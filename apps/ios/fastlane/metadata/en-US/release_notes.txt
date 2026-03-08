@@ -1,0 +1,1 @@
+﻿First App Store release of paleoclaw for iPhone. Pair with your paleoclaw Gateway to use chat, voice, sharing, and device actions from iOS.

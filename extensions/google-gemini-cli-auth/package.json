@@ -1,0 +1,12 @@
+﻿{
+  "name": "@paleoclaw/google-gemini-cli-auth",
+  "version": "2026.3.7",
+  "private": true,
+  "description": "paleoclaw Gemini CLI OAuth provider plugin",
+  "type": "module",
+  "paleoclaw": {
+    "extensions": [
+      "./index.ts"
+    ]
+  }
+}

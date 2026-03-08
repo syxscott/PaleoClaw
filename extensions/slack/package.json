@@ -1,0 +1,12 @@
+﻿{
+  "name": "@paleoclaw/slack",
+  "version": "2026.3.7",
+  "private": true,
+  "description": "paleoclaw Slack channel plugin",
+  "type": "module",
+  "paleoclaw": {
+    "extensions": [
+      "./index.ts"
+    ]
+  }
+}
