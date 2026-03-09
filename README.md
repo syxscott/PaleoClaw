@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/syxscott/PaleoClaw"><img src="https://img.shields.io/badge/version-1.1.0-blue.svg?style=for-the-badge" alt="Version"></a>
+  <a href="https://github.com/syxscott/PaleoClaw"><img src="https://img.shields.io/badge/version-1.2.0-blue.svg?style=for-the-badge" alt="Version"></a>
   <a href="https://github.com/syxscott/PaleoClaw/actions/workflows/ci.yml?branch=main"><img src="https://img.shields.io/github/actions/workflow/status/syxscott/PaleoClaw/ci.yml?branch=main&style=for-the-badge" alt="CI status"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge" alt="MIT License"></a>
 </p>
@@ -21,6 +21,40 @@ It automates scientific research workflows including literature search, database
 ---
 
 ## 📢 Recent Updates
+
+### v1.2.0 (2026-03-09) - Profile Layers & Memory System! 🆕
+
+**New Features:**
+- 🧬 **Soul/User Profile Layers** - Double-layer personalization architecture
+  - `soul.md`: System identity, scientific principles, safety boundaries
+  - `user.md`: Personal research preferences, output habits, workflow settings
+- 🧠 **Memory System** - Short-term and long-term research memory
+  - Automatic task recording and review
+  - Vector-based similarity search
+  - Research trajectory tracking
+- 🔍 **Memory Search** - Find past research queries by content similarity
+
+**What's New:**
+- Personalized research experience based on your preferences
+- Automatic recording of research workflows
+- Smart retrieval of past research activities
+- Research habit analysis and suggestions
+
+**CLI Commands:**
+```bash
+# Profile management
+paleoclaw profile init    # Initialize profile layers
+paleoclaw profile show    # Display current profile
+
+# Memory management
+paleoclaw paleo-memory status              # Show memory status
+paleoclaw paleo-memory short               # List short-term memories
+paleoclaw paleo-memory long                # List long-term memories
+paleoclaw paleo-memory search "theropod"   # Search memories
+paleoclaw paleo-memory archive             # Archive old memories
+```
+
+**See [CHANGELOG.md](CHANGELOG.md) for full details.**
 
 ### v1.1.0 (2026-03-09) - Activity Monitoring! 🆕
 
@@ -51,6 +85,30 @@ It automates scientific research workflows including literature search, database
 ---
 
 ## 🎯 Features
+
+### v1.2.0 New: Profile Layers & Memory System! 🆕
+
+Personalized research experience with double-layer profile architecture and intelligent memory system!
+
+| New Feature | Description |
+|-------------|-------------|
+| `profile init` | Initialize Soul/User profile layers |
+| `profile show` | Display current profile configuration |
+| `paleo-memory status` | Show memory store statistics |
+| `paleo-memory short` | List short-term research memories |
+| `paleo-memory long` | List long-term research memories |
+| `paleo-memory search` | Vector-based memory search |
+| `paleo-memory archive` | Archive old memories |
+
+**Profile Layers:**
+- **Soul Layer** (`soul.md`): System identity, core principles, data source hierarchy, safety boundaries
+- **User Layer** (`user.md`): Research focus, language preferences, output habits, workflow settings
+
+**Memory System:**
+- **Short-term Memory**: Automatic recording of each research task
+- **Long-term Memory**: Reviewed and summarized research insights
+- **Vector Search**: Find related research by content similarity
+- **Archive**: Automatic cleanup of old memories
 
 ### v1.1.0 New: Activity Monitoring! 🆕
 
@@ -342,13 +400,26 @@ PaleoClaw/
 │   ├── screen_monitor/
 │   ├── activity_logger/
 │   └── daily_log_generator/
+├── src/paleoclaw/            # Core modules (v1.2.0+)
+│   ├── profile/              # Profile layer management
+│   │   ├── layers.ts         # Soul/User profile parser
+│   │   └── index.ts          # Profile module exports
+│   ├── memory/               # Memory system
+│   │   ├── store.ts          # Task memory store
+│   │   ├── retrieval.ts      # Vector-based search
+│   │   └── index.ts          # Memory module exports
+│   ├── cli/                  # CLI commands
+│   │   ├── profile-cli.ts    # Profile commands
+│   │   ├── memory-cli.ts     # Memory commands
+│   │   └── index.ts          # CLI exports
+│   └── index.ts              # Main exports
 ├── docs/
 ├── scripts/
-├── soul.md                    # System identity
-├── user.md                    # User preferences
+├── soul.md                    # System identity (v1.2.0+)
+├── user.md                    # User preferences (v1.2.0+)
 ├── PALEOCLAW_IDENTITY.md      # Core system prompt
-├── RELEASE_NOTES.md           # Release notes (v1.0.0, v1.1.0)
-├── UPGRADE_GUIDE.md           # Upgrade guide from v1.0.0 to v1.1.0
+├── RELEASE_NOTES.md           # Release notes
+├── UPGRADE_GUIDE.md           # Upgrade guides
 ├── package.json
 ├── README.md
 └── LICENSE

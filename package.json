@@ -1,7 +1,7 @@
 ﻿{
   "name": "paleoclaw",
-  "version": "1.1.0",
-  "description": "An AI Research Agent for Paleontology with Activity Monitoring",
+  "version": "1.2.0",
+  "description": "An AI Research Agent for Paleontology with Profile Layers and Memory System",
   "keywords": [
     "paleontology",
     "ai-agent",
