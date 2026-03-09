@@ -1,7 +1,7 @@
 ---
 name: pbdb_query
 description: "Query the Paleobiology Database (PBDB) for fossil occurrences, taxonomy, and geological data. Use when: finding fossil records, checking taxonomic classifications, geographic distributions, time ranges. NOT for: non-paleontological data, modern species distributions."
-homepage: https://paleobiodb.org/
+homepage: https://github.com/syxscott/PaleoClaw
 metadata:
   {
     "paleoclaw":

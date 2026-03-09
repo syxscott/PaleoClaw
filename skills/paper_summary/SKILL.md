@@ -1,7 +1,7 @@
 ---
 name: paper_summary
 description: "Generate structured summaries of scientific papers from abstract or full text. Output includes: Background, Methods, Results, Significance. Use when: analyzing paper content, extracting key findings, comparing multiple papers, literature review."
-homepage: https://paleobiodb.org/
+homepage: https://github.com/syxscott/PaleoClaw
 metadata:
   {
     "paleoclaw":

@@ -1,7 +1,7 @@
 ---
 name: paper_search
 description: "Search paleontology and geoscience research papers via CrossRef, Semantic Scholar, and arXiv APIs. Use when: finding papers by topic/author/DOI, literature reviews, checking citations. Returns: title, authors, year, DOI, abstract. NOT for: accessing full-text PDFs (use browser tool), non-scientific articles."
-homepage: https://www.crossref.org/
+homepage: https://github.com/syxscott/PaleoClaw
 metadata:
   {
     "paleoclaw":

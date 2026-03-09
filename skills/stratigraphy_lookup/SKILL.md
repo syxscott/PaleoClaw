@@ -1,7 +1,7 @@
 ---
 name: stratigraphy_lookup
 description: "Query stratigraphic and geological formation data (formation name, age, period, epoch, location). Use when: identifying rock formations, checking geological ages, correlating strata, finding formation fossils."
-homepage: https://paleobiodb.org/
+homepage: https://github.com/syxscott/PaleoClaw
 metadata:
   {
     "paleoclaw":

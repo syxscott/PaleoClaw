@@ -9,18 +9,58 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/paleoclaw/paleoclaw"><img src="https://img.shields.io/badge/version-1.0.0-blue.svg?style=for-the-badge" alt="Version"></a>
-  <a href="https://github.com/paleoclaw/paleoclaw/actions/workflows/ci.yml?branch=main"><img src="https://img.shields.io/github/actions/workflow/status/paleoclaw/paleoclaw/ci.yml?branch=main&style=for-the-badge" alt="CI status"></a>
+  <a href="https://github.com/syxscott/PaleoClaw"><img src="https://img.shields.io/badge/version-1.1.0-blue.svg?style=for-the-badge" alt="Version"></a>
+  <a href="https://github.com/syxscott/PaleoClaw/actions/workflows/ci.yml?branch=main"><img src="https://img.shields.io/github/actions/workflow/status/syxscott/PaleoClaw/ci.yml?branch=main&style=for-the-badge" alt="CI status"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge" alt="MIT License"></a>
 </p>
 
 **PaleoClaw** is a specialized AI research assistant for **paleontology and geosciences**, built on the multi-channel AI gateway framework.
 
-It automates scientific research workflows including literature search, database queries, taxonomic lookup, stratigraphy analysis, and research synthesis.
+It automates scientific research workflows including literature search, database queries, taxonomic lookup, stratigraphy analysis, research synthesis, **and computer activity monitoring**.
+
+---
+
+## 📢 Recent Updates
+
+### v1.1.0 (2026-03-09) - Activity Monitoring! 🆕
+
+**New Features:**
+- 🖥️ **Screen Monitor** - Capture screenshots and monitor screen activity
+- 📝 **Activity Logger** - Log applications, files, websites, and commands
+- 📊 **Daily Log Generator** - Generate comprehensive daily logs in Markdown format
+
+**What's New:**
+- Real-time computer activity tracking
+- Productivity analysis and metrics
+- File location tracking
+- Daily/weekly report generation
+- Privacy-focused local storage
+
+**See [CHANGELOG.md](CHANGELOG.md) for full details.**
+
+### v1.0.0 (2026-03-09) - Initial Release
+
+**Initial Features:**
+- 📄 **Paper Search** - Search paleontology papers via CrossRef, Semantic Scholar, arXiv
+- 🦕 **PBDB Query** - Query fossil occurrences from Paleobiology Database
+- 🧬 **Taxonomy Lookup** - Taxonomic classification from PBDB, NCBI
+- 📊 **Stratigraphy Lookup** - Geological formation data from PBDB
+- 📝 **Paper Summary** - Structured paper summaries with AI analysis
+- 🎯 **Research Assistant** - Comprehensive research workflow integration
 
 ---
 
 ## 🎯 Features
+
+### v1.1.0 New: Activity Monitoring! 🆕
+
+Track your computer usage and generate daily productivity logs in Markdown format!
+
+| New Skill | Description |
+|-----------|-------------|
+| `screen_monitor` | Capture screenshots and monitor screen activity |
+| `activity_logger` | Log applications, files, websites, and commands |
+| `daily_log_generator` | Generate comprehensive daily logs in Markdown |
 
 ### Research Skills
 
@@ -90,6 +130,22 @@ paleoclaw agent --message "Query PBDB for Triceratops occurrences"
 
 # Comprehensive research
 paleoclaw agent --message "Write a literature review on sauropod gigantism"
+```
+
+### Activity Monitoring (v1.1.0)
+
+```bash
+# Start activity monitoring
+paleoclaw agent --message "Start monitoring my work session"
+
+# Generate daily log
+paleoclaw agent --message "Generate my daily log in Markdown"
+
+# Find where you saved a file
+paleoclaw agent --message "Where did I save the file I was working on at 3 PM?"
+
+# Weekly productivity report
+paleoclaw agent --message "Generate my weekly activity report"
 ```
 
 ---
@@ -282,12 +338,17 @@ PaleoClaw/
 │   ├── taxonomy_lookup/
 │   ├── stratigraphy_lookup/
 │   ├── paper_summary/
-│   └── research_assistant/
+│   ├── research_assistant/
+│   ├── screen_monitor/
+│   ├── activity_logger/
+│   └── daily_log_generator/
 ├── docs/
 ├── scripts/
 ├── soul.md                    # System identity
 ├── user.md                    # User preferences
 ├── PALEOCLAW_IDENTITY.md      # Core system prompt
+├── RELEASE_NOTES.md           # Release notes (v1.0.0, v1.1.0)
+├── UPGRADE_GUIDE.md           # Upgrade guide from v1.0.0 to v1.1.0
 ├── package.json
 ├── README.md
 └── LICENSE
@@ -339,6 +400,8 @@ https://doi.org/10.xxxx/xxxxx
 - [Integration Guide](docs/INTEGRATION.md) - Channel integration
 - [Development Guide](docs/DEVELOPMENT.md) - For contributors
 - [System Identity](PALEOCLAW_IDENTITY.md) - Core system prompt
+- [Release Notes](RELEASE_NOTES.md) - Version history and new features
+- [Upgrade Guide](UPGRADE_GUIDE.md) - How to upgrade from v1.0.0 to v1.1.0
 
 ---
 
@@ -382,8 +445,8 @@ MIT License - see [LICENSE](LICENSE) file for details.
 If you use PaleoClaw in your research, please cite:
 
 ```
-PaleoClaw Contributors. (2026). PaleoClaw: An AI Research Agent for 
-Paleontology. https://github.com/paleoclaw/paleoclaw
+PaleoClaw Contributors. (2026). PaleoClaw: An AI Research Agent for
+Paleontology. https://github.com/syxscott/PaleoClaw
 
 Data from PBDB: https://paleobiodb.org/
 ```
@@ -392,9 +455,9 @@ Data from PBDB: https://paleobiodb.org/
 
 ## 🔗 Support
 
-- **Issues**: https://github.com/paleoclaw/paleoclaw/issues
-- **Discussions**: https://github.com/paleoclaw/paleoclaw/discussions
-- **Documentation**: https://github.com/paleoclaw/paleoclaw/docs
+- **Issues**: https://github.com/syxscott/PaleoClaw/issues
+- **Discussions**: https://github.com/syxscott/PaleoClaw/discussions
+- **Documentation**: https://github.com/syxscott/PaleoClaw/docs
 
 ---
 

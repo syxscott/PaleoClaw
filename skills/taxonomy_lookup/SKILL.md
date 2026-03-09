@@ -1,7 +1,7 @@
 ---
 name: taxonomy_lookup
 description: "Lookup paleontological taxonomic classification (kingdom, phylum, class, order, family, genus, species). Uses PBDB as primary source, with NCBI/Wikidata for auxiliary data. Use when: verifying classification hierarchy, checking taxonomic validity, finding related taxa."
-homepage: https://paleobiodb.org/
+homepage: https://github.com/syxscott/PaleoClaw
 metadata:
   {
     "paleoclaw":

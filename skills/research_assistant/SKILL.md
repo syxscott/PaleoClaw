@@ -1,7 +1,7 @@
 ---
 name: research_assistant
 description: "Comprehensive paleontology research workflow agent. Automatically executes: paper_search → paper_summary → taxonomy_lookup → pbdb_query → stratigraphy_lookup. Produces structured literature review reports. Use for: research proposals, literature reviews, thesis preparation, grant applications."
-homepage: https://paleobiodb.org/
+homepage: https://github.com/syxscott/PaleoClaw
 metadata:
   {
     "paleoclaw":
