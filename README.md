@@ -1,539 +1,602 @@
-﻿# 🦕 PaleoClaw
+﻿<div align="center">
 
-<p align="center">
-  <strong>An AI Research Agent for Paleontology</strong>
+# 🦕 PaleoClaw
+
+**An AI Research Agent for Paleontology**  
+**古生物学 AI 研究助手**
+
+<p>
+  <em>"Ex Fossilo, Scientia" — From Fossils, Knowledge</em>  
+  <em>"源于化石，成就知识"</em>
 </p>
 
-<p align="center">
-  <em>"Ex Fossilo, Scientia" - From Fossils, Knowledge</em>
+<p>
+  <a href="https://github.com/syxscott/PaleoClaw">
+    <img src="https://img.shields.io/badge/version-1.2.0-blue.svg?style=for-the-badge" alt="Version">
+  </a>
+  <a href="https://github.com/syxscott/PaleoClaw/actions/workflows/ci.yml?branch=main">
+    <img src="https://img.shields.io/github/actions/workflow/status/syxscott/PaleoClaw/ci.yml?branch=main&style=for-the-badge" alt="CI status">
+  </a>
+  <a href="LICENSE">
+    <img src="https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge" alt="MIT License">
+  </a>
 </p>
 
-<p align="center">
-  <a href="https://github.com/syxscott/PaleoClaw"><img src="https://img.shields.io/badge/version-1.2.0-blue.svg?style=for-the-badge" alt="Version"></a>
-  <a href="https://github.com/syxscott/PaleoClaw/actions/workflows/ci.yml?branch=main"><img src="https://img.shields.io/github/actions/workflow/status/syxscott/PaleoClaw/ci.yml?branch=main&style=for-the-badge" alt="CI status"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge" alt="MIT License"></a>
+<p>
+  <a href="README_CN.md">🇨🇳 中文版</a> | 
+  <a href="#-quick-start">🚀 Quick Start</a> | 
+  <a href="#-features">✨ Features</a> | 
+  <a href="#-documentation">📚 Docs</a>
 </p>
 
-**PaleoClaw** is a specialized AI research assistant for **paleontology and geosciences**, built on the multi-channel AI gateway framework.
-
-It automates scientific research workflows including literature search, database queries, taxonomic lookup, stratigraphy analysis, research synthesis, **and computer activity monitoring**.
+</div>
 
 ---
 
-## 📢 Recent Updates
+## 📢 What's New | 最新动态
 
-### v1.2.0 (2026-03-09) - Profile Layers & Memory System! 🆕
+<div align="center">
 
-**New Features:**
-- 🧬 **Soul/User Profile Layers** - Double-layer personalization architecture
-  - `soul.md`: System identity, scientific principles, safety boundaries
-  - `user.md`: Personal research preferences, output habits, workflow settings
-- 🧠 **Memory System** - Short-term and long-term research memory
-  - Automatic task recording and review
-  - Vector-based similarity search
-  - Research trajectory tracking
-- 🔍 **Memory Search** - Find past research queries by content similarity
+### 🎉 v1.2.0 (2026-03-09) — Profile Layers & Memory System | 个人画像与记忆系统
 
-**What's New:**
-- Personalized research experience based on your preferences
-- Automatic recording of research workflows
-- Smart retrieval of past research activities
-- Research habit analysis and suggestions
+</div>
 
-**CLI Commands:**
+<table>
+<tr>
+<td width="50%">
+
+**🧬 Profile Layers | 个人画像分层**
+- `soul.md` — System identity & principles | 系统身份与核心原则
+- `user.md` — Personal research preferences | 个人研究偏好设置
+- Double-layer personalization | 双层个性化架构
+
+**🧠 Memory System | 记忆系统**
+- Short-term & long-term memory | 短期与长期记忆
+- Vector-based similarity search | 基于向量的相似度搜索
+- Research trajectory tracking | 研究轨迹追踪
+
+</td>
+<td width="50%">
+
+**🔍 New CLI Commands | 新增命令**
 ```bash
-# Profile management
-paleoclaw profile init    # Initialize profile layers
-paleoclaw profile show    # Display current profile
+# Profile management | 画像管理
+paleoclaw profile init    # Initialize | 初始化
+paleoclaw profile show    # Display | 显示配置
 
-# Memory management
-paleoclaw paleo-memory status              # Show memory status
-paleoclaw paleo-memory short               # List short-term memories
-paleoclaw paleo-memory long                # List long-term memories
-paleoclaw paleo-memory search "theropod"   # Search memories
-paleoclaw paleo-memory archive             # Archive old memories
+# Memory management | 记忆管理
+paleoclaw paleo-memory status     # Statistics | 状态统计
+paleoclaw paleo-memory short      # Short-term | 短期记忆
+paleoclaw paleo-memory long       # Long-term | 长期记忆
+paleoclaw paleo-memory search     # Search | 内容搜索
+paleoclaw paleo-memory archive    # Archive | 归档清理
 ```
 
-**See [CHANGELOG.md](CHANGELOG.md) for full details.**
+</td>
+</tr>
+</table>
 
-### v1.1.0 (2026-03-09) - Activity Monitoring! 🆕
+<details>
+<summary><b>📜 Previous Versions | 历史版本</b></summary>
 
-**New Features:**
-- 🖥️ **Screen Monitor** - Capture screenshots and monitor screen activity
-- 📝 **Activity Logger** - Log applications, files, websites, and commands
-- 📊 **Daily Log Generator** - Generate comprehensive daily logs in Markdown format
+### v1.1.0 — Activity Monitoring | 活动监控
+- 🖥️ Screen monitoring & screenshot capture | 屏幕监控与截图
+- 📝 Activity logging (apps, files, websites) | 活动日志记录
+- 📊 Daily productivity reports in Markdown | 每日生产力报告
 
-**What's New:**
-- Real-time computer activity tracking
-- Productivity analysis and metrics
-- File location tracking
-- Daily/weekly report generation
-- Privacy-focused local storage
+### v1.0.0 — Initial Release | 初始版本
+- 📄 Paper search via CrossRef/Semantic Scholar/arXiv | 文献搜索
+- 🦕 PBDB fossil occurrence queries | PBDB 化石记录查询
+- 🧬 Taxonomic classification lookup | 分类学查询
+- 📊 Stratigraphy & formation data | 地层学数据
 
-**See [CHANGELOG.md](CHANGELOG.md) for full details.**
-
-### v1.0.0 (2026-03-09) - Initial Release
-
-**Initial Features:**
-- 📄 **Paper Search** - Search paleontology papers via CrossRef, Semantic Scholar, arXiv
-- 🦕 **PBDB Query** - Query fossil occurrences from Paleobiology Database
-- 🧬 **Taxonomy Lookup** - Taxonomic classification from PBDB, NCBI
-- 📊 **Stratigraphy Lookup** - Geological formation data from PBDB
-- 📝 **Paper Summary** - Structured paper summaries with AI analysis
-- 🎯 **Research Assistant** - Comprehensive research workflow integration
+</details>
 
 ---
 
-## 🎯 Features
+## 🎯 Features | 功能特性
 
-### v1.2.0 New: Profile Layers & Memory System! 🆕
+<div align="center">
 
-Personalized research experience with double-layer profile architecture and intelligent memory system!
+### ✨ Core Capabilities | 核心能力
 
-| New Feature | Description |
-|-------------|-------------|
-| `profile init` | Initialize Soul/User profile layers |
-| `profile show` | Display current profile configuration |
-| `paleo-memory status` | Show memory store statistics |
-| `paleo-memory short` | List short-term research memories |
-| `paleo-memory long` | List long-term research memories |
-| `paleo-memory search` | Vector-based memory search |
-| `paleo-memory archive` | Archive old memories |
+</div>
 
-**Profile Layers:**
-- **Soul Layer** (`soul.md`): System identity, core principles, data source hierarchy, safety boundaries
-- **User Layer** (`user.md`): Research focus, language preferences, output habits, workflow settings
+<table>
+<tr>
+<th width="33%">🔬 Research | 研究功能</th>
+<th width="33%">🧠 Intelligence | 智能功能</th>
+<th width="33%">⚙️ Productivity | 生产力</th>
+</tr>
+<tr>
+<td>
 
-**Memory System:**
-- **Short-term Memory**: Automatic recording of each research task
-- **Long-term Memory**: Reviewed and summarized research insights
-- **Vector Search**: Find related research by content similarity
-- **Archive**: Automatic cleanup of old memories
+**Literature Search | 文献搜索**
+- CrossRef, Semantic Scholar, arXiv
+- DOI validation & citation formatting
+- Multi-source aggregation
 
-### v1.1.0 New: Activity Monitoring! 🆕
+**Database Queries | 数据库查询**
+- PBDB fossil occurrences
+- Taxonomic classifications
+- Stratigraphic information
 
-Track your computer usage and generate daily productivity logs in Markdown format!
+</td>
+<td>
 
-| New Skill | Description |
-|-----------|-------------|
-| `screen_monitor` | Capture screenshots and monitor screen activity |
-| `activity_logger` | Log applications, files, websites, and commands |
-| `daily_log_generator` | Generate comprehensive daily logs in Markdown |
+**AI-Powered Analysis | AI 分析**
+- Paper summarization
+- Research synthesis
+- Taxonomic verification
 
-### Research Skills
+**Memory System | 记忆系统**
+- Research history tracking
+- Smart content retrieval
+- Pattern recognition
 
-| Skill | Description | Data Sources |
-|-------|-------------|--------------|
-| `paper_search` | Search paleontology papers | CrossRef, Semantic Scholar, arXiv |
-| `pbdb_query` | Query fossil occurrences | Paleobiology Database |
-| `taxonomy_lookup` | Taxonomic classification | PBDB, NCBI |
-| `stratigraphy_lookup` | Geological formation data | PBDB, Macrostrat |
-| `paper_summary` | Structured paper summaries | AI Analysis |
-| `research_assistant` | Comprehensive research workflow | All above |
+</td>
+<td>
 
-### Data Sources
+**Activity Monitoring | 活动监控**
+- Work session tracking
+- Productivity metrics
+- Daily log generation
 
-- **Paleobiology Database (PBDB)** - Fossil occurrences and taxonomy
-- **CrossRef** - Peer-reviewed literature metadata  
-- **Semantic Scholar** - Citation analysis
-- **arXiv** - Preprints (clearly marked)
+**Profile Customization | 个性化**
+- Research preference profiles
+- Output format customization
+- Workflow optimization
 
-### Scientific Integrity
-
-✅ **No fabrication** - All data verified against primary sources  
-✅ **Verifiable citations** - Every paper includes DOI  
-✅ **Transparent uncertainty** - Clearly marks disputed data  
-✅ **Reproducible** - Documents all queries and parameters
+</td>
+</tr>
+</table>
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Quick Start | 快速开始
 
-### Prerequisites
+### Prerequisites | 环境要求
 
-- **Node.js** >= 22.12.0
-- **curl** (for API calls)
+<div align="center">
 
-### Installation
+| Requirement | Version | Description |
+|-------------|---------|-------------|
+| **Node.js** | >= 22.12.0 | Runtime environment | 运行环境 |
+| **curl** | latest | API calls | API 调用工具 |
+| **Git** | latest | Version control | 版本控制 |
+
+</div>
+
+### Installation | 安装
 
 ```bash
-# 1. Install PaleoClaw
+# Install PaleoClaw | 安装 PaleoClaw
 npm install -g paleoclaw@latest
-# or: pnpm add -g paleoclaw@latest
+# or | 或者
+pnpm add -g paleoclaw@latest
 
-# 2. Run onboarding
-paleoclaw onboard --install-daemon
+# Initialize profile layers | 初始化个人画像
+paleoclaw profile init
 
-# 3. Configure AI model
+# Configure AI provider | 配置 AI 提供商
 paleoclaw config set --ai-provider openai --ai-model gpt-5-mini
-# Or use other providers:
-# paleoclaw config set --ai-provider qwen --ai-model qwen-plus-latest
-# paleoclaw config set --ai-provider gemini --ai-model gemini-flash-latest
 ```
 
-### First Use
+### First Use | 首次使用
 
 ```bash
-# Start the gateway
+# Start the gateway | 启动网关
 paleoclaw gateway --port 18789 --verbose
 
-# Query literature
+# Example queries | 示例查询
 paleoclaw agent --message "Find papers about Jurassic theropods"
-
-# Query taxonomy
-paleoclaw agent --message "What is the classification of Tyrannosaurus rex?"
-
-# Query fossil data
-paleoclaw agent --message "Query PBDB for Triceratops occurrences"
-
-# Comprehensive research
-paleoclaw agent --message "Write a literature review on sauropod gigantism"
-```
-
-### Activity Monitoring (v1.1.0)
-
-```bash
-# Start activity monitoring
-paleoclaw agent --message "Start monitoring my work session"
-
-# Generate daily log
-paleoclaw agent --message "Generate my daily log in Markdown"
-
-# Find where you saved a file
-paleoclaw agent --message "Where did I save the file I was working on at 3 PM?"
-
-# Weekly productivity report
-paleoclaw agent --message "Generate my weekly activity report"
+paleoclaw agent --message "Query PBDB for Tyrannosaurus occurrences"
+paleoclaw agent --message "What is the classification of Velociraptor?"
 ```
 
 ---
 
-## 📋 Usage Examples
+## 📋 Usage Examples | 使用示例
 
-### Literature Search
+<div align="center">
 
+### 🔍 Literature Search | 文献搜索
+
+</div>
+
+**Command | 命令:**
 ```bash
 paleoclaw agent --message "Find papers about dinosaur extinction at K-Pg boundary from 2020-2026"
 ```
 
-**Expected Output:**
+**Output | 输出:**
 ```
-1. **The last dinosaurs: K-Pg boundary extinction patterns**
-   Authors: Smith, J., Johnson, K., Williams, R.
-   Year: 2023
-   Journal: Paleobiology
-   DOI: 10.1016/j.palaeo.2023.111234
-   Citations: 42
+📄 Research Papers Found | 找到的研究论文:
 
-2. **Iridium anomalies and dinosaur extinction**
-   Authors: Chen, L., et al.
-   Year: 2022
-   Journal: Cretaceous Research
-   DOI: 10.1016/j.cretres.2022.105234
-   Citations: 28
+1. The last dinosaurs: K-Pg boundary extinction patterns
+   最后恐龙的灭绝：K-Pg 边界灭绝模式
+   ├─ Authors: Smith, J., Johnson, K., Williams, R.
+   ├─ Year: 2023
+   ├─ Journal: Paleobiology
+   ├─ DOI: 10.1016/j.palaeo.2023.111234
+   └─ Citations: 42
+
+2. Iridium anomalies and dinosaur extinction
+   铱异常与恐龙灭绝
+   ├─ Authors: Chen, L., et al.
+   ├─ Year: 2022
+   ├─ Journal: Cretaceous Research
+   ├─ DOI: 10.1016/j.cretres.2022.105234
+   └─ Citations: 28
 ```
 
-### Taxonomy Lookup
+<div align="center">
 
+### 🧬 Taxonomy Lookup | 分类学查询
+
+</div>
+
+**Command | 命令:**
 ```bash
 paleoclaw agent --message "What is the full classification of Velociraptor mongoliensis?"
 ```
 
-**Expected Output:**
+**Output | 输出:**
 ```
-**Taxonomic Classification**
+🦕 Taxonomic Classification | 分类学信息
 
-**Name**: Velociraptor mongoliensis
-**Rank**: species
-**Status**: valid
+Name | 名称: Velociraptor mongoliensis
+Rank | 等级: species | 种
+Status | 状态: valid | 有效
 
-**Full Hierarchy**:
-└─ Kingdom: Animalia
-   └─ Phylum: Chordata
-      └─ Class: Dinosauria
-         └─ Order: Saurischia
-            └─ Suborder: Theropoda
-               └─ Family: Dromaeosauridae
-                  └─ Genus: Velociraptor
-                     └─ Species: V. mongoliensis
+Full Hierarchy | 完整分类层级:
+└─ Kingdom | 界: Animalia | 动物界
+   └─ Phylum | 门: Chordata | 脊索动物门
+      └─ Class | 纲: Dinosauria | 恐龙纲
+         └─ Order | 目: Saurischia | 蜥臀目
+            └─ Suborder | 亚目: Theropoda | 兽脚亚目
+               └─ Family | 科: Dromaeosauridae | 驰龙科
+                  └─ Genus | 属: Velociraptor | 伶盗龙属
+                     └─ Species | 种: V. mongoliensis | 蒙古伶盗龙
 
-Data source: Paleobiology Database (queried 2026-03-08)
+Data source | 数据来源: Paleobiology Database (queried 2026-03-09)
 ```
 
-### Fossil Occurrences
+<div align="center">
 
+### 🗺️ Fossil Occurrences | 化石记录
+
+</div>
+
+**Command | 命令:**
 ```bash
 paleoclaw agent --message "Where have Tyrannosaurus fossils been found? Query PBDB."
 ```
 
-**Expected Output:**
+**Output | 输出:**
 ```
-**Fossil Occurrences** for Tyrannosaurus (from PBDB):
+🗺️ Fossil Occurrences for Tyrannosaurus | 霸王龙化石记录
 
-1. **Location**: Montana, USA
-   Coordinates: 45.0, -110.0
-   Age: 66 Ma
-   Formation: Hell Creek Formation
+📍 Location 1 | 地点 1: Montana, USA | 美国蒙大拿州
+   ├─ Coordinates | 坐标: 45.0, -110.0
+   ├─ Age | 年代: 66 Ma | 6600万年前
+   └─ Formation | 地层: Hell Creek Formation | 地狱溪组
 
-2. **Location**: South Dakota, USA
-   Coordinates: 43.5, -102.5
-   Age: 66 Ma
-   Formation: Hell Creek Formation
+📍 Location 2 | 地点 2: South Dakota, USA | 美国南达科他州
+   ├─ Coordinates | 坐标: 43.5, -102.5
+   ├─ Age | 年代: 66 Ma
+   └─ Formation | 地层: Hell Creek Formation
 
-3. **Location**: Wyoming, USA
-   Coordinates: 44.0, -107.0
-   Age: 66 Ma
-   Formation: Lance Formation
+📍 Location 3 | 地点 3: Wyoming, USA | 美国怀俄明州
+   ├─ Coordinates | 坐标: 44.0, -107.0
+   ├─ Age | 年代: 66 Ma
+   └─ Formation | 地层: Lance Formation | 兰斯组
 
-Total occurrences: ~50
-Data source: PBDB (paleobiodb.org)
+📊 Total occurrences | 总记录数: ~50
+🔗 Data source | 数据来源: PBDB (paleobiodb.org)
 ```
 
-### Stratigraphy Query
+<div align="center">
 
+### 🏔️ Stratigraphy Query | 地层查询
+
+</div>
+
+**Command | 命令:**
 ```bash
 paleoclaw agent --message "What is the age and location of Yixian Formation?"
 ```
 
-**Expected Output:**
+**Output | 输出:**
 ```
-**Stratigraphic Information**
+🏔️ Stratigraphic Information | 地层信息
 
-**Formation**: Yixian Formation
-**Age**: ~125 Ma
-**Period**: Early Cretaceous
-**Epoch**: Barremian-Aptian
-**Location**: Liaoning, China
-**Lithology**: Volcaniclastic sediments
+Formation | 地层名称: Yixian Formation | 义县组
+Age | 年代: ~125 Ma | 约1.25亿年前
+Period | 纪: Early Cretaceous | 早白垩世
+Epoch | 世: Barremian-Aptian | 巴列姆期-阿普特期
+Location | 地点: Liaoning, China | 中国辽宁
+Lithology | 岩性: Volcaniclastic sediments | 火山碎屑沉积
 
-**Associated Fossils**:
-- Sinosauropteryx prima (feathered dinosaur)
-- Confuciusornis sanctus (early bird)
-- Psittacosaurus lujiatunensis (ceratopsian)
+🦕 Associated Fossils | 相关化石:
+• Sinosauropteryx prima — First feathered dinosaur | 第一种带羽毛恐龙
+• Confuciusornis sanctus — Early bird | 早期鸟类
+• Psittacosaurus lujiatunensis — Ceratopsian | 鹦鹉嘴龙
 
-**Significance**: Lagerstätte with exceptional preservation
-```
-
-### Comprehensive Research
-
-```bash
-paleoclaw agent --message "Write a comprehensive research summary on theropod dinosaur diversity in the Early Cretaceous of China"
-```
-
-**Expected Output:**
-```
-# Research Report: Theropod Diversity in Early Cretaceous China
-
-## Executive Summary
-The Early Cretaceous of China preserves one of the world's most important 
-theropod dinosaur faunas, particularly from Liaoning Province...
-
-## 1. Taxonomic Background
-[Full taxonomic hierarchy]
-
-## 2. Geological Context
-- Stratigraphic Range: Early Cretaceous (145-100 Ma)
-- Major Formations: Yixian, Jiufotang, Huajiying
-- Geographic Distribution: Liaoning, Hebei, Inner Mongolia
-
-## 3. Literature Review
-[5-10 paper summaries with full citations]
-
-## 4. Fossil Record Analysis
-[PBDB query results]
-
-## 5. Current Scientific Understanding
-[Established knowledge, debates, gaps]
-
-## 6. References
-[Formatted bibliography with DOIs]
+⭐ Significance | 重要性: Lagerstätte with exceptional preservation
+              具有 exceptional 保存状态的化石库
 ```
 
 ---
 
-## 🔧 Configuration
+## 🔧 Configuration | 配置
 
-### Environment Variables
+### Environment Variables | 环境变量
 
 ```bash
-# AI Provider
+# AI Provider Configuration | AI 提供商配置
 export PALEOCLAW_AI_PROVIDER=openai
 export PALEOCLAW_AI_MODEL=gpt-5-mini
 export PALEOCLAW_AI_API_KEY=your-api-key
 
-# Or use other providers
+# Alternative Providers | 其他提供商
 export PALEOCLAW_AI_PROVIDER=qwen
 export PALEOCLAW_AI_MODEL=qwen-plus-latest
+
+# Profile Paths | 画像文件路径
+export PALEOCLAW_SOUL_PATH=/path/to/soul.md
+export PALEOCLAW_USER_PATH=/path/to/user.md
 ```
 
-### Config File (~/.paleoclaw/paleoclaw.json)
+### Config File | 配置文件
+
+**Location | 位置:** `~/.paleoclaw/paleoclaw.json`
 
 ```json
 {
   "agent": {
-    "model": "openai/gpt-5-mini"
+    "model": "openai/gpt-5-mini",
+    "language": "zh-CN"
   },
   "skills": {
     "load": {
       "extraDirs": ["~/.paleoclaw/skills"]
     }
+  },
+  "memory": {
+    "autoArchive": true,
+    "archiveAfterDays": 7
   }
 }
 ```
 
 ---
 
-## 📁 Project Structure
+## 📁 Project Structure | 项目结构
 
 ```
 PaleoClaw/
-├── agents/
+├── 📂 agents/                    # Agent configurations | 代理配置
 │   └── paleoclaw-research-agent/
-│       └── AGENT.md          # Agent configuration
-├── skills/
-│   ├── paper_search/
-│   ├── pbdb_query/
-│   ├── taxonomy_lookup/
-│   ├── stratigraphy_lookup/
-│   ├── paper_summary/
-│   ├── research_assistant/
-│   ├── screen_monitor/
-│   ├── activity_logger/
-│   └── daily_log_generator/
-├── src/paleoclaw/            # Core modules (v1.2.0+)
-│   ├── profile/              # Profile layer management
-│   │   ├── layers.ts         # Soul/User profile parser
-│   │   └── index.ts          # Profile module exports
-│   ├── memory/               # Memory system
-│   │   ├── store.ts          # Task memory store
-│   │   ├── retrieval.ts      # Vector-based search
-│   │   └── index.ts          # Memory module exports
-│   ├── cli/                  # CLI commands
-│   │   ├── profile-cli.ts    # Profile commands
-│   │   ├── memory-cli.ts     # Memory commands
-│   │   └── index.ts          # CLI exports
-│   └── index.ts              # Main exports
-├── docs/
-├── scripts/
-├── soul.md                    # System identity (v1.2.0+)
-├── user.md                    # User preferences (v1.2.0+)
-├── PALEOCLAW_IDENTITY.md      # Core system prompt
-├── RELEASE_NOTES.md           # Release notes
-├── UPGRADE_GUIDE.md           # Upgrade guides
-├── package.json
-├── README.md
-└── LICENSE
+│       └── AGENT.md
+├── 📂 skills/                    # Research skills | 研究技能
+│   ├── 📄 paper_search/          # Literature search | 文献搜索
+│   ├── 🦕 pbdb_query/            # Fossil database | 化石数据库
+│   ├── 🧬 taxonomy_lookup/       # Taxonomy | 分类学
+│   ├── 📊 stratigraphy_lookup/   # Stratigraphy | 地层学
+│   ├── 📝 paper_summary/         # Paper summarization | 论文摘要
+│   ├── 🎯 research_assistant/    # Research workflow | 研究工作流
+│   ├── 🖥️ screen_monitor/        # Screen monitoring | 屏幕监控
+│   ├── 📝 activity_logger/       # Activity logging | 活动记录
+│   └── 📊 daily_log_generator/   # Daily reports | 日报生成
+├── 📂 src/paleoclaw/             # Core modules (v1.2.0+) | 核心模块
+│   ├── 📂 profile/               # Profile system | 画像系统
+│   │   ├── layers.ts             # Profile parser | 画像解析器
+│   │   └── index.ts
+│   ├── 📂 memory/                # Memory system | 记忆系统
+│   │   ├── store.ts              # Memory storage | 记忆存储
+│   │   ├── retrieval.ts          # Vector search | 向量搜索
+│   │   └── index.ts
+│   ├── 📂 cli/                   # CLI commands | 命令行接口
+│   │   ├── profile-cli.ts        # Profile commands | 画像命令
+│   │   ├── memory-cli.ts         # Memory commands | 记忆命令
+│   │   └── index.ts
+│   └── index.ts
+├── 📂 docs/                      # Documentation | 文档
+├── 📂 scripts/                   # Utility scripts | 工具脚本
+├── 📄 soul.md                    # System identity | 系统身份
+├── 📄 user.md                    # User preferences | 用户偏好
+├── 📄 PALEOCLAW_IDENTITY.md      # Core system prompt | 核心系统提示
+├── 📄 CHANGELOG.md               # Version history | 版本历史
+├── 📄 UPGRADE_GUIDE_v1.2.0.md    # Upgrade guide | 升级指南
+├── 📄 v1.2.0_CHECKLIST.md        # Release checklist | 发布检查清单
+├── 📄 package.json
+├── 📄 README.md
+└── 📄 LICENSE
 ```
 
 ---
 
-## 🔬 Scientific Integrity
+## 🔬 Scientific Integrity | 科学诚信
 
-### Data Verification
+<div align="center">
 
-All PaleoClaw outputs follow strict verification rules:
+### ✅ Our Commitment | 我们的承诺
 
-1. **Taxonomic names** verified via PBDB
-2. **Paper citations** include valid DOI
-3. **Age ranges** include uncertainty (in Ma)
-4. **Disputed claims** clearly marked
-5. **Data sources** explicitly cited
+</div>
 
-### Handling Unknown Data
+<table>
+<tr>
+<td align="center" width="25%">
 
-When data is unavailable:
+**🔍 No Fabrication**
+**不编造数据**
 
-```
-No verified fossil occurrences found in PBDB for [taxon name].
+All data verified against primary sources
+所有数据均经过原始来源验证
 
-This may indicate:
-- Limited fossil record
-- Recent taxonomic revision
-- Data not yet in database
+</td>
+<td align="center" width="25%">
 
-Recommendation: Check primary literature for recent discoveries.
-```
+**📚 Verifiable Citations**
+**可验证引用**
 
-### Citation Format
+Every paper includes valid DOI
+每篇论文都包含有效 DOI
 
-All papers cited with full metadata:
+</td>
+<td align="center" width="25%">
 
-```
-Author(s). (Year). Title. Journal, Volume(Issue), Pages.
-https://doi.org/10.xxxx/xxxxx
-```
+**⚠️ Transparent Uncertainty**
+**透明的不确定性**
 
----
+Clearly marks disputed data
+清楚标记有争议的数据
 
-## 📚 Documentation
+</td>
+<td align="center" width="25%">
 
-- [Usage Examples](docs/USAGE_EXAMPLES.md) - Detailed usage guide
-- [Integration Guide](docs/INTEGRATION.md) - Channel integration
-- [Development Guide](docs/DEVELOPMENT.md) - For contributors
-- [System Identity](PALEOCLAW_IDENTITY.md) - Core system prompt
-- [Release Notes](RELEASE_NOTES.md) - Version history and new features
-- [Upgrade Guide](UPGRADE_GUIDE.md) - How to upgrade from v1.0.0 to v1.1.0
+**🔄 Reproducible**
+**可复现**
 
----
+Documents all queries and parameters
+记录所有查询和参数
 
-## 🤝 Contributing
+</td>
+</tr>
+</table>
 
-Contributions welcome! Areas of interest:
+### Data Verification Standards | 数据验证标准
 
-- New data source integrations
-- Additional research skills
-- Improved citation formatting
-- Non-English language support
-- Documentation improvements
+1. **Taxonomic names** verified via PBDB | 分类学名称通过 PBDB 验证
+2. **Paper citations** include valid DOI | 论文引用包含有效 DOI
+3. **Age ranges** include uncertainty (in Ma) | 年代范围包含不确定性（百万年）
+4. **Disputed claims** clearly marked | 有争议的声明清楚标记
+5. **Data sources** explicitly cited | 数据来源明确引用
 
-### How to Contribute
+### Handling Unknown Data | 处理未知数据
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Run tests: `bash scripts/test.sh`
-5. Submit a pull request
-
----
-
-## 📜 License
-
-MIT License - see [LICENSE](LICENSE) file for details.
-
----
-
-## 🙏 Acknowledgments
-
-- Data from [Paleobiology Database](https://paleobiodb.org/)
-- Literature metadata from [CrossRef](https://www.crossref.org/)
-- Citation analysis from [Semantic Scholar](https://www.semanticscholar.org/)
-- Preprints from [arXiv](https://arxiv.org/)
-
----
-
-## 📖 Citation
-
-If you use PaleoClaw in your research, please cite:
+When data is unavailable | 当数据不可用时:
 
 ```
-PaleoClaw Contributors. (2026). PaleoClaw: An AI Research Agent for
-Paleontology. https://github.com/syxscott/PaleoClaw
+⚠️ No verified fossil occurrences found in PBDB for [taxon name].
+   在 PBDB 中未找到 [分类群名称] 的已验证化石记录。
 
-Data from PBDB: https://paleobiodb.org/
+This may indicate | 这可能表明:
+• Limited fossil record | 化石记录有限
+• Recent taxonomic revision | 最近的分类学修订
+• Data not yet in database | 数据尚未录入数据库
+
+Recommendation | 建议: Check primary literature for recent discoveries.
+              查阅原始文献以获取最新发现。
 ```
 
 ---
 
-## 🔗 Support
+## 📚 Documentation | 文档
 
-- **Issues**: https://github.com/syxscott/PaleoClaw/issues
-- **Discussions**: https://github.com/syxscott/PaleoClaw/discussions
-- **Documentation**: https://github.com/syxscott/PaleoClaw/docs
+<div align="center">
+
+| Document | Description | 描述 |
+|----------|-------------|------|
+| [USAGE_EXAMPLES.md](docs/USAGE_EXAMPLES.md) | Detailed usage guide | 详细使用指南 |
+| [INTEGRATION.md](docs/INTEGRATION.md) | Channel integration guide | 渠道集成指南 |
+| [DEVELOPMENT.md](docs/DEVELOPMENT.md) | Contributor guide | 贡献者指南 |
+| [PALEOCLAW_IDENTITY.md](PALEOCLAW_IDENTITY.md) | Core system prompt | 核心系统提示 |
+| [CHANGELOG.md](CHANGELOG.md) | Version history | 版本历史 |
+| [UPGRADE_GUIDE_v1.2.0.md](UPGRADE_GUIDE_v1.2.0.md) | Upgrade instructions | 升级说明 |
+
+</div>
 
 ---
 
-<p align="center">
-  <strong>PaleoClaw: An AI Assistant for Paleontological Research</strong>
-  <br>
-  <em>"Ex Fossilo, Scientia" - From Fossils, Knowledge</em>
+## 🤝 Contributing | 贡献
+
+We welcome contributions! Areas of interest | 我们欢迎贡献！感兴趣的领域：
+
+- 🌍 New data source integrations | 新数据源集成
+- 🔧 Additional research skills | 额外的研究技能
+- 📝 Improved citation formatting | 改进的引用格式
+- 🌐 Non-English language support | 非英语语言支持
+- 📖 Documentation improvements | 文档改进
+
+### How to Contribute | 如何贡献
+
+1. **Fork** the repository | Fork 仓库
+2. **Create** a feature branch | 创建功能分支
+3. **Make** your changes | 进行更改
+4. **Run** tests: `bash scripts/test.sh` | 运行测试
+5. **Submit** a pull request | 提交 Pull Request
+
+---
+
+## 📜 License | 许可证
+
+**MIT License** — see [LICENSE](LICENSE) file for details.
+
+---
+
+## 🙏 Acknowledgments | 致谢
+
+<div align="center">
+
+| Data Source | Provider | Description |
+|-------------|----------|-------------|
+| 🦕 **PBDB** | [Paleobiology Database](https://paleobiodb.org/) | Fossil occurrences & taxonomy | 化石记录与分类学 |
+| 📚 **CrossRef** | [CrossRef](https://www.crossref.org/) | Literature metadata | 文献元数据 |
+| 📊 **Semantic Scholar** | [Semantic Scholar](https://www.semanticscholar.org/) | Citation analysis | 引用分析 |
+| 📝 **arXiv** | [arXiv](https://arxiv.org/) | Preprints | 预印本 |
+
+</div>
+
+---
+
+## 📖 Citation | 引用
+
+If you use PaleoClaw in your research, please cite | 如果您在研究中使用 PaleoClaw，请引用：
+
+```bibtex
+@software{paleoclaw2026,
+  author = {PaleoClaw Contributors},
+  title = {PaleoClaw: An AI Research Agent for Paleontology},
+  year = {2026},
+  url = {https://github.com/syxscott/PaleoClaw}
+}
+```
+
+**Data Source | 数据来源:**
+```
+Paleobiology Database (PBDB): https://paleobiodb.org/
+```
+
+---
+
+## 🔗 Support & Community | 支持与社区
+
+<div align="center">
+
+| Channel | Link | Description |
+|---------|------|-------------|
+| 🐛 **Issues** | [GitHub Issues](https://github.com/syxscott/PaleoClaw/issues) | Bug reports & feature requests | 错误报告与功能请求 |
+| 💬 **Discussions** | [GitHub Discussions](https://github.com/syxscott/PaleoClaw/discussions) | Community Q&A | 社区问答 |
+| 📖 **Documentation** | [GitHub Docs](https://github.com/syxscott/PaleoClaw/docs) | Full documentation | 完整文档 |
+
+</div>
+
+---
+
+<div align="center">
+
+### 🦕 PaleoClaw: An AI Assistant for Paleontological Research
+### 🦕 PaleoClaw：古生物学研究的 AI 助手
+
+<p>
+  <em>"Ex Fossilo, Scientia" — From Fossils, Knowledge</em><br>
+  <em>"源于化石，成就知识"</em>
 </p>
+
+<p>
+  <sub>Built with ❤️ by the PaleoClaw Team | 由 PaleoClaw 团队用 ❤️ 构建</sub>
+</p>
+
+</div>
