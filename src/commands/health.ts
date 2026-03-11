@@ -8,7 +8,7 @@ import { loadConfig, readBestEffortConfig } from "../config/config.js";
 import { loadSessionStore, resolveStorePath } from "../config/sessions.js";
 import { buildGatewayConnectionDetails, callGateway } from "../gateway/call.js";
 import { info } from "../globals.js";
-import { isTruthyEnvValue } from "../infra/env.js";
+import { isTruthyEnvValue, isDebugEnabled } from "../infra/env.js";
 import { formatErrorMessage } from "../infra/errors.js";
 import {
   type HeartbeatSummary,
@@ -74,7 +74,7 @@ export type HealthSummary = {
 const DEFAULT_TIMEOUT_MS = 10_000;
 
 const debugHealth = (...args: unknown[]) => {
-  if (isTruthyEnvValue(process.env.OPENCLAW_DEBUG_HEALTH)) {
+  if (isDebugEnabled('health')) {
     console.warn("[health:debug]", ...args);
   }
 };
@@ -548,7 +548,7 @@ export async function healthCommand(
   if (opts.json) {
     runtime.log(JSON.stringify(summary, null, 2));
   } else {
-    const debugEnabled = isTruthyEnvValue(process.env.OPENCLAW_DEBUG_HEALTH);
+    const debugEnabled = isDebugEnabled('health');
     const rich = isRich();
     if (opts.verbose) {
       const details = buildGatewayConnectionDetails({ config: cfg });

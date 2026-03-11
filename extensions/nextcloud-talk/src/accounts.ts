@@ -5,16 +5,12 @@ import {
   normalizeAccountId,
   resolveAccountWithDefaultFallback,
 } from "paleoclaw/plugin-sdk/nextcloud-talk";
+import { isDebugEnabled } from "../../../../src/infra/env.js";
 import { normalizeResolvedSecretInputString } from "./secret-input.js";
 import type { CoreConfig, NextcloudTalkAccountConfig } from "./types.js";
 
-function isTruthyEnvValue(value?: string): boolean {
-  const normalized = (value ?? "").trim().toLowerCase();
-  return normalized === "true" || normalized === "1" || normalized === "yes" || normalized === "on";
-}
-
 const debugAccounts = (...args: unknown[]) => {
-  if (isTruthyEnvValue(process.env.OPENCLAW_DEBUG_NEXTCLOUD_TALK_ACCOUNTS)) {
+  if (isDebugEnabled('nextcloudTalkAccounts')) {
     console.warn("[nextcloud-talk:accounts]", ...args);
   }
 };

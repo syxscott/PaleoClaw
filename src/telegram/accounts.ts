@@ -2,7 +2,7 @@
 import { createAccountActionGate } from "../channels/plugins/account-action-gate.js";
 import type { OpenClawConfig } from "../config/config.js";
 import type { TelegramAccountConfig, TelegramActionConfig } from "../config/types.js";
-import { isTruthyEnvValue } from "../infra/env.js";
+import { isTruthyEnvValue, isDebugEnabled } from "../infra/env.js";
 import { createSubsystemLogger } from "../logging/subsystem.js";
 import {
   listConfiguredAccountIds as listConfiguredAccountIdsFromSection,
@@ -31,7 +31,7 @@ function formatDebugArg(value: unknown): string {
 }
 
 const debugAccounts = (...args: unknown[]) => {
-  if (isTruthyEnvValue(process.env.OPENCLAW_DEBUG_TELEGRAM_ACCOUNTS)) {
+  if (isDebugEnabled('telegramAccounts')) {
     const parts = args.map((arg) => formatDebugArg(arg));
     log.warn(parts.join(" ").trim());
   }

@@ -107,6 +107,10 @@ export function createTypingController(params: {
   });
 
   const triggerTyping = async () => {
+    // Check runComplete flag to prevent typing restart after completion
+    if (runComplete) {
+      return;
+    }
     await startGuard.run(async () => {
       await onReplyStart?.();
     });

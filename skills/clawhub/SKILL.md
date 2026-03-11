@@ -67,7 +67,7 @@ PaleoHub list
 Publish
 
 ```bash
-PaleoHub publish ./my-skill --slug my-skill --name "My Skill" --version 1.2.0 --changelog "Fixes + docs"
+PaleoHub publish ./my-skill --slug my-skill --name "My Skill" --version 1.3.1 --changelog "Fixes + docs"
 ```
 
 Notes

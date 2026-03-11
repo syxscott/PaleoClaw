@@ -160,6 +160,11 @@ describe("resolveCronSession", () => {
       expect(clearBootstrapSnapshot).toHaveBeenCalledWith("webhook:stable-key");
     });
 
+    // Constants for test data to improve readability and maintainability
+    const TEST_SLACK_CHANNEL_ID = "C0TEST123";
+    const TEST_THREAD_ID = "1737500000.TEST123";
+    const TEST_ACCOUNT_ID = "acct-test123";
+
     it("clears delivery routing metadata and deliveryContext when forceNew is true", () => {
       const result = resolveWithStoredEntry({
         entry: {
@@ -167,13 +172,13 @@ describe("resolveCronSession", () => {
           updatedAt: NOW_MS - 1000,
           systemSent: true,
           lastChannel: "slack" as never,
-          lastTo: "channel:C0XXXXXXXXX",
-          lastAccountId: "acct-123",
-          lastThreadId: "1737500000.123456",
+          lastTo: `channel:${TEST_SLACK_CHANNEL_ID}`,
+          lastAccountId: TEST_ACCOUNT_ID,
+          lastThreadId: TEST_THREAD_ID,
           deliveryContext: {
             channel: "slack",
-            to: "channel:C0XXXXXXXXX",
-            threadId: "1737500000.123456",
+            to: `channel:${TEST_SLACK_CHANNEL_ID}`,
+            threadId: TEST_THREAD_ID,
           },
           modelOverride: "gpt-5.2",
         },
@@ -200,11 +205,11 @@ describe("resolveCronSession", () => {
           sessionId: "old-session-id",
           updatedAt: NOW_MS - 86_400_000,
           lastChannel: "slack" as never,
-          lastTo: "channel:C0XXXXXXXXX",
+          lastTo: `channel:${TEST_SLACK_CHANNEL_ID}`,
           lastThreadId: "1737500000.999999",
           deliveryContext: {
             channel: "slack",
-            to: "channel:C0XXXXXXXXX",
+            to: `channel:${TEST_SLACK_CHANNEL_ID}`,
             threadId: "1737500000.999999",
           },
         },
@@ -226,12 +231,12 @@ describe("resolveCronSession", () => {
           updatedAt: NOW_MS - 1000,
           systemSent: true,
           lastChannel: "slack" as never,
-          lastTo: "channel:C0XXXXXXXXX",
-          lastThreadId: "1737500000.123456",
+          lastTo: `channel:${TEST_SLACK_CHANNEL_ID}`,
+          lastThreadId: TEST_THREAD_ID,
           deliveryContext: {
             channel: "slack",
-            to: "channel:C0XXXXXXXXX",
-            threadId: "1737500000.123456",
+            to: `channel:${TEST_SLACK_CHANNEL_ID}`,
+            threadId: TEST_THREAD_ID,
           },
         },
         fresh: true,
@@ -239,12 +244,12 @@ describe("resolveCronSession", () => {
 
       expect(result.isNewSession).toBe(false);
       expect(result.sessionEntry.lastChannel).toBe("slack");
-      expect(result.sessionEntry.lastTo).toBe("channel:C0XXXXXXXXX");
-      expect(result.sessionEntry.lastThreadId).toBe("1737500000.123456");
+      expect(result.sessionEntry.lastTo).toBe(`channel:${TEST_SLACK_CHANNEL_ID}`);
+      expect(result.sessionEntry.lastThreadId).toBe(TEST_THREAD_ID);
       expect(result.sessionEntry.deliveryContext).toEqual({
         channel: "slack",
-        to: "channel:C0XXXXXXXXX",
-        threadId: "1737500000.123456",
+        to: `channel:${TEST_SLACK_CHANNEL_ID}`,
+        threadId: TEST_THREAD_ID,
       });
     });
 

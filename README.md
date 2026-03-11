@@ -12,7 +12,7 @@
 
 <p>
   <a href="https://github.com/syxscott/PaleoClaw">
-    <img src="https://img.shields.io/badge/version-1.3.0-blue.svg?style=for-the-badge" alt="Version">
+    <img src="https://img.shields.io/badge/version-1.3.1-blue.svg?style=for-the-badge" alt="Version">
   </a>
   <a href="https://github.com/syxscott/PaleoClaw/actions/workflows/ci.yml?branch=main">
     <img src="https://img.shields.io/github/actions/workflow/status/syxscott/PaleoClaw/ci.yml?branch=main&style=for-the-badge" alt="CI status">
@@ -37,7 +37,7 @@
 
 <div align="center">
 
-### 🎉 v1.3.0 (2026-03-09) — Morphometric Analysis | 几何形态测量学分析
+### 🎉 v1.3.1 (2026-03-11) — Bug Fixes & Improvements | 错误修复与改进
 
 </div>
 
@@ -167,7 +167,7 @@ paleoclaw paleo-memory archive    # Archive | 归档清理
 - Taxonomic classifications
 - Stratigraphic information
 
-**Morphometric Analysis | 形态测量** (v1.3.0+)
+**Bug Fixes & Improvements | 错误修复与改进** (v1.3.1+)
 - 64 landmarks extraction
 - TPS/CSV/Excel/JSON export
 - MorphoJ & geomorph compatible
@@ -381,7 +381,7 @@ Lithology | 岩性: Volcaniclastic sediments | 火山碎屑沉积
 
 <div align="center">
 
-### 📐 Morphometric Analysis | 形态测量学分析 (v1.3.0+)
+### 📐 Bug Fixes & Improvements | 错误修复与改进 (v1.3.1+)
 
 </div>
 
@@ -493,7 +493,7 @@ PaleoClaw/
 │   ├── 🦕 pbdb_query/            # Fossil database | 化石数据库
 │   ├── 🧬 taxonomy_lookup/       # Taxonomy | 分类学
 │   ├── 📊 stratigraphy_lookup/   # Stratigraphy | 地层学
-│   ├── 📐 morphometric_analysis/ # Geometric morphometrics | 几何形态测量 (v1.3.0+)
+│   ├── 📐 bug_fixes_improvements/ # Bug fixes & improvements | 错误修复与改进 (v1.3.1+)
 │   ├── 64 landmarks (all semilandmarks) | 64 个地标点（全部为半地标点）
 │   └── Based on DeepMorph by Xiaokang Liu @ CUG | 基于 DeepMorph
 ├── 📝 paper_summary/         # Paper summarization | 论文摘要
@@ -501,7 +501,7 @@ PaleoClaw/
 ├── 🖥️ screen_monitor/        # Screen monitoring | 屏幕监控
 ├── 📝 activity_logger/       # Activity logging | 活动记录
 └── 📊 daily_log_generator/   # Daily reports | 日报生成
-├── 📂 src/paleoclaw/             # Core modules (v1.2.0+) | 核心模块
+├── 📂 src/paleoclaw/             # Core modules (v1.3.1+) | 核心模块
 │   ├── 📂 profile/               # Profile system | 画像系统
 │   │   ├── layers.ts             # Profile parser | 画像解析器
 │   │   └── index.ts

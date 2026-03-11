@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.3.1] - 2026-03-11
+
+### 🐛 Bug Fixes
+
+#### Markdown Processing
+- **Fixed Quote Block Spacing Issue**: Resolved issue where blockquotes followed by paragraphs produced triple newlines (`\n\n\n`) instead of standard double newlines (`\n\n`)
+  - Fixed `blockquote_close` processor to not add extra spacing since container blocks shouldn't add their own spacing
+  - Inner content (paragraphs, headings, etc.) already provides proper block separation
+
+#### Auto-reply System
+- **Fixed Input State Persistence**: Resolved issue where typing loop would restart after `markRunComplete()` was called
+  - Added check for `runComplete` flag in `triggerTyping` function to prevent typing restart after completion
+  - Ensures typing indicators don't appear unnecessarily after run completion
+
+#### Web Compatibility
+- **Fixed Global Event Object Dependency**: Removed dependency on global `event` object in tab switching functionality
+  - Updated `showTab` function to only use explicitly passed button element parameter
+  - Improves compatibility with strict mode and various browsers
+
+### 🔧 Improvements
+
+#### Debugging System
+- **Unified Debug Configuration**: Created centralized debug configuration system to replace scattered environment variables
+  - Introduced `DebugConfig` interface with standardized categories
+  - Added helper functions: `loadDebugConfig()`, `getDebugConfig()`, `isDebugEnabled()`
+  - Migrated multiple modules to use unified system: Telegram accounts, memory embeddings, health checks, NextCloud Talk
+
+#### Testing
+- **Improved Test Data Readability**: Replaced hard-coded test values with meaningful constants in session tests
+  - Added `TEST_SLACK_CHANNEL_ID`, `TEST_THREAD_ID`, and `TEST_ACCOUNT_ID` constants
+  - Enhanced test maintainability and clarity
+
+---
+
 ## [1.2.0] - 2026-03-09
 
 ### 🆕 New Features

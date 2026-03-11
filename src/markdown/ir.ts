@@ -636,6 +636,8 @@ function renderTokens(tokens: MarkdownToken[], state: RenderState): void {
         break;
       case "blockquote_close":
         closeStyle(state, "blockquote");
+        // Don't add extra newline here since container blocks shouldn't add their own spacing
+        // The inner content (paragraph, heading, etc.) already provides block separation
         break;
       case "bullet_list_open":
         // Add newline before nested list starts (so nested items appear on new line)
