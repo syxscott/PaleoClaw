@@ -219,19 +219,66 @@ paleoclaw paleo-memory archive    # Archive | 归档清理
 
 </div>
 
-### Installation | 安装
+### Installation Methods | 安装方式
+
+#### 📦 Recommended: Official Installer Script | 推荐：官方安装脚本
+
+**For macOS / Linux / WSL:**
+```bash
+curl -fsSL https://paleoclaw.ai/install.sh | bash
+```
+
+**For Windows (PowerShell):**
+```powershell
+iwr -useb https://paleoclaw.ai/install.ps1 | iex
+```
+
+#### 📦 Alternative: npm/pnpm Installation | 替代方案：npm/pnpm 安装
+
+**Using npm:**
+```bash
+npm install -g paleoclaw@latest
+paleoclaw onboard --install-daemon
+```
+
+**Using pnpm:**
+```bash
+pnpm add -g paleoclaw@latest
+pnpm approve-builds -g        # approve paleoclaw, node-llama-cpp, sharp, etc.
+paleoclaw onboard --install-daemon
+```
+
+#### 🐳 Docker Installation | Docker 安装
 
 ```bash
-# Install PaleoClaw | 安装 PaleoClaw
-npm install -g paleoclaw@latest
-# or | 或者
-pnpm add -g paleoclaw@latest
+git clone https://github.com/syxscott/PaleoClaw.git
+cd PaleoClaw
+./docker-setup.sh
+```
 
+#### 🔧 From Source | 从源码安装
+
+```bash
+git clone https://github.com/syxscott/PaleoClaw.git
+cd PaleoClaw
+pnpm install
+pnpm ui:build
+pnpm build
+pnpm link --global
+```
+
+### Post-Installation Setup | 安装后设置
+
+```bash
 # Initialize profile layers | 初始化个人画像
 paleoclaw profile init
 
 # Configure AI provider | 配置 AI 提供商
 paleoclaw config set --ai-provider openai --ai-model gpt-5-mini
+
+# Verify installation | 验证安装
+paleoclaw --version
+paleoclaw doctor
 ```
 
 ### First Use | 首次使用
@@ -246,9 +293,66 @@ paleoclaw agent --message "Query PBDB for Tyrannosaurus occurrences"
 paleoclaw agent --message "What is the classification of Velociraptor?"
 ```
 
+### Troubleshooting | 故障排除
+
+#### Command Not Found | 命令未找到
+
+If `paleoclaw` command is not found after installation:
+```bash
+# Check Node.js version
+node -v
+
+# Check npm global prefix
+npm prefix -g
+
+# Add to PATH (macOS/Linux)
+export PATH="$(npm prefix -g)/bin:$PATH"
+```
+
+#### Permission Errors | 权限错误 (Linux)
+```bash
+# Set npm prefix to user directory
+mkdir -p "$HOME/.npm-global"
+npm config set prefix "$HOME/.npm-global"
+export PATH="$HOME/.npm-global/bin:$PATH"
+```
+
 ---
 
 ## 📋 Usage Examples | 使用示例
+
+<div align="center">
+
+### 🧬 Profile & Memory Management | 画像与记忆管理
+
+</div>
+
+**Initialize Profile Layers | 初始化画像层:**
+```bash
+# Initialize dual-layer profile system | 初始化双层画像系统
+paleoclaw profile init
+
+# Show current profile configuration | 显示当前画像配置
+paleoclaw profile show
+```
+
+**Memory System Commands | 记忆系统命令:**
+```bash
+# Memory status | 记忆状态
+paleoclaw paleo-memory status
+
+# List short-term memories | 列出短期记忆
+paleoclaw paleo-memory short
+
+# List long-term memories | 列出长期记忆
+paleoclaw paleo-memory long
+
+# Search memories | 搜索记忆
+paleoclaw paleo-memory search "previous research on tyrannosaurus"
+
+# Archive old memories | 归档旧记忆
+paleoclaw paleo-memory archive
+```
 
 <div align="center">
 
@@ -611,9 +715,11 @@ Recommendation | 建议: Check primary literature for recent discoveries.
 
 | Document | Description | 描述 |
 |----------|-------------|------|
+| [INSTALL.md](docs/install/index.md) | Installation guide | 安装指南 |
 | [USAGE_EXAMPLES.md](docs/USAGE_EXAMPLES.md) | Detailed usage guide | 详细使用指南 |
 | [INTEGRATION.md](docs/INTEGRATION.md) | Channel integration guide | 渠道集成指南 |
 | [DEVELOPMENT.md](docs/DEVELOPMENT.md) | Contributor guide | 贡献者指南 |
+| [START.md](docs/start/index.md) | Getting started guide | 快速入门指南 |
 | [PALEOCLAW_IDENTITY.md](PALEOCLAW_IDENTITY.md) | Core system prompt | 核心系统提示 |
 | [CHANGELOG.md](CHANGELOG.md) | Version history | 版本历史 |
 | [UPGRADE_GUIDE_v1.2.0.md](UPGRADE_GUIDE_v1.2.0.md) | Upgrade instructions | 升级说明 |
@@ -693,6 +799,8 @@ Paleobiology Database (PBDB): https://paleobiodb.org/
 | 🐛 **Issues** | [GitHub Issues](https://github.com/syxscott/PaleoClaw/issues) | Bug reports & feature requests | 错误报告与功能请求 |
 | 💬 **Discussions** | [GitHub Discussions](https://github.com/syxscott/PaleoClaw/discussions) | Community Q&A | 社区问答 |
 | 📖 **Documentation** | [GitHub Docs](https://github.com/syxscott/PaleoClaw/docs) | Full documentation | 完整文档 |
+| 🌐 **Website** | [paleoclaw.ai](https://paleoclaw.ai/) | Official website | 官方网站 |
+| 📧 **Email** | [support@paleoclaw.ai](mailto:support@paleoclaw.ai) | Support contact | 支持联系邮箱 |
 
 </div>
 

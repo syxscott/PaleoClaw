@@ -80,10 +80,13 @@ const tryImport = async (specifier) => {
   }
 };
 
+// Try to import from dist first (built version)
 if (await tryImport("./dist/entry.js")) {
   // OK
 } else if (await tryImport("./dist/entry.mjs")) {
   // OK
+} else if (await tryImport("./src/entry.ts")) {
+  // OK - running from source
 } else {
-  throw new Error("paleoclaw: missing dist/entry.(m)js (build output).");
+  throw new Error("paleoclaw: missing entry point (dist/entry.js or src/entry.ts).");
 }
