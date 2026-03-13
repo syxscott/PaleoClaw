@@ -23,9 +23,9 @@
 </p>
 
 <p>
-  <a href="README_CN.md">🇨🇳 中文版</a> | 
-  <a href="#-quick-start">🚀 Quick Start</a> | 
-  <a href="#-features">✨ Features</a> | 
+  <a href="README_CN.md">🇨🇳 中文版</a> |
+  <a href="#-quick-start">🚀 Quick Start</a> |
+  <a href="#-features">✨ Features</a> |
   <a href="#-documentation">📚 Docs</a>
 </p>
 
@@ -43,9 +43,12 @@
 
 <table>
 <tr>
-<td width="50%">
+<th width="50%" align="center"><strong>📐 Morphometric Analysis | 形态测量学分析</strong></th>
+<th width="50%" align="center"><strong>🔍 New CLI Commands | 新增命令</strong></th>
+</tr>
+<tr>
+<td>
 
-**📐 Morphometric Analysis | 形态测量学分析**
 - 64 landmarks (all semilandmarks) | 64 个地标点
 - TPS/CSV/Excel/JSON export | 多格式导出
 - Compatible with MorphoJ & geomorph | 兼容主流 GM 软件
@@ -58,9 +61,8 @@
 - Batch processing support | 批量处理支持
 
 </td>
-<td width="50%">
+<td>
 
-**🔍 New CLI Commands | 新增命令**
 ```bash
 # Single image analysis | 单图像分析
 paleoclaw agent --message "Extract landmarks from ammonoid.png"
@@ -81,17 +83,16 @@ paleoclaw agent --message "Export as TPS for MorphoJ"
 </tr>
 </table>
 
-<div align="center">
-
-### v1.2.0 (2026-03-09) — Profile Layers & Memory System | 个人画像与记忆系统
-
-</div>
+<br>
 
 <table>
 <tr>
-<td width="50%">
+<th width="50%" align="center"><strong>🧬 Profile Layers | 个人画像分层</strong></th>
+<th width="50%" align="center"><strong>🔍 New CLI Commands | 新增命令</strong></th>
+</tr>
+<tr>
+<td>
 
-**🧬 Profile Layers | 个人画像分层**
 - `soul.md` — System identity & principles | 系统身份与核心原则
 - `user.md` — Personal research preferences | 个人研究偏好设置
 - Double-layer personalization | 双层个性化架构
@@ -102,9 +103,8 @@ paleoclaw agent --message "Export as TPS for MorphoJ"
 - Research trajectory tracking | 研究轨迹追踪
 
 </td>
-<td width="50%">
+<td>
 
-**🔍 New CLI Commands | 新增命令**
 ```bash
 # Profile management | 画像管理
 paleoclaw profile init    # Initialize | 初始化
@@ -150,9 +150,9 @@ paleoclaw paleo-memory archive    # Archive | 归档清理
 
 <table>
 <tr>
-<th width="33%">🔬 Research | 研究功能</th>
-<th width="33%">🧠 Intelligence | 智能功能</th>
-<th width="33%">⚙️ Productivity | 生产力</th>
+<th width="33%" align="center">🔬 Research | 研究功能</th>
+<th width="33%" align="center">🧠 Intelligence | 智能功能</th>
+<th width="33%" align="center">⚙️ Productivity | 生产力</th>
 </tr>
 <tr>
 <td>
@@ -643,36 +643,38 @@ PaleoClaw/
 
 <table>
 <tr>
-<td align="center" width="25%">
+<th align="center" width="25%">🔍 No Fabrication</th>
+<th align="center" width="25%">📚 Verifiable Citations</th>
+<th align="center" width="25%">⚠️ Transparent Uncertainty</th>
+<th align="center" width="25%">🔄 Reproducible</th>
+</tr>
+<tr>
+<td align="center">
 
-**🔍 No Fabrication**
 **不编造数据**
 
 All data verified against primary sources
 所有数据均经过原始来源验证
 
 </td>
-<td align="center" width="25%">
+<td align="center">
 
-**📚 Verifiable Citations**
 **可验证引用**
 
 Every paper includes valid DOI
 每篇论文都包含有效 DOI
 
 </td>
-<td align="center" width="25%">
+<td align="center">
 
-**⚠️ Transparent Uncertainty**
 **透明的不确定性**
 
 Clearly marks disputed data
 清楚标记有争议的数据
 
 </td>
-<td align="center" width="25%">
+<td align="center">
 
-**🔄 Reproducible**
 **可复现**
 
 Documents all queries and parameters
