@@ -149,6 +149,26 @@ const coreEntries: CoreCliEntry[] = [
   {
     commands: [
       {
+        name: "profile",
+        description: "Manage PaleoClaw soul/user profile layers",
+        hasSubcommands: true,
+      },
+      {
+        name: "paleo-memory",
+        description: "Manage PaleoClaw research memory",
+        hasSubcommands: true,
+      },
+    ],
+    register: async ({ program }) => {
+      const profileMod = await import("../../paleoclaw/cli/profile-cli.js");
+      const memoryMod = await import("../../paleoclaw/cli/memory-cli.js");
+      profileMod.registerProfileCommands(program);
+      memoryMod.registerMemoryCommands(program);
+    },
+  },
+  {
+    commands: [
+      {
         name: "agent",
         description: "Run one agent turn via the Gateway",
         hasSubcommands: false,

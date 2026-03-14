@@ -248,9 +248,10 @@ async function exportToExcel(
   result: SpecimenResult,
   config: ExportConfig
 ): Promise<void> {
-  // For now, export as CSV with Excel extension
-  // In production, use a library like 'xlsx' or 'exceljs'
-  const csvConfig = { ...config, outputPath: config.outputPath.replace('.xlsx', '.csv') };
+  // For now, export CSV-compatible content to the requested Excel path.
+  // This keeps file paths consistent for the caller while remaining dependency-free.
+  // In production, use a library like 'xlsx' or 'exceljs' for true XLSX generation.
+  const csvConfig = { ...config, outputPath: config.outputPath };
   await exportToCSV(result, csvConfig);
   
   // TODO: Implement proper Excel export with formatting
@@ -269,8 +270,8 @@ async function exportBatchToExcel(
   batch: BatchResult,
   config: ExportConfig
 ): Promise<void> {
-  // For now, export as CSV
-  const csvConfig = { ...config, outputPath: config.outputPath.replace('.xlsx', '.csv') };
+  // For now, export CSV-compatible content to the requested Excel path.
+  const csvConfig = { ...config, outputPath: config.outputPath };
   await exportBatchToCSV(batch, csvConfig);
 }
 

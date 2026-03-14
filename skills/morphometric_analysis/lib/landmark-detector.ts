@@ -70,15 +70,15 @@ export function detectLandmarks(
  * 
  * @returns Array of [from, to] index pairs
  */
-export function getLandmarkLinks(): Array<[number, number]> {
+export function getLandmarkLinks(numLandmarks: number = 64): Array<[number, number]> {
   const links: Array<[number, number]> = [];
-  
-  // Connect landmarks in sequence (1-2, 2-3, ..., 63-64, 64-1)
-  // This matches DeepMorph's ammonoid_links.txt format
-  for (let i = 1; i < 64; i++) {
+
+  // Connect landmarks in sequence (1-2, 2-3, ..., N-1 to N, N to 1)
+  // Default N=64 matches DeepMorph's ammonoid_links.txt format.
+  for (let i = 1; i < numLandmarks; i++) {
     links.push([i, i + 1]);
   }
-  links.push([64, 1]); // Close the loop
+  links.push([numLandmarks, 1]); // Close the loop
   
   return links;
 }

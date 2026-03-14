@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.4.0] - 2026-03-14
+
+### 🔧 Improvements
+
+#### CLI Integration
+- **Wired PaleoClaw profile/memory commands into main CLI registry**
+  - Added top-level `profile` command registration
+  - Added top-level `paleo-memory` command registration
+  - Aligned runtime behavior with README command documentation
+
+#### Morphometric Analysis Consistency
+- **Fixed processing options key mismatch**
+  - Replaced `numSemilandmarks` with `numLandmarks` in image processor defaults
+  - Aligned implementation with type definitions and runtime config
+- **Fixed visualization color option mismatch**
+  - Standardized on `landmarkColor` in skill default config
+  - Removed non-functional `fixedColor` / `semilandmarkColor` defaults
+- **Improved landmark link generation**
+  - Landmark link builder now supports dynamic landmark counts
+  - Visualization now generates links based on actual landmark length
+
+#### Export Behavior
+- **Fixed Excel export output path consistency**
+  - `excel` export now writes to the requested `.xlsx` output path directly
+  - Removed implicit rewrite to `.csv` filename
+
+#### Tooling and Versioning
+- **Added missing `tsgo` script** in `package.json` (`tsc --noEmit`) to keep `pnpm check` runnable
+- **Bumped project version to `1.4.0`**
+
 ## [1.3.1] - 2026-03-11
 
 ### 🐛 Bug Fixes

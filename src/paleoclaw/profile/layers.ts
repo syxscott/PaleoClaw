@@ -176,7 +176,7 @@ Citation format: APA
 - Respect peer review confidentiality
 - Contribute to community databases (PBDB)
 
-*Profile created for PaleoClaw v1.3.1*
+*Profile created for PaleoClaw v1.4.0*
 *Customize this file to match your research preferences*
 `;
 

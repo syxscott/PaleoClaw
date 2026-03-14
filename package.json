@@ -1,6 +1,6 @@
 ﻿{
   "name": "paleoclaw",
-  "version": "1.3.3",
+  "version": "1.4.0",
   "description": "An AI Research Agent for Paleontology with Profile Layers and Memory System",
   "keywords": [
     "paleontology",
@@ -332,6 +332,7 @@
     "test:ui": "pnpm lint:ui:no-raw-window-open && pnpm --dir ui test",
     "test:voicecall:closedloop": "vitest run extensions/voice-call/src/manager.test.ts extensions/voice-call/src/media-stream.test.ts src/plugins/voice-call.plugin.test.ts --maxWorkers=1",
     "test:watch": "vitest",
+    "tsgo": "tsc --noEmit",
     "tui": "node scripts/run-node.mjs tui",
     "tui:dev": "OPENCLAW_PROFILE=dev CLAWDBOT_PROFILE=dev node scripts/run-node.mjs --dev tui",
     "ui:build": "node scripts/ui.js build",

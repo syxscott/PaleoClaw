@@ -12,7 +12,7 @@
 
 <p>
   <a href="https://github.com/syxscott/PaleoClaw">
-    <img src="https://img.shields.io/badge/version-1.3.1-blue.svg?style=for-the-badge" alt="Version">
+    <img src="https://img.shields.io/badge/version-1.4.0-blue.svg?style=for-the-badge" alt="Version">
   </a>
   <a href="https://github.com/syxscott/PaleoClaw/actions/workflows/ci.yml?branch=main">
     <img src="https://img.shields.io/github/actions/workflow/status/syxscott/PaleoClaw/ci.yml?branch=main&style=for-the-badge" alt="CI status">
@@ -37,7 +37,7 @@
 
 <div align="center">
 
-### 🎉 v1.3.1 (2026-03-11) — Bug Fixes & Improvements | 错误修复与改进
+### 🎉 v1.4.0 (2026-03-14) — Reliability & Research Workflow Stabilization | 稳定性与科研流程修复
 
 </div>
 
@@ -101,6 +101,12 @@ paleoclaw agent --message "Export as TPS for MorphoJ"
 - Short-term & long-term memory | 短期与长期记忆
 - Vector-based similarity search | 基于向量的相似度搜索
 - Research trajectory tracking | 研究轨迹追踪
+- CLI wiring fixed (`profile` / `paleo-memory`) | 命令链路已修复
+
+**🛠️ 1.4.0 Reliability Fixes | 稳定性修复**
+- Morphometric config key consistency (`numLandmarks`) | 形态分析参数命名统一
+- Visualization color option consistency (`landmarkColor`) | 可视化颜色参数统一
+- Excel export path consistency (`.xlsx` path no longer rewritten) | Excel 导出路径一致性修复
 
 </td>
 <td>
@@ -485,7 +491,7 @@ Lithology | 岩性: Volcaniclastic sediments | 火山碎屑沉积
 
 <div align="center">
 
-### 📐 Bug Fixes & Improvements | 错误修复与改进 (v1.3.1+)
+### 📐 Bug Fixes & Improvements | 错误修复与改进 (v1.4.0+)
 
 </div>
 
@@ -589,43 +595,41 @@ export PALEOCLAW_USER_PATH=/path/to/user.md
 
 ```
 PaleoClaw/
-├── 📂 agents/                    # Agent configurations | 代理配置
+├── 📂 agents/                           # Agent configurations | 代理配置
 │   └── paleoclaw-research-agent/
 │       └── AGENT.md
-├── 📂 skills/                    # Research skills | 研究技能
-│   ├── 📄 paper_search/          # Literature search | 文献搜索
-│   ├── 🦕 pbdb_query/            # Fossil database | 化石数据库
-│   ├── 🧬 taxonomy_lookup/       # Taxonomy | 分类学
-│   ├── 📊 stratigraphy_lookup/   # Stratigraphy | 地层学
-│   ├── 📐 bug_fixes_improvements/ # Bug fixes & improvements | 错误修复与改进 (v1.3.1+)
-│   ├── 64 landmarks (all semilandmarks) | 64 个地标点（全部为半地标点）
-│   └── Based on DeepMorph by Xiaokang Liu @ CUG | 基于 DeepMorph
-├── 📝 paper_summary/         # Paper summarization | 论文摘要
-├── 🎯 research_assistant/    # Research workflow | 研究工作流
-├── 🖥️ screen_monitor/        # Screen monitoring | 屏幕监控
-├── 📝 activity_logger/       # Activity logging | 活动记录
-└── 📊 daily_log_generator/   # Daily reports | 日报生成
-├── 📂 src/paleoclaw/             # Core modules (v1.3.1+) | 核心模块
-│   ├── 📂 profile/               # Profile system | 画像系统
-│   │   ├── layers.ts             # Profile parser | 画像解析器
+├── 📂 skills/                           # Research skills | 研究技能
+│   ├── 📄 paper_search/                 # Literature search | 文献搜索
+│   ├── 🦕 pbdb_query/                   # Fossil database | 化石数据库
+│   ├── 🧬 taxonomy_lookup/              # Taxonomy | 分类学
+│   ├── 📊 stratigraphy_lookup/          # Stratigraphy | 地层学
+│   ├── 📝 paper_summary/                # Paper summarization | 论文摘要
+│   ├── 🎯 research_assistant/           # Research workflow | 研究工作流
+│   ├── 📐 morphometric_analysis/        # 64 landmarks + DeepMorph-based workflow
+│   ├── 🖥️ screen_monitor/               # Screen monitoring | 屏幕监控
+│   ├── 📝 activity_logger/              # Activity logging | 活动记录
+│   └── 📊 daily_log_generator/          # Daily reports | 日报生成
+├── 📂 src/paleoclaw/                    # Core modules (v1.4.0+) | 核心模块
+│   ├── 📂 profile/                      # Profile system | 画像系统
+│   │   ├── layers.ts                    # Profile parser | 画像解析器
 │   │   └── index.ts
-│   ├── 📂 memory/                # Memory system | 记忆系统
-│   │   ├── store.ts              # Memory storage | 记忆存储
-│   │   ├── retrieval.ts          # Vector search | 向量搜索
+│   ├── 📂 memory/                       # Memory system | 记忆系统
+│   │   ├── store.ts                     # Memory storage | 记忆存储
+│   │   ├── retrieval.ts                 # Vector search | 向量搜索
 │   │   └── index.ts
-│   ├── 📂 cli/                   # CLI commands | 命令行接口
-│   │   ├── profile-cli.ts        # Profile commands | 画像命令
-│   │   ├── memory-cli.ts         # Memory commands | 记忆命令
+│   ├── 📂 cli/                          # CLI commands | 命令行接口
+│   │   ├── profile-cli.ts               # Profile commands | 画像命令
+│   │   ├── memory-cli.ts                # Memory commands | 记忆命令
 │   │   └── index.ts
 │   └── index.ts
-├── 📂 docs/                      # Documentation | 文档
-├── 📂 scripts/                   # Utility scripts | 工具脚本
-├── 📄 soul.md                    # System identity | 系统身份
-├── 📄 user.md                    # User preferences | 用户偏好
-├── 📄 PALEOCLAW_IDENTITY.md      # Core system prompt | 核心系统提示
-├── 📄 CHANGELOG.md               # Version history | 版本历史
-├── 📄 UPGRADE_GUIDE_v1.2.0.md    # Upgrade guide | 升级指南
-├── 📄 v1.2.0_CHECKLIST.md        # Release checklist | 发布检查清单
+├── 📂 docs/                             # Documentation | 文档
+├── 📂 scripts/                          # Utility scripts | 工具脚本
+├── 📄 soul.md                           # System identity | 系统身份
+├── 📄 user.md                           # User preferences | 用户偏好
+├── 📄 PALEOCLAW_IDENTITY.md             # Core system prompt | 核心系统提示
+├── 📄 CHANGELOG.md                      # Version history | 版本历史
+├── 📄 UPGRADE_GUIDE_v1.2.0.md           # Upgrade guide | 升级指南
+├── 📄 v1.2.0_CHECKLIST.md               # Release checklist | 发布检查清单
 ├── 📄 package.json
 ├── 📄 README.md
 └── 📄 LICENSE

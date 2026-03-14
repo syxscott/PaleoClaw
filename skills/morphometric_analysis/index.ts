@@ -63,8 +63,7 @@ const DEFAULT_CONFIG: SkillConfig = {
     showNumbers: true,
     showConnections: true,
     pointSize: 4,
-    fixedColor: '#FF0000',
-    semilandmarkColor: '#0000FF',
+    landmarkColor: '#FF0000',
     imageOpacity: 0.3,
   },
 };

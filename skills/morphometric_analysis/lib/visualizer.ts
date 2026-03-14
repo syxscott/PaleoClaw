@@ -102,7 +102,7 @@ function drawConnections(
   scaleX: number,
   scaleY: number
 ): void {
-  const links = getLandmarkLinks();
+  const links = getLandmarkLinks(landmarks.length);
   
   ctx.strokeStyle = '#00AA00';
   ctx.lineWidth = 1;

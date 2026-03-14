@@ -19,7 +19,7 @@ import type { Point2D, ProcessingOptions } from './types.js';
 const DEFAULT_OPTIONS: Required<ProcessingOptions> = {
   threshold: 150,
   padding: 2,
-  numSemilandmarks: 64,
+  numLandmarks: 64,
   applyCurveslide: true,
 };
 
