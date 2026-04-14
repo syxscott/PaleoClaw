@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.5.0] - 2026-04-14
+
+### 🔧 Updated
+
+#### OpenClaw Base
+- **Updated from OpenClaw (downloaded 2026.3.8 → 2026.4.14)**
+  - Bumped all dependencies to latest versions
+  - Added new plugin-sdk exports
+  - Updated TypeScript to 6.x
+  - Updated Node.js requirement to >=22.14.0
+  - Updated pnpm to 10.32.1
+
+#### Dependencies Upgraded
+- @agentclientprotocol/sdk: 0.15.0 → 0.18.2
+- @mariozechner/*: 0.55.3 → 0.66.1
+- @buape/carbon: beta → 0.15.0
+- oxlint: ^1.51.0 → ^1.59.0
+- oxfmt: 0.36.0 → 0.44.0
+- vitest: ^4.0.18 → ^4.1.4
+
+#### New Dependencies Added
+- @anthropic-ai/vertex-sdk, @google/genai, hono
+- @lancedb/lancedb, @modelcontextprotocol/sdk
+- matrix-js-sdk, openai, uuid, jimp
+- And 20+ other new packages
+
 ## [1.4.0] - 2026-03-14
 
 ### 🔧 Improvements

@@ -12,7 +12,7 @@
 
 <p>
   <a href="https://github.com/syxscott/PaleoClaw">
-    <img src="https://img.shields.io/badge/version-1.4.0-blue.svg?style=for-the-badge" alt="Version">
+    <img src="https://img.shields.io/badge/version-1.5.0-blue.svg?style=for-the-badge" alt="Version">
   </a>
   <a href="https://github.com/syxscott/PaleoClaw/actions/workflows/ci.yml?branch=main">
     <img src="https://img.shields.io/github/actions/workflow/status/syxscott/PaleoClaw/ci.yml?branch=main&style=for-the-badge" alt="CI status">
@@ -37,7 +37,7 @@
 
 <div align="center">
 
-### 🎉 v1.4.0 (2026-03-14) — Reliability & Research Workflow Stabilization | 稳定性与科研流程修复
+### 🎉 v1.5.0 (2026-04-14) — OpenClaw 4.14 Update | OpenClaw 4.14 更新
 
 </div>
 
@@ -805,7 +805,6 @@ Paleobiology Database (PBDB): https://paleobiodb.org/
 | 🐛 **Issues** | [GitHub Issues](https://github.com/syxscott/PaleoClaw/issues) | Bug reports & feature requests | 错误报告与功能请求 |
 | 💬 **Discussions** | [GitHub Discussions](https://github.com/syxscott/PaleoClaw/discussions) | Community Q&A | 社区问答 |
 | 📖 **Documentation** | [GitHub Docs](https://github.com/syxscott/PaleoClaw/docs) | Full documentation | 完整文档 |
-| 🌐 **Website** | [paleoclaw.ai](https://paleoclaw.ai/) | Official website | 官方网站 |
 | 📧 **Email** | [support@paleoclaw.ai](mailto:support@paleoclaw.ai) | Support contact | 支持联系邮箱 |
 
 </div>
