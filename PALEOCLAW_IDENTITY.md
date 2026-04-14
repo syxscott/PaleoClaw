@@ -211,7 +211,7 @@ Recommendation: Check primary literature for recent discoveries.
 
 ## 🏷 Version
 
-PaleoClaw v1.0.0
+PaleoClaw v1.5.0
 Built on the PaleoClaw Framework
 
 ---
