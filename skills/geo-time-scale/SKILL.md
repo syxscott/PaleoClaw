@@ -20,7 +20,7 @@
 ### 输出格式
 ```json
 {
-  "name": "罗纪",
+  "name": "侏罗纪",
   "name_en": "Jurassic",
   "start_ma": 201.4,
   "end_ma": 145.0,

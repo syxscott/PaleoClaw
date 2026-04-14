@@ -62,10 +62,13 @@ function papersToBibtex(papers: Paper[]): string {
     return paperToBibtex(paper, `ref${index + 1}`);
   });
   
+  const generatedDate = new Date().toISOString();
+  const totalCount = papers.length;
+  
   return [
     '% BibTeX exported by PaleoClaw',
-    `% Generated: ${new Date().toISOString()}`,
-    '% Total references: ${papers.length}`,
+    `% Generated: ${generatedDate}`,
+    `% Total references: ${totalCount}`,
     '',
     ...bibtex,
   ].join('\n');
