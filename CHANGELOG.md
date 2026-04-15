@@ -7,6 +7,55 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.6.0] - 2026-04-15
+
+### 🚀 Added
+
+#### Tool System (Hermes-style integration)
+- Added a centralized PaleoClaw tool registry with typed tool metadata and execution results
+- Added built-in tool discovery/loading flow
+- Added built-in research tools:
+  - `pbdb_query`
+  - `crossref_search`
+  - `literature_summary`
+- Added CLI command group:
+  - `paleoclaw paleo-tools list`
+  - `paleoclaw paleo-tools run <tool-name> --params '{...}'`
+
+#### Memory Manager (Provider + Fenced Context)
+- Added `MemoryProvider` abstraction
+- Added `MemoryManager` orchestration with provider lifecycle
+- Added fenced memory-context injection format (`<memory-context>...</memory-context>`)
+- Added memory context CLI command:
+  - `paleoclaw paleo-memory context "<query>"`
+
+#### Session Management
+- Added `SessionStore` for local PaleoClaw session history persistence
+- Added session upsert support for stable session IDs from agent runtime
+- Added CLI command group:
+  - `paleoclaw paleo-session new`
+  - `paleoclaw paleo-session list`
+  - `paleoclaw paleo-session show`
+  - `paleoclaw paleo-session search`
+  - `paleoclaw paleo-session resume`
+
+### 🔧 Changed
+
+- Integrated memory prefetch/sync and session autosave into `agent` command execution path
+- Added automatic pre-run tool context injection for PBDB/CrossRef intent prompts
+- Added runtime integration switches via environment variables:
+  - `PALEOCLAW_ENABLE_AUTO_TOOLS`
+  - `PALEOCLAW_ENABLE_MEMORY_CONTEXT`
+  - `PALEOCLAW_ENABLE_SESSION_AUTOSAVE`
+
+### ✅ Quality
+
+- Added focused tests for:
+  - tool registry behavior
+  - memory manager fencing/provider rules
+  - session store CRUD/search/upsert
+  - runtime integration switches
+
 ## [1.5.0] - 2026-04-14
 
 ### 🔧 Updated

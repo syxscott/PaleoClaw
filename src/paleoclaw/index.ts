@@ -7,3 +7,6 @@
 
 export * from './profile';
 export * from './memory';
+export * from './tools';
+export * from './session';
+export * from './integration';

@@ -87,6 +87,14 @@ import { applyVerboseOverride } from "../sessions/level-overrides.js";
 import { applyModelOverrideToSessionEntry } from "../sessions/model-overrides.js";
 import { resolveSendPolicy } from "../sessions/send-policy.js";
 import { resolveMessageChannel } from "../utils/message-channel.js";
+import { createDefaultMemoryManager } from "../paleoclaw/memory/manager.js";
+import { SessionStore } from "../paleoclaw/session/store.js";
+import {
+  isAutoToolsEnabled,
+  isMemoryContextEnabled,
+  isSessionAutosaveEnabled,
+} from "../paleoclaw/integration/runtime-switches.js";
+import { buildAutoToolsContext } from "../paleoclaw/tools/auto-context.js";
 import { deliverAgentCommandResult } from "./agent/delivery.js";
 import { resolveAgentRunContext } from "./agent/run-context.js";
 import { updateSessionStoreAfterAgentRun } from "./agent/session-store.js";
@@ -231,6 +239,27 @@ function createAcpVisibleTextAccumulator() {
       return visibleText.trim();
     },
   };
+}
+
+function summarizePromptAsTitle(prompt: string): string {
+  const normalized = prompt.replace(/\s+/g, " ").trim();
+  if (!normalized) {
+    return "PaleoClaw Session";
+  }
+  return normalized.length > 80 ? `${normalized.slice(0, 77)}...` : normalized;
+}
+
+function flattenPayloadText(payloads: Array<{ text?: string; mediaUrls?: string[] }>): string {
+  const blocks: string[] = [];
+  for (const payload of payloads) {
+    if (payload.text?.trim()) {
+      blocks.push(payload.text.trim());
+    }
+    if (Array.isArray(payload.mediaUrls) && payload.mediaUrls.length > 0) {
+      blocks.push(payload.mediaUrls.map((url) => `MEDIA:${url}`).join("\n"));
+    }
+  }
+  return blocks.join("\n\n").trim();
 }
 
 function runAgentAttempt(params: {
@@ -622,6 +651,48 @@ async function agentCommandInternal(
     acpResolution,
   } = prepared;
   let sessionEntry = prepared.sessionEntry;
+  const memoryManager = createDefaultMemoryManager();
+  const sessionHistory = new SessionStore();
+  const userPrompt = body;
+  const enableAutoTools = isAutoToolsEnabled();
+  const enableMemoryContext = isMemoryContextEnabled();
+  const enableSessionAutosave = isSessionAutosaveEnabled();
+  let enrichedPrompt = body;
+
+  if (enableAutoTools) {
+    try {
+      const autoToolsContext = await buildAutoToolsContext(userPrompt);
+      if (autoToolsContext.trim()) {
+        enrichedPrompt = `${autoToolsContext}\n\n${enrichedPrompt}`;
+      }
+    } catch {
+      // Auto-tools context is best-effort and should never block the run.
+    }
+  }
+
+  if (enableMemoryContext) {
+    try {
+      const memoryContextBlock = await memoryManager.prefetchAll(userPrompt);
+      if (memoryContextBlock.trim()) {
+        enrichedPrompt = `${memoryContextBlock}\n\n${enrichedPrompt}`;
+      }
+    } catch {
+      // Prefetch is best-effort and should never block the run.
+    }
+  }
+
+  if (enableSessionAutosave) {
+    try {
+      sessionHistory.upsertSession(sessionId, summarizePromptAsTitle(userPrompt), [sessionAgentId]);
+      sessionHistory.appendMessage(sessionId, "user", userPrompt, {
+        source: "agent-command",
+        sessionKey,
+        runId,
+      });
+    } catch {
+      // Session history is best-effort and should never block the run.
+    }
+  }
 
   try {
     if (opts.deliver === true) {
@@ -673,7 +744,7 @@ async function agentCommandInternal(
         await acpManager.runTurn({
           cfg,
           sessionKey,
-          text: body,
+          text: enrichedPrompt,
           mode: "prompt",
           requestId: runId,
           signal: opts.abortSignal,
@@ -736,6 +807,29 @@ async function agentCommandInternal(
         text: visibleTextAccumulator.finalize(),
       });
       const payloads = normalizedFinalPayload ? [normalizedFinalPayload] : [];
+      const assistantText = flattenPayloadText(payloads);
+
+      if (assistantText) {
+        if (enableMemoryContext) {
+          try {
+            await memoryManager.syncAll(userPrompt, assistantText);
+          } catch {
+            // best-effort sync
+          }
+        }
+        if (enableSessionAutosave) {
+          try {
+            sessionHistory.appendMessage(sessionId, "assistant", assistantText, {
+              source: "agent-command-acp",
+              sessionKey,
+              runId,
+            });
+          } catch {
+            // best-effort history persistence
+          }
+        }
+      }
+
       const result = {
         payloads,
         meta: {
@@ -1015,7 +1109,7 @@ async function agentCommandInternal(
             sessionAgentId,
             sessionFile,
             workspaceDir,
-            body,
+            body: enrichedPrompt,
             isFallbackRetry,
             resolvedThinkLevel,
             timeoutMs,
@@ -1098,6 +1192,30 @@ async function agentCommandInternal(
     }
 
     const payloads = result.payloads ?? [];
+    const assistantText = flattenPayloadText(payloads);
+
+    if (assistantText) {
+      if (enableMemoryContext) {
+        try {
+          await memoryManager.syncAll(userPrompt, assistantText);
+        } catch {
+          // best-effort sync
+        }
+      }
+
+      if (enableSessionAutosave) {
+        try {
+          sessionHistory.appendMessage(sessionId, "assistant", assistantText, {
+            source: "agent-command",
+            sessionKey,
+            runId,
+          });
+        } catch {
+          // best-effort history persistence
+        }
+      }
+    }
+
     return await deliverAgentCommandResult({
       cfg,
       deps,

@@ -12,7 +12,7 @@
 
 <p>
   <a href="https://github.com/syxscott/PaleoClaw">
-    <img src="https://img.shields.io/badge/version-1.5.0-blue.svg?style=for-the-badge" alt="Version">
+    <img src="https://img.shields.io/badge/version-1.6.0-blue.svg?style=for-the-badge" alt="Version">
   </a>
   <a href="https://github.com/syxscott/PaleoClaw/actions/workflows/ci.yml?branch=main">
     <img src="https://img.shields.io/github/actions/workflow/status/syxscott/PaleoClaw/ci.yml?branch=main&style=for-the-badge" alt="CI status">
@@ -37,7 +37,7 @@
 
 <div align="center">
 
-### 🎉 v1.5.0 (2026-04-14) — OpenClaw 4.14 Update | OpenClaw 4.14 更新
+### 🎉 v1.6.0 (2026-04-15) — Tool/Memory/Session Integration | 工具/记忆/会话集成
 
 </div>
 
@@ -358,6 +358,48 @@ paleoclaw paleo-memory search "previous research on tyrannosaurus"
 
 # Archive old memories | 归档旧记忆
 paleoclaw paleo-memory archive
+
+# Build fenced memory context for current query | 生成围栏记忆上下文
+paleoclaw paleo-memory context "jurassic theropod fossil records"
+```
+
+**Tool System Commands | 工具系统命令:**
+```bash
+# List built-in tools | 查看内置工具
+paleoclaw paleo-tools list
+
+# Run PBDB tool directly | 直接执行 PBDB 工具
+paleoclaw paleo-tools run pbdb_query --params '{"baseName":"Allosaurus","limit":5}'
+
+# Run CrossRef tool directly | 直接执行 CrossRef 工具
+paleoclaw paleo-tools run crossref_search --params '{"query":"Jurassic theropod", "rows":5}'
+```
+
+**Session System Commands | 会话系统命令:**
+```bash
+# Create session | 创建会话
+paleoclaw paleo-session new --title "Jurassic Literature Review"
+
+# List recent sessions | 列出最近会话
+paleoclaw paleo-session list
+
+# Search historical sessions | 搜索历史会话
+paleoclaw paleo-session search "K-Pg extinction DOI"
+
+# Resume a session | 恢复会话
+paleoclaw paleo-session resume <session-id>
+```
+
+**Runtime Switches (Env) | 运行时开关（环境变量）:**
+```bash
+# Enable/disable auto tool context injection (default: true)
+PALEOCLAW_ENABLE_AUTO_TOOLS=true
+
+# Enable/disable memory fence context injection (default: true)
+PALEOCLAW_ENABLE_MEMORY_CONTEXT=true
+
+# Enable/disable automatic session autosave (default: true)
+PALEOCLAW_ENABLE_SESSION_AUTOSAVE=true
 ```
 
 <div align="center">

@@ -5,3 +5,5 @@
 
 export { registerProfileCommands } from './profile-cli.js';
 export { registerMemoryCommands } from './memory-cli.js';
+export { registerToolsCommands } from './tools-cli.js';
+export { registerSessionCommands } from './session-cli.js';

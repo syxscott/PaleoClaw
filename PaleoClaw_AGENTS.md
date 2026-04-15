@@ -152,4 +152,4 @@ pnpm test --filter <test-name>
 
 ## Version
 
-PaleoClaw v1.5.0
+PaleoClaw v1.6.0

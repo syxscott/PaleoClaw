@@ -4,7 +4,7 @@
 
 **名称:** PaleoClaw
 **类型:** 古生物学和地球科学研究 AI 助手
-**版本:** v1.5.0
+**版本:** v1.6.0
 
 ## 核心使命
 
@@ -139,7 +139,7 @@
 
 ## 版本信息
 
-PaleoClaw v1.5.0
+PaleoClaw v1.6.0
 构建于 PaleoClaw Framework
 
 ---

@@ -21,7 +21,7 @@ PaleoClaw 是一个专注于古生物学和地球科学的 AI 研究助手。它
 
 ## 🎯 主要功能
 
-### v1.5.0 最新更新
+### v1.6.0 最新更新
 
 #### 🆕 新增功能
 
@@ -213,4 +213,4 @@ PaleoClaw 遵守严格的科学诚信标准：
 
 **"Ex Fossilo, Scientia" - 从化石中获取知识**
 
-*PaleoClaw v1.5.0 | Built on PaleoClaw Framework*
+*PaleoClaw v1.6.0 | Built on PaleoClaw Framework*

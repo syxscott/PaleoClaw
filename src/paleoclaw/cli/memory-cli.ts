@@ -4,7 +4,7 @@
  */
 
 import { TaskMemoryStore } from '../memory/store.js';
-import { loadSessionProfile } from '../profile/layers.js';
+import { createDefaultMemoryManager } from '../memory/manager.js';
 
 interface MemoryCommandOptions {
   limit?: string;
@@ -255,6 +255,43 @@ export function registerMemoryCommands(program: any): void {
         }
       } catch (error) {
         console.error('Error searching memories:', error);
+        process.exit(1);
+      }
+    });
+
+  // context command
+  memoryCmd
+    .command('context')
+    .description('Build fenced memory context for a query')
+    .argument('<query>', 'Query used for memory prefetch')
+    .option('--json', 'Output as JSON')
+    .action(async (query: string, options: MemoryCommandOptions) => {
+      try {
+        const manager = createDefaultMemoryManager();
+        const contextBlock = await manager.prefetchAll(query);
+
+        if (options.json) {
+          console.log(
+            JSON.stringify(
+              {
+                query,
+                contextBlock,
+              },
+              null,
+              2
+            )
+          );
+          return;
+        }
+
+        if (!contextBlock.trim()) {
+          console.log('No matching memory context found.');
+          return;
+        }
+
+        console.log(contextBlock);
+      } catch (error) {
+        console.error('Error generating memory context:', error);
         process.exit(1);
       }
     });

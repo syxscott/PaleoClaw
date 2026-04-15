@@ -158,12 +158,26 @@ const coreEntries: CoreCliEntry[] = [
         description: "Manage PaleoClaw research memory",
         hasSubcommands: true,
       },
+      {
+        name: "paleo-tools",
+        description: "List and run PaleoClaw built-in tools",
+        hasSubcommands: true,
+      },
+      {
+        name: "paleo-session",
+        description: "Manage PaleoClaw session history",
+        hasSubcommands: true,
+      },
     ],
     register: async ({ program }) => {
       const profileMod = await import("../../paleoclaw/cli/profile-cli.js");
       const memoryMod = await import("../../paleoclaw/cli/memory-cli.js");
+      const toolsMod = await import("../../paleoclaw/cli/tools-cli.js");
+      const sessionMod = await import("../../paleoclaw/cli/session-cli.js");
       profileMod.registerProfileCommands(program);
       memoryMod.registerMemoryCommands(program);
+      toolsMod.registerToolsCommands(program);
+      sessionMod.registerSessionCommands(program);
     },
   },
   {

@@ -5,3 +5,5 @@
 
 export * from './store';
 export * from './retrieval';
+export * from './provider';
+export * from './manager';
