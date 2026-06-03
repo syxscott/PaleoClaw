@@ -583,8 +583,13 @@ describe("agent event handler", () => {
     resetAgentRunContextForTest();
   });
 
-  it("strips tool output when verbose is on", () => {
-    const { broadcastToConnIds, toolEventRecipients, handler } = createHarness({
+  it("keeps full tool output for Control UI recipients, but strips for node send when verbose is on", () => {
+    const {
+      broadcastToConnIds,
+      nodeSendToSession,
+      toolEventRecipients,
+      handler,
+    } = createHarness({
       resolveSessionKeyForRun: () => "session-1",
     });
 
@@ -605,10 +610,19 @@ describe("agent event handler", () => {
       },
     });
 
+    // Control UI recipients (registered for tool events) always receive the
+    // full tool payload — verbose only controls channel-side fanout.
     expect(broadcastToConnIds).toHaveBeenCalledTimes(1);
-    const payload = broadcastToConnIds.mock.calls[0]?.[1] as { data?: Record<string, unknown> };
-    expect(payload.data?.result).toBeUndefined();
-    expect(payload.data?.partialResult).toBeUndefined();
+    const wsPayload = broadcastToConnIds.mock.calls[0]?.[1] as { data?: Record<string, unknown> };
+    expect(wsPayload.data?.result).toBeDefined();
+    expect(wsPayload.data?.partialResult).toBeDefined();
+
+    // Node subscribers receive the stripped payload (the original behavior).
+    const nodeToolCalls = nodeSendToSession.mock.calls.filter(([, event]) => event === "agent");
+    expect(nodeToolCalls).toHaveLength(1);
+    const nodePayload = nodeToolCalls[0]?.[2] as { data?: Record<string, unknown> };
+    expect(nodePayload.data?.result).toBeUndefined();
+    expect(nodePayload.data?.partialResult).toBeUndefined();
     resetAgentRunContextForTest();
   });
 

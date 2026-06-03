@@ -82,6 +82,12 @@ export class MemoryManager {
   private providers: MemoryProvider[] = [];
 
   addProvider(provider: MemoryProvider): void {
+    // Prevent duplicate registrations by name to avoid running the same
+    // provider's prefetch/sync twice.
+    if (this.providers.some((item) => item.name === provider.name)) {
+      throw new Error(`Memory provider already registered: ${provider.name}`);
+    }
+
     if (!provider.isBuiltin) {
       const existingExternal = this.providers.find((item) => !item.isBuiltin);
       if (existingExternal) {

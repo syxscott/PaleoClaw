@@ -263,15 +263,17 @@ function writeDefaultIfMissing(filePath: string, content: string): void {
 
 function splitSections(markdown: string): Record<string, string> {
   const sections: Record<string, string[]> = {};
-  const headerRegex = /^#{2,3}\s+(.+?)\s*$/gm;
-  let current = '';
-  let lastIndex = 0;
-  
+  const headerRegex = /^#{2,3}\s+(.+?)\s*$/;
+
   const lines = markdown.split('\n');
+  let current = '';
+
   for (const line of lines) {
-    const match = line.match(/^#{2,3}\s+(.+?)\s*$/);
+    const match = line.match(headerRegex);
     if (match) {
-      current = match[1].trim().toLowerCase();
+      // Strip trailing punctuation like ":" so lookups like 'primary interests'
+      // (without the colon) work for headings such as '### Primary interests:'.
+      current = match[1].trim().toLowerCase().replace(/[:\s]+$/, '');
       sections[current] = [];
       continue;
     }
@@ -279,7 +281,7 @@ function splitSections(markdown: string): Record<string, string> {
       sections[current].push(line);
     }
   }
-  
+
   const result: Record<string, string> = {};
   for (const [key, value] of Object.entries(sections)) {
     result[key] = value.join('\n').trim();
@@ -298,37 +300,48 @@ function sectionText(sections: Record<string, string>, ...aliases: string[]): st
 function sectionItems(sections: Record<string, string>, ...aliases: string[]): string[] {
   const text = sectionText(sections, ...aliases);
   if (!text) return [];
-  
+
   const items: string[] = [];
   const lines = text.split('\n');
-  
+
   for (const line of lines) {
     const trimmed = line.trim();
     if (!trimmed) continue;
-    
+
+    // Skip markdown horizontal rules ("---", "***", "___") that some templates
+    // use between sections; they are not user-visible content.
+    if (/^[-*_]{3,}$/.test(trimmed)) {
+      continue;
+    }
+
     // Match bullet points
     const bulletMatch = trimmed.match(/^(?:[-*]|\d+\.)\s+(.+)$/);
     if (bulletMatch) {
       items.push(bulletMatch[1].trim());
       continue;
     }
-    
-    // Match key: value format
+
+    // Match key: value format. Lines that LOOK like "key: value" with a
+    // non-empty value are captured as the value. Lines that end with a
+    // colon (no value, e.g. "Mission: provide the following:") fall through
+    // to plain-text handling so the leading text isn't silently dropped.
     if (trimmed.includes(':')) {
       const parts = trimmed.split(':');
       if (parts.length >= 2) {
         const value = parts.slice(1).join(':').trim();
-        if (value) items.push(value);
+        if (value) {
+          items.push(value);
+          continue;
+        }
       }
-      continue;
     }
-    
+
     // Plain text lines
     if (trimmed.length > 2) {
       items.push(trimmed);
     }
   }
-  
+
   // Deduplicate while preserving order
   const unique: string[] = [];
   const seen = new Set<string>();
@@ -360,20 +373,30 @@ function parseSoul(markdown: string): SoulConfig {
   const dataSourceHierarchy = sectionItems(sections, 'data source hierarchy');
   const executionRules = sectionItems(sections, 'execution rules');
   const scientificCommunicationStandards = sectionItems(sections, 'scientific communication standards');
-  const safetyBoundaries = sectionItems(sections, 'safety boundaries');
+  // Safety boundaries may live under '## Safety Boundaries' directly or in a
+  // '### PaleoClaw MUST NOT:' subsection; fall back to the latter.
+  const safetyBoundaries =
+    sectionItems(sections, 'safety boundaries').length > 0
+      ? sectionItems(sections, 'safety boundaries')
+      : sectionItems(sections, 'paleoclaw must not');
   const collaborationPhilosophy = sectionItems(sections, 'collaboration philosophy');
 
-  // Parse domain scope
-  const domainScopeText = sectionText(sections, 'domain scope');
-  const inScopeMatch = domainScopeText.match(/### In Scope:([\s\S]*?)(?=### Out of Scope:|$)/);
-  const outOfScopeMatch = domainScopeText.match(/### Out of Scope:([\s\S]*?)$/);
+  // Parse domain scope. With the colon-stripping fix in splitSections(), the
+  // '### In Scope:' and '### Out of Scope:' headings become their own section
+  // keys ('in scope', 'out of scope') instead of being embedded in 'domain scope'.
+  const parseBulletList = (text: string): string[] =>
+    text
+      .split('\n')
+      .map((line) => line.trim())
+      // Skip markdown horizontal rules ("---", "***", "___") which can sneak
+      // in between sections in some templates.
+      .filter((line) => !/^[-*_]{3,}$/.test(line))
+      .filter((line) => line.startsWith('-') || line.startsWith('*'))
+      .map((line) => line.replace(/^[-*]\s*/, '').trim())
+      .filter(Boolean);
 
-  const inScope = inScopeMatch
-    ? inScopeMatch[1].split('\n').filter(l => l.trim().startsWith('-')).map(l => l.replace(/^-\s*/, '').trim())
-    : [];
-  const outOfScope = outOfScopeMatch
-    ? outOfScopeMatch[1].split('\n').filter(l => l.trim().startsWith('-')).map(l => l.replace(/^-\s*/, '').trim())
-    : [];
+  const inScope = parseBulletList(sectionText(sections, 'in scope'));
+  const outOfScope = parseBulletList(sectionText(sections, 'out of scope'));
 
   return {
     identity,
@@ -582,8 +605,90 @@ export function memoryContext(profile: SessionProfile): Record<string, unknown> 
     researchFocus: profile.user.researchFocus,
     reproducibilityExpectations: profile.user.reproducibilityExpectations,
     workflowHabits: profile.user.workflowHabits,
-    longTermConstraints: profile.user.reproducibilityExpectations,
+    longTermConstraints: profile.user.longTermConstraints,
     truthfulnessRules: profile.soul.corePrinciples,
     preferredTone: profile.user.communicationStyle.join(', '),
   };
+}
+
+/**
+ * Render a fenced profile context block that is prepended to the agent prompt.
+ * The block is plain-text Markdown so the LLM can follow the bullet structure,
+ * and it is wrapped in <paleoclaw-profile-context> tags so downstream tools
+ * (e.g. memory sanitizers) can recognize and strip it if needed.
+ */
+export function buildProfileContextBlock(profile: SessionProfile): string {
+  const lines: string[] = [];
+  const user = profile.user;
+  const soul = profile.soul;
+
+  lines.push('## User Research Profile');
+  lines.push(`- Role: ${user.role}`);
+  if (user.domain) lines.push(`- Domain: ${user.domain}`);
+  if (user.institution) lines.push(`- Institution: ${user.institution}`);
+  if (user.researchFocus.primaryInterests.length > 0) {
+    lines.push(`- Primary interests: ${user.researchFocus.primaryInterests.join(', ')}`);
+  }
+  if (user.researchFocus.preferredPeriods.length > 0) {
+    lines.push(`- Preferred periods: ${user.researchFocus.preferredPeriods.join(', ')}`);
+  }
+  if (user.researchFocus.preferredRegions.length > 0) {
+    lines.push(`- Preferred regions: ${user.researchFocus.preferredRegions.join(', ')}`);
+  }
+  lines.push(`- Preferred language: ${user.languagePreference}`);
+  lines.push(`- Output language: ${user.outputLanguage}`);
+  if (user.communicationStyle.length > 0) {
+    lines.push(`- Communication style: ${user.communicationStyle.join(', ')}`);
+  }
+  lines.push(`- Citation format: ${user.dataPreferences.citationFormat}`);
+  lines.push(`- Default occurrence limit: ${user.dataPreferences.defaultOccurrenceLimit}`);
+  lines.push(`- Prefer open access: ${user.dataPreferences.preferOpenAccess ? 'yes' : 'no'}`);
+  lines.push(`- Include preprints: ${user.dataPreferences.includePreprints ? 'yes' : 'no'}`);
+
+  if (soul.identity && soul.identity.trim()) {
+    lines.push('');
+    lines.push('## System Identity');
+    lines.push(soul.identity.trim());
+  }
+  if (soul.mission && soul.mission.trim()) {
+    lines.push('');
+    lines.push('## Mission');
+    lines.push(soul.mission.trim());
+  }
+  if (soul.corePrinciples.length > 0) {
+    lines.push('');
+    lines.push('## Core Principles');
+    for (const item of soul.corePrinciples) lines.push(`- ${item}`);
+  }
+  if (soul.executionRules.length > 0) {
+    lines.push('');
+    lines.push('## Execution Rules');
+    for (const item of soul.executionRules) lines.push(`- ${item}`);
+  }
+  if (soul.safetyBoundaries.length > 0) {
+    lines.push('');
+    lines.push('## Safety Boundaries');
+    for (const item of soul.safetyBoundaries) lines.push(`- ${item}`);
+  }
+  if (soul.domainScope.inScope.length > 0) {
+    lines.push('');
+    lines.push('## In Scope');
+    for (const item of soul.domainScope.inScope) lines.push(`- ${item}`);
+  }
+  if (soul.domainScope.outOfScope.length > 0) {
+    lines.push('');
+    lines.push('## Out of Scope');
+    for (const item of soul.domainScope.outOfScope) lines.push(`- ${item}`);
+  }
+
+  const body = lines.join('\n').trim();
+  if (!body) return '';
+
+  return [
+    '<paleoclaw-profile-context>',
+    '[System note: The following is the user research profile and PaleoClaw system identity. Treat as authoritative background — follow the execution rules and respect the safety boundaries. The user has customized these files in ~/.paleoclaw/soul.md and ~/.paleoclaw/user.md.]',
+    '',
+    body,
+    '</paleoclaw-profile-context>',
+  ].join('\n');
 }

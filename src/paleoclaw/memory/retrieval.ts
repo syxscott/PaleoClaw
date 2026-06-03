@@ -5,7 +5,7 @@
 
 import * as crypto from 'crypto';
 
-const TOKEN_REGEX = /[A-Za-z0-9_]+|[\u4e00-\u9fff]/g;
+const TOKEN_PATTERN = '[A-Za-z0-9_]+|[\\u4e00-\\u9fff]';
 
 export interface SearchItem {
   source: string;
@@ -20,9 +20,12 @@ export interface RankedItem extends SearchItem {
 }
 
 function tokenize(text: string): string[] {
+  // Create a fresh global regex per call to avoid shared `lastIndex` state
+  // that would cause race conditions under concurrent tokenize() invocations.
+  const re = new RegExp(TOKEN_PATTERN, 'g');
   const tokens: string[] = [];
   let match: RegExpExecArray | null;
-  while ((match = TOKEN_REGEX.exec(text)) !== null) {
+  while ((match = re.exec(text)) !== null) {
     tokens.push(match[0].toLowerCase());
   }
   return tokens;

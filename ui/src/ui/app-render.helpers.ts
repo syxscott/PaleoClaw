@@ -345,7 +345,7 @@ export function parseSessionKey(key: string): SessionKeyInfo {
   const normalized = key.toLowerCase();
 
   // ── Main session ─────────────────────────────────
-  if (key === "main" || key === "agent:main:main") {
+  if (normalized === "main" || normalized === "agent:main:main") {
     return { prefix: "", fallbackName: "Main Session" };
   }
 

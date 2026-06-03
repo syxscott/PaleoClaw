@@ -26,9 +26,15 @@ export function formatSessionTokens(row: GatewaySessionRow) {
   if (row.totalTokens == null) {
     return "n/a";
   }
-  const total = row.totalTokens ?? 0;
-  const ctx = row.contextTokens ?? 0;
-  return ctx ? `${total} / ${ctx}` : String(total);
+  const total = row.totalTokens;
+  const ctx = row.contextTokens;
+  // When context is unknown (null/undefined), show just the total; when it is
+  // a finite number (including 0), show the ratio so users can see the
+  // context window utilization.
+  if (typeof ctx === "number" && Number.isFinite(ctx)) {
+    return `${total} / ${ctx}`;
+  }
+  return String(total);
 }
 
 export function formatEventPayload(payload: unknown): string {

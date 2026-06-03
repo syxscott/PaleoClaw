@@ -31,13 +31,13 @@ describe('memory manager', () => {
   it('prefetches and fences provider content', async () => {
     const manager = new MemoryManager();
     manager.addProvider({
-      name: 'builtin',
+      name: 'builtin-fence',
       isBuiltin: true,
       prefetch: () => 'remembered-line',
     });
 
     const context = await manager.prefetchAll('query');
-    expect(context).toContain('[builtin]');
+    expect(context).toContain('[builtin-fence]');
     expect(context).toContain('remembered-line');
     expect(context.startsWith('<memory-context>')).toBe(true);
   });

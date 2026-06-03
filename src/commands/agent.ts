@@ -95,6 +95,7 @@ import {
   isSessionAutosaveEnabled,
 } from "../paleoclaw/integration/runtime-switches.js";
 import { buildAutoToolsContext } from "../paleoclaw/tools/auto-context.js";
+import { buildProfileContextBlock, loadSessionProfile } from "../paleoclaw/profile/layers.js";
 import { deliverAgentCommandResult } from "./agent/delivery.js";
 import { resolveAgentRunContext } from "./agent/run-context.js";
 import { updateSessionStoreAfterAgentRun } from "./agent/session-store.js";
@@ -658,6 +659,19 @@ async function agentCommandInternal(
   const enableMemoryContext = isMemoryContextEnabled();
   const enableSessionAutosave = isSessionAutosaveEnabled();
   let enrichedPrompt = body;
+
+  // Prepend the user research profile + system identity. This is what makes
+  // soul.md / user.md actually influence agent behavior — without this
+  // injection the parsed profile is never seen by the LLM.
+  try {
+    const profile = loadSessionProfile(undefined, true);
+    const profileBlock = buildProfileContextBlock(profile);
+    if (profileBlock.trim()) {
+      enrichedPrompt = `${profileBlock}\n\n${enrichedPrompt}`;
+    }
+  } catch {
+    // Profile is best-effort; never block the run.
+  }
 
   if (enableAutoTools) {
     try {

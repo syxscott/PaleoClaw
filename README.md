@@ -607,6 +607,14 @@ export PALEOCLAW_AI_MODEL=qwen-plus-latest
 # Profile Paths | 画像文件路径
 export PALEOCLAW_SOUL_PATH=/path/to/soul.md
 export PALEOCLAW_USER_PATH=/path/to/user.md
+
+# Data Root Override | 数据根目录覆盖（默认 ~/.paleoclaw）
+export PALEOCLAW_HOME=/custom/data/root
+
+# Integration Switches (v1.6.0+) | 集成开关
+export PALEOCLAW_ENABLE_AUTO_TOOLS=true          # Auto-fetch PBDB/CrossRef | 自动获取上下文
+export PALEOCLAW_ENABLE_MEMORY_CONTEXT=true      # Inject memory fence | 注入记忆围栏
+export PALEOCLAW_ENABLE_SESSION_AUTOSAVE=true    # Auto-save session history | 自动保存会话
 ```
 
 ### Config File | 配置文件

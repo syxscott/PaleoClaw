@@ -21,7 +21,7 @@ afterEach(() => {
 });
 
 describe('SessionStore', () => {
-  it('upserts session with caller-provided id', () => {
+  it('upserts session with caller-provided id and merges tags', () => {
     const store = new SessionStore(createTempRoot());
     const first = store.upsertSession('external-session-id', 'Seed title', ['seed']);
     expect(first.id).toBe('external-session-id');
@@ -31,6 +31,19 @@ describe('SessionStore', () => {
     expect(second.id).toBe('external-session-id');
     expect(second.tags).toContain('seed');
     expect(second.tags).toContain('new-tag');
+    // Title is preserved (NOT overwritten) on subsequent upserts to keep
+    // session titles stable across multiple agent turns.
+    expect(second.title).toBe('Seed title');
+  });
+
+  it('preserves a non-empty title on re-upsert (regression #NEW-2)', () => {
+    const store = new SessionStore(createTempRoot());
+    const first = store.upsertSession('ext-1', 'First prompt title', ['agent:1']);
+    expect(first.title).toBe('First prompt title');
+
+    // Caller (e.g. agent command) passes a fresh prompt title on every run.
+    const second = store.upsertSession('ext-1', 'Second prompt title', []);
+    expect(second.title).toBe('First prompt title');
   });
 
   it('creates, appends, and loads sessions', () => {

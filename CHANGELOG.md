@@ -7,6 +7,77 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.7.0] - 2026-06-02
+
+### 🐛 Fixed (Bug Fix Release)
+
+This release is a focused bug-fix pass over v1.6.0. No new features are introduced; the goal is to make the existing profile / memory / auto-tools / session subsystems actually work as documented.
+
+#### Profile System (`src/paleoclaw/profile/layers.ts`)
+
+- **Fixed: `splitSections` dropped colon-suffixed subheadings.** Headings like `### Primary interests:` or `### In Scope:` were stored with the colon in the key, so every `sectionItems` / `sectionText` lookup missed them. As a result, all user-customized research interests, preferred periods/regions, journals, workflow habits, long-term constraints, and the in-scope/out-of-scope lists were silently empty. `splitSections` now strips the trailing colon (and any trailing whitespace) from the heading text.
+- **Fixed: `parseSoul` never read the domain scope.** The old code tried to regex-extract `### In Scope:` / `### Out of Scope:` from inside the `## Domain Scope` block, but with the colon-stripping fix the headings now become their own sections. `parseSoul` now reads `in scope` and `out of scope` directly and uses a shared `parseBulletList` helper that also drops `---` horizontal rules.
+- **Fixed: `safetyBoundaries` was always empty for the shipped `soul.md`.** The shipped file puts safety rules under a `### PaleoClaw MUST NOT:` subsection, not under `## Safety Boundaries`. `parseSoul` now falls back to the `paleoclaw must not` section when the top-level one is empty.
+- **Fixed: `mission` was mis-captured as the first bullet.** The Mission section starts with a one-line statement ending in `:` and is followed by bullet elaboration. The key:value branch was discarding any line where the value was empty (e.g. `Help users …by providing:`), so `missionItems[0]` returned `Accurate taxonomic information` instead of the actual mission statement. `sectionItems` now falls through to plain-text handling when the colon branch produces an empty value, and `parseBulletList` filters `---` rows.
+- **Fixed: `memoryContext` mapped both `longTermConstraints` and `reproducibilityExpectations` to the same value.** `longTermConstraints` now correctly reads `profile.user.longTermConstraints`.
+- **Fixed: `profile.show` printed `…` even when the value was short.** Replaced ad-hoc `.slice + '...'` with a proper `truncate(text, max)` helper.
+- **New: `buildProfileContextBlock(profile)` renders a fenced `<paleoclaw-profile-context>…</paleoclaw-profile-context>` block** containing user research profile, system identity, mission, core principles, execution rules, safety boundaries, and in/out-of-scope lists. This block is now prepended to every agent run (see `src/commands/agent.ts` below), so user-customized `~/.paleoclaw/soul.md` and `~/.paleoclaw/user.md` actually influence the LLM. Without this, the entire profile system was a silent no-op.
+
+#### Memory System
+
+- **Fixed: `tokenize` had a global regex with shared `lastIndex` state** in `src/paleoclaw/memory/retrieval.ts`. Concurrent calls would corrupt each other's match positions. The regex is now constructed per call.
+- **Fixed: `addProvider` did not deduplicate by name** in `src/paleoclaw/memory/manager.ts`. Registering the same provider twice caused prefetch/sync to run twice. Now throws `Memory provider already registered: <name>`.
+- **Fixed: `archiveShort` archived files with `NaN`/`Invalid Date` timestamps** in `src/paleoclaw/memory/store.ts`. `new Date(undefined)` returns an `Invalid Date`, which compared false to the cutoff, so the file was silently moved to archive. Now explicitly checks `Number.isNaN(itemTime.getTime())` and skips.
+- **Fixed: pre-existing TS error in `searchMemory` payload cast** (`row as Record<string, unknown>`). Changed to `row as unknown as Record<string, unknown>`.
+
+#### Tool / Auto-Context (`src/paleoclaw/tools/auto-context.ts`)
+
+- **Fixed: `extractTaxonCandidate` returned common English words as taxa.** A query like "Use PBDB to find Allosaurus" previously extracted `Use` (length 3, capitalised). Now applies:
+  - A stopword set (`Use`, `Find`, `Show`, `List`, `Get`, `Query`, …) covering the most common sentence-initial verbs
+  - A geological-period stopword set (`Cambrian`, `Jurassic`, `Cretaceous`, etc.) so a query mentioning a period alone doesn't get sent to PBDB as a taxon name
+  - A length / Latin-suffix check (length ≥ 6 OR known suffix `-idae`, `-inae`, `-us`, `-yx`, …) so genuine short taxa like *Aves* still pass but `Use` does not
+- **Fixed: regex was greedy across the optional second word.** The old `([A-Z][a-z]{2,}(?:\s+[a-z]{2,})?)` would absorb `Allosaurus occurrences` into a single match. Replaced with a single-word regex and an `isLikelyTaxon` predicate that walks matches in order.
+
+#### Session Store (`src/paleoclaw/session/store.ts`)
+
+- **Fixed: session title was overwritten on every agent run.** `upsertSession` set `next.title = title.trim()` whenever the existing title differed, so the same `sessionId` would have its title rewritten to the latest user prompt on every turn. Now only sets the title when the existing session has no title yet, keeping titles stable in `paleo-session list`.
+
+#### Agent Integration (`src/commands/agent.ts`)
+
+- **New: profile context is now prepended to every agent run.** `agentCommandInternal` calls `loadSessionProfile(...)` and prepends the rendered `buildProfileContextBlock` to the enriched prompt. This is the actual wiring that makes `soul.md` / `user.md` influence the LLM. Wrapped in try/catch so a missing/corrupt profile never blocks the run.
+
+#### Gateway / WebSocket (`src/gateway/server-chat.ts`)
+
+- **Fixed: tool event payload was being stripped for Control UI recipients.** The `toolPayload` variable deleted `result` / `partialResult` whenever `verbose !== "full"`, and the same stripped payload was then used for both `broadcastToConnIds(agent, toolPayload, recipients)` and `nodeSendToSession(...)`. The in-code comment claimed "verbose only controls channel messages", but the actual code stripped for everyone. Fix: split into `agentPayload` (full) for Control UI recipients and `channelToolPayload` (stripped) for channel/node subscribers. The in-browser tool cards now always show full tool output regardless of the `verboseLevel` setting.
+- **Updated test** in `src/gateway/server-chat.agent-events.test.ts` to reflect the new contract.
+
+#### Frontend / Web UI
+
+- **Fixed: `GatewayBrowserClient.stop()` did not clear the `connectTimer` or `reconnectTimer`** in `ui/src/ui/gateway.ts`. If `stop()` was called while a connect/reconnect was pending, the timer would still fire and try to use a disposed WebSocket, leaking the connection attempt. `stop()` now clears both timers; `scheduleReconnect` also tracks its timer in `reconnectTimer` so a later stop or reschedule cancels cleanly.
+- **Fixed: `inferBasePathFromPathname` was case-sensitive in the prefix** in `ui/src/ui/navigation.ts`. Input like `/APPS/PALEOCLAW/CRON` would resolve to base path `/APPS/PALEOCLAW` (uppercase), causing the rest of the UI to lose routing. The prefix segments are now lowercased before being returned.
+- **Fixed: `formatSessionTokens` hid context when `contextTokens` was `0`** in `ui/src/ui/presenter.ts`. The old `ctx ? … : String(total)` treated `0` as falsy and dropped the context number. Now the ratio is shown whenever `contextTokens` is a finite number (including `0`).
+- **Fixed: `parseSessionKey` was case-sensitive on the `main` check** in `ui/src/ui/app-render.helpers.ts`. A session key like `MAIN` was no longer recognised as the main session. Now uses the already-lowercased `normalized` for the check.
+- **Removed dead code** in `src/paleoclaw/cli/profile-cli.ts`: unused imports (`fs`, `path`, `os`, `DEFAULT_SOUL_TEMPLATE`, `DEFAULT_USER_TEMPLATE`) and unused `paleoclawHome()` helper.
+
+#### Documentation
+
+- **Updated `README.md`** to document all four `PALEOCLAW_*` environment variables (`PALEOCLAW_HOME`, `PALEOCLAW_ENABLE_AUTO_TOOLS`, `PALEOCLAW_ENABLE_MEMORY_CONTEXT`, `PALEOCLAW_ENABLE_SESSION_AUTOSAVE`) — previously only `PALEOCLAW_AI_*`, `PALEOCLAW_SOUL_PATH`, and `PALEOCLAW_USER_PATH` were listed.
+
+#### Tests Added
+
+To prevent regression, the following focused unit tests were added:
+
+- `src/paleoclaw/profile/layers.test.ts` — covers `parseSoul` / `parseUser` against the default templates (verifies that colon-suffixed subheadings are now picked up), `memoryContext` no longer aliases `longTermConstraints` to `reproducibilityExpectations`, and the four context builders expose the expected fields.
+- `src/paleoclaw/profile/profile-block.test.ts` — covers `buildProfileContextBlock`.
+- `src/paleoclaw/profile/section-items.test.ts` — regression test for the Mission-parsing fix and the `---` horizontal-rule filter.
+- `src/paleoclaw/memory/manager.dedup.test.ts` — covers `addProvider` dedup.
+- `src/paleoclaw/memory/retrieval.test.ts` — covers concurrent `tokenize` correctness.
+- `src/paleoclaw/tools/auto-context-extract.test.ts` — covers `extractTaxonCandidate` with the stopword / geological-period / suffix filters.
+- `ui/src/ui/navigation.case.test.ts` — covers case-insensitive base path inference.
+- `ui/src/ui/presenter.test.ts` — covers `formatSessionTokens` edge cases.
+
+---
+
 ## [1.6.0] - 2026-04-15
 
 ### 🚀 Added

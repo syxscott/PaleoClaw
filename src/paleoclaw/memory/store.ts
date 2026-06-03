@@ -454,13 +454,20 @@ export class TaskMemoryStore {
         }
 
         const ts = payload.finishedAt || payload.updatedAt || payload.createdAt;
+        let itemTime: Date;
         try {
-          const itemTime = new Date(ts);
-          if (itemTime > cutoff) {
-            skipped++;
-            continue;
-          }
+          itemTime = new Date(ts);
         } catch {
+          skipped++;
+          continue;
+        }
+        // Treat invalid dates (e.g. when ts is undefined or unparseable) as
+        // "cannot determine age" — skip rather than accidentally archive.
+        if (Number.isNaN(itemTime.getTime())) {
+          skipped++;
+          continue;
+        }
+        if (itemTime > cutoff) {
           skipped++;
           continue;
         }
@@ -511,7 +518,7 @@ export class TaskMemoryStore {
           source: 'short',
           taskId: row.taskId,
           searchText: this.buildSearchText(row, 'short'),
-          payload: row as Record<string, unknown>,
+          payload: row as unknown as Record<string, unknown>,
         });
       }
     }
@@ -522,7 +529,7 @@ export class TaskMemoryStore {
           source: 'archive',
           taskId: row.taskId,
           searchText: this.buildSearchText(row, 'archive'),
-          payload: row as Record<string, unknown>,
+          payload: row as unknown as Record<string, unknown>,
         });
       }
     }

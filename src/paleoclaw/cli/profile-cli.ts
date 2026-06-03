@@ -3,22 +3,18 @@
  * Commands: init, show
  */
 
-import * as fs from 'fs';
-import * as path from 'path';
-import * as os from 'os';
 import {
   ensureProfileLayers,
   loadSessionProfile,
-  DEFAULT_SOUL_TEMPLATE,
-  DEFAULT_USER_TEMPLATE,
 } from '../profile/layers.js';
 
 interface ProfileCommandOptions {
   json?: boolean;
 }
 
-function paleoclawHome(): string {
-  return process.env.PALEOCLAW_HOME || path.join(os.homedir(), '.paleoclaw');
+function truncate(text: string, max: number): string {
+  if (!text) return '';
+  return text.length > max ? `${text.slice(0, max)}...` : text;
 }
 
 export function registerProfileCommands(program: any): void {
@@ -76,7 +72,7 @@ export function registerProfileCommands(program: any): void {
             soulPath: profile.soulPath,
             userPath: profile.userPath,
             soul: {
-              identity: profile.soul.identity.slice(0, 100) + '...',
+              identity: truncate(profile.soul.identity, 100),
               mission: profile.soul.mission,
               corePrinciples: profile.soul.corePrinciples.slice(0, 5),
               dataSourceHierarchy: profile.soul.dataSourceHierarchy.slice(0, 5),
@@ -98,16 +94,16 @@ export function registerProfileCommands(program: any): void {
           console.log('║              PaleoClaw Profile Configuration               ║');
           console.log('╚════════════════════════════════════════════════════════════╝');
           console.log('');
-          
+
           console.log('📁 Profile Files:');
           console.log(`   Soul: ${profile.soulPath}`);
           console.log(`   User: ${profile.userPath}`);
           console.log(`   Loaded: ${profile.loadedAt}`);
           console.log('');
-          
+
           console.log('🧬 Soul Configuration:');
-          console.log(`   Identity: ${profile.soul.identity.slice(0, 60)}...`);
-          console.log(`   Mission: ${profile.soul.mission.slice(0, 60)}...`);
+          console.log(`   Identity: ${truncate(profile.soul.identity, 60)}`);
+          console.log(`   Mission: ${truncate(profile.soul.mission, 60)}`);
           console.log(`   Core Principles: ${profile.soul.corePrinciples.length} items`);
           console.log(`   Data Sources: ${profile.soul.dataSourceHierarchy.length} sources`);
           console.log(`   Safety Boundaries: ${profile.soul.safetyBoundaries.length} rules`);

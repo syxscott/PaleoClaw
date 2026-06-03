@@ -125,6 +125,7 @@ export class GatewayBrowserClient {
   private connectNonce: string | null = null;
   private connectSent = false;
   private connectTimer: number | null = null;
+  private reconnectTimer: number | null = null;
   private backoffMs = 800;
   private pendingConnectError: GatewayErrorInfo | undefined;
 
@@ -137,6 +138,16 @@ export class GatewayBrowserClient {
 
   stop() {
     this.closed = true;
+    // Clear any pending timers so callbacks don't fire after stop() and try
+    // to use a disposed WebSocket.
+    if (this.connectTimer !== null) {
+      window.clearTimeout(this.connectTimer);
+      this.connectTimer = null;
+    }
+    if (this.reconnectTimer !== null) {
+      window.clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
     this.ws?.close();
     this.ws = null;
     this.pendingConnectError = undefined;
@@ -176,7 +187,13 @@ export class GatewayBrowserClient {
     }
     const delay = this.backoffMs;
     this.backoffMs = Math.min(this.backoffMs * 1.7, 15_000);
-    window.setTimeout(() => this.connect(), delay);
+    if (this.reconnectTimer !== null) {
+      window.clearTimeout(this.reconnectTimer);
+    }
+    this.reconnectTimer = window.setTimeout(() => {
+      this.reconnectTimer = null;
+      this.connect();
+    }, delay);
   }
 
   private flushPending(err: Error) {

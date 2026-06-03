@@ -11,14 +11,59 @@ export type AutoToolPlan = {
   params: Record<string, unknown>;
 };
 
-const TAXON_NAME_RE = /\b([A-Z][a-z]{2,}(?:\s+[a-z]{2,})?)\b/;
+// Common English words that often appear as sentence-initial capitalized words
+// but are not taxonomic names. We skip these when scanning for a taxon
+// candidate to avoid passing words like "Use", "Find", "Show" to PBDB.
+const TAXON_STOPWORDS = new Set([
+  'Use', 'Find', 'Show', 'List', 'Get', 'Query', 'Search', 'Look', 'Look',
+  'Check', 'Give', 'Tell', 'What', 'Which', 'Where', 'When', 'Who', 'How',
+  'I', 'We', 'You', 'They', 'The', 'This', 'That', 'These', 'Those',
+  'A', 'An', 'And', 'Or', 'But', 'For', 'With', 'Without', 'From', 'Into',
+  'Can', 'Could', 'Should', 'Would', 'May', 'Might', 'Must', 'Will', 'Shall',
+  'Need', 'Want', 'Have', 'Has', 'Had', 'Do', 'Does', 'Did', 'Is', 'Are',
+  'Was', 'Were', 'Be', 'Been', 'Being', 'Let', 'Please', 'About', 'Above',
+  'After', 'Below', 'Under', 'Over', 'Between', 'Among', 'During', 'Before',
+  'Open', 'Close', 'Start', 'Stop', 'Run', 'Build', 'Make', 'Create',
+  'Now', 'Then', 'Here', 'There', 'All', 'Any', 'Some', 'No', 'Not',
+  'My', 'Your', 'His', 'Her', 'Its', 'Our', 'Their', 'More', 'Most',
+  'Other', 'Such', 'Same', 'Own', 'Just', 'Only', 'Also', 'Very', 'Too',
+]);
+
+// Geological periods / epochs / eras that should not be treated as taxa even
+// though they may be capitalized and have length >= 6.
+const GEOLOGICAL_PERIODS = new Set([
+  'Cambrian', 'Ordovician', 'Silurian', 'Devonian', 'Carboniferous',
+  'Permian', 'Triassic', 'Jurassic', 'Cretaceous',
+  'Paleogene', 'Neogene', 'Quaternary',
+  'Paleocene', 'Eocene', 'Oligocene', 'Miocene', 'Pliocene',
+  'Pleistocene', 'Holocene',
+]);
+
+// Common Latin/scientific suffixes for taxa (genera, families, etc.) plus the
+// capital-letter-with-2+lowercase minimum length. We require EITHER a
+// recognized suffix OR a length >= 6 to accept a candidate, which filters out
+// most common English words like "Use" / "Find".
+const TAXON_SUFFIX_RE = /(idae|inae|aceae|opsida|phyta|mycota|formes|us|a|um|ia|yx|is|os|er|ix)$/i;
+
+function isLikelyTaxon(word: string): boolean {
+  if (!word) return false;
+  if (TAXON_STOPWORDS.has(word)) return false;
+  if (GEOLOGICAL_PERIODS.has(word)) return false;
+  if (word.length < 6 && !TAXON_SUFFIX_RE.test(word)) return false;
+  return true;
+}
+
+const TAXON_NAME_RE = /\b([A-Z][a-z]{2,})\b/g;
 
 function extractTaxonCandidate(text: string): string | undefined {
-  const match = text.match(TAXON_NAME_RE);
-  if (!match) {
-    return undefined;
+  const matches = text.matchAll(TAXON_NAME_RE);
+  for (const match of matches) {
+    const candidate = match[1]?.trim();
+    if (candidate && isLikelyTaxon(candidate)) {
+      return candidate;
+    }
   }
-  return match[1]?.trim();
+  return undefined;
 }
 
 export function resolveAutoToolPlan(prompt: string): AutoToolPlan[] {

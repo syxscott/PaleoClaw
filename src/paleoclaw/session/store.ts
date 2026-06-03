@@ -94,7 +94,15 @@ export class SessionStore {
       let changed = false;
       const next = { ...existing };
 
-      if (title && title.trim() && existing.title !== title.trim()) {
+      // Only treat the call as a title update when the new title is non-empty
+      // AND the existing session has no title yet. Avoids overwriting a
+      // meaningful title with the latest user prompt on every turn.
+      if (
+        title &&
+        title.trim() &&
+        !existing.title &&
+        existing.title !== title.trim()
+      ) {
         next.title = title.trim();
         changed = true;
       }

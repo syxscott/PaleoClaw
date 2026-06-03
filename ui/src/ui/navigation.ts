@@ -114,13 +114,17 @@ export function inferBasePathFromPathname(pathname: string): string {
     return "";
   }
   for (let i = 0; i < segments.length; i++) {
+    // Compare lowercased candidate against the lowercase tab map so that
+    // case differences in the input path (e.g. /APPS/CRON) still match.
     const candidate = `/${segments.slice(i).join("/")}`.toLowerCase();
     if (PATH_TO_TAB.has(candidate)) {
       const prefix = segments.slice(0, i);
-      return prefix.length ? `/${prefix.join("/")}` : "";
+      return prefix.length ? `/${prefix.join("/").toLowerCase()}` : "";
     }
   }
-  return `/${segments.join("/")}`;
+  // Fall back to the (lowercased) full path so callers get a consistent
+  // base path regardless of how the user typed the URL.
+  return `/${segments.join("/").toLowerCase()}`;
 }
 
 export function iconForTab(tab: Tab): IconName {
