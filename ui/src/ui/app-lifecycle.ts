@@ -40,6 +40,13 @@ type LifecycleHost = {
   logsEntries: unknown[];
   popStateHandler: () => void;
   topbarObserver: ResizeObserver | null;
+  // Timer handles that must be cleared on disconnect to prevent leaks.
+  toolStreamSyncTimer?: number | null;
+  sidebarCloseTimer?: number | null;
+  usageQueryDebounceTimer?: number | null;
+  compactionClearTimer?: number | null;
+  fallbackClearTimer?: number | null;
+  execApprovalTimers?: Map<string, number>;
 };
 
 export function handleConnected(host: LifecycleHost) {
@@ -76,6 +83,36 @@ export function handleDisconnected(host: LifecycleHost) {
   stopNodesPolling(host as unknown as Parameters<typeof stopNodesPolling>[0]);
   stopLogsPolling(host as unknown as Parameters<typeof stopLogsPolling>[0]);
   stopDebugPolling(host as unknown as Parameters<typeof stopDebugPolling>[0]);
+
+  // Clear all pending timers so they don't fire against a disconnected host
+  // and keep the component instance alive (preventing garbage collection).
+  if (host.toolStreamSyncTimer != null) {
+    window.clearTimeout(host.toolStreamSyncTimer);
+    host.toolStreamSyncTimer = null;
+  }
+  if (host.sidebarCloseTimer != null) {
+    window.clearTimeout(host.sidebarCloseTimer);
+    host.sidebarCloseTimer = null;
+  }
+  if (host.usageQueryDebounceTimer != null) {
+    window.clearTimeout(host.usageQueryDebounceTimer);
+    host.usageQueryDebounceTimer = null;
+  }
+  if (host.compactionClearTimer != null) {
+    window.clearTimeout(host.compactionClearTimer);
+    host.compactionClearTimer = null;
+  }
+  if (host.fallbackClearTimer != null) {
+    window.clearTimeout(host.fallbackClearTimer);
+    host.fallbackClearTimer = null;
+  }
+  if (host.execApprovalTimers) {
+    for (const timerId of host.execApprovalTimers.values()) {
+      window.clearTimeout(timerId);
+    }
+    host.execApprovalTimers.clear();
+  }
+
   host.client?.stop();
   host.client = null;
   host.connected = false;

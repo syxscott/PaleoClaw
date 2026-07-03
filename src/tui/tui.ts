@@ -923,6 +923,11 @@ export async function runTui(opts: TuiOptions) {
     isConnected = false;
     wasDisconnected = true;
     historyLoaded = false;
+    // Reset active run tracking on disconnect. Without this, a run that was
+    // in-flight would leave `activeChatRunId` set forever, blocking all
+    // subsequent runs from being recognized as active (see command-handlers).
+    state.activeChatRunId = null;
+    localRunIds.clear();
     const disconnectState = resolveGatewayDisconnectState(reason);
     setConnectionStatus(disconnectState.connectionStatus, 5000);
     setActivityStatus(disconnectState.activityStatus);

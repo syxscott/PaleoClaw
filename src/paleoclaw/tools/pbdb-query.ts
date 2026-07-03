@@ -25,7 +25,8 @@ async function pbdbQueryHandler(params: Record<string, unknown>): Promise<unknow
     }
   }
 
-  const limit = Math.max(1, Math.min(200, Number(typed.limit || 20)));
+  const parsedLimit = Number(typed.limit);
+  const limit = Math.max(1, Math.min(200, Number.isFinite(parsedLimit) ? parsedLimit : 20));
   query.set('limit', String(limit));
 
   const url = `https://paleobiodb.org/data1.2/occs/list.json?${query.toString()}`;

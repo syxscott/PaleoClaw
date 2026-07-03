@@ -456,6 +456,14 @@ export async function monitorWebInbox(options: {
   return {
     close: async () => {
       try {
+        // Flush any messages buffered in the debouncer before closing the
+        // socket, so messages that are still within their debounce window are
+        // not silently lost on disconnect.
+        await debouncer.flushAll();
+      } catch (err) {
+        logVerbose(`Debouncer flush failed: ${String(err)}`);
+      }
+      try {
         const ev = sock.ev as unknown as {
           off?: (event: string, listener: (...args: unknown[]) => void) => void;
           removeListener?: (event: string, listener: (...args: unknown[]) => void) => void;

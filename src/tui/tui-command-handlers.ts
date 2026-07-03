@@ -473,6 +473,19 @@ export function createCommandHandlers(context: CommandHandlerContext) {
     tui.requestRender();
   };
 
+  // Watchdog: if the gateway silently drops a run after sendChat() returns
+  // success without ever delivering a terminal event, clear activeChatRunId
+  // after a timeout to avoid blocking all future runs from being active.
+  // The timer lives on `state` so the event handlers can clear it when a
+  // terminal event (final/error/aborted) arrives.
+  const RUN_WATCHDOG_MS = 5 * 60 * 1000; // 5 minutes
+  const clearRunWatchdog = () => {
+    if (state.runWatchdogTimer != null) {
+      clearTimeout(state.runWatchdogTimer);
+      state.runWatchdogTimer = null;
+    }
+  };
+
   const sendMessage = async (text: string) => {
     if (!state.isConnected) {
       chatLog.addSystem("not connected to gateway — message not sent");
@@ -498,7 +511,20 @@ export function createCommandHandlers(context: CommandHandlerContext) {
       });
       setActivityStatus("waiting");
       tui.requestRender();
+      // Arm the watchdog: if no terminal event arrives within the window,
+      // clear the active run since the gateway likely dropped it silently.
+      clearRunWatchdog();
+      state.runWatchdogTimer = setTimeout(() => {
+        state.runWatchdogTimer = null;
+        if (state.activeChatRunId === runId) {
+          forgetLocalRunId?.(runId);
+          state.activeChatRunId = null;
+          setActivityStatus("idle");
+          tui.requestRender();
+        }
+      }, RUN_WATCHDOG_MS);
     } catch (err) {
+      clearRunWatchdog();
       if (state.activeChatRunId) {
         forgetLocalRunId?.(state.activeChatRunId);
       }

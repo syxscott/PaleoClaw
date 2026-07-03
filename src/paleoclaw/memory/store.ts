@@ -262,6 +262,11 @@ export class TaskMemoryStore {
 
   autoReviewToLong(taskId: string): LongTermMemory {
     const task = this.readShort(taskId);
+    // Refuse to promote a task that has not finished yet — a running task
+    // has returnCode=null / finishedAt='' and would write dirty long-term data.
+    if (task.status === 'running' || !task.finishedAt) {
+      throw new Error(`Cannot review task ${taskId}: task has not finished (status=${task.status}).`);
+    }
     const review = this.buildReview(task);
     
     const longPayload: LongTermMemory = {
@@ -300,11 +305,15 @@ export class TaskMemoryStore {
     const task = this.readShort(taskId);
     const auto = this.buildReview(task);
 
+    // NOTE: Array.filter returns [] (truthy) when all items are blank, so we
+    // must check .length explicitly instead of relying on `||` to fall back.
+    const cleanLessons = lessons?.filter(x => x.trim());
+    const cleanNext = nextActions?.filter(x => x.trim());
     const merged: ReviewData = {
       reviewedAt: utcNow(),
       summary: summary.trim() || auto.summary || '',
-      lessons: lessons?.filter(x => x.trim()) || auto.lessons || [],
-      nextActions: nextActions?.filter(x => x.trim()) || auto.nextActions || [],
+      lessons: cleanLessons && cleanLessons.length > 0 ? cleanLessons : (auto.lessons || []),
+      nextActions: cleanNext && cleanNext.length > 0 ? cleanNext : (auto.nextActions || []),
     };
 
     const longPayload: LongTermMemory = {

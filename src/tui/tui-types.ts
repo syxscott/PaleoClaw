@@ -105,5 +105,7 @@ export type TuiStateAccess = {
   connectionStatus: string;
   activityStatus: string;
   statusTimeout: ReturnType<typeof setTimeout> | null;
+  // Watchdog timer to clear activeChatRunId if gateway drops run silently.
+  runWatchdogTimer?: ReturnType<typeof setTimeout> | null;
   lastCtrlCAt: number;
 };

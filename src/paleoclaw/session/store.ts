@@ -64,8 +64,23 @@ export class SessionStore {
     }
   }
 
+  /**
+   * Resolve a sessionId to a file path. Rejects any sessionId that contains
+   * path separators or resolves outside the sessions directory to prevent
+   * path traversal attacks from crafted CLI inputs.
+   */
   private getSessionPath(sessionId: string): string {
-    return path.join(this.sessionsDir, `${sessionId}.json`);
+    const id = String(sessionId || '').trim();
+    // Reject path separators and traversal segments.
+    if (!id || id.includes('/') || id.includes('\\') || id.includes('..')) {
+      throw new Error(`Invalid sessionId: ${sessionId}`);
+    }
+    const resolved = path.join(this.sessionsDir, `${id}.json`);
+    // Belt-and-suspenders: verify the resolved path stays under sessionsDir.
+    if (!resolved.startsWith(this.sessionsDir + path.sep) && resolved !== this.sessionsDir) {
+      throw new Error(`Invalid sessionId escapes sessions directory: ${sessionId}`);
+    }
+    return resolved;
   }
 
   private readSession(sessionId: string): SessionRecord {
@@ -193,7 +208,13 @@ export class SessionStore {
     for (const file of files) {
       try {
         const content = fs.readFileSync(path.join(this.sessionsDir, file), 'utf-8');
-        sessions.push(JSON.parse(content) as SessionRecord);
+        const parsed = JSON.parse(content);
+        // Skip files that don't conform to the SessionRecord shape (e.g.
+        // stray config or backup JSON files in the sessions directory).
+        if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.messages)) {
+          continue;
+        }
+        sessions.push(parsed as SessionRecord);
       } catch {
         // skip invalid session files
       }

@@ -101,11 +101,21 @@ export function createEventHandlers(context: EventHandlerContext) {
     }
   };
 
+  // Clear the run watchdog when a terminal event arrives for any run. The timer
+  // lives on state so both command handlers and event handlers can access it.
+  const clearRunWatchdog = () => {
+    if (state.runWatchdogTimer != null) {
+      clearTimeout(state.runWatchdogTimer);
+      state.runWatchdogTimer = null;
+    }
+  };
+
   const finalizeRun = (params: {
     runId: string;
     wasActiveRun: boolean;
     status: "idle" | "error";
   }) => {
+    clearRunWatchdog();
     noteFinalizedRun(params.runId);
     clearActiveRunIfMatch(params.runId);
     if (params.wasActiveRun) {
@@ -119,6 +129,7 @@ export function createEventHandlers(context: EventHandlerContext) {
     wasActiveRun: boolean;
     status: "aborted" | "error";
   }) => {
+    clearRunWatchdog();
     streamAssembler.drop(params.runId);
     sessionRuns.delete(params.runId);
     clearActiveRunIfMatch(params.runId);

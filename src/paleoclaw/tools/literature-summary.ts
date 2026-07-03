@@ -21,7 +21,8 @@ function summaryHandler(params: Record<string, unknown>): unknown {
   const typed = params as SummaryParams;
   const title = String(typed.title || '').trim();
   const abstract = String(typed.abstract || '').trim();
-  const maxPoints = Math.max(1, Math.min(8, Number(typed.maxPoints || 4)));
+  const parsedMax = Number(typed.maxPoints);
+  const maxPoints = Math.max(1, Math.min(8, Number.isFinite(parsedMax) ? parsedMax : 4));
 
   if (!abstract) {
     throw new Error('abstract is required');

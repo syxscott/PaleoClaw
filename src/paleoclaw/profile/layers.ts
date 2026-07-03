@@ -479,8 +479,9 @@ function parseUser(markdown: string): UserProfile {
   };
 }
 
-// Profile cache
-let _PROFILE_CACHE: SessionProfile | null = null;
+// Profile cache keyed by workspace root so multi-workspace usage returns the
+// correct profile for each workspaceRoot.
+const _PROFILE_CACHE_MAP = new Map<string, SessionProfile>();
 
 export function ensureProfileLayers(workspaceRoot?: string): Record<string, string> {
   const root = workspaceRoot ? path.resolve(workspaceRoot) : process.cwd();
@@ -529,11 +530,12 @@ function resolveLayerPath(envKey: string, preferredPaths: string[]): string {
 }
 
 export function loadSessionProfile(workspaceRoot?: string, forceReload = false): SessionProfile {
-  if (_PROFILE_CACHE && !forceReload) {
-    return _PROFILE_CACHE;
-  }
-  
   const root = workspaceRoot ? path.resolve(workspaceRoot) : process.cwd();
+
+  if (_PROFILE_CACHE_MAP.has(root) && !forceReload) {
+    return _PROFILE_CACHE_MAP.get(root)!;
+  }
+
   const ensured = ensureProfileLayers(root);
   
   const soulPath = resolveLayerPath('PALEOCLAW_SOUL_PATH', [
@@ -557,16 +559,24 @@ export function loadSessionProfile(workspaceRoot?: string, forceReload = false):
     loadedAt: new Date().toISOString(),
   };
   
-  _PROFILE_CACHE = profile;
+  _PROFILE_CACHE_MAP.set(root, profile);
   return profile;
 }
 
-export function clearProfileCache(): void {
-  _PROFILE_CACHE = null;
+export function clearProfileCache(workspaceRoot?: string): void {
+  if (workspaceRoot) {
+    _PROFILE_CACHE_MAP.delete(path.resolve(workspaceRoot));
+  } else {
+    _PROFILE_CACHE_MAP.clear();
+  }
 }
 
-export function getProfileCache(): SessionProfile | null {
-  return _PROFILE_CACHE;
+export function getProfileCache(workspaceRoot?: string): SessionProfile | null {
+  if (workspaceRoot) {
+    return _PROFILE_CACHE_MAP.get(path.resolve(workspaceRoot)) ?? null;
+  }
+  // Return the first cached entry when no specific root is requested (legacy behavior).
+  return _PROFILE_CACHE_MAP.values().next().value ?? null;
 }
 
 // Context builders for different modules

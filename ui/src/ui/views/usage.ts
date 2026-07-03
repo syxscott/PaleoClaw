@@ -345,6 +345,9 @@ export function renderUsage(props: UsageProps) {
     props.onStartDateChange(formatIsoDate(start));
     props.onEndDateChange(formatIsoDate(end));
   };
+  // Tracks click-outside listeners attached to open <details> elements so they
+  // can be cleaned up on any close path (not just an outside window click).
+  const clickOutsideListeners = new Map<HTMLDetailsElement, (ev: MouseEvent) => void>();
   const renderFilterSelect = (key: string, label: string, options: string[]) => {
     if (options.length === 0) {
       return nothing;
@@ -359,6 +362,15 @@ export function renderUsage(props: UsageProps) {
         class="usage-filter-select"
         @toggle=${(e: Event) => {
           const el = e.currentTarget as HTMLDetailsElement;
+          // Always clean up any previously-attached click-outside listener for
+          // this dropdown before deciding whether to attach a new one. Without
+          // this, closing the dropdown by any path other than an outside click
+          // (e.g. clicking its summary again) leaks the listener.
+          const existing = clickOutsideListeners.get(el);
+          if (existing) {
+            window.removeEventListener("click", existing, true);
+            clickOutsideListeners.delete(el);
+          }
           if (!el.open) {
             return;
           }
@@ -366,9 +378,11 @@ export function renderUsage(props: UsageProps) {
             const path = ev.composedPath();
             if (!path.includes(el)) {
               el.open = false;
+              clickOutsideListeners.delete(el);
               window.removeEventListener("click", onClick, true);
             }
           };
+          clickOutsideListeners.set(el, onClick);
           window.addEventListener("click", onClick, true);
         }}
       >
@@ -491,6 +505,11 @@ export function renderUsage(props: UsageProps) {
             class="usage-export-menu"
             @toggle=${(e: Event) => {
               const el = e.currentTarget as HTMLDetailsElement;
+              const existing = clickOutsideListeners.get(el);
+              if (existing) {
+                window.removeEventListener("click", existing, true);
+                clickOutsideListeners.delete(el);
+              }
               if (!el.open) {
                 return;
               }
@@ -498,9 +517,11 @@ export function renderUsage(props: UsageProps) {
                 const path = ev.composedPath();
                 if (!path.includes(el)) {
                   el.open = false;
+                  clickOutsideListeners.delete(el);
                   window.removeEventListener("click", onClick, true);
                 }
               };
+              clickOutsideListeners.set(el, onClick);
               window.addEventListener("click", onClick, true);
             }}
           >

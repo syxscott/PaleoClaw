@@ -15,7 +15,7 @@ export type AutoToolPlan = {
 // but are not taxonomic names. We skip these when scanning for a taxon
 // candidate to avoid passing words like "Use", "Find", "Show" to PBDB.
 const TAXON_STOPWORDS = new Set([
-  'Use', 'Find', 'Show', 'List', 'Get', 'Query', 'Search', 'Look', 'Look',
+  'Use', 'Find', 'Show', 'List', 'Get', 'Query', 'Search', 'Look', 'Looks',
   'Check', 'Give', 'Tell', 'What', 'Which', 'Where', 'When', 'Who', 'How',
   'I', 'We', 'You', 'They', 'The', 'This', 'That', 'These', 'Those',
   'A', 'An', 'And', 'Or', 'But', 'For', 'With', 'Without', 'From', 'Into',
@@ -43,7 +43,10 @@ const GEOLOGICAL_PERIODS = new Set([
 // capital-letter-with-2+lowercase minimum length. We require EITHER a
 // recognized suffix OR a length >= 6 to accept a candidate, which filters out
 // most common English words like "Use" / "Find".
-const TAXON_SUFFIX_RE = /(idae|inae|aceae|opsida|phyta|mycota|formes|us|a|um|ia|yx|is|os|er|ix)$/i;
+// Only match legitimate multi-character taxonomic suffixes preceded by a stem
+// of at least 3 letters. Removed short 1-2 char alternations (us/is/os/a/
+// er/ix/um/ia/yx) which caused false positives on common English words.
+const TAXON_SUFFIX_RE = /[a-z]{3,}(idae|inae|aceae|opsida|phyta|mycota|formes|oidea|aceae|omorpha)$/i;
 
 function isLikelyTaxon(word: string): boolean {
   if (!word) return false;
@@ -100,9 +103,12 @@ export function resolveAutoToolPlan(prompt: string): AutoToolPlan[] {
 }
 
 function summarizePbdb(data: unknown): string {
-  const typed = data as { count?: number; records?: Array<Record<string, unknown>> };
+  const typed = data as { count?: number; records?: Array<Record<string, unknown> | null> };
   const count = Number(typed?.count || 0);
+  // PBDB sometimes returns records entries as null — guard against it before
+  // accessing row fields.
   const names = (typed?.records || [])
+    .filter((row): row is Record<string, unknown> => row != null)
     .slice(0, 3)
     .map((row) => String(row.tna || row.taxon_name || '').trim())
     .filter(Boolean);

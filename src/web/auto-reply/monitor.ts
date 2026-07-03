@@ -256,9 +256,15 @@ export async function monitorWebChannel(
       if (watchdogTimer) {
         clearInterval(watchdogTimer);
       }
-      if (backgroundTasks.size > 0) {
-        await Promise.allSettled(backgroundTasks);
-        backgroundTasks.clear();
+      // Loop until no background tasks remain. A task may spawn additional
+      // async work into `backgroundTasks` after our snapshot, so a single
+      // `Promise.allSettled` could orphan those follow-up tasks.
+      while (backgroundTasks.size > 0) {
+        const snapshot = [...backgroundTasks];
+        await Promise.allSettled(snapshot);
+        for (const task of snapshot) {
+          backgroundTasks.delete(task);
+        }
       }
       try {
         await listener.close();

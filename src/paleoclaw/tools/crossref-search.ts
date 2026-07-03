@@ -16,7 +16,8 @@ async function crossrefSearchHandler(params: Record<string, unknown>): Promise<u
     throw new Error('query is required');
   }
 
-  const rows = Math.max(1, Math.min(50, Number(typed.rows || 10)));
+  const parsedRows = Number(typed.rows);
+  const rows = Math.max(1, Math.min(50, Number.isFinite(parsedRows) ? parsedRows : 10));
   const api = new URL('https://api.crossref.org/works');
   api.searchParams.set('query', query);
   api.searchParams.set('rows', String(rows));

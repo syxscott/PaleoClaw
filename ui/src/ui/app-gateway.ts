@@ -381,9 +381,12 @@ function handleGatewayEventUnsafe(host: GatewayHost, evt: GatewayEventFrame) {
       host.execApprovalQueue = addExecApproval(host.execApprovalQueue, entry);
       host.execApprovalError = null;
       const delay = Math.max(0, entry.expiresAtMs - Date.now() + 500);
-      window.setTimeout(() => {
+      const timerId = window.setTimeout(() => {
+        host.execApprovalTimers?.delete(entry.id);
         host.execApprovalQueue = removeExecApproval(host.execApprovalQueue, entry.id);
       }, delay);
+      // Track the timer so handleDisconnected can clear pending expiries.
+      host.execApprovalTimers?.set(entry.id, timerId);
     }
     return;
   }
@@ -391,6 +394,7 @@ function handleGatewayEventUnsafe(host: GatewayHost, evt: GatewayEventFrame) {
   if (evt.event === "exec.approval.resolved") {
     const resolved = parseExecApprovalResolved(evt.payload);
     if (resolved) {
+      host.execApprovalTimers?.delete(resolved.id);
       host.execApprovalQueue = removeExecApproval(host.execApprovalQueue, resolved.id);
     }
     return;

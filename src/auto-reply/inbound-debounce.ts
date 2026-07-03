@@ -94,6 +94,11 @@ export function createInboundDebouncer<T>(params: InboundDebounceCreateParams<T>
     buffer.timeout.unref?.();
   };
 
+  const flushAll = async () => {
+    const keys = [...buffers.keys()];
+    await Promise.all(keys.map((key) => flushKey(key)));
+  };
+
   const enqueue = async (item: T) => {
     const key = params.buildKey(item);
     const debounceMs = resolveDebounceMs(item);
@@ -124,5 +129,5 @@ export function createInboundDebouncer<T>(params: InboundDebounceCreateParams<T>
     scheduleFlush(key, buffer);
   };
 
-  return { enqueue, flushKey };
+  return { enqueue, flushKey, flushAll };
 }

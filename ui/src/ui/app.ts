@@ -130,8 +130,11 @@ export class OpenClawApp extends LitElement {
   @state() lastErrorCode: string | null = null;
   @state() eventLog: EventLogEntry[] = [];
   private eventLogBuffer: EventLogEntry[] = [];
-  private toolStreamSyncTimer: number | null = null;
-  private sidebarCloseTimer: number | null = null;
+  // Timer handles — marked public so handleDisconnected() can clear them on
+  // disconnect (prevents leaks + stale state mutations on detached elements).
+  toolStreamSyncTimer: number | null = null;
+  sidebarCloseTimer: number | null = null;
+  execApprovalTimers: Map<string, number> = new Map();
 
   @state() assistantName = bootAssistantIdentity.name;
   @state() assistantAvatar = bootAssistantIdentity.avatar;

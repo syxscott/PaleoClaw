@@ -4,18 +4,22 @@
 
 import { toolRegistry } from './registry.js';
 
-let loaded = false;
+// Guard against concurrent callers: a shared "in-flight" promise ensures the
+// second caller awaits the first's imports instead of duplicating them.
+let loading: Promise<void> | null = null;
 
 export async function loadBuiltinTools(): Promise<void> {
-  if (loaded) {
-    return;
+  if (loading) {
+    return loading;
   }
 
-  await import('./pbdb-query.js');
-  await import('./crossref-search.js');
-  await import('./literature-summary.js');
+  loading = (async () => {
+    await import('./pbdb-query.js');
+    await import('./crossref-search.js');
+    await import('./literature-summary.js');
+  })();
 
-  loaded = true;
+  return loading;
 }
 
 export async function discoverTools() {

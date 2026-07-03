@@ -1,5 +1,8 @@
 import { normalizeE164 } from "../../../utils.js";
 
+/** Maximum number of group keys to retain in groupMemberNames (LRU eviction). */
+const MAX_GROUP_MEMBER_KEYS = 1000;
+
 function appendNormalizedUnique(entries: Iterable<string>, seen: Set<string>, ordered: string[]) {
   for (const entry of entries) {
     const normalized = normalizeE164(entry) ?? entry;
@@ -29,6 +32,18 @@ export function noteGroupMember(
   if (!roster) {
     roster = new Map();
     groupMemberNames.set(conversationId, roster);
+    // Evict oldest group keys when the map exceeds the cap to prevent
+    // unbounded memory growth across many distinct groups.
+    if (groupMemberNames.size > MAX_GROUP_MEMBER_KEYS) {
+      const keysToDelete = groupMemberNames.size - MAX_GROUP_MEMBER_KEYS;
+      const iterator = groupMemberNames.keys();
+      for (let i = 0; i < keysToDelete; i++) {
+        const oldKey = iterator.next().value;
+        if (oldKey !== undefined && oldKey !== conversationId) {
+          groupMemberNames.delete(oldKey);
+        }
+      }
+    }
   }
   roster.set(key, name);
 }

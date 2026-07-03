@@ -285,7 +285,14 @@ export function handleChatEvent(state: ChatState, payload?: ChatEventPayload) {
     const next = extractText(payload.message);
     if (typeof next === "string" && !isSilentReplyStream(next)) {
       const current = state.chatStream ?? "";
-      if (!current || next.length >= current.length) {
+      // Accept the new delta if:
+      //  - no accumulated text yet, OR
+      //  - the new text is at least as long as current (normal stream growth), OR
+      //  - the new text is a prefix of current (server legitimately shortened
+      //    the output — e.g. stripping thinking tags, NO_REPLY filtering).
+      // This prevents stale out-of-order deltas from overriding newer text
+      // while allowing the server to clean up intermediate output.
+      if (!current || next.length >= current.length || current.startsWith(next)) {
         state.chatStream = next;
       }
     }
