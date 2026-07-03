@@ -5,9 +5,9 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import * as os from 'os';
 import { bestMatches, SearchItem } from './retrieval';
 import { SessionProfile, loadSessionProfile, memoryContext } from '../profile/layers';
+import { paleoclawHome, atomicWriteFile } from '../paths';
 
 // Task memory interfaces
 export interface TaskMemory {
@@ -66,10 +66,15 @@ function utcNow(): string {
   return new Date().toISOString();
 }
 
+// Monotonic counter eliminates same-millisecond collisions that would
+// otherwise cause writeShort to silently overwrite an existing task.
+let _taskCounter = 0;
+
 function generateTaskId(): string {
-  const stamp = new Date().toISOString().replace(/[-:]/g, '').slice(0, 15);
-  const random = Math.random().toString(36).substring(2, 10);
-  return `${stamp}-${random}`;
+  const stamp = Date.now().toString(36); // millisecond precision
+  const rand = Math.random().toString(36).substring(2, 8);
+  const seq = (_taskCounter++).toString(36);
+  return `${stamp}-${seq}-${rand}`;
 }
 
 export class TaskMemoryStore {
@@ -127,7 +132,7 @@ export class TaskMemoryStore {
 
   private writeShort(taskId: string, payload: TaskMemory): void {
     const filePath = this.shortPath(taskId);
-    fs.writeFileSync(filePath, JSON.stringify(payload, null, 2), 'utf-8');
+    atomicWriteFile(filePath, JSON.stringify(payload, null, 2));
   }
 
   private buildReview(task: TaskMemory): ReviewData {
@@ -203,8 +208,8 @@ export class TaskMemoryStore {
     if (snapshot && typeof snapshot === 'object') {
       parts.push(String(snapshot.userRole || ''));
       parts.push(String(snapshot.preferredTone || ''));
-      parts.push(...(snapshot.reproducibilityExpectations as string[] || []));
-      parts.push(...(snapshot.truthfulnessRules as string[] || []));
+      parts.push(...((snapshot.reproducibilityExpectations as string[]) || []));
+      parts.push(...((snapshot.truthfulnessRules as string[]) || []));
     }
 
     return parts.filter(x => x && x.trim()).join('\n');
@@ -303,6 +308,14 @@ export class TaskMemoryStore {
     nextActions?: string[]
   ): LongTermMemory {
     const task = this.readShort(taskId);
+    // Refuse to promote a task that has not finished yet.
+    if (task.status === 'running' || !task.finishedAt) {
+      throw new Error(`Cannot review task ${taskId}: task has not finished (status=${task.status}).`);
+    }
+    // Guard against double-promotion producing duplicate long-term records.
+    if (task.promoted) {
+      throw new Error(`Task ${taskId} has already been promoted to long-term memory.`);
+    }
     const auto = this.buildReview(task);
 
     // NOTE: Array.filter returns [] (truthy) when all items are blank, so we
@@ -350,27 +363,26 @@ export class TaskMemoryStore {
     const rows: TaskMemory[] = [];
     
     const files = fs.readdirSync(this.shortDir)
-      .filter(f => f.endsWith('.json'))
-      .sort()
-      .reverse();
+      .filter(f => f.endsWith('.json'));
 
     for (const file of files) {
       try {
         const content = fs.readFileSync(path.join(this.shortDir, file), 'utf-8');
         const payload = JSON.parse(content) as TaskMemory;
-        
-        if (status && payload.status !== status) {
-          continue;
-        }
-        
         rows.push(payload);
-        if (rows.length >= limit) break;
       } catch {
         // Skip invalid files
       }
     }
 
-    return rows;
+    // Sort by updatedAt descending — filename sort is unreliable across
+    // process restarts because the per-process counter resets.
+    rows.sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''));
+
+    if (status) {
+      return rows.filter(r => r.status === status).slice(0, limit);
+    }
+    return rows.slice(0, limit);
   }
 
   listLong(options: { limit?: number } = {}): LongTermMemory[] {

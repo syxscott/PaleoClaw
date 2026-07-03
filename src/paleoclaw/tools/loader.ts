@@ -17,7 +17,12 @@ export async function loadBuiltinTools(): Promise<void> {
     await import('./pbdb-query.js');
     await import('./crossref-search.js');
     await import('./literature-summary.js');
-  })();
+  })().catch((err) => {
+    // Reset so the next caller can retry instead of awaiting a permanently
+    // rejected promise (which would brick tool loading for the process).
+    loading = null;
+    throw err;
+  });
 
   return loading;
 }

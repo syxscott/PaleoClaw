@@ -5,7 +5,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import * as os from 'os';
+import { paleoclawHome } from '../paths';
 
 // Default templates
 export const DEFAULT_SOUL_TEMPLATE = `# PaleoClaw Soul
@@ -234,11 +234,6 @@ export interface SessionProfile {
 }
 
 // Helper functions
-function paleoclawHome(): string {
-  const home = process.env.PALEOCLAW_HOME || path.join(os.homedir(), '.paleoclaw');
-  return home;
-}
-
 function readTextOrDefault(filePath: string, fallback: string): string {
   try {
     if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
@@ -336,8 +331,9 @@ function sectionItems(sections: Record<string, string>, ...aliases: string[]): s
       }
     }
 
-    // Plain text lines
-    if (trimmed.length > 2) {
+    // Plain text lines — accept any non-empty line (length > 0, not > 2
+    // which silently dropped valid short values like "Yes", "50", "N/A").
+    if (trimmed.length > 0) {
       items.push(trimmed);
     }
   }

@@ -112,23 +112,22 @@ export class MemoryManager {
   }
 
   async prefetchAll(userMessage: string): Promise<string> {
-    const chunks: string[] = [];
-
-    for (const provider of this.providers) {
-      if (!provider.prefetch) {
-        continue;
-      }
-      try {
-        const content = await Promise.resolve(provider.prefetch(userMessage));
-        if (content && content.trim()) {
-          chunks.push(`[${provider.name}]\n${content.trim()}`);
+    // Run all providers in parallel — they are independent I/O-bound calls
+    // with no shared state.
+    const results = await Promise.all(
+      this.providers.map(async (provider) => {
+        if (!provider.prefetch) return '';
+        try {
+          const content = await Promise.resolve(provider.prefetch(userMessage));
+          return content?.trim() ? `[${provider.name}]\n${content.trim()}` : '';
+        } catch {
+          // provider failure should not break request path
+          return '';
         }
-      } catch {
-        // provider failure should not break request path
-      }
-    }
+      })
+    );
 
-    return buildMemoryContextBlock(chunks.join('\n\n'));
+    return buildMemoryContextBlock(results.filter(Boolean).join('\n\n'));
   }
 
   async syncAll(userMessage: string, assistantResponse: string): Promise<void> {

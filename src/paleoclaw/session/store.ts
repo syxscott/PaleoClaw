@@ -3,22 +3,19 @@
  */
 
 import * as fs from 'fs';
-import * as os from 'os';
-import * as path from 'path';
+import { randomBytes } from 'crypto';
 import { SessionMessage, SessionRecord, SessionRole, SessionSearchHit } from './types.js';
-
-function paleoclawHome(): string {
-  return process.env.PALEOCLAW_HOME || path.join(os.homedir(), '.paleoclaw');
-}
+import { paleoclawHome, atomicWriteFile } from '../paths';
 
 function nowIso(): string {
   return new Date().toISOString();
 }
 
+// Use crypto.randomBytes for collision-resistant IDs instead of Math.random().
 function makeId(prefix: string): string {
-  const stamp = new Date().toISOString().replace(/[-:.TZ]/g, '').slice(0, 14);
-  const random = Math.random().toString(36).slice(2, 8);
-  return `${prefix}_${stamp}_${random}`;
+  const stamp = Date.now().toString(36); // millisecond precision
+  const randBytes = randomBytes(4).toString('hex').slice(0, 8);
+  return `${prefix}_${stamp}_${randBytes}`;
 }
 
 function normalizeTitle(title?: string): string {
@@ -94,7 +91,7 @@ export class SessionStore {
 
   private writeSession(record: SessionRecord): void {
     const file = this.getSessionPath(record.id);
-    fs.writeFileSync(file, JSON.stringify(record, null, 2), 'utf-8');
+    atomicWriteFile(file, JSON.stringify(record, null, 2));
   }
 
   upsertSession(sessionId: string, title?: string, tags: string[] = []): SessionRecord {
@@ -257,9 +254,14 @@ export class SessionStore {
   }
 
   getStatus(): { root: string; count: number } {
+    // Count .json files directly — no need to parse all session records just
+    // to report a count.
+    const count = fs.readdirSync(this.sessionsDir)
+      .filter((name) => name.endsWith('.json'))
+      .length;
     return {
       root: this.sessionsDir,
-      count: this.listSessions(100_000).length,
+      count,
     };
   }
 }

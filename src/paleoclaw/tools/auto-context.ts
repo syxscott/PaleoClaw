@@ -90,10 +90,20 @@ export function resolveAutoToolPlan(prompt: string): AutoToolPlan[] {
   }
 
   if (asksLiterature) {
+    // Slice at the last whitespace boundary before MAX_QUERY_LEN so we don't
+    // break a mid-word, which degrades CrossRef search quality.
+    const MAX_QUERY_LEN = 200;
+    let query = prompt.slice(0, MAX_QUERY_LEN);
+    if (prompt.length > MAX_QUERY_LEN) {
+      const lastSpace = query.lastIndexOf(' ');
+      if (lastSpace > MAX_QUERY_LEN * 0.5) {
+        query = query.slice(0, lastSpace);
+      }
+    }
     plans.push({
       tool: 'crossref_search',
       params: {
-        query: prompt.slice(0, 200),
+        query: query.trim(),
         rows: 5,
       },
     });
@@ -148,12 +158,19 @@ export async function buildAutoToolsContext(prompt: string): Promise<string> {
 
   await loadBuiltinTools();
 
+  // Execute all planned tools in parallel — they are independent network calls
+  // with no shared state. This caps combined latency at the slowest tool
+  // instead of the sum of all tools.
+  const results = await Promise.all(
+    plans.map(async (plan) => {
+      const result = await toolRegistry.execute(plan.tool, plan.params);
+      return { plan, result };
+    })
+  );
+
   const lines: string[] = [];
-  for (const plan of plans) {
-    const result = await toolRegistry.execute(plan.tool, plan.params);
-    if (!result.ok) {
-      continue;
-    }
+  for (const { plan, result } of results) {
+    if (!result.ok) continue;
     lines.push(summarizeResult(plan.tool, result.data));
   }
 
