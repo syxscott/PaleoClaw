@@ -189,8 +189,17 @@ function mergeWithExistingProviderSecrets(params: {
       continue;
     }
     const preserved: Record<string, unknown> = {};
+    // Only preserve the old literal apiKey when the new (normalized) entry does
+    // NOT already carry a cleaner env-var-ref / marker form. Otherwise we'd
+    // write the stale literal token back and defeat the env-var normalization.
+    const newEntryApiKey = (newEntry as { apiKey?: unknown }).apiKey;
+    const newEntryHasEnvRefApiKey =
+      typeof newEntryApiKey === "string" &&
+      newEntryApiKey.trim().length > 0 &&
+      isNonSecretApiKeyMarker(newEntryApiKey, { includeEnvVarName: true });
     if (
       !secretRefManagedProviders.has(key) &&
+      !newEntryHasEnvRefApiKey &&
       typeof existing.apiKey === "string" &&
       existing.apiKey &&
       !isNonSecretApiKeyMarker(existing.apiKey, { includeEnvVarName: false })
@@ -341,6 +350,15 @@ export async function ensureOpenClawModelsJson(
     await fs.mkdir(agentDir, { recursive: true, mode: 0o700 });
     await fs.writeFile(targetPath, next, { mode: 0o600 });
     await ensureModelsFileMode(targetPath);
+    // Invalidate the model catalog cache so newly written providers/models are
+    // visible without a process restart. Dynamic import avoids a static import
+    // cycle (model-catalog imports this module).
+    try {
+      const { invalidateModelCatalogCache } = await import("./model-catalog.js");
+      invalidateModelCatalogCache();
+    } catch {
+      // best-effort — cache will refresh on next natural expiry / restart
+    }
     return { agentDir, wrote: true };
   });
 }

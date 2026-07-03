@@ -81,6 +81,11 @@ export function resolveProfilesUnavailableReason(params: {
   };
 
   for (const profileId of params.profileIds) {
+    // Skip providers whose cooldown is bypassed (e.g. openrouter, kilocode) —
+    // their cooldown state must not influence the inferred unavailable reason.
+    if (isAuthCooldownBypassedForProvider(params.store.profiles[profileId]?.provider)) {
+      continue;
+    }
     const stats = params.store.usageStats?.[profileId];
     if (!stats) {
       continue;
@@ -146,6 +151,9 @@ export function getSoonestCooldownExpiry(
 ): number | null {
   let soonest: number | null = null;
   for (const id of profileIds) {
+    if (isAuthCooldownBypassedForProvider(store.profiles[id]?.provider)) {
+      continue;
+    }
     const stats = store.usageStats?.[id];
     if (!stats) {
       continue;

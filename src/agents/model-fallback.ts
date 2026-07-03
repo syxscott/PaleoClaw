@@ -342,6 +342,23 @@ const lastProbeAttempt = new Map<string, number>();
 const MIN_PROBE_INTERVAL_MS = 30_000; // 30 seconds between probes per key
 const PROBE_MARGIN_MS = 2 * 60 * 1000;
 const PROBE_SCOPE_DELIMITER = "::";
+// Bound the probe-throttle map so long-running processes accumulating many
+// distinct (agentDir, provider) keys don't leak memory unbounded.
+const MAX_PROBE_KEYS = 500;
+
+function markProbeAttempt(key: string, now: number): void {
+  // Refresh insertion order for LRU semantics.
+  if (lastProbeAttempt.has(key)) {
+    lastProbeAttempt.delete(key);
+  }
+  lastProbeAttempt.set(key, now);
+  if (lastProbeAttempt.size > MAX_PROBE_KEYS) {
+    const oldest = lastProbeAttempt.keys().next().value;
+    if (oldest !== undefined) {
+      lastProbeAttempt.delete(oldest);
+    }
+  }
+}
 
 function resolveProbeThrottleKey(provider: string, agentDir?: string): string {
   const scope = String(agentDir ?? "").trim();
@@ -516,7 +533,7 @@ export async function runWithModelFallback<T>(params: {
         }
 
         if (decision.markProbe) {
-          lastProbeAttempt.set(probeThrottleKey, now);
+          markProbeAttempt(probeThrottleKey, now);
         }
         if (decision.reason === "rate_limit" || decision.reason === "overloaded") {
           runOptions = { allowTransientCooldownProbe: true };

@@ -118,7 +118,9 @@ function normalizeAnthropicModelId(model: string): string {
   if (!trimmed) {
     return trimmed;
   }
-  const lower = trimmed.toLowerCase();
+  // Collapse internal whitespace to hyphens and lowercase so aliases like
+  // "Opus 4.5" / "opus  4.5" resolve to the "opus-4.5" alias-map key.
+  const lower = trimmed.toLowerCase().replace(/\s+/g, "-");
   return ANTHROPIC_MODEL_ALIASES[lower] ?? trimmed;
 }
 
@@ -475,15 +477,15 @@ export function buildAllowedModelSet(params: {
     ...syntheticCatalogEntries.values(),
   ];
 
-  if (allowedCatalog.length === 0 && allowedKeys.size === 0) {
-    if (defaultKey) {
-      catalogKeys.add(defaultKey);
-    }
-    return {
-      allowAny: true,
-      allowedCatalog: params.catalog,
-      allowedKeys: catalogKeys,
-    };
+  // If the user configured an allowlist but NONE of the entries could be
+  // parsed, do NOT silently fall back to allowAny — that would defeat the
+  // access control the user asked for. Warn and keep the (possibly
+  // default-only) restrictive set instead.
+  if (allowedKeys.size === 0) {
+    log.warn(
+      `Model allowlist has ${rawAllowlist.length} entr${rawAllowlist.length === 1 ? "y" : "ies"} but none could be parsed. ` +
+        `No models will be allowed. Check agents.defaults.models keys (expected "provider/model" format).`,
+    );
   }
 
   return { allowAny: false, allowedCatalog, allowedKeys };
