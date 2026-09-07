@@ -1,6 +1,8 @@
-﻿import { resetToolStream } from "../app-tool-stream.ts";
+﻿import { parseAgentSessionKey } from "../../../../src/sessions/session-key-utils.js";
+import { resetToolStream } from "../app-tool-stream.ts";
 import { extractText } from "../chat/message-extract.ts";
 import type { GatewayBrowserClient } from "../gateway.ts";
+import { clearDraft, loadDraft, saveDraft } from "../lib/draft-store.ts";
 import type { ChatAttachment } from "../ui-types.ts";
 import { generateUUID } from "../uuid.ts";
 
@@ -41,6 +43,13 @@ export type ChatState = {
   chatStream: string | null;
   chatStreamStartedAt: number | null;
   lastError: string | null;
+  /**
+   * Last send that failed at the gateway layer (see sendChatMessage). Exposed
+   * so the view can offer a retry affordance; cleared on any successful send
+   * or when retryLastFailedSend() succeeds. Optional because existing hosts
+   * (OpenClawApp) predate this field — treat falsy as "nothing pending".
+   */
+  lastFailedSend?: { text: string; at: number } | null;
 };
 
 export type ChatEventPayload = {
@@ -63,7 +72,134 @@ function maybeResetToolStream(state: ChatState) {
   }
 }
 
+/* ------------------------------------------------------------------ */
+/*  Composer drafts (IndexedDB, see lib/draft-store.ts)                */
+/* ------------------------------------------------------------------ */
+
+const COMPOSER_DRAFT_DEBOUNCE_MS = 400;
+/** Sampling interval for the draft-sync bridge (see startComposerDraftSync). */
+const COMPOSER_DRAFT_SYNC_INTERVAL_MS = 300;
+
+/** Composite key `<agentScope>|<sessionKey>` — matches lib/draft-store.ts docs. */
+function composerDraftKey(state: Pick<ChatState, "sessionKey">): string {
+  const agentScope = parseAgentSessionKey(state.sessionKey)?.agentId ?? "main";
+  return `${agentScope}|${state.sessionKey}`;
+}
+
+const draftSaveTimers = new Map<string, number>();
+
+function cancelScheduledDraftSave(key: string) {
+  const timer = draftSaveTimers.get(key);
+  if (timer !== undefined) {
+    window.clearTimeout(timer);
+    draftSaveTimers.delete(key);
+  }
+}
+
+/** Debounced (~400ms) draft write; empty text removes the stored draft. */
+function scheduleComposerDraftSave(state: ChatState, text: string) {
+  const key = composerDraftKey(state);
+  cancelScheduledDraftSave(key);
+  draftSaveTimers.set(
+    key,
+    window.setTimeout(() => {
+      draftSaveTimers.delete(key);
+      // The captured key/text pair is historically accurate even if the user
+      // switched sessions in the meantime: the text was typed in `key`'s
+      // session, so it belongs there.
+      if (text.trim()) {
+        void saveDraft(key, text).catch(() => undefined);
+      } else {
+        void clearDraft(key).catch(() => undefined);
+      }
+    }, COMPOSER_DRAFT_DEBOUNCE_MS),
+  );
+}
+
+/**
+ * Loads the persisted draft for the current session into the composer. Never
+ * clobbers live typing and never throws — drafts are best-effort.
+ */
+export async function restoreComposerDraft(state: ChatState): Promise<void> {
+  const key = composerDraftKey(state);
+  try {
+    const draft = await loadDraft(key);
+    if (composerDraftKey(state) !== key) {
+      return; // Session switched mid-load.
+    }
+    if (state.chatMessage.trim()) {
+      return; // The user typed while the load was in flight — keep theirs.
+    }
+    if (draft) {
+      state.chatMessage = draft;
+    }
+  } catch {
+    // loadDraft is rejection-safe; this guard is defense in depth.
+  }
+}
+
+function clearComposerDraft(state: ChatState) {
+  const key = composerDraftKey(state);
+  cancelScheduledDraftSave(key);
+  void clearDraft(key).catch(() => undefined);
+}
+
+/**
+ * Call from the composer's change handler to persist the draft on input.
+ * View integration point: app-render.ts passes
+ * `onDraftChange: (next) => (state.chatMessage = next)` to renderChat — route
+ * that through this helper (or rely on startComposerDraftSync's sampler).
+ */
+export function handleComposerInput(state: ChatState, text: string) {
+  state.chatMessage = text;
+  scheduleComposerDraftSave(state, text);
+}
+
+// Draft-sync bridge: the composer input handler lives in the view layer
+// (app-render.ts onDraftChange), which this controller cannot reach statically.
+// A low-frequency sampler watches chatMessage for changes and schedules the
+// same debounced saves, so drafts work without touching the view. WeakRefs
+// keep the registry free of leaks; hosts disappear when the page does.
+const draftSyncWatchers = new Set<WeakRef<ChatState>>();
+const draftSyncLastSeen = new WeakMap<ChatState, string>();
+let draftSyncTimer: number | null = null;
+
+function startComposerDraftSync(state: ChatState) {
+  if (draftSyncLastSeen.has(state)) {
+    return;
+  }
+  draftSyncLastSeen.set(state, state.chatMessage);
+  draftSyncWatchers.add(new WeakRef(state));
+  if (draftSyncTimer !== null) {
+    return;
+  }
+  draftSyncTimer = window.setInterval(() => {
+    try {
+      for (const ref of draftSyncWatchers) {
+        const watched = ref.deref();
+        if (!watched) {
+          draftSyncWatchers.delete(ref);
+          continue;
+        }
+        const lastSeen = draftSyncLastSeen.get(watched);
+        if (watched.chatMessage === lastSeen) {
+          continue;
+        }
+        draftSyncLastSeen.set(watched, watched.chatMessage);
+        scheduleComposerDraftSave(watched, watched.chatMessage);
+      }
+    } catch {
+      // The sampler must never throw into the interval handler.
+    }
+  }, COMPOSER_DRAFT_SYNC_INTERVAL_MS);
+}
+
 export async function loadChatHistory(state: ChatState) {
+  // Restore the persisted composer draft for this session (if any). Runs even
+  // while disconnected — drafts are local IndexedDB, unlike chat history —
+  // and covers chat init plus every session-switch path.
+  startComposerDraftSync(state);
+  void restoreComposerDraft(state);
   if (!state.client || !state.connected) {
     return;
   }
@@ -221,6 +357,9 @@ export async function sendChatMessage(
       idempotencyKey: runId,
       attachments: apiAttachments,
     });
+    state.lastFailedSend = null;
+    // The send went through, so the persisted draft is consumed.
+    clearComposerDraft(state);
     return runId;
   } catch (err) {
     const error = String(err);
@@ -228,18 +367,43 @@ export async function sendChatMessage(
     state.chatStream = null;
     state.chatStreamStartedAt = null;
     state.lastError = error;
+    // Remember the failed payload so the view can offer a one-click retry
+    // (retryLastFailedSend below). View integration point: app-render.ts's
+    // renderChat call already forwards state fields to views/chat.ts — pass
+    // state.lastFailedSend as a prop (like showNewMessages) and render a
+    // "Retry" affordance on the error bubble / next to the composer.
+    state.lastFailedSend = { text: msg, at: now };
     state.chatMessages = [
       ...state.chatMessages,
       {
         role: "assistant",
         content: [{ type: "text", text: "Error: " + error }],
         timestamp: Date.now(),
+        // Affordance marker for the view: this bubble is a send failure that
+        // can be retried via retryLastFailedSend() while lastFailedSend is set.
+        sendFailedRetryable: true,
       },
     ];
     return null;
   } finally {
     state.chatSending = false;
   }
+}
+
+/**
+ * Re-sends the payload stored on state.lastFailedSend and clears it on
+ * success. No-op when nothing is pending or the client is disconnected.
+ */
+export async function retryLastFailedSend(state: ChatState): Promise<string | null> {
+  const failed = state.lastFailedSend;
+  if (!failed) {
+    return null;
+  }
+  const runId = await sendChatMessage(state, failed.text);
+  if (runId) {
+    state.lastFailedSend = null;
+  }
+  return runId;
 }
 
 export async function abortChatRun(state: ChatState): Promise<boolean> {
@@ -286,13 +450,18 @@ export function handleChatEvent(state: ChatState, payload?: ChatEventPayload) {
     if (typeof next === "string" && !isSilentReplyStream(next)) {
       const current = state.chatStream ?? "";
       // Accept the new delta if:
+      //  - it is non-empty (an empty delta must never wipe accumulated text —
+      //    current.startsWith("") would otherwise always match), AND
       //  - no accumulated text yet, OR
       //  - the new text is at least as long as current (normal stream growth), OR
       //  - the new text is a prefix of current (server legitimately shortened
       //    the output — e.g. stripping thinking tags, NO_REPLY filtering).
       // This prevents stale out-of-order deltas from overriding newer text
       // while allowing the server to clean up intermediate output.
-      if (!current || next.length >= current.length || current.startsWith(next)) {
+      if (
+        next.length > 0 &&
+        (!current || next.length >= current.length || current.startsWith(next))
+      ) {
         state.chatStream = next;
       }
     }

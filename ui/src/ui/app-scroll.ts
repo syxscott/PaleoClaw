@@ -1,6 +1,9 @@
 ﻿/** Distance (px) from the bottom within which we consider the user "near bottom". */
 const NEAR_BOTTOM_THRESHOLD = 450;
 
+/** Per-session scroll memory: remember at most this many sessions (LRU). */
+const SCROLL_MEMORY_LIMIT = 50;
+
 type ScrollHost = {
   updateComplete: Promise<unknown>;
   querySelector: (selectors: string) => Element | null;
@@ -13,9 +16,138 @@ type ScrollHost = {
   logsScrollFrame: number | null;
   logsAtBottom: boolean;
   topbarObserver: ResizeObserver | null;
+  /** Current chat session key. Present on the app host; test stubs may omit it. */
+  sessionKey?: string;
 };
 
+/*
+ * Per-session scroll memory + "new messages below" pill.
+ *
+ * - `scrollMemory` is an LRU of the last scrollTop per session key. The
+ *   outgoing session's position is committed when a switch is detected
+ *   (resetChatScroll / scheduleChatScroll compare host.sessionKey against the
+ *   tracker) and restored for the incoming session after render
+ *   (requestAnimationFrame) via consumePendingChatRestore.
+ * - `chatNewMessagesBelow` (existing host state) is the pill channel: when a
+ *   message arrives while the user is scrolled beyond the near-bottom
+ *   threshold, scheduleChatScroll sets it, and the view renders it as the
+ *   "New messages" pill (views/chat.ts `showNewMessages`, fed from
+ *   app-render.ts). app-scroll only sets/clears the flag — unchanged.
+ */
+const scrollMemory = new Map<string, number>();
+const sessionTracker = new WeakMap<ScrollHost, { key: string; scrollTop: number }>();
+const pendingRestores = new WeakMap<ScrollHost, string>();
+/** Timestamp of the last restore, to keep it from flagging the pill below. */
+const chatRestoreJustAppliedAt = new WeakMap<ScrollHost, number>();
+const RESTORE_PILL_SUPPRESS_MS = 300;
+
+function wasRecentlyRestored(host: ScrollHost): boolean {
+  const at = chatRestoreJustAppliedAt.get(host);
+  return at !== undefined && Date.now() - at < RESTORE_PILL_SUPPRESS_MS;
+}
+
+function pickChatScrollTarget(host: ScrollHost): HTMLElement | null {
+  const container = host.querySelector(".chat-thread") as HTMLElement | null;
+  if (container) {
+    const overflowY = getComputedStyle(container).overflowY;
+    const canScroll =
+      overflowY === "auto" ||
+      overflowY === "scroll" ||
+      container.scrollHeight - container.clientHeight > 1;
+    if (canScroll) {
+      return container;
+    }
+  }
+  return (document.scrollingElement ?? document.documentElement) as HTMLElement | null;
+}
+
+function commitScrollPosition(key: string, scrollTop: number) {
+  if (!Number.isFinite(scrollTop) || scrollTop <= 0) {
+    scrollMemory.delete(key);
+    return;
+  }
+  // Re-insert to refresh LRU order, then evict the oldest entry over the cap.
+  scrollMemory.delete(key);
+  scrollMemory.set(key, Math.floor(scrollTop));
+  while (scrollMemory.size > SCROLL_MEMORY_LIMIT) {
+    const oldest = scrollMemory.keys().next().value;
+    if (oldest === undefined) {
+      break;
+    }
+    scrollMemory.delete(oldest);
+  }
+}
+
+/**
+ * Detects session switches: commits the outgoing session's scroll position to
+ * the LRU memory and primes the tracker/pending-restore for the incoming one.
+ * No-op for hosts without a sessionKey (e.g. unit-test stubs).
+ */
+function trackChatSession(host: ScrollHost) {
+  const sessionKey = host.sessionKey;
+  if (!sessionKey) {
+    return;
+  }
+  const tracked = sessionTracker.get(host);
+  if (tracked && tracked.key !== sessionKey) {
+    commitScrollPosition(tracked.key, tracked.scrollTop);
+  }
+  if (!tracked || tracked.key !== sessionKey) {
+    sessionTracker.set(host, {
+      key: sessionKey,
+      scrollTop: scrollMemory.get(sessionKey) ?? 0,
+    });
+    pendingRestores.set(host, sessionKey);
+  }
+}
+
+function noteScrollPosition(host: ScrollHost, target: HTMLElement) {
+  const tracked = sessionTracker.get(host);
+  if (tracked && tracked.key === host.sessionKey) {
+    tracked.scrollTop = target.scrollTop;
+  }
+}
+
+/**
+ * Restores the remembered scroll position for the pending session after render
+ * (updateComplete + requestAnimationFrame). Idempotent: the pending marker is
+ * consumed on the first attempt, so resetChatScroll and scheduleChatScroll can
+ * both trigger it safely.
+ */
+function consumePendingChatRestore(host: ScrollHost) {
+  const sessionKey = host.sessionKey;
+  if (!sessionKey || pendingRestores.get(host) !== sessionKey) {
+    return;
+  }
+  const saved = scrollMemory.get(sessionKey);
+  pendingRestores.delete(host);
+  if (saved === undefined || saved <= 0) {
+    return;
+  }
+  void host.updateComplete.then(() => {
+    requestAnimationFrame(() => {
+      const target = pickChatScrollTarget(host);
+      if (!target) {
+        return;
+      }
+      target.scrollTop = saved;
+      // The position is established — don't let the one-shot initial-load
+      // force-scroll yank the user back to the bottom.
+      host.chatHasAutoScrolled = true;
+      const distanceFromBottom = target.scrollHeight - target.scrollTop - target.clientHeight;
+      host.chatUserNearBottom = distanceFromBottom < NEAR_BOTTOM_THRESHOLD;
+      if (host.chatUserNearBottom) {
+        host.chatNewMessagesBelow = false;
+      }
+      chatRestoreJustAppliedAt.set(host, Date.now());
+      noteScrollPosition(host, target);
+    });
+  });
+}
+
 export function scheduleChatScroll(host: ScrollHost, force = false, smooth = false) {
+  trackChatSession(host);
+  consumePendingChatRestore(host);
   if (host.chatScrollFrame) {
     cancelAnimationFrame(host.chatScrollFrame);
   }
@@ -23,25 +155,11 @@ export function scheduleChatScroll(host: ScrollHost, force = false, smooth = fal
     clearTimeout(host.chatScrollTimeout);
     host.chatScrollTimeout = null;
   }
-  const pickScrollTarget = () => {
-    const container = host.querySelector(".chat-thread") as HTMLElement | null;
-    if (container) {
-      const overflowY = getComputedStyle(container).overflowY;
-      const canScroll =
-        overflowY === "auto" ||
-        overflowY === "scroll" ||
-        container.scrollHeight - container.clientHeight > 1;
-      if (canScroll) {
-        return container;
-      }
-    }
-    return (document.scrollingElement ?? document.documentElement) as HTMLElement | null;
-  };
   // Wait for Lit render to complete, then scroll
   void host.updateComplete.then(() => {
     host.chatScrollFrame = requestAnimationFrame(() => {
       host.chatScrollFrame = null;
-      const target = pickScrollTarget();
+      const target = pickChatScrollTarget(host);
       if (!target) {
         return;
       }
@@ -54,8 +172,12 @@ export function scheduleChatScroll(host: ScrollHost, force = false, smooth = fal
         effectiveForce || host.chatUserNearBottom || distanceFromBottom < NEAR_BOTTOM_THRESHOLD;
 
       if (!shouldStick) {
-        // User is scrolled up — flag that new content arrived below.
-        host.chatNewMessagesBelow = true;
+        // User is scrolled up — flag that new content arrived below, unless
+        // the position was just restored from per-session memory (a plain
+        // session switch must not raise the "new messages" pill).
+        if (!wasRecentlyRestored(host)) {
+          host.chatNewMessagesBelow = true;
+        }
         return;
       }
       if (effectiveForce) {
@@ -74,10 +196,11 @@ export function scheduleChatScroll(host: ScrollHost, force = false, smooth = fal
       }
       host.chatUserNearBottom = true;
       host.chatNewMessagesBelow = false;
+      noteScrollPosition(host, target);
       const retryDelay = effectiveForce ? 150 : 120;
       host.chatScrollTimeout = window.setTimeout(() => {
         host.chatScrollTimeout = null;
-        const latest = pickScrollTarget();
+        const latest = pickChatScrollTarget(host);
         if (!latest) {
           return;
         }
@@ -92,6 +215,7 @@ export function scheduleChatScroll(host: ScrollHost, force = false, smooth = fal
         }
         latest.scrollTop = latest.scrollHeight;
         host.chatUserNearBottom = true;
+        noteScrollPosition(host, latest);
       }, retryDelay);
     });
   });
@@ -130,6 +254,8 @@ export function handleChatScroll(host: ScrollHost, event: Event) {
   if (host.chatUserNearBottom) {
     host.chatNewMessagesBelow = false;
   }
+  trackChatSession(host);
+  noteScrollPosition(host, container);
 }
 
 export function handleLogsScroll(host: ScrollHost, event: Event) {
@@ -142,6 +268,10 @@ export function handleLogsScroll(host: ScrollHost, event: Event) {
 }
 
 export function resetChatScroll(host: ScrollHost) {
+  // Commit the outgoing session's position, then schedule the incoming
+  // session's restore (both no-ops when the host has no sessionKey).
+  trackChatSession(host);
+  consumePendingChatRestore(host);
   host.chatHasAutoScrolled = false;
   host.chatUserNearBottom = true;
   host.chatNewMessagesBelow = false;

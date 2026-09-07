@@ -117,6 +117,16 @@ export type GatewayBrowserClientOptions = {
 // 4008 = application-defined code (browser rejects 1008 "Policy Violation")
 const CONNECT_FAILED_CLOSE_CODE = 4008;
 
+// Wake/online recovery tuning (pattern borrowed from the 9.2 control UI's
+// gateway-page-activation.ts): after a tab suspension or BFCache resume Safari
+// keeps "ghost" sockets that report OPEN but never deliver frames again.
+// Inbound silence beyond 2x the server tick is treated as a dead socket.
+const DEFAULT_TICK_INTERVAL_MS = 30_000;
+const MIN_WAKE_SILENCE_MS = 5_000;
+/** A socket still stuck in CONNECTING this long after a wake is a ghost. */
+const CONNECTING_GHOST_TIMEOUT_MS = 10_000;
+const BASE_BACKOFF_MS = 800;
+
 export class GatewayBrowserClient {
   private ws: WebSocket | null = null;
   private pending = new Map<string, Pending>();
@@ -128,16 +138,31 @@ export class GatewayBrowserClient {
   private reconnectTimer: number | null = null;
   private backoffMs = 800;
   private pendingConnectError: GatewayErrorInfo | undefined;
+  // Wake/online recovery state (see needsWakeReconnect).
+  private lastInboundAtMs: number | null = null;
+  private maxInboundSilenceMs: number | null = null;
+  private connectStartedAtMs = 0;
+  private fatalClose = false;
+  private wakeCheckQueued = false;
+  private wakeForceRecovery = false;
+  private wakeWasHidden =
+    typeof document !== "undefined" && document.visibilityState === "hidden";
+  private onVisibilityChange: (() => void) | null = null;
+  private onOnline: (() => void) | null = null;
+  private onPageShow: ((event: PageTransitionEvent) => void) | null = null;
 
   constructor(private opts: GatewayBrowserClientOptions) {}
 
   start() {
     this.closed = false;
+    this.fatalClose = false;
+    this.attachWakeListeners();
     this.connect();
   }
 
   stop() {
     this.closed = true;
+    this.detachWakeListeners();
     // Clear any pending timers so callbacks don't fire after stop() and try
     // to use a disposed WebSocket.
     if (this.connectTimer !== null) {
@@ -151,6 +176,8 @@ export class GatewayBrowserClient {
     this.ws?.close();
     this.ws = null;
     this.pendingConnectError = undefined;
+    this.lastInboundAtMs = null;
+    this.maxInboundSilenceMs = null;
     this.flushPending(new Error("gateway client stopped"));
   }
 
@@ -158,25 +185,171 @@ export class GatewayBrowserClient {
     return this.ws?.readyState === WebSocket.OPEN;
   }
 
+  /**
+   * True when the transport is down or suspiciously silent — e.g. Safari
+   * resumes a suspended tab with a ghost socket that reports OPEN but is dead.
+   * The wake/online listeners trigger the existing reconnect path when this is
+   * set, bypassing the remaining backoff delay.
+   */
+  get needsWakeReconnect() {
+    if (!this.connected) {
+      const ws = this.ws;
+      if (ws && ws.readyState === WebSocket.CONNECTING) {
+        // Fresh dial: give it a moment before calling it a ghost.
+        return Date.now() - this.connectStartedAtMs > CONNECTING_GHOST_TIMEOUT_MS;
+      }
+      // A non-recoverable auth close intentionally left the client stopped;
+      // waking the tab must not hammer the gateway with doomed retries.
+      return !this.fatalClose || ws !== null;
+    }
+    return (
+      this.lastInboundAtMs !== null &&
+      this.maxInboundSilenceMs !== null &&
+      Date.now() - this.lastInboundAtMs > this.maxInboundSilenceMs
+    );
+  }
+
+  private attachWakeListeners() {
+    if (this.onVisibilityChange || this.onOnline || this.onPageShow) {
+      return;
+    }
+    if (typeof document !== "undefined") {
+      this.onVisibilityChange = () => {
+        if (document.visibilityState === "hidden") {
+          this.wakeWasHidden = true;
+          return;
+        }
+        // Only recover on the hidden → visible transition, not every blip.
+        if (this.wakeWasHidden) {
+          this.wakeWasHidden = false;
+          this.scheduleWakeRecovery(false);
+        }
+      };
+      document.addEventListener("visibilitychange", this.onVisibilityChange);
+    }
+    this.onOnline = () => this.scheduleWakeRecovery(false);
+    this.onPageShow = (event: PageTransitionEvent) => {
+      // BFCache resume: the old socket is a ghost even when it reports OPEN.
+      if (event.persisted) {
+        this.scheduleWakeRecovery(true);
+      }
+    };
+    window.addEventListener("online", this.onOnline);
+    window.addEventListener("pageshow", this.onPageShow);
+  }
+
+  private detachWakeListeners() {
+    if (this.onVisibilityChange) {
+      document.removeEventListener("visibilitychange", this.onVisibilityChange);
+      this.onVisibilityChange = null;
+    }
+    if (this.onOnline) {
+      window.removeEventListener("online", this.onOnline);
+      this.onOnline = null;
+    }
+    if (this.onPageShow) {
+      window.removeEventListener("pageshow", this.onPageShow);
+      this.onPageShow = null;
+    }
+    this.wakeCheckQueued = false;
+    this.wakeForceRecovery = false;
+  }
+
+  private scheduleWakeRecovery(force: boolean) {
+    if (this.closed) {
+      return;
+    }
+    this.wakeForceRecovery ||= force;
+    if (this.wakeCheckQueued) {
+      return;
+    }
+    this.wakeCheckQueued = true;
+    queueMicrotask(() => {
+      this.wakeCheckQueued = false;
+      const forceRecovery = this.wakeForceRecovery;
+      this.wakeForceRecovery = false;
+      if (this.closed) {
+        return;
+      }
+      if (!forceRecovery && !this.needsWakeReconnect) {
+        return;
+      }
+      this.recoverConnection();
+    });
+  }
+
+  /**
+   * Retire the current transport (if any) and reconnect immediately through
+   * the normal connect() path, bypassing any pending backoff delay. The
+   * socket-identity guards in connect() ensure the retired ghost's late close
+   * event neither clears the live socket nor schedules a duplicate reconnect.
+   */
+  private recoverConnection() {
+    const ghost = this.ws;
+    this.ws = null;
+    if (this.connectTimer !== null) {
+      window.clearTimeout(this.connectTimer);
+      this.connectTimer = null;
+    }
+    if (this.reconnectTimer !== null) {
+      window.clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
+    this.connectSent = false;
+    this.connectNonce = null;
+    this.backoffMs = BASE_BACKOFF_MS;
+    this.lastInboundAtMs = Date.now();
+    if (ghost) {
+      this.flushPending(new Error("gateway connection reset after page wake"));
+      try {
+        ghost.close();
+      } catch {
+        // The ghost socket may already be gone.
+      }
+    }
+    this.connect();
+  }
+
   private connect() {
     if (this.closed) {
       return;
     }
-    this.ws = new WebSocket(this.opts.url);
-    this.ws.addEventListener("open", () => this.queueConnect());
-    this.ws.addEventListener("message", (ev) => this.handleMessage(String(ev.data ?? "")));
-    this.ws.addEventListener("close", (ev) => {
+    const socket = new WebSocket(this.opts.url);
+    this.ws = socket;
+    this.connectStartedAtMs = Date.now();
+    // Socket-identity guard: events from a socket that was replaced (wake
+    // recovery) or orphaned must not touch current client state.
+    const isCurrentSocket = () => this.ws === socket;
+    socket.addEventListener("open", () => {
+      if (!isCurrentSocket()) {
+        return;
+      }
+      this.lastInboundAtMs = Date.now();
+      this.queueConnect();
+    });
+    socket.addEventListener("message", (ev) => {
+      if (!isCurrentSocket()) {
+        return;
+      }
+      this.handleMessage(String(ev.data ?? ""));
+    });
+    socket.addEventListener("close", (ev) => {
+      if (!isCurrentSocket()) {
+        return;
+      }
       const reason = String(ev.reason ?? "");
       const connectError = this.pendingConnectError;
       this.pendingConnectError = undefined;
       this.ws = null;
       this.flushPending(new Error(`gateway closed (${ev.code}): ${reason}`));
       this.opts.onClose?.({ code: ev.code, reason, error: connectError });
-      if (!isNonRecoverableAuthError(connectError)) {
-        this.scheduleReconnect();
+      if (isNonRecoverableAuthError(connectError)) {
+        this.fatalClose = true;
+        return;
       }
+      this.scheduleReconnect();
     });
-    this.ws.addEventListener("error", () => {
+    socket.addEventListener("error", () => {
       // ignored; close handler will fire
     });
   }
@@ -194,6 +367,17 @@ export class GatewayBrowserClient {
       this.reconnectTimer = null;
       this.connect();
     }, delay);
+  }
+
+  /** Gateway ticks bound how long inbound silence may be before a wake is suspect. */
+  private applyTickPolicy(hello: GatewayHelloOk) {
+    const advertised = hello.policy?.tickIntervalMs;
+    const tickIntervalMs =
+      typeof advertised === "number" && Number.isFinite(advertised) && advertised > 0
+        ? advertised
+        : DEFAULT_TICK_INTERVAL_MS;
+    this.maxInboundSilenceMs = Math.max(tickIntervalMs * 2, MIN_WAKE_SILENCE_MS);
+    this.lastInboundAtMs = Date.now();
   }
 
   private flushPending(err: Error) {
@@ -302,7 +486,9 @@ export class GatewayBrowserClient {
             scopes: hello.auth.scopes ?? [],
           });
         }
-        this.backoffMs = 800;
+        this.fatalClose = false;
+        this.applyTickPolicy(hello);
+        this.backoffMs = BASE_BACKOFF_MS;
         this.opts.onHello?.(hello);
       })
       .catch((err: unknown) => {
@@ -323,6 +509,8 @@ export class GatewayBrowserClient {
   }
 
   private handleMessage(raw: string) {
+    // Any inbound frame proves the transport is alive, even unparsable ones.
+    this.lastInboundAtMs = Date.now();
     let parsed: unknown;
     try {
       parsed = JSON.parse(raw);

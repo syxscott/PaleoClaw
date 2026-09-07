@@ -59,7 +59,7 @@ export function renderOverview(props: OverviewProps) {
         <div style="margin-top: 6px">
           <a
             class="session-link"
-            href="https://docs.paleoclaw.ai/web/control-ui#device-pairing-first-connection"
+            href="https://www.paleoclaw.paleo-lab.com/manual.html#quick"
             target=${EXTERNAL_LINK_TARGET}
             rel=${buildExternalLinkRel()}
             title="Device pairing docs (opens in new tab)"
@@ -116,7 +116,7 @@ export function renderOverview(props: OverviewProps) {
           <div style="margin-top: 6px">
             <a
               class="session-link"
-              href="https://docs.paleoclaw.ai/web/dashboard"
+              href="https://www.paleoclaw.paleo-lab.com/manual.html#production"
               target=${EXTERNAL_LINK_TARGET}
               rel=${buildExternalLinkRel()}
               title="Control UI auth docs (opens in new tab)"
@@ -132,7 +132,7 @@ export function renderOverview(props: OverviewProps) {
         <div style="margin-top: 6px">
           <a
             class="session-link"
-            href="https://docs.paleoclaw.ai/web/dashboard"
+            href="https://www.paleoclaw.paleo-lab.com/manual.html#production"
             target=${EXTERNAL_LINK_TARGET}
             rel=${buildExternalLinkRel()}
             title="Control UI auth docs (opens in new tab)"
@@ -171,7 +171,7 @@ export function renderOverview(props: OverviewProps) {
         <div style="margin-top: 6px">
           <a
             class="session-link"
-            href="https://docs.paleoclaw.ai/gateway/tailscale"
+            href="https://www.paleoclaw.paleo-lab.com/manual.html#troubleshooting"
             target=${EXTERNAL_LINK_TARGET}
             rel=${buildExternalLinkRel()}
             title="Tailscale Serve docs (opens in new tab)"
@@ -180,7 +180,7 @@ export function renderOverview(props: OverviewProps) {
           <span class="muted"> · </span>
           <a
             class="session-link"
-            href="https://docs.paleoclaw.ai/web/control-ui#insecure-http"
+            href="https://www.paleoclaw.paleo-lab.com/manual.html#troubleshooting"
             target=${EXTERNAL_LINK_TARGET}
             rel=${buildExternalLinkRel()}
             title="Insecure HTTP docs (opens in new tab)"

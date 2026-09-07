@@ -94,6 +94,8 @@ type GatewayHost = {
   refreshSessionsAfterChat: Set<string>;
   execApprovalQueue: ExecApprovalRequest[];
   execApprovalError: string | null;
+  // Per-approval fallback expiry timers keyed by approval id.
+  execApprovalTimers?: Map<string, number>;
   updateAvailable: UpdateAvailable | null;
 };
 
