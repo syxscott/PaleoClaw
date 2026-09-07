@@ -88,6 +88,12 @@ function ensureColumn(
   column: string,
   definition: string,
 ): void {
+  // Validate table and column names against allowlist to prevent SQL injection
+  const validTables = new Set(["files", "chunks"]);
+  const validColumnPattern = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
+  if (!validTables.has(table) || !validColumnPattern.test(column)) {
+    throw new Error(`Invalid table or column name: ${table}.${column}`);
+  }
   const rows = db.prepare(`PRAGMA table_info(${table})`).all() as Array<{ name: string }>;
   if (rows.some((row) => row.name === column)) {
     return;

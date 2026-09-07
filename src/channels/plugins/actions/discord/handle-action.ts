@@ -14,6 +14,40 @@ import { tryHandleDiscordMessageActionGuildAdmin } from "./handle-action.guild-a
 
 const providerId = "discord";
 
+/**
+ * Validate Discord embeds to prevent malformed data from reaching the API.
+ * Ensures embeds are plain objects without own prototype-pollution keys.
+ *
+ * Note: the check MUST use own properties (Object.keys), not the `in`
+ * operator — `"__proto__" in {}` and `"constructor" in {}` are both true via
+ * the prototype chain, so an `in`-based check would silently reject every
+ * valid embed object.
+ */
+function validateDiscordEmbeds(embeds: unknown): unknown[] | undefined {
+  if (!Array.isArray(embeds)) {
+    return undefined;
+  }
+  const validated: unknown[] = [];
+  for (const embed of embeds) {
+    // Reject non-objects and null
+    if (typeof embed !== "object" || embed === null) {
+      continue;
+    }
+    // Prevent prototype pollution via own dangerous keys (e.g. crafted JSON
+    // bodies where JSON.parse materializes "__proto__" as an own property).
+    const ownKeys = Object.keys(embed);
+    if (
+      ownKeys.includes("__proto__") ||
+      ownKeys.includes("constructor") ||
+      ownKeys.includes("prototype")
+    ) {
+      continue;
+    }
+    validated.push(embed);
+  }
+  return validated.length > 0 ? validated : undefined;
+}
+
 export async function handleDiscordMessageAction(
   ctx: Pick<
     ChannelMessageActionContext,
@@ -57,7 +91,7 @@ export async function handleDiscordMessageAction(
     const filename = readStringParam(params, "filename");
     const replyTo = readStringParam(params, "replyTo");
     const rawEmbeds = params.embeds;
-    const embeds = Array.isArray(rawEmbeds) ? rawEmbeds : undefined;
+    const embeds = validateDiscordEmbeds(rawEmbeds);
     const silent = readBooleanParam(params, "silent") === true;
     const sessionKey = readStringParam(params, "__sessionKey");
     const agentId = readStringParam(params, "__agentId");

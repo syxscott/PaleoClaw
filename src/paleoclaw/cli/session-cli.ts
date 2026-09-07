@@ -2,7 +2,8 @@
  * PaleoClaw Session CLI
  */
 
-import { SessionStore } from '../session/store.js';
+import { parseFiniteNumber } from '../../vendor/normalization-core/number-coercion.js';
+import { createSessionStore } from '../session/index.js';
 
 interface SessionCommandOptions {
   limit?: string;
@@ -11,9 +12,12 @@ interface SessionCommandOptions {
   tags?: string;
 }
 
+// Uses the vendored normalization-core strict numeric coercion instead of a
+// hand-rolled Number() parse: invalid or non-positive limits fall back exactly
+// as before, while exotic tokens (hex, etc.) are rejected instead of coerced.
 function parseLimit(value: string | undefined, fallback: number): number {
-  const parsed = Number(value || fallback);
-  if (!Number.isFinite(parsed) || parsed <= 0) {
+  const parsed = parseFiniteNumber(value);
+  if (parsed === undefined || parsed <= 0) {
     return fallback;
   }
   return Math.floor(parsed);
@@ -43,8 +47,9 @@ export function registerSessionCommands(program: any): void {
     .option('--json', 'Output as JSON')
     .action(async (options: SessionCommandOptions) => {
       try {
-        const store = new SessionStore();
+        const store = createSessionStore();
         const created = store.createSession(options.title, parseTags(options.tags));
+        store.close?.();
 
         if (options.json) {
           console.log(JSON.stringify(created, null, 2));
@@ -67,8 +72,9 @@ export function registerSessionCommands(program: any): void {
     .option('--json', 'Output as JSON')
     .action(async (options: SessionCommandOptions) => {
       try {
-        const store = new SessionStore();
+        const store = createSessionStore();
         const sessions = store.listSessions(parseLimit(options.limit, 20));
+        store.close?.();
 
         if (options.json) {
           console.log(JSON.stringify(sessions, null, 2));
@@ -99,8 +105,9 @@ export function registerSessionCommands(program: any): void {
     .option('--json', 'Output as JSON')
     .action(async (sessionId: string, options: SessionCommandOptions) => {
       try {
-        const store = new SessionStore();
+        const store = createSessionStore();
         const session = store.getSession(sessionId);
+        store.close?.();
 
         if (options.json) {
           console.log(JSON.stringify(session, null, 2));
@@ -130,8 +137,9 @@ export function registerSessionCommands(program: any): void {
     .option('--json', 'Output as JSON')
     .action(async (query: string, options: SessionCommandOptions) => {
       try {
-        const store = new SessionStore();
+        const store = createSessionStore();
         const hits = store.search(query, parseLimit(options.limit, 10));
+        store.close?.();
 
         if (options.json) {
           console.log(JSON.stringify(hits, null, 2));
@@ -160,8 +168,9 @@ export function registerSessionCommands(program: any): void {
     .option('--json', 'Output as JSON')
     .action(async (sessionId: string, options: SessionCommandOptions) => {
       try {
-        const store = new SessionStore();
+        const store = createSessionStore();
         const session = store.resumeSession(sessionId);
+        store.close?.();
 
         if (options.json) {
           console.log(JSON.stringify(session, null, 2));

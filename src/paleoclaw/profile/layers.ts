@@ -5,7 +5,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { paleoclawHome } from '../paths';
+import { paleoclawHome } from '../paths.js';
 
 // Default templates
 export const DEFAULT_SOUL_TEMPLATE = `# PaleoClaw Soul
@@ -256,7 +256,7 @@ function writeDefaultIfMissing(filePath: string, content: string): void {
   fs.writeFileSync(filePath, content.trim() + '\n', 'utf-8');
 }
 
-function splitSections(markdown: string): Record<string, string> {
+export function splitSections(markdown: string): Record<string, string> {
   const sections: Record<string, string[]> = {};
   const headerRegex = /^#{2,3}\s+(.+?)\s*$/;
 
@@ -292,7 +292,7 @@ function sectionText(sections: Record<string, string>, ...aliases: string[]): st
   return '';
 }
 
-function sectionItems(sections: Record<string, string>, ...aliases: string[]): string[] {
+export function sectionItems(sections: Record<string, string>, ...aliases: string[]): string[] {
   const text = sectionText(sections, ...aliases);
   if (!text) return [];
 
@@ -357,7 +357,7 @@ function extractKv(text: string, key: string, defaultValue = ''): string {
   return match ? match[1].trim() : defaultValue;
 }
 
-function parseSoul(markdown: string): SoulConfig {
+export function parseSoul(markdown: string): SoulConfig {
   const sections = splitSections(markdown);
 
   const identity = sectionText(sections, 'identity');
@@ -408,7 +408,7 @@ function parseSoul(markdown: string): SoulConfig {
   };
 }
 
-function parseUser(markdown: string): UserProfile {
+export function parseUser(markdown: string): UserProfile {
   const sections = splitSections(markdown);
   
   const identity = sectionText(sections, 'identity');

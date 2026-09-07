@@ -80,13 +80,18 @@ export function resolveAutoToolPlan(prompt: string): AutoToolPlan[] {
 
   if (asksPbdb) {
     const taxon = extractTaxonCandidate(prompt);
-    plans.push({
-      tool: 'pbdb_query',
-      params: {
-        baseName: taxon,
-        limit: 5,
-      },
-    });
+    // No usable taxon candidate: skip the plan instead of querying PBDB
+    // unfiltered, which would return 5 arbitrary occurrences and inject them
+    // into the prompt as authoritative context.
+    if (taxon) {
+      plans.push({
+        tool: 'pbdb_query',
+        params: {
+          baseName: taxon,
+          limit: 5,
+        },
+      });
+    }
   }
 
   if (asksLiterature) {

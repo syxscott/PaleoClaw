@@ -76,8 +76,10 @@ private object SystemContactsDataSource : ContactsDataSource {
       selection = null
       selectionArgs = null
     } else {
+      // Limit query length to prevent potential ReDoS or resource exhaustion
+      val safeQuery = request.query.take(100)
       selection = "${ContactsContract.Contacts.DISPLAY_NAME_PRIMARY} LIKE ?"
-      selectionArgs = arrayOf("%${request.query}%")
+      selectionArgs = arrayOf("%${safeQuery}%")
     }
     val sortOrder = "${ContactsContract.Contacts.DISPLAY_NAME_PRIMARY} COLLATE NOCASE ASC LIMIT ${request.limit}"
     resolver.query(

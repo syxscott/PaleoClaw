@@ -118,8 +118,8 @@ class DeviceIdentityStore(context: Context) {
       identityFile.parentFile?.mkdirs()
       val encoded = json.encodeToString(DeviceIdentity.serializer(), identity)
       identityFile.writeText(encoded, Charsets.UTF_8)
-    } catch (_: Throwable) {
-      // best-effort only
+    } catch (e: Throwable) {
+      android.util.Log.e("DeviceIdentityStore", "save failed: ${e.javaClass.simpleName}: ${e.message}", e)
     }
   }
 

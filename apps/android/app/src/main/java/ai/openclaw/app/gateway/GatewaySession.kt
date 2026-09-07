@@ -65,6 +65,8 @@ class GatewaySession(
   private companion object {
     // Keep connect timeout above observed gateway unauthorized close on lower-end devices.
     private const val CONNECT_RPC_TIMEOUT_MS = 12_000L
+    // Exponential backoff base for reconnection attempts
+    private const val RECONNECT_BACKOFF_BASE = 1.7
   }
 
   data class InvokeRequest(
@@ -426,18 +428,16 @@ class GatewaySession(
           deviceFamily = client.deviceFamily,
         )
       val signature = identityStore.signPayload(payload, identity)
+        ?: throw IllegalStateException("device authentication failed: signing error (see logcat for details)")
       val publicKey = identityStore.publicKeyBase64Url(identity)
+        ?: throw IllegalStateException("device authentication failed: public key unavailable")
       val deviceJson =
-        if (!signature.isNullOrBlank() && !publicKey.isNullOrBlank()) {
-          buildJsonObject {
-            put("id", JsonPrimitive(identity.deviceId))
-            put("publicKey", JsonPrimitive(publicKey))
-            put("signature", JsonPrimitive(signature))
-            put("signedAt", JsonPrimitive(signedAtMs))
-            put("nonce", JsonPrimitive(connectNonce))
-          }
-        } else {
-          null
+        buildJsonObject {
+          put("id", JsonPrimitive(identity.deviceId))
+          put("publicKey", JsonPrimitive(publicKey))
+          put("signature", JsonPrimitive(signature))
+          put("signedAt", JsonPrimitive(signedAtMs))
+          put("nonce", JsonPrimitive(connectNonce))
         }
 
       return buildJsonObject {
@@ -615,7 +615,7 @@ class GatewaySession(
       } catch (err: Throwable) {
         attempt += 1
         onDisconnected("Gateway error: ${err.message ?: err::class.java.simpleName}")
-        val sleepMs = minOf(8_000L, (350.0 * Math.pow(1.7, attempt.toDouble())).toLong())
+        val sleepMs = minOf(8_000L, (350.0 * Math.pow(RECONNECT_BACKOFF_BASE, attempt.toDouble())).toLong())
         delay(sleepMs)
       }
     }

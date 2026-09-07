@@ -490,6 +490,7 @@ export function createExecTool(
 
       let yielded = false;
       let yieldTimer: NodeJS.Timeout | null = null;
+      let pendingRejection: Error | undefined;
 
       // Tool-call abort should not kill backgrounded sessions; timeouts still must.
       const onAbortSignal = () => {
@@ -534,6 +535,10 @@ export function createExecTool(
             return;
           }
           yielded = true;
+          if (pendingRejection) {
+            reject(pendingRejection);
+            return;
+          }
           markBackgrounded(run.session);
           resolveRunning();
         };
@@ -586,6 +591,11 @@ export function createExecTool(
               clearTimeout(yieldTimer);
             }
             if (yielded || run.session.backgrounded) {
+              pendingRejection = err as Error;
+              // Warn about unhandled rejection to aid debugging
+              console.warn(
+                `[bash-tools] background process rejected but unobserved: ${(err as Error).message}`,
+              );
               return;
             }
             reject(err as Error);

@@ -19,3 +19,15 @@ export function atomicWriteFile(filePath: string, content: string): void {
   fs.writeFileSync(tmp, content, 'utf-8');
   fs.renameSync(tmp, filePath);
 }
+
+/**
+ * Create a directory restricted to the current user (mode 0o700 on POSIX;
+ * ignored on Windows). Borrowed from OpenClaw's private-file-store semantics:
+ * session/memory/credential state must never be world-readable. Existing
+ * directories are left as-is so repeated calls never loosen permissions.
+ */
+export function ensurePrivateDir(dirPath: string): void {
+  if (!fs.existsSync(dirPath)) {
+    fs.mkdirSync(dirPath, { recursive: true, mode: 0o700 });
+  }
+}

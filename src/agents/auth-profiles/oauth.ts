@@ -400,7 +400,17 @@ export async function resolveApiKeyForProfile(
       email: cred.email,
     });
   } catch (error) {
-    const refreshedStore = ensureAuthProfileStore(params.agentDir);
+    let refreshedStore: ReturnType<typeof ensureAuthProfileStore>;
+    try {
+      refreshedStore = ensureAuthProfileStore(params.agentDir);
+    } catch (storeError) {
+      // Preserve original refresh error, not the store access error
+      throw new Error(
+        `OAuth token refresh failed for ${cred.provider}: ${extractErrorMessage(error)}. ` +
+          "Please try again or re-authenticate.",
+        { cause: error },
+      );
+    }
     const refreshed = refreshedStore.profiles[profileId];
     if (refreshed?.type === "oauth" && Date.now() < refreshed.expires) {
       return buildOAuthProfileResult({
@@ -426,8 +436,9 @@ export async function resolveApiKeyForProfile(
         if (fallbackResolved) {
           return fallbackResolved;
         }
-      } catch {
-        // keep original error
+      } catch (e) {
+        // keep original error - log at debug level for troubleshooting
+        console.debug(`[auth-profiles] OAuth fallback failed: ${(e as Error).message}`);
       }
     }
 

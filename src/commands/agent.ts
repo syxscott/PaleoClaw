@@ -88,7 +88,7 @@ import { applyModelOverrideToSessionEntry } from "../sessions/model-overrides.js
 import { resolveSendPolicy } from "../sessions/send-policy.js";
 import { resolveMessageChannel } from "../utils/message-channel.js";
 import { createDefaultMemoryManager } from "../paleoclaw/memory/manager.js";
-import { SessionStore } from "../paleoclaw/session/store.js";
+import { createSessionStore } from "../paleoclaw/session/index.js";
 import {
   isAutoToolsEnabled,
   isMemoryContextEnabled,
@@ -653,7 +653,9 @@ async function agentCommandInternal(
   } = prepared;
   let sessionEntry = prepared.sessionEntry;
   const memoryManager = createDefaultMemoryManager();
-  const sessionHistory = new SessionStore();
+  // SQLite-backed session history with automatic JSON fallback (borrowed from
+  // Hermes' hardened SQLite session store; createSessionStore never throws).
+  const sessionHistory = createSessionStore();
   const userPrompt = body;
   const enableAutoTools = isAutoToolsEnabled();
   const enableMemoryContext = isMemoryContextEnabled();

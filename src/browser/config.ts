@@ -105,6 +105,8 @@ function resolveBrowserSsrFPolicy(cfg: BrowserConfig | undefined): SsrFPolicy | 
   const hasExplicitPrivateSetting =
     allowPrivateNetwork !== undefined || dangerouslyAllowPrivateNetwork !== undefined;
   // Browser defaults to trusted-network mode unless explicitly disabled by policy.
+  // SECURITY NOTE: The default allows private network access which may pose a risk in
+  // untrusted environments. Set ssrfPolicy.allowPrivateNetwork: false to restrict.
   const resolvedAllowPrivateNetwork =
     dangerouslyAllowPrivateNetwork === true ||
     allowPrivateNetwork === true ||

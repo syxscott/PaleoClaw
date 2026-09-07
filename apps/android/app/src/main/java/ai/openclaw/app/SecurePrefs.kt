@@ -4,6 +4,7 @@ package ai.openclaw.app
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.util.Log
 import androidx.core.content.edit
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
@@ -305,7 +306,8 @@ class SecurePrefs(context: Context) {
           }
         }
       WakeWords.sanitize(decoded, defaultWakeWords)
-    } catch (_: Throwable) {
+    } catch (e: Throwable) {
+      Log.d("SecurePrefs", "wake words parse failed, using defaults: ${e.message}")
       defaultWakeWords
     }
   }

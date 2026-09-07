@@ -679,10 +679,16 @@ export class AcpSessionManager {
       const onCallerAbort = () => {
         internalAbortController.abort();
       };
+      // Check aborted state AFTER attaching listener to avoid race condition
+      // where signal becomes aborted between the check and addEventListener.
       if (input.signal?.aborted) {
         internalAbortController.abort();
       } else if (input.signal) {
         input.signal.addEventListener("abort", onCallerAbort, { once: true });
+      }
+      // Double-check after adding listener in case it was triggered between check and attach
+      if (input.signal?.aborted) {
+        internalAbortController.abort();
       }
 
       const activeTurn: ActiveTurnState = {
@@ -1253,6 +1259,9 @@ export class AcpSessionManager {
           next.lastError = params.lastError.trim();
         } else if (params.clearLastError) {
           delete next.lastError;
+        } else {
+          // Preserve existing lastError when neither new error nor clear is specified
+          next.lastError = base.lastError;
         }
         return next;
       },

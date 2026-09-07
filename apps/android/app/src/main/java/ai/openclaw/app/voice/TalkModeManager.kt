@@ -1472,7 +1472,7 @@ private const val defaultTalkProvider = "elevenlabs"
         conn.outputStream.use { it.write(payload.toByteArray()) }
 
         val code = conn.responseCode
-        Log.d(tag, "elevenlabs http code=$code voiceId=$voiceId format=${request.outputFormat} keyLen=${apiKey.length}")
+        Log.d(tag, "elevenlabs http code=$code voiceId=$voiceId format=${request.outputFormat}")
         if (code >= 400) {
           val message = conn.errorStream?.readBytes()?.toString(Charsets.UTF_8) ?: ""
           Log.w(tag, "elevenlabs error code=$code voiceId=$voiceId body=$message")

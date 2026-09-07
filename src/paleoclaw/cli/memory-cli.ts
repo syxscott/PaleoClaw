@@ -162,7 +162,13 @@ export function registerMemoryCommands(program: any): void {
       try {
         const store = new TaskMemoryStore();
         const beforeDays = parseInt(options.beforeDays || '7', 10);
-        
+        // A NaN cutoff would make every freshness check false, archiving ALL
+        // short-term memories regardless of age — reject it up front.
+        if (!Number.isFinite(beforeDays) || beforeDays < 0) {
+          console.error(`Invalid --before-days: ${options.beforeDays} (expected a non-negative integer)`);
+          process.exitCode = 1;
+          return;
+        }
         const result = store.archiveShort({
           beforeDays,
           status: options.status || '',
@@ -215,6 +221,16 @@ export function registerMemoryCommands(program: any): void {
         const store = new TaskMemoryStore();
         const topK = parseInt(options.topK || '5', 10);
         const minScore = parseFloat(options.minScore || '0.15');
+        if (!Number.isFinite(topK) || topK < 1) {
+          console.error(`Invalid --top-k: ${options.topK} (expected a positive integer)`);
+          process.exitCode = 1;
+          return;
+        }
+        if (!Number.isFinite(minScore) || minScore < 0 || minScore > 1) {
+          console.error(`Invalid --min-score: ${options.minScore} (expected a number in [0, 1])`);
+          process.exitCode = 1;
+          return;
+        }
         
         const results = store.searchMemory({
           query,

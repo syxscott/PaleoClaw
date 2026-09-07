@@ -429,6 +429,8 @@ export async function waitForViaPlaywright(opts: {
     await page.waitForLoadState(opts.loadState, { timeout });
   }
   if (opts.fn) {
+    // SECURITY NOTE: waitForFunction executes user-provided JavaScript in the browser context.
+    // Only use this with trusted input. Consider using selectors or text-based waits when possible.
     const fn = String(opts.fn).trim();
     if (fn) {
       await page.waitForFunction(fn, { timeout });

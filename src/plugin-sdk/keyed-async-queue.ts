@@ -17,6 +17,10 @@ export function enqueueKeyedTask<T>(params: {
     .finally(() => {
       params.hooks?.onSettle?.();
     });
+  // Store a rejection-swallowed tail: chained tasks must not inherit the
+  // previous task's rejection, and the stored promise must never produce an
+  // unhandled rejection (which would crash the process under Node's default
+  // unhandled-rejection behavior).
   const tail = current.then(
     () => undefined,
     () => undefined,

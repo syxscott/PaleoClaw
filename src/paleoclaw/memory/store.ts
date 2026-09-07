@@ -5,9 +5,9 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { bestMatches, SearchItem } from './retrieval';
-import { SessionProfile, loadSessionProfile, memoryContext } from '../profile/layers';
-import { paleoclawHome, atomicWriteFile } from '../paths';
+import { bestMatches, SearchItem } from './retrieval.js';
+import { SessionProfile, loadSessionProfile, memoryContext } from '../profile/layers.js';
+import { paleoclawHome, atomicWriteFile, ensurePrivateDir } from '../paths.js';
 
 // Task memory interfaces
 export interface TaskMemory {
@@ -58,8 +58,27 @@ export interface ArchiveResult {
   archivedTaskIds: string[];
 }
 
-function paleoclawHome(): string {
-  return process.env.PALEOCLAW_HOME || path.join(os.homedir(), '.paleoclaw');
+// Chat day-file shapes, ported from GeoClaw's chat_daily feature. The
+// chat_digest field names deliberately mirror GeoClaw's on-disk format.
+export interface ChatTurnRecord {
+  ts: string;
+  user: string;
+  assistant: string;
+}
+
+export interface ChatDigest {
+  turn_count: number;
+  first_turn_at: string;
+  last_turn_at: string;
+  intents: string[];
+  modes: string[];
+  recent_turns: ChatTurnRecord[];
+}
+
+export interface ChatDailyRecord {
+  sessionId: string;
+  day: string;
+  chat_digest: ChatDigest;
 }
 
 function utcNow(): string {
@@ -75,6 +94,80 @@ function generateTaskId(): string {
   const rand = Math.random().toString(36).substring(2, 8);
   const seq = (_taskCounter++).toString(36);
   return `${stamp}-${seq}-${rand}`;
+}
+
+function emptyChatDigest(): ChatDigest {
+  return {
+    turn_count: 0,
+    first_turn_at: '',
+    last_turn_at: '',
+    intents: [],
+    modes: [],
+    recent_turns: [],
+  };
+}
+
+/**
+ * Clip text to maxChars code points (not UTF-16 code units) so CJK-heavy
+ * content and emoji never split a surrogate pair. Ported from GeoClaw's
+ * _clip_text (default 240 chars, '...' suffix on overflow).
+ */
+export function clipText(text: string, maxChars = 240): string {
+  const value = (text || '').trim();
+  const chars = Array.from(value);
+  if (chars.length <= maxChars) {
+    return value;
+  }
+  return `${chars.slice(0, Math.max(1, maxChars - 3)).join('')}...`;
+}
+
+/**
+ * Sanitize a session id for use inside a filename. Ported from GeoClaw's
+ * _safe_session_key: keep [A-Za-z0-9_.-], collapse every other run of
+ * characters into '_', trim leading/trailing separators, cap the length and
+ * fall back to 'adhoc' when nothing is left.
+ */
+function safeSessionKey(raw: string): string {
+  let text = (raw || '').toString().trim().replace(/[^A-Za-z0-9._-]+/g, '_');
+  text = text.replace(/^[._-]+|[._-]+$/g, '');
+  // Cap over-long ids so day-file names stay filesystem friendly.
+  if (text.length > 64) {
+    text = text.slice(0, 64).replace(/^[._-]+|[._-]+$/g, '');
+  }
+  return text || 'adhoc';
+}
+
+/**
+ * Parse a timestamp into a Date. Accepts ISO strings, epoch numbers and Date
+ * objects; empty or invalid input falls back to now. Ported from GeoClaw's
+ * _parse_event_time, including its treatment of offset-less ISO date-times
+ * as UTC rather than local time.
+ */
+function parseEventTime(raw?: string | number | Date): Date {
+  if (raw instanceof Date) {
+    return Number.isNaN(raw.getTime()) ? new Date() : raw;
+  }
+  if (typeof raw === 'number') {
+    const fromEpoch = new Date(raw);
+    return Number.isNaN(fromEpoch.getTime()) ? new Date() : fromEpoch;
+  }
+  const text = (raw || '').toString().trim();
+  if (!text) {
+    return new Date();
+  }
+  let candidate = text;
+  if (/[zZ]$/.test(candidate)) {
+    candidate = `${candidate.slice(0, -1)}+00:00`;
+  } else if (!/(?:[+-]\d{2}:?\d{2})$/.test(candidate) && /^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}/.test(candidate)) {
+    candidate = `${candidate.replace(' ', 'T')}Z`;
+  }
+  const parsed = new Date(candidate);
+  return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
+}
+
+/** UTC day key (YYYYMMDD) used in chat day-file names. */
+function chatDayKey(event: Date): string {
+  return event.toISOString().slice(0, 10).replace(/-/g, '');
 }
 
 export class TaskMemoryStore {
@@ -104,13 +197,13 @@ export class TaskMemoryStore {
 
   private ensurePaths(): void {
     if (!fs.existsSync(this.shortDir)) {
-      fs.mkdirSync(this.shortDir, { recursive: true });
+      ensurePrivateDir(this.shortDir);
     }
     if (!fs.existsSync(this.archiveShortDir)) {
-      fs.mkdirSync(this.archiveShortDir, { recursive: true });
+      ensurePrivateDir(this.archiveShortDir);
     }
     if (!fs.existsSync(path.dirname(this.longFile))) {
-      fs.mkdirSync(path.dirname(this.longFile), { recursive: true });
+      ensurePrivateDir(path.dirname(this.longFile));
     }
     if (!fs.existsSync(this.longFile)) {
       fs.writeFileSync(this.longFile, '', 'utf-8');
@@ -260,9 +353,159 @@ export class TaskMemoryStore {
     if (extra) {
       payload.extra = { ...(payload.extra || {}), ...extra };
     }
-    
+
     this.writeShort(taskId, payload);
     return payload;
+  }
+
+  /**
+   * Fold one chat turn into the session's day file
+   * (chat-YYYYMMDD-<safeSessionId>.json in the short-term dir). Only a
+   * rolling digest is kept — recent_turns holds at most the last 8 turns
+   * (user text clipped to 160 chars, assistant to 200, as in GeoClaw) and
+   * intents/modes the last 10 distinct values — so full transcripts are
+   * never persisted. Ported from GeoClaw's record_chat_turn.
+   */
+  recordChatTurn(input: {
+    sessionId: string;
+    userText: string;
+    assistantText: string;
+    intent?: string;
+    mode?: string;
+    ts?: string;
+  }): void {
+    const event = parseEventTime(input.ts);
+    const day = chatDayKey(event);
+    const sid = safeSessionKey(input.sessionId);
+    const filePath = this.shortPath(`chat-${day}-${sid}`);
+    const nowIso = event.toISOString();
+    const intent = input.intent || 'chat';
+    const mode = input.mode || 'fallback';
+
+    let record: ChatDailyRecord | null = null;
+    try {
+      const parsed = JSON.parse(fs.readFileSync(filePath, 'utf-8')) as ChatDailyRecord;
+      if (parsed && typeof parsed === 'object') {
+        record = parsed;
+      }
+    } catch {
+      // Missing or corrupt day file: start a fresh digest (GeoClaw behavior).
+      record = null;
+    }
+
+    if (!record) {
+      record = { sessionId: sid, day, chat_digest: emptyChatDigest() };
+    }
+    record.sessionId = sid;
+    record.day = day;
+
+    const digest = record.chat_digest && typeof record.chat_digest === 'object'
+      ? record.chat_digest
+      : emptyChatDigest();
+
+    digest.turn_count = (Number(digest.turn_count) || 0) + 1;
+    digest.last_turn_at = nowIso;
+    if (!digest.first_turn_at) {
+      digest.first_turn_at = nowIso;
+    }
+
+    const intents = (digest.intents || []).map(x => String(x).trim()).filter(x => x);
+    if (intent && !intents.includes(intent)) {
+      intents.push(intent);
+    }
+    digest.intents = intents.slice(-10);
+
+    const modes = (digest.modes || []).map(x => String(x).trim()).filter(x => x);
+    if (mode && !modes.includes(mode)) {
+      modes.push(mode);
+    }
+    digest.modes = modes.slice(-10);
+
+    const turns = (digest.recent_turns || []).filter(x => x && typeof x === 'object');
+    turns.push({
+      ts: nowIso,
+      user: clipText(input.userText, 160),
+      assistant: clipText(input.assistantText, 200),
+    });
+    digest.recent_turns = turns.slice(-8);
+
+    record.chat_digest = digest;
+    // Chat day files are not TaskMemory-shaped, so write via atomicWriteFile
+    // directly instead of writeShort.
+    atomicWriteFile(filePath, JSON.stringify(record, null, 2));
+  }
+
+  /**
+   * List chat day files, most recent first (by filename date descending).
+   * Defaults to the last 7 days; corrupt files are skipped. Ported from
+   * GeoClaw's list_chat_daily.
+   */
+  listChatDaily(days = 7): ChatDailyRecord[] {
+    const rows: ChatDailyRecord[] = [];
+    const requested = Math.floor(Number(days));
+    const limit = Number.isFinite(requested) ? Math.max(1, requested) : 7;
+
+    let files: string[] = [];
+    try {
+      files = fs.readdirSync(this.shortDir)
+        .filter(f => /^chat-\d{8}-.+\.json$/.test(f))
+        .sort()
+        .reverse();
+    } catch {
+      return rows;
+    }
+
+    for (const file of files) {
+      if (rows.length >= limit) {
+        break;
+      }
+      try {
+        const content = fs.readFileSync(path.join(this.shortDir, file), 'utf-8');
+        const parsed = JSON.parse(content) as ChatDailyRecord;
+        if (!parsed || typeof parsed !== 'object' || !parsed.chat_digest) {
+          continue;
+        }
+        rows.push(parsed);
+      } catch {
+        // Skip invalid files
+      }
+    }
+
+    return rows;
+  }
+
+  /**
+   * Read the digest of one chat day file for a YYYYMMDD key. When several
+   * sessions chatted that day, the lexicographically last session file wins.
+   * Returns null when the day file is missing or corrupt.
+   */
+  getChatDailyDigest(day: string): ChatDigest | null {
+    const normalized = (day || '').toString().trim();
+    if (!/^\d{8}$/.test(normalized)) {
+      return null;
+    }
+    let files: string[] = [];
+    try {
+      files = fs.readdirSync(this.shortDir)
+        .filter(f => f.startsWith(`chat-${normalized}-`) && f.endsWith('.json'))
+        .sort();
+    } catch {
+      return null;
+    }
+    if (files.length === 0) {
+      return null;
+    }
+    try {
+      const file = files[files.length - 1];
+      const content = fs.readFileSync(path.join(this.shortDir, file), 'utf-8');
+      const parsed = JSON.parse(content) as ChatDailyRecord;
+      if (!parsed || typeof parsed !== 'object' || !parsed.chat_digest) {
+        return null;
+      }
+      return parsed.chat_digest;
+    } catch {
+      return null;
+    }
   }
 
   autoReviewToLong(taskId: string): LongTermMemory {
@@ -271,6 +514,10 @@ export class TaskMemoryStore {
     // has returnCode=null / finishedAt='' and would write dirty long-term data.
     if (task.status === 'running' || !task.finishedAt) {
       throw new Error(`Cannot review task ${taskId}: task has not finished (status=${task.status}).`);
+    }
+    // Guard against double-promotion producing duplicate long-term records.
+    if (task.promoted) {
+      throw new Error(`Task ${taskId} has already been promoted to long-term memory.`);
     }
     const review = this.buildReview(task);
     
@@ -455,7 +702,10 @@ export class TaskMemoryStore {
     let skipped = 0;
     const archivedIds: string[] = [];
 
-    const files = fs.readdirSync(this.shortDir).filter(f => f.endsWith('.json'));
+    // chat-*.json files are conversational day digests, not task memories —
+    // exclude them from archiving so chat history is never swept away.
+    const files = fs.readdirSync(this.shortDir)
+      .filter(f => f.endsWith('.json') && !f.startsWith('chat-'));
 
     for (const file of files) {
       const filePath = path.join(this.shortDir, file);

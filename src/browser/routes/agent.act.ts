@@ -285,6 +285,9 @@ export function registerBrowserAgentActRoutes(
                 ].join("\n"),
               );
             }
+            // SECURITY: This feature allows arbitrary code execution in the browser context.
+            // Only enable browser.evaluateEnabled in trusted environments.
+            ctx.logger.warn?.("act:evaluate called - arbitrary code execution in browser context");
             const fn = toStringOrEmpty(body.fn);
             if (!fn) {
               return jsonError(res, 400, "fn is required");

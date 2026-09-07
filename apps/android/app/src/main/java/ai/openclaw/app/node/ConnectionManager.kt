@@ -90,12 +90,12 @@ class ConnectionManager(
   fun buildCapabilities(): List<String> = InvokeCommandRegistry.advertisedCapabilities(runtimeFlags())
 
   fun resolvedVersionName(): String {
-    val versionName = BuildConfig.VERSION_NAME.trim().ifEmpty { "dev" }
-    return if (BuildConfig.DEBUG && !versionName.contains("dev", ignoreCase = true)) {
-      "$versionName-dev"
-    } else {
-      versionName
-    }
+    val baseVersion = BuildConfig.VERSION_NAME.trim().ifEmpty { "dev" }
+    // Release builds report VERSION_NAME verbatim so an intentional "-dev" suffix survives.
+    if (!BuildConfig.DEBUG) return baseVersion
+    // Strip an existing trailing "-dev"/"_dev" (case-insensitive) so the debug suffix never doubles.
+    val stripped = baseVersion.replace(Regex("[-_]dev$", RegexOption.IGNORE_CASE), "")
+    return "$stripped-dev"
   }
 
   fun resolveModelIdentifier(): String? {

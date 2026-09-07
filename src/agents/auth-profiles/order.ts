@@ -78,6 +78,8 @@ export function resolveAuthProfileOrder(params: {
   // Clear any cooldowns that have expired since the last check so profiles
   // get a fresh error count and are not immediately re-penalized on the
   // next transient failure. See #3604.
+  // NOTE: clearExpiredCooldowns mutates store.usageStats as a side effect.
+  // This is intentional to keep the store fresh across profile resolution.
   clearExpiredCooldowns(store, now);
   const storedOrder = findNormalizedProviderValue(store.order, providerKey);
   const configuredOrder = findNormalizedProviderValue(cfg?.auth?.order, providerKey);

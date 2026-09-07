@@ -536,14 +536,19 @@ export async function runAcpClientInteractive(opts: AcpClientOptions = {}): Prom
   console.log(`Session: ${sessionId}`);
   console.log('Type a prompt, or "exit" to quit.\n');
 
-  const prompt = () => {
-    rl.question("> ", async (input) => {
+  let stopped = false;
+
+  const runPromptLoop = async () => {
+    while (!stopped) {
+      const input = await new Promise<string>((resolve) => {
+        rl.question("> ", resolve);
+      });
       const text = input.trim();
       if (!text) {
-        prompt();
-        return;
+        continue;
       }
       if (text === "exit" || text === "quit") {
+        stopped = true;
         agent.kill();
         rl.close();
         process.exit(0);
@@ -558,16 +563,16 @@ export async function runAcpClientInteractive(opts: AcpClientOptions = {}): Prom
       } catch (err) {
         console.error(`\n[error] ${String(err)}\n`);
       }
-
-      prompt();
-    });
+    }
   };
 
-  prompt();
+  runPromptLoop();
 
   agent.on("exit", (code) => {
-    console.log(`\nAgent exited with code ${code ?? 0}`);
-    rl.close();
+    if (!stopped) {
+      console.log(`\nAgent exited with code ${code ?? 0}`);
+      rl.close();
+    }
     process.exit(code ?? 0);
   });
 }

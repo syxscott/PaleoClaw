@@ -116,8 +116,13 @@ function cosineSimilarity(vecA: Map<number, number>, vecB: Map<number, number>):
  */
 class MinHeap<T> {
   private data: { item: T; priority: number }[] = [];
+  private readonly capacity: number;
 
-  constructor(private readonly capacity: number) {}
+  constructor(capacity: number) {
+    // Normalize degenerate capacities (0, negative, NaN) to 1 so push() can
+    // never index into an empty heap.
+    this.capacity = Number.isFinite(capacity) && capacity >= 1 ? Math.floor(capacity) : 1;
+  }
 
   get size(): number {
     return this.data.length;
@@ -181,10 +186,15 @@ export function bestMatches(
   topK = 5,
   minScore = 0.15
 ): RankedItem[] {
+  // Degenerate topK (0, negative, NaN from unparsed CLI input) selects nothing.
+  const effectiveTopK = Number.isFinite(topK) && topK >= 1 ? Math.floor(topK) : 0;
+  if (effectiveTopK === 0) {
+    return [];
+  }
   const queryVector = getCachedVector(query, 384);
 
   // Use a min-heap of size topK for O(N log K) selection instead of O(N log N).
-  const heap = new MinHeap<RankedItem>(topK);
+  const heap = new MinHeap<RankedItem>(effectiveTopK);
 
   for (const item of items) {
     const text = item.searchText?.trim() || '';

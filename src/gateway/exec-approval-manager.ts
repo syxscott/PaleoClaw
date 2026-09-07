@@ -158,6 +158,11 @@ export class ExecApprovalManager {
     }
     // One-time approvals must be consumed atomically so the same runId
     // cannot be replayed during the resolved-entry grace window.
+    // Use a consumed flag to ensure atomic check-and-set.
+    if ((record as any)._consumed) {
+      return false;
+    }
+    (record as any)._consumed = true;
     record.decision = undefined;
     return true;
   }

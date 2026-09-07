@@ -58,8 +58,9 @@ export function readTextFileIfExists(pathname: string): string | null {
 export function writeTextFileAtomic(pathname: string, value: string, mode = 0o600): void {
   ensureDirForFile(pathname);
   const tempPath = `${pathname}.tmp-${process.pid}-${Date.now()}`;
-  fs.writeFileSync(tempPath, value, "utf8");
-  fs.chmodSync(tempPath, mode);
+  // Use writeFileSync with mode option to create file with correct permissions atomically,
+  // avoiding race condition between file creation and chmod.
+  fs.writeFileSync(tempPath, value, { encoding: "utf8", mode });
   fs.renameSync(tempPath, pathname);
 }
 
