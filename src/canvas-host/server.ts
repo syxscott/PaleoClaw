@@ -1,4 +1,4 @@
-﻿import * as fsSync from "node:fs";
+import * as fsSync from "node:fs";
 import fs from "node:fs/promises";
 import http, { type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import type { Socket } from "node:net";

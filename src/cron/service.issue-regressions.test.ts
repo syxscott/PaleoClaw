@@ -1,4 +1,4 @@
-﻿import fs from "node:fs/promises";
+import fs from "node:fs/promises";
 import { describe, expect, it, vi } from "vitest";
 import type { HeartbeatRunResult } from "../infra/heartbeat-wake.js";
 import * as schedule from "./schedule.js";

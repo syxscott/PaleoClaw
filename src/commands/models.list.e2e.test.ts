@@ -1,4 +1,4 @@
-﻿import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 let modelsListCommand: typeof import("./models/list.list-command.js").modelsListCommand;
 let loadModelRegistry: typeof import("./models/list.registry.js").loadModelRegistry;

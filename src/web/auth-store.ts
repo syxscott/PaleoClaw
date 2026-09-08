@@ -1,4 +1,4 @@
-﻿import fsSync from "node:fs";
+import fsSync from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { formatCliCommand } from "../cli/command-format.js";

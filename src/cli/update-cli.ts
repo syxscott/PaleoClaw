@@ -1,4 +1,4 @@
-﻿import type { Command } from "commander";
+import type { Command } from "commander";
 import { defaultRuntime } from "../runtime.js";
 import { formatDocsLink } from "../terminal/links.js";
 import { theme } from "../terminal/theme.js";

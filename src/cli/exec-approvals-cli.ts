@@ -1,4 +1,4 @@
-﻿import fs from "node:fs/promises";
+import fs from "node:fs/promises";
 import type { Command } from "commander";
 import JSON5 from "json5";
 import {

@@ -1,4 +1,4 @@
-﻿import { vi } from "vitest";
+import { vi } from "vitest";
 import type { RuntimeEnv } from "../runtime.js";
 import type { MockFn } from "../test-utils/vitest-mock-fn.js";
 

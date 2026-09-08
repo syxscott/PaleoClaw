@@ -1,4 +1,4 @@
-﻿import type { Server } from "node:http";
+import type { Server } from "node:http";
 import express from "express";
 import { loadConfig } from "../config/config.js";
 import { createSubsystemLogger } from "../logging/subsystem.js";

@@ -1,4 +1,4 @@
-﻿import { randomUUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import type { IncomingMessage } from "node:http";
 import { listAgentIds, resolveDefaultAgentId } from "../agents/agent-scope.js";
 import { listChannelPlugins } from "../channels/plugins/index.js";

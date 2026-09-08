@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { buildSystemdUnit } from "./systemd-unit.js";
 
 describe("buildSystemdUnit", () => {

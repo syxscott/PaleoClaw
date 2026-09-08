@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { isSystemdUnavailableDetail, renderSystemdUnavailableHints } from "./systemd-hints.js";
 
 describe("isSystemdUnavailableDetail", () => {

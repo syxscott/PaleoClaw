@@ -1,4 +1,4 @@
-﻿import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { discordOutbound } from "../../channels/plugins/outbound/discord.js";
 import { imessageOutbound } from "../../channels/plugins/outbound/imessage.js";
 import { signalOutbound } from "../../channels/plugins/outbound/signal.js";

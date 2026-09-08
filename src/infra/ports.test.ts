@@ -1,4 +1,4 @@
-﻿import net from "node:net";
+import net from "node:net";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { stripAnsi } from "../terminal/ansi.js";
 

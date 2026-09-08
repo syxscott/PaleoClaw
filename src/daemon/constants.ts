@@ -1,4 +1,4 @@
-﻿// Default service labels (canonical + legacy compatibility)
+// Default service labels (canonical + legacy compatibility)
 export const GATEWAY_LAUNCH_AGENT_LABEL = "ai.paleoclaw.gateway";
 export const GATEWAY_SYSTEMD_SERVICE_NAME = "paleoclaw-gateway";
 export const GATEWAY_WINDOWS_TASK_NAME = "paleoclaw Gateway";

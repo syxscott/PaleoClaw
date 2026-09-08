@@ -1,4 +1,4 @@
-﻿import { AcpRuntimeError } from "./errors.js";
+import { AcpRuntimeError } from "./errors.js";
 import type { AcpRuntime } from "./types.js";
 
 export type AcpRuntimeBackend = {

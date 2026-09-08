@@ -1,4 +1,4 @@
-﻿import type { BrowserFormField } from "./client-actions-core.js";
+import type { BrowserFormField } from "./client-actions-core.js";
 import { DEFAULT_FILL_FIELD_TYPE } from "./form-fields.js";
 import { DEFAULT_UPLOAD_DIR, resolveStrictExistingPathsWithinRoot } from "./paths.js";
 import {

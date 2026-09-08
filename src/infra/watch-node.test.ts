@@ -1,4 +1,4 @@
-﻿import { EventEmitter } from "node:events";
+import { EventEmitter } from "node:events";
 import { describe, expect, it, vi } from "vitest";
 import { runNodeWatchedPaths } from "../../scripts/run-node.mjs";
 import { runWatchMain } from "../../scripts/watch-node.mjs";

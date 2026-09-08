@@ -1,4 +1,4 @@
-﻿import { SessionManager } from "@mariozechner/pi-coding-agent";
+import { SessionManager } from "@mariozechner/pi-coding-agent";
 
 type AppendMessageArg = Parameters<SessionManager["appendMessage"]>[0];
 

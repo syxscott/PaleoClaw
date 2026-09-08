@@ -1,4 +1,4 @@
-﻿import { EventEmitter } from "node:events";
+import { EventEmitter } from "node:events";
 import fsSync from "node:fs";
 import os from "node:os";
 import path from "node:path";

@@ -1,4 +1,4 @@
-﻿import { existsSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { formatCliCommand } from "../cli/command-format.js";
 import { promptYesNo } from "../cli/prompt.js";
 import { danger, info, logVerbose, shouldLogVerbose, warn } from "../globals.js";

@@ -1,4 +1,4 @@
-﻿import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { escapeRegExp, formatEnvelopeTimestamp } from "../../test/helpers/envelope-timestamp.js";
 import { expectInboundContextContract } from "../../test/helpers/inbound-contract.js";
 import {

@@ -1,4 +1,4 @@
-﻿export type HookInstallSpec = {
+export type HookInstallSpec = {
   id?: string;
   kind: "bundled" | "npm" | "git";
   label?: string;

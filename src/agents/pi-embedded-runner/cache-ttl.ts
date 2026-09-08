@@ -1,4 +1,4 @@
-﻿type CustomEntryLike = { type?: unknown; customType?: unknown; data?: unknown };
+type CustomEntryLike = { type?: unknown; customType?: unknown; data?: unknown };
 
 export const CACHE_TTL_CUSTOM_TYPE = "paleoclaw.cache-ttl";
 

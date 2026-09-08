@@ -1,4 +1,4 @@
-﻿import type { DiscordPluralKitConfig } from "../discord/pluralkit.js";
+import type { DiscordPluralKitConfig } from "../discord/pluralkit.js";
 import type {
   BlockStreamingChunkConfig,
   BlockStreamingCoalesceConfig,

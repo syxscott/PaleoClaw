@@ -1,4 +1,4 @@
-﻿import { confirm, isCancel } from "@clack/prompts";
+import { confirm, isCancel } from "@clack/prompts";
 import { readConfigFileSnapshot } from "../../config/config.js";
 import {
   formatUpdateChannelLabel,

@@ -1,4 +1,4 @@
-﻿import path from "node:path";
+import path from "node:path";
 
 export const CONFIG_BACKUP_COUNT = 5;
 

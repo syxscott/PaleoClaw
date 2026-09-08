@@ -1,4 +1,4 @@
-﻿import fs from "node:fs";
+import fs from "node:fs";
 import { confirm } from "@clack/prompts";
 import type { Command } from "commander";
 import { danger } from "../globals.js";

@@ -1,4 +1,4 @@
-﻿import { randomUUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import type { Stats } from "node:fs";
 import { constants as fsConstants } from "node:fs";
 import type { FileHandle } from "node:fs/promises";

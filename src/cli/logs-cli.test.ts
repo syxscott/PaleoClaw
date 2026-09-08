@@ -1,4 +1,4 @@
-﻿import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { runRegisteredCli } from "../test-utils/command-runner.js";
 import { formatLogTimestamp } from "./logs-cli.js";
 

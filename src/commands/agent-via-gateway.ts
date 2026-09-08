@@ -1,4 +1,4 @@
-﻿import { listAgentIds } from "../agents/agent-scope.js";
+import { listAgentIds } from "../agents/agent-scope.js";
 import { formatCliCommand } from "../cli/command-format.js";
 import type { CliDeps } from "../cli/deps.js";
 import { withProgress } from "../cli/progress.js";

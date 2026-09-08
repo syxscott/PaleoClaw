@@ -1,4 +1,4 @@
-﻿export type HookMappingMatch = {
+export type HookMappingMatch = {
   path?: string;
   source?: string;
 };

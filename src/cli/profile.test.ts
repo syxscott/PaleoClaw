@@ -1,4 +1,4 @@
-﻿import path from "node:path";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { formatCliCommand } from "./command-format.js";
 import { applyCliProfileEnv, parseCliProfileArgs } from "./profile.js";

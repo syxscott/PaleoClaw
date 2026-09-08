@@ -1,4 +1,4 @@
-﻿export type BrowserProfileConfig = {
+export type BrowserProfileConfig = {
   /** CDP port for this profile. Allocated once at creation, persisted permanently. */
   cdpPort?: number;
   /** CDP URL for this profile (use for remote Chrome). */

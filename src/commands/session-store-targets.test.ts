@@ -1,4 +1,4 @@
-﻿import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { resolveSessionStoreTargets } from "./session-store-targets.js";
 
 const resolveStorePathMock = vi.hoisted(() => vi.fn());

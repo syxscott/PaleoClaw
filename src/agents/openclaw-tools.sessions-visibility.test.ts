@@ -1,4 +1,4 @@
-﻿import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 const callGatewayMock = vi.fn();
 vi.mock("../gateway/call.js", () => ({

@@ -1,4 +1,4 @@
-﻿import path from "node:path";
+import path from "node:path";
 import { describe, expect, it, test, vi } from "vitest";
 import type { OpenClawConfig } from "../config/config.js";
 import type { RuntimeEnv } from "../runtime.js";

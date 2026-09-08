@@ -1,4 +1,4 @@
-﻿import { Command } from "commander";
+import { Command } from "commander";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { withEnvOverride } from "../config/test-helpers.js";
 import { GatewayLockError } from "../infra/gateway-lock.js";

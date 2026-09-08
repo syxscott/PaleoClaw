@@ -1,4 +1,4 @@
-﻿import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 let page: Record<string, unknown> | null = null;
 let locator: Record<string, unknown> | null = null;

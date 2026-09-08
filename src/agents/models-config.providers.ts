@@ -1,4 +1,4 @@
-﻿import type { OpenClawConfig } from "../config/config.js";
+import type { OpenClawConfig } from "../config/config.js";
 import type { ModelDefinitionConfig } from "../config/types.models.js";
 import { coerceSecretRef, resolveSecretInputRef } from "../config/types.secrets.js";
 import { createSubsystemLogger } from "../logging/subsystem.js";

@@ -1,4 +1,4 @@
-﻿import fs from "node:fs";
+import fs from "node:fs";
 import fsp from "node:fs/promises";
 import { createServer } from "node:http";
 import type { AddressInfo } from "node:net";

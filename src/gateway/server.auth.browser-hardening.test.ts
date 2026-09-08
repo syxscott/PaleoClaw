@@ -1,4 +1,4 @@
-﻿import { randomUUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, test } from "vitest";

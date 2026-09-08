@@ -1,4 +1,4 @@
-﻿import { describe, expect, test } from "vitest";
+import { describe, expect, test } from "vitest";
 import { resolveMainSessionKeyFromConfig } from "../config/sessions.js";
 import { drainSystemEvents, peekSystemEvents } from "../infra/system-events.js";
 import {

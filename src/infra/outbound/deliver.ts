@@ -1,4 +1,4 @@
-﻿import {
+import {
   chunkByParagraph,
   chunkMarkdownTextWithMode,
   resolveChunkMode,

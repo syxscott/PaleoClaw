@@ -1,4 +1,4 @@
-﻿import syncFs from "node:fs";
+import syncFs from "node:fs";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";

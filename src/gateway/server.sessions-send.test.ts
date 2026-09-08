@@ -1,4 +1,4 @@
-﻿import fs from "node:fs/promises";
+import fs from "node:fs/promises";
 import path from "node:path";
 import { afterAll, beforeAll, describe, expect, it, type Mock } from "vitest";
 import { resolveSessionTranscriptPath } from "../config/sessions.js";

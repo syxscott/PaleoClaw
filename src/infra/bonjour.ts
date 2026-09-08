@@ -1,4 +1,4 @@
-﻿import { logDebug, logWarn } from "../logger.js";
+import { logDebug, logWarn } from "../logger.js";
 import { getLogger } from "../logging.js";
 import { ignoreCiaoCancellationRejection } from "./bonjour-ciao.js";
 import { formatBonjourError } from "./bonjour-errors.js";

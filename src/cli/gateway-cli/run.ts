@@ -1,4 +1,4 @@
-﻿import fs from "node:fs";
+import fs from "node:fs";
 import path from "node:path";
 import type { Command } from "commander";
 import { readSecretFromFile } from "../../acp/secret-file.js";

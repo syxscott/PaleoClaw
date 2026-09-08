@@ -1,4 +1,4 @@
-﻿import { describe, expect, it, test } from "vitest";
+import { describe, expect, it, test } from "vitest";
 import { extractTextFromChatContent } from "./chat-content.js";
 import {
   getFrontmatterString,

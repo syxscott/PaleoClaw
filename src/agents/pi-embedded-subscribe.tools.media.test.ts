@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { extractToolResultMediaPaths } from "./pi-embedded-subscribe.tools.js";
 
 describe("extractToolResultMediaPaths", () => {

@@ -1,4 +1,4 @@
-﻿import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { applyAuthChoiceAnthropic } from "./auth-choice.apply.anthropic.js";
 import { ANTHROPIC_SETUP_TOKEN_PREFIX } from "./auth-token.js";
 import {

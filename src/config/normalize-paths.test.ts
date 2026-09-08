@@ -1,4 +1,4 @@
-﻿import path from "node:path";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { withTempHome } from "../../test/helpers/temp-home.js";
 import { normalizeConfigPaths } from "./normalize-paths.js";

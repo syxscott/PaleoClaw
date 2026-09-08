@@ -1,4 +1,4 @@
-﻿import "./test-helpers.js";
+import "./test-helpers.js";
 import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import { beforeAll, describe, expect, it, vi } from "vitest";

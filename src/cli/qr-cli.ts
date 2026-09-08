@@ -1,4 +1,4 @@
-﻿import type { Command } from "commander";
+import type { Command } from "commander";
 import qrcode from "qrcode-terminal";
 import { loadConfig } from "../config/config.js";
 import { hasConfiguredSecretInput } from "../config/types.secrets.js";

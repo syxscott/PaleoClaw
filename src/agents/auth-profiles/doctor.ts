@@ -1,4 +1,4 @@
-﻿import { formatCliCommand } from "../../cli/command-format.js";
+import { formatCliCommand } from "../../cli/command-format.js";
 import type { OpenClawConfig } from "../../config/config.js";
 import { normalizeProviderId } from "../model-selection.js";
 import { listProfilesForProvider } from "./profiles.js";

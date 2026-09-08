@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env node
+#!/usr/bin/env node
 import { Readable, Writable } from "node:stream";
 import { fileURLToPath } from "node:url";
 import { AgentSideConnection, ndJsonStream } from "@agentclientprotocol/sdk";

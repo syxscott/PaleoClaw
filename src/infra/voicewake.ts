@@ -1,4 +1,4 @@
-﻿import path from "node:path";
+import path from "node:path";
 import { resolveStateDir } from "../config/paths.js";
 import { createAsyncLock, readJsonFile, writeJsonAtomic } from "./json-files.js";
 

@@ -1,4 +1,4 @@
-﻿import path from "node:path";
+import path from "node:path";
 import { loginWeb } from "../../../channel-web.js";
 import { formatCliCommand } from "../../../cli/command-format.js";
 import type { OpenClawConfig } from "../../../config/config.js";

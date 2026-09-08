@@ -1,4 +1,4 @@
-﻿import type { BrowserFormField } from "../client-actions-core.js";
+import type { BrowserFormField } from "../client-actions-core.js";
 import { normalizeBrowserFormField } from "../form-fields.js";
 import type { BrowserRouteContext } from "../server-context.js";
 import { registerBrowserAgentActDownloadRoutes } from "./agent.act.download.js";

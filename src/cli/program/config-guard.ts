@@ -1,4 +1,4 @@
-﻿import { loadAndMaybeMigrateDoctorConfig } from "../../commands/doctor-config-flow.js";
+import { loadAndMaybeMigrateDoctorConfig } from "../../commands/doctor-config-flow.js";
 import { readConfigFileSnapshot } from "../../config/config.js";
 import { formatConfigIssueLines } from "../../config/issue-format.js";
 import type { RuntimeEnv } from "../../runtime.js";

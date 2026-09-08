@@ -1,4 +1,4 @@
-﻿import { EventEmitter } from "node:events";
+import { EventEmitter } from "node:events";
 import { Readable } from "node:stream";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { computeSandboxConfigHash } from "./config-hash.js";

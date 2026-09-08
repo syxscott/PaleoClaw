@@ -1,4 +1,4 @@
-﻿import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { setDefaultChannelPluginRegistryForTests } from "./channel-test-helpers.js";
 import { configMocks, offsetMocks } from "./channels.mock-harness.js";
 import { baseConfigSnapshot, createTestRuntime } from "./test-runtime-config-helpers.js";

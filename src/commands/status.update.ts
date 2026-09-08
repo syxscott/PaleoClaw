@@ -1,4 +1,4 @@
-﻿import { formatCliCommand } from "../cli/command-format.js";
+import { formatCliCommand } from "../cli/command-format.js";
 import { resolveOpenClawPackageRoot } from "../infra/paleoclaw-root.js";
 import {
   checkUpdateStatus,

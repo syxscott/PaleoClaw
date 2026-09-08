@@ -1,4 +1,4 @@
-﻿import * as fs from "node:fs/promises";
+import * as fs from "node:fs/promises";
 import { Command } from "commander";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { IOS_NODE, createIosNodeListResponse } from "./program.nodes-test-helpers.js";

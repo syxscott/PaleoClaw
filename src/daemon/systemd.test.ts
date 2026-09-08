@@ -1,4 +1,4 @@
-﻿import fs from "node:fs/promises";
+import fs from "node:fs/promises";
 import os from "node:os";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Tests for edit tool post-write recovery: when the upstream library throws after
  * having already written the file (e.g. generateDiffString fails), we catch and
  * if the file on disk contains the intended newText we return success (#32333).

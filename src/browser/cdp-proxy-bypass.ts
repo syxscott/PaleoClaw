@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Proxy bypass for CDP (Chrome DevTools Protocol) localhost connections.
  *
  * When HTTP_PROXY / HTTPS_PROXY / ALL_PROXY environment variables are set,

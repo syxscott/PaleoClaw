@@ -1,4 +1,4 @@
-﻿import "./reply.directive.directive-behavior.e2e-mocks.js";
+import "./reply.directive.directive-behavior.e2e-mocks.js";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";

@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import type { PluginManifestRegistry } from "../plugins/manifest-registry.js";
 import { validateConfigObject } from "./config.js";
 import { applyPluginAutoEnable } from "./plugin-auto-enable.js";

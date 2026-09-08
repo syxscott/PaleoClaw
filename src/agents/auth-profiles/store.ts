@@ -1,4 +1,4 @@
-﻿import fs from "node:fs";
+import fs from "node:fs";
 import type { OAuthCredentials } from "@mariozechner/pi-ai";
 import { resolveOAuthPath } from "../../config/paths.js";
 import { withFileLock } from "../../infra/file-lock.js";

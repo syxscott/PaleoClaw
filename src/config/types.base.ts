@@ -1,4 +1,4 @@
-﻿import type { ChatType } from "../channels/chat-type.js";
+import type { ChatType } from "../channels/chat-type.js";
 
 export type ReplyMode = "text" | "command";
 export type TypingMode = "never" | "instant" | "thinking" | "message";

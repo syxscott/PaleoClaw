@@ -1,4 +1,4 @@
-﻿import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { loadConfig, validateConfigObject } from "./config.js";
 import { withTempHomeConfig } from "./test-helpers.js";
 

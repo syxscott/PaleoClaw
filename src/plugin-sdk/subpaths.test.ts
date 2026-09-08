@@ -1,4 +1,4 @@
-﻿import * as compatSdk from "paleoclaw/plugin-sdk/compat";
+import * as compatSdk from "paleoclaw/plugin-sdk/compat";
 import * as discordSdk from "paleoclaw/plugin-sdk/discord";
 import * as imessageSdk from "paleoclaw/plugin-sdk/imessage";
 import * as lineSdk from "paleoclaw/plugin-sdk/line";

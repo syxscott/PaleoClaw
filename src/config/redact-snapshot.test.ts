@@ -1,4 +1,4 @@
-﻿import JSON5 from "json5";
+import JSON5 from "json5";
 import { describe, expect, it } from "vitest";
 import {
   REDACTED_SENTINEL,

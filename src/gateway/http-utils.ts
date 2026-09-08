@@ -1,4 +1,4 @@
-﻿import { randomUUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import type { IncomingMessage } from "node:http";
 import { buildAgentMainSessionKey, normalizeAgentId } from "../routing/session-key.js";
 import { normalizeMessageChannel } from "../utils/message-channel.js";

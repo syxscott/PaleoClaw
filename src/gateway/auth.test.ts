@@ -1,4 +1,4 @@
-﻿import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { AuthRateLimiter } from "./auth-rate-limit.js";
 import {
   assertGatewayAuthConfigured,

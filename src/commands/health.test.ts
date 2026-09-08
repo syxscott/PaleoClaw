@@ -1,4 +1,4 @@
-﻿import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { stripAnsi } from "../terminal/ansi.js";
 import { formatHealthCheckFailure } from "./health-format.js";
 import type { HealthSummary } from "./health.js";

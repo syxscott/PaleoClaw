@@ -1,4 +1,4 @@
-﻿import {
+import {
   hasConfiguredUnavailableCredentialStatus,
   hasResolvedCredentialValue,
 } from "../../channels/account-snapshot-fields.js";

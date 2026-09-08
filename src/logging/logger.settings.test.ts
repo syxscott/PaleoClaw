@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { __test__ } from "./logger.js";
 
 describe("shouldSkipLoadConfigFallback", () => {

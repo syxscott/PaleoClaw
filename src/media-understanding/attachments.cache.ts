@@ -1,4 +1,4 @@
-﻿import fs from "node:fs/promises";
+import fs from "node:fs/promises";
 import path from "node:path";
 import { logVerbose, shouldLogVerbose } from "../globals.js";
 import { isAbortError } from "../infra/unhandled-rejections.js";

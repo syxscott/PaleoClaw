@@ -1,4 +1,4 @@
-﻿import type { App } from "@slack/bolt";
+import type { App } from "@slack/bolt";
 import { describe, expect, it } from "vitest";
 import type { OpenClawConfig } from "../../config/config.js";
 import type { RuntimeEnv } from "../../runtime.js";

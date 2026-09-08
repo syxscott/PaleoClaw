@@ -1,4 +1,4 @@
-﻿import type { IncomingMessage } from "node:http";
+import type { IncomingMessage } from "node:http";
 import { describe, expect, it } from "vitest";
 import { resolveGatewayRequestContext } from "./http-utils.js";
 

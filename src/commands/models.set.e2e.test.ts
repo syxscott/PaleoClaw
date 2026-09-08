@@ -1,4 +1,4 @@
-﻿import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const readConfigFileSnapshot = vi.fn();
 const writeConfigFile = vi.fn().mockResolvedValue(undefined);

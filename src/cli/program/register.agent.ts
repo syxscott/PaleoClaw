@@ -1,4 +1,4 @@
-﻿import type { Command } from "commander";
+import type { Command } from "commander";
 import { agentCliCommand } from "../../commands/agent-via-gateway.js";
 import {
   agentsAddCommand,

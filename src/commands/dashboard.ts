@@ -1,4 +1,4 @@
-﻿import { readConfigFileSnapshot, resolveGatewayPort } from "../config/config.js";
+import { readConfigFileSnapshot, resolveGatewayPort } from "../config/config.js";
 import type { OpenClawConfig } from "../config/types.js";
 import { readGatewayTokenEnv } from "../gateway/credentials.js";
 import { resolveConfiguredSecretInputWithFallback } from "../gateway/resolve-configured-secret-input-string.js";

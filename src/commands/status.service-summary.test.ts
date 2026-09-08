@@ -1,4 +1,4 @@
-﻿import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { GatewayService } from "../daemon/service.js";
 import { readServiceStatusSummary } from "./status.service-summary.js";
 

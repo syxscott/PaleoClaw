@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Asynchronous security audit collector functions.
  *
  * These functions perform I/O (filesystem, config reads) to detect security issues.

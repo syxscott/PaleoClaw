@@ -1,4 +1,4 @@
-﻿import {
+import {
   buildAuthHealthSummary,
   DEFAULT_OAUTH_WARN_MS,
   formatRemainingShort,

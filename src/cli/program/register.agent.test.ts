@@ -1,4 +1,4 @@
-﻿import { Command } from "commander";
+import { Command } from "commander";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const agentCliCommandMock = vi.fn();

@@ -1,4 +1,4 @@
-﻿import { beforeEach, vi } from "vitest";
+import { beforeEach, vi } from "vitest";
 import { resetInboundDedupe } from "../auto-reply/reply/inbound-dedupe.js";
 import type { MsgContext } from "../auto-reply/templating.js";
 import type { GetReplyOptions, ReplyPayload } from "../auto-reply/types.js";

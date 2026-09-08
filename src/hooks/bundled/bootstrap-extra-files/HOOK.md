@@ -1,4 +1,4 @@
-﻿---
+---
 name: bootstrap-extra-files
 description: "Inject additional workspace bootstrap files via glob/path patterns"
 homepage: https://docs.paleoclaw.ai/automation/hooks#bootstrap-extra-files

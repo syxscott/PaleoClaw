@@ -1,4 +1,4 @@
-﻿import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockReadFileSync = vi.hoisted(() => vi.fn());
 const mockSpawnSync = vi.hoisted(() => vi.fn());

@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { buildPlatformRuntimeLogHints, buildPlatformServiceStartHints } from "./runtime-hints.js";
 
 describe("buildPlatformRuntimeLogHints", () => {

@@ -1,4 +1,4 @@
-﻿import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { applyAuthChoiceBytePlus } from "./auth-choice.apply.byteplus.js";
 import { applyAuthChoiceVolcengine } from "./auth-choice.apply.volcengine.js";
 import {

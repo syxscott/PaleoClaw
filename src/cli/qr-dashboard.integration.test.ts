@@ -1,4 +1,4 @@
-﻿import { Command } from "commander";
+import { Command } from "commander";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { captureEnv } from "../test-utils/env.js";
 

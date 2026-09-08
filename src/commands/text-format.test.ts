@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { shortenText } from "./text-format.js";
 
 describe("shortenText", () => {

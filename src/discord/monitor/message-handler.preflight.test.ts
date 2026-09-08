@@ -1,4 +1,4 @@
-﻿import { ChannelType } from "@buape/carbon";
+import { ChannelType } from "@buape/carbon";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const transcribeFirstAudioMock = vi.hoisted(() => vi.fn());

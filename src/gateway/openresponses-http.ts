@@ -1,4 +1,4 @@
-﻿/**
+/**
  * OpenResponses HTTP Handler
  *
  * Implements the OpenResponses `/v1/responses` endpoint for paleoclaw Gateway.

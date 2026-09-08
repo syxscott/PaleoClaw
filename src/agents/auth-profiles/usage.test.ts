@@ -1,4 +1,4 @@
-﻿import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { AuthProfileStore, ProfileUsageStats } from "./types.js";
 import {
   clearAuthProfileCooldown,

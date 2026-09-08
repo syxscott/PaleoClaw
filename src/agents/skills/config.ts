@@ -1,4 +1,4 @@
-﻿import type { OpenClawConfig, SkillConfig } from "../../config/config.js";
+import type { OpenClawConfig, SkillConfig } from "../../config/config.js";
 import {
   evaluateRuntimeEligibility,
   hasBinary,

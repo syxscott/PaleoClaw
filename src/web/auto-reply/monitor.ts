@@ -1,4 +1,4 @@
-﻿import { hasControlCommand } from "../../auto-reply/command-detection.js";
+import { hasControlCommand } from "../../auto-reply/command-detection.js";
 import { resolveInboundDebounceMs } from "../../auto-reply/inbound-debounce.js";
 import { getReplyFromConfig } from "../../auto-reply/reply.js";
 import { DEFAULT_GROUP_HISTORY_LIMIT } from "../../auto-reply/reply/history.js";

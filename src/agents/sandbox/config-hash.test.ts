@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { computeSandboxBrowserConfigHash, computeSandboxConfigHash } from "./config-hash.js";
 import type { SandboxDockerConfig } from "./types.js";
 

@@ -1,4 +1,4 @@
-﻿import { installSkill } from "../agents/skills-install.js";
+import { installSkill } from "../agents/skills-install.js";
 import { buildWorkspaceSkillStatus } from "../agents/skills-status.js";
 import { formatCliCommand } from "../cli/command-format.js";
 import type { OpenClawConfig } from "../config/config.js";

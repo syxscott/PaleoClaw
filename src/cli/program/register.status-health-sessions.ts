@@ -1,4 +1,4 @@
-﻿import type { Command } from "commander";
+import type { Command } from "commander";
 import { healthCommand } from "../../commands/health.js";
 import { sessionsCleanupCommand } from "../../commands/sessions-cleanup.js";
 import { sessionsCommand } from "../../commands/sessions.js";

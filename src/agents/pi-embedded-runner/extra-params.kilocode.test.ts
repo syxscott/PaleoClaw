@@ -1,4 +1,4 @@
-﻿import type { StreamFn } from "@mariozechner/pi-agent-core";
+import type { StreamFn } from "@mariozechner/pi-agent-core";
 import type { Context, Model } from "@mariozechner/pi-ai";
 import { createAssistantMessageEventStream } from "@mariozechner/pi-ai";
 import { afterEach, describe, expect, it } from "vitest";

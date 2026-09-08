@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Sanitize model output for plain-text messaging surfaces.
  *
  * LLMs occasionally produce HTML tags (`<br>`, `<b>`, `<i>`, etc.) that render

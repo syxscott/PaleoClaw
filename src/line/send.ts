@@ -1,4 +1,4 @@
-﻿import { messagingApi } from "@line/bot-sdk";
+import { messagingApi } from "@line/bot-sdk";
 import { loadConfig } from "../config/config.js";
 import type { OpenClawConfig } from "../config/types.paleoclaw.js";
 import { logVerbose } from "../globals.js";

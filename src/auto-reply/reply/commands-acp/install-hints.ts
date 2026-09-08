@@ -1,4 +1,4 @@
-﻿import { existsSync } from "node:fs";
+import { existsSync } from "node:fs";
 import path from "node:path";
 import type { OpenClawConfig } from "../../../config/config.js";
 

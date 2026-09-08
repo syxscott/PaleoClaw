@@ -1,4 +1,4 @@
-﻿import type { Command } from "commander";
+import type { Command } from "commander";
 import { danger } from "../globals.js";
 import { defaultRuntime } from "../runtime.js";
 import { shortenHomePath } from "../utils.js";

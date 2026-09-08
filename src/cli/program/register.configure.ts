@@ -1,4 +1,4 @@
-﻿import type { Command } from "commander";
+import type { Command } from "commander";
 import {
   CONFIGURE_WIZARD_SECTIONS,
   configureCommandFromSectionsArg,

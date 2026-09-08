@@ -1,4 +1,4 @@
-﻿import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { getSlackSlashMocks, resetSlackSlashMocks } from "./slash.test-harness.js";
 
 vi.mock("../../auto-reply/commands-registry.js", () => {

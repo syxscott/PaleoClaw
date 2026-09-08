@@ -1,4 +1,4 @@
-﻿import type { IncomingMessage } from "node:http";
+import type { IncomingMessage } from "node:http";
 import { safeEqualSecret } from "../security/secret-equal.js";
 
 function firstHeaderValue(value: string | string[] | undefined): string {

@@ -1,4 +1,4 @@
-﻿import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import "./server-context.chrome-test-harness.js";
 import * as chromeModule from "./chrome.js";
 import * as pwAiModule from "./pw-ai-module.js";

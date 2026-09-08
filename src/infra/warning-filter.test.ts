@@ -1,4 +1,4 @@
-﻿import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { installProcessWarningFilter, shouldIgnoreWarning } from "./warning-filter.js";
 
 const warningFilterKey = Symbol.for("paleoclaw.warning-filter");

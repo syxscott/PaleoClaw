@@ -1,4 +1,4 @@
-﻿import crypto from "node:crypto";
+import crypto from "node:crypto";
 import { mkdtemp, rm } from "node:fs/promises";
 import path from "node:path";
 import { resolvePreferredOpenClawTmpDir } from "../infra/tmp-paleoclaw-dir.js";

@@ -1,4 +1,4 @@
-﻿import { detectBinary } from "../../../commands/onboard-helpers.js";
+import { detectBinary } from "../../../commands/onboard-helpers.js";
 import type { OpenClawConfig } from "../../../config/config.js";
 import {
   listIMessageAccountIds,

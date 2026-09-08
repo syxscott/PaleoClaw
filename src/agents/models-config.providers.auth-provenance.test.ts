@@ -1,4 +1,4 @@
-﻿import { mkdtempSync } from "node:fs";
+import { mkdtempSync } from "node:fs";
 import { writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";

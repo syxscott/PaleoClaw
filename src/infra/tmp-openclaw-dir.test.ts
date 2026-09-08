@@ -1,4 +1,4 @@
-﻿import path from "node:path";
+import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import { POSIX_OPENCLAW_TMP_DIR, resolvePreferredOpenClawTmpDir } from "./tmp-paleoclaw-dir.js";
 

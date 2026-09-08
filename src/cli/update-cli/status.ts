@@ -1,4 +1,4 @@
-﻿import {
+import {
   formatUpdateAvailableHint,
   formatUpdateOneLiner,
   resolveUpdateAvailability,

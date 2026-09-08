@@ -1,4 +1,4 @@
-﻿import path from "node:path";
+import path from "node:path";
 import type { AnyAgentTool } from "../agents/tools/common.js";
 import type { ChannelDock } from "../channels/dock.js";
 import type { ChannelPlugin } from "../channels/plugins/types.js";

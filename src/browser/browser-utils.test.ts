@@ -1,4 +1,4 @@
-﻿import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { appendCdpPath, getHeadersWithAuth } from "./cdp.helpers.js";
 import { __test } from "./client-fetch.js";
 import { resolveBrowserConfig, resolveProfile } from "./config.js";

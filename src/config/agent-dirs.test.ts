@@ -1,4 +1,4 @@
-﻿import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { findDuplicateAgentDirs } from "./agent-dirs.js";
 import type { OpenClawConfig } from "./types.js";
 

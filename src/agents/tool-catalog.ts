@@ -1,4 +1,4 @@
-﻿export type ToolProfileId = "minimal" | "coding" | "messaging" | "full";
+export type ToolProfileId = "minimal" | "coding" | "messaging" | "full";
 
 type ToolProfilePolicy = {
   allow?: string[];

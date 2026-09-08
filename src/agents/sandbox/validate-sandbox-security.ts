@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Sandbox security validation — blocks dangerous Docker configurations.
  *
  * Threat model: local-trusted config, but protect against foot-guns and config injection.

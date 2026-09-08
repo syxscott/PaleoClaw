@@ -1,4 +1,4 @@
-﻿import { afterEach, beforeEach, vi } from "vitest";
+import { afterEach, beforeEach, vi } from "vitest";
 import type { MockFn } from "../test-utils/vitest-mock-fn.js";
 import { installChromeUserDataDirHooks } from "./chrome-user-data-dir.test-harness.js";
 import { getFreePort } from "./test-port.js";

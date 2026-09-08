@@ -1,4 +1,4 @@
-﻿import { hasBinary } from "../agents/skills.js";
+import { hasBinary } from "../agents/skills.js";
 import { formatCliCommand } from "../cli/command-format.js";
 import { runCommandWithTimeout } from "../process/exec.js";
 import type { RuntimeEnv } from "../runtime.js";

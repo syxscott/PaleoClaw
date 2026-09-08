@@ -1,4 +1,4 @@
-﻿import { fetchBrowserJson } from "./client-fetch.js";
+import { fetchBrowserJson } from "./client-fetch.js";
 
 export type BrowserStatus = {
   enabled: boolean;

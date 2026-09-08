@@ -1,4 +1,4 @@
-﻿import { resolveSessionAgentId } from "../../agents/agent-scope.js";
+import { resolveSessionAgentId } from "../../agents/agent-scope.js";
 import { getFinishedSession, getSession, markExited } from "../../agents/bash-process-registry.js";
 import { createExecTool } from "../../agents/bash-tools.js";
 import { resolveSandboxRuntimeStatus } from "../../agents/sandbox.js";

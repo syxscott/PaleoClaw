@@ -1,4 +1,4 @@
-﻿import { ChannelType, type Guild } from "@buape/carbon";
+import { ChannelType, type Guild } from "@buape/carbon";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { typedCases } from "../test-utils/typed-cases.js";
 import {

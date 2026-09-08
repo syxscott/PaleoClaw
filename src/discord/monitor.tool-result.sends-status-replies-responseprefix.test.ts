@@ -1,4 +1,4 @@
-﻿import type { Client } from "@buape/carbon";
+import type { Client } from "@buape/carbon";
 import { ChannelType, MessageType } from "@buape/carbon";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {

@@ -1,4 +1,4 @@
-﻿import { formatCliCommand } from "../../cli/command-format.js";
+import { formatCliCommand } from "../../cli/command-format.js";
 import type { OpenClawConfig } from "../../config/config.js";
 import { DEFAULT_ACCOUNT_ID } from "../../routing/session-key.js";
 import type { ChannelSecurityDmPolicy } from "./types.core.js";

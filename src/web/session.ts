@@ -1,4 +1,4 @@
-﻿import { randomUUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import fsSync from "node:fs";
 import {
   DisconnectReason,

@@ -1,4 +1,4 @@
-﻿import path from "node:path";
+import path from "node:path";
 import { resolveAgentWorkspaceDir } from "../agents/agent-scope.js";
 import type { OpenClawConfig } from "../config/config.js";
 import { resolveStateDir } from "../config/paths.js";

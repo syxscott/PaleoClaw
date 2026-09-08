@@ -1,4 +1,4 @@
-﻿import { Command } from "commander";
+import { Command } from "commander";
 import { describe, expect, it, vi } from "vitest";
 import type { ProgramContext } from "./context.js";
 

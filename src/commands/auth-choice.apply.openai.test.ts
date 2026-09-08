@@ -1,4 +1,4 @@
-﻿import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { applyAuthChoiceOpenAI } from "./auth-choice.apply.openai.js";
 import {
   createAuthTestLifecycle,

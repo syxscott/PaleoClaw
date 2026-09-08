@@ -1,4 +1,4 @@
-﻿import { getAcpSessionManager } from "../../acp/control-plane/manager.js";
+import { getAcpSessionManager } from "../../acp/control-plane/manager.js";
 import { resolveSessionAgentId } from "../../agents/agent-scope.js";
 import { abortEmbeddedPiRun } from "../../agents/pi-embedded.js";
 import {

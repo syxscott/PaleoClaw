@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
   formatGatewayServiceDescription,
   GATEWAY_LAUNCH_AGENT_LABEL,

@@ -1,4 +1,4 @@
-﻿import "./isolated-agent.mocks.js";
+import "./isolated-agent.mocks.js";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";

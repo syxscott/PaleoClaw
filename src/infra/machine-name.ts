@@ -1,4 +1,4 @@
-﻿import { execFile } from "node:child_process";
+import { execFile } from "node:child_process";
 import os from "node:os";
 import { promisify } from "node:util";
 

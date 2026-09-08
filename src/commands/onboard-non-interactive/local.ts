@@ -1,4 +1,4 @@
-﻿import { formatCliCommand } from "../../cli/command-format.js";
+import { formatCliCommand } from "../../cli/command-format.js";
 import type { OpenClawConfig } from "../../config/config.js";
 import { resolveGatewayPort, writeConfigFile } from "../../config/config.js";
 import { logConfigUpdated } from "../../config/logging.js";

@@ -1,4 +1,4 @@
-﻿import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const ensureConfiguredAcpBindingSessionMock = vi.hoisted(() => vi.fn());
 const resolveConfiguredAcpBindingRecordMock = vi.hoisted(() => vi.fn());

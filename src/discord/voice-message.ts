@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Discord Voice Message Support
  *
  * Implements sending voice messages via Discord's API.

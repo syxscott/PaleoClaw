@@ -1,4 +1,4 @@
-﻿import type { AcpConfig } from "./types.acp.js";
+import type { AcpConfig } from "./types.acp.js";
 import type { AgentBinding, AgentsConfig } from "./types.agents.js";
 import type { ApprovalsConfig } from "./types.approvals.js";
 import type { AuthConfig } from "./types.auth.js";

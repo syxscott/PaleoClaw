@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import type { OpenClawConfig } from "../config/config.js";
 import { isDiagnosticFlagEnabled, resolveDiagnosticFlags } from "./diagnostic-flags.js";
 import { isMainModule } from "./is-main.js";

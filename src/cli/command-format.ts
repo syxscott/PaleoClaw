@@ -1,4 +1,4 @@
-﻿import { replaceCliName, resolveCliName } from "./cli-name.js";
+import { replaceCliName, resolveCliName } from "./cli-name.js";
 import { normalizeProfileName } from "./profile-utils.js";
 
 const CLI_PREFIX_RE = /^(?:pnpm|npm|bunx|npx)\s+paleoclaw\b|^paleoclaw\b/;

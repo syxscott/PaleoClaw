@@ -1,4 +1,4 @@
-﻿export function hasExpectedToolNonce(text: string, nonceA: string, nonceB: string): boolean {
+export function hasExpectedToolNonce(text: string, nonceA: string, nonceB: string): boolean {
   return text.includes(nonceA) && text.includes(nonceB);
 }
 

@@ -1,4 +1,4 @@
-﻿import { ChannelType, Routes } from "discord-api-types/v10";
+import { ChannelType, Routes } from "discord-api-types/v10";
 import { logVerbose } from "../../globals.js";
 import { createDiscordRestClient } from "../client.js";
 import { sendMessageDiscord, sendWebhookMessageDiscord } from "../send.js";

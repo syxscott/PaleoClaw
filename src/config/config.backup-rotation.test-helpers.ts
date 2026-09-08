@@ -1,4 +1,4 @@
-﻿import path from "node:path";
+import path from "node:path";
 import { expect } from "vitest";
 
 export const IS_WINDOWS = process.platform === "win32";

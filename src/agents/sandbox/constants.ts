@@ -1,4 +1,4 @@
-﻿import path from "node:path";
+import path from "node:path";
 import { CHANNEL_IDS } from "../../channels/registry.js";
 import { STATE_DIR } from "../../config/config.js";
 

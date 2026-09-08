@@ -1,4 +1,4 @@
-﻿import * as dns from "node:dns";
+import * as dns from "node:dns";
 import * as net from "node:net";
 import { EnvHttpProxyAgent, getGlobalDispatcher, setGlobalDispatcher } from "undici";
 import type { TelegramNetworkConfig } from "../config/types.telegram.js";

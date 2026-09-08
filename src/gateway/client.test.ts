@@ -1,4 +1,4 @@
-﻿import { Buffer } from "node:buffer";
+import { Buffer } from "node:buffer";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { DeviceIdentity } from "../infra/device-identity.js";
 import { captureEnv } from "../test-utils/env.js";

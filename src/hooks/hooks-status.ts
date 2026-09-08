@@ -1,4 +1,4 @@
-﻿import path from "node:path";
+import path from "node:path";
 import type { OpenClawConfig } from "../config/config.js";
 import { evaluateEntryRequirementsForCurrentPlatform } from "../shared/entry-status.js";
 import type { RequirementConfigCheck, Requirements } from "../shared/requirements.js";

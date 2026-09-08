@@ -1,4 +1,4 @@
-﻿export const GATEWAY_CLIENT_IDS = {
+export const GATEWAY_CLIENT_IDS = {
   WEBCHAT_UI: "webchat-ui",
   CONTROL_UI: "paleoclaw-control-ui",
   WEBCHAT: "webchat",

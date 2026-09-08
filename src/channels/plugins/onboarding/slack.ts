@@ -1,4 +1,4 @@
-﻿import type { OpenClawConfig } from "../../../config/config.js";
+import type { OpenClawConfig } from "../../../config/config.js";
 import { hasConfiguredSecretInput } from "../../../config/types.secrets.js";
 import { DEFAULT_ACCOUNT_ID } from "../../../routing/session-key.js";
 import { inspectSlackAccount } from "../../../slack/account-inspect.js";

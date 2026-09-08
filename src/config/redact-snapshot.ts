@@ -1,4 +1,4 @@
-﻿import JSON5 from "json5";
+import JSON5 from "json5";
 import { createSubsystemLogger } from "../logging/subsystem.js";
 import {
   replaceSensitiveValuesInRaw,

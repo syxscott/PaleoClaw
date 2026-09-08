@@ -1,4 +1,4 @@
-﻿# Bundled Hooks
+# Bundled Hooks
 
 This directory contains hooks that ship with paleoclaw. These hooks are automatically discovered and can be enabled/disabled via CLI or configuration.
 

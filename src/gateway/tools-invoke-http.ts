@@ -1,4 +1,4 @@
-﻿import type { IncomingMessage, ServerResponse } from "node:http";
+import type { IncomingMessage, ServerResponse } from "node:http";
 import { createOpenClawTools } from "../agents/paleoclaw-tools.js";
 import {
   resolveEffectiveToolPolicy,

@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
   DANGEROUS_SANDBOX_DOCKER_BOOLEAN_KEYS,
   resolveSandboxBrowserConfig,

@@ -1,4 +1,4 @@
-﻿import { resolveBrowserExecutableForPlatform } from "../chrome.executables.js";
+import { resolveBrowserExecutableForPlatform } from "../chrome.executables.js";
 import { createBrowserProfilesService } from "../profiles-service.js";
 import type { BrowserRouteContext, ProfileContext } from "../server-context.js";
 import { resolveProfileContext } from "./agent.shared.js";

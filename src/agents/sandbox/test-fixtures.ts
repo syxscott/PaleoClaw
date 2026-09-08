@@ -1,4 +1,4 @@
-﻿import type { SandboxContext } from "./types.js";
+import type { SandboxContext } from "./types.js";
 
 export function createSandboxTestContext(params?: {
   overrides?: Partial<SandboxContext>;

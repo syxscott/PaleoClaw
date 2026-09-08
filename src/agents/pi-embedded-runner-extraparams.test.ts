@@ -1,4 +1,4 @@
-﻿import type { StreamFn } from "@mariozechner/pi-agent-core";
+import type { StreamFn } from "@mariozechner/pi-agent-core";
 import type { Context, Model, SimpleStreamOptions } from "@mariozechner/pi-ai";
 import { describe, expect, it, vi } from "vitest";
 import { applyExtraParamsToAgent, resolveExtraParams } from "./pi-embedded-runner.js";

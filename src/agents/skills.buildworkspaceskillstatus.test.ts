@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { withEnv } from "../test-utils/env.js";
 import { buildWorkspaceSkillStatus } from "./skills-status.js";
 import type { SkillEntry } from "./skills/types.js";

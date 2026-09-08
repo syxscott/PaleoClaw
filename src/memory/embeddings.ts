@@ -1,4 +1,4 @@
-﻿import fsSync from "node:fs";
+import fsSync from "node:fs";
 import type { Llama, LlamaEmbeddingContext, LlamaModel } from "node-llama-cpp";
 import type { OpenClawConfig } from "../config/config.js";
 import type { SecretInput } from "../config/types.secrets.js";

@@ -1,4 +1,4 @@
-﻿import { normalizeChatType } from "../../channels/chat-type.js";
+import { normalizeChatType } from "../../channels/chat-type.js";
 import { resolveSenderLabel } from "../../channels/sender-label.js";
 import { formatZonedTimestamp } from "../../infra/format-time/format-datetime.js";
 import type { TemplateContext } from "../templating.js";

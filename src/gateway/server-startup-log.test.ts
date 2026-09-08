@@ -1,4 +1,4 @@
-﻿import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { logGatewayStartup } from "./server-startup-log.js";
 
 describe("gateway startup log", () => {

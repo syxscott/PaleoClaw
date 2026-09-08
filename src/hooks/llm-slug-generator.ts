@@ -1,4 +1,4 @@
-﻿/**
+/**
  * LLM-based slug generator for session memory filenames
  */
 

@@ -1,4 +1,4 @@
-﻿export type AgentInternalEventType = "task_completion";
+export type AgentInternalEventType = "task_completion";
 
 export type AgentTaskCompletionInternalEvent = {
   type: "task_completion";

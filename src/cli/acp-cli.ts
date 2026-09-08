@@ -1,4 +1,4 @@
-﻿import type { Command } from "commander";
+import type { Command } from "commander";
 import { runAcpClientInteractive } from "../acp/client.js";
 import { readSecretFromFile } from "../acp/secret-file.js";
 import { serveAcpGateway } from "../acp/server.js";

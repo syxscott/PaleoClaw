@@ -1,4 +1,4 @@
-﻿import { createWriteStream } from "node:fs";
+import { createWriteStream } from "node:fs";
 import fs from "node:fs/promises";
 import { request } from "node:https";
 import os from "node:os";

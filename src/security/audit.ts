@@ -1,4 +1,4 @@
-﻿import { isIP } from "node:net";
+import { isIP } from "node:net";
 import path from "node:path";
 import { resolveSandboxConfigForAgent } from "../agents/sandbox.js";
 import { execDockerRaw } from "../agents/sandbox/docker.js";

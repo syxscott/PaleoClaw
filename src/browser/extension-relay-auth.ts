@@ -1,4 +1,4 @@
-﻿import { createHmac } from "node:crypto";
+import { createHmac } from "node:crypto";
 import { loadConfig } from "../config/config.js";
 import { normalizeSecretInputString, resolveSecretInputRef } from "../config/types.secrets.js";
 import { secretRefKey } from "../secrets/ref-contract.js";

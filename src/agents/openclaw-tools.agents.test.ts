@@ -1,4 +1,4 @@
-﻿import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createPerSenderSessionConfig } from "./test-helpers/session-config.js";
 
 let configOverride: ReturnType<(typeof import("../config/config.js"))["loadConfig"]> = {

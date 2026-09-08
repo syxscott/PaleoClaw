@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { OpenClawSchema } from "./zod-schema.js";
 
 describe("ACP binding cutover schema", () => {

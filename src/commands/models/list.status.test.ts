@@ -1,4 +1,4 @@
-﻿import { describe, expect, it, type Mock, vi } from "vitest";
+import { describe, expect, it, type Mock, vi } from "vitest";
 
 const mocks = vi.hoisted(() => {
   type MockAuthProfile = { provider: string; [key: string]: unknown };

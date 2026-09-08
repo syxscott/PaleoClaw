@@ -1,4 +1,4 @@
-﻿import process from "node:process";
+import process from "node:process";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const tryRouteCliMock = vi.hoisted(() => vi.fn());

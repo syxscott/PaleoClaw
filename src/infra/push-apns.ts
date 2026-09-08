@@ -1,4 +1,4 @@
-﻿import { createHash, createPrivateKey, sign as signJwt } from "node:crypto";
+import { createHash, createPrivateKey, sign as signJwt } from "node:crypto";
 import fs from "node:fs/promises";
 import http2 from "node:http2";
 import path from "node:path";

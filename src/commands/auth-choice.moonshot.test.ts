@@ -1,4 +1,4 @@
-﻿import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { resolveAgentModelPrimaryValue } from "../config/model-input.js";
 import type { WizardPrompter } from "../wizard/prompts.js";
 import { applyAuthChoice } from "./auth-choice.js";

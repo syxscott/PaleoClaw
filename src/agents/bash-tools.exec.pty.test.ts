@@ -1,4 +1,4 @@
-﻿import { afterEach, expect, test } from "vitest";
+import { afterEach, expect, test } from "vitest";
 import { resetProcessRegistryForTests } from "./bash-process-registry.js";
 import { createExecTool } from "./bash-tools.exec.js";
 

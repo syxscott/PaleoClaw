@@ -1,4 +1,4 @@
-﻿import { computeBackoff, sleepWithAbort, type BackoffPolicy } from "../infra/backoff.js";
+import { computeBackoff, sleepWithAbort, type BackoffPolicy } from "../infra/backoff.js";
 
 export type TelegramSendChatActionLogger = (message: string) => void;
 

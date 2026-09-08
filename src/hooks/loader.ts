@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Dynamic loader for hook handlers
  *
  * Loads hook handlers from external modules based on configuration

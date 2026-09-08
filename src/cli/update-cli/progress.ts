@@ -1,4 +1,4 @@
-﻿import { spinner } from "@clack/prompts";
+import { spinner } from "@clack/prompts";
 import { formatDurationPrecise } from "../../infra/format-time/format-duration.ts";
 import type {
   UpdateRunResult,

@@ -1,4 +1,4 @@
-﻿import type { ResolvedBrowserConfig } from "./config.js";
+import type { ResolvedBrowserConfig } from "./config.js";
 import { resolveProfile } from "./config.js";
 import { ensureChromeExtensionRelayServer } from "./extension-relay.js";
 import {

@@ -1,4 +1,4 @@
-﻿import {
+import {
   createServer as createHttpServer,
   type Server as HttpServer,
   type IncomingMessage,

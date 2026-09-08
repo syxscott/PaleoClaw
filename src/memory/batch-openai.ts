@@ -1,4 +1,4 @@
-﻿import {
+import {
   applyEmbeddingBatchOutputLine,
   buildBatchHeaders,
   buildEmbeddingBatchGroupOptions,

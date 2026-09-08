@@ -1,4 +1,4 @@
-﻿import {
+import {
   cancel,
   confirm as clackConfirm,
   isCancel,

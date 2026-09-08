@@ -1,4 +1,4 @@
-﻿import { Mock, vi } from "vitest";
+import { Mock, vi } from "vitest";
 
 type SlackHandler = (args: unknown) => Promise<void>;
 type SlackProviderMonitor = (params: {

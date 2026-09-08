@@ -1,4 +1,4 @@
-﻿import path from "node:path";
+import path from "node:path";
 import { cancel, confirm, isCancel, multiselect } from "@clack/prompts";
 import { isNixMode } from "../config/config.js";
 import { resolveGatewayService } from "../daemon/service.js";

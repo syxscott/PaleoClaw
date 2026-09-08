@@ -1,4 +1,4 @@
-﻿import { vi } from "vitest";
+import { vi } from "vitest";
 import type { MockFn } from "../test-utils/vitest-mock-fn.js";
 
 export const sendMock: MockFn = vi.fn();

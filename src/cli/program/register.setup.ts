@@ -1,4 +1,4 @@
-﻿import type { Command } from "commander";
+import type { Command } from "commander";
 import { onboardCommand } from "../../commands/onboard.js";
 import { setupCommand } from "../../commands/setup.js";
 import { defaultRuntime } from "../../runtime.js";

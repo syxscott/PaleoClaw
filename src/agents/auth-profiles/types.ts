@@ -1,4 +1,4 @@
-﻿import type { OAuthCredentials } from "@mariozechner/pi-ai";
+import type { OAuthCredentials } from "@mariozechner/pi-ai";
 import type { OpenClawConfig } from "../../config/config.js";
 import type { SecretRef } from "../../config/types.secrets.js";
 

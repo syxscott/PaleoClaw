@@ -1,4 +1,4 @@
-﻿import type { IncomingMessage, ServerResponse } from "node:http";
+import type { IncomingMessage, ServerResponse } from "node:http";
 import { describe, expect, test, vi } from "vitest";
 import { canonicalizePathVariant, isProtectedPluginRoutePath } from "./security-path.js";
 import {

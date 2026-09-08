@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { sanitizeForLog, stripAnsi } from "./ansi.js";
 
 describe("terminal ansi helpers", () => {

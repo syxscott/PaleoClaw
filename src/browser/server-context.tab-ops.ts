@@ -1,4 +1,4 @@
-﻿import { CDP_JSON_NEW_TIMEOUT_MS } from "./cdp-timeouts.js";
+import { CDP_JSON_NEW_TIMEOUT_MS } from "./cdp-timeouts.js";
 import { fetchJson, fetchOk } from "./cdp.helpers.js";
 import { appendCdpPath, createTargetViaCdp, normalizeCdpWsUrl } from "./cdp.js";
 import type { ResolvedBrowserProfile } from "./config.js";

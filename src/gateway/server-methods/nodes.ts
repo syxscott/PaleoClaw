@@ -1,4 +1,4 @@
-﻿import { loadConfig } from "../../config/config.js";
+import { loadConfig } from "../../config/config.js";
 import { listDevicePairing } from "../../infra/device-pairing.js";
 import {
   approveNodePairing,

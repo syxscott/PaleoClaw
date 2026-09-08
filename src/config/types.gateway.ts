@@ -1,4 +1,4 @@
-﻿import type { SecretInput } from "./types.secrets.js";
+import type { SecretInput } from "./types.secrets.js";
 
 export type GatewayBindMode = "auto" | "lan" | "loopback" | "custom" | "tailnet";
 

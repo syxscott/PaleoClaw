@@ -1,4 +1,4 @@
-﻿import path from "node:path";
+import path from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { withEnv } from "../test-utils/env.js";
 import { createFixtureSuite } from "../test-utils/fixture-suite.js";

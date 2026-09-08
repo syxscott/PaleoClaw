@@ -1,4 +1,4 @@
-﻿import type { SecretTargetRegistryEntry } from "./target-registry-types.js";
+import type { SecretTargetRegistryEntry } from "./target-registry-types.js";
 
 const SECRET_INPUT_SHAPE = "secret_input"; // pragma: allowlist secret
 const SIBLING_REF_SHAPE = "sibling_ref"; // pragma: allowlist secret

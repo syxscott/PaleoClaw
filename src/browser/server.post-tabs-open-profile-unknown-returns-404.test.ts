@@ -1,4 +1,4 @@
-﻿import { fetch as realFetch } from "undici";
+import { fetch as realFetch } from "undici";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   cleanupBrowserControlServerTestContext,

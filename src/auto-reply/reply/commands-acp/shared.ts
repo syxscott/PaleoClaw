@@ -1,4 +1,4 @@
-﻿import { randomUUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import { toAcpRuntimeErrorText } from "../../../acp/runtime/error-text.js";
 import type { AcpRuntimeError } from "../../../acp/runtime/errors.js";
 import type { AcpRuntimeSessionMode } from "../../../acp/runtime/types.js";

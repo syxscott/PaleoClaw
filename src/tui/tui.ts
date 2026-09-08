@@ -1,4 +1,4 @@
-﻿import {
+import {
   CombinedAutocompleteProvider,
   Container,
   Key,

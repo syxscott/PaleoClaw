@@ -1,4 +1,4 @@
-﻿import fs from "node:fs";
+import fs from "node:fs";
 import { execDockerRaw, type ExecDockerRawResult } from "./docker.js";
 import { SandboxFsPathGuard } from "./fs-bridge-path-safety.js";
 import {

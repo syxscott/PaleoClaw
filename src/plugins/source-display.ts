@@ -1,4 +1,4 @@
-﻿import path from "node:path";
+import path from "node:path";
 import { resolveConfigDir, shortenHomeInString } from "../utils.js";
 import { resolveBundledPluginsDir } from "./bundled-dir.js";
 import type { PluginRecord } from "./registry.js";

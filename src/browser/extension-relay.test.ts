@@ -1,4 +1,4 @@
-﻿import { createServer } from "node:http";
+import { createServer } from "node:http";
 import { afterAll, afterEach, beforeEach, describe, expect, it } from "vitest";
 import WebSocket from "ws";
 import { captureEnv } from "../test-utils/env.js";

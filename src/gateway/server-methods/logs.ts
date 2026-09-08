@@ -1,4 +1,4 @@
-﻿import fs from "node:fs/promises";
+import fs from "node:fs/promises";
 import path from "node:path";
 import { getResolvedLoggerSettings } from "../../logging.js";
 import { clamp } from "../../utils.js";

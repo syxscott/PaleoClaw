@@ -1,4 +1,4 @@
-﻿import type { Command } from "commander";
+import type { Command } from "commander";
 import { loadNodeHostConfig } from "../../node-host/config.js";
 import { runNodeHost } from "../../node-host/runner.js";
 import { formatDocsLink } from "../../terminal/links.js";

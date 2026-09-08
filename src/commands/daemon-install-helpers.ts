@@ -1,4 +1,4 @@
-﻿import { formatCliCommand } from "../cli/command-format.js";
+import { formatCliCommand } from "../cli/command-format.js";
 import { collectConfigServiceEnvVars } from "../config/env-vars.js";
 import type { OpenClawConfig } from "../config/types.js";
 import { resolveGatewayLaunchAgentLabel } from "../daemon/constants.js";

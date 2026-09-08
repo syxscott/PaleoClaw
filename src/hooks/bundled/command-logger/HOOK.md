@@ -1,4 +1,4 @@
-﻿---
+---
 name: command-logger
 description: "Log all command events to a centralized audit file"
 homepage: https://docs.paleoclaw.ai/automation/hooks#command-logger

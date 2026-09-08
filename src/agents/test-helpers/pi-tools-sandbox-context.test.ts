@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { createPiToolsSandboxContext } from "./pi-tools-sandbox-context.js";
 
 describe("createPiToolsSandboxContext", () => {

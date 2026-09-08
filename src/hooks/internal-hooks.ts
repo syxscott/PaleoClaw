@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Hook system for paleoclaw agent events
  *
  * Provides an extensible event-driven hook system for agent events

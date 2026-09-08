@@ -1,4 +1,4 @@
-﻿import type { AgentSession } from "@mariozechner/pi-coding-agent";
+import type { AgentSession } from "@mariozechner/pi-coding-agent";
 import type { ReasoningLevel, VerboseLevel } from "../auto-reply/thinking.js";
 import type { OpenClawConfig } from "../config/types.paleoclaw.js";
 import type { HookRunner } from "../plugins/hooks.js";

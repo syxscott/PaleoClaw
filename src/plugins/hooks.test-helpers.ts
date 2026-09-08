@@ -1,4 +1,4 @@
-﻿import type { PluginRegistry } from "./registry.js";
+import type { PluginRegistry } from "./registry.js";
 import type { PluginHookAgentContext, PluginHookRegistration } from "./types.js";
 
 export function createMockPluginRegistry(

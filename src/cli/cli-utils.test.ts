@@ -1,4 +1,4 @@
-﻿import { Command } from "commander";
+import { Command } from "commander";
 import { describe, expect, it, vi } from "vitest";
 import { parseCanvasSnapshotPayload } from "./nodes-canvas.js";
 import { parseByteSize } from "./parse-bytes.js";

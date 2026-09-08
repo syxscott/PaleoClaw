@@ -1,4 +1,4 @@
-﻿import type { Server } from "node:http";
+import type { Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import express from "express";
 import { isLoopbackHost } from "../gateway/net.js";

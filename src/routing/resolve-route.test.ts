@@ -1,4 +1,4 @@
-﻿import { describe, expect, test, vi } from "vitest";
+import { describe, expect, test, vi } from "vitest";
 import type { ChatType } from "../channels/chat-type.js";
 import type { OpenClawConfig } from "../config/config.js";
 import * as routingBindings from "./bindings.js";

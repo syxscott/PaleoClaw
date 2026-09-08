@@ -1,4 +1,4 @@
-﻿import { formatCliCommand } from "../../../cli/command-format.js";
+import { formatCliCommand } from "../../../cli/command-format.js";
 import type { ChannelAccountSnapshot, ChannelStatusIssue } from "../types.js";
 import { asString, collectIssuesForEnabledAccounts, isRecord } from "./shared.js";
 

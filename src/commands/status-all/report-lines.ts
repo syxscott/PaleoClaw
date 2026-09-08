@@ -1,4 +1,4 @@
-﻿import type { ProgressReporter } from "../../cli/progress.js";
+import type { ProgressReporter } from "../../cli/progress.js";
 import { renderTable } from "../../terminal/table.js";
 import { isRich, theme } from "../../terminal/theme.js";
 import { groupChannelIssuesByChannel } from "./channel-issues.js";

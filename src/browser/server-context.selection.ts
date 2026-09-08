@@ -1,4 +1,4 @@
-﻿import { fetchOk } from "./cdp.helpers.js";
+import { fetchOk } from "./cdp.helpers.js";
 import { appendCdpPath } from "./cdp.js";
 import type { ResolvedBrowserProfile } from "./config.js";
 import type { PwAiModule } from "./pw-ai-module.js";

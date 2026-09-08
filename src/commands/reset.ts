@@ -1,4 +1,4 @@
-﻿import { cancel, confirm, isCancel } from "@clack/prompts";
+import { cancel, confirm, isCancel } from "@clack/prompts";
 import { formatCliCommand } from "../cli/command-format.js";
 import { isNixMode } from "../config/config.js";
 import { resolveGatewayService } from "../daemon/service.js";

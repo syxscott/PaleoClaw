@@ -1,4 +1,4 @@
-﻿import { formatCliCommand } from "../cli/command-format.js";
+import { formatCliCommand } from "../cli/command-format.js";
 import { loadConfig } from "../config/config.js";
 import { isLoopbackHost } from "../gateway/net.js";
 import { getBridgeAuthForPort } from "./bridge-auth-registry.js";

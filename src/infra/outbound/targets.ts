@@ -1,4 +1,4 @@
-﻿import { normalizeChatType, type ChatType } from "../../channels/chat-type.js";
+import { normalizeChatType, type ChatType } from "../../channels/chat-type.js";
 import type { ChannelOutboundTargetMode } from "../../channels/plugins/types.js";
 import { formatCliCommand } from "../../cli/command-format.js";
 import type { OpenClawConfig } from "../../config/config.js";

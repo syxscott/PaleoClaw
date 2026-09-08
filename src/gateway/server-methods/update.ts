@@ -1,4 +1,4 @@
-﻿import { loadConfig } from "../../config/config.js";
+import { loadConfig } from "../../config/config.js";
 import { extractDeliveryInfo } from "../../config/sessions.js";
 import { resolveOpenClawPackageRoot } from "../../infra/paleoclaw-root.js";
 import {

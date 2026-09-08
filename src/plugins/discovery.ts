@@ -1,4 +1,4 @@
-﻿import fs from "node:fs";
+import fs from "node:fs";
 import path from "node:path";
 import { openBoundaryFileSync } from "../infra/boundary-file-read.js";
 import { resolveConfigDir, resolveUserPath } from "../utils.js";

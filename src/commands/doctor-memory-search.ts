@@ -1,4 +1,4 @@
-﻿import fsSync from "node:fs";
+import fsSync from "node:fs";
 import { resolveAgentDir, resolveDefaultAgentId } from "../agents/agent-scope.js";
 import { resolveMemorySearchConfig } from "../agents/memory-search.js";
 import { resolveApiKeyForProvider } from "../agents/model-auth.js";

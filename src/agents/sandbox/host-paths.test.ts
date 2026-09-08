@@ -1,4 +1,4 @@
-﻿import { mkdtempSync, mkdirSync, realpathSync, symlinkSync } from "node:fs";
+import { mkdtempSync, mkdirSync, realpathSync, symlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";

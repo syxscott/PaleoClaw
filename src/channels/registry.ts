@@ -1,4 +1,4 @@
-﻿import { requireActivePluginRegistry } from "../plugins/runtime.js";
+import { requireActivePluginRegistry } from "../plugins/runtime.js";
 import type { ChannelMeta } from "./plugins/types.js";
 import type { ChannelId } from "./plugins/types.js";
 

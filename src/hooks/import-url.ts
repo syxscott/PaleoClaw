@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Build an import URL for a hook handler module.
  *
  * Bundled hooks (shipped in dist/) are immutable between installs, so they

@@ -1,4 +1,4 @@
-﻿import { spawn } from "node:child_process";
+import { spawn } from "node:child_process";
 import { createSubsystemLogger } from "../../logging/subsystem.js";
 import {
   materializeWindowsSpawnProgram,

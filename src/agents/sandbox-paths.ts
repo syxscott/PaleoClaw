@@ -1,4 +1,4 @@
-﻿import os from "node:os";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath, URL } from "node:url";
 import { assertNoPathAliasEscape, type PathAliasPolicy } from "../infra/path-alias-guards.js";

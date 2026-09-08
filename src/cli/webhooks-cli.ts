@@ -1,4 +1,4 @@
-﻿import type { Command } from "commander";
+import type { Command } from "commander";
 import { danger } from "../globals.js";
 import {
   type GmailRunOptions,

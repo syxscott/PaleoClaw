@@ -1,4 +1,4 @@
-﻿import path from "node:path";
+import path from "node:path";
 import { resolveGatewayProfileSuffix } from "./constants.js";
 
 const windowsAbsolutePath = /^[a-zA-Z]:[\\/]/;

@@ -1,4 +1,4 @@
-﻿import type { AgentToolResult } from "@mariozechner/pi-agent-core";
+import type { AgentToolResult } from "@mariozechner/pi-agent-core";
 import { browserAct, browserConsoleMessages } from "../../browser/client-actions.js";
 import { browserSnapshot, browserTabs } from "../../browser/client.js";
 import { DEFAULT_AI_SNAPSHOT_MAX_CHARS } from "../../browser/constants.js";

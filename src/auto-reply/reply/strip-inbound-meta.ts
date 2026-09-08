@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Strips paleoclaw-injected inbound metadata blocks from a user-role message
  * text before it is displayed in any UI surface (TUI, webchat, macOS app).
  *

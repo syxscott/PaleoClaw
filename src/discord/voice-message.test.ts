@@ -1,4 +1,4 @@
-﻿import type { ChildProcess, ExecFileOptions } from "node:child_process";
+import type { ChildProcess, ExecFileOptions } from "node:child_process";
 import { promisify } from "node:util";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 

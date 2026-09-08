@@ -1,4 +1,4 @@
-﻿import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { findRoutedCommand } from "./routes.js";
 
 const runConfigGetMock = vi.hoisted(() => vi.fn(async () => {}));

@@ -1,4 +1,4 @@
-﻿import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { dashboardCommand } from "./dashboard.js";
 
 const readConfigFileSnapshotMock = vi.hoisted(() => vi.fn());

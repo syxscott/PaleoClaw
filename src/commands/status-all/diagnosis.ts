@@ -1,4 +1,4 @@
-﻿import type { ProgressReporter } from "../../cli/progress.js";
+import type { ProgressReporter } from "../../cli/progress.js";
 import { formatConfigIssueLine } from "../../config/issue-format.js";
 import { resolveGatewayLogPaths } from "../../daemon/launchd.js";
 import { formatPortDiagnostics } from "../../infra/ports.js";

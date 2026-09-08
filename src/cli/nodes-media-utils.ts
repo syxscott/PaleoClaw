@@ -1,4 +1,4 @@
-﻿import { randomUUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import fs from "node:fs";
 import { resolvePreferredOpenClawTmpDir } from "../infra/tmp-paleoclaw-dir.js";
 

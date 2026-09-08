@@ -1,4 +1,4 @@
-﻿import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import type { AuthProfileStore } from "../agents/auth-profiles.js";
 import type { OpenClawConfig } from "../config/config.js";
 import { getPath, setPathCreateStrict } from "./path-utils.js";

@@ -1,4 +1,4 @@
-﻿import type { SandboxContext, SandboxToolPolicy, SandboxWorkspaceAccess } from "../sandbox.js";
+import type { SandboxContext, SandboxToolPolicy, SandboxWorkspaceAccess } from "../sandbox.js";
 import type { SandboxFsBridge } from "../sandbox/fs-bridge.js";
 
 type PiToolsSandboxContextParams = {

@@ -1,4 +1,4 @@
-﻿import type { Mock } from "vitest";
+import type { Mock } from "vitest";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { captureEnv } from "../test-utils/env.js";
 

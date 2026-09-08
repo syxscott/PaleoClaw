@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Detects obfuscated or encoded commands that could bypass allowlist-based
  * security filters.
  *

@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { resolveSkillsPromptForRun } from "./skills.js";
 import type { SkillEntry } from "./skills/types.js";
 

@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import type { HookStatusReport } from "../hooks/hooks-status.js";
 import { formatHooksCheck, formatHooksList } from "./hooks-cli.js";
 import { createEmptyInstallChecks } from "./requirements-test-fixtures.js";

@@ -1,4 +1,4 @@
-﻿import { formatCliCommand } from "../cli/command-format.js";
+import { formatCliCommand } from "../cli/command-format.js";
 import { readConfigFileSnapshot, writeConfigFile, type OpenClawConfig } from "../config/config.js";
 import { resolveSecretInputRef } from "../config/types.secrets.js";
 import { shouldRequireGatewayTokenForInstall } from "../gateway/auth-install-policy.js";

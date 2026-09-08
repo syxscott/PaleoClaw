@@ -1,4 +1,4 @@
-﻿import path from "node:path";
+import path from "node:path";
 import { resolveOpenClawAgentDir } from "../../agents/agent-paths.js";
 import {
   resolveAgentDir,

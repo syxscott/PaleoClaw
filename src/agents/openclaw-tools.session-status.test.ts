@@ -1,4 +1,4 @@
-﻿import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 const loadSessionStoreMock = vi.fn();
 const updateSessionStoreMock = vi.fn();

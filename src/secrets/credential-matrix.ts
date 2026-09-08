@@ -1,4 +1,4 @@
-﻿import { listSecretTargetRegistryEntries } from "./target-registry.js";
+import { listSecretTargetRegistryEntries } from "./target-registry.js";
 
 type CredentialMatrixEntry = {
   id: string;

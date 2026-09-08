@@ -1,4 +1,4 @@
-﻿import { formatCliCommand } from "../cli/command-format.js";
+import { formatCliCommand } from "../cli/command-format.js";
 import { ensurePageState, getPageForTargetId } from "./pw-session.js";
 import { normalizeTimeoutMs } from "./pw-tools-core.shared.js";
 

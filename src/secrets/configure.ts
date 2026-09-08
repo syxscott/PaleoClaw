@@ -1,4 +1,4 @@
-﻿import path from "node:path";
+import path from "node:path";
 import { isDeepStrictEqual } from "node:util";
 import { confirm, select, text } from "@clack/prompts";
 import { listAgentIds, resolveAgentDir, resolveDefaultAgentId } from "../agents/agent-scope.js";

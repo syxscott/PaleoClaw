@@ -1,4 +1,4 @@
-﻿import { danger, info, shouldLogVerbose, warn } from "../globals.js";
+import { danger, info, shouldLogVerbose, warn } from "../globals.js";
 import { logDebug } from "../logger.js";
 import type { RuntimeEnv } from "../runtime.js";
 import { defaultRuntime } from "../runtime.js";

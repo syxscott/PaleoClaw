@@ -1,4 +1,4 @@
-﻿import type { SlackActionMiddlewareArgs } from "@slack/bolt";
+import type { SlackActionMiddlewareArgs } from "@slack/bolt";
 import type { Block, KnownBlock } from "@slack/web-api";
 import { enqueueSystemEvent } from "../../../infra/system-events.js";
 import { authorizeSlackSystemEventSender } from "../auth.js";

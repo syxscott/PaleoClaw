@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import type { OpenClawConfig } from "./config.js";
 import { migrateLegacyConfig, validateConfigObject } from "./config.js";
 import { WHISPER_BASE_AUDIO_MODEL } from "./legacy-migrate.test-helpers.js";

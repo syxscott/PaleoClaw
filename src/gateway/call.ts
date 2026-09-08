@@ -1,4 +1,4 @@
-﻿import { randomUUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import type { OpenClawConfig } from "../config/config.js";
 import {
   loadConfig,

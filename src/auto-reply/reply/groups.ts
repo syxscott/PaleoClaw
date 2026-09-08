@@ -1,4 +1,4 @@
-﻿import { getChannelDock } from "../../channels/dock.js";
+import { getChannelDock } from "../../channels/dock.js";
 import {
   getChannelPlugin,
   normalizeChannelId as normalizePluginChannelId,

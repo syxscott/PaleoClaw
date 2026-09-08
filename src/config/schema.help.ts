@@ -1,4 +1,4 @@
-﻿import {
+import {
   DISCORD_DEFAULT_INBOUND_WORKER_TIMEOUT_MS,
   DISCORD_DEFAULT_LISTENER_TIMEOUT_MS,
 } from "../discord/monitor/timeouts.js";

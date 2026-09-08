@@ -1,4 +1,4 @@
-﻿---
+---
 name: session-memory
 description: "Save session context to memory when /new or /reset command is issued"
 homepage: https://docs.paleoclaw.ai/automation/hooks#session-memory

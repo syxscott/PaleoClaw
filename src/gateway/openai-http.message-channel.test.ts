@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { agentCommand, installGatewayTestHooks, withGatewayServer } from "./test-helpers.js";
 
 installGatewayTestHooks({ scope: "test" });

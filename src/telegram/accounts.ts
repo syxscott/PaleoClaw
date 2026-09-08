@@ -1,4 +1,4 @@
-﻿import util from "node:util";
+import util from "node:util";
 import { createAccountActionGate } from "../channels/plugins/account-action-gate.js";
 import type { OpenClawConfig } from "../config/config.js";
 import type { TelegramAccountConfig, TelegramActionConfig } from "../config/types.js";

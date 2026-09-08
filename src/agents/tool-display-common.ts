@@ -1,4 +1,4 @@
-﻿export type ToolDisplayActionSpec = {
+export type ToolDisplayActionSpec = {
   label?: string;
   detailKeys?: string[];
 };

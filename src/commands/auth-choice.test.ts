@@ -1,4 +1,4 @@
-﻿import fs from "node:fs/promises";
+import fs from "node:fs/promises";
 import type { OAuthCredentials } from "@mariozechner/pi-ai";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { resolveAgentModelPrimaryValue } from "../config/model-input.js";

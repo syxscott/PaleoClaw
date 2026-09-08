@@ -1,4 +1,4 @@
-﻿import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { findExtraGatewayServices } from "./inspect.js";
 
 const { execSchtasksMock } = vi.hoisted(() => ({

@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { renderWideAreaGatewayZoneText } from "./widearea-dns.js";
 
 describe("wide-area DNS-SD zone rendering", () => {

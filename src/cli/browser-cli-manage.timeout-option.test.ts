@@ -1,4 +1,4 @@
-﻿import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { registerBrowserManageCommands } from "./browser-cli-manage.js";
 import { createBrowserProgram } from "./browser-cli-test-helpers.js";
 

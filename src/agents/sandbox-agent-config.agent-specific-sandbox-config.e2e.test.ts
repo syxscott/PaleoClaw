@@ -1,4 +1,4 @@
-﻿import { EventEmitter } from "node:events";
+import { EventEmitter } from "node:events";
 import path from "node:path";
 import { Readable } from "node:stream";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";

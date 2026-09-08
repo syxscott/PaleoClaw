@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Display utilities for sandbox CLI
  */
 

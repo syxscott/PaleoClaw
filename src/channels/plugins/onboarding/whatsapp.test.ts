@@ -1,4 +1,4 @@
-﻿import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { DEFAULT_ACCOUNT_ID } from "../../../routing/session-key.js";
 import type { RuntimeEnv } from "../../../runtime.js";
 import type { WizardPrompter } from "../../../wizard/prompts.js";

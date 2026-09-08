@@ -1,4 +1,4 @@
-﻿import { isBunRuntime, isNodeRuntime } from "../daemon/runtime-binary.js";
+import { isBunRuntime, isNodeRuntime } from "../daemon/runtime-binary.js";
 import {
   consumeRootOptionToken,
   FLAG_TERMINATOR,

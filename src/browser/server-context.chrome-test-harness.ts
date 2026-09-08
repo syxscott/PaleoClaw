@@ -1,4 +1,4 @@
-﻿import { vi } from "vitest";
+import { vi } from "vitest";
 import { installChromeUserDataDirHooks } from "./chrome-user-data-dir.test-harness.js";
 
 const chromeUserDataDir = { dir: "/tmp/paleoclaw" };

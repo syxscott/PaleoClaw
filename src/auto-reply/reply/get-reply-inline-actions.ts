@@ -1,4 +1,4 @@
-﻿import { collectTextContentBlocks } from "../../agents/content-blocks.js";
+import { collectTextContentBlocks } from "../../agents/content-blocks.js";
 import { createOpenClawTools } from "../../agents/paleoclaw-tools.js";
 import type { SkillCommandSpec } from "../../agents/skills.js";
 import { applyOwnerOnlyToolPolicy } from "../../agents/tool-policy.js";

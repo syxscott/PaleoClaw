@@ -1,4 +1,4 @@
-﻿import { spawn, type ChildProcess } from "node:child_process";
+import { spawn, type ChildProcess } from "node:child_process";
 import fs from "node:fs";
 import { homedir } from "node:os";
 import path from "node:path";

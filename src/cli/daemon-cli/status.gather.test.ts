@@ -1,4 +1,4 @@
-﻿import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { captureEnv } from "../../test-utils/env.js";
 
 const callGatewayStatusProbe = vi.fn(async (_opts?: unknown) => ({ ok: true as const }));

@@ -1,4 +1,4 @@
-﻿import { beforeEach, vi } from "vitest";
+import { beforeEach, vi } from "vitest";
 import { resetInboundDedupe } from "../auto-reply/reply/inbound-dedupe.js";
 import { resetSystemEventsForTest } from "../infra/system-events.js";
 import type { MockFn } from "../test-utils/vitest-mock-fn.js";

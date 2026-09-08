@@ -1,4 +1,4 @@
-﻿import "./isolated-agent.mocks.js";
+import "./isolated-agent.mocks.js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { withTempHome as withTempHomeBase } from "../../test/helpers/temp-home.js";
 import { runEmbeddedPiAgent } from "../agents/pi-embedded.js";

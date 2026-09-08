@@ -1,4 +1,4 @@
-﻿const warningFilterKey = Symbol.for("paleoclaw.warning-filter");
+const warningFilterKey = Symbol.for("paleoclaw.warning-filter");
 
 export type ProcessWarning = {
   code?: string;

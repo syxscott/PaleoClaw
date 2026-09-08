@@ -1,4 +1,4 @@
-﻿import type { ModelDefinitionConfig } from "../config/types.js";
+import type { ModelDefinitionConfig } from "../config/types.js";
 import { createSubsystemLogger } from "../logging/subsystem.js";
 import {
   KILOCODE_BASE_URL,

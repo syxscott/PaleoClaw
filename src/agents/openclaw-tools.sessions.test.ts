@@ -1,4 +1,4 @@
-﻿import path from "node:path";
+import path from "node:path";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   addSubagentRunForTests,

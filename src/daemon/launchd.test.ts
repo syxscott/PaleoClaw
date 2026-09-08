@@ -1,4 +1,4 @@
-﻿import { PassThrough } from "node:stream";
+import { PassThrough } from "node:stream";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   LAUNCH_AGENT_THROTTLE_INTERVAL_SECONDS,

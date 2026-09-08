@@ -1,4 +1,4 @@
-﻿import { EnvHttpProxyAgent } from "undici";
+import { EnvHttpProxyAgent } from "undici";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { withFetchPreconnect } from "../../test-utils/fetch-mock.js";
 import { __testing as webSearchTesting } from "./web-search.js";

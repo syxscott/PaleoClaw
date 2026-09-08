@@ -1,4 +1,4 @@
-﻿import fs from "node:fs";
+import fs from "node:fs";
 import fsp from "node:fs/promises";
 import path from "node:path";
 import type { Command } from "commander";

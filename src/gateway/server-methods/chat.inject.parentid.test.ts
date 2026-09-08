@@ -1,4 +1,4 @@
-﻿import fs from "node:fs";
+import fs from "node:fs";
 import { describe, expect, it } from "vitest";
 import { appendInjectedAssistantMessageToTranscript } from "./chat-transcript-inject.js";
 import { createTranscriptFixtureSync } from "./chat.test-helpers.js";

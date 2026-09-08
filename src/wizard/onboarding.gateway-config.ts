@@ -1,4 +1,4 @@
-﻿import {
+import {
   promptSecretRefForOnboarding,
   resolveSecretInputModeForEnvSelection,
 } from "../commands/auth-choice.apply-helpers.js";

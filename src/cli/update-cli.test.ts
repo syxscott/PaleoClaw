@@ -1,4 +1,4 @@
-﻿import path from "node:path";
+import path from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { OpenClawConfig, ConfigFileSnapshot } from "../config/types.paleoclaw.js";
 import type { UpdateRunResult } from "../infra/update-runner.js";

@@ -1,4 +1,4 @@
-﻿---
+---
 name: boot-md
 description: "Run BOOT.md on gateway startup"
 homepage: https://docs.paleoclaw.ai/automation/hooks#boot-md

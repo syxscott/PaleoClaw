@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { validateConfigObject } from "./config.js";
 
 describe("config discord presence", () => {

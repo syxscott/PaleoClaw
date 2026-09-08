@@ -1,4 +1,4 @@
-﻿import { getAcpSessionManager } from "../../../acp/control-plane/manager.js";
+import { getAcpSessionManager } from "../../../acp/control-plane/manager.js";
 import { formatAcpRuntimeErrorText } from "../../../acp/runtime/error-text.js";
 import { toAcpRuntimeError } from "../../../acp/runtime/errors.js";
 import { getAcpRuntimeBackend, requireAcpRuntimeBackend } from "../../../acp/runtime/registry.js";

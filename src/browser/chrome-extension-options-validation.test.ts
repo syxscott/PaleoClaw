@@ -1,4 +1,4 @@
-﻿import { createRequire } from "node:module";
+import { createRequire } from "node:module";
 import { describe, expect, it } from "vitest";
 
 type RelayCheckResponse = {

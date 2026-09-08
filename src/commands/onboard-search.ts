@@ -1,4 +1,4 @@
-﻿import type { OpenClawConfig } from "../config/config.js";
+import type { OpenClawConfig } from "../config/config.js";
 import {
   DEFAULT_SECRET_PROVIDER_ALIAS,
   type SecretInput,

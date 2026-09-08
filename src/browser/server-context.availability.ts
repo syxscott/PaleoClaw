@@ -1,4 +1,4 @@
-﻿import {
+import {
   PROFILE_ATTACH_RETRY_TIMEOUT_MS,
   PROFILE_POST_RESTART_WS_TIMEOUT_MS,
   resolveCdpReachabilityTimeouts,

@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { withEnvAsync } from "../../test-utils/env.js";
 import { extractConfigSummary, resolveAuthForTarget } from "./helpers.js";
 

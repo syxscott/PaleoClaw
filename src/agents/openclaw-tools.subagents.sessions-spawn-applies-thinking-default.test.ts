@@ -1,4 +1,4 @@
-﻿import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import "./test-helpers/fast-core-tools.js";
 import * as harness from "./paleoclaw-tools.subagents.sessions-spawn.test-harness.js";
 import { resetSubagentRegistryForTests } from "./subagent-registry.js";

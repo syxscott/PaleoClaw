@@ -1,4 +1,4 @@
-﻿import {
+import {
   buildEmbeddingBatchGroupOptions,
   runEmbeddingBatchGroups,
   type EmbeddingBatchExecutionParams,

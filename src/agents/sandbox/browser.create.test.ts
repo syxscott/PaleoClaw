@@ -1,4 +1,4 @@
-﻿import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { BROWSER_BRIDGES } from "./browser-bridges.js";
 import { ensureSandboxBrowser } from "./browser.js";
 import { resetNoVncObserverTokensForTests } from "./novnc-auth.js";

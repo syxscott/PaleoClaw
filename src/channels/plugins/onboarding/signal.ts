@@ -1,4 +1,4 @@
-﻿import { formatCliCommand } from "../../../cli/command-format.js";
+import { formatCliCommand } from "../../../cli/command-format.js";
 import { detectBinary } from "../../../commands/onboard-helpers.js";
 import { installSignalCli } from "../../../commands/signal-install.js";
 import type { OpenClawConfig } from "../../../config/config.js";

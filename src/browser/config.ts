@@ -1,4 +1,4 @@
-﻿import type { BrowserConfig, BrowserProfileConfig, OpenClawConfig } from "../config/config.js";
+import type { BrowserConfig, BrowserProfileConfig, OpenClawConfig } from "../config/config.js";
 import { resolveGatewayPort } from "../config/paths.js";
 import {
   deriveDefaultBrowserCdpPortRange,

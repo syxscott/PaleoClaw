@@ -1,4 +1,4 @@
-﻿export const browserCoreExamples = [
+export const browserCoreExamples = [
   "paleoclaw browser status",
   "paleoclaw browser start",
   "paleoclaw browser stop",

@@ -1,4 +1,4 @@
-﻿import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const withProgress = vi.hoisted(() => vi.fn(async (_opts, run) => run({ setLabel: vi.fn() })));
 const loadConfig = vi.hoisted(() => vi.fn());

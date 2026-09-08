@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { visibleWidth } from "./ansi.js";
 import { wrapNoteMessage } from "./note.js";
 import { renderTable } from "./table.js";

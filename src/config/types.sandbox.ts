@@ -1,4 +1,4 @@
-﻿export type SandboxDockerSettings = {
+export type SandboxDockerSettings = {
   /** Docker image to use for sandbox containers. */
   image?: string;
   /** Prefix for sandbox container names. */

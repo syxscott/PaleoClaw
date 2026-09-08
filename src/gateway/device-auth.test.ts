@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { buildDeviceAuthPayloadV3, normalizeDeviceMetadataForAuth } from "./device-auth.js";
 
 describe("device-auth payload vectors", () => {

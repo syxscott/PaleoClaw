@@ -1,4 +1,4 @@
-﻿import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { resolveBrowserConfig } from "./config.js";
 import {
   refreshResolvedBrowserConfigFromDisk,

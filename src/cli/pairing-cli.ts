@@ -1,4 +1,4 @@
-﻿import type { Command } from "commander";
+import type { Command } from "commander";
 import { normalizeChannelId } from "../channels/plugins/index.js";
 import { listPairingChannels, notifyPairingApproved } from "../channels/plugins/pairing.js";
 import { loadConfig } from "../config/config.js";

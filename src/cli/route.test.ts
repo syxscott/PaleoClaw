@@ -1,4 +1,4 @@
-﻿import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const emitCliBannerMock = vi.hoisted(() => vi.fn());
 const ensureConfigReadyMock = vi.hoisted(() => vi.fn(async () => {}));
