@@ -55,6 +55,7 @@ function openDatabase(): Promise<IDBDatabase | null> {
       try {
         request = indexedDB.open(DB_NAME, DB_VERSION);
       } catch {
+        dbPromise = null; // Retry the open on the next call.
         resolve(null);
         return;
       }
@@ -78,9 +79,21 @@ function openDatabase(): Promise<IDBDatabase | null> {
         };
         resolve(db);
       };
-      request.onerror = () => resolve(null);
-      request.onblocked = () => resolve(null);
-    }).catch(() => null);
+      // Failure paths must forget the memoized promise, or one transient
+      // failure (private mode, quota, blocked upgrade) would disable drafts
+      // for the rest of the page's lifetime.
+      request.onerror = () => {
+        dbPromise = null;
+        resolve(null);
+      };
+      request.onblocked = () => {
+        dbPromise = null;
+        resolve(null);
+      };
+    }).catch(() => {
+      dbPromise = null;
+      return null;
+    });
   }
   return dbPromise;
 }

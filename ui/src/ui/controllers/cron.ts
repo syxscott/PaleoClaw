@@ -213,6 +213,10 @@ export async function loadCronModelSuggestions(state: CronModelSuggestionsState)
   }
 }
 
+// Set when a reload (non-append load) is requested while another load is in
+// flight; consumed by loadCronJobsPage's finally to run one coalesced reload.
+let cronReloadPending = false;
+
 export async function loadCronJobs(state: CronState) {
   return await loadCronJobsPage(state, { append: false });
 }
@@ -255,6 +259,12 @@ export async function loadCronJobsPage(state: CronState, opts?: { append?: boole
     return;
   }
   if (state.cronLoading || state.cronJobsLoadingMore) {
+    // Keystrokes typed while a load is in flight must not be silently dropped:
+    // park a pending marker and re-run one coalesced reload when the in-flight
+    // load finishes (see the finally below).
+    if (opts?.append !== true) {
+      cronReloadPending = true;
+    }
     return;
   }
   const append = opts?.append === true;
@@ -304,6 +314,13 @@ export async function loadCronJobsPage(state: CronState, opts?: { append?: boole
       state.cronJobsLoadingMore = false;
     } else {
       state.cronLoading = false;
+    }
+    // Re-run a reload that was requested while this load was in flight. The
+    // re-run goes through the same guard above, so an overlapping request
+    // re-coalesces instead of recursing.
+    if (cronReloadPending) {
+      cronReloadPending = false;
+      await reloadCronJobs(state);
     }
   }
 }

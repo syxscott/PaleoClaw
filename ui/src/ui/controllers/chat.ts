@@ -7,9 +7,20 @@ import type { ChatAttachment } from "../ui-types.ts";
 import { generateUUID } from "../uuid.ts";
 
 const SILENT_REPLY_PATTERN = /^\s*NO_REPLY\s*$/;
+/**
+ * Partial NO_REPLY forms (e.g. a cumulative stream that jumped from "NO_REPL"
+ * straight to final). Tolerated ONLY at final-commit time — mid-stream delta
+ * rejection keeps the exact-match behavior so partial text still streams.
+ */
+const SILENT_REPLY_PARTIAL_PATTERN = /^\s*NO_?R?E?P?L?Y?\s*$/i;
 
 function isSilentReplyStream(text: string): boolean {
   return SILENT_REPLY_PATTERN.test(text);
+}
+
+/** Final-commit variant of isSilentReplyStream: also swallows truncated prefixes. */
+function isSilentReplyCommit(text: string): boolean {
+  return SILENT_REPLY_PATTERN.test(text) || SILENT_REPLY_PARTIAL_PATTERN.test(text);
 }
 /** Client-side defense-in-depth: detect assistant messages whose text is purely NO_REPLY. */
 function isAssistantSilentReply(message: unknown): boolean {
@@ -138,8 +149,8 @@ export async function restoreComposerDraft(state: ChatState): Promise<void> {
   }
 }
 
-function clearComposerDraft(state: ChatState) {
-  const key = composerDraftKey(state);
+/** Clears the persisted draft for `key` (defaults to the current session). */
+function clearComposerDraft(state: ChatState, key: string = composerDraftKey(state)) {
   cancelScheduledDraftSave(key);
   void clearDraft(key).catch(() => undefined);
 }
@@ -191,6 +202,12 @@ function startComposerDraftSync(state: ChatState) {
     } catch {
       // The sampler must never throw into the interval handler.
     }
+    // Every watched host is gone: stop sampling. The next startComposerDraftSync
+    // registration restarts the interval lazily (see the null-timer check there).
+    if (draftSyncWatchers.size === 0 && draftSyncTimer !== null) {
+      window.clearInterval(draftSyncTimer);
+      draftSyncTimer = null;
+    }
   }, COMPOSER_DRAFT_SYNC_INTERVAL_MS);
 }
 
@@ -203,16 +220,23 @@ export async function loadChatHistory(state: ChatState) {
   if (!state.client || !state.connected) {
     return;
   }
+  // Bind this load to the session it was requested for; discard the response
+  // when the user switched sessions mid-flight (mirrors restoreComposerDraft's
+  // composerDraftKey guard below).
+  const sessionKey = state.sessionKey;
   state.chatLoading = true;
   state.lastError = null;
   try {
     const res = await state.client.request<{ messages?: Array<unknown>; thinkingLevel?: string }>(
       "chat.history",
       {
-        sessionKey: state.sessionKey,
+        sessionKey,
         limit: 200,
       },
     );
+    if (state.sessionKey !== sessionKey) {
+      return; // Session switched mid-load — the stale history must not apply.
+    }
     const messages = Array.isArray(res.messages) ? res.messages : [];
     state.chatMessages = messages.filter((message) => !isAssistantSilentReply(message));
     state.chatThinkingLevel = res.thinkingLevel ?? null;
@@ -222,8 +246,13 @@ export async function loadChatHistory(state: ChatState) {
     state.chatStream = null;
     state.chatStreamStartedAt = null;
   } catch (err) {
+    if (state.sessionKey !== sessionKey) {
+      return; // Stale failure — don't surface it in the new session.
+    }
     state.lastError = String(err);
   } finally {
+    // Unconditional: chatLoading has no owner key, and leaving it stuck true
+    // after a superseded load would block the next load's spinner reset.
     state.chatLoading = false;
   }
 }
@@ -293,6 +322,11 @@ export async function sendChatMessage(
   if (!state.client || !state.connected) {
     return null;
   }
+  // Bind this send to the session (and composer draft) it was started for:
+  // a session switch during the in-flight request must not let the response
+  // mutate the new session's state, clear its draft, or arm its retry.
+  const sessionKey = state.sessionKey;
+  const draftKey = composerDraftKey(state);
   const msg = message.trim();
   const hasAttachments = attachments && attachments.length > 0;
   if (!msg && !hasAttachments) {
@@ -351,17 +385,29 @@ export async function sendChatMessage(
 
   try {
     await state.client.request("chat.send", {
-      sessionKey: state.sessionKey,
+      sessionKey,
       message: msg,
       deliver: false,
       idempotencyKey: runId,
       attachments: apiAttachments,
     });
+    if (state.sessionKey !== sessionKey) {
+      // Session switched mid-send: the new session's state is off-limits, but
+      // the old session's draft was consumed by this send — clear it by its
+      // own key (never by whatever session is active now).
+      clearComposerDraft(state, draftKey);
+      return runId;
+    }
     state.lastFailedSend = null;
     // The send went through, so the persisted draft is consumed.
     clearComposerDraft(state);
     return runId;
   } catch (err) {
+    if (state.sessionKey !== sessionKey) {
+      // Session switched mid-send: drop the failure entirely — the error
+      // bubble and retry payload must not bleed into the new session.
+      return null;
+    }
     const error = String(err);
     state.chatRunId = null;
     state.chatStream = null;
@@ -372,7 +418,11 @@ export async function sendChatMessage(
     // renderChat call already forwards state fields to views/chat.ts — pass
     // state.lastFailedSend as a prop (like showNewMessages) and render a
     // "Retry" affordance on the error bubble / next to the composer.
-    state.lastFailedSend = { text: msg, at: now };
+    // Text-only: attachment sends are excluded — retryLastFailedSend always
+    // re-sends plain text and would silently drop the images.
+    if (!hasAttachments) {
+      state.lastFailedSend = { text: msg, at: now };
+    }
     state.chatMessages = [
       ...state.chatMessages,
       {
@@ -386,24 +436,37 @@ export async function sendChatMessage(
     ];
     return null;
   } finally {
+    // Intentionally not session-guarded: a switched-away send must still
+    // release the flag, or chatSending would stick true forever (the session
+    // switch path doesn't reset it) and every later send would just queue.
     state.chatSending = false;
   }
 }
 
 /**
  * Re-sends the payload stored on state.lastFailedSend and clears it on
- * success. No-op when nothing is pending or the client is disconnected.
+ * success. No-op when nothing is pending, a send is already in flight, or the
+ * client is disconnected.
  */
 export async function retryLastFailedSend(state: ChatState): Promise<string | null> {
   const failed = state.lastFailedSend;
-  if (!failed) {
+  if (!failed || state.chatSending) {
     return null;
   }
-  const runId = await sendChatMessage(state, failed.text);
-  if (runId) {
-    state.lastFailedSend = null;
+  // Clear before awaiting so a double-click cannot double-send. sendChatMessage
+  // re-arms lastFailedSend itself when the retry fails at the gateway layer;
+  // the restore below covers bailing out before the request (e.g. disconnect).
+  state.lastFailedSend = null;
+  try {
+    const runId = await sendChatMessage(state, failed.text);
+    if (!runId && !state.lastFailedSend) {
+      state.lastFailedSend = failed;
+    }
+    return runId;
+  } catch (err) {
+    state.lastFailedSend = failed;
+    throw err;
   }
-  return runId;
 }
 
 export async function abortChatRun(state: ChatState): Promise<boolean> {
@@ -469,7 +532,7 @@ export function handleChatEvent(state: ChatState, payload?: ChatEventPayload) {
     const finalMessage = normalizeFinalAssistantMessage(payload.message);
     if (finalMessage && !isAssistantSilentReply(finalMessage)) {
       state.chatMessages = [...state.chatMessages, finalMessage];
-    } else if (state.chatStream?.trim() && !isSilentReplyStream(state.chatStream)) {
+    } else if (state.chatStream?.trim() && !isSilentReplyCommit(state.chatStream)) {
       state.chatMessages = [
         ...state.chatMessages,
         {
@@ -488,7 +551,7 @@ export function handleChatEvent(state: ChatState, payload?: ChatEventPayload) {
       state.chatMessages = [...state.chatMessages, normalizedMessage];
     } else {
       const streamedText = state.chatStream ?? "";
-      if (streamedText.trim() && !isSilentReplyStream(streamedText)) {
+      if (streamedText.trim() && !isSilentReplyCommit(streamedText)) {
         state.chatMessages = [
           ...state.chatMessages,
           {

@@ -492,6 +492,13 @@ export class GatewayBrowserClient {
         this.opts.onHello?.(hello);
       })
       .catch((err: unknown) => {
+        // Only a structured auth/device rejection (GatewayRequestError carrying
+        // a connect-error detail code — see ConnectErrorDetailCodes) may clear
+        // the device token and force-close the socket. Plain transport failures
+        // (socket died mid-handshake, ghost retired during async signing) must
+        // keep both: the normal close/reconnect machinery handles those.
+        const authRejected =
+          err instanceof GatewayRequestError && resolveGatewayErrorDetailCode(err) !== null;
         if (err instanceof GatewayRequestError) {
           this.pendingConnectError = {
             code: err.gatewayCode,
@@ -501,10 +508,12 @@ export class GatewayBrowserClient {
         } else {
           this.pendingConnectError = undefined;
         }
-        if (canFallbackToShared && deviceIdentity) {
+        if (authRejected && canFallbackToShared && deviceIdentity) {
           clearDeviceAuthToken({ deviceId: deviceIdentity.deviceId, role });
         }
-        this.ws?.close(CONNECT_FAILED_CLOSE_CODE, "connect failed");
+        if (authRejected) {
+          this.ws?.close(CONNECT_FAILED_CLOSE_CODE, "connect failed");
+        }
       });
   }
 

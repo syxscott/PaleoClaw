@@ -18,6 +18,14 @@ export type LogsState = {
 const LOG_BUFFER_LIMIT = 2000;
 const LEVELS = new Set<LogLevel>(["trace", "debug", "info", "warn", "error", "fatal"]);
 
+// Quiet (polling) loads don't touch logsLoading, so overlapping 2s polls can
+// race: a slow tail followed by a full load (or a duplicate poll) would apply
+// an out-of-order response and regress the cursor / duplicate entries.
+// logsQuietInFlight skips redundant quiet ticks; logsLoadGeneration lets a
+// full load invalidate a quiet tail that is still in flight.
+let logsQuietInFlight = false;
+let logsLoadGeneration = 0;
+
 function parseMaybeJsonString(value: unknown) {
   if (typeof value !== "string") {
     return null;
@@ -100,11 +108,23 @@ export async function loadLogs(state: LogsState, opts?: { reset?: boolean; quiet
   if (!state.client || !state.connected) {
     return;
   }
-  if (state.logsLoading && !opts?.quiet) {
+  const quiet = opts?.quiet === true;
+  if (quiet && (logsQuietInFlight || state.logsLoading)) {
+    // A quiet tail or a full load is already in flight — skip this tick so
+    // overlapping responses cannot regress the cursor or duplicate lines.
     return;
   }
-  if (!opts?.quiet) {
+  if (!quiet) {
     state.logsLoading = true;
+    // Invalidate any quiet tail still in flight: its stale response must be
+    // discarded on return (generation check below).
+    if (logsQuietInFlight) {
+      logsLoadGeneration += 1;
+    }
+  }
+  const requestGeneration = logsLoadGeneration;
+  if (quiet) {
+    logsQuietInFlight = true;
   }
   state.logsError = null;
   try {
@@ -113,6 +133,10 @@ export async function loadLogs(state: LogsState, opts?: { reset?: boolean; quiet
       limit: state.logsLimit,
       maxBytes: state.logsMaxBytes,
     });
+    if (quiet && logsLoadGeneration !== requestGeneration) {
+      // A full load superseded this quiet tail — drop the stale response.
+      return;
+    }
     const payload = res as {
       file?: string;
       cursor?: number;
@@ -140,7 +164,10 @@ export async function loadLogs(state: LogsState, opts?: { reset?: boolean; quiet
   } catch (err) {
     state.logsError = String(err);
   } finally {
-    if (!opts?.quiet) {
+    if (quiet) {
+      logsQuietInFlight = false;
+    }
+    if (!quiet) {
       state.logsLoading = false;
     }
   }

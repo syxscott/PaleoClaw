@@ -66,6 +66,11 @@ export type ChatProps = {
   // Image attachments
   attachments?: ChatAttachment[];
   onAttachmentsChange?: (attachments: ChatAttachment[]) => void;
+  // Failed-send retry affordance (see controllers/chat.ts lastFailedSend):
+  // rendered when a sendFailedRetryable error bubble is visible and the
+  // controller still holds the failed payload.
+  lastFailedSend?: { text: string; at: number } | null;
+  onRetryFailedSend?: () => void;
   // Scroll control
   showNewMessages?: boolean;
   onScrollToBottom?: () => void;
@@ -242,6 +247,17 @@ export function renderChat(props: ChatProps) {
   const canCompose = props.connected;
   const isBusy = props.sending || props.stream !== null;
   const canAbort = Boolean(props.canAbort && props.onAbort);
+  // Error bubbles marked sendFailedRetryable by sendChatMessage — the retry
+  // affordance below only applies while such a bubble is on screen.
+  const hasRetryableFailure = (Array.isArray(props.messages) ? props.messages : []).some(
+    (message) =>
+      Boolean(message) &&
+      typeof message === "object" &&
+      (message as Record<string, unknown>).sendFailedRetryable === true,
+  );
+  const showRetryFailedSend = Boolean(
+    hasRetryableFailure && props.lastFailedSend && props.onRetryFailedSend,
+  );
   const activeSession = props.sessions?.sessions?.find((row) => row.key === props.sessionKey);
   const reasoningLevel = activeSession?.reasoningLevel ?? "off";
   const showReasoning = props.showThinking && reasoningLevel !== "off";
@@ -417,6 +433,23 @@ export function renderChat(props: ChatProps) {
             >
               New messages ${icons.arrowDown}
             </button>
+          `
+          : nothing
+      }
+
+      ${
+        showRetryFailedSend
+          ? html`
+            <div class="chat-retry-failed" role="status">
+              <button
+                class="btn"
+                type="button"
+                ?disabled=${props.sending}
+                @click=${props.onRetryFailedSend}
+              >
+                Retry last message
+              </button>
+            </div>
           `
           : nothing
       }

@@ -70,6 +70,17 @@ class I18nManager {
   }
 
   public async setLocale(locale: Locale) {
+    await this.requestLocale(locale);
+  }
+
+  /**
+   * Single locale-load pipeline. `fromRetry` marks requests issued by
+   * retryPendingLocale (t()-driven or reconnect hook): a retry that fails
+   * again must NOT re-arm the auto-retry, or every t() call would fire a new
+   * locale import() forever.
+   */
+  private async requestLocale(locale: Locale, opts?: { fromRetry?: boolean }) {
+    const fromRetry = opts?.fromRetry === true;
     const requestGeneration = ++this.localeRequestGeneration;
     const needsTranslationLoad = locale !== DEFAULT_LOCALE && !this.translations[locale];
     if (this.locale === locale && !needsTranslationLoad) {
@@ -94,8 +105,11 @@ class I18nManager {
         if (requestGeneration === this.localeRequestGeneration) {
           this.pendingLocale = locale;
           // Arm exactly one t()-driven retry; after that only the exported
-          // retry hook (or another setLocale) re-attempts.
-          this.pendingLocaleAutoRetryArmed = true;
+          // retry hook (or another setLocale) re-attempts. Retry-originated
+          // failures are exempt — see requestLocale docs above.
+          if (!fromRetry) {
+            this.pendingLocaleAutoRetryArmed = true;
+          }
         }
         console.error(`Failed to load locale: ${locale}`, e);
         return;
@@ -122,7 +136,7 @@ class I18nManager {
     if (target === null || target === this.locale) {
       return;
     }
-    void this.setLocale(target);
+    void this.requestLocale(target, { fromRetry: true });
   }
 
   private retryPendingLocaleOnce() {

@@ -156,6 +156,37 @@ export function removeQueuedMessage(host: ChatHost, id: string) {
   host.chatQueue = host.chatQueue.filter((item) => item.id !== id);
 }
 
+/**
+ * Session-switch routine shared by every chat session entry point (chat tab
+ * select, overview session list, popstate / ?session= navigation): clears the
+ * outgoing session's transient chat state, persists the new key, and loads the
+ * incoming session's history, composer draft, and avatar. No-op when the
+ * requested key is already active.
+ */
+export function switchChatSession(host: ChatHost, next: string) {
+  const app = host as unknown as OpenClawApp;
+  if (app.sessionKey === next) {
+    return;
+  }
+  app.sessionKey = next;
+  app.chatMessage = "";
+  app.chatAttachments = [];
+  app.chatStream = null;
+  app.chatStreamStartedAt = null;
+  app.chatRunId = null;
+  app.chatQueue = [];
+  app.resetToolStream();
+  app.resetChatScroll();
+  app.applySettings({
+    ...app.settings,
+    sessionKey: next,
+    lastActiveSessionKey: next,
+  });
+  void app.loadAssistantIdentity();
+  void loadChatHistory(app as unknown as Parameters<typeof loadChatHistory>[0]);
+  void refreshChatAvatar(app);
+}
+
 export async function handleSendChat(
   host: ChatHost,
   messageOverride?: string,

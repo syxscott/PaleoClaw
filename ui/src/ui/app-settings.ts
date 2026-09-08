@@ -1,4 +1,4 @@
-import { refreshChat } from "./app-chat.ts";
+import { refreshChat, switchChatSession } from "./app-chat.ts";
 import {
   startLogsPolling,
   stopLogsPolling,
@@ -320,12 +320,10 @@ export function onPopState(host: SettingsHost) {
   const url = new URL(window.location.href);
   const session = url.searchParams.get("session")?.trim();
   if (session) {
-    host.sessionKey = session;
-    applySettings(host, {
-      ...host.settings,
-      sessionKey: session,
-      lastActiveSessionKey: session,
-    });
+    // Go through the shared switch routine so back/forward also resets the
+    // stream/scroll state and reloads history + the composer draft — a bare
+    // sessionKey write would leave the previous session's chat on screen.
+    switchChatSession(host as unknown as Parameters<typeof switchChatSession>[0], session);
   }
 
   setTabFromRoute(host, resolved);

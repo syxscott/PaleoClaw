@@ -126,6 +126,13 @@ function consumePendingChatRestore(host: ScrollHost) {
   }
   void host.updateComplete.then(() => {
     requestAnimationFrame(() => {
+      // The queued restore can outlive its session (two rapid switches): bail
+      // out before touching scrollTop or chatHasAutoScrolled, or the first
+      // session's saved position would scroll — and suppress the initial
+      // auto-scroll of — the session that is now active.
+      if (host.sessionKey !== sessionKey) {
+        return;
+      }
       const target = pickChatScrollTarget(host);
       if (!target) {
         return;
