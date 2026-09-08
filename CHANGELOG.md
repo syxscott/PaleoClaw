@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.8.0] - 2026-09-08
+
+### 🛠 Fixed
+
+Comprehensive bug-fix pass across the core, paleoclaw domain modules, Android app, website, and control UI. Highlights:
+
+- **Core**: restored broken `memory/index.ts` re-exports (startup crash); keyed-async-queue no longer produces unhandled rejections; LINE webhook signature validation is length-safe again; Discord embed validation no longer rejects every valid embed; memory-manager external-provider slot is freed on removal; context-fence keeps text before unclosed fences and buffers tags split across stream chunks; tool discovery parses TypeScript via the TS compiler; several boundary fixes (topK guards, NaN CLI args, executor abort mapping).
+- **paleoclaw modules**: session store and task-memory store now import correctly (missing `path`/shadowed `paleoclawHome`); auto-review promotion is guarded against duplicates; chat day-files are excluded from archiving.
+- **Android**: missing `android.util.Log` import fixed; version-name normalization rewritten (case-insensitive `-dev` suffix strip, release builds verbatim).
+- **Control UI**: all six `docs.paleoclaw.ai` dead links repointed at the deployed manual; `GatewayHost.execApprovalTimers` type error fixed; empty streaming deltas no longer wipe accumulated text; dead `moonshot-kimi-k2.ts` removed.
+
+### ✨ Added
+
+- **SQLite session store** (`createSessionStore`): WAL with graceful fallback, FTS5 with LIKE fallback, index self-repair; JSON store remains as automatic fallback. Two-stage session titles (instant deterministic derive + injectable LLM upgrade) with `titleSource` provenance.
+- **Chat-turn daily memory** ported from GeoClaw-OpenAI v3.2.4 (`recordChatTurn` / `listChatDaily` / `getChatDailyDigest`).
+- **Skill lifecycle curator** (archive-only, pinned-aware, dry-run, `PALEOCLAW_ENABLE_SKILL_CURATOR` gated) and a **declarative pipeline registry** (pre-dependencies, cycle detection).
+- **Vendored openclaw 2026.9.2 `normalization-core` + `retry`**; retry wired into PBDB/CrossRef fetches (exponential backoff + jitter, 429/5xx only).
+- **Control UI**: wake/online reconnect for suspended tabs, IndexedDB composer drafts, per-session scroll memory, send-failure retry, mobile viewport meta with no-flash theme bootstrap, hardened i18n runtime.
+- **Website**: full zh/en/ja coverage (259 keys), real favicon set + OG/social meta, robots.txt + sitemap.xml, keyboard-accessible navigation, clipboard fallbacks.
+- **Private state dirs** (0o700) for session/memory data.
+
+---
+
 ## [1.7.0] - 2026-06-02
 
 ### 🐛 Fixed (Bug Fix Release)

@@ -1,6 +1,32 @@
+<div align="center">
+
+<img src="docs/assets/paleoclaw-logo.png" alt="PaleoClaw logo" width="140">
+
 # PaleoClaw 🦕
 
 **古生物学和地球科学研究 AI 助手**
+
+<em>"Ex Fossilo, Scientia" — 源于化石，成就知识</em>
+
+<p>
+  <a href="https://github.com/syxscott/PaleoClaw/actions/workflows/ci.yml?branch=main"><img src="https://img.shields.io/github/actions/workflow/status/syxscott/PaleoClaw/ci.yml?branch=main&style=flat-square&label=CI" alt="CI"></a>
+  <img src="https://img.shields.io/badge/version-1.8.0-blue?style=flat-square" alt="v1.8.0">
+  <img src="https://img.shields.io/badge/node-%E2%89%A522.12-339933?style=flat-square&logo=nodedotjs&logoColor=white" alt="Node ≥22.12">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="MIT"></a>
+  <a href="https://github.com/syxscott/PaleoClaw/stargazers"><img src="https://img.shields.io/github/stars/syxscott/PaleoClaw?style=flat-square&color=yellow" alt="Stars"></a>
+</p>
+
+<p>
+  <a href="https://www.paleoclaw.paleo-lab.com">🌐 官网</a> ·
+  <a href="https://www.paleoclaw.paleo-lab.com/manual.html">📖 使用手册</a> ·
+  <a href="README.md">🇺🇸 English</a> ·
+  <a href="CHANGELOG.md">📋 更新日志</a> ·
+  <a href="https://github.com/syxscott/PaleoClaw/issues">🐞 问题反馈</a>
+</p>
+
+</div>
+
+---
 
 [English](README.md) | 中文
 
@@ -21,7 +47,7 @@ PaleoClaw 是一个专注于古生物学和地球科学的 AI 研究助手。它
 
 ## 🎯 主要功能
 
-### v1.6.0 最新更新
+### 功能亮点（当前版本 v1.8.0，完整列表见 [CHANGELOG.md](CHANGELOG.md)）
 
 #### 🆕 新增功能
 
@@ -205,7 +231,7 @@ PaleoClaw 遵守严格的科学诚信标准：
 
 ## 🔗 相关链接
 
-- 🌐 网站: https://paleoclaw.ai
+- 🌐 网站: https://www.paleoclaw.paleo-lab.com
 - 📦 npm: https://www.npmjs.com/package/paleoclaw
 - 💬 Discord: [加入讨论](https://discord.com/invite/clawd)
 
