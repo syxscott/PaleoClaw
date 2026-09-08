@@ -5,7 +5,7 @@
   "description": "paleoclaw core memory search plugin",
   "type": "module",
   "peerDependencies": {
-    "paleoclaw": ">=2026.3.2"
+    "paleoclaw": ">=1.6.0"
   },
   "peerDependenciesMeta": {
     "paleoclaw": {

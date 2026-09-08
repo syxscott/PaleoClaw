@@ -21,7 +21,7 @@ jobs:
       matrix:
         include:
           - language: javascript-typescript
-            runs_on: blacksmith-16vcpu-ubuntu-2404
+            runs_on: ubuntu-latest
             needs_node: true
             needs_python: false
             needs_java: false
@@ -29,7 +29,7 @@ jobs:
             needs_manual_build: false
             needs_autobuild: false
           - language: actions
-            runs_on: blacksmith-16vcpu-ubuntu-2404
+            runs_on: ubuntu-latest
             needs_node: false
             needs_python: false
             needs_java: false
@@ -37,7 +37,7 @@ jobs:
             needs_manual_build: false
             needs_autobuild: false
           - language: python
-            runs_on: blacksmith-16vcpu-ubuntu-2404
+            runs_on: ubuntu-latest
             needs_node: false
             needs_python: true
             needs_java: false
@@ -45,7 +45,7 @@ jobs:
             needs_manual_build: false
             needs_autobuild: false
           - language: java-kotlin
-            runs_on: blacksmith-16vcpu-ubuntu-2404
+            runs_on: ubuntu-latest
             needs_node: false
             needs_python: false
             needs_java: true
