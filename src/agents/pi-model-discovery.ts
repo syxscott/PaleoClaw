@@ -148,5 +148,12 @@ export function discoverAuthStorage(agentDir: string): PiAuthStorage {
 }
 
 export function discoverModels(authStorage: PiAuthStorage, agentDir: string): PiModelRegistry {
-  return new PiModelRegistryClass(authStorage, path.join(agentDir, "models.json"));
+  const Registry = PiModelRegistryClass as unknown as {
+    create?: (authStorage: PiAuthStorage, modelsJsonPath: string) => PiModelRegistry;
+    new (authStorage: PiAuthStorage, modelsJsonPath: string): PiModelRegistry;
+  };
+  if (typeof Registry.create === "function") {
+    return Registry.create(authStorage, path.join(agentDir, "models.json"));
+  }
+  return new Registry(authStorage, path.join(agentDir, "models.json"));
 }

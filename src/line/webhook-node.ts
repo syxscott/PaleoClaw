@@ -1,5 +1,7 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
-import type { WebhookRequestBody } from "@line/bot-sdk";
+import type { webhook } from "@line/bot-sdk";
+
+type WebhookRequestBody = webhook.CallbackRequest;
 import { danger, logVerbose } from "../globals.js";
 import {
   isRequestBodyLimitError,

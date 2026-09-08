@@ -1,4 +1,4 @@
-import type { Message } from "@grammyjs/types";
+import type { Message } from "grammy/types";
 import { createDedupeCache } from "../infra/dedupe.js";
 import type { TelegramContext } from "./bot/types.js";
 

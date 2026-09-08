@@ -1,4 +1,6 @@
-import type { WebhookRequestBody } from "@line/bot-sdk";
+import type { webhook } from "@line/bot-sdk";
+
+type WebhookRequestBody = webhook.CallbackRequest;
 import type { Request, Response, NextFunction } from "express";
 import { logVerbose, danger } from "../globals.js";
 import type { RuntimeEnv } from "../runtime.js";

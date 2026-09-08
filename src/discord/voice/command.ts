@@ -1,15 +1,12 @@
 import {
+  type APIApplicationCommandChannelOption,
   ChannelType as CarbonChannelType,
   Command,
   CommandWithSubcommands,
   type CommandInteraction,
   type CommandOptions,
 } from "@buape/carbon";
-import {
-  ApplicationCommandOptionType,
-  ChannelType as DiscordChannelType,
-  type APIApplicationCommandChannelOption,
-} from "discord-api-types/v10";
+import { ApplicationCommandOptionType } from "discord-api-types/v10";
 import { resolveCommandAuthorizedFromAuthorizers } from "../../channels/command-gating.js";
 import type { OpenClawConfig } from "../../config/config.js";
 import { isDangerousNameMatchingEnabled } from "../../config/dangerous-name-matching.js";
@@ -29,8 +26,8 @@ import { resolveDiscordThreadParentInfo } from "../monitor/threading.js";
 import type { DiscordVoiceManager } from "./manager.js";
 
 const VOICE_CHANNEL_TYPES: NonNullable<APIApplicationCommandChannelOption["channel_types"]> = [
-  DiscordChannelType.GuildVoice,
-  DiscordChannelType.GuildStageVoice,
+  CarbonChannelType.GuildVoice,
+  CarbonChannelType.GuildStageVoice,
 ];
 
 type VoiceCommandContext = {

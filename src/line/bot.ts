@@ -1,4 +1,6 @@
-import type { WebhookRequestBody } from "@line/bot-sdk";
+import type { webhook } from "@line/bot-sdk";
+
+type WebhookRequestBody = webhook.CallbackRequest;
 import type { Request, Response, NextFunction } from "express";
 import { DEFAULT_GROUP_HISTORY_LIMIT, type HistoryEntry } from "../auto-reply/reply/history.js";
 import type { OpenClawConfig } from "../config/config.js";

@@ -278,11 +278,24 @@ export async function sendDiscordVoiceMessage(
           retry_after?: number;
           global?: boolean;
         };
-        throw new RateLimitError(res, {
-          message: retryData.message ?? "You are being rate limited.",
-          retry_after: retryData.retry_after ?? 1,
-          global: retryData.global ?? false,
-        });
+        throw new RateLimitError(
+          res,
+          {
+            message: retryData.message ?? "You are being rate limited.",
+            retry_after: retryData.retry_after ?? 1,
+            global: retryData.global ?? false,
+          },
+          new Request(url, {
+            method: "POST",
+            headers: {
+              Authorization: `Bot ${botToken}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              files: [{ filename, file_size: fileSize, id: "0" }],
+            }),
+          }),
+        );
       }
       const errorBody = (await res.json().catch(() => null)) as {
         code?: number;

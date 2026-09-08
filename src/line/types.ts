@@ -1,12 +1,4 @@
-import type {
-  WebhookEvent,
-  TextMessage,
-  ImageMessage,
-  VideoMessage,
-  AudioMessage,
-  StickerMessage,
-  LocationMessage,
-} from "@line/bot-sdk";
+import type { messagingApi, webhook } from "@line/bot-sdk";
 import type { BaseProbeResult } from "../channels/plugins/types.js";
 
 export type LineTokenSource = "config" | "env" | "file" | "none";
@@ -57,15 +49,15 @@ export interface ResolvedLineAccount {
 }
 
 export type LineMessageType =
-  | TextMessage
-  | ImageMessage
-  | VideoMessage
-  | AudioMessage
-  | StickerMessage
-  | LocationMessage;
+  | messagingApi.TextMessage
+  | messagingApi.ImageMessage
+  | messagingApi.VideoMessage
+  | messagingApi.AudioMessage
+  | messagingApi.StickerMessage
+  | messagingApi.LocationMessage;
 
 export interface LineWebhookContext {
-  event: WebhookEvent;
+  event: webhook.Event;
   replyToken?: string;
   userId?: string;
   groupId?: string;

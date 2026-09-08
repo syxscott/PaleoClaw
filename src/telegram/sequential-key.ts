@@ -1,4 +1,4 @@
-import { type Message, type UserFromGetMe } from "@grammyjs/types";
+import { type Message, type UserFromGetMe } from "grammy/types";
 import { isAbortRequestText } from "../auto-reply/reply/abort.js";
 import { resolveTelegramForumThreadId } from "./bot/helpers.js";
 

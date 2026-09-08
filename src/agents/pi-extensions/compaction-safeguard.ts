@@ -735,7 +735,8 @@ export default function compactionSafeguardExtension(api: ExtensionAPI): void {
       return { cancel: true };
     }
 
-    const apiKey = await ctx.modelRegistry.getApiKey(model);
+    const requestAuth = await ctx.modelRegistry.getApiKeyAndHeaders(model);
+    const apiKey = requestAuth.ok ? requestAuth.apiKey : undefined;
     if (!apiKey) {
       console.warn(
         "Compaction safeguard: no API key available; cancelling compaction to preserve history.",

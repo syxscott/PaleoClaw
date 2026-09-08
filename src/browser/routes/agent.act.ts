@@ -1,6 +1,7 @@
 import type { BrowserFormField } from "../client-actions-core.js";
 import { normalizeBrowserFormField } from "../form-fields.js";
 import type { BrowserRouteContext } from "../server-context.js";
+import { createSubsystemLogger } from "../../logging/subsystem.js";
 import { registerBrowserAgentActDownloadRoutes } from "./agent.act.download.js";
 import { registerBrowserAgentActHookRoutes } from "./agent.act.hooks.js";
 import {
@@ -17,6 +18,8 @@ import {
 } from "./agent.shared.js";
 import type { BrowserRouteRegistrar } from "./types.js";
 import { jsonError, toBoolean, toNumber, toStringArray, toStringOrEmpty } from "./utils.js";
+
+const actEvaluateLogger = createSubsystemLogger("gateway/channels/browser/act-evaluate");
 
 export function registerBrowserAgentActRoutes(
   app: BrowserRouteRegistrar,
@@ -287,7 +290,7 @@ export function registerBrowserAgentActRoutes(
             }
             // SECURITY: This feature allows arbitrary code execution in the browser context.
             // Only enable browser.evaluateEnabled in trusted environments.
-            ctx.logger.warn?.("act:evaluate called - arbitrary code execution in browser context");
+            actEvaluateLogger.warn("act:evaluate called - arbitrary code execution in browser context");
             const fn = toStringOrEmpty(body.fn);
             if (!fn) {
               return jsonError(res, 400, "fn is required");

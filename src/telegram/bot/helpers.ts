@@ -1,4 +1,4 @@
-import type { Chat, Message, MessageOrigin, User } from "@grammyjs/types";
+import type { Chat, Message, MessageOrigin, User } from "grammy/types";
 import { formatLocationText, type NormalizedLocation } from "../../channels/location.js";
 import { resolveTelegramPreviewStreamMode } from "../../config/discord-preview-streaming.js";
 import type {

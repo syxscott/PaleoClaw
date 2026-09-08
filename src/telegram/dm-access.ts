@@ -1,4 +1,4 @@
-import type { Message } from "@grammyjs/types";
+import type { Message } from "grammy/types";
 import type { Bot } from "grammy";
 import type { DmPolicy } from "../config/types.js";
 import { logVerbose } from "../globals.js";

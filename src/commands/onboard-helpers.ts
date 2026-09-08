@@ -29,7 +29,9 @@ import { VERSION } from "../version.js";
 import type { NodeManagerChoice, OnboardMode, ResetScope } from "./onboard-types.js";
 
 export function guardCancel<T>(value: T | symbol, runtime: RuntimeEnv): T {
-  if (isCancel(value)) {
+  // @clack's isCancel only narrows to its CANCEL_SYMBOL literal, so also
+  // exclude `symbol` explicitly to satisfy the `T` return type.
+  if (isCancel(value) || typeof value === "symbol") {
     cancel(stylePromptTitle("Setup cancelled.") ?? "Setup cancelled.");
     runtime.exit(0);
     throw new Error("unreachable");

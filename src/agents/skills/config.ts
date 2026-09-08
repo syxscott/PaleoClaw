@@ -7,6 +7,7 @@ import {
   resolveRuntimePlatform,
 } from "../../shared/config-eval.js";
 import { normalizeStringEntries } from "../../shared/string-normalization.js";
+import type { Skill } from "@mariozechner/pi-coding-agent";
 import { resolveSkillKey } from "./frontmatter.js";
 import type { SkillEligibilityContext, SkillEntry } from "./types.js";
 
@@ -49,8 +50,16 @@ function normalizeAllowlist(input: unknown): string[] | undefined {
 
 const BUNDLED_SOURCES = new Set(["paleoclaw-bundled"]);
 
+function resolveSkillSource(skill: Skill): string {
+  const compatSkill = skill as Skill & {
+    source?: string;
+    sourceInfo?: { source?: string };
+  };
+  return compatSkill.source ?? compatSkill.sourceInfo?.source ?? "unknown";
+}
+
 function isBundledSkill(entry: SkillEntry): boolean {
-  return BUNDLED_SOURCES.has(entry.skill.source);
+  return BUNDLED_SOURCES.has(resolveSkillSource(entry.skill));
 }
 
 export function resolveBundledAllowlist(config?: OpenClawConfig): string[] | undefined {

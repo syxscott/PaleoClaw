@@ -1,4 +1,9 @@
-import type { MessageEvent, StickerEventMessage, EventSource, PostbackEvent } from "@line/bot-sdk";
+import type { webhook } from "@line/bot-sdk";
+
+type EventSource = webhook.Source | undefined;
+type MessageEvent = webhook.MessageEvent;
+type PostbackEvent = webhook.PostbackEvent;
+type StickerEventMessage = webhook.StickerMessageContent;
 import { formatInboundEnvelope } from "../auto-reply/envelope.js";
 import { type HistoryEntry } from "../auto-reply/reply/history.js";
 import { finalizeInboundContext } from "../auto-reply/reply/inbound-context.js";
@@ -37,6 +42,9 @@ export type LineSourceInfo = {
 };
 
 export function getLineSourceInfo(source: EventSource): LineSourceInfo {
+  if (!source) {
+    return { userId: undefined, groupId: undefined, roomId: undefined, isGroup: false };
+  }
   const userId =
     source.type === "user"
       ? source.userId
@@ -53,6 +61,9 @@ export function getLineSourceInfo(source: EventSource): LineSourceInfo {
 }
 
 function buildPeerId(source: EventSource): string {
+  if (!source) {
+    return "unknown";
+  }
   const groupKey = resolveLineGroupHistoryKey({
     groupId: source.type === "group" ? source.groupId : undefined,
     roomId: source.type === "room" ? source.roomId : undefined,

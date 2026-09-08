@@ -1,4 +1,6 @@
-import type { WebhookRequestBody } from "@line/bot-sdk";
+import type { webhook } from "@line/bot-sdk";
+
+type WebhookRequestBody = webhook.CallbackRequest;
 
 export function parseLineWebhookBody(rawBody: string): WebhookRequestBody | null {
   try {
