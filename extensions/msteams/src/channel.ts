@@ -1,4 +1,4 @@
-﻿import {
+import {
   collectAllowlistProviderRestrictSendersWarnings,
   formatAllowFromLowercase,
 } from "paleoclaw/plugin-sdk/compat";

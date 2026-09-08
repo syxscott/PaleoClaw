@@ -1,4 +1,4 @@
-﻿import type { ChannelPlugin, OpenClawPluginApi } from "paleoclaw/plugin-sdk/irc";
+import type { ChannelPlugin, OpenClawPluginApi } from "paleoclaw/plugin-sdk/irc";
 import { emptyPluginConfigSchema } from "paleoclaw/plugin-sdk/irc";
 import { ircPlugin } from "./src/channel.js";
 import { setIrcRuntime } from "./src/runtime.js";

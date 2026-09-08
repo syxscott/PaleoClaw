@@ -1,4 +1,4 @@
-﻿/**
+/**
  * HTTP callback handler for Mattermost slash commands.
  *
  * Receives POST requests from Mattermost when a slash command is invoked,

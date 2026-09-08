@@ -1,4 +1,4 @@
-﻿import type { MatrixClient } from "@vector-im/matrix-bot-sdk";
+import type { MatrixClient } from "@vector-im/matrix-bot-sdk";
 import { DEFAULT_ACCOUNT_ID, normalizeAccountId } from "paleoclaw/plugin-sdk/account-id";
 import { getMatrixRuntime } from "../../runtime.js";
 import type { CoreConfig } from "../../types.js";

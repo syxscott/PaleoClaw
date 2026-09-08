@@ -1,4 +1,4 @@
-﻿import type { PluginRuntime } from "paleoclaw/plugin-sdk/msteams";
+import type { PluginRuntime } from "paleoclaw/plugin-sdk/msteams";
 
 let runtime: PluginRuntime | null = null;
 

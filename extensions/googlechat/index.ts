@@ -1,4 +1,4 @@
-﻿import type { OpenClawPluginApi } from "paleoclaw/plugin-sdk/googlechat";
+import type { OpenClawPluginApi } from "paleoclaw/plugin-sdk/googlechat";
 import { emptyPluginConfigSchema } from "paleoclaw/plugin-sdk/googlechat";
 import { googlechatDock, googlechatPlugin } from "./src/channel.js";
 import { setGoogleChatRuntime } from "./src/runtime.js";

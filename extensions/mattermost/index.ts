@@ -1,4 +1,4 @@
-﻿import type { OpenClawPluginApi } from "paleoclaw/plugin-sdk/mattermost";
+import type { OpenClawPluginApi } from "paleoclaw/plugin-sdk/mattermost";
 import { emptyPluginConfigSchema } from "paleoclaw/plugin-sdk/mattermost";
 import { mattermostPlugin } from "./src/channel.js";
 import { getSlashCommandState, registerSlashCommandRoute } from "./src/mattermost/slash-state.js";

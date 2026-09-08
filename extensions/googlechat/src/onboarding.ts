@@ -1,4 +1,4 @@
-﻿import type { OpenClawConfig, DmPolicy } from "paleoclaw/plugin-sdk/googlechat";
+import type { OpenClawConfig, DmPolicy } from "paleoclaw/plugin-sdk/googlechat";
 import {
   addWildcardAllowFrom,
   formatDocsLink,

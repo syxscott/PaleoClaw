@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { buildViewerUrl, normalizeViewerBaseUrl } from "./url.js";
 
 describe("diffs viewer URL helpers", () => {

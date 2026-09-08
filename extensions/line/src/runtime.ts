@@ -1,4 +1,4 @@
-﻿import type { PluginRuntime } from "paleoclaw/plugin-sdk/line";
+import type { PluginRuntime } from "paleoclaw/plugin-sdk/line";
 
 let runtime: PluginRuntime | null = null;
 

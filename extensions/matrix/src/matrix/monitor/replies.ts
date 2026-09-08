@@ -1,4 +1,4 @@
-﻿import type { MatrixClient } from "@vector-im/matrix-bot-sdk";
+import type { MatrixClient } from "@vector-im/matrix-bot-sdk";
 import type { MarkdownTableMode, ReplyPayload, RuntimeEnv } from "paleoclaw/plugin-sdk/matrix";
 import { getMatrixRuntime } from "../../runtime.js";
 import { sendMessageMatrix } from "../send.js";

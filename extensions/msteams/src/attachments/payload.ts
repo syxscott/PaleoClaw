@@ -1,4 +1,4 @@
-﻿import { buildMediaPayload } from "paleoclaw/plugin-sdk/msteams";
+import { buildMediaPayload } from "paleoclaw/plugin-sdk/msteams";
 
 export function buildMSTeamsMediaPayload(
   mediaList: Array<{ path: string; contentType?: string }>,

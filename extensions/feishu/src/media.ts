@@ -1,4 +1,4 @@
-﻿import fs from "fs";
+import fs from "fs";
 import path from "path";
 import { Readable } from "stream";
 import { withTempDownloadPath, type ClawdbotConfig } from "paleoclaw/plugin-sdk/feishu";

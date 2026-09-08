@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Twitch message sending functions with dependency injection support.
  *
  * These functions are the primary interface for sending messages to Twitch.

@@ -1,4 +1,4 @@
-﻿import type { OpenClawPluginApi } from "paleoclaw/plugin-sdk/slack";
+import type { OpenClawPluginApi } from "paleoclaw/plugin-sdk/slack";
 import { emptyPluginConfigSchema } from "paleoclaw/plugin-sdk/slack";
 import { slackPlugin } from "./src/channel.js";
 import { setSlackRuntime } from "./src/runtime.js";

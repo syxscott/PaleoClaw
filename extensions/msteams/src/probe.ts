@@ -1,4 +1,4 @@
-﻿import {
+import {
   normalizeStringEntries,
   type BaseProbeResult,
   type MSTeamsConfig,

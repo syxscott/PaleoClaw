@@ -1,1 +1,1 @@
-﻿console.warn("moltbot renamed -> paleoclaw");
+console.warn("moltbot renamed -> paleoclaw");

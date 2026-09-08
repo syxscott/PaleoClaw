@@ -1,4 +1,4 @@
-﻿import { StaticAuthProvider } from "@twurple/auth";
+import { StaticAuthProvider } from "@twurple/auth";
 import { ChatClient } from "@twurple/chat";
 import type { BaseProbeResult } from "paleoclaw/plugin-sdk/twitch";
 import type { TwitchAccountConfig } from "./types.js";

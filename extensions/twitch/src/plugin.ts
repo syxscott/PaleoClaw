@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Twitch channel plugin for paleoclaw.
  *
  * Main plugin export combining all adapters (outbound, actions, status, gateway).

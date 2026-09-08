@@ -1,4 +1,4 @@
-﻿import {
+import {
   DM_GROUP_ACCESS_REASON,
   DEFAULT_GROUP_HISTORY_LIMIT,
   type HistoryEntry,

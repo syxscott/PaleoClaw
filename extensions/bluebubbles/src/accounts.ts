@@ -1,4 +1,4 @@
-﻿import { DEFAULT_ACCOUNT_ID, normalizeAccountId } from "paleoclaw/plugin-sdk/account-id";
+import { DEFAULT_ACCOUNT_ID, normalizeAccountId } from "paleoclaw/plugin-sdk/account-id";
 import { createAccountListHelpers, type OpenClawConfig } from "paleoclaw/plugin-sdk/bluebubbles";
 import { hasConfiguredSecretInput, normalizeSecretInputString } from "./secret-input.js";
 import { normalizeBlueBubblesServerUrl, type BlueBubblesAccountConfig } from "./types.js";

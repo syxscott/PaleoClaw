@@ -1,4 +1,4 @@
-﻿import { MarkdownConfigSchema } from "paleoclaw/plugin-sdk/zalo";
+import { MarkdownConfigSchema } from "paleoclaw/plugin-sdk/zalo";
 import { z } from "zod";
 import { buildSecretInputSchema } from "./secret-input.js";
 

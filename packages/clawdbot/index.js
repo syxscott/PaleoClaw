@@ -1,1 +1,1 @@
-﻿export * from "paleoclaw";
+export * from "paleoclaw";

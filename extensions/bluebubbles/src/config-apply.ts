@@ -1,4 +1,4 @@
-﻿import { DEFAULT_ACCOUNT_ID, type OpenClawConfig } from "paleoclaw/plugin-sdk/bluebubbles";
+import { DEFAULT_ACCOUNT_ID, type OpenClawConfig } from "paleoclaw/plugin-sdk/bluebubbles";
 
 type BlueBubblesConfigPatch = {
   serverUrl?: string;

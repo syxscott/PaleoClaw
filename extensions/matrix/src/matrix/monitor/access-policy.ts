@@ -1,4 +1,4 @@
-﻿import {
+import {
   formatAllowlistMatchMeta,
   issuePairingChallenge,
   readStoreAllowFromForDmPolicy,

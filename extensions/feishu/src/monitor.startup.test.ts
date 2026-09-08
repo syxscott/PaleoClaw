@@ -1,4 +1,4 @@
-﻿import type { ClawdbotConfig } from "paleoclaw/plugin-sdk/feishu";
+import type { ClawdbotConfig } from "paleoclaw/plugin-sdk/feishu";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { monitorFeishuProvider, stopFeishuMonitor } from "./monitor.js";
 

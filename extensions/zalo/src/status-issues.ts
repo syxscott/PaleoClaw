@@ -1,4 +1,4 @@
-﻿import type { ChannelAccountSnapshot, ChannelStatusIssue } from "paleoclaw/plugin-sdk/zalo";
+import type { ChannelAccountSnapshot, ChannelStatusIssue } from "paleoclaw/plugin-sdk/zalo";
 
 type ZaloAccountStatus = {
   accountId?: unknown;

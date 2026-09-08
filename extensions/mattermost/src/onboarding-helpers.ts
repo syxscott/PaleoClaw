@@ -1,1 +1,1 @@
-﻿export { promptAccountId, resolveAccountIdForConfigure } from "paleoclaw/plugin-sdk/mattermost";
+export { promptAccountId, resolveAccountIdForConfigure } from "paleoclaw/plugin-sdk/mattermost";

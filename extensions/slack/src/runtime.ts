@@ -1,4 +1,4 @@
-﻿import type { PluginRuntime } from "paleoclaw/plugin-sdk/slack";
+import type { PluginRuntime } from "paleoclaw/plugin-sdk/slack";
 
 let runtime: PluginRuntime | null = null;
 

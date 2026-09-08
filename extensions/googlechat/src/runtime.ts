@@ -1,4 +1,4 @@
-﻿import type { PluginRuntime } from "paleoclaw/plugin-sdk/googlechat";
+import type { PluginRuntime } from "paleoclaw/plugin-sdk/googlechat";
 
 let runtime: PluginRuntime | null = null;
 

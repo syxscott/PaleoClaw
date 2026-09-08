@@ -1,4 +1,4 @@
-﻿import type { ClawdbotConfig } from "paleoclaw/plugin-sdk/feishu";
+import type { ClawdbotConfig } from "paleoclaw/plugin-sdk/feishu";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getMessageFeishu } from "./send.js";
 

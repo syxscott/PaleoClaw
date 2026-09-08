@@ -1,4 +1,4 @@
-﻿import { loadOutboundMediaFromUrl, type OpenClawConfig } from "paleoclaw/plugin-sdk/mattermost";
+import { loadOutboundMediaFromUrl, type OpenClawConfig } from "paleoclaw/plugin-sdk/mattermost";
 import { getMattermostRuntime } from "../runtime.js";
 import { resolveMattermostAccount } from "./accounts.js";
 import {

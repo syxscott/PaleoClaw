@@ -1,4 +1,4 @@
-﻿import type { OpenClawConfig, OpenClawPluginApi } from "paleoclaw/plugin-sdk/thread-ownership";
+import type { OpenClawConfig, OpenClawPluginApi } from "paleoclaw/plugin-sdk/thread-ownership";
 
 type ThreadOwnershipConfig = {
   forwarderUrl?: string;

@@ -1,4 +1,4 @@
-﻿import type { DmPolicy } from "paleoclaw/plugin-sdk/matrix";
+import type { DmPolicy } from "paleoclaw/plugin-sdk/matrix";
 import {
   addWildcardAllowFrom,
   buildSingleChannelSecretPromptState,

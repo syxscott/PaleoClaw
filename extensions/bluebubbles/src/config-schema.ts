@@ -1,4 +1,4 @@
-﻿import { MarkdownConfigSchema, ToolPolicySchema } from "paleoclaw/plugin-sdk/bluebubbles";
+import { MarkdownConfigSchema, ToolPolicySchema } from "paleoclaw/plugin-sdk/bluebubbles";
 import { z } from "zod";
 import { buildSecretInputSchema, hasConfiguredSecretInput } from "./secret-input.js";
 

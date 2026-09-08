@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { resolveIrcInboundTarget } from "./monitor.js";
 
 describe("irc monitor inbound target", () => {

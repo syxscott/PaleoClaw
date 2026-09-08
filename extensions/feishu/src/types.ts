@@ -1,4 +1,4 @@
-﻿import type { BaseProbeResult } from "paleoclaw/plugin-sdk/feishu";
+import type { BaseProbeResult } from "paleoclaw/plugin-sdk/feishu";
 import type {
   FeishuConfigSchema,
   FeishuGroupSchema,

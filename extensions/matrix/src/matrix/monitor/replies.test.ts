@@ -1,4 +1,4 @@
-﻿import type { MatrixClient } from "@vector-im/matrix-bot-sdk";
+import type { MatrixClient } from "@vector-im/matrix-bot-sdk";
 import type { PluginRuntime, RuntimeEnv } from "paleoclaw/plugin-sdk/matrix";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 

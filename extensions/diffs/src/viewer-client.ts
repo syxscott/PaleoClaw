@@ -1,4 +1,4 @@
-﻿import { FileDiff, preloadHighlighter } from "@pierre/diffs";
+import { FileDiff, preloadHighlighter } from "@pierre/diffs";
 import type {
   FileContents,
   FileDiffMetadata,

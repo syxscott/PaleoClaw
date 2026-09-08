@@ -1,4 +1,4 @@
-﻿import {
+import {
   createReplyPrefixOptions,
   createTypingCallbacks,
   logTypingFailure,

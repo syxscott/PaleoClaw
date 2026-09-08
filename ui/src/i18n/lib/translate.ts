@@ -1,4 +1,4 @@
-﻿import { en } from "../locales/en.ts";
+import { en } from "../locales/en.ts";
 import {
   DEFAULT_LOCALE,
   SUPPORTED_LOCALES,

@@ -1,4 +1,4 @@
-﻿import type { PluginRuntime } from "paleoclaw/plugin-sdk/mattermost";
+import type { PluginRuntime } from "paleoclaw/plugin-sdk/mattermost";
 
 let runtime: PluginRuntime | null = null;
 

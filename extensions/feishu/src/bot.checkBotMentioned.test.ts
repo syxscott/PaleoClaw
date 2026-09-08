@@ -1,4 +1,4 @@
-﻿import { describe, it, expect } from "vitest";
+import { describe, it, expect } from "vitest";
 import { parseFeishuMessageEvent } from "./bot.js";
 
 // Helper to build a minimal FeishuMessageEvent for testing

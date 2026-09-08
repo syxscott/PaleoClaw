@@ -1,4 +1,4 @@
-﻿import { LitElement } from "lit";
+import { LitElement } from "lit";
 import { customElement, state } from "lit/decorators.js";
 import { i18n, I18nController, isSupportedLocale } from "../i18n/index.ts";
 import {

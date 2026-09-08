@@ -1,4 +1,4 @@
-﻿import { promises as fs } from "node:fs";
+import { promises as fs } from "node:fs";
 import path from "node:path";
 import type { OpenClawPluginApi } from "paleoclaw/plugin-sdk/device-pair";
 import { listDevicePairing } from "paleoclaw/plugin-sdk/device-pair";

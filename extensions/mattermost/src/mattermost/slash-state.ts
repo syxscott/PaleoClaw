@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Shared state for Mattermost slash commands.
  *
  * Bridges the plugin registration phase (HTTP route) with the monitor phase

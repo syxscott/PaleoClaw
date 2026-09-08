@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Upload an image from a URL to Tlon storage.
  */
 import { uploadFile } from "@tloncorp/api";

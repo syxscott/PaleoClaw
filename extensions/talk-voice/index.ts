@@ -1,4 +1,4 @@
-﻿import type { OpenClawPluginApi } from "paleoclaw/plugin-sdk/talk-voice";
+import type { OpenClawPluginApi } from "paleoclaw/plugin-sdk/talk-voice";
 
 type ElevenLabsVoice = {
   voice_id: string;

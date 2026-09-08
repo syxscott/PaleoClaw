@@ -1,4 +1,4 @@
-﻿import type { OpenClawPluginApi } from "paleoclaw/plugin-sdk/diagnostics-otel";
+import type { OpenClawPluginApi } from "paleoclaw/plugin-sdk/diagnostics-otel";
 import { emptyPluginConfigSchema } from "paleoclaw/plugin-sdk/diagnostics-otel";
 import { createDiagnosticsOtelService } from "./src/service.js";
 

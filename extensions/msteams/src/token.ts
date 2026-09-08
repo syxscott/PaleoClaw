@@ -1,4 +1,4 @@
-﻿import type { MSTeamsConfig } from "paleoclaw/plugin-sdk/msteams";
+import type { MSTeamsConfig } from "paleoclaw/plugin-sdk/msteams";
 import {
   hasConfiguredSecretInput,
   normalizeResolvedSecretInputString,

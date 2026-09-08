@@ -1,4 +1,4 @@
-﻿import type { LookupFn, SsrFPolicy } from "paleoclaw/plugin-sdk/tlon";
+import type { LookupFn, SsrFPolicy } from "paleoclaw/plugin-sdk/tlon";
 import { fetchWithSsrFGuard } from "paleoclaw/plugin-sdk/tlon";
 import { validateUrbitBaseUrl } from "./base-url.js";
 import { UrbitUrlError } from "./errors.js";

@@ -1,4 +1,4 @@
-﻿import type { AnyAgentTool, OpenClawPluginApi } from "paleoclaw/plugin-sdk/llm-task";
+import type { AnyAgentTool, OpenClawPluginApi } from "paleoclaw/plugin-sdk/llm-task";
 import { createLlmTaskTool } from "./src/llm-task-tool.js";
 
 export default function register(api: OpenClawPluginApi) {

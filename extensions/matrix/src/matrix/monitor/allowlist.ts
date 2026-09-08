@@ -1,4 +1,4 @@
-﻿import {
+import {
   normalizeStringEntries,
   resolveAllowlistMatchByCandidates,
   type AllowlistMatch,

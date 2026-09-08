@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Memory Plugin E2E Tests
  *
  * Tests the memory plugin functionality including:

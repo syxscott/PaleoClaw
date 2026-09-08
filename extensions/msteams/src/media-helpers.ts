@@ -1,4 +1,4 @@
-﻿/**
+/**
  * MIME type detection and filename extraction for MSTeams media attachments.
  */
 

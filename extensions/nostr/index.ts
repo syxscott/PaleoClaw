@@ -1,4 +1,4 @@
-﻿import type { OpenClawPluginApi } from "paleoclaw/plugin-sdk/nostr";
+import type { OpenClawPluginApi } from "paleoclaw/plugin-sdk/nostr";
 import { emptyPluginConfigSchema } from "paleoclaw/plugin-sdk/nostr";
 import { nostrPlugin } from "./src/channel.js";
 import type { NostrProfile } from "./src/config-schema.js";

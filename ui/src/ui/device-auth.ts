@@ -1,4 +1,4 @@
-﻿import {
+import {
   clearDeviceAuthTokenFromStore,
   type DeviceAuthEntry,
   loadDeviceAuthTokenFromStore,

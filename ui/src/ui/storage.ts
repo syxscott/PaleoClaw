@@ -1,4 +1,4 @@
-﻿const KEY = "paleoclaw.control.settings.v1";
+const KEY = "paleoclaw.control.settings.v1";
 
 type PersistedUiSettings = Omit<UiSettings, "token"> & { token?: never };
 

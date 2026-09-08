@@ -1,4 +1,4 @@
-﻿import { fetchWithSsrFGuard } from "paleoclaw/plugin-sdk/voice-call";
+import { fetchWithSsrFGuard } from "paleoclaw/plugin-sdk/voice-call";
 
 type GuardedJsonApiRequestParams = {
   url: string;

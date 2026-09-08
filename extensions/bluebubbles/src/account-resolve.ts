@@ -1,4 +1,4 @@
-﻿import type { OpenClawConfig } from "paleoclaw/plugin-sdk/bluebubbles";
+import type { OpenClawConfig } from "paleoclaw/plugin-sdk/bluebubbles";
 import { resolveBlueBubblesAccount } from "./accounts.js";
 import { normalizeResolvedSecretInputString } from "./secret-input.js";
 

@@ -1,4 +1,4 @@
-﻿import type { PluginRuntime } from "paleoclaw/plugin-sdk/bluebubbles";
+import type { PluginRuntime } from "paleoclaw/plugin-sdk/bluebubbles";
 
 let runtime: PluginRuntime | null = null;
 type LegacyRuntimeLogShape = { log?: (message: string) => void };

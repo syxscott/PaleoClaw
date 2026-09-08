@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Twitch access token resolution with environment variable support.
  *
  * Supports reading Twitch OAuth access tokens from config or environment variable.

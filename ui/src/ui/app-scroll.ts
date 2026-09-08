@@ -1,4 +1,4 @@
-﻿/** Distance (px) from the bottom within which we consider the user "near bottom". */
+/** Distance (px) from the bottom within which we consider the user "near bottom". */
 const NEAR_BOTTOM_THRESHOLD = 450;
 
 /** Per-session scroll memory: remember at most this many sessions (LRU). */

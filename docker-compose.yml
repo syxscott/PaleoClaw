@@ -1,4 +1,4 @@
-﻿services:
+services:
   paleoclaw-gateway:
     image: ${OPENCLAW_IMAGE:-paleoclaw:local}
     environment:

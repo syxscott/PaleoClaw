@@ -1,4 +1,4 @@
-﻿import {
+import {
   BLUEBUBBLES_ACTION_NAMES,
   BLUEBUBBLES_ACTIONS,
   createActionGate,

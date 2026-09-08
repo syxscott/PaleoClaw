@@ -1,4 +1,4 @@
-﻿import type { BaseProbeResult } from "paleoclaw/plugin-sdk/matrix";
+import type { BaseProbeResult } from "paleoclaw/plugin-sdk/matrix";
 import { createMatrixClient, isBunRuntime } from "./client.js";
 
 export type MatrixProbe = BaseProbeResult & {

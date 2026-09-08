@@ -1,4 +1,4 @@
-﻿import { mapAllowlistResolutionInputs } from "paleoclaw/plugin-sdk/compat";
+import { mapAllowlistResolutionInputs } from "paleoclaw/plugin-sdk/compat";
 import { searchGraphUsers } from "./graph-users.js";
 import {
   listChannelsForTeam,

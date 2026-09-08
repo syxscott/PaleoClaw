@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Twitch status issues collector.
  *
  * Detects and reports configuration issues for Twitch accounts.

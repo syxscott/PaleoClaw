@@ -1,4 +1,4 @@
-﻿import type { OpenClawPluginApi } from "paleoclaw/plugin-sdk/zalo";
+import type { OpenClawPluginApi } from "paleoclaw/plugin-sdk/zalo";
 import { emptyPluginConfigSchema } from "paleoclaw/plugin-sdk/zalo";
 import { zaloDock, zaloPlugin } from "./src/channel.js";
 import { setZaloRuntime } from "./src/runtime.js";

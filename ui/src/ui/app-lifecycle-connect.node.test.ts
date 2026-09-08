@@ -1,4 +1,4 @@
-﻿import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 const { connectGatewayMock, loadBootstrapMock } = vi.hoisted(() => ({
   connectGatewayMock: vi.fn(),

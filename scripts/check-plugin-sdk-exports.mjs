@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env node
+#!/usr/bin/env node
 
 /**
  * Verifies that critical plugin-sdk exports are present in the compiled dist output.

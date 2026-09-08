@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Voice call response generator - uses the embedded Pi agent for tool support.
  * Routes voice responses through the same agent infrastructure as messaging.
  */

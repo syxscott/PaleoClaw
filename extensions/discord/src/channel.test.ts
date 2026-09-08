@@ -1,4 +1,4 @@
-﻿import type { OpenClawConfig, PluginRuntime } from "paleoclaw/plugin-sdk/discord";
+import type { OpenClawConfig, PluginRuntime } from "paleoclaw/plugin-sdk/discord";
 import { describe, expect, it, vi } from "vitest";
 import { discordPlugin } from "./channel.js";
 import { setDiscordRuntime } from "./runtime.js";

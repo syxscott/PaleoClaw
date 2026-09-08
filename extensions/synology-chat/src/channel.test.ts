@@ -1,4 +1,4 @@
-﻿import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock external dependencies
 vi.mock("paleoclaw/plugin-sdk/synology-chat", () => ({

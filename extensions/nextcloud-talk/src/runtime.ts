@@ -1,4 +1,4 @@
-﻿import type { PluginRuntime } from "paleoclaw/plugin-sdk/nextcloud-talk";
+import type { PluginRuntime } from "paleoclaw/plugin-sdk/nextcloud-talk";
 
 let runtime: PluginRuntime | null = null;
 

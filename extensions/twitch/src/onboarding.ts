@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Twitch onboarding adapter for CLI setup wizard.
  */
 

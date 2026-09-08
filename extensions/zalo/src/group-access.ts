@@ -1,4 +1,4 @@
-﻿import type { GroupPolicy, SenderGroupAccessDecision } from "paleoclaw/plugin-sdk/zalo";
+import type { GroupPolicy, SenderGroupAccessDecision } from "paleoclaw/plugin-sdk/zalo";
 import {
   evaluateSenderGroupAccess,
   isNormalizedSenderAllowed,

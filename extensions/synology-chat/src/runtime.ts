@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Plugin runtime singleton.
  * Stores the PluginRuntime from api.runtime (set during register()).
  * Used by channel.ts to access dispatch functions.

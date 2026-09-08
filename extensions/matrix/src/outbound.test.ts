@@ -1,4 +1,4 @@
-﻿import type { OpenClawConfig } from "paleoclaw/plugin-sdk/matrix";
+import type { OpenClawConfig } from "paleoclaw/plugin-sdk/matrix";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({

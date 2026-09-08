@@ -1,4 +1,4 @@
-﻿import { DEFAULT_ACCOUNT_ID, normalizeAccountId } from "paleoclaw/plugin-sdk/account-id";
+import { DEFAULT_ACCOUNT_ID, normalizeAccountId } from "paleoclaw/plugin-sdk/account-id";
 import { createAccountListHelpers, type OpenClawConfig } from "paleoclaw/plugin-sdk/zalouser";
 import type { ResolvedZalouserAccount, ZalouserAccountConfig, ZalouserConfig } from "./types.js";
 import { checkZaloAuthenticated, getZaloUserInfo } from "./zalo-js.js";

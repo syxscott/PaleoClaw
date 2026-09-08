@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Twitch message monitor - processes incoming messages and routes to agents.
  *
  * This monitor connects to the Twitch client manager, processes incoming messages,

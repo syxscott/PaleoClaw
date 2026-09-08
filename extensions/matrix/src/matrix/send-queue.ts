@@ -1,4 +1,4 @@
-﻿import { KeyedAsyncQueue } from "paleoclaw/plugin-sdk/keyed-async-queue";
+import { KeyedAsyncQueue } from "paleoclaw/plugin-sdk/keyed-async-queue";
 
 export const DEFAULT_SEND_GAP_MS = 150;
 

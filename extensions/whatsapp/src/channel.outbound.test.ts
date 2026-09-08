@@ -1,4 +1,4 @@
-﻿import type { OpenClawConfig } from "paleoclaw/plugin-sdk/whatsapp";
+import type { OpenClawConfig } from "paleoclaw/plugin-sdk/whatsapp";
 import { describe, expect, it, vi } from "vitest";
 
 const hoisted = vi.hoisted(() => ({

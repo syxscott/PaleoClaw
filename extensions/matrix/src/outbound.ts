@@ -1,4 +1,4 @@
-﻿import type { ChannelOutboundAdapter } from "paleoclaw/plugin-sdk/matrix";
+import type { ChannelOutboundAdapter } from "paleoclaw/plugin-sdk/matrix";
 import { sendMessageMatrix, sendPollMatrix } from "./matrix/send.js";
 import { getMatrixRuntime } from "./runtime.js";
 

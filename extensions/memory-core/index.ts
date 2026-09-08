@@ -1,4 +1,4 @@
-﻿import type { OpenClawPluginApi } from "paleoclaw/plugin-sdk/memory-core";
+import type { OpenClawPluginApi } from "paleoclaw/plugin-sdk/memory-core";
 import { emptyPluginConfigSchema } from "paleoclaw/plugin-sdk/memory-core";
 
 const memoryCorePlugin = {

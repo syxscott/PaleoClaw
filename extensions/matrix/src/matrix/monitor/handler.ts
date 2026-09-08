@@ -1,4 +1,4 @@
-﻿import type { LocationMessageEventContent, MatrixClient } from "@vector-im/matrix-bot-sdk";
+import type { LocationMessageEventContent, MatrixClient } from "@vector-im/matrix-bot-sdk";
 import {
   DEFAULT_ACCOUNT_ID,
   createScopedPairingAccess,

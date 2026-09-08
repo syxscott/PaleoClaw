@@ -1,4 +1,4 @@
-﻿import crypto from "node:crypto";
+import crypto from "node:crypto";
 import { configureClient } from "@tloncorp/api";
 import type {
   ChannelOutboundAdapter,

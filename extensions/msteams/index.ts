@@ -1,4 +1,4 @@
-﻿import type { OpenClawPluginApi } from "paleoclaw/plugin-sdk/msteams";
+import type { OpenClawPluginApi } from "paleoclaw/plugin-sdk/msteams";
 import { emptyPluginConfigSchema } from "paleoclaw/plugin-sdk/msteams";
 import { msteamsPlugin } from "./src/channel.js";
 import { setMSTeamsRuntime } from "./src/runtime.js";

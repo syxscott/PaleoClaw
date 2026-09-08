@@ -1,4 +1,4 @@
-﻿import { describe, expect, it, vi, afterEach, beforeEach } from "vitest";
+import { describe, expect, it, vi, afterEach, beforeEach } from "vitest";
 
 // Mock fetchWithSsrFGuard from plugin-sdk
 vi.mock("paleoclaw/plugin-sdk/tlon", async (importOriginal) => {

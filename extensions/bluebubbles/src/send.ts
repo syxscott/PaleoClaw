@@ -1,4 +1,4 @@
-﻿import crypto from "node:crypto";
+import crypto from "node:crypto";
 import type { OpenClawConfig } from "paleoclaw/plugin-sdk/bluebubbles";
 import { stripMarkdown } from "paleoclaw/plugin-sdk/bluebubbles";
 import { resolveBlueBubblesAccount } from "./accounts.js";

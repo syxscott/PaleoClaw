@@ -1,4 +1,4 @@
-﻿import {
+import {
   formatInboundFromLabel as formatInboundFromLabelShared,
   resolveThreadSessionKeys as resolveThreadSessionKeysShared,
   type OpenClawConfig,

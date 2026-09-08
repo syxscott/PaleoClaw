@@ -1,4 +1,4 @@
-﻿import type { PluginRuntime } from "paleoclaw/plugin-sdk/nostr";
+import type { PluginRuntime } from "paleoclaw/plugin-sdk/nostr";
 
 let runtime: PluginRuntime | null = null;
 

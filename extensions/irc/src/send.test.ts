@@ -1,4 +1,4 @@
-﻿import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { IrcClient } from "./client.js";
 import type { CoreConfig } from "./types.js";
 

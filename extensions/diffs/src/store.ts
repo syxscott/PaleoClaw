@@ -1,4 +1,4 @@
-﻿import crypto from "node:crypto";
+import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
 import type { PluginLogger } from "paleoclaw/plugin-sdk/diffs";

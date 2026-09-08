@@ -1,4 +1,4 @@
-﻿import type { OpenClawPluginApi } from "paleoclaw/plugin-sdk/line";
+import type { OpenClawPluginApi } from "paleoclaw/plugin-sdk/line";
 import { emptyPluginConfigSchema } from "paleoclaw/plugin-sdk/line";
 import { registerLineCardCommand } from "./src/card-command.js";
 import { linePlugin } from "./src/channel.js";

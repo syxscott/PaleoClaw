@@ -1,4 +1,4 @@
-﻿import type { RuntimeEnv, ReplyPayload, OpenClawConfig } from "paleoclaw/plugin-sdk/tlon";
+import type { RuntimeEnv, ReplyPayload, OpenClawConfig } from "paleoclaw/plugin-sdk/tlon";
 import { createLoggerBackedRuntime, createReplyPrefixOptions } from "paleoclaw/plugin-sdk/tlon";
 import { getTlonRuntime } from "../runtime.js";
 import { createSettingsManager, type TlonSettingsStore } from "../settings.js";

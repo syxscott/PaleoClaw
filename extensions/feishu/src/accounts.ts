@@ -1,4 +1,4 @@
-﻿import { DEFAULT_ACCOUNT_ID, normalizeAccountId } from "paleoclaw/plugin-sdk/account-id";
+import { DEFAULT_ACCOUNT_ID, normalizeAccountId } from "paleoclaw/plugin-sdk/account-id";
 import type { ClawdbotConfig } from "paleoclaw/plugin-sdk/feishu";
 import { normalizeResolvedSecretInputString, normalizeSecretInputString } from "./secret-input.js";
 import type {

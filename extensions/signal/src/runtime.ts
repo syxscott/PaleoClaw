@@ -1,4 +1,4 @@
-﻿import type { PluginRuntime } from "paleoclaw/plugin-sdk/signal";
+import type { PluginRuntime } from "paleoclaw/plugin-sdk/signal";
 
 let runtime: PluginRuntime | null = null;
 

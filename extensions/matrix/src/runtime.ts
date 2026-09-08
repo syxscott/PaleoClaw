@@ -1,4 +1,4 @@
-﻿import type { PluginRuntime } from "paleoclaw/plugin-sdk/matrix";
+import type { PluginRuntime } from "paleoclaw/plugin-sdk/matrix";
 
 let runtime: PluginRuntime | null = null;
 

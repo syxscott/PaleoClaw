@@ -1,4 +1,4 @@
-﻿import {
+import {
   DEFAULT_ACCOUNT_ID,
   normalizeAccountId,
   normalizeOptionalAccountId,

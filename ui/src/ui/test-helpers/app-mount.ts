@@ -1,4 +1,4 @@
-﻿import { afterEach, beforeEach } from "vitest";
+import { afterEach, beforeEach } from "vitest";
 import "../app.ts";
 import type { OpenClawApp } from "../app.ts";
 

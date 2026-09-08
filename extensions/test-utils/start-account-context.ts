@@ -1,4 +1,4 @@
-﻿import type {
+import type {
   ChannelAccountSnapshot,
   ChannelGatewayContext,
   OpenClawConfig,

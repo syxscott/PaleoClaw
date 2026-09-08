@@ -1,4 +1,4 @@
-﻿import type { IncomingMessage, ServerResponse } from "node:http";
+import type { IncomingMessage, ServerResponse } from "node:http";
 import type { PluginLogger } from "paleoclaw/plugin-sdk/diffs";
 import type { DiffArtifactStore } from "./store.js";
 import { DIFF_ARTIFACT_ID_PATTERN, DIFF_ARTIFACT_TOKEN_PATTERN } from "./types.js";

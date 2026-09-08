@@ -1,4 +1,4 @@
-﻿import { DEFAULT_ACCOUNT_ID } from "paleoclaw/plugin-sdk/account-id";
+import { DEFAULT_ACCOUNT_ID } from "paleoclaw/plugin-sdk/account-id";
 import {
   buildSingleChannelSecretPromptState,
   hasConfiguredSecretInput,

@@ -1,4 +1,4 @@
-﻿import {
+import {
   buildOauthProviderAuthResult,
   emptyPluginConfigSchema,
   type OpenClawPluginApi,

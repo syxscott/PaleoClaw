@@ -1,4 +1,4 @@
-﻿import type { PluginRuntime } from "paleoclaw/plugin-sdk/test-utils";
+import type { PluginRuntime } from "paleoclaw/plugin-sdk/test-utils";
 import { removeAckReactionAfterReply, shouldAckReaction } from "paleoclaw/plugin-sdk/test-utils";
 import { vi } from "vitest";
 

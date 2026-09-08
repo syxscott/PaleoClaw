@@ -1,4 +1,4 @@
-﻿import type { RuntimeEnv } from "paleoclaw/plugin-sdk/feishu";
+import type { RuntimeEnv } from "paleoclaw/plugin-sdk/feishu";
 import { probeFeishu } from "./probe.js";
 import type { ResolvedFeishuAccount } from "./types.js";
 

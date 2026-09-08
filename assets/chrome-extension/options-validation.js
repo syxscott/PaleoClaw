@@ -1,4 +1,4 @@
-﻿const PORT_GUIDANCE = 'Use gateway port + 3 (for gateway 18789, relay is 18792).'
+const PORT_GUIDANCE = 'Use gateway port + 3 (for gateway 18789, relay is 18792).'
 
 function hasCdpVersionShape(data) {
   return !!data && typeof data === 'object' && 'Browser' in data && 'Protocol-Version' in data

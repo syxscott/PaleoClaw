@@ -1,4 +1,4 @@
-﻿import type { OpenClawConfig } from "paleoclaw/plugin-sdk/msteams";
+import type { OpenClawConfig } from "paleoclaw/plugin-sdk/msteams";
 import { loadOutboundMediaFromUrl } from "paleoclaw/plugin-sdk/msteams";
 import { createMSTeamsConversationStoreFs } from "./conversation-store-fs.js";
 import {

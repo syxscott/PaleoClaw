@@ -1,4 +1,4 @@
-﻿import { constants as fsConstants } from "node:fs";
+import { constants as fsConstants } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
 import type { OpenClawConfig } from "paleoclaw/plugin-sdk/diffs";

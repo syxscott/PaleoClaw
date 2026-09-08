@@ -1,4 +1,4 @@
-﻿import type { OpenClawConfig, RuntimeEnv } from "paleoclaw/plugin-sdk/msteams";
+import type { OpenClawConfig, RuntimeEnv } from "paleoclaw/plugin-sdk/msteams";
 import { describe, expect, it } from "vitest";
 import { msteamsPlugin } from "./channel.js";
 

@@ -1,4 +1,4 @@
-﻿import type { OpenClawConfig } from "paleoclaw/plugin-sdk/mattermost";
+import type { OpenClawConfig } from "paleoclaw/plugin-sdk/mattermost";
 import { createReplyPrefixOptions } from "paleoclaw/plugin-sdk/mattermost";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 const { sendMessageMattermostMock } = vi.hoisted(() => ({

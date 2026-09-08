@@ -1,1 +1,1 @@
-﻿console.warn("clawdbot renamed -> paleoclaw");
+console.warn("clawdbot renamed -> paleoclaw");

@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { findRawWindowOpenLines } from "../../scripts/check-no-raw-window-open.mjs";
 
 describe("check-no-raw-window-open", () => {

@@ -1,4 +1,4 @@
-﻿import { lookup } from "node:dns/promises";
+import { lookup } from "node:dns/promises";
 import {
   buildHostnameAllowlistPolicyFromSuffixAllowlist,
   isHttpsUrlAllowedByHostnameSuffixAllowlist,

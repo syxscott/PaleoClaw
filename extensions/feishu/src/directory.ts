@@ -1,4 +1,4 @@
-﻿import {
+import {
   listDirectoryGroupEntriesFromMapKeysAndAllowFrom,
   listDirectoryUserEntriesFromAllowFromAndMapKeys,
 } from "paleoclaw/plugin-sdk/compat";

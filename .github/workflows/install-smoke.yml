@@ -1,4 +1,4 @@
-﻿name: Install Smoke
+name: Install Smoke
 
 on:
   push:

@@ -1,4 +1,4 @@
-﻿import type { ChannelDirectoryEntry } from "paleoclaw/plugin-sdk/matrix";
+import type { ChannelDirectoryEntry } from "paleoclaw/plugin-sdk/matrix";
 import { resolveMatrixAuth } from "./matrix/client.js";
 
 type MatrixUserResult = {

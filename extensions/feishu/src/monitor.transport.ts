@@ -1,4 +1,4 @@
-﻿import * as http from "http";
+import * as http from "http";
 import * as Lark from "@larksuiteoapi/node-sdk";
 import {
   applyBasicWebhookRequestGuards,

@@ -1,4 +1,4 @@
-﻿import type { IncomingMessage, ServerResponse } from "node:http";
+import type { IncomingMessage, ServerResponse } from "node:http";
 import type { OpenClawConfig } from "paleoclaw/plugin-sdk/googlechat";
 import {
   createWebhookInFlightLimiter,

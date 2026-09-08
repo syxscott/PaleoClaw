@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Security module: token validation, rate limiting, input sanitization, user allowlist.
  */
 

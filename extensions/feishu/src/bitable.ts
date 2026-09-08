@@ -1,4 +1,4 @@
-﻿import type * as Lark from "@larksuiteoapi/node-sdk";
+import type * as Lark from "@larksuiteoapi/node-sdk";
 import { Type } from "@sinclair/typebox";
 import type { OpenClawPluginApi } from "paleoclaw/plugin-sdk/feishu";
 import { listEnabledFeishuAccounts } from "./accounts.js";

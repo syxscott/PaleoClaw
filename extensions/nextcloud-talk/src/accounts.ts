@@ -1,4 +1,4 @@
-﻿import { readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import {
   createAccountListHelpers,
   DEFAULT_ACCOUNT_ID,

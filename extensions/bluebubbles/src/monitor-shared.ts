@@ -1,4 +1,4 @@
-﻿import { normalizeWebhookPath, type OpenClawConfig } from "paleoclaw/plugin-sdk/bluebubbles";
+import { normalizeWebhookPath, type OpenClawConfig } from "paleoclaw/plugin-sdk/bluebubbles";
 import type { ResolvedBlueBubblesAccount } from "./accounts.js";
 import { getBlueBubblesRuntime } from "./runtime.js";
 import type { BlueBubblesAccountConfig } from "./types.js";

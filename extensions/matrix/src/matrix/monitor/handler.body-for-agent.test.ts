@@ -1,4 +1,4 @@
-﻿import type { MatrixClient } from "@vector-im/matrix-bot-sdk";
+import type { MatrixClient } from "@vector-im/matrix-bot-sdk";
 import type { PluginRuntime, RuntimeEnv, RuntimeLogger } from "paleoclaw/plugin-sdk/matrix";
 import { describe, expect, it, vi } from "vitest";
 import { createMatrixRoomMessageHandler } from "./handler.js";

@@ -1,4 +1,4 @@
-﻿import type { OpenClawConfig } from "paleoclaw/plugin-sdk/twitch";
+import type { OpenClawConfig } from "paleoclaw/plugin-sdk/twitch";
 import type { TwitchAccountConfig } from "./types.js";
 
 /**

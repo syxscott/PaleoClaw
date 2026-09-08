@@ -1,4 +1,4 @@
-﻿import type { MatrixClient } from "@vector-im/matrix-bot-sdk";
+import type { MatrixClient } from "@vector-im/matrix-bot-sdk";
 import type { PluginRuntime, RuntimeLogger } from "paleoclaw/plugin-sdk/matrix";
 import type { MatrixAuth } from "../client.js";
 import { sendReadReceiptMatrix } from "../send.js";

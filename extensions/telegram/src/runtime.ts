@@ -1,4 +1,4 @@
-﻿import type { PluginRuntime } from "paleoclaw/plugin-sdk/telegram";
+import type { PluginRuntime } from "paleoclaw/plugin-sdk/telegram";
 
 let runtime: PluginRuntime | null = null;
 

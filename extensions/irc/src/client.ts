@@ -1,4 +1,4 @@
-﻿import net from "node:net";
+import net from "node:net";
 import tls from "node:tls";
 import {
   parseIrcLine,

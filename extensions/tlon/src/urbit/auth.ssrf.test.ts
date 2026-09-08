@@ -1,4 +1,4 @@
-﻿import type { LookupFn } from "paleoclaw/plugin-sdk/tlon";
+import type { LookupFn } from "paleoclaw/plugin-sdk/tlon";
 import { SsrFBlockedError } from "paleoclaw/plugin-sdk/tlon";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { authenticate } from "./auth.js";

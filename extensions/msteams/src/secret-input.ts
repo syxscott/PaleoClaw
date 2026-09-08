@@ -1,4 +1,4 @@
-﻿import {
+import {
   hasConfiguredSecretInput,
   normalizeResolvedSecretInputString,
   normalizeSecretInputString,

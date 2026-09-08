@@ -1,4 +1,4 @@
-﻿import type { OpenClawPluginApi } from "paleoclaw/plugin-sdk/whatsapp";
+import type { OpenClawPluginApi } from "paleoclaw/plugin-sdk/whatsapp";
 import { emptyPluginConfigSchema } from "paleoclaw/plugin-sdk/whatsapp";
 import { whatsappPlugin } from "./src/channel.js";
 import { setWhatsAppRuntime } from "./src/runtime.js";

@@ -1,4 +1,4 @@
-﻿import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { parseMattermostTarget, sendMessageMattermost } from "./send.js";
 
 const mockState = vi.hoisted(() => ({

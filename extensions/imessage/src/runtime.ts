@@ -1,4 +1,4 @@
-﻿import type { PluginRuntime } from "paleoclaw/plugin-sdk/imessage";
+import type { PluginRuntime } from "paleoclaw/plugin-sdk/imessage";
 
 let runtime: PluginRuntime | null = null;
 

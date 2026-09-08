@@ -1,4 +1,4 @@
-﻿import * as crypto from "crypto";
+import * as crypto from "crypto";
 import * as Lark from "@larksuiteoapi/node-sdk";
 import type { ClawdbotConfig, RuntimeEnv, HistoryEntry } from "paleoclaw/plugin-sdk/feishu";
 import { resolveFeishuAccount } from "./accounts.js";

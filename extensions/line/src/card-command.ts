@@ -1,4 +1,4 @@
-﻿import type { LineChannelData, OpenClawPluginApi, ReplyPayload } from "paleoclaw/plugin-sdk/line";
+import type { LineChannelData, OpenClawPluginApi, ReplyPayload } from "paleoclaw/plugin-sdk/line";
 import {
   createActionCard,
   createImageCard,

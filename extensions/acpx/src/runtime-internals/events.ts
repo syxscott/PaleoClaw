@@ -1,4 +1,4 @@
-﻿import type { AcpRuntimeEvent, AcpSessionUpdateTag } from "paleoclaw/plugin-sdk/acpx";
+import type { AcpRuntimeEvent, AcpSessionUpdateTag } from "paleoclaw/plugin-sdk/acpx";
 import {
   asOptionalBoolean,
   asOptionalString,

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Feishu Streaming Card - Card Kit streaming API for real-time text output
  */
 

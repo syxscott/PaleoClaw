@@ -1,4 +1,4 @@
-﻿import type { RuntimeEnv } from "paleoclaw/plugin-sdk/tlon";
+import type { RuntimeEnv } from "paleoclaw/plugin-sdk/tlon";
 import { extractMessageText } from "./utils.js";
 
 /**

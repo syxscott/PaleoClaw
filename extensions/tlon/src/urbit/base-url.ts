@@ -1,4 +1,4 @@
-﻿import { isBlockedHostnameOrIp } from "paleoclaw/plugin-sdk/tlon";
+import { isBlockedHostnameOrIp } from "paleoclaw/plugin-sdk/tlon";
 
 export type UrbitBaseUrlValidation =
   | { ok: true; baseUrl: string; hostname: string }

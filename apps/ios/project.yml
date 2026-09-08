@@ -1,4 +1,4 @@
-﻿name: paleoclaw
+name: paleoclaw
 options:
   bundleIdPrefix: ai.paleoclaw
   deploymentTarget:

@@ -1,4 +1,4 @@
-﻿import type { PluginRuntime } from "paleoclaw/plugin-sdk/zalo";
+import type { PluginRuntime } from "paleoclaw/plugin-sdk/zalo";
 
 let runtime: PluginRuntime | null = null;
 

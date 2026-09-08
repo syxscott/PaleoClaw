@@ -1,4 +1,4 @@
-﻿import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { handleDisconnected } from "./app-lifecycle.ts";
 
 function createHost() {

@@ -1,4 +1,4 @@
-﻿import {
+import {
   collectAllowlistProviderGroupPolicyWarnings,
   buildAccountScopedDmSecurityPolicy,
   collectOpenGroupPolicyRouteAllowlistWarnings,

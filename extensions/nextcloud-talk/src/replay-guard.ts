@@ -1,4 +1,4 @@
-﻿import path from "node:path";
+import path from "node:path";
 import { createPersistentDedupe } from "paleoclaw/plugin-sdk/nextcloud-talk";
 
 const DEFAULT_REPLAY_TTL_MS = 24 * 60 * 60 * 1000;

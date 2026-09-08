@@ -1,4 +1,4 @@
-﻿import { normalizeAccountId } from "paleoclaw/plugin-sdk/account-id";
+import { normalizeAccountId } from "paleoclaw/plugin-sdk/account-id";
 import { createAccountListHelpers } from "paleoclaw/plugin-sdk/matrix";
 import { hasConfiguredSecretInput } from "../secret-input.js";
 import type { CoreConfig, MatrixConfig } from "../types.js";

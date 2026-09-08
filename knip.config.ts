@@ -1,4 +1,4 @@
-﻿const rootEntries = [
+const rootEntries = [
   "paleoclaw.mjs!",
   "src/index.ts!",
   "src/entry.ts!",

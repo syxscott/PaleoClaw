@@ -1,4 +1,4 @@
-﻿import type { RuntimeEnv } from "paleoclaw/plugin-sdk/test-utils";
+import type { RuntimeEnv } from "paleoclaw/plugin-sdk/test-utils";
 import { vi } from "vitest";
 
 export function createRuntimeEnv(): RuntimeEnv {

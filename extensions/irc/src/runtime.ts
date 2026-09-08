@@ -1,4 +1,4 @@
-﻿import type { PluginRuntime } from "paleoclaw/plugin-sdk/irc";
+import type { PluginRuntime } from "paleoclaw/plugin-sdk/irc";
 
 let runtime: PluginRuntime | null = null;
 

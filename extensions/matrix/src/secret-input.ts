@@ -1,4 +1,4 @@
-﻿import {
+import {
   buildSecretInputSchema,
   hasConfiguredSecretInput,
   normalizeResolvedSecretInputString,

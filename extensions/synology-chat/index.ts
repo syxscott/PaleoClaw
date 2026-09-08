@@ -1,4 +1,4 @@
-﻿import type { OpenClawPluginApi } from "paleoclaw/plugin-sdk/synology-chat";
+import type { OpenClawPluginApi } from "paleoclaw/plugin-sdk/synology-chat";
 import { emptyPluginConfigSchema } from "paleoclaw/plugin-sdk/synology-chat";
 import { createSynologyChatPlugin } from "./src/channel.js";
 import { setSynologyRuntime } from "./src/runtime.js";

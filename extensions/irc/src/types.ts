@@ -1,4 +1,4 @@
-﻿import type { BaseProbeResult } from "paleoclaw/plugin-sdk/irc";
+import type { BaseProbeResult } from "paleoclaw/plugin-sdk/irc";
 import type {
   BlockStreamingCoalesceConfig,
   DmConfig,

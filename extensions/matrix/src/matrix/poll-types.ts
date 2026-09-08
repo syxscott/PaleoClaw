@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Matrix Poll Types (MSC3381)
  *
  * Defines types for Matrix poll events:

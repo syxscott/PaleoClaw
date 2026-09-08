@@ -1,4 +1,4 @@
-﻿name: Sandbox Common Smoke
+name: Sandbox Common Smoke
 
 on:
   push:

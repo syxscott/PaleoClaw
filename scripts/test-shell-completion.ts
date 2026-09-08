@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Test script for shell completion installation feature.
  *
  * This script simulates the shell completion prompt that appears during

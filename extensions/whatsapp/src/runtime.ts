@@ -1,4 +1,4 @@
-﻿import type { PluginRuntime } from "paleoclaw/plugin-sdk/whatsapp";
+import type { PluginRuntime } from "paleoclaw/plugin-sdk/whatsapp";
 
 let runtime: PluginRuntime | null = null;
 

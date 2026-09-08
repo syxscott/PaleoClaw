@@ -1,4 +1,4 @@
-﻿import { createArgReader, createGatewayWsClient, resolveGatewayUrl } from "./gateway-ws-client.ts";
+import { createArgReader, createGatewayWsClient, resolveGatewayUrl } from "./gateway-ws-client.ts";
 
 const { get: getArg } = createArgReader();
 const urlRaw = getArg("--url") ?? process.env.OPENCLAW_GATEWAY_URL;

@@ -1,4 +1,4 @@
-﻿import { parseAgentSessionKey } from "../../../../src/sessions/session-key-utils.js";
+import { parseAgentSessionKey } from "../../../../src/sessions/session-key-utils.js";
 import { resetToolStream } from "../app-tool-stream.ts";
 import { extractText } from "../chat/message-extract.ts";
 import type { GatewayBrowserClient } from "../gateway.ts";

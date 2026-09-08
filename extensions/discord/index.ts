@@ -1,4 +1,4 @@
-﻿import type { OpenClawPluginApi } from "paleoclaw/plugin-sdk/discord";
+import type { OpenClawPluginApi } from "paleoclaw/plugin-sdk/discord";
 import { emptyPluginConfigSchema } from "paleoclaw/plugin-sdk/discord";
 import { discordPlugin } from "./src/channel.js";
 import { setDiscordRuntime } from "./src/runtime.js";

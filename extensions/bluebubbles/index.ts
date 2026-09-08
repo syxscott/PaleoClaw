@@ -1,4 +1,4 @@
-﻿import type { OpenClawPluginApi } from "paleoclaw/plugin-sdk/bluebubbles";
+import type { OpenClawPluginApi } from "paleoclaw/plugin-sdk/bluebubbles";
 import { emptyPluginConfigSchema } from "paleoclaw/plugin-sdk/bluebubbles";
 import { bluebubblesPlugin } from "./src/channel.js";
 import { setBlueBubblesRuntime } from "./src/runtime.js";

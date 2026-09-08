@@ -1,4 +1,4 @@
-﻿import { createServer, type RequestListener } from "node:http";
+import { createServer, type RequestListener } from "node:http";
 import type { AddressInfo } from "node:net";
 import type { OpenClawConfig, PluginRuntime } from "paleoclaw/plugin-sdk/zalo";
 import { afterEach, describe, expect, it, vi } from "vitest";

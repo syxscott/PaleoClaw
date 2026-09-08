@@ -1,4 +1,4 @@
-﻿import {
+import {
   GROUP_POLICY_BLOCKED_LABEL,
   createScopedPairingAccess,
   evaluateGroupRouteAccessForPolicy,

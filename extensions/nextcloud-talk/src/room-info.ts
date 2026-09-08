@@ -1,4 +1,4 @@
-﻿import { readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { fetchWithSsrFGuard } from "paleoclaw/plugin-sdk/nextcloud-talk";
 import type { RuntimeEnv } from "paleoclaw/plugin-sdk/nextcloud-talk";
 import type { ResolvedNextcloudTalkAccount } from "./accounts.js";

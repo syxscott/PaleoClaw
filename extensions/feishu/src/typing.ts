@@ -1,4 +1,4 @@
-﻿import type { ClawdbotConfig, RuntimeEnv } from "paleoclaw/plugin-sdk/feishu";
+import type { ClawdbotConfig, RuntimeEnv } from "paleoclaw/plugin-sdk/feishu";
 import { resolveFeishuAccount } from "./accounts.js";
 import { createFeishuClient } from "./client.js";
 import { getFeishuRuntime } from "./runtime.js";

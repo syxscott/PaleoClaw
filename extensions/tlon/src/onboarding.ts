@@ -1,4 +1,4 @@
-﻿import type { OpenClawConfig } from "paleoclaw/plugin-sdk/tlon";
+import type { OpenClawConfig } from "paleoclaw/plugin-sdk/tlon";
 import {
   formatDocsLink,
   resolveAccountIdForConfigure,

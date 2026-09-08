@@ -1,4 +1,4 @@
-﻿import { deriveRelayToken } from './background-utils.js'
+import { deriveRelayToken } from './background-utils.js'
 import { classifyRelayCheckException, classifyRelayCheckResponse } from './options-validation.js'
 
 const DEFAULT_PORT = 18792

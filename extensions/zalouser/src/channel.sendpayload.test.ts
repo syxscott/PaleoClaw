@@ -1,4 +1,4 @@
-﻿import type { ReplyPayload } from "paleoclaw/plugin-sdk/zalouser";
+import type { ReplyPayload } from "paleoclaw/plugin-sdk/zalouser";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { zalouserPlugin } from "./channel.js";
 

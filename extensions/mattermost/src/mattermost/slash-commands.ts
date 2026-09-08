@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Mattermost native slash command support.
  *
  * Registers custom slash commands via the Mattermost REST API and handles

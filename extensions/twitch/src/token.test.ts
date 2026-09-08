@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Tests for token.ts module
  *
  * Tests cover:

@@ -1,4 +1,4 @@
-﻿import {
+import {
   emptyPluginConfigSchema,
   type OpenClawPluginApi,
   type ProviderAuthContext,

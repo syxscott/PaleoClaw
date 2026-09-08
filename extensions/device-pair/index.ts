@@ -1,4 +1,4 @@
-﻿import os from "node:os";
+import os from "node:os";
 import type { OpenClawPluginApi } from "paleoclaw/plugin-sdk/device-pair";
 import {
   approveDevicePairing,

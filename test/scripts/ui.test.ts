@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { assertSafeWindowsShellArgs, shouldUseShellForCommand } from "../../scripts/ui.js";
 
 describe("scripts/ui windows spawn behavior", () => {

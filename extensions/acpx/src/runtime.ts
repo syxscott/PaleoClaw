@@ -1,4 +1,4 @@
-﻿import { createInterface } from "node:readline";
+import { createInterface } from "node:readline";
 import type {
   AcpRuntimeCapabilities,
   AcpRuntimeDoctorReport,

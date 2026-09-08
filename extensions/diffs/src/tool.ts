@@ -1,4 +1,4 @@
-﻿import fs from "node:fs/promises";
+import fs from "node:fs/promises";
 import { Static, Type } from "@sinclair/typebox";
 import type { AnyAgentTool, OpenClawPluginApi } from "paleoclaw/plugin-sdk/diffs";
 import { PlaywrightDiffScreenshotter, type DiffScreenshotter } from "./browser.js";

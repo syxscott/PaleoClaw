@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Synology Chat Channel Plugin for paleoclaw.
  *
  * Implements the ChannelPlugin interface following the LINE pattern.

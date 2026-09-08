@@ -1,4 +1,4 @@
-﻿import { DEFAULT_ACCOUNT_ID } from "paleoclaw/plugin-sdk/account-id";
+import { DEFAULT_ACCOUNT_ID } from "paleoclaw/plugin-sdk/account-id";
 import type { OpenClawConfig } from "paleoclaw/plugin-sdk/zalouser";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {

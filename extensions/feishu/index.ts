@@ -1,4 +1,4 @@
-﻿import type { OpenClawPluginApi } from "paleoclaw/plugin-sdk/feishu";
+import type { OpenClawPluginApi } from "paleoclaw/plugin-sdk/feishu";
 import { emptyPluginConfigSchema } from "paleoclaw/plugin-sdk/feishu";
 import { registerFeishuBitableTools } from "./src/bitable.js";
 import { feishuPlugin } from "./src/channel.js";

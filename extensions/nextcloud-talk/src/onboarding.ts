@@ -1,4 +1,4 @@
-﻿import {
+import {
   buildSingleChannelSecretPromptState,
   formatDocsLink,
   hasConfiguredSecretInput,

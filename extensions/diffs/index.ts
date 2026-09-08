@@ -1,4 +1,4 @@
-﻿import path from "node:path";
+import path from "node:path";
 import type { OpenClawPluginApi } from "paleoclaw/plugin-sdk/diffs";
 import { resolvePreferredOpenClawTmpDir } from "paleoclaw/plugin-sdk/diffs";
 import {

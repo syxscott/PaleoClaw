@@ -1,4 +1,4 @@
-﻿/**
+/**
  * paleoclaw Memory (LanceDB) Plugin
  *
  * Long-term memory with vector search for AI conversations.

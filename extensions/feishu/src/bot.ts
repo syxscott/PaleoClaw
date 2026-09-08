@@ -1,4 +1,4 @@
-﻿import type { ClawdbotConfig, RuntimeEnv } from "paleoclaw/plugin-sdk/feishu";
+import type { ClawdbotConfig, RuntimeEnv } from "paleoclaw/plugin-sdk/feishu";
 import {
   buildAgentMediaPayload,
   buildPendingHistoryContextFromMap,

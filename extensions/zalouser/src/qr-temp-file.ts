@@ -1,4 +1,4 @@
-﻿import fsp from "node:fs/promises";
+import fsp from "node:fs/promises";
 import path from "node:path";
 import { resolvePreferredOpenClawTmpDir } from "paleoclaw/plugin-sdk/zalouser";
 

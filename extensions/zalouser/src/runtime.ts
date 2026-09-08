@@ -1,4 +1,4 @@
-﻿import type { PluginRuntime } from "paleoclaw/plugin-sdk/zalouser";
+import type { PluginRuntime } from "paleoclaw/plugin-sdk/zalouser";
 
 let runtime: PluginRuntime | null = null;
 

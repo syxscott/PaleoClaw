@@ -1,4 +1,4 @@
-﻿import { DEFAULT_ACCOUNT_ID, normalizeAccountId } from "paleoclaw/plugin-sdk/account-id";
+import { DEFAULT_ACCOUNT_ID, normalizeAccountId } from "paleoclaw/plugin-sdk/account-id";
 import { fetchWithSsrFGuard } from "paleoclaw/plugin-sdk/matrix";
 import { getMatrixRuntime } from "../../runtime.js";
 import {

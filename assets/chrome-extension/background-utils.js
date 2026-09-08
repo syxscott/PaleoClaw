@@ -1,4 +1,4 @@
-﻿export function reconnectDelayMs(
+export function reconnectDelayMs(
   attempt,
   opts = { baseMs: 1000, maxMs: 30000, jitterMs: 1000, random: Math.random },
 ) {

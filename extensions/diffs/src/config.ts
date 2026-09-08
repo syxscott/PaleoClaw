@@ -1,4 +1,4 @@
-﻿import type { OpenClawPluginConfigSchema } from "paleoclaw/plugin-sdk/diffs";
+import type { OpenClawPluginConfigSchema } from "paleoclaw/plugin-sdk/diffs";
 import {
   DIFF_IMAGE_QUALITY_PRESETS,
   DIFF_INDICATORS,

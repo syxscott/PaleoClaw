@@ -1,4 +1,4 @@
-﻿import type { PluginRuntime } from "paleoclaw/plugin-sdk/twitch";
+import type { PluginRuntime } from "paleoclaw/plugin-sdk/twitch";
 
 let runtime: PluginRuntime | null = null;
 

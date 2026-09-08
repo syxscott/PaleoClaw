@@ -1,4 +1,4 @@
-﻿import {
+import {
   buildAccountScopedDmSecurityPolicy,
   collectAllowlistProviderRestrictSendersWarnings,
 } from "paleoclaw/plugin-sdk/compat";

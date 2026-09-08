@@ -1,4 +1,4 @@
-﻿import { resolveChannelGroupRequireMention } from "paleoclaw/plugin-sdk/compat";
+import { resolveChannelGroupRequireMention } from "paleoclaw/plugin-sdk/compat";
 import type { ChannelGroupContext } from "paleoclaw/plugin-sdk/mattermost";
 import { resolveMattermostAccount } from "./mattermost/accounts.js";
 

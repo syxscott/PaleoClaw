@@ -1,4 +1,4 @@
-﻿import type { MatrixClient } from "@vector-im/matrix-bot-sdk";
+import type { MatrixClient } from "@vector-im/matrix-bot-sdk";
 import { normalizeAccountId } from "paleoclaw/plugin-sdk/account-id";
 
 // Support multiple active clients for multi-account

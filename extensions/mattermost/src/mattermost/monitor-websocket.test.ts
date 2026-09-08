@@ -1,4 +1,4 @@
-﻿import type { RuntimeEnv } from "paleoclaw/plugin-sdk/mattermost";
+import type { RuntimeEnv } from "paleoclaw/plugin-sdk/mattermost";
 import { describe, expect, it, vi } from "vitest";
 import {
   createMattermostConnectOnce,

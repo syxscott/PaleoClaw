@@ -1,4 +1,4 @@
-﻿import type { WizardPrompter } from "paleoclaw/plugin-sdk/bluebubbles";
+import type { WizardPrompter } from "paleoclaw/plugin-sdk/bluebubbles";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("paleoclaw/plugin-sdk/bluebubbles", () => ({

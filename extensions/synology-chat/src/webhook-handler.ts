@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Inbound webhook handler for Synology Chat outgoing webhooks.
  * Parses form-urlencoded/JSON body, validates security, delivers to agent.
  */

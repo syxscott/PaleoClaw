@@ -1,4 +1,4 @@
-﻿import type { ChannelDirectoryEntry } from "paleoclaw/plugin-sdk/msteams";
+import type { ChannelDirectoryEntry } from "paleoclaw/plugin-sdk/msteams";
 import { searchGraphUsers } from "./graph-users.js";
 import {
   type GraphChannel,

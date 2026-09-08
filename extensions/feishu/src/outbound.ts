@@ -1,4 +1,4 @@
-﻿import fs from "fs";
+import fs from "fs";
 import path from "path";
 import type { ChannelOutboundAdapter } from "paleoclaw/plugin-sdk/feishu";
 import { resolveFeishuAccount } from "./accounts.js";

@@ -1,4 +1,4 @@
-﻿import type { IncomingMessage, ServerResponse } from "node:http";
+import type { IncomingMessage, ServerResponse } from "node:http";
 import { PassThrough } from "node:stream";
 import type { OpenClawConfig, RuntimeEnv } from "paleoclaw/plugin-sdk/mattermost";
 import { describe, expect, it } from "vitest";

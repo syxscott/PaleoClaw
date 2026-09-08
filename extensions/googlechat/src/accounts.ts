@@ -1,4 +1,4 @@
-﻿import { DEFAULT_ACCOUNT_ID, normalizeAccountId } from "paleoclaw/plugin-sdk/account-id";
+import { DEFAULT_ACCOUNT_ID, normalizeAccountId } from "paleoclaw/plugin-sdk/account-id";
 import { isSecretRef } from "paleoclaw/plugin-sdk/googlechat";
 import { createAccountListHelpers, type OpenClawConfig } from "paleoclaw/plugin-sdk/googlechat";
 import type { GoogleChatAccountConfig } from "./types.config.js";

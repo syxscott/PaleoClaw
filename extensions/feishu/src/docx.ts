@@ -1,4 +1,4 @@
-﻿import { existsSync, promises as fs } from "node:fs";
+import { existsSync, promises as fs } from "node:fs";
 import { homedir } from "node:os";
 import { isAbsolute } from "node:path";
 import { basename } from "node:path";

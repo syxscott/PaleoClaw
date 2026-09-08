@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Tests for onboarding.ts helpers
  *
  * Tests cover:

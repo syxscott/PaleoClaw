@@ -1,4 +1,4 @@
-﻿import { buildChannelConfigSchema } from "paleoclaw/plugin-sdk/tlon";
+import { buildChannelConfigSchema } from "paleoclaw/plugin-sdk/tlon";
 import { z } from "zod";
 
 const ShipSchema = z.string().min(1);

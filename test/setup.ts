@@ -1,4 +1,4 @@
-﻿import { afterAll, afterEach, beforeAll, vi } from "vitest";
+import { afterAll, afterEach, beforeAll, vi } from "vitest";
 
 // Ensure Vitest environment is properly set
 process.env.VITEST = "true";

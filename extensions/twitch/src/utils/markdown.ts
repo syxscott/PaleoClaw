@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Markdown utilities for Twitch chat
  *
  * Twitch chat doesn't support markdown formatting, so we strip it before sending.

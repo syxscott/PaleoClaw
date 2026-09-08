@@ -1,4 +1,4 @@
-﻿import type { OpenClawPluginApi } from "paleoclaw/plugin-sdk/imessage";
+import type { OpenClawPluginApi } from "paleoclaw/plugin-sdk/imessage";
 import { emptyPluginConfigSchema } from "paleoclaw/plugin-sdk/imessage";
 import { imessagePlugin } from "./src/channel.js";
 import { setIMessageRuntime } from "./src/runtime.js";

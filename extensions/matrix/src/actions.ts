@@ -1,4 +1,4 @@
-﻿import {
+import {
   createActionGate,
   readNumberParam,
   readStringParam,

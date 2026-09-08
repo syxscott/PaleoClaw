@@ -1,1 +1,1 @@
-﻿export { resolveRequestUrl } from "paleoclaw/plugin-sdk/bluebubbles";
+export { resolveRequestUrl } from "paleoclaw/plugin-sdk/bluebubbles";

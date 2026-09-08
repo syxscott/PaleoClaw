@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Nostr Profile HTTP Handler
  *
  * Handles HTTP requests for profile management:

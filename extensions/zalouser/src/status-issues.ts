@@ -1,4 +1,4 @@
-﻿import type { ChannelAccountSnapshot, ChannelStatusIssue } from "paleoclaw/plugin-sdk/zalouser";
+import type { ChannelAccountSnapshot, ChannelStatusIssue } from "paleoclaw/plugin-sdk/zalouser";
 
 type ZalouserAccountStatus = {
   accountId?: unknown;

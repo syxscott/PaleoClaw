@@ -1,1 +1,1 @@
-﻿export { withFileLock } from "paleoclaw/plugin-sdk/msteams";
+export { withFileLock } from "paleoclaw/plugin-sdk/msteams";

@@ -1,4 +1,4 @@
-﻿import type { FileContents, FileDiffMetadata, SupportedLanguages } from "@pierre/diffs";
+import type { FileContents, FileDiffMetadata, SupportedLanguages } from "@pierre/diffs";
 import { parsePatchFiles } from "@pierre/diffs";
 import { preloadFileDiff, preloadMultiFileDiff } from "@pierre/diffs/ssr";
 import type {

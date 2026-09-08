@@ -1,4 +1,4 @@
-﻿import { getPublicKeyAsync, signAsync, utils } from "@noble/ed25519";
+import { getPublicKeyAsync, signAsync, utils } from "@noble/ed25519";
 
 type StoredIdentity = {
   version: 1;

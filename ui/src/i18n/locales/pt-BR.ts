@@ -1,4 +1,4 @@
-﻿import type { TranslationMap } from "../lib/types.ts";
+import type { TranslationMap } from "../lib/types.ts";
 
 export const pt_BR: TranslationMap = {
   common: {

@@ -1,4 +1,4 @@
-﻿import type { ChannelPlugin, OpenClawPluginApi } from "paleoclaw/plugin-sdk/telegram";
+import type { ChannelPlugin, OpenClawPluginApi } from "paleoclaw/plugin-sdk/telegram";
 import { emptyPluginConfigSchema } from "paleoclaw/plugin-sdk/telegram";
 import { telegramPlugin } from "./src/channel.js";
 import { setTelegramRuntime } from "./src/runtime.js";

@@ -1,4 +1,4 @@
-﻿import fs from "node:fs";
+import fs from "node:fs";
 import { readJsonFileWithFallback, writeJsonFileAtomically } from "paleoclaw/plugin-sdk/msteams";
 import { withFileLock as withPathLock } from "./file-lock.js";
 

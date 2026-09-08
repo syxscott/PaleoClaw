@@ -1,4 +1,4 @@
-﻿import type { AnyAgentTool, OpenClawPluginApi } from "paleoclaw/plugin-sdk/zalouser";
+import type { AnyAgentTool, OpenClawPluginApi } from "paleoclaw/plugin-sdk/zalouser";
 import { emptyPluginConfigSchema } from "paleoclaw/plugin-sdk/zalouser";
 import { zalouserDock, zalouserPlugin } from "./src/channel.js";
 import { setZalouserRuntime } from "./src/runtime.js";

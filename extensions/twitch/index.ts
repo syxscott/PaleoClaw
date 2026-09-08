@@ -1,4 +1,4 @@
-﻿import type { OpenClawPluginApi } from "paleoclaw/plugin-sdk/twitch";
+import type { OpenClawPluginApi } from "paleoclaw/plugin-sdk/twitch";
 import { emptyPluginConfigSchema } from "paleoclaw/plugin-sdk/twitch";
 import { twitchPlugin } from "./src/plugin.js";
 import { setTwitchRuntime } from "./src/runtime.js";

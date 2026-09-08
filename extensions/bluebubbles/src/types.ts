@@ -1,4 +1,4 @@
-﻿import type { DmPolicy, GroupPolicy } from "paleoclaw/plugin-sdk/bluebubbles";
+import type { DmPolicy, GroupPolicy } from "paleoclaw/plugin-sdk/bluebubbles";
 
 export type { DmPolicy, GroupPolicy } from "paleoclaw/plugin-sdk/bluebubbles";
 

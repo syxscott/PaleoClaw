@@ -1,4 +1,4 @@
-﻿import { createServer } from "node:http";
+import { createServer } from "node:http";
 import type { AddressInfo } from "node:net";
 import type { ClawdbotConfig } from "paleoclaw/plugin-sdk/feishu";
 import { afterEach, describe, expect, it, vi } from "vitest";

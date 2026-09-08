@@ -1,4 +1,4 @@
-﻿import {
+import {
   resolveChannelMediaMaxBytes,
   type OpenClawConfig,
   type PluginRuntime,

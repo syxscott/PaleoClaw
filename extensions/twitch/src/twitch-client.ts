@@ -1,4 +1,4 @@
-﻿import { RefreshingAuthProvider, StaticAuthProvider } from "@twurple/auth";
+import { RefreshingAuthProvider, StaticAuthProvider } from "@twurple/auth";
 import { ChatClient, LogLevel } from "@twurple/chat";
 import type { OpenClawConfig } from "paleoclaw/plugin-sdk/twitch";
 import { resolveTwitchToken } from "./token.js";

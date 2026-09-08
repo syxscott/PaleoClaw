@@ -1,4 +1,4 @@
-﻿import { html, css, LitElement, unsafeCSS } from "lit";
+import { html, css, LitElement, unsafeCSS } from "lit";
 import { repeat } from "lit/directives/repeat.js";
 import { ContextProvider } from "@lit/context";
 

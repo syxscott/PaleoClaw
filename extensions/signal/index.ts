@@ -1,4 +1,4 @@
-﻿import type { OpenClawPluginApi } from "paleoclaw/plugin-sdk/signal";
+import type { OpenClawPluginApi } from "paleoclaw/plugin-sdk/signal";
 import { emptyPluginConfigSchema } from "paleoclaw/plugin-sdk/signal";
 import { signalPlugin } from "./src/channel.js";
 import { setSignalRuntime } from "./src/runtime.js";

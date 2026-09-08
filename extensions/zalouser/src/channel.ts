@@ -1,4 +1,4 @@
-﻿import {
+import {
   buildAccountScopedDmSecurityPolicy,
   mapAllowFromEntries,
 } from "paleoclaw/plugin-sdk/compat";
