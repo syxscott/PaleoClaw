@@ -66,15 +66,6 @@ export interface DebugConfig {
   all: boolean;
 }
 
-// 默认调试配置
-const DEFAULT_DEBUG_CONFIG: DebugConfig = {
-  telegramAccounts: false,
-  memoryEmbeddings: false,
-  health: false,
-  nextcloudTalkAccounts: false,
-  all: false
-};
-
 /**
  * 从环境变量中加载调试配置
  */

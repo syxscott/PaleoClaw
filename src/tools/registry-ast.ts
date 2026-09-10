@@ -10,10 +10,10 @@ import * as ts from 'typescript';
  * and the failure was silently swallowed, disabling discovery entirely.
  */
 function isRegistryRegisterCall(node: ts.Expression): boolean {
-  if (!ts.isCallExpression(node)) return false;
+  if (!ts.isCallExpression(node)) {return false;}
   const callee = node.expression;
-  if (!ts.isPropertyAccessExpression(callee)) return false;
-  if (!ts.isIdentifier(callee.expression) || callee.expression.text !== 'registry') return false;
+  if (!ts.isPropertyAccessExpression(callee)) {return false;}
+  if (!ts.isIdentifier(callee.expression) || callee.expression.text !== 'registry') {return false;}
   return ts.isIdentifier(callee.name) && callee.name.text === 'register';
 }
 
@@ -28,7 +28,7 @@ function moduleRegistersTools(source: string): boolean {
 }
 
 export function discoverBuiltinTools(toolsDir: string): string[] {
-  if (!fs.existsSync(toolsDir)) return [];
+  if (!fs.existsSync(toolsDir)) {return [];}
 
   const files = fs.readdirSync(toolsDir).filter(f =>
     f.endsWith('.ts') && !['index.ts', 'registry-types.ts', 'tool-availability-cache.ts', 'registry-ast.ts'].includes(f)

@@ -5,6 +5,7 @@
 
 import { TaskMemoryStore } from '../memory/store.js';
 import { createDefaultMemoryManager } from '../memory/manager.js';
+import type { Command } from 'commander';
 
 interface MemoryCommandOptions {
   limit?: string;
@@ -19,7 +20,7 @@ interface MemoryCommandOptions {
   includeRunning?: boolean;
 }
 
-export function registerMemoryCommands(program: any): void {
+export function registerMemoryCommands(program: Command): void {
   const memoryCmd = program
     .command('paleo-memory')
     .alias('pmem')
@@ -259,11 +260,11 @@ export function registerMemoryCommands(program: any): void {
             console.log(`${i + 1}. [${result.source}] Score: ${result.score}`);
             console.log(`   Task ID: ${result.taskId}`);
             
-            const payload = result.payload as any;
-            if (payload.command) {
+            const payload = result.payload;
+            if (typeof payload.command === 'string') {
               console.log(`   Command: ${payload.command}`);
             }
-            if (payload.summary) {
+            if (typeof payload.summary === 'string') {
               console.log(`   Summary: ${payload.summary.slice(0, 70)}${payload.summary.length > 70 ? '...' : ''}`);
             }
             console.log('');

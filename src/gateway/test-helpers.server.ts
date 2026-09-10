@@ -281,7 +281,7 @@ export function trackConnectChallengeNonce(ws: WebSocket): void {
   });
 }
 
-export function onceMessage<T extends GatewayTestMessage = GatewayTestMessage>(
+export function onceMessage<T extends GatewayTestMessage>(
   ws: WebSocket,
   filter: (obj: T) => boolean,
   // Full-suite runs can saturate the event loop (581+ files). Keep this high
@@ -494,11 +494,7 @@ export async function readConnectChallengeNonce(
   }
   trackConnectChallengeNonce(ws);
   try {
-    const evt = await onceMessage<{
-      type?: string;
-      event?: string;
-      payload?: Record<string, unknown> | null;
-    }>(ws, (o) => o.type === "event" && o.event === "connect.challenge", timeoutMs);
+    const evt = await onceMessage(ws, (o) => o.type === "event" && o.event === "connect.challenge", timeoutMs);
     const nonce = (evt.payload as { nonce?: unknown } | undefined)?.nonce;
     if (typeof nonce === "string" && nonce.trim().length > 0) {
       (ws as TrackedWs)[CONNECT_CHALLENGE_NONCE_KEY] = nonce.trim();
@@ -703,22 +699,24 @@ export async function connectWebchatClient(params: {
   return ws;
 }
 
-export async function rpcReq<T extends Record<string, unknown>>(
+export type RpcResponse<T> = {
+  type: "res";
+  id: string;
+  ok: boolean;
+  payload?: T | null | undefined;
+  error?: { message?: string; code?: string };
+};
+
+export async function rpcReq(
   ws: WebSocket,
   method: string,
   params?: unknown,
   timeoutMs?: number,
-) {
+): Promise<RpcResponse<Record<string, unknown>>> {
   const { randomUUID } = await import("node:crypto");
   const id = randomUUID();
   ws.send(JSON.stringify({ type: "req", id, method, params }));
-  return await onceMessage<{
-    type: "res";
-    id: string;
-    ok: boolean;
-    payload?: T | null | undefined;
-    error?: { message?: string; code?: string };
-  }>(
+  return await onceMessage<RpcResponse<Record<string, unknown>>>(
     ws,
     (o) => {
       if (!o || typeof o !== "object" || Array.isArray(o)) {

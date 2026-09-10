@@ -108,9 +108,9 @@ async function runDaemonCommand(args: string[]) {
   await daemonProgram.parseAsync(args, { from: "user" });
 }
 
-function parseFirstJsonRuntimeLine<T>() {
+function parseFirstJsonRuntimeLine() {
   const jsonLine = runtimeLogs.find((line) => line.trim().startsWith("{"));
-  return JSON.parse(jsonLine ?? "{}") as T;
+  return JSON.parse(jsonLine ?? "{}") as unknown;
 }
 
 describe("daemon-cli coverage", () => {
@@ -175,11 +175,11 @@ describe("daemon-cli coverage", () => {
     );
     expect(inspectPortUsage).toHaveBeenCalledWith(19001);
 
-    const parsed = parseFirstJsonRuntimeLine<{
+    const parsed = parseFirstJsonRuntimeLine() as {
       gateway?: { port?: number; portSource?: string; probeUrl?: string };
       config?: { mismatch?: boolean };
       rpc?: { url?: string; ok?: boolean };
-    }>();
+    };
     expect(parsed.gateway?.port).toBe(19001);
     expect(parsed.gateway?.portSource).toBe("service args");
     expect(parsed.gateway?.probeUrl).toBe("ws://127.0.0.1:19001");
@@ -215,11 +215,11 @@ describe("daemon-cli coverage", () => {
     ]);
 
     expect(serviceInstall).toHaveBeenCalledTimes(1);
-    const parsed = parseFirstJsonRuntimeLine<{
+    const parsed = parseFirstJsonRuntimeLine() as {
       ok?: boolean;
       action?: string;
       result?: string;
-    }>();
+    };
     expect(parsed.ok).toBe(true);
     expect(parsed.action).toBe("install");
     expect(parsed.result).toBe("installed");

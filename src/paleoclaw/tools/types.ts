@@ -33,7 +33,7 @@ export interface ToolResult {
 export type ToolHandler = (
   params: Record<string, unknown>,
   context?: ToolExecuteContext
-) => Promise<unknown> | unknown;
+) => unknown;
 
 export interface ToolEntry {
   name: string;

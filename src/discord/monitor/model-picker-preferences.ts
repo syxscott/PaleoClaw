@@ -95,7 +95,7 @@ function sanitizeRecentModels(models: string[] | undefined, limit: number): stri
 }
 
 async function readPreferencesStore(filePath: string): Promise<ModelPickerPreferencesStore> {
-  const { value } = await readJsonFileWithFallback<ModelPickerPreferencesStore>(filePath, {
+  const { value } = await readJsonFileWithFallback(filePath, {
     version: 1,
     entries: {},
   });
@@ -104,7 +104,10 @@ async function readPreferencesStore(filePath: string): Promise<ModelPickerPrefer
   }
   return {
     version: 1,
-    entries: value.entries && typeof value.entries === "object" ? value.entries : {},
+    entries:
+      value.entries && typeof value.entries === "object"
+        ? (value.entries as ModelPickerPreferencesStore["entries"])
+        : {},
   };
 }
 

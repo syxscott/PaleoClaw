@@ -61,7 +61,7 @@ export class BuiltinTaskMemoryProvider implements MemoryProvider {
 
     return hits
       .map((hit, idx) => {
-        const payload = hit.payload as Record<string, unknown>;
+        const payload = hit.payload;
         const summary = typeof payload.summary === 'string'
           ? payload.summary
           : typeof payload.error === 'string'
@@ -116,7 +116,7 @@ export class MemoryManager {
     // with no shared state.
     const results = await Promise.all(
       this.providers.map(async (provider) => {
-        if (!provider.prefetch) return '';
+        if (!provider.prefetch) {return '';}
         try {
           const content = await Promise.resolve(provider.prefetch(userMessage));
           return content?.trim() ? `[${provider.name}]\n${content.trim()}` : '';

@@ -638,6 +638,7 @@ function stripShellPreamble(command: string): PreambleResult {
         first = { index: idx, length: 1 };
         return false;
       }
+      return undefined;
     });
     const head = (first ? rest.slice(0, first.index) : rest).trim();
     // cd/pushd/popd is preamble when followed by && / ; / \n, or when we already

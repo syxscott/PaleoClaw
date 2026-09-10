@@ -133,7 +133,7 @@ export async function handleSubagentsSendAction(
   }
 
   const waitMs = 30_000;
-  const wait = await callGateway<{ status?: string; error?: string }>({
+  const wait = await callGateway({
     method: "agent.wait",
     params: { runId, timeoutMs: waitMs },
     timeoutMs: waitMs + 2000,

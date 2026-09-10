@@ -58,9 +58,14 @@ function buildEntry(name: string): SkillEntry {
     skill: {
       name,
       description: `${name} test skill`,
-      source: "paleoclaw-workspace",
       filePath: path.join(skillDir, "SKILL.md"),
       baseDir: skillDir,
+      sourceInfo: {
+        path: path.join(skillDir, "SKILL.md"),
+        source: "paleoclaw-workspace",
+        scope: "project",
+        origin: "package",
+      },
       disableModelInvocation: false,
     },
     frontmatter: {},

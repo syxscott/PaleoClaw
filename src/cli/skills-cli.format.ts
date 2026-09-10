@@ -22,7 +22,7 @@ function appendPaleoHubHint(output: string, json?: boolean): string {
   if (json) {
     return output;
   }
-  return `${output}\n\nTip: use \`npx PaleoHub\` to search, install, and sync skills.`;
+  return `${output}\n\nTip: use \`npx clawhub\` to search, install, and sync skills.`;
 }
 
 function formatSkillStatus(skill: SkillStatusEntry): string {

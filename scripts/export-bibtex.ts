@@ -22,9 +22,9 @@ interface Paper {
 }
 
 function formatAuthors(authors: string[]): string {
-  if (authors.length === 0) return '';
-  if (authors.length === 1) return authors[0];
-  if (authors.length === 2) return `${authors[0]} and ${authors[1]}`;
+  if (authors.length === 0) {return '';}
+  if (authors.length === 1) {return authors[0];}
+  if (authors.length === 2) {return `${authors[0]} and ${authors[1]}`;}
   return `${authors.slice(0, -1).join(', ')} and ${authors[authors.length - 1]}`;
 }
 
@@ -40,17 +40,17 @@ function paperToBibtex(paper: Paper, key?: string): string {
   const entries: string[] = [];
   entries.push(`@article{${bibKey},`);
   
-  if (paper.title) entries.push(`  title = {${paper.title}},`);
+  if (paper.title) {entries.push(`  title = {${paper.title}},`);}
   if (paper.authors && paper.authors.length > 0) {
     entries.push(`  author = {${formatAuthors(paper.authors)}},`);
   }
-  if (paper.year) entries.push(`  year = {${paper.year}},`);
-  if (paper.journal) entries.push(`  journal = {${paper.journal}},`);
-  if (paper.volume) entries.push(`  volume = {${paper.volume}},`);
-  if (paper.issue) entries.push(`  number = {${paper.issue}},`);
-  if (paper.pages) entries.push(`  pages = {${paper.pages}},`);
-  if (paper.doi) entries.push(`  doi = {${paper.doi}},`);
-  if (paper.url) entries.push(`  url = {${paper.url}},`);
+  if (paper.year) {entries.push(`  year = {${paper.year}},`);}
+  if (paper.journal) {entries.push(`  journal = {${paper.journal}},`);}
+  if (paper.volume) {entries.push(`  volume = {${paper.volume}},`);}
+  if (paper.issue) {entries.push(`  number = {${paper.issue}},`);}
+  if (paper.pages) {entries.push(`  pages = {${paper.pages}},`);}
+  if (paper.doi) {entries.push(`  doi = {${paper.doi}},`);}
+  if (paper.url) {entries.push(`  url = {${paper.url}},`);}
   
   entries.push('}');
   
@@ -111,12 +111,24 @@ Examples:
         process.exit(1);
       }
       
-      const data = await response.json();
-      const work = data.message;
+      const data = (await response.json()) as {
+        message?: {
+          title?: string[];
+          author?: Array<{ given?: string; family?: string }>;
+          published?: { 'date-parts'?: number[][] };
+          'container-title'?: string[];
+          DOI?: string;
+          volume?: string;
+          issue?: string;
+          page?: string;
+          URL?: string;
+        };
+      };
+      const work = data.message ?? {};
       
       papers = [{
         title: work.title?.[0] || '',
-        authors: work.author?.map((a: any) => `${a.given || ''} ${a.family || ''}`.trim()) || [],
+        authors: work.author?.map((a) => `${a.given || ''} ${a.family || ''}`.trim()) || [],
         year: work.published?.['date-parts']?.[0]?.[0],
         journal: work['container-title']?.[0] || '',
         doi: work.DOI,
@@ -129,7 +141,7 @@ Examples:
       output = args.find(a => a.startsWith('--output='))?.split('=')[1] || `${sanitizeBibtex(papers[0].title || 'ref', papers[0].year)}.bib`;
     } else {
       const inputFile = args[0];
-      if (args[1]) output = args[1];
+      if (args[1]) {output = args[1];}
       
       const content = await Bun.file(inputFile).text();
       papers = JSON.parse(content);
@@ -151,4 +163,4 @@ function sanitizeBibtex(title: string, year: number | undefined): string {
   return year ? `${base}${year}` : base;
 }
 
-main();
+void main();

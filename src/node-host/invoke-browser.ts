@@ -112,15 +112,15 @@ async function readBrowserProxyFile(filePath: string): Promise<BrowserProxyFile 
   return { path: filePath, base64: buffer.toString("base64"), mimeType };
 }
 
-function decodeParams<T>(raw?: string | null): T {
+function decodeParams(raw?: string | null): unknown {
   if (!raw) {
     throw new Error("INVALID_REQUEST: paramsJSON required");
   }
-  return JSON.parse(raw) as T;
+  return JSON.parse(raw);
 }
 
 export async function runBrowserProxyCommand(paramsJSON?: string | null): Promise<string> {
-  const params = decodeParams<BrowserProxyParams>(paramsJSON);
+  const params = decodeParams(paramsJSON) as BrowserProxyParams;
   const pathValue = typeof params.path === "string" ? params.path.trim() : "";
   if (!pathValue) {
     throw new Error("INVALID_REQUEST: path required");

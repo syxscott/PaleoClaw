@@ -162,6 +162,9 @@ describe("GatewayBrowserClient", () => {
       event: "connect.challenge",
       payload: { nonce: "nonce-1" },
     });
+    // The challenge-triggered connect is signed asynchronously (device identity
+    // load + payload signature): two awaits must flush before the frame lands.
+    await Promise.resolve();
     await Promise.resolve();
 
     const connectFrame = JSON.parse(ws.sent.at(-1) ?? "{}") as {

@@ -49,9 +49,9 @@ describe("channels command", () => {
     setDefaultChannelPluginRegistryForTests();
   });
 
-  function getWrittenConfig<T>(): T {
+  function getWrittenConfig(): unknown {
     expect(configMocks.writeConfigFile).toHaveBeenCalledTimes(1);
-    return configMocks.writeConfigFile.mock.calls[0]?.[0] as T;
+    return configMocks.writeConfigFile.mock.calls[0]?.[0];
   }
 
   async function runRemoveWithConfirm(
@@ -83,14 +83,14 @@ describe("channels command", () => {
     };
   }> {
     await addTelegramAccount("alerts", token);
-    return getWrittenConfig<{
+    return getWrittenConfig() as {
       channels?: {
         telegram?: {
           enabled?: boolean;
           accounts?: Record<string, { botToken?: string }>;
         };
       };
-    }>();
+    };
   }
 
   it("adds a non-default telegram account", async () => {
@@ -119,7 +119,7 @@ describe("channels command", () => {
 
     await addTelegramAccount("alerts", "alerts-token");
 
-    const next = getWrittenConfig<{
+    const next = getWrittenConfig() as {
       channels?: {
         telegram?: {
           botToken?: string;
@@ -139,7 +139,7 @@ describe("channels command", () => {
           >;
         };
       };
-    }>();
+    };
     expect(next.channels?.telegram?.accounts?.default).toEqual({
       botToken: "legacy-token",
       dmPolicy: "allowlist",
@@ -186,11 +186,11 @@ describe("channels command", () => {
       { hasFlags: true },
     );
 
-    const next = getWrittenConfig<{
+    const next = getWrittenConfig() as {
       channels?: {
         slack?: { enabled?: boolean; botToken?: string; appToken?: string };
       };
-    }>();
+    };
     expect(next.channels?.slack?.enabled).toBe(true);
     expect(next.channels?.slack?.botToken).toBe("xoxb-1");
     expect(next.channels?.slack?.appToken).toBe("xapp-1");
@@ -215,11 +215,11 @@ describe("channels command", () => {
       hasFlags: true,
     });
 
-    const next = getWrittenConfig<{
+    const next = getWrittenConfig() as {
       channels?: {
         discord?: { accounts?: Record<string, { token?: string }> };
       };
-    }>();
+    };
     expect(next.channels?.discord?.accounts?.work).toBeUndefined();
     expect(next.channels?.discord?.accounts?.default?.token).toBe("d0");
   });
@@ -232,11 +232,11 @@ describe("channels command", () => {
       { hasFlags: true },
     );
 
-    const next = getWrittenConfig<{
+    const next = getWrittenConfig() as {
       channels?: {
         whatsapp?: { accounts?: Record<string, { name?: string }> };
       };
-    }>();
+    };
     expect(next.channels?.whatsapp?.accounts?.family?.name).toBe("Family Phone");
   });
 
@@ -265,13 +265,13 @@ describe("channels command", () => {
       { hasFlags: true },
     );
 
-    const next = getWrittenConfig<{
+    const next = getWrittenConfig() as {
       channels?: {
         signal?: {
           accounts?: Record<string, { account?: string; name?: string }>;
         };
       };
-    }>();
+    };
     expect(next.channels?.signal?.accounts?.lab?.account).toBe("+15555550123");
     expect(next.channels?.signal?.accounts?.lab?.name).toBe("Lab");
     expect(next.channels?.signal?.accounts?.default?.name).toBe("Primary");
@@ -287,9 +287,9 @@ describe("channels command", () => {
 
     await runRemoveWithConfirm({ channel: "discord", account: "default" });
 
-    const next = getWrittenConfig<{
+    const next = getWrittenConfig() as {
       channels?: { discord?: { enabled?: boolean } };
-    }>();
+    };
     expect(next.channels?.discord?.enabled).toBe(false);
   });
 
@@ -355,14 +355,14 @@ describe("channels command", () => {
       { hasFlags: true },
     );
 
-    const next = getWrittenConfig<{
+    const next = getWrittenConfig() as {
       channels?: {
         telegram?: {
           name?: string;
           accounts?: Record<string, { botToken?: string; name?: string }>;
         };
       };
-    }>();
+    };
     expect(next.channels?.telegram?.name).toBeUndefined();
     expect(next.channels?.telegram?.accounts?.default?.name).toBe("Primary Bot");
   });
@@ -384,14 +384,14 @@ describe("channels command", () => {
       hasFlags: true,
     });
 
-    const next = getWrittenConfig<{
+    const next = getWrittenConfig() as {
       channels?: {
         discord?: {
           name?: string;
           accounts?: Record<string, { name?: string; token?: string }>;
         };
       };
-    }>();
+    };
     expect(next.channels?.discord?.name).toBeUndefined();
     expect(next.channels?.discord?.accounts?.default?.name).toBe("Primary Bot");
     expect(next.channels?.discord?.accounts?.work?.token).toBe("d1");

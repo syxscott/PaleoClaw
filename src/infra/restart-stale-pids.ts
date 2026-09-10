@@ -1,7 +1,23 @@
 import { spawnSync } from "node:child_process";
+import { LEGACY_PROJECT_NAMES, PROJECT_NAME } from "../compat/legacy-names.js";
 import { resolveGatewayPort } from "../config/paths.js";
 import { createSubsystemLogger } from "../logging/subsystem.js";
 import { resolveLsofCommandSync } from "./ports-lsof.js";
+
+/**
+ * Gateway process names to reclaim during a restart. Includes the pre-rebrand
+ * names so stale processes launched before the PaleoClaw rename are still
+ * detected and killed (otherwise an old "openclaw" listener would keep the
+ * gateway port busy forever).
+ */
+const GATEWAY_PROCESS_NAMES = [PROJECT_NAME, ...LEGACY_PROJECT_NAMES].map((name) =>
+  name.toLowerCase(),
+);
+
+function isGatewayProcessName(cmd: string): boolean {
+  const lower = cmd.toLowerCase();
+  return GATEWAY_PROCESS_NAMES.some((name) => lower.includes(name));
+}
 
 const SPAWN_TIMEOUT_MS = 2000;
 const STALE_SIGTERM_WAIT_MS = 600;
@@ -60,7 +76,7 @@ function parsePidsFromLsofOutput(stdout: string): number[] {
   let currentCmd: string | undefined;
   for (const line of stdout.split(/\r?\n/).filter(Boolean)) {
     if (line.startsWith("p")) {
-      if (currentPid != null && currentCmd && currentCmd.toLowerCase().includes("paleoclaw")) {
+      if (currentPid != null && currentCmd && isGatewayProcessName(currentCmd)) {
         pids.push(currentPid);
       }
       const parsed = Number.parseInt(line.slice(1), 10);
@@ -70,7 +86,7 @@ function parsePidsFromLsofOutput(stdout: string): number[] {
       currentCmd = line.slice(1);
     }
   }
-  if (currentPid != null && currentCmd && currentCmd.toLowerCase().includes("paleoclaw")) {
+  if (currentPid != null && currentCmd && isGatewayProcessName(currentCmd)) {
     pids.push(currentPid);
   }
   // Deduplicate: dual-stack listeners (IPv4 + IPv6) cause lsof to emit the

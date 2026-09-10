@@ -32,6 +32,8 @@ jobs:
       digest: ${{ steps.build.outputs.digest }}
       slim-digest: ${{ steps.build-slim.outputs.digest }}
     steps:
+      - name: Normalize image name (GHCR requires lowercase)
+        run: echo "IMAGE_NAME=${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -133,6 +135,8 @@ jobs:
       digest: ${{ steps.build.outputs.digest }}
       slim-digest: ${{ steps.build-slim.outputs.digest }}
     steps:
+      - name: Normalize image name (GHCR requires lowercase)
+        run: echo "IMAGE_NAME=${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -232,6 +236,8 @@ jobs:
       contents: read
     needs: [build-amd64, build-arm64]
     steps:
+      - name: Normalize image name (GHCR requires lowercase)
+        run: echo "IMAGE_NAME=${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
       - name: Checkout
         uses: actions/checkout@v4
 

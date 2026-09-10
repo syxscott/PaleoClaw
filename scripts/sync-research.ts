@@ -11,7 +11,7 @@
  */
 
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync, cpSync } from 'fs';
-import { join, basename, extname } from 'path';
+import { join, extname } from 'path';
 
 interface ResearchItem {
   id: string;
@@ -128,8 +128,8 @@ Examples:
       console.log(`[${item.id}] ${item.title}`);
       console.log(`  Authors: ${item.authors.join(', ')}`);
       console.log(`  Year: ${item.year}`);
-      if (item.doi) console.log(`  DOI: ${item.doi}`);
-      if (item.tags.length > 0) console.log(`  Tags: ${item.tags.join(', ')}`);
+      if (item.doi) {console.log(`  DOI: ${item.doi}`);}
+      if (item.tags.length > 0) {console.log(`  Tags: ${item.tags.join(', ')}`);}
       console.log('');
     }
     return;
@@ -216,4 +216,4 @@ Examples:
   console.log('No action specified. Use --help for usage information.');
 }
 
-main();
+void main();

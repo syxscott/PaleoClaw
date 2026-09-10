@@ -1,10 +1,5 @@
 import { ContextEngine } from './context-engine.js';
 
-interface CompressionResult {
-  compressed: Array<{ role: string; content: string }>;
-  summary: string;
-}
-
 const COMPRESSED_SUMMARY_METADATA_KEY = '_compressed_summary';
 
 export class ContextCompressor extends ContextEngine {
@@ -27,11 +22,14 @@ export class ContextCompressor extends ContextEngine {
     this.thresholdTokens = Math.floor(contextLength * thresholdPercent);
   }
 
-  update_from_response(response: any): void {
-    if (response.usage) {
-      this.lastPromptTokens = response.usage.prompt_tokens || 0;
-      this.lastCompletionTokens = response.usage.completion_tokens || 0;
-      this.lastTotalTokens = response.usage.total_tokens || 0;
+  update_from_response(response: unknown): void {
+    const usage = (
+      response as { usage?: { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number } } | undefined
+    )?.usage;
+    if (usage) {
+      this.lastPromptTokens = usage.prompt_tokens || 0;
+      this.lastCompletionTokens = usage.completion_tokens || 0;
+      this.lastTotalTokens = usage.total_tokens || 0;
     }
   }
 
@@ -40,14 +38,14 @@ export class ContextCompressor extends ContextEngine {
   }
 
   compress(messages: Array<{ role: string; content: string }>): Array<{ role: string; content: string }> {
-    if (!this.should_compress()) return messages;
-    if (messages.length <= this.protectFirstN + this.protectLastN) return messages;
+    if (!this.should_compress()) {return messages;}
+    if (messages.length <= this.protectFirstN + this.protectLastN) {return messages;}
 
     const protectedStart = messages.slice(0, this.protectFirstN);
     const protectedEnd = messages.slice(-this.protectLastN);
     const middle = messages.slice(this.protectFirstN, -this.protectLastN);
 
-    if (middle.length === 0) return messages;
+    if (middle.length === 0) {return messages;}
 
     // Simple compression: summarize middle messages
     const summary = this.summarize(middle);

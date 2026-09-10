@@ -30,7 +30,6 @@ import {
   validateHostEnv,
 } from "./bash-tools.exec-runtime.js";
 import type {
-  ExecElevatedDefaults,
   ExecToolDefaults,
   ExecToolDetails,
 } from "./bash-tools.exec-types.js";

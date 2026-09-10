@@ -1,5 +1,5 @@
 import crypto from "node:crypto";
-import type { WebhookRequestBody } from "@line/bot-sdk";
+import type { webhook } from "@line/bot-sdk";
 import { describe, expect, it, vi } from "vitest";
 import { createLineWebhookMiddleware, startLineWebhook } from "./webhook.js";
 
@@ -29,7 +29,7 @@ async function invokeWebhook(params: {
   const onEventsMock = params.onEvents ?? vi.fn(async () => {});
   const middleware = createLineWebhookMiddleware({
     channelSecret: SECRET,
-    onEvents: onEventsMock as unknown as (body: WebhookRequestBody) => Promise<void>,
+    onEvents: onEventsMock as unknown as (body: webhook.CallbackRequest) => Promise<void>,
   });
 
   const headers = { ...params.headers };

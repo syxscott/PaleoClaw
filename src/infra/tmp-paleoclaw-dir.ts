@@ -132,16 +132,16 @@ export function resolvePreferredOpenClawTmpDir(
       if (tryRepairWritableBits(fallbackPath)) {
         return fallbackPath;
       }
-      throw new Error(`Unsafe fallback PaleoClaw temp dir: ${fallbackPath}`);
+      throw new Error(`Unsafe fallback paleoclaw temp dir: ${fallbackPath}`);
     }
     try {
       mkdirSync(fallbackPath, { recursive: true, mode: 0o700 });
       chmodSync(fallbackPath, 0o700);
     } catch {
-      throw new Error(`Unable to create fallback PaleoClaw temp dir: ${fallbackPath}`);
+      throw new Error(`Unable to create fallback paleoclaw temp dir: ${fallbackPath}`);
     }
     if (resolveDirState(fallbackPath) !== "available" && !tryRepairWritableBits(fallbackPath)) {
-      throw new Error(`Unsafe fallback PaleoClaw temp dir: ${fallbackPath}`);
+      throw new Error(`Unsafe fallback paleoclaw temp dir: ${fallbackPath}`);
     }
     return fallbackPath;
   };

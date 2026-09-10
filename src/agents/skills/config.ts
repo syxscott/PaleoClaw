@@ -50,7 +50,7 @@ function normalizeAllowlist(input: unknown): string[] | undefined {
 
 const BUNDLED_SOURCES = new Set(["paleoclaw-bundled"]);
 
-function resolveSkillSource(skill: Skill): string {
+export function resolveSkillSource(skill: Skill): string {
   const compatSkill = skill as Skill & {
     source?: string;
     sourceInfo?: { source?: string };

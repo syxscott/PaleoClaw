@@ -165,14 +165,8 @@ export class GatewayBrowserClient {
     this.detachWakeListeners();
     // Clear any pending timers so callbacks don't fire after stop() and try
     // to use a disposed WebSocket.
-    if (this.connectTimer !== null) {
-      window.clearTimeout(this.connectTimer);
-      this.connectTimer = null;
-    }
-    if (this.reconnectTimer !== null) {
-      window.clearTimeout(this.reconnectTimer);
-      this.reconnectTimer = null;
-    }
+    this.connectTimer = this.clearWindowTimer(this.connectTimer);
+    this.reconnectTimer = this.clearWindowTimer(this.reconnectTimer);
     this.ws?.close();
     this.ws = null;
     this.pendingConnectError = undefined;
@@ -227,6 +221,11 @@ export class GatewayBrowserClient {
       };
       document.addEventListener("visibilitychange", this.onVisibilityChange);
     }
+    // Node/test environments may lack `window` entirely or provide a partial
+    // stub without listener support — skip wake listeners there.
+    if (typeof window === "undefined" || typeof window.addEventListener !== "function") {
+      return;
+    }
     this.onOnline = () => this.scheduleWakeRecovery(false);
     this.onPageShow = (event: PageTransitionEvent) => {
       // BFCache resume: the old socket is a ghost even when it reports OPEN.
@@ -243,16 +242,41 @@ export class GatewayBrowserClient {
       document.removeEventListener("visibilitychange", this.onVisibilityChange);
       this.onVisibilityChange = null;
     }
+    const canRemoveWindowListeners =
+      typeof window !== "undefined" && typeof window.removeEventListener === "function";
     if (this.onOnline) {
-      window.removeEventListener("online", this.onOnline);
+      if (canRemoveWindowListeners) {
+        window.removeEventListener("online", this.onOnline);
+      }
       this.onOnline = null;
     }
     if (this.onPageShow) {
-      window.removeEventListener("pageshow", this.onPageShow);
+      if (canRemoveWindowListeners) {
+        window.removeEventListener("pageshow", this.onPageShow);
+      }
       this.onPageShow = null;
     }
     this.wakeCheckQueued = false;
     this.wakeForceRecovery = false;
+  }
+
+  /**
+   * window-timer helpers: non-browser environments (node test runs, SSR) may
+   * lack `window`, so timers are simply never scheduled/cleared there. Browser
+   * behavior is unchanged.
+   */
+  private clearWindowTimer(timer: number | null): null {
+    if (timer !== null && typeof window !== "undefined") {
+      window.clearTimeout(timer);
+    }
+    return null;
+  }
+
+  private setWindowTimer(handler: () => void, delay: number): number | null {
+    if (typeof window === "undefined") {
+      return null;
+    }
+    return window.setTimeout(handler, delay);
   }
 
   private scheduleWakeRecovery(force: boolean) {
@@ -287,14 +311,8 @@ export class GatewayBrowserClient {
   private recoverConnection() {
     const ghost = this.ws;
     this.ws = null;
-    if (this.connectTimer !== null) {
-      window.clearTimeout(this.connectTimer);
-      this.connectTimer = null;
-    }
-    if (this.reconnectTimer !== null) {
-      window.clearTimeout(this.reconnectTimer);
-      this.reconnectTimer = null;
-    }
+    this.connectTimer = this.clearWindowTimer(this.connectTimer);
+    this.reconnectTimer = this.clearWindowTimer(this.reconnectTimer);
     this.connectSent = false;
     this.connectNonce = null;
     this.backoffMs = BASE_BACKOFF_MS;
@@ -360,10 +378,8 @@ export class GatewayBrowserClient {
     }
     const delay = this.backoffMs;
     this.backoffMs = Math.min(this.backoffMs * 1.7, 15_000);
-    if (this.reconnectTimer !== null) {
-      window.clearTimeout(this.reconnectTimer);
-    }
-    this.reconnectTimer = window.setTimeout(() => {
+    this.clearWindowTimer(this.reconnectTimer);
+    this.reconnectTimer = this.setWindowTimer(() => {
       this.reconnectTimer = null;
       this.connect();
     }, delay);
@@ -392,10 +408,7 @@ export class GatewayBrowserClient {
       return;
     }
     this.connectSent = true;
-    if (this.connectTimer !== null) {
-      window.clearTimeout(this.connectTimer);
-      this.connectTimer = null;
-    }
+    this.connectTimer = this.clearWindowTimer(this.connectTimer);
 
     // crypto.subtle is only available in secure contexts (HTTPS, localhost).
     // Over plain HTTP, we skip device identity and fall back to token-only auth.
@@ -592,10 +605,8 @@ export class GatewayBrowserClient {
   private queueConnect() {
     this.connectNonce = null;
     this.connectSent = false;
-    if (this.connectTimer !== null) {
-      window.clearTimeout(this.connectTimer);
-    }
-    this.connectTimer = window.setTimeout(() => {
+    this.clearWindowTimer(this.connectTimer);
+    this.connectTimer = this.setWindowTimer(() => {
       void this.sendConnect();
     }, 750);
   }

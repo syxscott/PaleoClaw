@@ -566,7 +566,7 @@ export async function runAcpClientInteractive(opts: AcpClientOptions = {}): Prom
     }
   };
 
-  runPromptLoop();
+  void runPromptLoop();
 
   agent.on("exit", (code) => {
     if (!stopped) {

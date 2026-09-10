@@ -14,22 +14,6 @@ import {
 import { agentCommand } from "./agent.js";
 import { resolveSessionKeyForRequest } from "./agent/session.js";
 
-type AgentGatewayResult = {
-  payloads?: Array<{
-    text?: string;
-    mediaUrl?: string | null;
-    mediaUrls?: string[];
-  }>;
-  meta?: unknown;
-};
-
-type GatewayAgentResponse = {
-  runId?: string;
-  status?: string;
-  summary?: string;
-  result?: AgentGatewayResult;
-};
-
 const NO_GATEWAY_TIMEOUT_MS = 2_147_000_000;
 
 export type AgentCliOpts = {
@@ -127,7 +111,7 @@ export async function agentViaGatewayCommand(opts: AgentCliOpts, runtime: Runtim
       enabled: opts.json !== true,
     },
     async () =>
-      await callGateway<GatewayAgentResponse>({
+      await callGateway({
         method: "agent",
         params: {
           message: body,
@@ -159,11 +143,17 @@ export async function agentViaGatewayCommand(opts: AgentCliOpts, runtime: Runtim
     return response;
   }
 
-  const result = response?.result;
+  const result = response?.result as
+    | { payloads?: Array<{ text?: string; mediaUrl?: string | null; mediaUrls?: string[] }> }
+    | undefined;
   const payloads = result?.payloads ?? [];
 
   if (payloads.length === 0) {
-    runtime.log(response?.summary ? String(response.summary) : "No reply from agent.");
+    runtime.log(
+      typeof response?.summary === "string" && response.summary
+        ? response.summary
+        : "No reply from agent.",
+    );
     return response;
   }
 

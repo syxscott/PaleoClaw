@@ -23,7 +23,7 @@ function getSessionRecipients(cfg: OpenClawConfig) {
   const recipients = Object.entries(store)
     .filter(([key]) => key !== "global" && key !== "unknown")
     .filter(([key]) => !isGroupKey(key) && !isCronKey(key))
-    .map(([_, entry]) => ({
+    .map(([, entry]) => ({
       to:
         normalizeChatChannelId(entry?.lastChannel) === "whatsapp" && entry?.lastTo
           ? normalizeE164(entry.lastTo)

@@ -197,7 +197,7 @@ export function buildAuthHealthSummary(params: {
     : null;
 
   const profiles = Object.entries(params.store.profiles)
-    .filter(([_, cred]) => (providerFilter ? providerFilter.has(cred.provider) : true))
+    .filter(([, cred]) => (providerFilter ? providerFilter.has(cred.provider) : true))
     .map(([profileId, credential]) =>
       buildProfileHealth({
         profileId,

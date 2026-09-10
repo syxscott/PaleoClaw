@@ -84,6 +84,7 @@ vi.mock("node:fs", async (importOriginal) => {
         return await (actual.promises.mkdir as any)(p, { recursive: true });
       }
       ensureDir(p);
+      return undefined;
     },
     readFile: async (p: string) => {
       if (!isFixtureInMock(p)) {
@@ -103,6 +104,7 @@ vi.mock("node:fs", async (importOriginal) => {
       }
       const content = typeof data === "string" ? data : Buffer.from(data).toString("utf-8");
       setFile(p, content);
+      return undefined;
     },
     rename: async (from: string, to: string) => {
       if (!isFixtureInMock(from) || !isFixtureInMock(to)) {
@@ -118,6 +120,7 @@ vi.mock("node:fs", async (importOriginal) => {
       ensureDir(pathMod.dirname(toAbs));
       fsState.entries.delete(fromAbs);
       fsState.entries.set(toAbs, { ...entry, mtimeMs: bumpMtimeMs() });
+      return undefined;
     },
     copyFile: async (from: string, to: string) => {
       if (!isFixtureInMock(from) || !isFixtureInMock(to)) {
@@ -129,6 +132,7 @@ vi.mock("node:fs", async (importOriginal) => {
         throw mkErr("ENOENT", `ENOENT: no such file or directory, copyfile '${from}' -> '${to}'`);
       }
       setFile(to, entry.content);
+      return undefined;
     },
     stat: async (p: string) => {
       if (!isFixtureInMock(p)) {
@@ -154,6 +158,7 @@ vi.mock("node:fs", async (importOriginal) => {
       if (!entry) {
         throw mkErr("ENOENT", `ENOENT: no such file or directory, access '${p}'`);
       }
+      return undefined;
     },
     unlink: async (p: string) => {
       if (!isFixtureInMock(p)) {
@@ -161,6 +166,7 @@ vi.mock("node:fs", async (importOriginal) => {
         return await (actual.promises.unlink as any)(p);
       }
       fsState.entries.delete(absInMock(p));
+      return undefined;
     },
   } as unknown as typeof actual.promises;
 
@@ -178,6 +184,7 @@ vi.mock("node:fs/promises", async (importOriginal) => {
         return await (actual.mkdir as any)(p, { recursive: true });
       }
       ensureDir(p);
+      return undefined;
     },
     writeFile: async (p: string, data: string, _enc?: unknown) => {
       if (!isFixturePath(p)) {
@@ -185,6 +192,7 @@ vi.mock("node:fs/promises", async (importOriginal) => {
         return await (actual.writeFile as any)(p, data, "utf-8");
       }
       setFile(p, data);
+      return undefined;
     },
   };
   return { ...wrapped, default: wrapped };

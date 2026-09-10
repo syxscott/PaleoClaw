@@ -1,4 +1,4 @@
-import type { MessageEvent, PostbackEvent } from "@line/bot-sdk";
+import type { webhook } from "@line/bot-sdk";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Avoid pulling in globals/pairing/media dependencies; this suite only asserts
@@ -86,7 +86,7 @@ function createReplayMessageEvent(params: {
     mode: "active",
     webhookEventId: params.webhookEventId,
     deliveryContext: { isRedelivery: params.isRedelivery },
-  } as MessageEvent;
+  } as webhook.MessageEvent;
 }
 
 function createOpenGroupReplayContext(
@@ -138,7 +138,7 @@ describe("handleLineWebhookEvents", () => {
       mode: "active",
       webhookEventId: "evt-1",
       deliveryContext: { isRedelivery: false },
-    } as MessageEvent;
+    } as webhook.MessageEvent;
 
     await handleLineWebhookEvents([event], {
       cfg: { channels: { line: { groupPolicy: "disabled" } } },
@@ -170,7 +170,7 @@ describe("handleLineWebhookEvents", () => {
       mode: "active",
       webhookEventId: "evt-2",
       deliveryContext: { isRedelivery: false },
-    } as MessageEvent;
+    } as webhook.MessageEvent;
 
     await handleLineWebhookEvents([event], {
       cfg: { channels: { line: { groupPolicy: "allowlist" } } },
@@ -202,7 +202,7 @@ describe("handleLineWebhookEvents", () => {
       mode: "active",
       webhookEventId: "evt-3",
       deliveryContext: { isRedelivery: false },
-    } as MessageEvent;
+    } as webhook.MessageEvent;
 
     await handleLineWebhookEvents([event], {
       cfg: {
@@ -241,7 +241,7 @@ describe("handleLineWebhookEvents", () => {
       mode: "active",
       webhookEventId: "evt-5",
       deliveryContext: { isRedelivery: false },
-    } as MessageEvent;
+    } as webhook.MessageEvent;
 
     await handleLineWebhookEvents([event], {
       cfg: {
@@ -276,7 +276,7 @@ describe("handleLineWebhookEvents", () => {
       mode: "active",
       webhookEventId: "evt-5a",
       deliveryContext: { isRedelivery: false },
-    } as MessageEvent;
+    } as webhook.MessageEvent;
 
     await handleLineWebhookEvents([event], {
       cfg: {
@@ -311,7 +311,7 @@ describe("handleLineWebhookEvents", () => {
       mode: "active",
       webhookEventId: "evt-5b",
       deliveryContext: { isRedelivery: false },
-    } as MessageEvent;
+    } as webhook.MessageEvent;
 
     await handleLineWebhookEvents([event], {
       cfg: { channels: { line: { groupPolicy: "allowlist" } } },
@@ -348,7 +348,7 @@ describe("handleLineWebhookEvents", () => {
       mode: "active",
       webhookEventId: "evt-4",
       deliveryContext: { isRedelivery: false },
-    } as MessageEvent;
+    } as webhook.MessageEvent;
 
     await handleLineWebhookEvents([event], {
       cfg: { channels: { line: { groupPolicy: "open" } } },
@@ -380,7 +380,7 @@ describe("handleLineWebhookEvents", () => {
       mode: "active",
       webhookEventId: "evt-5",
       deliveryContext: { isRedelivery: false },
-    } as MessageEvent;
+    } as webhook.MessageEvent;
 
     await handleLineWebhookEvents([event], {
       cfg: { channels: { line: { dmPolicy: "pairing" } } },
@@ -427,7 +427,7 @@ describe("handleLineWebhookEvents", () => {
       mode: "active",
       webhookEventId: "evt-6",
       deliveryContext: { isRedelivery: false },
-    } as MessageEvent;
+    } as webhook.MessageEvent;
 
     await handleLineWebhookEvents([event], {
       cfg: { channels: { line: { dmPolicy: "pairing" } } },
@@ -538,7 +538,7 @@ describe("handleLineWebhookEvents", () => {
       mode: "active",
       webhookEventId: "evt-dup-1",
       deliveryContext: { isRedelivery: false },
-    } as MessageEvent;
+    } as webhook.MessageEvent;
 
     const context: Parameters<typeof handleLineWebhookEvents>[1] = {
       cfg: {
@@ -569,7 +569,7 @@ describe("handleLineWebhookEvents", () => {
           ...event,
           webhookEventId: "evt-dup-redelivery",
           deliveryContext: { isRedelivery: true },
-        } as MessageEvent,
+        } as webhook.MessageEvent,
       ],
       context,
     );
@@ -595,7 +595,7 @@ describe("handleLineWebhookEvents", () => {
       mode: "active",
       webhookEventId: "evt-postback-1",
       deliveryContext: { isRedelivery: false },
-    } as PostbackEvent;
+    } as webhook.PostbackEvent;
 
     const context: Parameters<typeof handleLineWebhookEvents>[1] = {
       cfg: { channels: { line: { dmPolicy: "open" } } },
@@ -620,7 +620,7 @@ describe("handleLineWebhookEvents", () => {
           ...event,
           replyToken: "reply-token-2",
           deliveryContext: { isRedelivery: true },
-        } as PostbackEvent,
+        } as webhook.PostbackEvent,
       ],
       context,
     );
@@ -640,7 +640,7 @@ describe("handleLineWebhookEvents", () => {
       mode: "active",
       webhookEventId: "evt-default-skip",
       deliveryContext: { isRedelivery: false },
-    } as MessageEvent;
+    } as webhook.MessageEvent;
 
     await handleLineWebhookEvents([event], {
       cfg: { channels: { line: { groupPolicy: "open" } } },
@@ -676,7 +676,7 @@ describe("handleLineWebhookEvents", () => {
       mode: "active",
       webhookEventId: "evt-hist-1",
       deliveryContext: { isRedelivery: false },
-    } as MessageEvent;
+    } as webhook.MessageEvent;
 
     await handleLineWebhookEvents([event], {
       cfg: { channels: { line: { groupPolicy: "open" } } },
@@ -715,7 +715,7 @@ describe("handleLineWebhookEvents", () => {
       mode: "active",
       webhookEventId: "evt-mention-1",
       deliveryContext: { isRedelivery: false },
-    } as MessageEvent;
+    } as webhook.MessageEvent;
 
     await handleLineWebhookEvents([event], {
       cfg: { channels: { line: { groupPolicy: "open" } } },
@@ -758,7 +758,7 @@ describe("handleLineWebhookEvents", () => {
       mode: "active",
       webhookEventId: "evt-mention-2",
       deliveryContext: { isRedelivery: false },
-    } as unknown as MessageEvent;
+    } as unknown as webhook.MessageEvent;
 
     await handleLineWebhookEvents([event], {
       cfg: { channels: { line: { groupPolicy: "open" } } },
@@ -800,7 +800,7 @@ describe("handleLineWebhookEvents", () => {
       mode: "active",
       webhookEventId: "evt-mention-3",
       deliveryContext: { isRedelivery: false },
-    } as MessageEvent;
+    } as webhook.MessageEvent;
 
     await handleLineWebhookEvents([event], {
       cfg: { channels: { line: { groupPolicy: "open" } } },
@@ -835,7 +835,7 @@ describe("handleLineWebhookEvents", () => {
       mode: "active",
       webhookEventId: "evt-mention-dm",
       deliveryContext: { isRedelivery: false },
-    } as MessageEvent;
+    } as webhook.MessageEvent;
 
     await handleLineWebhookEvents([event], {
       cfg: { channels: { line: { dmPolicy: "open" } } },
@@ -871,7 +871,7 @@ describe("handleLineWebhookEvents", () => {
       mode: "active",
       webhookEventId: "evt-mention-img",
       deliveryContext: { isRedelivery: false },
-    } as MessageEvent;
+    } as webhook.MessageEvent;
 
     await handleLineWebhookEvents([event], {
       cfg: { channels: { line: { groupPolicy: "open" } } },
@@ -912,7 +912,7 @@ describe("handleLineWebhookEvents", () => {
       mode: "active",
       webhookEventId: "evt-mention-other",
       deliveryContext: { isRedelivery: false },
-    } as unknown as MessageEvent;
+    } as unknown as webhook.MessageEvent;
 
     await handleLineWebhookEvents([event], {
       cfg: { channels: { line: { groupPolicy: "open" } } },

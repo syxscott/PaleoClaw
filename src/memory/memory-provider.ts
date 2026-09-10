@@ -15,28 +15,28 @@ export abstract class MemoryProvider {
     return '';
   }
 
-  prefetch(query: string, session_id: string = ''): string {
+  prefetch(_query: string, _session_id: string = ''): string {
     return '';
   }
 
-  queue_prefetch(query: string, session_id: string = ''): void {
+  queue_prefetch(_query: string, _session_id: string = ''): void {
     // Default no-op
   }
 
-  sync_turn(user_content: string, assistant_content: string, ...kwargs: unknown[]): void {
+  sync_turn(_user_content: string, _assistant_content: string, ..._kwargs: unknown[]): void {
     // Default no-op
   }
 
   on_turn_start(): void {}
   on_session_end(): void {}
-  on_session_switch(session_id: string): void {}
+  on_session_switch(_session_id: string): void {}
   on_pre_compress(messages: unknown[]): unknown[] {
     return messages;
   }
 
   abstract get_tool_schemas(): Array<{ name: string; description: string; input_schema: unknown }>;
 
-  handle_tool_call(tool_name: string, args: Record<string, unknown>, result: unknown): string {
+  handle_tool_call(_tool_name: string, _args: Record<string, unknown>, _result: unknown): string {
     return '';
   }
 

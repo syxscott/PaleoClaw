@@ -8,7 +8,7 @@ function attachRunCommandAndCaptureInheritedToken(command: Command) {
     .command("run")
     .option("--token <token>", "Run token")
     .action((_opts, childCommand) => {
-      inherited = inheritOptionFromParent<string>(childCommand, "token");
+      inherited = inheritOptionFromParent(childCommand, "token") as string | undefined;
     });
   return () => inherited;
 }
@@ -47,7 +47,7 @@ describe("inheritOptionFromParent", () => {
     gateway.setOptionValueWithSource("token", "gateway-token", "cli");
     run.setOptionValueWithSource("token", "run-token", "cli");
 
-    expect(inheritOptionFromParent<string>(run, "token")).toBeUndefined();
+    expect(inheritOptionFromParent(run, "token") as string | undefined).toBeUndefined();
   });
 
   it("does not inherit from ancestors beyond the bounded traversal depth", async () => {
@@ -69,7 +69,7 @@ describe("inheritOptionFromParent", () => {
 
     gateway.setOptionValueWithSource("token", "gateway-env-token", "env");
 
-    expect(inheritOptionFromParent<string>(run, "token")).toBe("gateway-env-token");
+    expect(inheritOptionFromParent(run, "token") as string | undefined).toBe("gateway-env-token");
   });
 
   it("skips default-valued ancestor options and keeps traversing", async () => {
@@ -86,6 +86,6 @@ describe("inheritOptionFromParent", () => {
   });
 
   it("returns undefined when command is missing", () => {
-    expect(inheritOptionFromParent<string>(undefined, "token")).toBeUndefined();
+    expect(inheritOptionFromParent(undefined, "token") as string | undefined).toBeUndefined();
   });
 });

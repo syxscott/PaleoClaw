@@ -98,7 +98,7 @@ export function registerAcpCli(program: Command) {
     .option("--server-verbose", "Enable verbose logging on the ACP server", false)
     .option("-v, --verbose", "Verbose client logging", false)
     .action(async (opts, command) => {
-      const inheritedVerbose = inheritOptionFromParent<boolean>(command, "verbose");
+      const inheritedVerbose = inheritOptionFromParent(command, "verbose") as boolean | undefined;
       try {
         await runAcpClientInteractive({
           cwd: opts.cwd as string | undefined,

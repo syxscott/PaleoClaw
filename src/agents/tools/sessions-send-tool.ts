@@ -302,7 +302,7 @@ export function createSessionsSendTool(opts?: {
       let waitStatus: string | undefined;
       let waitError: string | undefined;
       try {
-        const wait = await callGateway<{ status?: string; error?: string }>({
+        const wait = await callGateway({
           method: "agent.wait",
           params: {
             runId,

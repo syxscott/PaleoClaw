@@ -718,7 +718,7 @@ export async function upsertChannelPairingRequest(params: {
           ? Object.fromEntries(
               Object.entries(params.meta)
                 .map(([k, v]) => [k, String(v ?? "").trim()] as const)
-                .filter(([_, v]) => Boolean(v)),
+                .filter(([, v]) => Boolean(v)),
             )
           : undefined;
       const meta = { ...baseMeta, accountId: normalizedAccountId };

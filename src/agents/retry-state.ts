@@ -46,15 +46,15 @@ export class TurnRetryStateMachine {
   }
 
   get shouldRetry(): boolean {
-    if (this.state === TurnRetryState.Exhausted) return false;
-    if (!this.lastFailoverReason) return false;
+    if (this.state === TurnRetryState.Exhausted) {return false;}
+    if (!this.lastFailoverReason) {return false;}
 
     const config = DEFAULT_RETRY_CONFIG[this.lastFailoverReason];
     return this.attemptCount < config.maxRetries;
   }
 
   get retryDelayMs(): number {
-    if (!this.lastFailoverReason) return 0;
+    if (!this.lastFailoverReason) {return 0;}
     const config = DEFAULT_RETRY_CONFIG[this.lastFailoverReason];
     const delay = config.baseDelayMs * Math.pow(2, this.attemptCount);
     return Math.min(delay, config.maxDelayMs);
@@ -107,10 +107,19 @@ export class TurnRetryStateMachine {
     };
   }
 
-  static reasonFromError(error: any): FailoverReason {
-    if (!error) return FailoverReason.Unknown;
+  static reasonFromError(error: unknown): FailoverReason {
+    if (!error) {return FailoverReason.Unknown;}
 
-    const message = String(error.message || error).toLowerCase();
+    const rawMessage = (error as { message?: unknown }).message;
+    const raw =
+      typeof rawMessage === 'string' && rawMessage
+        ? rawMessage
+        : typeof error === 'string'
+          ? error
+          : error instanceof Error
+            ? `${error.name}: ${error.message}`
+            : '';
+    const message = raw.toLowerCase();
 
     if (message.includes('rate_limit') || message.includes('429')) {
       return FailoverReason.RateLimit;

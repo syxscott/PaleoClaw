@@ -30,8 +30,22 @@ function chatFiles(): string[] {
   return fs.readdirSync(shortDir()).filter(f => f.startsWith('chat-'));
 }
 
-function readChatFile(name: string): Record<string, any> {
-  return JSON.parse(fs.readFileSync(path.join(shortDir(), name), 'utf-8'));
+type ChatDigestRecord = {
+  sessionId: unknown;
+  day: unknown;
+  chat_digest: {
+    turn_count: unknown;
+    first_turn_at: unknown;
+    last_turn_at: unknown;
+    recent_turns: Array<{ user?: unknown; ts?: unknown }>;
+    intents: unknown[];
+    modes: unknown[];
+  };
+};
+
+function readChatFile(name: string): ChatDigestRecord {
+  const parsed: unknown = JSON.parse(fs.readFileSync(path.join(shortDir(), name), 'utf-8'));
+  return parsed as ChatDigestRecord;
 }
 
 describe('chat daily memory', () => {
@@ -104,7 +118,7 @@ describe('chat daily memory', () => {
       ts: '2026-09-08T00:01:00Z',
     });
 
-    expect(chatFiles().sort()).toEqual([
+    expect(chatFiles().toSorted()).toEqual([
       'chat-20260907-sess-a.json',
       'chat-20260908-sess-a.json',
     ]);

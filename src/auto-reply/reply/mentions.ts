@@ -21,16 +21,27 @@ function deriveMentionPatterns(identity?: { name?: string; emoji?: string }) {
 }
 
 const BACKSPACE_CHAR = "\u0008";
+const CANONICAL_BRAND = "paleoclaw";
+// PaleoClaw was renamed from "openclaw"; configured mention patterns and inbound
+// text may still use the legacy brand. Normalize both sides to the canonical
+// name so existing patterns keep matching after the rename.
+const LEGACY_BRAND_REGEX = /openclaw/gi;
+const LEGACY_BRAND_TEST_REGEX = /openclaw/i;
 const mentionRegexCompileCache = new Map<string, RegExp[]>();
+const brandRewrittenRegexCache = new WeakMap<RegExp, RegExp>();
 const MAX_MENTION_REGEX_COMPILE_CACHE_KEYS = 512;
+
+function normalizeBrandAlias(value: string): string {
+  return value.replace(LEGACY_BRAND_REGEX, CANONICAL_BRAND);
+}
 
 export const CURRENT_MESSAGE_MARKER = "[Current message - respond to this]";
 
 function normalizeMentionPattern(pattern: string): string {
-  if (!pattern.includes(BACKSPACE_CHAR)) {
-    return pattern;
-  }
-  return pattern.split(BACKSPACE_CHAR).join("\\b");
+  const expanded = pattern.includes(BACKSPACE_CHAR)
+    ? pattern.split(BACKSPACE_CHAR).join("\\b")
+    : pattern;
+  return normalizeBrandAlias(expanded);
 }
 
 function normalizeMentionPatterns(patterns: string[]): string[] {
@@ -82,7 +93,26 @@ export function buildMentionRegexes(cfg: OpenClawConfig | undefined, agentId?: s
 }
 
 export function normalizeMentionText(text: string): string {
-  return (text ?? "").replace(/[\u200b-\u200f\u202a-\u202e\u2060-\u206f]/g, "").toLowerCase();
+  return normalizeBrandAlias(
+    (text ?? "").replace(/[\u200b-\u200f\u202a-\u202e\u2060-\u206f]/g, "").toLowerCase(),
+  );
+}
+
+/**
+ * Rewrites legacy-brand regexes so hand-compiled mention regexes (e.g. built
+ * directly from configured patterns) match the canonical brand in inbound text.
+ */
+function rewriteRegexBrandAlias(re: RegExp): RegExp {
+  const cached = brandRewrittenRegexCache.get(re);
+  if (cached) {
+    return cached;
+  }
+  let rewritten = re;
+  if (LEGACY_BRAND_TEST_REGEX.test(re.source)) {
+    rewritten = new RegExp(re.source.replace(LEGACY_BRAND_REGEX, CANONICAL_BRAND), re.flags);
+  }
+  brandRewrittenRegexCache.set(re, rewritten);
+  return rewritten;
 }
 
 export function matchesMentionPatterns(text: string, mentionRegexes: RegExp[]): boolean {
@@ -93,7 +123,7 @@ export function matchesMentionPatterns(text: string, mentionRegexes: RegExp[]): 
   if (!cleaned) {
     return false;
   }
-  return mentionRegexes.some((re) => re.test(cleaned));
+  return mentionRegexes.some((re) => rewriteRegexBrandAlias(re).test(cleaned));
 }
 
 export type ExplicitMentionSignal = {
@@ -118,12 +148,12 @@ export function matchesMentionWithExplicit(params: {
   const textToCheck = cleaned || transcriptCleaned;
 
   if (hasAnyMention && explicitAvailable) {
-    return explicit || params.mentionRegexes.some((re) => re.test(textToCheck));
+    return explicit || params.mentionRegexes.some((re) => rewriteRegexBrandAlias(re).test(textToCheck));
   }
   if (!textToCheck) {
     return explicit;
   }
-  return explicit || params.mentionRegexes.some((re) => re.test(textToCheck));
+  return explicit || params.mentionRegexes.some((re) => rewriteRegexBrandAlias(re).test(textToCheck));
 }
 
 export function stripStructuralPrefixes(text: string): string {

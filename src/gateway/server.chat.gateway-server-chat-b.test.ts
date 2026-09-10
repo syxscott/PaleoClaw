@@ -13,6 +13,7 @@ import {
   startServerWithClient,
   testState,
   writeSessionStore,
+  type RpcResponse,
 } from "./test-helpers.js";
 
 installGatewayTestHooks({ scope: "suite" });
@@ -75,10 +76,10 @@ async function writeMainSessionTranscript(sessionDir: string, lines: string[]) {
 async function fetchHistoryMessages(
   ws: Awaited<ReturnType<typeof startServerWithClient>>["ws"],
 ): Promise<unknown[]> {
-  const historyRes = await rpcReq<{ messages?: unknown[] }>(ws, "chat.history", {
+  const historyRes = (await rpcReq(ws, "chat.history", {
     sessionKey: "main",
     limit: 1000,
-  });
+  })) as RpcResponse<{ messages?: unknown[] }>;
   expect(historyRes.ok).toBe(true);
   return historyRes.payload?.messages ?? [];
 }
@@ -377,18 +378,18 @@ describe("gateway server chat", () => {
         expect(spy.mock.calls.length).toBeGreaterThan(0);
       }, FAST_WAIT_OPTS);
 
-      const inFlight = await rpcReq<{ status?: string }>(ws, "chat.send", {
+      const inFlight = (await rpcReq(ws, "chat.send", {
         sessionKey: "main",
         message: "hello",
         idempotencyKey: "idem-abort-1",
-      });
+      })) as RpcResponse<{ status?: string }>;
       expect(inFlight.ok).toBe(true);
       expect(["started", "in_flight", "ok"]).toContain(inFlight.payload?.status ?? "");
 
-      const abortRes = await rpcReq<{ aborted?: boolean }>(ws, "chat.abort", {
+      const abortRes = (await rpcReq(ws, "chat.abort", {
         sessionKey: "main",
         runId: "idem-abort-1",
-      });
+      })) as RpcResponse<{ aborted?: boolean }>;
       expect(abortRes.ok).toBe(true);
       expect(abortRes.payload?.aborted).toBe(true);
       await vi.waitFor(() => {
@@ -398,19 +399,19 @@ describe("gateway server chat", () => {
       spy.mockClear();
       spy.mockResolvedValueOnce(undefined);
 
-      const completeRes = await rpcReq<{ status?: string }>(ws, "chat.send", {
+      const completeRes = (await rpcReq(ws, "chat.send", {
         sessionKey: "main",
         message: "hello",
         idempotencyKey: "idem-complete-1",
-      });
+      })) as RpcResponse<{ status?: string }>;
       expect(completeRes.ok).toBe(true);
 
       await vi.waitFor(async () => {
-        const again = await rpcReq<{ status?: string }>(ws, "chat.send", {
+        const again = (await rpcReq(ws, "chat.send", {
           sessionKey: "main",
           message: "hello",
           idempotencyKey: "idem-complete-1",
-        });
+        })) as RpcResponse<{ status?: string }>;
         expect(again.ok).toBe(true);
         expect(again.payload?.status).toBe("ok");
       }, FAST_WAIT_OPTS);

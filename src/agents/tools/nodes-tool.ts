@@ -642,7 +642,7 @@ export function createNodesTool(options?: {
               typeof params.needsScreenRecording === "boolean"
                 ? params.needsScreenRecording
                 : undefined;
-            const prepareRaw = await callGatewayTool<{ payload?: unknown }>(
+            const prepareRaw = await callGatewayTool(
               "node.invoke",
               gatewayOpts,
               {
@@ -675,7 +675,7 @@ export function createNodesTool(options?: {
 
             // First attempt without approval flags.
             try {
-              const raw = await callGatewayTool<{ payload?: unknown }>("node.invoke", gatewayOpts, {
+              const raw = await callGatewayTool("node.invoke", gatewayOpts, {
                 nodeId,
                 command: "system.run",
                 params: runParams,
@@ -732,7 +732,7 @@ export function createNodesTool(options?: {
             }
 
             // Retry with the approval decision.
-            const raw = await callGatewayTool<{ payload?: unknown }>("node.invoke", gatewayOpts, {
+            const raw = await callGatewayTool("node.invoke", gatewayOpts, {
               nodeId,
               command: "system.run",
               params: {

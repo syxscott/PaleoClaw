@@ -45,14 +45,14 @@ type ParsedChatAllowTarget =
   | { kind: "chat_identifier"; chatIdentifier: string }
   | { kind: "handle"; handle: string };
 
-export function isAllowedParsedChatSender<TParsed extends ParsedChatAllowTarget>(params: {
+export function isAllowedParsedChatSender(params: {
   allowFrom: Array<string | number>;
   sender: string;
   chatId?: number | null;
   chatGuid?: string | null;
   chatIdentifier?: string | null;
   normalizeSender: (sender: string) => string;
-  parseAllowTarget: (entry: string) => TParsed;
+  parseAllowTarget: (entry: string) => ParsedChatAllowTarget;
 }): boolean {
   const allowFrom = params.allowFrom.map((entry) => String(entry).trim());
   if (allowFrom.length === 0) {

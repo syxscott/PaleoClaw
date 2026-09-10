@@ -47,9 +47,9 @@ export function escapeRegExp(value: string): string {
 /**
  * Safely parse JSON, returning null on error instead of throwing.
  */
-export function safeParseJson<T>(raw: string): T | null {
+export function safeParseJson(raw: string): unknown {
   try {
-    return JSON.parse(raw) as T;
+    return JSON.parse(raw);
   } catch {
     return null;
   }

@@ -172,9 +172,9 @@ export function resolveServicePrefixedOrChatAllowTarget<
   return null;
 }
 
-export function createAllowedChatSenderMatcher<TParsed extends ParsedChatAllowTarget>(params: {
+export function createAllowedChatSenderMatcher(params: {
   normalizeSender: (sender: string) => string;
-  parseAllowTarget: (entry: string) => TParsed;
+  parseAllowTarget: (entry: string) => ParsedChatAllowTarget;
 }): (input: ChatSenderAllowParams) => boolean {
   return (input) =>
     isAllowedParsedChatSender({

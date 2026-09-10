@@ -48,10 +48,10 @@ export async function runCommandWithRuntime(
   }
 }
 
-export function resolveOptionFromCommand<T>(
+export function resolveOptionFromCommand(
   command: Command | undefined,
   key: string,
-): T | undefined {
+): unknown {
   let current: Command | null | undefined = command;
   while (current) {
     const opts = current.opts?.() ?? {};

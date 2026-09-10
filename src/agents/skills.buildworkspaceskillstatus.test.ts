@@ -22,9 +22,14 @@ function makeEntry(params: {
     skill: {
       name: params.name,
       description: `desc:${params.name}`,
-      source: params.source ?? "paleoclaw-workspace",
       filePath: `/tmp/${params.name}/SKILL.md`,
       baseDir: `/tmp/${params.name}`,
+      sourceInfo: {
+        path: `/tmp/${params.name}/SKILL.md`,
+        source: params.source ?? "paleoclaw-workspace",
+        scope: "project",
+        origin: "top-level",
+      },
       disableModelInvocation: false,
     },
     frontmatter: {},

@@ -9,6 +9,7 @@ import {
   rpcReq,
   startServerWithClient,
   withGatewayServer,
+  type RpcResponse,
 } from "./test-helpers.js";
 
 const hoisted = vi.hoisted(() => {
@@ -547,8 +548,8 @@ describe("gateway hot reload", () => {
     try {
       await connectOk(ws);
       const [first, second] = await Promise.all([
-        rpcReq<{ warningCount: number }>(ws, "secrets.reload", {}),
-        rpcReq<{ warningCount: number }>(ws, "secrets.reload", {}),
+        rpcReq(ws, "secrets.reload", {}) as Promise<RpcResponse<{ warningCount: number }>>,
+        rpcReq(ws, "secrets.reload", {}) as Promise<RpcResponse<{ warningCount: number }>>,
       ]);
       expect(first.ok).toBe(true);
       expect(second.ok).toBe(true);
@@ -563,7 +564,7 @@ describe("gateway agents", () => {
   it("lists configured agents via agents.list RPC", async () => {
     const { server, ws } = await startServerWithClient();
     await connectOk(ws);
-    const res = await rpcReq<{ agents: Array<{ id: string }> }>(ws, "agents.list", {});
+    const res = (await rpcReq(ws, "agents.list", {})) as RpcResponse<{ agents: Array<{ id: string }> }>;
     expect(res.ok).toBe(true);
     expect(res.payload?.agents.map((agent) => agent.id)).toContain("main");
     ws.close();

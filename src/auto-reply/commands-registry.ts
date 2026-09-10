@@ -9,7 +9,6 @@ import type {
   ChatCommandDefinition,
   CommandArgChoiceContext,
   CommandArgDefinition,
-  CommandArgMenuSpec,
   CommandArgValues,
   CommandArgs,
   CommandDetection,

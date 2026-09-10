@@ -51,8 +51,8 @@ function resolveGatewayRpcOptions<T extends { token?: string; password?: string 
   opts: T,
   command?: Command,
 ): T {
-  const parentToken = inheritOptionFromParent<string>(command, "token");
-  const parentPassword = inheritOptionFromParent<string>(command, "password");
+  const parentToken = inheritOptionFromParent(command, "token") as string | undefined;
+  const parentPassword = inheritOptionFromParent(command, "password") as string | undefined;
   return {
     ...opts,
     token: opts.token ?? parentToken,

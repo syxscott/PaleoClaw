@@ -101,17 +101,17 @@ async function createHandler(cfg: LoadedConfig) {
   });
 }
 
-function captureNextDispatchCtx<
-  T extends {
-    SessionKey?: string;
-    ParentSessionKey?: string;
-    ThreadStarterBody?: string;
-    ThreadLabel?: string;
-  },
->(): () => T | undefined {
-  let capturedCtx: T | undefined;
+type CapturedDispatchCtx = {
+  SessionKey?: string;
+  ParentSessionKey?: string;
+  ThreadStarterBody?: string;
+  ThreadLabel?: string;
+};
+
+function captureNextDispatchCtx(): () => CapturedDispatchCtx | undefined {
+  let capturedCtx: CapturedDispatchCtx | undefined;
   dispatchMock.mockImplementationOnce(async ({ ctx, dispatcher }) => {
-    capturedCtx = ctx as T;
+    capturedCtx = ctx as CapturedDispatchCtx;
     dispatcher.sendFinalReply({ text: "hi" });
     return { queuedFinal: true, counts: { final: 1 } };
   });
@@ -272,12 +272,7 @@ function createThreadEvent(messageId: string, channel?: unknown) {
 }
 
 function captureThreadDispatchCtx() {
-  return captureNextDispatchCtx<{
-    SessionKey?: string;
-    ParentSessionKey?: string;
-    ThreadStarterBody?: string;
-    ThreadLabel?: string;
-  }>();
+  return captureNextDispatchCtx();
 }
 
 describe("discord tool result dispatch", () => {
@@ -418,7 +413,7 @@ describe("discord tool result dispatch", () => {
   });
 
   it("skips thread starter context when disabled", async () => {
-    const getCapturedCtx = captureNextDispatchCtx<{ ThreadStarterBody?: string }>();
+    const getCapturedCtx = captureNextDispatchCtx();
     const cfg = {
       ...createDefaultThreadConfig(),
       channels: {
@@ -484,10 +479,7 @@ describe("discord tool result dispatch", () => {
   });
 
   it("scopes thread sessions to the routed agent", async () => {
-    const getCapturedCtx = captureNextDispatchCtx<{
-      SessionKey?: string;
-      ParentSessionKey?: string;
-    }>();
+    const getCapturedCtx = captureNextDispatchCtx();
 
     const cfg = {
       ...createDefaultThreadConfig(),

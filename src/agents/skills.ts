@@ -9,6 +9,7 @@ export {
   resolveConfigPath,
   resolveRuntimePlatform,
   resolveSkillConfig,
+  resolveSkillSource,
 } from "./skills/config.js";
 export {
   applySkillEnvOverrides,

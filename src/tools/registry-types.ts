@@ -1,6 +1,6 @@
 export interface ToolJsonSchema {
   type: string;
-  properties: Record<string, any>;
+  properties: Record<string, unknown>;
   required?: string[];
   description?: string;
 }
@@ -27,4 +27,4 @@ export interface ToolSetEntry {
   checkFn?: () => boolean | Promise<boolean>;
 }
 
-export type ToolHandler = (args: Record<string, unknown>) => unknown | Promise<unknown>;
+export type ToolHandler = (args: Record<string, unknown>) => unknown;

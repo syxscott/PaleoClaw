@@ -140,7 +140,7 @@ export async function updateWizardCommand(opts: UpdateWizardOptions = {}): Promi
 
   try {
     await updateCommand({
-      channel: requestedChannel ?? undefined,
+      channel: typeof requestedChannel === "string" ? requestedChannel : undefined,
       restart: Boolean(restart),
       timeout: opts.timeout,
     });

@@ -299,8 +299,8 @@ export class TaskMemoryStore {
 
     const snapshot = (payload as TaskMemory).profileSnapshot;
     if (snapshot && typeof snapshot === 'object') {
-      parts.push(String(snapshot.userRole || ''));
-      parts.push(String(snapshot.preferredTone || ''));
+      parts.push(typeof snapshot.userRole === 'string' ? snapshot.userRole : '');
+      parts.push(typeof snapshot.preferredTone === 'string' ? snapshot.preferredTone : '');
       parts.push(...((snapshot.reproducibilityExpectations as string[]) || []));
       parts.push(...((snapshot.truthfulnessRules as string[]) || []));
     }
@@ -351,7 +351,7 @@ export class TaskMemoryStore {
     payload.updatedAt = utcNow();
     
     if (extra) {
-      payload.extra = { ...(payload.extra || {}), ...extra };
+      payload.extra = { ...payload.extra, ...extra };
     }
 
     this.writeShort(taskId, payload);
@@ -449,8 +449,8 @@ export class TaskMemoryStore {
     try {
       files = fs.readdirSync(this.shortDir)
         .filter(f => /^chat-\d{8}-.+\.json$/.test(f))
-        .sort()
-        .reverse();
+        .toSorted()
+        .toReversed();
     } catch {
       return rows;
     }
@@ -488,7 +488,7 @@ export class TaskMemoryStore {
     try {
       files = fs.readdirSync(this.shortDir)
         .filter(f => f.startsWith(`chat-${normalized}-`) && f.endsWith('.json'))
-        .sort();
+        .toSorted();
     } catch {
       return null;
     }
@@ -640,16 +640,16 @@ export class TaskMemoryStore {
       return rows;
     }
 
-    const lines = fs.readFileSync(this.longFile, 'utf-8').split('\n').reverse();
+    const lines = fs.readFileSync(this.longFile, 'utf-8').split('\n').toReversed();
     
     for (const line of lines) {
       const trimmed = line.trim();
-      if (!trimmed) continue;
+      if (!trimmed) {continue;}
       
       try {
         const payload = JSON.parse(trimmed) as LongTermMemory;
         rows.push(payload);
-        if (rows.length >= limit) break;
+        if (rows.length >= limit) {break;}
       } catch {
         // Skip invalid lines
       }
@@ -668,8 +668,8 @@ export class TaskMemoryStore {
 
     const files = fs.readdirSync(this.archiveShortDir)
       .filter(f => f.endsWith('.json'))
-      .sort()
-      .reverse();
+      .toSorted()
+      .toReversed();
 
     for (const file of files) {
       try {
@@ -681,7 +681,7 @@ export class TaskMemoryStore {
         }
         
         rows.push(payload);
-        if (rows.length >= limit) break;
+        if (rows.length >= limit) {break;}
       } catch {
         // Skip invalid files
       }
@@ -829,7 +829,7 @@ export class TaskMemoryStore {
 
   countLong(): number {
     try {
-      if (!fs.existsSync(this.longFile)) return 0;
+      if (!fs.existsSync(this.longFile)) {return 0;}
       const content = fs.readFileSync(this.longFile, 'utf-8');
       return content.split('\n').filter(line => line.trim()).length;
     } catch {

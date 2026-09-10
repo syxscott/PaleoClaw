@@ -39,6 +39,7 @@ const { registerCronCli } = await import("./cron-cli.js");
 
 type CronUpdatePatch = {
   patch?: {
+    agentId?: string | null;
     schedule?: { kind?: string; expr?: string; tz?: string; staggerMs?: number };
     payload?: {
       kind?: string;
@@ -128,9 +129,9 @@ function mockCronEditJobLookup(schedule: unknown): void {
   );
 }
 
-function getGatewayCallParams<T>(method: string): T {
+function getGatewayCallParams(method: string): unknown {
   const call = callGatewayFromCli.mock.calls.find((entry) => entry[0] === method);
-  return (call?.[2] ?? {}) as T;
+  return call?.[2] ?? {};
 }
 
 async function runCronEditWithScheduleLookup(
@@ -141,7 +142,7 @@ async function runCronEditWithScheduleLookup(
   mockCronEditJobLookup(schedule);
   const program = buildProgram();
   await program.parseAsync(["cron", "edit", "job-1", ...editArgs], { from: "user" });
-  return getGatewayCallParams<CronUpdatePatch>("cron.update");
+  return getGatewayCallParams("cron.update") as CronUpdatePatch;
 }
 
 async function expectCronEditWithScheduleLookupExit(
@@ -407,20 +408,18 @@ describe("cron cli", () => {
   it("sets and clears agent id on cron edit", async () => {
     await runCronCommand(["cron", "edit", "job-1", "--agent", " Ops ", "--message", "hello"]);
 
-    const patch = getGatewayCallParams<{ patch?: { agentId?: unknown } }>("cron.update");
+    const patch = getGatewayCallParams("cron.update") as CronUpdatePatch;
     expect(patch?.patch?.agentId).toBe("ops");
 
     await runCronCommand(["cron", "edit", "job-2", "--clear-agent"]);
-    const clearPatch = getGatewayCallParams<{ patch?: { agentId?: unknown } }>("cron.update");
+    const clearPatch = getGatewayCallParams("cron.update") as CronUpdatePatch;
     expect(clearPatch?.patch?.agentId).toBeNull();
   });
 
   it("allows model/thinking updates without --message", async () => {
     await runCronCommand(["cron", "edit", "job-1", "--model", "opus", "--thinking", "low"]);
 
-    const patch = getGatewayCallParams<{
-      patch?: { payload?: { kind?: string; model?: string; thinking?: string } };
-    }>("cron.update");
+    const patch = getGatewayCallParams("cron.update") as CronUpdatePatch;
 
     expect(patch?.patch?.payload?.kind).toBe("agentTurn");
     expect(patch?.patch?.payload?.model).toBe("opus");
@@ -447,12 +446,7 @@ describe("cron cli", () => {
       "19098680",
     ]);
 
-    const patch = getGatewayCallParams<{
-      patch?: {
-        payload?: { kind?: string; message?: string };
-        delivery?: { mode?: string; channel?: string; to?: string };
-      };
-    }>("cron.update");
+    const patch = getGatewayCallParams("cron.update") as CronUpdatePatch;
 
     expect(patch?.patch?.payload?.kind).toBe("agentTurn");
     expect(patch?.patch?.delivery?.mode).toBe("announce");
@@ -464,9 +458,7 @@ describe("cron cli", () => {
   it("supports --no-deliver on cron edit", async () => {
     await runCronCommand(["cron", "edit", "job-1", "--no-deliver"]);
 
-    const patch = getGatewayCallParams<{
-      patch?: { payload?: { kind?: string }; delivery?: { mode?: string } };
-    }>("cron.update");
+    const patch = getGatewayCallParams("cron.update") as CronUpdatePatch;
 
     expect(patch?.patch?.payload?.kind).toBe("agentTurn");
     expect(patch?.patch?.delivery?.mode).toBe("none");
@@ -483,18 +475,7 @@ describe("cron cli", () => {
     // Update message without delivery flags - should NOT include undefined delivery fields
     await runCronCommand(["cron", "edit", "job-1", "--message", "Updated message"]);
 
-    const patch = getGatewayCallParams<{
-      patch?: {
-        payload?: {
-          message?: string;
-          deliver?: boolean;
-          channel?: string;
-          to?: string;
-          bestEffortDeliver?: boolean;
-        };
-        delivery?: unknown;
-      };
-    }>("cron.update");
+    const patch = getGatewayCallParams("cron.update") as CronUpdatePatch;
 
     // Should include the new message
     expect(patch?.patch?.payload?.message).toBe("Updated message");
@@ -606,9 +587,7 @@ describe("cron cli", () => {
   it("sets explicit stagger for cron edit", async () => {
     await runCronCommand(["cron", "edit", "job-1", "--cron", "0 * * * *", "--stagger", "30s"]);
 
-    const patch = getGatewayCallParams<{
-      patch?: { schedule?: { kind?: string; staggerMs?: number } };
-    }>("cron.update");
+    const patch = getGatewayCallParams("cron.update") as CronUpdatePatch;
     expect(patch?.patch?.schedule?.kind).toBe("cron");
     expect(patch?.patch?.schedule?.staggerMs).toBe(30_000);
   });

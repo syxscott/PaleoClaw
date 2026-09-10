@@ -13,20 +13,20 @@ describe('resolveAutoToolPlan - taxon extraction', () => {
     expect(plans.some((item) => item.tool === 'pbdb_query')).toBe(true);
     const pbdb = plans.find((p) => p.tool === 'pbdb_query');
     // Bug fix: previously this was 'Use'; now it should be 'Allosaurus'.
-    expect((pbdb?.params as { baseName?: string }).baseName).toBe('Allosaurus');
+    expect((pbdb?.params as { baseName?: string } | undefined)?.baseName).toBe('Allosaurus');
   });
 
   it('skips the leading verb "Find" and extracts the taxon', () => {
     const plans = resolveAutoToolPlan('Find fossil occurrences for Tyrannosaurus in North America');
     const pbdb = plans.find((p) => p.tool === 'pbdb_query');
-    expect((pbdb?.params as { baseName?: string }).baseName).toBe('Tyrannosaurus');
+    expect((pbdb?.params as { baseName?: string } | undefined)?.baseName).toBe('Tyrannosaurus');
   });
 
   it('returns undefined baseName when no plausible taxon can be found', () => {
     const plans = resolveAutoToolPlan('Query PBDB for everything about fossils');
     const pbdb = plans.find((p) => p.tool === 'pbdb_query');
     // "everything" is not a taxon, "fossils" is not a taxon, "about" is in stopwords
-    expect((pbdb?.params as { baseName?: string }).baseName).toBeUndefined();
+    expect((pbdb?.params as { baseName?: string } | undefined)?.baseName).toBeUndefined();
   });
 
   it('returns CrossRef plan for literature prompts', () => {
@@ -37,12 +37,12 @@ describe('resolveAutoToolPlan - taxon extraction', () => {
   it('does not treat geological periods as taxa', () => {
     const plans = resolveAutoToolPlan('Find all fossils in the Cretaceous');
     const pbdb = plans.find((p) => p.tool === 'pbdb_query');
-    expect((pbdb?.params as { baseName?: string }).baseName).toBeUndefined();
+    expect((pbdb?.params as { baseName?: string } | undefined)?.baseName).toBeUndefined();
   });
 
   it('still extracts higher-order taxa like Ammonoidea', () => {
     const plans = resolveAutoToolPlan('Find Ammonoidea in Jurassic');
     const pbdb = plans.find((p) => p.tool === 'pbdb_query');
-    expect((pbdb?.params as { baseName?: string }).baseName).toBe('Ammonoidea');
+    expect((pbdb?.params as { baseName?: string } | undefined)?.baseName).toBe('Ammonoidea');
   });
 });

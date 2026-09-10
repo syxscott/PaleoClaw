@@ -1,5 +1,4 @@
 import { MemoryProvider, MemoryProviderStats } from './memory-provider.js';
-import { build_memory_context_block } from './memory-context-fence.js';
 
 export class MemoryManager {
   private static instance: MemoryManager;
@@ -36,7 +35,7 @@ export class MemoryManager {
 
   remove_provider(name: string): boolean {
     const provider = this.providers.get(name);
-    if (!provider) return false;
+    if (!provider) {return false;}
     this.providers.delete(name);
     if (this.externalProviderNames.delete(name)) {
       this.externalProviderCount--;
@@ -63,7 +62,7 @@ export class MemoryManager {
     const blocks: string[] = [];
     for (const provider of this.providers.values()) {
       const block = provider.system_prompt_block();
-      if (block) blocks.push(block);
+      if (block) {blocks.push(block);}
     }
     return blocks.join('\n\n');
   }
@@ -72,7 +71,7 @@ export class MemoryManager {
     const contexts: string[] = [];
     for (const provider of this.providers.values()) {
       const context = provider.prefetch(query, this.currentSessionId);
-      if (context) contexts.push(context);
+      if (context) {contexts.push(context);}
     }
     return contexts.join('\n\n');
   }

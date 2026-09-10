@@ -113,7 +113,7 @@ RUN chown node:node /app
 COPY --from=build --chown=node:node /app/dist ./dist
 COPY --from=build --chown=node:node /app/node_modules ./node_modules
 COPY --from=build --chown=node:node /app/package.json .
-COPY --from=build --chown=node:node /app/openclaw.mjs .
+COPY --from=build --chown=node:node /app/paleoclaw.mjs .
 COPY --from=build --chown=node:node /app/extensions ./extensions
 COPY --from=build --chown=node:node /app/skills ./skills
 COPY --from=build --chown=node:node /app/docs ./docs
@@ -192,8 +192,8 @@ RUN for dir in /app/extensions /app/.agent /app/.agents; do \
     done
 
 # Expose the CLI binary without requiring npm global writes as non-root.
-RUN ln -sf /app/openclaw.mjs /usr/local/bin/openclaw \
- && chmod 755 /app/openclaw.mjs
+RUN ln -sf /app/paleoclaw.mjs /usr/local/bin/openclaw \
+ && chmod 755 /app/paleoclaw.mjs
 
 ENV NODE_ENV=production
 
@@ -216,4 +216,4 @@ USER node
 # For external access from host/ingress, override bind to "lan" and set auth.
 HEALTHCHECK --interval=3m --timeout=10s --start-period=15s --retries=3 \
   CMD node -e "fetch('http://127.0.0.1:18789/healthz').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
-CMD ["node", "openclaw.mjs", "gateway", "--allow-unconfigured"]
+CMD ["node", "paleoclaw.mjs", "gateway", "--allow-unconfigured"]

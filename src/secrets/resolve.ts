@@ -387,7 +387,7 @@ async function resolveFileRefs(params: {
       cache: params.cache,
     });
   } catch (err) {
-    throwUnknownProviderResolutionError({
+    return throwUnknownProviderResolutionError({
       source: "file",
       provider: params.providerName,
       err,
@@ -821,7 +821,7 @@ async function resolveProviderRefs(params: {
       message: `Unsupported secret provider source "${String((params.providerConfig as { source?: unknown }).source)}".`,
     });
   } catch (err) {
-    throwUnknownProviderResolutionError({
+    return throwUnknownProviderResolutionError({
       source: params.source,
       provider: params.providerName,
       err,

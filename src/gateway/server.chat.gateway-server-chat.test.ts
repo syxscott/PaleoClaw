@@ -15,6 +15,7 @@ import {
   testState,
   trackConnectChallengeNonce,
   writeSessionStore,
+  type RpcResponse,
 } from "./test-helpers.js";
 import { agentCommand } from "./test-helpers.mocks.js";
 import { installConnectedControlUiServerSuite } from "./test-with-server.js";
@@ -90,9 +91,9 @@ describe("gateway server chat", () => {
       const lines = messages.map((message) => JSON.stringify({ message }));
       await fs.writeFile(path.join(dir, "sess-main.jsonl"), lines.join("\n"), "utf-8");
 
-      const res = await rpcReq<{ messages?: unknown[] }>(ws, "chat.history", {
+      const res = (await rpcReq(ws, "chat.history", {
         sessionKey: "main",
-      });
+      })) as RpcResponse<{ messages?: unknown[] }>;
       expect(res.ok).toBe(true);
       return res.payload?.messages ?? [];
     });
@@ -415,9 +416,9 @@ describe("gateway server chat", () => {
       }
       await fs.writeFile(path.join(historyDir, "sess-main.jsonl"), lines.join("\n"), "utf-8");
 
-      const defaultRes = await rpcReq<{ messages?: unknown[] }>(ws, "chat.history", {
+      const defaultRes = (await rpcReq(ws, "chat.history", {
         sessionKey: "main",
-      });
+      })) as RpcResponse<{ messages?: unknown[] }>;
       expect(defaultRes.ok).toBe(true);
       const defaultMsgs = defaultRes.payload?.messages ?? [];
       expect(defaultMsgs.length).toBe(200);

@@ -22,12 +22,12 @@ const VECTOR_CACHE_MAX = 500;
 const vectorCache = new Map<string, Map<number, number>>();
 function getCachedVector(text: string, dim: number): Map<number, number> {
   const cached = vectorCache.get(text);
-  if (cached) return cached;
+  if (cached) {return cached;}
   const vec = textToVector(text, dim);
   if (vectorCache.size >= VECTOR_CACHE_MAX) {
     // Evict oldest entry (Map preserves insertion order).
     const firstKey = vectorCache.keys().next().value;
-    if (firstKey !== undefined) vectorCache.delete(firstKey);
+    if (firstKey !== undefined) {vectorCache.delete(firstKey);}
   }
   vectorCache.set(text, vec);
   return vec;
@@ -147,15 +147,15 @@ class MinHeap<T> {
 
   toSortedArray(): T[] {
     // Sort descending by priority
-    return [...this.data]
-      .sort((a, b) => b.priority - a.priority)
+    return this.data
+      .toSorted((a, b) => b.priority - a.priority)
       .map((entry) => entry.item);
   }
 
   private bubbleUp(i: number): void {
     while (i > 0) {
       const parent = (i - 1) >> 1;
-      if (this.data[parent].priority <= this.data[i].priority) break;
+      if (this.data[parent].priority <= this.data[i].priority) {break;}
       [this.data[parent], this.data[i]] = [this.data[i], this.data[parent]];
       i = parent;
     }
@@ -173,7 +173,7 @@ class MinHeap<T> {
       if (right < n && this.data[right].priority < this.data[smallest].priority) {
         smallest = right;
       }
-      if (smallest === i) break;
+      if (smallest === i) {break;}
       [this.data[smallest], this.data[i]] = [this.data[i], this.data[smallest]];
       i = smallest;
     }
@@ -198,12 +198,12 @@ export function bestMatches(
 
   for (const item of items) {
     const text = item.searchText?.trim() || '';
-    if (!text) continue;
+    if (!text) {continue;}
 
     const itemVector = getCachedVector(text, 384);
     const score = cosineSimilarity(queryVector, itemVector);
 
-    if (score < minScore) continue;
+    if (score < minScore) {continue;}
 
     heap.push(
       {

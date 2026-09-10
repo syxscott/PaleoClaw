@@ -40,7 +40,10 @@ export class ToolExecutor {
     // Preallocate slots so the result order always matches the call order —
     // even with duplicate ids — and un-started calls (e.g. after an abort)
     // still yield a 1:1 call→result mapping like executeSequential.
-    const resultByIndex: Array<ToolResult | undefined> = new Array(toolCalls.length).fill(undefined);
+    const resultByIndex: Array<ToolResult | undefined> = Array.from(
+      { length: toolCalls.length },
+      () => undefined,
+    );
     let index = 0;
 
     const executeOne = async (call: ToolCall, callIndex: number): Promise<void> => {
@@ -74,7 +77,7 @@ export class ToolExecutor {
     };
 
     const pushTask = (): Promise<void> => {
-      if (index >= toolCalls.length) return Promise.resolve();
+      if (index >= toolCalls.length) {return Promise.resolve();}
       const callIndex = index++;
       return executeOne(toolCalls[callIndex], callIndex);
     };
@@ -84,7 +87,7 @@ export class ToolExecutor {
       workers.push(
         (async () => {
           while (index < toolCalls.length) {
-            if (context.signal?.aborted) break;
+            if (context.signal?.aborted) {break;}
             await pushTask();
           }
         })()
@@ -94,7 +97,7 @@ export class ToolExecutor {
     await Promise.all(workers);
 
     return resultByIndex.map((result, i) => {
-      if (result) return result;
+      if (result) {return result;}
       // The call was never started (worker stopped on abort) — mirror
       // executeSequential's placeholder so callers can map results 1:1.
       return {

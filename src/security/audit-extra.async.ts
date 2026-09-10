@@ -14,7 +14,7 @@ import {
 import { SANDBOX_BROWSER_SECURITY_HASH_EPOCH } from "../agents/sandbox/constants.js";
 import { execDockerRaw, type ExecDockerRawResult } from "../agents/sandbox/docker.js";
 import type { SandboxToolPolicy } from "../agents/sandbox/types.js";
-import { loadWorkspaceSkillEntries } from "../agents/skills.js";
+import { loadWorkspaceSkillEntries, resolveSkillSource } from "../agents/skills.js";
 import { resolveToolProfilePolicy } from "../agents/tool-policy.js";
 import { listAgentWorkspaceDirs } from "../agents/workspace-dirs.js";
 import { formatCliCommand } from "../cli/command-format.js";
@@ -1251,7 +1251,7 @@ export async function collectInstalledSkillsCodeSafetyFindings(params: {
   for (const workspaceDir of workspaceDirs) {
     const entries = loadWorkspaceSkillEntries(workspaceDir, { config: params.cfg });
     for (const entry of entries) {
-      if (entry.skill.source === "paleoclaw-bundled") {
+      if (resolveSkillSource(entry.skill) === "paleoclaw-bundled") {
         continue;
       }
 

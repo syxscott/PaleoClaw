@@ -282,7 +282,7 @@ async function readLatestSubagentOutput(sessionKey: string): Promise<string | un
   } catch {
     // Best-effort: fall back to richer history parsing below.
   }
-  const history = await callGateway<{ messages?: Array<unknown> }>({
+  const history = await callGateway({
     method: "chat.history",
     params: { sessionKey, limit: 50 },
   });
@@ -1182,12 +1182,7 @@ export async function runSubagentAnnounceFlow(params: {
 
     if (!reply && params.waitForCompletion !== false) {
       const waitMs = settleTimeoutMs;
-      const wait = await callGateway<{
-        status?: string;
-        startedAt?: number;
-        endedAt?: number;
-        error?: string;
-      }>({
+      const wait = await callGateway({
         method: "agent.wait",
         params: {
           runId: params.childRunId,

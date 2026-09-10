@@ -94,7 +94,7 @@ export function registerModelsCli(program: Command) {
     )
     .action(async (opts, command) => {
       const agent =
-        resolveOptionFromCommand<string>(command, "agent") ?? (opts.agent as string | undefined);
+        resolveOptionFromCommand(command, "agent") as string | undefined ?? (opts.agent as string | undefined);
       await runModelsCommand(async () => {
         await modelsStatusCommand(
           {
@@ -388,7 +388,7 @@ export function registerModelsCli(program: Command) {
     .option("--json", "Output JSON", false)
     .action(async (opts, command) => {
       const agent =
-        resolveOptionFromCommand<string>(command, "agent") ?? (opts.agent as string | undefined);
+        resolveOptionFromCommand(command, "agent") as string | undefined ?? (opts.agent as string | undefined);
       await runModelsCommand(async () => {
         await modelsAuthOrderGetCommand(
           {
@@ -409,7 +409,7 @@ export function registerModelsCli(program: Command) {
     .argument("<profileIds...>", "Auth profile ids (e.g. anthropic:default)")
     .action(async (profileIds: string[], opts, command) => {
       const agent =
-        resolveOptionFromCommand<string>(command, "agent") ?? (opts.agent as string | undefined);
+        resolveOptionFromCommand(command, "agent") as string | undefined ?? (opts.agent as string | undefined);
       await runModelsCommand(async () => {
         await modelsAuthOrderSetCommand(
           {
@@ -429,7 +429,7 @@ export function registerModelsCli(program: Command) {
     .option("--agent <id>", "Agent id (default: configured default agent)")
     .action(async (opts, command) => {
       const agent =
-        resolveOptionFromCommand<string>(command, "agent") ?? (opts.agent as string | undefined);
+        resolveOptionFromCommand(command, "agent") as string | undefined ?? (opts.agent as string | undefined);
       await runModelsCommand(async () => {
         await modelsAuthOrderClearCommand(
           {

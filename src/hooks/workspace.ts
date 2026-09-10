@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { MANIFEST_KEY } from "../compat/legacy-names.js";
+import { MANIFEST_KEY, resolveManifestSection } from "../compat/legacy-names.js";
 import type { OpenClawConfig } from "../config/config.js";
 import { openBoundaryFileSync } from "../infra/boundary-file-read.js";
 import { createSubsystemLogger } from "../logging/subsystem.js";
@@ -53,7 +53,8 @@ function readHookPackageManifest(dir: string): HookPackageManifest | null {
 }
 
 function resolvePackageHooks(manifest: HookPackageManifest): string[] {
-  const raw = manifest[MANIFEST_KEY]?.hooks;
+  const section = resolveManifestSection(manifest, MANIFEST_KEY) as { hooks?: string[] } | undefined;
+  const raw = section?.hooks;
   if (!Array.isArray(raw)) {
     return [];
   }

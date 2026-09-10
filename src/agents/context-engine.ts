@@ -19,7 +19,7 @@ export abstract class ContextEngine {
   protectFirstN: number = 2;
   protectLastN: number = 5;
 
-  abstract update_from_response(response: any): void;
+  abstract update_from_response(response: unknown): void;
   abstract should_compress(): boolean;
   abstract compress(messages: Array<{ role: string; content: string }>): Array<{ role: string; content: string }>;
 
@@ -33,8 +33,8 @@ export abstract class ContextEngine {
   on_session_end(): void {}
   on_session_reset(): void { this.on_session_start(); }
 
-  get_tool_schemas(): Array<{ name: string; description: string; input_schema: any }> { return []; }
-  handle_tool_call(tool_name: string, args: Record<string, unknown>, result: unknown): string { return ''; }
+  get_tool_schemas(): Array<{ name: string; description: string; input_schema: unknown }> { return []; }
+  handle_tool_call(_tool_name: string, _args: Record<string, unknown>, _result: unknown): string { return ''; }
 
   get_status(): ContextEngineStats {
     return {

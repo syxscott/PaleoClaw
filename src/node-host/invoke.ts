@@ -440,7 +440,7 @@ export async function handleInvoke(
 
   if (command === "system.execApprovals.set") {
     try {
-      const params = decodeParams<SystemExecApprovalsSetParams>(frame.paramsJSON);
+      const params = decodeParams(frame.paramsJSON) as SystemExecApprovalsSetParams;
       if (!params.file || typeof params.file !== "object") {
         throw new Error("INVALID_REQUEST: exec approvals file required");
       }
@@ -466,7 +466,7 @@ export async function handleInvoke(
 
   if (command === "system.which") {
     try {
-      const params = decodeParams<SystemWhichParams>(frame.paramsJSON);
+      const params = decodeParams(frame.paramsJSON) as SystemWhichParams;
       if (!Array.isArray(params.bins)) {
         throw new Error("INVALID_REQUEST: bins required");
       }
@@ -491,13 +491,13 @@ export async function handleInvoke(
 
   if (command === "system.run.prepare") {
     try {
-      const params = decodeParams<{
+      const params = decodeParams(frame.paramsJSON) as {
         command?: unknown;
         rawCommand?: unknown;
         cwd?: unknown;
         agentId?: unknown;
         sessionKey?: unknown;
-      }>(frame.paramsJSON);
+      };
       const prepared = buildSystemRunApprovalPlan(params);
       if (!prepared.ok) {
         await sendErrorResult(client, frame, "INVALID_REQUEST", prepared.message);
@@ -520,7 +520,7 @@ export async function handleInvoke(
 
   let params: SystemRunParams;
   try {
-    params = decodeParams<SystemRunParams>(frame.paramsJSON);
+    params = decodeParams(frame.paramsJSON) as SystemRunParams;
   } catch (err) {
     await sendInvalidRequestResult(client, frame, err);
     return;
@@ -555,11 +555,11 @@ export async function handleInvoke(
   });
 }
 
-function decodeParams<T>(raw?: string | null): T {
+function decodeParams(raw?: string | null): unknown {
   if (!raw) {
     throw new Error("INVALID_REQUEST: paramsJSON required");
   }
-  return JSON.parse(raw) as T;
+  return JSON.parse(raw);
 }
 
 export function coerceNodeInvokePayload(payload: unknown): NodeInvokeRequestPayload | null {

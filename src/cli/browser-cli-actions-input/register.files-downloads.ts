@@ -18,16 +18,16 @@ async function normalizeUploadPaths(paths: string[]): Promise<string[]> {
   return result.paths;
 }
 
-async function runBrowserPostAction<T>(params: {
+async function runBrowserPostAction(params: {
   parent: BrowserParentOpts;
   profile: string | undefined;
   path: string;
   body: Record<string, unknown>;
   timeoutMs: number;
-  describeSuccess: (result: T) => string;
+  describeSuccess: (result: unknown) => string;
 }): Promise<void> {
   try {
-    const result = await callBrowserRequest<T>(
+    const result = await callBrowserRequest<unknown>(
       params.parent,
       {
         method: "POST",
@@ -66,7 +66,7 @@ export function registerBrowserFilesAndDownloadsCommands(
   ) => {
     const { parent, profile } = resolveBrowserActionContext(cmd, parentOpts);
     const { timeoutMs, targetId } = resolveTimeoutAndTarget(opts);
-    await runBrowserPostAction<{ download: { path: string } }>({
+    await runBrowserPostAction({
       parent,
       profile,
       path: request.path,
@@ -76,7 +76,8 @@ export function registerBrowserFilesAndDownloadsCommands(
         timeoutMs,
       },
       timeoutMs: timeoutMs ?? 20000,
-      describeSuccess: (result) => `downloaded: ${shortenHomePath(result.download.path)}`,
+      describeSuccess: (result) =>
+        `downloaded: ${shortenHomePath((result as { download: { path: string } }).download.path)}`,
     });
   };
 

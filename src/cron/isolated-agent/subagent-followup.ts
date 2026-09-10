@@ -147,7 +147,7 @@ export async function waitForDescendantSubagentSummary(params: {
     // out, allSettled absorbs the error so we proceed to the next iteration.
     await Promise.allSettled(
       [...pendingRunIds].map((runId) =>
-        callGateway<{ status?: string }>({
+        callGateway({
           method: "agent.wait",
           params: { runId, timeoutMs: remainingMs },
           timeoutMs: remainingMs + 2_000,

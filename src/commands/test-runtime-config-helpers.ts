@@ -22,7 +22,7 @@ export type TestRuntime = {
 export function createTestRuntime(): TestRuntime {
   const log = vi.fn() as MockFn<RuntimeEnv["log"]>;
   const error = vi.fn() as MockFn<RuntimeEnv["error"]>;
-  const exit = vi.fn((_: number) => undefined) as MockFn<RuntimeEnv["exit"]>;
+  const exit = vi.fn(() => undefined) as MockFn<RuntimeEnv["exit"]>;
   return {
     log,
     error,

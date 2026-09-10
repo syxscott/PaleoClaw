@@ -338,11 +338,11 @@ async function loadTransform(transform: HookMappingTransformResolved): Promise<H
 }
 
 function resolveTransformFn(mod: Record<string, unknown>, exportName?: string): HookTransformFn {
-  const candidate = resolveFunctionModuleExport<HookTransformFn>({
+  const candidate = resolveFunctionModuleExport({
     mod,
     exportName,
     fallbackExportNames: ["default", "transform"],
-  });
+  }) as HookTransformFn | undefined;
   if (!candidate) {
     throw new Error("hook transform module must export a function");
   }

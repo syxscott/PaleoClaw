@@ -20,7 +20,7 @@ const hookMocks = vi.hoisted(() => ({
 }));
 
 const beforeToolCallMocks = vi.hoisted(() => ({
-  consumeAdjustedParamsForToolCall: vi.fn((_: string): unknown => undefined),
+  consumeAdjustedParamsForToolCall: vi.fn<(id: string) => unknown>(() => undefined),
   isToolWrappedWithBeforeToolCallHook: vi.fn(() => false),
   runBeforeToolCallHook: vi.fn(async ({ params }: { params: unknown }) => ({
     blocked: false,

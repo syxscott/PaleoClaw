@@ -92,7 +92,7 @@ export async function executeNodeHostCommand(
     );
   }
   const argv = buildNodeShellCommand(params.command, nodeInfo?.platform);
-  const prepareRaw = await callGatewayTool<{ payload?: unknown }>(
+  const prepareRaw = await callGatewayTool(
     "node.invoke",
     { timeoutMs: 15_000 },
     {

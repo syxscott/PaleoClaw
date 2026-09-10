@@ -8,7 +8,7 @@ function resolveUrl(opts: { url?: string }, command: Command): string | undefine
   if (typeof opts.url === "string" && opts.url.trim()) {
     return opts.url.trim();
   }
-  const inherited = inheritOptionFromParent<string>(command, "url");
+  const inherited = inheritOptionFromParent(command, "url") as string | undefined;
   if (typeof inherited === "string" && inherited.trim()) {
     return inherited.trim();
   }
@@ -20,7 +20,7 @@ function resolveTargetId(rawTargetId: unknown, command: Command): string | undef
   if (local) {
     return local;
   }
-  const inherited = inheritOptionFromParent<string>(command, "targetId");
+  const inherited = inheritOptionFromParent(command, "targetId") as string | undefined;
   if (typeof inherited !== "string") {
     return undefined;
   }

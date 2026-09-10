@@ -25,21 +25,21 @@ export async function importFileModule(params: {
   return (await import(specifier)) as ModuleNamespace;
 }
 
-export function resolveFunctionModuleExport<T extends GenericFunction>(params: {
+export function resolveFunctionModuleExport(params: {
   mod: ModuleNamespace;
   exportName?: string;
   fallbackExportNames?: string[];
-}): T | undefined {
+}): GenericFunction | undefined {
   const explicitExport = params.exportName?.trim();
   if (explicitExport) {
     const candidate = params.mod[explicitExport];
-    return typeof candidate === "function" ? (candidate as T) : undefined;
+    return typeof candidate === "function" ? (candidate as GenericFunction) : undefined;
   }
   const fallbacks = params.fallbackExportNames ?? ["default"];
   for (const exportName of fallbacks) {
     const candidate = params.mod[exportName];
     if (typeof candidate === "function") {
-      return candidate as T;
+      return candidate as GenericFunction;
     }
   }
   return undefined;

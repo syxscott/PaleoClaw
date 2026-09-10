@@ -1,5 +1,7 @@
-import { convertMessages } from "@mariozechner/pi-ai/dist/providers/google-shared.js";
-import type { Context } from "@mariozechner/pi-ai/dist/types.js";
+// pi-ai 0.66.x does not export its internal google-shared module; import the
+// built file directly and take public types from the package entry point.
+import { convertMessages } from "../../node_modules/@mariozechner/pi-ai/dist/providers/google-shared.js";
+import type { Context } from "@mariozechner/pi-ai";
 import { describe, expect, it } from "vitest";
 import {
   asRecord,

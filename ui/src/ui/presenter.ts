@@ -1,5 +1,5 @@
 import { formatRelativeTimestamp, formatDurationHuman, formatMs } from "./format.ts";
-import type { CronJob, GatewaySessionRow, PresenceEntry } from "./types.ts";
+import type { CronJob, PresenceEntry } from "./types.ts";
 
 export function formatPresenceSummary(entry: PresenceEntry): string {
   const host = entry.host ?? "unknown";
@@ -22,7 +22,17 @@ export function formatNextRun(ms?: number | null) {
   return `${weekday}, ${formatMs(ms)} (${formatRelativeTimestamp(ms)})`;
 }
 
-export function formatSessionTokens(row: GatewaySessionRow) {
+/**
+ * Token stats the formatter needs — a structural subset of GatewaySessionRow.
+ * Gateway rows can omit the fields or send null for unknown values, so both
+ * optional fields accept null and the function tolerates partial rows.
+ */
+export type SessionTokensRow = {
+  totalTokens?: number | null;
+  contextTokens?: number | null;
+};
+
+export function formatSessionTokens(row: SessionTokensRow) {
   if (row.totalTokens == null) {
     return "n/a";
   }

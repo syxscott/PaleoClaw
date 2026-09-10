@@ -50,7 +50,7 @@ export class ToolRegistry {
   }
 
   list(): RegisteredTool[] {
-    return [...this.tools.values()].sort((a, b) => a.name.localeCompare(b.name));
+    return [...this.tools.values()].toSorted((a, b) => a.name.localeCompare(b.name));
   }
 
   async execute(

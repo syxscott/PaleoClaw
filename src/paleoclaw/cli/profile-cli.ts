@@ -3,6 +3,7 @@
  * Commands: init, show
  */
 
+import type { Command } from 'commander';
 import {
   ensureProfileLayers,
   loadSessionProfile,
@@ -13,11 +14,11 @@ interface ProfileCommandOptions {
 }
 
 function truncate(text: string, max: number): string {
-  if (!text) return '';
+  if (!text) {return '';}
   return text.length > max ? `${text.slice(0, max)}...` : text;
 }
 
-export function registerProfileCommands(program: any): void {
+export function registerProfileCommands(program: Command): void {
   const profileCmd = program
     .command('profile')
     .description('Manage PaleoClaw Soul/User profile layers');

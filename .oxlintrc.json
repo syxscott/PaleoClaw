@@ -1,6 +1,10 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["unicorn", "typescript", "oxc"],
+  "plugins": [
+    "unicorn",
+    "typescript",
+    "oxc"
+  ],
   "categories": {
     "correctness": "error",
     "perf": "error",
@@ -20,7 +24,9 @@
     "typescript/no-extraneous-class": "off",
     "typescript/no-unsafe-type-assertion": "off",
     "unicorn/consistent-function-scoping": "off",
-    "unicorn/require-post-message-target-origin": "off"
+    "unicorn/require-post-message-target-origin": "off",
+    "typescript/no-unnecessary-type-conversion": "off",
+    "no-underscore-dangle": "off"
   },
   "ignorePatterns": [
     "assets/",

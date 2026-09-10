@@ -80,7 +80,7 @@ export async function resetCommand(runtime: RuntimeEnv, opts: ResetOptions) {
       ],
       initialValue: "config+creds+sessions",
     });
-    if (isCancel(selection)) {
+    if (isCancel(selection) || typeof selection === "symbol") {
       cancel(stylePromptTitle("Reset cancelled.") ?? "Reset cancelled.");
       runtime.exit(0);
       return;

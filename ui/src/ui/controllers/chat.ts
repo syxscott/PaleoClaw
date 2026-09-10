@@ -102,13 +102,20 @@ const draftSaveTimers = new Map<string, number>();
 function cancelScheduledDraftSave(key: string) {
   const timer = draftSaveTimers.get(key);
   if (timer !== undefined) {
-    window.clearTimeout(timer);
+    if (typeof window !== "undefined") {
+      window.clearTimeout(timer);
+    }
     draftSaveTimers.delete(key);
   }
 }
 
 /** Debounced (~400ms) draft write; empty text removes the stored draft. */
 function scheduleComposerDraftSave(state: ChatState, text: string) {
+  // Non-browser environment (node test runs, SSR): no timers and no IndexedDB,
+  // so there is nothing to schedule — skip silently like the draft store does.
+  if (typeof window === "undefined") {
+    return;
+  }
   const key = composerDraftKey(state);
   cancelScheduledDraftSave(key);
   draftSaveTimers.set(
@@ -176,6 +183,12 @@ const draftSyncLastSeen = new WeakMap<ChatState, string>();
 let draftSyncTimer: number | null = null;
 
 function startComposerDraftSync(state: ChatState) {
+  // The sampler drives browser-only draft persistence (window timers +
+  // IndexedDB). In non-browser environments (node test runs, SSR) there is
+  // nothing to watch — skip registration entirely.
+  if (typeof window === "undefined") {
+    return;
+  }
   if (draftSyncLastSeen.has(state)) {
     return;
   }

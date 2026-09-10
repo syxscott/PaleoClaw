@@ -1,7 +1,9 @@
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { withEnvAsync } from "../test-utils/env.js";
-import { connectOk, installGatewayTestHooks, rpcReq } from "./test-helpers.js";
+import { connectOk, installGatewayTestHooks, rpcReq,
+  type RpcResponse,
+} from "./test-helpers.js";
 import { withServer } from "./test-with-server.js";
 
 installGatewayTestHooks({ scope: "suite" });
@@ -24,14 +26,14 @@ describe("gateway skills.status", () => {
 
         await withServer(async (ws) => {
           await connectOk(ws, { token: "secret", scopes: ["operator.read"] });
-          const res = await rpcReq<{
+          const res = (await rpcReq(ws, "skills.status", {})) as RpcResponse<{
             skills?: Array<{
               name?: string;
               configChecks?: Array<
                 { path?: string; satisfied?: boolean } & Record<string, unknown>
               >;
             }>;
-          }>(ws, "skills.status", {});
+          }>;
 
           expect(res.ok).toBe(true);
           expect(JSON.stringify(res.payload)).not.toContain(secret);

@@ -4,6 +4,7 @@
 
 import { parseFiniteNumber } from '../../vendor/normalization-core/number-coercion.js';
 import { createSessionStore } from '../session/index.js';
+import type { Command } from 'commander';
 
 interface SessionCommandOptions {
   limit?: string;
@@ -33,7 +34,7 @@ function parseTags(raw?: string): string[] {
     .filter(Boolean);
 }
 
-export function registerSessionCommands(program: any): void {
+export function registerSessionCommands(program: Command): void {
   const sessionCmd = program
     .command('paleo-session')
     .alias('psession')

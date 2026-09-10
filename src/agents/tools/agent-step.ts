@@ -42,7 +42,7 @@ export async function runAgentStep(params: {
   sourceTool?: string;
 }): Promise<string | undefined> {
   const stepIdem = crypto.randomUUID();
-  const response = await callGateway<{ runId?: string }>({
+  const response = await callGateway({
     method: "agent",
     params: {
       message: params.message,
@@ -65,7 +65,7 @@ export async function runAgentStep(params: {
   const stepRunId = typeof response?.runId === "string" && response.runId ? response.runId : "";
   const resolvedRunId = stepRunId || stepIdem;
   const stepWaitMs = Math.min(params.timeoutMs, 60_000);
-  const wait = await callGateway<{ status?: string }>({
+  const wait = await callGateway({
     method: "agent.wait",
     params: {
       runId: resolvedRunId,

@@ -20,7 +20,7 @@ import type { WizardProgress, WizardPrompter } from "./prompts.js";
 import { WizardCancelledError } from "./prompts.js";
 
 function guardCancel<T>(value: T | symbol): T {
-  if (isCancel(value)) {
+  if (isCancel(value) || typeof value === "symbol") {
     cancel(stylePromptTitle("Setup cancelled.") ?? "Setup cancelled.");
     throw new WizardCancelledError();
   }

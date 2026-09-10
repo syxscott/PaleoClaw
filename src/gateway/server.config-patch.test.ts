@@ -9,6 +9,7 @@ import {
   startServerWithClient,
   testState,
   writeSessionStore,
+  type RpcResponse,
 } from "./test-helpers.js";
 
 installGatewayTestHooks({ scope: "suite" });
@@ -48,14 +49,14 @@ async function resetTempDir(name: string): Promise<string> {
 
 describe("gateway config methods", () => {
   it("returns a path-scoped config schema lookup", async () => {
-    const res = await rpcReq<{
+    const res = (await rpcReq(requireWs(), "config.schema.lookup", {
+      path: "gateway.auth",
+    })) as RpcResponse<{
       path: string;
       hintPath?: string;
       children?: Array<{ key: string; path: string; required: boolean; hintPath?: string }>;
       schema?: { properties?: unknown };
-    }>(requireWs(), "config.schema.lookup", {
-      path: "gateway.auth",
-    });
+    }>;
 
     expect(res.ok).toBe(true);
     expect(res.payload?.path).toBe("gateway.auth");
@@ -70,54 +71,54 @@ describe("gateway config methods", () => {
   });
 
   it("rejects config.schema.lookup when the path is missing", async () => {
-    const res = await rpcReq<{ ok?: boolean }>(requireWs(), "config.schema.lookup", {
+    const res = (await rpcReq(requireWs(), "config.schema.lookup", {
       path: "gateway.notReal.path",
-    });
+    })) as RpcResponse<{ ok?: boolean }>;
 
     expect(res.ok).toBe(false);
     expect(res.error?.message).toBe("config schema path not found");
   });
 
   it("rejects config.schema.lookup when the path is only whitespace", async () => {
-    const res = await rpcReq<{ ok?: boolean }>(requireWs(), "config.schema.lookup", {
+    const res = (await rpcReq(requireWs(), "config.schema.lookup", {
       path: "   ",
-    });
+    })) as RpcResponse<{ ok?: boolean }>;
 
     expect(res.ok).toBe(false);
     expect(res.error?.message ?? "").toContain("invalid config.schema.lookup params");
   });
 
   it("rejects config.schema.lookup when the path exceeds the protocol limit", async () => {
-    const res = await rpcReq<{ ok?: boolean }>(requireWs(), "config.schema.lookup", {
+    const res = (await rpcReq(requireWs(), "config.schema.lookup", {
       path: `gateway.${"a".repeat(1020)}`,
-    });
+    })) as RpcResponse<{ ok?: boolean }>;
 
     expect(res.ok).toBe(false);
     expect(res.error?.message ?? "").toContain("invalid config.schema.lookup params");
   });
 
   it("rejects config.schema.lookup when the path contains invalid characters", async () => {
-    const res = await rpcReq<{ ok?: boolean }>(requireWs(), "config.schema.lookup", {
+    const res = (await rpcReq(requireWs(), "config.schema.lookup", {
       path: "gateway.auth\nspoof",
-    });
+    })) as RpcResponse<{ ok?: boolean }>;
 
     expect(res.ok).toBe(false);
     expect(res.error?.message ?? "").toContain("invalid config.schema.lookup params");
   });
 
   it("rejects prototype-chain config.schema.lookup paths without reflecting them", async () => {
-    const res = await rpcReq<{ ok?: boolean }>(requireWs(), "config.schema.lookup", {
+    const res = (await rpcReq(requireWs(), "config.schema.lookup", {
       path: "constructor",
-    });
+    })) as RpcResponse<{ ok?: boolean }>;
 
     expect(res.ok).toBe(false);
     expect(res.error?.message).toBe("config schema path not found");
   });
 
   it("rejects config.patch when raw is not an object", async () => {
-    const res = await rpcReq<{ ok?: boolean }>(requireWs(), "config.patch", {
+    const res = (await rpcReq(requireWs(), "config.patch", {
       raw: "[]",
-    });
+    })) as RpcResponse<{ ok?: boolean }>;
     expect(res.ok).toBe(false);
     expect(res.error?.message ?? "").toContain("raw must be an object");
   });
@@ -161,26 +162,26 @@ describe("gateway server sessions", () => {
       },
     });
 
-    const homeSessions = await rpcReq<{
-      sessions: Array<{ key: string }>;
-    }>(requireWs(), "sessions.list", {
+    const homeSessions = (await rpcReq(requireWs(), "sessions.list", {
       includeGlobal: false,
       includeUnknown: false,
       agentId: "home",
-    });
+    })) as RpcResponse<{
+      sessions: Array<{ key: string }>;
+    }>;
     expect(homeSessions.ok).toBe(true);
     expect(homeSessions.payload?.sessions.map((s) => s.key).toSorted()).toEqual([
       "agent:home:discord:group:dev",
       "agent:home:main",
     ]);
 
-    const workSessions = await rpcReq<{
-      sessions: Array<{ key: string }>;
-    }>(requireWs(), "sessions.list", {
+    const workSessions = (await rpcReq(requireWs(), "sessions.list", {
       includeGlobal: false,
       includeUnknown: false,
       agentId: "work",
-    });
+    })) as RpcResponse<{
+      sessions: Array<{ key: string }>;
+    }>;
     expect(workSessions.ok).toBe(true);
     expect(workSessions.payload?.sessions.map((s) => s.key)).toEqual(["agent:work:main"]);
   });
@@ -204,16 +205,16 @@ describe("gateway server sessions", () => {
       },
     });
 
-    const resolved = await rpcReq<{ ok: true; key: string }>(requireWs(), "sessions.resolve", {
+    const resolved = (await rpcReq(requireWs(), "sessions.resolve", {
       key: "main",
-    });
+    })) as RpcResponse<{ ok: true; key: string }>;
     expect(resolved.ok).toBe(true);
     expect(resolved.payload?.key).toBe("agent:ops:work");
 
-    const patched = await rpcReq<{ ok: true; key: string }>(requireWs(), "sessions.patch", {
+    const patched = (await rpcReq(requireWs(), "sessions.patch", {
       key: "main",
       thinkingLevel: "medium",
-    });
+    })) as RpcResponse<{ ok: true; key: string }>;
     expect(patched.ok).toBe(true);
     expect(patched.payload?.key).toBe("agent:ops:work");
 

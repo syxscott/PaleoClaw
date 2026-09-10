@@ -33,6 +33,9 @@ type PendingEntry = {
 
 export class ExecApprovalManager {
   private pending = new Map<string, PendingEntry>();
+  // One-time approvals already consumed; kept out of the record itself so the
+  // flag never leaks into snapshots or serialized payloads.
+  private consumedAllowOnceRecords = new WeakSet<ExecApprovalRecord>();
 
   create(
     request: ExecApprovalRequestPayload,
@@ -159,10 +162,10 @@ export class ExecApprovalManager {
     // One-time approvals must be consumed atomically so the same runId
     // cannot be replayed during the resolved-entry grace window.
     // Use a consumed flag to ensure atomic check-and-set.
-    if ((record as any)._consumed) {
+    if (this.consumedAllowOnceRecords.has(record)) {
       return false;
     }
-    (record as any)._consumed = true;
+    this.consumedAllowOnceRecords.add(record);
     record.decision = undefined;
     return true;
   }

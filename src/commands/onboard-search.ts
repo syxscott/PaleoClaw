@@ -81,6 +81,8 @@ function rawKeyValue(config: OpenClawConfig, provider: SearchProvider): unknown 
       return search?.grok?.apiKey;
     case "kimi":
       return search?.kimi?.apiKey;
+    default:
+      return undefined;
   }
 }
 

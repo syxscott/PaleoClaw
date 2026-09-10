@@ -30,11 +30,11 @@ type DeviceTokenResponse =
       error_uri?: string;
     };
 
-function parseJsonResponse<T>(value: unknown): T {
+function parseJsonResponse(value: unknown): unknown {
   if (!value || typeof value !== "object") {
     throw new Error("Unexpected response from GitHub");
   }
-  return value as T;
+  return value;
 }
 
 async function requestDeviceCode(params: { scope: string }): Promise<DeviceCodeResponse> {
@@ -56,7 +56,7 @@ async function requestDeviceCode(params: { scope: string }): Promise<DeviceCodeR
     throw new Error(`GitHub device code failed: HTTP ${res.status}`);
   }
 
-  const json = parseJsonResponse<DeviceCodeResponse>(await res.json());
+  const json = parseJsonResponse(await res.json()) as DeviceCodeResponse;
   if (!json.device_code || !json.user_code || !json.verification_uri) {
     throw new Error("GitHub device code response missing fields");
   }
@@ -88,7 +88,7 @@ async function pollForAccessToken(params: {
       throw new Error(`GitHub device token failed: HTTP ${res.status}`);
     }
 
-    const json = parseJsonResponse<DeviceTokenResponse>(await res.json());
+    const json = parseJsonResponse(await res.json()) as DeviceTokenResponse;
     if ("access_token" in json && typeof json.access_token === "string") {
       return json.access_token;
     }

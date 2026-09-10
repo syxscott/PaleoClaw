@@ -95,10 +95,10 @@ export async function loadInternalHooks(
 
         // Get handler function (default or named export)
         const exportName = entry.metadata?.export ?? "default";
-        const handler = resolveFunctionModuleExport<InternalHookHandler>({
+        const handler = resolveFunctionModuleExport({
           mod,
           exportName,
-        });
+        }) as InternalHookHandler | undefined;
 
         if (!handler) {
           log.error(`Handler '${exportName}' from ${entry.hook.name} is not a function`);
@@ -175,10 +175,10 @@ export async function loadInternalHooks(
 
       // Get the handler function
       const exportName = handlerConfig.export ?? "default";
-      const handler = resolveFunctionModuleExport<InternalHookHandler>({
+      const handler = resolveFunctionModuleExport({
         mod,
         exportName,
-      });
+      }) as InternalHookHandler | undefined;
 
       if (!handler) {
         log.error(`Handler '${exportName}' from ${modulePath} is not a function`);

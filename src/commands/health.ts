@@ -8,7 +8,7 @@ import { loadConfig, readBestEffortConfig } from "../config/config.js";
 import { loadSessionStore, resolveStorePath } from "../config/sessions.js";
 import { buildGatewayConnectionDetails, callGateway } from "../gateway/call.js";
 import { info } from "../globals.js";
-import { isTruthyEnvValue, isDebugEnabled } from "../infra/env.js";
+import { isDebugEnabled } from "../infra/env.js";
 import { formatErrorMessage } from "../infra/errors.js";
 import {
   type HeartbeatSummary,

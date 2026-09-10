@@ -49,10 +49,10 @@ const GEOLOGICAL_PERIODS = new Set([
 const TAXON_SUFFIX_RE = /[a-z]{3,}(idae|inae|aceae|opsida|phyta|mycota|formes|oidea|aceae|omorpha)$/i;
 
 function isLikelyTaxon(word: string): boolean {
-  if (!word) return false;
-  if (TAXON_STOPWORDS.has(word)) return false;
-  if (GEOLOGICAL_PERIODS.has(word)) return false;
-  if (word.length < 6 && !TAXON_SUFFIX_RE.test(word)) return false;
+  if (!word) {return false;}
+  if (TAXON_STOPWORDS.has(word)) {return false;}
+  if (GEOLOGICAL_PERIODS.has(word)) {return false;}
+  if (word.length < 6 && !TAXON_SUFFIX_RE.test(word)) {return false;}
   return true;
 }
 
@@ -73,25 +73,25 @@ export function resolveAutoToolPlan(prompt: string): AutoToolPlan[] {
   const normalized = prompt.toLowerCase();
   const plans: AutoToolPlan[] = [];
 
-  const asksPbdb = /\b(pbdb|fossil|occurrence|taxon|stratigraph|formation)\b/.test(normalized);
+  const taxon = extractTaxonCandidate(prompt);
+  // A plausible taxon candidate is itself an implicit PBDB ask ("Find
+  // Ammonoidea in Jurassic" mentions neither PBDB nor a keyword), and
+  // "fossils?" covers the plural form ("Find all fossils in the Cretaceous").
+  const asksPbdb =
+    /\b(pbdb|fossils?|occurrences?|taxa|taxon|stratigraph\w*|formations?)\b/.test(normalized) ||
+    taxon !== undefined;
   const asksLiterature = /\b(crossref|doi|citation|paper|literature|journal|references?)\b/.test(
     normalized
   );
 
   if (asksPbdb) {
-    const taxon = extractTaxonCandidate(prompt);
-    // No usable taxon candidate: skip the plan instead of querying PBDB
-    // unfiltered, which would return 5 arbitrary occurrences and inject them
-    // into the prompt as authoritative context.
-    if (taxon) {
-      plans.push({
-        tool: 'pbdb_query',
-        params: {
-          baseName: taxon,
-          limit: 5,
-        },
-      });
-    }
+    plans.push({
+      tool: 'pbdb_query',
+      params: {
+        baseName: taxon,
+        limit: 5,
+      },
+    });
   }
 
   if (asksLiterature) {
@@ -125,7 +125,10 @@ function summarizePbdb(data: unknown): string {
   const names = (typed?.records || [])
     .filter((row): row is Record<string, unknown> => row != null)
     .slice(0, 3)
-    .map((row) => String(row.tna || row.taxon_name || '').trim())
+    .map((row) => {
+      const raw = row.tna ?? row.taxon_name;
+      return (typeof raw === 'string' ? raw : '').trim();
+    })
     .filter(Boolean);
 
   return `PBDB hits=${count}${names.length > 0 ? `; taxa=${names.join(', ')}` : ''}`;
@@ -175,7 +178,7 @@ export async function buildAutoToolsContext(prompt: string): Promise<string> {
 
   const lines: string[] = [];
   for (const { plan, result } of results) {
-    if (!result.ok) continue;
+    if (!result.ok) {continue;}
     lines.push(summarizeResult(plan.tool, result.data));
   }
 

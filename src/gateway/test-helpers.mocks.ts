@@ -242,8 +242,17 @@ vi.mock("../agents/pi-model-discovery.js", async () => {
     "../agents/pi-model-discovery.js",
   );
 
-  class MockModelRegistry extends actual.ModelRegistry {
-    override getAll(): ReturnType<typeof actual.ModelRegistry.prototype.getAll> {
+  // pi-ai 0.66.1 marks ModelRegistry's constructor private; extend through a
+  // structural public-constructor view so the mock keeps all inherited behavior.
+  type ModelRegistryLike = {
+    getAll(): ReturnType<(typeof actual.ModelRegistry)["prototype"]["getAll"]>;
+  };
+  const ModelRegistryBase = actual.ModelRegistry as unknown as new (
+    ...args: unknown[]
+  ) => ModelRegistryLike;
+
+  class MockModelRegistry extends ModelRegistryBase {
+    override getAll(): ModelRegistryLike["getAll"] extends () => infer R ? R : never {
       if (!piSdkMock.enabled) {
         return super.getAll();
       }

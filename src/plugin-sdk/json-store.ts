@@ -8,7 +8,7 @@ export async function readJsonFileWithFallback<T>(
 ): Promise<{ value: T; exists: boolean }> {
   try {
     const raw = await fs.promises.readFile(filePath, "utf-8");
-    const parsed = safeParseJson<T>(raw);
+    const parsed = safeParseJson(raw) as T | null;
     if (parsed == null) {
       return { value: fallback, exists: true };
     }

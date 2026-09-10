@@ -95,10 +95,7 @@ describe("gateway e2e", () => {
         });
 
         const runId = nextGatewayId("run");
-        const payload = await client.request<{
-          status?: unknown;
-          result?: unknown;
-        }>(
+        const payload = await client.request(
           "agent",
           {
             sessionKey,

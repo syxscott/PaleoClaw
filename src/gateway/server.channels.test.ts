@@ -8,6 +8,7 @@ import {
   installGatewayTestHooks,
   rpcReq,
   startServerWithClient,
+  type RpcResponse,
 } from "./test-helpers.js";
 
 let readConfigFileSnapshot: typeof import("../config/config.js").readConfigFileSnapshot;
@@ -106,7 +107,7 @@ describe("gateway server channels", () => {
   test("channels.status returns snapshot without probe", async () => {
     vi.stubEnv("TELEGRAM_BOT_TOKEN", undefined);
     setRegistry(defaultRegistry);
-    const res = await rpcReq<{
+    const res = (await rpcReq(ws, "channels.status", { probe: false, timeoutMs: 2000 })) as RpcResponse<{
       channels?: Record<
         string,
         {
@@ -117,7 +118,7 @@ describe("gateway server channels", () => {
           linked?: boolean;
         }
       >;
-    }>(ws, "channels.status", { probe: false, timeoutMs: 2000 });
+    }>;
     expect(res.ok).toBe(true);
     const telegram = res.payload?.channels?.telegram;
     const signal = res.payload?.channels?.signal;
@@ -133,9 +134,9 @@ describe("gateway server channels", () => {
 
   test("channels.logout reports no session when missing", async () => {
     setRegistry(defaultRegistry);
-    const res = await rpcReq<{ cleared?: boolean; channel?: string }>(ws, "channels.logout", {
+    const res = (await rpcReq(ws, "channels.logout", {
       channel: "whatsapp",
-    });
+    })) as RpcResponse<{ cleared?: boolean; channel?: string }>;
     expect(res.ok).toBe(true);
     expect(res.payload?.channel).toBe("whatsapp");
     expect(res.payload?.cleared).toBe(false);
@@ -152,11 +153,11 @@ describe("gateway server channels", () => {
         },
       },
     });
-    const res = await rpcReq<{
+    const res = (await rpcReq(ws, "channels.logout", { channel: "telegram" })) as RpcResponse<{
       cleared?: boolean;
       envToken?: boolean;
       channel?: string;
-    }>(ws, "channels.logout", { channel: "telegram" });
+    }>;
     expect(res.ok).toBe(true);
     expect(res.payload?.channel).toBe("telegram");
     expect(res.payload?.cleared).toBe(true);

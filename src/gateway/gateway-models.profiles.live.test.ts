@@ -320,7 +320,7 @@ async function runAnthropicRefusalProbe(params: {
   const magic = buildAnthropicRefusalToken();
   const runId = randomUUID();
   const probe = await withGatewayLiveProbeTimeout(
-    params.client.request<AgentFinalPayload>(
+    params.client.request(
       "agent",
       {
         sessionKey: params.sessionKey,
@@ -349,7 +349,7 @@ async function runAnthropicRefusalProbe(params: {
 
   const followupId = randomUUID();
   const followup = await withGatewayLiveProbeTimeout(
-    params.client.request<AgentFinalPayload>(
+    params.client.request(
       "agent",
       {
         sessionKey: params.sessionKey,
@@ -473,11 +473,6 @@ async function getFreeGatewayPort(): Promise<number> {
   }
   throw new Error("failed to acquire a free gateway port block");
 }
-
-type AgentFinalPayload = {
-  status?: unknown;
-  result?: unknown;
-};
 
 async function connectClient(params: { url: string; token: string }) {
   return await new Promise<GatewayClient>((resolve, reject) => {
@@ -794,7 +789,7 @@ async function runGatewayModelSuite(params: GatewayModelSuiteParams) {
           logProgress(`${progressLabel}: prompt`);
           const runId = randomUUID();
           const payload = await withGatewayLiveProbeTimeout(
-            client.request<AgentFinalPayload>(
+            client.request(
               "agent",
               {
                 sessionKey,
@@ -816,7 +811,7 @@ async function runGatewayModelSuite(params: GatewayModelSuiteParams) {
           if (!text) {
             logProgress(`${progressLabel}: empty response, retrying`);
             const retry = await withGatewayLiveProbeTimeout(
-              client.request<AgentFinalPayload>(
+              client.request(
                 "agent",
                 {
                   sessionKey,
@@ -881,7 +876,7 @@ async function runGatewayModelSuite(params: GatewayModelSuiteParams) {
           ) {
             const strictReply = toolReadAttempt > 0;
             const toolProbe = await withGatewayLiveProbeTimeout(
-              client.request<AgentFinalPayload>(
+              client.request(
                 "agent",
                 {
                   sessionKey,
@@ -960,7 +955,7 @@ async function runGatewayModelSuite(params: GatewayModelSuiteParams) {
             ) {
               const strictReply = execReadAttempt > 0;
               const execReadProbe = await withGatewayLiveProbeTimeout(
-                client.request<AgentFinalPayload>(
+                client.request(
                   "agent",
                   {
                     sessionKey,
@@ -1040,7 +1035,7 @@ async function runGatewayModelSuite(params: GatewayModelSuiteParams) {
             const runIdImage = randomUUID();
 
             const imageProbe = await withGatewayLiveProbeTimeout(
-              client.request<AgentFinalPayload>(
+              client.request(
                 "agent",
                 {
                   sessionKey,
@@ -1108,7 +1103,7 @@ async function runGatewayModelSuite(params: GatewayModelSuiteParams) {
             logProgress(`${progressLabel}: tool-only regression`);
             const runId2 = randomUUID();
             const first = await withGatewayLiveProbeTimeout(
-              client.request<AgentFinalPayload>(
+              client.request(
                 "agent",
                 {
                   sessionKey,
@@ -1133,7 +1128,7 @@ async function runGatewayModelSuite(params: GatewayModelSuiteParams) {
             });
 
             const second = await withGatewayLiveProbeTimeout(
-              client.request<AgentFinalPayload>(
+              client.request(
                 "agent",
                 {
                   sessionKey,
@@ -1518,7 +1513,7 @@ describeLive("gateway live (dev agent, profile keys)", () => {
 
       const runId = randomUUID();
       const toolProbe = await withGatewayLiveProbeTimeout(
-        client.request<AgentFinalPayload>(
+        client.request(
           "agent",
           {
             sessionKey,
@@ -1557,7 +1552,7 @@ describeLive("gateway live (dev agent, profile keys)", () => {
 
       const followupId = randomUUID();
       const followup = await withGatewayLiveProbeTimeout(
-        client.request<AgentFinalPayload>(
+        client.request(
           "agent",
           {
             sessionKey,

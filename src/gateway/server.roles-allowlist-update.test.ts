@@ -19,8 +19,14 @@ vi.mock("../infra/update-runner.js", () => ({
 }));
 
 import { runGatewayUpdate } from "../infra/update-runner.js";
-import { connectGatewayClient } from "./test-helpers.e2e.js";
-import { installGatewayTestHooks, onceMessage, rpcReq } from "./test-helpers.js";
+import { connectGatewayClient,
+} from "./test-helpers.e2e.js";
+import {
+  installGatewayTestHooks,
+  onceMessage,
+  rpcReq,
+  type RpcResponse,
+} from "./test-helpers.js";
 import { installConnectedControlUiServerSuite } from "./test-with-server.js";
 
 installGatewayTestHooks({ scope: "suite" });
@@ -112,7 +118,7 @@ describe("gateway role enforcement", () => {
         displayName: "node-role-enforcement",
       });
 
-      const binsPayload = await nodeClient.request<{ bins?: unknown[] }>("skills.bins", {});
+      const binsPayload = await nodeClient.request("skills.bins", {});
       expect(Array.isArray(binsPayload?.bins)).toBe(true);
 
       await expect(nodeClient.request("status", {})).rejects.toThrow("unauthorized role");
@@ -198,9 +204,9 @@ describe("gateway node command allowlist", () => {
     const waitForConnectedCount = async (count: number) => {
       await expect
         .poll(async () => {
-          const listRes = await rpcReq<{
+          const listRes = (await rpcReq(ws, "node.list", {})) as RpcResponse<{
             nodes?: Array<{ nodeId: string; connected?: boolean }>;
-          }>(ws, "node.list", {});
+          }>;
           const nodes = listRes.payload?.nodes ?? [];
           return nodes.filter((node) => node.connected).length;
         }, FAST_WAIT_OPTS)
@@ -208,11 +214,11 @@ describe("gateway node command allowlist", () => {
     };
 
     const getConnectedNodeId = async () => {
-      const listRes = await rpcReq<{ nodes?: Array<{ nodeId: string; connected?: boolean }> }>(
+      const listRes = (await rpcReq(
         ws,
         "node.list",
         {},
-      );
+      )) as RpcResponse<{ nodes?: Array<{ nodeId: string; connected?: boolean }> }>;
       const nodeId = listRes.payload?.nodes?.find((node) => node.connected)?.nodeId ?? "";
       expect(nodeId).toBeTruthy();
       return nodeId;
@@ -342,11 +348,11 @@ describe("gateway node command allowlist", () => {
       iosClient.stop();
       await expect
         .poll(async () => {
-          const listRes = await rpcReq<{ nodes?: Array<{ connected?: boolean }> }>(
+          const listRes = (await rpcReq(
             ws,
             "node.list",
             {},
-          );
+          )) as RpcResponse<{ nodes?: Array<{ connected?: boolean }> }>;
           return (listRes.payload?.nodes ?? []).filter((node) => node.connected).length;
         }, FAST_WAIT_OPTS)
         .toBe(0);
@@ -391,14 +397,14 @@ describe("gateway node command allowlist", () => {
       const displayName = `node-${testCase.label}`;
 
       const findConnectedNode = async () => {
-        const listRes = await rpcReq<{
+        const listRes = (await rpcReq(ws, "node.list", {})) as RpcResponse<{
           nodes?: Array<{
             nodeId: string;
             displayName?: string;
             connected?: boolean;
             commands?: string[];
           }>;
-        }>(ws, "node.list", {});
+        }>;
         return (listRes.payload?.nodes ?? []).find(
           (node) => node.connected && node.displayName === displayName,
         );

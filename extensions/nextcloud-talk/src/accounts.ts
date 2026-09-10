@@ -5,7 +5,7 @@ import {
   normalizeAccountId,
   resolveAccountWithDefaultFallback,
 } from "paleoclaw/plugin-sdk/nextcloud-talk";
-import { isDebugEnabled } from "../../../../src/infra/env.js";
+import { isDebugEnabled } from "../../../src/infra/env.js";
 import { normalizeResolvedSecretInputString } from "./secret-input.js";
 import type { CoreConfig, NextcloudTalkAccountConfig } from "./types.js";
 

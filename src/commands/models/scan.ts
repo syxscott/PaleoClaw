@@ -27,7 +27,7 @@ const multiselect = <T>(params: Parameters<typeof clackMultiselect<T>>[0]) =>
   });
 
 function guardPromptCancel<T>(value: T | symbol, runtime: RuntimeEnv): T {
-  if (isCancel(value)) {
+  if (isCancel(value) || typeof value === "symbol") {
     cancel(stylePromptTitle("Model scan cancelled.") ?? "Model scan cancelled.");
     runtime.exit(0);
     throw new Error("unreachable");

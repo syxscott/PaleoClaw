@@ -36,7 +36,7 @@ export class RetryStateRegistry {
 
   getActiveSessions(): string[] {
     return Array.from(this.states.entries())
-      .filter(([_, state]) => state.state !== TurnRetryState.Idle)
+      .filter(([, state]) => state.state !== TurnRetryState.Idle)
       .map(([id]) => id);
   }
 }

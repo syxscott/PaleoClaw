@@ -125,7 +125,7 @@ export async function uninstallCommand(runtime: RuntimeEnv, opts: UninstallOptio
       ],
       initialValues: ["service", "state", "workspace"],
     });
-    if (isCancel(selection)) {
+    if (isCancel(selection) || typeof selection === "symbol") {
       cancel(stylePromptTitle("Uninstall cancelled.") ?? "Uninstall cancelled.");
       runtime.exit(0);
       return;

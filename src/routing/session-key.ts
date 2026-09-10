@@ -1,6 +1,6 @@
 import type { ChatType } from "../channels/chat-type.js";
-import { parseAgentSessionKey, type ParsedAgentSessionKey } from "../sessions/session-key-utils.js";
-import { DEFAULT_ACCOUNT_ID, normalizeAccountId } from "./account-id.js";
+import { parseAgentSessionKey } from "../sessions/session-key-utils.js";
+import { normalizeAccountId } from "./account-id.js";
 
 export {
   getSubagentDepth,

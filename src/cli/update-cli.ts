@@ -17,7 +17,7 @@ export { updateCommand, updateStatusCommand, updateWizardCommand };
 export type { UpdateCommandOptions, UpdateStatusOptions, UpdateWizardOptions };
 
 function inheritedUpdateJson(command?: Command): boolean {
-  return Boolean(inheritOptionFromParent<boolean>(command, "json"));
+  return Boolean(inheritOptionFromParent(command, "json") as boolean | undefined);
 }
 
 function inheritedUpdateTimeout(
@@ -28,7 +28,7 @@ function inheritedUpdateTimeout(
   if (timeout) {
     return timeout;
   }
-  return inheritOptionFromParent<string>(command, "timeout");
+  return inheritOptionFromParent(command, "timeout") as string | undefined;
 }
 
 export function registerUpdateCli(program: Command) {

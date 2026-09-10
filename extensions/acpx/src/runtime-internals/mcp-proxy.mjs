@@ -8,14 +8,25 @@ function splitCommandLine(value) {
   let current = "";
   let quote = null;
   let escaping = false;
+  // On Windows, backslashes are path separators (e.g. C:\nvm4w\nodejs\node.exe),
+  // so they must be preserved literally unless they escape a double quote or
+  // another backslash (the inverse of quoteCommandPart's escaping). On POSIX
+  // they behave like shell escapes for any character.
+  const backslashIsPathSeparator = process.platform === "win32";
 
-  for (const ch of value) {
+  for (let i = 0; i < value.length; i += 1) {
+    const ch = value[i];
     if (escaping) {
       current += ch;
       escaping = false;
       continue;
     }
     if (ch === "\\" && quote !== "'") {
+      const next = value[i + 1];
+      if (backslashIsPathSeparator && next !== '"' && next !== "\\") {
+        current += ch;
+        continue;
+      }
       escaping = true;
       continue;
     }

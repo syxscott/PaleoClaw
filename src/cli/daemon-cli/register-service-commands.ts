@@ -14,9 +14,9 @@ function resolveInstallOptions(
   cmdOpts: DaemonInstallOptions,
   command?: Command,
 ): DaemonInstallOptions {
-  const parentForce = inheritOptionFromParent<boolean>(command, "force");
-  const parentPort = inheritOptionFromParent<string>(command, "port");
-  const parentToken = inheritOptionFromParent<string>(command, "token");
+  const parentForce = inheritOptionFromParent(command, "force") as boolean | undefined;
+  const parentPort = inheritOptionFromParent(command, "port") as string | undefined;
+  const parentToken = inheritOptionFromParent(command, "token") as string | undefined;
   return {
     ...cmdOpts,
     force: Boolean(cmdOpts.force || parentForce),
@@ -26,8 +26,8 @@ function resolveInstallOptions(
 }
 
 function resolveRpcOptions(cmdOpts: GatewayRpcOpts, command?: Command): GatewayRpcOpts {
-  const parentToken = inheritOptionFromParent<string>(command, "token");
-  const parentPassword = inheritOptionFromParent<string>(command, "password");
+  const parentToken = inheritOptionFromParent(command, "token") as string | undefined;
+  const parentPassword = inheritOptionFromParent(command, "password") as string | undefined;
   return {
     ...cmdOpts,
     token: cmdOpts.token ?? parentToken,

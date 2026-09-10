@@ -1,6 +1,9 @@
 import fs from "node:fs";
 import path from "node:path";
-import { MANIFEST_KEY } from "../compat/legacy-names.js";
+import {
+  MANIFEST_KEY,
+  resolveManifestSection,
+} from "../compat/legacy-names.js";
 import { openBoundaryFileSync } from "../infra/boundary-file-read.js";
 import { isRecord } from "../utils.js";
 import type { PluginConfigUiHint, PluginKind } from "./types.js";
@@ -178,7 +181,7 @@ export function getPackageManifestMetadata(
   if (!manifest) {
     return undefined;
   }
-  return manifest[MANIFEST_KEY];
+  return resolveManifestSection(manifest, MANIFEST_KEY) as OpenClawPackageManifest | undefined;
 }
 
 export function resolvePackageExtensionEntries(

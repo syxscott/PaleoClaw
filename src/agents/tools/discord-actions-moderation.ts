@@ -116,5 +116,7 @@ export async function handleDiscordModerationAction(
       }
       return jsonResult({ ok: true });
     }
+    default:
+      throw new Error(`Unsupported Discord moderation action: ${String(command.action)}`);
   }
 }

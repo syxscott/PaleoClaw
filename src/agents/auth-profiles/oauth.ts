@@ -408,7 +408,7 @@ export async function resolveApiKeyForProfile(
       throw new Error(
         `OAuth token refresh failed for ${cred.provider}: ${extractErrorMessage(error)}. ` +
           "Please try again or re-authenticate.",
-        { cause: error },
+        { cause: storeError },
       );
     }
     const refreshed = refreshedStore.profiles[profileId];

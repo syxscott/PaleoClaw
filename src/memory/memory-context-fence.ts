@@ -1,6 +1,5 @@
 // Memory context fence tags
 const FENCE_TAG_RE = /<\/?\s*memory-context\s*>/gi;
-const INTERNAL_CONTEXT_RE = /<\s*memory-context\s*>[\s\S]*?<\/\s*memory-context\s*>/gi;
 const INTERNAL_NOTE_RE = /\[System note:.*?Treat as.*?\.\]\s*/gi;
 
 // Consistent tag definitions
@@ -18,7 +17,7 @@ export class StreamingContextScrubber {
   }
 
   flush(): string {
-    if (!this.buffer) return '';
+    if (!this.buffer) {return '';}
 
     // Find and remove memory-context blocks that were split across chunks
     let result = '';
@@ -27,7 +26,7 @@ export class StreamingContextScrubber {
 
     while (searchFrom < this.buffer.length) {
       const openIdx = this.buffer.indexOf(OPEN_TAG, searchFrom);
-      if (openIdx === -1) break;
+      if (openIdx === -1) {break;}
 
       const afterOpen = openIdx + OPEN_TAG.length;
       const closeIdx = this.buffer.indexOf(CLOSE_TAG, afterOpen);
@@ -70,7 +69,7 @@ export class StreamingContextScrubber {
 }
 
 export function sanitize_context(text: string): string {
-  if (!text) return '';
+  if (!text) {return '';}
   return text
     .replace(FENCE_TAG_RE, '')
     .replace(INTERNAL_NOTE_RE, '');

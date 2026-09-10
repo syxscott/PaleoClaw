@@ -44,7 +44,7 @@ export function createDiscordGatewayPlugin(params: {
   }
 
   try {
-    const wsAgent = new HttpsProxyAgent<string>(proxy);
+    const wsAgent = new HttpsProxyAgent(proxy);
     const fetchAgent = new ProxyAgent(proxy);
 
     params.runtime.log?.("discord: gateway proxy enabled");

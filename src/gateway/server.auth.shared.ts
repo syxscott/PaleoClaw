@@ -63,11 +63,7 @@ const readConnectChallengeNonce = async (ws: WebSocket) => {
   if (cached) {
     return cached;
   }
-  const challenge = await onceMessage<{
-    type?: string;
-    event?: string;
-    payload?: Record<string, unknown> | null;
-  }>(ws, (o) => o.type === "event" && o.event === "connect.challenge");
+  const challenge = await onceMessage(ws, (o) => o.type === "event" && o.event === "connect.challenge");
   const nonce = (challenge.payload as { nonce?: unknown } | undefined)?.nonce;
   expect(typeof nonce).toBe("string");
   return String(nonce);
@@ -252,6 +248,14 @@ function isConnectResMessage(id: string) {
   };
 }
 
+type ConnectResMessage = {
+  type?: string;
+  id?: string;
+  ok?: boolean;
+  error?: { message?: string; code?: string; details?: { code?: string; reason?: string } };
+  [key: string]: unknown;
+};
+
 async function sendRawConnectReq(
   ws: WebSocket,
   params: {
@@ -276,19 +280,7 @@ async function sendRawConnectReq(
       },
     }),
   );
-  return onceMessage<{
-    type?: string;
-    id?: string;
-    ok?: boolean;
-    payload?: Record<string, unknown> | null;
-    error?: {
-      message?: string;
-      details?: {
-        code?: string;
-        reason?: string;
-      };
-    };
-  }>(ws, isConnectResMessage(params.id));
+  return onceMessage<ConnectResMessage>(ws, isConnectResMessage(params.id));
 }
 
 async function resolvePairedTokenForDeviceIdentityPath(deviceIdentityPath: string): Promise<{

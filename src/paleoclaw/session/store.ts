@@ -27,11 +27,6 @@ export function makeId(prefix: string): string {
   return `${prefix}_${stamp}_${randBytes}`;
 }
 
-function normalizeTitle(title?: string): string {
-  const value = String(title || '').trim();
-  return value || DEFAULT_SESSION_TITLE;
-}
-
 /**
  * Coerce a stored titleSource into a valid value. Old records missing the
  * field are classified by their title: a non-default title was explicitly

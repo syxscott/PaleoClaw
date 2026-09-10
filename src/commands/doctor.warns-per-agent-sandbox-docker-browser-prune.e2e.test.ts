@@ -84,7 +84,7 @@ describe("doctor command", () => {
 
     await doctorCommand(createDoctorRuntime(), { nonInteractive: true });
 
-    expect(note.mock.calls.some(([_, title]) => title === "Extra workspace")).toBe(false);
+    expect(note.mock.calls.some(([, title]) => title === "Extra workspace")).toBe(false);
 
     homedirSpy.mockRestore();
     existsSpy.mockRestore();

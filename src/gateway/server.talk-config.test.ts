@@ -12,6 +12,7 @@ import {
   installGatewayTestHooks,
   readConnectChallengeNonce,
   rpcReq,
+  type RpcResponse,
 } from "./test-helpers.js";
 import { withServer } from "./test-with-server.js";
 
@@ -79,7 +80,7 @@ describe("gateway talk.config", () => {
 
     await withServer(async (ws) => {
       await connectOperator(ws, ["operator.read"]);
-      const res = await rpcReq<{
+      const res = (await rpcReq(ws, "talk.config", {})) as RpcResponse<{
         config?: {
           talk?: {
             provider?: string;
@@ -90,7 +91,7 @@ describe("gateway talk.config", () => {
             voiceId?: string;
           };
         };
-      }>(ws, "talk.config", {});
+      }>;
       expect(res.ok).toBe(true);
       expect(res.payload?.config?.talk?.provider).toBe("elevenlabs");
       expect(res.payload?.config?.talk?.providers?.elevenlabs?.voiceId).toBe("voice-123");
@@ -118,9 +119,9 @@ describe("gateway talk.config", () => {
 
     await withServer(async (ws) => {
       await connectOperator(ws, ["operator.read", "operator.write", "operator.talk.secrets"]);
-      const res = await rpcReq<{ config?: { talk?: { apiKey?: string } } }>(ws, "talk.config", {
+      const res = (await rpcReq(ws, "talk.config", {
         includeSecrets: true,
-      });
+      })) as RpcResponse<{ config?: { talk?: { apiKey?: string } } }>;
       expect(res.ok).toBe(true);
       expect(res.payload?.config?.talk?.apiKey).toBe("secret-key-abc");
     });
@@ -142,7 +143,7 @@ describe("gateway talk.config", () => {
 
     await withServer(async (ws) => {
       await connectOperator(ws, ["operator.read"]);
-      const res = await rpcReq<{
+      const res = (await rpcReq(ws, "talk.config", {})) as RpcResponse<{
         config?: {
           talk?: {
             provider?: string;
@@ -152,7 +153,7 @@ describe("gateway talk.config", () => {
             voiceId?: string;
           };
         };
-      }>(ws, "talk.config", {});
+      }>;
       expect(res.ok).toBe(true);
       expect(res.payload?.config?.talk?.provider).toBe("elevenlabs");
       expect(res.payload?.config?.talk?.providers?.elevenlabs?.voiceId).toBe("voice-normalized");

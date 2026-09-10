@@ -30,17 +30,21 @@ export function isDraftStoreAvailable(): boolean {
 function requestAsPromise<T>(request: IDBRequest<T>): Promise<T> {
   return new Promise<T>((resolve, reject) => {
     request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error ?? new Error("indexeddb request failed"));
+    request.addEventListener("error", () =>
+      reject(request.error ?? new Error("indexeddb request failed")),
+    );
   });
 }
 
 function transactionAsPromise(transaction: IDBTransaction): Promise<void> {
   return new Promise<void>((resolve, reject) => {
     transaction.oncomplete = () => resolve();
-    transaction.onerror = () =>
-      reject(transaction.error ?? new Error("indexeddb transaction failed"));
-    transaction.onabort = () =>
-      reject(transaction.error ?? new Error("indexeddb transaction aborted"));
+    transaction.addEventListener("error", () =>
+      reject(transaction.error ?? new Error("indexeddb transaction failed")),
+    );
+    transaction.addEventListener("abort", () =>
+      reject(transaction.error ?? new Error("indexeddb transaction aborted")),
+    );
   });
 }
 
@@ -82,10 +86,10 @@ function openDatabase(): Promise<IDBDatabase | null> {
       // Failure paths must forget the memoized promise, or one transient
       // failure (private mode, quota, blocked upgrade) would disable drafts
       // for the rest of the page's lifetime.
-      request.onerror = () => {
+      request.addEventListener("error", () => {
         dbPromise = null;
         resolve(null);
-      };
+      });
       request.onblocked = () => {
         dbPromise = null;
         resolve(null);

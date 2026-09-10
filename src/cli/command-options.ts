@@ -17,10 +17,10 @@ function getOptionSource(command: Command, name: string): string | undefined {
 // Defensive guardrail: allow expected parent/grandparent inheritance without unbounded deep traversal.
 const MAX_INHERIT_DEPTH = 2;
 
-export function inheritOptionFromParent<T = unknown>(
+export function inheritOptionFromParent(
   command: Command | undefined,
   name: string,
-): T | undefined {
+): unknown {
   if (!command) {
     return undefined;
   }
@@ -35,7 +35,7 @@ export function inheritOptionFromParent<T = unknown>(
   while (ancestor && depth < MAX_INHERIT_DEPTH) {
     const source = getOptionSource(ancestor, name);
     if (source && source !== "default") {
-      return ancestor.opts<Record<string, unknown>>()[name] as T | undefined;
+      return ancestor.opts<Record<string, unknown>>()[name];
     }
     depth += 1;
     ancestor = ancestor.parent;

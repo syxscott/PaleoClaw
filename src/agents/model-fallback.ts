@@ -601,7 +601,7 @@ export async function runWithModelFallback<T>(params: {
     }
   }
 
-  throwFallbackFailureSummary({
+  return throwFallbackFailureSummary({
     attempts,
     candidates,
     lastError,
@@ -657,7 +657,7 @@ export async function runWithImageModelFallback<T>(params: {
     }
   }
 
-  throwFallbackFailureSummary({
+  return throwFallbackFailureSummary({
     attempts,
     candidates,
     lastError,

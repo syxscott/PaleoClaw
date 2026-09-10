@@ -4,6 +4,7 @@
 
 import { discoverTools } from '../tools/loader.js';
 import { toolRegistry } from '../tools/registry.js';
+import type { Command } from 'commander';
 
 interface ToolCommandOptions {
   json?: boolean;
@@ -22,11 +23,11 @@ function parseParams(raw?: string): Record<string, unknown> {
     }
     throw new Error('params must be a JSON object');
   } catch (error) {
-    throw new Error(`Invalid --params JSON: ${error instanceof Error ? error.message : String(error)}`);
+    throw new Error(`Invalid --params JSON: ${error instanceof Error ? error.message : String(error)}`, { cause: error });
   }
 }
 
-export function registerToolsCommands(program: any): void {
+export function registerToolsCommands(program: Command): void {
   const toolsCmd = program
     .command('paleo-tools')
     .alias('ptools')

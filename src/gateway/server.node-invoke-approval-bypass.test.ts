@@ -18,6 +18,7 @@ import {
   rpcReq,
   startServerWithClient,
   trackConnectChallengeNonce,
+  type RpcResponse,
 } from "./test-helpers.js";
 
 installGatewayTestHooks({ scope: "suite" });
@@ -48,11 +49,11 @@ async function expectNoForwardedInvoke(hasInvoke: () => boolean): Promise<void> 
 }
 
 async function getConnectedNodeId(ws: WebSocket): Promise<string> {
-  const nodes = await rpcReq<{ nodes?: Array<{ nodeId: string; connected?: boolean }> }>(
+  const nodes = (await rpcReq(
     ws,
     "node.list",
     {},
-  );
+  )) as RpcResponse<{ nodes?: Array<{ nodeId: string; connected?: boolean }> }>;
   expect(nodes.ok).toBe(true);
   const nodeId = nodes.payload?.nodes?.find((n) => n.connected)?.nodeId ?? "";
   expect(nodeId).toBeTruthy();
@@ -60,11 +61,11 @@ async function getConnectedNodeId(ws: WebSocket): Promise<string> {
 }
 
 async function getConnectedNodeIds(ws: WebSocket): Promise<string[]> {
-  const nodes = await rpcReq<{ nodes?: Array<{ nodeId: string; connected?: boolean }> }>(
+  const nodes = (await rpcReq(
     ws,
     "node.list",
     {},
-  );
+  )) as RpcResponse<{ nodes?: Array<{ nodeId: string; connected?: boolean }> }>;
   expect(nodes.ok).toBe(true);
   return (nodes.payload?.nodes ?? []).filter((n) => n.connected).map((n) => n.nodeId);
 }
@@ -129,11 +130,7 @@ describe("node.invoke approval bypass", () => {
       const ws = new WebSocket(`ws://127.0.0.1:${port}`);
       trackConnectChallengeNonce(ws);
       const challengePromise = resolveDevice
-        ? onceMessage<{
-            type?: string;
-            event?: string;
-            payload?: Record<string, unknown> | null;
-          }>(ws, (o) => o.type === "event" && o.event === "connect.challenge")
+        ? onceMessage(ws, (o) => o.type === "event" && o.event === "connect.challenge")
         : null;
       await new Promise<void>((resolve) => ws.once("open", resolve));
       const nonce = (() => {

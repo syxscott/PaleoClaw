@@ -8,7 +8,6 @@
  * and the query is retried with LIKE.
  */
 
-import * as fs from 'fs';
 import * as path from 'path';
 import type { DatabaseSync } from 'node:sqlite';
 import { requireNodeSqlite } from '../../memory/sqlite.js';
@@ -61,8 +60,8 @@ function asRows<T>(rows: Array<Record<string, unknown>>): T[] {
   return rows as unknown as T[];
 }
 
-function asRow<T>(row: Record<string, unknown> | undefined): T | undefined {
-  return row as T | undefined;
+function asRow(row: Record<string, unknown> | undefined): Record<string, unknown> | undefined {
+  return row;
 }
 
 function parseJsonObject(raw?: string | null): Record<string, unknown> {
@@ -201,12 +200,12 @@ export class SqliteSessionStore implements SessionStoreLike {
    */
   private repairFtsIfDesynced(): void {
     try {
-      const msgRow = asRow<{ count: number }>(
+      const msgRow = asRow(
         this.db.prepare('SELECT COUNT(*) AS count FROM messages').get()
-      );
-      const ftsRow = asRow<{ count: number }>(
+      ) as { count: number } | undefined;
+      const ftsRow = asRow(
         this.db.prepare('SELECT COUNT(*) AS count FROM messages_fts').get()
-      );
+      ) as { count: number } | undefined;
       if (Number(msgRow?.count ?? 0) > 0 && Number(ftsRow?.count ?? 0) === 0) {
         this.rebuildFts();
       }
@@ -301,11 +300,11 @@ export class SqliteSessionStore implements SessionStoreLike {
   }
 
   private readRecord(sessionId: string): SessionRecord {
-    const row = asRow<SessionRow>(
+    const row = asRow(
       this.db
         .prepare('SELECT id, title, title_source, created_at, updated_at, meta FROM sessions WHERE id = ?')
         .get(sessionId)
-    );
+    ) as SessionRow | undefined;
     if (!row) {
       throw new Error(`Session not found: ${sessionId}`);
     }
@@ -350,7 +349,7 @@ export class SqliteSessionStore implements SessionStoreLike {
     const trimmedTitle = String(title || '').trim();
     const filteredTags = tags.filter((tag) => tag.trim().length > 0);
 
-    const exists = asRow<SessionRow>(this.db.prepare('SELECT id FROM sessions WHERE id = ?').get(id));
+    const exists = asRow(this.db.prepare('SELECT id FROM sessions WHERE id = ?').get(id)) as SessionRow | undefined;
     if (exists) {
       const existing = this.readRecord(id);
       let nextTitle = existing.title;
@@ -415,9 +414,9 @@ export class SqliteSessionStore implements SessionStoreLike {
     const shouldDeriveTitle = isFirstUserMessage && (record.titleSource ?? 'user') !== 'user';
     const title = shouldDeriveTitle ? deriveInstantTitle(text) : record.title;
 
-    const seqRow = asRow<{ max_seq: number | null }>(
+    const seqRow = asRow(
       this.db.prepare('SELECT MAX(seq) AS max_seq FROM messages WHERE session_id = ?').get(id)
-    );
+    ) as { max_seq: number | null } | undefined;
     const seq = Number(seqRow?.max_seq ?? -1) + 1;
     const ts = nowIso();
 
@@ -580,7 +579,7 @@ export class SqliteSessionStore implements SessionStoreLike {
     const hits: SessionSearchHit[] = [];
     for (const [sessionId, perSession] of matches) {
       for (const [seq, count] of perSession) {
-        const row = asRow<{ content: string; ts: string; title: string }>(rowStmt.get(sessionId, seq));
+        const row = asRow(rowStmt.get(sessionId, seq)) as { content: string; ts: string; title: string } | undefined;
         if (!row) {
           continue;
         }
@@ -601,7 +600,7 @@ export class SqliteSessionStore implements SessionStoreLike {
   }
 
   getStatus(): { root: string; count: number } {
-    const row = asRow<{ count: number }>(this.db.prepare('SELECT COUNT(*) AS count FROM sessions').get());
+    const row = asRow(this.db.prepare('SELECT COUNT(*) AS count FROM sessions').get()) as { count: number } | undefined;
     return {
       root: this.dbPath,
       count: Number(row?.count ?? 0),

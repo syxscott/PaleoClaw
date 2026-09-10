@@ -287,21 +287,21 @@ export function splitSections(markdown: string): Record<string, string> {
 function sectionText(sections: Record<string, string>, ...aliases: string[]): string {
   for (const key of aliases) {
     const text = sections[key.toLowerCase()];
-    if (text) return text;
+    if (text) {return text;}
   }
   return '';
 }
 
 export function sectionItems(sections: Record<string, string>, ...aliases: string[]): string[] {
   const text = sectionText(sections, ...aliases);
-  if (!text) return [];
+  if (!text) {return [];}
 
   const items: string[] = [];
   const lines = text.split('\n');
 
   for (const line of lines) {
     const trimmed = line.trim();
-    if (!trimmed) continue;
+    if (!trimmed) {continue;}
 
     // Skip markdown horizontal rules ("---", "***", "___") that some templates
     // use between sections; they are not user-visible content.
@@ -333,8 +333,13 @@ export function sectionItems(sections: Record<string, string>, ...aliases: strin
 
     // Plain text lines — accept any non-empty line (length > 0, not > 2
     // which silently dropped valid short values like "Yes", "50", "N/A").
+    // A trailing colon on a lead-in line (e.g. "... research by providing:")
+    // is punctuation, not content, so strip it from the captured item.
     if (trimmed.length > 0) {
-      items.push(trimmed);
+      const plain = trimmed.replace(/:+\s*$/, '');
+      if (plain) {
+        items.push(plain);
+      }
     }
   }
 
@@ -343,7 +348,7 @@ export function sectionItems(sections: Record<string, string>, ...aliases: strin
   const seen = new Set<string>();
   for (const item of items) {
     const key = item.toLowerCase().trim();
-    if (!key || seen.has(key)) continue;
+    if (!key || seen.has(key)) {continue;}
     seen.add(key);
     unique.push(item);
   }
@@ -416,10 +421,10 @@ export function parseUser(markdown: string): UserProfile {
   const domain = extractKv(identity, 'Domain', 'vertebrate paleontology');
   const institution = extractKv(identity, 'Institution', '');
   
-  // Research focus
-  const researchFocusText = sectionText(sections, 'research focus');
   const primaryInterests = sectionItems(sections, 'primary interests');
-  const preferredPeriods = sectionItems(sections, 'preferred periods');
+  // The default template headings are "### Preferred geological periods:" /
+  // "### Preferred regions:", so match those keys as aliases too.
+  const preferredPeriods = sectionItems(sections, 'preferred periods', 'preferred geological periods');
   const preferredRegions = sectionItems(sections, 'preferred regions');
   
   // Language
@@ -630,8 +635,8 @@ export function buildProfileContextBlock(profile: SessionProfile): string {
 
   lines.push('## User Research Profile');
   lines.push(`- Role: ${user.role}`);
-  if (user.domain) lines.push(`- Domain: ${user.domain}`);
-  if (user.institution) lines.push(`- Institution: ${user.institution}`);
+  if (user.domain) {lines.push(`- Domain: ${user.domain}`);}
+  if (user.institution) {lines.push(`- Institution: ${user.institution}`);}
   if (user.researchFocus.primaryInterests.length > 0) {
     lines.push(`- Primary interests: ${user.researchFocus.primaryInterests.join(', ')}`);
   }
@@ -664,31 +669,31 @@ export function buildProfileContextBlock(profile: SessionProfile): string {
   if (soul.corePrinciples.length > 0) {
     lines.push('');
     lines.push('## Core Principles');
-    for (const item of soul.corePrinciples) lines.push(`- ${item}`);
+    for (const item of soul.corePrinciples) {lines.push(`- ${item}`);}
   }
   if (soul.executionRules.length > 0) {
     lines.push('');
     lines.push('## Execution Rules');
-    for (const item of soul.executionRules) lines.push(`- ${item}`);
+    for (const item of soul.executionRules) {lines.push(`- ${item}`);}
   }
   if (soul.safetyBoundaries.length > 0) {
     lines.push('');
     lines.push('## Safety Boundaries');
-    for (const item of soul.safetyBoundaries) lines.push(`- ${item}`);
+    for (const item of soul.safetyBoundaries) {lines.push(`- ${item}`);}
   }
   if (soul.domainScope.inScope.length > 0) {
     lines.push('');
     lines.push('## In Scope');
-    for (const item of soul.domainScope.inScope) lines.push(`- ${item}`);
+    for (const item of soul.domainScope.inScope) {lines.push(`- ${item}`);}
   }
   if (soul.domainScope.outOfScope.length > 0) {
     lines.push('');
     lines.push('## Out of Scope');
-    for (const item of soul.domainScope.outOfScope) lines.push(`- ${item}`);
+    for (const item of soul.domainScope.outOfScope) {lines.push(`- ${item}`);}
   }
 
   const body = lines.join('\n').trim();
-  if (!body) return '';
+  if (!body) {return '';}
 
   return [
     '<paleoclaw-profile-context>',

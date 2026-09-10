@@ -28,6 +28,7 @@ import {
   testState,
   testTailnetIPv4,
   trackConnectChallengeNonce,
+  type RpcResponse,
 } from "./test-helpers.js";
 
 installGatewayTestHooks({ scope: "suite" });
@@ -145,7 +146,7 @@ const expectedSortedCatalog = (): ModelCatalogRpcEntry[] => [
 ];
 
 describe("gateway server models + voicewake", () => {
-  const listModels = async () => rpcReq<{ models: ModelCatalogRpcEntry[] }>(ws, "models.list");
+  const listModels = async () => (await rpcReq(ws, "models.list")) as RpcResponse<{ models: ModelCatalogRpcEntry[] }>;
 
   const seedPiCatalog = () => {
     piSdkMock.enabled = true;
@@ -219,7 +220,7 @@ describe("gateway server models + voicewake", () => {
     { timeout: 20_000 },
     async () => {
       await withTempHome(async (homeDir) => {
-        const initial = await rpcReq<{ triggers: string[] }>(ws, "voicewake.get");
+        const initial = (await rpcReq(ws, "voicewake.get")) as RpcResponse<{ triggers: string[] }>;
         expect(initial.ok).toBe(true);
         expect(initial.payload?.triggers).toEqual(["paleoclaw", "claude", "computer"]);
 
@@ -228,7 +229,7 @@ describe("gateway server models + voicewake", () => {
           (o) => o.type === "event" && o.event === "voicewake.changed",
         );
 
-        const setRes = await rpcReq<{ triggers: string[] }>(ws, "voicewake.set", {
+        const setRes = await rpcReq(ws, "voicewake.set", {
           triggers: ["  hi  ", "", "there"],
         });
         expect(setRes.ok).toBe(true);
@@ -241,7 +242,7 @@ describe("gateway server models + voicewake", () => {
           "there",
         ]);
 
-        const after = await rpcReq<{ triggers: string[] }>(ws, "voicewake.get");
+        const after = (await rpcReq(ws, "voicewake.get")) as RpcResponse<{ triggers: string[] }>;
         expect(after.ok).toBe(true);
         expect(after.payload?.triggers).toEqual(["hi", "there"]);
 
@@ -285,7 +286,7 @@ describe("gateway server models + voicewake", () => {
         nodeWs,
         (o) => o.type === "event" && o.event === "voicewake.changed",
       );
-      const setRes = await rpcReq<{ triggers: string[] }>(ws, "voicewake.set", {
+      const setRes = await rpcReq(ws, "voicewake.set", {
         triggers: ["paleoclaw", "computer"],
       });
       expect(setRes.ok).toBe(true);

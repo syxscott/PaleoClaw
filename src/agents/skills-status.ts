@@ -10,6 +10,7 @@ import {
   loadWorkspaceSkillEntries,
   resolveBundledAllowlist,
   resolveSkillConfig,
+  resolveSkillSource,
   resolveSkillsInstallPreferences,
   type SkillEntry,
   type SkillEligibilityContext,
@@ -189,7 +190,7 @@ function buildSkillStatus(
   const bundled =
     bundledNames && bundledNames.size > 0
       ? bundledNames.has(entry.skill.name)
-      : entry.skill.source === "paleoclaw-bundled";
+      : resolveSkillSource(entry.skill) === "paleoclaw-bundled";
 
   const { emoji, homepage, required, missing, requirementsSatisfied, configChecks } =
     evaluateEntryRequirementsForCurrentPlatform({
@@ -205,7 +206,7 @@ function buildSkillStatus(
   return {
     name: entry.skill.name,
     description: entry.skill.description,
-    source: entry.skill.source,
+    source: resolveSkillSource(entry.skill),
     bundled,
     filePath: entry.skill.filePath,
     baseDir: entry.skill.baseDir,
