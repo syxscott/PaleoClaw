@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 你想要一个在 API 提供商失败时的可靠回退
   - 你正在运行 Claude Code CLI 或其他本地 AI CLI 并想要复用它们

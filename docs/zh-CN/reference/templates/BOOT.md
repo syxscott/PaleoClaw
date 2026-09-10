@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 添加 BOOT.md 检查清单时
 summary: BOOT.md 的工作区模板

@@ -1,4 +1,4 @@
-﻿---
+---
 title: "Pi Development Workflow"
 summary: "Developer workflow for Pi integration: build, test, and live validation"
 read_when:

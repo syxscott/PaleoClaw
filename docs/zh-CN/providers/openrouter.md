@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 你想用一个 API 密钥访问多种 LLM
   - 你想在 paleoclaw 中通过 OpenRouter 运行模型

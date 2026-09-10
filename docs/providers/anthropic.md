@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Use Anthropic Claude via API keys or setup-token in paleoclaw"
 read_when:
   - You want to use Anthropic models in paleoclaw

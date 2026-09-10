@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "OAuth in paleoclaw: token exchange, storage, and multi-account patterns"
 read_when:
   - You want to understand paleoclaw OAuth end-to-end

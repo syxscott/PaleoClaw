@@ -1,4 +1,4 @@
-﻿---
+---
 title: "PDF Tool"
 summary: "Analyze one or more PDF documents with native provider support and extraction fallback"
 read_when:

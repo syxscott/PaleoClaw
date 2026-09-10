@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "CLI reference for `paleoclaw agents` (list/add/delete/bindings/bind/unbind/set identity)"
 read_when:
   - You want multiple isolated agents (workspaces + routing + auth)

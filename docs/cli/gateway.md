@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "paleoclaw Gateway CLI (`paleoclaw gateway`) — run, query, and discover gateways"
 read_when:
   - Running the Gateway from the CLI (dev or servers)

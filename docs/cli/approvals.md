@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "CLI reference for `paleoclaw approvals` (exec approvals for gateway or node hosts)"
 read_when:
   - You want to edit exec approvals from the CLI

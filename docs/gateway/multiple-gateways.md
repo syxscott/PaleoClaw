@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Run multiple paleoclaw Gateways on one host (isolation, ports, and profiles)"
 read_when:
   - Running more than one Gateway on the same machine

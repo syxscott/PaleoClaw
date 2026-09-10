@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 诊断 WhatsApp 渠道健康状况
 summary: 渠道连接的健康检查步骤

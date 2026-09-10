@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 你想全面了解 paleoclaw 的 OAuth 流程
   - 你遇到了令牌失效/登出问题

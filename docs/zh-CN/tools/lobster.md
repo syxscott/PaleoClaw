@@ -1,4 +1,4 @@
-﻿---
+---
 description: Typed workflow runtime for paleoclaw — composable pipelines with approval gates.
 read_when:
   - 你想要具有显式审批的确定性多步骤工作流

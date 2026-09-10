@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "CLI reference for `paleoclaw configure` (interactive configuration prompts)"
 read_when:
   - You want to tweak credentials, devices, or agent defaults interactively

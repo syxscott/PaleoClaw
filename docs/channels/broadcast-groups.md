@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Broadcast a WhatsApp message to multiple agents"
 read_when:
   - Configuring broadcast groups

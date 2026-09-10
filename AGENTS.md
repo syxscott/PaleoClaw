@@ -1,4 +1,4 @@
-﻿# Repository Guidelines
+# Repository Guidelines
 
 - Repo: https://github.com/paleoclaw/paleoclaw
 - In chat replies, file references must be repo-root relative only (example: `extensions/bluebubbles/src/channel.ts:80`); never absolute paths or `~/...`.

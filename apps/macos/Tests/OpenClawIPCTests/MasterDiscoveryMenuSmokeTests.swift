@@ -1,4 +1,4 @@
-﻿import OpenClawDiscovery
+import OpenClawDiscovery
 import SwiftUI
 import Testing
 @testable import paleoclaw

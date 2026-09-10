@@ -1,4 +1,4 @@
-﻿# MiniMax OAuth (paleoclaw plugin)
+# MiniMax OAuth (paleoclaw plugin)
 
 OAuth provider plugin for **MiniMax** (OAuth).
 

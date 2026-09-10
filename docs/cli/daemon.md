@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "CLI reference for `paleoclaw daemon` (legacy alias for gateway service management)"
 read_when:
   - You still use `paleoclaw daemon ...` in scripts

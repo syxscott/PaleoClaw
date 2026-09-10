@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 你想以非交互方式读取或编辑配置
 summary: "`paleoclaw config` 的 CLI 参考（获取/设置/取消设置配置值）"

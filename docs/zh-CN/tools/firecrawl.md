@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 你想要 Firecrawl 支持的网页提取
   - 你需要 Firecrawl API 密钥

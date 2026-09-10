@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Perplexity Search API setup for web_search"
 read_when:
   - You want to use Perplexity Search for web search

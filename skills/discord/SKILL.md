@@ -1,4 +1,4 @@
-﻿---
+---
 name: discord
 description: "Discord ops via the message tool (channel=discord)."
 metadata: { "paleoclaw": { "emoji": "🎮", "requires": { "config": ["channels.discord.token"] } } }

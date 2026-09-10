@@ -1,4 +1,4 @@
-﻿import Foundation
+import Foundation
 
 public struct SharedContentPayload: Sendable, Equatable {
     public let title: String?

@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Messaging platforms paleoclaw can connect to"
 read_when:
   - You want to choose a chat channel for paleoclaw

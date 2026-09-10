@@ -1,4 +1,4 @@
-﻿---
+---
 title: Pi 集成架构
 x-i18n:
   generated_at: "2026-02-03T07:53:24Z"

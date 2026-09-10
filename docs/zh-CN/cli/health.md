@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 你想快速检查运行中的 Gateway 网关健康状态
 summary: "`paleoclaw health` 的 CLI 参考（通过 RPC 获取 Gateway 网关健康端点）"

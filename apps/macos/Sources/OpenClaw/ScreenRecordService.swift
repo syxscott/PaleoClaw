@@ -1,4 +1,4 @@
-﻿import AVFoundation
+import AVFoundation
 import Foundation
 import OpenClawKit
 import OSLog

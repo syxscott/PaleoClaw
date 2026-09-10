@@ -1,4 +1,4 @@
-﻿import CoreAudio
+import CoreAudio
 import Foundation
 import OSLog
 

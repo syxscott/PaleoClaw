@@ -1,4 +1,4 @@
-﻿import CoreGraphics
+import CoreGraphics
 import Foundation
 import OpenClawKit
 import OpenClawProtocol

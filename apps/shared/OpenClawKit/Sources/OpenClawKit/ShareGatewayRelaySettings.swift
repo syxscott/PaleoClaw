@@ -1,4 +1,4 @@
-﻿import Foundation
+import Foundation
 
 public struct ShareGatewayRelayConfig: Codable, Sendable, Equatable {
     public let gatewayURLString: String

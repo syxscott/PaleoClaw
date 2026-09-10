@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 添加或修改智能体工具
   - 停用或更改 `paleoclaw-*` Skills

@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Run paleoclaw with Ollama (local LLM runtime)"
 read_when:
   - You want to run paleoclaw with local models via Ollama

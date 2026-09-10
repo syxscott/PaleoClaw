@@ -1,4 +1,4 @@
-﻿import ActivityKit
+import ActivityKit
 import Foundation
 import os
 

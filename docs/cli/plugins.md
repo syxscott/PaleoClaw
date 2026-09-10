@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "CLI reference for `paleoclaw plugins` (list, install, uninstall, enable/disable, doctor)"
 read_when:
   - You want to install or manage in-process Gateway plugins

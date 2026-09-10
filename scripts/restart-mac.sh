@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env bash
+#!/usr/bin/env bash
 # Reset paleoclaw like Trimmy: kill running instances, rebuild, repackage, relaunch, verify.
 
 set -euo pipefail

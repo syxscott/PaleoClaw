@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Usage tracking surfaces and credential requirements"
 read_when:
   - You are wiring provider usage/quota surfaces

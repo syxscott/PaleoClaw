@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 处理 WhatsApp/网页渠道行为或收件箱路由时
 summary: WhatsApp（网页渠道）集成：登录、收件箱、回复、媒体和运维

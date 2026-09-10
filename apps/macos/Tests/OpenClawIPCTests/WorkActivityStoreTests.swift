@@ -1,4 +1,4 @@
-﻿import Foundation
+import Foundation
 import OpenClawProtocol
 import Testing
 @testable import paleoclaw

@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "CLI reference for `paleoclaw doctor` (health checks + guided repairs)"
 read_when:
   - You have connectivity/auth issues and want guided fixes

@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Run paleoclaw through LiteLLM Proxy for unified model access and cost tracking"
 read_when:
   - You want to route paleoclaw through a LiteLLM proxy

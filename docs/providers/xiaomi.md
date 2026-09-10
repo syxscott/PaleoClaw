@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Use Xiaomi MiMo (mimo-v2-flash) with paleoclaw"
 read_when:
   - You want Xiaomi MiMo models in paleoclaw

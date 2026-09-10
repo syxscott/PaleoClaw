@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Agent-controlled Canvas panel embedded via WKWebView + custom URL scheme"
 read_when:
   - Implementing the macOS Canvas panel

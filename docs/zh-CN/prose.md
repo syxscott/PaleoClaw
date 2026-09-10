@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 你想运行或编写 .prose 工作流
   - 你想启用 OpenProse 插件

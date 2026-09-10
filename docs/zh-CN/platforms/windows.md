@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 在 Windows 上安装 paleoclaw
   - 查找 Windows 配套应用状态

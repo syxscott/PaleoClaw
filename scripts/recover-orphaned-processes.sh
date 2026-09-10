@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env bash
+#!/usr/bin/env bash
 # Scan for orphaned coding agent processes after a gateway restart.
 #
 # Background coding agents (Claude Code, Codex CLI) spawned by the gateway

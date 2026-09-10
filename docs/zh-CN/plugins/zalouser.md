@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 你想在 paleoclaw 中支持 Zalo Personal（非官方）
   - 你正在配置或开发 zalouser 插件

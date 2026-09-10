@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Poll sending via gateway + CLI"
 read_when:
   - Adding or modifying poll support

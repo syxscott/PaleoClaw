@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 你想在 paleoclaw 中使用 Amazon Bedrock 模型
   - 你需要为模型调用配置 AWS 凭证/区域

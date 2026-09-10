@@ -1,4 +1,4 @@
-﻿---
+---
 name: blucli
 description: BluOS CLI (blu) for discovery, playback, grouping, and volume.
 homepage: https://blucli.sh

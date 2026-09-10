@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Inbound channel location parsing (Telegram + WhatsApp) and context fields"
 read_when:
   - Adding or modifying channel location parsing

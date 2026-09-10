@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Global voice wake words (Gateway-owned) and how they sync across nodes"
 read_when:
   - Changing voice wake words behavior or defaults

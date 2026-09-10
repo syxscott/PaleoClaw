@@ -1,4 +1,4 @@
-﻿import Foundation
+import Foundation
 
 public enum OpenClawNodeStorage {
     public static func appSupportDir() throws -> URL {

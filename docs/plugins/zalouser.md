@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Zalo Personal plugin: QR login + messaging via native zca-js (plugin install + channel config + tool)"
 read_when:
   - You want Zalo Personal (unofficial) support in paleoclaw

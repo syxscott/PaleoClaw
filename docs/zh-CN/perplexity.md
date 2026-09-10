@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 你想使用 Perplexity Sonar 进行网络搜索
   - 你需要设置 PERPLEXITY_API_KEY 或 OpenRouter

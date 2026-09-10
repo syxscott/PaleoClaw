@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "paleoclaw CLI reference for `paleoclaw` commands, subcommands, and options"
 read_when:
   - Adding or modifying CLI commands or options

@@ -1,4 +1,4 @@
-﻿import Foundation
+import Foundation
 
 private let legacyDefaultsPrefix = "paleoclaw."
 private let defaultsPrefix = "paleoclaw."

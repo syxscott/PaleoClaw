@@ -1,4 +1,4 @@
-﻿# @paleoclaw/twitch
+# @paleoclaw/twitch
 
 Twitch channel plugin for paleoclaw.
 

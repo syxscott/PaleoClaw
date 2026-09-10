@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Plugin manifest + JSON schema requirements (strict config validation)"
 read_when:
   - You are building a paleoclaw plugin

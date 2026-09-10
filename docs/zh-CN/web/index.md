@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 你想通过 Tailscale 访问 Gateway 网关
   - 你想使用浏览器 Control UI 和配置编辑

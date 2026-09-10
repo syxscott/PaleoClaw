@@ -1,4 +1,4 @@
-﻿import SwiftUI
+import SwiftUI
 
 #if DEBUG
 struct CronSettings_Previews: PreviewProvider {

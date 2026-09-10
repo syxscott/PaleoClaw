@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Chrome extension: let paleoclaw drive your existing Chrome tab"
 read_when:
   - You want the agent to drive an existing Chrome tab (toolbar button)

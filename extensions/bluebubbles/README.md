@@ -1,4 +1,4 @@
-﻿# BlueBubbles extension (developer reference)
+# BlueBubbles extension (developer reference)
 
 This directory contains the **BlueBubbles external channel plugin** for paleoclaw.
 

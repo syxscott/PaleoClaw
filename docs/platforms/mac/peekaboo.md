@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "PeekabooBridge integration for macOS UI automation"
 read_when:
   - Hosting PeekabooBridge in paleoclaw.app

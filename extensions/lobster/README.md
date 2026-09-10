@@ -1,4 +1,4 @@
-﻿# Lobster (plugin)
+# Lobster (plugin)
 
 Adds the `lobster` agent tool as an **optional** plugin tool.
 

@@ -1,4 +1,4 @@
-﻿---
+---
 summary: Node.js 安装与配置（paleoclaw 版本要求、安装方式与 PATH 排错）
 title: Node.js
 ---

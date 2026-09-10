@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 你想从终端搜索实时 paleoclaw 文档
 summary: "`paleoclaw docs` 的 CLI 参考（搜索实时文档索引）"

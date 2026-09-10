@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Doctor command: health checks, config migrations, and repair steps"
 read_when:
   - Adding or modifying doctor migrations

@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 正在开发 Gateway 网关协议、客户端或传输层
 summary: WebSocket Gateway 网关架构、组件和客户端流程

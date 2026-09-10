@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "CLI reference for `paleoclaw node` (headless node host)"
 read_when:
   - Running the headless node host

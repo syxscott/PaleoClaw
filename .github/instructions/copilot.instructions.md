@@ -1,4 +1,4 @@
-﻿# paleoclaw Codebase Patterns
+# paleoclaw Codebase Patterns
 
 **Always reuse existing code - no redundancy!**
 

@@ -1,4 +1,4 @@
-﻿import Foundation
+import Foundation
 import OpenClawProtocol
 
 enum OpenClawConfigFile {

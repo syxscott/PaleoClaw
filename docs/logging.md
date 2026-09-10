@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Logging overview: file logs, console output, CLI tailing, and the Control UI"
 read_when:
   - You need a beginner-friendly overview of logging

@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "CLI reference for `paleoclaw memory` (status/index/search)"
 read_when:
   - You want to index or search semantic memory

@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Complete reference for CLI onboarding flow, auth/model setup, outputs, and internals"
 read_when:
   - You need detailed behavior for paleoclaw onboard

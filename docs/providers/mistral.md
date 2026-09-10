@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Use Mistral models and Voxtral transcription with paleoclaw"
 read_when:
   - You want to use Mistral models in paleoclaw

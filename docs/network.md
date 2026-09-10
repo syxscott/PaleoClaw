@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Network hub: gateway surfaces, pairing, discovery, and security"
 read_when:
   - You need the network architecture + security overview

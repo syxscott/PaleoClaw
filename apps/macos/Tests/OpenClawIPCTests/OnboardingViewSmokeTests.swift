@@ -1,4 +1,4 @@
-﻿import Foundation
+import Foundation
 import OpenClawDiscovery
 import SwiftUI
 import Testing

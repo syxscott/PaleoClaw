@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "paleoclaw on Raspberry Pi (budget self-hosted setup)"
 read_when:
   - Setting up paleoclaw on a Raspberry Pi

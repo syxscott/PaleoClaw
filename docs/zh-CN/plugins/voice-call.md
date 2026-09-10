@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 你想从 paleoclaw 发起出站语音通话
   - 你正在配置或开发 voice-call 插件

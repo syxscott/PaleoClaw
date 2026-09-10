@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 你想从脚本运行一个智能体回合（可选发送回复）
 summary: "`paleoclaw agent` 的 CLI 参考（通过 Gateway 网关发送一个智能体回合）"

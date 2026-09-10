@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env bash
+#!/usr/bin/env bash
 set -euo pipefail
 
 INSTALL_URL="${OPENCLAW_INSTALL_URL:-https://paleoclaw.bot/install.sh}"

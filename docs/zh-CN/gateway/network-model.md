@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 你想要简要了解 Gateway 网关的网络模型
 summary: Gateway 网关、节点和 canvas 主机如何连接。

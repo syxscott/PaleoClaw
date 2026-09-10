@@ -1,4 +1,4 @@
-﻿---
+---
 title: 创建 Skills
 x-i18n:
   generated_at: "2026-02-03T10:10:19Z"

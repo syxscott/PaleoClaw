@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 调查运行时问题或故障
 summary: paleoclaw 常见故障的快速故障排除指南

@@ -1,4 +1,4 @@
-﻿# Contributing to paleoclaw
+# Contributing to paleoclaw
 
 Welcome to the lobster tank! 🦞
 

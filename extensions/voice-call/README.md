@@ -1,4 +1,4 @@
-﻿# @paleoclaw/voice-call
+# @paleoclaw/voice-call
 
 Official Voice Call plugin for **paleoclaw**.
 

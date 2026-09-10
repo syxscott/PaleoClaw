@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 添加或更改 webhook 端点
   - 将外部系统接入 paleoclaw

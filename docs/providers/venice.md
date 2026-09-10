@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Use Venice AI privacy-focused models in paleoclaw"
 read_when:
   - You want privacy-focused inference in paleoclaw

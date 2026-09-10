@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 你想将 Vercel AI Gateway 与 paleoclaw 配合使用
   - 你需要 API 密钥环境变量或 CLI 认证选择

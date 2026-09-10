@@ -1,4 +1,4 @@
-﻿---
+---
 title: "Vercel AI Gateway"
 summary: "Vercel AI Gateway setup (auth + model selection)"
 read_when:

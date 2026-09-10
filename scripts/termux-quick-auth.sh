@@ -1,4 +1,4 @@
-﻿#!/data/data/com.termux/files/usr/bin/bash
+#!/data/data/com.termux/files/usr/bin/bash
 # Quick Auth Check - Minimal widget for Termux
 # Place in ~/.shortcuts/ for Termux:Widget
 #

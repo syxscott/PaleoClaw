@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Windows (WSL2) support + companion app status"
 read_when:
   - Installing paleoclaw on Windows

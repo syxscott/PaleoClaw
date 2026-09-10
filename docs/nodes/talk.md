@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Talk mode: continuous speech conversations with ElevenLabs TTS"
 read_when:
   - Implementing Talk mode on macOS/iOS/Android

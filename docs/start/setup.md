@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Advanced setup and development workflows for paleoclaw"
 read_when:
   - Setting up a new machine

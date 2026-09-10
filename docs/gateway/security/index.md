@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Security considerations and threat model for running an AI gateway with shell access"
 read_when:
   - Adding features that widen access or automation

@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "How the installer scripts work (install.sh, install-cli.sh, install.ps1), flags, and automation"
 read_when:
   - You want to understand `paleoclaw.ai/install.sh`

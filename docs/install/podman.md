@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Run paleoclaw in a rootless Podman container"
 read_when:
   - You want a containerized gateway with Podman instead of Docker

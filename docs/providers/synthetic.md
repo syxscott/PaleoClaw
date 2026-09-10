@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Use Synthetic's Anthropic-compatible API in paleoclaw"
 read_when:
   - You want to use Synthetic as a model provider

@@ -1,4 +1,4 @@
-﻿import Foundation
+import Foundation
 
 public enum ShareToAgentSettings {
     private static let suiteName = "group.ai.paleoclaw.shared"

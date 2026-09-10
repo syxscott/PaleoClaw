@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "paleoclaw macOS release checklist (Sparkle feed, packaging, signing)"
 read_when:
   - Cutting or validating a paleoclaw macOS release

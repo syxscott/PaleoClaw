@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env bash
+#!/usr/bin/env bash
 # Rootless paleoclaw in Podman: run after one-time setup.
 #
 # One-time setup (from repo root): ./setup-podman.sh

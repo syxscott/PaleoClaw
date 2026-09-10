@@ -1,4 +1,4 @@
-﻿import Foundation
+import Foundation
 
 enum OpenClawEnv {
     static func path(_ key: String) -> String? {

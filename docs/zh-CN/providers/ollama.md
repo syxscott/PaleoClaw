@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 你想通过 Ollama 使用本地模型运行 paleoclaw
   - 你需要 Ollama 的安装和配置指导

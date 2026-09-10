@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 设置 iMessage 支持
   - 调试 iMessage 发送/接收

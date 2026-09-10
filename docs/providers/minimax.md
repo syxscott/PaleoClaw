@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Use MiniMax M2.5 in paleoclaw"
 read_when:
   - You want MiniMax models in paleoclaw

@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 你想了解 `paleoclaw.ai/install.sh` 的工作机制
   - 你想自动化安装（CI / 无头环境）

@@ -1,4 +1,4 @@
-﻿---
+---
 title: "Pi Integration Architecture"
 summary: "Architecture of paleoclaw's embedded Pi agent integration and session lifecycle"
 read_when:

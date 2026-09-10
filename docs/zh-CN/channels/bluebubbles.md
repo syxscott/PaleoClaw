@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 设置 BlueBubbles 渠道
   - 排查 webhook 配对问题

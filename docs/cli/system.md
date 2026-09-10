@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "CLI reference for `paleoclaw system` (system events, heartbeat, presence)"
 read_when:
   - You want to enqueue a system event without creating a cron job

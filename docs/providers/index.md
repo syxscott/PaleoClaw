@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Model providers (LLMs) supported by paleoclaw"
 read_when:
   - You want to choose a model provider

@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 你想使用 GitHub Copilot 作为模型提供商
   - 你需要了解 `paleoclaw models auth login-github-copilot` 流程

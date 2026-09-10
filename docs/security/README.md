@@ -1,4 +1,4 @@
-﻿# paleoclaw Security & Trust
+# paleoclaw Security & Trust
 
 **Live:** [trust.paleoclaw.ai](https://trust.paleoclaw.ai)
 

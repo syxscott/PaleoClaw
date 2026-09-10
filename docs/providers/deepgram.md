@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Deepgram transcription for inbound voice notes"
 read_when:
   - You want Deepgram speech-to-text for audio attachments

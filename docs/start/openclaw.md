@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "End-to-end guide for running paleoclaw as a personal assistant with safety cautions"
 read_when:
   - Onboarding a new assistant instance

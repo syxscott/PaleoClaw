@@ -1,4 +1,4 @@
-﻿paleoclaw is a personal AI assistant you run on your own devices.
+paleoclaw is a personal AI assistant you run on your own devices.
 
 Pair this iPhone app with your paleoclaw Gateway to connect your phone as a secure node for voice, camera, and device automation.
 

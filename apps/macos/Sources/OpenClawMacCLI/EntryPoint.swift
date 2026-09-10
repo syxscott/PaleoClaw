@@ -1,4 +1,4 @@
-﻿import Foundation
+import Foundation
 
 private struct RootCommand {
     var name: String

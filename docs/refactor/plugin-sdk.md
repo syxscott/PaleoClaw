@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Plan: one clean plugin SDK + runtime for all messaging connectors"
 read_when:
   - Defining or refactoring the plugin architecture

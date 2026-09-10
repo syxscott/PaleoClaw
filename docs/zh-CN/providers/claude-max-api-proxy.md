@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 你想将 Claude Max 订阅与 OpenAI 兼容工具配合使用
   - 你想要一个封装 Claude Code CLI 的本地 API 服务器

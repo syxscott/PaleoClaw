@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 你想列出已存储的会话并查看近期活动
 summary: "`paleoclaw sessions`（列出已存储的会话及使用情况）的 CLI 参考"

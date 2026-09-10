@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 配对或重新连接 Android 节点
   - 调试 Android Gateway 网关发现或认证

@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Optional Docker-based setup and onboarding for paleoclaw"
 read_when:
   - You want a containerized gateway instead of local installs

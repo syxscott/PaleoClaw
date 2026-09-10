@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Use ACP runtime sessions for Pi, Claude Code, Codex, OpenCode, Gemini CLI, and other harness agents"
 read_when:
   - Running coding harnesses through ACP

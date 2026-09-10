@@ -1,4 +1,4 @@
-﻿import OpenClawKit
+import OpenClawKit
 import Network
 import Testing
 @testable import paleoclaw

@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Text-to-speech (TTS) for outbound replies"
 read_when:
   - Enabling text-to-speech for replies

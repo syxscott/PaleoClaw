@@ -1,4 +1,4 @@
-﻿// swift-tools-version: 6.2
+// swift-tools-version: 6.2
 // Package manifest for the paleoclaw macOS companion (menu bar app + IPC library).
 
 import PackageDescription

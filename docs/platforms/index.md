@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Platform support overview (Gateway + companion apps)"
 read_when:
   - Looking for OS support or install paths

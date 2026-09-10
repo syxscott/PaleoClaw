@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Symptom first troubleshooting hub for paleoclaw"
 read_when:
   - paleoclaw is not working and you need the fastest path to a fix

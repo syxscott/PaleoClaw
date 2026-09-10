@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 开发 Nextcloud Talk 渠道功能时
 summary: Nextcloud Talk 支持状态、功能和配置

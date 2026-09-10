@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 你想了解 paleoclaw 支持的完整功能列表
 summary: paleoclaw 在渠道、路由、媒体和用户体验方面的功能。

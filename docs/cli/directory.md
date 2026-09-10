@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "CLI reference for `paleoclaw directory` (self, peers, groups)"
 read_when:
   - You want to look up contacts/groups/self ids for a channel

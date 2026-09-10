@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Status and next steps for decoupling Discord gateway listeners from long-running agent turns with a Discord-specific inbound worker"
 owner: "paleoclaw"
 status: "in_progress"

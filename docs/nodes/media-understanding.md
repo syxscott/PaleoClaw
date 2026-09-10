@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Inbound image/audio/video understanding (optional) with provider + CLI fallbacks"
 read_when:
   - Designing or refactoring media understanding

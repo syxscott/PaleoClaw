@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "iMessage via BlueBubbles macOS server (REST send/receive, typing, reactions, pairing, advanced actions)."
 read_when:
   - Setting up BlueBubbles channel

@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 在 Oracle Cloud 上设置 paleoclaw
   - 寻找 paleoclaw 的低成本 VPS 托管

@@ -1,4 +1,4 @@
-﻿# AGENTS.md - zh-CN 文档翻译工作区
+# AGENTS.md - zh-CN 文档翻译工作区
 
 ## Read When
 

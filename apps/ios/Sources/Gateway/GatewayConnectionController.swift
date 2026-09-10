@@ -1,4 +1,4 @@
-﻿import AVFoundation
+import AVFoundation
 import Contacts
 import CoreLocation
 import CoreMotion

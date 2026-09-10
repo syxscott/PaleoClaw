@@ -1,4 +1,4 @@
-﻿---
+---
 name: ordercli
 description: Foodora-only CLI for checking past orders and active order status (Deliveroo WIP).
 homepage: https://ordercli.sh

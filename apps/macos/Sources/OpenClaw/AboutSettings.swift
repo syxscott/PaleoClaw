@@ -1,4 +1,4 @@
-﻿import SwiftUI
+import SwiftUI
 
 struct AboutSettings: View {
     weak var updater: UpdaterProviding?

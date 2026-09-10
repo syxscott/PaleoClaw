@@ -1,4 +1,4 @@
-﻿import Foundation
+import Foundation
 import OSLog
 
 /// Manages the SSH tunnel that forwards the remote gateway/control port to localhost.

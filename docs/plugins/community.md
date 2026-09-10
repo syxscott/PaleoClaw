@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Community plugins: quality bar, hosting requirements, and PR submission path"
 read_when:
   - You want to publish a third-party paleoclaw plugin

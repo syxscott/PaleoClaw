@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 在 macOS/iOS/Android 上实现 Talk 模式
   - 更改语音/TTS/中断行为

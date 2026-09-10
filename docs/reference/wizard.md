@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Full reference for the CLI onboarding wizard: every step, flag, and config field"
 read_when:
   - Looking up a specific wizard step or flag

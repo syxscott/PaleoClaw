@@ -1,4 +1,4 @@
-﻿---
+---
 title: "Default AGENTS.md"
 summary: "Default paleoclaw agent instructions and skills roster for the personal assistant setup"
 read_when:

@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Terminal UI (TUI): connect to the Gateway from any machine"
 read_when:
   - You want a beginner-friendly walkthrough of the TUI

@@ -1,4 +1,4 @@
-﻿# ClawDock <!-- omit in toc -->
+# ClawDock <!-- omit in toc -->
 
 Stop typing `docker-compose` commands. Just type `clawdock-start`.
 

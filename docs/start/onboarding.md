@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "First-run onboarding flow for paleoclaw (macOS app)"
 read_when:
   - Designing the macOS onboarding assistant

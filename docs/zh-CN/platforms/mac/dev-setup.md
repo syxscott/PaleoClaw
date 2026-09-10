@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 设置 macOS 开发环境
 summary: 为在 paleoclaw macOS 应用上工作的开发者提供的设置指南

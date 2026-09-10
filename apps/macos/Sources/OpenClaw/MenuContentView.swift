@@ -1,4 +1,4 @@
-﻿import AppKit
+import AppKit
 import AVFoundation
 import Foundation
 import Observation

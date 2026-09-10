@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "CLI reference for `paleoclaw status` (diagnostics, probes, usage snapshots)"
 read_when:
   - You want a quick diagnosis of channel health + recent session recipients

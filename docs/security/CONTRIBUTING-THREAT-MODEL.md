@@ -1,4 +1,4 @@
-﻿# Contributing to the paleoclaw Threat Model
+# Contributing to the paleoclaw Threat Model
 
 Thanks for helping make paleoclaw more secure. This threat model is a living document and we welcome contributions from anyone - you don't need to be a security expert.
 

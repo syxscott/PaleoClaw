@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 更改渠道路由或收件箱行为
 summary: 每个渠道（WhatsApp、Telegram、Discord、Slack）的路由规则及共享上下文

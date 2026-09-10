@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Get paleoclaw installed and run your first chat in minutes."
 read_when:
   - First time setup from zero

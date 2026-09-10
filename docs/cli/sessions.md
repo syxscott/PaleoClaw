@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "CLI reference for `paleoclaw sessions` (list stored sessions + usage)"
 read_when:
   - You want to list stored sessions and see recent activity

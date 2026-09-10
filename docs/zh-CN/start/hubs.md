@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 你想要一份完整的文档地图
 summary: 链接到每篇 paleoclaw 文档的导航中心

@@ -1,4 +1,4 @@
-﻿# paleoclaw Android UI Style Guide
+# paleoclaw Android UI Style Guide
 
 Scope: all native Android UI in `apps/android` (Jetpack Compose).
 Goal: one coherent visual system across onboarding, settings, and future screens.

@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "paleoclaw on Oracle Cloud (Always Free ARM)"
 read_when:
   - Setting up paleoclaw on Oracle Cloud

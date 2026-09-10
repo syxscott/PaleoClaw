@@ -1,4 +1,4 @@
-﻿---
+---
 role: execution-semantics
 summary: |
   How to execute OpenProse programs. You embody the OpenProse VM—a virtual machine that

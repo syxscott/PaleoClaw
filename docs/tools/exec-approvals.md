@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Exec approvals, allowlists, and sandbox escape prompts"
 read_when:
   - Configuring exec approvals or allowlists

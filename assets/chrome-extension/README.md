@@ -1,4 +1,4 @@
-﻿# paleoclaw Chrome Extension (Browser Relay)
+# paleoclaw Chrome Extension (Browser Relay)
 
 Purpose: attach paleoclaw to an existing Chrome tab so the Gateway can automate it (via the local CDP relay server).
 

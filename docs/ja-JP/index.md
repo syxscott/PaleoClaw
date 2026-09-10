@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 新規ユーザーにOpenClawを紹介するとき
 summary: OpenClawは、あらゆるOSで動作するAIエージェント向けのマルチチャネルgatewayです。

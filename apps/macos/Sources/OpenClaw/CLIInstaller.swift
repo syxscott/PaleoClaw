@@ -1,4 +1,4 @@
-﻿import Foundation
+import Foundation
 
 @MainActor
 enum CLIInstaller {

@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "CLI reference for `paleoclaw webhooks` (webhook helpers + Gmail Pub/Sub)"
 read_when:
   - You want to wire Gmail Pub/Sub events into paleoclaw

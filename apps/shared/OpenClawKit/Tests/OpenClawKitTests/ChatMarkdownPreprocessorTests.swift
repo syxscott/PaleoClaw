@@ -1,4 +1,4 @@
-﻿import Testing
+import Testing
 @testable import OpenClawChatUI
 
 @Suite("ChatMarkdownPreprocessor")

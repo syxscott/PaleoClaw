@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 你想要可复现、可回滚的安装
   - 你已经在使用 Nix/NixOS/Home Manager

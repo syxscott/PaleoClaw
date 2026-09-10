@@ -1,4 +1,4 @@
-﻿---
+---
 title: "Showcase"
 description: "Real-world paleoclaw projects from the community"
 summary: "Community-built projects and integrations powered by paleoclaw"

@@ -1,4 +1,4 @@
-﻿import AppKit
+import AppKit
 import Observation
 import SwiftUI
 import UniformTypeIdentifiers

@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Use NVIDIA's OpenAI-compatible API in paleoclaw"
 read_when:
   - You want to use NVIDIA models in paleoclaw

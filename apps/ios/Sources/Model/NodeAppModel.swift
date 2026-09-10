@@ -1,4 +1,4 @@
-﻿import OpenClawChatUI
+import OpenClawChatUI
 import OpenClawKit
 import OpenClawProtocol
 import Observation

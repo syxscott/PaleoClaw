@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 你想在 stable/beta/dev 之间切换
   - 你正在标记或发布预发布版本

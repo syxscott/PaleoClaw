@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Run paleoclaw with vLLM (OpenAI-compatible local server)"
 read_when:
   - You want to run paleoclaw against a local vLLM server

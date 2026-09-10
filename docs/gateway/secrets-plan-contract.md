@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Contract for `secrets apply` plans: target validation, path matching, and `auth-profiles.json` target scope"
 read_when:
   - Generating or reviewing `paleoclaw secrets apply` plans

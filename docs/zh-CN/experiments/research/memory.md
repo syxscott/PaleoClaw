@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 设计超越每日 Markdown 日志的工作区记忆（~/.paleoclaw/workspace）
   - Deciding: standalone CLI vs deep paleoclaw integration

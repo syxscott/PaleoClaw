@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Context window + compaction: how paleoclaw keeps sessions under model limits"
 read_when:
   - You want to understand auto-compaction and /compact

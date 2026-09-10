@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 你想在 paleoclaw 中使用 MiniMax 模型
   - 你需要 MiniMax 设置指南

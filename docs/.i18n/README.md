@@ -1,4 +1,4 @@
-﻿# paleoclaw docs i18n assets
+# paleoclaw docs i18n assets
 
 This folder stores **generated** and **config** files for documentation translations.
 

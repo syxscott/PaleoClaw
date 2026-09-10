@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 你想从自己的 GPU 机器提供模型服务
   - 你正在配置 LM Studio 或 OpenAI 兼容代理

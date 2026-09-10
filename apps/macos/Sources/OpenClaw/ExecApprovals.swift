@@ -1,4 +1,4 @@
-﻿import CryptoKit
+import CryptoKit
 import Foundation
 import OSLog
 import Security

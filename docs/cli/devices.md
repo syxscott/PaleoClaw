@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "CLI reference for `paleoclaw devices` (device pairing + token rotation/revocation)"
 read_when:
   - You are approving device pairing requests

@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Mattermost bot setup and paleoclaw config"
 read_when:
   - Setting up Mattermost

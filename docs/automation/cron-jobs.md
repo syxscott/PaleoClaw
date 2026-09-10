@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Cron jobs + wakeups for the Gateway scheduler"
 read_when:
   - Scheduling background jobs or wakeups

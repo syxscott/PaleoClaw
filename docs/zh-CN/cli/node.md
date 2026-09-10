@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 运行无头节点主机
   - 为 system.run 配对非 macOS 节点

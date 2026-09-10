@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "CLI reference for `paleoclaw reset` (reset local state/config)"
 read_when:
   - You want to wipe local state while keeping the CLI installed

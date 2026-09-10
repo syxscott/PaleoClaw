@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 设置 Mattermost
   - 调试 Mattermost 路由

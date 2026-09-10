@@ -1,4 +1,4 @@
-﻿# Canvas Skill
+# Canvas Skill
 
 Display HTML content on connected paleoclaw nodes (Mac app, iOS, Android).
 

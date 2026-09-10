@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Directive syntax for /think + /verbose and how they affect model reasoning"
 read_when:
   - Adjusting thinking or verbose directive parsing or defaults

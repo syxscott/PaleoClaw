@@ -1,4 +1,4 @@
-﻿---
+---
 summary: 关于 paleoclaw 安装、配置和使用的常见问题
 title: 常见问题
 x-i18n:

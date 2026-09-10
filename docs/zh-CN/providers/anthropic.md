@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 你想在 paleoclaw 中使用 Anthropic 模型
   - 你想使用 setup-token 而不是 API 密钥

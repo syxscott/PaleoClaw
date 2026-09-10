@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "CLI reference for `paleoclaw dashboard` (open the Control UI)"
 read_when:
   - You want to open the Control UI with your current token

@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 添加或修改配置字段时
 summary: ~/.paleoclaw/paleoclaw.json 的所有配置选项及示例

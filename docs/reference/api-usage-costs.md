@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Audit what can spend money, which keys are used, and how to view usage"
 read_when:
   - You want to understand which features may call paid APIs

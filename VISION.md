@@ -1,4 +1,4 @@
-﻿## PaleoClaw Vision
+## PaleoClaw Vision
 
 <p align="center">
   <strong>An AI Research Agent for Paleontology</strong>

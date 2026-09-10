@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Android app (node): connection runbook + Connect/Chat/Voice/Canvas command surface"
 read_when:
   - Pairing or reconnecting the Android node

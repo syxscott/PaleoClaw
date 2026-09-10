@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 更改菜单栏图标行为
 summary: macOS 上 paleoclaw 菜单栏图标的状态和动画

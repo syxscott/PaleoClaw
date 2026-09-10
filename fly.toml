@@ -1,4 +1,4 @@
-﻿# paleoclaw Fly.io deployment configuration
+# paleoclaw Fly.io deployment configuration
 # See https://fly.io/docs/reference/configuration/
 
 app = "paleoclaw"

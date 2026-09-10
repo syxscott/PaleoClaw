@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Zalo personal account support via native zca-js (QR login), capabilities, and configuration"
 read_when:
   - Setting up Zalo Personal for paleoclaw

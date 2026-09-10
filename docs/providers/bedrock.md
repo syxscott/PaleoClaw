@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Use Amazon Bedrock (Converse API) models with paleoclaw"
 read_when:
   - You want to use Amazon Bedrock models with paleoclaw

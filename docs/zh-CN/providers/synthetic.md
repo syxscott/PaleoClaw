@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 你想使用 Synthetic 作为模型提供商
   - 你需要配置 Synthetic API 密钥或 base URL

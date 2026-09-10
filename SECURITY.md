@@ -1,4 +1,4 @@
-﻿# Security Policy
+# Security Policy
 
 If you believe you've found a security issue in paleoclaw, please report it privately.
 

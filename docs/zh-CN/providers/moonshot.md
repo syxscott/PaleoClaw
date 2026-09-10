@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 你想了解 Moonshot K2（Moonshot 开放平台）与 Kimi Coding 的配置
   - 你需要了解独立的端点、密钥和模型引用

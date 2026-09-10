@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 你需要多个隔离的智能体（工作区 + 路由 + 认证）
 summary: "`paleoclaw agents` 的 CLI 参考（列出/添加/删除/设置身份）"

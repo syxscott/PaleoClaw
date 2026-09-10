@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Run paleoclaw on local LLMs (LM Studio, vLLM, LiteLLM, custom OpenAI endpoints)"
 read_when:
   - You want to serve models from your own GPU box

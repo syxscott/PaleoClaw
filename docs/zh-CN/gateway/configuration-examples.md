@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 学习如何配置 paleoclaw
   - 寻找配置示例

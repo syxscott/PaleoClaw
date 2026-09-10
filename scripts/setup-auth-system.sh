@@ -1,4 +1,4 @@
-﻿#!/bin/bash
+#!/bin/bash
 # Setup paleoclaw Auth Management System
 # Run this once to set up:
 # 1. Long-lived Claude Code token

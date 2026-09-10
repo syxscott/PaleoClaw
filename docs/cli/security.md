@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "CLI reference for `paleoclaw security` (audit and fix common security footguns)"
 read_when:
   - You want to run a quick security audit on config/state

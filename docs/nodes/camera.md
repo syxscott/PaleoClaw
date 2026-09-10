@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Camera capture (iOS/Android nodes + macOS app) for agent use: photos (jpg) and short video clips (mp4)"
 read_when:
   - Adding or modifying camera capture on iOS/Android nodes or macOS

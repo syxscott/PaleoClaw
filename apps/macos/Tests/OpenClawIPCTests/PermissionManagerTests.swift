@@ -1,4 +1,4 @@
-﻿import CoreLocation
+import CoreLocation
 import OpenClawIPC
 import Testing
 @testable import paleoclaw

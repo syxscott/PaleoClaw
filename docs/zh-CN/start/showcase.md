@@ -1,4 +1,4 @@
-﻿---
+---
 description: Real-world paleoclaw projects from the community
 summary: 社区构建的基于 paleoclaw 的项目和集成
 title: 案例展示

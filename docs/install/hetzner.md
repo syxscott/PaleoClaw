@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Run paleoclaw Gateway 24/7 on a cheap Hetzner VPS (Docker) with durable state and baked-in binaries"
 read_when:
   - You want paleoclaw running 24/7 on a cloud VPS (not your laptop)

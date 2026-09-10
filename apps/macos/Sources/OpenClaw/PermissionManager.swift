@@ -1,4 +1,4 @@
-﻿import AppKit
+import AppKit
 import ApplicationServices
 import AVFoundation
 import CoreGraphics

@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 更改群聊行为或提及限制
 summary: 跨平台的群聊行为（WhatsApp/Telegram/Discord/Slack/Signal/iMessage/Microsoft Teams）

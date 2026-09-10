@@ -1,4 +1,4 @@
-﻿---
+---
 title: "Node.js"
 summary: "Install and configure Node.js for paleoclaw — version requirements, install options, and PATH troubleshooting"
 read_when:

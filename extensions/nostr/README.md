@@ -1,4 +1,4 @@
-﻿# @paleoclaw/nostr
+# @paleoclaw/nostr
 
 Nostr DM channel plugin for paleoclaw using NIP-04 encrypted direct messages.
 

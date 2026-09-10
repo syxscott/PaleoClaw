@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 将 Gmail 收件箱触发器接入 paleoclaw
   - 为智能体唤醒设置 Pub/Sub 推送

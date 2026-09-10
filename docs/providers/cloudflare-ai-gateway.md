@@ -1,4 +1,4 @@
-﻿---
+---
 title: "Cloudflare AI Gateway"
 summary: "Cloudflare AI Gateway setup (auth + model selection)"
 read_when:

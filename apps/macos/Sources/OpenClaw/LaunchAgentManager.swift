@@ -1,4 +1,4 @@
-﻿import Foundation
+import Foundation
 
 enum LaunchAgentManager {
     private static var plistURL: URL {

@@ -1,4 +1,4 @@
-﻿import Foundation
+import Foundation
 
 enum VoiceWakePreferences {
     static let enabledKey = "voiceWake.enabled"

@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env bash
+#!/usr/bin/env bash
 # One-time host setup for rootless paleoclaw in Podman: creates the paleoclaw
 # user, builds the image, loads it into that user's Podman store, and installs
 # the launch script. Run from repo root with sudo capability.

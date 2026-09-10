@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Bridge protocol (legacy nodes): TCP JSONL, pairing, scoped RPC"
 read_when:
   - Building or debugging node clients (iOS/Android/macOS node mode)

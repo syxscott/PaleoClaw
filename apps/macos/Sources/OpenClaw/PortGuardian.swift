@@ -1,4 +1,4 @@
-﻿import Foundation
+import Foundation
 import OSLog
 #if canImport(Darwin)
 import Darwin

@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Write agent tools in a plugin (schemas, optional tools, allowlists)"
 read_when:
   - You want to add a new agent tool in a plugin

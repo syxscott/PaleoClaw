@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "CLI reference for `paleoclaw qr` (generate iOS pairing QR + setup code)"
 read_when:
   - You want to pair the iOS app with a gateway quickly

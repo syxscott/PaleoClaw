@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 你想添加/删除渠道账户（WhatsApp/Telegram/Discord/Google Chat/Slack/Mattermost（插件）/Signal/iMessage）
   - 你想检查渠道状态或跟踪渠道日志

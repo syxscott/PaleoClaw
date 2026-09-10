@@ -1,4 +1,4 @@
-﻿---
+---
 title: IRC
 description: Connect paleoclaw to IRC channels and direct messages.
 summary: "IRC plugin setup, access controls, and troubleshooting"

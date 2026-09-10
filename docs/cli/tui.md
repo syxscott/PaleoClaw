@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "CLI reference for `paleoclaw tui` (terminal UI connected to the Gateway)"
 read_when:
   - You want a terminal UI for the Gateway (remote-friendly)

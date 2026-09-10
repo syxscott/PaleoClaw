@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "OpenProse: .prose workflows, slash commands, and state in paleoclaw"
 read_when:
   - You want to run or write .prose workflows

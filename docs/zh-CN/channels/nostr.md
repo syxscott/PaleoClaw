@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 你希望 paleoclaw 通过 Nostr 接收私信
   - 你正在设置去中心化消息

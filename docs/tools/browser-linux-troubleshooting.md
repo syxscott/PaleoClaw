@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Fix Chrome/Brave/Edge/Chromium CDP startup issues for paleoclaw browser control on Linux"
 read_when: "Browser control fails on Linux, especially with snap Chromium"
 title: "Browser Troubleshooting"

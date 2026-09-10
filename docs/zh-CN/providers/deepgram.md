@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 你想使用 Deepgram 语音转文字处理音频附件
   - 你需要一个快速的 Deepgram 配置示例

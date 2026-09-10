@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 你希望智能体驱动现有的 Chrome 标签页（工具栏按钮）
   - 你需要通过 Tailscale 实现远程 Gateway 网关 + 本地浏览器自动化

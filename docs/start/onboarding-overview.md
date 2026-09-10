@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Overview of paleoclaw onboarding options and flows"
 read_when:
   - Choosing an onboarding path

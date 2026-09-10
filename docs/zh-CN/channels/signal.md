@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 设置 Signal 支持
   - 调试 Signal 发送/接收

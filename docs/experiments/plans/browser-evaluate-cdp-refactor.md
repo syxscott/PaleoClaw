@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Plan: isolate browser act:evaluate from Playwright queue using CDP, with end-to-end deadlines and safer ref resolution"
 read_when:
   - Working on browser `act:evaluate` timeout, abort, or queue blocking issues

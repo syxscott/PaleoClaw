@@ -1,4 +1,4 @@
-﻿---
+---
 read_when: You are managing sandbox containers or debugging sandbox/tool-policy behavior.
 status: active
 summary: 管理沙箱容器并检查生效的沙箱策略

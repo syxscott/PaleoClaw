@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Skills: managed vs workspace, gating rules, and config/env wiring"
 read_when:
   - Adding or modifying skills

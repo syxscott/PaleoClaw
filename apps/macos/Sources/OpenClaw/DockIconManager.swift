@@ -1,4 +1,4 @@
-﻿import AppKit
+import AppKit
 
 /// Central manager for Dock icon visibility.
 /// Shows the Dock icon while any windows are visible, regardless of user preference.

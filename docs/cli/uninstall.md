@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "CLI reference for `paleoclaw uninstall` (remove gateway service + local data)"
 read_when:
   - You want to remove the gateway service and/or local state

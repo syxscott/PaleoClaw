@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Message flow, sessions, queueing, and reasoning visibility"
 read_when:
   - Explaining how inbound messages become replies

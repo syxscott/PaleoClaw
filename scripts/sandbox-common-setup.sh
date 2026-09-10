@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env bash
+#!/usr/bin/env bash
 set -euo pipefail
 
 BASE_IMAGE="${BASE_IMAGE:-paleoclaw-sandbox:bookworm-slim}"

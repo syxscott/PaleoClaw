@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "What the paleoclaw system prompt contains and how it is assembled"
 read_when:
   - Editing system prompt text, tools list, or time/heartbeat sections

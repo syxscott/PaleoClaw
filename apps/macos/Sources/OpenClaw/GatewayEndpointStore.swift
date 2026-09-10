@@ -1,4 +1,4 @@
-﻿import ConcurrencyExtras
+import ConcurrencyExtras
 import Foundation
 import OSLog
 

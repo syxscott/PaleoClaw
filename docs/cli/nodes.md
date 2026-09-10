@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "CLI reference for `paleoclaw nodes` (list/status/approve/invoke, camera/canvas/screen)"
 read_when:
   - You’re managing paired nodes (cameras, screen, canvas)

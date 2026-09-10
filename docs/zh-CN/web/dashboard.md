@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 更改仪表板认证或暴露模式
 summary: Gateway 网关仪表板（控制 UI）访问和认证

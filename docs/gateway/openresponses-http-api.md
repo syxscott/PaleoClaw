@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Expose an OpenResponses-compatible /v1/responses HTTP endpoint from the Gateway"
 read_when:
   - Integrating clients that speak the OpenResponses API

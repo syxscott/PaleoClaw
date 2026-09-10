@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env bash
+#!/usr/bin/env bash
 # ClawDock - Docker helpers for paleoclaw
 # Inspired by Simon Willison's "Running paleoclaw in Docker"
 # https://til.simonwillison.net/llms/paleoclaw-docker

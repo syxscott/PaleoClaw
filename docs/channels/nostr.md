@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Nostr DM channel via NIP-04 encrypted messages"
 read_when:
   - You want paleoclaw to receive DMs via Nostr

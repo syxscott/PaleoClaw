@@ -1,4 +1,4 @@
-﻿---
+---
 title: "Configuration Reference"
 description: "Complete field-by-field reference for ~/.paleoclaw/paleoclaw.json"
 summary: "Complete reference for every paleoclaw config key, defaults, and channel settings"

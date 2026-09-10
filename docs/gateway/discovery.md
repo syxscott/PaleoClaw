@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Node discovery and transports (Bonjour, Tailscale, SSH) for finding the gateway"
 read_when:
   - Implementing or changing Bonjour discovery/advertising

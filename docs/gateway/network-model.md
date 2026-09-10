@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "How the Gateway, nodes, and canvas host connect."
 read_when:
   - You want a concise view of the Gateway networking model

@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Secrets management: SecretRef contract, runtime snapshot behavior, and safe one-way scrubbing"
 read_when:
   - Configuring SecretRefs for provider credentials and `auth-profiles.json` refs

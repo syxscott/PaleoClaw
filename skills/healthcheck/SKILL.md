@@ -1,4 +1,4 @@
-﻿---
+---
 name: healthcheck
 description: Host security hardening and risk-tolerance configuration for paleoclaw deployments. Use when a user asks for security audits, firewall/SSH/update hardening, risk posture, exposure review, paleoclaw cron scheduling for periodic checks, or version status checks on a machine running paleoclaw (laptop, workstation, Pi, VPS).
 ---

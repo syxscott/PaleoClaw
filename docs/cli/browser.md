@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "CLI reference for `paleoclaw browser` (profiles, tabs, actions, extension relay)"
 read_when:
   - You use `paleoclaw browser` and want examples for common tasks

@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 向新用户介绍 paleoclaw
 summary: paleoclaw 是一个多渠道 AI 智能体 Gateway 网关，可在任何操作系统上运行。

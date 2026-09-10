@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "CLI reference for `paleoclaw hooks` (agent hooks)"
 read_when:
   - You want to manage agent hooks

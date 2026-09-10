@@ -1,4 +1,4 @@
-﻿import Foundation
+import Foundation
 
 extension ProcessInfo {
     var isPreview: Bool {

@@ -1,4 +1,4 @@
-﻿import Foundation
+import Foundation
 
 enum CommandResolver {
     private static let projectRootDefaultsKey = "paleoclaw.gatewayProjectRootPath"

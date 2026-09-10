@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "paleoclaw on DigitalOcean (simple paid VPS option)"
 read_when:
   - Setting up paleoclaw on DigitalOcean

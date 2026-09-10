@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "paleoclaw is a multi-channel gateway for AI agents that runs on any OS."
 read_when:
   - Introducing paleoclaw to newcomers

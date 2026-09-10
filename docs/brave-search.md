@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Brave Search API setup for web_search"
 read_when:
   - You want to use Brave Search for web_search

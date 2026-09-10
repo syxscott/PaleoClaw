@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "CLI reference for `paleoclaw clawbot` (legacy alias namespace)"
 read_when:
   - You maintain older scripts using `paleoclaw clawbot ...`

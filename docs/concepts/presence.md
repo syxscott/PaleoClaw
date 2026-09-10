@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "How paleoclaw presence entries are produced, merged, and displayed"
 read_when:
   - Debugging the Instances tab

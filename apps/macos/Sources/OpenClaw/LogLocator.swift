@@ -1,4 +1,4 @@
-﻿import Foundation
+import Foundation
 
 enum LogLocator {
     private static var logDir: URL {

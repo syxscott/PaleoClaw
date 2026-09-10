@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 你使用 `paleoclaw browser` 并想要常见任务的示例
   - 你想通过 node host 控制在另一台机器上运行的浏览器

@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "CLI reference for `paleoclaw models` (status/list/set/scan, aliases, fallbacks, auth)"
 read_when:
   - You want to change default models or view provider auth status

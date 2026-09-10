@@ -1,4 +1,4 @@
-﻿# @paleoclaw/diffs
+# @paleoclaw/diffs
 
 Read-only diff viewer plugin for **paleoclaw** agents.
 

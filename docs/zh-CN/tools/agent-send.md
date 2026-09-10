@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 添加或修改智能体 CLI 入口点
 summary: 直接 `paleoclaw agent` CLI 运行（带可选投递）

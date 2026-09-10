@@ -1,4 +1,4 @@
-﻿---
+---
 title: "Prompt Caching"
 summary: "Prompt caching knobs, merge order, provider behavior, and tuning patterns"
 read_when:

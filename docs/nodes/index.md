@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Nodes: pairing, capabilities, permissions, and CLI helpers for canvas/camera/screen/device/notifications/system"
 read_when:
   - Pairing iOS/Android nodes to a gateway

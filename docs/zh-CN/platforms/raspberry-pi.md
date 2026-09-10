@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 在 Raspberry Pi 上设置 paleoclaw 时
   - 在 ARM 设备上运行 paleoclaw 时

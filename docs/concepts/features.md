@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "paleoclaw capabilities across channels, routing, media, and UX."
 read_when:
   - You want a full list of what paleoclaw supports

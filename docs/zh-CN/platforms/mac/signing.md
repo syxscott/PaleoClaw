@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 构建或签名 Mac 调试构建
 summary: 打包脚本生成的 macOS 调试构建的签名步骤

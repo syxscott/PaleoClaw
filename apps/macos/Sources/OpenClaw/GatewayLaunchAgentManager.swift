@@ -1,4 +1,4 @@
-﻿import Foundation
+import Foundation
 
 enum GatewayLaunchAgentManager {
     private static let logger = Logger(subsystem: "ai.paleoclaw", category: "gateway.launchd")

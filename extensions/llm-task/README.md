@@ -1,4 +1,4 @@
-﻿# LLM Task (plugin)
+# LLM Task (plugin)
 
 Adds an **optional** agent tool `llm-task` for running **JSON-only** LLM tasks
 (drafting, summarizing, classifying) with optional JSON Schema validation.

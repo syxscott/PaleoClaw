@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 实现 macOS 应用功能
   - 在 macOS 上更改 Gateway 网关生命周期或节点桥接

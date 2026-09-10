@@ -1,4 +1,4 @@
-﻿# ACP Persistent Bindings for Discord Channels and Telegram Topics
+# ACP Persistent Bindings for Discord Channels and Telegram Topics
 
 Status: Draft
 

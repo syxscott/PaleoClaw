@@ -1,4 +1,4 @@
-﻿import Foundation
+import Foundation
 
 enum CanvasScheme {
     static let scheme = "paleoclaw-canvas"

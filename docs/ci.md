@@ -1,4 +1,4 @@
-﻿---
+---
 title: CI Pipeline
 description: How the paleoclaw CI pipeline works
 summary: "CI job graph, scope gates, and local command equivalents"

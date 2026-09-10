@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 设置或调试远程 mac 控制时
 summary: macOS 应用通过 SSH 控制远程 paleoclaw Gateway 网关的流程

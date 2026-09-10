@@ -1,4 +1,4 @@
-﻿import Foundation
+import Foundation
 
 public enum OpenClawCanvasA2UIAction: Sendable {
     public struct AgentMessageContext: Sendable {

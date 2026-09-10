@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 你想在 paleoclaw 中使用 Qwen
   - 你想要免费层 OAuth 访问 Qwen Coder

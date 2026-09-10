@@ -1,4 +1,4 @@
-﻿---
+---
 title: Lobster
 summary: "Typed workflow runtime for paleoclaw with resumable approval gates."
 description: Typed workflow runtime for paleoclaw — composable pipelines with approval gates.

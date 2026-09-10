@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 向新用户介绍 PaleoHub
   - 安装、搜索或发布 Skills

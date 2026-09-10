@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 添加或修改 Skills
   - 更改 Skills 门控或加载规则

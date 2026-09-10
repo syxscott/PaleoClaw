@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 你想将 Gmail Pub/Sub 事件接入 paleoclaw
   - 你需要 Webhook 辅助命令

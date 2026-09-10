@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "CLI reference for `paleoclaw message` (send + channel actions)"
 read_when:
   - Adding or modifying message CLI actions

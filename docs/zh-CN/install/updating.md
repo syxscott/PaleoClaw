@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 更新 paleoclaw
   - 更新后出现问题

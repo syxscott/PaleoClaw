@@ -1,4 +1,4 @@
-﻿---
+---
 title: Fly.io
 description: Deploy paleoclaw on Fly.io
 summary: "Step-by-step Fly.io deployment for paleoclaw with persistent storage and HTTPS"

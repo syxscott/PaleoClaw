@@ -1,4 +1,4 @@
-﻿---
+---
 description: Deploy paleoclaw on Fly.io
 title: Fly.io
 x-i18n:

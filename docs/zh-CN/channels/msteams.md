@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 开发 MS Teams 渠道功能
 summary: Microsoft Teams 机器人支持状态、功能和配置

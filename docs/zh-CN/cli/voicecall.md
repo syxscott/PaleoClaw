@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 使用语音通话插件并想了解 CLI 入口
   - 想要 `voicecall call|continue|status|tail|expose` 的快速示例

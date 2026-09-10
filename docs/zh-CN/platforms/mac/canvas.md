@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 实现 macOS Canvas 面板
   - 为可视化工作区添加智能体控制

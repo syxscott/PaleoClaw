@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 开发 Zalo 功能或 webhooks
 summary: Zalo bot 支持状态、功能和配置

@@ -1,4 +1,4 @@
-﻿import AppKit
+import AppKit
 import CryptoKit
 import Darwin
 import Foundation

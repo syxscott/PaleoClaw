@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 你想要 Gateway 网关、工作区、认证、渠道和 Skills 的引导式设置
 summary: "`paleoclaw onboard` 的 CLI 参考（交互式新手引导向导）"

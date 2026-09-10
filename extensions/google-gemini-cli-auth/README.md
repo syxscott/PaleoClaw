@@ -1,4 +1,4 @@
-﻿# Google Gemini CLI Auth (paleoclaw plugin)
+# Google Gemini CLI Auth (paleoclaw plugin)
 
 OAuth provider plugin for **Gemini CLI** (Google Code Assist).
 

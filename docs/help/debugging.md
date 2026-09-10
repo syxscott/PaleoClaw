@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Debugging tools: watch mode, raw model streams, and tracing reasoning leakage"
 read_when:
   - You need to inspect raw model output for reasoning leakage

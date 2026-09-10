@@ -1,4 +1,4 @@
-﻿# paleoclaw Fly.io PRIVATE deployment configuration
+# paleoclaw Fly.io PRIVATE deployment configuration
 # Use this template for hardened deployments with no public IP exposure.
 #
 # This config is suitable when:

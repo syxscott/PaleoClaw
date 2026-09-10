@@ -1,4 +1,4 @@
-﻿#!/bin/bash
+#!/bin/bash
 # Claude Code Authentication Status Checker
 # Checks both Claude Code and paleoclaw auth status
 

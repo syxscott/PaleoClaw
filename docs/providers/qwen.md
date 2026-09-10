@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Use Qwen OAuth (free tier) in paleoclaw"
 read_when:
   - You want to use Qwen with paleoclaw

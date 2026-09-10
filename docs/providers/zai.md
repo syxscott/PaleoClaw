@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Use Z.AI (GLM models) with paleoclaw"
 read_when:
   - You want Z.AI / GLM models in paleoclaw

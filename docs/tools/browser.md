@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Integrated browser control service + action commands"
 read_when:
   - Adding agent-controlled browser automation

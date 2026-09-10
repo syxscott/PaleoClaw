@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 你想在 paleoclaw 中使用注重隐私的推理服务
   - 你需要 Venice AI 设置指导

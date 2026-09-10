@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Configuration overview: common tasks, quick setup, and links to the full reference"
 read_when:
   - Setting up paleoclaw for the first time

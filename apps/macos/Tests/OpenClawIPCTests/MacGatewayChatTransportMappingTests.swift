@@ -1,4 +1,4 @@
-﻿import OpenClawChatUI
+import OpenClawChatUI
 import OpenClawProtocol
 import Testing
 @testable import paleoclaw

@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Twitch chat bot configuration and setup"
 read_when:
   - Setting up Twitch chat integration for paleoclaw

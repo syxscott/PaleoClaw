@@ -1,4 +1,4 @@
-﻿---
+---
 title: "Session Pruning"
 summary: "Session pruning: tool-result trimming to reduce context bloat"
 read_when:

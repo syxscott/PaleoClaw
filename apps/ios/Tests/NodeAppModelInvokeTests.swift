@@ -1,4 +1,4 @@
-﻿import OpenClawKit
+import OpenClawKit
 import Foundation
 import Testing
 import UIKit

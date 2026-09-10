@@ -1,4 +1,4 @@
-﻿---
+---
 title: "Release Checklist"
 summary: "Step-by-step release checklist for npm + macOS app"
 read_when:

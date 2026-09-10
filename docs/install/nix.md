@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Install paleoclaw declaratively with Nix"
 read_when:
   - You want reproducible, rollback-able installs

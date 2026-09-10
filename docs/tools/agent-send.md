@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Direct `paleoclaw agent` CLI runs (with optional delivery)"
 read_when:
   - Adding or modifying the agent CLI entrypoint

@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Menu bar icon states and animations for paleoclaw on macOS"
 read_when:
   - Changing menu bar icon behavior

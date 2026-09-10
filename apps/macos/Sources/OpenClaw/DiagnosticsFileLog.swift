@@ -1,4 +1,4 @@
-﻿import Foundation
+import Foundation
 
 actor DiagnosticsFileLog {
     static let shared = DiagnosticsFileLog()

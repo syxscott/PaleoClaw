@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Location command for nodes (location.get), permission modes, and background behavior"
 read_when:
   - Adding location node support or permissions UI

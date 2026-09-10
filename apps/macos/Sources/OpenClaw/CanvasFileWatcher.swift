@@ -1,4 +1,4 @@
-﻿import Foundation
+import Foundation
 
 final class CanvasFileWatcher: @unchecked Sendable, SimpleFileWatcherOwner {
     let watcher: SimpleFileWatcher

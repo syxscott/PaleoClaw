@@ -1,4 +1,4 @@
-﻿import Observation
+import Observation
 
 @MainActor
 @Observable

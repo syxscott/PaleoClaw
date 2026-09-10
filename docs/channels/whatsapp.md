@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "WhatsApp channel support, access controls, delivery behavior, and operations"
 read_when:
   - Working on WhatsApp/web channel behavior or inbox routing

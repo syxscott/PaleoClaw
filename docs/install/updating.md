@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Updating paleoclaw safely (global install or source), plus rollback strategy"
 read_when:
   - Updating paleoclaw

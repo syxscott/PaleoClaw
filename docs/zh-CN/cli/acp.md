@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 设置基于 ACP 的 IDE 集成
   - 调试到 Gateway 网关的 ACP 会话路由

@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 添加或修改模型 CLI（models list/set/scan/aliases/fallbacks）
   - 更改模型回退行为或选择用户体验

@@ -1,4 +1,4 @@
-﻿import Foundation
+import Foundation
 
 // Stable identifier used for both the macOS LaunchAgent label and Nix-managed defaults suite.
 // nix-paleoclaw writes app defaults into this suite to survive app bundle identifier churn.

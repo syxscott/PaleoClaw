@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Troubleshoot node pairing, foreground requirements, permissions, and tool failures"
 read_when:
   - Node is connected but camera/canvas/screen/exec tools fail

@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "CLI reference for `paleoclaw skills` (list/info/check) and skill eligibility"
 read_when:
   - You want to see which skills are available and ready to run

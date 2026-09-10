@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 你想使用 Brave Search 进行 web_search
   - 你需要 BRAVE_API_KEY 或套餐详情

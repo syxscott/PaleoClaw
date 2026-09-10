@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 打包 paleoclaw.app
   - 调试 macOS Gateway 网关 launchd 服务

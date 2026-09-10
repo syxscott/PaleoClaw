@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 安装 paleoclaw
   - 你想从 GitHub 安装

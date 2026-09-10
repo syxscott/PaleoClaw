@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Canonical supported vs unsupported SecretRef credential surface"
 read_when:
   - Verifying SecretRef credential coverage

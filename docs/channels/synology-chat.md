@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Synology Chat webhook setup and paleoclaw config"
 read_when:
   - Setting up Synology Chat with paleoclaw

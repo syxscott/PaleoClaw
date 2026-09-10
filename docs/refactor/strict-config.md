@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Strict config validation + doctor-only migrations"
 read_when:
   - Designing or implementing config validation behavior

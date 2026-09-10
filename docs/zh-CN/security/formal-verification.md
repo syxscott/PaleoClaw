@@ -1,4 +1,4 @@
-﻿---
+---
 permalink: /security/formal-verification/
 summary: 针对 paleoclaw 最高风险路径的机器检查安全模型。
 title: 形式化验证（安全模型）

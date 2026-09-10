@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "PaleoHub guide: public skills registry + CLI workflows"
 read_when:
   - Introducing PaleoHub to new users

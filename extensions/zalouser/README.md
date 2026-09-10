@@ -1,4 +1,4 @@
-﻿# @paleoclaw/zalouser
+# @paleoclaw/zalouser
 
 paleoclaw extension for Zalo Personal Account messaging via native `zca-js` integration.
 

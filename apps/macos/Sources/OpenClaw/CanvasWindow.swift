@@ -1,4 +1,4 @@
-﻿import AppKit
+import AppKit
 
 let canvasWindowLogger = Logger(subsystem: "ai.paleoclaw", category: "Canvas")
 

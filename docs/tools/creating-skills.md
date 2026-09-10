@@ -1,4 +1,4 @@
-﻿---
+---
 title: "Creating Skills"
 summary: "Build and test custom workspace skills with SKILL.md"
 read_when:

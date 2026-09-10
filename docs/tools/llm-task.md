@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "JSON-only LLM tasks for workflows (optional plugin tool)"
 read_when:
   - You want a JSON-only LLM step inside workflows

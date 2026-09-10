@@ -1,4 +1,4 @@
-﻿import Testing
+import Testing
 import WebKit
 @testable import paleoclaw
 

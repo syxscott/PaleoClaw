@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Move (migrate) a paleoclaw install from one machine to another"
 read_when:
   - You are moving paleoclaw to a new laptop/server

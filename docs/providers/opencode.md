@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Use OpenCode Zen (curated models) with paleoclaw"
 read_when:
   - You want OpenCode Zen for model access

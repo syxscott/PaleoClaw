@@ -1,4 +1,4 @@
-﻿---
+---
 name: openai-whisper
 description: Local speech-to-text with the Whisper CLI (no API key).
 homepage: https://openai.com/research/whisper

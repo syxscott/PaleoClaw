@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 添加或更改外部 CLI 集成
   - 调试 RPC 适配器（signal-cli、imsg）

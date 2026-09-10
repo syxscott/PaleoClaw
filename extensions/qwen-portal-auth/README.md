@@ -1,4 +1,4 @@
-﻿# Qwen OAuth (paleoclaw plugin)
+# Qwen OAuth (paleoclaw plugin)
 
 OAuth provider plugin for **Qwen** (free-tier OAuth).
 

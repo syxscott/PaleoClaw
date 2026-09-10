@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "GLM model family overview + how to use it in paleoclaw"
 read_when:
   - You want GLM models in paleoclaw

@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 运行或排查远程 Gateway 网关设置问题
 summary: 使用 SSH 隧道（Gateway WS）和 tailnet 进行远程访问

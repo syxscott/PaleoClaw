@@ -1,4 +1,4 @@
-﻿import OpenClawProtocol
+import OpenClawProtocol
 import SwiftUI
 import Testing
 @testable import paleoclaw

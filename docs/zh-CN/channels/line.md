@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 你想将 paleoclaw 连接到 LINE
   - 你需要配置 LINE webhook + 凭证

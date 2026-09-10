@@ -1,4 +1,4 @@
-﻿import Foundation
+import Foundation
 
 struct GatewayConfig {
     var mode: String?

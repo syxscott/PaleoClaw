@@ -1,4 +1,4 @@
-﻿import Foundation
+import Foundation
 
 extension OnboardingView {
     func loadWorkspaceDefaults() async {

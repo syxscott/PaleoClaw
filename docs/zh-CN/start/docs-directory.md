@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 你想快速访问关键文档页面
 summary: 精选的常用 paleoclaw 文档链接。

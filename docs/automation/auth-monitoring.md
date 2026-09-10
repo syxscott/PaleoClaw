@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Monitor OAuth expiry for model providers"
 read_when:
   - Setting up auth expiry monitoring or alerts

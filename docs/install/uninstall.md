@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Uninstall paleoclaw completely (CLI, service, state, workspace)"
 read_when:
   - You want to remove paleoclaw from a machine

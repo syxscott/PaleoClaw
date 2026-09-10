@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Integrate ACP coding agents via a first-class ACP control plane in core and plugin-backed runtimes (acpx first)"
 owner: "onutc"
 status: "draft"

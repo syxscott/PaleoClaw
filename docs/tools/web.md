@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Web search + fetch tools (Perplexity Search API, Brave, Gemini, Grok, and Kimi providers)"
 read_when:
   - You want to enable web_search or web_fetch

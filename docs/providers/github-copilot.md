@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Sign in to GitHub Copilot from paleoclaw using the device flow"
 read_when:
   - You want to use GitHub Copilot as a model provider

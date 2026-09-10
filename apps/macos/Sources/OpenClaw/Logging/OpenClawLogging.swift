@@ -1,4 +1,4 @@
-﻿import Foundation
+import Foundation
 @_exported import Logging
 import os
 import OSLog

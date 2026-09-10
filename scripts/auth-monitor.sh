@@ -1,4 +1,4 @@
-﻿#!/bin/bash
+#!/bin/bash
 # Auth Expiry Monitor
 # Run via cron or systemd timer to get proactive notifications
 # before Claude Code auth expires.

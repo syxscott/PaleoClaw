@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 设计 exec 主机路由或 exec 批准
   - 实现节点运行器 + UI IPC

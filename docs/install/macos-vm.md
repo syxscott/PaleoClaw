@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Run paleoclaw in a sandboxed macOS VM (local or hosted) when you need isolation or iMessage"
 read_when:
   - You want paleoclaw isolated from your main macOS environment

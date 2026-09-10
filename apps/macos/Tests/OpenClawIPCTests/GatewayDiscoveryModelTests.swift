@@ -1,4 +1,4 @@
-﻿@testable import OpenClawDiscovery
+@testable import OpenClawDiscovery
 import Testing
 
 @Suite

@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 你希望以最快的方式从安装到运行一个可用的 Gateway 网关
 summary: 安装 paleoclaw，完成 Gateway 网关新手引导，并配对你的第一个渠道。

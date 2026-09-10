@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env bash
+#!/usr/bin/env bash
 set -euo pipefail
 
 # Render the macOS .icon bundle to a padded .icns like Trimmy's pipeline.

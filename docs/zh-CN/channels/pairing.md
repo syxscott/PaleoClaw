@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 设置私信访问控制
   - 配对新的 iOS/Android 节点

@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Scripted onboarding and agent setup for the paleoclaw CLI"
 read_when:
   - You are automating onboarding in scripts or CI

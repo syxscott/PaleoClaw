@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 在 paleoclaw.app 中托管 PeekabooBridge
   - 通过 Swift Package Manager 集成 Peekaboo

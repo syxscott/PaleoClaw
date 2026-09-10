@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Delegate gateway authentication to a trusted reverse proxy (Pomerium, Caddy, nginx + OAuth)"
 read_when:
   - Running paleoclaw behind an identity-aware proxy

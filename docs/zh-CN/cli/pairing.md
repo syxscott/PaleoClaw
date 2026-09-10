@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 你正在使用配对模式私信并需要批准发送者
 summary: "`paleoclaw pairing` 的 CLI 参考（批准/列出配对请求）"

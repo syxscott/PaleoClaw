@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 更新 macOS Skills 设置 UI
   - 更改 Skills 门控或安装行为

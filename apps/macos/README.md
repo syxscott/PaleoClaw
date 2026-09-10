@@ -1,4 +1,4 @@
-﻿# paleoclaw macOS app (dev + signing)
+# paleoclaw macOS app (dev + signing)
 
 ## Quick dev run
 

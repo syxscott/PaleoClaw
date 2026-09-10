@@ -1,4 +1,4 @@
-﻿# Kilo Gateway Provider Integration Design
+# Kilo Gateway Provider Integration Design
 
 ## Overview
 

@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 你正在构建一个 paleoclaw 插件
   - 你需要提供插件配置 Schema 或调试插件验证错误

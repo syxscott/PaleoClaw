@@ -1,4 +1,4 @@
-﻿import SwiftUI
+import SwiftUI
 
 private enum GatewayTailscaleMode: String, CaseIterable, Identifiable {
     case off

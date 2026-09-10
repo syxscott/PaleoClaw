@@ -1,4 +1,4 @@
-﻿#!/bin/bash
+#!/bin/bash
 
 # VibeTunnel Logging Utility
 # Simplifies access to VibeTunnel logs using macOS unified logging system

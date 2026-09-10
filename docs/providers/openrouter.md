@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Use OpenRouter's unified API to access many models in paleoclaw"
 read_when:
   - You want a single API key for many LLMs

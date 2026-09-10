@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Models CLI: list, set, aliases, fallbacks, scan, status"
 read_when:
   - Adding or modifying models CLI (models list/set/scan/aliases/fallbacks)

@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 你想让 paleoclaw 与你的主 macOS 环境隔离
   - 你想在沙箱中集成 iMessage（BlueBubbles）

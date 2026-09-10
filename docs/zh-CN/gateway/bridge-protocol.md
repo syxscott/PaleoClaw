@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 构建或调试节点客户端（iOS/Android/macOS 节点模式）
   - 调查配对或 bridge 认证失败

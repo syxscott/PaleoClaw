@@ -1,4 +1,4 @@
-﻿# App Store metadata (Fastlane deliver)
+# App Store metadata (Fastlane deliver)
 
 This directory is used by `fastlane deliver` for App Store Connect text metadata.
 

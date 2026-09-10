@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 制作或验证 paleoclaw macOS 发布版本
   - 更新 Sparkle appcast 或订阅源资源

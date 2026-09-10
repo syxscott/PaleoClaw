@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 开发 Google Chat 渠道功能时
 summary: Google Chat 应用支持状态、功能和配置

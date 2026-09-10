@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Sub-agents: spawning isolated agent runs that announce results back to the requester chat"
 read_when:
   - You want background/parallel work via the agent

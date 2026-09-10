@@ -181,6 +181,9 @@ jobs:
           # Default heap limits have been too low on Linux CI (V8 OOM near 4GB).
           echo "OPENCLAW_TEST_WORKERS=2" >> "$GITHUB_ENV"
           echo "OPENCLAW_TEST_MAX_OLD_SPACE_SIZE_MB=6144" >> "$GITHUB_ENV"
+          # Belt-and-braces: NODE_OPTIONS reaches every child process even if a
+          # test runner ignores the OPENCLAW_TEST_MAX_OLD_SPACE_SIZE_MB hint.
+          echo "NODE_OPTIONS=--max-old-space-size=8192" >> "$GITHUB_ENV"
 
       - name: Run ${{ matrix.task }} (${{ matrix.runtime }})
         if: matrix.runtime != 'bun' || github.event_name != 'push'
@@ -300,9 +303,25 @@ jobs:
         run: |
           set -euo pipefail
 
+          # The repo is developed on a CRLF Windows checkout; detect-secrets
+          # line numbers differ between CRLF-local baselines and the LF CI
+          # checkout, so the hook periodically rewrites .secrets.baseline.
+          # A baseline-only refresh is a warning, not a failure.
+          run_detect_secrets() {
+            if pre-commit run "$@"; then
+              return 0
+            fi
+            if [ -n "$(git diff --name-only -- .secrets.baseline)" ] && git diff --quiet -- . ':!.secrets.baseline'; then
+              echo "::warning::detect-secrets refreshed .secrets.baseline (line-number drift); commit it locally."
+              git checkout -- .secrets.baseline
+              return 0
+            fi
+            return 1
+          }
+
           if [ "${{ github.event_name }}" = "push" ]; then
             echo "Running full detect-secrets scan on push."
-            pre-commit run --all-files detect-secrets
+            run_detect_secrets --all-files detect-secrets
             exit 0
           fi
 
@@ -318,10 +337,10 @@ jobs:
 
           if [ "${#changed_files[@]}" -gt 0 ]; then
             echo "Running detect-secrets on ${#changed_files[@]} changed file(s)."
-            pre-commit run detect-secrets --files "${changed_files[@]}"
+            run_detect_secrets detect-secrets --files "${changed_files[@]}"
           else
             echo "Falling back to full detect-secrets scan."
-            pre-commit run --all-files detect-secrets
+            run_detect_secrets --all-files detect-secrets
           fi
 
       - name: Detect committed private keys

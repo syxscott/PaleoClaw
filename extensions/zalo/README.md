@@ -1,4 +1,4 @@
-﻿# @paleoclaw/zalo
+# @paleoclaw/zalo
 
 Zalo channel plugin for paleoclaw (Bot API).
 

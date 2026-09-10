@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Remote access using SSH tunnels (Gateway WS) and tailnets"
 read_when:
   - Running or troubleshooting remote gateway setups

@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 为 paleoclaw 设置 Twitch 聊天集成
 summary: Twitch 聊天机器人配置和设置

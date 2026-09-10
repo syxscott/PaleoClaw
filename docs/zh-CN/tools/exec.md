@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 使用或修改 exec 工具
   - 调试 stdin 或 TTY 行为

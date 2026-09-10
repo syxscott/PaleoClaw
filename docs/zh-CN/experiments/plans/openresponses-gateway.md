@@ -1,4 +1,4 @@
-﻿---
+---
 last_updated: "2026-01-19"
 owner: paleoclaw
 status: draft

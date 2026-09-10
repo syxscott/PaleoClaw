@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Pairing overview: approve who can DM you + which nodes can join"
 read_when:
   - Setting up DM access control

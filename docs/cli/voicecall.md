@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "CLI reference for `paleoclaw voicecall` (voice-call plugin command surface)"
 read_when:
   - You use the voice-call plugin and want the CLI entry points

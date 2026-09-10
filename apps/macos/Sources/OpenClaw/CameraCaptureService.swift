@@ -1,4 +1,4 @@
-﻿import AVFoundation
+import AVFoundation
 import CoreGraphics
 import Foundation
 import OpenClawIPC

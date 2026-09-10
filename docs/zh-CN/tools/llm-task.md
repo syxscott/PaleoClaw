@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 你需要在工作流中添加纯 JSON 的 LLM 步骤
   - 你需要经过 Schema 验证的 LLM 输出用于自动化

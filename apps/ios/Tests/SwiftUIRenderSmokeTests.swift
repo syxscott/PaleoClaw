@@ -1,4 +1,4 @@
-﻿import OpenClawKit
+import OpenClawKit
 import SwiftUI
 import Testing
 import UIKit

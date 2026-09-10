@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env bash
+#!/usr/bin/env bash
 set -euo pipefail
 
 # Build the mac app bundle, then create a zip (Sparkle) + styled DMG (humans).

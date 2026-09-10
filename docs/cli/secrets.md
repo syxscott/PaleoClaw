@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "CLI reference for `paleoclaw secrets` (reload, audit, configure, apply)"
 read_when:
   - Re-resolving secret refs at runtime

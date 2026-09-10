@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Troubleshoot cron and heartbeat scheduling and delivery"
 read_when:
   - Cron did not run

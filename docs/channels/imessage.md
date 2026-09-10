@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Legacy iMessage support via imsg (JSON-RPC over stdio). New setups should use BlueBubbles."
 read_when:
   - Setting up iMessage support

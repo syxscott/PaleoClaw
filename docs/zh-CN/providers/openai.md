@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 你想在 paleoclaw 中使用 OpenAI 模型
   - 你想使用 Codex 订阅认证而非 API 密钥

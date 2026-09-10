@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Run paleoclaw Gateway 24/7 on a GCP Compute Engine VM (Docker) with durable state"
 read_when:
   - You want paleoclaw running 24/7 on GCP

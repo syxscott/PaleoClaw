@@ -1,4 +1,4 @@
-﻿---
+---
 read_when: Browser control fails on Linux, especially with snap Chromium
 summary: 修复 Linux 上 paleoclaw 浏览器控制的 Chrome/Brave/Edge/Chromium CDP 启动问题
 title: 浏览器故障排除

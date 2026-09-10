@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "CLI reference for `paleoclaw update` (safe-ish source update + gateway auto-restart)"
 read_when:
   - You want to update a source checkout safely

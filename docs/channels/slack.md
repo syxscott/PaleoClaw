@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Slack setup and runtime behavior (Socket Mode + HTTP Events API)"
 read_when:
   - Setting up Slack or debugging Slack socket/HTTP mode

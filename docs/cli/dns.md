@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "CLI reference for `paleoclaw dns` (wide-area discovery helpers)"
 read_when:
   - You want wide-area discovery (DNS-SD) via Tailscale + CoreDNS

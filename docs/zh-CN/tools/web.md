@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 你想启用 web_search 或 web_fetch
   - 你需要设置 Brave Search API 密钥

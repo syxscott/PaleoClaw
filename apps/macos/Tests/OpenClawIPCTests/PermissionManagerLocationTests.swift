@@ -1,4 +1,4 @@
-﻿import CoreLocation
+import CoreLocation
 import Testing
 @testable import paleoclaw
 

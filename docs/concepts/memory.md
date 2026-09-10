@@ -1,4 +1,4 @@
-﻿---
+---
 title: "Memory"
 summary: "How paleoclaw memory works (workspace files + automatic memory flush)"
 read_when:

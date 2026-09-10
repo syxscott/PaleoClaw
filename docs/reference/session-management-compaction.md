@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Deep dive: session store + transcripts, lifecycle, and (auto)compaction internals"
 read_when:
   - You need to debug session ids, transcript JSONL, or sessions.json fields

@@ -1,4 +1,4 @@
-﻿# paleoclaw iOS (Super Alpha)
+# paleoclaw iOS (Super Alpha)
 
 NO TEST FLIGHT AVAILABLE AT THIS POINT
 

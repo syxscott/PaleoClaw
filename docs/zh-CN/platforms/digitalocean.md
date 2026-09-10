@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 在 DigitalOcean 上设置 paleoclaw
   - 寻找便宜的 VPS 托管来运行 paleoclaw

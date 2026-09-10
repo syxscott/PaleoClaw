@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Frequently asked questions about paleoclaw setup, configuration, and usage"
 read_when:
   - Answering common setup, install, onboarding, or runtime support questions

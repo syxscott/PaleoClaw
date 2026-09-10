@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Deep troubleshooting runbook for gateway, channels, automation, nodes, and browser"
 read_when:
   - The troubleshooting hub pointed you here for deeper diagnosis

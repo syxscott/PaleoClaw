@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 你想在 paleoclaw 中使用 Xiaomi MiMo 模型
   - 你需要设置 XIAOMI_API_KEY

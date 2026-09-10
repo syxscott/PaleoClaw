@@ -1,4 +1,4 @@
-﻿---
+---
 read_when: You want a dedicated explanation of sandboxing or need to tune agents.defaults.sandbox.
 status: active
 summary: paleoclaw 沙箱隔离的工作原理：模式、作用域、工作区访问和镜像

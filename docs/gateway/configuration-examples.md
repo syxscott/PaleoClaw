@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Schema-accurate configuration examples for common paleoclaw setups"
 read_when:
   - Learning how to configure paleoclaw

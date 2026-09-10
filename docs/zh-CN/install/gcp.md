@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 你想在 GCP 上 24/7 运行 paleoclaw
   - 你想要在自己的 VM 上运行生产级、常驻的 Gateway 网关

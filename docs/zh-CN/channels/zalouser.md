@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 为 paleoclaw 设置 Zalo Personal
   - 调试 Zalo Personal 登录或消息流程

@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Skills config schema and examples"
 read_when:
   - Adding or modifying skills config

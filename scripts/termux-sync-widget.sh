@@ -1,4 +1,4 @@
-﻿#!/data/data/com.termux/files/usr/bin/bash
+#!/data/data/com.termux/files/usr/bin/bash
 # paleoclaw OAuth Sync Widget
 # Syncs Claude Code tokens to paleoclaw on l36 server
 # Place in ~/.shortcuts/ on phone for Termux:Widget

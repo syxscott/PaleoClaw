@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "CLI reference for `paleoclaw config` (get/set/unset/file/validate)"
 read_when:
   - You want to read or edit config non-interactively

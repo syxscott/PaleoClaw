@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Community proxy to expose Claude subscription credentials as an OpenAI-compatible endpoint"
 read_when:
   - You want to use Claude Max subscription with OpenAI-compatible tools

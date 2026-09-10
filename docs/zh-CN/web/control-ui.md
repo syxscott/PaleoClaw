@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 你想从浏览器操作 Gateway 网关
   - 你想要无需 SSH 隧道的 Tailnet 访问

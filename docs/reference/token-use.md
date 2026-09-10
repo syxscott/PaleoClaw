@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "How paleoclaw builds prompt context and reports token usage + costs"
 read_when:
   - Explaining token usage, costs, or context windows

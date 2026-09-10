@@ -1,4 +1,4 @@
-﻿# paleoclaw ACP Bridge
+# paleoclaw ACP Bridge
 
 This document describes how the paleoclaw ACP (Agent Client Protocol) bridge works,
 how it maps ACP sessions to Gateway sessions, and how IDEs should invoke it.

@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Production plan for reliable interactive process supervision (PTY + non-PTY) with explicit ownership, unified lifecycle, and deterministic cleanup"
 read_when:
   - Working on exec/process lifecycle ownership and cleanup

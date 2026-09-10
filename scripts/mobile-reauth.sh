@@ -1,4 +1,4 @@
-﻿#!/bin/bash
+#!/bin/bash
 # Mobile-friendly Claude Code re-authentication
 # Designed for use via SSH from Termux
 #

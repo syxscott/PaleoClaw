@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 你想从机器上移除 paleoclaw
   - 卸载后 Gateway 网关服务仍在运行

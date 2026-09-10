@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Gmail Pub/Sub push wired into paleoclaw webhooks via gogcli"
 read_when:
   - Wiring Gmail inbox triggers to paleoclaw

@@ -1,4 +1,4 @@
-﻿import SwiftUI
+import SwiftUI
 
 struct DeepLinkAgentPromptAlert: ViewModifier {
     @Environment(NodeAppModel.self) private var appModel: NodeAppModel

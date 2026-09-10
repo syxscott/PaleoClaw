@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 调试 macOS WebChat 视图或 loopback 端口
 summary: macOS 应用如何嵌入 Gateway 网关 WebChat 以及如何调试

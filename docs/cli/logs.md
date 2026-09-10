@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "CLI reference for `paleoclaw logs` (tail gateway logs via RPC)"
 read_when:
   - You need to tail Gateway logs remotely (without SSH)

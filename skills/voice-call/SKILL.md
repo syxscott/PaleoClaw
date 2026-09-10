@@ -1,4 +1,4 @@
-﻿---
+---
 name: voice-call
 description: Start voice calls via the paleoclaw voice-call plugin.
 metadata:

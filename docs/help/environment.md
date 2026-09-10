@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Where paleoclaw loads environment variables and the precedence order"
 read_when:
   - You need to know which env vars are loaded, and in what order

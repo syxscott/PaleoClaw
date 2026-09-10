@@ -1,4 +1,4 @@
-﻿import Foundation
+import Foundation
 
 actor TestIsolationLock {
     static let shared = TestIsolationLock()

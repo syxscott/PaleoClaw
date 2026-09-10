@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 你想在 paleoclaw 中使用 Z.AI / GLM 模型
   - 你需要简单的 ZAI_API_KEY 配置

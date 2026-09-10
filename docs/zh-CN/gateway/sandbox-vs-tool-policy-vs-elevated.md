@@ -1,4 +1,4 @@
-﻿---
+---
 read_when: You hit 'sandbox jail' or see a tool/elevated refusal and want the exact config key to change.
 status: active
 summary: 工具被阻止的原因：沙箱运行时、工具允许/拒绝策略和提权 exec 限制

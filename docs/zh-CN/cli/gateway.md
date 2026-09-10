@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 从 CLI 运行 Gateway 网关（开发或服务器）
   - 调试 Gateway 网关认证、绑定模式和连接性

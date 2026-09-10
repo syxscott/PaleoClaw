@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "VPS hosting hub for paleoclaw (Oracle/Fly/Hetzner/GCP/exe.dev)"
 read_when:
   - You want to run the Gateway in the cloud

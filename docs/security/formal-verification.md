@@ -1,4 +1,4 @@
-﻿---
+---
 title: Formal Verification (Security Models)
 summary: Machine-checked security models for paleoclaw’s highest-risk paths.
 read_when:

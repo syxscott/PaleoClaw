@@ -1,4 +1,4 @@
-﻿import Foundation
+import Foundation
 
 final class ConfigFileWatcher: @unchecked Sendable, SimpleFileWatcherOwner {
     private let url: URL

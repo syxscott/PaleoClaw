@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 你想要一个连接 Gateway 网关的终端 UI（支持远程）
   - 你想从脚本传递 url/token/session

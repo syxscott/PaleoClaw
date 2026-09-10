@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Reference: provider-specific transcript sanitization and repair rules"
 read_when:
   - You are debugging provider request rejections tied to transcript shape

@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Automated, hardened paleoclaw installation with Ansible, Tailscale VPN, and firewall isolation"
 read_when:
   - You want automated server deployment with security hardening

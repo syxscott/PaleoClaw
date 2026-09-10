@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 设置认证过期监控或告警
   - 自动化 Claude Code / Codex OAuth 刷新检查

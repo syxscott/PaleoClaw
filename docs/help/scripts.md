@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Repository scripts: purpose, scope, and safety notes"
 read_when:
   - Running scripts from the repo

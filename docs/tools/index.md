@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Agent tool surface for paleoclaw (browser, canvas, nodes, message, cron) replacing legacy `paleoclaw-*` skills"
 read_when:
   - Adding or modifying agent tools

@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Slash commands: text vs native, config, and supported commands"
 read_when:
   - Using or configuring chat commands

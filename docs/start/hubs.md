@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Hubs that link to every paleoclaw doc"
 read_when:
   - You want a complete map of the documentation

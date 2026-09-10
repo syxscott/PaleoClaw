@@ -1,4 +1,4 @@
-﻿# fastlane setup (paleoclaw iOS)
+# fastlane setup (paleoclaw iOS)
 
 Install:
 

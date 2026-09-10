@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Health check steps for channel connectivity"
 read_when:
   - Diagnosing WhatsApp channel health

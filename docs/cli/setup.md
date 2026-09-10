@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "CLI reference for `paleoclaw setup` (initialize config + workspace)"
 read_when:
   - You’re doing first-run setup without the full onboarding wizard

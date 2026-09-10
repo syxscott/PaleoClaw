@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "LINE Messaging API plugin setup, config, and usage"
 read_when:
   - You want to connect paleoclaw to LINE

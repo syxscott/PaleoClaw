@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Research notes: offline memory system for Clawd workspaces (Markdown source-of-truth + derived index)"
 read_when:
   - Designing workspace memory (~/.paleoclaw/workspace) beyond daily Markdown logs

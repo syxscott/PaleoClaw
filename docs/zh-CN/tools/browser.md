@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 添加智能体控制的浏览器自动化
   - 调试 paleoclaw 干扰你自己 Chrome 的问题

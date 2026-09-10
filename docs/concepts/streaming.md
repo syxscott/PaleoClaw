@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Streaming + chunking behavior (block replies, channel preview streaming, mode mapping)"
 read_when:
   - Explaining how streaming or chunking works on channels

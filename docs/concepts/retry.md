@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Retry policy for outbound provider calls"
 read_when:
   - Updating provider retry behavior or defaults

@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 调试仅限 Node 的开发脚本或 watch 模式失败
   - 排查 paleoclaw 中 tsx/esbuild 加载器崩溃问题

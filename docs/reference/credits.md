@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Project origin, contributors, and license."
 read_when:
   - You want the project backstory or contributor credits

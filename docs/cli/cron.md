@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "CLI reference for `paleoclaw cron` (schedule and run background jobs)"
 read_when:
   - You want scheduled jobs and wakeups

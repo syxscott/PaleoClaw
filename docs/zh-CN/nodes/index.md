@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 将 iOS/Android 节点配对到 Gateway 网关时
   - 使用节点 canvas/camera 为智能体提供上下文时

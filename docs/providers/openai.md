@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Use OpenAI via API keys or Codex subscription in paleoclaw"
 read_when:
   - You want to use OpenAI models in paleoclaw

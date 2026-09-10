@@ -1,4 +1,4 @@
-﻿import AppKit
+import AppKit
 import Foundation
 import OpenClawKit
 import OSLog

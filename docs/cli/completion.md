@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "CLI reference for `paleoclaw completion` (generate/install shell completion scripts)"
 read_when:
   - You want shell completions for zsh/bash/fish/PowerShell

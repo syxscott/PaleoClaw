@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "paleoclaw macOS companion app (menu bar + gateway broker)"
 read_when:
   - Implementing macOS app features

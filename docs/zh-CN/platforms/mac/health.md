@@ -1,4 +1,4 @@
-﻿---
+---
 read_when:
   - 调试 Mac 应用健康指示器
 summary: macOS 应用如何报告 Gateway 网关/Baileys 健康状态

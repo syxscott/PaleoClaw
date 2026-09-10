@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Markdown formatting pipeline for outbound channels"
 read_when:
   - You are changing markdown formatting or chunking for outbound channels

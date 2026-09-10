@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "Quick start has moved to Getting Started."
 read_when:
   - You are looking for the fastest setup steps

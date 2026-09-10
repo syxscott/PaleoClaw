@@ -1,4 +1,4 @@
-﻿---
+---
 summary: "CLI reference for `paleoclaw onboard` (interactive onboarding wizard)"
 read_when:
   - You want guided setup for gateway, workspace, auth, channels, and skills

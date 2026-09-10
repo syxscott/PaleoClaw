@@ -1,4 +1,4 @@
-﻿---
+---
 title: "Tool-loop detection"
 description: "Configure optional guardrails for preventing repetitive or stalled tool-call loops"
 summary: "How to enable and tune guardrails that detect repetitive tool-call loops"
