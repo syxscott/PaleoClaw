@@ -183,10 +183,14 @@ jobs:
           echo "OPENCLAW_TEST_MAX_OLD_SPACE_SIZE_MB=6144" >> "$GITHUB_ENV"
           # Belt-and-braces: NODE_OPTIONS reaches every child process even if a
           # test runner ignores the OPENCLAW_TEST_MAX_OLD_SPACE_SIZE_MB hint.
-          echo "NODE_OPTIONS=--max-old-space-size=8192" >> "$GITHUB_ENV"
+          echo "NODE_OPTIONS=--max-old-space-size=8192" >> "$GITHUB_ENV"  # pragma: allowlist secret
 
       - name: Run ${{ matrix.task }} (${{ matrix.runtime }})
         if: matrix.runtime != 'bun' || github.event_name != 'push'
+        env:
+          # Step-level env (not GITHUB_ENV) so the heap headroom is guaranteed
+          # to reach this exact process; the default ~4GB V8 heap OOMs.
+          NODE_OPTIONS: --max-old-space-size=6144
         run: ${{ matrix.command }}
 
   # Types, lint, and format check.
