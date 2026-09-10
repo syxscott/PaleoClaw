@@ -192,7 +192,7 @@ RUN for dir in /app/extensions /app/.agent /app/.agents; do \
     done
 
 # Expose the CLI binary without requiring npm global writes as non-root.
-RUN ln -sf /app/paleoclaw.mjs /usr/local/bin/openclaw \
+RUN ln -sf /app/paleoclaw.mjs /usr/local/bin/paleoclaw \
  && chmod 755 /app/paleoclaw.mjs
 
 ENV NODE_ENV=production
