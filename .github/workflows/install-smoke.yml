@@ -107,9 +107,10 @@ jobs:
 
       - name: Run installer docker tests
         env:
-          # paleoclaw.ai does not resolve yet; installer smoke runs against the
-          # committed install script via the local build steps above.
-          CLAWDBOT_INSTALL_URL: ""
+          # The committed install scripts are the source of truth; paleoclaw.ai
+          # does not resolve yet.
+          CLAWDBOT_INSTALL_URL: https://raw.githubusercontent.com/syxscott/PaleoClaw/main/scripts/install.sh
+          CLAWDBOT_INSTALL_CLI_URL: https://raw.githubusercontent.com/syxscott/PaleoClaw/main/scripts/install.ps1
           CLAWDBOT_NO_ONBOARD: "1"
           CLAWDBOT_INSTALL_SMOKE_SKIP_CLI: "1"
           CLAWDBOT_INSTALL_SMOKE_SKIP_IMAGE_BUILD: "1"
