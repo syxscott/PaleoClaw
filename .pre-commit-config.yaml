@@ -31,6 +31,10 @@ repos:
           - .secrets.baseline
           - --exclude-files
           - '(^|/)pnpm-lock\.yaml$'
+          - --exclude-files
+          - 'appcast\.xml$'
+          - --exclude-files
+          - '(^|/)vendor/a2ui/specification/.*/eval/pnpm-lock\.yaml$'
           - --exclude-lines
           - 'key_content\.include\?\("BEGIN PRIVATE KEY"\)'
           - --exclude-lines

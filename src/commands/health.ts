@@ -74,7 +74,7 @@ export type HealthSummary = {
 const DEFAULT_TIMEOUT_MS = 10_000;
 
 const debugHealth = (...args: unknown[]) => {
-  if (isDebugEnabled('health')) {
+  if (isDebugEnabled("health")) {
     console.warn("[health:debug]", ...args);
   }
 };
@@ -548,7 +548,7 @@ export async function healthCommand(
   if (opts.json) {
     runtime.log(JSON.stringify(summary, null, 2));
   } else {
-    const debugEnabled = isDebugEnabled('health');
+    const debugEnabled = isDebugEnabled("health");
     const rich = isRich();
     if (opts.verbose) {
       const details = buildGatewayConnectionDetails({ config: cfg });

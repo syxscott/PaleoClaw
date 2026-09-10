@@ -1,3 +1,4 @@
+import type { Skill } from "@mariozechner/pi-coding-agent";
 import type { OpenClawConfig, SkillConfig } from "../../config/config.js";
 import {
   evaluateRuntimeEligibility,
@@ -7,7 +8,6 @@ import {
   resolveRuntimePlatform,
 } from "../../shared/config-eval.js";
 import { normalizeStringEntries } from "../../shared/string-normalization.js";
-import type { Skill } from "@mariozechner/pi-coding-agent";
 import { resolveSkillKey } from "./frontmatter.js";
 import type { SkillEligibilityContext, SkillEntry } from "./types.js";
 

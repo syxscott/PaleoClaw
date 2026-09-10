@@ -164,7 +164,11 @@ describe("buildLineMessageContext", () => {
     const event = createMessageEvent(
       { type: "user", userId: "user-audio" },
       {
-        message: { id: "audio-1", type: "audio", duration: 1000 } as webhook.MessageEvent["message"],
+        message: {
+          id: "audio-1",
+          type: "audio",
+          duration: 1000,
+        } as webhook.MessageEvent["message"],
       },
     );
 

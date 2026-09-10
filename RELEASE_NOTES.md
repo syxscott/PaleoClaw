@@ -22,6 +22,7 @@ Real-time screen activity monitoring and screenshot capture:
 - **Activity Summary**: Generate visual activity logs with timestamps
 
 **Usage:**
+
 ```bash
 paleoclaw agent --message "Start monitoring my screen activity"
 paleoclaw agent --message "What have I been working on for the past 2 hours?"
@@ -38,6 +39,7 @@ Comprehensive activity tracking for all computer operations:
 - **Structured Logging**: JSON and Markdown export formats
 
 **Usage:**
+
 ```bash
 paleoclaw agent --message "Start logging my computer activity"
 paleoclaw agent --message "What have I been doing this session?"
@@ -54,6 +56,7 @@ Generate comprehensive daily activity reports in Markdown format:
 - **Search by Time**: Find files or activities from specific times
 
 **Usage:**
+
 ```bash
 paleoclaw agent --message "Generate my daily log for today"
 paleoclaw agent --message "Where did I save the file I was working on at 3 PM?"
@@ -66,14 +69,14 @@ All features from v1.0.0 are preserved and enhanced:
 
 #### Research Skills
 
-| Skill | Description | Data Sources |
-|-------|-------------|--------------|
-| `paper_search` | Search paleontology papers | CrossRef, Semantic Scholar, arXiv |
-| `pbdb_query` | Query fossil occurrences | Paleobiology Database |
-| `taxonomy_lookup` | Taxonomic classification | PBDB, NCBI |
-| `stratigraphy_lookup` | Geological formation data | PBDB, Macrostrat |
-| `paper_summary` | Structured paper summaries | AI Analysis |
-| `research_assistant` | Comprehensive research workflow | All above |
+| Skill                 | Description                     | Data Sources                      |
+| --------------------- | ------------------------------- | --------------------------------- |
+| `paper_search`        | Search paleontology papers      | CrossRef, Semantic Scholar, arXiv |
+| `pbdb_query`          | Query fossil occurrences        | Paleobiology Database             |
+| `taxonomy_lookup`     | Taxonomic classification        | PBDB, NCBI                        |
+| `stratigraphy_lookup` | Geological formation data       | PBDB, Macrostrat                  |
+| `paper_summary`       | Structured paper summaries      | AI Analysis                       |
+| `research_assistant`  | Comprehensive research workflow | All above                         |
 
 ### 🔒 Privacy & Security
 
@@ -85,6 +88,7 @@ All features from v1.0.0 are preserved and enhanced:
 ### 📊 Example Output
 
 **Daily Log Example:**
+
 ```markdown
 # Daily Activity Log
 
@@ -93,21 +97,25 @@ All features from v1.0.0 are preserved and enhanced:
 **Productivity Score**: 87/100 ⭐
 
 ## Summary
-| Metric | Value |
-|--------|-------|
-| Work Sessions | 4 |
-| Applications Used | 12 |
-| Files Modified | 23 |
-| Screenshots | 482 |
+
+| Metric            | Value |
+| ----------------- | ----- |
+| Work Sessions     | 4     |
+| Applications Used | 12    |
+| Files Modified    | 23    |
+| Screenshots       | 482   |
 
 ## Morning Session (09:00 - 12:00)
+
 ### Applications
-| Application | Time | % |
-|-------------|------|---|
-| VS Code | 2h 15m | 75% |
-| Chrome | 30m | 17% |
+
+| Application | Time   | %   |
+| ----------- | ------ | --- |
+| VS Code     | 2h 15m | 75% |
+| Chrome      | 30m    | 17% |
 
 ## Files Modified Today
+
 - `src/activity_logger.ts` - 09:15
 - `README.md` - 11:45
 ```
@@ -117,6 +125,7 @@ All features from v1.0.0 are preserved and enhanced:
 No breaking changes! All v1.0.0 features continue to work as before.
 
 To start using new features:
+
 ```bash
 # Start activity monitoring
 paleoclaw agent --message "Start monitoring my work session"

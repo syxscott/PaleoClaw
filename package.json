@@ -3,12 +3,12 @@
   "version": "1.8.0",
   "description": "An AI Research Agent for Paleontology with Profile Layers and Memory System",
   "keywords": [
-    "paleontology",
-    "ai-agent",
-    "research-assistant",
     "activity-monitoring",
+    "ai-agent",
+    "geosciences",
+    "paleontology",
     "productivity",
-    "geosciences"
+    "research-assistant"
   ],
   "homepage": "https://github.com/syxscott/PaleoClaw#readme",
   "bugs": {

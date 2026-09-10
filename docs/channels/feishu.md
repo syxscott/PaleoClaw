@@ -439,8 +439,8 @@ paleoclaw pairing list feishu
 
 ## Gateway management commands
 
-| Command                    | Description                   |
-| -------------------------- | ----------------------------- |
+| Command                     | Description                   |
+| --------------------------- | ----------------------------- |
 | `paleoclaw gateway status`  | Show gateway status           |
 | `paleoclaw gateway install` | Install/start gateway service |
 | `paleoclaw gateway stop`    | Stop gateway service          |

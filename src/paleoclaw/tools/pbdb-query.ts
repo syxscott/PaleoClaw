@@ -2,8 +2,8 @@
  * PBDB query tool
  */
 
-import { retryAsync } from '../../vendor/retry/index.js';
-import { toolRegistry } from './registry.js';
+import { retryAsync } from "../../vendor/retry/index.js";
+import { toolRegistry } from "./registry.js";
 
 interface PbdbQueryParams {
   genus?: string;
@@ -38,7 +38,7 @@ async function fetchPbdbWithRetry(url: string): Promise<Response> {
           return true;
         }
         const status = (error as { status?: unknown }).status;
-        return status === 429 || (typeof status === 'number' && status >= 500 && status <= 599);
+        return status === 429 || (typeof status === "number" && status >= 500 && status <= 599);
       },
     },
   );
@@ -47,20 +47,20 @@ async function fetchPbdbWithRetry(url: string): Promise<Response> {
 async function pbdbQueryHandler(params: Record<string, unknown>): Promise<unknown> {
   const typed = params as PbdbQueryParams;
   const query = new URLSearchParams();
-  query.set('show', 'coords,phylo,time,strat');
+  query.set("show", "coords,phylo,time,strat");
 
   if (typed.baseName) {
-    query.set('base_name', typed.baseName);
+    query.set("base_name", typed.baseName);
   } else {
-    const nameParts = [typed.genus, typed.species].filter(Boolean).join(' ').trim();
+    const nameParts = [typed.genus, typed.species].filter(Boolean).join(" ").trim();
     if (nameParts) {
-      query.set('base_name', nameParts);
+      query.set("base_name", nameParts);
     }
   }
 
   const parsedLimit = Number(typed.limit);
   const limit = Math.max(1, Math.min(200, Number.isFinite(parsedLimit) ? parsedLimit : 20));
-  query.set('limit', String(limit));
+  query.set("limit", String(limit));
 
   const url = `https://paleobiodb.org/data1.2/occs/list.json?${query.toString()}`;
   const response = await fetchPbdbWithRetry(url);
@@ -77,21 +77,19 @@ async function pbdbQueryHandler(params: Record<string, unknown>): Promise<unknow
 }
 
 toolRegistry.register({
-  name: 'pbdb_query',
-  category: 'database',
-  description: 'Query fossil occurrences from Paleobiology Database (PBDB)',
+  name: "pbdb_query",
+  category: "database",
+  description: "Query fossil occurrences from Paleobiology Database (PBDB)",
   schema: {
-    type: 'object',
+    type: "object",
     properties: {
-      genus: { type: 'string', description: 'Genus name' },
-      species: { type: 'string', description: 'Species epithet' },
-      baseName: { type: 'string', description: 'Taxon name override' },
-      limit: { type: 'number', description: 'Maximum records (1-200)' },
+      genus: { type: "string", description: "Genus name" },
+      species: { type: "string", description: "Species epithet" },
+      baseName: { type: "string", description: "Taxon name override" },
+      limit: { type: "number", description: "Maximum records (1-200)" },
     },
     required: [],
   },
   handler: pbdbQueryHandler,
   timeoutMs: 15_000,
 });
-
-

@@ -28,7 +28,14 @@ describe("detectMacCloudSyncedStateDir", () => {
   });
 
   it("detects state dir under Library/CloudStorage", () => {
-    const stateDir = path.join(home, "Library", "CloudStorage", "Dropbox", "paleoclaw", ".paleoclaw");
+    const stateDir = path.join(
+      home,
+      "Library",
+      "CloudStorage",
+      "Dropbox",
+      "paleoclaw",
+      ".paleoclaw",
+    );
 
     const result = detectMacCloudSyncedStateDir(stateDir, {
       platform: "darwin",

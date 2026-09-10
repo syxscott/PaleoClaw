@@ -5,13 +5,21 @@
  * in store-sqlite.ts; both implement the SessionStoreLike surface.
  */
 
-import * as fs from 'fs';
-import * as path from 'path';
-import { randomBytes } from 'crypto';
-import { SessionMessage, SessionRecord, SessionRole, SessionSearchHit, SessionStoreLike, SessionTitleSource, SessionTitleUpgrader } from './types.js';
-import { paleoclawHome, atomicWriteFile, ensurePrivateDir } from '../paths.js';
+import { randomBytes } from "crypto";
+import * as fs from "fs";
+import * as path from "path";
+import { paleoclawHome, atomicWriteFile, ensurePrivateDir } from "../paths.js";
+import {
+  SessionMessage,
+  SessionRecord,
+  SessionRole,
+  SessionSearchHit,
+  SessionStoreLike,
+  SessionTitleSource,
+  SessionTitleUpgrader,
+} from "./types.js";
 
-export const DEFAULT_SESSION_TITLE = 'Untitled PaleoClaw Session';
+export const DEFAULT_SESSION_TITLE = "Untitled PaleoClaw Session";
 
 /** Max length (in code points) for derived/LLM-generated titles. */
 const MAX_DERIVED_TITLE_LENGTH = 60;
@@ -23,7 +31,7 @@ function nowIso(): string {
 // Use crypto.randomBytes for collision-resistant IDs instead of Math.random().
 export function makeId(prefix: string): string {
   const stamp = Date.now().toString(36); // millisecond precision
-  const randBytes = randomBytes(4).toString('hex').slice(0, 8);
+  const randBytes = randomBytes(4).toString("hex").slice(0, 8);
   return `${prefix}_${stamp}_${randBytes}`;
 }
 
@@ -33,11 +41,11 @@ export function makeId(prefix: string): string {
  * provided by the caller ('user'), the default placeholder is 'derived'.
  */
 export function normalizeTitleSource(value?: string, title?: string): SessionTitleSource {
-  if (value === 'user' || value === 'derived' || value === 'llm') {
+  if (value === "user" || value === "derived" || value === "llm") {
     return value;
   }
-  const normalized = String(title || '').trim();
-  return normalized && normalized !== DEFAULT_SESSION_TITLE ? 'user' : 'derived';
+  const normalized = String(title || "").trim();
+  return normalized && normalized !== DEFAULT_SESSION_TITLE ? "user" : "derived";
 }
 
 /**
@@ -49,7 +57,7 @@ export function truncateTitle(value: string, maxLen: number = MAX_DERIVED_TITLE_
   if (codePoints.length <= maxLen) {
     return value;
   }
-  return `${codePoints.slice(0, maxLen).join('')}...`;
+  return `${codePoints.slice(0, maxLen).join("")}...`;
 }
 
 /**
@@ -58,7 +66,9 @@ export function truncateTitle(value: string, maxLen: number = MAX_DERIVED_TITLE_
  * truncate. Falls back to the generic default for empty input.
  */
 export function deriveInstantTitle(rawMessage?: string): string {
-  const collapsed = String(rawMessage || '').replace(/\s+/g, ' ').trim();
+  const collapsed = String(rawMessage || "")
+    .replace(/\s+/g, " ")
+    .trim();
   if (!collapsed) {
     return DEFAULT_SESSION_TITLE;
   }
@@ -97,7 +107,7 @@ function scoreContent(queryTokens: string[], content: string): number {
 }
 
 export function previewText(content: string, maxLen = 120): string {
-  const value = content.replace(/\s+/g, ' ').trim();
+  const value = content.replace(/\s+/g, " ").trim();
   if (value.length <= maxLen) {
     return value;
   }
@@ -119,7 +129,7 @@ export class SessionStore implements SessionStoreLike {
   private titleUpgrader?: SessionTitleUpgrader;
 
   constructor(root?: string, options: SessionStoreOptions = {}) {
-    this.root = root || path.join(paleoclawHome(), 'sessions');
+    this.root = root || path.join(paleoclawHome(), "sessions");
     this.sessionsDir = this.root;
     this.titleUpgrader = options.titleUpgrader;
     this.ensurePaths();
@@ -136,9 +146,9 @@ export class SessionStore implements SessionStoreLike {
    * path traversal attacks from crafted CLI inputs.
    */
   private getSessionPath(sessionId: string): string {
-    const id = String(sessionId || '').trim();
+    const id = String(sessionId || "").trim();
     // Reject path separators and traversal segments.
-    if (!id || id.includes('/') || id.includes('\\') || id.includes('..')) {
+    if (!id || id.includes("/") || id.includes("\\") || id.includes("..")) {
       throw new Error(`Invalid sessionId: ${sessionId}`);
     }
     const resolved = path.join(this.sessionsDir, `${id}.json`);
@@ -154,7 +164,7 @@ export class SessionStore implements SessionStoreLike {
     if (!fs.existsSync(file)) {
       throw new Error(`Session not found: ${sessionId}`);
     }
-    const data = fs.readFileSync(file, 'utf-8');
+    const data = fs.readFileSync(file, "utf-8");
     return this.normalizeRecord(JSON.parse(data) as SessionRecord);
   }
 
@@ -176,23 +186,27 @@ export class SessionStore implements SessionStoreLike {
    * best-effort). Re-reads the record before writing so a title the user set
    * while the upgrade was in flight always wins.
    */
-  private maybeUpgradeTitle(sessionId: string, firstUserMessage: string, currentTitle: string): void {
+  private maybeUpgradeTitle(
+    sessionId: string,
+    firstUserMessage: string,
+    currentTitle: string,
+  ): void {
     const upgrader = this.titleUpgrader;
     if (!upgrader) {
       return;
     }
     void upgrader({ sessionId, firstUserMessage, currentTitle })
       .then((upgraded) => {
-        const upgradedTitle = String(upgraded || '').trim();
+        const upgradedTitle = String(upgraded || "").trim();
         if (!upgradedTitle) {
           return;
         }
         const fresh = this.readSession(sessionId);
-        if ((fresh.titleSource ?? 'user') === 'user') {
+        if ((fresh.titleSource ?? "user") === "user") {
           return;
         }
         fresh.title = truncateTitle(upgradedTitle);
-        fresh.titleSource = 'llm';
+        fresh.titleSource = "llm";
         fresh.updatedAt = nowIso();
         this.writeSession(fresh);
       })
@@ -202,9 +216,9 @@ export class SessionStore implements SessionStoreLike {
   }
 
   upsertSession(sessionId: string, title?: string, tags: string[] = []): SessionRecord {
-    const normalizedId = String(sessionId || '').trim();
+    const normalizedId = String(sessionId || "").trim();
     if (!normalizedId) {
-      throw new Error('sessionId is required');
+      throw new Error("sessionId is required");
     }
 
     const file = this.getSessionPath(normalizedId);
@@ -220,11 +234,11 @@ export class SessionStore implements SessionStoreLike {
       if (
         title &&
         title.trim() &&
-        (existing.titleSource ?? 'user') !== 'user' &&
+        (existing.titleSource ?? "user") !== "user" &&
         existing.title !== title.trim()
       ) {
         next.title = title.trim();
-        next.titleSource = 'user';
+        next.titleSource = "user";
         changed = true;
       }
 
@@ -246,11 +260,11 @@ export class SessionStore implements SessionStoreLike {
     }
 
     const current = nowIso();
-    const trimmedTitle = String(title || '').trim();
+    const trimmedTitle = String(title || "").trim();
     const created: SessionRecord = {
       id: normalizedId,
       title: trimmedTitle || DEFAULT_SESSION_TITLE,
-      titleSource: trimmedTitle ? 'user' : 'derived',
+      titleSource: trimmedTitle ? "user" : "derived",
       createdAt: current,
       updatedAt: current,
       tags: tags.filter((tag) => tag.trim().length > 0),
@@ -262,11 +276,11 @@ export class SessionStore implements SessionStoreLike {
 
   createSession(title?: string, tags: string[] = []): SessionRecord {
     const current = nowIso();
-    const trimmedTitle = String(title || '').trim();
+    const trimmedTitle = String(title || "").trim();
     const record: SessionRecord = {
-      id: makeId('session'),
+      id: makeId("session"),
       title: trimmedTitle || DEFAULT_SESSION_TITLE,
-      titleSource: trimmedTitle ? 'user' : 'derived',
+      titleSource: trimmedTitle ? "user" : "derived",
       createdAt: current,
       updatedAt: current,
       tags: tags.filter((tag) => tag.trim().length > 0),
@@ -281,14 +295,14 @@ export class SessionStore implements SessionStoreLike {
     sessionId: string,
     role: SessionRole,
     content: string,
-    metadata?: Record<string, unknown>
+    metadata?: Record<string, unknown>,
   ): SessionMessage {
     const record = this.readSession(sessionId);
-    const isFirstUserMessage = role === 'user' && !record.messages.some((m) => m.role === 'user');
+    const isFirstUserMessage = role === "user" && !record.messages.some((m) => m.role === "user");
     const message: SessionMessage = {
-      id: makeId('msg'),
+      id: makeId("msg"),
       role,
-      content: String(content || ''),
+      content: String(content || ""),
       createdAt: nowIso(),
       metadata,
     };
@@ -298,15 +312,15 @@ export class SessionStore implements SessionStoreLike {
 
     // Stage 1: derive an instant title from the first user message so `list`
     // never shows the generic placeholder once any user message exists.
-    if (isFirstUserMessage && (record.titleSource ?? 'user') !== 'user') {
+    if (isFirstUserMessage && (record.titleSource ?? "user") !== "user") {
       record.title = deriveInstantTitle(message.content);
-      record.titleSource = 'derived';
+      record.titleSource = "derived";
     }
 
     this.writeSession(record);
 
     // Stage 2: kick off the optional async upgrade (never awaited).
-    if (isFirstUserMessage && (record.titleSource ?? 'user') !== 'user') {
+    if (isFirstUserMessage && (record.titleSource ?? "user") !== "user") {
       this.maybeUpgradeTitle(sessionId, message.content, record.title);
     }
 
@@ -325,17 +339,16 @@ export class SessionStore implements SessionStoreLike {
   }
 
   listSessions(limit = 20): SessionRecord[] {
-    const files = fs.readdirSync(this.sessionsDir)
-      .filter((name) => name.endsWith('.json'));
+    const files = fs.readdirSync(this.sessionsDir).filter((name) => name.endsWith(".json"));
 
     const sessions: SessionRecord[] = [];
     for (const file of files) {
       try {
-        const content = fs.readFileSync(path.join(this.sessionsDir, file), 'utf-8');
+        const content = fs.readFileSync(path.join(this.sessionsDir, file), "utf-8");
         const parsed = JSON.parse(content);
         // Skip files that don't conform to the SessionRecord shape (e.g.
         // stray config or backup JSON files in the sessions directory).
-        if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.messages)) {
+        if (!parsed || typeof parsed !== "object" || !Array.isArray(parsed.messages)) {
           continue;
         }
         sessions.push(this.normalizeRecord(parsed as SessionRecord));
@@ -349,7 +362,9 @@ export class SessionStore implements SessionStoreLike {
   }
 
   search(query: string, limit = 10): SessionSearchHit[] {
-    const normalized = String(query || '').trim().toLowerCase();
+    const normalized = String(query || "")
+      .trim()
+      .toLowerCase();
     if (!normalized) {
       return [];
     }
@@ -383,9 +398,7 @@ export class SessionStore implements SessionStoreLike {
   getStatus(): { root: string; count: number } {
     // Count .json files directly — no need to parse all session records just
     // to report a count.
-    const count = fs.readdirSync(this.sessionsDir)
-      .filter((name) => name.endsWith('.json'))
-      .length;
+    const count = fs.readdirSync(this.sessionsDir).filter((name) => name.endsWith(".json")).length;
     return {
       root: this.sessionsDir,
       count,

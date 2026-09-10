@@ -3,7 +3,7 @@
  * Adapted from GeoClaw-OpenAI v2.4.0
  */
 
-const TOKEN_PATTERN = '[A-Za-z0-9_]+|[\\u4e00-\\u9fff]';
+const TOKEN_PATTERN = "[A-Za-z0-9_]+|[\\u4e00-\\u9fff]";
 
 export interface SearchItem {
   source: string;
@@ -22,12 +22,16 @@ const VECTOR_CACHE_MAX = 500;
 const vectorCache = new Map<string, Map<number, number>>();
 function getCachedVector(text: string, dim: number): Map<number, number> {
   const cached = vectorCache.get(text);
-  if (cached) {return cached;}
+  if (cached) {
+    return cached;
+  }
   const vec = textToVector(text, dim);
   if (vectorCache.size >= VECTOR_CACHE_MAX) {
     // Evict oldest entry (Map preserves insertion order).
     const firstKey = vectorCache.keys().next().value;
-    if (firstKey !== undefined) {vectorCache.delete(firstKey);}
+    if (firstKey !== undefined) {
+      vectorCache.delete(firstKey);
+    }
   }
   vectorCache.set(text, vec);
   return vec;
@@ -36,7 +40,7 @@ function getCachedVector(text: string, dim: number): Map<number, number> {
 function tokenize(text: string): string[] {
   // Create a fresh global regex per call to avoid shared `lastIndex` state
   // that would cause race conditions under concurrent tokenize() invocations.
-  const re = new RegExp(TOKEN_PATTERN, 'g');
+  const re = new RegExp(TOKEN_PATTERN, "g");
   const tokens: string[] = [];
   let match: RegExpExecArray | null;
   while ((match = re.exec(text)) !== null) {
@@ -58,7 +62,7 @@ function fnvHashToken(token: string, dim: number): [number, number] {
   }
   const unsigned = h >>> 0;
   const idx = unsigned % dim;
-  const sign = (unsigned & 0x8000) ? -1.0 : 1.0;
+  const sign = unsigned & 0x8000 ? -1.0 : 1.0;
   return [idx, sign];
 }
 
@@ -147,15 +151,15 @@ class MinHeap<T> {
 
   toSortedArray(): T[] {
     // Sort descending by priority
-    return this.data
-      .toSorted((a, b) => b.priority - a.priority)
-      .map((entry) => entry.item);
+    return this.data.toSorted((a, b) => b.priority - a.priority).map((entry) => entry.item);
   }
 
   private bubbleUp(i: number): void {
     while (i > 0) {
       const parent = (i - 1) >> 1;
-      if (this.data[parent].priority <= this.data[i].priority) {break;}
+      if (this.data[parent].priority <= this.data[i].priority) {
+        break;
+      }
       [this.data[parent], this.data[i]] = [this.data[i], this.data[parent]];
       i = parent;
     }
@@ -173,7 +177,9 @@ class MinHeap<T> {
       if (right < n && this.data[right].priority < this.data[smallest].priority) {
         smallest = right;
       }
-      if (smallest === i) {break;}
+      if (smallest === i) {
+        break;
+      }
       [this.data[smallest], this.data[i]] = [this.data[i], this.data[smallest]];
       i = smallest;
     }
@@ -184,7 +190,7 @@ export function bestMatches(
   query: string,
   items: SearchItem[],
   topK = 5,
-  minScore = 0.15
+  minScore = 0.15,
 ): RankedItem[] {
   // Degenerate topK (0, negative, NaN from unparsed CLI input) selects nothing.
   const effectiveTopK = Number.isFinite(topK) && topK >= 1 ? Math.floor(topK) : 0;
@@ -197,13 +203,17 @@ export function bestMatches(
   const heap = new MinHeap<RankedItem>(effectiveTopK);
 
   for (const item of items) {
-    const text = item.searchText?.trim() || '';
-    if (!text) {continue;}
+    const text = item.searchText?.trim() || "";
+    if (!text) {
+      continue;
+    }
 
     const itemVector = getCachedVector(text, 384);
     const score = cosineSimilarity(queryVector, itemVector);
 
-    if (score < minScore) {continue;}
+    if (score < minScore) {
+      continue;
+    }
 
     heap.push(
       {

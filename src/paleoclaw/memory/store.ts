@@ -3,11 +3,11 @@
  * Adapted from GeoClaw-OpenAI v2.4.0
  */
 
-import * as fs from 'fs';
-import * as path from 'path';
-import { bestMatches, SearchItem } from './retrieval.js';
-import { SessionProfile, loadSessionProfile, memoryContext } from '../profile/layers.js';
-import { paleoclawHome, atomicWriteFile, ensurePrivateDir } from '../paths.js';
+import * as fs from "fs";
+import * as path from "path";
+import { paleoclawHome, atomicWriteFile, ensurePrivateDir } from "../paths.js";
+import { SessionProfile, loadSessionProfile, memoryContext } from "../profile/layers.js";
+import { bestMatches, SearchItem } from "./retrieval.js";
 
 // Task memory interfaces
 export interface TaskMemory {
@@ -15,7 +15,7 @@ export interface TaskMemory {
   command: string;
   argv: string[];
   cwd: string;
-  status: 'running' | 'success' | 'failed';
+  status: "running" | "success" | "failed";
   returnCode: number | null;
   error: string;
   createdAt: string;
@@ -99,8 +99,8 @@ function generateTaskId(): string {
 function emptyChatDigest(): ChatDigest {
   return {
     turn_count: 0,
-    first_turn_at: '',
-    last_turn_at: '',
+    first_turn_at: "",
+    last_turn_at: "",
     intents: [],
     modes: [],
     recent_turns: [],
@@ -113,12 +113,12 @@ function emptyChatDigest(): ChatDigest {
  * _clip_text (default 240 chars, '...' suffix on overflow).
  */
 export function clipText(text: string, maxChars = 240): string {
-  const value = (text || '').trim();
+  const value = (text || "").trim();
   const chars = Array.from(value);
   if (chars.length <= maxChars) {
     return value;
   }
-  return `${chars.slice(0, Math.max(1, maxChars - 3)).join('')}...`;
+  return `${chars.slice(0, Math.max(1, maxChars - 3)).join("")}...`;
 }
 
 /**
@@ -128,13 +128,16 @@ export function clipText(text: string, maxChars = 240): string {
  * fall back to 'adhoc' when nothing is left.
  */
 function safeSessionKey(raw: string): string {
-  let text = (raw || '').toString().trim().replace(/[^A-Za-z0-9._-]+/g, '_');
-  text = text.replace(/^[._-]+|[._-]+$/g, '');
+  let text = (raw || "")
+    .toString()
+    .trim()
+    .replace(/[^A-Za-z0-9._-]+/g, "_");
+  text = text.replace(/^[._-]+|[._-]+$/g, "");
   // Cap over-long ids so day-file names stay filesystem friendly.
   if (text.length > 64) {
-    text = text.slice(0, 64).replace(/^[._-]+|[._-]+$/g, '');
+    text = text.slice(0, 64).replace(/^[._-]+|[._-]+$/g, "");
   }
-  return text || 'adhoc';
+  return text || "adhoc";
 }
 
 /**
@@ -147,19 +150,22 @@ function parseEventTime(raw?: string | number | Date): Date {
   if (raw instanceof Date) {
     return Number.isNaN(raw.getTime()) ? new Date() : raw;
   }
-  if (typeof raw === 'number') {
+  if (typeof raw === "number") {
     const fromEpoch = new Date(raw);
     return Number.isNaN(fromEpoch.getTime()) ? new Date() : fromEpoch;
   }
-  const text = (raw || '').toString().trim();
+  const text = (raw || "").toString().trim();
   if (!text) {
     return new Date();
   }
   let candidate = text;
   if (/[zZ]$/.test(candidate)) {
     candidate = `${candidate.slice(0, -1)}+00:00`;
-  } else if (!/(?:[+-]\d{2}:?\d{2})$/.test(candidate) && /^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}/.test(candidate)) {
-    candidate = `${candidate.replace(' ', 'T')}Z`;
+  } else if (
+    !/(?:[+-]\d{2}:?\d{2})$/.test(candidate) &&
+    /^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}/.test(candidate)
+  ) {
+    candidate = `${candidate.replace(" ", "T")}Z`;
   }
   const parsed = new Date(candidate);
   return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
@@ -167,7 +173,7 @@ function parseEventTime(raw?: string | number | Date): Date {
 
 /** UTC day key (YYYYMMDD) used in chat day-file names. */
 function chatDayKey(event: Date): string {
-  return event.toISOString().slice(0, 10).replace(/-/g, '');
+  return event.toISOString().slice(0, 10).replace(/-/g, "");
 }
 
 export class TaskMemoryStore {
@@ -178,12 +184,12 @@ export class TaskMemoryStore {
   private sessionProfile: SessionProfile | null;
 
   constructor(sessionProfile?: SessionProfile) {
-    this.root = path.join(paleoclawHome(), 'memory');
-    this.shortDir = path.join(this.root, 'short');
-    this.archiveShortDir = path.join(this.root, 'archive', 'short');
-    this.longFile = path.join(this.root, 'long_term.jsonl');
+    this.root = path.join(paleoclawHome(), "memory");
+    this.shortDir = path.join(this.root, "short");
+    this.archiveShortDir = path.join(this.root, "archive", "short");
+    this.longFile = path.join(this.root, "long_term.jsonl");
     this.sessionProfile = sessionProfile || null;
-    
+
     if (!this.sessionProfile) {
       try {
         this.sessionProfile = loadSessionProfile();
@@ -191,7 +197,7 @@ export class TaskMemoryStore {
         this.sessionProfile = null;
       }
     }
-    
+
     this.ensurePaths();
   }
 
@@ -206,7 +212,7 @@ export class TaskMemoryStore {
       ensurePrivateDir(path.dirname(this.longFile));
     }
     if (!fs.existsSync(this.longFile)) {
-      fs.writeFileSync(this.longFile, '', 'utf-8');
+      fs.writeFileSync(this.longFile, "", "utf-8");
     }
   }
 
@@ -219,7 +225,7 @@ export class TaskMemoryStore {
     if (!fs.existsSync(filePath)) {
       throw new Error(`Short memory task not found: ${taskId}`);
     }
-    const content = fs.readFileSync(filePath, 'utf-8');
+    const content = fs.readFileSync(filePath, "utf-8");
     return JSON.parse(content) as TaskMemory;
   }
 
@@ -229,23 +235,23 @@ export class TaskMemoryStore {
   }
 
   private buildReview(task: TaskMemory): ReviewData {
-    const command = task.command || 'task';
+    const command = task.command || "task";
     const status = task.status;
     const returnCode = task.returnCode;
-    const error = task.error || '';
+    const error = task.error || "";
 
     let summary: string;
     let lessons: string[];
     let nextActions: string[];
 
-    if (status === 'success') {
+    if (status === "success") {
       summary = `Command '${command}' completed successfully.`;
-      lessons = ['Current parameters and environment are runnable and reproducible.'];
-      nextActions = ['Keep output artifacts and logs for future comparison.'];
+      lessons = ["Current parameters and environment are runnable and reproducible."];
+      nextActions = ["Keep output artifacts and logs for future comparison."];
     } else {
       summary = `Command '${command}' failed with return code ${returnCode}.`;
-      lessons = ['Failure information has been captured in short-term memory.'];
-      nextActions = ['Check CLI output and rerun after fixing environment or parameters.'];
+      lessons = ["Failure information has been captured in short-term memory."];
+      nextActions = ["Check CLI output and rerun after fixing environment or parameters."];
       if (error) {
         nextActions.push(`Primary error: ${error}`);
       }
@@ -253,16 +259,16 @@ export class TaskMemoryStore {
 
     // Add profile context
     const profileCtx = this.memoryProfileSnapshot();
-    const repro = profileCtx.reproducibilityExpectations as string[] || [];
-    const constraints = profileCtx.longTermConstraints as string[] || [];
-    
+    const repro = (profileCtx.reproducibilityExpectations as string[]) || [];
+    const constraints = (profileCtx.longTermConstraints as string[]) || [];
+
     if (Array.isArray(repro)) {
       for (const item of repro.slice(0, 2)) {
         lessons.push(`Profile reproducibility expectation: ${item}`);
       }
     }
-    
-    if (status !== 'success' && Array.isArray(constraints)) {
+
+    if (status !== "success" && Array.isArray(constraints)) {
       for (const item of constraints.slice(0, 2)) {
         nextActions.push(`Profile long-term constraint reminder: ${item}`);
       }
@@ -281,15 +287,15 @@ export class TaskMemoryStore {
       source,
       payload.taskId,
       payload.command,
-      (payload.argv || []).join(' '),
+      (payload.argv || []).join(" "),
       payload.status,
-      (payload as TaskMemory).error || '',
-      (payload as LongTermMemory).summary || '',
+      (payload as TaskMemory).error || "",
+      (payload as LongTermMemory).summary || "",
     ];
 
     const review = (payload as TaskMemory).review;
-    if (review && typeof review === 'object') {
-      parts.push(review.summary || '');
+    if (review && typeof review === "object") {
+      parts.push(review.summary || "");
       parts.push(...(review.lessons || []));
       parts.push(...(review.nextActions || []));
     }
@@ -298,14 +304,14 @@ export class TaskMemoryStore {
     parts.push(...((payload as LongTermMemory).nextActions || []));
 
     const snapshot = (payload as TaskMemory).profileSnapshot;
-    if (snapshot && typeof snapshot === 'object') {
-      parts.push(typeof snapshot.userRole === 'string' ? snapshot.userRole : '');
-      parts.push(typeof snapshot.preferredTone === 'string' ? snapshot.preferredTone : '');
+    if (snapshot && typeof snapshot === "object") {
+      parts.push(typeof snapshot.userRole === "string" ? snapshot.userRole : "");
+      parts.push(typeof snapshot.preferredTone === "string" ? snapshot.preferredTone : "");
       parts.push(...((snapshot.reproducibilityExpectations as string[]) || []));
       parts.push(...((snapshot.truthfulnessRules as string[]) || []));
     }
 
-    return parts.filter(x => x && x.trim()).join('\n');
+    return parts.filter((x) => x && x.trim()).join("\n");
   }
 
   private memoryProfileSnapshot(): Record<string, unknown> {
@@ -323,12 +329,12 @@ export class TaskMemoryStore {
       command,
       argv: [...argv],
       cwd,
-      status: 'running',
+      status: "running",
       returnCode: null,
-      error: '',
+      error: "",
       createdAt: utcNow(),
       updatedAt: utcNow(),
-      finishedAt: '',
+      finishedAt: "",
       promoted: false,
       review: {},
       profileSnapshot: this.memoryProfileSnapshot(),
@@ -340,16 +346,16 @@ export class TaskMemoryStore {
   finishTask(
     taskId: string,
     returnCode: number,
-    error = '',
-    extra?: Record<string, unknown>
+    error = "",
+    extra?: Record<string, unknown>,
   ): TaskMemory {
     const payload = this.readShort(taskId);
-    payload.status = returnCode === 0 ? 'success' : 'failed';
+    payload.status = returnCode === 0 ? "success" : "failed";
     payload.returnCode = returnCode;
     payload.error = error.trim();
     payload.finishedAt = utcNow();
     payload.updatedAt = utcNow();
-    
+
     if (extra) {
       payload.extra = { ...payload.extra, ...extra };
     }
@@ -379,13 +385,13 @@ export class TaskMemoryStore {
     const sid = safeSessionKey(input.sessionId);
     const filePath = this.shortPath(`chat-${day}-${sid}`);
     const nowIso = event.toISOString();
-    const intent = input.intent || 'chat';
-    const mode = input.mode || 'fallback';
+    const intent = input.intent || "chat";
+    const mode = input.mode || "fallback";
 
     let record: ChatDailyRecord | null = null;
     try {
-      const parsed = JSON.parse(fs.readFileSync(filePath, 'utf-8')) as ChatDailyRecord;
-      if (parsed && typeof parsed === 'object') {
+      const parsed = JSON.parse(fs.readFileSync(filePath, "utf-8")) as ChatDailyRecord;
+      if (parsed && typeof parsed === "object") {
         record = parsed;
       }
     } catch {
@@ -399,9 +405,10 @@ export class TaskMemoryStore {
     record.sessionId = sid;
     record.day = day;
 
-    const digest = record.chat_digest && typeof record.chat_digest === 'object'
-      ? record.chat_digest
-      : emptyChatDigest();
+    const digest =
+      record.chat_digest && typeof record.chat_digest === "object"
+        ? record.chat_digest
+        : emptyChatDigest();
 
     digest.turn_count = (Number(digest.turn_count) || 0) + 1;
     digest.last_turn_at = nowIso;
@@ -409,19 +416,19 @@ export class TaskMemoryStore {
       digest.first_turn_at = nowIso;
     }
 
-    const intents = (digest.intents || []).map(x => String(x).trim()).filter(x => x);
+    const intents = (digest.intents || []).map((x) => String(x).trim()).filter((x) => x);
     if (intent && !intents.includes(intent)) {
       intents.push(intent);
     }
     digest.intents = intents.slice(-10);
 
-    const modes = (digest.modes || []).map(x => String(x).trim()).filter(x => x);
+    const modes = (digest.modes || []).map((x) => String(x).trim()).filter((x) => x);
     if (mode && !modes.includes(mode)) {
       modes.push(mode);
     }
     digest.modes = modes.slice(-10);
 
-    const turns = (digest.recent_turns || []).filter(x => x && typeof x === 'object');
+    const turns = (digest.recent_turns || []).filter((x) => x && typeof x === "object");
     turns.push({
       ts: nowIso,
       user: clipText(input.userText, 160),
@@ -447,8 +454,9 @@ export class TaskMemoryStore {
 
     let files: string[] = [];
     try {
-      files = fs.readdirSync(this.shortDir)
-        .filter(f => /^chat-\d{8}-.+\.json$/.test(f))
+      files = fs
+        .readdirSync(this.shortDir)
+        .filter((f) => /^chat-\d{8}-.+\.json$/.test(f))
         .toSorted()
         .toReversed();
     } catch {
@@ -460,9 +468,9 @@ export class TaskMemoryStore {
         break;
       }
       try {
-        const content = fs.readFileSync(path.join(this.shortDir, file), 'utf-8');
+        const content = fs.readFileSync(path.join(this.shortDir, file), "utf-8");
         const parsed = JSON.parse(content) as ChatDailyRecord;
-        if (!parsed || typeof parsed !== 'object' || !parsed.chat_digest) {
+        if (!parsed || typeof parsed !== "object" || !parsed.chat_digest) {
           continue;
         }
         rows.push(parsed);
@@ -480,14 +488,15 @@ export class TaskMemoryStore {
    * Returns null when the day file is missing or corrupt.
    */
   getChatDailyDigest(day: string): ChatDigest | null {
-    const normalized = (day || '').toString().trim();
+    const normalized = (day || "").toString().trim();
     if (!/^\d{8}$/.test(normalized)) {
       return null;
     }
     let files: string[] = [];
     try {
-      files = fs.readdirSync(this.shortDir)
-        .filter(f => f.startsWith(`chat-${normalized}-`) && f.endsWith('.json'))
+      files = fs
+        .readdirSync(this.shortDir)
+        .filter((f) => f.startsWith(`chat-${normalized}-`) && f.endsWith(".json"))
         .toSorted();
     } catch {
       return null;
@@ -497,9 +506,9 @@ export class TaskMemoryStore {
     }
     try {
       const file = files[files.length - 1];
-      const content = fs.readFileSync(path.join(this.shortDir, file), 'utf-8');
+      const content = fs.readFileSync(path.join(this.shortDir, file), "utf-8");
       const parsed = JSON.parse(content) as ChatDailyRecord;
-      if (!parsed || typeof parsed !== 'object' || !parsed.chat_digest) {
+      if (!parsed || typeof parsed !== "object" || !parsed.chat_digest) {
         return null;
       }
       return parsed.chat_digest;
@@ -512,15 +521,17 @@ export class TaskMemoryStore {
     const task = this.readShort(taskId);
     // Refuse to promote a task that has not finished yet — a running task
     // has returnCode=null / finishedAt='' and would write dirty long-term data.
-    if (task.status === 'running' || !task.finishedAt) {
-      throw new Error(`Cannot review task ${taskId}: task has not finished (status=${task.status}).`);
+    if (task.status === "running" || !task.finishedAt) {
+      throw new Error(
+        `Cannot review task ${taskId}: task has not finished (status=${task.status}).`,
+      );
     }
     // Guard against double-promotion producing duplicate long-term records.
     if (task.promoted) {
       throw new Error(`Task ${taskId} has already been promoted to long-term memory.`);
     }
     const review = this.buildReview(task);
-    
+
     const longPayload: LongTermMemory = {
       taskId: task.taskId,
       command: task.command,
@@ -531,13 +542,13 @@ export class TaskMemoryStore {
       createdAt: task.createdAt,
       finishedAt: task.finishedAt,
       reviewedAt: review.reviewedAt || utcNow(),
-      summary: review.summary || '',
+      summary: review.summary || "",
       lessons: review.lessons || [],
       nextActions: review.nextActions || [],
     };
 
     // Append to long-term file
-    fs.appendFileSync(this.longFile, JSON.stringify(longPayload) + '\n', 'utf-8');
+    fs.appendFileSync(this.longFile, JSON.stringify(longPayload) + "\n", "utf-8");
 
     // Update short-term memory
     task.promoted = true;
@@ -550,14 +561,16 @@ export class TaskMemoryStore {
 
   reviewTaskToLong(
     taskId: string,
-    summary = '',
+    summary = "",
     lessons?: string[],
-    nextActions?: string[]
+    nextActions?: string[],
   ): LongTermMemory {
     const task = this.readShort(taskId);
     // Refuse to promote a task that has not finished yet.
-    if (task.status === 'running' || !task.finishedAt) {
-      throw new Error(`Cannot review task ${taskId}: task has not finished (status=${task.status}).`);
+    if (task.status === "running" || !task.finishedAt) {
+      throw new Error(
+        `Cannot review task ${taskId}: task has not finished (status=${task.status}).`,
+      );
     }
     // Guard against double-promotion producing duplicate long-term records.
     if (task.promoted) {
@@ -567,13 +580,13 @@ export class TaskMemoryStore {
 
     // NOTE: Array.filter returns [] (truthy) when all items are blank, so we
     // must check .length explicitly instead of relying on `||` to fall back.
-    const cleanLessons = lessons?.filter(x => x.trim());
-    const cleanNext = nextActions?.filter(x => x.trim());
+    const cleanLessons = lessons?.filter((x) => x.trim());
+    const cleanNext = nextActions?.filter((x) => x.trim());
     const merged: ReviewData = {
       reviewedAt: utcNow(),
-      summary: summary.trim() || auto.summary || '',
-      lessons: cleanLessons && cleanLessons.length > 0 ? cleanLessons : (auto.lessons || []),
-      nextActions: cleanNext && cleanNext.length > 0 ? cleanNext : (auto.nextActions || []),
+      summary: summary.trim() || auto.summary || "",
+      lessons: cleanLessons && cleanLessons.length > 0 ? cleanLessons : auto.lessons || [],
+      nextActions: cleanNext && cleanNext.length > 0 ? cleanNext : auto.nextActions || [],
     };
 
     const longPayload: LongTermMemory = {
@@ -586,12 +599,12 @@ export class TaskMemoryStore {
       createdAt: task.createdAt,
       finishedAt: task.finishedAt,
       reviewedAt: merged.reviewedAt || utcNow(),
-      summary: merged.summary || '',
+      summary: merged.summary || "",
       lessons: merged.lessons || [],
       nextActions: merged.nextActions || [],
     };
 
-    fs.appendFileSync(this.longFile, JSON.stringify(longPayload) + '\n', 'utf-8');
+    fs.appendFileSync(this.longFile, JSON.stringify(longPayload) + "\n", "utf-8");
 
     task.promoted = true;
     task.review = merged;
@@ -606,15 +619,14 @@ export class TaskMemoryStore {
   }
 
   listShort(options: { limit?: number; status?: string } = {}): TaskMemory[] {
-    const { limit = 20, status = '' } = options;
+    const { limit = 20, status = "" } = options;
     const rows: TaskMemory[] = [];
-    
-    const files = fs.readdirSync(this.shortDir)
-      .filter(f => f.endsWith('.json'));
+
+    const files = fs.readdirSync(this.shortDir).filter((f) => f.endsWith(".json"));
 
     for (const file of files) {
       try {
-        const content = fs.readFileSync(path.join(this.shortDir, file), 'utf-8');
+        const content = fs.readFileSync(path.join(this.shortDir, file), "utf-8");
         const payload = JSON.parse(content) as TaskMemory;
         rows.push(payload);
       } catch {
@@ -624,10 +636,10 @@ export class TaskMemoryStore {
 
     // Sort by updatedAt descending — filename sort is unreliable across
     // process restarts because the per-process counter resets.
-    rows.sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''));
+    rows.sort((a, b) => (b.updatedAt || "").localeCompare(a.updatedAt || ""));
 
     if (status) {
-      return rows.filter(r => r.status === status).slice(0, limit);
+      return rows.filter((r) => r.status === status).slice(0, limit);
     }
     return rows.slice(0, limit);
   }
@@ -635,21 +647,25 @@ export class TaskMemoryStore {
   listLong(options: { limit?: number } = {}): LongTermMemory[] {
     const { limit = 20 } = options;
     const rows: LongTermMemory[] = [];
-    
+
     if (!fs.existsSync(this.longFile)) {
       return rows;
     }
 
-    const lines = fs.readFileSync(this.longFile, 'utf-8').split('\n').toReversed();
-    
+    const lines = fs.readFileSync(this.longFile, "utf-8").split("\n").toReversed();
+
     for (const line of lines) {
       const trimmed = line.trim();
-      if (!trimmed) {continue;}
-      
+      if (!trimmed) {
+        continue;
+      }
+
       try {
         const payload = JSON.parse(trimmed) as LongTermMemory;
         rows.push(payload);
-        if (rows.length >= limit) {break;}
+        if (rows.length >= limit) {
+          break;
+        }
       } catch {
         // Skip invalid lines
       }
@@ -659,29 +675,32 @@ export class TaskMemoryStore {
   }
 
   listArchiveShort(options: { limit?: number; status?: string } = {}): TaskMemory[] {
-    const { limit = 20, status = '' } = options;
+    const { limit = 20, status = "" } = options;
     const rows: TaskMemory[] = [];
-    
+
     if (!fs.existsSync(this.archiveShortDir)) {
       return rows;
     }
 
-    const files = fs.readdirSync(this.archiveShortDir)
-      .filter(f => f.endsWith('.json'))
+    const files = fs
+      .readdirSync(this.archiveShortDir)
+      .filter((f) => f.endsWith(".json"))
       .toSorted()
       .toReversed();
 
     for (const file of files) {
       try {
-        const content = fs.readFileSync(path.join(this.archiveShortDir, file), 'utf-8');
+        const content = fs.readFileSync(path.join(this.archiveShortDir, file), "utf-8");
         const payload = JSON.parse(content) as TaskMemory;
-        
+
         if (status && payload.status !== status) {
           continue;
         }
-        
+
         rows.push(payload);
-        if (rows.length >= limit) {break;}
+        if (rows.length >= limit) {
+          break;
+        }
       } catch {
         // Skip invalid files
       }
@@ -690,28 +709,31 @@ export class TaskMemoryStore {
     return rows;
   }
 
-  archiveShort(options: {
-    beforeDays?: number;
-    status?: string;
-    includeRunning?: boolean;
-  } = {}): ArchiveResult {
-    const { beforeDays = 7, status = '', includeRunning = false } = options;
+  archiveShort(
+    options: {
+      beforeDays?: number;
+      status?: string;
+      includeRunning?: boolean;
+    } = {},
+  ): ArchiveResult {
+    const { beforeDays = 7, status = "", includeRunning = false } = options;
     const cutoff = new Date(Date.now() - beforeDays * 24 * 60 * 60 * 1000);
-    
+
     let moved = 0;
     let skipped = 0;
     const archivedIds: string[] = [];
 
     // chat-*.json files are conversational day digests, not task memories —
     // exclude them from archiving so chat history is never swept away.
-    const files = fs.readdirSync(this.shortDir)
-      .filter(f => f.endsWith('.json') && !f.startsWith('chat-'));
+    const files = fs
+      .readdirSync(this.shortDir)
+      .filter((f) => f.endsWith(".json") && !f.startsWith("chat-"));
 
     for (const file of files) {
       const filePath = path.join(this.shortDir, file);
-      
+
       try {
-        const content = fs.readFileSync(filePath, 'utf-8');
+        const content = fs.readFileSync(filePath, "utf-8");
         const payload = JSON.parse(content) as TaskMemory;
 
         if (status && payload.status !== status) {
@@ -719,7 +741,7 @@ export class TaskMemoryStore {
           continue;
         }
 
-        if (!includeRunning && payload.status === 'running') {
+        if (!includeRunning && payload.status === "running") {
           skipped++;
           continue;
         }
@@ -749,7 +771,7 @@ export class TaskMemoryStore {
           const random = Math.random().toString(36).substring(2, 8);
           dst = path.join(this.archiveShortDir, `${path.parse(file).name}-${random}.json`);
         }
-        
+
         fs.renameSync(filePath, dst);
         moved++;
         archivedIds.push(payload.taskId);
@@ -774,43 +796,43 @@ export class TaskMemoryStore {
     topK?: number;
     minScore?: number;
   }): SearchItem[] {
-    const { query, scope = 'long', topK = 5, minScore = 0.15 } = options;
-    const scopeText = scope.toLowerCase() || 'long';
-    
-    if (!['short', 'long', 'archive', 'all'].includes(scopeText)) {
-      throw new Error('scope must be one of: short, long, archive, all');
+    const { query, scope = "long", topK = 5, minScore = 0.15 } = options;
+    const scopeText = scope.toLowerCase() || "long";
+
+    if (!["short", "long", "archive", "all"].includes(scopeText)) {
+      throw new Error("scope must be one of: short, long, archive, all");
     }
 
     const items: SearchItem[] = [];
 
-    if (scopeText === 'short' || scopeText === 'all') {
+    if (scopeText === "short" || scopeText === "all") {
       for (const row of this.listShort({ limit: 500 })) {
         items.push({
-          source: 'short',
+          source: "short",
           taskId: row.taskId,
-          searchText: this.buildSearchText(row, 'short'),
+          searchText: this.buildSearchText(row, "short"),
           payload: row as unknown as Record<string, unknown>,
         });
       }
     }
 
-    if (scopeText === 'archive' || scopeText === 'all') {
+    if (scopeText === "archive" || scopeText === "all") {
       for (const row of this.listArchiveShort({ limit: 1000 })) {
         items.push({
-          source: 'archive',
+          source: "archive",
           taskId: row.taskId,
-          searchText: this.buildSearchText(row, 'archive'),
+          searchText: this.buildSearchText(row, "archive"),
           payload: row as unknown as Record<string, unknown>,
         });
       }
     }
 
-    if (scopeText === 'long' || scopeText === 'all') {
+    if (scopeText === "long" || scopeText === "all") {
       for (const row of this.listLong({ limit: 1000 })) {
         items.push({
-          source: 'long',
+          source: "long",
           taskId: row.taskId,
-          searchText: this.buildSearchText(row as unknown as TaskMemory, 'long'),
+          searchText: this.buildSearchText(row as unknown as TaskMemory, "long"),
           payload: row as unknown as Record<string, unknown>,
         });
       }
@@ -821,7 +843,7 @@ export class TaskMemoryStore {
 
   countShort(): number {
     try {
-      return fs.readdirSync(this.shortDir).filter(f => f.endsWith('.json')).length;
+      return fs.readdirSync(this.shortDir).filter((f) => f.endsWith(".json")).length;
     } catch {
       return 0;
     }
@@ -829,9 +851,11 @@ export class TaskMemoryStore {
 
   countLong(): number {
     try {
-      if (!fs.existsSync(this.longFile)) {return 0;}
-      const content = fs.readFileSync(this.longFile, 'utf-8');
-      return content.split('\n').filter(line => line.trim()).length;
+      if (!fs.existsSync(this.longFile)) {
+        return 0;
+      }
+      const content = fs.readFileSync(this.longFile, "utf-8");
+      return content.split("\n").filter((line) => line.trim()).length;
     } catch {
       return 0;
     }

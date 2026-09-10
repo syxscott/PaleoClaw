@@ -8,7 +8,7 @@ export interface ContextEngineStats {
 }
 
 export abstract class ContextEngine {
-  name: string = 'unknown';
+  name: string = "unknown";
   lastPromptTokens: number = 0;
   lastCompletionTokens: number = 0;
   lastTotalTokens: number = 0;
@@ -21,7 +21,9 @@ export abstract class ContextEngine {
 
   abstract update_from_response(response: unknown): void;
   abstract should_compress(): boolean;
-  abstract compress(messages: Array<{ role: string; content: string }>): Array<{ role: string; content: string }>;
+  abstract compress(
+    messages: Array<{ role: string; content: string }>,
+  ): Array<{ role: string; content: string }>;
 
   on_session_start(): void {
     this.compressionCount = 0;
@@ -31,10 +33,16 @@ export abstract class ContextEngine {
   }
 
   on_session_end(): void {}
-  on_session_reset(): void { this.on_session_start(); }
+  on_session_reset(): void {
+    this.on_session_start();
+  }
 
-  get_tool_schemas(): Array<{ name: string; description: string; input_schema: unknown }> { return []; }
-  handle_tool_call(_tool_name: string, _args: Record<string, unknown>, _result: unknown): string { return ''; }
+  get_tool_schemas(): Array<{ name: string; description: string; input_schema: unknown }> {
+    return [];
+  }
+  handle_tool_call(_tool_name: string, _args: Record<string, unknown>, _result: unknown): string {
+    return "";
+  }
 
   get_status(): ContextEngineStats {
     return {

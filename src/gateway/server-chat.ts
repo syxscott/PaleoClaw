@@ -600,11 +600,7 @@ export function createAgentEventHandler({
       // raw tool output. WS clients already received the event above via
       // broadcastToConnIds with the full agent payload.
       if (!isToolEvent || toolVerbose !== "off") {
-        nodeSendToSession(
-          sessionKey,
-          "agent",
-          isToolEvent ? channelToolPayload : agentPayload,
-        );
+        nodeSendToSession(sessionKey, "agent", isToolEvent ? channelToolPayload : agentPayload);
       }
       if (!isAborted && evt.stream === "assistant" && typeof evt.data?.text === "string") {
         emitChatDelta(sessionKey, clientRunId, evt.runId, evt.seq, evt.data.text, evt.data.delta);

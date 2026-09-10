@@ -270,18 +270,16 @@ function renderGroupedMessage(
     <div class="${bubbleClasses}">
       ${canCopyMarkdown ? renderCopyAsMarkdownButton(markdown!) : nothing}
       ${renderMessageImages(images)}
-      ${
-        reasoningMarkdown
-          ? html`<div class="chat-thinking">${unsafeHTML(
-              toSanitizedMarkdownHtml(reasoningMarkdown),
-            )}</div>`
-          : nothing
-      }
-      ${
-        markdown
-          ? html`<div class="chat-text" dir="${detectTextDirection(markdown)}">${unsafeHTML(toSanitizedMarkdownHtml(markdown))}</div>`
-          : nothing
-      }
+      ${reasoningMarkdown
+        ? html`<div class="chat-thinking">
+            ${unsafeHTML(toSanitizedMarkdownHtml(reasoningMarkdown))}
+          </div>`
+        : nothing}
+      ${markdown
+        ? html`<div class="chat-text" dir="${detectTextDirection(markdown)}">
+            ${unsafeHTML(toSanitizedMarkdownHtml(markdown))}
+          </div>`
+        : nothing}
       ${toolCards.map((card) => renderToolCardSidebar(card, onOpenSidebar))}
     </div>
   `;

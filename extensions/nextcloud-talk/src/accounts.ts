@@ -10,7 +10,7 @@ import { normalizeResolvedSecretInputString } from "./secret-input.js";
 import type { CoreConfig, NextcloudTalkAccountConfig } from "./types.js";
 
 const debugAccounts = (...args: unknown[]) => {
-  if (isDebugEnabled('nextcloudTalkAccounts')) {
+  if (isDebugEnabled("nextcloudTalkAccounts")) {
     console.warn("[nextcloud-talk:accounts]", ...args);
   }
 };

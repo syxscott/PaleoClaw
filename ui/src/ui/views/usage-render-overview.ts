@@ -87,45 +87,41 @@ function renderFilterChips(
 
   return html`
     <div class="active-filters">
-      ${
-        selectedDays.length > 0
-          ? html`
+      ${selectedDays.length > 0
+        ? html`
             <div class="filter-chip">
               <span class="filter-chip-label">Days: ${daysLabel}</span>
-              <button class="filter-chip-remove" @click=${onClearDays} title="Remove filter">×</button>
+              <button class="filter-chip-remove" @click=${onClearDays} title="Remove filter">
+                ×
+              </button>
             </div>
           `
-          : nothing
-      }
-      ${
-        selectedHours.length > 0
-          ? html`
+        : nothing}
+      ${selectedHours.length > 0
+        ? html`
             <div class="filter-chip">
               <span class="filter-chip-label">Hours: ${hoursLabel}</span>
-              <button class="filter-chip-remove" @click=${onClearHours} title="Remove filter">×</button>
+              <button class="filter-chip-remove" @click=${onClearHours} title="Remove filter">
+                ×
+              </button>
             </div>
           `
-          : nothing
-      }
-      ${
-        selectedSessions.length > 0
-          ? html`
+        : nothing}
+      ${selectedSessions.length > 0
+        ? html`
             <div class="filter-chip" title="${sessionsFullName}">
               <span class="filter-chip-label">Session: ${sessionsLabel}</span>
-              <button class="filter-chip-remove" @click=${onClearSessions} title="Remove filter">×</button>
+              <button class="filter-chip-remove" @click=${onClearSessions} title="Remove filter">
+                ×
+              </button>
             </div>
           `
-          : nothing
-      }
-      ${
-        (selectedDays.length > 0 || selectedHours.length > 0) && selectedSessions.length > 0
-          ? html`
-            <button class="btn btn-sm filter-clear-btn" @click=${onClearFilters}>
-              Clear All
-            </button>
+        : nothing}
+      ${(selectedDays.length > 0 || selectedHours.length > 0) && selectedSessions.length > 0
+        ? html`
+            <button class="btn btn-sm filter-clear-btn" @click=${onClearFilters}>Clear All</button>
           `
-          : nothing
-      }
+        : nothing}
     </div>
   `;
 }
@@ -222,41 +218,37 @@ function renderDailyChartCompact(
                 class="daily-bar-wrapper ${isSelected ? "selected" : ""}"
                 @click=${(e: MouseEvent) => onSelectDay(d.date, e.shiftKey)}
               >
-                ${
-                  dailyChartMode === "by-type"
-                    ? html`
-                        <div
-                          class="daily-bar"
-                          style="height: ${heightPct.toFixed(1)}%; display: flex; flex-direction: column;"
-                        >
-                          ${(() => {
-                            const total = segments.reduce((sum, seg) => sum + seg.value, 0) || 1;
-                            return segments.map(
-                              (seg) => html`
-                                <div
-                                  class="cost-segment ${seg.class}"
-                                  style="height: ${(seg.value / total) * 100}%"
-                                ></div>
-                              `,
-                            );
-                          })()}
-                        </div>
-                      `
-                    : html`
-                        <div class="daily-bar" style="height: ${heightPct.toFixed(1)}%"></div>
-                      `
-                }
+                ${dailyChartMode === "by-type"
+                  ? html`
+                      <div
+                        class="daily-bar"
+                        style="height: ${heightPct.toFixed(
+                          1,
+                        )}%; display: flex; flex-direction: column;"
+                      >
+                        ${(() => {
+                          const total = segments.reduce((sum, seg) => sum + seg.value, 0) || 1;
+                          return segments.map(
+                            (seg) => html`
+                              <div
+                                class="cost-segment ${seg.class}"
+                                style="height: ${(seg.value / total) * 100}%"
+                              ></div>
+                            `,
+                          );
+                        })()}
+                      </div>
+                    `
+                  : html` <div class="daily-bar" style="height: ${heightPct.toFixed(1)}%"></div> `}
                 ${showTotals ? html`<div class="daily-bar-total">${totalLabel}</div>` : nothing}
                 <div class="daily-bar-label" style="${labelStyle}">${shortLabel}</div>
                 <div class="daily-bar-tooltip">
                   <strong>${formatFullDate(d.date)}</strong><br />
                   ${formatTokens(d.totalTokens)} tokens<br />
                   ${formatCost(d.totalCost)}
-                  ${
-                    breakdownLines.length
-                      ? html`${breakdownLines.map((line) => html`<div>${line}</div>`)}`
-                      : nothing
-                  }
+                  ${breakdownLines.length
+                    ? html`${breakdownLines.map((line) => html`<div>${line}</div>`)}`
+                    : nothing}
                 </div>
               </div>
             `;
@@ -282,20 +274,60 @@ function renderCostBreakdownCompact(totals: UsageTotals, mode: "tokens" | "cost"
     <div class="cost-breakdown cost-breakdown-compact">
       <div class="cost-breakdown-header">${isTokenMode ? "Tokens" : "Cost"} by Type</div>
       <div class="cost-breakdown-bar">
-        <div class="cost-segment output" style="width: ${(isTokenMode ? tokenPcts.output : breakdown.output.pct).toFixed(1)}%"
-          title="Output: ${isTokenMode ? formatTokens(totals.output) : formatCost(breakdown.output.cost)}"></div>
-        <div class="cost-segment input" style="width: ${(isTokenMode ? tokenPcts.input : breakdown.input.pct).toFixed(1)}%"
-          title="Input: ${isTokenMode ? formatTokens(totals.input) : formatCost(breakdown.input.cost)}"></div>
-        <div class="cost-segment cache-write" style="width: ${(isTokenMode ? tokenPcts.cacheWrite : breakdown.cacheWrite.pct).toFixed(1)}%"
-          title="Cache Write: ${isTokenMode ? formatTokens(totals.cacheWrite) : formatCost(breakdown.cacheWrite.cost)}"></div>
-        <div class="cost-segment cache-read" style="width: ${(isTokenMode ? tokenPcts.cacheRead : breakdown.cacheRead.pct).toFixed(1)}%"
-          title="Cache Read: ${isTokenMode ? formatTokens(totals.cacheRead) : formatCost(breakdown.cacheRead.cost)}"></div>
+        <div
+          class="cost-segment output"
+          style="width: ${(isTokenMode ? tokenPcts.output : breakdown.output.pct).toFixed(1)}%"
+          title="Output: ${isTokenMode
+            ? formatTokens(totals.output)
+            : formatCost(breakdown.output.cost)}"
+        ></div>
+        <div
+          class="cost-segment input"
+          style="width: ${(isTokenMode ? tokenPcts.input : breakdown.input.pct).toFixed(1)}%"
+          title="Input: ${isTokenMode
+            ? formatTokens(totals.input)
+            : formatCost(breakdown.input.cost)}"
+        ></div>
+        <div
+          class="cost-segment cache-write"
+          style="width: ${(isTokenMode ? tokenPcts.cacheWrite : breakdown.cacheWrite.pct).toFixed(
+            1,
+          )}%"
+          title="Cache Write: ${isTokenMode
+            ? formatTokens(totals.cacheWrite)
+            : formatCost(breakdown.cacheWrite.cost)}"
+        ></div>
+        <div
+          class="cost-segment cache-read"
+          style="width: ${(isTokenMode ? tokenPcts.cacheRead : breakdown.cacheRead.pct).toFixed(
+            1,
+          )}%"
+          title="Cache Read: ${isTokenMode
+            ? formatTokens(totals.cacheRead)
+            : formatCost(breakdown.cacheRead.cost)}"
+        ></div>
       </div>
       <div class="cost-breakdown-legend">
-        <span class="legend-item"><span class="legend-dot output"></span>Output ${isTokenMode ? formatTokens(totals.output) : formatCost(breakdown.output.cost)}</span>
-        <span class="legend-item"><span class="legend-dot input"></span>Input ${isTokenMode ? formatTokens(totals.input) : formatCost(breakdown.input.cost)}</span>
-        <span class="legend-item"><span class="legend-dot cache-write"></span>Cache Write ${isTokenMode ? formatTokens(totals.cacheWrite) : formatCost(breakdown.cacheWrite.cost)}</span>
-        <span class="legend-item"><span class="legend-dot cache-read"></span>Cache Read ${isTokenMode ? formatTokens(totals.cacheRead) : formatCost(breakdown.cacheRead.cost)}</span>
+        <span class="legend-item"
+          ><span class="legend-dot output"></span>Output
+          ${isTokenMode ? formatTokens(totals.output) : formatCost(breakdown.output.cost)}</span
+        >
+        <span class="legend-item"
+          ><span class="legend-dot input"></span>Input
+          ${isTokenMode ? formatTokens(totals.input) : formatCost(breakdown.input.cost)}</span
+        >
+        <span class="legend-item"
+          ><span class="legend-dot cache-write"></span>Cache Write
+          ${isTokenMode
+            ? formatTokens(totals.cacheWrite)
+            : formatCost(breakdown.cacheWrite.cost)}</span
+        >
+        <span class="legend-item"
+          ><span class="legend-dot cache-read"></span>Cache Read
+          ${isTokenMode
+            ? formatTokens(totals.cacheRead)
+            : formatCost(breakdown.cacheRead.cost)}</span
+        >
       </div>
       <div class="cost-breakdown-total">
         Total: ${isTokenMode ? formatTokens(totals.totalTokens) : formatCost(totals.totalCost)}
@@ -312,25 +344,23 @@ function renderInsightList(
   return html`
     <div class="usage-insight-card">
       <div class="usage-insight-title">${title}</div>
-      ${
-        items.length === 0
-          ? html`<div class="muted">${emptyLabel}</div>`
-          : html`
-              <div class="usage-list">
-                ${items.map(
-                  (item) => html`
-                    <div class="usage-list-item">
-                      <span>${item.label}</span>
-                      <span class="usage-list-value">
-                        <span>${item.value}</span>
-                        ${item.sub ? html`<span class="usage-list-sub">${item.sub}</span>` : nothing}
-                      </span>
-                    </div>
-                  `,
-                )}
-              </div>
-            `
-      }
+      ${items.length === 0
+        ? html`<div class="muted">${emptyLabel}</div>`
+        : html`
+            <div class="usage-list">
+              ${items.map(
+                (item) => html`
+                  <div class="usage-list-item">
+                    <span>${item.label}</span>
+                    <span class="usage-list-value">
+                      <span>${item.value}</span>
+                      ${item.sub ? html`<span class="usage-list-sub">${item.sub}</span>` : nothing}
+                    </span>
+                  </div>
+                `,
+              )}
+            </div>
+          `}
     </div>
   `;
 }
@@ -343,23 +373,21 @@ function renderPeakErrorList(
   return html`
     <div class="usage-insight-card">
       <div class="usage-insight-title">${title}</div>
-      ${
-        items.length === 0
-          ? html`<div class="muted">${emptyLabel}</div>`
-          : html`
-              <div class="usage-error-list">
-                ${items.map(
-                  (item) => html`
-                    <div class="usage-error-row">
-                      <div class="usage-error-date">${item.label}</div>
-                      <div class="usage-error-rate">${item.value}</div>
-                      ${item.sub ? html`<div class="usage-error-sub">${item.sub}</div>` : nothing}
-                    </div>
-                  `,
-                )}
-              </div>
-            `
-      }
+      ${items.length === 0
+        ? html`<div class="muted">${emptyLabel}</div>`
+        : html`
+            <div class="usage-error-list">
+              ${items.map(
+                (item) => html`
+                  <div class="usage-error-row">
+                    <div class="usage-error-date">${item.label}</div>
+                    <div class="usage-error-rate">${item.value}</div>
+                    ${item.sub ? html`<div class="usage-error-sub">${item.sub}</div>` : nothing}
+                  </div>
+                `,
+              )}
+            </div>
+          `}
     </div>
   `;
 }
@@ -453,7 +481,9 @@ function renderUsageInsights(
         <div class="usage-summary-card">
           <div class="usage-summary-title">
             Messages
-            <span class="usage-summary-hint" title="Total user + assistant messages in range.">?</span>
+            <span class="usage-summary-hint" title="Total user + assistant messages in range."
+              >?</span
+            >
           </div>
           <div class="usage-summary-value">${aggregates.messages.total}</div>
           <div class="usage-summary-sub">
@@ -513,7 +543,15 @@ function renderUsageInsights(
             Error Rate
             <span class="usage-summary-hint" title=${errorHint}>?</span>
           </div>
-          <div class="usage-summary-value ${errorRatePct > 5 ? "bad" : errorRatePct > 1 ? "warn" : "good"}">${errorRatePct.toFixed(2)}%</div>
+          <div
+            class="usage-summary-value ${errorRatePct > 5
+              ? "bad"
+              : errorRatePct > 1
+                ? "warn"
+                : "good"}"
+          >
+            ${errorRatePct.toFixed(2)}%
+          </div>
           <div class="usage-summary-sub">
             ${aggregates.messages.errors} errors · ${avgDurationLabel} avg session
           </div>
@@ -523,7 +561,15 @@ function renderUsageInsights(
             Cache Hit Rate
             <span class="usage-summary-hint" title=${cacheHint}>?</span>
           </div>
-          <div class="usage-summary-value ${cacheHitRate > 0.6 ? "good" : cacheHitRate > 0.3 ? "warn" : "bad"}">${cacheHitLabel}</div>
+          <div
+            class="usage-summary-value ${cacheHitRate > 0.6
+              ? "good"
+              : cacheHitRate > 0.3
+                ? "warn"
+                : "bad"}"
+          >
+            ${cacheHitLabel}
+          </div>
           <div class="usage-summary-sub">
             ${formatTokens(totals.cacheRead)} cached · ${formatTokens(cacheBase)} prompt
           </div>
@@ -661,7 +707,9 @@ function renderSessionsCard(
       >
         <div class="session-bar-label">
           <div class="session-bar-title">${displayLabel}</div>
-          ${meta.length > 0 ? html`<div class="session-bar-meta">${meta.join(" · ")}</div>` : nothing}
+          ${meta.length > 0
+            ? html`<div class="session-bar-meta">${meta.join(" · ")}</div>`
+            : nothing}
         </div>
         <div class="session-bar-track" style="display: none;"></div>
         <div class="session-bar-actions">
@@ -675,7 +723,9 @@ function renderSessionsCard(
           >
             Copy
           </button>
-          <div class="session-bar-value">${isTokenMode ? formatTokens(value) : formatCost(value)}</div>
+          <div class="session-bar-value">
+            ${isTokenMode ? formatTokens(value) : formatCost(value)}
+          </div>
         </div>
       </div>
     `;
@@ -694,7 +744,8 @@ function renderSessionsCard(
       <div class="sessions-card-header">
         <div class="card-title">Sessions</div>
         <div class="sessions-card-count">
-          ${sessions.length} shown${totalSessions !== sessions.length ? ` · ${totalSessions} total` : ""}
+          ${sessions.length}
+          shown${totalSessions !== sessions.length ? ` · ${totalSessions} total` : ""}
         </div>
       </div>
       <div class="sessions-card-meta">
@@ -719,7 +770,8 @@ function renderSessionsCard(
         <label class="sessions-sort">
           <span>Sort</span>
           <select
-            @change=${(e: Event) => onSessionSortChange((e.target as HTMLSelectElement).value as typeof sessionSort)}
+            @change=${(e: Event) =>
+              onSessionSortChange((e.target as HTMLSelectElement).value as typeof sessionSort)}
           >
             <option value="cost" ?selected=${sessionSort === "cost"}>Cost</option>
             <option value="errors" ?selected=${sessionSort === "errors"}>Errors</option>
@@ -735,52 +787,58 @@ function renderSessionsCard(
         >
           ${sessionSortDir === "desc" ? "↓" : "↑"}
         </button>
-        ${
-          selectedCount > 0
-            ? html`
-                <button class="btn btn-sm sessions-action-btn sessions-clear-btn" @click=${onClearSessions}>
-                  Clear Selection
-                </button>
-              `
-            : nothing
-        }
-      </div>
-      ${
-        sessionsTab === "recent"
-          ? recentEntries.length === 0
-            ? html`
-                <div class="muted" style="padding: 20px; text-align: center">No recent sessions</div>
-              `
-            : html`
-	                <div class="session-bars" style="max-height: 220px; margin-top: 6px;">
-	                  ${recentEntries.map((s) => renderSessionBarRow(s, selectedSet.has(s.key)))}
-	                </div>
-	              `
-          : sessions.length === 0
-            ? html`
-                <div class="muted" style="padding: 20px; text-align: center">No sessions in range</div>
-              `
-            : html`
-	                <div class="session-bars">
-	                  ${sortedWithDir
-                      .slice(0, 50)
-                      .map((s) => renderSessionBarRow(s, selectedSet.has(s.key)))}
-	                  ${sessions.length > 50 ? html`<div class="muted" style="padding: 8px; text-align: center; font-size: 11px;">+${sessions.length - 50} more</div>` : nothing}
-	                </div>
-	              `
-      }
-      ${
-        selectedCount > 1
+        ${selectedCount > 0
           ? html`
-              <div style="margin-top: 10px;">
-                <div class="sessions-card-count">Selected (${selectedCount})</div>
-                <div class="session-bars" style="max-height: 160px; margin-top: 6px;">
-                  ${selectedEntries.map((s) => renderSessionBarRow(s, true))}
-                </div>
+              <button
+                class="btn btn-sm sessions-action-btn sessions-clear-btn"
+                @click=${onClearSessions}
+              >
+                Clear Selection
+              </button>
+            `
+          : nothing}
+      </div>
+      ${sessionsTab === "recent"
+        ? recentEntries.length === 0
+          ? html`
+              <div class="muted" style="padding: 20px; text-align: center">No recent sessions</div>
+            `
+          : html`
+              <div class="session-bars" style="max-height: 220px; margin-top: 6px;">
+                ${recentEntries.map((s) => renderSessionBarRow(s, selectedSet.has(s.key)))}
               </div>
             `
-          : nothing
-      }
+        : sessions.length === 0
+          ? html`
+              <div class="muted" style="padding: 20px; text-align: center">
+                No sessions in range
+              </div>
+            `
+          : html`
+              <div class="session-bars">
+                ${sortedWithDir
+                  .slice(0, 50)
+                  .map((s) => renderSessionBarRow(s, selectedSet.has(s.key)))}
+                ${sessions.length > 50
+                  ? html`<div
+                      class="muted"
+                      style="padding: 8px; text-align: center; font-size: 11px;"
+                    >
+                      +${sessions.length - 50} more
+                    </div>`
+                  : nothing}
+              </div>
+            `}
+      ${selectedCount > 1
+        ? html`
+            <div style="margin-top: 10px;">
+              <div class="sessions-card-count">Selected (${selectedCount})</div>
+              <div class="session-bars" style="max-height: 160px; margin-top: 6px;">
+                ${selectedEntries.map((s) => renderSessionBarRow(s, true))}
+              </div>
+            </div>
+          `
+        : nothing}
     </div>
   `;
 }

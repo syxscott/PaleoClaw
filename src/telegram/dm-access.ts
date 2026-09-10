@@ -1,5 +1,5 @@
-import type { Message } from "grammy/types";
 import type { Bot } from "grammy";
+import type { Message } from "grammy/types";
 import type { DmPolicy } from "../config/types.js";
 import { logVerbose } from "../globals.js";
 import { issuePairingChallenge } from "../pairing/pairing-challenge.js";

@@ -148,12 +148,16 @@ export function matchesMentionWithExplicit(params: {
   const textToCheck = cleaned || transcriptCleaned;
 
   if (hasAnyMention && explicitAvailable) {
-    return explicit || params.mentionRegexes.some((re) => rewriteRegexBrandAlias(re).test(textToCheck));
+    return (
+      explicit || params.mentionRegexes.some((re) => rewriteRegexBrandAlias(re).test(textToCheck))
+    );
   }
   if (!textToCheck) {
     return explicit;
   }
-  return explicit || params.mentionRegexes.some((re) => rewriteRegexBrandAlias(re).test(textToCheck));
+  return (
+    explicit || params.mentionRegexes.some((re) => rewriteRegexBrandAlias(re).test(textToCheck))
+  );
 }
 
 export function stripStructuralPrefixes(text: string): string {

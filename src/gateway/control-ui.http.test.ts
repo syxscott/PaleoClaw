@@ -176,7 +176,10 @@ describe("handleControlUiHttpRequest", () => {
       fn: async (tmp) => {
         const { res, end } = makeMockHttpResponse();
         const handled = handleControlUiHttpRequest(
-          { url: `/paleoclaw${CONTROL_UI_BOOTSTRAP_CONFIG_PATH}`, method: "GET" } as IncomingMessage,
+          {
+            url: `/paleoclaw${CONTROL_UI_BOOTSTRAP_CONFIG_PATH}`,
+            method: "GET",
+          } as IncomingMessage,
           res,
           {
             basePath: "/paleoclaw",

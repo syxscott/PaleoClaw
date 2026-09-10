@@ -140,7 +140,7 @@ curl -s "https://paleobiodb.org/data1.2/occs/list.json?formation=Yixian&limit=10
 ```bash
 # Get full taxon info
 curl -s "https://paleobiodb.org/data1.2/taxa/list.json?name=Tyrannosaurus&rank=genus&show=class,firstlast" | jq -r '
-  .records[0] | 
+  .records[0] |
   "**Taxon**: \(.name)\n**Rank**: \(.rank)\n**Time Range**: \(.firstapp) - \(.lastapp) Ma\n**Classification**: \(.class) > \(.order) > \(.family)"
 '
 ```
@@ -149,7 +149,7 @@ curl -s "https://paleobiodb.org/data1.2/taxa/list.json?name=Tyrannosaurus&rank=g
 
 ```bash
 curl -s "https://paleobiodb.org/data1.2/occs/list.json?taxon=Triceratops&limit=5" | jq -r '
-  .records[] | 
+  .records[] |
   "**Location**: \(.country // "Unknown")\nAge: \(.max_ma) Ma\nFormation: \(.formation // "Unknown")\nTaxon: \(.taxon_name)\n"
 '
 ```
@@ -158,7 +158,7 @@ curl -s "https://paleobiodb.org/data1.2/occs/list.json?taxon=Triceratops&limit=5
 
 ```bash
 curl -s "https://paleobiodb.org/data1.2/occs/list.json?formation=Yixian&limit=10" | jq -r '
-  .records[] | 
+  .records[] |
   "- \(.taxon_name) (~\(.max_ma) Ma)"
 '
 ```

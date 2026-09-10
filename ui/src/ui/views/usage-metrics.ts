@@ -196,7 +196,8 @@ function renderUsageMosaic(
         <div>
           <div class="usage-mosaic-title">Activity by Time</div>
           <div class="usage-mosaic-sub">
-            Estimated from session spans (first/last activity). Time zone: ${timeZone === "utc" ? "UTC" : "Local"}.
+            Estimated from session spans (first/last activity). Time zone:
+            ${timeZone === "utc" ? "UTC" : "Local"}.
           </div>
         </div>
         <div class="usage-mosaic-total">${formatTokens(stats.totalTokens)} tokens</div>

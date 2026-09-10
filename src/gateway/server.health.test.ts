@@ -32,10 +32,7 @@ describe("gateway server health/presence", () => {
 
       const healthP = onceMessage(ws, (o) => o.type === "res" && o.id === "health1");
       const statusP = onceMessage(ws, (o) => o.type === "res" && o.id === "status1");
-      const presenceP = onceMessage(
-        ws,
-        (o) => o.type === "res" && o.id === "presence1",
-      );
+      const presenceP = onceMessage(ws, (o) => o.type === "res" && o.id === "presence1");
 
       const sendReq = (id: string, method: string) =>
         ws.send(JSON.stringify({ type: "req", id, method }));
@@ -103,10 +100,7 @@ describe("gateway server health/presence", () => {
         params: { enabled: false },
       }),
     );
-    const toggle = await onceMessage(
-      ws,
-      (o) => o.type === "res" && o.id === "hb-toggle-off",
-    );
+    const toggle = await onceMessage(ws, (o) => o.type === "res" && o.id === "hb-toggle-off");
     expect(toggle.ok).toBe(true);
     expect((toggle.payload as { enabled?: boolean } | undefined)?.enabled).toBe(false);
 
@@ -119,10 +113,7 @@ describe("gateway server health/presence", () => {
     async () => {
       const { ws } = await harness.openClient();
 
-      const presenceEventP = onceMessage(
-        ws,
-        (o) => o.type === "event" && o.event === "presence",
-      );
+      const presenceEventP = onceMessage(ws, (o) => o.type === "event" && o.event === "presence");
       ws.send(
         JSON.stringify({
           type: "req",

@@ -146,7 +146,8 @@ const expectedSortedCatalog = (): ModelCatalogRpcEntry[] => [
 ];
 
 describe("gateway server models + voicewake", () => {
-  const listModels = async () => (await rpcReq(ws, "models.list")) as RpcResponse<{ models: ModelCatalogRpcEntry[] }>;
+  const listModels = async () =>
+    (await rpcReq(ws, "models.list")) as RpcResponse<{ models: ModelCatalogRpcEntry[] }>;
 
   const seedPiCatalog = () => {
     piSdkMock.enabled = true;

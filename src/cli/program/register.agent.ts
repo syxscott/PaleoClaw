@@ -219,7 +219,10 @@ ${theme.muted("Docs:")} ${formatDocsLink("/cli/agent", "docs.paleoclaw.ai/cli/ag
         `
 ${theme.heading("Examples:")}
 ${formatHelpExamples([
-  ['paleoclaw agents set-identity --agent main --name "paleoclaw" --emoji "🦞"', "Set name + emoji."],
+  [
+    'paleoclaw agents set-identity --agent main --name "paleoclaw" --emoji "🦞"',
+    "Set name + emoji.",
+  ],
   ["paleoclaw agents set-identity --agent main --avatar avatars/paleoclaw.png", "Set avatar path."],
   [
     "paleoclaw agents set-identity --workspace ~/.paleoclaw/workspace --from-identity",

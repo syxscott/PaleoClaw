@@ -1,9 +1,9 @@
-import { ContextEngine } from './context-engine.js';
+import { ContextEngine } from "./context-engine.js";
 
-const COMPRESSED_SUMMARY_METADATA_KEY = '_compressed_summary';
+const COMPRESSED_SUMMARY_METADATA_KEY = "_compressed_summary";
 
 export class ContextCompressor extends ContextEngine {
-  name = 'context-compressor';
+  name = "context-compressor";
 
   // Note: do NOT use `private` parameter properties here — the base class
   // already declares these as public fields, and parameter properties would
@@ -12,7 +12,7 @@ export class ContextCompressor extends ContextEngine {
     contextLength: number = 128000,
     thresholdPercent: number = 0.9,
     protectFirstN: number = 2,
-    protectLastN: number = 5
+    protectLastN: number = 5,
   ) {
     super();
     this.contextLength = contextLength;
@@ -24,7 +24,9 @@ export class ContextCompressor extends ContextEngine {
 
   update_from_response(response: unknown): void {
     const usage = (
-      response as { usage?: { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number } } | undefined
+      response as
+        | { usage?: { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number } }
+        | undefined
     )?.usage;
     if (usage) {
       this.lastPromptTokens = usage.prompt_tokens || 0;
@@ -37,20 +39,28 @@ export class ContextCompressor extends ContextEngine {
     return this.lastTotalTokens >= this.thresholdTokens;
   }
 
-  compress(messages: Array<{ role: string; content: string }>): Array<{ role: string; content: string }> {
-    if (!this.should_compress()) {return messages;}
-    if (messages.length <= this.protectFirstN + this.protectLastN) {return messages;}
+  compress(
+    messages: Array<{ role: string; content: string }>,
+  ): Array<{ role: string; content: string }> {
+    if (!this.should_compress()) {
+      return messages;
+    }
+    if (messages.length <= this.protectFirstN + this.protectLastN) {
+      return messages;
+    }
 
     const protectedStart = messages.slice(0, this.protectFirstN);
     const protectedEnd = messages.slice(-this.protectLastN);
     const middle = messages.slice(this.protectFirstN, -this.protectLastN);
 
-    if (middle.length === 0) {return messages;}
+    if (middle.length === 0) {
+      return messages;
+    }
 
     // Simple compression: summarize middle messages
     const summary = this.summarize(middle);
     const compressedSummary = {
-      role: 'system',
+      role: "system",
       content: `[Previous conversation summarized (${middle.length} messages removed): ${summary}]`,
       [COMPRESSED_SUMMARY_METADATA_KEY]: true,
     };
@@ -63,15 +73,15 @@ export class ContextCompressor extends ContextEngine {
     // Simple summarization - in production this could call an LLM
     const totalLength = messages.reduce((sum, m) => sum + (m.content?.length || 0), 0);
     const topics = this.extractTopics(messages);
-    return `${messages.length} messages (${totalLength} chars) about: ${topics.join(', ')}`;
+    return `${messages.length} messages (${totalLength} chars) about: ${topics.join(", ")}`;
   }
 
   private extractTopics(messages: Array<{ role: string; content: string }>): string[] {
     const words = new Set<string>();
     for (const msg of messages) {
-      const content = msg.content?.toLowerCase() || '';
+      const content = msg.content?.toLowerCase() || "";
       const matches = content.match(/\b[a-z]{4,}\b/g) || [];
-      matches.forEach(w => words.add(w));
+      matches.forEach((w) => words.add(w));
     }
     return Array.from(words).slice(0, 5);
   }

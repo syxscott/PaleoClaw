@@ -33,46 +33,42 @@ export function renderGoogleChatCard(params: {
         <div>
           <span class="label">Audience</span>
           <span>
-            ${
-              googleChat?.audienceType
-                ? `${googleChat.audienceType}${googleChat.audience ? ` · ${googleChat.audience}` : ""}`
-                : "n/a"
-            }
+            ${googleChat?.audienceType
+              ? `${googleChat.audienceType}${googleChat.audience ? ` · ${googleChat.audience}` : ""}`
+              : "n/a"}
           </span>
         </div>
         <div>
           <span class="label">Last start</span>
-          <span>${googleChat?.lastStartAt ? formatRelativeTimestamp(googleChat.lastStartAt) : "n/a"}</span>
+          <span
+            >${googleChat?.lastStartAt
+              ? formatRelativeTimestamp(googleChat.lastStartAt)
+              : "n/a"}</span
+          >
         </div>
         <div>
           <span class="label">Last probe</span>
-          <span>${googleChat?.lastProbeAt ? formatRelativeTimestamp(googleChat.lastProbeAt) : "n/a"}</span>
+          <span
+            >${googleChat?.lastProbeAt
+              ? formatRelativeTimestamp(googleChat.lastProbeAt)
+              : "n/a"}</span
+          >
         </div>
       </div>
 
-      ${
-        googleChat?.lastError
-          ? html`<div class="callout danger" style="margin-top: 12px;">
-            ${googleChat.lastError}
+      ${googleChat?.lastError
+        ? html`<div class="callout danger" style="margin-top: 12px;">${googleChat.lastError}</div>`
+        : nothing}
+      ${googleChat?.probe
+        ? html`<div class="callout" style="margin-top: 12px;">
+            Probe ${googleChat.probe.ok ? "ok" : "failed"} · ${googleChat.probe.status ?? ""}
+            ${googleChat.probe.error ?? ""}
           </div>`
-          : nothing
-      }
-
-      ${
-        googleChat?.probe
-          ? html`<div class="callout" style="margin-top: 12px;">
-            Probe ${googleChat.probe.ok ? "ok" : "failed"} ·
-            ${googleChat.probe.status ?? ""} ${googleChat.probe.error ?? ""}
-          </div>`
-          : nothing
-      }
-
+        : nothing}
       ${renderChannelConfigSection({ channelId: "googlechat", props })}
 
       <div class="row" style="margin-top: 12px;">
-        <button class="btn" @click=${() => props.onRefresh(true)}>
-          Probe
-        </button>
+        <button class="btn" @click=${() => props.onRefresh(true)}>Probe</button>
       </div>
     </div>
   `;

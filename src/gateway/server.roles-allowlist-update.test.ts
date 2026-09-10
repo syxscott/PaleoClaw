@@ -19,14 +19,8 @@ vi.mock("../infra/update-runner.js", () => ({
 }));
 
 import { runGatewayUpdate } from "../infra/update-runner.js";
-import { connectGatewayClient,
-} from "./test-helpers.e2e.js";
-import {
-  installGatewayTestHooks,
-  onceMessage,
-  rpcReq,
-  type RpcResponse,
-} from "./test-helpers.js";
+import { connectGatewayClient } from "./test-helpers.e2e.js";
+import { installGatewayTestHooks, onceMessage, rpcReq, type RpcResponse } from "./test-helpers.js";
 import { installConnectedControlUiServerSuite } from "./test-with-server.js";
 
 installGatewayTestHooks({ scope: "suite" });
@@ -214,11 +208,9 @@ describe("gateway node command allowlist", () => {
     };
 
     const getConnectedNodeId = async () => {
-      const listRes = (await rpcReq(
-        ws,
-        "node.list",
-        {},
-      )) as RpcResponse<{ nodes?: Array<{ nodeId: string; connected?: boolean }> }>;
+      const listRes = (await rpcReq(ws, "node.list", {})) as RpcResponse<{
+        nodes?: Array<{ nodeId: string; connected?: boolean }>;
+      }>;
       const nodeId = listRes.payload?.nodes?.find((node) => node.connected)?.nodeId ?? "";
       expect(nodeId).toBeTruthy();
       return nodeId;
@@ -348,11 +340,9 @@ describe("gateway node command allowlist", () => {
       iosClient.stop();
       await expect
         .poll(async () => {
-          const listRes = (await rpcReq(
-            ws,
-            "node.list",
-            {},
-          )) as RpcResponse<{ nodes?: Array<{ connected?: boolean }> }>;
+          const listRes = (await rpcReq(ws, "node.list", {})) as RpcResponse<{
+            nodes?: Array<{ connected?: boolean }>;
+          }>;
           return (listRes.payload?.nodes ?? []).filter((node) => node.connected).length;
         }, FAST_WAIT_OPTS)
         .toBe(0);

@@ -53,7 +53,9 @@ function readHookPackageManifest(dir: string): HookPackageManifest | null {
 }
 
 function resolvePackageHooks(manifest: HookPackageManifest): string[] {
-  const section = resolveManifestSection(manifest, MANIFEST_KEY) as { hooks?: string[] } | undefined;
+  const section = resolveManifestSection(manifest, MANIFEST_KEY) as
+    | { hooks?: string[] }
+    | undefined;
   const raw = section?.hooks;
   if (!Array.isArray(raw)) {
     return [];

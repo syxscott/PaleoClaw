@@ -50,12 +50,14 @@ Extract landmarks from fossil images for geometric morphometrics analysis.
 ## Input Requirements
 
 ### Image Format
+
 - **Supported**: PNG, JPG, JPEG, TIFF, WEBP
 - **Recommended**: Binary silhouette (black fossil on white background)
 - **Resolution**: Minimum 512x512 pixels
 - **Color**: Grayscale or binary preferred
 
 ### Image Quality
+
 - Clear, sharp outline
 - High contrast between fossil and background
 - Minimal noise or artifacts
@@ -64,6 +66,7 @@ Extract landmarks from fossil images for geometric morphometrics analysis.
 ## Output Formats
 
 ### TPS Format (Recommended for MorphoJ)
+
 ```
 LANDMARKS
 64
@@ -77,6 +80,7 @@ SCALE=1.0
 ```
 
 ### CSV Format
+
 ```csv
 specimen_id,landmark_id,x,y,type,name
 specimen_001,1,256.5,128.0,landmark,LM1
@@ -86,6 +90,7 @@ specimen_001,64,255.8,129.5,landmark,LM64
 ```
 
 ### JSON Format (PaleoClaw Internal)
+
 ```json
 {
   "specimenId": "specimen_001",
@@ -101,6 +106,7 @@ specimen_001,64,255.8,129.5,landmark,LM64
 ## Landmark Configuration
 
 ### Landmarks (64 points total)
+
 - All 64 landmarks are semilandmarks with sliding constraints
 - Evenly distributed along contour
 - Start from arbitrary point, proceed clockwise
@@ -152,6 +158,7 @@ paleoclaw agent --message "Export previous analysis to Excel format"
 ## Configuration Options
 
 ### Processing Options
+
 ```typescript
 {
   threshold: 150,        // Binarization threshold (0-255)
@@ -162,12 +169,14 @@ paleoclaw agent --message "Export previous analysis to Excel format"
 ```
 
 ### Export Formats
+
 - `tps` - MorphoJ/TPSdig compatible
 - `csv` - Comma-separated values
 - `excel` - Excel spreadsheet
 - `json` - PaleoClaw internal format
 
 ### Visualization Options
+
 ```typescript
 {
   showNumbers: true,           // Show landmark numbers
@@ -216,6 +225,7 @@ data/outputs/morphometrics/
 ## Integration with Other Skills
 
 ### With PBDB Query
+
 ```
 User: "Analyze this ammonoid and find its occurrences in PBDB"
 Agent: 1. Extract landmarks from image
@@ -224,6 +234,7 @@ Agent: 1. Extract landmarks from image
 ```
 
 ### With Taxonomy Lookup
+
 ```
 User: "Extract landmarks and verify the taxonomic classification"
 Agent: 1. Extract landmarks
@@ -232,6 +243,7 @@ Agent: 1. Extract landmarks
 ```
 
 ### With Paper Search
+
 ```
 User: "Find papers using similar morphometric methods"
 Agent: 1. Extract landmarks
@@ -244,12 +256,14 @@ Agent: 1. Extract landmarks
 Results are automatically saved to PaleoClaw memory system:
 
 ### Short-term Memory
+
 - Processing timestamp
 - Image path and size
 - Landmark coordinates
 - Export file paths
 
 ### Long-term Memory
+
 - Project accumulation
 - Morphometric patterns
 - Analysis history
@@ -258,21 +272,25 @@ Results are automatically saved to PaleoClaw memory system:
 ## Troubleshooting
 
 ### No Contour Detected
+
 - Check image contrast
 - Adjust threshold value
 - Ensure binary silhouette
 
 ### Landmarks Misplaced
+
 - Verify image orientation
 - Check for image artifacts
 - Manual threshold tuning
 
 ### Export Errors
+
 - Verify output directory permissions
 - Check disk space
 - Ensure valid file paths
 
 ### Visualization Issues
+
 - Install canvas dependencies: `npm install @napi-rs/canvas`
 - Check image format support
 - Verify output directory exists
@@ -280,10 +298,12 @@ Results are automatically saved to PaleoClaw memory system:
 ## Dependencies
 
 ### Required
+
 - `sharp` - Image processing
 - `@napi-rs/canvas` - Visualization (optional)
 
 ### Installation
+
 ```bash
 npm install sharp @napi-rs/canvas
 ```

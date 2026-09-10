@@ -286,7 +286,10 @@ export function registerDefaultAuthTokenSuite(): void {
 
     test("sends connect challenge on open", async () => {
       const ws = new WebSocket(`ws://127.0.0.1:${port}`);
-      const evtPromise = onceMessage(ws, (o) => o.type === "event" && o.event === "connect.challenge");
+      const evtPromise = onceMessage(
+        ws,
+        (o) => o.type === "event" && o.event === "connect.challenge",
+      );
       await new Promise<void>((resolve) => ws.once("open", resolve));
       const evt = await evtPromise;
       const nonce = (evt.payload as { nonce?: unknown } | undefined)?.nonce;
@@ -311,10 +314,7 @@ export function registerDefaultAuthTokenSuite(): void {
     test("rejects non-connect first request", async () => {
       const ws = await openWs(port);
       ws.send(JSON.stringify({ type: "req", id: "h1", method: "health" }));
-      const res = await onceMessage(
-        ws,
-        (o) => o.type === "res" && o.id === "h1",
-      );
+      const res = await onceMessage(ws, (o) => o.type === "res" && o.id === "h1");
       expect(res.ok).toBe(false);
       await new Promise<void>((resolve) => ws.once("close", () => resolve()));
     });

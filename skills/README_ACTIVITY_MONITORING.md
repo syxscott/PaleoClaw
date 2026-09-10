@@ -4,11 +4,11 @@ This document explains how to use the activity monitoring scripts for PaleoClaw 
 
 ## 📦 Skills Overview
 
-| Skill | Script | Description |
-|-------|--------|-------------|
-| `screen_monitor` | `capture_screen.sh` | Capture screenshots at intervals |
-| `activity_logger` | `log_activity.sh` | Log application usage and file access |
-| `daily_log_generator` | `generate_daily_log.sh` | Generate Markdown daily reports |
+| Skill                 | Script                  | Description                           |
+| --------------------- | ----------------------- | ------------------------------------- |
+| `screen_monitor`      | `capture_screen.sh`     | Capture screenshots at intervals      |
+| `activity_logger`     | `log_activity.sh`       | Log application usage and file access |
+| `daily_log_generator` | `generate_daily_log.sh` | Generate Markdown daily reports       |
 
 ---
 
@@ -17,17 +17,20 @@ This document explains how to use the activity monitoring scripts for PaleoClaw 
 ### 1. Screen Monitor
 
 **Capture screenshots continuously:**
+
 ```bash
 cd PaleoClaw/skills/screen_monitor/scripts
 bash capture_screen.sh monitor
 ```
 
 **Capture single screenshot:**
+
 ```bash
 bash capture_screen.sh single
 ```
 
 **Configuration:**
+
 ```bash
 export SCREEN_MONITOR_INTERVAL=60  # seconds
 export SCREEN_MONITOR_DIR="$HOME/paleoclaw-logs/screenshots"
@@ -38,12 +41,14 @@ export SCREEN_MONITOR_DIR="$HOME/paleoclaw-logs/screenshots"
 ### 2. Activity Logger
 
 **Start activity logging:**
+
 ```bash
 cd PaleoClaw/skills/activity_logger/scripts
 bash log_activity.sh monitor
 ```
 
 **Log specific events:**
+
 ```bash
 # Log current application
 bash log_activity.sh log-app
@@ -56,11 +61,13 @@ bash log_activity.sh log-command "git commit -m 'feat: add feature'"
 ```
 
 **View summary:**
+
 ```bash
 bash log_activity.sh summary
 ```
 
 **Configuration:**
+
 ```bash
 export ACTIVITY_LOG_DIR="$HOME/paleoclaw-logs/activity"
 ```
@@ -70,22 +77,26 @@ export ACTIVITY_LOG_DIR="$HOME/paleoclaw-logs/activity"
 ### 3. Daily Log Generator
 
 **Generate today's log:**
+
 ```bash
 cd PaleoClaw/skills/daily_log_generator/scripts
 bash generate_daily_log.sh today
 ```
 
 **Generate for specific date:**
+
 ```bash
 bash generate_daily_log.sh 2026-03-08
 ```
 
 **Generate weekly report:**
+
 ```bash
 bash generate_daily_log.sh weekly
 ```
 
 **Configuration:**
+
 ```bash
 export ACTIVITY_LOG_DIR="$HOME/paleoclaw-logs/activity"
 export SCREEN_MONITOR_DIR="$HOME/paleoclaw-logs/screenshots"
@@ -117,16 +128,19 @@ export DAILY_LOG_OUTPUT_DIR="$HOME/paleoclaw-logs/daily-logs"
 ## 🔧 System Requirements
 
 ### macOS
+
 - `screencapture` (built-in)
 - `osascript` (built-in)
 - `jq` (install: `brew install jq`)
 
 ### Linux
+
 - `imagemagick` (install: `sudo apt install imagemagick`)
 - `xdotool` (install: `sudo apt install xdotool`)
 - `jq` (install: `sudo apt install jq`)
 
 ### Windows
+
 - PowerShell (built-in)
 - `jq` (install: `choco install jq`)
 
@@ -135,6 +149,7 @@ export DAILY_LOG_OUTPUT_DIR="$HOME/paleoclaw-logs/daily-logs"
 ## 🎯 Complete Workflow Example
 
 ### Morning Setup
+
 ```bash
 # Start screen monitoring in background
 cd ~/PaleoClaw/skills/screen_monitor/scripts
@@ -150,6 +165,7 @@ echo "Monitoring started. PIDs: Screen=$SCREEN_PID, Activity=$ACTIVITY_PID"
 ```
 
 ### End of Day
+
 ```bash
 # Stop monitoring
 kill $SCREEN_PID $ACTIVITY_PID
@@ -167,6 +183,7 @@ cat ~/paleoclaw-logs/daily-logs/daily-log_$(date +%Y-%m-%d).md
 ## 📊 Output Examples
 
 ### Activity Log Entry (JSON)
+
 ```json
 {
   "timestamp": "2026-03-09T14:30:00Z",
@@ -179,6 +196,7 @@ cat ~/paleoclaw-logs/daily-logs/daily-log_$(date +%Y-%m-%d).md
 ```
 
 ### Daily Log (Markdown)
+
 ```markdown
 # Daily Activity Log
 
@@ -188,12 +206,12 @@ cat ~/paleoclaw-logs/daily-logs/daily-log_$(date +%Y-%m-%d).md
 
 ## 📊 Summary
 
-| Metric | Value |
-|--------|-------|
-| Application Switches | 245 |
-| Files Accessed | 42 |
-| Commands Executed | 156 |
-| Screenshots Captured | 482 |
+| Metric               | Value |
+| -------------------- | ----- |
+| Application Switches | 245   |
+| Files Accessed       | 42    |
+| Commands Executed    | 156   |
+| Screenshots Captured | 482   |
 
 ...
 ```
@@ -203,11 +221,13 @@ cat ~/paleoclaw-logs/daily-logs/daily-log_$(date +%Y-%m-%d).md
 ## 🔒 Privacy & Security
 
 ### Data Storage
+
 - All data stored locally by default
 - No automatic cloud uploads
 - User has full control over data
 
 ### Sensitive Data Protection
+
 ```bash
 # Exclude sensitive applications
 export EXCLUDE_APPS="Password Manager,Banking App"
@@ -217,6 +237,7 @@ export AUTO_DELETE_AFTER_DAYS=7
 ```
 
 ### Manual Cleanup
+
 ```bash
 # Delete all logs
 rm -rf ~/paleoclaw-logs/
@@ -232,6 +253,7 @@ rm ~/paleoclaw-logs/daily-logs/daily-log_2026-03-09.md
 ## 🐛 Troubleshooting
 
 ### Screen capture fails on macOS
+
 ```bash
 # Grant screen recording permission
 # System Preferences → Security & Privacy → Privacy → Screen Recording
@@ -239,6 +261,7 @@ rm ~/paleoclaw-logs/daily-logs/daily-log_2026-03-09.md
 ```
 
 ### Activity logger not detecting apps on Linux
+
 ```bash
 # Install xdotool
 sudo apt install xdotool
@@ -248,6 +271,7 @@ xdotool getactivewindow getwindowname
 ```
 
 ### jq command not found
+
 ```bash
 # macOS
 brew install jq
@@ -277,6 +301,7 @@ paleoclaw agent --message "What have I been working on today?"
 ## 🔄 Automation
 
 ### Cron Job (Linux/macOS)
+
 ```bash
 # Start monitoring at 9 AM
 0 9 * * * cd ~/PaleoClaw/skills/screen_monitor/scripts && bash capture_screen.sh monitor &
@@ -286,6 +311,7 @@ paleoclaw agent --message "What have I been working on today?"
 ```
 
 ### Task Scheduler (Windows)
+
 Create scheduled tasks to run the scripts at desired times.
 
 ---
@@ -299,5 +325,5 @@ Create scheduled tasks to run the scripts at desired times.
 
 ---
 
-*Part of PaleoClaw v1.1.0 Activity Monitoring System*  
-*"Ex Fossilo, Scientia" - From Fossils, Knowledge*
+_Part of PaleoClaw v1.1.0 Activity Monitoring System_  
+_"Ex Fossilo, Scientia" - From Fossils, Knowledge_

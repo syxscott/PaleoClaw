@@ -2,8 +2,8 @@
  * CrossRef literature search tool
  */
 
-import { retryAsync } from '../../vendor/retry/index.js';
-import { toolRegistry } from './registry.js';
+import { retryAsync } from "../../vendor/retry/index.js";
+import { toolRegistry } from "./registry.js";
 
 interface CrossrefParams {
   query?: string;
@@ -36,7 +36,7 @@ async function fetchCrossrefWithRetry(url: URL, init?: RequestInit): Promise<Res
           return true;
         }
         const status = (error as { status?: unknown }).status;
-        return status === 429 || (typeof status === 'number' && status >= 500 && status <= 599);
+        return status === 429 || (typeof status === "number" && status >= 500 && status <= 599);
       },
     },
   );
@@ -44,21 +44,24 @@ async function fetchCrossrefWithRetry(url: URL, init?: RequestInit): Promise<Res
 
 async function crossrefSearchHandler(params: Record<string, unknown>): Promise<unknown> {
   const typed = params as CrossrefParams;
-  const query = String(typed.query || '').trim();
+  const query = String(typed.query || "").trim();
   if (!query) {
-    throw new Error('query is required');
+    throw new Error("query is required");
   }
 
   const parsedRows = Number(typed.rows);
   const rows = Math.max(1, Math.min(50, Number.isFinite(parsedRows) ? parsedRows : 10));
-  const api = new URL('https://api.crossref.org/works');
-  api.searchParams.set('query', query);
-  api.searchParams.set('rows', String(rows));
-  api.searchParams.set('select', 'DOI,title,author,published-print,published-online,container-title');
+  const api = new URL("https://api.crossref.org/works");
+  api.searchParams.set("query", query);
+  api.searchParams.set("rows", String(rows));
+  api.searchParams.set(
+    "select",
+    "DOI,title,author,published-print,published-online,container-title",
+  );
 
   const response = await fetchCrossrefWithRetry(api, {
     headers: {
-      'User-Agent': 'PaleoClaw/1.6.0 (mailto:maintainer@example.com)',
+      "User-Agent": "PaleoClaw/1.6.0 (mailto:maintainer@example.com)",
     },
   });
 
@@ -67,30 +70,28 @@ async function crossrefSearchHandler(params: Record<string, unknown>): Promise<u
   }
 
   const data = (await response.json()) as {
-    message?: { items?: unknown[]; ['total-results']?: number };
+    message?: { items?: unknown[]; ["total-results"]?: number };
   };
 
   return {
     query,
-    totalResults: data.message?.['total-results'] || 0,
+    totalResults: data.message?.["total-results"] || 0,
     items: data.message?.items || [],
   };
 }
 
 toolRegistry.register({
-  name: 'crossref_search',
-  category: 'research',
-  description: 'Search scholarly metadata from CrossRef',
+  name: "crossref_search",
+  category: "research",
+  description: "Search scholarly metadata from CrossRef",
   schema: {
-    type: 'object',
+    type: "object",
     properties: {
-      query: { type: 'string', description: 'Search query text' },
-      rows: { type: 'number', description: 'Max rows (1-50)' },
+      query: { type: "string", description: "Search query text" },
+      rows: { type: "number", description: "Max rows (1-50)" },
     },
-    required: ['query'],
+    required: ["query"],
   },
   handler: crossrefSearchHandler,
   timeoutMs: 15_000,
 });
-
-

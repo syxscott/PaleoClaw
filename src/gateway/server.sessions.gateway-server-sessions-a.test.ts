@@ -199,7 +199,11 @@ function expectActiveRunCleanup(
 }
 
 async function getMainPreviewEntry(ws: import("ws").WebSocket) {
-  const preview = (await rpcReq(ws, "sessions.preview", { keys: ["main"], limit: 3, maxChars: 120 })) as RpcResponse<{
+  const preview = (await rpcReq(ws, "sessions.preview", {
+    keys: ["main"],
+    limit: 3,
+    maxChars: 120,
+  })) as RpcResponse<{
     previews: Array<{
       key: string;
       status: string;
@@ -309,7 +313,10 @@ describe("gateway server sessions", () => {
     expect(resolvedBySessionId.ok).toBe(true);
     expect(resolvedBySessionId.payload?.key).toBe("agent:main:discord:group:dev");
 
-    const list1 = (await rpcReq(ws, "sessions.list", { includeGlobal: false, includeUnknown: false })) as RpcResponse<{
+    const list1 = (await rpcReq(ws, "sessions.list", {
+      includeGlobal: false,
+      includeUnknown: false,
+    })) as RpcResponse<{
       path: string;
       defaults?: { model?: string | null; modelProvider?: string | null };
       sessions: Array<{
@@ -369,7 +376,10 @@ describe("gateway server sessions", () => {
     expect(patched.payload?.ok).toBe(true);
     expect(patched.payload?.key).toBe("agent:main:main");
 
-    const sendPolicyPatched = (await rpcReq(ws, "sessions.patch", { key: "agent:main:main", sendPolicy: "deny" })) as RpcResponse<{
+    const sendPolicyPatched = (await rpcReq(ws, "sessions.patch", {
+      key: "agent:main:main",
+      sendPolicy: "deny",
+    })) as RpcResponse<{
       ok: true;
       entry: { sendPolicy?: string };
     }>;
@@ -679,7 +689,10 @@ describe("gateway server sessions", () => {
       ...store,
       "agent:ops:MAIN": { ...store["agent:ops:work"] },
     });
-    const reset = (await rpcReq(ws, "sessions.reset", { key: "main" })) as RpcResponse<{ ok: true; key: string }>;
+    const reset = (await rpcReq(ws, "sessions.reset", { key: "main" })) as RpcResponse<{
+      ok: true;
+      key: string;
+    }>;
     expect(reset.ok).toBe(true);
     expect(reset.payload?.key).toBe("agent:ops:work");
     store = await readStore();
@@ -857,7 +870,9 @@ describe("gateway server sessions", () => {
     expect(deleted.ok).toBe(true);
     expect(deleted.payload?.deleted).toBe(true);
     expect(subagentLifecycleHookMocks.runSubagentEnded).toHaveBeenCalledTimes(1);
-    const event = (subagentLifecycleHookMocks.runSubagentEnded.mock.calls as unknown[][])[0]?.[0] as
+    const event = (
+      subagentLifecycleHookMocks.runSubagentEnded.mock.calls as unknown[][]
+    )[0]?.[0] as
       | { targetKind?: string; targetSessionKey?: string; reason?: string; outcome?: string }
       | undefined;
     expect(event).toMatchObject({
@@ -950,13 +965,9 @@ describe("gateway server sessions", () => {
 
     const { ws } = await openClient();
 
-    const reset = (await rpcReq(
-      ws,
-      "sessions.reset",
-      {
-        key: "main",
-      },
-    )) as RpcResponse<{ ok: true; key: string; entry: { sessionId: string } }>;
+    const reset = (await rpcReq(ws, "sessions.reset", {
+      key: "main",
+    })) as RpcResponse<{ ok: true; key: string; entry: { sessionId: string } }>;
     expect(reset.ok).toBe(true);
     expect(reset.payload?.key).toBe("agent:main:main");
     expect(reset.payload?.entry.sessionId).not.toBe("sess-main");
@@ -1056,13 +1067,9 @@ describe("gateway server sessions", () => {
     });
 
     const { ws } = await openClient();
-    const reset = (await rpcReq(
-      ws,
-      "sessions.reset",
-      {
-        key: "agent:main:subagent:missing",
-      },
-    )) as RpcResponse<{ ok: true; key: string; entry: { sessionId: string } }>;
+    const reset = (await rpcReq(ws, "sessions.reset", {
+      key: "agent:main:subagent:missing",
+    })) as RpcResponse<{ ok: true; key: string; entry: { sessionId: string } }>;
 
     expect(reset.ok).toBe(true);
     expect(subagentLifecycleHookMocks.runSubagentEnded).not.toHaveBeenCalled();
@@ -1084,18 +1091,16 @@ describe("gateway server sessions", () => {
     });
 
     const { ws } = await openClient();
-    const reset = (await rpcReq(
-      ws,
-      "sessions.reset",
-      {
-        key: "agent:main:subagent:worker",
-      },
-    )) as RpcResponse<{ ok: true; key: string; entry: { sessionId: string } }>;
+    const reset = (await rpcReq(ws, "sessions.reset", {
+      key: "agent:main:subagent:worker",
+    })) as RpcResponse<{ ok: true; key: string; entry: { sessionId: string } }>;
     expect(reset.ok).toBe(true);
     expect(reset.payload?.key).toBe("agent:main:subagent:worker");
     expect(reset.payload?.entry.sessionId).not.toBe("sess-subagent");
     expect(subagentLifecycleHookMocks.runSubagentEnded).toHaveBeenCalledTimes(1);
-    const event = (subagentLifecycleHookMocks.runSubagentEnded.mock.calls as unknown[][])[0]?.[0] as
+    const event = (
+      subagentLifecycleHookMocks.runSubagentEnded.mock.calls as unknown[][]
+    )[0]?.[0] as
       | { targetKind?: string; targetSessionKey?: string; reason?: string; outcome?: string }
       | undefined;
     expect(event).toMatchObject({

@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-
 import { formatSessionTokens } from "./presenter.ts";
 
 describe("formatSessionTokens (regression #F3)", () => {

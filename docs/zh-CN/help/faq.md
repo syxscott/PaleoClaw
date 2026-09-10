@@ -1151,7 +1151,7 @@ paleoclaw 还会运行**静默的预压缩记忆刷新**，以提醒模型在自
 
 | 路径                                                            | 用途                                                 |
 | --------------------------------------------------------------- | ---------------------------------------------------- |
-| `$OPENCLAW_STATE_DIR/paleoclaw.json`                             | 主配置（JSON5）                                      |
+| `$OPENCLAW_STATE_DIR/paleoclaw.json`                            | 主配置（JSON5）                                      |
 | `$OPENCLAW_STATE_DIR/credentials/oauth.json`                    | 旧版 OAuth 导入（首次使用时复制到认证配置文件）      |
 | `$OPENCLAW_STATE_DIR/agents/<agentId>/agent/auth-profiles.json` | 认证配置文件（OAuth + API 密钥）                     |
 | `$OPENCLAW_STATE_DIR/agents/<agentId>/agent/auth.json`          | 运行时认证缓存（自动管理）                           |

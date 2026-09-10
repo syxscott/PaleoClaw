@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-
 import { inferBasePathFromPathname } from "./navigation.ts";
 
 describe("inferBasePathFromPathname - case sensitivity (regression #F2)", () => {
@@ -10,9 +9,7 @@ describe("inferBasePathFromPathname - case sensitivity (regression #F2)", () => 
   });
 
   it("lowercases the fallback path when no tab is matched", () => {
-    expect(inferBasePathFromPathname("/APPS/PALEOCLAW/UNKNOWN")).toBe(
-      "/apps/paleoclaw/unknown",
-    );
+    expect(inferBasePathFromPathname("/APPS/PALEOCLAW/UNKNOWN")).toBe("/apps/paleoclaw/unknown");
   });
 
   it("still returns the existing canonical values for lowercase input", () => {

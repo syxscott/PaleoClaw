@@ -113,7 +113,9 @@ export function resolveHookInstallDir(hookId: string, hooksDir?: string): string
 }
 
 async function ensureOpenClawHooks(manifest: HookPackageManifest) {
-  const section = resolveManifestSection(manifest, MANIFEST_KEY) as { hooks?: string[] } | undefined;
+  const section = resolveManifestSection(manifest, MANIFEST_KEY) as
+    | { hooks?: string[] }
+    | undefined;
   const hooks = section?.hooks;
   if (!Array.isArray(hooks)) {
     throw new Error("package.json missing paleoclaw.hooks");

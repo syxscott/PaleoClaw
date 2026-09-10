@@ -2,7 +2,7 @@
  * PaleoClaw Session types
  */
 
-export type SessionRole = 'system' | 'user' | 'assistant' | 'tool';
+export type SessionRole = "system" | "user" | "assistant" | "tool";
 
 /**
  * Provenance of a session title:
@@ -10,7 +10,7 @@ export type SessionRole = 'system' | 'user' | 'assistant' | 'tool';
  * - 'derived': deterministically derived from the first user message.
  * - 'llm': upgraded by an injected titleUpgrader (cheap model).
  */
-export type SessionTitleSource = 'user' | 'derived' | 'llm';
+export type SessionTitleSource = "user" | "derived" | "llm";
 
 export interface SessionMessage {
   id: string;
@@ -66,7 +66,7 @@ export interface SessionStoreLike {
     sessionId: string,
     role: SessionRole,
     content: string,
-    metadata?: Record<string, unknown>
+    metadata?: Record<string, unknown>,
   ): SessionMessage;
   getSession(sessionId: string): SessionRecord;
   resumeSession(sessionId: string): SessionRecord;

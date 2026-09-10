@@ -3,23 +3,24 @@ name: taxonomy_lookup
 description: "Lookup paleontological taxonomic classification (kingdom, phylum, class, order, family, genus, species). Uses PBDB as primary source, with NCBI/Wikidata for auxiliary data. Use when: verifying classification hierarchy, checking taxonomic validity, finding related taxa."
 homepage: https://github.com/syxscott/PaleoClaw
 metadata:
-  {
-    "paleoclaw":
-      {
-        "emoji": "🔬",
-        "requires": { "bins": ["curl"] },
-        "install":
-          [
-            {
-              "id": "brew",
-              "kind": "brew",
-              "formula": "curl",
-              "bins": ["curl"],
-              "label": "Install curl (brew)",
-            },
-          ],
-      },
-  }
+{
+"paleoclaw":
+{
+"emoji": "🔬",
+"requires": { "bins": ["curl"] },
+"install":
+[
+{
+"id": "brew",
+"kind": "brew",
+"formula": "curl",
+"bins": ["curl"],
+"label": "Install curl (brew)",
+},
+],
+},
+}
+
 ---
 
 # Taxonomy Lookup Skill
@@ -58,7 +59,7 @@ Query taxonomic classification for paleontological taxa.
 ```bash
 # Get complete taxonomic hierarchy from PBDB
 curl -s "https://paleobiodb.org/data1.2/taxa/list.json?name=Tyrannosaurus&rank=genus&show=class" | jq '
-  .records[0] | 
+  .records[0] |
   {
     name: .name,
     rank: .rank,

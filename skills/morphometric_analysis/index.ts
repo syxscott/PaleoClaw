@@ -1,21 +1,30 @@
 /**
  * Morphometric Analysis Skill
  * 几何形态测量学分析 Skill
- * 
+ *
  * 功能：
  * 1. 从化石图像提取 64 个地标点
  * 2. 导出 TPS、CSV、Excel、JSON 格式
  * 3. 生成可视化图像
  * 4. 支持批量处理
  * 5. 与 PaleoClaw 记忆系统集成
- * 
+ *
  * 基于 DeepMorph 算法移植
  * DeepMorph 使用 64 个连续的地标点（1-64），每个都有滑动约束
  */
 
-import { existsSync } from 'fs';
-import { mkdir, readdir, stat } from 'fs/promises';
-import { basename, extname, join, resolve } from 'path';
+import { existsSync } from "fs";
+import { mkdir, readdir, stat } from "fs/promises";
+import { basename, extname, join, resolve } from "path";
+import { exportCurveslideConfig, exportLandmarkLinks } from "./lib/curveslide.js";
+import {
+  exportSpecimen,
+  exportBatch,
+  createExportConfig,
+  getFileExtension,
+} from "./lib/exporters.js";
+import { extractContour, getImageSize, validateImageFormat } from "./lib/image-processor.js";
+import { detectAllLandmarks } from "./lib/landmark-detector.js";
 import type {
   SpecimenResult,
   BatchResult,
@@ -23,12 +32,12 @@ import type {
   ExportFormat,
   ExportConfig,
   VisualizationOptions,
-} from './lib/types.js';
-import { extractContour, getImageSize, validateImageFormat } from './lib/image-processor.js';
-import { detectAllLandmarks } from './lib/landmark-detector.js';
-import { exportSpecimen, exportBatch, createExportConfig, getFileExtension } from './lib/exporters.js';
-import { generateVisualization, generateComparison, createVisualizationOptions } from './lib/visualizer.js';
-import { exportCurveslideConfig, exportLandmarkLinks } from './lib/curveslide.js';
+} from "./lib/types.js";
+import {
+  generateVisualization,
+  generateComparison,
+  createVisualizationOptions,
+} from "./lib/visualizer.js";
 
 /**
  * Skill configuration
@@ -50,8 +59,8 @@ export interface SkillConfig {
  * Default skill configuration
  */
 const DEFAULT_CONFIG: SkillConfig = {
-  outputDir: 'data/outputs/morphometrics',
-  formats: ['tps', 'csv', 'json'],
+  outputDir: "data/outputs/morphometrics",
+  formats: ["tps", "csv", "json"],
   generateVisualizations: true,
   processingOptions: {
     threshold: 150,
@@ -63,7 +72,7 @@ const DEFAULT_CONFIG: SkillConfig = {
     showNumbers: true,
     showConnections: true,
     pointSize: 4,
-    landmarkColor: '#FF0000',
+    landmarkColor: "#FF0000",
     imageOpacity: 0.3,
   },
 };
@@ -71,7 +80,7 @@ const DEFAULT_CONFIG: SkillConfig = {
 /**
  * Process single specimen
  * 处理单个标本
- * 
+ *
  * @param imagePath - Path to specimen image
  * @param specimenId - Specimen identifier
  * @param config - Skill configuration
@@ -80,7 +89,7 @@ const DEFAULT_CONFIG: SkillConfig = {
 export async function processSpecimen(
   imagePath: string,
   specimenId?: string,
-  config: Partial<SkillConfig> = {}
+  config: Partial<SkillConfig> = {},
 ): Promise<SpecimenResult> {
   const cfg = { ...DEFAULT_CONFIG, ...config };
 
@@ -108,10 +117,7 @@ export async function processSpecimen(
   }
 
   // Detect landmarks (64 points matching DeepMorph)
-  const landmarks = detectAllLandmarks(
-    contour,
-    cfg.processingOptions.numLandmarks
-  );
+  const landmarks = detectAllLandmarks(contour, cfg.processingOptions.numLandmarks);
 
   // Build result
   const result: SpecimenResult = {
@@ -129,14 +135,14 @@ export async function processSpecimen(
 /**
  * Process batch of specimens
  * 批量处理标本
- * 
+ *
  * @param inputDir - Directory containing images
  * @param config - Skill configuration
  * @returns Batch processing result
  */
 export async function processBatch(
   inputDir: string,
-  config: Partial<SkillConfig> = {}
+  config: Partial<SkillConfig> = {},
 ): Promise<BatchResult> {
   const cfg = { ...DEFAULT_CONFIG, ...config };
 
@@ -146,10 +152,8 @@ export async function processBatch(
 
   // Find all image files
   const files = await readdir(inputDir);
-  const imageExtensions = ['.png', '.jpg', '.jpeg', '.tiff', '.tif', '.webp'];
-  const imageFiles = files.filter(f => 
-    imageExtensions.includes(extname(f).toLowerCase())
-  );
+  const imageExtensions = [".png", ".jpg", ".jpeg", ".tiff", ".tif", ".webp"];
+  const imageFiles = files.filter((f) => imageExtensions.includes(extname(f).toLowerCase()));
 
   if (imageFiles.length === 0) {
     throw new Error(`No image files found in: ${inputDir}`);
@@ -190,13 +194,13 @@ export async function processBatch(
 /**
  * Export results
  * 导出结果
- * 
+ *
  * @param result - Specimen or batch result
  * @param config - Skill configuration
  */
 export async function exportResults(
   result: SpecimenResult | BatchResult,
-  config: Partial<SkillConfig> = {}
+  config: Partial<SkillConfig> = {},
 ): Promise<string[]> {
   const cfg = { ...DEFAULT_CONFIG, ...config };
   const outputPaths: string[] = [];
@@ -204,35 +208,33 @@ export async function exportResults(
   // Ensure output directory exists
   await mkdir(cfg.outputDir, { recursive: true });
 
-  const isBatch = 'total' in result;
+  const isBatch = "total" in result;
 
   for (const format of cfg.formats) {
     const ext = getFileExtension(format);
-    const filename = isBatch 
-      ? `batch_results${ext}`
-      : `${result.specimenId}${ext}`;
+    const filename = isBatch ? `batch_results${ext}` : `${result.specimenId}${ext}`;
     const outputPath = join(cfg.outputDir, format, filename);
-    
+
     await mkdir(join(cfg.outputDir, format), { recursive: true });
-    
+
     const exportConfig = createExportConfig(format, outputPath);
-    
+
     if (isBatch) {
       await exportBatch(result as BatchResult, exportConfig);
     } else {
       await exportSpecimen(result as SpecimenResult, exportConfig);
     }
-    
+
     outputPaths.push(outputPath);
   }
 
   // Export curveslide config
-  const curveslidePath = join(cfg.outputDir, 'curveslide.csv');
+  const curveslidePath = join(cfg.outputDir, "curveslide.csv");
   await exportCurveslideConfig(curveslidePath);
   outputPaths.push(curveslidePath);
 
   // Export landmark links
-  const linksPath = join(cfg.outputDir, 'landmark_links.txt');
+  const linksPath = join(cfg.outputDir, "landmark_links.txt");
   await exportLandmarkLinks(linksPath);
   outputPaths.push(linksPath);
 
@@ -242,13 +244,13 @@ export async function exportResults(
 /**
  * Generate visualizations
  * 生成可视化
- * 
+ *
  * @param result - Specimen result
  * @param config - Skill configuration
  */
 export async function generateVisualizations(
   result: SpecimenResult,
-  config: Partial<SkillConfig> = {}
+  config: Partial<SkillConfig> = {},
 ): Promise<string[]> {
   const cfg = { ...DEFAULT_CONFIG, ...config };
   const outputPaths: string[] = [];
@@ -257,7 +259,7 @@ export async function generateVisualizations(
     return outputPaths;
   }
 
-  const visDir = join(cfg.outputDir, 'visualizations');
+  const visDir = join(cfg.outputDir, "visualizations");
   await mkdir(visDir, { recursive: true });
 
   const visOptions = createVisualizationOptions(cfg.visualizationOptions);
@@ -278,14 +280,14 @@ export async function generateVisualizations(
 /**
  * Run complete analysis pipeline
  * 运行完整分析流程
- * 
+ *
  * @param imagePath - Image path or directory
  * @param config - Skill configuration
  * @returns Analysis results and output paths
  */
 export async function runAnalysis(
   imagePath: string,
-  config: Partial<SkillConfig> = {}
+  config: Partial<SkillConfig> = {},
 ): Promise<{
   results: SpecimenResult | BatchResult;
   exportPaths: string[];
@@ -345,7 +347,7 @@ function generateSpecimenId(imagePath: string): string {
  * 批量结果类型守卫
  */
 function isBatchResult(result: SpecimenResult | BatchResult): result is BatchResult {
-  return 'total' in result;
+  return "total" in result;
 }
 
 /**
@@ -359,15 +361,16 @@ export function getSkillInfo(): {
   capabilities: string[];
 } {
   return {
-    name: 'morphometric_analysis',
-    version: '1.0.0',
-    description: 'Extract morphometric landmarks from fossil images for geometric morphometrics analysis',
+    name: "morphometric_analysis",
+    version: "1.0.0",
+    description:
+      "Extract morphometric landmarks from fossil images for geometric morphometrics analysis",
     capabilities: [
-      'Extract 64 landmarks along contour (matching DeepMorph)',
-      'Export to TPS, CSV, Excel, JSON formats',
-      'Generate visualization images',
-      'Batch processing support',
-      'Compatible with MorphoJ and geomorph',
+      "Extract 64 landmarks along contour (matching DeepMorph)",
+      "Export to TPS, CSV, Excel, JSON formats",
+      "Generate visualization images",
+      "Batch processing support",
+      "Compatible with MorphoJ and geomorph",
     ],
   };
 }
@@ -375,17 +378,15 @@ export function getSkillInfo(): {
 /**
  * Validate configuration
  * 验证配置
- * 
+ *
  * @param config - Configuration to validate
  * @returns Validation result
  */
-export function validateConfig(
-  config: Partial<SkillConfig>
-): { valid: boolean; errors: string[] } {
+export function validateConfig(config: Partial<SkillConfig>): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
 
   if (config.formats) {
-    const validFormats: ExportFormat[] = ['tps', 'csv', 'excel', 'json'];
+    const validFormats: ExportFormat[] = ["tps", "csv", "excel", "json"];
     for (const format of config.formats) {
       if (!validFormats.includes(format)) {
         errors.push(`Invalid export format: ${format}`);
@@ -395,13 +396,13 @@ export function validateConfig(
 
   if (config.processingOptions?.threshold !== undefined) {
     if (config.processingOptions.threshold < 0 || config.processingOptions.threshold > 255) {
-      errors.push('Threshold must be between 0 and 255');
+      errors.push("Threshold must be between 0 and 255");
     }
   }
 
   if (config.processingOptions?.numLandmarks !== undefined) {
     if (config.processingOptions.numLandmarks < 1) {
-      errors.push('Number of landmarks must be at least 1');
+      errors.push("Number of landmarks must be at least 1");
     }
   }
 
@@ -412,9 +413,9 @@ export function validateConfig(
 }
 
 // Export all modules
-export * from './lib/types.js';
-export * from './lib/image-processor.js';
-export * from './lib/landmark-detector.js';
-export * from './lib/curveslide.js';
-export * from './lib/exporters.js';
-export * from './lib/visualizer.js';
+export * from "./lib/types.js";
+export * from "./lib/image-processor.js";
+export * from "./lib/landmark-detector.js";
+export * from "./lib/curveslide.js";
+export * from "./lib/exporters.js";
+export * from "./lib/visualizer.js";

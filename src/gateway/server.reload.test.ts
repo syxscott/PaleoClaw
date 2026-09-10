@@ -564,7 +564,9 @@ describe("gateway agents", () => {
   it("lists configured agents via agents.list RPC", async () => {
     const { server, ws } = await startServerWithClient();
     await connectOk(ws);
-    const res = (await rpcReq(ws, "agents.list", {})) as RpcResponse<{ agents: Array<{ id: string }> }>;
+    const res = (await rpcReq(ws, "agents.list", {})) as RpcResponse<{
+      agents: Array<{ id: string }>;
+    }>;
     expect(res.ok).toBe(true);
     expect(res.payload?.agents.map((agent) => agent.id)).toContain("main");
     ws.close();

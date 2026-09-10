@@ -416,10 +416,7 @@ describe("resolveSessionModelRef", () => {
 });
 
 describe("resolveSessionModelIdentityRef", () => {
-  const resolveLegacyIdentityRef = (
-    cfg: OpenClawConfig,
-    modelProvider?: string,
-  ) =>
+  const resolveLegacyIdentityRef = (cfg: OpenClawConfig, modelProvider?: string) =>
     resolveSessionModelIdentityRef(cfg, {
       sessionId: "legacy-session",
       updatedAt: Date.now(),

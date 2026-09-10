@@ -107,7 +107,10 @@ describe("gateway server channels", () => {
   test("channels.status returns snapshot without probe", async () => {
     vi.stubEnv("TELEGRAM_BOT_TOKEN", undefined);
     setRegistry(defaultRegistry);
-    const res = (await rpcReq(ws, "channels.status", { probe: false, timeoutMs: 2000 })) as RpcResponse<{
+    const res = (await rpcReq(ws, "channels.status", {
+      probe: false,
+      timeoutMs: 2000,
+    })) as RpcResponse<{
       channels?: Record<
         string,
         {

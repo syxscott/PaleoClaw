@@ -1,6 +1,6 @@
 {
   "name": "@paleoclaw/acpx",
-  "version": "2026.3.7",
+  "version": "1.8.0",
   "description": "paleoclaw ACP runtime backend via acpx",
   "type": "module",
   "dependencies": {

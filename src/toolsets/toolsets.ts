@@ -1,4 +1,4 @@
-import { toolRegistry } from '../tools/tool-registry.js';
+import { toolRegistry } from "../tools/tool-registry.js";
 
 export interface ToolsetDefinition {
   name: string;
@@ -8,30 +8,30 @@ export interface ToolsetDefinition {
 }
 
 export const CORE_TOOLSETS: Record<string, ToolsetDefinition> = {
-  'hermes-core': {
-    name: 'hermes-core',
-    description: 'Core Hermes tools',
-    tools: ['web_search', 'web_extract', 'terminal', 'process', 'read_file', 'write_file'],
+  "hermes-core": {
+    name: "hermes-core",
+    description: "Core Hermes tools",
+    tools: ["web_search", "web_extract", "terminal", "process", "read_file", "write_file"],
   },
-  'file': {
-    name: 'file',
-    description: 'File operations',
-    tools: ['read_file', 'write_file', 'patch', 'search_files'],
+  file: {
+    name: "file",
+    description: "File operations",
+    tools: ["read_file", "write_file", "patch", "search_files"],
   },
-  'web': {
-    name: 'web',
-    description: 'Web search and extraction',
-    tools: ['web_search', 'web_extract'],
+  web: {
+    name: "web",
+    description: "Web search and extraction",
+    tools: ["web_search", "web_extract"],
   },
-  'terminal': {
-    name: 'terminal',
-    description: 'Terminal and process operations',
-    tools: ['terminal', 'process'],
+  terminal: {
+    name: "terminal",
+    description: "Terminal and process operations",
+    tools: ["terminal", "process"],
   },
-  'vision': {
-    name: 'vision',
-    description: 'Vision and image analysis',
-    tools: ['vision_analyze', 'image_generate'],
+  vision: {
+    name: "vision",
+    description: "Vision and image analysis",
+    tools: ["vision_analyze", "image_generate"],
   },
 };
 

@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     tags:
-      - 'v*'
+      - "v*"
   workflow_dispatch:
 
 jobs:
@@ -19,8 +19,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22.12.0'
-          registry-url: 'https://registry.npmjs.org'
+          node-version: "22.12.0"
+          registry-url: "https://registry.npmjs.org"
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v2
@@ -60,4 +60,4 @@ jobs:
         with:
           name: dist
           path: dist/
-          retention-days: 7 
+          retention-days: 7

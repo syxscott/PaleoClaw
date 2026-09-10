@@ -41,17 +41,20 @@ Log and track computer activities for productivity monitoring and daily reports.
 ## Data Sources
 
 ### macOS
+
 - System logs via `log show`
 - Application switching via AppleScript
 - File access via `.DS_Store` and recent items
 - Browser history (with permission)
 
 ### Linux
+
 - Shell history (`~/.bash_history`, `~/.zsh_history`)
 - Recent files (`~/.local/share/recently-used.xbel`)
 - Process accounting
 
 ### Windows
+
 - Event Viewer logs
 - Recent files
 - Shell history
@@ -143,15 +146,8 @@ paleoclaw agent --message "Export my activity log to Markdown"
     "log_interval_seconds": 30,
     "storage_path": "~/paleoclaw-logs/activity",
     "retention_days": 30,
-    "exclude_applications": [
-      "Password Manager",
-      "Banking App",
-      "Private Browser"
-    ],
-    "exclude_websites": [
-      "bank.com",
-      "email.com"
-    ]
+    "exclude_applications": ["Password Manager", "Banking App", "Private Browser"],
+    "exclude_websites": ["bank.com", "email.com"]
   }
 }
 ```
@@ -201,7 +197,7 @@ paleoclaw agent --message "Export my activity log to Markdown"
 
 ### Markdown Format
 
-```markdown
+````markdown
 # Daily Activity Log
 
 **Date**: 2026-03-09  
@@ -211,24 +207,30 @@ paleoclaw agent --message "Export my activity log to Markdown"
 ## Morning Session (09:00 - 12:00)
 
 ### Applications
-| Application | Time | Percentage |
-|-------------|------|------------|
-| VS Code | 2h 15m | 75% |
-| Chrome | 45m | 25% |
+
+| Application | Time   | Percentage |
+| ----------- | ------ | ---------- |
+| VS Code     | 2h 15m | 75%        |
+| Chrome      | 45m    | 25%        |
 
 ### Files Modified
+
 1. `src/index.ts` - 10:30
 2. `src/utils.ts` - 11:15
 
 ### Commands
+
 ```bash
 git commit -m "feat: add activity logger"
 npm run build
 ```
+````
 
 ## Afternoon Session (13:00 - 17:30)
+
 ...
-```
+
+````
 
 ## Scientific Integrity Rules
 
@@ -249,7 +251,7 @@ npm run build
 ```bash
 # Combined monitoring
 paleoclaw agent --message "Start screen monitoring and activity logging"
-```
+````
 
 ### With daily_log_generator
 

@@ -63,7 +63,10 @@ const readConnectChallengeNonce = async (ws: WebSocket) => {
   if (cached) {
     return cached;
   }
-  const challenge = await onceMessage(ws, (o) => o.type === "event" && o.event === "connect.challenge");
+  const challenge = await onceMessage(
+    ws,
+    (o) => o.type === "event" && o.event === "connect.challenge",
+  );
   const nonce = (challenge.payload as { nonce?: unknown } | undefined)?.nonce;
   expect(typeof nonce).toBe("string");
   return String(nonce);

@@ -7,11 +7,13 @@ This guide will help you upgrade from PaleoClaw v1.1.0 to v1.2.0, which introduc
 ## What's New in v1.2.0
 
 ### 🧬 Profile Layers System
+
 - **Soul Layer** (`soul.md`): System identity, scientific principles, safety boundaries
 - **User Layer** (`user.md`): Personal research preferences, output habits, workflow settings
 - Double-layer architecture adapted from GeoClaw-OpenAI v2.4.0
 
 ### 🧠 Memory System
+
 - **Short-term Memory**: Automatic recording of research tasks
 - **Long-term Memory**: Reviewed and summarized research insights
 - **Vector Search**: Find past research by content similarity
@@ -30,6 +32,7 @@ pnpm add -g paleoclaw@latest
 ```
 
 Verify the update:
+
 ```bash
 paleoclaw --version
 # Should show: 1.2.0
@@ -44,6 +47,7 @@ paleoclaw profile init
 ```
 
 This will create:
+
 - `~/.paleoclaw/soul.md` - System identity and principles
 - `~/.paleoclaw/user.md` - User preferences (with defaults)
 
@@ -72,21 +76,26 @@ Example customization:
 
 ```markdown
 ## Identity
+
 Role: PhD candidate
 Domain: theropod paleontology, dinosaur biomechanics
 Institution: Your University
 
 ## Research Focus
+
 Primary interests:
+
 - Tyrannosauridae
 - Dromaeosauridae
 - Feathers and flight origins
 
 Preferred geological periods:
+
 - Late Cretaceous
 - Early Cretaceous
 
 Preferred regions:
+
 - Mongolia
 - China (Liaoning)
 - North America
@@ -115,6 +124,7 @@ paleoclaw paleo-memory status
 ```
 
 This will show:
+
 - Short-term memory count
 - Long-term memory count
 - Storage locations
@@ -140,16 +150,16 @@ paleoclaw paleo-memory search "theropod"
 
 ### New Files Created
 
-| File | Location | Purpose |
-|------|----------|---------|
-| `soul.md` | `~/.paleoclaw/soul.md` | System identity |
-| `user.md` | `~/.paleoclaw/user.md` | User preferences |
+| File           | Location               | Purpose           |
+| -------------- | ---------------------- | ----------------- |
+| `soul.md`      | `~/.paleoclaw/soul.md` | System identity   |
+| `user.md`      | `~/.paleoclaw/user.md` | User preferences  |
 | Memory storage | `~/.paleoclaw/memory/` | Research memories |
 
 ### Deprecated Files
 
-| File | Status | Notes |
-|------|--------|-------|
+| File                    | Status     | Notes                         |
+| ----------------------- | ---------- | ----------------------------- |
 | `PALEOCLAW_IDENTITY.md` | Deprecated | Content migrated to `soul.md` |
 
 ---
@@ -222,11 +232,13 @@ paleoclaw paleo-memory review <task-id> --summary "Custom summary"
 If `paleoclaw profile show` shows default values:
 
 1. Check if files exist:
+
    ```bash
    ls -la ~/.paleoclaw/soul.md ~/.paleoclaw/user.md
    ```
 
 2. Reinitialize:
+
    ```bash
    paleoclaw profile init
    ```
@@ -242,6 +254,7 @@ If `paleoclaw profile show` shows default values:
 If `paleoclaw paleo-memory` is not recognized:
 
 1. Verify version:
+
    ```bash
    paleoclaw --version
    ```
@@ -303,4 +316,4 @@ Enjoy your upgraded PaleoClaw experience!
 
 ---
 
-*For more information, see the full documentation in [README.md](README.md)*
+_For more information, see the full documentation in [README.md](README.md)_

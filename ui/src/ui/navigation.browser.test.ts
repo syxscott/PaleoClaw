@@ -176,9 +176,11 @@ describe("control UI routing", () => {
     await app.updateComplete;
 
     expect(app.settings.token).toBe("abc123");
-    expect(JSON.parse(localStorage.getItem("paleoclaw.control.settings.v1") ?? "{}")).toMatchObject({
-      gatewayUrl: "wss://gateway.example/paleoclaw",
-    });
+    expect(JSON.parse(localStorage.getItem("paleoclaw.control.settings.v1") ?? "{}")).toMatchObject(
+      {
+        gatewayUrl: "wss://gateway.example/paleoclaw",
+      },
+    );
     expect(JSON.parse(localStorage.getItem("paleoclaw.control.settings.v1") ?? "{}").token).toBe(
       undefined,
     );

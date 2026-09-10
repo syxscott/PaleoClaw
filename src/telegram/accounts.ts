@@ -31,7 +31,7 @@ function formatDebugArg(value: unknown): string {
 }
 
 const debugAccounts = (...args: unknown[]) => {
-  if (isDebugEnabled('telegramAccounts')) {
+  if (isDebugEnabled("telegramAccounts")) {
     const parts = args.map((arg) => formatDebugArg(arg));
     log.warn(parts.join(" ").trim());
   }

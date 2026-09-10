@@ -1,6 +1,6 @@
 {
   "name": "@paleoclaw/feishu",
-  "version": "2026.3.7",
+  "version": "1.8.0",
   "description": "paleoclaw Feishu/Lark channel plugin (community maintained by @m1heng)",
   "type": "module",
   "dependencies": {

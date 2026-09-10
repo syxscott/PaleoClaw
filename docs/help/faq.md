@@ -1339,7 +1339,7 @@ Everything lives under `$OPENCLAW_STATE_DIR` (default: `~/.paleoclaw`):
 
 | Path                                                            | Purpose                                                            |
 | --------------------------------------------------------------- | ------------------------------------------------------------------ |
-| `$OPENCLAW_STATE_DIR/paleoclaw.json`                             | Main config (JSON5)                                                |
+| `$OPENCLAW_STATE_DIR/paleoclaw.json`                            | Main config (JSON5)                                                |
 | `$OPENCLAW_STATE_DIR/credentials/oauth.json`                    | Legacy OAuth import (copied into auth profiles on first use)       |
 | `$OPENCLAW_STATE_DIR/agents/<agentId>/agent/auth-profiles.json` | Auth profiles (OAuth, API keys, and optional `keyRef`/`tokenRef`)  |
 | `$OPENCLAW_STATE_DIR/secrets.json`                              | Optional file-backed secret payload for `file` SecretRef providers |

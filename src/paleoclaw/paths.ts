@@ -1,13 +1,13 @@
-import * as fs from 'fs';
-import * as os from 'os';
-import * as path from 'path';
+import * as fs from "fs";
+import * as os from "os";
+import * as path from "path";
 
 /**
  * Resolve the PaleoClaw home directory.
  * Uses PALEOCLAW_HOME env var if set, otherwise defaults to ~/.paleoclaw.
  */
 export function paleoclawHome(): string {
-  return process.env.PALEOCLAW_HOME || path.join(os.homedir(), '.paleoclaw');
+  return process.env.PALEOCLAW_HOME || path.join(os.homedir(), ".paleoclaw");
 }
 
 /**
@@ -16,7 +16,7 @@ export function paleoclawHome(): string {
  */
 export function atomicWriteFile(filePath: string, content: string): void {
   const tmp = `${filePath}.tmp-${process.pid}`;
-  fs.writeFileSync(tmp, content, 'utf-8');
+  fs.writeFileSync(tmp, content, "utf-8");
   fs.renameSync(tmp, filePath);
 }
 

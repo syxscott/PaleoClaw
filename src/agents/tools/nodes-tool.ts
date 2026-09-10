@@ -642,22 +642,18 @@ export function createNodesTool(options?: {
               typeof params.needsScreenRecording === "boolean"
                 ? params.needsScreenRecording
                 : undefined;
-            const prepareRaw = await callGatewayTool(
-              "node.invoke",
-              gatewayOpts,
-              {
-                nodeId,
-                command: "system.run.prepare",
-                params: {
-                  command,
-                  cwd,
-                  agentId,
-                  sessionKey,
-                },
-                timeoutMs: invokeTimeoutMs,
-                idempotencyKey: crypto.randomUUID(),
+            const prepareRaw = await callGatewayTool("node.invoke", gatewayOpts, {
+              nodeId,
+              command: "system.run.prepare",
+              params: {
+                command,
+                cwd,
+                agentId,
+                sessionKey,
               },
-            );
+              timeoutMs: invokeTimeoutMs,
+              idempotencyKey: crypto.randomUUID(),
+            });
             const prepared = parsePreparedSystemRunPayload(prepareRaw?.payload);
             if (!prepared) {
               throw new Error("invalid system.run.prepare response");

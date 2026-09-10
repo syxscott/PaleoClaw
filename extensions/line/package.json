@@ -1,6 +1,6 @@
 {
   "name": "@paleoclaw/line",
-  "version": "2026.3.7",
+  "version": "1.8.0",
   "private": true,
   "description": "paleoclaw LINE channel plugin",
   "type": "module",

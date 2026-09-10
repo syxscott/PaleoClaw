@@ -29,7 +29,10 @@ const SANDBOX_EXAMPLES = {
   recreate: [
     ["paleoclaw sandbox recreate --all", "Recreate all containers."],
     ["paleoclaw sandbox recreate --session main", "Recreate a specific session."],
-    ["paleoclaw sandbox recreate --agent mybot", "Recreate a specific agent (includes sub-agents)."],
+    [
+      "paleoclaw sandbox recreate --agent mybot",
+      "Recreate a specific agent (includes sub-agents).",
+    ],
     ["paleoclaw sandbox recreate --browser --all", "Recreate only browser containers."],
     ["paleoclaw sandbox recreate --all --force", "Skip confirmation."],
   ],

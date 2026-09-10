@@ -402,9 +402,9 @@ function createMockRateLimitError(retryAfter = 0.001): RateLimitError {
   return new RateLimitError(
     response,
     {
-    message: "You are being rate limited.",
-    retry_after: retryAfter,
-    global: false,
+      message: "You are being rate limited.",
+      retry_after: retryAfter,
+      global: false,
     },
     new Request("https://discord.com/api/v10/channels/test/messages", {
       method: "POST",

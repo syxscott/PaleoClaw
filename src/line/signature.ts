@@ -1,5 +1,4 @@
 import crypto from "node:crypto";
-
 import { safeEqualSecret } from "../security/secret-equal.js";
 
 export function validateLineSignature(

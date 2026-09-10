@@ -1,25 +1,25 @@
 /**
  * Curveslide Module
  * 曲线滑动模块
- * 
+ *
  * 功能：
  * 1. 定义半地标点的滑动规则
  * 2. 应用滑动约束（用于后续 GM 分析）
- * 
+ *
  * 基于 DeepMorph 的 ammonoid_curveslide.csv
  */
 
-import type { Point2D, CurveslideConfig } from './types.js';
+import type { Point2D, CurveslideConfig } from "./types.js";
 
 /**
  * Default curveslide configuration for 64 semilandmarks
  * 64个半地标点的默认滑动配置
- * 
+ *
  * Format: before, slide, after
  * - before: 前一个地标点索引
  * - slide: 当前滑动地标点索引
  * - after: 后一个地标点索引
- * 
+ *
  * Note: Landmark indices are 1-based (matching DeepMorph)
  * Fixed landmarks: 1-4
  * Semilandmarks: 5-68
@@ -38,7 +38,7 @@ export const DEFAULT_CURVESLIDE_CONFIG: CurveslideConfig[] = [
   { before: 13, slide: 14, after: 15 },
   { before: 14, slide: 15, after: 16 },
   { before: 15, slide: 16, after: 17 },
-  
+
   // Semilandmark 17-32
   { before: 16, slide: 17, after: 18 },
   { before: 17, slide: 18, after: 19 },
@@ -55,7 +55,7 @@ export const DEFAULT_CURVESLIDE_CONFIG: CurveslideConfig[] = [
   { before: 28, slide: 29, after: 30 },
   { before: 29, slide: 30, after: 31 },
   { before: 30, slide: 31, after: 32 },
-  
+
   // Semilandmark 33-48
   { before: 31, slide: 32, after: 33 },
   { before: 32, slide: 33, after: 34 },
@@ -73,7 +73,7 @@ export const DEFAULT_CURVESLIDE_CONFIG: CurveslideConfig[] = [
   { before: 44, slide: 45, after: 46 },
   { before: 45, slide: 46, after: 47 },
   { before: 46, slide: 47, after: 48 },
-  
+
   // Semilandmark 49-64
   { before: 47, slide: 48, after: 49 },
   { before: 48, slide: 49, after: 50 },
@@ -91,7 +91,7 @@ export const DEFAULT_CURVESLIDE_CONFIG: CurveslideConfig[] = [
   { before: 60, slide: 61, after: 62 },
   { before: 61, slide: 62, after: 63 },
   { before: 62, slide: 63, after: 64 },
-  
+
   // Connect back to fixed landmarks
   { before: 63, slide: 64, after: 1 },
 ];
@@ -99,7 +99,7 @@ export const DEFAULT_CURVESLIDE_CONFIG: CurveslideConfig[] = [
 /**
  * Load curveslide configuration from file
  * 从文件加载滑动配置
- * 
+ *
  * @param filePath - Path to curveslide CSV file
  * @returns Array of curveslide configurations
  */
@@ -112,29 +112,27 @@ export function loadCurveslideConfig(filePath: string): CurveslideConfig[] {
 /**
  * Get curveslide configuration for a specific semilandmark
  * 获取特定半地标点的滑动配置
- * 
+ *
  * @param landmarkId - Landmark ID (5-68 for semilandmarks)
  * @returns Curveslide configuration or null if not found
  */
-export function getCurveslideForLandmark(
-  landmarkId: number
-): CurveslideConfig | null {
-  const config = DEFAULT_CURVESLIDE_CONFIG.find(c => c.slide === landmarkId);
+export function getCurveslideForLandmark(landmarkId: number): CurveslideConfig | null {
+  const config = DEFAULT_CURVESLIDE_CONFIG.find((c) => c.slide === landmarkId);
   return config || null;
 }
 
 /**
  * Apply curveslide constraint to a semilandmark
  * 应用曲线滑动约束到半地标点
- * 
+ *
  * This function adjusts the position of a semilandmark to lie on the
  * curve between its 'before' and 'after' anchor points.
- * 
+ *
  * Algorithm:
  * 1. Find the contour segment between 'before' and 'after' points
  * 2. Project the current semilandmark onto this segment
  * 3. Return the projected position
- * 
+ *
  * @param landmark - Current semilandmark position
  * @param before - Anchor point before
  * @param after - Anchor point after
@@ -145,16 +143,16 @@ export function applyCurveslide(
   landmark: Point2D,
   before: Point2D,
   after: Point2D,
-  contour: Point2D[]
+  contour: Point2D[],
 ): Point2D {
   // Find contour segment between before and after
   const segment = extractContourSegment(contour, before, after);
-  
+
   if (segment.length === 0) {
     // Fallback: project onto line between before and after
     return projectOntoLine(landmark, before, after);
   }
-  
+
   // Find closest point on segment to current landmark
   return findClosestPointOnSegment(landmark, segment);
 }
@@ -163,28 +161,24 @@ export function applyCurveslide(
  * Extract contour segment between two points
  * 提取两个点之间的轮廓段
  */
-function extractContourSegment(
-  contour: Point2D[],
-  start: Point2D,
-  end: Point2D
-): Point2D[] {
+function extractContourSegment(contour: Point2D[], start: Point2D, end: Point2D): Point2D[] {
   const startIdx = findClosestPointIndex(contour, start);
   const endIdx = findClosestPointIndex(contour, end);
-  
+
   if (startIdx === -1 || endIdx === -1) {
     return [];
   }
-  
+
   // Extract segment (handle wrap-around)
   const segment: Point2D[] = [];
   let idx = startIdx;
-  
+
   while (idx !== endIdx) {
     segment.push(contour[idx]);
     idx = (idx + 1) % contour.length;
   }
   segment.push(contour[endIdx]);
-  
+
   return segment;
 }
 
@@ -192,24 +186,21 @@ function extractContourSegment(
  * Project point onto line segment
  * 将点投影到线段上
  */
-function projectOntoLine(
-  point: Point2D,
-  lineStart: Point2D,
-  lineEnd: Point2D
-): Point2D {
+function projectOntoLine(point: Point2D, lineStart: Point2D, lineEnd: Point2D): Point2D {
   const dx = lineEnd.x - lineStart.x;
   const dy = lineEnd.y - lineStart.y;
   const len2 = dx * dx + dy * dy;
-  
+
   if (len2 === 0) {
     return lineStart;
   }
-  
+
   // Calculate projection parameter
-  const t = Math.max(0, Math.min(1, 
-    ((point.x - lineStart.x) * dx + (point.y - lineStart.y) * dy) / len2
-  ));
-  
+  const t = Math.max(
+    0,
+    Math.min(1, ((point.x - lineStart.x) * dx + (point.y - lineStart.y) * dy) / len2),
+  );
+
   return {
     x: lineStart.x + t * dx,
     y: lineStart.y + t * dy,
@@ -220,13 +211,10 @@ function projectOntoLine(
  * Find closest point on segment to given point
  * 找到线段上最接近给定点的点
  */
-function findClosestPointOnSegment(
-  point: Point2D,
-  segment: Point2D[]
-): Point2D {
+function findClosestPointOnSegment(point: Point2D, segment: Point2D[]): Point2D {
   let closest = segment[0];
   let minDist = distance(point, closest);
-  
+
   for (let i = 1; i < segment.length; i++) {
     const dist = distance(point, segment[i]);
     if (dist < minDist) {
@@ -234,7 +222,7 @@ function findClosestPointOnSegment(
       closest = segment[i];
     }
   }
-  
+
   return closest;
 }
 
@@ -245,7 +233,7 @@ function findClosestPointOnSegment(
 function findClosestPointIndex(contour: Point2D[], target: Point2D): number {
   let minIdx = -1;
   let minDist = Infinity;
-  
+
   for (let i = 0; i < contour.length; i++) {
     const dist = distance(contour[i], target);
     if (dist < minDist) {
@@ -253,7 +241,7 @@ function findClosestPointIndex(contour: Point2D[], target: Point2D): number {
       minIdx = i;
     }
   }
-  
+
   return minIdx;
 }
 
@@ -268,36 +256,36 @@ function distance(p1: Point2D, p2: Point2D): number {
 /**
  * Export curveslide configuration to CSV format
  * 导出滑动配置为 CSV 格式
- * 
+ *
  * @returns CSV string
  */
 export function exportCurveslideToCSV(): string {
-  const lines = ['before,slide,after'];
-  
+  const lines = ["before,slide,after"];
+
   for (const config of DEFAULT_CURVESLIDE_CONFIG) {
     lines.push(`${config.before},${config.slide},${config.after}`);
   }
-  
-  return lines.join('\n');
+
+  return lines.join("\n");
 }
 
 /**
  * Export landmark links to text format
  * 导出地标点连接关系到文本格式
- * 
+ *
  * Based on DeepMorph's ammonoid_links.txt format
- * 
+ *
  * @returns Text string (tab-separated)
  */
 export function exportLinksToText(): string {
   const lines: string[] = [];
-  
+
   // Connect landmarks in sequence (1-2, 2-3, ..., 63-64, 64-1)
   // This matches DeepMorph's ammonoid_links.txt format
   for (let i = 1; i <= 64; i++) {
     const next = i === 64 ? 1 : i + 1;
     lines.push(`${i}\t${next}`);
   }
-  
-  return lines.join('\n');
+
+  return lines.join("\n");
 }

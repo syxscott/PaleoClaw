@@ -2,15 +2,10 @@
  * PaleoClaw Tool System types
  */
 
-export type ToolCategory =
-  | 'research'
-  | 'database'
-  | 'analysis'
-  | 'morphometric'
-  | 'utility';
+export type ToolCategory = "research" | "database" | "analysis" | "morphometric" | "utility";
 
 export interface ToolJsonSchema {
-  type: 'object';
+  type: "object";
   properties: Record<string, unknown>;
   required?: string[];
 }
@@ -32,7 +27,7 @@ export interface ToolResult {
 
 export type ToolHandler = (
   params: Record<string, unknown>,
-  context?: ToolExecuteContext
+  context?: ToolExecuteContext,
 ) => unknown;
 
 export interface ToolEntry {

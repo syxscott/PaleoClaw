@@ -1,4 +1,4 @@
-import { toolRegistry } from '../tools/tool-registry.js';
+import { toolRegistry } from "../tools/tool-registry.js";
 
 export interface ToolCall {
   id: string;
@@ -20,7 +20,7 @@ export interface ToolExecuteContext {
   signal?: AbortSignal;
 }
 
-export type ExecutionMode = 'concurrent' | 'sequential' | 'segmented';
+export type ExecutionMode = "concurrent" | "sequential" | "segmented";
 
 export class ToolExecutor {
   private static instance: ToolExecutor;
@@ -35,7 +35,7 @@ export class ToolExecutor {
   async executeConcurrent(
     toolCalls: ToolCall[],
     context: ToolExecuteContext,
-    maxConcurrency: number = 8
+    maxConcurrency: number = 8,
   ): Promise<ToolResult[]> {
     // Preallocate slots so the result order always matches the call order —
     // even with duplicate ids — and un-started calls (e.g. after an abort)
@@ -50,7 +50,7 @@ export class ToolExecutor {
       const startTime = Date.now();
       try {
         if (context.signal?.aborted) {
-          throw new Error('Execution aborted');
+          throw new Error("Execution aborted");
         }
 
         const tool = toolRegistry.getByName(call.name);
@@ -77,7 +77,9 @@ export class ToolExecutor {
     };
 
     const pushTask = (): Promise<void> => {
-      if (index >= toolCalls.length) {return Promise.resolve();}
+      if (index >= toolCalls.length) {
+        return Promise.resolve();
+      }
       const callIndex = index++;
       return executeOne(toolCalls[callIndex], callIndex);
     };
@@ -87,24 +89,28 @@ export class ToolExecutor {
       workers.push(
         (async () => {
           while (index < toolCalls.length) {
-            if (context.signal?.aborted) {break;}
+            if (context.signal?.aborted) {
+              break;
+            }
             await pushTask();
           }
-        })()
+        })(),
       );
     }
 
     await Promise.all(workers);
 
     return resultByIndex.map((result, i) => {
-      if (result) {return result;}
+      if (result) {
+        return result;
+      }
       // The call was never started (worker stopped on abort) — mirror
       // executeSequential's placeholder so callers can map results 1:1.
       return {
         id: toolCalls[i].id,
         name: toolCalls[i].name,
         result: null,
-        error: 'Execution aborted',
+        error: "Execution aborted",
         executionTimeMs: 0,
       };
     });
@@ -112,7 +118,7 @@ export class ToolExecutor {
 
   async executeSequential(
     toolCalls: ToolCall[],
-    context: ToolExecuteContext
+    context: ToolExecuteContext,
   ): Promise<ToolResult[]> {
     const results: ToolResult[] = [];
 
@@ -122,7 +128,7 @@ export class ToolExecutor {
           id: call.id,
           name: call.name,
           result: null,
-          error: 'Execution aborted',
+          error: "Execution aborted",
           executionTimeMs: 0,
         });
         continue;
@@ -159,7 +165,7 @@ export class ToolExecutor {
   async executeSegmented(
     toolCalls: ToolCall[],
     context: ToolExecuteContext,
-    segmentSize: number = 5
+    segmentSize: number = 5,
   ): Promise<ToolResult[]> {
     const results: ToolResult[] = [];
 
@@ -175,14 +181,14 @@ export class ToolExecutor {
   async execute(
     toolCalls: ToolCall[],
     context: ToolExecuteContext,
-    mode: ExecutionMode = 'sequential'
+    mode: ExecutionMode = "sequential",
   ): Promise<ToolResult[]> {
     switch (mode) {
-      case 'concurrent':
+      case "concurrent":
         return this.executeConcurrent(toolCalls, context);
-      case 'sequential':
+      case "sequential":
         return this.executeSequential(toolCalls, context);
-      case 'segmented':
+      case "segmented":
         return this.executeSegmented(toolCalls, context);
       default:
         return this.executeSequential(toolCalls, context);

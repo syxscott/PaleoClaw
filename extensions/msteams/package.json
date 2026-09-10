@@ -1,6 +1,6 @@
 {
   "name": "@paleoclaw/msteams",
-  "version": "2026.3.7",
+  "version": "1.8.0",
   "description": "paleoclaw Microsoft Teams channel plugin",
   "type": "module",
   "dependencies": {

@@ -1,4 +1,12 @@
-﻿# Changelog
+# Changelog
+
+## 1.8.0
+
+### Changes
+
+- Version alignment with core paleoclaw release numbers.
+
+# Changelog
 
 ## 2026.4.14
 

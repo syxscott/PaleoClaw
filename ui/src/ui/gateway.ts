@@ -145,8 +145,7 @@ export class GatewayBrowserClient {
   private fatalClose = false;
   private wakeCheckQueued = false;
   private wakeForceRecovery = false;
-  private wakeWasHidden =
-    typeof document !== "undefined" && document.visibilityState === "hidden";
+  private wakeWasHidden = typeof document !== "undefined" && document.visibilityState === "hidden";
   private onVisibilityChange: (() => void) | null = null;
   private onOnline: (() => void) | null = null;
   private onPageShow: ((event: PageTransitionEvent) => void) | null = null;

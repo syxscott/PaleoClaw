@@ -130,7 +130,9 @@ afterEach(() => {
 
 describe("chat abort transcript persistence", () => {
   it("persists run-scoped abort partial with rpc metadata and idempotency", async () => {
-    const { transcriptPath, sessionId } = await createTranscriptFixture("paleoclaw-chat-abort-run-");
+    const { transcriptPath, sessionId } = await createTranscriptFixture(
+      "paleoclaw-chat-abort-run-",
+    );
     const runId = "idem-abort-run-1";
     const respond = vi.fn();
     const context = createChatAbortContext({

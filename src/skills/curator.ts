@@ -10,8 +10,8 @@
  * activity via `recordSkillUse()`.
  */
 
-import * as fs from 'fs';
-import * as path from 'path';
+import * as fs from "fs";
+import * as path from "path";
 
 export interface SkillMeta {
   lastUsedAt?: string;
@@ -46,17 +46,17 @@ function readEnvFlag(name: string, defaultValue: boolean): boolean {
   }
 
   const normalized = raw.trim().toLowerCase();
-  if (['1', 'true', 'yes', 'on'].includes(normalized)) {
+  if (["1", "true", "yes", "on"].includes(normalized)) {
     return true;
   }
-  if (['0', 'false', 'no', 'off'].includes(normalized)) {
+  if (["0", "false", "no", "off"].includes(normalized)) {
     return false;
   }
   return defaultValue;
 }
 
 export function isCuratorEnabled(): boolean {
-  return readEnvFlag('PALEOCLAW_ENABLE_SKILL_CURATOR', false);
+  return readEnvFlag("PALEOCLAW_ENABLE_SKILL_CURATOR", false);
 }
 
 function describeError(err: unknown): string {
@@ -64,7 +64,7 @@ function describeError(err: unknown): string {
 }
 
 function metaPathFor(skillsRoot: string, skillId: string): string {
-  return path.join(skillsRoot, skillId, 'meta.json');
+  return path.join(skillsRoot, skillId, "meta.json");
 }
 
 function readSkillMeta(skillsRoot: string, skillId: string): { meta: SkillMeta; error?: string } {
@@ -74,8 +74,8 @@ function readSkillMeta(skillsRoot: string, skillId: string): { meta: SkillMeta; 
   }
 
   try {
-    const parsed: unknown = JSON.parse(fs.readFileSync(metaPath, 'utf-8'));
-    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    const parsed: unknown = JSON.parse(fs.readFileSync(metaPath, "utf-8"));
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
       return { meta: {}, error: `${skillId}: meta.json is not an object` };
     }
     return { meta: parsed as SkillMeta };
@@ -86,7 +86,11 @@ function readSkillMeta(skillsRoot: string, skillId: string): { meta: SkillMeta; 
 
 function writeSkillMeta(skillsRoot: string, skillId: string, meta: SkillMeta): string | undefined {
   try {
-    fs.writeFileSync(metaPathFor(skillsRoot, skillId), `${JSON.stringify(meta, null, 2)}\n`, 'utf-8');
+    fs.writeFileSync(
+      metaPathFor(skillsRoot, skillId),
+      `${JSON.stringify(meta, null, 2)}\n`,
+      "utf-8",
+    );
     return undefined;
   } catch (err) {
     return `${skillId}: failed to write meta.json: ${describeError(err)}`;
@@ -175,7 +179,11 @@ export function runCurator(opts: CuratorOptions): CuratorReport {
   return report;
 }
 
-export function recordSkillUse(skillsRoot: string, skillId: string, now: Date = new Date()): SkillMeta {
+export function recordSkillUse(
+  skillsRoot: string,
+  skillId: string,
+  now: Date = new Date(),
+): SkillMeta {
   const { meta, error } = readSkillMeta(skillsRoot, skillId);
   if (error) {
     throw new Error(error);

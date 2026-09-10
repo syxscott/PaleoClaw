@@ -3,70 +3,69 @@
  * Commands: init, show
  */
 
-import type { Command } from 'commander';
-import {
-  ensureProfileLayers,
-  loadSessionProfile,
-} from '../profile/layers.js';
+import type { Command } from "commander";
+import { ensureProfileLayers, loadSessionProfile } from "../profile/layers.js";
 
 interface ProfileCommandOptions {
   json?: boolean;
 }
 
 function truncate(text: string, max: number): string {
-  if (!text) {return '';}
+  if (!text) {
+    return "";
+  }
   return text.length > max ? `${text.slice(0, max)}...` : text;
 }
 
 export function registerProfileCommands(program: Command): void {
   const profileCmd = program
-    .command('profile')
-    .description('Manage PaleoClaw Soul/User profile layers');
+    .command("profile")
+    .description("Manage PaleoClaw Soul/User profile layers");
 
   // init command
   profileCmd
-    .command('init')
-    .description('Initialize soul.md and user.md in ~/.paleoclaw/')
-    .option('--json', 'Output as JSON')
+    .command("init")
+    .description("Initialize soul.md and user.md in ~/.paleoclaw/")
+    .option("--json", "Output as JSON")
     .action(async (options: ProfileCommandOptions) => {
       try {
         const paths = ensureProfileLayers();
-        
+
         const result = {
-          status: 'initialized',
+          status: "initialized",
           paths: {
             soul: paths.homeSoul,
             user: paths.homeUser,
           },
-          message: 'Profile layers initialized successfully',
+          message: "Profile layers initialized successfully",
         };
 
         if (options.json) {
           console.log(JSON.stringify(result, null, 2));
         } else {
-          console.log('✓ Profile layers initialized');
+          console.log("✓ Profile layers initialized");
           console.log(`  Soul:  ${paths.homeSoul}`);
           console.log(`  User:  ${paths.homeUser}`);
-          console.log('');
-          console.log('Edit these files to customize PaleoClaw behavior:');
-          console.log('  - soul.md: System identity and scientific principles');
-          console.log('  - user.md: Personal research preferences');
+          console.log("");
+          console.log("Edit these files to customize PaleoClaw behavior:");
+          console.log("  - soul.md: System identity and scientific principles");
+          console.log("  - user.md: Personal research preferences");
         }
       } catch (error) {
-        console.error('Error initializing profile:', error);
+        console.error("Error initializing profile:", error);
         process.exit(1);
       }
     });
 
   // show command
   profileCmd
-    .command('show')
-    .description('Display current profile configuration')
-    .option('--json', 'Output as JSON')
+    .command("show")
+    .description("Display current profile configuration")
+    .option("--json", "Output as JSON")
     .action(async (options: ProfileCommandOptions) => {
       try {
         const profile = loadSessionProfile(undefined, true);
-        
+
         if (options.json) {
           const output = {
             loadedAt: profile.loadedAt,
@@ -91,26 +90,26 @@ export function registerProfileCommands(program: Command): void {
           };
           console.log(JSON.stringify(output, null, 2));
         } else {
-          console.log('╔════════════════════════════════════════════════════════════╗');
-          console.log('║              PaleoClaw Profile Configuration               ║');
-          console.log('╚════════════════════════════════════════════════════════════╝');
-          console.log('');
+          console.log("╔════════════════════════════════════════════════════════════╗");
+          console.log("║              PaleoClaw Profile Configuration               ║");
+          console.log("╚════════════════════════════════════════════════════════════╝");
+          console.log("");
 
-          console.log('📁 Profile Files:');
+          console.log("📁 Profile Files:");
           console.log(`   Soul: ${profile.soulPath}`);
           console.log(`   User: ${profile.userPath}`);
           console.log(`   Loaded: ${profile.loadedAt}`);
-          console.log('');
+          console.log("");
 
-          console.log('🧬 Soul Configuration:');
+          console.log("🧬 Soul Configuration:");
           console.log(`   Identity: ${truncate(profile.soul.identity, 60)}`);
           console.log(`   Mission: ${truncate(profile.soul.mission, 60)}`);
           console.log(`   Core Principles: ${profile.soul.corePrinciples.length} items`);
           console.log(`   Data Sources: ${profile.soul.dataSourceHierarchy.length} sources`);
           console.log(`   Safety Boundaries: ${profile.soul.safetyBoundaries.length} rules`);
-          console.log('');
-          
-          console.log('👤 User Configuration:');
+          console.log("");
+
+          console.log("👤 User Configuration:");
           console.log(`   Role: ${profile.user.role}`);
           console.log(`   Domain: ${profile.user.domain}`);
           if (profile.user.institution) {
@@ -118,22 +117,32 @@ export function registerProfileCommands(program: Command): void {
           }
           console.log(`   Language: ${profile.user.languagePreference}`);
           console.log(`   Output: ${profile.user.outputLanguage}`);
-          console.log('');
-          
-          console.log('🔬 Research Focus:');
-          console.log(`   Interests: ${profile.user.researchFocus.primaryInterests.slice(0, 3).join(', ')}${profile.user.researchFocus.primaryInterests.length > 3 ? '...' : ''}`);
-          console.log(`   Periods: ${profile.user.researchFocus.preferredPeriods.slice(0, 3).join(', ')}`);
-          console.log(`   Regions: ${profile.user.researchFocus.preferredRegions.slice(0, 3).join(', ')}${profile.user.researchFocus.preferredRegions.length > 3 ? '...' : ''}`);
-          console.log('');
-          
-          console.log('📚 Preferences:');
-          console.log(`   Journals: ${profile.user.preferredJournals.slice(0, 3).join(', ')}${profile.user.preferredJournals.length > 3 ? '...' : ''}`);
+          console.log("");
+
+          console.log("🔬 Research Focus:");
+          console.log(
+            `   Interests: ${profile.user.researchFocus.primaryInterests.slice(0, 3).join(", ")}${profile.user.researchFocus.primaryInterests.length > 3 ? "..." : ""}`,
+          );
+          console.log(
+            `   Periods: ${profile.user.researchFocus.preferredPeriods.slice(0, 3).join(", ")}`,
+          );
+          console.log(
+            `   Regions: ${profile.user.researchFocus.preferredRegions.slice(0, 3).join(", ")}${profile.user.researchFocus.preferredRegions.length > 3 ? "..." : ""}`,
+          );
+          console.log("");
+
+          console.log("📚 Preferences:");
+          console.log(
+            `   Journals: ${profile.user.preferredJournals.slice(0, 3).join(", ")}${profile.user.preferredJournals.length > 3 ? "..." : ""}`,
+          );
           console.log(`   Citation Format: ${profile.user.dataPreferences.citationFormat}`);
           console.log(`   Default Limit: ${profile.user.dataPreferences.defaultOccurrenceLimit}`);
-          console.log(`   Open Access: ${profile.user.dataPreferences.preferOpenAccess ? 'Yes' : 'No'}`);
+          console.log(
+            `   Open Access: ${profile.user.dataPreferences.preferOpenAccess ? "Yes" : "No"}`,
+          );
         }
       } catch (error) {
-        console.error('Error loading profile:', error);
+        console.error("Error loading profile:", error);
         process.exit(1);
       }
     });

@@ -12,14 +12,14 @@ export abstract class MemoryProvider {
   abstract initialize(session_id: string, ...kwargs: unknown[]): void;
 
   system_prompt_block(): string {
-    return '';
+    return "";
   }
 
-  prefetch(_query: string, _session_id: string = ''): string {
-    return '';
+  prefetch(_query: string, _session_id: string = ""): string {
+    return "";
   }
 
-  queue_prefetch(_query: string, _session_id: string = ''): void {
+  queue_prefetch(_query: string, _session_id: string = ""): void {
     // Default no-op
   }
 
@@ -37,7 +37,7 @@ export abstract class MemoryProvider {
   abstract get_tool_schemas(): Array<{ name: string; description: string; input_schema: unknown }>;
 
   handle_tool_call(_tool_name: string, _args: Record<string, unknown>, _result: unknown): string {
-    return '';
+    return "";
   }
 
   get_stats(): MemoryProviderStats {

@@ -584,12 +584,7 @@ describe("agent event handler", () => {
   });
 
   it("keeps full tool output for Control UI recipients, but strips for node send when verbose is on", () => {
-    const {
-      broadcastToConnIds,
-      nodeSendToSession,
-      toolEventRecipients,
-      handler,
-    } = createHarness({
+    const { broadcastToConnIds, nodeSendToSession, toolEventRecipients, handler } = createHarness({
       resolveSessionKeyForRun: () => "session-1",
     });
 

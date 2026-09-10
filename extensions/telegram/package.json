@@ -1,6 +1,6 @@
 {
   "name": "@paleoclaw/telegram",
-  "version": "2026.3.7",
+  "version": "1.8.0",
   "private": true,
   "description": "paleoclaw Telegram channel plugin",
   "type": "module",

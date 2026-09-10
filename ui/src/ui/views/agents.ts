@@ -119,174 +119,156 @@ export function renderAgents(props: AgentsProps) {
             ${props.loading ? "Loading…" : "Refresh"}
           </button>
         </div>
-        ${
-          props.error
-            ? html`<div class="callout danger" style="margin-top: 12px;">${props.error}</div>`
-            : nothing
-        }
+        ${props.error
+          ? html`<div class="callout danger" style="margin-top: 12px;">${props.error}</div>`
+          : nothing}
         <div class="agent-list" style="margin-top: 12px;">
-          ${
-            agents.length === 0
-              ? html`
-                  <div class="muted">No agents found.</div>
-                `
-              : agents.map((agent) => {
-                  const badge = agentBadgeText(agent.id, defaultId);
-                  const emoji = resolveAgentEmoji(agent, props.agentIdentityById[agent.id] ?? null);
-                  return html`
-                    <button
-                      type="button"
-                      class="agent-row ${selectedId === agent.id ? "active" : ""}"
-                      @click=${() => props.onSelectAgent(agent.id)}
-                    >
-                      <div class="agent-avatar">${emoji || normalizeAgentLabel(agent).slice(0, 1)}</div>
-                      <div class="agent-info">
-                        <div class="agent-title">${normalizeAgentLabel(agent)}</div>
-                        <div class="agent-sub mono">${agent.id}</div>
-                      </div>
-                      ${badge ? html`<span class="agent-pill">${badge}</span>` : nothing}
-                    </button>
-                  `;
-                })
-          }
+          ${agents.length === 0
+            ? html` <div class="muted">No agents found.</div> `
+            : agents.map((agent) => {
+                const badge = agentBadgeText(agent.id, defaultId);
+                const emoji = resolveAgentEmoji(agent, props.agentIdentityById[agent.id] ?? null);
+                return html`
+                  <button
+                    type="button"
+                    class="agent-row ${selectedId === agent.id ? "active" : ""}"
+                    @click=${() => props.onSelectAgent(agent.id)}
+                  >
+                    <div class="agent-avatar">
+                      ${emoji || normalizeAgentLabel(agent).slice(0, 1)}
+                    </div>
+                    <div class="agent-info">
+                      <div class="agent-title">${normalizeAgentLabel(agent)}</div>
+                      <div class="agent-sub mono">${agent.id}</div>
+                    </div>
+                    ${badge ? html`<span class="agent-pill">${badge}</span>` : nothing}
+                  </button>
+                `;
+              })}
         </div>
       </section>
       <section class="agents-main">
-        ${
-          !selectedAgent
-            ? html`
-                <div class="card">
-                  <div class="card-title">Select an agent</div>
-                  <div class="card-sub">Pick an agent to inspect its workspace and tools.</div>
-                </div>
-              `
-            : html`
-                ${renderAgentHeader(
-                  selectedAgent,
-                  defaultId,
-                  props.agentIdentityById[selectedAgent.id] ?? null,
-                )}
-                ${renderAgentTabs(props.activePanel, (panel) => props.onSelectPanel(panel))}
-                ${
-                  props.activePanel === "overview"
-                    ? renderAgentOverview({
-                        agent: selectedAgent,
-                        defaultId,
-                        configForm: props.configForm,
-                        agentFilesList: props.agentFilesList,
-                        agentIdentity: props.agentIdentityById[selectedAgent.id] ?? null,
-                        agentIdentityError: props.agentIdentityError,
-                        agentIdentityLoading: props.agentIdentityLoading,
-                        configLoading: props.configLoading,
-                        configSaving: props.configSaving,
-                        configDirty: props.configDirty,
-                        onConfigReload: props.onConfigReload,
-                        onConfigSave: props.onConfigSave,
-                        onModelChange: props.onModelChange,
-                        onModelFallbacksChange: props.onModelFallbacksChange,
-                      })
-                    : nothing
-                }
-                ${
-                  props.activePanel === "files"
-                    ? renderAgentFiles({
-                        agentId: selectedAgent.id,
-                        agentFilesList: props.agentFilesList,
-                        agentFilesLoading: props.agentFilesLoading,
-                        agentFilesError: props.agentFilesError,
-                        agentFileActive: props.agentFileActive,
-                        agentFileContents: props.agentFileContents,
-                        agentFileDrafts: props.agentFileDrafts,
-                        agentFileSaving: props.agentFileSaving,
-                        onLoadFiles: props.onLoadFiles,
-                        onSelectFile: props.onSelectFile,
-                        onFileDraftChange: props.onFileDraftChange,
-                        onFileReset: props.onFileReset,
-                        onFileSave: props.onFileSave,
-                      })
-                    : nothing
-                }
-                ${
-                  props.activePanel === "tools"
-                    ? renderAgentTools({
-                        agentId: selectedAgent.id,
-                        configForm: props.configForm,
-                        configLoading: props.configLoading,
-                        configSaving: props.configSaving,
-                        configDirty: props.configDirty,
-                        toolsCatalogLoading: props.toolsCatalogLoading,
-                        toolsCatalogError: props.toolsCatalogError,
-                        toolsCatalogResult: props.toolsCatalogResult,
-                        onProfileChange: props.onToolsProfileChange,
-                        onOverridesChange: props.onToolsOverridesChange,
-                        onConfigReload: props.onConfigReload,
-                        onConfigSave: props.onConfigSave,
-                      })
-                    : nothing
-                }
-                ${
-                  props.activePanel === "skills"
-                    ? renderAgentSkills({
-                        agentId: selectedAgent.id,
-                        report: props.agentSkillsReport,
-                        loading: props.agentSkillsLoading,
-                        error: props.agentSkillsError,
-                        activeAgentId: props.agentSkillsAgentId,
-                        configForm: props.configForm,
-                        configLoading: props.configLoading,
-                        configSaving: props.configSaving,
-                        configDirty: props.configDirty,
-                        filter: props.skillsFilter,
-                        onFilterChange: props.onSkillsFilterChange,
-                        onRefresh: props.onSkillsRefresh,
-                        onToggle: props.onAgentSkillToggle,
-                        onClear: props.onAgentSkillsClear,
-                        onDisableAll: props.onAgentSkillsDisableAll,
-                        onConfigReload: props.onConfigReload,
-                        onConfigSave: props.onConfigSave,
-                      })
-                    : nothing
-                }
-                ${
-                  props.activePanel === "channels"
-                    ? renderAgentChannels({
-                        context: buildAgentContext(
-                          selectedAgent,
-                          props.configForm,
-                          props.agentFilesList,
-                          defaultId,
-                          props.agentIdentityById[selectedAgent.id] ?? null,
-                        ),
-                        configForm: props.configForm,
-                        snapshot: props.channelsSnapshot,
-                        loading: props.channelsLoading,
-                        error: props.channelsError,
-                        lastSuccess: props.channelsLastSuccess,
-                        onRefresh: props.onChannelsRefresh,
-                      })
-                    : nothing
-                }
-                ${
-                  props.activePanel === "cron"
-                    ? renderAgentCron({
-                        context: buildAgentContext(
-                          selectedAgent,
-                          props.configForm,
-                          props.agentFilesList,
-                          defaultId,
-                          props.agentIdentityById[selectedAgent.id] ?? null,
-                        ),
-                        agentId: selectedAgent.id,
-                        jobs: props.cronJobs,
-                        status: props.cronStatus,
-                        loading: props.cronLoading,
-                        error: props.cronError,
-                        onRefresh: props.onCronRefresh,
-                      })
-                    : nothing
-                }
-              `
-        }
+        ${!selectedAgent
+          ? html`
+              <div class="card">
+                <div class="card-title">Select an agent</div>
+                <div class="card-sub">Pick an agent to inspect its workspace and tools.</div>
+              </div>
+            `
+          : html`
+              ${renderAgentHeader(
+                selectedAgent,
+                defaultId,
+                props.agentIdentityById[selectedAgent.id] ?? null,
+              )}
+              ${renderAgentTabs(props.activePanel, (panel) => props.onSelectPanel(panel))}
+              ${props.activePanel === "overview"
+                ? renderAgentOverview({
+                    agent: selectedAgent,
+                    defaultId,
+                    configForm: props.configForm,
+                    agentFilesList: props.agentFilesList,
+                    agentIdentity: props.agentIdentityById[selectedAgent.id] ?? null,
+                    agentIdentityError: props.agentIdentityError,
+                    agentIdentityLoading: props.agentIdentityLoading,
+                    configLoading: props.configLoading,
+                    configSaving: props.configSaving,
+                    configDirty: props.configDirty,
+                    onConfigReload: props.onConfigReload,
+                    onConfigSave: props.onConfigSave,
+                    onModelChange: props.onModelChange,
+                    onModelFallbacksChange: props.onModelFallbacksChange,
+                  })
+                : nothing}
+              ${props.activePanel === "files"
+                ? renderAgentFiles({
+                    agentId: selectedAgent.id,
+                    agentFilesList: props.agentFilesList,
+                    agentFilesLoading: props.agentFilesLoading,
+                    agentFilesError: props.agentFilesError,
+                    agentFileActive: props.agentFileActive,
+                    agentFileContents: props.agentFileContents,
+                    agentFileDrafts: props.agentFileDrafts,
+                    agentFileSaving: props.agentFileSaving,
+                    onLoadFiles: props.onLoadFiles,
+                    onSelectFile: props.onSelectFile,
+                    onFileDraftChange: props.onFileDraftChange,
+                    onFileReset: props.onFileReset,
+                    onFileSave: props.onFileSave,
+                  })
+                : nothing}
+              ${props.activePanel === "tools"
+                ? renderAgentTools({
+                    agentId: selectedAgent.id,
+                    configForm: props.configForm,
+                    configLoading: props.configLoading,
+                    configSaving: props.configSaving,
+                    configDirty: props.configDirty,
+                    toolsCatalogLoading: props.toolsCatalogLoading,
+                    toolsCatalogError: props.toolsCatalogError,
+                    toolsCatalogResult: props.toolsCatalogResult,
+                    onProfileChange: props.onToolsProfileChange,
+                    onOverridesChange: props.onToolsOverridesChange,
+                    onConfigReload: props.onConfigReload,
+                    onConfigSave: props.onConfigSave,
+                  })
+                : nothing}
+              ${props.activePanel === "skills"
+                ? renderAgentSkills({
+                    agentId: selectedAgent.id,
+                    report: props.agentSkillsReport,
+                    loading: props.agentSkillsLoading,
+                    error: props.agentSkillsError,
+                    activeAgentId: props.agentSkillsAgentId,
+                    configForm: props.configForm,
+                    configLoading: props.configLoading,
+                    configSaving: props.configSaving,
+                    configDirty: props.configDirty,
+                    filter: props.skillsFilter,
+                    onFilterChange: props.onSkillsFilterChange,
+                    onRefresh: props.onSkillsRefresh,
+                    onToggle: props.onAgentSkillToggle,
+                    onClear: props.onAgentSkillsClear,
+                    onDisableAll: props.onAgentSkillsDisableAll,
+                    onConfigReload: props.onConfigReload,
+                    onConfigSave: props.onConfigSave,
+                  })
+                : nothing}
+              ${props.activePanel === "channels"
+                ? renderAgentChannels({
+                    context: buildAgentContext(
+                      selectedAgent,
+                      props.configForm,
+                      props.agentFilesList,
+                      defaultId,
+                      props.agentIdentityById[selectedAgent.id] ?? null,
+                    ),
+                    configForm: props.configForm,
+                    snapshot: props.channelsSnapshot,
+                    loading: props.channelsLoading,
+                    error: props.channelsError,
+                    lastSuccess: props.channelsLastSuccess,
+                    onRefresh: props.onChannelsRefresh,
+                  })
+                : nothing}
+              ${props.activePanel === "cron"
+                ? renderAgentCron({
+                    context: buildAgentContext(
+                      selectedAgent,
+                      props.configForm,
+                      props.agentFilesList,
+                      defaultId,
+                      props.agentIdentityById[selectedAgent.id] ?? null,
+                    ),
+                    agentId: selectedAgent.id,
+                    jobs: props.cronJobs,
+                    status: props.cronStatus,
+                    loading: props.cronLoading,
+                    error: props.cronError,
+                    onRefresh: props.onCronRefresh,
+                  })
+                : nothing}
+            `}
       </section>
     </div>
   `;
@@ -428,7 +410,9 @@ function renderAgentOverview(params: {
         <div class="agent-kv">
           <div class="label">Identity Name</div>
           <div>${identityName}</div>
-          ${identityStatus ? html`<div class="agent-kv-sub muted">${identityStatus}</div>` : nothing}
+          ${identityStatus
+            ? html`<div class="agent-kv-sub muted">${identityStatus}</div>`
+            : nothing}
         </div>
         <div class="agent-kv">
           <div class="label">Default</div>
@@ -455,15 +439,13 @@ function renderAgentOverview(params: {
               @change=${(e: Event) =>
                 onModelChange(agent.id, (e.target as HTMLSelectElement).value || null)}
             >
-              ${
-                isDefault
-                  ? nothing
-                  : html`
-                      <option value="">
-                        ${defaultPrimary ? `Inherit default (${defaultPrimary})` : "Inherit default"}
-                      </option>
-                    `
-              }
+              ${isDefault
+                ? nothing
+                : html`
+                    <option value="">
+                      ${defaultPrimary ? `Inherit default (${defaultPrimary})` : "Inherit default"}
+                    </option>
+                  `}
               ${buildModelOptions(configForm, effectivePrimary ?? undefined)}
             </select>
           </label>

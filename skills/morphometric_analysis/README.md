@@ -26,14 +26,14 @@ pnpm install
 ### Single Image
 
 ```typescript
-import { processSpecimen, exportResults, generateVisualizations } from './index.js';
+import { processSpecimen, exportResults, generateVisualizations } from "./index.js";
 
-const result = await processSpecimen('path/to/ammonoid.png', 'specimen_001');
+const result = await processSpecimen("path/to/ammonoid.png", "specimen_001");
 
 // Export to multiple formats
 await exportResults(result, {
-  outputDir: 'data/outputs',
-  formats: ['tps', 'csv', 'json'],
+  outputDir: "data/outputs",
+  formats: ["tps", "csv", "json"],
 });
 
 // Generate visualization
@@ -43,9 +43,9 @@ await generateVisualizations(result);
 ### Batch Processing
 
 ```typescript
-import { processBatch } from './index.js';
+import { processBatch } from "./index.js";
 
-const batch = await processBatch('path/to/specimens/');
+const batch = await processBatch("path/to/specimens/");
 console.log(`Processed ${batch.success}/${batch.total} specimens`);
 ```
 

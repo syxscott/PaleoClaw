@@ -631,7 +631,13 @@ describe("readSystemdServiceExecStart", () => {
 
 describe("systemd service control", () => {
   const assertMachineRestartArgs = (args: string[]) => {
-    expect(args).toEqual(["--machine", "debian@", "--user", "restart", "paleoclaw-gateway.service"]);
+    expect(args).toEqual([
+      "--machine",
+      "debian@",
+      "--user",
+      "restart",
+      "paleoclaw-gateway.service",
+    ]);
   };
 
   beforeEach(() => {

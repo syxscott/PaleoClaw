@@ -36,29 +36,19 @@ export function renderSlackCard(params: {
         </div>
       </div>
 
-      ${
-        slack?.lastError
-          ? html`<div class="callout danger" style="margin-top: 12px;">
-            ${slack.lastError}
+      ${slack?.lastError
+        ? html`<div class="callout danger" style="margin-top: 12px;">${slack.lastError}</div>`
+        : nothing}
+      ${slack?.probe
+        ? html`<div class="callout" style="margin-top: 12px;">
+            Probe ${slack.probe.ok ? "ok" : "failed"} · ${slack.probe.status ?? ""}
+            ${slack.probe.error ?? ""}
           </div>`
-          : nothing
-      }
-
-      ${
-        slack?.probe
-          ? html`<div class="callout" style="margin-top: 12px;">
-            Probe ${slack.probe.ok ? "ok" : "failed"} ·
-            ${slack.probe.status ?? ""} ${slack.probe.error ?? ""}
-          </div>`
-          : nothing
-      }
-
+        : nothing}
       ${renderChannelConfigSection({ channelId: "slack", props })}
 
       <div class="row" style="margin-top: 12px;">
-        <button class="btn" @click=${() => props.onRefresh(true)}>
-          Probe
-        </button>
+        <button class="btn" @click=${() => props.onRefresh(true)}>Probe</button>
       </div>
     </div>
   `;

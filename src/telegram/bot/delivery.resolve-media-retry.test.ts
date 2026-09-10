@@ -1,5 +1,5 @@
-import type { Message } from "grammy/types";
 import { GrammyError } from "grammy";
+import type { Message } from "grammy/types";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { TelegramContext } from "./types.js";
 

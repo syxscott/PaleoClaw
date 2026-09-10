@@ -1,6 +1,6 @@
 {
   "name": "@paleoclaw/llm-task",
-  "version": "2026.3.7",
+  "version": "1.8.0",
   "private": true,
   "description": "paleoclaw JSON-only LLM task plugin",
   "type": "module",

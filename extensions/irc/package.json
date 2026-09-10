@@ -1,6 +1,6 @@
 {
   "name": "@paleoclaw/irc",
-  "version": "2026.3.7",
+  "version": "1.8.0",
   "description": "paleoclaw IRC channel plugin",
   "type": "module",
   "dependencies": {

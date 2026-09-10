@@ -35,16 +35,16 @@ PaleoClaw 是基于 OpenClaw 运行时的古生物学领域研究智能体：把
 
 ## ✨ Highlights
 
-| | Capability | 说明 |
-|---|---|---|
-| 🔬 | **Domain tool suite** — PBDB fossil occurrences, taxonomy, stratigraphy, CrossRef/arXiv literature, 64-landmark morphometrics (DeepMorph-based) | 领域工具套件 |
-| 🧠 | **Fenced memory** — short/long-term memory with vector retrieval, injected as a sanitized `<memory-context>` block that never leaks into replies | 围栏式记忆系统 |
-| 👤 | **Dual-layer research profile** — `soul.md` (system identity) + `user.md` (your preferences) actually shape every run | 双层研究画像 |
-| 💾 | **SQLite sessions** — WAL-backed history with FTS5 search, graceful JSON fallback, two-stage session titles | SQLite 会话存储 |
-| 🗂️ | **Skills & pipelines** — curated research skills plus declarative pipelines with dependencies and a lifecycle curator | 技能与流水线 |
-| 📱 | **Runs where you chat** — Telegram, Discord, WhatsApp, Slack, Signal, iMessage, LINE, Feishu and more via the OpenClaw channel layer | 多平台接入 |
-| 🖥️ | **Control UI** — local web console for chat, sessions, usage and config | 控制台 UI |
-| 🔬 | **Scientific integrity by design** — no fabricated data, verifiable DOIs, transparent uncertainty, reproducible queries | 科学诚信设计 |
+|     | Capability                                                                                                                                       | 说明            |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------ | --------------- |
+| 🔬  | **Domain tool suite** — PBDB fossil occurrences, taxonomy, stratigraphy, CrossRef/arXiv literature, 64-landmark morphometrics (DeepMorph-based)  | 领域工具套件    |
+| 🧠  | **Fenced memory** — short/long-term memory with vector retrieval, injected as a sanitized `<memory-context>` block that never leaks into replies | 围栏式记忆系统  |
+| 👤  | **Dual-layer research profile** — `soul.md` (system identity) + `user.md` (your preferences) actually shape every run                            | 双层研究画像    |
+| 💾  | **SQLite sessions** — WAL-backed history with FTS5 search, graceful JSON fallback, two-stage session titles                                      | SQLite 会话存储 |
+| 🗂️  | **Skills & pipelines** — curated research skills plus declarative pipelines with dependencies and a lifecycle curator                            | 技能与流水线    |
+| 📱  | **Runs where you chat** — Telegram, Discord, WhatsApp, Slack, Signal, iMessage, LINE, Feishu and more via the OpenClaw channel layer             | 多平台接入      |
+| 🖥️  | **Control UI** — local web console for chat, sessions, usage and config                                                                          | 控制台 UI       |
+| 🔬  | **Scientific integrity by design** — no fabricated data, verifiable DOIs, transparent uncertainty, reproducible queries                          | 科学诚信设计    |
 
 ## 🚀 Quick Start
 
@@ -117,11 +117,11 @@ export PATH="$HOME/.npm-global/bin:$PATH"
 
 ## 🧪 Research Tools
 
-| Tool | What it does | 数据来源 |
-|------|--------------|----------|
-| `pbdb_query` | Fossil occurrences, taxonomy, stratigraphy via the [Paleobiology Database](https://paleobiodb.org/) | PBDB |
-| `crossref_search` | Literature metadata with DOI validation | [CrossRef](https://www.crossref.org/) |
-| `literature_summary` | Multi-source aggregation (CrossRef · Semantic Scholar · arXiv) with citation formatting | 多源聚合 |
+| Tool                 | What it does                                                                                        | 数据来源                              |
+| -------------------- | --------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| `pbdb_query`         | Fossil occurrences, taxonomy, stratigraphy via the [Paleobiology Database](https://paleobiodb.org/) | PBDB                                  |
+| `crossref_search`    | Literature metadata with DOI validation                                                             | [CrossRef](https://www.crossref.org/) |
+| `literature_summary` | Multi-source aggregation (CrossRef · Semantic Scholar · arXiv) with citation formatting             | 多源聚合                              |
 
 Morphometric analysis runs as a skill (`skills/morphometric_analysis/` — 64 landmarks, TPS/CSV/Excel/JSON export, MorphoJ & geomorph compatible, based on [DeepMorph](mailto:xkliu@cug.edu.cn)); PBDB/CrossRef context is injected into runs automatically by the auto-context layer (`PALEOCLAW_ENABLE_AUTO_TOOLS`).
 
@@ -198,9 +198,9 @@ The repo ships the full OpenClaw-style control console (`ui/`) — chat, session
 
 <div align="center">
 
-| 🔍 No Fabrication | 📚 Verifiable Citations | ⚠️ Transparent Uncertainty | 🔄 Reproducible |
-|:---:|:---:|:---:|:---:|
-| 不编造数据 | 可验证引用 | 透明的不确定性 | 可复现 |
+|             🔍 No Fabrication             |     📚 Verifiable Citations      |   ⚠️ Transparent Uncertainty    |            🔄 Reproducible            |
+| :---------------------------------------: | :------------------------------: | :-----------------------------: | :-----------------------------------: |
+|                不编造数据                 |            可验证引用            |         透明的不确定性          |                可复现                 |
 | All data verified against primary sources | Every paper includes a valid DOI | Disputed data is clearly marked | All queries and parameters are logged |
 
 </div>
@@ -304,13 +304,13 @@ Focused bug-fix release: `splitSections` colon handling, `parseSoul` domain scop
 
 ## 📚 Documentation
 
-| Document | Description |
-|----------|-------------|
+| Document                                                             | Description                    |
+| -------------------------------------------------------------------- | ------------------------------ | ------------ |
 | [使用手册 (Manual)](https://www.paleoclaw.paleo-lab.com/manual.html) | Full deployment & usage manual | 完整使用手册 |
-| [README_CN.md](README_CN.md) | 中文文档 |
-| [CHANGELOG.md](CHANGELOG.md) | Version history | 版本历史 |
-| [docs/channels/](docs/channels/) | Channel integration guides | 渠道集成指南 |
-| [DEPLOY_GUIDE (site)](https://github.com/syxscott/PaleoClaw_Web) | Website deployment | 官网部署 |
+| [README_CN.md](README_CN.md)                                         | 中文文档                       |
+| [CHANGELOG.md](CHANGELOG.md)                                         | Version history                | 版本历史     |
+| [docs/channels/](docs/channels/)                                     | Channel integration guides     | 渠道集成指南 |
+| [DEPLOY_GUIDE (site)](https://github.com/syxscott/PaleoClaw_Web)     | Website deployment             | 官网部署     |
 
 ## 🤝 Contributing
 
@@ -322,13 +322,13 @@ Contributions welcome — new data sources, research skills, citation formats, l
 
 ## 🙏 Acknowledgements
 
-| Source | Provider |
-|--------|----------|
-| 🦕 Fossil occurrences & taxonomy | [Paleobiology Database (PBDB)](https://paleobiodb.org/) |
-| 📚 Literature metadata | [CrossRef](https://www.crossref.org/) · [Semantic Scholar](https://www.semanticscholar.org/) · [arXiv](https://arxiv.org/) |
-| 📐 Morphometric algorithms | [DeepMorph](mailto:xkliu@cug.edu.cn) — Xiaokang Liu @ CUG |
-| 🦞 Agent runtime | [OpenClaw](https://github.com/openclaw/openclaw) |
-| 🧠 Memory store design | [GeoClaw-OpenAI](https://github.com/whuyao/GeoClaw-OpenAI) |
+| Source                           | Provider                                                                                                                   |
+| -------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| 🦕 Fossil occurrences & taxonomy | [Paleobiology Database (PBDB)](https://paleobiodb.org/)                                                                    |
+| 📚 Literature metadata           | [CrossRef](https://www.crossref.org/) · [Semantic Scholar](https://www.semanticscholar.org/) · [arXiv](https://arxiv.org/) |
+| 📐 Morphometric algorithms       | [DeepMorph](mailto:xkliu@cug.edu.cn) — Xiaokang Liu @ CUG                                                                  |
+| 🦞 Agent runtime                 | [OpenClaw](https://github.com/openclaw/openclaw)                                                                           |
+| 🧠 Memory store design           | [GeoClaw-OpenAI](https://github.com/whuyao/GeoClaw-OpenAI)                                                                 |
 
 ## 📖 Citation
 
@@ -345,11 +345,11 @@ Data source: Paleobiology Database (PBDB) — https://paleobiodb.org/
 
 ## 🔗 Support & Community
 
-| Channel | Link |
-|---------|------|
-| 🐛 Bug reports & features | [GitHub Issues](https://github.com/syxscott/PaleoClaw/issues) |
-| 💬 Community Q&A | [GitHub Discussions](https://github.com/syxscott/PaleoClaw/discussions) |
-| 📧 Support | [support@paleoclaw.ai](mailto:support@paleoclaw.ai) |
+| Channel                   | Link                                                                    |
+| ------------------------- | ----------------------------------------------------------------------- |
+| 🐛 Bug reports & features | [GitHub Issues](https://github.com/syxscott/PaleoClaw/issues)           |
+| 💬 Community Q&A          | [GitHub Discussions](https://github.com/syxscott/PaleoClaw/discussions) |
+| 📧 Support                | [support@paleoclaw.ai](mailto:support@paleoclaw.ai)                     |
 
 ---
 

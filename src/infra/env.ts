@@ -52,16 +52,16 @@ export function isTruthyEnvValue(value?: string): boolean {
 export interface DebugConfig {
   // Telegram 相关调试
   telegramAccounts: boolean;
-  
-  // 内存嵌入相关调试  
+
+  // 内存嵌入相关调试
   memoryEmbeddings: boolean;
-  
+
   // 健康检查相关调试
   health: boolean;
-  
+
   // NextCloud Talk 相关调试
   nextcloudTalkAccounts: boolean;
-  
+
   // 通用调试开关 - 如果设置了这个，则启用所有调试
   all: boolean;
 }
@@ -71,19 +71,28 @@ export interface DebugConfig {
  */
 export function loadDebugConfig(): DebugConfig {
   // 检查是否有通用调试开关
-  const allDebug = isTruthyEnvValue(process.env.PALEOCLAW_DEBUG_ALL) || 
-                   isTruthyEnvValue(process.env.OPENCLAW_DEBUG_ALL);
-  
+  const allDebug =
+    isTruthyEnvValue(process.env.PALEOCLAW_DEBUG_ALL) ||
+    isTruthyEnvValue(process.env.OPENCLAW_DEBUG_ALL);
+
   return {
-    telegramAccounts: allDebug || isTruthyEnvValue(process.env.PALEOCLAW_DEBUG_TELEGRAM_ACCOUNTS) || 
-                      isTruthyEnvValue(process.env.OPENCLAW_DEBUG_TELEGRAM_ACCOUNTS),
-    memoryEmbeddings: allDebug || isTruthyEnvValue(process.env.PALEOCLAW_DEBUG_MEMORY_EMBEDDINGS) || 
-                      isTruthyEnvValue(process.env.OPENCLAW_DEBUG_MEMORY_EMBEDDINGS),
-    health: allDebug || isTruthyEnvValue(process.env.PALEOCLAW_DEBUG_HEALTH) || 
-            isTruthyEnvValue(process.env.OPENCLAW_DEBUG_HEALTH),
-    nextcloudTalkAccounts: allDebug || isTruthyEnvValue(process.env.PALEOCLAW_DEBUG_NEXTCLOUD_TALK_ACCOUNTS) || 
-                           isTruthyEnvValue(process.env.OPENCLAW_DEBUG_NEXTCLOUD_TALK_ACCOUNTS),
-    all: allDebug
+    telegramAccounts:
+      allDebug ||
+      isTruthyEnvValue(process.env.PALEOCLAW_DEBUG_TELEGRAM_ACCOUNTS) ||
+      isTruthyEnvValue(process.env.OPENCLAW_DEBUG_TELEGRAM_ACCOUNTS),
+    memoryEmbeddings:
+      allDebug ||
+      isTruthyEnvValue(process.env.PALEOCLAW_DEBUG_MEMORY_EMBEDDINGS) ||
+      isTruthyEnvValue(process.env.OPENCLAW_DEBUG_MEMORY_EMBEDDINGS),
+    health:
+      allDebug ||
+      isTruthyEnvValue(process.env.PALEOCLAW_DEBUG_HEALTH) ||
+      isTruthyEnvValue(process.env.OPENCLAW_DEBUG_HEALTH),
+    nextcloudTalkAccounts:
+      allDebug ||
+      isTruthyEnvValue(process.env.PALEOCLAW_DEBUG_NEXTCLOUD_TALK_ACCOUNTS) ||
+      isTruthyEnvValue(process.env.OPENCLAW_DEBUG_NEXTCLOUD_TALK_ACCOUNTS),
+    all: allDebug,
   };
 }
 

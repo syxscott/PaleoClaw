@@ -1,5 +1,5 @@
-import { ContextEngine } from './context-engine.js';
-import { ContextCompressor } from './context-engine-compressor.js';
+import { ContextCompressor } from "./context-engine-compressor.js";
+import { ContextEngine } from "./context-engine.js";
 
 export class ContextEngineRegistry {
   private static instance: ContextEngineRegistry;
@@ -8,7 +8,7 @@ export class ContextEngineRegistry {
 
   private constructor() {
     this.defaultEngine = new ContextCompressor();
-    this.engines.set('context-compressor', this.defaultEngine);
+    this.engines.set("context-compressor", this.defaultEngine);
   }
 
   static getInstance(): ContextEngineRegistry {
@@ -30,7 +30,7 @@ export class ContextEngineRegistry {
     return this.defaultEngine;
   }
 
-  list(): Array<{ name: string; stats: ReturnType<ContextEngine['get_status']> }> {
+  list(): Array<{ name: string; stats: ReturnType<ContextEngine["get_status"]> }> {
     return Array.from(this.engines.entries()).map(([name, engine]) => ({
       name,
       stats: engine.get_status(),

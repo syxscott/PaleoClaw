@@ -407,9 +407,7 @@ export function buildModelOptions(
     options.unshift({ value: current, label: `Current (${current})` });
   }
   if (options.length === 0) {
-    return html`
-      <option value="" disabled>No configured models</option>
-    `;
+    return html` <option value="" disabled>No configured models</option> `;
   }
   return options.map((option) => html`<option value=${option.value}>${option.label}</option>`);
 }

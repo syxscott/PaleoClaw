@@ -76,7 +76,9 @@ const icons = {
       stroke-linejoin="round"
     >
       <polyline points="3 6 5 6 21 6"></polyline>
-      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+      <path
+        d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+      ></path>
     </svg>
   `,
   edit: html`
@@ -316,9 +318,7 @@ function renderTags(tags: string[]): TemplateResult | typeof nothing {
     return nothing;
   }
   return html`
-    <div class="cfg-tags">
-      ${tags.map((tag) => html`<span class="cfg-tag">${tag}</span>`)}
-    </div>
+    <div class="cfg-tags">${tags.map((tag) => html`<span class="cfg-tag">${tag}</span>`)}</div>
   `;
 }
 
@@ -384,26 +384,25 @@ export function renderNode(params: {
       return html`
         <div class="cfg-field">
           ${showLabel ? html`<label class="cfg-field__label">${label}</label>` : nothing}
-          ${help ? html`<div class="cfg-field__help">${help}</div>` : nothing}
-          ${renderTags(tags)}
+          ${help ? html`<div class="cfg-field__help">${help}</div>` : nothing} ${renderTags(tags)}
           <div class="cfg-segmented">
             ${literals.map(
               (lit) => html`
-              <button
-                type="button"
-                class="cfg-segmented__btn ${
-                  // oxlint-disable typescript/no-base-to-string
-                  lit === resolvedValue || String(lit) === String(resolvedValue) ? "active" : ""
-                }"
-                ?disabled=${disabled}
-                @click=${() => onPatch(path, lit)}
-              >
-                ${
-                  // oxlint-disable typescript/no-base-to-string
-                  String(lit)
-                }
-              </button>
-            `,
+                <button
+                  type="button"
+                  class="cfg-segmented__btn ${
+                    // oxlint-disable typescript/no-base-to-string
+                    lit === resolvedValue || String(lit) === String(resolvedValue) ? "active" : ""
+                  }"
+                  ?disabled=${disabled}
+                  @click=${() => onPatch(path, lit)}
+                >
+                  ${
+                    // oxlint-disable typescript/no-base-to-string
+                    String(lit)
+                  }
+                </button>
+              `,
             )}
           </div>
         </div>
@@ -450,20 +449,22 @@ export function renderNode(params: {
       return html`
         <div class="cfg-field">
           ${showLabel ? html`<label class="cfg-field__label">${label}</label>` : nothing}
-          ${help ? html`<div class="cfg-field__help">${help}</div>` : nothing}
-          ${renderTags(tags)}
+          ${help ? html`<div class="cfg-field__help">${help}</div>` : nothing} ${renderTags(tags)}
           <div class="cfg-segmented">
             ${options.map(
               (opt) => html`
-              <button
-                type="button"
-                class="cfg-segmented__btn ${opt === resolvedValue || String(opt) === String(resolvedValue) ? "active" : ""}"
-                ?disabled=${disabled}
-                @click=${() => onPatch(path, opt)}
-              >
-                ${String(opt)}
-              </button>
-            `,
+                <button
+                  type="button"
+                  class="cfg-segmented__btn ${opt === resolvedValue ||
+                  String(opt) === String(resolvedValue)
+                    ? "active"
+                    : ""}"
+                  ?disabled=${disabled}
+                  @click=${() => onPatch(path, opt)}
+                >
+                  ${String(opt)}
+                </button>
+              `,
             )}
           </div>
         </div>
@@ -559,8 +560,7 @@ function renderTextInput(params: {
   return html`
     <div class="cfg-field">
       ${showLabel ? html`<label class="cfg-field__label">${label}</label>` : nothing}
-      ${help ? html`<div class="cfg-field__help">${help}</div>` : nothing}
-      ${renderTags(tags)}
+      ${help ? html`<div class="cfg-field__help">${help}</div>` : nothing} ${renderTags(tags)}
       <div class="cfg-input-wrap">
         <input
           type=${isSensitive ? "password" : inputType}
@@ -589,19 +589,19 @@ function renderTextInput(params: {
             onPatch(path, raw.trim());
           }}
         />
-        ${
-          schema.default !== undefined
-            ? html`
-          <button
-            type="button"
-            class="cfg-input__reset"
-            title="Reset to default"
-            ?disabled=${disabled}
-            @click=${() => onPatch(path, schema.default)}
-          >↺</button>
-        `
-            : nothing
-        }
+        ${schema.default !== undefined
+          ? html`
+              <button
+                type="button"
+                class="cfg-input__reset"
+                title="Reset to default"
+                ?disabled=${disabled}
+                @click=${() => onPatch(path, schema.default)}
+              >
+                ↺
+              </button>
+            `
+          : nothing}
       </div>
     </div>
   `;
@@ -626,15 +626,16 @@ function renderNumberInput(params: {
   return html`
     <div class="cfg-field">
       ${showLabel ? html`<label class="cfg-field__label">${label}</label>` : nothing}
-      ${help ? html`<div class="cfg-field__help">${help}</div>` : nothing}
-      ${renderTags(tags)}
+      ${help ? html`<div class="cfg-field__help">${help}</div>` : nothing} ${renderTags(tags)}
       <div class="cfg-number">
         <button
           type="button"
           class="cfg-number__btn"
           ?disabled=${disabled}
           @click=${() => onPatch(path, numValue - 1)}
-        >−</button>
+        >
+          −
+        </button>
         <input
           type="number"
           class="cfg-number__input"
@@ -651,7 +652,9 @@ function renderNumberInput(params: {
           class="cfg-number__btn"
           ?disabled=${disabled}
           @click=${() => onPatch(path, numValue + 1)}
-        >+</button>
+        >
+          +
+        </button>
       </div>
     </div>
   `;
@@ -680,8 +683,7 @@ function renderSelect(params: {
   return html`
     <div class="cfg-field">
       ${showLabel ? html`<label class="cfg-field__label">${label}</label>` : nothing}
-      ${help ? html`<div class="cfg-field__help">${help}</div>` : nothing}
-      ${renderTags(tags)}
+      ${help ? html`<div class="cfg-field__help">${help}</div>` : nothing} ${renderTags(tags)}
       <select
         class="cfg-select"
         ?disabled=${disabled}
@@ -692,11 +694,7 @@ function renderSelect(params: {
         }}
       >
         <option value=${unset}>Select...</option>
-        ${options.map(
-          (opt, idx) => html`
-          <option value=${String(idx)}>${String(opt)}</option>
-        `,
-        )}
+        ${options.map((opt, idx) => html` <option value=${String(idx)}>${String(opt)}</option> `)}
       </select>
     </div>
   `;
@@ -757,38 +755,28 @@ function renderObject(params: {
         onPatch,
       }),
     )}
-    ${
-      allowExtra
-        ? renderMapField({
-            schema: additional,
-            value: obj,
-            path,
-            hints,
-            unsupported,
-            disabled,
-            reservedKeys: reserved,
-            searchCriteria: childSearchCriteria,
-            onPatch,
-          })
-        : nothing
-    }
+    ${allowExtra
+      ? renderMapField({
+          schema: additional,
+          value: obj,
+          path,
+          hints,
+          unsupported,
+          disabled,
+          reservedKeys: reserved,
+          searchCriteria: childSearchCriteria,
+          onPatch,
+        })
+      : nothing}
   `;
 
   // For top-level, don't wrap in collapsible
   if (path.length === 1) {
-    return html`
-      <div class="cfg-fields">
-        ${fields}
-      </div>
-    `;
+    return html` <div class="cfg-fields">${fields}</div> `;
   }
 
   if (!showLabel) {
-    return html`
-      <div class="cfg-fields cfg-fields--inline">
-        ${fields}
-      </div>
-    `;
+    return html` <div class="cfg-fields cfg-fields--inline">${fields}</div> `;
   }
 
   // Nested objects get collapsible treatment
@@ -802,9 +790,7 @@ function renderObject(params: {
         <span class="cfg-object__chevron">${icons.chevronDown}</span>
       </summary>
       ${help ? html`<div class="cfg-object__help">${help}</div>` : nothing}
-      <div class="cfg-object__content">
-        ${fields}
-      </div>
+      <div class="cfg-object__content">${fields}</div>
     </details>
   `;
 }
@@ -863,52 +849,47 @@ function renderArray(params: {
         </button>
       </div>
       ${help ? html`<div class="cfg-array__help">${help}</div>` : nothing}
-
-      ${
-        arr.length === 0
-          ? html`
-              <div class="cfg-array__empty">No items yet. Click "Add" to create one.</div>
-            `
-          : html`
-        <div class="cfg-array__items">
-          ${arr.map(
-            (item, idx) => html`
-            <div class="cfg-array__item">
-              <div class="cfg-array__item-header">
-                <span class="cfg-array__item-index">#${idx + 1}</span>
-                <button
-                  type="button"
-                  class="cfg-array__item-remove"
-                  title="Remove item"
-                  ?disabled=${disabled}
-                  @click=${() => {
-                    const next = [...arr];
-                    next.splice(idx, 1);
-                    onPatch(path, next);
-                  }}
-                >
-                  ${icons.trash}
-                </button>
-              </div>
-              <div class="cfg-array__item-content">
-                ${renderNode({
-                  schema: itemsSchema,
-                  value: item,
-                  path: [...path, idx],
-                  hints,
-                  unsupported,
-                  disabled,
-                  searchCriteria: childSearchCriteria,
-                  showLabel: false,
-                  onPatch,
-                })}
-              </div>
+      ${arr.length === 0
+        ? html` <div class="cfg-array__empty">No items yet. Click "Add" to create one.</div> `
+        : html`
+            <div class="cfg-array__items">
+              ${arr.map(
+                (item, idx) => html`
+                  <div class="cfg-array__item">
+                    <div class="cfg-array__item-header">
+                      <span class="cfg-array__item-index">#${idx + 1}</span>
+                      <button
+                        type="button"
+                        class="cfg-array__item-remove"
+                        title="Remove item"
+                        ?disabled=${disabled}
+                        @click=${() => {
+                          const next = [...arr];
+                          next.splice(idx, 1);
+                          onPatch(path, next);
+                        }}
+                      >
+                        ${icons.trash}
+                      </button>
+                    </div>
+                    <div class="cfg-array__item-content">
+                      ${renderNode({
+                        schema: itemsSchema,
+                        value: item,
+                        path: [...path, idx],
+                        hints,
+                        unsupported,
+                        disabled,
+                        searchCriteria: childSearchCriteria,
+                        showLabel: false,
+                        onPatch,
+                      })}
+                    </div>
+                  </div>
+                `,
+              )}
             </div>
-          `,
-          )}
-        </div>
-      `
-      }
+          `}
     </div>
   `;
 }
@@ -975,99 +956,93 @@ function renderMapField(params: {
         </button>
       </div>
 
-      ${
-        visibleEntries.length === 0
-          ? html`
-              <div class="cfg-map__empty">No custom entries.</div>
-            `
-          : html`
-        <div class="cfg-map__items">
-          ${visibleEntries.map(([key, entryValue]) => {
-            const valuePath = [...path, key];
-            const fallback = jsonValue(entryValue);
-            return html`
-              <div class="cfg-map__item">
-                <div class="cfg-map__item-header">
-                  <div class="cfg-map__item-key">
-                    <input
-                      type="text"
-                      class="cfg-input cfg-input--sm"
-                      placeholder="Key"
-                      .value=${key}
-                      ?disabled=${disabled}
-                      @change=${(e: Event) => {
-                        const nextKey = (e.target as HTMLInputElement).value.trim();
-                        if (!nextKey || nextKey === key) {
-                          return;
-                        }
-                        const next = { ...value };
-                        if (nextKey in next) {
-                          return;
-                        }
-                        next[nextKey] = next[key];
-                        delete next[key];
-                        onPatch(path, next);
-                      }}
-                    />
-                  </div>
-                  <button
-                    type="button"
-                    class="cfg-map__item-remove"
-                    title="Remove entry"
-                    ?disabled=${disabled}
-                    @click=${() => {
-                      const next = { ...value };
-                      delete next[key];
-                      onPatch(path, next);
-                    }}
-                  >
-                    ${icons.trash}
-                  </button>
-                </div>
-                <div class="cfg-map__item-value">
-                  ${
-                    anySchema
-                      ? html`
-                        <textarea
-                          class="cfg-textarea cfg-textarea--sm"
-                          placeholder="JSON value"
-                          rows="2"
-                          .value=${fallback}
+      ${visibleEntries.length === 0
+        ? html` <div class="cfg-map__empty">No custom entries.</div> `
+        : html`
+            <div class="cfg-map__items">
+              ${visibleEntries.map(([key, entryValue]) => {
+                const valuePath = [...path, key];
+                const fallback = jsonValue(entryValue);
+                return html`
+                  <div class="cfg-map__item">
+                    <div class="cfg-map__item-header">
+                      <div class="cfg-map__item-key">
+                        <input
+                          type="text"
+                          class="cfg-input cfg-input--sm"
+                          placeholder="Key"
+                          .value=${key}
                           ?disabled=${disabled}
                           @change=${(e: Event) => {
-                            const target = e.target as HTMLTextAreaElement;
-                            const raw = target.value.trim();
-                            if (!raw) {
-                              onPatch(valuePath, undefined);
+                            const nextKey = (e.target as HTMLInputElement).value.trim();
+                            if (!nextKey || nextKey === key) {
                               return;
                             }
-                            try {
-                              onPatch(valuePath, JSON.parse(raw));
-                            } catch {
-                              target.value = fallback;
+                            const next = { ...value };
+                            if (nextKey in next) {
+                              return;
                             }
+                            next[nextKey] = next[key];
+                            delete next[key];
+                            onPatch(path, next);
                           }}
-                        ></textarea>
-                      `
-                      : renderNode({
-                          schema,
-                          value: entryValue,
-                          path: valuePath,
-                          hints,
-                          unsupported,
-                          disabled,
-                          searchCriteria,
-                          showLabel: false,
-                          onPatch,
-                        })
-                  }
-                </div>
-              </div>
-            `;
-          })}
-        </div>
-      `
-      }
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        class="cfg-map__item-remove"
+                        title="Remove entry"
+                        ?disabled=${disabled}
+                        @click=${() => {
+                          const next = { ...value };
+                          delete next[key];
+                          onPatch(path, next);
+                        }}
+                      >
+                        ${icons.trash}
+                      </button>
+                    </div>
+                    <div class="cfg-map__item-value">
+                      ${anySchema
+                        ? html`
+                            <textarea
+                              class="cfg-textarea cfg-textarea--sm"
+                              placeholder="JSON value"
+                              rows="2"
+                              .value=${fallback}
+                              ?disabled=${disabled}
+                              @change=${(e: Event) => {
+                                const target = e.target as HTMLTextAreaElement;
+                                const raw = target.value.trim();
+                                if (!raw) {
+                                  onPatch(valuePath, undefined);
+                                  return;
+                                }
+                                try {
+                                  onPatch(valuePath, JSON.parse(raw));
+                                } catch {
+                                  target.value = fallback;
+                                }
+                              }}
+                            ></textarea>
+                          `
+                        : renderNode({
+                            schema,
+                            value: entryValue,
+                            path: valuePath,
+                            hints,
+                            unsupported,
+                            disabled,
+                            searchCriteria,
+                            showLabel: false,
+                            onPatch,
+                          })}
+                    </div>
+                  </div>
+                `;
+              })}
+            </div>
+          `}
     </div>
   `;
 }

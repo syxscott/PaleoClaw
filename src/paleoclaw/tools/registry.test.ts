@@ -1,50 +1,49 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from "vitest";
+import { ToolRegistry } from "./registry.js";
 
-import { ToolRegistry } from './registry.js';
-
-describe('ToolRegistry', () => {
-  it('registers and executes tools', async () => {
+describe("ToolRegistry", () => {
+  it("registers and executes tools", async () => {
     const registry = new ToolRegistry();
 
     registry.register({
-      name: 'echo',
-      category: 'utility',
-      description: 'Echo params',
+      name: "echo",
+      category: "utility",
+      description: "Echo params",
       schema: {
-        type: 'object',
+        type: "object",
         properties: {
-          message: { type: 'string' },
+          message: { type: "string" },
         },
       },
-      handler: (params) => ({ message: params.message || '' }),
+      handler: (params) => ({ message: params.message || "" }),
     });
 
-    const result = await registry.execute('echo', { message: 'hello' });
+    const result = await registry.execute("echo", { message: "hello" });
     expect(result.ok).toBe(true);
-    expect(result.data).toEqual({ message: 'hello' });
+    expect(result.data).toEqual({ message: "hello" });
   });
 
-  it('returns error when tool is missing', async () => {
+  it("returns error when tool is missing", async () => {
     const registry = new ToolRegistry();
-    const result = await registry.execute('missing_tool');
+    const result = await registry.execute("missing_tool");
 
     expect(result.ok).toBe(false);
-    expect(result.error).toContain('Tool not found');
+    expect(result.error).toContain("Tool not found");
   });
 
-  it('respects tool availability checks', async () => {
+  it("respects tool availability checks", async () => {
     const registry = new ToolRegistry();
     registry.register({
-      name: 'blocked',
-      category: 'utility',
-      description: 'Blocked tool',
-      schema: { type: 'object', properties: {} },
-      handler: () => 'ok',
+      name: "blocked",
+      category: "utility",
+      description: "Blocked tool",
+      schema: { type: "object", properties: {} },
+      handler: () => "ok",
       checkAvailability: () => false,
     });
 
-    const result = await registry.execute('blocked');
+    const result = await registry.execute("blocked");
     expect(result.ok).toBe(false);
-    expect(result.error).toContain('Tool unavailable');
+    expect(result.error).toContain("Tool unavailable");
   });
 });

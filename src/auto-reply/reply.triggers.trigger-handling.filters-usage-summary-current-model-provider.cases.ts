@@ -145,9 +145,10 @@ export function registerTriggerHandlingUsageSummaryCases(params: {
             "Usage footer: tokens",
           );
           const finalStore = await readSessionStore(usageStorePath);
-          expect((pickFirstStoreEntry(finalStore) as { responseUsage?: string } | undefined)?.responseUsage).toBe(
-            "tokens",
-          );
+          expect(
+            (pickFirstStoreEntry(finalStore) as { responseUsage?: string } | undefined)
+              ?.responseUsage,
+          ).toBe("tokens");
           expect(runEmbeddedPiAgentMock).not.toHaveBeenCalled();
         }
 

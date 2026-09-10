@@ -49,11 +49,9 @@ async function expectNoForwardedInvoke(hasInvoke: () => boolean): Promise<void> 
 }
 
 async function getConnectedNodeId(ws: WebSocket): Promise<string> {
-  const nodes = (await rpcReq(
-    ws,
-    "node.list",
-    {},
-  )) as RpcResponse<{ nodes?: Array<{ nodeId: string; connected?: boolean }> }>;
+  const nodes = (await rpcReq(ws, "node.list", {})) as RpcResponse<{
+    nodes?: Array<{ nodeId: string; connected?: boolean }>;
+  }>;
   expect(nodes.ok).toBe(true);
   const nodeId = nodes.payload?.nodes?.find((n) => n.connected)?.nodeId ?? "";
   expect(nodeId).toBeTruthy();
@@ -61,11 +59,9 @@ async function getConnectedNodeId(ws: WebSocket): Promise<string> {
 }
 
 async function getConnectedNodeIds(ws: WebSocket): Promise<string[]> {
-  const nodes = (await rpcReq(
-    ws,
-    "node.list",
-    {},
-  )) as RpcResponse<{ nodes?: Array<{ nodeId: string; connected?: boolean }> }>;
+  const nodes = (await rpcReq(ws, "node.list", {})) as RpcResponse<{
+    nodes?: Array<{ nodeId: string; connected?: boolean }>;
+  }>;
   expect(nodes.ok).toBe(true);
   return (nodes.payload?.nodes ?? []).filter((n) => n.connected).map((n) => n.nodeId);
 }

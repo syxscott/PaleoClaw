@@ -16,9 +16,7 @@
       // Mirrors applyResolvedTheme() in src/ui/app-settings.ts (key from src/ui/storage.ts).
       (function () {
         try {
-          var settings = JSON.parse(
-            localStorage.getItem("paleoclaw.control.settings.v1") || "{}"
-          );
+          var settings = JSON.parse(localStorage.getItem("paleoclaw.control.settings.v1") || "{}");
           var mode =
             settings.theme === "light" || settings.theme === "dark" ? settings.theme : "system";
           var resolved =

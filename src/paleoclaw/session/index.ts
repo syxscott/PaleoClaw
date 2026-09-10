@@ -2,13 +2,13 @@
  * PaleoClaw Session Module
  */
 
-import { SessionStore } from './store.js';
-import { SqliteSessionStore, defaultSessionDbPath } from './store-sqlite.js';
-import { SessionStoreLike, SessionTitleUpgrader } from './types.js';
+import { SqliteSessionStore, defaultSessionDbPath } from "./store-sqlite.js";
+import { SessionStore } from "./store.js";
+import { SessionStoreLike, SessionTitleUpgrader } from "./types.js";
 
-export * from './types.js';
-export * from './store.js';
-export * from './store-sqlite.js';
+export * from "./types.js";
+export * from "./store.js";
+export * from "./store-sqlite.js";
 
 export interface CreateSessionStoreOptions {
   /**

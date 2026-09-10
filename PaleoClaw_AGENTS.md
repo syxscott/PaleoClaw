@@ -32,12 +32,14 @@ The profile system provides double-layer personalization:
 - `user.md` - User-level research preferences
 
 **Key Files:**
+
 - `layers.ts` - Profile parser and loader
 - `index.ts` - Module exports
 
 **Usage:**
+
 ```typescript
-import { loadProfileLayers, createProfileContext } from './paleoclaw/profile';
+import { loadProfileLayers, createProfileContext } from "./paleoclaw/profile";
 
 const profile = await loadProfileLayers();
 const context = createProfileContext(profile);
@@ -52,13 +54,15 @@ The memory system provides research trajectory tracking:
 - Vector search: Content similarity retrieval
 
 **Key Files:**
+
 - `store.ts` - Memory storage implementation
 - `retrieval.ts` - Vector-based search
 - `index.ts` - Module exports
 
 **Usage:**
+
 ```typescript
-import { MemoryStore } from './paleoclaw/memory';
+import { MemoryStore } from "./paleoclaw/memory";
 
 const store = new MemoryStore();
 await store.saveShortTermMemory(task);
@@ -74,32 +78,37 @@ const results = await store.searchLongTerm(query);
 Skills are located in `skills/<skill-name>/`.
 
 **Required Files:**
+
 - `SKILL.md` - Skill definition and instructions
 - `skill.ts` - Skill implementation
 
 **SKILL.md Template:**
+
 ```markdown
 # Skill Name
 
 ## Purpose
+
 Brief description of the skill's purpose.
 
 ## Usage
+
 How to use the skill.
 
 ## Examples
+
 Example queries and responses.
 ```
 
 ### Existing Skills
 
-| Skill | Description |
-|-------|-------------|
-| `paper_search` | Literature search via CrossRef/Semantic Scholar |
-| `pbdb_query` | PBDB fossil occurrence queries |
-| `taxonomy_lookup` | Taxonomic classification lookup |
-| `stratigraphy_lookup` | Geological formation data |
-| `morphometric_analysis` | Landmark extraction and analysis |
+| Skill                   | Description                                     |
+| ----------------------- | ----------------------------------------------- |
+| `paper_search`          | Literature search via CrossRef/Semantic Scholar |
+| `pbdb_query`            | PBDB fossil occurrence queries                  |
+| `taxonomy_lookup`       | Taxonomic classification lookup                 |
+| `stratigraphy_lookup`   | Geological formation data                       |
+| `morphometric_analysis` | Landmark extraction and analysis                |
 
 ---
 
@@ -139,11 +148,13 @@ Before delivering any scientific claim:
 ## Testing
 
 Run tests:
+
 ```bash
 pnpm test
 ```
 
 Run specific tests:
+
 ```bash
 pnpm test --filter <test-name>
 ```

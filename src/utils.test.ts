@@ -167,9 +167,9 @@ describe("shortenHomePath", () => {
     vi.stubEnv("OPENCLAW_HOME", "/srv/paleoclaw-home");
     vi.stubEnv("HOME", "/home/other");
 
-    expect(shortenHomePath(`${path.resolve("/srv/paleoclaw-home")}/.paleoclaw/paleoclaw.json`)).toBe(
-      "$OPENCLAW_HOME/.paleoclaw/paleoclaw.json",
-    );
+    expect(
+      shortenHomePath(`${path.resolve("/srv/paleoclaw-home")}/.paleoclaw/paleoclaw.json`),
+    ).toBe("$OPENCLAW_HOME/.paleoclaw/paleoclaw.json");
 
     vi.unstubAllEnvs();
   });
@@ -181,7 +181,9 @@ describe("shortenHomeInString", () => {
     vi.stubEnv("HOME", "/home/other");
 
     expect(
-      shortenHomeInString(`config: ${path.resolve("/srv/paleoclaw-home")}/.paleoclaw/paleoclaw.json`),
+      shortenHomeInString(
+        `config: ${path.resolve("/srv/paleoclaw-home")}/.paleoclaw/paleoclaw.json`,
+      ),
     ).toBe("config: $OPENCLAW_HOME/.paleoclaw/paleoclaw.json");
 
     vi.unstubAllEnvs();

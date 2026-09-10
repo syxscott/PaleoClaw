@@ -1,5 +1,5 @@
-import { ToolEntry, ToolSetEntry, ToolJsonSchema } from './registry-types.js';
-import { ToolAvailabilityCache } from './tool-availability-cache.js';
+import { ToolEntry, ToolSetEntry, ToolJsonSchema } from "./registry-types.js";
+import { ToolAvailabilityCache } from "./tool-availability-cache.js";
 
 export class ToolRegistry {
   private static instance: ToolRegistry;
@@ -40,7 +40,7 @@ export class ToolRegistry {
   }
 
   getByToolset(toolset: string): ToolEntry[] {
-    return Array.from(this.tools.values()).filter(t => t.toolset === toolset);
+    return Array.from(this.tools.values()).filter((t) => t.toolset === toolset);
   }
 
   getAllTools(): ToolEntry[] {
@@ -57,8 +57,12 @@ export class ToolRegistry {
 
   async isAvailable(name: string): Promise<boolean> {
     const tool = this.tools.get(name);
-    if (!tool) {return false;}
-    if (!tool.checkFn) {return true;}
+    if (!tool) {
+      return false;
+    }
+    if (!tool.checkFn) {
+      return true;
+    }
     return this.availabilityCache.check(name, tool.checkFn);
   }
 
@@ -66,8 +70,13 @@ export class ToolRegistry {
     return this.generation;
   }
 
-  getDefinitions(): Array<{ name: string; description?: string; schema: ToolJsonSchema; emoji?: string }> {
-    return this.getAllTools().map(t => ({
+  getDefinitions(): Array<{
+    name: string;
+    description?: string;
+    schema: ToolJsonSchema;
+    emoji?: string;
+  }> {
+    return this.getAllTools().map((t) => ({
       name: t.name,
       description: t.description,
       schema: t.schema,

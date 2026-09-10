@@ -1,11 +1,11 @@
-import { MemoryProvider, MemoryProviderStats } from './memory-provider.js';
+import { MemoryProvider, MemoryProviderStats } from "./memory-provider.js";
 
 export class MemoryManager {
   private static instance: MemoryManager;
   private providers: Map<string, MemoryProvider> = new Map();
   private externalProviderCount = 0;
   private externalProviderNames: Set<string> = new Set();
-  private currentSessionId: string = '';
+  private currentSessionId: string = "";
 
   static getInstance(): MemoryManager {
     if (!MemoryManager.instance) {
@@ -16,12 +16,15 @@ export class MemoryManager {
 
   add_provider(provider: MemoryProvider, is_external: boolean = false): boolean {
     if (is_external && this.externalProviderCount >= 1) {
-      console.warn('MemoryManager: Maximum external providers (1) reached. Rejecting:', provider.name);
+      console.warn(
+        "MemoryManager: Maximum external providers (1) reached. Rejecting:",
+        provider.name,
+      );
       return false;
     }
 
     if (this.providers.has(provider.name)) {
-      console.warn('MemoryManager: Provider already registered:', provider.name);
+      console.warn("MemoryManager: Provider already registered:", provider.name);
       return false;
     }
 
@@ -35,7 +38,9 @@ export class MemoryManager {
 
   remove_provider(name: string): boolean {
     const provider = this.providers.get(name);
-    if (!provider) {return false;}
+    if (!provider) {
+      return false;
+    }
     this.providers.delete(name);
     if (this.externalProviderNames.delete(name)) {
       this.externalProviderCount--;
@@ -62,18 +67,22 @@ export class MemoryManager {
     const blocks: string[] = [];
     for (const provider of this.providers.values()) {
       const block = provider.system_prompt_block();
-      if (block) {blocks.push(block);}
+      if (block) {
+        blocks.push(block);
+      }
     }
-    return blocks.join('\n\n');
+    return blocks.join("\n\n");
   }
 
   prefetch_all(query: string): string {
     const contexts: string[] = [];
     for (const provider of this.providers.values()) {
       const context = provider.prefetch(query, this.currentSessionId);
-      if (context) {contexts.push(context);}
+      if (context) {
+        contexts.push(context);
+      }
     }
-    return contexts.join('\n\n');
+    return contexts.join("\n\n");
   }
 
   queue_prefetch_all(query: string): void {

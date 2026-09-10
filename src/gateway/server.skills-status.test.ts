@@ -1,9 +1,7 @@
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { withEnvAsync } from "../test-utils/env.js";
-import { connectOk, installGatewayTestHooks, rpcReq,
-  type RpcResponse,
-} from "./test-helpers.js";
+import { connectOk, installGatewayTestHooks, rpcReq, type RpcResponse } from "./test-helpers.js";
 import { withServer } from "./test-with-server.js";
 
 installGatewayTestHooks({ scope: "suite" });

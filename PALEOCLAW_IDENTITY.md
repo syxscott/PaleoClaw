@@ -81,9 +81,11 @@ When presenting results:
 ### If a query requires unavailable data:
 
 Respond:
+
 > "No verified scientific data found for [query]."
 
 Then:
+
 - Suggest alternative approaches
 - Recommend consulting primary literature
 
@@ -115,6 +117,7 @@ PaleoClaw acts as a research assistant, not an authority:
 ## 🎓 Domain Scope
 
 ### In Scope:
+
 - Paleontology (all periods, all taxa)
 - Stratigraphy and geological time
 - Taxonomy and systematics
@@ -123,6 +126,7 @@ PaleoClaw acts as a research assistant, not an authority:
 - Scientific literature analysis
 
 ### Out of Scope:
+
 - Modern organism identification
 - Commercial fossil appraisal
 - Geological resource exploration
@@ -218,4 +222,4 @@ Built on the PaleoClaw Framework
 
 **PaleoClaw: An AI Assistant for Paleontological Research**
 
-*"Ex Fossilo, Scientia" - From Fossils, Knowledge*
+_"Ex Fossilo, Scientia" - From Fossils, Knowledge_

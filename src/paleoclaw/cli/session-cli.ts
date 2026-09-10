@@ -2,9 +2,9 @@
  * PaleoClaw Session CLI
  */
 
-import { parseFiniteNumber } from '../../vendor/normalization-core/number-coercion.js';
-import { createSessionStore } from '../session/index.js';
-import type { Command } from 'commander';
+import type { Command } from "commander";
+import { parseFiniteNumber } from "../../vendor/normalization-core/number-coercion.js";
+import { createSessionStore } from "../session/index.js";
 
 interface SessionCommandOptions {
   limit?: string;
@@ -29,23 +29,23 @@ function parseTags(raw?: string): string[] {
     return [];
   }
   return raw
-    .split(',')
+    .split(",")
     .map((item) => item.trim())
     .filter(Boolean);
 }
 
 export function registerSessionCommands(program: Command): void {
   const sessionCmd = program
-    .command('paleo-session')
-    .alias('psession')
-    .description('Manage PaleoClaw session history');
+    .command("paleo-session")
+    .alias("psession")
+    .description("Manage PaleoClaw session history");
 
   sessionCmd
-    .command('new')
-    .description('Create a new session')
-    .option('--title <title>', 'Session title')
-    .option('--tags <csv>', 'Comma-separated tags')
-    .option('--json', 'Output as JSON')
+    .command("new")
+    .description("Create a new session")
+    .option("--title <title>", "Session title")
+    .option("--tags <csv>", "Comma-separated tags")
+    .option("--json", "Output as JSON")
     .action(async (options: SessionCommandOptions) => {
       try {
         const store = createSessionStore();
@@ -57,20 +57,20 @@ export function registerSessionCommands(program: Command): void {
           return;
         }
 
-        console.log('✓ Session created');
+        console.log("✓ Session created");
         console.log(`  ID: ${created.id}`);
         console.log(`  Title: ${created.title}`);
       } catch (error) {
-        console.error('Error creating session:', error);
+        console.error("Error creating session:", error);
         process.exit(1);
       }
     });
 
   sessionCmd
-    .command('list')
-    .description('List recent sessions')
-    .option('-l, --limit <n>', 'Max sessions to list', '20')
-    .option('--json', 'Output as JSON')
+    .command("list")
+    .description("List recent sessions")
+    .option("-l, --limit <n>", "Max sessions to list", "20")
+    .option("--json", "Output as JSON")
     .action(async (options: SessionCommandOptions) => {
       try {
         const store = createSessionStore();
@@ -83,7 +83,7 @@ export function registerSessionCommands(program: Command): void {
         }
 
         if (sessions.length === 0) {
-          console.log('No sessions found.');
+          console.log("No sessions found.");
           return;
         }
 
@@ -94,16 +94,16 @@ export function registerSessionCommands(program: Command): void {
           console.log(`  Updated: ${new Date(session.updatedAt).toLocaleString()}`);
         }
       } catch (error) {
-        console.error('Error listing sessions:', error);
+        console.error("Error listing sessions:", error);
         process.exit(1);
       }
     });
 
   sessionCmd
-    .command('show')
-    .description('Show one session')
-    .argument('<session-id>', 'Session ID')
-    .option('--json', 'Output as JSON')
+    .command("show")
+    .description("Show one session")
+    .argument("<session-id>", "Session ID")
+    .option("--json", "Output as JSON")
     .action(async (sessionId: string, options: SessionCommandOptions) => {
       try {
         const store = createSessionStore();
@@ -118,24 +118,24 @@ export function registerSessionCommands(program: Command): void {
         console.log(`${session.title} (${session.id})`);
         console.log(`Created: ${new Date(session.createdAt).toLocaleString()}`);
         console.log(`Updated: ${new Date(session.updatedAt).toLocaleString()}`);
-        console.log('');
+        console.log("");
         for (const message of session.messages) {
           console.log(`[${message.role}] ${new Date(message.createdAt).toLocaleString()}`);
           console.log(message.content);
-          console.log('');
+          console.log("");
         }
       } catch (error) {
-        console.error('Error showing session:', error);
+        console.error("Error showing session:", error);
         process.exit(1);
       }
     });
 
   sessionCmd
-    .command('search')
-    .description('Search historical messages')
-    .argument('<query>', 'Search keyword')
-    .option('-l, --limit <n>', 'Max result count', '10')
-    .option('--json', 'Output as JSON')
+    .command("search")
+    .description("Search historical messages")
+    .argument("<query>", "Search keyword")
+    .option("-l, --limit <n>", "Max result count", "10")
+    .option("--json", "Output as JSON")
     .action(async (query: string, options: SessionCommandOptions) => {
       try {
         const store = createSessionStore();
@@ -148,7 +148,7 @@ export function registerSessionCommands(program: Command): void {
         }
 
         if (hits.length === 0) {
-          console.log('No matching history found.');
+          console.log("No matching history found.");
           return;
         }
 
@@ -157,16 +157,16 @@ export function registerSessionCommands(program: Command): void {
           console.log(`  ${hit.preview}`);
         }
       } catch (error) {
-        console.error('Error searching sessions:', error);
+        console.error("Error searching sessions:", error);
         process.exit(1);
       }
     });
 
   sessionCmd
-    .command('resume')
-    .description('Mark a session as active (touch updatedAt)')
-    .argument('<session-id>', 'Session ID')
-    .option('--json', 'Output as JSON')
+    .command("resume")
+    .description("Mark a session as active (touch updatedAt)")
+    .argument("<session-id>", "Session ID")
+    .option("--json", "Output as JSON")
     .action(async (sessionId: string, options: SessionCommandOptions) => {
       try {
         const store = createSessionStore();
@@ -181,7 +181,7 @@ export function registerSessionCommands(program: Command): void {
         console.log(`✓ Resumed session ${session.id}`);
         console.log(`  Updated: ${new Date(session.updatedAt).toLocaleString()}`);
       } catch (error) {
-        console.error('Error resuming session:', error);
+        console.error("Error resuming session:", error);
         process.exit(1);
       }
     });

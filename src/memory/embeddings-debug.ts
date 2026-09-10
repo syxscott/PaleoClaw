@@ -1,7 +1,7 @@
 import { isDebugEnabled } from "../infra/env.js";
 import { createSubsystemLogger } from "../logging/subsystem.js";
 
-const debugEmbeddings = isDebugEnabled('memoryEmbeddings');
+const debugEmbeddings = isDebugEnabled("memoryEmbeddings");
 const log = createSubsystemLogger("memory/embeddings");
 
 export function debugEmbeddingsLog(message: string, meta?: Record<string, unknown>): void {

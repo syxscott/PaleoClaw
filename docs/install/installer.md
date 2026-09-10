@@ -11,10 +11,10 @@ title: "Installer Internals"
 
 paleoclaw ships three installer scripts, served from `paleoclaw.ai`.
 
-| Script                             | Platform             | What it does                                                                                 |
-| ---------------------------------- | -------------------- | -------------------------------------------------------------------------------------------- |
+| Script                             | Platform             | What it does                                                                                  |
+| ---------------------------------- | -------------------- | --------------------------------------------------------------------------------------------- |
 | [`install.sh`](#installsh)         | macOS / Linux / WSL  | Installs Node if needed, installs paleoclaw via npm (default) or git, and can run onboarding. |
-| [`install-cli.sh`](#install-clish) | macOS / Linux / WSL  | Installs Node + paleoclaw into a local prefix (`~/.paleoclaw`). No root required.              |
+| [`install-cli.sh`](#install-clish) | macOS / Linux / WSL  | Installs Node + paleoclaw into a local prefix (`~/.paleoclaw`). No root required.             |
 | [`install.ps1`](#installps1)       | Windows (PowerShell) | Installs Node if needed, installs paleoclaw via npm (default) or git, and can run onboarding. |
 
 ## Quick commands
@@ -126,21 +126,21 @@ The script exits with code `2` for invalid method selection or invalid `--instal
 <AccordionGroup>
   <Accordion title="Flags reference">
 
-| Flag                            | Description                                                |
-| ------------------------------- | ---------------------------------------------------------- |
-| `--install-method npm\|git`     | Choose install method (default: `npm`). Alias: `--method`  |
-| `--npm`                         | Shortcut for npm method                                    |
-| `--git`                         | Shortcut for git method. Alias: `--github`                 |
-| `--version <version\|dist-tag>` | npm version or dist-tag (default: `latest`)                |
-| `--beta`                        | Use beta dist-tag if available, else fallback to `latest`  |
+| Flag                            | Description                                                 |
+| ------------------------------- | ----------------------------------------------------------- |
+| `--install-method npm\|git`     | Choose install method (default: `npm`). Alias: `--method`   |
+| `--npm`                         | Shortcut for npm method                                     |
+| `--git`                         | Shortcut for git method. Alias: `--github`                  |
+| `--version <version\|dist-tag>` | npm version or dist-tag (default: `latest`)                 |
+| `--beta`                        | Use beta dist-tag if available, else fallback to `latest`   |
 | `--git-dir <path>`              | Checkout directory (default: `~/paleoclaw`). Alias: `--dir` |
-| `--no-git-update`               | Skip `git pull` for existing checkout                      |
-| `--no-prompt`                   | Disable prompts                                            |
-| `--no-onboard`                  | Skip onboarding                                            |
-| `--onboard`                     | Enable onboarding                                          |
-| `--dry-run`                     | Print actions without applying changes                     |
-| `--verbose`                     | Enable debug output (`set -x`, npm notice-level logs)      |
-| `--help`                        | Show usage (`-h`)                                          |
+| `--no-git-update`               | Skip `git pull` for existing checkout                       |
+| `--no-prompt`                   | Disable prompts                                             |
+| `--no-onboard`                  | Skip onboarding                                             |
+| `--onboard`                     | Enable onboarding                                           |
+| `--dry-run`                     | Print actions without applying changes                      |
+| `--verbose`                     | Enable debug output (`set -x`, npm notice-level logs)       |
+| `--help`                        | Show usage (`-h`)                                           |
 
   </Accordion>
 
@@ -215,11 +215,11 @@ Designed for environments where you want everything under a local prefix (defaul
 
 | Flag                   | Description                                                                     |
 | ---------------------- | ------------------------------------------------------------------------------- |
-| `--prefix <path>`      | Install prefix (default: `~/.paleoclaw`)                                         |
-| `--version <ver>`      | paleoclaw version or dist-tag (default: `latest`)                                |
+| `--prefix <path>`      | Install prefix (default: `~/.paleoclaw`)                                        |
+| `--version <ver>`      | paleoclaw version or dist-tag (default: `latest`)                               |
 | `--node-version <ver>` | Node version (default: `22.22.0`)                                               |
 | `--json`               | Emit NDJSON events                                                              |
-| `--onboard`            | Run `paleoclaw onboard` after install                                            |
+| `--onboard`            | Run `paleoclaw onboard` after install                                           |
 | `--no-onboard`         | Skip onboarding (default)                                                       |
 | `--set-npm-prefix`     | On Linux, force npm prefix to `~/.npm-global` if current prefix is not writable |
 | `--help`               | Show usage (`-h`)                                                               |
@@ -231,7 +231,7 @@ Designed for environments where you want everything under a local prefix (defaul
 | Variable                                    | Description                                                                       |
 | ------------------------------------------- | --------------------------------------------------------------------------------- |
 | `OPENCLAW_PREFIX=<path>`                    | Install prefix                                                                    |
-| `OPENCLAW_VERSION=<ver>`                    | paleoclaw version or dist-tag                                                      |
+| `OPENCLAW_VERSION=<ver>`                    | paleoclaw version or dist-tag                                                     |
 | `OPENCLAW_NODE_VERSION=<ver>`               | Node version                                                                      |
 | `OPENCLAW_NO_ONBOARD=1`                     | Skip onboarding                                                                   |
 | `OPENCLAW_NPM_LOGLEVEL=error\|warn\|notice` | npm log level                                                                     |
@@ -299,14 +299,14 @@ Designed for environments where you want everything under a local prefix (defaul
 <AccordionGroup>
   <Accordion title="Flags reference">
 
-| Flag                      | Description                                            |
-| ------------------------- | ------------------------------------------------------ |
-| `-InstallMethod npm\|git` | Install method (default: `npm`)                        |
-| `-Tag <tag>`              | npm dist-tag (default: `latest`)                       |
+| Flag                      | Description                                             |
+| ------------------------- | ------------------------------------------------------- |
+| `-InstallMethod npm\|git` | Install method (default: `npm`)                         |
+| `-Tag <tag>`              | npm dist-tag (default: `latest`)                        |
 | `-GitDir <path>`          | Checkout directory (default: `%USERPROFILE%\paleoclaw`) |
-| `-NoOnboard`              | Skip onboarding                                        |
-| `-NoGitUpdate`            | Skip `git pull`                                        |
-| `-DryRun`                 | Print actions only                                     |
+| `-NoOnboard`              | Skip onboarding                                         |
+| `-NoGitUpdate`            | Skip `git pull`                                         |
+| `-DryRun`                 | Print actions only                                      |
 
   </Accordion>
 

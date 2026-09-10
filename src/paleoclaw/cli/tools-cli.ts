@@ -2,9 +2,9 @@
  * PaleoClaw Tools CLI
  */
 
-import { discoverTools } from '../tools/loader.js';
-import { toolRegistry } from '../tools/registry.js';
-import type { Command } from 'commander';
+import type { Command } from "commander";
+import { discoverTools } from "../tools/loader.js";
+import { toolRegistry } from "../tools/registry.js";
 
 interface ToolCommandOptions {
   json?: boolean;
@@ -18,25 +18,28 @@ function parseParams(raw?: string): Record<string, unknown> {
 
   try {
     const parsed = JSON.parse(raw) as unknown;
-    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
       return parsed as Record<string, unknown>;
     }
-    throw new Error('params must be a JSON object');
+    throw new Error("params must be a JSON object");
   } catch (error) {
-    throw new Error(`Invalid --params JSON: ${error instanceof Error ? error.message : String(error)}`, { cause: error });
+    throw new Error(
+      `Invalid --params JSON: ${error instanceof Error ? error.message : String(error)}`,
+      { cause: error },
+    );
   }
 }
 
 export function registerToolsCommands(program: Command): void {
   const toolsCmd = program
-    .command('paleo-tools')
-    .alias('ptools')
-    .description('Manage and run PaleoClaw built-in tools');
+    .command("paleo-tools")
+    .alias("ptools")
+    .description("Manage and run PaleoClaw built-in tools");
 
   toolsCmd
-    .command('list')
-    .description('List available tools')
-    .option('--json', 'Output as JSON')
+    .command("list")
+    .description("List available tools")
+    .option("--json", "Output as JSON")
     .action(async (options: ToolCommandOptions) => {
       try {
         const tools = await discoverTools();
@@ -45,26 +48,26 @@ export function registerToolsCommands(program: Command): void {
           return;
         }
 
-        console.log('╔════════════════════════════════════════════════════════════╗');
-        console.log('║                 PaleoClaw Tool Catalog                     ║');
-        console.log('╚════════════════════════════════════════════════════════════╝');
-        console.log('');
+        console.log("╔════════════════════════════════════════════════════════════╗");
+        console.log("║                 PaleoClaw Tool Catalog                     ║");
+        console.log("╚════════════════════════════════════════════════════════════╝");
+        console.log("");
         for (const tool of tools) {
           console.log(`• ${tool.name} [${tool.category}]`);
           console.log(`  ${tool.description}`);
         }
       } catch (error) {
-        console.error('Error listing tools:', error);
+        console.error("Error listing tools:", error);
         process.exit(1);
       }
     });
 
   toolsCmd
-    .command('run')
-    .description('Run a tool by name')
-    .argument('<tool-name>', 'Tool name to execute')
-    .option('--params <json>', 'JSON object of tool params')
-    .option('--json', 'Output as JSON')
+    .command("run")
+    .description("Run a tool by name")
+    .argument("<tool-name>", "Tool name to execute")
+    .option("--params <json>", "JSON object of tool params")
+    .option("--json", "Output as JSON")
     .action(async (toolName: string, options: ToolCommandOptions) => {
       try {
         await discoverTools();
@@ -84,10 +87,10 @@ export function registerToolsCommands(program: Command): void {
         }
 
         console.error(`✗ Tool failed: ${toolName} (${result.elapsedMs}ms)`);
-        console.error(result.error || 'Unknown tool error');
+        console.error(result.error || "Unknown tool error");
         process.exit(1);
       } catch (error) {
-        console.error('Error running tool:', error);
+        console.error("Error running tool:", error);
         process.exit(1);
       }
     });

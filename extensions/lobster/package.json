@@ -1,6 +1,6 @@
 {
   "name": "@paleoclaw/lobster",
-  "version": "2026.3.7",
+  "version": "1.8.0",
   "description": "Lobster workflow tool plugin (typed pipelines + resumable approvals)",
   "type": "module",
   "dependencies": {

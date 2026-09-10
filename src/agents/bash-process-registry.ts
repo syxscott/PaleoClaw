@@ -165,9 +165,21 @@ function moveToFinished(session: ProcessSession, status: ProcessStatus) {
   if (session.child) {
     // Destroy stdio streams to release file descriptors
     // Use try-catch to ensure all streams are attempted even if one fails
-    try { session.child.stdin?.destroy?.(); } catch { /* ignore */ }
-    try { session.child.stdout?.destroy?.(); } catch { /* ignore */ }
-    try { session.child.stderr?.destroy?.(); } catch { /* ignore */ }
+    try {
+      session.child.stdin?.destroy?.();
+    } catch {
+      /* ignore */
+    }
+    try {
+      session.child.stdout?.destroy?.();
+    } catch {
+      /* ignore */
+    }
+    try {
+      session.child.stderr?.destroy?.();
+    } catch {
+      /* ignore */
+    }
 
     // Remove all event listeners to prevent memory leaks
     // This is intentional - we want to clean up ALL listeners on the child process

@@ -104,7 +104,11 @@ function renderCompactionIndicator(status: CompactionIndicatorStatus | null | un
   // Show "compacting..." while active
   if (status.active) {
     return html`
-      <div class="compaction-indicator compaction-indicator--active" role="status" aria-live="polite">
+      <div
+        class="compaction-indicator compaction-indicator--active"
+        role="status"
+        aria-live="polite"
+      >
         ${icons.loader} Compacting context...
       </div>
     `;
@@ -115,7 +119,11 @@ function renderCompactionIndicator(status: CompactionIndicatorStatus | null | un
     const elapsed = Date.now() - status.completedAt;
     if (elapsed < COMPACTION_TOAST_DURATION_MS) {
       return html`
-        <div class="compaction-indicator compaction-indicator--complete" role="status" aria-live="polite">
+        <div
+          class="compaction-indicator compaction-indicator--complete"
+          role="status"
+          aria-live="polite"
+        >
           ${icons.check} Context compacted
         </div>
       `;
@@ -153,12 +161,7 @@ function renderFallbackIndicator(status: FallbackIndicatorStatus | null | undefi
       : "compaction-indicator compaction-indicator--fallback";
   const icon = phase === "cleared" ? icons.check : icons.brain;
   return html`
-    <div
-      class=${className}
-      role="status"
-      aria-live="polite"
-      title=${details}
-    >
+    <div class=${className} role="status" aria-live="polite" title=${details}>
       ${icon} ${message}
     </div>
   `;
@@ -220,11 +223,7 @@ function renderAttachmentPreview(props: ChatProps) {
       ${attachments.map(
         (att) => html`
           <div class="chat-attachment">
-            <img
-              src=${att.dataUrl}
-              alt="Attachment preview"
-              class="chat-attachment__img"
-            />
+            <img src=${att.dataUrl} alt="Attachment preview" class="chat-attachment__img" />
             <button
               class="chat-attachment__remove"
               type="button"
@@ -276,19 +275,8 @@ export function renderChat(props: ChatProps) {
   const splitRatio = props.splitRatio ?? 0.6;
   const sidebarOpen = Boolean(props.sidebarOpen && props.onCloseSidebar);
   const thread = html`
-    <div
-      class="chat-thread"
-      role="log"
-      aria-live="polite"
-      @scroll=${props.onChatScroll}
-    >
-      ${
-        props.loading
-          ? html`
-              <div class="muted">Loading chat…</div>
-            `
-          : nothing
-      }
+    <div class="chat-thread" role="log" aria-live="polite" @scroll=${props.onChatScroll}>
+      ${props.loading ? html` <div class="muted">Loading chat…</div> ` : nothing}
       ${repeat(
         buildChatItems(props),
         (item) => item.key,
@@ -334,12 +322,9 @@ export function renderChat(props: ChatProps) {
   return html`
     <section class="card chat">
       ${props.disabledReason ? html`<div class="callout">${props.disabledReason}</div>` : nothing}
-
       ${props.error ? html`<div class="callout danger">${props.error}</div>` : nothing}
-
-      ${
-        props.focusMode
-          ? html`
+      ${props.focusMode
+        ? html`
             <button
               class="chat-focus-exit"
               type="button"
@@ -350,12 +335,9 @@ export function renderChat(props: ChatProps) {
               ${icons.x}
             </button>
           `
-          : nothing
-      }
+        : nothing}
 
-      <div
-        class="chat-split-container ${sidebarOpen ? "chat-split-container--open" : ""}"
-      >
+      <div class="chat-split-container ${sidebarOpen ? "chat-split-container--open" : ""}">
         <div
           class="chat-main"
           style="flex: ${sidebarOpen ? `0 0 ${splitRatio * 100}%` : "1 1 100%"}"
@@ -363,9 +345,8 @@ export function renderChat(props: ChatProps) {
           ${thread}
         </div>
 
-        ${
-          sidebarOpen
-            ? html`
+        ${sidebarOpen
+          ? html`
               <resizable-divider
                 .splitRatio=${splitRatio}
                 @resize=${(e: CustomEvent) => props.onSplitRatioChange?.(e.detail.splitRatio)}
@@ -384,13 +365,11 @@ export function renderChat(props: ChatProps) {
                 })}
               </div>
             `
-            : nothing
-        }
+          : nothing}
       </div>
 
-      ${
-        props.queue.length
-          ? html`
+      ${props.queue.length
+        ? html`
             <div class="chat-queue" role="status" aria-live="polite">
               <div class="chat-queue__title">Queued (${props.queue.length})</div>
               <div class="chat-queue__list">
@@ -398,10 +377,8 @@ export function renderChat(props: ChatProps) {
                   (item) => html`
                     <div class="chat-queue__item">
                       <div class="chat-queue__text">
-                        ${
-                          item.text ||
-                          (item.attachments?.length ? `Image (${item.attachments.length})` : "")
-                        }
+                        ${item.text ||
+                        (item.attachments?.length ? `Image (${item.attachments.length})` : "")}
                       </div>
                       <button
                         class="btn chat-queue__remove"
@@ -417,29 +394,18 @@ export function renderChat(props: ChatProps) {
               </div>
             </div>
           `
-          : nothing
-      }
-
+        : nothing}
       ${renderFallbackIndicator(props.fallbackStatus)}
       ${renderCompactionIndicator(props.compactionStatus)}
-
-      ${
-        props.showNewMessages
-          ? html`
-            <button
-              class="btn chat-new-messages"
-              type="button"
-              @click=${props.onScrollToBottom}
-            >
+      ${props.showNewMessages
+        ? html`
+            <button class="btn chat-new-messages" type="button" @click=${props.onScrollToBottom}>
               New messages ${icons.arrowDown}
             </button>
           `
-          : nothing
-      }
-
-      ${
-        showRetryFailedSend
-          ? html`
+        : nothing}
+      ${showRetryFailedSend
+        ? html`
             <div class="chat-retry-failed" role="status">
               <button
                 class="btn"
@@ -451,8 +417,7 @@ export function renderChat(props: ChatProps) {
               </button>
             </div>
           `
-          : nothing
-      }
+        : nothing}
 
       <div class="chat-compose">
         ${renderAttachmentPreview(props)}
@@ -499,11 +464,7 @@ export function renderChat(props: ChatProps) {
             >
               ${canAbort ? "Stop" : "New session"}
             </button>
-            <button
-              class="btn primary"
-              ?disabled=${!props.connected}
-              @click=${props.onSend}
-            >
+            <button class="btn primary" ?disabled=${!props.connected} @click=${props.onSend}>
               ${isBusy ? "Queue" : "Send"}<kbd class="btn-kbd">↵</kbd>
             </button>
           </div>

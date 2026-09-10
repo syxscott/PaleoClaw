@@ -178,11 +178,9 @@ export function renderSessions(props: SessionsProps) {
         </label>
       </div>
 
-      ${
-        props.error
-          ? html`<div class="callout danger" style="margin-top: 12px;">${props.error}</div>`
-          : nothing
-      }
+      ${props.error
+        ? html`<div class="callout danger" style="margin-top: 12px;">${props.error}</div>`
+        : nothing}
 
       <div class="muted" style="margin-top: 12px;">
         ${props.result ? `Store: ${props.result.path}` : ""}
@@ -200,15 +198,11 @@ export function renderSessions(props: SessionsProps) {
           <div>Reasoning</div>
           <div>Actions</div>
         </div>
-        ${
-          rows.length === 0
-            ? html`
-                <div class="muted">No sessions found.</div>
-              `
-            : rows.map((row) =>
-                renderRow(row, props.basePath, props.onPatch, props.onDelete, props.loading),
-              )
-        }
+        ${rows.length === 0
+          ? html` <div class="muted">No sessions found.</div> `
+          : rows.map((row) =>
+              renderRow(row, props.basePath, props.onPatch, props.onDelete, props.loading),
+            )}
       </div>
     </section>
   `;
@@ -245,7 +239,9 @@ function renderRow(
     <div class="table-row">
       <div class="mono session-key-cell">
         ${canLink ? html`<a href=${chatUrl} class="session-link">${row.key}</a>` : row.key}
-        ${showDisplayName ? html`<span class="muted session-key-display-name">${displayName}</span>` : nothing}
+        ${showDisplayName
+          ? html`<span class="muted session-key-display-name">${displayName}</span>`
+          : nothing}
       </div>
       <div>
         <input

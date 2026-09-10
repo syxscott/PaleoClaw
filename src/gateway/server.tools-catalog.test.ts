@@ -1,7 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { connectOk, installGatewayTestHooks, rpcReq,
-  type RpcResponse,
-} from "./test-helpers.js";
+import { connectOk, installGatewayTestHooks, rpcReq, type RpcResponse } from "./test-helpers.js";
 import { withServer } from "./test-with-server.js";
 
 installGatewayTestHooks({ scope: "suite" });
@@ -32,7 +30,9 @@ describe("gateway tools.catalog", () => {
     await withServer(async (ws) => {
       await connectOk(ws, { token: "secret", scopes: ["operator.read"] });
 
-      const noPlugins = (await rpcReq(ws, "tools.catalog", { includePlugins: false })) as RpcResponse<{
+      const noPlugins = (await rpcReq(ws, "tools.catalog", {
+        includePlugins: false,
+      })) as RpcResponse<{
         groups?: Array<{ source?: "core" | "plugin" }>;
       }>;
       expect(noPlugins.ok).toBe(true);

@@ -24,27 +24,29 @@
 
 共更新 **2757 个文件**，完成以下重命名：
 
-| 原名称 | 新名称 |
-|--------|--------|
-| `OpenClaw` | `PaleoClaw` |
-| `openclaw` | `paleoclaw` |
-| `OPENCLAW` | `PALEOCLAW` |
-| `openclaw.mjs` | `paleoclaw.mjs` |
+| 原名称                         | 新名称                           |
+| ------------------------------ | -------------------------------- |
+| `OpenClaw`                     | `PaleoClaw`                      |
+| `openclaw`                     | `paleoclaw`                      |
+| `OPENCLAW`                     | `PALEOCLAW`                      |
+| `openclaw.mjs`                 | `paleoclaw.mjs`                  |
 | `github.com/openclaw/openclaw` | `github.com/paleoclaw/paleoclaw` |
-| `ai.openclaw.` | `ai.paleoclaw.` |
-| `@openclaw/` | `@paleoclaw/` |
-| `docs.openclaw.ai` | `docs.paleoclaw.ai` |
-| `ClawHub` | `PaleoHub` |
+| `ai.openclaw.`                 | `ai.paleoclaw.`                  |
+| `@openclaw/`                   | `@paleoclaw/`                    |
+| `docs.openclaw.ai`             | `docs.paleoclaw.ai`              |
+| `ClawHub`                      | `PaleoHub`                       |
 
 ### 3. 核心配置文件更新
 
 #### package.json
+
 - [x] name: `paleoclaw`
 - [x] bin: `paleoclaw`
 - [x] repository: `paleoclaw/paleoclaw`
 - [x] homepage: `paleoclaw` URLs
 
 #### .env.example
+
 - [x] 环境变量前缀：`PALEOCLAW_`
 - [x] 添加古生物学研究相关注释
 - [x] 推荐模型配置说明
@@ -52,6 +54,7 @@
 ### 4. 核心文档更新
 
 #### README.md (完全重写)
+
 - [x] 项目定位：古生物学 AI 研究助手
 - [x] 功能特性：6 个核心研究 Skills
 - [x] 使用示例：文献检索、分类学查询等
@@ -59,6 +62,7 @@
 - [x] 项目结构：完整目录说明
 
 #### VISION.md (完全重写)
+
 - [x] 使命宣言
 - [x] 核心价值观
 - [x] 当前重点
@@ -67,6 +71,7 @@
 - [x] 路线图
 
 #### soul.md (完全重写)
+
 - [x] 系统身份定义
 - [x] 核心原则
 - [x] 数据源层次
@@ -76,6 +81,7 @@
 ### 5. System Prompt 定制
 
 #### PALEOCLAW_IDENTITY.md (新增)
+
 - [x] 系统身份：古生物学专业 AI
 - [x] 核心原则：科学诚信第一
 - [x] 数据源层次：PBDB > CrossRef > Semantic Scholar
@@ -90,14 +96,14 @@
 
 ### Research Skills
 
-| Skill | 功能 | 数据源 |
-|-------|------|--------|
-| `paper_search` | 文献检索 | CrossRef, Semantic Scholar, arXiv |
-| `pbdb_query` | 化石记录查询 | Paleobiology Database |
-| `taxonomy_lookup` | 分类学查询 | PBDB, NCBI |
-| `stratigraphy_lookup` | 地层学查询 | PBDB |
-| `paper_summary` | 论文总结 | AI 分析 |
-| `research_assistant` | 综合研究 | 全部以上 |
+| Skill                 | 功能         | 数据源                            |
+| --------------------- | ------------ | --------------------------------- |
+| `paper_search`        | 文献检索     | CrossRef, Semantic Scholar, arXiv |
+| `pbdb_query`          | 化石记录查询 | Paleobiology Database             |
+| `taxonomy_lookup`     | 分类学查询   | PBDB, NCBI                        |
+| `stratigraphy_lookup` | 地层学查询   | PBDB                              |
+| `paper_summary`       | 论文总结     | AI 分析                           |
+| `research_assistant`  | 综合研究     | 全部以上                          |
 
 ### 科学诚信保证
 
@@ -175,13 +181,13 @@ paleoclaw agent --message "Write a literature review on sauropod gigantism"
 
 ## 📊 统计数据
 
-| 项目 | 数量 |
-|------|------|
-| 更新文件数 | 2757 |
-| 新增文档 | 3 |
-| 完全重写文档 | 4 |
-| Skills 数量 | 6 |
-| 数据源集成 | 4 |
+| 项目         | 数量 |
+| ------------ | ---- |
+| 更新文件数   | 2757 |
+| 新增文档     | 3    |
+| 完全重写文档 | 4    |
+| Skills 数量  | 6    |
+| 数据源集成   | 4    |
 
 ---
 
@@ -203,6 +209,7 @@ paleoclaw agent --message "Write a literature review on sauropod gigantism"
 ### 保持 OpenClaw 架构
 
 PaleoClaw **完全保持** OpenClaw 的原有架构：
+
 - ✅ Gateway 系统
 - ✅ Agents 框架
 - ✅ Skills 系统
@@ -213,6 +220,7 @@ PaleoClaw **完全保持** OpenClaw 的原有架构：
 ### 新增功能
 
 PaleoClaw **新增**的功能：
+
 - ✅ 古生物学专业 Skills
 - ✅ 科研诚信规则
 - ✅ 科学数据源集成
@@ -221,6 +229,7 @@ PaleoClaw **新增**的功能：
 ### 兼容性
 
 PaleoClaw **完全兼容** OpenClaw 生态系统：
+
 - ✅ 所有 OpenClaw Channels
 - ✅ 所有 OpenClaw Skills
 - ✅ 所有 AI Provider
@@ -278,4 +287,4 @@ PaleoClaw 基于以下项目构建：
 
 **PaleoClaw v1.0.0**
 
-*"Ex Fossilo, Scientia" - From Fossils, Knowledge*
+_"Ex Fossilo, Scientia" - From Fossils, Knowledge_

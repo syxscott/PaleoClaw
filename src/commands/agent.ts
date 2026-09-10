@@ -81,21 +81,21 @@ import {
 } from "../infra/agent-events.js";
 import { buildOutboundSessionContext } from "../infra/outbound/session-context.js";
 import { getRemoteSkillEligibility } from "../infra/skills-remote.js";
+import {
+  isAutoToolsEnabled,
+  isMemoryContextEnabled,
+  isSessionAutosaveEnabled,
+} from "../paleoclaw/integration/runtime-switches.js";
+import { createDefaultMemoryManager } from "../paleoclaw/memory/manager.js";
+import { buildProfileContextBlock, loadSessionProfile } from "../paleoclaw/profile/layers.js";
+import { createSessionStore } from "../paleoclaw/session/index.js";
+import { buildAutoToolsContext } from "../paleoclaw/tools/auto-context.js";
 import { normalizeAgentId } from "../routing/session-key.js";
 import { defaultRuntime, type RuntimeEnv } from "../runtime.js";
 import { applyVerboseOverride } from "../sessions/level-overrides.js";
 import { applyModelOverrideToSessionEntry } from "../sessions/model-overrides.js";
 import { resolveSendPolicy } from "../sessions/send-policy.js";
 import { resolveMessageChannel } from "../utils/message-channel.js";
-import { createDefaultMemoryManager } from "../paleoclaw/memory/manager.js";
-import { createSessionStore } from "../paleoclaw/session/index.js";
-import {
-  isAutoToolsEnabled,
-  isMemoryContextEnabled,
-  isSessionAutosaveEnabled,
-} from "../paleoclaw/integration/runtime-switches.js";
-import { buildAutoToolsContext } from "../paleoclaw/tools/auto-context.js";
-import { buildProfileContextBlock, loadSessionProfile } from "../paleoclaw/profile/layers.js";
 import { deliverAgentCommandResult } from "./agent/delivery.js";
 import { resolveAgentRunContext } from "./agent/run-context.js";
 import { updateSessionStoreAfterAgentRun } from "./agent/session-store.js";

@@ -53,9 +53,7 @@ export function renderOverview(props: OverviewProps) {
           <span class="mono">paleoclaw devices list</span><br />
           <span class="mono">paleoclaw devices approve &lt;requestId&gt;</span>
         </div>
-        <div style="margin-top: 6px; font-size: 12px;">
-          ${t("overview.pairing.mobileHint")}
-        </div>
+        <div style="margin-top: 6px; font-size: 12px;">${t("overview.pairing.mobileHint")}</div>
         <div style="margin-top: 6px">
           <a
             class="session-link"
@@ -166,7 +164,9 @@ export function renderOverview(props: OverviewProps) {
       <div class="muted" style="margin-top: 8px">
         ${t("overview.insecure.hint", { url: "http://127.0.0.1:18789" })}
         <div style="margin-top: 6px">
-          ${t("overview.insecure.stayHttp", { config: "gateway.controlUi.allowInsecureAuth: true" })}
+          ${t("overview.insecure.stayHttp", {
+            config: "gateway.controlUi.allowInsecureAuth: true",
+          })}
         </div>
         <div style="margin-top: 6px">
           <a
@@ -210,10 +210,9 @@ export function renderOverview(props: OverviewProps) {
               placeholder="ws://100.x.y.z:18789"
             />
           </label>
-          ${
-            isTrustedProxy
-              ? ""
-              : html`
+          ${isTrustedProxy
+            ? ""
+            : html`
                 <label class="field">
                   <span>${t("overview.access.token")}</span>
                   <input
@@ -237,8 +236,7 @@ export function renderOverview(props: OverviewProps) {
                     placeholder="system or shared password"
                   />
                 </label>
-              `
-          }
+              `}
           <label class="field">
             <span>${t("overview.access.sessionKey")}</span>
             <input
@@ -269,9 +267,11 @@ export function renderOverview(props: OverviewProps) {
         <div class="row" style="margin-top: 14px;">
           <button class="btn" @click=${() => props.onConnect()}>${t("common.connect")}</button>
           <button class="btn" @click=${() => props.onRefresh()}>${t("common.refresh")}</button>
-          <span class="muted">${
-            isTrustedProxy ? t("overview.access.trustedProxy") : t("overview.access.connectHint")
-          }</span>
+          <span class="muted"
+            >${isTrustedProxy
+              ? t("overview.access.trustedProxy")
+              : t("overview.access.connectHint")}</span
+          >
         </div>
       </div>
 
@@ -296,24 +296,22 @@ export function renderOverview(props: OverviewProps) {
           <div class="stat">
             <div class="stat-label">${t("overview.snapshot.lastChannelsRefresh")}</div>
             <div class="stat-value">
-              ${props.lastChannelsRefresh ? formatRelativeTimestamp(props.lastChannelsRefresh) : t("common.na")}
+              ${props.lastChannelsRefresh
+                ? formatRelativeTimestamp(props.lastChannelsRefresh)
+                : t("common.na")}
             </div>
           </div>
         </div>
-        ${
-          props.lastError
-            ? html`<div class="callout danger" style="margin-top: 14px;">
+        ${props.lastError
+          ? html`<div class="callout danger" style="margin-top: 14px;">
               <div>${props.lastError}</div>
-              ${pairingHint ?? ""}
-              ${authHint ?? ""}
-              ${insecureContextHint ?? ""}
+              ${pairingHint ?? ""} ${authHint ?? ""} ${insecureContextHint ?? ""}
             </div>`
-            : html`
-                <div class="callout" style="margin-top: 14px">
-                  ${t("overview.snapshot.channelsHint")}
-                </div>
-              `
-        }
+          : html`
+              <div class="callout" style="margin-top: 14px">
+                ${t("overview.snapshot.channelsHint")}
+              </div>
+            `}
       </div>
     </section>
 
@@ -331,9 +329,15 @@ export function renderOverview(props: OverviewProps) {
       <div class="card stat-card">
         <div class="stat-label">${t("overview.stats.cron")}</div>
         <div class="stat-value">
-          ${props.cronEnabled == null ? t("common.na") : props.cronEnabled ? t("common.enabled") : t("common.disabled")}
+          ${props.cronEnabled == null
+            ? t("common.na")
+            : props.cronEnabled
+              ? t("common.enabled")
+              : t("common.disabled")}
         </div>
-        <div class="muted">${t("overview.stats.cronNext", { time: formatNextRun(props.cronNext) })}</div>
+        <div class="muted">
+          ${t("overview.stats.cronNext", { time: formatNextRun(props.cronNext) })}
+        </div>
       </div>
     </section>
 
@@ -343,9 +347,7 @@ export function renderOverview(props: OverviewProps) {
       <div class="note-grid" style="margin-top: 14px;">
         <div>
           <div class="note-title">${t("overview.notes.tailscaleTitle")}</div>
-          <div class="muted">
-            ${t("overview.notes.tailscaleText")}
-          </div>
+          <div class="muted">${t("overview.notes.tailscaleText")}</div>
         </div>
         <div>
           <div class="note-title">${t("overview.notes.sessionTitle")}</div>

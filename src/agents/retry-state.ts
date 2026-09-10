@@ -1,19 +1,19 @@
 export enum FailoverReason {
-  RateLimit = 'rate_limit',
-  ContextTooLong = 'context_too_long',
-  Auth = 'auth',
-  AuthPermanent = 'auth_permanent',
-  Billing = 'billing',
-  TokenLimit = 'token_limit',
-  Timeout = 'timeout',
-  InternalError = 'internal_error',
-  Unknown = 'unknown',
+  RateLimit = "rate_limit",
+  ContextTooLong = "context_too_long",
+  Auth = "auth",
+  AuthPermanent = "auth_permanent",
+  Billing = "billing",
+  TokenLimit = "token_limit",
+  Timeout = "timeout",
+  InternalError = "internal_error",
+  Unknown = "unknown",
 }
 
 export enum TurnRetryState {
-  Idle = 'idle',
-  Retrying = 'retrying',
-  Exhausted = 'exhausted',
+  Idle = "idle",
+  Retrying = "retrying",
+  Exhausted = "exhausted",
 }
 
 interface RetryConfig {
@@ -46,15 +46,21 @@ export class TurnRetryStateMachine {
   }
 
   get shouldRetry(): boolean {
-    if (this.state === TurnRetryState.Exhausted) {return false;}
-    if (!this.lastFailoverReason) {return false;}
+    if (this.state === TurnRetryState.Exhausted) {
+      return false;
+    }
+    if (!this.lastFailoverReason) {
+      return false;
+    }
 
     const config = DEFAULT_RETRY_CONFIG[this.lastFailoverReason];
     return this.attemptCount < config.maxRetries;
   }
 
   get retryDelayMs(): number {
-    if (!this.lastFailoverReason) {return 0;}
+    if (!this.lastFailoverReason) {
+      return 0;
+    }
     const config = DEFAULT_RETRY_CONFIG[this.lastFailoverReason];
     const delay = config.baseDelayMs * Math.pow(2, this.attemptCount);
     return Math.min(delay, config.maxDelayMs);
@@ -68,7 +74,7 @@ export class TurnRetryStateMachine {
     this.errors.push({
       reason,
       at: new Date(),
-      message: errorMessage || 'Unknown error',
+      message: errorMessage || "Unknown error",
     });
 
     const config = DEFAULT_RETRY_CONFIG[reason];
@@ -108,38 +114,43 @@ export class TurnRetryStateMachine {
   }
 
   static reasonFromError(error: unknown): FailoverReason {
-    if (!error) {return FailoverReason.Unknown;}
+    if (!error) {
+      return FailoverReason.Unknown;
+    }
 
     const rawMessage = (error as { message?: unknown }).message;
     const raw =
-      typeof rawMessage === 'string' && rawMessage
+      typeof rawMessage === "string" && rawMessage
         ? rawMessage
-        : typeof error === 'string'
+        : typeof error === "string"
           ? error
           : error instanceof Error
             ? `${error.name}: ${error.message}`
-            : '';
+            : "";
     const message = raw.toLowerCase();
 
-    if (message.includes('rate_limit') || message.includes('429')) {
+    if (message.includes("rate_limit") || message.includes("429")) {
       return FailoverReason.RateLimit;
     }
-    if (message.includes('context') && (message.includes('too_long') || message.includes('exceed'))) {
+    if (
+      message.includes("context") &&
+      (message.includes("too_long") || message.includes("exceed"))
+    ) {
       return FailoverReason.ContextTooLong;
     }
-    if (message.includes('token') && (message.includes('limit') || message.includes('exceed'))) {
+    if (message.includes("token") && (message.includes("limit") || message.includes("exceed"))) {
       return FailoverReason.TokenLimit;
     }
-    if (message.includes('auth') || message.includes('401') || message.includes('403')) {
-      return message.includes('permanent') ? FailoverReason.AuthPermanent : FailoverReason.Auth;
+    if (message.includes("auth") || message.includes("401") || message.includes("403")) {
+      return message.includes("permanent") ? FailoverReason.AuthPermanent : FailoverReason.Auth;
     }
-    if (message.includes('billing') || message.includes('payment')) {
+    if (message.includes("billing") || message.includes("payment")) {
       return FailoverReason.Billing;
     }
-    if (message.includes('timeout') || message.includes('timed_out')) {
+    if (message.includes("timeout") || message.includes("timed_out")) {
       return FailoverReason.Timeout;
     }
-    if (message.includes('internal') || message.includes('500')) {
+    if (message.includes("internal") || message.includes("500")) {
       return FailoverReason.InternalError;
     }
 

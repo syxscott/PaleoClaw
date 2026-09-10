@@ -45,6 +45,7 @@
 ### 4. Skills 实现
 
 #### 古生物学 Skills (6 个)
+
 - [x] paper_search - 文献检索
 - [x] pbdb_query - 化石记录查询
 - [x] taxonomy_lookup - 分类学查询
@@ -53,6 +54,7 @@
 - [x] research_assistant - 综合研究
 
 #### 活动监控 Skills (3 个)
+
 - [x] screen_monitor - 屏幕监控
 - [x] activity_logger - 活动日志
 - [x] daily_log_generator - 日报生成
@@ -68,6 +70,7 @@
 ### 6. 功能说明
 
 #### v1.1.0 新功能
+
 - [x] Screen Monitor - 截图捕获和监控
 - [x] Activity Logger - 活动记录
 - [x] Daily Log Generator - 日报生成
@@ -75,6 +78,7 @@
 - [x] 跨平台支持
 
 #### v1.0.0 功能
+
 - [x] 文献检索
 - [x] 化石记录查询
 - [x] 分类学查询
@@ -100,20 +104,21 @@
 
 ## 📊 项目统计
 
-| 指标 | 数量 |
-|------|------|
-| 总文件数 | 7,790+ |
-| 代码行数 | 142 万+ |
-| 古生物学 Skills | 6 个 |
-| 活动监控 Skills | 3 个 |
-| 文档文件 | 13+ |
-| 修改文件数 | 2,757+ |
+| 指标            | 数量    |
+| --------------- | ------- |
+| 总文件数        | 7,790+  |
+| 代码行数        | 142 万+ |
+| 古生物学 Skills | 6 个    |
+| 活动监控 Skills | 3 个    |
+| 文档文件        | 13+     |
+| 修改文件数      | 2,757+  |
 
 ---
 
 ## 🚀 上传步骤
 
 ### 1. 提交更改
+
 ```bash
 cd d:\GIthub\Claw\PaleoClaw
 
@@ -128,7 +133,9 @@ git push origin main
 ```
 
 ### 2. 创建 Release
+
 在 GitHub 上创建 Release：
+
 - **Tag**: v1.1.0
 - **Title**: v1.1.0 - Activity Monitoring!
 - **Description**: 参考 RELEASE_NOTES.md
@@ -137,19 +144,19 @@ git push origin main
 
 ## ✅ 最终检查
 
-| 检查项 | 状态 | 备注 |
-|--------|------|------|
-| GitHub 仓库地址 | ✅ | https://github.com/syxscott/PaleoClaw |
-| 版本号 | ✅ | v1.1.0 |
-| README 更新 | ✅ | 包含 v1.1.0 新功能 |
-| package.json | ✅ | 配置正确 |
-| RELEASE_NOTES | ✅ | 已创建 |
-| UPGRADE_GUIDE | ✅ | 已创建 |
-| UPDATE_SUMMARY | ✅ | 已创建 |
-| 敏感信息 | ✅ | 无泄露 |
-| 许可证 | ✅ | MIT License |
-| Skills 实现 | ✅ | 9 个 Skills |
-| 文档完整性 | ✅ | 13+ 文档 |
+| 检查项          | 状态 | 备注                                  |
+| --------------- | ---- | ------------------------------------- |
+| GitHub 仓库地址 | ✅   | https://github.com/syxscott/PaleoClaw |
+| 版本号          | ✅   | v1.1.0                                |
+| README 更新     | ✅   | 包含 v1.1.0 新功能                    |
+| package.json    | ✅   | 配置正确                              |
+| RELEASE_NOTES   | ✅   | 已创建                                |
+| UPGRADE_GUIDE   | ✅   | 已创建                                |
+| UPDATE_SUMMARY  | ✅   | 已创建                                |
+| 敏感信息        | ✅   | 无泄露                                |
+| 许可证          | ✅   | MIT License                           |
+| Skills 实现     | ✅   | 9 个 Skills                           |
+| 文档完整性      | ✅   | 13+ 文档                              |
 
 ---
 
@@ -158,6 +165,7 @@ git push origin main
 **所有检查项通过！项目已准备好上传到 GitHub。**
 
 ### 推荐操作
+
 1. ✅ 提交所有更改到 Git
 2. ✅ 推送到 GitHub 仓库
 3. ✅ 创建 v1.1.0 Release

@@ -1,6 +1,12 @@
-import * as fs from 'fs';
-import * as path from 'path';
-import { loadSkillBundle, addSkillBundle, getSkillBundlesDirectory, setSkillBundlesDirectory, SkillBundle } from './skill-bundles.js';
+import * as fs from "fs";
+import * as path from "path";
+import {
+  loadSkillBundle,
+  addSkillBundle,
+  getSkillBundlesDirectory,
+  setSkillBundlesDirectory,
+  SkillBundle,
+} from "./skill-bundles.js";
 
 const BUNDLE_MTIMES = new Map<string, number>();
 
@@ -18,7 +24,7 @@ export async function scanBundleDirectory(dir?: string): Promise<string[]> {
     const files = fs.readdirSync(bundleDir);
 
     for (const file of files) {
-      if (!file.endsWith('.yaml') && !file.endsWith('.yml')) continue;
+      if (!file.endsWith(".yaml") && !file.endsWith(".yml")) continue;
 
       const fullPath = path.join(bundleDir, file);
       const stat = fs.statSync(fullPath);
@@ -28,7 +34,7 @@ export async function scanBundleDirectory(dir?: string): Promise<string[]> {
       if (lastMtime && stat.mtimeMs <= lastMtime) continue;
 
       try {
-        const content = fs.readFileSync(fullPath, 'utf-8');
+        const content = fs.readFileSync(fullPath, "utf-8");
         const bundle = await loadSkillBundle(content, fullPath);
         addSkillBundle(bundle);
         BUNDLE_MTIMES.set(fullPath, stat.mtimeMs);
@@ -55,7 +61,7 @@ export function watchBundleDirectory(dir?: string): fs.FSWatcher | null {
 
   try {
     const watcher = fs.watch(bundleDir, { recursive: false }, (eventType, filename) => {
-      if (filename && (filename.endsWith('.yaml') || filename.endsWith('.yml'))) {
+      if (filename && (filename.endsWith(".yaml") || filename.endsWith(".yml"))) {
         console.log(`Skill bundle file changed: ${filename}, reloading...`);
         scanBundleDirectory(bundleDir);
       }

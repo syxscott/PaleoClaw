@@ -15,7 +15,7 @@ export interface SkillBundleFile {
 }
 
 const BUNDLE_CACHE = new Map<string, SkillBundle>();
-let BUNDLES_DIR = '';
+let BUNDLES_DIR = "";
 
 export function setSkillBundlesDirectory(dir: string): void {
   BUNDLES_DIR = dir;
@@ -28,13 +28,13 @@ export function getSkillBundlesDirectory(): string {
 
 export async function loadSkillBundle(yamlContent: string, source?: string): Promise<SkillBundle> {
   const bundle: SkillBundleFile = {
-    name: '',
-    description: '',
+    name: "",
+    description: "",
     skills: [],
   };
 
-  const lines = yamlContent.split('\n');
-  let currentKey = '';
+  const lines = yamlContent.split("\n");
+  let currentKey = "";
   let blockScalar: { key: string; fold: boolean; indent: number; lines: string[] } | null = null;
 
   const flushBlockScalar = (): void => {
@@ -48,19 +48,19 @@ export async function loadSkillBundle(yamlContent: string, source?: string): Pro
     const commonIndent = indents.length > 0 ? Math.min(...indents) : 0;
     const text = body
       .map((bodyLine) => bodyLine.slice(Math.min(commonIndent, bodyLine.length)))
-      .join(fold ? ' ' : '\n')
+      .join(fold ? " " : "\n")
       .trim();
 
-    if (['name', 'description', 'instruction'].includes(key)) {
+    if (["name", "description", "instruction"].includes(key)) {
       (bundle as any)[key] = text;
     }
   };
 
   for (const line of lines) {
     const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith('#')) {
+    if (!trimmed || trimmed.startsWith("#")) {
       // Blank lines inside a block scalar are part of its text.
-      if (blockScalar && !trimmed) blockScalar.lines.push('');
+      if (blockScalar && !trimmed) blockScalar.lines.push("");
       continue;
     }
 
@@ -69,35 +69,35 @@ export async function loadSkillBundle(yamlContent: string, source?: string): Pro
     if (blockScalar) {
       const indent = line.length - line.trimStart().length;
       if (indent > blockScalar.indent) {
-        blockScalar.lines.push(line.replace(/\r$/, ''));
+        blockScalar.lines.push(line.replace(/\r$/, ""));
         continue;
       }
       flushBlockScalar();
     }
 
-    if (trimmed.includes(':')) {
-      const [key, ...valueParts] = trimmed.split(':');
+    if (trimmed.includes(":")) {
+      const [key, ...valueParts] = trimmed.split(":");
       const keyClean = key.trim().toLowerCase();
-      const value = valueParts.join(':').trim();
+      const value = valueParts.join(":").trim();
 
-      if (value === '|' || value === '>') {
+      if (value === "|" || value === ">") {
         blockScalar = {
           key: keyClean,
-          fold: value === '>',
+          fold: value === ">",
           indent: line.length - line.trimStart().length,
           lines: [],
         };
-      } else if (['name', 'description', 'instruction'].includes(keyClean)) {
+      } else if (["name", "description", "instruction"].includes(keyClean)) {
         (bundle as any)[keyClean] = value;
-      } else if (keyClean === 'skills') {
+      } else if (keyClean === "skills") {
         if (value) bundle.skills.push(value);
       }
       currentKey = keyClean;
-    } else if (trimmed.startsWith('-')) {
+    } else if (trimmed.startsWith("-")) {
       const skill = trimmed.substring(1).trim();
       // Only `- ` items under the `skills` key are skill names; list items
       // under any other key are ignored.
-      if (skill && currentKey === 'skills') bundle.skills.push(skill);
+      if (skill && currentKey === "skills") bundle.skills.push(skill);
     }
   }
   flushBlockScalar();
@@ -132,9 +132,9 @@ export function buildBundleInvocationMessage(bundle: SkillBundle): string {
     parts.push(bundle.instruction);
   }
 
-  parts.push(`Using skills: ${bundle.skills.join(', ')}`);
+  parts.push(`Using skills: ${bundle.skills.join(", ")}`);
 
-  return parts.join('\n\n');
+  return parts.join("\n\n");
 }
 
 export function reloadBundles(): void {

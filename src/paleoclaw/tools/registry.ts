@@ -3,12 +3,7 @@
  * Inspired by Hermes central registry design.
  */
 
-import {
-  RegisteredTool,
-  ToolEntry,
-  ToolExecuteContext,
-  ToolResult,
-} from './types.js';
+import { RegisteredTool, ToolEntry, ToolExecuteContext, ToolResult } from "./types.js";
 
 function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> {
   let timeoutId: NodeJS.Timeout | null = null;
@@ -31,7 +26,7 @@ export class ToolRegistry {
   register(entry: ToolEntry): void {
     const normalizedName = entry.name.trim();
     if (!normalizedName) {
-      throw new Error('Tool name must not be empty');
+      throw new Error("Tool name must not be empty");
     }
 
     this.tools.set(normalizedName, {
@@ -56,7 +51,7 @@ export class ToolRegistry {
   async execute(
     name: string,
     params: Record<string, unknown> = {},
-    context?: ToolExecuteContext
+    context?: ToolExecuteContext,
   ): Promise<ToolResult> {
     const tool = this.get(name);
     const started = Date.now();
@@ -81,9 +76,10 @@ export class ToolRegistry {
 
     try {
       const invoke = Promise.resolve(tool.handler(params, context));
-      const data = tool.timeoutMs && tool.timeoutMs > 0
-        ? await withTimeout(invoke, tool.timeoutMs, `Tool ${name}`)
-        : await invoke;
+      const data =
+        tool.timeoutMs && tool.timeoutMs > 0
+          ? await withTimeout(invoke, tool.timeoutMs, `Tool ${name}`)
+          : await invoke;
 
       return {
         ok: true,

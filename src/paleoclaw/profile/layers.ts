@@ -3,9 +3,9 @@
  * Adapted from GeoClaw-OpenAI v2.4.0
  */
 
-import * as fs from 'fs';
-import * as path from 'path';
-import { paleoclawHome } from '../paths.js';
+import * as fs from "fs";
+import * as path from "path";
+import { paleoclawHome } from "../paths.js";
 
 // Default templates
 export const DEFAULT_SOUL_TEMPLATE = `# PaleoClaw Soul
@@ -237,7 +237,7 @@ export interface SessionProfile {
 function readTextOrDefault(filePath: string, fallback: string): string {
   try {
     if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
-      return fs.readFileSync(filePath, 'utf-8');
+      return fs.readFileSync(filePath, "utf-8");
     }
   } catch {
     // Ignore errors
@@ -253,22 +253,25 @@ function writeDefaultIfMissing(filePath: string, content: string): void {
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
-  fs.writeFileSync(filePath, content.trim() + '\n', 'utf-8');
+  fs.writeFileSync(filePath, content.trim() + "\n", "utf-8");
 }
 
 export function splitSections(markdown: string): Record<string, string> {
   const sections: Record<string, string[]> = {};
   const headerRegex = /^#{2,3}\s+(.+?)\s*$/;
 
-  const lines = markdown.split('\n');
-  let current = '';
+  const lines = markdown.split("\n");
+  let current = "";
 
   for (const line of lines) {
     const match = line.match(headerRegex);
     if (match) {
       // Strip trailing punctuation like ":" so lookups like 'primary interests'
       // (without the colon) work for headings such as '### Primary interests:'.
-      current = match[1].trim().toLowerCase().replace(/[:\s]+$/, '');
+      current = match[1]
+        .trim()
+        .toLowerCase()
+        .replace(/[:\s]+$/, "");
       sections[current] = [];
       continue;
     }
@@ -279,7 +282,7 @@ export function splitSections(markdown: string): Record<string, string> {
 
   const result: Record<string, string> = {};
   for (const [key, value] of Object.entries(sections)) {
-    result[key] = value.join('\n').trim();
+    result[key] = value.join("\n").trim();
   }
   return result;
 }
@@ -287,21 +290,27 @@ export function splitSections(markdown: string): Record<string, string> {
 function sectionText(sections: Record<string, string>, ...aliases: string[]): string {
   for (const key of aliases) {
     const text = sections[key.toLowerCase()];
-    if (text) {return text;}
+    if (text) {
+      return text;
+    }
   }
-  return '';
+  return "";
 }
 
 export function sectionItems(sections: Record<string, string>, ...aliases: string[]): string[] {
   const text = sectionText(sections, ...aliases);
-  if (!text) {return [];}
+  if (!text) {
+    return [];
+  }
 
   const items: string[] = [];
-  const lines = text.split('\n');
+  const lines = text.split("\n");
 
   for (const line of lines) {
     const trimmed = line.trim();
-    if (!trimmed) {continue;}
+    if (!trimmed) {
+      continue;
+    }
 
     // Skip markdown horizontal rules ("---", "***", "___") that some templates
     // use between sections; they are not user-visible content.
@@ -320,10 +329,10 @@ export function sectionItems(sections: Record<string, string>, ...aliases: strin
     // non-empty value are captured as the value. Lines that end with a
     // colon (no value, e.g. "Mission: provide the following:") fall through
     // to plain-text handling so the leading text isn't silently dropped.
-    if (trimmed.includes(':')) {
-      const parts = trimmed.split(':');
+    if (trimmed.includes(":")) {
+      const parts = trimmed.split(":");
       if (parts.length >= 2) {
-        const value = parts.slice(1).join(':').trim();
+        const value = parts.slice(1).join(":").trim();
         if (value) {
           items.push(value);
           continue;
@@ -336,7 +345,7 @@ export function sectionItems(sections: Record<string, string>, ...aliases: strin
     // A trailing colon on a lead-in line (e.g. "... research by providing:")
     // is punctuation, not content, so strip it from the captured item.
     if (trimmed.length > 0) {
-      const plain = trimmed.replace(/:+\s*$/, '');
+      const plain = trimmed.replace(/:+\s*$/, "");
       if (plain) {
         items.push(plain);
       }
@@ -348,16 +357,18 @@ export function sectionItems(sections: Record<string, string>, ...aliases: strin
   const seen = new Set<string>();
   for (const item of items) {
     const key = item.toLowerCase().trim();
-    if (!key || seen.has(key)) {continue;}
+    if (!key || seen.has(key)) {
+      continue;
+    }
     seen.add(key);
     unique.push(item);
   }
-  
+
   return unique;
 }
 
-function extractKv(text: string, key: string, defaultValue = ''): string {
-  const pattern = new RegExp(`^${key}\\s*:\\s*(.+)$`, 'im');
+function extractKv(text: string, key: string, defaultValue = ""): string {
+  const pattern = new RegExp(`^${key}\\s*:\\s*(.+)$`, "im");
   const match = text.match(pattern);
   return match ? match[1].trim() : defaultValue;
 }
@@ -365,39 +376,42 @@ function extractKv(text: string, key: string, defaultValue = ''): string {
 export function parseSoul(markdown: string): SoulConfig {
   const sections = splitSections(markdown);
 
-  const identity = sectionText(sections, 'identity');
-  const missionRaw = sectionText(sections, 'mission');
-  const missionItems = sectionItems(sections, 'mission');
-  const mission = missionItems[0] || (missionRaw ? missionRaw.split('\n')[0].trim() : '');
+  const identity = sectionText(sections, "identity");
+  const missionRaw = sectionText(sections, "mission");
+  const missionItems = sectionItems(sections, "mission");
+  const mission = missionItems[0] || (missionRaw ? missionRaw.split("\n")[0].trim() : "");
 
-  const corePrinciples = sectionItems(sections, 'core principles');
-  const dataSourceHierarchy = sectionItems(sections, 'data source hierarchy');
-  const executionRules = sectionItems(sections, 'execution rules');
-  const scientificCommunicationStandards = sectionItems(sections, 'scientific communication standards');
+  const corePrinciples = sectionItems(sections, "core principles");
+  const dataSourceHierarchy = sectionItems(sections, "data source hierarchy");
+  const executionRules = sectionItems(sections, "execution rules");
+  const scientificCommunicationStandards = sectionItems(
+    sections,
+    "scientific communication standards",
+  );
   // Safety boundaries may live under '## Safety Boundaries' directly or in a
   // '### PaleoClaw MUST NOT:' subsection; fall back to the latter.
   const safetyBoundaries =
-    sectionItems(sections, 'safety boundaries').length > 0
-      ? sectionItems(sections, 'safety boundaries')
-      : sectionItems(sections, 'paleoclaw must not');
-  const collaborationPhilosophy = sectionItems(sections, 'collaboration philosophy');
+    sectionItems(sections, "safety boundaries").length > 0
+      ? sectionItems(sections, "safety boundaries")
+      : sectionItems(sections, "paleoclaw must not");
+  const collaborationPhilosophy = sectionItems(sections, "collaboration philosophy");
 
   // Parse domain scope. With the colon-stripping fix in splitSections(), the
   // '### In Scope:' and '### Out of Scope:' headings become their own section
   // keys ('in scope', 'out of scope') instead of being embedded in 'domain scope'.
   const parseBulletList = (text: string): string[] =>
     text
-      .split('\n')
+      .split("\n")
       .map((line) => line.trim())
       // Skip markdown horizontal rules ("---", "***", "___") which can sneak
       // in between sections in some templates.
       .filter((line) => !/^[-*_]{3,}$/.test(line))
-      .filter((line) => line.startsWith('-') || line.startsWith('*'))
-      .map((line) => line.replace(/^[-*]\s*/, '').trim())
+      .filter((line) => line.startsWith("-") || line.startsWith("*"))
+      .map((line) => line.replace(/^[-*]\s*/, "").trim())
       .filter(Boolean);
 
-  const inScope = parseBulletList(sectionText(sections, 'in scope'));
-  const outOfScope = parseBulletList(sectionText(sections, 'out of scope'));
+  const inScope = parseBulletList(sectionText(sections, "in scope"));
+  const outOfScope = parseBulletList(sectionText(sections, "out of scope"));
 
   return {
     identity,
@@ -415,41 +429,48 @@ export function parseSoul(markdown: string): SoulConfig {
 
 export function parseUser(markdown: string): UserProfile {
   const sections = splitSections(markdown);
-  
-  const identity = sectionText(sections, 'identity');
-  const role = extractKv(identity, 'Role', 'paleontology researcher');
-  const domain = extractKv(identity, 'Domain', 'vertebrate paleontology');
-  const institution = extractKv(identity, 'Institution', '');
-  
-  const primaryInterests = sectionItems(sections, 'primary interests');
+
+  const identity = sectionText(sections, "identity");
+  const role = extractKv(identity, "Role", "paleontology researcher");
+  const domain = extractKv(identity, "Domain", "vertebrate paleontology");
+  const institution = extractKv(identity, "Institution", "");
+
+  const primaryInterests = sectionItems(sections, "primary interests");
   // The default template headings are "### Preferred geological periods:" /
   // "### Preferred regions:", so match those keys as aliases too.
-  const preferredPeriods = sectionItems(sections, 'preferred periods', 'preferred geological periods');
-  const preferredRegions = sectionItems(sections, 'preferred regions');
-  
+  const preferredPeriods = sectionItems(
+    sections,
+    "preferred periods",
+    "preferred geological periods",
+  );
+  const preferredRegions = sectionItems(sections, "preferred regions");
+
   // Language
-  const langPref = sectionText(sections, 'language preference');
-  const languagePreference = extractKv(langPref, 'Preferred language', 'Chinese or English');
-  const outputLanguage = extractKv(langPref, 'Output language', 'Chinese');
-  
+  const langPref = sectionText(sections, "language preference");
+  const languagePreference = extractKv(langPref, "Preferred language", "Chinese or English");
+  const outputLanguage = extractKv(langPref, "Output language", "Chinese");
+
   // Communication style
-  const communicationStyle = sectionItems(sections, 'communication style');
-  
+  const communicationStyle = sectionItems(sections, "communication style");
+
   // Data preferences
-  const dataPrefText = sectionText(sections, 'data preferences');
-  const defaultOccurrenceLimit = parseInt(extractKv(dataPrefText, 'Default occurrence limit', '50')) || 50;
-  const includePreprints = extractKv(dataPrefText, 'Include preprints', 'false').toLowerCase() === 'true';
-  const preferOpenAccess = extractKv(dataPrefText, 'Prefer open access', 'true').toLowerCase() === 'true';
-  const citationFormat = extractKv(dataPrefText, 'Citation format', 'APA');
-  
+  const dataPrefText = sectionText(sections, "data preferences");
+  const defaultOccurrenceLimit =
+    parseInt(extractKv(dataPrefText, "Default occurrence limit", "50")) || 50;
+  const includePreprints =
+    extractKv(dataPrefText, "Include preprints", "false").toLowerCase() === "true";
+  const preferOpenAccess =
+    extractKv(dataPrefText, "Prefer open access", "true").toLowerCase() === "true";
+  const citationFormat = extractKv(dataPrefText, "Citation format", "APA");
+
   // Other preferences
-  const preferredJournals = sectionItems(sections, 'preferred journals');
-  const outputPreferences = sectionItems(sections, 'output preferences');
-  const reproducibilityExpectations = sectionItems(sections, 'reproducibility expectations');
-  const workflowHabits = sectionItems(sections, 'workflow habits');
-  const privacyPreferences = sectionItems(sections, 'privacy and safety');
-  const longTermConstraints = sectionItems(sections, 'long-term constraints and habits');
-  const collaborationExpectations = sectionItems(sections, 'collaboration expectations');
+  const preferredJournals = sectionItems(sections, "preferred journals");
+  const outputPreferences = sectionItems(sections, "output preferences");
+  const reproducibilityExpectations = sectionItems(sections, "reproducibility expectations");
+  const workflowHabits = sectionItems(sections, "workflow habits");
+  const privacyPreferences = sectionItems(sections, "privacy and safety");
+  const longTermConstraints = sectionItems(sections, "long-term constraints and habits");
+  const collaborationExpectations = sectionItems(sections, "collaboration expectations");
 
   return {
     role,
@@ -487,22 +508,22 @@ const _PROFILE_CACHE_MAP = new Map<string, SessionProfile>();
 export function ensureProfileLayers(workspaceRoot?: string): Record<string, string> {
   const root = workspaceRoot ? path.resolve(workspaceRoot) : process.cwd();
   const home = paleoclawHome();
-  
+
   if (!fs.existsSync(home)) {
     fs.mkdirSync(home, { recursive: true });
   }
-  
-  const workspaceSoul = path.join(root, 'soul.md');
-  const workspaceUser = path.join(root, 'user.md');
-  const homeSoul = path.join(home, 'soul.md');
-  const homeUser = path.join(home, 'user.md');
-  
+
+  const workspaceSoul = path.join(root, "soul.md");
+  const workspaceUser = path.join(root, "user.md");
+  const homeSoul = path.join(home, "soul.md");
+  const homeUser = path.join(home, "user.md");
+
   const soulSeed = readTextOrDefault(workspaceSoul, DEFAULT_SOUL_TEMPLATE);
   const userSeed = readTextOrDefault(workspaceUser, DEFAULT_USER_TEMPLATE);
-  
+
   writeDefaultIfMissing(homeSoul, soulSeed);
   writeDefaultIfMissing(homeUser, userSeed);
-  
+
   return {
     workspaceRoot: root,
     workspaceSoul,
@@ -520,13 +541,13 @@ function resolveLayerPath(envKey: string, preferredPaths: string[]): string {
       return envPath;
     }
   }
-  
+
   for (const p of preferredPaths) {
     if (fs.existsSync(p) && fs.statSync(p).isFile()) {
       return path.resolve(p);
     }
   }
-  
+
   return preferredPaths[0];
 }
 
@@ -538,20 +559,20 @@ export function loadSessionProfile(workspaceRoot?: string, forceReload = false):
   }
 
   const ensured = ensureProfileLayers(root);
-  
-  const soulPath = resolveLayerPath('PALEOCLAW_SOUL_PATH', [
+
+  const soulPath = resolveLayerPath("PALEOCLAW_SOUL_PATH", [
     ensured.homeSoul,
     ensured.workspaceSoul,
   ]);
-  
-  const userPath = resolveLayerPath('PALEOCLAW_USER_PATH', [
+
+  const userPath = resolveLayerPath("PALEOCLAW_USER_PATH", [
     ensured.homeUser,
     ensured.workspaceUser,
   ]);
-  
+
   const soulText = readTextOrDefault(soulPath, DEFAULT_SOUL_TEMPLATE);
   const userText = readTextOrDefault(userPath, DEFAULT_USER_TEMPLATE);
-  
+
   const profile: SessionProfile = {
     soul: parseSoul(soulText),
     user: parseUser(userText),
@@ -559,7 +580,7 @@ export function loadSessionProfile(workspaceRoot?: string, forceReload = false):
     userPath,
     loadedAt: new Date().toISOString(),
   };
-  
+
   _PROFILE_CACHE_MAP.set(root, profile);
   return profile;
 }
@@ -618,7 +639,7 @@ export function memoryContext(profile: SessionProfile): Record<string, unknown> 
     workflowHabits: profile.user.workflowHabits,
     longTermConstraints: profile.user.longTermConstraints,
     truthfulnessRules: profile.soul.corePrinciples,
-    preferredTone: profile.user.communicationStyle.join(', '),
+    preferredTone: profile.user.communicationStyle.join(", "),
   };
 }
 
@@ -633,73 +654,89 @@ export function buildProfileContextBlock(profile: SessionProfile): string {
   const user = profile.user;
   const soul = profile.soul;
 
-  lines.push('## User Research Profile');
+  lines.push("## User Research Profile");
   lines.push(`- Role: ${user.role}`);
-  if (user.domain) {lines.push(`- Domain: ${user.domain}`);}
-  if (user.institution) {lines.push(`- Institution: ${user.institution}`);}
+  if (user.domain) {
+    lines.push(`- Domain: ${user.domain}`);
+  }
+  if (user.institution) {
+    lines.push(`- Institution: ${user.institution}`);
+  }
   if (user.researchFocus.primaryInterests.length > 0) {
-    lines.push(`- Primary interests: ${user.researchFocus.primaryInterests.join(', ')}`);
+    lines.push(`- Primary interests: ${user.researchFocus.primaryInterests.join(", ")}`);
   }
   if (user.researchFocus.preferredPeriods.length > 0) {
-    lines.push(`- Preferred periods: ${user.researchFocus.preferredPeriods.join(', ')}`);
+    lines.push(`- Preferred periods: ${user.researchFocus.preferredPeriods.join(", ")}`);
   }
   if (user.researchFocus.preferredRegions.length > 0) {
-    lines.push(`- Preferred regions: ${user.researchFocus.preferredRegions.join(', ')}`);
+    lines.push(`- Preferred regions: ${user.researchFocus.preferredRegions.join(", ")}`);
   }
   lines.push(`- Preferred language: ${user.languagePreference}`);
   lines.push(`- Output language: ${user.outputLanguage}`);
   if (user.communicationStyle.length > 0) {
-    lines.push(`- Communication style: ${user.communicationStyle.join(', ')}`);
+    lines.push(`- Communication style: ${user.communicationStyle.join(", ")}`);
   }
   lines.push(`- Citation format: ${user.dataPreferences.citationFormat}`);
   lines.push(`- Default occurrence limit: ${user.dataPreferences.defaultOccurrenceLimit}`);
-  lines.push(`- Prefer open access: ${user.dataPreferences.preferOpenAccess ? 'yes' : 'no'}`);
-  lines.push(`- Include preprints: ${user.dataPreferences.includePreprints ? 'yes' : 'no'}`);
+  lines.push(`- Prefer open access: ${user.dataPreferences.preferOpenAccess ? "yes" : "no"}`);
+  lines.push(`- Include preprints: ${user.dataPreferences.includePreprints ? "yes" : "no"}`);
 
   if (soul.identity && soul.identity.trim()) {
-    lines.push('');
-    lines.push('## System Identity');
+    lines.push("");
+    lines.push("## System Identity");
     lines.push(soul.identity.trim());
   }
   if (soul.mission && soul.mission.trim()) {
-    lines.push('');
-    lines.push('## Mission');
+    lines.push("");
+    lines.push("## Mission");
     lines.push(soul.mission.trim());
   }
   if (soul.corePrinciples.length > 0) {
-    lines.push('');
-    lines.push('## Core Principles');
-    for (const item of soul.corePrinciples) {lines.push(`- ${item}`);}
+    lines.push("");
+    lines.push("## Core Principles");
+    for (const item of soul.corePrinciples) {
+      lines.push(`- ${item}`);
+    }
   }
   if (soul.executionRules.length > 0) {
-    lines.push('');
-    lines.push('## Execution Rules');
-    for (const item of soul.executionRules) {lines.push(`- ${item}`);}
+    lines.push("");
+    lines.push("## Execution Rules");
+    for (const item of soul.executionRules) {
+      lines.push(`- ${item}`);
+    }
   }
   if (soul.safetyBoundaries.length > 0) {
-    lines.push('');
-    lines.push('## Safety Boundaries');
-    for (const item of soul.safetyBoundaries) {lines.push(`- ${item}`);}
+    lines.push("");
+    lines.push("## Safety Boundaries");
+    for (const item of soul.safetyBoundaries) {
+      lines.push(`- ${item}`);
+    }
   }
   if (soul.domainScope.inScope.length > 0) {
-    lines.push('');
-    lines.push('## In Scope');
-    for (const item of soul.domainScope.inScope) {lines.push(`- ${item}`);}
+    lines.push("");
+    lines.push("## In Scope");
+    for (const item of soul.domainScope.inScope) {
+      lines.push(`- ${item}`);
+    }
   }
   if (soul.domainScope.outOfScope.length > 0) {
-    lines.push('');
-    lines.push('## Out of Scope');
-    for (const item of soul.domainScope.outOfScope) {lines.push(`- ${item}`);}
+    lines.push("");
+    lines.push("## Out of Scope");
+    for (const item of soul.domainScope.outOfScope) {
+      lines.push(`- ${item}`);
+    }
   }
 
-  const body = lines.join('\n').trim();
-  if (!body) {return '';}
+  const body = lines.join("\n").trim();
+  if (!body) {
+    return "";
+  }
 
   return [
-    '<paleoclaw-profile-context>',
-    '[System note: The following is the user research profile and PaleoClaw system identity. Treat as authoritative background — follow the execution rules and respect the safety boundaries. The user has customized these files in ~/.paleoclaw/soul.md and ~/.paleoclaw/user.md.]',
-    '',
+    "<paleoclaw-profile-context>",
+    "[System note: The following is the user research profile and PaleoClaw system identity. Treat as authoritative background — follow the execution rules and respect the safety boundaries. The user has customized these files in ~/.paleoclaw/soul.md and ~/.paleoclaw/user.md.]",
+    "",
     body,
-    '</paleoclaw-profile-context>',
-  ].join('\n');
+    "</paleoclaw-profile-context>",
+  ].join("\n");
 }

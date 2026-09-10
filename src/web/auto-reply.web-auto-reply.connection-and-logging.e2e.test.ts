@@ -345,7 +345,9 @@ describe("web auto-reply connection", () => {
         );
         expect(firstArgs.Body).not.toContain("second");
         expect(secondArgs.Body).toMatch(
-          new RegExp(`\\[WhatsApp \\+1 (\\+\\d+[smhd] )?${secondPattern}\\] \\[paleoclaw\\] second`),
+          new RegExp(
+            `\\[WhatsApp \\+1 (\\+\\d+[smhd] )?${secondPattern}\\] \\[paleoclaw\\] second`,
+          ),
         );
         expect(secondArgs.Body).not.toContain("first");
         expect(process.getMaxListeners?.()).toBeGreaterThanOrEqual(50);

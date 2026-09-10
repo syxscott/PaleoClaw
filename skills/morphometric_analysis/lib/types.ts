@@ -16,7 +16,7 @@ export interface Point2D {
  */
 export interface Landmark extends Point2D {
   id: number;
-  type: 'landmark';
+  type: "landmark";
   name?: string;
 }
 
@@ -69,7 +69,7 @@ export interface BatchResult {
 /**
  * Export format options
  */
-export type ExportFormat = 'tps' | 'csv' | 'excel' | 'json';
+export type ExportFormat = "tps" | "csv" | "excel" | "json";
 
 /**
  * Export configuration
@@ -119,10 +119,10 @@ export interface TPSData {
 
 /**
  * Curveslide configuration (from ammonoid_curveslide.csv)
- * 
+ *
  * DeepMorph uses 64 landmarks (1-64), each with sliding constraints
  * Format: before, slide, after
- * 
+ *
  * Note: Landmark indices are 1-based (matching DeepMorph)
  * All 64 points are semilandmarks with sliding constraints
  */

@@ -126,7 +126,7 @@ OpenProse 支持多种状态后端：
 
 OpenProse 程序映射到 paleoclaw 原语：
 
-| OpenProse 概念       | paleoclaw 工具    |
+| OpenProse 概念       | paleoclaw 工具   |
 | -------------------- | ---------------- |
 | 生成会话 / Task 工具 | `sessions_spawn` |
 | 文件读/写            | `read` / `write` |

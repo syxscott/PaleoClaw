@@ -40,29 +40,19 @@ export function renderSignalCard(params: {
         </div>
       </div>
 
-      ${
-        signal?.lastError
-          ? html`<div class="callout danger" style="margin-top: 12px;">
-            ${signal.lastError}
+      ${signal?.lastError
+        ? html`<div class="callout danger" style="margin-top: 12px;">${signal.lastError}</div>`
+        : nothing}
+      ${signal?.probe
+        ? html`<div class="callout" style="margin-top: 12px;">
+            Probe ${signal.probe.ok ? "ok" : "failed"} · ${signal.probe.status ?? ""}
+            ${signal.probe.error ?? ""}
           </div>`
-          : nothing
-      }
-
-      ${
-        signal?.probe
-          ? html`<div class="callout" style="margin-top: 12px;">
-            Probe ${signal.probe.ok ? "ok" : "failed"} ·
-            ${signal.probe.status ?? ""} ${signal.probe.error ?? ""}
-          </div>`
-          : nothing
-      }
-
+        : nothing}
       ${renderChannelConfigSection({ channelId: "signal", props })}
 
       <div class="row" style="margin-top: 12px;">
-        <button class="btn" @click=${() => props.onRefresh(true)}>
-          Probe
-        </button>
+        <button class="btn" @click=${() => props.onRefresh(true)}>Probe</button>
       </div>
     </div>
   `;
