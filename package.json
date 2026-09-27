@@ -171,6 +171,10 @@
       "types": "./dist/plugin-sdk/phone-control.d.ts",
       "default": "./dist/plugin-sdk/phone-control.js"
     },
+    "./plugin-sdk/qqbot": {
+      "types": "./dist/plugin-sdk/qqbot.d.ts",
+      "default": "./dist/plugin-sdk/qqbot.js"
+    },
     "./plugin-sdk/qwen-portal-auth": {
       "types": "./dist/plugin-sdk/qwen-portal-auth.d.ts",
       "default": "./dist/plugin-sdk/qwen-portal-auth.js"
@@ -202,6 +206,14 @@
     "./plugin-sdk/voice-call": {
       "types": "./dist/plugin-sdk/voice-call.d.ts",
       "default": "./dist/plugin-sdk/voice-call.js"
+    },
+    "./plugin-sdk/wecom": {
+      "types": "./dist/plugin-sdk/wecom.d.ts",
+      "default": "./dist/plugin-sdk/wecom.js"
+    },
+    "./plugin-sdk/weixin": {
+      "types": "./dist/plugin-sdk/weixin.d.ts",
+      "default": "./dist/plugin-sdk/weixin.js"
     },
     "./plugin-sdk/zalo": {
       "types": "./dist/plugin-sdk/zalo.d.ts",

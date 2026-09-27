@@ -81,6 +81,8 @@ const pluginSdkEntrypoints = [
   "tlon",
   "twitch",
   "voice-call",
+  "wecom",
+  "weixin",
   "zalo",
   "zalouser",
   "account-id",
