@@ -341,10 +341,15 @@ const maxOldSpaceSizeMb = (() => {
 const runOnce = (entry, extraArgs = []) =>
   new Promise((resolve) => {
     const maxWorkers = maxWorkersForRun(entry.name);
-    // vmForks with a single worker has shown cross-file leakage in extension suites.
-    // Fall back to process forks when we intentionally clamp that lane to one worker.
+    // vmForks with a single worker has shown cross-file leakage: the VM worker
+    // reuses its module cache across test files, so per-file `vi.mock`
+    // registrations stop applying and mock-based suites fail nondeterministically
+    // (seen in extension suites and in mock-heavy unit suites such as
+    // src/cron/isolated-agent.* on the Linux CI lane, where
+    // OPENCLAW_TEST_WORKERS=1 clamps every lane to one worker).
+    // Fall back to process forks whenever we intentionally clamp any lane to one worker.
     const entryArgs =
-      entry.name === "extensions" && maxWorkers === 1 && entry.args.includes("--pool=vmForks")
+      maxWorkers === 1 && entry.args.includes("--pool=vmForks")
         ? entry.args.map((arg) => (arg === "--pool=vmForks" ? "--pool=forks" : arg))
         : entry.args;
     const args = maxWorkers

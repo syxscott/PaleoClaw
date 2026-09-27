@@ -1,0 +1,25 @@
+{
+  "name": "@paleoclaw/wecom",
+  "version": "1.8.0",
+  "description": "paleoclaw 企业微信 WeCom channel plugin (encrypted callback + QYAPI proactive send)",
+  "type": "module",
+  "paleoclaw": {
+    "extensions": [
+      "./index.ts"
+    ],
+    "channel": {
+      "id": "wecom",
+      "label": "企业微信 WeCom",
+      "selectionLabel": "企业微信 WeCom (自建应用回调)",
+      "docsPath": "/channels/wecom",
+      "docsLabel": "wecom",
+      "blurb": "企业微信自建应用：WXBizMsgCrypt 加密回调 + message/send 主动发送。",
+      "order": 36
+    },
+    "install": {
+      "npmSpec": "@paleoclaw/wecom",
+      "localPath": "extensions/wecom",
+      "defaultChoice": "local"
+    }
+  }
+}

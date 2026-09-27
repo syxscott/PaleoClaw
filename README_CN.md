@@ -246,4 +246,4 @@ PaleoClaw 遵守严格的科学诚信标准：
 
 **"Ex Fossilo, Scientia" - 从化石中获取知识**
 
-_PaleoClaw v1.6.0 | Built on PaleoClaw Framework_
+_PaleoClaw v1.8.0 | Built on PaleoClaw Framework_

@@ -176,6 +176,57 @@ function chatDayKey(event: Date): string {
   return event.toISOString().slice(0, 10).replace(/-/g, "");
 }
 
+/**
+ * Chat day files (`chat-YYYYMMDD-<safeSessionId>.json`) live in the same
+ * directory as task memories but hold a ChatDailyRecord, not a TaskMemory.
+ * They are conversation digests, never task entries, so every task-shaped
+ * reader must skip them — otherwise counts inflate, listings render rows of
+ * `undefined`, and search feeds a constant string into the ranker.
+ */
+function isChatDayFile(name: string): boolean {
+  return name.startsWith("chat-") && name.endsWith(".json");
+}
+
+/** Task memories are the only `.json` files in shortDir that are not chat digests. */
+function isTaskFile(name: string): boolean {
+  return name.endsWith(".json") && !isChatDayFile(name);
+}
+
+/**
+ * Shape guard for on-disk task records. A file can be valid JSON and still
+ * not be a TaskMemory (chat digests, stray backups, truncated writes), so
+ * listing paths must verify the discriminator before treating a row as a task.
+ */
+function isTaskMemoryShape(value: unknown): value is TaskMemory {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return false;
+  }
+  const candidate = value as Partial<TaskMemory>;
+  return (
+    typeof candidate.taskId === "string" &&
+    candidate.taskId.length > 0 &&
+    typeof candidate.command === "string"
+  );
+}
+
+/**
+ * Normalize a caller-supplied row limit.
+ *
+ * The two list paths previously disagreed on garbage input: `rows.slice(0,
+ * NaN)` yields `[]` (silently empty) while `rows.length >= NaN` is never
+ * true (silently *everything*). A negative limit is just as bad — `slice(0,
+ * -1)` drops the newest rows instead of clamping. Normalizing once here makes
+ * every list path behave identically; the CLI still rejects bad input up
+ * front with a message.
+ */
+function normalizeLimit(value: number | undefined, fallback: number): number {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 1) {
+    return fallback;
+  }
+  return Math.floor(parsed);
+}
+
 export class TaskMemoryStore {
   private root: string;
   private shortDir: string;
@@ -311,6 +362,34 @@ export class TaskMemoryStore {
       parts.push(...((snapshot.truthfulnessRules as string[]) || []));
     }
 
+    return parts.filter((x) => x && x.trim()).join("\n");
+  }
+
+  /**
+   * Search text for a chat day digest. Chat records are not TaskMemory-shaped,
+   * so they must never go through buildSearchText() — that would index only the
+   * constant source label and make every digest a permanent match for the word
+   * "short". Index the actual turn content instead, plus the intents/modes
+   * recorded for the day.
+   */
+  private buildChatSearchText(record: ChatDailyRecord): string {
+    const digest = record?.chat_digest;
+    if (!digest || typeof digest !== "object") {
+      return "";
+    }
+    const parts: string[] = [
+      "chat",
+      record.sessionId || "",
+      record.day || "",
+      ...(Array.isArray(digest.intents) ? digest.intents : []),
+      ...(Array.isArray(digest.modes) ? digest.modes : []),
+    ];
+    for (const turn of Array.isArray(digest.recent_turns) ? digest.recent_turns : []) {
+      if (!turn || typeof turn !== "object") {
+        continue;
+      }
+      parts.push(turn.user || "", turn.assistant || "");
+    }
     return parts.filter((x) => x && x.trim()).join("\n");
   }
 
@@ -619,15 +698,19 @@ export class TaskMemoryStore {
   }
 
   listShort(options: { limit?: number; status?: string } = {}): TaskMemory[] {
-    const { limit = 20, status = "" } = options;
+    const limit = normalizeLimit(options.limit, 20);
+    const status = options.status || "";
     const rows: TaskMemory[] = [];
 
-    const files = fs.readdirSync(this.shortDir).filter((f) => f.endsWith(".json"));
+    const files = fs.readdirSync(this.shortDir).filter(isTaskFile);
 
     for (const file of files) {
       try {
         const content = fs.readFileSync(path.join(this.shortDir, file), "utf-8");
-        const payload = JSON.parse(content) as TaskMemory;
+        const payload: unknown = JSON.parse(content);
+        if (!isTaskMemoryShape(payload)) {
+          continue;
+        }
         rows.push(payload);
       } catch {
         // Skip invalid files
@@ -645,7 +728,7 @@ export class TaskMemoryStore {
   }
 
   listLong(options: { limit?: number } = {}): LongTermMemory[] {
-    const { limit = 20 } = options;
+    const limit = normalizeLimit(options.limit, 20);
     const rows: LongTermMemory[] = [];
 
     if (!fs.existsSync(this.longFile)) {
@@ -675,23 +758,23 @@ export class TaskMemoryStore {
   }
 
   listArchiveShort(options: { limit?: number; status?: string } = {}): TaskMemory[] {
-    const { limit = 20, status = "" } = options;
+    const limit = normalizeLimit(options.limit, 20);
+    const status = options.status || "";
     const rows: TaskMemory[] = [];
 
     if (!fs.existsSync(this.archiveShortDir)) {
       return rows;
     }
 
-    const files = fs
-      .readdirSync(this.archiveShortDir)
-      .filter((f) => f.endsWith(".json"))
-      .toSorted()
-      .toReversed();
+    const files = fs.readdirSync(this.archiveShortDir).filter(isTaskFile).toSorted().toReversed();
 
     for (const file of files) {
       try {
         const content = fs.readFileSync(path.join(this.archiveShortDir, file), "utf-8");
-        const payload = JSON.parse(content) as TaskMemory;
+        const payload: unknown = JSON.parse(content);
+        if (!isTaskMemoryShape(payload)) {
+          continue;
+        }
 
         if (status && payload.status !== status) {
           continue;
@@ -725,16 +808,18 @@ export class TaskMemoryStore {
 
     // chat-*.json files are conversational day digests, not task memories —
     // exclude them from archiving so chat history is never swept away.
-    const files = fs
-      .readdirSync(this.shortDir)
-      .filter((f) => f.endsWith(".json") && !f.startsWith("chat-"));
+    const files = fs.readdirSync(this.shortDir).filter(isTaskFile);
 
     for (const file of files) {
       const filePath = path.join(this.shortDir, file);
 
       try {
         const content = fs.readFileSync(filePath, "utf-8");
-        const payload = JSON.parse(content) as TaskMemory;
+        const payload: unknown = JSON.parse(content);
+        if (!isTaskMemoryShape(payload)) {
+          skipped++;
+          continue;
+        }
 
         if (status && payload.status !== status) {
           skipped++;
@@ -814,6 +899,29 @@ export class TaskMemoryStore {
           payload: row as unknown as Record<string, unknown>,
         });
       }
+
+      // Chat day digests share shortDir with task memories but are a distinct
+      // record shape, so they are indexed separately (and with their own search
+      // text) rather than being filtered out of the corpus entirely.
+      for (const chat of this.listChatDaily(30)) {
+        const searchText = this.buildChatSearchText(chat);
+        if (!searchText) {
+          continue;
+        }
+        const turns = chat.chat_digest?.recent_turns ?? [];
+        const lastTurn = turns[turns.length - 1];
+        items.push({
+          source: "chat",
+          taskId: `chat-${chat.day}-${chat.sessionId}`,
+          searchText,
+          payload: {
+            day: chat.day,
+            sessionId: chat.sessionId,
+            turnCount: chat.chat_digest?.turn_count ?? 0,
+            excerpt: lastTurn?.user || lastTurn?.assistant || "",
+          },
+        });
+      }
     }
 
     if (scopeText === "archive" || scopeText === "all") {
@@ -843,7 +951,7 @@ export class TaskMemoryStore {
 
   countShort(): number {
     try {
-      return fs.readdirSync(this.shortDir).filter((f) => f.endsWith(".json")).length;
+      return fs.readdirSync(this.shortDir).filter(isTaskFile).length;
     } catch {
       return 0;
     }

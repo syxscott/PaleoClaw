@@ -121,7 +121,23 @@ const createCompactionContext = (params: {
     model: undefined,
     sessionManager: params.sessionManager,
     modelRegistry: {
-      getApiKey: params.getApiKeyMock,
+      // pi-coding-agent >= 0.66 replaced getApiKey(model) with
+      // getApiKeyAndHeaders(model), which resolves to a discriminated union
+      // ({ ok: true, apiKey?, headers? } | { ok: false, error }). Keep the
+      // existing string-returning spy as the single source of truth for every
+      // call site and adapt it here, so assertions like
+      // `expect(getApiKeyMock).toHaveBeenCalledWith(model)` keep working.
+      getApiKeyAndHeaders: async (model: Model<Api>) => {
+        // `ReturnType<typeof vi.fn>` is not directly callable, so narrow the
+        // spy to the signature the handler actually relies on.
+        const spy = params.getApiKeyMock as unknown as (
+          m: Model<Api>,
+        ) => Promise<string | null | undefined>;
+        const apiKey = await spy(model);
+        return apiKey
+          ? ({ ok: true, apiKey } as const)
+          : ({ ok: false, error: "no API key configured" } as const);
+      },
     },
   }) as unknown as Partial<ExtensionContext>;
 

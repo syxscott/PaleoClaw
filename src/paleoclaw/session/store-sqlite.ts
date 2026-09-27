@@ -286,6 +286,21 @@ export class SqliteSessionStore implements SessionStoreLike {
     });
   }
 
+  private insertMessage(
+    sessionId: string,
+    role: SessionRole,
+    content: string,
+    ts: string,
+    seq: number,
+    metadata?: Record<string, unknown>,
+  ): void {
+    this.db
+      .prepare(
+        "INSERT INTO messages (session_id, role, content, ts, seq, metadata) VALUES (?, ?, ?, ?, ?, ?)",
+      )
+      .run(sessionId, role, content, ts, seq, metadata ? JSON.stringify(metadata) : null);
+  }
+
   private rowToRecord(row: SessionRow): SessionRecord {
     const meta = parseJsonObject(row.meta);
     const title = String(row.title ?? DEFAULT_SESSION_TITLE);
@@ -387,11 +402,24 @@ export class SqliteSessionStore implements SessionStoreLike {
       }
 
       const updatedAt = nowIso();
+      // Merge into the existing meta rather than replacing it with
+      // `{ tags }` — the previous overwrite silently dropped any other key
+      // a future writer had stored there.
+      const metaRow = asRow(this.db.prepare("SELECT meta FROM sessions WHERE id = ?").get(id)) as
+        | { meta?: string | null }
+        | undefined;
+      const existingMeta = parseJsonObject(metaRow?.meta ?? null);
       this.db
         .prepare(
           "UPDATE sessions SET title = ?, title_source = ?, updated_at = ?, meta = ? WHERE id = ?",
         )
-        .run(nextTitle, nextTitleSource, updatedAt, JSON.stringify({ tags: mergedTags }), id);
+        .run(
+          nextTitle,
+          nextTitleSource,
+          updatedAt,
+          JSON.stringify({ ...existingMeta, tags: mergedTags }),
+          id,
+        );
       return {
         ...existing,
         title: nextTitle,
@@ -436,25 +464,40 @@ export class SqliteSessionStore implements SessionStoreLike {
     const shouldDeriveTitle = isFirstUserMessage && (record.titleSource ?? "user") !== "user";
     const title = shouldDeriveTitle ? deriveInstantTitle(text) : record.title;
 
-    const seqRow = asRow(
-      this.db.prepare("SELECT MAX(seq) AS max_seq FROM messages WHERE session_id = ?").get(id),
-    ) as { max_seq: number | null } | undefined;
-    const seq = Number(seqRow?.max_seq ?? -1) + 1;
+    // seq is assigned inside the transaction below, from a MAX(seq) read that
+    // is itself inside the transaction boundary.
+    let seq = 0;
     const ts = nowIso();
 
     this.withTransaction(() => {
-      if (shouldDeriveTitle) {
-        this.db
-          .prepare("UPDATE sessions SET title = ?, title_source = ? WHERE id = ?")
-          .run(title, "derived", id);
+      // Re-read MAX(seq) inside the transaction. Reading it outside meant two
+      // concurrent appends could both compute the same seq and collide on the
+      // (session_id, seq) primary key; the retry keeps the invariant local to
+      // the write even if another writer committed in between.
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        const current = asRow(
+          this.db.prepare("SELECT MAX(seq) AS max_seq FROM messages WHERE session_id = ?").get(id),
+        ) as { max_seq: number | null } | undefined;
+        seq = Number(current?.max_seq ?? -1) + 1;
+        try {
+          this.insertMessage(id, role, text, ts, seq, metadata);
+        } catch (error) {
+          const isSeqConflict =
+            error instanceof Error && /UNIQUE|PRIMARY KEY|constraint/i.test(error.message);
+          if (isSeqConflict && attempt < 2) {
+            continue;
+          }
+          throw error;
+        }
+        if (shouldDeriveTitle) {
+          this.db
+            .prepare("UPDATE sessions SET title = ?, title_source = ? WHERE id = ?")
+            .run(title, "derived", id);
+        }
+        this.syncFts(id, seq, text);
+        this.db.prepare("UPDATE sessions SET updated_at = ? WHERE id = ?").run(nowIso(), id);
+        return;
       }
-      this.db
-        .prepare(
-          "INSERT INTO messages (session_id, role, content, ts, seq, metadata) VALUES (?, ?, ?, ?, ?, ?)",
-        )
-        .run(id, role, text, ts, seq, metadata ? JSON.stringify(metadata) : null);
-      this.syncFts(id, seq, text);
-      this.db.prepare("UPDATE sessions SET updated_at = ? WHERE id = ?").run(nowIso(), id);
     });
 
     // Stage 2: kick off the optional async upgrade (never awaited).

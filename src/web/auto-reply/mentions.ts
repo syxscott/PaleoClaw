@@ -1,4 +1,8 @@
-import { buildMentionRegexes, normalizeMentionText } from "../../auto-reply/reply/mentions.js";
+import {
+  buildMentionRegexes,
+  matchesMentionPatterns,
+  normalizeMentionText,
+} from "../../auto-reply/reply/mentions.js";
 import type { loadConfig } from "../../config/config.js";
 import { isSelfChatMode, jidToE164, normalizeE164 } from "../../utils.js";
 import type { WebInboundMsg } from "./types.js";
@@ -60,7 +64,9 @@ export function isBotMentionedFromTargets(
     // Self-chat mode: ignore WhatsApp @mention JIDs, otherwise @mentioning the owner in group chats triggers the bot.
   }
   const bodyClean = clean(msg.body);
-  if (mentionCfg.mentionRegexes.some((re) => re.test(bodyClean))) {
+  // Match via the shared helper so legacy-brand regexes (e.g. /\bopenclaw\b/i)
+  // are rewritten to the canonical brand, mirroring the core mention path.
+  if (matchesMentionPatterns(msg.body, mentionCfg.mentionRegexes)) {
     return true;
   }
 

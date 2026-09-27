@@ -242,14 +242,6 @@ function createAcpVisibleTextAccumulator() {
   };
 }
 
-function summarizePromptAsTitle(prompt: string): string {
-  const normalized = prompt.replace(/\s+/g, " ").trim();
-  if (!normalized) {
-    return "PaleoClaw Session";
-  }
-  return normalized.length > 80 ? `${normalized.slice(0, 77)}...` : normalized;
-}
-
 function flattenPayloadText(payloads: Array<{ text?: string; mediaUrls?: string[] }>): string {
   const blocks: string[] = [];
   for (const payload of payloads) {
@@ -652,10 +644,22 @@ async function agentCommandInternal(
     acpResolution,
   } = prepared;
   let sessionEntry = prepared.sessionEntry;
-  const memoryManager = createDefaultMemoryManager();
+  const memoryManager = createDefaultMemoryManager({ sessionId });
   // SQLite-backed session history with automatic JSON fallback (borrowed from
-  // Hermes' hardened SQLite session store; createSessionStore never throws).
-  const sessionHistory = createSessionStore();
+  // Hermes' hardened SQLite session store). createSessionStore() only degrades
+  // silently when the runtime lacks node:sqlite; a real database failure is
+  // caught here so a corrupt/locked DB degrades instead of failing the run —
+  // but with a diagnostic rather than in silence.
+  let sessionHistory: ReturnType<typeof createSessionStore>;
+  try {
+    sessionHistory = createSessionStore();
+  } catch (error) {
+    console.error(
+      "[paleoclaw] SQLite session store unavailable, falling back to JSON:",
+      error instanceof Error ? error.message : String(error),
+    );
+    sessionHistory = createSessionStore({ forceJson: true });
+  }
   const userPrompt = body;
   const enableAutoTools = isAutoToolsEnabled();
   const enableMemoryContext = isMemoryContextEnabled();
@@ -699,7 +703,14 @@ async function agentCommandInternal(
 
   if (enableSessionAutosave) {
     try {
-      sessionHistory.upsertSession(sessionId, summarizePromptAsTitle(userPrompt), [sessionAgentId]);
+      // Deliberately pass no title here. Both stores treat an explicit title as
+      // user-provenance ("user"), which permanently blocks Stage-1 derivation
+      // and the Stage-2 title upgrader in appendMessage() — the two-stage
+      // title system exists precisely to derive a title from the first user
+      // message, and it is the only code path that can supply one. Passing the
+      // raw prompt instead also truncated on UTF-16 code units, which can split
+      // a surrogate pair; deriveInstantTitle() truncates by code point.
+      sessionHistory.upsertSession(sessionId, undefined, [sessionAgentId]);
       sessionHistory.appendMessage(sessionId, "user", userPrompt, {
         source: "agent-command",
         sessionKey,

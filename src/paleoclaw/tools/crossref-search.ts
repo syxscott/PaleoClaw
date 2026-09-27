@@ -3,11 +3,24 @@
  */
 
 import { retryAsync } from "../../vendor/retry/index.js";
+import { VERSION } from "../../version.js";
 import { toolRegistry } from "./registry.js";
 
 interface CrossrefParams {
   query?: string;
   rows?: number;
+}
+
+/**
+ * CrossRef asks API clients to identify themselves with a real contact
+ * address; requests carrying one are served from the "polite pool" with higher
+ * rate limits and faster response. A placeholder mailto gets the generic pool,
+ * so the contact is configurable instead of hard-coded.
+ */
+function buildUserAgent(): string {
+  const contact = String(process.env.PALEOCLAW_CONTACT_EMAIL || "").trim();
+  const base = `PaleoClaw/${VERSION} (+https://github.com/syxscott/PaleoClaw)`;
+  return contact ? `${base}; mailto:${contact}` : base;
 }
 
 // Retry policy: max 3 attempts total with exponential backoff and jitter.
@@ -61,7 +74,7 @@ async function crossrefSearchHandler(params: Record<string, unknown>): Promise<u
 
   const response = await fetchCrossrefWithRetry(api, {
     headers: {
-      "User-Agent": "PaleoClaw/1.6.0 (mailto:maintainer@example.com)",
+      "User-Agent": buildUserAgent(),
     },
   });
 
