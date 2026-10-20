@@ -236,6 +236,15 @@ export const OpenClawSchema = z
           })
           .strict()
           .optional(),
+        streamWatchdog: z
+          .object({
+            enabled: z.boolean().optional(),
+            idleTimeoutMs: z.number().int().positive().optional(),
+            stallTimeoutMs: z.number().int().positive().optional(),
+            profile: z.union([z.literal("fresh"), z.literal("resume")]).optional(),
+          })
+          .strict()
+          .optional(),
       })
       .strict()
       .optional(),

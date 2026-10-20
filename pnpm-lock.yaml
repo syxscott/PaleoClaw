@@ -636,6 +636,15 @@ importers:
 
   extensions/open-prose: {}
 
+  extensions/qqbot:
+    dependencies:
+      ws:
+        specifier: '>=8.21.0'
+        version: 8.21.3
+      zod:
+        specifier: ^4.3.6
+        version: 4.3.6
+
   extensions/signal: {}
 
   extensions/slack: {}
@@ -692,6 +701,10 @@ importers:
       zod:
         specifier: ^4.3.6
         version: 4.3.6
+
+  extensions/wecom: {}
+
+  extensions/weixin: {}
 
   extensions/whatsapp: {}
 
@@ -4061,7 +4074,7 @@ packages:
     resolution: {integrity: sha512-2XJVD55d1o5AZous5CCGKS74g/riOj9odEt2bQpCVZeblHyHdnMeFl4jl0XjU21stf4mbjUkew2eXQZt65g5CQ==}
     peerDependencies:
       msw: ^2.4.9
-      vite: '>=7.3.2'
+      vite: '>=7.3.5'
     peerDependenciesMeta:
       msw:
         optional: true

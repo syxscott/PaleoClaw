@@ -201,6 +201,23 @@ export type DiagnosticsCacheTraceConfig = {
   includeSystem?: boolean;
 };
 
+/**
+ * Idle/stall watchdog for the embedded agent stream.
+ *
+ * Off by default. When enabled, an idle stream (no event at all) is aborted
+ * and retried in non-streaming mode, while a stalled stream (a long gap
+ * between two events) is only logged — the model may simply be thinking.
+ */
+export type DiagnosticsStreamWatchdogConfig = {
+  enabled?: boolean;
+  /** No event at all for this long → abort the stream and fall back. */
+  idleTimeoutMs?: number;
+  /** Gap between two events longer than this → log only, never interrupt. */
+  stallTimeoutMs?: number;
+  /** "fresh" for a new session, "resume" for a continued one. */
+  profile?: "fresh" | "resume";
+};
+
 export type DiagnosticsConfig = {
   enabled?: boolean;
   /** Optional ad-hoc diagnostics flags (e.g. "telegram.http"). */
@@ -209,6 +226,7 @@ export type DiagnosticsConfig = {
   stuckSessionWarnMs?: number;
   otel?: DiagnosticsOtelConfig;
   cacheTrace?: DiagnosticsCacheTraceConfig;
+  streamWatchdog?: DiagnosticsStreamWatchdogConfig;
 };
 
 export type WebReconnectConfig = {

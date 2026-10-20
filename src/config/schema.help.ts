@@ -508,6 +508,16 @@ export const FIELD_HELP: Record<string, string> = {
     "Include full message payloads in trace output (default: true).",
   "diagnostics.cacheTrace.includePrompt": "Include prompt text in trace output (default: true).",
   "diagnostics.cacheTrace.includeSystem": "Include system prompt in trace output (default: true).",
+  "diagnostics.streamWatchdog":
+    "Idle/stall watchdog for the embedded agent stream. Off by default; it only becomes active when enabled here or when the OPENCLAW_STREAM_WATCHDOG environment variables are set.",
+  "diagnostics.streamWatchdog.enabled":
+    "Enable the embedded-stream watchdog (default: false). An idle stream is aborted and retried in non-streaming mode; a stalled stream is only logged.",
+  "diagnostics.streamWatchdog.idleTimeoutMs":
+    "Abort the stream when no event at all arrives for this many milliseconds. When unset it is derived from the run timeout, clamped to the profile's min/max.",
+  "diagnostics.streamWatchdog.stallTimeoutMs":
+    "Log a stall when the gap between two stream events exceeds this many milliseconds. It never interrupts the stream — the model may simply be thinking (default: 30000).",
+  "diagnostics.streamWatchdog.profile":
+    'Watchdog profile: "fresh" for a new session, "resume" for a continued one. "auto" derives it from the conversation length (default: auto).',
   "tools.exec.applyPatch.enabled":
     "Experimental. Enables apply_patch for OpenAI models when allowed by tool policy.",
   "tools.exec.applyPatch.workspaceOnly":

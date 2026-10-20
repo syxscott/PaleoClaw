@@ -176,3 +176,98 @@ describe("createCacheTrace", () => {
     expect(event.messageFingerprints).toHaveLength(1);
   });
 });
+
+describe("createCacheTrace trajectory events", () => {
+  function createEnabledTrace(lines: string[]) {
+    return createCacheTrace({
+      cfg: {
+        diagnostics: {
+          cacheTrace: {
+            enabled: true,
+          },
+        },
+      },
+      env: {},
+      writer: {
+        filePath: "memory",
+        write: (line) => lines.push(line),
+      },
+    });
+  }
+
+  it("is unavailable when the cache trace is disabled", () => {
+    const trace = createCacheTrace({ cfg: {} as OpenClawConfig, env: {} });
+
+    expect(trace).toBeNull();
+    expect(
+      (trace as unknown as { recordTrajectory?: unknown } | null)?.recordTrajectory,
+    ).toBeUndefined();
+  });
+
+  it("appends trajectory events in order without rewriting earlier lines", () => {
+    const lines: string[] = [];
+    const trace = createEnabledTrace(lines);
+
+    trace?.recordTrajectory("system:stable", { source: "system", text: "stable half" });
+    trace?.recordTrajectory("system:dynamic", { source: "system", text: "dynamic half" });
+    trace?.recordTrajectory("user:prompt", { source: "user", text: "question" });
+
+    expect(lines).toHaveLength(3);
+    const first = JSON.parse(lines[0]?.trim() ?? "{}") as Record<string, unknown>;
+    const second = JSON.parse(lines[1]?.trim() ?? "{}") as Record<string, unknown>;
+    const third = JSON.parse(lines[2]?.trim() ?? "{}") as Record<string, unknown>;
+    expect(first.kind).toBe("system:stable");
+    expect(first.stage).toBe("trajectory");
+    expect(first.source).toBe("system");
+    expect(second.kind).toBe("system:dynamic");
+    expect(third.kind).toBe("user:prompt");
+    expect(Number(second.seq)).toBeGreaterThan(Number(first.seq));
+    expect(Number(third.seq)).toBeGreaterThan(Number(second.seq));
+    expect(lines[0]).toBe(lines[0]);
+  });
+
+  it("redacts image data and secret-shaped values before writing", () => {
+    const lines: string[] = [];
+    const trace = createEnabledTrace(lines);
+
+    trace?.recordTrajectory("tool:result", {
+      source: "tool",
+      data: {
+        images: [{ type: "image", mimeType: "image/png", data: "QUJDRA==" }],
+        output: "token sk-abcdefghijklmnop1234",
+      },
+    });
+
+    const event = JSON.parse(lines[0]?.trim() ?? "{}") as Record<string, unknown>;
+    const data = event.data as { images: Array<Record<string, unknown>>; output: string };
+    expect(data.images[0]?.data).toBe("<redacted>");
+    expect(data.output).not.toContain("sk-abcdefghijklmnop1234");
+  });
+
+  it("honours the include switches", () => {
+    const lines: string[] = [];
+    const trace = createCacheTrace({
+      cfg: {
+        diagnostics: {
+          cacheTrace: {
+            enabled: true,
+            includePrompt: false,
+            includeSystem: false,
+            includeMessages: false,
+          },
+        },
+      },
+      env: {},
+      writer: {
+        filePath: "memory",
+        write: (line) => lines.push(line),
+      },
+    });
+
+    trace?.recordTrajectory("system:stable", { source: "system", text: "stable" });
+    trace?.recordTrajectory("user:prompt", { source: "user", text: "question" });
+    trace?.recordTrajectory("assistant:text", { source: "assistant", text: "answer" });
+
+    expect(lines).toHaveLength(0);
+  });
+});

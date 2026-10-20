@@ -1,3 +1,5 @@
+import { supportsProviderCacheTtl } from "../provider-capabilities.js";
+
 type CustomEntryLike = { type?: unknown; customType?: unknown; data?: unknown };
 
 export const CACHE_TTL_CUSTOM_TYPE = "paleoclaw.cache-ttl";
@@ -8,31 +10,17 @@ export type CacheTtlEntryData = {
   modelId?: string;
 };
 
-const CACHE_TTL_NATIVE_PROVIDERS = new Set(["anthropic", "moonshot", "zai"]);
-const OPENROUTER_CACHE_TTL_MODEL_PREFIXES = [
-  "anthropic/",
-  "moonshot/",
-  "moonshotai/",
-  "zai/",
-] as const;
-
-function isOpenRouterCacheTtlModel(modelId: string): boolean {
-  return OPENROUTER_CACHE_TTL_MODEL_PREFIXES.some((prefix) => modelId.startsWith(prefix));
-}
-
+/**
+ * Whether long-lived prompt caches (TTL) are available for a provider/model.
+ *
+ * The answer is owned by the declarative provider capability table
+ * (`src/agents/provider-capabilities.ts`): a provider opts in explicitly and
+ * may restrict the opt-in to model-id prefixes. Operators can extend it for
+ * custom providers through `<agentDir>/provider-capabilities.json` without a
+ * code change.
+ */
 export function isCacheTtlEligibleProvider(provider: string, modelId: string): boolean {
-  const normalizedProvider = provider.toLowerCase();
-  const normalizedModelId = modelId.toLowerCase();
-  if (CACHE_TTL_NATIVE_PROVIDERS.has(normalizedProvider)) {
-    return true;
-  }
-  if (normalizedProvider === "openrouter" && isOpenRouterCacheTtlModel(normalizedModelId)) {
-    return true;
-  }
-  if (normalizedProvider === "kilocode" && normalizedModelId.startsWith("anthropic/")) {
-    return true;
-  }
-  return false;
+  return supportsProviderCacheTtl({ provider, modelId });
 }
 
 export function readLastCacheTtlTimestamp(sessionManager: unknown): number | null {

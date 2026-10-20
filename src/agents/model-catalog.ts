@@ -2,10 +2,11 @@ import { type OpenClawConfig, loadConfig } from "../config/config.js";
 import { createSubsystemLogger } from "../logging/subsystem.js";
 import { resolveOpenClawAgentDir } from "./agent-paths.js";
 import { ensureOpenClawModelsJson } from "./models-config.js";
+import { type ModelInputType, requiresConfigDeclaredModels } from "./provider-capabilities.js";
 
 const log = createSubsystemLogger("model-catalog");
 
-export type ModelInputType = "text" | "image" | "document";
+export type { ModelInputType };
 
 export type ModelCatalogEntry = {
   id: string;
@@ -39,7 +40,6 @@ const OPENAI_GPT54_PRO_MODEL_ID = "gpt-5.4-pro";
 const OPENAI_CODEX_GPT53_MODEL_ID = "gpt-5.3-codex";
 const OPENAI_CODEX_GPT53_SPARK_MODEL_ID = "gpt-5.3-codex-spark";
 const OPENAI_CODEX_GPT54_MODEL_ID = "gpt-5.4";
-const NON_PI_NATIVE_MODEL_PROVIDERS = new Set(["kilocode"]);
 
 type SyntheticCatalogFallback = {
   provider: string;
@@ -115,7 +115,10 @@ function readConfiguredOptInProviderModels(config: OpenClawConfig): ModelCatalog
   const out: ModelCatalogEntry[] = [];
   for (const [providerRaw, providerValue] of Object.entries(providers)) {
     const provider = providerRaw.toLowerCase().trim();
-    if (!NON_PI_NATIVE_MODEL_PROVIDERS.has(provider)) {
+    // Providers that are not served by the pi-ai model registry have to
+    // declare their models in the operator config; the capability table owns
+    // that decision (see `requiresConfigDeclaredModels`).
+    if (!requiresConfigDeclaredModels(provider)) {
       continue;
     }
     if (!providerValue || typeof providerValue !== "object") {

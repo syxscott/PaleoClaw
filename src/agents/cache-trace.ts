@@ -9,6 +9,12 @@ import { safeJsonStringify } from "../utils/safe-json.js";
 import { redactImageDataForDiagnostics } from "./payload-redaction.js";
 import { getQueuedFileWriter, type QueuedFileWriter } from "./queued-file-writer.js";
 import { buildAgentTraceBase } from "./trace-base.js";
+import {
+  redactTrajectoryData,
+  redactTrajectoryText,
+  type TrajectoryEventKind,
+  type TrajectorySource,
+} from "./trajectory.js";
 
 export type CacheTraceStage =
   | "session:loaded"
@@ -17,7 +23,8 @@ export type CacheTraceStage =
   | "prompt:before"
   | "prompt:images"
   | "stream:context"
-  | "session:after";
+  | "session:after"
+  | "trajectory";
 
 export type CacheTraceEvent = {
   ts: string;
@@ -42,12 +49,35 @@ export type CacheTraceEvent = {
   systemDigest?: string;
   note?: string;
   error?: string;
+  /** Trajectory discriminator; absent on legacy cache-trace events. */
+  kind?: TrajectoryEventKind;
+  /** Where a trajectory event came from. */
+  source?: TrajectorySource;
+  /** Redacted text payload of a trajectory event. */
+  text?: string;
+  /** Redacted structured payload of a trajectory event. */
+  data?: unknown;
 };
 
 export type CacheTrace = {
   enabled: true;
   filePath: string;
   recordStage: (stage: CacheTraceStage, payload?: Partial<CacheTraceEvent>) => void;
+  /**
+   * Append a trajectory event to the same append-only JSONL stream.
+   *
+   * Trajectory events are additive: legacy cache-trace events keep their
+   * shape, and the trajectory view is a filtered projection of the file.
+   */
+  recordTrajectory: (
+    kind: TrajectoryEventKind,
+    payload: {
+      source: TrajectorySource;
+      text?: string;
+      data?: unknown;
+      note?: string;
+    },
+  ) => void;
   wrapStreamFn: (streamFn: StreamFn) => StreamFn;
 };
 
@@ -75,6 +105,19 @@ type CacheTraceConfig = {
 type CacheTraceWriter = QueuedFileWriter;
 
 const writers = new Map<string, CacheTraceWriter>();
+
+/**
+ * Sequence counters are kept per output file so that a resumed or forked run
+ * continues on the same stream instead of restarting the numbering. The file
+ * itself is only ever appended to.
+ */
+const sequenceCounters = new Map<string, number>();
+
+function nextSequence(filePath: string): number {
+  const next = (sequenceCounters.get(filePath) ?? 0) + 1;
+  sequenceCounters.set(filePath, next);
+  return next;
+}
 
 function resolveCacheTraceConfig(params: CacheTraceInit): CacheTraceConfig {
   const env = params.env ?? process.env;
@@ -182,15 +225,23 @@ export function createCacheTrace(params: CacheTraceInit): CacheTrace | null {
   }
 
   const writer = params.writer ?? getWriter(cfg.filePath);
-  let seq = 0;
+  const seqKey = writer.filePath;
 
   const base: Omit<CacheTraceEvent, "ts" | "seq" | "stage"> = buildAgentTraceBase(params);
+
+  const writeEvent = (event: CacheTraceEvent) => {
+    const line = safeJsonStringify(event);
+    if (!line) {
+      return;
+    }
+    writer.write(`${line}\n`);
+  };
 
   const recordStage: CacheTrace["recordStage"] = (stage, payload = {}) => {
     const event: CacheTraceEvent = {
       ...base,
       ts: new Date().toISOString(),
-      seq: (seq += 1),
+      seq: nextSequence(seqKey),
       stage,
     };
 
@@ -227,11 +278,41 @@ export function createCacheTrace(params: CacheTraceInit): CacheTrace | null {
       event.error = payload.error;
     }
 
-    const line = safeJsonStringify(event);
-    if (!line) {
+    writeEvent(event);
+  };
+
+  const recordTrajectory: CacheTrace["recordTrajectory"] = (kind, payload) => {
+    // The trajectory stream honours the same include* switches as the legacy
+    // cache-trace events so that a run can be kept free of prompt text.
+    const isPromptKind = kind === "user:prompt" || kind === "context:injection";
+    const isSystemKind = kind === "system:stable" || kind === "system:dynamic";
+    if (isPromptKind && !cfg.includePrompt) {
       return;
     }
-    writer.write(`${line}\n`);
+    if (isSystemKind && !cfg.includeSystem) {
+      return;
+    }
+    if (!isPromptKind && !isSystemKind && !cfg.includeMessages) {
+      return;
+    }
+    const event: CacheTraceEvent = {
+      ...base,
+      ts: new Date().toISOString(),
+      seq: nextSequence(seqKey),
+      stage: "trajectory",
+      kind,
+      source: payload.source,
+    };
+    if (payload.text !== undefined) {
+      event.text = redactTrajectoryText(payload.text);
+    }
+    if (payload.data !== undefined) {
+      event.data = redactTrajectoryData(payload.data);
+    }
+    if (payload.note) {
+      event.note = redactTrajectoryText(payload.note);
+    }
+    writeEvent(event);
   };
 
   const wrapStreamFn: CacheTrace["wrapStreamFn"] = (streamFn) => {
@@ -255,6 +336,7 @@ export function createCacheTrace(params: CacheTraceInit): CacheTrace | null {
     enabled: true,
     filePath: cfg.filePath,
     recordStage,
+    recordTrajectory,
     wrapStreamFn,
   };
 }

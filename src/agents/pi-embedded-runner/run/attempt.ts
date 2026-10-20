@@ -89,6 +89,7 @@ import { buildSystemPromptReport } from "../../system-prompt-report.js";
 import { sanitizeToolCallIdsForCloudCodeAssist } from "../../tool-call-id.js";
 import { resolveEffectiveToolFsWorkspaceOnly } from "../../tool-fs-policy.js";
 import { normalizeToolName } from "../../tool-policy.js";
+import { detectContextInjections } from "../../trajectory.js";
 import { resolveTranscriptPolicy } from "../../transcript-policy.js";
 import { DEFAULT_BOOTSTRAP_FILENAME } from "../../workspace.js";
 import { isRunnerAbortError } from "../abort.js";
@@ -113,6 +114,8 @@ import { buildEmbeddedSandboxInfo } from "../sandbox-info.js";
 import { prewarmSessionFile, trackSessionManagerAccess } from "../session-manager-cache.js";
 import { prepareSessionManagerForRun } from "../session-manager-init.js";
 import { resolveEmbeddedRunSkillEntries } from "../skills-runtime.js";
+import { createStreamWatchdogWrapper } from "../stream-watchdog.js";
+import { createAnthropicPromptCacheWrapper, splitSystemPrompt } from "../system-prompt-split.js";
 import {
   applySystemPromptOverrideToSession,
   buildEmbeddedSystemPrompt,
@@ -680,6 +683,51 @@ export function buildAfterTurnLegacyCompactionParams(params: {
   };
 }
 
+/**
+ * Record the assistant turn of a run into the trajectory stream: the visible
+ * text, the reasoning blocks and the requested tool calls are separate kinds
+ * so a run can be inspected by source.
+ */
+function recordAssistantTrajectory(
+  cacheTrace: NonNullable<ReturnType<typeof createCacheTrace>>,
+  message: unknown,
+): void {
+  const content = (message as { content?: unknown }).content;
+  if (!Array.isArray(content)) {
+    return;
+  }
+  for (const block of content) {
+    if (!block || typeof block !== "object") {
+      continue;
+    }
+    const typed = block as {
+      type?: unknown;
+      text?: unknown;
+      thinking?: unknown;
+      id?: unknown;
+      name?: unknown;
+      arguments?: unknown;
+    };
+    if (typed.type === "text" && typeof typed.text === "string") {
+      cacheTrace.recordTrajectory("assistant:text", { source: "assistant", text: typed.text });
+      continue;
+    }
+    if (typed.type === "thinking" && typeof typed.thinking === "string") {
+      cacheTrace.recordTrajectory("assistant:reasoning", {
+        source: "assistant",
+        text: typed.thinking,
+      });
+      continue;
+    }
+    if (typed.type === "toolCall") {
+      cacheTrace.recordTrajectory("tool:call", {
+        source: "tool",
+        data: { id: typed.id, name: typed.name, arguments: typed.arguments },
+      });
+    }
+  }
+}
+
 function summarizeMessagePayload(msg: AgentMessage): { textChars: number; imageBlocks: number } {
   const content = (msg as { content?: unknown }).content;
   if (typeof content === "string") {
@@ -1214,6 +1262,55 @@ export async function runEmbeddedAttempt(
         modelApi: params.model.api,
         workspaceDir: params.workspaceDir,
       });
+      // Trajectory: record the two halves of the system prompt separately so a
+      // run can be inspected by source. The split is the same one that drives
+      // the Anthropic cache breakpoints, so the recorded halves match what the
+      // model actually receives.
+      const recordSystemPromptTrajectory = () => {
+        if (!cacheTrace) {
+          return;
+        }
+        const split = splitSystemPrompt({ prompt: systemPromptText });
+        cacheTrace.recordTrajectory("system:stable", { source: "system", text: split.stable });
+        if (split.dynamic) {
+          cacheTrace.recordTrajectory("system:dynamic", { source: "system", text: split.dynamic });
+        }
+      };
+      recordSystemPromptTrajectory();
+      const unsubscribeTrajectory = cacheTrace
+        ? activeSession.agent.subscribe((event) => {
+            try {
+              if (event.type === "message_end") {
+                recordAssistantTrajectory(cacheTrace, event.message);
+                return;
+              }
+              if (event.type === "tool_execution_end") {
+                cacheTrace.recordTrajectory("tool:result", {
+                  source: "tool",
+                  data: {
+                    toolCallId: event.toolCallId,
+                    toolName: event.toolName,
+                    isError: event.isError,
+                    result: event.result,
+                  },
+                });
+                return;
+              }
+              if (event.type === "tool_execution_start") {
+                cacheTrace.recordTrajectory("tool:call", {
+                  source: "tool",
+                  data: {
+                    toolCallId: event.toolCallId,
+                    toolName: event.toolName,
+                    args: event.args,
+                  },
+                });
+              }
+            } catch (trajectoryErr) {
+              log.debug(`trajectory recording failed: ${String(trajectoryErr)}`);
+            }
+          })
+        : undefined;
       const anthropicPayloadLogger = createAnthropicPayloadLogger({
         env: process.env,
         runId: params.runId,
@@ -1385,6 +1482,36 @@ export async function runEmbeddedAttempt(
         );
       }
 
+      // Anthropic-shaped requests: split the system prompt into a byte-stable
+      // prefix and a run-dependent suffix and attach the cache breakpoints.
+      // Providers that do not speak the Anthropic block shape are untouched.
+      activeSession.agent.streamFn = createAnthropicPromptCacheWrapper({
+        log: (message, data) => {
+          log.debug(`${message}${data ? ` ${JSON.stringify(data)}` : ""}`);
+        },
+      })(activeSession.agent.streamFn);
+
+      // Idle/stall watchdog for the embedded HTTP/SSE stream. Disabled unless
+      // explicitly configured, so existing deployments behave exactly as
+      // before.
+      activeSession.agent.streamFn = createStreamWatchdogWrapper({
+        env: process.env,
+        config: params.config?.diagnostics?.streamWatchdog,
+        runTimeoutMs: params.timeoutMs,
+        log: (level, message, data) => {
+          const suffix = data ? ` ${JSON.stringify(data)}` : "";
+          if (level === "warn") {
+            log.warn(`${message}${suffix}`);
+            return;
+          }
+          if (level === "info") {
+            log.info(`${message}${suffix}`);
+            return;
+          }
+          log.debug(`${message}${suffix}`);
+        },
+      })(activeSession.agent.streamFn);
+
       try {
         const prior = await sanitizeSessionHistory({
           messages: activeSession.messages,
@@ -1430,6 +1557,10 @@ export async function runEmbeddedAttempt(
               activeSession.agent.state.messages = assembled.messages;
             }
             if (assembled.systemPromptAddition) {
+              cacheTrace?.recordTrajectory("context:injection", {
+                source: "context-engine",
+                text: assembled.systemPromptAddition,
+              });
               systemPromptText = prependSystemPromptAddition({
                 systemPrompt: systemPromptText,
                 systemPromptAddition: assembled.systemPromptAddition,
@@ -1650,6 +1781,10 @@ export async function runEmbeddedAttempt(
         {
           if (hookResult?.prependContext) {
             effectivePrompt = `${hookResult.prependContext}\n\n${params.prompt}`;
+            cacheTrace?.recordTrajectory("context:injection", {
+              source: "hook",
+              text: hookResult.prependContext,
+            });
             log.debug(
               `hooks: prepended context to prompt (${hookResult.prependContext.length} chars)`,
             );
@@ -1669,6 +1804,18 @@ export async function runEmbeddedAttempt(
           if (prependedOrAppendedSystemPrompt) {
             const prependSystemLen = hookResult?.prependSystemContext?.trim().length ?? 0;
             const appendSystemLen = hookResult?.appendSystemContext?.trim().length ?? 0;
+            if (hookResult?.prependSystemContext) {
+              cacheTrace?.recordTrajectory("context:injection", {
+                source: "hook",
+                text: hookResult.prependSystemContext,
+              });
+            }
+            if (hookResult?.appendSystemContext) {
+              cacheTrace?.recordTrajectory("context:injection", {
+                source: "hook",
+                text: hookResult.appendSystemContext,
+              });
+            }
             applySystemPromptOverrideToSession(activeSession, prependedOrAppendedSystemPrompt);
             systemPromptText = prependedOrAppendedSystemPrompt;
             log.debug(
@@ -1682,6 +1829,13 @@ export async function runEmbeddedAttempt(
           prompt: effectivePrompt,
           messages: activeSession.messages,
         });
+        cacheTrace?.recordTrajectory("user:prompt", { source: "user", text: effectivePrompt });
+        for (const injection of detectContextInjections(effectivePrompt)) {
+          cacheTrace?.recordTrajectory("context:injection", {
+            source: injection.source,
+            text: injection.text,
+          });
+        }
 
         // Repair orphaned trailing user messages so new prompts don't violate role ordering.
         const leafEntry = sessionManager.getLeafEntry();
@@ -1984,6 +2138,13 @@ export async function runEmbeddedAttempt(
           // as it would mask any exception from the try block above.
           log.error(
             `CRITICAL: unsubscribe failed, possible resource leak: runId=${params.runId} ${String(err)}`,
+          );
+        }
+        try {
+          unsubscribeTrajectory?.();
+        } catch (err) {
+          log.error(
+            `CRITICAL: trajectory unsubscribe failed, possible resource leak: runId=${params.runId} ${String(err)}`,
           );
         }
         clearActiveEmbeddedRun(params.sessionId, queueHandle, params.sessionKey);

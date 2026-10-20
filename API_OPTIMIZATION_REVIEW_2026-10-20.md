@@ -6,6 +6,43 @@
 
 ---
 
+## ✅ 实施状态（2026-10-21）
+
+7 项已落地并通过验证；**P0-3（pi-ai 升级）经实测后判定为不安全，已回退**，理由见文末。
+
+| 项                                    | 状态                                        | 落点                                                                                                                                                                                    | 验证                                                                                                                                                                                                                                                                                                                                            |
+| ------------------------------------- | ------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **P0-1** `prompt_cache_key`           | ✅ 已实现                                   | `src/agents/pi-embedded-runner/extra-params.ts` → `createPromptCacheKeyWrapper()`                                                                                                       | 取 `options.sessionId`；由能力表判定 `cacheMechanism === "prompt_cache_key"` 才注入；**不覆盖 pi-ai 已设的值**；**非 OpenAI 形状的 provider 绝不注入**（避免 opencode #25984 那种「形状错配 → 0% 命中」）。8 个新用例                                                                                                                           |
+| **P0-2** 系统提示 stable/dynamic 拆分 | ✅ 已实现                                   | 新增 `src/agents/pi-embedded-runner/system-prompt-split.ts`；接线在 `run/attempt.ts`                                                                                                    | 以最终 prompt 文本的**第一个动态 section 标题**为切点（并用 `Your working directory is:` 校验，匹配不上就**不拆**）；`stable + "\n" + dynamic` 与原 prompt **逐字节相同**；先剥掉 provider 自己的 `cache_control` 再重打，**断点数恒 ≤ 4**（Anthropic 上限）；**非 anthropic-messages provider 在 wire 上完全 no-op**。17 个新用例              |
+| **P1-1** 缓存能力声明化               | ✅ 已实现                                   | `cache-ttl.ts` 改为委托 `supportsProviderCacheTtl()`；`extensions.ts` 不再静默 `return undefined`，改为 **log.warn 点名 provider/model 并指向 `<agentDir>/provider-capabilities.json`** | 23 组「委托 vs 旧硬编码」等价断言，逐对相同                                                                                                                                                                                                                                                                                                     |
+| **P1-2** 流式双看门狗                 | ✅ 已实现                                   | 新增 `src/agents/pi-embedded-runner/stream-watchdog.ts`                                                                                                                                 | **idle**（全程无事件）→ 经 `AbortSignal` 真正取消 → 降级为非流式重试，半阈值先告警；**stall**（事件间隔过长）→ **只记录不打断**。**仅在零输出时才回退**，故不会重复产出 / 重复计费。默认关闭；已补 `diagnostics.streamWatchdog` 配置项（schema + types + labels + help）                                                                        |
+| **P1-3** provider 能力表              | ✅ 已实现                                   | 新增 `src/agents/provider-capabilities.ts`（43 个 provider 行 + `provider-capabilities.json` 覆盖扩展点）                                                                               | 表驱动的 `cacheMechanism` / `cacheTtl` / api 协议 / 凭据引用（env 引用而非明文）/ 模态声明；**不命中时给出可操作提示**而不是静默                                                                                                                                                                                                                |
+| **P2-1** Trajectory 事件流            | ✅ 已实现                                   | 新增 `src/agents/trajectory.ts`；`src/agents/cache-trace.ts` 扩展 `stage:"trajectory"`                                                                                                  | 追加式（append-only）事件流：system:stable / system:dynamic / user:prompt / assistant:text / assistant:reasoning / tool:call / tool:result / context:injection，带 `kind` 与 `source` 可按来源过滤；**老事件格式一行未改**（向后兼容）；复用仓库既有的 `redactImageDataForDiagnostics` + `redactSensitiveText` 脱敏；**默认关闭且关闭时零开销** |
+| **P2-2** 安全切换 provider            | ✅ 已实现                                   | `src/agents/models-config.ts`                                                                                                                                                           | 写前备份（`models.json.bak` + `.bak.1…4` 轮转，**上限 5**，与仓库 `src/config/backup-rotation.ts` 同约定）；备份**脱敏**（明文密钥变 `"redacted"`，env 引用保留）；**replace 模式也保留仍被引用的凭据**；切换前用 **`fetchWithSsrFGuard`** 预检连通性（绝不用裸 `fetch`），失败则保留旧配置；`PALEOCLAW_PROVIDER_PREFLIGHT=0` 可跳过            |
+| **P0-3** pi-ai 升级                   | ⛔ **已回退**（实测判定不安全，理由见文末） | —                                                                                                                                                                                       | —                                                                                                                                                                                                                                                                                                                                               |
+
+**实施过程中额外发现并修复**：`pnpm-lock.yaml` 缺少三个新插件（`extensions/qqbot`、`extensions/wecom`、`extensions/weixin`）的 importer 条目。CI（`ci.yml:484`）与发布（`publish.yml:31`）都用 `pnpm install --frozen-lockfile`，**该分支原样提交会在安装阶段直接失败**。已补齐。
+
+### P0-3 为什么回退（实测结论，不是猜测）
+
+实际执行了升级（`package.json` 改到 0.73.1 + `pnpm install`），随后发现三件事：
+
+1. **0.73.1 移除了 `google-gemini-cli` provider。** 对 `node_modules/@mariozechner/pi-ai/dist` 全量递归搜索 `google-gemini-cli` → **零命中**；`providers/` 下已无 `google-gemini-cli.js`，`GoogleApiType` 变成 `"google-generative-ai" | "google-vertex"`。而本仓库的 `extensions/google-gemini-cli-auth` 只注册 **OAuth 认证**，真正的传输层依赖 pi-ai → **该扩展会静默失效**。
+2. **`@mariozechner/pi-*` 整个 scope 已被弃用**：`npm view @mariozechner/pi-ai@0.73.1 deprecated` → _"please use @earendil-works/pi-ai instead going forward"_。0.73.1 是**该 scope 的最后一个版本**。
+3. **真正的后继是 `@earendil-works/pi-*`（最新 1.3.0）**，但那是 **0.x → 1.x 主版本跳跃 + 包名 scope 变更**：全仓 **186 个导入行 / 126 个文件**受影响，并连带引入 `openai` 6→7 的主版本变化。
+
+在 0.73.1 上实测还引入了 **43 个类型错误 / 12 个文件**（`pi-coding-agent` 删除了静态导出 `codingTools`/`readTool`、工具参数类型从 `any` 收紧为 `unknown`、`compat` 变为判别联合、typebox v1→v2 断裂），并**新增 7 个失败测试文件**（基线 28 → 34）。
+
+**决策**：这 7 项功能优化**没有一项依赖升级**，而升级本身带一个静默的功能破坏、终点还是已弃用的包。因此**回退升级**，把 scope 迁移留作独立任务（它需要自己的评审面与独立回归基线）。
+
+**升级的真实收益（供规划 1.3.0 迁移时参考）**：
+
+- pi-ai 0.73.1 起**内置 `minimax` / `minimax-cn` provider**，其 `api` 是 **`anthropic-messages`**，且带 `cacheRead`/`cacheWrite` 计费字段 —— 即 **MiniMax 走 Anthropic 形状的 `cache_control` 路径**，不是 `prompt_cache_key`。
+  > **这修正了原文的一处判断**：`P0-1` 的 `prompt_cache_key` 缺口影响的是 **openai-completions 形状**的 provider（DeepSeek / Moonshot / Mistral / 自建网关）；**对 MiniMax 真正相关的是 P1-1** —— 缓存资格名单此前不含 minimax，导致 `contextPruning.mode="cache-ttl"` 静默失效。P1-1 已把 `minimax` / `minimax-cn` 补进资格表（`api: "anthropic-messages"`、`cacheMechanism: "cache_control"`、`cacheTtl.enabled: true`，**不**期望 `ttl:"1h"`，MiniMax 保持默认 5 分钟 ephemeral 缓存）。
+- 0.73.1 的 `StreamOptions` 新增 `sessionId` / `sendSessionAffinityHeaders` / `sendSessionIdHeader` 基础设施；而 `options.sessionId` 在 **0.66.1 里本来就可用**（`pi-agent-core/dist/agent.js:281` 就会传），所以 P0-1 在 0.66.1 上就能实现 —— 这也是本次没等升级的原因之一。
+
+---
+
 ## 一、结论摘要
 
 PaleoClaw 的 provider 层**不是自研**，而是外部包 `@mariozechner/pi-ai`，当前锁在 **0.66.1**，而 npm 上已发布到 **0.73.1**（落后 7 个 minor）。这决定了大部分「API 优化」的正确落点。
