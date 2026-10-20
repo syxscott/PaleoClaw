@@ -11,6 +11,8 @@ export {
   buildTextMessagePayload,
   buildMarkdownMessagePayload,
   sendWecomMessage,
+  splitContentByBytes,
+  truncateContent,
 } from "./src/qyapi.js";
 
 const plugin = {

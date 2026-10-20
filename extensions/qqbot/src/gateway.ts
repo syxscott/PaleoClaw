@@ -48,7 +48,9 @@ export type QqbotSocketFactory = (url: string, handlers: QqbotSocketHandlers) =>
 /** Default socket factory backed by the `ws` package. */
 export function wsSocketFactory(): QqbotSocketFactory {
   return (url, handlers) => {
-    const socket = new WebSocket(url);
+    // handshakeTimeout is a backstop for a hung TCP/TLS handshake; the
+    // gateway's own connect timeout is shorter and owns the cleanup path.
+    const socket = new WebSocket(url, { handshakeTimeout: CONNECT_TIMEOUT_MS + 5_000 });
     socket.on("open", () => handlers.onOpen());
     socket.on("message", (data) => handlers.onMessage(data.toString()));
     socket.on("close", (code, reason) => handlers.onClose(code, reason.toString("utf8")));
@@ -166,10 +168,23 @@ export class QqbotGateway {
     this.log?.info?.(`[qqbot] connecting gateway ${url}`);
 
     await new Promise<void>((resolve, reject) => {
+      let settled = false;
       const timer = setTimeout(() => {
+        if (settled) {
+          return;
+        }
+        settled = true;
+        // Close the half-open socket and route through the normal close path so
+        // the reconnect/backoff logic runs. The generation bump makes the stale
+        // socket inert: it can no longer deliver messages after this attempt
+        // already failed.
+        this.abandonConnectAttempt(generation, "connect timeout");
         reject(new Error(`gateway connect timeout after ${CONNECT_TIMEOUT_MS}ms`));
       }, CONNECT_TIMEOUT_MS);
-      const onSettled = () => clearTimeout(timer);
+      const onSettled = () => {
+        settled = true;
+        clearTimeout(timer);
+      };
 
       this.socket = this.socketFactory(url, {
         onOpen: () => {
@@ -210,6 +225,27 @@ export class QqbotGateway {
 
   private onSocketOpen(): void {
     this.log?.info?.("[qqbot] gateway socket open, waiting for Hello");
+  }
+
+  /**
+   * Abandon a connect attempt: close the half-open socket and route through
+   * the normal close path (so the reconnect/backoff logic runs). The generation
+   * bump detaches the stale socket's handlers — a socket that connects later
+   * must not deliver messages after the attempt already failed.
+   */
+  private abandonConnectAttempt(generation: number, reason: string): void {
+    if (generation !== this.generation) {
+      return;
+    }
+    this.generation += 1;
+    const stale = this.socket;
+    this.socket = null;
+    try {
+      stale?.close(4000, reason);
+    } catch {
+      // ignore close errors during a failed connect
+    }
+    this.handleClose(4000, reason);
   }
 
   private scheduleReconnect(delayMs: number): void {

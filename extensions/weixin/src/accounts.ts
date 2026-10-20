@@ -64,9 +64,16 @@ export function resolveWeixinAccount(
   const channelCfg = getChannelConfig(cfg) ?? {};
   const id = accountId || DEFAULT_ACCOUNT_ID;
   const override = channelCfg.accounts?.[id] ?? {};
+  // Top-level config and WEIXIN_* env vars belong to the default account only:
+  // a named account must never borrow another account's bot identity.
+  const isDefaultAccount = id === DEFAULT_ACCOUNT_ID;
 
-  const token = firstNonEmpty(override.token, channelCfg.token, process.env.WEIXIN_TOKEN);
-  const botId = firstNonEmpty(override.botId, channelCfg.botId, process.env.WEIXIN_ACCOUNT_ID);
+  const token = isDefaultAccount
+    ? firstNonEmpty(override.token, channelCfg.token, process.env.WEIXIN_TOKEN)
+    : firstNonEmpty(override.token);
+  const botId = isDefaultAccount
+    ? firstNonEmpty(override.botId, channelCfg.botId, process.env.WEIXIN_ACCOUNT_ID)
+    : firstNonEmpty(override.botId);
 
   return {
     accountId: id,

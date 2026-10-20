@@ -171,10 +171,12 @@ authoring plugins:
   `paleoclaw/plugin-sdk/minimax-portal-auth`,
   `paleoclaw/plugin-sdk/nextcloud-talk`, `paleoclaw/plugin-sdk/nostr`,
   `paleoclaw/plugin-sdk/open-prose`, `paleoclaw/plugin-sdk/phone-control`,
-  `paleoclaw/plugin-sdk/qwen-portal-auth`, `paleoclaw/plugin-sdk/synology-chat`,
+  `paleoclaw/plugin-sdk/qqbot`, `paleoclaw/plugin-sdk/qwen-portal-auth`,
+  `paleoclaw/plugin-sdk/synology-chat`,
   `paleoclaw/plugin-sdk/talk-voice`, `paleoclaw/plugin-sdk/test-utils`,
   `paleoclaw/plugin-sdk/thread-ownership`, `paleoclaw/plugin-sdk/tlon`,
   `paleoclaw/plugin-sdk/twitch`, `paleoclaw/plugin-sdk/voice-call`,
+  `paleoclaw/plugin-sdk/wecom`, `paleoclaw/plugin-sdk/weixin`,
   `paleoclaw/plugin-sdk/zalo`, and `paleoclaw/plugin-sdk/zalouser`.
 
 Compatibility note:

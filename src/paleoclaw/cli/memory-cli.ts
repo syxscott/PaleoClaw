@@ -18,6 +18,8 @@ interface MemoryCommandOptions {
   taskId?: string;
   summary?: string;
   includeRunning?: boolean;
+  session?: string;
+  allSessions?: boolean;
 }
 
 /**
@@ -250,6 +252,11 @@ export function registerMemoryCommands(program: Command): void {
     .option("-s, --scope <scope>", "Search scope (short, long, archive, all)", "long")
     .option("-k, --top-k <n>", "Number of results", "5")
     .option("-m, --min-score <score>", "Minimum similarity score", "0.15")
+    .option("--session <id>", "Limit chat digests to one session")
+    .option(
+      "--all-sessions",
+      "Include chat digests from every session (operator browse; off by default)",
+    )
     .option("--json", "Output as JSON")
     .action(async (query: string, options: MemoryCommandOptions) => {
       try {
@@ -272,6 +279,8 @@ export function registerMemoryCommands(program: Command): void {
           scope: options.scope || "long",
           topK,
           minScore,
+          sessionId: options.session,
+          includeAllSessions: options.allSessions === true,
         });
 
         if (options.json) {
@@ -317,10 +326,11 @@ export function registerMemoryCommands(program: Command): void {
     .command("context")
     .description("Build fenced memory context for a query")
     .argument("<query>", "Query used for memory prefetch")
+    .option("--session <id>", "Recall chat digests for one session (matches the agent path)")
     .option("--json", "Output as JSON")
     .action(async (query: string, options: MemoryCommandOptions) => {
       try {
-        const manager = createDefaultMemoryManager();
+        const manager = createDefaultMemoryManager({ sessionId: options.session });
         const contextBlock = await manager.prefetchAll(query);
 
         if (options.json) {

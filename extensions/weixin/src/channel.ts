@@ -10,7 +10,13 @@
  * typing indicators. The text send/receive path is complete.
  */
 
-import { DEFAULT_ACCOUNT_ID, setAccountEnabledInConfigSection } from "paleoclaw/plugin-sdk/weixin";
+import { randomUUID } from "node:crypto";
+import {
+  createScopedPairingAccess,
+  DEFAULT_ACCOUNT_ID,
+  resolveControlCommandGate,
+  setAccountEnabledInConfigSection,
+} from "paleoclaw/plugin-sdk/weixin";
 import { resolveWeixinAccount } from "./accounts.js";
 import { ContextTokenStore } from "./context-tokens.js";
 import { sendMessage } from "./ilink.js";
@@ -213,17 +219,47 @@ export function createWeixinPlugin() {
         const contextTokens = new ContextTokenStore(storeRoot);
         await contextTokens.restore(account.accountId);
 
+        const rt = getWeixinRuntime();
+        const pairing = createScopedPairingAccess({
+          core: rt,
+          channel: CHANNEL_ID,
+          accountId: account.accountId,
+        });
+
         const monitor = new WeixinMonitor({
           account,
           contextTokens,
+          pairing: {
+            readStoreForDmPolicy: pairing.readStoreForDmPolicy,
+            upsertPairingRequest: pairing.upsertPairingRequest,
+          },
           log: {
             info: (msg: unknown) => log?.info?.(String(msg)),
             warn: (msg: unknown) => log?.warn?.(String(msg)),
             error: (msg: unknown) => log?.error?.(String(msg)),
           },
-          deliver: async (message) => {
-            const rt = getWeixinRuntime();
+          deliver: async (message, access) => {
             const currentCfg = await rt.config.loadConfig();
+            // Owner-level command authorization mirrors the access decision:
+            // only a sender on the effective allowlist may run control commands.
+            const commandAuthorized = resolveControlCommandGate({
+              useAccessGroups: currentCfg.commands?.useAccessGroups !== false,
+              authorizers: [
+                {
+                  configured:
+                    (message.chatType === "group"
+                      ? access.effectiveGroupAllowFrom
+                      : access.effectiveAllowFrom
+                    ).length > 0,
+                  allowed: access.senderAllowed,
+                },
+              ],
+              allowTextCommands: rt.channel.commands.shouldHandleTextCommands({
+                cfg: currentCfg,
+                surface: CHANNEL_ID,
+              }),
+              hasControlCommand: rt.channel.text.hasControlCommand(message.text, currentCfg),
+            }).commandAuthorized;
             const msgCtx = rt.channel.reply.finalizeInboundContext({
               Body: message.text,
               RawBody: JSON.stringify(message.raw),
@@ -241,7 +277,7 @@ export function createWeixinPlugin() {
               Surface: CHANNEL_ID,
               ConversationLabel: message.chatId,
               Timestamp: Date.now(),
-              CommandAuthorized: false,
+              CommandAuthorized: commandAuthorized,
             });
             await rt.channel.reply.dispatchReplyWithBufferedBlockDispatcher({
               ctx: msgCtx,
@@ -261,7 +297,7 @@ export function createWeixinPlugin() {
                       to: message.chatId,
                       text: chunk,
                       contextToken: contextTokens.get(account.accountId, message.chatId) ?? null,
-                      clientId: `paleoclaw-weixin-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+                      clientId: `paleoclaw-weixin-${Date.now()}-${randomUUID().slice(0, 8)}`,
                     });
                     const ret = result.ret ?? 0;
                     const errcode = result.errcode ?? 0;

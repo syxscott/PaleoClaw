@@ -11,12 +11,15 @@ export interface WecomChannelConfig {
   token?: string;
   encodingAesKey?: string;
   callbackPath?: string;
-  dmPolicy?: "open" | "allowlist" | "disabled";
+  dmPolicy?: WecomDmPolicy;
   allowFrom?: string | string[];
   /** Outbound msgtype for text replies: plain "text" or rendered "markdown". */
   outboundMsgType?: "text" | "markdown";
   accounts?: Record<string, WecomAccountRaw>;
 }
+
+/** Access-control policy for inbound WeCom messages. */
+export type WecomDmPolicy = "open" | "allowlist" | "pairing" | "disabled";
 
 /** Raw per-account config (overrides base config) */
 export interface WecomAccountRaw {
@@ -27,7 +30,7 @@ export interface WecomAccountRaw {
   token?: string;
   encodingAesKey?: string;
   callbackPath?: string;
-  dmPolicy?: "open" | "allowlist" | "disabled";
+  dmPolicy?: WecomDmPolicy;
   allowFrom?: string | string[];
   outboundMsgType?: "text" | "markdown";
 }
@@ -42,7 +45,7 @@ export interface ResolvedWecomAccount {
   token: string;
   encodingAesKey: string;
   callbackPath: string;
-  dmPolicy: "open" | "allowlist" | "disabled";
+  dmPolicy: WecomDmPolicy;
   allowFrom: string[];
   outboundMsgType: "text" | "markdown";
   configured: boolean;
@@ -54,6 +57,8 @@ export type WecomInboundMessage = {
   msgType: string;
   fromUserId: string;
   toUserName: string;
+  /** Conversation type: WeCom sends "group" for group callbacks, "chat" for DMs. */
+  chatType: "direct" | "group";
   agentId?: string;
   msgId?: string;
   createTime?: string;

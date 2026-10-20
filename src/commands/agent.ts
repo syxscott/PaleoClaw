@@ -88,7 +88,7 @@ import {
 } from "../paleoclaw/integration/runtime-switches.js";
 import { createDefaultMemoryManager } from "../paleoclaw/memory/manager.js";
 import { buildProfileContextBlock, loadSessionProfile } from "../paleoclaw/profile/layers.js";
-import { createSessionStore } from "../paleoclaw/session/index.js";
+import { createSessionStore, upsertAgentSession } from "../paleoclaw/session/index.js";
 import { buildAutoToolsContext } from "../paleoclaw/tools/auto-context.js";
 import { normalizeAgentId } from "../routing/session-key.js";
 import { defaultRuntime, type RuntimeEnv } from "../runtime.js";
@@ -650,6 +650,9 @@ async function agentCommandInternal(
   // silently when the runtime lacks node:sqlite; a real database failure is
   // caught here so a corrupt/locked DB degrades instead of failing the run —
   // but with a diagnostic rather than in silence.
+  // No Stage-2 title upgrader is injected: the store would need a cheap model
+  // call to polish the derived title and the repo has no title helper yet, so
+  // Stage-1 (deterministic derivation) is the only stage that runs.
   let sessionHistory: ReturnType<typeof createSessionStore>;
   try {
     sessionHistory = createSessionStore();
@@ -705,19 +708,27 @@ async function agentCommandInternal(
     try {
       // Deliberately pass no title here. Both stores treat an explicit title as
       // user-provenance ("user"), which permanently blocks Stage-1 derivation
-      // and the Stage-2 title upgrader in appendMessage() — the two-stage
-      // title system exists precisely to derive a title from the first user
-      // message, and it is the only code path that can supply one. Passing the
-      // raw prompt instead also truncated on UTF-16 code units, which can split
-      // a surrogate pair; deriveInstantTitle() truncates by code point.
-      sessionHistory.upsertSession(sessionId, undefined, [sessionAgentId]);
+      // in appendMessage() — the title is supposed to be derived from the
+      // first user message, and that is the only code path that can supply
+      // one. Passing the raw prompt instead also truncated on UTF-16 code
+      // units, which can split a surrogate pair; deriveInstantTitle()
+      // truncates by code point.
+      // Stage-2 (the optional LLM title upgrade) is NOT enabled here: it only
+      // runs when a titleUpgrader is injected into createSessionStore(), and
+      // no production caller injects one.
+      upsertAgentSession(sessionHistory, sessionId, [sessionAgentId]);
       sessionHistory.appendMessage(sessionId, "user", userPrompt, {
         source: "agent-command",
         sessionKey,
         runId,
       });
-    } catch {
-      // Session history is best-effort and should never block the run.
+    } catch (error) {
+      // Session history is best-effort and should never block the run — but a
+      // dropped message is silent data loss, so report it.
+      console.error(
+        "[paleoclaw] failed to persist the session turn:",
+        error instanceof Error ? error.message : String(error),
+      );
     }
   }
 

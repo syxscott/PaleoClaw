@@ -46,6 +46,36 @@ export function escapeXmlText(text: string): string {
     .replace(/'/g, "&apos;");
 }
 
+/**
+ * Find the index of `</tagName>` that closes the element opened at `from`.
+ *
+ * CDATA sections are opaque: their content may legally contain the literal
+ * text "</Content>" (e.g. a user pasting XML), so a plain `indexOf` would match
+ * inside the CDATA and truncate the element. Skip over CDATA regions while
+ * searching and return -1 when no closing tag exists outside of CDATA.
+ */
+function findClosingTagIndex(xml: string, tagName: string, from: number): number {
+  const closeTag = `</${tagName}>`;
+  let i = from;
+  while (i < xml.length) {
+    const cdataStart = xml.indexOf("<![CDATA[", i);
+    const closeIndex = xml.indexOf(closeTag, i);
+    if (closeIndex < 0) {
+      return -1;
+    }
+    if (cdataStart >= 0 && cdataStart < closeIndex) {
+      const cdataEnd = xml.indexOf("]]>", cdataStart);
+      if (cdataEnd < 0) {
+        return -1; // unterminated CDATA
+      }
+      i = cdataEnd + 3;
+      continue;
+    }
+    return closeIndex;
+  }
+  return -1;
+}
+
 /** Element name → decoded text content, for a flat one-level XML document. */
 export function parseXmlEnvelope(xml: string): Record<string, string> {
   const out: Record<string, string> = {};
@@ -78,8 +108,7 @@ export function parseXmlEnvelope(xml: string): Record<string, string> {
     if (!tagName || rawTag.startsWith("/") || rawTag.endsWith("/")) {
       continue; // closing / self-closing tag
     }
-    const closeTag = `</${tagName}>`;
-    const close = xml.indexOf(closeTag, i);
+    const close = findClosingTagIndex(xml, tagName, i);
     if (close < 0) {
       continue; // malformed child; ignore
     }
@@ -88,7 +117,7 @@ export function parseXmlEnvelope(xml: string): Record<string, string> {
     if (isCdataLeaf || !inner.includes("<")) {
       // Leaf node: record it and jump past the closing tag.
       out[tagName] = decodeXmlText(inner);
-      i = close + closeTag.length;
+      i = close + `</${tagName}>`.length;
     } else {
       // Container (e.g. the <xml> root): keep scanning its children.
       // i already points just past the opening tag.

@@ -8,6 +8,32 @@ import type { ResolvedWecomAccount, WecomChannelConfig } from "./types.js";
 
 const DEFAULT_CALLBACK_PATH = "/wecom/callback";
 
+/** Make an account id safe to use as a single URL path segment. */
+function toPathSegment(value: string): string {
+  const cleaned = value.trim().replace(/[^A-Za-z0-9._-]+/g, "_");
+  return cleaned || "account";
+}
+
+/**
+ * Resolve the callback path for an account.
+ *
+ * An explicit `callbackPath` always wins. Otherwise the default path is
+ * account-scoped so that two accounts never resolve to the same route (the
+ * HTTP registry replaces an existing route, which would silently kill the
+ * first account). The default account keeps the historical path so existing
+ * WeCom console configurations keep working.
+ */
+export function resolveWecomCallbackPath(accountId: string, explicit?: string): string {
+  const trimmed = explicit?.trim();
+  if (trimmed) {
+    return trimmed;
+  }
+  if (accountId === DEFAULT_ACCOUNT_ID) {
+    return DEFAULT_CALLBACK_PATH;
+  }
+  return `${DEFAULT_CALLBACK_PATH}/${toPathSegment(accountId)}`;
+}
+
 function getChannelConfig(cfg: unknown): WecomChannelConfig | undefined {
   return (cfg as { channels?: { wecom?: WecomChannelConfig } } | null | undefined)?.channels?.wecom;
 }
@@ -83,8 +109,7 @@ export function resolveWecomAccount(cfg: unknown, accountId?: string | null): Re
     secret,
     token,
     encodingAesKey,
-    callbackPath:
-      firstNonEmpty(override.callbackPath, channelCfg.callbackPath) || DEFAULT_CALLBACK_PATH,
+    callbackPath: resolveWecomCallbackPath(id, override.callbackPath ?? channelCfg.callbackPath),
     dmPolicy: override.dmPolicy ?? channelCfg.dmPolicy ?? "allowlist",
     allowFrom: parseAllowFrom(override.allowFrom ?? channelCfg.allowFrom),
     outboundMsgType: override.outboundMsgType ?? channelCfg.outboundMsgType ?? "text",

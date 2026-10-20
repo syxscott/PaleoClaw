@@ -4,12 +4,19 @@
  * allocator, and inbound chat-kind memory (reference `_chat_type_map`).
  */
 
+import { createHash } from "node:crypto";
 import { resolveQqbotAccount } from "./accounts.js";
 import { QqbotClient } from "./client.js";
-import { QQ_MSG_TYPE_MEDIA, QQBOT_MAX_MESSAGE_LENGTH } from "./constants.js";
+import {
+  QQBOT_API_BASE,
+  QQBOT_MAX_MESSAGE_LENGTH,
+  QQBOT_SANDBOX_API_BASE,
+  QQ_MSG_TYPE_MEDIA,
+} from "./constants.js";
 import { uploadQqbotLocalFile, uploadQqbotMediaUrl } from "./media.js";
 import {
   MsgSeqAllocator,
+  assertQqbotChatKindSupported,
   buildGuildMessageBody,
   buildV2MessageBody,
   guessQqbotChatKind,
@@ -25,6 +32,8 @@ export class QqbotAccountContext {
   readonly allocator = new MsgSeqAllocator();
   /** chatId → chat kind learned from inbound events (outbound path resolution). */
   readonly chatKinds = new Map<string, QqbotChatKind>();
+  /** Optional warn sink (wired by the monitor / outbound adapter). */
+  log?: (message: string) => void;
 
   constructor(account: ResolvedQqbotAccount) {
     this.account = account;
@@ -36,6 +45,15 @@ export class QqbotAccountContext {
       tokenManager: this.tokenManager,
       sandbox: account.sandbox,
     });
+  }
+
+  /** Carry over the inbound-learned chat kinds (used when a context is rebuilt). */
+  adoptChatKinds(previous: QqbotAccountContext): void {
+    for (const [chatId, kind] of previous.chatKinds) {
+      if (!this.chatKinds.has(chatId)) {
+        this.chatKinds.set(chatId, kind);
+      }
+    }
   }
 
   rememberChatKind(chatId: string, kind: QqbotChatKind): void {
@@ -58,6 +76,8 @@ export class QqbotAccountContext {
     keyboard?: Record<string, unknown>;
   }): Promise<{ channelId: string; messageId: string }> {
     const chatKind = this.resolveChatKind(params.chatId);
+    // Guild DMs have no v2 endpoint — refuse before any side effect.
+    assertQqbotChatKindSupported(chatKind);
     const markdown = params.markdown ?? this.account.markdown;
     const seqKey = params.replyTo || params.chatId;
     const body =
@@ -100,8 +120,24 @@ export class QqbotAccountContext {
     replyTo?: string;
   }): Promise<{ channelId: string; messageId: string }> {
     const chatKind = this.resolveChatKind(params.chatId);
+    // Guild DMs have no v2 endpoint — refuse before any upload/side effect.
+    assertQqbotChatKindSupported(chatKind);
     if (chatKind === "guild") {
-      throw new Error("Guild media send is not supported by the QQ v2 upload API");
+      // The QQ v2 upload API has no guild media endpoint. Drop the media and
+      // deliver the caption as a plain guild message so the reply (text) is
+      // not lost together with the unsupported attachment.
+      const caption = (params.caption ?? "").trim();
+      this.log?.(
+        `[qqbot] guild media is not supported by the QQ v2 upload API; sending the caption as text (chat ${params.chatId})`,
+      );
+      if (!caption) {
+        return { channelId: params.chatId, messageId: "" };
+      }
+      return await this.sendText({
+        chatId: params.chatId,
+        text: caption,
+        replyTo: params.replyTo,
+      });
     }
     const isHttp = /^https?:\/\//i.test(params.mediaUrl);
     const mediaKind = params.mediaKind ?? guessMediaKind(params.mediaUrl);
@@ -141,21 +177,63 @@ export class QqbotAccountContext {
   }
 }
 
-const contexts = new Map<string, QqbotAccountContext>();
+type CachedQqbotAccountContext = {
+  /** Digest of the account credentials; never logged. */
+  fingerprint: string;
+  context: QqbotAccountContext;
+};
+
+const contexts = new Map<string, CachedQqbotAccountContext>();
+
+/** Resolved REST base for an account (mirrors QqbotClient). */
+function resolveQqbotApiBase(account: ResolvedQqbotAccount): string {
+  return account.sandbox ? QQBOT_SANDBOX_API_BASE : QQBOT_API_BASE;
+}
+
+/**
+ * Credential fingerprint of an account. A rotated secret or a sandbox flip has
+ * to rebuild the token manager + client — otherwise the account keeps using
+ * the stale credentials (and the stale API base) until the process restarts.
+ * The digest is never logged or persisted.
+ */
+function credentialFingerprint(account: ResolvedQqbotAccount): string {
+  return createHash("sha256")
+    .update(
+      [
+        account.appId,
+        account.clientSecret,
+        resolveQqbotApiBase(account),
+        account.sandbox ? "sandbox" : "production",
+      ].join("\u0000"),
+    )
+    .digest("hex")
+    .slice(0, 32);
+}
 
 export function getQqbotAccountContext(account: ResolvedQqbotAccount): QqbotAccountContext {
+  const fingerprint = credentialFingerprint(account);
   const existing = contexts.get(account.accountId);
-  if (existing) {
-    return existing;
+  if (existing && existing.fingerprint === fingerprint) {
+    return existing.context;
   }
   const context = new QqbotAccountContext(account);
-  contexts.set(account.accountId, context);
+  if (existing) {
+    // Keep the inbound-learned chat kinds so outbound target resolution does
+    // not regress to the c2c guess after a credential rotation.
+    context.adoptChatKinds(existing.context);
+  }
+  contexts.set(account.accountId, { fingerprint, context });
   return context;
 }
 
 /** Clear cached contexts (tests / account removal). */
 export function clearQqbotAccountContexts(): void {
   contexts.clear();
+}
+
+/** Drop the cached context of a single account (e.g. when it is removed). */
+export function clearQqbotAccountContext(accountId: string): void {
+  contexts.delete(accountId);
 }
 
 /** Convenience wrapper: send text via the default/selected account. */

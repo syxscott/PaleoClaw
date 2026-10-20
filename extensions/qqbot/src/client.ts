@@ -4,6 +4,7 @@
  */
 
 import { QQBOT_API_BASE, QQBOT_API_TIMEOUT_MS, QQBOT_SANDBOX_API_BASE } from "./constants.js";
+import { assertQqbotChatKindSupported } from "./outbound.js";
 import type { QqbotFetchLike } from "./token.js";
 import { qqbotAuthHeaders, QqbotTokenManager } from "./token.js";
 import type { QqbotChatKind } from "./types.js";
@@ -104,6 +105,9 @@ export class QqbotClient {
     body: Record<string, unknown>,
     path?: string,
   ): Promise<QqbotApiRequestResult> {
+    // Guard the single outbound choke point: chat kinds without a v2 endpoint
+    // (guild DMs) must never produce a request that can never succeed.
+    assertQqbotChatKindSupported(chatKind);
     const resolvedPath = path ?? messagesPathFor(chatKind, targetId);
     return await this.request("POST", resolvedPath, body);
   }

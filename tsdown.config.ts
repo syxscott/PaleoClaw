@@ -73,6 +73,7 @@ const pluginSdkEntrypoints = [
   "nostr",
   "open-prose",
   "phone-control",
+  "qqbot",
   "qwen-portal-auth",
   "synology-chat",
   "talk-voice",

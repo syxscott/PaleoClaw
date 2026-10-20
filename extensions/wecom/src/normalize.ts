@@ -7,13 +7,19 @@
 import type { WecomInboundMessage } from "./types.js";
 import { parseXmlEnvelope } from "./xml.js";
 
-/** Event names that are lifecycle pings: acknowledge silently, never dispatch. */
-const SILENT_EVENTS = new Set(["enter_agent", "subscribe"]);
+/**
+ * Events that represent real user intake and may start an agent session.
+ *
+ * Everything else (`enter_agent`, `subscribe`, `change_contact`,
+ * `batch_job_result`, `location_report`, ...) is a lifecycle/HR/batch event:
+ * it is acknowledged by the callback handler but never starts an agent turn
+ * and never replies to the event sender.
+ */
+const INTAKE_EVENTS = new Set(["click"]);
 
 /**
- * Parse decrypted callback XML. Returns `null` for lifecycle events that
- * should be silently acknowledged (enter_agent / subscribe) or unparseable
- * payloads.
+ * Parse decrypted callback XML. Returns `null` for events that should be
+ * acknowledged without an agent turn, or unparseable payloads.
  */
 export function parseWecomMessage(xmlText: string): WecomInboundMessage | null {
   const fields = parseXmlEnvelope(xmlText);
@@ -24,9 +30,14 @@ export function parseWecomMessage(xmlText: string): WecomInboundMessage | null {
     return null;
   }
 
+  // WeCom sends ChatType="group" for group callbacks and "chat" for DMs.
+  const chatType: "direct" | "group" =
+    (fields.ChatType ?? "").toLowerCase() === "group" ? "group" : "direct";
+
   const base = {
     fromUserId,
     toUserName,
+    chatType,
     agentId: fields.AgentID || undefined,
     msgId: fields.MsgId || undefined,
     createTime: fields.CreateTime || undefined,
@@ -35,7 +46,8 @@ export function parseWecomMessage(xmlText: string): WecomInboundMessage | null {
 
   if (msgType === "event") {
     const eventName = (fields.Event ?? "").toLowerCase();
-    if (SILENT_EVENTS.has(eventName)) {
+    if (!INTAKE_EVENTS.has(eventName)) {
+      // Not an intake event: acknowledge silently, never start a session.
       return null;
     }
     return {

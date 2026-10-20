@@ -7,9 +7,15 @@
  * stores record an explicitly supplied title as user-provenance ("user"),
  * `appendMessage` then computed
  *   `isFirstUserMessage && titleSource !== "user"`  ->  false
- * for every run, so Stage-1 derivation and the Stage-2 upgrader were both
- * unreachable. These tests pin the corrected interaction: create without a
- * title, then let the first user message drive the title.
+ * for every run, so Stage-1 derivation was unreachable (and Stage-2, which
+ * needs a title that is not user-owned, with it). These tests pin the
+ * corrected interaction: create without a title, then let the first user
+ * message drive the title.
+ *
+ * The store-level assertions alone cannot see the agent's call site, so a
+ * reverted `upsertSession(id, summarizePromptAsTitle(prompt), tags)` would
+ * keep this file green while the regression was back. The last describe block
+ * therefore also guards the agent source itself.
  */
 import * as fs from "fs";
 import * as os from "os";
@@ -17,7 +23,7 @@ import * as path from "path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createSessionStore } from "./index.js";
 import { SessionStore } from "./store.js";
-import { deriveInstantTitle, truncateTitle } from "./store.js";
+import { deriveInstantTitle, truncateTitle, upsertAgentSession } from "./store.js";
 
 let home: string;
 
@@ -42,13 +48,24 @@ describe("session title derivation is reachable from the agent path", () => {
     it(`[${name}] deriving happens when upsert passes no title`, () => {
       const store = make();
       // Mirrors the fixed agent.ts call site.
-      store.upsertSession("sess-1", undefined, ["main"]);
+      upsertAgentSession(store, "sess-1", ["main"]);
 
       store.appendMessage("sess-1", "user", "What is the age range of Sinraptor? Also sources?");
 
       const record = store.getSession("sess-1");
       expect(record.title).toBe("What is the age range of Sinraptor?");
       expect(record.titleSource).toBe("derived");
+      store.close?.();
+    });
+
+    it(`[${name}] the agent upsert helper leaves the title unset`, () => {
+      const store = make();
+      // A title derived from the prompt here would be stored as
+      // user-provenance ("user") and block Stage-1 derivation forever.
+      const record = upsertAgentSession(store, "sess-helper", ["main"]);
+      expect(record.titleSource).toBe("derived");
+      expect(record.title).toBe("Untitled PaleoClaw Session");
+      expect(record.tags).toEqual(["main"]);
       store.close?.();
     });
 
@@ -66,12 +83,12 @@ describe("session title derivation is reachable from the agent path", () => {
 
     it(`[${name}] the title is stable across later turns`, () => {
       const store = make();
-      store.upsertSession("sess-3", undefined, ["main"]);
+      upsertAgentSession(store, "sess-3", ["main"]);
       store.appendMessage("sess-3", "user", "Tell me about the Jehol Biota.");
       const first = store.getSession("sess-3").title;
 
       store.appendMessage("sess-3", "assistant", "An Early Cretaceous assemblage.");
-      store.upsertSession("sess-3", undefined, ["main"]);
+      upsertAgentSession(store, "sess-3", ["main"]);
       store.appendMessage("sess-3", "user", "A completely different second question?");
 
       expect(store.getSession("sess-3").title).toBe(first);
@@ -87,9 +104,10 @@ describe("title derivation details", () => {
     // after the kept code points, so expect maxLen content chars + 3.
     const emoji = "\u{1F996}".repeat(40);
     const clipped = truncateTitle(emoji, 20);
+    const clippedCodePoints = Array.from(clipped);
 
-    expect([...clipped]).toHaveLength(23);
-    expect([...clipped].slice(0, 20).every((c) => c === "\u{1F996}")).toBe(true);
+    expect(clippedCodePoints).toHaveLength(23);
+    expect(clippedCodePoints.slice(0, 20).every((c) => c === "\u{1F996}")).toBe(true);
     expect(clipped.endsWith("...")).toBe(true);
     // No lone surrogate and no replacement character anywhere in the result.
     expect(clipped).not.toContain("\uFFFD");
@@ -125,5 +143,45 @@ describe("session id safety is unchanged", () => {
     const root = path.join(home, "sessions");
     const store = new SessionStore(root);
     expect(() => store.getSession("..")).toThrow(/Invalid sessionId/);
+  });
+});
+
+/** Split a call's argument list on top-level commas. */
+function splitCallArgs(args: string): string[] {
+  const parts: string[] = [];
+  let depth = 0;
+  let current = "";
+  for (const char of args) {
+    if (char === "(" || char === "[" || char === "{") {
+      depth += 1;
+    } else if (char === ")" || char === "]" || char === "}") {
+      depth -= 1;
+    }
+    if (char === "," && depth === 0) {
+      parts.push(current.trim());
+      current = "";
+      continue;
+    }
+    current += char;
+  }
+  parts.push(current.trim());
+  return parts;
+}
+
+describe("the agent call site keeps the title system reachable", () => {
+  const agentSource = fs.readFileSync(path.resolve(__dirname, "../../commands/agent.ts"), "utf-8");
+
+  it("still creates the session record for the agent turn", () => {
+    expect(agentSource).toMatch(/upsertAgentSession\(|upsertSession\(/);
+  });
+
+  it("never hands a derived title to upsertSession", () => {
+    const calls = [...agentSource.matchAll(/upsertSession\(((?:[^()]|\([^()]*\))*)\)/g)];
+    for (const call of calls) {
+      const args = splitCallArgs(call[1] ?? "");
+      // The title argument must stay unset: an explicit title is recorded as
+      // user-provenance ("user") and disables Stage-1/Stage-2 derivation.
+      expect(args[1] ?? "undefined").toBe("undefined");
+    }
   });
 });

@@ -9,10 +9,12 @@
  *   - POST     ilink/bot/getconfig              (typing tickets)
  *   - GET      ilink/bot/get_bot_qrcode         (QR login)
  *   - GET      ilink/bot/get_qrcode_status      (QR login poll)
- * All calls are plain HTTPS/JSON via fetch — no native dependencies.
+ * All calls are plain HTTPS/JSON via the SSRF-guarded fetch — no native deps.
  */
 
 import { randomBytes } from "node:crypto";
+import { fetchWithSsrFGuard } from "paleoclaw/plugin-sdk/weixin";
+import type { LookupFn, SsrFPolicy } from "paleoclaw/plugin-sdk/weixin";
 import type { WeixinIlinkMessage } from "./types.js";
 
 export const ILINK_BASE_URL = "https://ilinkai.weixin.qq.com";
@@ -49,7 +51,84 @@ export const ITEM_VIDEO = 5;
 
 export type FetchLike = (url: string, init?: RequestInit) => Promise<Response>;
 
-export const defaultFetch: FetchLike = (url, init) => fetch(url, init);
+/** Options shared by every guarded iLink HTTP call. */
+export type IlinkHttpOptions = {
+  /** Injected fetch (tests / custom transports). */
+  fetchImpl?: FetchLike;
+  /** Injected DNS resolver (tests / custom pinning). */
+  lookupFn?: LookupFn;
+  /** SSRF policy override (private-network allowances). */
+  ssrfPolicy?: SsrFPolicy;
+  /** Aborts an in-flight request (used by the monitor on stop). */
+  signal?: AbortSignal;
+};
+
+/** Raised when an iLink request exceeds its timeout budget. */
+export class IlinkTimeoutError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "IlinkTimeoutError";
+  }
+}
+
+function isAbortError(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "name" in error &&
+    (error as { name?: unknown }).name === "AbortError"
+  );
+}
+
+/**
+ * Adapt the plugin-level `FetchLike` (string URL) to the guard's fetch
+ * signature. The guard always calls with a stringified absolute URL.
+ */
+function toGuardedFetch(fetchImpl?: FetchLike) {
+  if (!fetchImpl) {
+    return undefined;
+  }
+  return (input: RequestInfo | URL, init?: RequestInit): Promise<Response> =>
+    fetchImpl(typeof input === "string" ? input : String(input), init);
+}
+
+/**
+ * Perform one guarded iLink HTTP request. All outbound calls go through the
+ * SSRF guard (the bot token travels in the Authorization header, so the
+ * operator-supplied `baseUrl` must never be fetched unguarded).
+ */
+async function ilinkRequest(params: {
+  url: string;
+  method: "GET" | "POST";
+  headers: Record<string, string>;
+  body?: string;
+  timeoutMs: number;
+  fetchImpl?: FetchLike;
+  lookupFn?: LookupFn;
+  ssrfPolicy?: SsrFPolicy;
+  signal?: AbortSignal;
+}): Promise<{ ok: boolean; status: number; text: string }> {
+  const { response, release } = await fetchWithSsrFGuard({
+    url: params.url,
+    init: {
+      method: params.method,
+      headers: params.headers,
+      ...(params.body === undefined ? {} : { body: params.body }),
+    },
+    timeoutMs: params.timeoutMs,
+    fetchImpl: toGuardedFetch(params.fetchImpl),
+    lookupFn: params.lookupFn,
+    policy: params.ssrfPolicy,
+    signal: params.signal,
+    auditContext: "weixin-ilink",
+  });
+  try {
+    const text = await response.text();
+    return { ok: response.ok, status: response.status, text };
+  } finally {
+    await release();
+  }
+}
 
 /** Random 4-byte uin, base64-encoded (port of the `_headers` X-WECHAT-UIN). */
 export const randomUinBytes = (): Buffer => randomBytes(4);
@@ -93,83 +172,96 @@ export function isSessionExpired(
 export type IlinkResponse = Record<string, unknown>;
 
 /** POST a JSON payload with iLink headers and timeout; returns parsed JSON. */
-export async function ilinkPost(params: {
-  baseUrl: string;
-  endpoint: string;
-  payload: Record<string, unknown>;
-  token?: string;
-  timeoutMs: number;
-  fetchImpl?: FetchLike;
-}): Promise<IlinkResponse> {
-  const fetchImpl = params.fetchImpl ?? defaultFetch;
+export async function ilinkPost(
+  params: {
+    baseUrl: string;
+    endpoint: string;
+    payload: Record<string, unknown>;
+    token?: string;
+    timeoutMs: number;
+  } & IlinkHttpOptions,
+): Promise<IlinkResponse> {
   const body = JSON.stringify({
     ...params.payload,
     base_info: { channel_version: CHANNEL_VERSION },
   });
-  const doFetch = async (): Promise<IlinkResponse> => {
-    const response = await fetchImpl(`${params.baseUrl.replace(/\/+$/, "")}/${params.endpoint}`, {
-      method: "POST",
-      headers: buildIlinkHeaders(params.token, body),
-      body,
-    });
-    const raw = await response.text();
-    if (!response.ok) {
-      throw new Error(
-        `iLink POST ${params.endpoint} HTTP ${response.status}: ${raw.slice(0, 200)}`,
-      );
-    }
-    return JSON.parse(raw) as IlinkResponse;
-  };
-  return withTimeout(doFetch(), params.timeoutMs);
+  return await ilinkJsonRequest({
+    url: `${params.baseUrl.replace(/\/+$/, "")}/${params.endpoint}`,
+    method: "POST",
+    headers: buildIlinkHeaders(params.token, body),
+    body,
+    timeoutMs: params.timeoutMs,
+    endpoint: params.endpoint,
+    fetchImpl: params.fetchImpl,
+    lookupFn: params.lookupFn,
+    ssrfPolicy: params.ssrfPolicy,
+    signal: params.signal,
+  });
 }
 
 /** GET an iLink endpoint with timeout. */
-export async function ilinkGet(params: {
-  baseUrl: string;
-  endpoint: string;
-  timeoutMs: number;
-  fetchImpl?: FetchLike;
-}): Promise<IlinkResponse> {
-  const fetchImpl = params.fetchImpl ?? defaultFetch;
-  const doFetch = async (): Promise<IlinkResponse> => {
-    const response = await fetchImpl(`${params.baseUrl.replace(/\/+$/, "")}/${params.endpoint}`, {
-      method: "GET",
-      headers: {
-        "iLink-App-Id": ILINK_APP_ID,
-        "iLink-App-ClientVersion": String(ILINK_APP_CLIENT_VERSION),
-      },
-    });
-    const raw = await response.text();
-    if (!response.ok) {
-      throw new Error(`iLink GET ${params.endpoint} HTTP ${response.status}: ${raw.slice(0, 200)}`);
-    }
-    return JSON.parse(raw) as IlinkResponse;
-  };
-  return withTimeout(doFetch(), params.timeoutMs);
+export async function ilinkGet(
+  params: {
+    baseUrl: string;
+    endpoint: string;
+    timeoutMs: number;
+  } & IlinkHttpOptions,
+): Promise<IlinkResponse> {
+  return await ilinkJsonRequest({
+    url: `${params.baseUrl.replace(/\/+$/, "")}/${params.endpoint}`,
+    method: "GET",
+    headers: {
+      "iLink-App-Id": ILINK_APP_ID,
+      "iLink-App-ClientVersion": String(ILINK_APP_CLIENT_VERSION),
+    },
+    timeoutMs: params.timeoutMs,
+    endpoint: params.endpoint,
+    fetchImpl: params.fetchImpl,
+    lookupFn: params.lookupFn,
+    ssrfPolicy: params.ssrfPolicy,
+    signal: params.signal,
+  });
 }
 
-async function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
-  let timer: NodeJS.Timeout | undefined;
-  const timeout = new Promise<never>((_resolve, reject) => {
-    timer = setTimeout(() => reject(new Error("iLink request timeout")), timeoutMs);
-  });
+async function ilinkJsonRequest(params: {
+  url: string;
+  method: "GET" | "POST";
+  headers: Record<string, string>;
+  body?: string;
+  timeoutMs: number;
+  endpoint: string;
+  fetchImpl?: FetchLike;
+  lookupFn?: LookupFn;
+  ssrfPolicy?: SsrFPolicy;
+  signal?: AbortSignal;
+}): Promise<IlinkResponse> {
   try {
-    return await Promise.race([promise, timeout]);
-  } finally {
-    if (timer) {
-      clearTimeout(timer);
+    const result = await ilinkRequest(params);
+    if (!result.ok) {
+      throw new Error(
+        `iLink ${params.method} ${params.endpoint} HTTP ${result.status}: ${result.text.slice(0, 200)}`,
+      );
     }
+    return JSON.parse(result.text) as IlinkResponse;
+  } catch (error) {
+    if (isAbortError(error) && !params.signal?.aborted) {
+      throw new IlinkTimeoutError(
+        `iLink ${params.method} ${params.endpoint} timed out after ${params.timeoutMs}ms`,
+      );
+    }
+    throw error;
   }
 }
 
 /** Long-poll getupdates. Timeout → empty batch (same semantics as the port). */
-export async function getUpdates(params: {
-  baseUrl: string;
-  token: string;
-  syncBuf: string;
-  timeoutMs?: number;
-  fetchImpl?: FetchLike;
-}): Promise<{
+export async function getUpdates(
+  params: {
+    baseUrl: string;
+    token: string;
+    syncBuf: string;
+    timeoutMs?: number;
+  } & IlinkHttpOptions,
+): Promise<{
   ret?: number;
   errcode?: number;
   msgs?: WeixinIlinkMessage[];
@@ -184,6 +276,9 @@ export async function getUpdates(params: {
       token: params.token,
       timeoutMs: params.timeoutMs ?? LONG_POLL_TIMEOUT_MS,
       fetchImpl: params.fetchImpl,
+      lookupFn: params.lookupFn,
+      ssrfPolicy: params.ssrfPolicy,
+      signal: params.signal,
     });
     return {
       ret: response.ret as number | undefined,
@@ -192,9 +287,14 @@ export async function getUpdates(params: {
       get_updates_buf: response.get_updates_buf as string | undefined,
       longpolling_timeout_ms: response.longpolling_timeout_ms as number | undefined,
     };
-  } catch {
-    // Timed-out long poll is an empty batch, not an error (ported behavior).
-    return { ret: 0, errcode: 0, msgs: [], get_updates_buf: params.syncBuf };
+  } catch (error) {
+    // A long poll that times out is an empty batch (ported behavior). Every other
+    // transport/HTTP failure MUST surface so the monitor can log it and back off
+    // instead of treating the channel as a healthy empty poll.
+    if (error instanceof IlinkTimeoutError) {
+      return { ret: 0, errcode: 0, msgs: [], get_updates_buf: params.syncBuf };
+    }
+    throw error;
   }
 }
 
@@ -223,16 +323,17 @@ export function buildSendMessagePayload(params: {
 }
 
 /** Send a text message. */
-export function sendMessage(params: {
-  baseUrl: string;
-  token: string;
-  to: string;
-  text: string;
-  contextToken?: string | null;
-  clientId: string;
-  timeoutMs?: number;
-  fetchImpl?: FetchLike;
-}): Promise<IlinkResponse> {
+export function sendMessage(
+  params: {
+    baseUrl: string;
+    token: string;
+    to: string;
+    text: string;
+    contextToken?: string | null;
+    clientId: string;
+    timeoutMs?: number;
+  } & IlinkHttpOptions,
+): Promise<IlinkResponse> {
   return ilinkPost({
     baseUrl: params.baseUrl,
     endpoint: EP_SEND_MESSAGE,
@@ -245,6 +346,9 @@ export function sendMessage(params: {
     token: params.token,
     timeoutMs: params.timeoutMs ?? API_TIMEOUT_MS,
     fetchImpl: params.fetchImpl,
+    lookupFn: params.lookupFn,
+    ssrfPolicy: params.ssrfPolicy,
+    signal: params.signal,
   });
 }
 
@@ -260,17 +364,17 @@ export type QrLoginCredentials = {
  * confirmed, and return the credentials. Rendering the QR is the caller's job
  * (no terminal/QR dependency here — return the URL for display).
  */
-export async function qrLogin(params: {
-  botType?: string;
-  timeoutSeconds?: number;
-  pollIntervalMs?: number;
-  onQr?: (qrUrl: string) => void;
-  onStatus?: (status: string) => void;
-  baseUrl?: string;
-  fetchImpl?: FetchLike;
-}): Promise<QrLoginCredentials | null> {
+export async function qrLogin(
+  params: {
+    botType?: string;
+    timeoutSeconds?: number;
+    pollIntervalMs?: number;
+    onQr?: (qrUrl: string) => void;
+    onStatus?: (status: string) => void;
+    baseUrl?: string;
+  } & IlinkHttpOptions,
+): Promise<QrLoginCredentials | null> {
   const baseUrl = params.baseUrl ?? ILINK_BASE_URL;
-  const fetchImpl = params.fetchImpl ?? defaultFetch;
   const botType = params.botType ?? "3";
   const deadline = Date.now() + (params.timeoutSeconds ?? 480) * 1000;
 
@@ -278,7 +382,10 @@ export async function qrLogin(params: {
     baseUrl,
     endpoint: `${EP_GET_BOT_QR}?bot_type=${botType}`,
     timeoutMs: QR_TIMEOUT_MS,
-    fetchImpl,
+    fetchImpl: params.fetchImpl,
+    lookupFn: params.lookupFn,
+    ssrfPolicy: params.ssrfPolicy,
+    signal: params.signal,
   });
   const qrcodeValue = String(qrResp.qrcode ?? "");
   const qrcodeUrl = String(qrResp.qrcode_img_content ?? "");
@@ -294,7 +401,10 @@ export async function qrLogin(params: {
         baseUrl,
         endpoint: `${EP_GET_QR_STATUS}?qrcode=${encodeURIComponent(qrcodeValue)}`,
         timeoutMs: QR_TIMEOUT_MS,
-        fetchImpl,
+        fetchImpl: params.fetchImpl,
+        lookupFn: params.lookupFn,
+        ssrfPolicy: params.ssrfPolicy,
+        signal: params.signal,
       });
     } catch {
       await sleep(1000);

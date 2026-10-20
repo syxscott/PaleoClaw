@@ -80,6 +80,54 @@ describe("parseWecomMessage (inbound normalization)", () => {
     expect(message?.content).toBe("/start");
   });
 
+  it("returns null for non-intake events (change_contact / batch_job_result)", () => {
+    for (const event of ["change_contact", "batch_job_result", "location_report"]) {
+      const xml = buildXmlEnvelope({
+        FromUserName: "zhangsan",
+        MsgType: "event",
+        Event: event,
+        EventKey: "KEY",
+      });
+      expect(parseWecomMessage(xml)).toBeNull();
+    }
+  });
+
+  it("marks group callbacks as group chat", () => {
+    const groupXml = buildXmlEnvelope({
+      FromUserName: "zhangsan",
+      MsgType: "text",
+      Content: "hi team",
+      MsgId: "3",
+      ChatType: "group",
+    });
+    expect(parseWecomMessage(groupXml)?.chatType).toBe("group");
+
+    const directXml = buildXmlEnvelope({
+      FromUserName: "zhangsan",
+      MsgType: "text",
+      Content: "hi",
+      MsgId: "4",
+      ChatType: "chat",
+    });
+    expect(parseWecomMessage(directXml)?.chatType).toBe("direct");
+
+    const noChatTypeXml = buildXmlEnvelope({
+      FromUserName: "zhangsan",
+      MsgType: "text",
+      Content: "hi",
+      MsgId: "5",
+    });
+    expect(parseWecomMessage(noChatTypeXml)?.chatType).toBe("direct");
+  });
+
+  it("keeps a message body whose CDATA contains a literal </Content>", () => {
+    const xml =
+      "<xml><FromUserName>zhangsan</FromUserName><MsgType>text</MsgType>" +
+      "<Content><![CDATA[snippet: </Content> done]]></Content><MsgId>6</MsgId></xml>";
+    const message = parseWecomMessage(xml);
+    expect(message?.content).toBe("snippet: </Content> done");
+  });
+
   it("returns null for payloads without MsgType or sender", () => {
     expect(parseWecomMessage("<xml><Content>hi</Content></xml>")).toBeNull();
     expect(parseWecomMessage(buildXmlEnvelope({ MsgType: "text", Content: "hi" }))).toBeNull();

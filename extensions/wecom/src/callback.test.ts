@@ -13,6 +13,8 @@ const CORP_ID = "ww1234567890abcdef";
 const TIMESTAMP = "1409659813";
 const NONCE = "nonce12345";
 const RANDOM_PREFIX = Buffer.alloc(16, 0xab);
+/** POST callbacks must carry a current timestamp (replay window: 5 minutes). */
+const FRESH_TIMESTAMP = String(Math.floor(Date.now() / 1000));
 
 function makeAccount(overrides: Partial<ResolvedWecomAccount> = {}): ResolvedWecomAccount {
   return {
@@ -117,7 +119,7 @@ describe("WeCom callback handler", () => {
     });
     const body = crypt.buildEncryptedEnvelope(messageXml, {
       nonce: NONCE,
-      timestamp: TIMESTAMP,
+      timestamp: FRESH_TIMESTAMP,
       randomPrefix: RANDOM_PREFIX,
     });
     const encrypt = /<Encrypt>([^<]+)<\/Encrypt>/.exec(body)?.[1] ?? "";
@@ -135,7 +137,7 @@ describe("WeCom callback handler", () => {
     await handler(
       makeReq(
         "POST",
-        makeGetUrl({ msg_signature: signature, timestamp: TIMESTAMP, nonce: NONCE }),
+        makeGetUrl({ msg_signature: signature, timestamp: FRESH_TIMESTAMP, nonce: NONCE }),
         body,
       ),
       res,
@@ -162,7 +164,7 @@ describe("WeCom callback handler", () => {
     });
     const body = crypt.buildEncryptedEnvelope(messageXml, {
       nonce: NONCE,
-      timestamp: TIMESTAMP,
+      timestamp: FRESH_TIMESTAMP,
       randomPrefix: RANDOM_PREFIX,
     });
     const encrypt = /<Encrypt>([^<]+)<\/Encrypt>/.exec(body)?.[1] ?? "";
@@ -181,7 +183,7 @@ describe("WeCom callback handler", () => {
       await handler(
         makeReq(
           "POST",
-          makeGetUrl({ msg_signature: signature, timestamp: TIMESTAMP, nonce: NONCE }),
+          makeGetUrl({ msg_signature: signature, timestamp: FRESH_TIMESTAMP, nonce: NONCE }),
           body,
         ),
         res,
@@ -202,10 +204,50 @@ describe("WeCom callback handler", () => {
     });
     const body = crypt.buildEncryptedEnvelope(messageXml, {
       nonce: NONCE,
-      timestamp: TIMESTAMP,
+      timestamp: FRESH_TIMESTAMP,
       randomPrefix: RANDOM_PREFIX,
     });
     const encrypt = /<Encrypt>([^<]+)<\/Encrypt>/.exec(body)?.[1] ?? "";
+    const signature = /<MsgSignature>([^<]+)<\/MsgSignature>/.exec(body)?.[1] ?? "";
+
+    const delivered: WecomInboundMessage[] = [];
+    const { handler } = createWecomCallbackHandler({
+      account: makeAccount(),
+      deliver: (message) => {
+        delivered.push(message);
+      },
+    });
+
+    const res = makeRes();
+    await handler(
+      makeReq(
+        "POST",
+        makeGetUrl({ msg_signature: signature, timestamp: FRESH_TIMESTAMP, nonce: NONCE }),
+        body,
+      ),
+      res,
+    );
+
+    expect(res._status).toBe(200);
+    expect(res._body).toBe("success");
+    await flushAsync();
+    expect(delivered).toHaveLength(0);
+  });
+
+  it("POST with a stale timestamp (replay) is rejected with 400", async () => {
+    const crypt = makeCrypt();
+    const messageXml = buildXmlEnvelope({
+      FromUserName: "zhangsan",
+      MsgType: "text",
+      Content: "replayed",
+      MsgId: "900004",
+    });
+    // A captured, still-validly signed body replayed long after it was sent.
+    const body = crypt.buildEncryptedEnvelope(messageXml, {
+      nonce: NONCE,
+      timestamp: TIMESTAMP,
+      randomPrefix: RANDOM_PREFIX,
+    });
     const signature = /<MsgSignature>([^<]+)<\/MsgSignature>/.exec(body)?.[1] ?? "";
 
     const delivered: WecomInboundMessage[] = [];
@@ -226,8 +268,7 @@ describe("WeCom callback handler", () => {
       res,
     );
 
-    expect(res._status).toBe(200);
-    expect(res._body).toBe("success");
+    expect(res._status).toBe(400);
     await flushAsync();
     expect(delivered).toHaveLength(0);
   });

@@ -25,6 +25,12 @@ import type { ResolvedWecomAccount, WecomInboundMessage } from "./types.js";
 import { parseXmlEnvelope } from "./xml.js";
 
 const MAX_BODY_BYTES = 1_048_576;
+/**
+ * Maximum accepted clock skew for the callback `timestamp` query parameter.
+ * WeCom itself documents a 5 minute tolerance; anything older is a replay of
+ * a captured (still validly signed) request.
+ */
+const MAX_TIMESTAMP_SKEW_MS = 5 * 60 * 1000;
 
 export type WecomCallbackDeps = {
   account: ResolvedWecomAccount;
@@ -44,6 +50,18 @@ function respondText(res: ServerResponse, status: number, body: string): void {
 
 function queryParam(url: URL, name: string): string {
   return url.searchParams.get(name) ?? "";
+}
+
+/**
+ * Reject callbacks whose `timestamp` is missing, unparseable or outside the
+ * accepted replay window.
+ */
+export function isCallbackTimestampFresh(timestamp: string, now = Date.now()): boolean {
+  const seconds = Number(timestamp);
+  if (!Number.isFinite(seconds) || seconds <= 0) {
+    return false;
+  }
+  return Math.abs(now - seconds * 1000) <= MAX_TIMESTAMP_SKEW_MS;
 }
 
 /** Build the crypt helper for the account (throws on incomplete config). */
@@ -115,6 +133,14 @@ export function createWecomCallbackHandler(deps: WecomCallbackDeps) {
 
     if (req.method !== "POST") {
       respondText(res, 405, "method not allowed");
+      return;
+    }
+
+    // Reject replays: a captured, still-validly signed body must not be
+    // accepted long after WeCom sent it.
+    if (!isCallbackTimestampFresh(timestamp)) {
+      log?.warn?.(`wecom: callback rejected: stale timestamp ${timestamp}`);
+      respondText(res, 400, "invalid callback payload");
       return;
     }
 

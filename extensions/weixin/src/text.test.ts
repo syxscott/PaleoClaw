@@ -69,6 +69,18 @@ describe("packBlocks", () => {
     const long = "x".repeat(25);
     expect(packBlocks([long], 10)).toEqual(["x".repeat(10), "x".repeat(10), "x".repeat(5)]);
   });
+
+  it("never splits a surrogate pair when hard-wrapping oversized blocks", () => {
+    const long = `aaaaa${"😀".repeat(4)}`;
+    const chunks = packBlocks([long], 6);
+    for (const chunk of chunks) {
+      // No lone high surrogate (not followed by a low surrogate) …
+      expect(chunk).not.toMatch(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])/);
+      // … and no lone low surrogate (not preceded by a high surrogate).
+      expect(chunk).not.toMatch(/(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/);
+    }
+    expect(chunks.join("")).toBe(long);
+  });
 });
 
 describe("wrapCopyFriendlyLines", () => {
@@ -84,6 +96,16 @@ describe("wrapCopyFriendlyLines", () => {
   it("leaves table lines unwrapped", () => {
     const tableLine = `| ${"c".repeat(150)} |`;
     expect(wrapCopyFriendlyLines(tableLine)).toBe(tableLine);
+  });
+
+  it("does not split a surrogate pair when wrapping long lines", () => {
+    const line = `${"a".repeat(119)}😀${"b".repeat(10)}`;
+    const wrapped = wrapCopyFriendlyLines(line);
+    for (const part of wrapped.split("\n")) {
+      expect(part).not.toMatch(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])/);
+      expect(part).not.toMatch(/(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/);
+    }
+    expect(wrapped.replace(/\n/g, "")).toBe(line);
   });
 });
 

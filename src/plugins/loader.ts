@@ -172,6 +172,11 @@ const pluginSdkScopedAliasEntries = [
     distFile: "phone-control.js",
   },
   {
+    subpath: "qqbot",
+    srcFile: "qqbot.ts",
+    distFile: "qqbot.js",
+  },
+  {
     subpath: "qwen-portal-auth",
     srcFile: "qwen-portal-auth.ts",
     distFile: "qwen-portal-auth.js",
@@ -191,6 +196,8 @@ const pluginSdkScopedAliasEntries = [
   { subpath: "tlon", srcFile: "tlon.ts", distFile: "tlon.js" },
   { subpath: "twitch", srcFile: "twitch.ts", distFile: "twitch.js" },
   { subpath: "voice-call", srcFile: "voice-call.ts", distFile: "voice-call.js" },
+  { subpath: "wecom", srcFile: "wecom.ts", distFile: "wecom.js" },
+  { subpath: "weixin", srcFile: "weixin.ts", distFile: "weixin.js" },
   { subpath: "zalo", srcFile: "zalo.ts", distFile: "zalo.js" },
   { subpath: "zalouser", srcFile: "zalouser.ts", distFile: "zalouser.js" },
   { subpath: "account-id", srcFile: "account-id.ts", distFile: "account-id.js" },

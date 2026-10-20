@@ -1,5 +1,9 @@
+import type { LookupFn } from "paleoclaw/plugin-sdk/weixin";
 import { describe, expect, it, vi } from "vitest";
 import { createWeixinOutbound } from "./outbound.js";
+
+/** Hermetic DNS resolver so the SSRF guard never hits the real network. */
+const fakeLookup = (async () => [{ address: "93.184.216.34", family: 4 }]) as unknown as LookupFn;
 
 /** Fetch mock queue: last response repeats. */
 function queueFetch(responses: Array<Record<string, unknown>>) {
@@ -31,6 +35,7 @@ describe("weixin outbound sendTextChunks", () => {
       maxMessageLength: 2000,
       contextToken: "CTX_ALICE",
       fetchImpl,
+      lookupFn: fakeLookup,
     });
     expect(result.ok).toBe(true);
     if (result.ok) {
@@ -58,6 +63,7 @@ describe("weixin outbound sendTextChunks", () => {
       text: longText,
       maxMessageLength: 400,
       fetchImpl,
+      lookupFn: fakeLookup,
     });
     expect(result.ok).toBe(true);
     expect(calls.length).toBeGreaterThan(1);
@@ -81,6 +87,7 @@ describe("weixin outbound sendTextChunks", () => {
       maxMessageLength: 2000,
       contextToken: "STALE",
       fetchImpl,
+      lookupFn: fakeLookup,
     });
     expect(result.ok).toBe(true);
     expect(calls).toHaveLength(2);
@@ -104,6 +111,7 @@ describe("weixin outbound sendTextChunks", () => {
       maxMessageLength: 2000,
       contextToken: "STALE",
       fetchImpl,
+      lookupFn: fakeLookup,
     });
     expect(result.ok).toBe(true);
     expect(calls).toHaveLength(2);
@@ -120,6 +128,7 @@ describe("weixin outbound sendTextChunks", () => {
       maxMessageLength: 2000,
       contextToken: null,
       fetchImpl,
+      lookupFn: fakeLookup,
     });
     expect(result.ok).toBe(false);
     if (!result.ok) {
@@ -137,6 +146,7 @@ describe("weixin outbound sendTextChunks", () => {
       text: "   ",
       maxMessageLength: 2000,
       fetchImpl,
+      lookupFn: fakeLookup,
     });
     expect(result.ok).toBe(false);
   });
@@ -162,6 +172,7 @@ describe("weixin outbound plugin sendText", () => {
         },
       },
       fetchImpl,
+      lookupFn: fakeLookup,
     });
     expect(result.channel).toBe("weixin");
     expect(result.chatId).toBe("alice");

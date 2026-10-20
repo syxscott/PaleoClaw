@@ -8,19 +8,40 @@
  */
 
 import {
+  createScopedPairingAccess,
   DEFAULT_ACCOUNT_ID,
+  issuePairingChallenge,
+  logInboundDrop,
+  readStoreAllowFromForDmPolicy,
   registerPluginHttpRoute,
+  resolveControlCommandGate,
+  resolveDmGroupAccessWithLists,
   setAccountEnabledInConfigSection,
 } from "paleoclaw/plugin-sdk/wecom";
+import type { PluginHttpRouteHandler } from "paleoclaw/plugin-sdk/wecom";
+import { isWecomSenderAllowed } from "./access.js";
 import { listWecomAccountIds, resolveWecomAccount } from "./accounts.js";
 import { createWecomCallbackHandler } from "./callback.js";
-import { sendWecomMessage } from "./qyapi.js";
+import { sendWecomMessage, splitContentByBytes, WECOM_MAX_TEXT_BYTES } from "./qyapi.js";
 import { getWecomRuntime } from "./runtime.js";
 import type { ResolvedWecomAccount } from "./types.js";
 
 const CHANNEL_ID = "wecom";
 
+type WecomRouteEntry = {
+  accountId: string;
+  path: string;
+  handler: PluginHttpRouteHandler;
+};
+
 const activeRouteUnregisters = new Map<string, () => void>();
+/** Callback path → the account (and handler) that currently owns it. */
+const activeRoutes = new Map<string, WecomRouteEntry>();
+
+/** Test seam: the callback routes currently registered by this plugin. */
+export function getWecomRegisteredRoutesForTest(): WecomRouteEntry[] {
+  return [...activeRoutes.values()];
+}
 
 function waitUntilAbort(signal?: AbortSignal, onAbort?: () => void): Promise<void> {
   return new Promise((resolve) => {
@@ -80,7 +101,7 @@ export function createWecomPlugin() {
           token: { type: "string" },
           encodingAesKey: { type: "string" },
           callbackPath: { type: "string" },
-          dmPolicy: { type: "string", enum: ["open", "allowlist", "disabled"] },
+          dmPolicy: { type: "string", enum: ["open", "allowlist", "pairing", "disabled"] },
           allowFrom: {
             type: "array",
             items: { oneOf: [{ type: "string" }, { type: "number" }] },
@@ -93,6 +114,7 @@ export function createWecomPlugin() {
               additionalProperties: true,
               properties: {
                 enabled: { type: "boolean" },
+                callbackPath: { type: "string" },
               },
             },
           },
@@ -177,6 +199,11 @@ export function createWecomPlugin() {
             '- WeCom: dmPolicy="allowlist" with empty allowFrom blocks all senders. Add user ids or set dmPolicy="open".',
           );
         }
+        if (account.dmPolicy === "pairing") {
+          warnings.push(
+            '- WeCom: dmPolicy="pairing" requires unknown senders to complete a pairing challenge before the agent answers.',
+          );
+        }
         return warnings;
       },
     },
@@ -203,7 +230,12 @@ export function createWecomPlugin() {
 
     outbound: {
       deliveryMode: "gateway" as const,
-      textChunkLimit: 2048,
+      // WeCom caps one message at 2048 bytes; split long replies instead of
+      // letting the server (or a hard cut) drop the tail.
+      chunker: (text: string, limit: number) =>
+        splitContentByBytes(text, Math.min(limit, WECOM_MAX_TEXT_BYTES)),
+      chunkerMode: "text" as const,
+      textChunkLimit: WECOM_MAX_TEXT_BYTES,
 
       sendText: async ({ to, text, accountId, cfg }: any) => {
         const account = resolveWecomAccount(cfg ?? {}, accountId);
@@ -243,14 +275,106 @@ export function createWecomPlugin() {
           deliver: async (message) => {
             const rt = getWecomRuntime();
             const currentCfg = await rt.config.loadConfig();
+            // Re-resolve the account so dmPolicy / allowFrom edits take effect
+            // without waiting for a channel restart.
+            const liveAccount = resolveWecomAccount(currentCfg, account.accountId);
+
+            // Group callbacks are not supported yet: replying to the sender
+            // would leak the group conversation into that user's DM session.
+            if (message.chatType === "group") {
+              log?.warn?.(
+                `WeCom group message from ${message.fromUserId} ignored (group chat is not supported)`,
+              );
+              return;
+            }
+
+            const senderId = message.fromUserId.trim();
+            if (!senderId) {
+              log?.warn?.("WeCom message without a sender id ignored");
+              return;
+            }
+
+            const pairing = createScopedPairingAccess({
+              core: rt,
+              channel: CHANNEL_ID,
+              accountId: liveAccount.accountId,
+            });
+            const dmPolicy = liveAccount.dmPolicy;
+            const storeAllowFrom = await readStoreAllowFromForDmPolicy({
+              provider: CHANNEL_ID,
+              accountId: liveAccount.accountId,
+              dmPolicy,
+              readStore: pairing.readStoreForDmPolicy,
+            });
+            const access = resolveDmGroupAccessWithLists({
+              isGroup: false,
+              dmPolicy,
+              allowFrom: liveAccount.allowFrom,
+              storeAllowFrom,
+              isSenderAllowed: (list) => isWecomSenderAllowed(list, senderId),
+            });
+
+            if (access.decision === "pairing") {
+              await issuePairingChallenge({
+                channel: CHANNEL_ID,
+                senderId,
+                senderIdLine: `Your WeCom user id: ${senderId}`,
+                meta: { name: senderId },
+                upsertPairingRequest: pairing.upsertPairingRequest,
+                sendPairingReply: async (text) => {
+                  const result = await sendWecomMessage({
+                    account: liveAccount,
+                    toUser: senderId,
+                    content: text,
+                  });
+                  if (!result.ok) {
+                    log?.warn?.(`WeCom pairing reply failed: ${result.error}`);
+                  }
+                },
+                onReplyError: (err) => {
+                  log?.warn?.(`WeCom pairing reply failed: ${String(err)}`);
+                },
+              });
+              return;
+            }
+            if (access.decision !== "allow") {
+              logInboundDrop({
+                log: (line) => log?.warn?.(line),
+                channel: CHANNEL_ID,
+                reason: access.reason,
+                target: senderId,
+              });
+              return;
+            }
+
+            const rawBody = message.content ?? "";
+            const senderAllowedForCommands = isWecomSenderAllowed(
+              access.effectiveAllowFrom,
+              senderId,
+            );
+            const commandGate = resolveControlCommandGate({
+              useAccessGroups: currentCfg.commands?.useAccessGroups !== false,
+              authorizers: [
+                {
+                  configured: access.effectiveAllowFrom.length > 0,
+                  allowed: senderAllowedForCommands,
+                },
+              ],
+              allowTextCommands: rt.channel.commands.shouldHandleTextCommands({
+                cfg: currentCfg,
+                surface: CHANNEL_ID,
+              }),
+              hasControlCommand: rt.channel.text.hasControlCommand(rawBody, currentCfg),
+            });
+
             const msgCtx = rt.channel.reply.finalizeInboundContext({
-              Body: message.content ?? "",
+              Body: rawBody,
               RawBody: message.rawXml,
-              CommandBody: message.content ?? "",
+              CommandBody: rawBody,
               From: `${CHANNEL_ID}:${message.fromUserId}`,
               To: `${CHANNEL_ID}:${message.fromUserId}`,
-              SessionKey: `${CHANNEL_ID}-${account.accountId}-${message.fromUserId}`,
-              AccountId: account.accountId,
+              SessionKey: `${CHANNEL_ID}-${liveAccount.accountId}-${message.fromUserId}`,
+              AccountId: liveAccount.accountId,
               OriginatingChannel: CHANNEL_ID,
               OriginatingTo: `${CHANNEL_ID}:${message.fromUserId}`,
               ChatType: "direct",
@@ -260,7 +384,7 @@ export function createWecomPlugin() {
               Surface: CHANNEL_ID,
               ConversationLabel: message.fromUserId,
               Timestamp: Date.now(),
-              CommandAuthorized: false,
+              CommandAuthorized: commandGate.commandAuthorized,
             });
             await rt.channel.reply.dispatchReplyWithBufferedBlockDispatcher({
               ctx: msgCtx,
@@ -271,13 +395,17 @@ export function createWecomPlugin() {
                   if (!text || !message.fromUserId) {
                     return;
                   }
-                  const result = await sendWecomMessage({
-                    account,
-                    toUser: message.fromUserId,
-                    content: text,
-                  });
-                  if (!result.ok) {
-                    log?.warn?.(`WeCom reply send failed: ${result.error}`);
+                  // WeCom caps a single message at 2048 bytes: send the long
+                  // reply in several messages instead of losing the tail.
+                  for (const chunk of splitContentByBytes(text, WECOM_MAX_TEXT_BYTES)) {
+                    const result = await sendWecomMessage({
+                      account: liveAccount,
+                      toUser: message.fromUserId,
+                      content: chunk,
+                    });
+                    if (!result.ok) {
+                      log?.warn?.(`WeCom reply send failed: ${result.error}`);
+                    }
                   }
                 },
                 onReplyStart: () => {
@@ -301,6 +429,18 @@ export function createWecomPlugin() {
           activeRouteUnregisters.delete(routeKey);
         }
 
+        // A callback path may only be owned by one account: registering a
+        // second handler on the same path would silently replace the first
+        // one and break that account's signature verification.
+        const pathOwner = activeRoutes.get(account.callbackPath);
+        if (pathOwner && pathOwner.accountId !== account.accountId) {
+          log?.error?.(
+            `WeCom callback path ${account.callbackPath} is already owned by account ${pathOwner.accountId}; ` +
+              `refusing to register account ${account.accountId} (set a distinct callbackPath)`,
+          );
+          return waitUntilAbort(ctx.abortSignal);
+        }
+
         const unregister = registerPluginHttpRoute({
           path: account.callbackPath,
           auth: "plugin",
@@ -311,6 +451,11 @@ export function createWecomPlugin() {
           handler,
         });
         activeRouteUnregisters.set(routeKey, unregister);
+        activeRoutes.set(account.callbackPath, {
+          accountId: account.accountId,
+          path: account.callbackPath,
+          handler,
+        });
 
         log?.info?.(`Registered WeCom callback route: ${account.callbackPath}`);
 
@@ -321,6 +466,9 @@ export function createWecomPlugin() {
             unregister();
           }
           activeRouteUnregisters.delete(routeKey);
+          if (activeRoutes.get(account.callbackPath)?.accountId === account.accountId) {
+            activeRoutes.delete(account.callbackPath);
+          }
         });
       },
 

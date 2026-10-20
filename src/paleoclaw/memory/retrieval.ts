@@ -28,7 +28,15 @@ export interface RankedItem extends SearchItem {
 // vector to any caller that used a dim other than the default.
 const VECTOR_CACHE_MAX = 500;
 const vectorCache = new Map<string, Map<number, number>>();
-function getCachedVector(text: string, dim: number): Map<number, number> {
+
+/**
+ * Return the (cached) vector for `text` at dimension `dim`.
+ *
+ * Exported so callers and tests can assert the dimension-keyed cache
+ * behaviour: the same text at two dimensions must yield two different
+ * vectors, never one shared bucket.
+ */
+export function getCachedVector(text: string, dim: number): Map<number, number> {
   // `dim` is a pure digit run, so the first "|" unambiguously terminates it and
   // no text can forge another dimension's prefix.
   const key = `${dim}|${text}`;

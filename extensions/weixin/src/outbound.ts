@@ -5,6 +5,8 @@
  * tokenless, matching the ported `_send_text_chunk` behavior).
  */
 
+import { randomUUID } from "node:crypto";
+import type { LookupFn, SsrFPolicy } from "paleoclaw/plugin-sdk/weixin";
 import { resolveWeixinAccount } from "./accounts.js";
 import { ContextTokenStore } from "./context-tokens.js";
 import { buildSendMessagePayload, sendMessage, type FetchLike } from "./ilink.js";
@@ -13,7 +15,7 @@ import { normalizeMarkdownBlocks, splitTextForDelivery, wrapCopyFriendlyLines } 
 export type WeixinSendResult = { ok: true; messageIds: string[] } | { ok: false; error: string };
 
 function makeClientId(): string {
-  return `paleoclaw-weixin-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  return `paleoclaw-weixin-${Date.now()}-${randomUUID().slice(0, 8)}`;
 }
 
 export function createWeixinOutbound(
@@ -31,6 +33,8 @@ export function createWeixinOutbound(
     maxMessageLength: number;
     contextToken?: string | null;
     fetchImpl?: FetchLike;
+    lookupFn?: LookupFn;
+    ssrfPolicy?: SsrFPolicy;
   }): Promise<WeixinSendResult> => {
     const formatted = wrapCopyFriendlyLines(normalizeMarkdownBlocks(params.text));
     const chunks = splitTextForDelivery(formatted, params.maxMessageLength);
@@ -50,6 +54,8 @@ export function createWeixinOutbound(
           contextToken,
           clientId,
           fetchImpl: params.fetchImpl,
+          lookupFn: params.lookupFn,
+          ssrfPolicy: params.ssrfPolicy,
         });
         const ret = response.ret;
         const errcode = response.errcode;
@@ -69,6 +75,8 @@ export function createWeixinOutbound(
             contextToken: null,
             clientId: makeClientId(),
             fetchImpl: params.fetchImpl,
+            lookupFn: params.lookupFn,
+            ssrfPolicy: params.ssrfPolicy,
           });
           const retryRet = retry.ret ?? 0;
           const retryErr = retry.errcode ?? 0;
@@ -97,7 +105,7 @@ export function createWeixinOutbound(
 
   return {
     /** Plugin-contract sendText: resolves account from cfg and sends via iLink. */
-    sendText: async ({ to, text, accountId, cfg, fetchImpl }: any) => {
+    sendText: async ({ to, text, accountId, cfg, fetchImpl, lookupFn, ssrfPolicy }: any) => {
       const account = resolveWeixinAccount(cfg ?? {}, accountId);
       if (!account.configured) {
         throw new Error("Weixin account is not configured (missing token/botId from QR login)");
@@ -113,6 +121,8 @@ export function createWeixinOutbound(
         maxMessageLength: account.maxMessageLength,
         contextToken,
         fetchImpl,
+        lookupFn,
+        ssrfPolicy,
       });
       if (!result.ok) {
         throw new Error(result.error);

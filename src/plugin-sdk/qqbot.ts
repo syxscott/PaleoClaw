@@ -1,7 +1,10 @@
 // Narrow plugin-sdk surface for the bundled qqbot plugin.
 // Keep this list additive and scoped to symbols used under extensions/qqbot.
 
+export { buildAgentMediaPayload } from "./agent-media-payload.js";
 export { buildChannelConfigSchema } from "../channels/plugins/config-schema.js";
+export { formatPairingApproveHint } from "../channels/plugins/helpers.js";
+export { PAIRING_APPROVED_MESSAGE } from "../channels/plugins/pairing-message.js";
 export { emptyPluginConfigSchema } from "../plugins/config-schema.js";
 export type { OpenClawPluginApi } from "../plugins/types.js";
 export type { PluginRuntime } from "../plugins/runtime/types.js";
@@ -12,3 +15,10 @@ export { createLoggerBackedRuntime } from "./runtime.js";
 export { buildBaseAccountStatusSnapshot, buildBaseChannelStatusSummary } from "./status-helpers.js";
 export type { ChannelPlugin } from "../channels/plugins/types.plugin.js";
 export type { ChannelAccountSnapshot } from "../channels/plugins/types.core.js";
+export { createScopedPairingAccess } from "./pairing-access.js";
+export { issuePairingChallenge } from "../pairing/pairing-challenge.js";
+export {
+  readStoreAllowFromForDmPolicy,
+  resolveDmGroupAccessWithLists,
+  resolveEffectiveAllowFromLists,
+} from "../security/dm-policy-shared.js";

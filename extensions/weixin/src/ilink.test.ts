@@ -1,3 +1,4 @@
+import type { LookupFn } from "paleoclaw/plugin-sdk/weixin";
 import { describe, expect, it, vi } from "vitest";
 import {
   buildIlinkHeaders,
@@ -7,6 +8,15 @@ import {
   ILINK_APP_ID,
   isSessionExpired,
 } from "./ilink.js";
+
+/** Hermetic DNS resolver so the SSRF guard never hits the real network. */
+const fakeLookup = (async () => [{ address: "93.184.216.34", family: 4 }]) as unknown as LookupFn;
+
+function abortError(): Error {
+  const error = new Error("The operation was aborted");
+  error.name = "AbortError";
+  return error;
+}
 
 describe("buildIlinkHeaders (port of _headers)", () => {
   it("sets the iLink auth headers and bearer token", () => {
@@ -102,6 +112,7 @@ describe("getUpdates", () => {
       token: "tok",
       syncBuf: "CURSOR1",
       fetchImpl: fetchImpl as unknown as typeof fetch,
+      lookupFn: fakeLookup,
     });
     expect(result.msgs).toHaveLength(1);
     expect(result.get_updates_buf).toBe("CURSOR2");
@@ -111,15 +122,50 @@ describe("getUpdates", () => {
     expect(body.base_info).toEqual({ channel_version: "2.2.0" });
   });
 
-  it("returns an empty batch on timeout/network failure (ported semantics)", async () => {
+  it("surfaces a network failure instead of faking a healthy empty poll", async () => {
     const fetchImpl = vi.fn(async () => {
       throw new Error("network down");
     });
+    await expect(
+      getUpdates({
+        baseUrl: "https://ilinkai.weixin.qq.com",
+        token: "tok",
+        syncBuf: "CURSOR1",
+        fetchImpl: fetchImpl as unknown as typeof fetch,
+        lookupFn: fakeLookup,
+      }),
+    ).rejects.toThrow("network down");
+  });
+
+  it("surfaces an upstream HTTP 401 instead of faking a healthy empty poll", async () => {
+    const fetchImpl = vi.fn(
+      async () => new Response("unauthorized", { status: 401, statusText: "Unauthorized" }),
+    );
+    await expect(
+      getUpdates({
+        baseUrl: "https://ilinkai.weixin.qq.com",
+        token: "tok",
+        syncBuf: "CURSOR1",
+        fetchImpl: fetchImpl as unknown as typeof fetch,
+        lookupFn: fakeLookup,
+      }),
+    ).rejects.toThrow(/HTTP 401/);
+  });
+
+  it("returns an empty batch when the long poll times out (ported semantics)", async () => {
+    const fetchImpl = vi.fn(
+      (_url: string | URL, init?: RequestInit) =>
+        new Promise<Response>((_resolve, reject) => {
+          init?.signal?.addEventListener("abort", () => reject(abortError()), { once: true });
+        }),
+    );
     const result = await getUpdates({
       baseUrl: "https://ilinkai.weixin.qq.com",
       token: "tok",
       syncBuf: "CURSOR1",
+      timeoutMs: 10,
       fetchImpl: fetchImpl as unknown as typeof fetch,
+      lookupFn: fakeLookup,
     });
     expect(result.ret).toBe(0);
     expect(result.msgs).toEqual([]);
@@ -136,6 +182,7 @@ describe("getUpdates", () => {
       token: "tok",
       syncBuf: "",
       fetchImpl: fetchImpl as unknown as typeof fetch,
+      lookupFn: fakeLookup,
     });
     expect(result.ret).toBe(-14);
   });

@@ -42,7 +42,7 @@ PaleoClaw 是基于 OpenClaw 运行时的古生物学领域研究智能体：把
 | 👤  | **Dual-layer research profile** — `soul.md` (system identity) + `user.md` (your preferences) actually shape every run                            | 双层研究画像    |
 | 💾  | **SQLite sessions** — WAL-backed history with FTS5 search, graceful JSON fallback, two-stage session titles                                      | SQLite 会话存储 |
 | 🗂️  | **Skills & pipelines** — curated research skills plus declarative pipelines with dependencies and a lifecycle curator                            | 技能与流水线    |
-| 📱  | **Runs where you chat** — Telegram, Discord, WhatsApp, Slack, Signal, iMessage, LINE, Feishu and more via the OpenClaw channel layer             | 多平台接入      |
+| 📱  | **Runs where you chat** — Telegram, Discord, WhatsApp, Slack, Signal, iMessage, LINE, Feishu, QQ, WeCom, WeChat via the OpenClaw channel layer   | 多平台接入      |
 | 🖥️  | **Control UI** — local web console for chat, sessions, usage and config                                                                          | 控制台 UI       |
 | 🔬  | **Scientific integrity by design** — no fabricated data, verifiable DOIs, transparent uncertainty, reproducible queries                          | 科学诚信设计    |
 
@@ -192,7 +192,7 @@ PALEOCLAW_ENABLE_SESSION_AUTOSAVE=true  # automatic session autosave | 会话自
 
 ## 🖥️ Control UI & Channels
 
-The repo ships the full OpenClaw-style control console (`ui/`) — chat, session history, usage dashboards and configuration in a local web UI, with wake-reconnect, composer drafts and per-session scroll memory. Messaging channels (Telegram, Discord, WhatsApp, Slack, Signal, iMessage, LINE, …) run in-tree; see [docs/channels/](docs/channels/) and [docs/index.md](docs/index.md).
+The repo ships the full OpenClaw-style control console (`ui/`) — chat, session history, usage dashboards and configuration in a local web UI, with wake-reconnect, composer drafts and per-session scroll memory. Messaging channels (Telegram, Discord, WhatsApp, Slack, Signal, iMessage, LINE, QQ, WeCom, WeChat, …) run in-tree; see [docs/channels/](docs/channels/) and [docs/index.md](docs/index.md).
 
 ## 🔬 Scientific Integrity | 科学诚信
 

@@ -43,6 +43,7 @@ PaleoClaw 是一个专注于古生物学和地球科学的 AI 研究助手。它
 - 🦴 **化石数据查询** - 查询化石产地、分类学信息、地层数据
 - 📊 **形态测量工具** - 化石标本测量数据格式转换
 - 🔄 **记忆系统** - 追踪研究轨迹，保存研究洞察
+- 📱 **多平台接入** - 支持 Telegram、Discord、WhatsApp、Slack、Signal、iMessage、LINE、飞书、QQ、企业微信、微信等渠道
 
 ---
 
@@ -59,6 +60,9 @@ PaleoClaw 是一个专注于古生物学和地球科学的 AI 研究助手。它
 | `export-bibtex.ts`       | 文献 BibTeX 导出工具 |
 | `backup-memory.sh`       | 记忆系统备份脚本     |
 | `sync-research.ts`       | 研究数据同步工具     |
+| `qqbot`                  | QQ 官方机器人        |
+| `wecom`                  | 企业微信自建应用     |
+| `weixin`                 | 微信 iLink 机器人    |
 
 ### 历史版本功能
 

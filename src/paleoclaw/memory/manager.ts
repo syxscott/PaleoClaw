@@ -60,6 +60,10 @@ export class BuiltinTaskMemoryProvider implements MemoryProvider {
       scope: "all",
       topK: 3,
       minScore: 0.12,
+      // Chat digests are session-private: without this the store would hand
+      // back another session's conversation text and it would be injected
+      // into this session's prompt.
+      sessionId: this.sessionId,
     });
 
     if (hits.length === 0) {

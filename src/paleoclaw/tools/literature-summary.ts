@@ -14,12 +14,32 @@ interface SummaryParams {
  * Common scholarly abbreviations whose internal period is NOT a sentence
  * boundary. Without this, "et al." and "Fig. 3" get split mid-clause and the
  * following fragment becomes its own bullet point.
+ *
+ * The taxonomic abbreviations matter most here: this tool's input domain is
+ * palaeontology abstracts, where genus abbreviations ("T. rex"), open
+ * nomenclature ("sp.", "sp. nov.", "aff.", "gen.", "cf.") and ranks
+ * ("subsp.", "var.") are near-universal. A stray "T." bullet is not only
+ * meaningless — `splitSentences(...).slice(0, maxPoints)` lets it push a
+ * real sentence out of the summary.
+ *
+ * Matching: the list is joined into `\b(?:...)\.$`, so entries are matched
+ * case-sensitively and must end the current sentence fragment. Longer
+ * entries must stay ahead of their prefixes ("et al" before "et").
  */
 const ABBREVIATIONS = [
   "et al",
+  "et",
+  "al",
   "e.g",
   "i.e",
   "cf",
+  "sens",
+  "sp",
+  "nov",
+  "aff",
+  "gen",
+  "subsp",
+  "var",
   "vs",
   "Fig",
   "Figs",
@@ -35,12 +55,20 @@ const ABBREVIATIONS = [
 const ABBREVIATION_SUFFIX_RE = new RegExp(`\\b(?:${ABBREVIATIONS.join("|")})\\.$`);
 
 /**
- * Split on sentence terminators while protecting the two cases that a naive
- * split corrupts:
+ * A single capital letter followed by a period is a genus abbreviation
+ * ("T. rex", "G. iguanodon"), never a sentence end.
+ */
+const SINGLE_LETTER_ABBREVIATION_RE = /\b[A-Z]\.$/;
+
+/**
+ * Split on sentence terminators while protecting the three cases that a
+ * naive split corrupts:
  *  - decimals and version numbers ("1.5 Ma", "Fig. 2") — a period between two
  *    digits, or between a digit and a letter, is never a sentence end;
- *  - known abbreviations ("et al.") — a period that ends a known abbreviation
- *    is not a sentence end.
+ *  - known abbreviations ("et al.", "sp. nov.") — a period that ends a known
+ *    abbreviation is not a sentence end;
+ *  - genus abbreviations ("T. rex", "G. iguanodon") — a lone capital letter
+ *    followed by a period is not a sentence end.
  */
 function splitSentences(text: string): string[] {
   const normalized = text.replace(/\s+/g, " ").trim();
@@ -76,6 +104,12 @@ function splitSentences(text: string): string[] {
 
     // "et al." / "e.g." — the period terminates a known abbreviation.
     if (char === "." && ABBREVIATION_SUFFIX_RE.test(current.trimEnd())) {
+      continue;
+    }
+
+    // "T. rex" / "G. iguanodon" — a lone capital letter followed by a period
+    // is a genus abbreviation, not the end of a sentence.
+    if (char === "." && SINGLE_LETTER_ABBREVIATION_RE.test(current.trimEnd())) {
       continue;
     }
 

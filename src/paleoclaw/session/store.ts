@@ -8,7 +8,7 @@
 import { randomBytes } from "crypto";
 import * as fs from "fs";
 import * as path from "path";
-import { paleoclawHome, atomicWriteFile, ensurePrivateDir } from "../paths.js";
+import { paleoclawHome, atomicWriteFile, ensurePrivateDir, withFileLock } from "../paths.js";
 import {
   SessionMessage,
   SessionRecord,
@@ -112,6 +112,26 @@ export function previewText(content: string, maxLen = 120): string {
     return value;
   }
   return `${value.slice(0, maxLen - 3)}...`;
+}
+
+/**
+ * Create or refresh the session record for an agent turn.
+ *
+ * Deliberately passes NO title. Both stores record an explicitly supplied
+ * title as user-provenance ("user"), and `appendMessage()` only derives a
+ * title while the record is not user-titled — so a title derived from the
+ * prompt at this call site permanently disables Stage-1 derivation (and with
+ * it the optional Stage-2 upgrade).
+ *
+ * Stage-2 additionally needs a `titleUpgrader` injected into the store; this
+ * helper does not change that, it only keeps the Stage-1 path reachable.
+ */
+export function upsertAgentSession(
+  store: SessionStoreLike,
+  sessionId: string,
+  tags: string[] = [],
+): SessionRecord {
+  return store.upsertSession(sessionId, undefined, tags);
 }
 
 export interface SessionStoreOptions {
@@ -222,56 +242,61 @@ export class SessionStore implements SessionStoreLike {
     }
 
     const file = this.getSessionPath(normalizedId);
-    if (fs.existsSync(file)) {
-      const existing = this.readSession(normalizedId);
-      let changed = false;
-      const next = { ...existing };
+    // The read-modify-write below runs under an exclusive lock: without it two
+    // processes touching the same session read the same base record and the
+    // later writer drops the earlier change.
+    return withFileLock(file, () => {
+      if (fs.existsSync(file)) {
+        const existing = this.readSession(normalizedId);
+        let changed = false;
+        const next = { ...existing };
 
-      // Only treat the call as a title update when the new title is non-empty
-      // AND the existing title is not explicitly user-set. Avoids overwriting
-      // a meaningful title with the latest user prompt on every turn, while
-      // still letting an explicit title replace an auto-derived placeholder.
-      if (
-        title &&
-        title.trim() &&
-        (existing.titleSource ?? "user") !== "user" &&
-        existing.title !== title.trim()
-      ) {
-        next.title = title.trim();
-        next.titleSource = "user";
-        changed = true;
-      }
-
-      if (tags.length > 0) {
-        const mergedTags = [...new Set([...existing.tags, ...tags])];
-        if (mergedTags.length !== existing.tags.length) {
-          next.tags = mergedTags;
+        // Only treat the call as a title update when the new title is non-empty
+        // AND the existing title is not explicitly user-set. Avoids overwriting
+        // a meaningful title with the latest user prompt on every turn, while
+        // still letting an explicit title replace an auto-derived placeholder.
+        if (
+          title &&
+          title.trim() &&
+          (existing.titleSource ?? "user") !== "user" &&
+          existing.title !== title.trim()
+        ) {
+          next.title = title.trim();
+          next.titleSource = "user";
           changed = true;
         }
+
+        if (tags.length > 0) {
+          const mergedTags = [...new Set([...existing.tags, ...tags])];
+          if (mergedTags.length !== existing.tags.length) {
+            next.tags = mergedTags;
+            changed = true;
+          }
+        }
+
+        if (changed) {
+          next.updatedAt = nowIso();
+          this.writeSession(next);
+          return next;
+        }
+
+        return existing;
       }
 
-      if (changed) {
-        next.updatedAt = nowIso();
-        this.writeSession(next);
-        return next;
-      }
-
-      return existing;
-    }
-
-    const current = nowIso();
-    const trimmedTitle = String(title || "").trim();
-    const created: SessionRecord = {
-      id: normalizedId,
-      title: trimmedTitle || DEFAULT_SESSION_TITLE,
-      titleSource: trimmedTitle ? "user" : "derived",
-      createdAt: current,
-      updatedAt: current,
-      tags: tags.filter((tag) => tag.trim().length > 0),
-      messages: [],
-    };
-    this.writeSession(created);
-    return created;
+      const current = nowIso();
+      const trimmedTitle = String(title || "").trim();
+      const created: SessionRecord = {
+        id: normalizedId,
+        title: trimmedTitle || DEFAULT_SESSION_TITLE,
+        titleSource: trimmedTitle ? "user" : "derived",
+        createdAt: current,
+        updatedAt: current,
+        tags: tags.filter((tag) => tag.trim().length > 0),
+        messages: [],
+      };
+      this.writeSession(created);
+      return created;
+    });
   }
 
   createSession(title?: string, tags: string[] = []): SessionRecord {
@@ -297,34 +322,40 @@ export class SessionStore implements SessionStoreLike {
     content: string,
     metadata?: Record<string, unknown>,
   ): SessionMessage {
-    const record = this.readSession(sessionId);
-    const isFirstUserMessage = role === "user" && !record.messages.some((m) => m.role === "user");
-    const message: SessionMessage = {
-      id: makeId("msg"),
-      role,
-      content: String(content || ""),
-      createdAt: nowIso(),
-      metadata,
-    };
+    // The read-modify-write below runs under an exclusive lock: without it two
+    // processes appending to the same session read the same base record and the
+    // later writer drops the earlier message.
+    const file = this.getSessionPath(sessionId);
+    return withFileLock(file, () => {
+      const record = this.readSession(sessionId);
+      const isFirstUserMessage = role === "user" && !record.messages.some((m) => m.role === "user");
+      const message: SessionMessage = {
+        id: makeId("msg"),
+        role,
+        content: String(content || ""),
+        createdAt: nowIso(),
+        metadata,
+      };
 
-    record.messages.push(message);
-    record.updatedAt = nowIso();
+      record.messages.push(message);
+      record.updatedAt = nowIso();
 
-    // Stage 1: derive an instant title from the first user message so `list`
-    // never shows the generic placeholder once any user message exists.
-    if (isFirstUserMessage && (record.titleSource ?? "user") !== "user") {
-      record.title = deriveInstantTitle(message.content);
-      record.titleSource = "derived";
-    }
+      // Stage 1: derive an instant title from the first user message so `list`
+      // never shows the generic placeholder once any user message exists.
+      if (isFirstUserMessage && (record.titleSource ?? "user") !== "user") {
+        record.title = deriveInstantTitle(message.content);
+        record.titleSource = "derived";
+      }
 
-    this.writeSession(record);
+      this.writeSession(record);
 
-    // Stage 2: kick off the optional async upgrade (never awaited).
-    if (isFirstUserMessage && (record.titleSource ?? "user") !== "user") {
-      this.maybeUpgradeTitle(sessionId, message.content, record.title);
-    }
+      // Stage 2: kick off the optional async upgrade (never awaited).
+      if (isFirstUserMessage && (record.titleSource ?? "user") !== "user") {
+        this.maybeUpgradeTitle(sessionId, message.content, record.title);
+      }
 
-    return message;
+      return message;
+    });
   }
 
   getSession(sessionId: string): SessionRecord {

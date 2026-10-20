@@ -1,4 +1,8 @@
-import { DEFAULT_ACCOUNT_ID } from "paleoclaw/plugin-sdk/qqbot";
+import {
+  DEFAULT_ACCOUNT_ID,
+  readStoreAllowFromForDmPolicy,
+  resolveEffectiveAllowFromLists,
+} from "paleoclaw/plugin-sdk/qqbot";
 import { QQBOT_DEFAULT_INTENTS } from "./constants.js";
 import type {
   CoreConfig,
@@ -125,6 +129,11 @@ export function resolveQqbotAccount(params: {
   };
 }
 
+/** Masked AppID for status/probe output (the full id is never exposed). */
+export function maskQqbotAppId(appId: string): string {
+  return appId ? `${appId.slice(0, 4)}***` : "";
+}
+
 /** ACL check mirroring the reference _entry_matches ("*" wildcards allowed). */
 export function allowListMatches(allowFrom: string[], target: string): boolean {
   const normalized = target.trim().toLowerCase();
@@ -137,28 +146,80 @@ export function allowListMatches(allowFrom: string[], target: string): boolean {
   });
 }
 
-export function isDmIntakeAllowed(account: ResolvedQqbotAccount, senderId: string): boolean {
+/**
+ * Effective allowlists for one account: the configured lists merged with the
+ * pairing store (DM only, and only for policies that read the store).
+ */
+export function resolveQqbotEffectiveAllowFrom(
+  account: ResolvedQqbotAccount,
+  storeAllowFrom: string[] = [],
+): { effectiveAllowFrom: string[]; effectiveGroupAllowFrom: string[] } {
+  return resolveEffectiveAllowFromLists({
+    allowFrom: account.allowFrom,
+    groupAllowFrom: account.groupAllowFrom,
+    storeAllowFrom,
+    dmPolicy: account.dmPolicy,
+    // QQ requires an explicit groupAllowFrom; never fall back to the DM allowlist.
+    groupAllowFromFallbackToAllowFrom: false,
+  });
+}
+
+/**
+ * Read the pairing store for this account. The store is only consulted for the
+ * pairing policy (the "allowlist" policy is config-only, matching the SDK).
+ */
+export async function readQqbotStoreAllowFrom(params: {
+  account: ResolvedQqbotAccount;
+  readStore: (provider: string, accountId: string) => Promise<string[]>;
+}): Promise<string[]> {
+  return await readStoreAllowFromForDmPolicy({
+    provider: "qqbot",
+    accountId: params.account.accountId,
+    dmPolicy: params.account.dmPolicy,
+    shouldRead: params.account.dmPolicy === "pairing",
+    readStore: params.readStore,
+  });
+}
+
+export function isDmIntakeAllowed(
+  account: ResolvedQqbotAccount,
+  senderId: string,
+  options?: { storeAllowFrom?: string[] },
+): boolean {
   const principal = senderId.trim();
   if (!principal) {
     return false;
   }
-  if (account.dmPolicy === "pairing") {
-    // Pairing flow is not wired yet; treat as allowlist (empty list = blocked)
-    // so an unconfigured deployment stays closed. Documented in the README.
-    return allowListMatches(account.allowFrom, principal);
+  if (account.dmPolicy === "open") {
+    return true;
   }
-  if (account.dmPolicy === "allowlist") {
-    return allowListMatches(account.allowFrom, principal);
+  if (account.dmPolicy === "disabled") {
+    return false;
   }
-  return account.dmPolicy === "open";
+  // "allowlist" and "pairing" both gate on the effective allowlist; pairing
+  // additionally accepts senders that were approved through the pairing store.
+  const { effectiveAllowFrom } = resolveQqbotEffectiveAllowFrom(
+    account,
+    options?.storeAllowFrom ?? [],
+  );
+  return allowListMatches(effectiveAllowFrom, principal);
 }
 
-export function isGroupAllowed(account: ResolvedQqbotAccount, groupId: string): boolean {
-  if (account.groupPolicy === "allowlist") {
-    return allowListMatches(account.groupAllowFrom, groupId);
+export function isGroupAllowed(
+  account: ResolvedQqbotAccount,
+  groupId: string,
+  options?: { storeAllowFrom?: string[] },
+): boolean {
+  if (account.groupPolicy === "open") {
+    return true;
   }
-  if (account.groupPolicy === "pairing") {
-    return allowListMatches(account.groupAllowFrom, groupId);
+  if (account.groupPolicy === "disabled") {
+    return false;
   }
-  return account.groupPolicy === "open";
+  // Group access is always allowlist-based (the pairing store is DM-only).
+  const { effectiveGroupAllowFrom } = resolveQqbotEffectiveAllowFrom(
+    account,
+    options?.storeAllowFrom ?? [],
+  );
+  return allowListMatches(effectiveGroupAllowFrom, groupId);
 }

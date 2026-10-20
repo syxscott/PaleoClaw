@@ -9,6 +9,8 @@ import {
   buildChannelConfigSchema,
   buildBaseChannelStatusSummary,
   DEFAULT_ACCOUNT_ID,
+  formatPairingApproveHint,
+  PAIRING_APPROVED_MESSAGE,
   type ChannelPlugin,
 } from "paleoclaw/plugin-sdk/qqbot";
 import {
@@ -16,6 +18,7 @@ import {
   isDmIntakeAllowed,
   isGroupAllowed,
   listQqbotAccountIds,
+  maskQqbotAppId,
   resolveDefaultQqbotAccountId,
   resolveQqbotAccount,
 } from "./accounts.js";
@@ -23,7 +26,7 @@ import { QqbotConfigSchema } from "./config-schema.js";
 import { monitorQqbotProvider } from "./monitor.js";
 import { probeQqbot } from "./probe.js";
 import { getQqbotRuntime } from "./runtime.js";
-import { getQqbotAccountContext } from "./send.js";
+import { clearQqbotAccountContext, getQqbotAccountContext } from "./send.js";
 import type { CoreConfig, ResolvedQqbotAccount } from "./types.js";
 
 export function normalizeQqbotMessagingTarget(raw: string): string | undefined {
@@ -84,6 +87,7 @@ export const qqbotPlugin: ChannelPlugin<ResolvedQqbotAccount> = {
       } as typeof cfg;
     },
     deleteAccount: ({ cfg, accountId }) => {
+      clearQqbotAccountContext(accountId);
       if (accountId !== DEFAULT_ACCOUNT_ID) {
         const section = (cfg.channels as Record<string, unknown> | undefined)?.qqbot as
           | { accounts?: Record<string, unknown> }
@@ -108,17 +112,19 @@ export const qqbotPlugin: ChannelPlugin<ResolvedQqbotAccount> = {
       name: account.name,
       enabled: account.enabled,
       configured: account.configured,
-      appId: account.appId ? `${account.appId.slice(0, 4)}***` : "",
+      appId: maskQqbotAppId(account.appId),
       sandbox: account.sandbox,
       mode: account.mode,
       dmPolicy: account.dmPolicy,
       groupPolicy: account.groupPolicy,
       secretSource: account.secretSource,
     }),
-    resolveAllowFrom: ({ cfg }) => resolveQqbotAccount({ cfg: cfg as CoreConfig }).allowFrom,
+    resolveAllowFrom: ({ cfg, accountId }) =>
+      resolveQqbotAccount({ cfg: cfg as CoreConfig, accountId }).allowFrom,
     formatAllowFrom: ({ allowFrom }) =>
       allowFrom.map((entry) => String(entry).trim().toLowerCase()).filter(Boolean),
-    resolveDefaultTo: ({ cfg }) => resolveQqbotAccount({ cfg: cfg as CoreConfig }).defaultTo,
+    resolveDefaultTo: ({ cfg, accountId }) =>
+      resolveQqbotAccount({ cfg: cfg as CoreConfig, accountId }).defaultTo,
   },
   security: {
     resolveDmPolicy: ({ cfg, accountId, account }) => ({
@@ -126,7 +132,7 @@ export const qqbotPlugin: ChannelPlugin<ResolvedQqbotAccount> = {
       allowFrom: account.allowFrom,
       policyPath: `channels.qqbot${accountId && accountId !== DEFAULT_QQBOT_ACCOUNT_ID ? `.accounts.${accountId}` : ""}.dmPolicy`,
       allowFromPath: `channels.qqbot${accountId && accountId !== DEFAULT_QQBOT_ACCOUNT_ID ? `.accounts.${accountId}` : ""}.allowFrom`,
-      approveHint: "paleoclaw pairing approve qqbot <openid>",
+      approveHint: formatPairingApproveHint("qqbot"),
       normalizeEntry: (raw: string) => raw.trim().toLowerCase(),
     }),
     collectWarnings: ({ account }) => {
@@ -170,14 +176,14 @@ export const qqbotPlugin: ChannelPlugin<ResolvedQqbotAccount> = {
         throw new Error("QQBot is not configured; cannot send pairing approval");
       }
       const context = getQqbotAccountContext(account);
-      await context.sendText({ chatId: id, text: "paleoclaw: your access has been approved." });
+      await context.sendText({ chatId: id, text: PAIRING_APPROVED_MESSAGE });
     },
   },
   agentPrompt: {
     messageToolHints: () => [
       "- QQ 官方机器人: passive replies require the inbound msg_id (replyTo). Text is sent as markdown payload by default (msg_type 2).",
-      "- Outbound targets are opaque openids: user_openid (DM), group_openid (group), or channel_id (guild).",
-      "- Media (image/video/voice/file) is uploaded via the QQ files API first; URL sources are fetched server-side by QQ.",
+      "- Outbound targets are opaque openids: user_openid (c2c DM) and group_openid (group).",
+      "- Media (image/video/voice/file) is uploaded via the QQ files API first; URL sources are fetched server-side by QQ. Media is supported for c2c/group targets only — guild channel targets accept text only.",
       "- Keyboards: pass a raw QQ keyboard DSL object via `keyboard`; no builder is provided.",
       "- QQ does not support editing or unsending messages; keep replies under 4000 chars.",
     ],
@@ -234,7 +240,7 @@ export const qqbotPlugin: ChannelPlugin<ResolvedQqbotAccount> = {
       probeQqbot(cfg as CoreConfig, { accountId: account.accountId }),
     buildAccountSnapshot: ({ account, runtime, probe }) => ({
       ...buildBaseAccountStatusSnapshot({ account, runtime, probe }),
-      appId: account.appId ? `${account.appId.slice(0, 4)}***` : "",
+      appId: maskQqbotAppId(account.appId),
       sandbox: account.sandbox,
       mode: account.mode,
       dmPolicy: account.dmPolicy,

@@ -96,6 +96,23 @@ function isFtsError(error: unknown): boolean {
   return /fts|corrupt|malformed/i.test(message);
 }
 
+/**
+ * Errors a concurrent writer can cause on an append:
+ *  - a seq conflict on the (session_id, seq) primary key, and
+ *  - SQLITE_BUSY ("database is locked") when another connection holds the
+ *    write lock — the message text does NOT mention a constraint, so a
+ *    constraint-only filter never matched it.
+ * Both are worth another attempt: the transaction is rolled back before the
+ * retry, so nothing is half-written.
+ */
+function isRetryableWriteError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return /UNIQUE|PRIMARY KEY|constraint|locked|busy/i.test(message);
+}
+
+/** Attempts per append: one initial write plus two retries. */
+const APPEND_MAX_ATTEMPTS = 3;
+
 /** sessionId -> seq -> number of query tokens matched (for scoring). */
 type MatchCounts = Map<string, Map<number, number>>;
 
@@ -108,9 +125,18 @@ export interface SqliteSessionStoreOptions {
   wal?: boolean;
   /** Skip the FTS5 index entirely and always search via LIKE. */
   fts?: boolean;
+  /**
+   * How long (ms) a writer waits for the database lock before SQLite reports
+   * SQLITE_BUSY. Defaults to 5000 — long enough for a concurrent append to
+   * finish instead of losing the message.
+   */
+  busyTimeoutMs?: number;
   /** Same Stage-2 title hook as the JSON store. */
   titleUpgrader?: SessionTitleUpgrader;
 }
+
+/** Default lock wait for writers (ms). */
+const DEFAULT_BUSY_TIMEOUT_MS = 5000;
 
 export class SqliteSessionStore implements SessionStoreLike {
   private db: DatabaseSync;
@@ -118,10 +144,12 @@ export class SqliteSessionStore implements SessionStoreLike {
   private walEnabled: boolean;
   private ftsAvailable: boolean = false;
   private titleUpgrader?: SessionTitleUpgrader;
+  private busyTimeoutMs: number;
 
   constructor(dbPath: string, options: SqliteSessionStoreOptions = {}) {
     this.dbPath = dbPath;
     this.titleUpgrader = options.titleUpgrader;
+    this.busyTimeoutMs = options.busyTimeoutMs ?? DEFAULT_BUSY_TIMEOUT_MS;
 
     const { DatabaseSync } = requireNodeSqlite();
     ensurePrivateDir(path.dirname(dbPath));
@@ -133,6 +161,16 @@ export class SqliteSessionStore implements SessionStoreLike {
   }
 
   private applyPragmas(): void {
+    // busy_timeout comes first: it makes every later pragma (notably the
+    // journal_mode switch, which needs an exclusive lock) wait for a
+    // concurrent writer instead of failing. Without it, a writer holding the
+    // lock at open time made the WAL switch fail and silently downgraded the
+    // store to the DELETE journal mode.
+    try {
+      this.db.exec(`PRAGMA busy_timeout = ${Math.max(0, Math.trunc(this.busyTimeoutMs))}`);
+    } catch {
+      // Ignore.
+    }
     if (this.walEnabled) {
       try {
         this.db.exec("PRAGMA journal_mode = WAL");
@@ -238,8 +276,19 @@ export class SqliteSessionStore implements SessionStoreLike {
     }
   }
 
+  /**
+   * Run `fn` inside a write transaction.
+   *
+   * BEGIN IMMEDIATE (not the default deferred BEGIN) takes the write lock up
+   * front: with a deferred transaction the first statement only starts a read
+   * transaction, so a concurrent writer can commit between the MAX(seq) read
+   * and the INSERT — the INSERT then fails with SQLITE_BUSY_SNAPSHOT
+   * ("database is locked"), which no busy handler can resolve because the
+   * read snapshot is already stale. Holding the write lock from the start
+   * makes the seq read and the INSERT atomic with respect to other writers.
+   */
   private withTransaction<T>(fn: () => T): T {
-    this.db.exec("BEGIN");
+    this.db.exec("BEGIN IMMEDIATE");
     try {
       const result = fn();
       this.db.exec("COMMIT");
@@ -469,36 +518,52 @@ export class SqliteSessionStore implements SessionStoreLike {
     let seq = 0;
     const ts = nowIso();
 
-    this.withTransaction(() => {
-      // Re-read MAX(seq) inside the transaction. Reading it outside meant two
-      // concurrent appends could both compute the same seq and collide on the
-      // (session_id, seq) primary key; the retry keeps the invariant local to
-      // the write even if another writer committed in between.
-      for (let attempt = 0; attempt < 3; attempt += 1) {
-        const current = asRow(
-          this.db.prepare("SELECT MAX(seq) AS max_seq FROM messages WHERE session_id = ?").get(id),
-        ) as { max_seq: number | null } | undefined;
-        seq = Number(current?.max_seq ?? -1) + 1;
-        try {
-          this.insertMessage(id, role, text, ts, seq, metadata);
-        } catch (error) {
-          const isSeqConflict =
-            error instanceof Error && /UNIQUE|PRIMARY KEY|constraint/i.test(error.message);
-          if (isSeqConflict && attempt < 2) {
-            continue;
+    // The retry wraps the whole transaction, not just the INSERT: a BUSY error
+    // leaves the transaction's read snapshot stale (SQLITE_BUSY_SNAPSHOT), so
+    // the only way forward is to roll back and start over from a fresh
+    // snapshot. withTransaction() rolls back before rethrowing, so a retry
+    // never sees a half-written message.
+    for (let attempt = 0; attempt < APPEND_MAX_ATTEMPTS; attempt += 1) {
+      try {
+        this.withTransaction(() => {
+          // Re-read MAX(seq) inside the write transaction. Reading it outside
+          // meant two concurrent appends could both compute the same seq and
+          // collide on the (session_id, seq) primary key; the write lock
+          // (BEGIN IMMEDIATE) plus the retry keep the invariant local to the
+          // write even if another writer committed in between.
+          for (let seqAttempt = 0; seqAttempt < APPEND_MAX_ATTEMPTS; seqAttempt += 1) {
+            const current = asRow(
+              this.db
+                .prepare("SELECT MAX(seq) AS max_seq FROM messages WHERE session_id = ?")
+                .get(id),
+            ) as { max_seq: number | null } | undefined;
+            seq = Number(current?.max_seq ?? -1) + 1;
+            try {
+              this.insertMessage(id, role, text, ts, seq, metadata);
+            } catch (error) {
+              if (isRetryableWriteError(error) && seqAttempt < APPEND_MAX_ATTEMPTS - 1) {
+                continue;
+              }
+              throw error;
+            }
+            if (shouldDeriveTitle) {
+              this.db
+                .prepare("UPDATE sessions SET title = ?, title_source = ? WHERE id = ?")
+                .run(title, "derived", id);
+            }
+            this.syncFts(id, seq, text);
+            this.db.prepare("UPDATE sessions SET updated_at = ? WHERE id = ?").run(nowIso(), id);
+            return;
           }
-          throw error;
+        });
+        break;
+      } catch (error) {
+        if (attempt < APPEND_MAX_ATTEMPTS - 1 && isRetryableWriteError(error)) {
+          continue;
         }
-        if (shouldDeriveTitle) {
-          this.db
-            .prepare("UPDATE sessions SET title = ?, title_source = ? WHERE id = ?")
-            .run(title, "derived", id);
-        }
-        this.syncFts(id, seq, text);
-        this.db.prepare("UPDATE sessions SET updated_at = ? WHERE id = ?").run(nowIso(), id);
-        return;
+        throw error;
       }
-    });
+    }
 
     // Stage 2: kick off the optional async upgrade (never awaited).
     if (shouldDeriveTitle) {

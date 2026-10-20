@@ -37,6 +37,7 @@ const bundledExtensionSubpathLoaders = [
   { id: "nostr", load: () => import("paleoclaw/plugin-sdk/nostr") },
   { id: "open-prose", load: () => import("paleoclaw/plugin-sdk/open-prose") },
   { id: "phone-control", load: () => import("paleoclaw/plugin-sdk/phone-control") },
+  { id: "qqbot", load: () => import("paleoclaw/plugin-sdk/qqbot") },
   { id: "qwen-portal-auth", load: () => import("paleoclaw/plugin-sdk/qwen-portal-auth") },
   { id: "synology-chat", load: () => import("paleoclaw/plugin-sdk/synology-chat") },
   { id: "talk-voice", load: () => import("paleoclaw/plugin-sdk/talk-voice") },
@@ -45,6 +46,8 @@ const bundledExtensionSubpathLoaders = [
   { id: "tlon", load: () => import("paleoclaw/plugin-sdk/tlon") },
   { id: "twitch", load: () => import("paleoclaw/plugin-sdk/twitch") },
   { id: "voice-call", load: () => import("paleoclaw/plugin-sdk/voice-call") },
+  { id: "wecom", load: () => import("paleoclaw/plugin-sdk/wecom") },
+  { id: "weixin", load: () => import("paleoclaw/plugin-sdk/weixin") },
   { id: "zalo", load: () => import("paleoclaw/plugin-sdk/zalo") },
   { id: "zalouser", load: () => import("paleoclaw/plugin-sdk/zalouser") },
 ] as const;

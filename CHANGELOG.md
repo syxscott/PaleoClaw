@@ -17,6 +17,14 @@ Comprehensive bug-fix pass across the core, paleoclaw domain modules, Android ap
 - **paleoclaw modules**: session store and task-memory store now import correctly (missing `path`/shadowed `paleoclawHome`); auto-review promotion is guarded against duplicates; chat day-files are excluded from archiving.
 - **Android**: missing `android.util.Log` import fixed; version-name normalization rewritten (case-insensitive `-dev` suffix strip, release builds verbatim).
 - **Control UI**: all six `docs.paleoclaw.ai` dead links repointed at the deployed manual; `GatewayHost.execApprovalTimers` type error fixed; empty streaming deltas no longer wipe accumulated text; dead `moonshot-kimi-k2.ts` removed.
+- **Memory**: chat day digests no longer inflate the short-term counts, render `undefined` rows in `paleo-memory short`, or dominate search results with a constant score; the built-in provider now records every agent turn, so earlier conversations can actually be recalled. An invalid `--limit` is rejected with a message instead of returning no rows on one command and the entire history on another.
+- **Sessions**: two-stage session titles now run (an instant title derived from the first user message, then the optional LLM upgrade); a corrupt or locked SQLite database surfaces an error instead of silently downgrading to the JSON backend and splitting history across two files; `upsertSession` keeps session metadata other than `tags`, and a sequence conflict is retried instead of losing the message.
+- **Tools**: `literature_summary` no longer splits sentences on every period, so `et al.` and `1.5 Ma` stay intact; CrossRef requests identify with the real version and an optional contact address (`PALEOCLAW_CONTACT_EMAIL`) so they reach the polite pool; third-party API responses injected as auto-tool context are labelled as untrusted data rather than as system instructions.
+- **Web/WhatsApp**: mention matching now goes through the shared helper, so a configured legacy pattern such as `/\bopenclaw\b/i` still matches after the rebrand; a rejected socket close no longer takes the WhatsApp monitor down.
+- **Channel access control**: the QQ, WeCom and WeChat plugins now enforce `dmPolicy`/`allowFrom` on the inbound path, read the pairing store, and issue a pairing code instead of silently dropping an unauthorized sender; the QQ pairing approval hint points at a command that now works. A WeChat deployment that never set `dmPolicy` is no longer reachable by every sender, and a WeCom deployment with `dmPolicy=allowlist` now actually blocks senders outside the list.
+- **Channel packaging**: the `qqbot`, `wecom` and `weixin` plugin-sdk subpaths are built, typed and published like every other channel subpath, and `scripts/check-plugin-sdk-exports.mjs` now guards them, so a missing build artifact can no longer reach a release unnoticed.
+- **Session and memory stores**: concurrent writers no longer lose a session message (the SQLite store waits on a busy lock and retries the whole transaction), memory recall no longer leaks one session's conversation into another session's prompt, and rotating a channel credential no longer keeps serving the token minted for the old one.
+- **Literature summary**: a genus abbreviation such as `T. rex` is no longer split into two summary points, and the taxonomic abbreviations (`sp.`, `nov.`, `aff.`, `gen.`) survive summarisation.
 
 ### ✨ Added
 
@@ -27,6 +35,9 @@ Comprehensive bug-fix pass across the core, paleoclaw domain modules, Android ap
 - **Control UI**: wake/online reconnect for suspended tabs, IndexedDB composer drafts, per-session scroll memory, send-failure retry, mobile viewport meta with no-flash theme bootstrap, hardened i18n runtime.
 - **Website**: full zh/en/ja coverage (259 keys), real favicon set + OG/social meta, robots.txt + sitemap.xml, keyboard-accessible navigation, clipboard fallbacks.
 - **Private state dirs** (0o700) for session/memory data.
+- **QQ bot channel** (`channels.qqbot`): QQ open platform official bot. Inbound events arrive over the official WebSocket gateway, replies go out through the REST API as markdown payloads, and media is uploaded through the QQ files API.
+- **WeCom channel** (`channels.wecom`): WeCom self-built app. Inbound messages arrive on an encrypted callback (WXBizMsgCrypt), and replies are sent proactively through `message/send` with a cached access token.
+- **WeChat channel** (`channels.weixin`): WeChat personal account bridge over Tencent's iLink bot API, with QR-code login and long-poll message delivery.
 
 ---
 

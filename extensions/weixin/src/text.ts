@@ -8,6 +8,8 @@
  * content is packed block-aware into <= max_length chunks.
  */
 
+import { sliceUtf16Safe } from "paleoclaw/plugin-sdk/weixin";
+
 const HEADER_RE = /^(#{1,6})\s+(.+?)\s*$/;
 const TABLE_RULE_RE = /^\s*\|?(?:\s*:?-{3,}:?\s*\|)+\s*:?-{3,}:?\s*\|?\s*$/;
 const FENCE_RE = /^```([^\n`]*)\s*$/;
@@ -155,8 +157,17 @@ function wrapLine(line: string, width: number): string[] {
     }
     while (current.length > width) {
       // A single word longer than the width must still fit a chunk.
-      out.push(current.slice(0, width));
-      current = current.slice(width);
+      // Slicing is surrogate-safe: a boundary inside an emoji keeps the pair.
+      const head = sliceUtf16Safe(current, 0, width);
+      if (!head) {
+        // Width boundary landed inside a surrogate pair — emit the whole code point.
+        const codePoint = String.fromCodePoint(current.codePointAt(0) ?? 0);
+        out.push(codePoint);
+        current = current.slice(codePoint.length);
+        continue;
+      }
+      out.push(head);
+      current = current.slice(head.length);
     }
   }
   if (current) {
@@ -205,8 +216,17 @@ export function packBlocks(blocks: string[], maxLength: number): string[] {
   for (const block of blocks) {
     if (block.length > maxLength) {
       flush();
-      for (let i = 0; i < block.length; i += maxLength) {
-        chunks.push(block.slice(i, i + maxLength));
+      // Slice on code-point boundaries so an emoji is never split into a lone
+      // surrogate (the chunk would be invalid UTF-16 on the wire).
+      let offset = 0;
+      while (offset < block.length) {
+        const chunk = sliceUtf16Safe(block, offset, offset + maxLength);
+        if (!chunk) {
+          offset += 1;
+          continue;
+        }
+        chunks.push(chunk);
+        offset += chunk.length;
       }
       continue;
     }

@@ -3,7 +3,7 @@
  * nothing else — a successful token fetch proves appId/secret are valid.
  */
 
-import { resolveQqbotAccount } from "./accounts.js";
+import { maskQqbotAppId, resolveQqbotAccount } from "./accounts.js";
 import { getQqbotAccountContext } from "./send.js";
 import type { CoreConfig } from "./types.js";
 
@@ -11,6 +11,7 @@ export type QqbotProbe = {
   ok: boolean;
   error?: string;
   sandbox: boolean;
+  /** Masked AppID (the full id is never exposed). */
   appId: string;
   configured: boolean;
 };
@@ -25,20 +26,25 @@ export async function probeQqbot(
       ok: false,
       error: "not configured (missing appId or appSecret/clientSecret)",
       sandbox: account.sandbox,
-      appId: account.appId,
+      appId: maskQqbotAppId(account.appId),
       configured: false,
     };
   }
   try {
     const context = getQqbotAccountContext(account);
     await context.tokenManager.getToken();
-    return { ok: true, sandbox: account.sandbox, appId: account.appId, configured: true };
+    return {
+      ok: true,
+      sandbox: account.sandbox,
+      appId: maskQqbotAppId(account.appId),
+      configured: true,
+    };
   } catch (err) {
     return {
       ok: false,
       error: err instanceof Error ? err.message : String(err),
       sandbox: account.sandbox,
-      appId: account.appId,
+      appId: maskQqbotAppId(account.appId),
       configured: true,
     };
   }

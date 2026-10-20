@@ -45,6 +45,7 @@
     "src/plugin-sdk/nostr.ts",
     "src/plugin-sdk/open-prose.ts",
     "src/plugin-sdk/phone-control.ts",
+    "src/plugin-sdk/qqbot.ts",
     "src/plugin-sdk/qwen-portal-auth.ts",
     "src/plugin-sdk/synology-chat.ts",
     "src/plugin-sdk/talk-voice.ts",

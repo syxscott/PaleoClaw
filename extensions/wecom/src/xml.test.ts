@@ -55,6 +55,35 @@ describe("parseXmlEnvelope (WeCom callback XML)", () => {
     expect(parseXmlEnvelope("not xml at all")).toEqual({});
     expect(parseXmlEnvelope("")).toEqual({});
   });
+
+  it("parses a Content element whose CDATA contains a literal </Content>", () => {
+    const xml =
+      "<xml><FromUserName>zhangsan</FromUserName><MsgType>text</MsgType>" +
+      "<Content><![CDATA[look: </Content> and more]]></Content><MsgId>42</MsgId></xml>";
+    const fields = parseXmlEnvelope(xml);
+    expect(fields.Content).toBe("look: </Content> and more");
+    expect(fields.MsgId).toBe("42");
+    expect(fields.FromUserName).toBe("zhangsan");
+  });
+
+  it("parses Event / EventKey elements whose CDATA contains the closing tag", () => {
+    const xml =
+      "<xml><Event><![CDATA[</Event>]]></Event>" +
+      "<EventKey><![CDATA[key </EventKey> tail]]></EventKey></xml>";
+    const fields = parseXmlEnvelope(xml);
+    expect(fields.Event).toBe("</Event>");
+    expect(fields.EventKey).toBe("key </EventKey> tail");
+  });
+
+  it("keeps sibling elements when one CDATA holds a closing tag", () => {
+    const xml =
+      "<xml><Content><![CDATA[a]]></Content><Note><![CDATA[</Content> b]]></Note>" +
+      "<MsgId>7</MsgId></xml>";
+    const fields = parseXmlEnvelope(xml);
+    expect(fields.Content).toBe("a");
+    expect(fields.Note).toBe("</Content> b");
+    expect(fields.MsgId).toBe("7");
+  });
 });
 
 describe("buildXmlEnvelope", () => {

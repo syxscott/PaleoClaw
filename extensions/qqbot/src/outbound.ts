@@ -97,11 +97,27 @@ export function buildV2MessageBody(
   return out;
 }
 
+/**
+ * Guild DMs (QQ `DIRECT_MESSAGE_CREATE`) have no v2 reply endpoint: the only
+ * ids the payload carries are the guild id and the author id, and neither maps
+ * to a valid `/v2/users/{id}/messages` target. Refuse explicitly instead of
+ * posting a request that can never succeed.
+ */
+export function assertQqbotChatKindSupported(chatKind: QqbotChatKind): void {
+  if (chatKind === "dm") {
+    throw new Error(
+      "QQ guild direct messages cannot be replied to (the QQ v2 API has no guild DM endpoint)",
+    );
+  }
+}
+
 /** REST path for a chat kind + target id (reference _rest_path). */
 export function qqbotMessagesPath(chatKind: QqbotChatKind, targetId: string): string {
   if (chatKind === "guild") {
     return `/channels/${targetId}/messages`;
   }
+  // "dm" (guild DM) is rejected by assertQqbotChatKindSupported before any
+  // request is built; the mapping below is kept for the path helper contract.
   const kind = chatKind === "c2c" || chatKind === "dm" ? "users" : "groups";
   return `/v2/${kind}/${targetId}/messages`;
 }

@@ -21,6 +21,11 @@ export interface CreateSessionStoreOptions {
    */
   wal?: boolean;
   /**
+   * How long (ms) a SQLite writer waits for the database lock before giving
+   * up with SQLITE_BUSY. Defaults to 5000.
+   */
+  busyTimeoutMs?: number;
+  /**
    * Stage-2 title upgrade hook, forwarded to the created store.
    */
   titleUpgrader?: SessionTitleUpgrader;
@@ -51,6 +56,7 @@ export function createSessionStore(options: CreateSessionStoreOptions = {}): Ses
 
   return new SqliteSessionStore(defaultSessionDbPath(), {
     wal: options.wal,
+    busyTimeoutMs: options.busyTimeoutMs,
     titleUpgrader: options.titleUpgrader,
   });
 }
