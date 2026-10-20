@@ -11,15 +11,15 @@
 
 全部 47 项发现均已修复并验证。修复分 7 组并行推进（按文件归属排他切分），每组均附**修复前反证**（回滚源码保留新测试 → 断言变红）。
 
-| 分组 | 覆盖缺陷 | 关键改动 | 测试 |
-| --- | --- | --- | --- |
-| 构建接线 | C1、H6、A8 | plugin-sdk 子路径补进**全部 7 份清单**（exports / tsdown / tsconfig.dts / write-plugin-sdk-entry-dts / plugins-loader alias / CI 守卫 / vitest） | 守卫 `OK: All 21 required plugin-sdk exports verified` |
-| 微信插件 | C2、H7、H8、M5–M8、L6 | 接入控制改用规范 helper；`stop()` 可中断；错误不再被吞；改走 `fetchWithSsrFGuard`；通配符 `*` 生效；命名账号不再串号；代理对安全 | 8 文件 / 83 例 |
-| 企业微信 | H2、H3、M9–M13、L3–L5 | deliver 路径强制 allowlist + 配对码；账号维度回调路径；CDATA 安全 XML；errcode 严格校验；按**字节**截断 + chunker；token 共享缓存；群聊不再当私聊 | 6 文件 / 72 例 |
-| QQ 插件 | H4、H5、M1–M4、L1、L2 | pairing 流程接线 + 修正 approveHint；凭据指纹化缓存；连接超时关 socket 并排重连；附件投递给 agent；群聊媒体契约对齐；accountId 透传 | 12 文件 / 109 例 |
-| 记忆子系统 | H1、M14–M19 | 记忆按 session 隔离（跨会话泄漏已复现并修复）；日期固定夹具；`listChatDaily` 语义统一；缓存键测试改为真断言；保留期清理；跨进程锁；计数口径统一 | 6 文件 / 37 例 |
-| 会话/工具 | M20–M23 | `busy_timeout` + `BEGIN IMMEDIATE` + 全事务重试；标题回归测试改为真守卫；属名缩写不再被切开；注释与实现对齐 | 7 文件 / 68 例 |
-| 文档与约定 | A1–A7 | labeler 补 3 个插件；新建 3 个渠道文档页；渠道索引 / subpath 清单 / README / README_CN / CHANGELOG 全部补齐；`PaleoClaw_AGENTS.md` 按真实 API 重写 | — |
+| 分组       | 覆盖缺陷              | 关键改动                                                                                                                                           | 测试                                                   |
+| ---------- | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| 构建接线   | C1、H6、A8            | plugin-sdk 子路径补进**全部 7 份清单**（exports / tsdown / tsconfig.dts / write-plugin-sdk-entry-dts / plugins-loader alias / CI 守卫 / vitest）   | 守卫 `OK: All 21 required plugin-sdk exports verified` |
+| 微信插件   | C2、H7、H8、M5–M8、L6 | 接入控制改用规范 helper；`stop()` 可中断；错误不再被吞；改走 `fetchWithSsrFGuard`；通配符 `*` 生效；命名账号不再串号；代理对安全                   | 8 文件 / 83 例                                         |
+| 企业微信   | H2、H3、M9–M13、L3–L5 | deliver 路径强制 allowlist + 配对码；账号维度回调路径；CDATA 安全 XML；errcode 严格校验；按**字节**截断 + chunker；token 共享缓存；群聊不再当私聊  | 6 文件 / 72 例                                         |
+| QQ 插件    | H4、H5、M1–M4、L1、L2 | pairing 流程接线 + 修正 approveHint；凭据指纹化缓存；连接超时关 socket 并排重连；附件投递给 agent；群聊媒体契约对齐；accountId 透传                | 12 文件 / 109 例                                       |
+| 记忆子系统 | H1、M14–M19           | 记忆按 session 隔离（跨会话泄漏已复现并修复）；日期固定夹具；`listChatDaily` 语义统一；缓存键测试改为真断言；保留期清理；跨进程锁；计数口径统一    | 6 文件 / 37 例                                         |
+| 会话/工具  | M20–M23               | `busy_timeout` + `BEGIN IMMEDIATE` + 全事务重试；标题回归测试改为真守卫；属名缩写不再被切开；注释与实现对齐                                        | 7 文件 / 68 例                                         |
+| 文档与约定 | A1–A7                 | labeler 补 3 个插件；新建 3 个渠道文档页；渠道索引 / subpath 清单 / README / README_CN / CHANGELOG 全部补齐；`PaleoClaw_AGENTS.md` 按真实 API 重写 | —                                                      |
 
 **主审额外收尾**（各 worker 权限之外）：
 
@@ -32,19 +32,19 @@
 
 **终局验证**：
 
-| 检查 | 结果 |
-| --- | --- |
-| `tsdown` 构建 | ✅ exit 0 |
-| Node 真实解析 `paleoclaw/plugin-sdk/qqbot` | ✅ **RESOLVE_OK**（修复前为 `MODULE_NOT_FOUND`） |
-| `dist/plugin-sdk/{qqbot,wecom,weixin}.{js,d.ts}` | ✅ 全部生成 |
-| `scripts/check-plugin-sdk-exports.mjs`（CI 守卫） | ✅ exit 0，21 项导出全过 |
-| 扩展测试全套 | ✅ **292 文件 / 2575 用例通过**（1 跳过） |
-| 单元测试全套 | ✅ **888 文件 / 7337 用例通过**；仅 3 个文件 4 用例失败，均为环境问题（bash 钩子集成、Windows 中文区域 `Intl` 输出「周一」、macOS Xcode 脚本），与本次改动无关 |
-| `tsc --noEmit`（全仓） | ✅ exit 0 |
-| `oxlint --type-aware` | ✅ exit 0 |
-| `oxfmt --check` | ✅ 全部合规 |
-| 仓库守卫脚本（6 个） | ✅ 全部 exit 0 |
-| AST 空函数重扫（61 个改动文件） | ✅ **具名空函数 0**；2 处命中均为既有且合法（JSON store 的接口可选 no-op `close()`、微信的后期绑定 `signalStop` 默认值） |
+| 检查                                              | 结果                                                                                                                                                           |
+| ------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tsdown` 构建                                     | ✅ exit 0                                                                                                                                                      |
+| Node 真实解析 `paleoclaw/plugin-sdk/qqbot`        | ✅ **RESOLVE_OK**（修复前为 `MODULE_NOT_FOUND`）                                                                                                               |
+| `dist/plugin-sdk/{qqbot,wecom,weixin}.{js,d.ts}`  | ✅ 全部生成                                                                                                                                                    |
+| `scripts/check-plugin-sdk-exports.mjs`（CI 守卫） | ✅ exit 0，21 项导出全过                                                                                                                                       |
+| 扩展测试全套                                      | ✅ **292 文件 / 2575 用例通过**（1 跳过）                                                                                                                      |
+| 单元测试全套                                      | ✅ **888 文件 / 7337 用例通过**；仅 3 个文件 4 用例失败，均为环境问题（bash 钩子集成、Windows 中文区域 `Intl` 输出「周一」、macOS Xcode 脚本），与本次改动无关 |
+| `tsc --noEmit`（全仓）                            | ✅ exit 0                                                                                                                                                      |
+| `oxlint --type-aware`                             | ✅ exit 0                                                                                                                                                      |
+| `oxfmt --check`                                   | ✅ 全部合规                                                                                                                                                    |
+| 仓库守卫脚本（6 个）                              | ✅ 全部 exit 0                                                                                                                                                 |
+| AST 空函数重扫（61 个改动文件）                   | ✅ **具名空函数 0**；2 处命中均为既有且合法（JSON store 的接口可选 no-op `close()`、微信的后期绑定 `signalStop` 默认值）                                       |
 
 > 附带修复：微信插件引入的弱随机曾导致 `src/security/temp-path-guard.test.ts` 变红——这是本轮唯一由本次改动引入的测试回归，已在终局验证前修掉并复验通过。
 
