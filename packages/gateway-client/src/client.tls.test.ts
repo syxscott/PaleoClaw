@@ -3,7 +3,7 @@ import { createServer as createHttpServer, type IncomingHttpHeaders } from "node
 import { createServer as createHttpsServer } from "node:https";
 import { connect, createServer as createTcpServer } from "node:net";
 import { checkServerIdentity } from "node:tls";
-import { installGlobalProxy, type ProxylineHandle } from "@paleoclaw/proxyline";
+import { installGlobalProxy, type ProxylineHandle } from "@openclaw/proxyline";
 import { expect, it } from "vitest";
 import { createDeferred } from "../../../test/helpers/promise.js";
 import { TEST_TLS_CERT_PEM, TEST_TLS_KEY_PEM } from "../../../test/helpers/tls-fixture.js";

@@ -1,4 +1,4 @@
-import { parseClawHubPluginSpec } from "../infra/clawhub-spec.js";
+import { parseClawHubPluginSpec } from "../infra/PaleoHub-spec.js";
 import { withClawPackageLifecycleLease } from "../state/claw-package-lifecycle-lease.js";
 
 type ClawHubInstallRecord = {
@@ -9,7 +9,7 @@ type ClawHubInstallRecord = {
 };
 
 export function resolveRecordedClawHubPackage(record: ClawHubInstallRecord): string | undefined {
-  if (record.source !== "clawhub") {
+  if (record.source !== "PaleoHub") {
     return undefined;
   }
   return (
@@ -31,7 +31,7 @@ export async function runPluginUpdateWithClawHubLease<T>(params: {
       return await params.run();
     }
     return await withClawPackageLifecycleLease(
-      { kind: "plugin", source: "clawhub", ref: params.clawhubPackage },
+      { kind: "plugin", source: "PaleoHub", ref: params.clawhubPackage },
       async () => {
         params.beforePersistentEffect?.();
         return await params.run();

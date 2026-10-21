@@ -1,5 +1,5 @@
 /* @vitest-environment jsdom */
-import { createRouter, definePage, type Router } from "@openclaw/uirouter";
+import { createRouter, definePage, type Router } from "@paleoclaw/uirouter";
 import type { JSX } from "@solidjs/web";
 import { createSignal, onCleanup } from "solid-js";
 import { expect, it, vi } from "vitest";

@@ -37,7 +37,7 @@ it.each([
     const plugin = writePlugin({
       id: "codex",
       filename: "index.cjs",
-      registration: `api.registerTool({ name: "runtime_probe", description: "Probe", parameters: { type: "object", properties: {} }, execute: async () => (await import("./runtime.mjs")).result });`,
+      registration: `api.registerTool({ name: "runtime_probe", description: "Probe", parameters: { type: "object", properties: {} }, execute: async () => (await import("./runtime.js")).result });`,
     });
     fs.writeFileSync(
       path.join(plugin.dir, "runtime.mjs"),

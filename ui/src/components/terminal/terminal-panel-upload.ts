@@ -1,4 +1,4 @@
-import type { GhosttyTerminalController } from "@openclaw/libterminal/browser";
+import type { GhosttyTerminalController } from "@paleoclaw/libterminal/browser";
 import { createMemo, createSignal, onSettled } from "solid-js";
 import { TERMINAL_UPLOAD_RETENTION_MS } from "../../../../packages/gateway-protocol/src/schema/terminal-constants.js";
 import type { ApplicationConfigCapability } from "../../app/config.ts";

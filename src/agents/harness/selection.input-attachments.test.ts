@@ -34,7 +34,7 @@ import { prepareEmbeddedAttemptPromptExecution } from "../embedded-agent-runner/
 import { makeEmbeddedRunnerAttempt } from "../test-helpers/embedded-agent-runner-e2e-fixtures.js";
 import { attachToolAllowlistIntersection } from "../tool-policy.js";
 import { registerAgentWorkspaceAccess } from "../workspace-access.js";
-import * as builtinOpenClaw from "./builtin-openclaw.js";
+import * as builtinOpenClaw from "./builtin-paleoclaw.js";
 import { runAgentHarnessBeforeMessageWriteHook } from "./hook-helpers.js";
 import { createAgentHarnessHostCapabilities } from "./host-capability.js";
 import * as harnessLifecycle from "./lifecycle.js";

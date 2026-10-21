@@ -1,40 +1,51 @@
 import fs from "node:fs/promises";
-import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { expectedNpmCommand } from "../test-utils/npm-command.js";
+import { npmCommandFailureCases } from "../test-utils/npm-spec-install-test-helpers.js";
+import { createTrackedTempDirs } from "../test-utils/tracked-temp-dirs.js";
 import {
   packNpmSpecToArchive,
   resolveArchiveSourcePath,
-  withTempDir,
+  resolveNpmPackArchiveMetadata,
+  resolveNpmSpecMetadata,
 } from "./install-source-utils.js";
 
+const execFileSyncMock = vi.hoisted(() => vi.fn(() => "/tmp/paleoclaw-test-global-npmrc\n"));
 const runCommandWithTimeoutMock = vi.fn();
-const TEMP_DIR_PREFIX = "paleoclaw-install-source-utils-";
+const tempDirs = createTrackedTempDirs();
+
+vi.mock("node:child_process", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("node:child_process")>();
+  return { ...actual, execFileSync: execFileSyncMock };
+});
 
 vi.mock("../process/exec.js", () => ({
   runCommandWithTimeout: (...args: unknown[]) => runCommandWithTimeoutMock(...args),
 }));
 
-const tempDirs: string[] = [];
-
-async function createTempDir(prefix: string) {
-  const dir = await fs.mkdtemp(path.join(os.tmpdir(), prefix));
-  tempDirs.push(dir);
-  return dir;
-}
+const packFields = {
+  name: "paleoclaw-plugin",
+  version: "1.2.3",
+  integrity: "sha512-test-integrity",
+  shasum: "abc123",
+};
+const packMetadata = { ...packFields, resolvedSpec: "paleoclaw-plugin@1.2.3" };
+const packEntry = {
+  ...packFields,
+  id: packMetadata.resolvedSpec,
+  filename: "paleoclaw-plugin-1.2.3.tgz",
+};
+const createArchive = (contents = "") => createFixtureFile(packEntry.filename, contents);
 
 async function createFixtureDir() {
-  return await createTempDir(TEMP_DIR_PREFIX);
+  return await tempDirs.make("paleoclaw-install-source-utils-");
 }
 
-async function createFixtureFile(params: {
-  fileName: string;
-  contents: string;
-  dir?: string;
-}): Promise<{ dir: string; filePath: string }> {
-  const dir = params.dir ?? (await createFixtureDir());
-  const filePath = path.join(dir, params.fileName);
-  await fs.writeFile(filePath, params.contents, "utf-8");
+async function createFixtureFile(fileName: string, contents = "") {
+  const dir = await createFixtureDir();
+  const filePath = path.join(dir, fileName);
+  await fs.writeFile(filePath, contents, "utf-8");
   return { dir, filePath };
 }
 
@@ -49,253 +60,271 @@ function mockPackCommandResult(params: { stdout: string; stderr?: string; code?:
 }
 
 async function runPack(spec: string, cwd: string, timeoutMs = 1000) {
-  return await packNpmSpecToArchive({
-    spec,
-    timeoutMs,
-    cwd,
+  return await packNpmSpecToArchive({ spec, timeoutMs, cwd });
+}
+
+async function expectPackFallback(stdout: string, metadata = {}) {
+  const { dir: cwd, filePath: archivePath } = await createArchive();
+  mockPackCommandResult({ stdout });
+  expect(await runPack(packMetadata.resolvedSpec, cwd, 5000)).toEqual({
+    ok: true,
+    archivePath,
+    metadata,
   });
 }
 
-async function expectPackFallsBackToDetectedArchive(params: { stdout: string }) {
-  const cwd = await createTempDir("paleoclaw-install-source-utils-");
-  const archivePath = path.join(cwd, "paleoclaw-plugin-1.2.3.tgz");
-  await fs.writeFile(archivePath, "", "utf-8");
-  runCommandWithTimeoutMock.mockResolvedValue({
-    stdout: params.stdout,
-    stderr: "",
-    code: 0,
-    signal: null,
-    killed: false,
-  });
-
-  const result = await packNpmSpecToArchive({
-    spec: "paleoclaw-plugin@1.2.3",
-    timeoutMs: 5000,
-    cwd,
-  });
-
-  expect(result).toEqual({
-    ok: true,
-    archivePath,
-    metadata: {},
-  });
+function expectPackError(result: { ok: boolean; error?: string }, expected: string[]): void {
+  expect(result.ok).toBe(false);
+  if (result.ok) {
+    return;
+  }
+  for (const part of expected) {
+    expect(result.error ?? "").toContain(part);
+  }
 }
 
 beforeEach(() => {
+  execFileSyncMock.mockClear();
   runCommandWithTimeoutMock.mockClear();
 });
 
 afterEach(async () => {
-  while (tempDirs.length > 0) {
-    const dir = tempDirs.pop();
-    if (!dir) {
-      break;
-    }
-    await fs.rm(dir, { recursive: true, force: true });
-  }
+  await tempDirs.cleanup();
 });
 
-describe("withTempDir", () => {
-  it("creates a temp dir and always removes it after callback", async () => {
-    let observedDir = "";
-    const markerFile = "marker.txt";
+describe.each([
+  {
+    owner: "registry metadata",
+    prefix: "npm view failed: ",
+    category: "metadata-env",
+    run: async () => await resolveNpmSpecMetadata({ spec: "example-plugin@1.0.0" }),
+  },
+  {
+    owner: "registry archive packing",
+    prefix: "npm pack failed: ",
+    category: undefined,
+    run: async () => await runPack("example-plugin@1.0.0", await createFixtureDir()),
+  },
+  {
+    owner: "local archive metadata",
+    prefix: "npm pack metadata read failed: ",
+    category: undefined,
+    run: async () => {
+      const { filePath } = await createFixtureFile("plugin.tgz", "fixture");
+      return await resolveNpmPackArchiveMetadata({ archivePath: filePath });
+    },
+  },
+])("npm failure diagnostics: $owner", ({ prefix, category, run }) => {
+  const failureCases =
+    category === "metadata-env"
+      ? npmCommandFailureCases.filter(({ label }) =>
+          [
+            "exit code without output",
+            "cancellation followed by a nonzero exit",
+            "no-output-timeout with normalized exit code",
+          ].includes(label),
+        )
+      : npmCommandFailureCases.filter(({ label }) => label === "signal without output");
+  it.each(failureCases)("preserves $label", async ({ npmResult, expectedDetail }) => {
+    runCommandWithTimeoutMock.mockResolvedValue(npmResult);
 
-    const value = await withTempDir("paleoclaw-install-source-utils-", async (tmpDir) => {
-      observedDir = tmpDir;
-      await fs.writeFile(path.join(tmpDir, markerFile), "ok", "utf-8");
-      await expect(fs.stat(path.join(tmpDir, markerFile))).resolves.toBeDefined();
-      return "done";
+    await expect(run()).resolves.toEqual({
+      ok: false,
+      error: `${prefix}${expectedDetail}`,
+      ...(category ? { category } : {}),
     });
-
-    expect(value).toBe("done");
-    await expect(fs.stat(observedDir)).rejects.toThrow();
   });
 });
 
-describe("resolveArchiveSourcePath", () => {
-  it("returns not found error for missing archive paths", async () => {
-    const result = await resolveArchiveSourcePath("/tmp/does-not-exist-paleoclaw-archive.tgz");
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.error).toContain("archive not found");
-    }
+it.each([
+  ["archive not found", async (): Promise<string> => "/tmp/does-not-exist-paleoclaw-archive.tgz"],
+  [
+    "unsupported archive",
+    async (): Promise<string> => (await createFixtureFile("plugin.txt", "not-an-archive")).filePath,
+  ],
+] as const)("resolveArchiveSourcePath rejects %s", async (expected, resolvePath) => {
+  expectPackError(await resolveArchiveSourcePath(await resolvePath()), [expected]);
+});
+
+describe("resolveNpmSpecMetadata", () => {
+  const npmViewMetadata = {
+    name: "@paleoclaw/codex",
+    version: "2026.6.11",
+    "dist.integrity": "placeholder",
+    "dist.shasum": "placeholder",
+    paleoclaw: { extensions: ["./index.ts"] },
+  };
+
+  it("normalizes npm 12 view JSON", async () => {
+    mockPackCommandResult({ stdout: JSON.stringify([npmViewMetadata]) });
+
+    expect(await resolveNpmSpecMetadata({ spec: "@paleoclaw/codex" })).toEqual({
+      ok: true,
+      metadata: {
+        name: npmViewMetadata.name,
+        version: npmViewMetadata.version,
+        resolvedSpec: "@paleoclaw/codex@2026.6.11",
+        integrity: "placeholder",
+        shasum: "placeholder",
+        packageOpenClaw: npmViewMetadata.openclaw,
+      },
+    });
   });
 
-  it("rejects unsupported archive extensions", async () => {
-    const { filePath } = await createFixtureFile({
-      fileName: "plugin.txt",
-      contents: "not-an-archive",
+  describe("registry selectors", () => {
+    const name = "example-plugin";
+    it("preserves literal tag v2 in both npm view shapes", async () => {
+      const entry = { name, version: "1.0.0" };
+      // npm resolves literal dist-tags before interpreting the selector as a range.
+      for (const payload of [entry, [entry]]) {
+        mockPackCommandResult({ stdout: JSON.stringify(payload) });
+        await expect(resolveNpmSpecMetadata({ spec: `${name}@v2` })).resolves.toMatchObject({
+          ok: true,
+          metadata: { name, version: "1.0.0", resolvedSpec: `${name}@1.0.0` },
+        });
+      }
     });
 
-    const result = await resolveArchiveSourcePath(filePath);
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.error).toContain("unsupported archive");
-    }
+    it("selects the max version when v2 is not a literal tag", async () => {
+      mockPackCommandResult({
+        stdout: JSON.stringify([
+          { name, version: "2.9.0" },
+          { name, version: "2.1.0" },
+        ]),
+      });
+      await expect(resolveNpmSpecMetadata({ spec: `${name}@v2` })).resolves.toMatchObject({
+        ok: true,
+        metadata: { name, version: "2.9.0", resolvedSpec: `${name}@2.9.0` },
+      });
+    });
+
+    it.each(["^2", "2.0.0"])(
+      "rejects a singleton outside the non-tag selector %s",
+      async (selector) => {
+        mockPackCommandResult({ stdout: JSON.stringify([{ name, version: "1.0.0" }]) });
+        await expect(
+          resolveNpmSpecMetadata({ spec: `${name}@${selector}` }),
+        ).resolves.toMatchObject({
+          ok: false,
+          category: "metadata-env",
+        });
+      },
+    );
   });
 
-  it("accepts supported archive extensions", async () => {
-    const { filePath } = await createFixtureFile({
-      fileName: "plugin.zip",
-      contents: "",
-    });
+  it("reports which required metadata fields are missing", async () => {
+    mockPackCommandResult({ stdout: JSON.stringify({ version: "2026.6.11" }) });
 
-    const result = await resolveArchiveSourcePath(filePath);
-    expect(result).toEqual({ ok: true, path: filePath });
+    await expect(resolveNpmSpecMetadata({ spec: "@paleoclaw/codex" })).resolves.toEqual({
+      ok: false,
+      error: "npm view produced incomplete package metadata (missing: name)",
+      category: "metadata-env",
+    });
   });
 });
 
 describe("packNpmSpecToArchive", () => {
-  it("packs spec and returns archive path using JSON output metadata", async () => {
-    const cwd = await createFixtureDir();
-    const archivePath = path.join(cwd, "paleoclaw-plugin-1.2.3.tgz");
-    await fs.writeFile(archivePath, "", "utf-8");
-    mockPackCommandResult({
-      stdout: JSON.stringify([
-        {
-          id: "paleoclaw-plugin@1.2.3",
-          name: "paleoclaw-plugin",
-          version: "1.2.3",
-          filename: "paleoclaw-plugin-1.2.3.tgz",
-          integrity: "sha512-test-integrity",
-          shasum: "abc123",
-        },
-      ]),
+  it("packs spec with an unbounded work deadline and retains metadata", async () => {
+    const { dir: cwd, filePath: archivePath } = await createArchive();
+    mockPackCommandResult({ stdout: JSON.stringify([packEntry]) });
+
+    const signal = new AbortController().signal;
+    const result = await packNpmSpecToArchive({
+      spec: "paleoclaw-plugin@1.2.3",
+      timeoutMs: 1000,
+      workTimeoutMs: null,
+      cwd,
+      signal,
     });
 
-    const result = await runPack("paleoclaw-plugin@1.2.3", cwd);
-
-    expect(result).toEqual({
-      ok: true,
-      archivePath,
-      metadata: {
-        name: "paleoclaw-plugin",
-        version: "1.2.3",
-        resolvedSpec: "paleoclaw-plugin@1.2.3",
-        integrity: "sha512-test-integrity",
-        shasum: "abc123",
-      },
-    });
+    expect(result).toEqual({ ok: true, archivePath, metadata: packMetadata });
     expect(runCommandWithTimeoutMock).toHaveBeenCalledWith(
-      ["npm", "pack", "paleoclaw-plugin@1.2.3", "--ignore-scripts", "--json"],
-      expect.objectContaining({
+      expectedNpmCommand([
+        "pack",
+        "paleoclaw-plugin@1.2.3",
+        "--ignore-scripts",
+        "--json",
+        "--dry-run=false",
+        `--pack-destination=${cwd}`,
+      ]),
+      {
         cwd,
-        timeoutMs: 300_000,
-      }),
+        timeoutMs: undefined,
+        signal,
+        killProcessTree: true,
+        env: {
+          COREPACK_ENABLE_DOWNLOAD_PROMPT: "0",
+          NPM_CONFIG_IGNORE_SCRIPTS: "true",
+          NPM_CONFIG_BEFORE: "",
+          NPM_CONFIG_MIN_RELEASE_AGE: "",
+          "NPM_CONFIG_MIN-RELEASE-AGE": "",
+          npm_config_before: "",
+          "npm_config_min-release-age": "",
+          npm_config_min_release_age: "0",
+        },
+      },
     );
   });
 
-  it("falls back to parsing final stdout line when npm json output is unavailable", async () => {
-    const cwd = await createFixtureDir();
-    const expectedArchivePath = path.join(cwd, "paleoclaw-plugin-1.2.3.tgz");
-    await fs.writeFile(expectedArchivePath, "", "utf-8");
-    mockPackCommandResult({
-      stdout: "npm notice created package\nopenclaw-plugin-1.2.3.tgz\n",
-    });
-
-    const result = await runPack("paleoclaw-plugin@1.2.3", cwd);
-
-    expect(result).toEqual({
-      ok: true,
-      archivePath: expectedArchivePath,
-      metadata: {},
-    });
+  it("uses the workspace archive when npm prints notices without JSON", async () => {
+    await expectPackFallback(`npm notice created package\n${packEntry.filename}\n`);
   });
 
-  it("returns npm pack error details when command fails", async () => {
-    const cwd = await createFixtureDir();
-    mockPackCommandResult({
-      stdout: "fallback stdout",
-      stderr: "registry timeout",
-      code: 1,
-    });
-
-    const result = await runPack("bad-spec", cwd, 5000);
-
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.error).toContain("npm pack failed");
-      expect(result.error).toContain("registry timeout");
-    }
-  });
-
-  it("falls back to archive detected in cwd when npm pack stdout is empty", async () => {
-    await expectPackFallsBackToDetectedArchive({ stdout: " \n\n" });
-  });
-
-  it("falls back to archive detected in cwd when stdout does not contain a tgz", async () => {
-    await expectPackFallsBackToDetectedArchive({ stdout: "npm pack completed successfully\n" });
+  it("falls back to cwd archive when logged JSON metadata omits filename", async () => {
+    await expectPackFallback(
+      `npm notice using cache\n${JSON.stringify([{ ...packFields, id: packEntry.id }])}\n`,
+      packMetadata,
+    );
   });
 
   it("returns friendly error for 404 (package not on npm)", async () => {
     const cwd = await createFixtureDir();
     mockPackCommandResult({
       stdout: "",
-      stderr:
-        "npm error code E404\nnpm error 404  '@paleoclaw/whatsapp@*' is not in this registry.",
+      stderr: "npm error code E404\nnpm error 404  '@paleoclaw/whatsapp@*' is not in this registry.",
       code: 1,
     });
 
-    const result = await runPack("@paleoclaw/whatsapp", cwd);
-
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.error).toContain("Package not found on npm");
-      expect(result.error).toContain("@paleoclaw/whatsapp");
-      expect(result.error).toContain("docs.paleoclaw.ai/tools/plugin");
-    }
+    expectPackError(await runPack("@paleoclaw/whatsapp", cwd), [
+      "Package not found on npm",
+      "@paleoclaw/whatsapp",
+      "docs.openclaw.ai/tools/plugin",
+    ]);
   });
 
   it("returns explicit error when npm pack produces no archive name", async () => {
     const cwd = await createFixtureDir();
-    mockPackCommandResult({
-      stdout: " \n\n",
-    });
-
-    const result = await runPack("paleoclaw-plugin@1.2.3", cwd, 5000);
-
-    expect(result).toEqual({
+    mockPackCommandResult({ stdout: " \n\n" });
+    expect(await runPack(packMetadata.resolvedSpec, cwd, 5000)).toEqual({
       ok: false,
       error: "npm pack produced no archive",
     });
   });
 
   it("parses scoped metadata from id-only json output even with npm notice prefix", async () => {
-    const cwd = await createFixtureDir();
-    await fs.writeFile(path.join(cwd, "paleoclaw-plugin-demo-2.0.0.tgz"), "", "utf-8");
+    const filename = "paleoclaw-plugin-demo-2.0.0.tgz";
+    const { dir: cwd, filePath: archivePath } = await createFixtureFile(filename);
     mockPackCommandResult({
       stdout:
         "npm notice creating package\n" +
-        JSON.stringify([
-          {
-            id: "@paleoclaw/plugin-demo@2.0.0",
-            filename: "paleoclaw-plugin-demo-2.0.0.tgz",
-          },
-        ]),
+        JSON.stringify([{ id: "@paleoclaw/plugin-demo@2.0.0", filename }]),
     });
 
-    const result = await runPack("@paleoclaw/plugin-demo@2.0.0", cwd);
-    expect(result).toEqual({
+    expect(await runPack("@paleoclaw/plugin-demo@2.0.0", cwd)).toEqual({
       ok: true,
-      archivePath: path.join(cwd, "paleoclaw-plugin-demo-2.0.0.tgz"),
-      metadata: {
-        resolvedSpec: "@paleoclaw/plugin-demo@2.0.0",
-      },
+      archivePath,
+      metadata: { resolvedSpec: "@paleoclaw/plugin-demo@2.0.0" },
     });
   });
+});
 
-  it("uses stdout fallback error text when stderr is empty", async () => {
-    const cwd = await createFixtureDir();
-    mockPackCommandResult({
-      stdout: "network timeout",
-      stderr: " ",
-      code: 1,
-    });
-
-    const result = await runPack("bad-spec", cwd);
-    expect(result).toEqual({
-      ok: false,
-      error: "npm pack failed: network timeout",
-    });
+it("resolveNpmPackArchiveMetadata reads npm 12 pack output", async () => {
+  const { filePath: archivePath } = await createArchive("tar-bytes");
+  mockPackCommandResult({ stdout: JSON.stringify({ "paleoclaw-plugin": packEntry }) });
+  expect(await resolveNpmPackArchiveMetadata({ archivePath, timeoutMs: 1000 })).toEqual({
+    ok: true,
+    archivePath,
+    tarballName: packEntry.filename,
+    metadata: packMetadata,
   });
 });

@@ -1,4 +1,4 @@
-import { runManagedCommand } from "./managed-child-process.mjs";
+import { runManagedCommand } from "./managed-child-process.mts";
 
 const NODE_TIMEOUT_MAX_MS = 2 ** 31 - 1;
 

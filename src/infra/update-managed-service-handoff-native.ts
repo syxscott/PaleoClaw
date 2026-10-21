@@ -2,7 +2,7 @@ import fs from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
 
-type IdentityModule = typeof import("@paleoclaw/proc-safe/identity");
+type IdentityModule = typeof import("@openclaw/proc-safe/identity");
 
 function packageMetadata(
   root: string,
@@ -68,8 +68,8 @@ export function stageFreeBsdManagedHandoffNativeRuntime(directory: string): stri
   }
 
   const require = createRequire(import.meta.url);
-  const sourceRoot = path.dirname(require.resolve("@paleoclaw/proc-safe/package.json"));
-  const entry = require.resolve("@paleoclaw/proc-safe/identity");
+  const sourceRoot = path.dirname(require.resolve("@openclaw/proc-safe/package.json"));
+  const entry = require.resolve("@openclaw/proc-safe/identity");
   if (entry !== path.join(sourceRoot, "dist", "identity.js") || fs.realpathSync(entry) !== entry) {
     throw new Error("Managed handoff FreeBSD identity entry has an unexpected package path");
   }
@@ -80,7 +80,7 @@ export function stageFreeBsdManagedHandoffNativeRuntime(directory: string): stri
     }
   }
   const sourceRequire = createRequire(entry);
-  const platformName = `@paleoclaw/proc-safe-freebsd-${process.arch}`;
+  const platformName = `@openclaw/proc-safe-freebsd-${process.arch}`;
   const nativeFile = sourceRequire.resolve(platformName);
   const nativeRoot = path.dirname(sourceRequire.resolve(`${platformName}/package.json`));
   if (
@@ -89,7 +89,7 @@ export function stageFreeBsdManagedHandoffNativeRuntime(directory: string): stri
   ) {
     throw new Error("Managed handoff FreeBSD native runtime has an unexpected package path");
   }
-  const metadata = packageMetadata(sourceRoot, "@paleoclaw/proc-safe");
+  const metadata = packageMetadata(sourceRoot, "@openclaw/proc-safe");
   const nativeMetadata = packageMetadata(nativeRoot, platformName);
   if (metadata.optionalDependencies?.[platformName] !== nativeMetadata.version) {
     throw new Error("Managed handoff FreeBSD native runtime version does not match its package");

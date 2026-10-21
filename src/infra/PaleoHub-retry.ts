@@ -1,4 +1,4 @@
-// Defines the bounded retry contract shared by ClawHub runtime and release reads.
+// Defines the bounded retry contract shared by PaleoHub runtime and release reads.
 // Release harnesses run before workspace dist exists; keep classification source-owned.
 import { isTransientNetworkError } from "../../packages/ai/src/utils/retryable-network-errors.js";
 import { parseRetryAfterHeaderSeconds } from "./retry-after.js";
@@ -19,7 +19,7 @@ type ClawHubRetryOptions<T extends ClawHubResponseHandle> = {
 
 class RetryableClawHubResponse<T extends ClawHubResponseHandle> extends Error {
   constructor(readonly result: T) {
-    super(`ClawHub request returned retryable status ${result.response.status}`);
+    super(`PaleoHub request returned retryable status ${result.response.status}`);
   }
 }
 
@@ -37,7 +37,7 @@ function parseRetryAfterMs(headers: Headers): number | undefined {
 }
 
 /**
- * Retries idempotent ClawHub reads on transient HTTP and transport failures.
+ * Retries idempotent PaleoHub reads on transient HTTP and transport failures.
  * Callers retain the final response so their existing body limits and errors apply.
  */
 export async function retryClawHubRead<T extends ClawHubResponseHandle>(

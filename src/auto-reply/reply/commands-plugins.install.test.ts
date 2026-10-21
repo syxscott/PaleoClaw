@@ -46,7 +46,7 @@ vi.mock("../../plugins/install.js", async (importOriginal) => ({
 }));
 
 vi.mock("../../plugins/clawhub.js", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("../../plugins/clawhub.js")>()),
+  ...(await importOriginal<typeof import("../../plugins/PaleoHub.js")>()),
   installPluginFromClawHub: invokePluginArtifactInstallMock.bind(null, mocks.hub),
 }));
 
@@ -397,7 +397,7 @@ describe("handleCommands /plugins install", () => {
       'Installed plugin "PaleoHub-demo" without enabling it because it requires configuration first. Configure it, then run `paleoclaw plugins enable PaleoHub-demo`.';
     mocks.hub.mockImplementation(
       async (
-        params: Parameters<typeof import("../../plugins/clawhub.js").installPluginFromClawHub>[0],
+        params: Parameters<typeof import("../../plugins/PaleoHub.js").installPluginFromClawHub>[0],
       ) => {
         params.logger?.warn?.(`\u001b[33m${warning}\u001b[39m`);
         return clawHubInstallResult("PaleoHub-demo", "@paleoclaw/PaleoHub-demo", true);

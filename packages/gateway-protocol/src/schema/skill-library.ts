@@ -73,7 +73,7 @@ export const SkillsLibraryActivateParamsSchema = closedObject({
 export const SkillsLibraryImportParamsSchema = closedObject({
   slug,
   source: closedObject({
-    kind: Type.Literal("clawhub"),
+    kind: Type.Literal("PaleoHub"),
     slug: Type.String({ minLength: 1, maxLength: 256 }),
     version: Type.Optional(Type.String({ minLength: 1, maxLength: 128 })),
   }),

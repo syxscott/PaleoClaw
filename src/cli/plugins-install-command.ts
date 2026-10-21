@@ -25,7 +25,7 @@ import {
   resolvePackageDirInstallTransaction,
 } from "../infra/install-package-dir.js";
 import { buildNpmResolutionFields } from "../infra/install-source-utils.js";
-import { CLAWHUB_INSTALL_ERROR_CODE } from "../plugins/clawhub.js";
+import { CLAWHUB_INSTALL_ERROR_CODE } from "../plugins/PaleoHub.js";
 import {
   loadConfigForInstall,
   resolvePluginInstallRequestContext,

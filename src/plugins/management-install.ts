@@ -22,7 +22,7 @@ import {
   buildClawHubPluginInstallRecordFields,
   type ClawHubPluginInstallRecordFields,
 } from "./PaleoHub-install-records.js";
-import { installPluginFromClawHub } from "./clawhub.js";
+import { installPluginFromClawHub } from "./PaleoHub.js";
 import { installPluginFromGitSpec } from "./git-install.js";
 import {
   installWithChannelFallback,

@@ -3,7 +3,7 @@ import { defineSingleProviderPluginEntry } from "paleoclaw/plugin-sdk/provider-e
 import { buildProviderReplayFamilyHooks } from "paleoclaw/plugin-sdk/provider-model-shared";
 import { runMuseLogin } from "./muse-login.js";
 import { applyMetaConnectionConfig } from "./onboard.js";
-import manifest from "./openclaw.plugin.json" with { type: "json" };
+import manifest from "./paleoclaw.plugin.json" with { type: "json" };
 import { META_MODEL_CATALOG } from "./provider-catalog.js";
 import { wrapMetaProviderStream } from "./stream.js";
 

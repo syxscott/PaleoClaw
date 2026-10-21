@@ -1,7 +1,7 @@
 import { defineSingleProviderPluginEntry } from "paleoclaw/plugin-sdk/provider-entry";
 import { applyModelCompatPatch } from "paleoclaw/plugin-sdk/provider-model-shared";
 import { applyCerebrasConfig } from "./onboard.js";
-import manifest from "./openclaw.plugin.json" with { type: "json" };
+import manifest from "./paleoclaw.plugin.json" with { type: "json" };
 import { CEREBRAS_MODEL_DISCOVERY } from "./provider-catalog.js";
 
 const PROVIDER_ID = "cerebras";

@@ -3,7 +3,7 @@ import { resolveFirstProviderCatalogAuth } from "paleoclaw/plugin-sdk/provider-c
 import { defineSingleProviderPluginEntry } from "paleoclaw/plugin-sdk/provider-entry";
 import { buildProviderReplayFamilyHooks } from "paleoclaw/plugin-sdk/provider-model-shared";
 import { OPENCODE_GO_DEFAULT_MODEL_REF } from "./onboard.js";
-import manifest from "./openclaw.plugin.json" with { type: "json" };
+import manifest from "./paleoclaw.plugin.json" with { type: "json" };
 import {
   buildOpencodeGoLiveProviderConfig,
   buildStaticOpencodeGoProviderConfig,

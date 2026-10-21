@@ -719,7 +719,7 @@ console.log("full-ws loaded without node_modules");
       { "fs-safe-native.node": "fs" },
     );
     const procNative = pkg(
-      "@paleoclaw/proc-safe-darwin-arm64",
+      "@openclaw/proc-safe-darwin-arm64",
       { main: "proc-safe-native.node", os: ["darwin"], cpu: ["arm64"] },
       { "proc-safe-native.node": "proc" },
     );
@@ -735,8 +735,8 @@ console.log("full-ws loaded without node_modules");
     );
     fs.chmodSync(path.join(fsOwner, "LICENSE"), 0o755);
     const procOwner = pkg(
-      "@paleoclaw/proc-safe",
-      { optionalDependencies: { "@paleoclaw/proc-safe-darwin-arm64": "1.0.0" } },
+      "@openclaw/proc-safe",
+      { optionalDependencies: { "@openclaw/proc-safe-darwin-arm64": "1.0.0" } },
       { "dist/native.js": "export const url = import.meta.url;" },
     );
     const vecOwner = pkg(
@@ -749,7 +749,7 @@ console.log("full-ws loaded without node_modules");
       JSON.stringify({
         dependencies: {
           "@openclaw/fs-safe": "1.0.0",
-          "@paleoclaw/proc-safe": "1.0.0",
+          "@openclaw/proc-safe": "1.0.0",
           "sqlite-vec": "1.0.0",
         },
       }),
@@ -771,7 +771,7 @@ console.log("full-ws loaded without node_modules");
     const resolve = context["__openclawStandaloneNativeResolve"];
     const resolutions: Array<[string, string, string]> = [
       [path.join(fsOwner, "dist/native.js"), "@openclaw/fs-safe-darwin-arm64", fsNative],
-      [path.join(procOwner, "dist/native.js"), "@paleoclaw/proc-safe-darwin-arm64", procNative],
+      [path.join(procOwner, "dist/native.js"), "@openclaw/proc-safe-darwin-arm64", procNative],
       [path.join(vecOwner, "index.mjs"), "sqlite-vec-darwin-arm64/vec0.dylib", vecNative],
     ];
     for (const [owner, specifier, expected] of resolutions) {

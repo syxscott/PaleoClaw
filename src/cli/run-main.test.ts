@@ -1,130 +1,258 @@
-import { describe, expect, it } from "vitest";
+import "../test-utils/prepare-compiled-subprocesses.js";
+import process from "node:process";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  rewriteUpdateFlagArgv,
-  shouldEnsureCliPath,
-  shouldRegisterPrimarySubcommand,
-  shouldSkipPluginCommandRegistration,
-} from "./run-main.js";
+  resolveManifestCommandAliasOwnerInRegistry,
+  resolveManifestToolOwnerInRegistry,
+  type PluginManifestCommandAliasRegistry,
+} from "../plugins/manifest-command-aliases.js";
+import { createDeferredCore } from "../shared/deferred.js";
+import { captureEnv } from "../test-utils/env.js";
+import { rewriteUpdateFlagArgv } from "./argv.js";
+import {
+  resolveGatewayCommandPath,
+  resolveGatewayRunPreBootstrapOptions,
+} from "./gateway-run-argv.js";
+import {
+  isGatewayRunFastPathArgv,
+  resolveMissingPluginCommandMessage,
+  shouldUseRootHelpFastPath,
+} from "./run-main-policy.js";
+import { runCli } from "./run-main.js";
 
-describe("rewriteUpdateFlagArgv", () => {
-  it("leaves argv unchanged when --update is absent", () => {
-    const argv = ["node", "entry.js", "status"];
-    expect(rewriteUpdateFlagArgv(argv)).toBe(argv);
+const cliArgs = (...args: string[]) => ["node", "paleoclaw", ...args];
+vi.mock("node:process", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("node:process")>()),
+  // Stock Bun cannot clear its nonconfigurable native exitCode accessor after help sets zero.
+  default: Object.create(globalThis.process, {
+    exitCode: { value: undefined, writable: true, enumerable: true, configurable: true },
+  }),
+}));
+const runGatewayCommand = vi.hoisted(() => vi.fn());
+const sqliteAdmission = vi.hoisted(() => ({
+  initialize: vi.fn<() => Promise<void>>().mockResolvedValue(),
+  selectGatewayEnvironment: vi.fn<() => Promise<boolean>>().mockResolvedValue(true),
+}));
+vi.mock("../infra/sqlite-runtime-initialize.js", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../infra/sqlite-runtime-initialize.js")>()),
+  initializeSqliteRuntime: sqliteAdmission.initialize,
+}));
+vi.mock("./gateway-cli/run.js", () => ({ runGatewayCommand }));
+// Keep Commander parsing independent of native startup; run-main.exit and
+// command-execution-startup tests own bootstrap and admission behavior.
+vi.mock("./gateway-cli/pre-bootstrap.js", () => ({
+  selectGatewayRunEnvironment: sqliteAdmission.selectGatewayEnvironment,
+  prepareGatewayRunBootstrap: async () => false,
+  recheckGatewayRunBootstrap: async () => {
+    throw new Error("Commander parsing fixture unexpectedly rechecked Gateway bootstrap");
+  },
+  reloadTrustedGatewayRunEnvironment: async () => {
+    throw new Error("Commander parsing fixture unexpectedly reloaded Gateway environment");
+  },
+}));
+vi.mock("../state/agent-database-startup.js", () => ({
+  withAgentDatabaseStartupAdmission: <T>(run: () => Promise<T>) => run(),
+}));
+vi.mock("./command-execution-startup.js", () => ({
+  ensureCliExecutionBootstrap: async () => {
+    throw new Error("Commander parsing fixture unexpectedly entered CLI bootstrap");
+  },
+}));
+vi.mock("../logging/console.js", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../logging/console.js")>()),
+  enableConsoleCapture: vi.fn(),
+}));
+
+describe("CLI host admission and Gateway fast-path parsing", () => {
+  const previousExitCode = process.exitCode;
+  const pathEnv = captureEnv(["PATH", "OPENCLAW_PATH_BOOTSTRAPPED"]);
+  beforeEach(() => {
+    process.exitCode = undefined;
+    runGatewayCommand.mockClear();
+    sqliteAdmission.initialize.mockReset().mockResolvedValue();
+    sqliteAdmission.selectGatewayEnvironment.mockClear();
+    vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+  });
+  afterEach(() => {
+    pathEnv.restore();
+    process.exitCode = previousExitCode;
+    vi.restoreAllMocks();
   });
 
-  it("rewrites --update into the update command", () => {
-    expect(rewriteUpdateFlagArgv(["node", "entry.js", "--update"])).toEqual([
-      "node",
-      "entry.js",
-      "update",
-    ]);
+  it("awaits SQLite admission before Gateway environment selection can read state", async () => {
+    const entered = createDeferredCore();
+    const decided = createDeferredCore();
+    sqliteAdmission.initialize.mockImplementationOnce(() => {
+      entered.resolve();
+      return decided.promise;
+    });
+    const starting = runCli(cliArgs("gateway", "run"));
+    try {
+      await Promise.race([entered.promise, starting]);
+      expect(sqliteAdmission.initialize).toHaveBeenCalledOnce();
+      expect(sqliteAdmission.selectGatewayEnvironment).not.toHaveBeenCalled();
+      expect(runGatewayCommand).not.toHaveBeenCalled();
+    } finally {
+      decided.resolve();
+      await starting;
+    }
+    expect(sqliteAdmission.selectGatewayEnvironment).toHaveBeenCalledOnce();
+    expect(runGatewayCommand).toHaveBeenCalledOnce();
   });
 
-  it("preserves global flags that appear before --update", () => {
-    expect(rewriteUpdateFlagArgv(["node", "entry.js", "--profile", "p", "--update"])).toEqual([
-      "node",
-      "entry.js",
-      "--profile",
-      "p",
-      "update",
-    ]);
+  it.each([["node", "run"], ["node", "worker"], ["worker"]])(
+    "admits the long-lived host before CLI bootstrap: %j",
+    async (...args) => {
+      const stopped = new Error("SQLite admission reached before host bootstrap");
+      sqliteAdmission.initialize.mockRejectedValueOnce(stopped);
+      await expect(runCli(cliArgs(...args))).rejects.toBe(stopped);
+      expect(sqliteAdmission.initialize).toHaveBeenCalledOnce();
+    },
+  );
+
+  it.each([["gateway"], ["gateway", "status"], ["node", "run"], ["worker"], ["config", "get"]])(
+    "keeps help paths free of SQLite capability admission: %j",
+    async (...args) => {
+      vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+      await runCli(cliArgs(...args, "--help"));
+      expect(sqliteAdmission.initialize).not.toHaveBeenCalled();
+    },
+  );
+
+  it("keeps version output free of SQLite capability admission", async () => {
+    vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    await runCli(cliArgs("--version"));
+    expect(sqliteAdmission.initialize).not.toHaveBeenCalled();
   });
 
-  it("keeps update options after the rewritten command", () => {
-    expect(rewriteUpdateFlagArgv(["node", "entry.js", "--update", "--json"])).toEqual([
-      "node",
-      "entry.js",
-      "update",
-      "--json",
-    ]);
-  });
-});
-
-describe("shouldRegisterPrimarySubcommand", () => {
-  it("skips eager primary registration for help/version invocations", () => {
-    expect(shouldRegisterPrimarySubcommand(["node", "paleoclaw", "status", "--help"])).toBe(false);
-    expect(shouldRegisterPrimarySubcommand(["node", "paleoclaw", "-V"])).toBe(false);
-    expect(shouldRegisterPrimarySubcommand(["node", "paleoclaw", "-v"])).toBe(false);
-  });
-
-  it("keeps eager primary registration for regular command runs", () => {
-    expect(shouldRegisterPrimarySubcommand(["node", "paleoclaw", "status"])).toBe(true);
-    expect(shouldRegisterPrimarySubcommand(["node", "paleoclaw", "acp", "-v"])).toBe(true);
-  });
-});
-
-describe("shouldSkipPluginCommandRegistration", () => {
-  it("skips plugin registration for root help/version", () => {
-    expect(
-      shouldSkipPluginCommandRegistration({
-        argv: ["node", "paleoclaw", "--help"],
-        primary: null,
-        hasBuiltinPrimary: false,
-      }),
-    ).toBe(true);
-  });
-
-  it("skips plugin registration for builtin subcommand help", () => {
-    expect(
-      shouldSkipPluginCommandRegistration({
-        argv: ["node", "paleoclaw", "config", "--help"],
-        primary: "config",
-        hasBuiltinPrimary: true,
-      }),
-    ).toBe(true);
-  });
-
-  it("skips plugin registration for builtin command runs", () => {
-    expect(
-      shouldSkipPluginCommandRegistration({
-        argv: ["node", "paleoclaw", "sessions", "--json"],
-        primary: "sessions",
-        hasBuiltinPrimary: true,
-      }),
-    ).toBe(true);
-  });
-
-  it("keeps plugin registration for non-builtin help", () => {
-    expect(
-      shouldSkipPluginCommandRegistration({
-        argv: ["node", "paleoclaw", "voicecall", "--help"],
-        primary: "voicecall",
-        hasBuiltinPrimary: false,
-      }),
-    ).toBe(false);
-  });
-
-  it("keeps plugin registration for non-builtin command runs", () => {
-    expect(
-      shouldSkipPluginCommandRegistration({
-        argv: ["node", "paleoclaw", "voicecall", "status"],
-        primary: "voicecall",
-        hasBuiltinPrimary: false,
-      }),
-    ).toBe(false);
-  });
-});
-
-describe("shouldEnsureCliPath", () => {
-  it("skips path bootstrap for help/version invocations", () => {
-    expect(shouldEnsureCliPath(["node", "paleoclaw", "--help"])).toBe(false);
-    expect(shouldEnsureCliPath(["node", "paleoclaw", "-V"])).toBe(false);
-    expect(shouldEnsureCliPath(["node", "paleoclaw", "-v"])).toBe(false);
-  });
-
-  it("skips path bootstrap for read-only fast paths", () => {
-    expect(shouldEnsureCliPath(["node", "paleoclaw", "status"])).toBe(false);
-    expect(shouldEnsureCliPath(["node", "paleoclaw", "--log-level", "debug", "status"])).toBe(
-      false,
+  it.each([
+    ["--update-canary", "--no-color", "run"],
+    ["run", "--update-canary", "--no-color"],
+  ])("accepts no-color beside a boolean flag: %j", async (...args) => {
+    await runCli(cliArgs("gateway", ...args, "--token=--no-color"));
+    expect(process.exitCode).toBeUndefined();
+    expect(runGatewayCommand).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({ updateCanary: true, token: "--no-color" }),
+      expect.any(Object),
     );
-    expect(shouldEnsureCliPath(["node", "paleoclaw", "sessions", "--json"])).toBe(false);
-    expect(shouldEnsureCliPath(["node", "paleoclaw", "config", "get", "update"])).toBe(false);
-    expect(shouldEnsureCliPath(["node", "paleoclaw", "models", "status", "--json"])).toBe(false);
+  });
+});
+
+describe("Gateway argv boundaries", () => {
+  it("matches only plain foreground starts without root options or help", () => {
+    expect(isGatewayRunFastPathArgv(cliArgs("gateway"))).toBe(true);
+    expect(isGatewayRunFastPathArgv(cliArgs("gateway", "--force"))).toBe(true);
+    expect(isGatewayRunFastPathArgv(cliArgs("gateway", "--port", "18789"))).toBe(true);
+    expect(isGatewayRunFastPathArgv(cliArgs("gateway", "--auth=none"))).toBe(true);
+    expect(isGatewayRunFastPathArgv(cliArgs("--no-color", "gateway", "--bind", "loopback"))).toBe(
+      true,
+    );
+    expect(isGatewayRunFastPathArgv(cliArgs("gateway", "run"))).toBe(true);
+    expect(isGatewayRunFastPathArgv(cliArgs("gateway", "--log-level", "debug", "run"))).toBe(false);
+    expect(isGatewayRunFastPathArgv(cliArgs("gateway", "call", "health"))).toBe(false);
+    expect(isGatewayRunFastPathArgv(cliArgs("gateway", "--help"))).toBe(false);
+    expect(isGatewayRunFastPathArgv(cliArgs("gateway", "--port"))).toBe(false);
+    expect(isGatewayRunFastPathArgv(cliArgs("gateway", "--unknown"))).toBe(false);
+    expect(isGatewayRunFastPathArgv(cliArgs("gateway", "--update-canary=true"))).toBe(false);
   });
 
-  it("keeps path bootstrap for mutating or unknown commands", () => {
-    expect(shouldEnsureCliPath(["node", "paleoclaw", "message", "send"])).toBe(true);
-    expect(shouldEnsureCliPath(["node", "paleoclaw", "voicecall", "status"])).toBe(true);
-    expect(shouldEnsureCliPath(["node", "paleoclaw", "acp", "-v"])).toBe(true);
+  it("resolves destructive flags after root options without consuming option values", () => {
+    expect(
+      resolveGatewayRunPreBootstrapOptions(
+        cliArgs("--log-level", "debug", "gateway", "run", "--force", "--reset"),
+      ),
+    ).toEqual({ force: true, reset: true });
+    expect(resolveGatewayRunPreBootstrapOptions(cliArgs("gateway", "--token", "--force"))).toEqual({
+      force: false,
+      reset: false,
+    });
   });
+
+  it.each([
+    { args: ["--", "gateway", "--force"], commandPath: ["gateway", "--force"] },
+    { args: ["gateway", "--", "run", "--force"], commandPath: ["gateway", "run"] },
+    { args: ["gateway", "run", "--", "--reset"], commandPath: ["gateway", "run"] },
+  ])("preserves literal commands without destructive flags: $args", ({ args, commandPath }) => {
+    const argv = cliArgs(...args);
+    expect(resolveGatewayCommandPath(argv)).toEqual(commandPath);
+    const options = resolveGatewayRunPreBootstrapOptions(argv);
+    expect(options?.force).not.toBe(true);
+    expect(options?.reset).not.toBe(true);
+  });
+});
+
+describe("root startup policy", () => {
+  it.each([
+    { args: ["--profile", "p", "--update"], expected: ["--profile", "p", "update"] },
+    { args: ["--", "--update"], expected: ["--", "--update"] },
+    {
+      args: ["config", "set", "update.channel", "--update"],
+      expected: ["config", "set", "update.channel", "--update"],
+    },
+  ])("rewrites only a root update flag: $args", ({ args, expected }) => {
+    expect(rewriteUpdateFlagArgv(cliArgs(...args))).toEqual(cliArgs(...expected));
+  });
+
+  it("uses root help only for root invocations and aliases", () => {
+    expect(shouldUseRootHelpFastPath(cliArgs("--help"))).toBe(true);
+    expect(shouldUseRootHelpFastPath(cliArgs("help", "--help"))).toBe(true);
+    expect(shouldUseRootHelpFastPath(cliArgs("tools", "--help"))).toBe(true);
+    expect(shouldUseRootHelpFastPath(cliArgs("status", "--help"))).toBe(false);
+    expect(shouldUseRootHelpFastPath(cliArgs("--help", "status"))).toBe(false);
+    expect(shouldUseRootHelpFastPath(cliArgs("help", "gateway"))).toBe(false);
+  });
+});
+
+function commandResolvers(registry: PluginManifestCommandAliasRegistry) {
+  return {
+    resolveCommandAliasOwner: ({ command }: { command: string | undefined }) =>
+      resolveManifestCommandAliasOwnerInRegistry({ command, registry }),
+    resolveToolOwner: ({ toolName }: { toolName: string | undefined }) =>
+      resolveManifestToolOwnerInRegistry({ toolName, registry }),
+  };
+}
+
+describe("plugin command policy", () => {
+  it("reports a disabled root without an alias record", () => {
+    expect(
+      resolveMissingPluginCommandMessage("browser", {
+        plugins: { entries: { browser: { enabled: false } } },
+      }),
+    ).toContain("plugins.entries.browser.enabled=false");
+  });
+
+  it.each([
+    {
+      command: "voicecall",
+      plugin: { id: "voice-call", commandAliases: [{ name: "voicecall" }] },
+      config: { plugins: { entries: { "voice-call": { enabled: true } } } },
+    },
+    {
+      command: "wiki",
+      plugin: { id: "memory-wiki", enabledByDefault: true, commandAliases: [{ name: "wiki" }] },
+      config: { plugins: { allow: ["memory-wiki"] } },
+    },
+  ])("accepts enabled parent ownership for $command", ({ command, plugin, config }) => {
+    expect(
+      resolveMissingPluginCommandMessage(command, config, commandResolvers({ plugins: [plugin] })),
+    ).toBeNull();
+  });
+});
+
+it("keeps post-root log levels out of the gateway command path", () => {
+  expect(resolveGatewayCommandPath(cliArgs("gateway", "--log-level", "debug", "run"))).toEqual([
+    "gateway",
+    "run",
+  ]);
+  expect(
+    resolveGatewayCommandPath(
+      cliArgs("gateway", "--log-level=debug", "restart-handoff", "capabilities"),
+    ),
+  ).toEqual(["gateway", "restart-handoff"]);
+});
+
+it("keeps reserved non-plugin roots out of plugin allowlist diagnostics", () => {
+  expect(
+    resolveMissingPluginCommandMessage("auth", { plugins: { allow: ["browser"] } }),
+  ).toBeNull();
 });

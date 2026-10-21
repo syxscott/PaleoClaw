@@ -35,7 +35,7 @@ import {
   type AndroidReleaseTransportSnapshot,
 } from "./lib/android-release-e2e-evidence.js";
 import { prepareIOSReleaseGateway } from "./lib/ios-release-gateway.js";
-import { hasUnjoinedWork, runManagedCommand } from "./lib/managed-child-process.mjs";
+import { hasUnjoinedWork, runManagedCommand } from "./lib/managed-child-process.mts";
 import { resolveRepoRoot } from "./lib/repo-root.mjs";
 import {
   getStandaloneRuntimeProcessOutputOptions,

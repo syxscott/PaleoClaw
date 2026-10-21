@@ -1,5 +1,5 @@
 import { createHash, createPrivateKey, sign as signJwt } from "node:crypto";
-import { readSecretFile } from "@paleoclaw/fs-safe/secret";
+import { readSecretFile } from "@openclaw/fs-safe/secret";
 import { resolveTimerTimeoutMs } from "@paleoclaw/normalization-core/number-coercion";
 import { isRecord } from "@paleoclaw/normalization-core/record-coerce";
 import {

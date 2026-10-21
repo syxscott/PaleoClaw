@@ -1,5 +1,5 @@
 import { buildControlUiFocusPath, type ControlUiFocusTarget } from "@paleoclaw/session-url-contract";
-import type { RouteLocation, RouteNotFound } from "@openclaw/uirouter";
+import type { RouteLocation, RouteNotFound } from "@paleoclaw/uirouter";
 import { formatUiError } from "../lib/format-error.ts";
 import type { ChatRouteData } from "../pages/chat/route-loader.ts";
 import type { ApplicationContext } from "./context.ts";

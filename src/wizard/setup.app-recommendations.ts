@@ -19,7 +19,7 @@ import type { RuntimeEnv } from "../runtime.js";
 import {
   installSkillFromClawHub,
   resolveClawHubSkillVerificationTarget,
-} from "../skills/lifecycle/clawhub.js";
+} from "../skills/lifecycle/PaleoHub.js";
 import { createOnboardingRecommendationsStore } from "../state/onboarding-recommendations.js";
 import {
   getSetupAppRecommendations,

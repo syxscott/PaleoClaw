@@ -7,7 +7,7 @@
  * to bundled discovery. Only the repo-bundled catalog JSON feeds this table;
  * hosted marketplace feeds must never influence endpoint classification.
  * Kept separate from official-external-plugin-catalog.ts so provider
- * transports do not pull the ClawHub install/marketplace module graph.
+ * transports do not pull the PaleoHub install/marketplace module graph.
  */
 import officialExternalProviderCatalog from "../../scripts/lib/official-external-provider-catalog.json" with { type: "json" };
 import { MANIFEST_KEY } from "../compat/legacy-names.js";

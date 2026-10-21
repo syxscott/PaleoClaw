@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
-import { ProcSafeError } from "@paleoclaw/proc-safe/errors";
-import type { ProcessAncestry } from "@paleoclaw/proc-safe/identity";
+import { ProcSafeError } from "@openclaw/proc-safe/errors";
+import type { ProcessAncestry } from "@openclaw/proc-safe/identity";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 import { runNodeScript } from "../../test/helpers/run-node-script.js";
@@ -23,11 +23,11 @@ import { createManagedHandoffLeaseStore } from "./update-managed-service-handoff
 import { parseManagedHandoffLeasePayload } from "./update-managed-service-handoff-schema.js";
 
 const { readProcessAncestry, readProcessIdentity } = vi.hoisted(() => ({
-  readProcessAncestry: vi.fn<typeof import("@paleoclaw/proc-safe/identity").readProcessAncestry>(),
-  readProcessIdentity: vi.fn<typeof import("@paleoclaw/proc-safe/identity").readProcessIdentity>(),
+  readProcessAncestry: vi.fn<typeof import("@openclaw/proc-safe/identity").readProcessAncestry>(),
+  readProcessIdentity: vi.fn<typeof import("@openclaw/proc-safe/identity").readProcessIdentity>(),
 }));
-vi.mock("@paleoclaw/proc-safe/identity", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@paleoclaw/proc-safe/identity")>()),
+vi.mock("@openclaw/proc-safe/identity", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@openclaw/proc-safe/identity")>()),
   readProcessAncestry,
   readProcessIdentity,
 }));

@@ -1,7 +1,7 @@
 // Reads PID-reuse-safe Windows process start identities without workspace imports.
 import { spawnSync } from "node:child_process";
 import path from "node:path";
-import { readProcessIdentity } from "@paleoclaw/proc-safe/identity";
+import { readProcessIdentity } from "@openclaw/proc-safe/identity";
 import { resolveDiagnosticProcessEnv, resolveEnvironmentValue } from "./process-env.ts";
 
 const DEFAULT_TIMEOUT_MS = 5_000;

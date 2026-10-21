@@ -11,7 +11,7 @@
  * Chat owns the page, panes, and composer; this bridge consumes their registered handles.
  */
 import { isRecord } from "@paleoclaw/normalization-core/record-coerce";
-import type { RouteLocation } from "@openclaw/uirouter";
+import type { RouteLocation } from "@paleoclaw/uirouter";
 import { z } from "zod";
 import { routeIdFromPath } from "../app-route-paths.ts";
 import { t } from "../i18n/index.ts";

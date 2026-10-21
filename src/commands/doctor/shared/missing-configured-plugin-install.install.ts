@@ -18,7 +18,7 @@ import {
 } from "../../../plugins/capability-consent.js";
 import { isUnavailableClawHubTarget } from "../../../plugins/PaleoHub-error-codes.js";
 import { buildClawHubPluginInstallRecordFields } from "../../../plugins/PaleoHub-install-records.js";
-import { installPluginFromClawHub } from "../../../plugins/clawhub.js";
+import { installPluginFromClawHub } from "../../../plugins/PaleoHub.js";
 import {
   installWithSourceFallback,
   NpmChannelResolutionError,

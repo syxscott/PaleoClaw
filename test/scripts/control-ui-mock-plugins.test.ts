@@ -10,7 +10,7 @@ import {
 } from "../../scripts/control-ui-mock-plugins.js";
 
 describe("Control UI plugin discovery preview", () => {
-  it("provides visible ClawHub rows with valid joined local state", () => {
+  it("provides visible PaleoHub rows with valid joined local state", () => {
     const result = buildPluginDiscoveryMock();
 
     expect(Value.Check(PluginsCatalogBrowseResultSchema, result)).toBe(true);

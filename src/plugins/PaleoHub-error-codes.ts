@@ -1,4 +1,4 @@
-/** Stable ClawHub install error codes used by plugin install policy and diagnostics. */
+/** Stable PaleoHub install error codes used by plugin install policy and diagnostics. */
 export const CLAWHUB_INSTALL_ERROR_CODE = {
   INVALID_SPEC: "invalid_spec",
   PACKAGE_NOT_FOUND: "package_not_found",
@@ -19,7 +19,7 @@ export const CLAWHUB_INSTALL_ERROR_CODE = {
   CLAWHUB_DOWNLOAD_BLOCKED: "clawhub_download_blocked",
 } as const;
 
-/** Union of stable ClawHub install error code values. */
+/** Union of stable PaleoHub install error code values. */
 export type ClawHubInstallErrorCode =
   (typeof CLAWHUB_INSTALL_ERROR_CODE)[keyof typeof CLAWHUB_INSTALL_ERROR_CODE];
 
@@ -47,7 +47,7 @@ export function buildClawHubInstallFailure(
 }
 
 /**
- * Detects ClawHub failures caused by a target that is not published, as opposed
+ * Detects PaleoHub failures caused by a target that is not published, as opposed
  * to a broken install. Channel-aware installs use this to widen the selector
  * instead of failing when the requested release has no artifact.
  */

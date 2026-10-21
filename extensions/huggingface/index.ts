@@ -1,7 +1,7 @@
 import { runLiveProviderCatalog } from "paleoclaw/plugin-sdk/provider-catalog-live-runtime";
 import { defineSingleProviderPluginEntry } from "paleoclaw/plugin-sdk/provider-entry";
 import { applyHuggingfaceConnectionConfig, HUGGINGFACE_DEFAULT_MODEL_REF } from "./onboard.js";
-import manifest from "./openclaw.plugin.json" with { type: "json" };
+import manifest from "./paleoclaw.plugin.json" with { type: "json" };
 import { buildHuggingfaceProvider } from "./provider-catalog.js";
 
 const PROVIDER_ID = "huggingface";

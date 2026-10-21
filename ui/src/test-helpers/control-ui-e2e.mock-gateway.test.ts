@@ -5,7 +5,7 @@ import { expect, vi } from "vitest";
 import { ChannelsPairingListResultSchema } from "../../../packages/gateway-protocol/src/schema/channel-pairing.ts";
 import { ChannelsStatusResultSchema } from "../../../packages/gateway-protocol/src/schema/channels.ts";
 import { MigrationProtocolSchemas } from "../../../packages/gateway-protocol/src/schema/migrations.ts";
-import { SystemAgentChatHistoryResultSchema } from "../../../packages/gateway-protocol/src/schema/openclaw.ts";
+import { SystemAgentChatHistoryResultSchema } from "../../../packages/gateway-protocol/src/schema/paleoclaw.js";
 import {
   PluginsCatalogBrowseResultSchema,
   PluginsCatalogCategoriesResultSchema,

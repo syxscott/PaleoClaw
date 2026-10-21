@@ -1,4 +1,4 @@
-import type { RouteLocation } from "@openclaw/uirouter";
+import type { RouteLocation } from "@paleoclaw/uirouter";
 import { createDeferredCore } from "../../../../src/shared/deferred.js";
 import type { GatewayBrowserClient } from "../../api/gateway.ts";
 import type { GatewaySessionRow, SessionsListResult } from "../../api/types.ts";

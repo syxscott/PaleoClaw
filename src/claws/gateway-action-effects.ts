@@ -1,6 +1,6 @@
 import path from "node:path";
 import type { ClawActionEffect } from "../../packages/gateway-protocol/src/schema/claws.js";
-import { normalizeClawHubSha256Integrity } from "../infra/clawhub-integrity.js";
+import { normalizeClawHubSha256Integrity } from "../infra/PaleoHub-integrity.js";
 import { digestClawValue } from "./digest.js";
 import { digestClawMcpServer } from "./mcp.js";
 import { isSafeClawRelativePath } from "./schema-portability.js";
@@ -17,7 +17,7 @@ function skillArtifact(details: Record<string, unknown> | undefined): SkillArtif
   const integrity =
     typeof rawIntegrity === "string" ? normalizeClawHubSha256Integrity(rawIntegrity) : null;
   if (
-    source !== "clawhub" ||
+    source !== "PaleoHub" ||
     typeof ref !== "string" ||
     !ref ||
     typeof version !== "string" ||

@@ -1,6 +1,6 @@
 // Global Undici dispatcher setup keeps process-wide proxy routing, HTTP/1-only
 // enforcement, and long stream timeouts aligned across root fetch imports.
-import { isProxylineDispatcher } from "@paleoclaw/proxyline/dispatcher-brand";
+import { isProxylineDispatcher } from "@openclaw/proxyline/dispatcher-brand";
 import {
   resolveEnvHttpProxyAgentOptions,
   type EnvHttpProxyAgentProxyOptions,

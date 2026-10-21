@@ -35,7 +35,7 @@ import {
   resolveClawHubSkillVerificationTarget,
   updateSkillsFromClawHub,
   verifySkillWithClawHub,
-} from "../skills/lifecycle/clawhub.js";
+} from "../skills/lifecycle/PaleoHub.js";
 import {
   installSkillFromSource,
   isSkillSourceInstallSpec,

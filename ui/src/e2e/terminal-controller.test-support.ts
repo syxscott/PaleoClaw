@@ -1,4 +1,4 @@
-import type { GhosttyTerminalController } from "@openclaw/libterminal/browser";
+import type { GhosttyTerminalController } from "@paleoclaw/libterminal/browser";
 import type { Locator, Page } from "playwright";
 
 declare global {

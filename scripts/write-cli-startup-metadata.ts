@@ -301,12 +301,12 @@ function readBundledChannelCatalog(
           };
         };
       };
-      const id = parsed.paleoclaw?.channel?.id;
+      const id = parsed.openclaw?.channel?.id;
       if (typeof id !== "string" || !id.trim()) {
         continue;
       }
-      const orderRaw = parsed.paleoclaw?.channel?.order;
-      const labelRaw = parsed.paleoclaw?.channel?.label;
+      const orderRaw = parsed.openclaw?.channel?.order;
+      const labelRaw = parsed.openclaw?.channel?.label;
       entries.push({
         id: id.trim(),
         order: typeof orderRaw === "number" ? orderRaw : 999,

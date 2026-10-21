@@ -1,12 +1,14 @@
 {
   "name": "@paleoclaw/llm-task",
-  "version": "1.8.0",
+  "version": "2026.10.5",
   "private": true,
   "description": "paleoclaw JSON-only LLM task plugin",
   "type": "module",
   "dependencies": {
-    "@sinclair/typebox": "0.34.48",
-    "ajv": "^8.18.0"
+    "typebox": "1.3.37"
+  },
+  "devDependencies": {
+    "@paleoclaw/plugin-sdk": "workspace:*"
   },
   "paleoclaw": {
     "extensions": [

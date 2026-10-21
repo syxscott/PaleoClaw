@@ -29,7 +29,7 @@ const SAFE_INSTALL_ID_RE = /^(?:@[a-z0-9][a-z0-9._-]*\/)?[a-z0-9][a-z0-9._-]*$/i
 
 type BootstrapRecommendation = {
   id: string;
-  source: "official-plugin" | "clawhub-skill";
+  source: "official-plugin" | "PaleoHub-skill";
   tier: "recommended" | "optional";
 };
 
@@ -48,7 +48,7 @@ async function createDefaultOnboardingRecommendationsStore(
 
 function isLegacyBareClawHubId(match: OnboardingRecommendationsRecord["matches"][number]): boolean {
   return (
-    match.candidate.source === "clawhub-skill" &&
+    match.candidate.source === "PaleoHub-skill" &&
     SAFE_INSTALL_ID_RE.test(match.candidate.id) &&
     !match.candidate.id.startsWith("@")
   );
@@ -65,11 +65,11 @@ function bootstrapRecommendations(
     const id = match.candidate.id;
     if (
       !SAFE_INSTALL_ID_RE.test(id) ||
-      (match.candidate.source === "clawhub-skill" && !id.startsWith("@"))
+      (match.candidate.source === "PaleoHub-skill" && !id.startsWith("@"))
     ) {
       continue;
     }
-    const source = match.candidate.source === "clawhub-skill" ? "clawhub-skill" : "official-plugin";
+    const source = match.candidate.source === "PaleoHub-skill" ? "PaleoHub-skill" : "official-plugin";
     const key = `${source}:${id.toLocaleLowerCase("en-US")}`;
     const existing = byInstall.get(key);
     if (!existing || (existing.tier === "optional" && match.tier === "recommended")) {
@@ -111,7 +111,7 @@ export async function onboardRecommendationsCommand(
   runtime.log(
     matches
       .map((match) => {
-        const source = match.source === "clawhub-skill" ? "ClawHub skill" : "official plugin";
+        const source = match.source === "PaleoHub-skill" ? "PaleoHub skill" : "official plugin";
         return `- ${match.id} [${source}; ${match.tier}]`;
       })
       .join("\n"),

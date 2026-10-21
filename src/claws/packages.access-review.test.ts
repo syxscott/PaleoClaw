@@ -19,7 +19,7 @@ describe("Claw package reviewed access", () => {
         packageInstallPlan([
           {
             kind: "skill",
-            source: "clawhub",
+            source: "PaleoHub",
             ref: "@owner/triage",
             version: "1.2.3",
             integrity: skillIntegrity,

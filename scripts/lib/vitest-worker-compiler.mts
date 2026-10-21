@@ -118,8 +118,8 @@ async function compileVitestWorkerArtifacts(directory: string): Promise<void> {
     (id.startsWith("@paleoclaw/") || id.startsWith("paleoclaw/")) &&
     id !== "@openclaw/fs-safe" &&
     !id.startsWith("@openclaw/fs-safe/") &&
-    id !== "@paleoclaw/proc-safe" &&
-    !id.startsWith("@paleoclaw/proc-safe/");
+    id !== "@openclaw/proc-safe" &&
+    !id.startsWith("@openclaw/proc-safe/");
   const createInputPlugins = (outputPrefix: string) => {
     const schemaPlugin = createStateSchemaInlinePlugin(root);
     return [

@@ -1,7 +1,7 @@
 /* @vitest-environment jsdom */
 
 import { expectDefined } from "@paleoclaw/normalization-core";
-import { createRouter } from "@openclaw/uirouter";
+import { createRouter } from "@paleoclaw/uirouter";
 import { IDBFactory } from "fake-indexeddb";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { createDeferred } from "../../../../test/helpers/promise.js";

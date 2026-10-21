@@ -36,7 +36,7 @@ import { normalizeClawRouterApiBaseUrl, normalizeClawRouterRootUrl } from "./bas
 import { buildClawRouterDecisionProvider } from "./decision-provider.js";
 import { buildClawRouterImageGenerationProvider } from "./image-generation-provider.js";
 import { listClawRouterImageModelCatalog } from "./image-model-catalog.js";
-import manifest from "./openclaw.plugin.json" with { type: "json" };
+import manifest from "./paleoclaw.plugin.json" with { type: "json" };
 import { parseClawRouterPool, type ClawRouterPoolResult } from "./pool.js";
 import {
   buildClawRouterProviderConfig,

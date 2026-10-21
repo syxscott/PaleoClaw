@@ -1,4 +1,4 @@
-import manifest from "./openclaw.plugin.json" with { type: "json" };
+import manifest from "./paleoclaw.plugin.json" with { type: "json" };
 
 export const CLAUDE_CLI_BACKEND_ID = "claude-cli";
 /** Retired paleoclaw auth profile replaced by Claude CLI's native login. */

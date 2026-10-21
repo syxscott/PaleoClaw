@@ -1,9 +1,9 @@
-import { readProcessIdentity } from "@paleoclaw/proc-safe/identity";
+import { readProcessIdentity } from "@openclaw/proc-safe/identity";
 import {
   listProcesses,
   readProcessCommand,
   type ProcessSnapshot,
-} from "@paleoclaw/proc-safe/inspect";
+} from "@openclaw/proc-safe/inspect";
 
 export type DarwinProcess = {
   pid: number;

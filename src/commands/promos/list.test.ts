@@ -5,9 +5,9 @@ const mocks = vi.hoisted(() => ({
   fetchClawHubPromotions: vi.fn(),
 }));
 
-vi.mock("../../infra/clawhub-promotions.js", async () => {
-  const actual = await vi.importActual<typeof import("../../infra/clawhub-promotions.js")>(
-    "../../infra/clawhub-promotions.js",
+vi.mock("../../infra/PaleoHub-promotions.js", async () => {
+  const actual = await vi.importActual<typeof import("../../infra/PaleoHub-promotions.js")>(
+    "../../infra/PaleoHub-promotions.js",
   );
   return {
     ...actual,
@@ -15,7 +15,7 @@ vi.mock("../../infra/clawhub-promotions.js", async () => {
   };
 });
 
-const { ClawHubRequestError } = await import("../../infra/clawhub-client.js");
+const { ClawHubRequestError } = await import("../../infra/PaleoHub-client.js");
 const { promosListCommand } = await import("./list.js");
 
 function makeRuntime() {
@@ -101,7 +101,7 @@ describe("promosListCommand", () => {
 
     await promosListCommand({}, runtime);
 
-    expect(lines).toEqual(["Promotions are not available from ClawHub yet."]);
+    expect(lines).toEqual(["Promotions are not available from PaleoHub yet."]);
   });
 
   it("preserves the JSON shape when the promotions route is not deployed", async () => {

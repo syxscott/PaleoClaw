@@ -1,6 +1,6 @@
 /** Read loaded service commands without loading units or reading their environment files. */
 import path from "node:path";
-import { ProcSafeError } from "@paleoclaw/proc-safe/errors";
+import { ProcSafeError } from "@openclaw/proc-safe/errors";
 import { pathEntryExists } from "../infra/path-existence.js";
 import { getProcessStartTime } from "../shared/pid-alive.js";
 import { withServiceInspectionBudget } from "./service-inspection-budget.js";

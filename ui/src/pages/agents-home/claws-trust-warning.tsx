@@ -11,7 +11,7 @@ type ClawHubAudit = {
 function parseClawHubAudit(warning: string): ClawHubAudit | null {
   const lines = warning.trim().split(/\r?\n/u);
   if (
-    !/^╭─ ClawHub Security Audit ─+╮$/u.test(lines[0] ?? "") ||
+    !/^╭─ PaleoHub Security Audit ─+╮$/u.test(lines[0] ?? "") ||
     !/^╰─+╯$/u.test(lines.at(-1) ?? "")
   ) {
     return null;

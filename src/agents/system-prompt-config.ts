@@ -7,7 +7,7 @@
 import type { OpenClawConfig } from "../config/types.openclaw.js";
 import { classifyAgentToolSource } from "../plugins/tool-metadata.js";
 import type { PreparedTtsPreferences } from "../tts/tts-preferences.js";
-import { buildTtsSystemPromptHint } from "../tts/tts-settings.js";
+import {  buildTtsSystemPromptHint  } from "../plugin-sdk/tts-runtime.js";
 import { resolveMainSessionDelegationMode } from "./delegation-guidance.js";
 import type { PreparedModelRuntimeSnapshot } from "./prepared-model-runtime.types.js";
 import type { McpServerInstruction } from "./system-prompt-tool-list.js";

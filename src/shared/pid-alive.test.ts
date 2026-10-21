@@ -1,7 +1,7 @@
 import "../test-utils/prepare-compiled-subprocesses.ts";
 import childProcess from "node:child_process";
 import fsSync from "node:fs";
-import { ProcSafeError } from "@paleoclaw/proc-safe/errors";
+import { ProcSafeError } from "@openclaw/proc-safe/errors";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { withMockedPlatform } from "../test-utils/vitest-spies.js";
 import {
@@ -13,8 +13,8 @@ import {
 } from "./pid-alive.js";
 
 const nativeIdentity = vi.hoisted(() => vi.fn());
-vi.mock("@paleoclaw/proc-safe/identity", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@paleoclaw/proc-safe/identity")>()),
+vi.mock("@openclaw/proc-safe/identity", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@openclaw/proc-safe/identity")>()),
   readProcessIdentity: nativeIdentity,
 }));
 

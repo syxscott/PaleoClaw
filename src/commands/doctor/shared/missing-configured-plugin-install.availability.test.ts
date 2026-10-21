@@ -21,7 +21,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("../../../plugins/clawhub.js", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("../../../plugins/clawhub.js")>()),
+  ...(await importOriginal<typeof import("../../../plugins/PaleoHub.js")>()),
   installPluginFromClawHub: mocks.installPluginFromClawHub,
 }));
 vi.mock("../../../plugins/install.js", () => ({

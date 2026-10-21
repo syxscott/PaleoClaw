@@ -1,7 +1,7 @@
 import path from "node:path";
+import { readProcessAncestry } from "@openclaw/proc-safe/identity";
 import { sha256Hex } from "@paleoclaw/normalization-core/node-crypto";
 import { isRecord, isStringArray } from "@paleoclaw/normalization-core/record-coerce";
-import { readProcessAncestry } from "@paleoclaw/proc-safe/identity";
 import {
   getFileLockProcessStartTime,
   isPidDefinitelyDead,

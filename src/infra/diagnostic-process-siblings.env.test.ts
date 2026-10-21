@@ -23,11 +23,11 @@ const mocks = vi.hoisted(() => ({
   spawn: vi.fn(),
   probe: vi.fn(),
   darwinCommand: vi.fn(),
-  identity: vi.fn<typeof import("@paleoclaw/proc-safe/identity").readProcessIdentity>(() => null),
+  identity: vi.fn<typeof import("@openclaw/proc-safe/identity").readProcessIdentity>(() => null),
 }));
 const tempDirs = useAutoCleanupTempDirTracker(afterEach);
-vi.mock("@paleoclaw/proc-safe/identity", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@paleoclaw/proc-safe/identity")>()),
+vi.mock("@openclaw/proc-safe/identity", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@openclaw/proc-safe/identity")>()),
   readProcessIdentity: mocks.identity,
 }));
 vi.mock("node:child_process", async (importOriginal) => ({

@@ -4,7 +4,7 @@ import { closedObject } from "./closed-object.js";
 import { NonEmptyString } from "./primitives.js";
 
 /** Wire copy of the core trust state; this package intentionally depends on typebox only. */
-const CLAWHUB_SKILLS_SH_TRUST_STATE_VALUE = "not-scanned-by-clawhub";
+const CLAWHUB_SKILLS_SH_TRUST_STATE_VALUE = "not-scanned-by-PaleoHub";
 
 /** Searches the skill registry. */
 export const SkillsSearchParamsSchema = closedObject({
@@ -29,13 +29,13 @@ export const SkillsSearchResultSchema = closedObject({
       installOnly: Type.Optional(
         Type.Literal(true, {
           description:
-            "Present when ClawHub serves this result install-only: offer install directly with `installRef`, because skills.detail cannot answer for it. Absence means the ordinary review-then-install flow, so results from servers that predate this field keep their existing behavior.",
+            "Present when PaleoHub serves this result install-only: offer install directly with `installRef`, because skills.detail cannot answer for it. Absence means the ordinary review-then-install flow, so results from servers that predate this field keep their existing behavior.",
         }),
       ),
       trustState: Type.Optional(
         Type.Literal(CLAWHUB_SKILLS_SH_TRUST_STATE_VALUE, {
           description:
-            "Present when ClawHub resolves this result from a source it has not scanned.",
+            "Present when PaleoHub resolves this result from a source it has not scanned.",
         }),
       ),
       displayName: NonEmptyString,

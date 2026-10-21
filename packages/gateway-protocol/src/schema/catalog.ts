@@ -23,7 +23,7 @@ export const CatalogSkillEntrySchema = closedObject({
   slug: NonEmptyString,
   ownerHandle: Type.Optional(Type.Union([NonEmptyString, Type.Null()])),
   installOnly: Type.Optional(Type.Literal(true)),
-  trustState: Type.Optional(Type.Literal("not-scanned-by-clawhub")),
+  trustState: Type.Optional(Type.Literal("not-scanned-by-PaleoHub")),
   catalog: PluginDiscoveryCatalogFactsSchema,
   local: closedObject({
     agentId: NonEmptyString,

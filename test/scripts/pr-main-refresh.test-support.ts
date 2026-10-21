@@ -11,7 +11,7 @@ import {
 import { delimiter, join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { afterAll } from "vitest";
-import type { RollupPayload } from "../../scripts/lib/watch-pr-ci-rollup.mjs";
+import type { RollupPayload } from "../../scripts/lib/watch-pr-ci-rollup.mts";
 import { copyTreeCloseOnExec } from "../helpers/close-on-exec-copy.js";
 import { useAutoCleanupTempDirTracker } from "../helpers/temp-dir.js";
 import { createPrivateHandoffStoreFixture } from "./pr-private-handoff.test-support.js";

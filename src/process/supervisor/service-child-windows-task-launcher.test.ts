@@ -2,10 +2,10 @@ import { beforeEach, expect, it, vi } from "vitest";
 import { bindWindowsTaskLauncher } from "./service-child-windows-task-launcher.js";
 
 const native = vi.hoisted(() => ({ open: vi.fn(), bind: vi.fn(), identity: vi.fn() }));
-vi.mock("@paleoclaw/proc-safe/identity", () => ({
+vi.mock("@openclaw/proc-safe/identity", () => ({
   readProcessIdentity: native.identity,
 }));
-vi.mock("@paleoclaw/proc-safe/windows-job", () => ({
+vi.mock("@openclaw/proc-safe/windows-job", () => ({
   PinnedProcess: { open: native.open },
   bindCurrentProcessLifetimeTo: native.bind,
 }));

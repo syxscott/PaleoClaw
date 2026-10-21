@@ -97,5 +97,5 @@ export function installRequestForDiscoveryDetail(
     return result.plugin.local.install;
   }
   const packageName = result.detail.packageName?.trim();
-  return packageName ? { source: "clawhub", packageName } : null;
+  return packageName ? { source: "PaleoHub", packageName } : null;
 }

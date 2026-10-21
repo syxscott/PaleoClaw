@@ -3,7 +3,7 @@ import {
   buildControlUiCatalogSharePath,
   isControlUiCatalogShareId,
 } from "@paleoclaw/session-url-contract/share-build";
-import type { RouteLocation } from "@openclaw/uirouter";
+import type { RouteLocation } from "@paleoclaw/uirouter";
 import type { SessionsCatalogListResult } from "../../../../packages/gateway-protocol/src/index.js";
 import { INTERNAL_SESSION_PATH_PARAM } from "../../app-route-paths.ts";
 import { waitForGatewayClient } from "../../app/gateway-readiness.ts";

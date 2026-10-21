@@ -1,7 +1,7 @@
 import { spawn } from "node:child_process";
 import { once } from "node:events";
 import { Worker } from "node:worker_threads";
-import { readProcessCoalition } from "@paleoclaw/proc-safe/darwin";
+import { readProcessCoalition } from "@openclaw/proc-safe/darwin";
 import { expect, it } from "vitest";
 import { inspectServiceProcessMembershipSync } from "./service-process-membership.js";
 
@@ -24,7 +24,7 @@ it.skipIf(process.platform !== "darwin")(
         new URL(
           `data:text/javascript,${encodeURIComponent(`
         import { parentPort } from 'node:worker_threads';
-        import { readProcessCoalition } from ${JSON.stringify(import.meta.resolve("@paleoclaw/proc-safe/darwin"))};
+        import { readProcessCoalition } from ${JSON.stringify(import.meta.resolve("@openclaw/proc-safe/darwin"))};
         import { inspectServiceProcessMembershipSync } from ${JSON.stringify(source)};
         parentPort.postMessage({
           membership: inspectServiceProcessMembershipSync(${child.pid}),

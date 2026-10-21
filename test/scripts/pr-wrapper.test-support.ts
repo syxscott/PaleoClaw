@@ -37,8 +37,8 @@ export function linkPrWrapperDependencies(destination: string): void {
   // Use installed third-party packages only, never workspace source or loader mocks.
   for (const dependency of [
     "@openclaw/fs-safe",
-    "@paleoclaw/proc-safe",
-    "@paleoclaw/proxyline",
+    "@openclaw/proc-safe",
+    "@openclaw/proxyline",
     "acorn",
     "chalk",
     "commander",

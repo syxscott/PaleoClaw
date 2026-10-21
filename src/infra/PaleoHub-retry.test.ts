@@ -1,5 +1,5 @@
 import { expect, it, vi } from "vitest";
-import { retryClawHubRead } from "./clawhub-retry.js";
+import { retryClawHubRead } from "./PaleoHub-retry.js";
 
 function retryResponse(first: Response | Error, retryRateLimit = false) {
   const delays: number[] = [];

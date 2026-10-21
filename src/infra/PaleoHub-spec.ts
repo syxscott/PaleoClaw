@@ -1,14 +1,14 @@
-/** Parses explicit `clawhub:<name>[@version]` package specs for ClawHub installs. */
+/** Parses explicit `PaleoHub:<name>[@version]` package specs for PaleoHub installs. */
 export function parseClawHubPluginSpec(raw: string): {
   name: string;
   version?: string;
   baseUrl?: string;
 } | null {
   const trimmed = raw.trim();
-  if (!trimmed.toLowerCase().startsWith("clawhub:")) {
+  if (!trimmed.toLowerCase().startsWith("PaleoHub:")) {
     return null;
   }
-  const spec = trimmed.slice("clawhub:".length).trim();
+  const spec = trimmed.slice("PaleoHub:".length).trim();
   if (!spec) {
     return null;
   }

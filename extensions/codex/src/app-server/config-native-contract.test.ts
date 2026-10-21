@@ -1,6 +1,6 @@
 import { validateJsonSchemaValue } from "paleoclaw/plugin-sdk/json-schema-runtime";
 import { describe, expect, it } from "vitest";
-import manifest from "../../openclaw.plugin.json" with { type: "json" };
+import manifest from "../../paleoclaw.plugin.json" with { type: "json" };
 import { readCodexPluginConfig } from "./config-parsing.js";
 import nativeConfig from "./fixtures/native-plugin-config.json" with { type: "json" };
 

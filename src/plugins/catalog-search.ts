@@ -2,7 +2,7 @@ import {
   searchClawHubPackages,
   type ClawHubPackageFamily,
   type ClawHubPackageSearchResult,
-} from "../infra/clawhub-packages.js";
+} from "../infra/PaleoHub-packages.js";
 
 const INSTALLABLE_PLUGIN_FAMILIES: readonly ClawHubPackageFamily[] = [
   "code-plugin",
@@ -35,6 +35,6 @@ export async function searchInstallablePluginPackages(params: {
       byName.set(entry.package.name, entry);
     }
   }
-  // Stable sorting preserves family query order when ClawHub scores tie.
+  // Stable sorting preserves family query order when PaleoHub scores tie.
   return [...byName.values()].toSorted((left, right) => right.score - left.score).slice(0, limit);
 }

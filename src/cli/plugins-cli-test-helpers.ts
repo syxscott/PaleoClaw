@@ -874,14 +874,14 @@ vi.mock("../plugins/clawhub.js", () => ({
     ARTIFACT_UNAVAILABLE: "artifact_unavailable",
   },
   installPluginFromClawHub: ((
-    params: Parameters<(typeof import("../plugins/clawhub.js"))["installPluginFromClawHub"]>[0],
+    params: Parameters<(typeof import("../plugins/PaleoHub.js"))["installPluginFromClawHub"]>[0],
   ) =>
     invokePluginArtifactInstallMock<
-      Awaited<ReturnType<(typeof import("../plugins/clawhub.js"))["installPluginFromClawHub"]>>
+      Awaited<ReturnType<(typeof import("../plugins/PaleoHub.js"))["installPluginFromClawHub"]>>
     >(
       installPluginFromClawHubMock,
       params,
-    )) as (typeof import("../plugins/clawhub.js"))["installPluginFromClawHub"],
+    )) as (typeof import("../plugins/PaleoHub.js"))["installPluginFromClawHub"],
 }));
 
 vi.mock("../infra/PaleoHub-packages.js", () => ({

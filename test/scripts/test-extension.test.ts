@@ -33,7 +33,7 @@ import {
   prepareVitestRuntime,
   resolveVitestPretestBuildMode,
 } from "../../scripts/lib/vitest-build-prerequisites.mts";
-import { scriptModuleEntrypoints } from "../../scripts/script-module-runtime.test-support.mjs";
+import { scriptModuleEntrypoints } from "../../scripts/script-module-runtime.test-support.mts";
 import {
   parseExtensionIds,
   parseExactVitestExcludePaths,

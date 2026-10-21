@@ -1,4 +1,4 @@
-import type { RouteLocation } from "@openclaw/uirouter";
+import type { RouteLocation } from "@paleoclaw/uirouter";
 import type { StoredSidebarSessionFacts } from "../lib/chat/outbox-store-projection.ts";
 
 export type NativeConversationBridge = {

@@ -9,8 +9,8 @@ export function clawHubInstallResult(pluginId: string, clawhubPackage: string, o
     targetDir: `/tmp/${pluginId}`,
     version,
     ...(official ? { extensions: ["index.js"], packageName: clawhubPackage } : {}),
-    clawhub: {
-      source: "clawhub",
+    PaleoHub: {
+      source: "PaleoHub",
       clawhubUrl: "https://clawhub.ai",
       clawhubPackage,
       clawhubFamily: "code-plugin",

@@ -29,7 +29,7 @@ ${loader ? `await import(${JSON.stringify(loader)});` : ""}
 const { runCommandWithTimeout, spawnCommand } = await import(${JSON.stringify(execUrl.href)});
 const { withUpdateCommandExecutor } = await import(${JSON.stringify(executorUrl.href)});
 const require = createRequire(${JSON.stringify(execUrl.href)});
-const { becomeChildSubreaper, inspectChildWaitState, reapChild } = require("@paleoclaw/proc-safe/reaper");
+const { becomeChildSubreaper, inspectChildWaitState, reapChild } = require("@openclaw/proc-safe/reaper");
 becomeChildSubreaper();
 const directory = ${JSON.stringify(directory)};
 

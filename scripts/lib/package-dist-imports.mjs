@@ -135,7 +135,7 @@ function appendImportEdges(source, importerPath, imports, sourceType) {
       const stagedNativeUrl =
         kind === "import-meta-url" &&
         importerPath === "dist/managed-handoff-runtime.mjs" &&
-        importedPath === "dist/node_modules/@paleoclaw/proc-safe/dist/identity.js";
+        importedPath === "dist/node_modules/@openclaw/proc-safe/dist/identity.js";
       if (!stagedNativeUrl && (kind !== "import-meta-url" || importedPath.startsWith("dist/"))) {
         imports.push({ importerPath, importedPath, ...(kind === "require" ? { kind } : {}) });
       }

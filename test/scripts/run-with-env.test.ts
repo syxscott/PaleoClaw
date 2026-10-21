@@ -14,7 +14,7 @@ import {
   resolveForceKillDelayMs,
   resolveSpawnCommand,
 } from "../../scripts/run-with-env.mts";
-import { scriptModuleEntrypoints } from "../../scripts/script-module-runtime.test-support.mjs";
+import { scriptModuleEntrypoints } from "../../scripts/script-module-runtime.test-support.mts";
 import { hasErrnoCode } from "../../src/infra/errno.js";
 import {
   resolveRuntimeWorkerArgv,

@@ -1,4 +1,4 @@
-import { createRouter, definePage } from "@openclaw/uirouter";
+import { createRouter, definePage } from "@paleoclaw/uirouter";
 import type { JSX } from "@solidjs/web";
 import { createComponent, createRoot, Show } from "solid-js";
 import { afterEach, expect, it, onTestFinished, vi } from "vitest";

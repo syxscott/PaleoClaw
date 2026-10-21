@@ -5,7 +5,7 @@ import { createServer as createHttpsServer } from "node:https";
 import net, { type AddressInfo } from "node:net";
 import { Duplex } from "node:stream";
 import { rawDataToString } from "@paleoclaw/gateway-client/websocket-data";
-import { installGlobalProxy } from "@paleoclaw/proxyline";
+import { installGlobalProxy } from "@openclaw/proxyline";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { WebSocketServer } from "ws";
 import { WebSocket } from "../../packages/gateway-client/src/websocket.js";

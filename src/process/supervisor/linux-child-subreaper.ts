@@ -5,7 +5,7 @@ import {
   inspectChildWaitState,
   isChildSubreaper,
   reapChild,
-} from "@paleoclaw/proc-safe/reaper";
+} from "@openclaw/proc-safe/reaper";
 import { hasErrnoCode, ignoreMissingPath } from "../../infra/errno.js";
 
 function childPids(): number[] {

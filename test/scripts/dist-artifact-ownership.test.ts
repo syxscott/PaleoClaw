@@ -372,7 +372,7 @@ describe("native check launchers in paths with spaces", () => {
           ],
           {
             compiler: false,
-            dependencies: ["tsx", "@openclaw/fs-safe", "json5", "p-map", "@paleoclaw/proc-safe"],
+            dependencies: ["tsx", "@openclaw/fs-safe", "json5", "p-map", "@openclaw/proc-safe"],
           },
         );
         const compiler = script === "run-tsgo-core-test-shards.mts";

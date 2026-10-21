@@ -15,7 +15,7 @@ import { observeMainThreadSql } from "../test-utils/main-thread-sql-spies.test-s
 import { useStateDatabaseTempDirs } from "../test-utils/state-database-temp-dirs.js";
 import { shouldAttemptTtsPayload, shouldCleanTtsDirectiveText } from "./tts-config.js";
 import { prepareTtsPreferences } from "./tts-preferences.js";
-import { buildTtsSystemPromptHint, buildTtsSystemPromptHintAsync } from "./tts-settings.js";
+import {  buildTtsSystemPromptHint, buildTtsSystemPromptHintAsync  } from "../plugin-sdk/tts-runtime.js";
 import { resolveTtsConfig, resolveTtsPrefsPath, resolveTtsPrefsPathAsync } from "./tts.js";
 
 const tempDirs = useStateDatabaseTempDirs();

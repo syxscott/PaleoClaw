@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import manifest from "./openclaw.plugin.json" with { type: "json" };
+import manifest from "./paleoclaw.plugin.json" with { type: "json" };
 import { resolveModelRoutes } from "./provider-policy-api.js";
 
 describe("OpenAI capability route policy", () => {

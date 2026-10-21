@@ -366,12 +366,12 @@ export function resolveExternalPackageAliasesForVite(
     path.dirname(resolvePackage(`${specifier}/package.json`));
   return [
     {
-      find: "@openclaw/libterminal/browser",
-      replacement: path.join(packageRoot("@openclaw/libterminal"), "dist/browser.js"),
+      find: "@paleoclaw/libterminal/browser",
+      replacement: path.join(packageRoot("@paleoclaw/libterminal"), "dist/browser.js"),
     },
     {
-      find: "@openclaw/uirouter",
-      replacement: path.join(packageRoot("@openclaw/uirouter"), "dist/index.js"),
+      find: "@paleoclaw/uirouter",
+      replacement: path.join(packageRoot("@paleoclaw/uirouter"), "dist/index.js"),
     },
   ];
 }

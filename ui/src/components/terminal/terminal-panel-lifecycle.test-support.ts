@@ -48,7 +48,7 @@ export function panelTestStorage(
   afterUnmount = () => {},
 ) {
   beforeAll(async () => {
-    await import("@openclaw/libterminal/browser");
+    await import("@paleoclaw/libterminal/browser");
   });
   beforeEach(async () => {
     if (timers) {

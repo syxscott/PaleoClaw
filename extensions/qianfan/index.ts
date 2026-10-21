@@ -1,6 +1,6 @@
 import { defineSingleProviderPluginEntry } from "paleoclaw/plugin-sdk/provider-entry";
 import { applyQianfanConfig, QIANFAN_DEFAULT_MODEL_REF } from "./onboard.js";
-import manifest from "./openclaw.plugin.json" with { type: "json" };
+import manifest from "./paleoclaw.plugin.json" with { type: "json" };
 import { QIANFAN_BASE_URL } from "./provider-catalog.js";
 
 const PROVIDER_ID = "qianfan";

@@ -1,4 +1,4 @@
-import { readProcessIdentity } from "@paleoclaw/proc-safe/identity";
+import { readProcessIdentity } from "@openclaw/proc-safe/identity";
 import { vi } from "vitest";
 
 export function createChromeProcessIdentityFixture(pid: number, startTime: string) {

@@ -6,7 +6,7 @@ import {
 } from "../../../packages/gateway-protocol/src/index.js";
 import { retainMutationAuthority } from "../../infra/mutation-authority.js";
 import { getOrCreatePromise } from "../../shared/lazy-promise.js";
-import { installSkillFromClawHub } from "../../skills/lifecycle/clawhub.js";
+import { installSkillFromClawHub } from "../../skills/lifecycle/PaleoHub.js";
 import { installSkill } from "../../skills/lifecycle/install.js";
 import { installUploadedSkillArchive } from "../../skills/lifecycle/upload-install.js";
 import { SessionMutationAuthorizationChangedError } from "../session-mutation-authorization-error.js";
@@ -30,7 +30,7 @@ export const handleSkillsInstall = defineValidatedGatewayHandler(
     const { cfg, workspaceDir: workspaceDirRaw } = resolved;
     // Skill installs are intentionally routed by source; each source owns its
     // validation, provenance checks, and result payload shape.
-    if ("source" in p && p.source === "clawhub") {
+    if ("source" in p && p.source === "PaleoHub") {
       const input = {
         workspaceDir: workspaceDirRaw,
         slug: p.slug,

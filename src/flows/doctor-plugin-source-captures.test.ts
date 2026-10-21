@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import fsPromises from "node:fs/promises";
 import path from "node:path";
-import { ProcSafeError } from "@paleoclaw/proc-safe/errors";
+import { ProcSafeError } from "@openclaw/proc-safe/errors";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { useAutoCleanupTempDirTracker } from "../../test/helpers/temp-dir.js";
 import type { GatewayServiceCommandConfig } from "../daemon/service-types.js";
@@ -33,12 +33,12 @@ vi.mock("node:child_process", async (importOriginal) => ({
 vi.mock("../process/darwin-process-inspection.js", () => ({
   readDarwinProcessCensus: nativeCensus,
 }));
-vi.mock("@paleoclaw/proc-safe/inspect", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@paleoclaw/proc-safe/inspect")>()),
+vi.mock("@openclaw/proc-safe/inspect", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@openclaw/proc-safe/inspect")>()),
   readProcessCommand,
 }));
-vi.mock("@paleoclaw/proc-safe/identity", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@paleoclaw/proc-safe/identity")>();
+vi.mock("@openclaw/proc-safe/identity", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@openclaw/proc-safe/identity")>();
   return {
     ...actual,
     readProcessIdentity: (pid: number) =>

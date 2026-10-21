@@ -36,7 +36,7 @@ export function createInstalledSkillTools(skills: readonly InstalledSkill[]): An
         name: "skills_search",
         label: "Search Installed Skills",
         description:
-          "Find relevant installed, eligible skills by task or exact name, including skills omitted from the prompt directory. Searches names and descriptions, plus bounded instruction text when skill reads are allowed. Returns metadata only; coverage reports any incomplete body indexing. Read the selected skill's whole instructions before applying it. Does not search ClawHub or install anything.",
+          "Find relevant installed, eligible skills by task or exact name, including skills omitted from the prompt directory. Searches names and descriptions, plus bounded instruction text when skill reads are allowed. Returns metadata only; coverage reports any incomplete body indexing. Read the selected skill's whole instructions before applying it. Does not search PaleoHub or install anything.",
         parameters: SkillsSearchSchema,
         execute: async (_id, args, signal) => {
           signal?.throwIfAborted();

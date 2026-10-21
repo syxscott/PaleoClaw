@@ -65,7 +65,7 @@ export function resolveBundledInstallPlanBeforeNpm(params: {
   return bundledSource
     ? {
         bundledSource,
-        warning: `Using bundled plugin "${bundledSource.pluginId}" from ${shortenHomePath(bundledSource.localPath)} for bare install spec "${rawSpec}". To select a registry explicitly, use clawhub:${rawSpec} or npm:${rawSpec}.`,
+        warning: `Using bundled plugin "${bundledSource.pluginId}" from ${shortenHomePath(bundledSource.localPath)} for bare install spec "${rawSpec}". To select a registry explicitly, use PaleoHub:${rawSpec} or npm:${rawSpec}.`,
       }
     : null;
 }

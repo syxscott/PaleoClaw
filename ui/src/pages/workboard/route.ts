@@ -1,5 +1,5 @@
-import type { RouteLocation } from "@openclaw/uirouter";
-import { definePage } from "@openclaw/uirouter";
+import type { RouteLocation } from "@paleoclaw/uirouter";
+import { definePage } from "@paleoclaw/uirouter";
 import { createComponent } from "solid-js";
 import { routePageSpec } from "../../app-route-paths.ts";
 import type { SolidRouteProps } from "../../app-route-types.ts";

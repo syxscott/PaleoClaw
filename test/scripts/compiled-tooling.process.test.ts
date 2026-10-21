@@ -1,5 +1,5 @@
 import { afterEach, expect, it } from "vitest";
-import { scriptModuleEntrypoints } from "../../scripts/script-module-runtime.test-support.mjs";
+import { scriptModuleEntrypoints } from "../../scripts/script-module-runtime.test-support.mts";
 import { resolveRuntimeWorkerUrl } from "../../src/infra/runtime-worker-url.js";
 import { runNodeScript } from "../helpers/run-node-script.js";
 import { useAutoCleanupTempDirTracker } from "../helpers/temp-dir.js";

@@ -267,10 +267,14 @@ it.each(
       entry = path.join(directory, "runtime", MANAGED_HANDOFF_RUNTIME_ENTRY);
       const privateModules = path.join(directory, "runtime", "node_modules");
       const procSafeRoot = path.join(privateModules, "@paleoclaw", "proc-safe");
-      const addonRoot = path.join(privateModules, "@paleoclaw", `proc-safe-freebsd-${process.arch}`);
+      const addonRoot = path.join(
+        privateModules,
+        "@paleoclaw",
+        `proc-safe-freebsd-${process.arch}`,
+      );
       const nativeAssets = freebsd
         ? [
-            ...publishedProcSafeRuntimeFiles(packageDir("@paleoclaw/proc-safe")).map((file) =>
+            ...publishedProcSafeRuntimeFiles(packageDir("@openclaw/proc-safe")).map((file) =>
               path.join(procSafeRoot, file),
             ),
             ...["package.json", "proc-safe-native.node"].map((file) => path.join(addonRoot, file)),
@@ -302,8 +306,8 @@ it.each(
         // npm nests proc-safe and its FreeBSD addon inside the installed package.
         const nativeModules = path.join(fixture.packageRoot, "node_modules");
         if (freebsd && !existsSync(nativeModules)) {
-          const procSafe = realpathSync(packageDir("@paleoclaw/proc-safe"));
-          const platformName = `@paleoclaw/proc-safe-freebsd-${process.arch}`;
+          const procSafe = realpathSync(packageDir("@openclaw/proc-safe"));
+          const platformName = `@openclaw/proc-safe-freebsd-${process.arch}`;
           const addon = path.dirname(
             createRequire(path.join(procSafe, "package.json")).resolve(
               `${platformName}/package.json`,

@@ -181,7 +181,10 @@ process.stdout.write(JSON.stringify({ inputs, selected, declarations }));
 export function createDeclarationFixture(
   command: Pick<CommandFixture, "createTempDir">,
   groups: readonly string[] = TSDOWN_PLUGIN_SDK_DTS_CONFIG_GROUPS,
-  root = path.join(fs.realpathSync(command.createTempDir("paleoclaw-sdk-declarations-")), "Project"),
+  root = path.join(
+    fs.realpathSync(command.createTempDir("paleoclaw-sdk-declarations-")),
+    "Project",
+  ),
   extraEntrypoints: readonly string[] = [],
 ) {
   return createFixture(groups, root, extraEntrypoints);
@@ -208,7 +211,7 @@ export function createFixture(
   for (const name of [
     ".bin",
     "@openclaw/fs-safe",
-    "@paleoclaw/proc-safe",
+    "@openclaw/proc-safe",
     "@silvia-odwyer/photon-node",
     "highlight.js",
     "playwright-core",

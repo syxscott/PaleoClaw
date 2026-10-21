@@ -1,5 +1,5 @@
 /* @vitest-environment jsdom */
-import { createRouter, definePage } from "@openclaw/uirouter";
+import { createRouter, definePage } from "@paleoclaw/uirouter";
 import { afterEach, expect, it, vi } from "vitest";
 import type { RouteId } from "../app-route-paths.ts";
 import { ApplicationProvider } from "../lib/reactive/context.ts";

@@ -1,4 +1,4 @@
-import type { RouteLocation, RouterHistory } from "@openclaw/uirouter";
+import type { RouteLocation, RouterHistory } from "@paleoclaw/uirouter";
 import { pluginSlugCandidate, sameRouteLocation } from "../../app-route-paths.ts";
 import type { ApplicationContext } from "../../app/context.ts";
 import { canCallGatewayMethod } from "../../lib/gateway-methods.ts";

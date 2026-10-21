@@ -1,7 +1,7 @@
-import { ProcSafeError } from "@paleoclaw/proc-safe/errors";
-import { readProcessIdentity } from "@paleoclaw/proc-safe/identity";
-import { listProcesses } from "@paleoclaw/proc-safe/inspect";
-import { PinnedProcess } from "@paleoclaw/proc-safe/windows-job";
+import { ProcSafeError } from "@openclaw/proc-safe/errors";
+import { readProcessIdentity } from "@openclaw/proc-safe/identity";
+import { listProcesses } from "@openclaw/proc-safe/inspect";
+import { PinnedProcess } from "@openclaw/proc-safe/windows-job";
 
 type WindowsProcessObservation = {
   pid: number;

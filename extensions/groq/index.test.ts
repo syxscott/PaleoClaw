@@ -10,7 +10,7 @@ import { buildManifestModelProviderConfig } from "paleoclaw/plugin-sdk/provider-
 import { buildOpenAICompletionsParams } from "paleoclaw/plugin-sdk/provider-transport-runtime";
 import { describe, expect, it } from "vitest";
 import plugin from "./index.js";
-import manifest from "./openclaw.plugin.json" with { type: "json" };
+import manifest from "./paleoclaw.plugin.json" with { type: "json" };
 
 describe("groq provider compat", () => {
   it("requests parsed reasoning only for enabled Groq Qwen reasoning models", async () => {

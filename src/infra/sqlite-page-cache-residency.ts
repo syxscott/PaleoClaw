@@ -1,5 +1,5 @@
 import fs from "node:fs";
-import { samplePageCacheResidency } from "@paleoclaw/proc-safe/diagnostics";
+import { samplePageCacheResidency } from "@openclaw/proc-safe/diagnostics";
 
 export type SqlitePageCacheResidency = {
   scope: "file-sample";

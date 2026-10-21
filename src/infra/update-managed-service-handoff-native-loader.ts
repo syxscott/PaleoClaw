@@ -3,10 +3,10 @@ import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-let identity: typeof import("@paleoclaw/proc-safe/identity") | undefined;
+let identity: typeof import("@openclaw/proc-safe/identity") | undefined;
 
 /** The handoff build alone owns this loader beside its staged native package. */
-export function loadFreeBsdProcessIdentityNative(): typeof import("@paleoclaw/proc-safe/identity") {
+export function loadFreeBsdProcessIdentityNative(): typeof import("@openclaw/proc-safe/identity") {
   // SAFETY: This adds only an optional unknown field; every defined value is rejected.
   if ((process as NodeJS.Process & { resourcesPath?: unknown }).resourcesPath !== undefined) {
     throw new Error("Managed handoff cannot use an external FreeBSD native resource path");
@@ -15,10 +15,10 @@ export function loadFreeBsdProcessIdentityNative(): typeof import("@paleoclaw/pr
     return identity;
   }
   const entry = fileURLToPath(
-    new URL("./node_modules/@paleoclaw/proc-safe/dist/identity.js", import.meta.url),
+    new URL("./node_modules/@openclaw/proc-safe/dist/identity.js", import.meta.url),
   );
   const require = createRequire(entry);
-  const platformName = `@paleoclaw/proc-safe-freebsd-${process.arch}`;
+  const platformName = `@openclaw/proc-safe-freebsd-${process.arch}`;
   const nativeEntry = path.resolve(
     path.dirname(entry),
     "../..",
@@ -33,5 +33,5 @@ export function loadFreeBsdProcessIdentityNative(): typeof import("@paleoclaw/pr
     throw new Error("Managed handoff cannot use an external FreeBSD native runtime");
   }
   // SAFETY: Staging validates this public entry and its private platform addon.
-  return (identity = require(entry) as typeof import("@paleoclaw/proc-safe/identity"));
+  return (identity = require(entry) as typeof import("@openclaw/proc-safe/identity"));
 }

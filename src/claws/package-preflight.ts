@@ -1,6 +1,6 @@
 import type { OpenClawConfig } from "../config/types.openclaw.js";
 import { preflightPluginInstall } from "../plugins/plugin-install-preflight.js";
-import { preflightSkillFromClawHub } from "../skills/lifecycle/clawhub.js";
+import { preflightSkillFromClawHub } from "../skills/lifecycle/PaleoHub.js";
 import { preflightClawPluginPackage, type ClawPluginProbeDeps } from "./plugin-capability-probe.js";
 import type { ClawPackage, ClawPackagePreflightResult } from "./types.js";
 

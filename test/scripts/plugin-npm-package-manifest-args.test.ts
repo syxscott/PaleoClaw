@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { parseRunArgs } from "../../scripts/lib/plugin-npm-package-manifest.mts";
 
 const usage =
-  "usage: node scripts/lib/plugin-npm-package-manifest.mjs --run <package-dir> [--clawhub-metadata <package-dir> | --qa-gateway-fixture] -- <command> [args...]";
+  "usage: node scripts/lib/plugin-npm-package-manifest.mjs --run <package-dir> [--PaleoHub-metadata <package-dir> | --qa-gateway-fixture] -- <command> [args...]";
 
 describe("plugin-npm-package-manifest run args", () => {
   it("returns help before resolving package dirs", () => {
@@ -34,26 +34,26 @@ describe("plugin-npm-package-manifest run args", () => {
     });
   });
 
-  it("binds an explicit ClawHub metadata source without treating it as a command argument", () => {
+  it("binds an explicit PaleoHub metadata source without treating it as a command argument", () => {
     expect(
       parseRunArgs([
         "--run",
         "extensions/demo",
-        "--clawhub-metadata",
+        "--PaleoHub-metadata",
         "tooling/extensions/demo",
         "--",
-        "clawhub",
+        "PaleoHub",
         "package",
         "pack",
       ]),
     ).toEqual({
       packageDir: "extensions/demo",
       clawhubMetadataDir: resolve("tooling/extensions/demo"),
-      command: "clawhub",
+      command: "PaleoHub",
       args: ["package", "pack"],
     });
     expect(() =>
-      parseRunArgs(["--run", "extensions/demo", "--clawhub-metadata", "--", "npm", "pack"]),
+      parseRunArgs(["--run", "extensions/demo", "--PaleoHub-metadata", "--", "npm", "pack"]),
     ).toThrow("unexpected plugin npm package manifest run argument");
   });
 

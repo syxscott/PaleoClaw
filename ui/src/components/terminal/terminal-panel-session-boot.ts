@@ -1,4 +1,4 @@
-import type { GhosttyTerminalController } from "@openclaw/libterminal/browser";
+import type { GhosttyTerminalController } from "@paleoclaw/libterminal/browser";
 import { t } from "../../i18n/index.ts";
 import { formatUiError } from "../../lib/format-error.ts";
 import { listen } from "../../lib/reactive/listener.ts";
@@ -158,7 +158,7 @@ export async function bootTerminalPanelSession(params: {
       !tabReference.current?.controller.readOnly,
   );
   const { createTerminalDefaultColorQueryResponder } =
-    await import("@openclaw/libterminal/browser");
+    await import("@paleoclaw/libterminal/browser");
   const defaultColorQueries = createTerminalDefaultColorQueryResponder({
     getColors: terminalDynamicColors,
     reply: (data) => startupInput.onData(TERMINAL_OUTPUT_ENCODER.encode(data)),

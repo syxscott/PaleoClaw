@@ -34,7 +34,7 @@ import { installDistArtifactScripts } from "./dist-artifact-fixture.js";
 
 const testNodeExecPath = resolveTestNodeExecPath();
 const procSafeRoot = fs.realpathSync(
-  path.dirname(createRequire(import.meta.url).resolve("@paleoclaw/proc-safe/package.json")),
+  path.dirname(createRequire(import.meta.url).resolve("@openclaw/proc-safe/package.json")),
 );
 const fixtureLifetime = createFixtureLifetime();
 const tempDirs = useAutoCleanupTempDirTracker((cleanup) =>

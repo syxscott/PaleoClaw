@@ -12,7 +12,7 @@ import {
 import { withExtractedArchiveRoot } from "../../infra/install-flow.js";
 import { resolvePreferredOpenClawTmpDir } from "../../infra/tmp-paleoclaw-dir.js";
 import type { OpenClawStateDatabaseOptions } from "../../state/paleoclaw-state-db.js";
-import { installSkillFromClawHub } from "../lifecycle/clawhub.js";
+import { installSkillFromClawHub } from "../lifecycle/PaleoHub.js";
 import { SkillLibraryError } from "../skill-library-error.js";
 import {
   prepareSkillLibraryBundle,

@@ -177,7 +177,7 @@ describeControlUiE2e("Plugin overview", () => {
         },
       },
       detail: {
-        origin: "clawhub",
+        origin: "PaleoHub",
         packageName: "@acme/calendar",
         author: { handle: "acme", displayName: "Acme", official: true },
         topics: [],

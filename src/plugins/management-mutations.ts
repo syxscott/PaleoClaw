@@ -11,8 +11,8 @@ import {
 } from "../config/config.js";
 import { ensurePluginAllowlisted } from "../config/plugins-allowlist.js";
 import { composeConfigWriteAssertions } from "../config/write-authority.js";
-import { isDefaultClawHubBaseUrl, resolveClawHubBaseUrl } from "../infra/clawhub-client.js";
-import { reportClawHubPluginInstallTelemetry } from "../infra/clawhub-packages.js";
+import { isDefaultClawHubBaseUrl, resolveClawHubBaseUrl } from "../infra/PaleoHub-client.js";
+import { reportClawHubPluginInstallTelemetry } from "../infra/PaleoHub-packages.js";
 import { formatErrorMessage } from "../infra/errors.js";
 import { withClawPackageLifecycleLease } from "../state/claw-package-lifecycle-lease.js";
 import { shortenHomePath } from "../utils.js";
@@ -21,7 +21,7 @@ import {
   type PluginCapabilityConsentAcknowledgment,
   type PluginCapabilityConsentHandler,
 } from "./capability-consent.js";
-import { CLAWHUB_INSTALL_ERROR_CODE } from "./clawhub-error-codes.js";
+import { CLAWHUB_INSTALL_ERROR_CODE } from "./PaleoHub-error-codes.js";
 import { normalizePluginId } from "./config-state.js";
 import { resolvePluginControlPlaneWorkspace } from "./control-plane-workspace.js";
 import { getProcessGatewayPluginMetadataSnapshot } from "./current-plugin-metadata-state.js";
@@ -112,7 +112,7 @@ function throwInstallFailure(
   });
 }
 
-/** Install a ClawHub or curated official plugin through the canonical install pipeline. */
+/** Install a PaleoHub or curated official plugin through the canonical install pipeline. */
 export async function installManagedPlugin(
   params: ManagedPluginInstallOptions & {
     request: PluginsInstallParams;
@@ -134,7 +134,7 @@ export async function installManagedPlugin(
     const performInstall = async () => {
       const useHostedCatalog =
         params.request.source === "official" ||
-        (params.request.source === "clawhub" && isDefaultClawHubBaseUrl(clawhubUrl));
+        (params.request.source === "PaleoHub" && isDefaultClawHubBaseUrl(clawhubUrl));
       const officialCatalog = useHostedCatalog ? await loadOfficialCatalog() : { entries: [] };
       const warnings: string[] = [];
       const request = resolveManagedPluginInstallRequest(
@@ -182,7 +182,7 @@ export async function installManagedPlugin(
       if (request.source === "local" && request.link) {
         request.successMessage = `Linked plugin path: ${shortenHomePath(request.path)}`;
       }
-      if (request.source === "clawhub" && params.confirmInstall) {
+      if (request.source === "PaleoHub" && params.confirmInstall) {
         request.confirmInstall = params.confirmInstall;
       }
       const captured = params.applyRuntime
@@ -228,7 +228,7 @@ export async function installManagedPlugin(
       }
       try {
         warnings.push(...(installed.warnings ?? []));
-        if (params.request.source === "clawhub" && installed.clawhub) {
+        if (params.request.source === "PaleoHub" && installed.clawhub) {
           await reportClawHubPluginInstallTelemetry({
             baseUrl: installed.clawhub.clawhubUrl,
             packageName: installed.clawhub.clawhubPackage,
@@ -286,9 +286,9 @@ export async function installManagedPlugin(
         throw new PluginInstallPersistedError(installed.pluginId, error);
       }
     };
-    return params.request.source === "clawhub" && !params.clawManaged
+    return params.request.source === "PaleoHub" && !params.clawManaged
       ? await withClawPackageLifecycleLease(
-          { kind: "plugin", source: "clawhub", ref: params.request.packageName },
+          { kind: "plugin", source: "PaleoHub", ref: params.request.packageName },
           performInstall,
         )
       : await performInstall();

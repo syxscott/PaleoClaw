@@ -58,7 +58,7 @@ describe("write-unified-entry-dts", () => {
       ]),
     );
     expect(closure).not.toContain("scripts/lib/ci-node-test-plan.mts");
-    expect(closure).not.toContain("src/infra/node_modules/@paleoclaw/proc-safe/dist/identity.js");
+    expect(closure).not.toContain("src/infra/node_modules/@openclaw/proc-safe/dist/identity.js");
   });
 
   it("still traverses a compiler source when the generator also imports it", () => {

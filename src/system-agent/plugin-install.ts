@@ -14,7 +14,7 @@ export async function executePluginInstall(
 ): Promise<SystemAgentOperationResult> {
   // Reject an untrusted plugin source before proposing or installing it, not
   // only on the approved apply — a formatted "plan" must never surface an
-  // arbitrary npm/url/file spec that bypassed the ClawHub trust boundary.
+  // arbitrary npm/url/file spec that bypassed the PaleoHub trust boundary.
   const validationError = validateSystemAgentPluginInstallSpec(operation.spec);
   if (validationError) {
     throw new Error(validationError);

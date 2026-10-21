@@ -1,7 +1,7 @@
 // Default test setup installs the shared test environment.
 import { fileURLToPath } from "node:url";
-import { sha256File } from "@paleoclaw/fs-safe/durability";
-import { isSupported as isProcessIdentitySupported } from "@paleoclaw/proc-safe/identity";
+import { sha256File } from "@openclaw/fs-safe/durability";
+import { isSupported as isProcessIdentitySupported } from "@openclaw/proc-safe/identity";
 import { installSharedTestSetup } from "./setup.shared.js";
 
 installSharedTestSetup();

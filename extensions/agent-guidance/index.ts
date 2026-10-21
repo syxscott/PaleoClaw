@@ -6,7 +6,7 @@ import {
 } from "paleoclaw/plugin-sdk/file-access-runtime";
 import { buildJsonPluginConfigSchema, definePluginEntry } from "paleoclaw/plugin-sdk/plugin-entry";
 import { isRecord } from "paleoclaw/plugin-sdk/string-coerce-runtime";
-import manifest from "./openclaw.plugin.json" with { type: "json" };
+import manifest from "./paleoclaw.plugin.json" with { type: "json" };
 
 const MAX_FILES = 8;
 const MAX_FILE_BYTES = 16 * 1024;

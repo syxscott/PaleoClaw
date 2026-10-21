@@ -14,8 +14,8 @@ import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from 
 const spawnMock = vi.hoisted(() => vi.fn());
 const execFileSyncMock = vi.hoisted(() => vi.fn());
 
-vi.mock("@paleoclaw/proc-safe/identity", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@paleoclaw/proc-safe/identity")>();
+vi.mock("@openclaw/proc-safe/identity", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@openclaw/proc-safe/identity")>();
   return { ...actual, readProcessIdentity: vi.fn(actual.readProcessIdentity) };
 });
 

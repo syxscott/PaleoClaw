@@ -3,7 +3,7 @@ import { applyMistralModelCompat } from "./api.js";
 import { mistralMediaUnderstandingProvider } from "./media-understanding-provider.js";
 import { mistralMemoryEmbeddingProviderAdapter } from "./memory-embedding-adapter.js";
 import { applyMistralConnectionConfig } from "./onboard.js";
-import manifest from "./openclaw.plugin.json" with { type: "json" };
+import manifest from "./paleoclaw.plugin.json" with { type: "json" };
 import { resolveThinkingProfile } from "./provider-policy-api.js";
 import { buildMistralRealtimeTranscriptionProvider } from "./realtime-transcription-provider-factory.js";
 

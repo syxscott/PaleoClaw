@@ -19,7 +19,7 @@ import {
   getCoreTtsAttemptResultMediaUrls,
   markCoreTtsAttemptResult,
 } from "../tools/tts-tool-result-provenance.js";
-import { createOpenClawAgentHarness } from "./builtin-openclaw.js";
+import { createOpenClawAgentHarness } from "./builtin-paleoclaw.js";
 import { AgentHarnessPreflightError, resolveAgentHarnessPreflightOwner } from "./errors.js";
 import {
   runAgentHarnessLifecycleAttempt,

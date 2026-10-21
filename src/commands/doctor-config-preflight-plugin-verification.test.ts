@@ -21,7 +21,7 @@ vi.mock("../plugins/install.js", async (importOriginal) => ({
   installPluginFromNpmSpec: npmInstall,
 }));
 vi.mock("../plugins/clawhub.js", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("../plugins/clawhub.js")>()),
+  ...(await importOriginal<typeof import("../plugins/PaleoHub.js")>()),
   installPluginFromClawHub: () => {
     throw new Error("unselected plugin reached PaleoHub installation");
   },

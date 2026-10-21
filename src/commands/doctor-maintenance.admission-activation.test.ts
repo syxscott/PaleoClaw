@@ -15,7 +15,7 @@ const native = vi.hoisted(() => ({
 
 // Only the external systemd transport is synthetic. paleoclaw's queue, deadlines,
 // identity checks, service authority, and every Doctor ledger read remain real.
-vi.mock("@paleoclaw/proc-safe/systemd", () => ({
+vi.mock("@openclaw/proc-safe/systemd", () => ({
   SystemdBus: {
     connectBroker: async () => ({
       close: async () => {

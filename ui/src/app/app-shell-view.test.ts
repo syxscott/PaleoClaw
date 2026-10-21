@@ -1,6 +1,6 @@
 /* @vitest-environment jsdom */
 
-import { createRouter, definePage } from "@openclaw/uirouter";
+import { createRouter, definePage } from "@paleoclaw/uirouter";
 import { render } from "@solidjs/testing-library";
 import { createComponent, createRoot, flush, onSettled } from "solid-js";
 import { expect, it, onTestFinished, vi } from "vitest";

@@ -27,7 +27,7 @@ if (role === "launcher") {
   await once(child, "message");
   process.send?.({ descendantPid: child.pid }, () => process.exit(0));
 } else if (role === "candidate") {
-  const { isCurrentProcessInJob } = await import("@paleoclaw/proc-safe/windows-job");
+  const { isCurrentProcessInJob } = await import("@openclaw/proc-safe/windows-job");
   const wasInJob = isCurrentProcessInJob();
   if (ownership === "legacy") {
     const { retainWindowsProcessJobUntilExit } =

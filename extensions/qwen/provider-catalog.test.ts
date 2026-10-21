@@ -13,7 +13,7 @@ import {
   QWEN_TOKEN_PLAN_DEFAULT_MODEL_ID,
   QWEN_TOKEN_PLAN_GLOBAL_BASE_URL,
 } from "./api.js";
-import manifest from "./openclaw.plugin.json" with { type: "json" };
+import manifest from "./paleoclaw.plugin.json" with { type: "json" };
 
 useProviderCatalogMetadata(new URL(".", import.meta.url));
 

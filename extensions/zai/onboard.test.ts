@@ -12,7 +12,7 @@ import {
   ZAI_GLOBAL_BASE_URL,
 } from "./model-definitions.js";
 import { applyZaiConfig, applyZaiProviderConfig } from "./onboard.js";
-import manifest from "./openclaw.plugin.json" with { type: "json" };
+import manifest from "./paleoclaw.plugin.json" with { type: "json" };
 
 describe("zai onboard", () => {
   let defaultCfg: ReturnType<typeof applyZaiConfig>;

@@ -1,20 +1,51 @@
 {
   "name": "@paleoclaw/diffs",
-  "version": "1.8.0",
-  "private": true,
-  "description": "paleoclaw diff viewer plugin",
-  "type": "module",
-  "scripts": {
-    "build:viewer": "bun build src/viewer-client.ts --target browser --format esm --minify --outfile assets/viewer-runtime.js"
+  "version": "2026.10.5",
+  "description": "paleoclaw read-only diff viewer plugin and file renderer for agents.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/paleoclaw/paleoclaw"
   },
+  "type": "module",
   "dependencies": {
-    "@pierre/diffs": "1.0.11",
-    "@sinclair/typebox": "0.34.48",
-    "playwright-core": "1.58.2"
+    "@pierre/diffs": "1.5.2",
+    "@shikijs/langs": "4.5.0",
+    "playwright-core": "1.64.0",
+    "typebox": "1.3.37",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@paleoclaw/plugin-sdk": "workspace:*"
   },
   "paleoclaw": {
     "extensions": [
       "./index.ts"
-    ]
+    ],
+    "install": {
+      "npmSpec": "@paleoclaw/diffs",
+      "clawhubSpec": "PaleoHub:@paleoclaw/diffs",
+      "defaultChoice": "npm",
+      "minHostVersion": ">=2026.4.30"
+    },
+    "compat": {
+      "pluginApi": ">=2026.10.5"
+    },
+    "assetScripts": {
+      "build": "node --import tsx ../../scripts/build-diffs-viewer-runtime.mts curated"
+    },
+    "build": {
+      "bundledDist": false,
+      "openclawVersion": "2026.10.5",
+      "staticAssets": [
+        {
+          "source": "./assets/viewer-runtime.js",
+          "output": "assets/viewer-runtime.js"
+        }
+      ]
+    },
+    "release": {
+      "publishToClawHub": true,
+      "publishToNpm": true
+    }
   }
 }

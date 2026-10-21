@@ -3,7 +3,7 @@ import type {
   ModelDefinitionConfig,
   ModelProviderConfig,
 } from "paleoclaw/plugin-sdk/provider-model-shared";
-import manifest from "./openclaw.plugin.json" with { type: "json" };
+import manifest from "./paleoclaw.plugin.json" with { type: "json" };
 
 export const META_BASE_URL = manifest.modelCatalog.providers.meta.baseUrl;
 export const META_MODEL_CATALOG = manifest.modelCatalog.providers.meta.models;

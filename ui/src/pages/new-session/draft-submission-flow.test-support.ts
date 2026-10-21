@@ -1,4 +1,4 @@
-import { createRouter } from "@openclaw/uirouter";
+import { createRouter } from "@paleoclaw/uirouter";
 import { onTestFinished, vi } from "vitest";
 import type { RouteId } from "../../app-routes.ts";
 import { createChatSubmissions } from "../../app/chat-submissions.ts";

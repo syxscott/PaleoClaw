@@ -144,7 +144,7 @@ beforeAll(() => {
     EventDispatcher: vi.fn(),
     defaultHttpInstance: mockBaseHttpInstance,
   }));
-  vi.doMock("@paleoclaw/proxyline", () => ({
+  vi.doMock("@openclaw/proxyline", () => ({
     createAmbientNodeProxyAgent: proxyAgentCtorMock,
     hasAmbientNodeProxyConfigured: vi.fn(() =>
       Boolean(proxyEnvKeys.map((key) => process.env[key]).find((value) => value !== undefined)),
@@ -166,7 +166,7 @@ afterEach(() => vi.unstubAllEnvs());
 
 afterAll(() => {
   vi.doUnmock("@larksuiteoapi/node-sdk");
-  vi.doUnmock("@paleoclaw/proxyline");
+  vi.doUnmock("@openclaw/proxyline");
   vi.resetModules();
 });
 

@@ -16,7 +16,7 @@ import { readResponseWithLimit } from "paleoclaw/plugin-sdk/response-limit-runti
 import { parseRetryAfterHeaderSeconds } from "paleoclaw/plugin-sdk/retry-runtime";
 import { fetchWithSsrFGuard } from "paleoclaw/plugin-sdk/ssrf-runtime";
 import { isRecord } from "paleoclaw/plugin-sdk/string-coerce-runtime";
-import manifest from "../openclaw.plugin.json" with { type: "json" };
+import manifest from "../paleoclaw.plugin.json" with { type: "json" };
 
 const MODEL = manifest.decisionModels[0]!.id;
 const LIMITS = manifest.decisionModels[0]!.capabilities;

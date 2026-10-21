@@ -2,7 +2,7 @@ import fs from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
 
-type IdentityModule = typeof import("@paleoclaw/proc-safe/identity");
+type IdentityModule = typeof import("@openclaw/proc-safe/identity");
 let packageRoots: readonly string[] = [];
 let identity: IdentityModule | undefined;
 
@@ -22,7 +22,7 @@ function isInside(root: string, file: string): boolean {
 }
 
 /** The package recovery build alone owns this loader; its single-file helper stages no addon. */
-export function loadFreeBsdProcessIdentityNative(): typeof import("@paleoclaw/proc-safe/identity") {
+export function loadFreeBsdProcessIdentityNative(): typeof import("@openclaw/proc-safe/identity") {
   if (identity) {
     return identity;
   }
@@ -46,7 +46,7 @@ export function loadFreeBsdProcessIdentityNative(): typeof import("@paleoclaw/pr
     const require = createRequire(entry);
     let nativeEntry: string;
     try {
-      nativeEntry = fs.realpathSync(require.resolve(`@paleoclaw/proc-safe-freebsd-${process.arch}`));
+      nativeEntry = fs.realpathSync(require.resolve(`@openclaw/proc-safe-freebsd-${process.arch}`));
     } catch {
       continue;
     }

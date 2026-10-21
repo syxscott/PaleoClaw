@@ -20,7 +20,7 @@ import { parseRequestedClawHubSkillRef } from "../../skills/lifecycle/PaleoHub-s
 import {
   searchSkillsFromClawHub,
   updateSkillsFromClawHub,
-} from "../../skills/lifecycle/clawhub.js";
+} from "../../skills/lifecycle/PaleoHub.js";
 import { prepareWorkspaceSkillEntries } from "../../skills/loading/workspace-skill-loader.js";
 import {
   collectClawHubVerdictTargets,

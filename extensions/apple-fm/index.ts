@@ -3,7 +3,7 @@ import type { StreamFn } from "paleoclaw/plugin-sdk/agent-core";
 import { createLazyRuntimeModule } from "paleoclaw/plugin-sdk/lazy-runtime";
 import { defineSingleProviderPluginEntry } from "paleoclaw/plugin-sdk/provider-entry";
 import { APPLE_FM_LOCAL_AUTH_MARKER, APPLE_FM_PROVIDER_ID } from "./defaults.js";
-import manifest from "./openclaw.plugin.json" with { type: "json" };
+import manifest from "./paleoclaw.plugin.json" with { type: "json" };
 
 const loadSetup = createLazyRuntimeModule(() => import("./setup.js"));
 const loadStream = createLazyRuntimeModule(() => import("./stream.js"));

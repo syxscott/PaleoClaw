@@ -17,7 +17,7 @@ import {
 } from "paleoclaw/plugin-sdk/test-fixtures";
 import { build } from "tsdown";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { createStateSchemaInlinePlugin } from "../../../scripts/lib/state-schema-inline-plugin.mjs";
+import { createStateSchemaInlinePlugin } from "../../../scripts/lib/state-schema-inline-plugin.mts";
 import { encodeOnePasswordSecretId } from "../onepassword-secret-id.js";
 import { createTrustedNodeFixture } from "./trusted-node.test-support.js";
 

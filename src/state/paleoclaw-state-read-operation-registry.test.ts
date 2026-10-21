@@ -1,7 +1,7 @@
 import path from "node:path";
 import { expect, it } from "vitest";
 import { collectStronglyConnectedComponents } from "../../scripts/lib/import-cycle-graph.js";
-import { createRuntimeImportGraph } from "../../scripts/lib/runtime-import-closure.mjs";
+import { createRuntimeImportGraph } from "../../scripts/lib/runtime-import-closure.mts";
 
 it("keeps the state read registry's static contracts acyclic, including type imports", () => {
   const root = path.resolve(import.meta.dirname, "../..");

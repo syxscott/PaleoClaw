@@ -12,7 +12,7 @@ const OnboardingRecommendationMatchSchema = z.object({
     id: z.string(),
     displayName: z.string(),
     summary: z.string(),
-    source: z.enum(["official-plugin", "official-channel", "official-provider", "clawhub-skill"]),
+    source: z.enum(["official-plugin", "official-channel", "official-provider", "PaleoHub-skill"]),
     downloads: z.number().optional(),
   }),
 });

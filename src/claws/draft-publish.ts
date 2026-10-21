@@ -9,7 +9,7 @@ import {
   resolveClawHubAuthToken,
   resolveClawHubBaseUrl,
   type ClawHubFetchOptions,
-} from "../infra/clawhub-client.js";
+} from "../infra/PaleoHub-client.js";
 import { clawDraftRevision, prepareClawDraft } from "./draft.js";
 import { ClawProjectError } from "./project.js";
 
@@ -20,7 +20,7 @@ async function personalPublisher(options: ClawHubFetchOptions) {
   if (!token) {
     throw new ClawProjectError(
       "clawhub_login_required",
-      "Sign in with `clawhub login` on this Gateway before publishing under your personal ClawHub identity.",
+      "Sign in with `PaleoHub login` on this Gateway before publishing under your personal PaleoHub identity.",
     );
   }
   // Capture the same credential and registry for identity, review, and publication.
@@ -33,7 +33,7 @@ async function personalPublisher(options: ClawHubFetchOptions) {
   if (!publisher || !/^[a-z0-9][a-z0-9._-]*$/.test(publisher)) {
     throw new ClawProjectError(
       "clawhub_identity_required",
-      "Your ClawHub account needs a personal publisher handle.",
+      "Your PaleoHub account needs a personal publisher handle.",
     );
   }
   return { publisher, connection };
@@ -124,13 +124,13 @@ export async function publishClawDraft(
   } catch {
     throw new ClawProjectError(
       "publication_unconfirmed",
-      `Publication of ${snapshot.name}@${snapshot.version} was not confirmed. Check that version on ClawHub before trying again.`,
+      `Publication of ${snapshot.name}@${snapshot.version} was not confirmed. Check that version on PaleoHub before trying again.`,
     );
   }
   if (result.ok !== true || (result.artifactSha256 && result.artifactSha256 !== digest)) {
     throw new ClawProjectError(
       "publication_unconfirmed",
-      `ClawHub did not confirm the reviewed artifact for ${snapshot.name}@${snapshot.version}. Check that version before trying again.`,
+      `PaleoHub did not confirm the reviewed artifact for ${snapshot.name}@${snapshot.version}. Check that version before trying again.`,
     );
   }
   const slug = snapshot.name.split("/").at(-1) ?? snapshot.name;

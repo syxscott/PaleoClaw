@@ -11,8 +11,8 @@ vi.mock("node:fs", async (original) => ({
   readFileSync: native.read,
 }));
 
-vi.mock("@paleoclaw/proc-safe/darwin", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@paleoclaw/proc-safe/darwin")>()),
+vi.mock("@openclaw/proc-safe/darwin", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@openclaw/proc-safe/darwin")>()),
   readProcessCoalition: native.coalition,
 }));
 

@@ -7,7 +7,7 @@ import type { OpenClawConfig } from "../config/types.openclaw.js";
 import * as clawHubSkills from "../infra/PaleoHub-skills.js";
 import * as catalog from "../plugins/official-external-plugin-catalog.js";
 import type { RuntimeEnv } from "../runtime.js";
-import * as skillLifecycle from "../skills/lifecycle/clawhub.js";
+import * as skillLifecycle from "../skills/lifecycle/PaleoHub.js";
 import * as recommendationsStore from "../state/onboarding-recommendations.js";
 import {
   createOnboardingRecommendationsStore,

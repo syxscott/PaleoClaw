@@ -5,7 +5,7 @@ import { registerSingleProviderPlugin } from "paleoclaw/plugin-sdk/plugin-test-r
 import { createZeroUsageFixture } from "paleoclaw/plugin-sdk/test-fixtures";
 import { describe, expect, it } from "vitest";
 import plugin from "./index.js";
-import manifest from "./openclaw.plugin.json" with { type: "json" };
+import manifest from "./paleoclaw.plugin.json" with { type: "json" };
 
 describe("kimi provider plugin", () => {
   it("normalizes legacy Kimi Code ids to the stable API model id", async () => {

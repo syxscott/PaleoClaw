@@ -1,5 +1,5 @@
 import { Buffer } from "node:buffer";
-import type { ProxylineOptions } from "@paleoclaw/proxyline";
+import type { ProxylineOptions } from "@openclaw/proxyline";
 // Gateway client tests cover WebSocket protocol negotiation, auth persistence,
 // proxy bypass setup, command dispatch, reconnect, and error handling.
 import { createRequireRecord } from "paleoclaw/plugin-sdk/test-fixtures";

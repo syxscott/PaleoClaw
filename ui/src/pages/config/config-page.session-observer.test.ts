@@ -1,7 +1,7 @@
 /* @vitest-environment jsdom */
 
 import { expectDefined } from "@paleoclaw/normalization-core";
-import { createRouter } from "@openclaw/uirouter";
+import { createRouter } from "@paleoclaw/uirouter";
 import { createComponent } from "solid-js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { resolveThemeBranding } from "../../../../packages/gateway-protocol/src/theme.ts";

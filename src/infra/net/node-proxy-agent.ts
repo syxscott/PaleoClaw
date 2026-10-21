@@ -11,9 +11,9 @@ const UNSUPPORTED_PROXY_PROTOCOL_MESSAGE =
   "Unsupported proxy protocol. SOCKS and PAC proxy URLs are not supported; use an HTTP or HTTPS proxy URL.";
 
 type NodeProxyProtocol = "http" | "https";
-type ProxylineNodeAgent = import("@paleoclaw/proxyline").ProxylineNodeProxyAgent;
-type ProxylineTlsOptions = import("@paleoclaw/proxyline").ProxylineTlsOptions;
-type ProxylineProxyConnectOptions = import("@paleoclaw/proxyline").ProxyConnectOptions;
+type ProxylineNodeAgent = import("@openclaw/proxyline").ProxylineNodeProxyAgent;
+type ProxylineTlsOptions = import("@openclaw/proxyline").ProxylineTlsOptions;
+type ProxylineProxyConnectOptions = import("@openclaw/proxyline").ProxyConnectOptions;
 type NodeProxyAgentOptions = HttpAgentOptions & HttpsAgentOptions;
 
 /** Selects either ambient env proxy resolution or a caller-supplied fixed proxy URL. */

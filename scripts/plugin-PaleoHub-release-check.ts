@@ -8,7 +8,7 @@ import {
   assertPluginReleaseVersionFloors,
   parsePluginReleaseArgs,
   resolveSelectedClawHubPublishablePluginPackages,
-} from "./lib/plugin-clawhub-release.ts";
+} from "./lib/plugin-PaleoHub-release.js";
 import type { NpmLatestVersionResolver } from "./lib/plugin-npm-release.ts";
 
 export async function runPluginClawHubReleaseCheck(

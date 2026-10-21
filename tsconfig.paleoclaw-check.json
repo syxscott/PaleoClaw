@@ -9,7 +9,6 @@
   },
   "include": [
     "src/paleoclaw/**/*.ts",
-    "src/agents/**/*.ts",
     "src/plugin-sdk/**/*.ts",
     "extensions/qqbot/**/*.ts",
     "extensions/wecom/**/*.ts",

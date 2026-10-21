@@ -2,7 +2,7 @@ import { lstat } from "node:fs/promises";
 import { join } from "node:path";
 import { tempWorkspace } from "@openclaw/fs-safe/temp";
 import { describe, expect, it, vi } from "vitest";
-import type { installPluginFromClawHub } from "../plugins/clawhub.js";
+import type { installPluginFromClawHub } from "../plugins/PaleoHub.js";
 import { preflightClawPackage } from "./packages.js";
 import { emptyPluginCapabilityEvidence } from "./packages.test-support.js";
 

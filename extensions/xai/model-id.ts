@@ -1,4 +1,4 @@
-import manifest from "./openclaw.plugin.json" with { type: "json" };
+import manifest from "./paleoclaw.plugin.json" with { type: "json" };
 
 // A Grok release id: plain, `-latest`, or a dated snapshot (grok-4.7, grok-5, grok-4.8-0115).
 // Other suffixes (fast, mini, reasoning variants) name models with their own contracts.

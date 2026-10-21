@@ -1,6 +1,6 @@
 import path from "node:path";
 import type { PluginInstallRecord } from "../../../config/types.plugins.js";
-import { parseClawHubPluginSpec } from "../../../infra/clawhub-spec.js";
+import { parseClawHubPluginSpec } from "../../../infra/PaleoHub-spec.js";
 import { parseRegistryNpmSpec } from "../../../infra/npm-registry-spec.js";
 import {
   resolveDefaultPluginExtensionsDir,
@@ -39,7 +39,7 @@ function collectInstalledRecordPackageNames(record: PluginInstallRecord): Set<st
           record.spec ? parseRegistryNpmSpec(record.spec)?.name : undefined,
           record.resolvedSpec ? parseRegistryNpmSpec(record.resolvedSpec)?.name : undefined,
         ]
-      : record.source === "clawhub"
+      : record.source === "PaleoHub"
         ? [
             record.clawhubPackage,
             record.spec ? parseClawHubPluginSpec(record.spec)?.name : undefined,
@@ -53,10 +53,10 @@ export function isTrustedOfficialInstallRecordForCandidate(params: {
   candidate: { npmSpec?: string; clawhubSpec?: string };
 }): boolean {
   const { record, candidate } = params;
-  if (!record || (record.source !== "npm" && record.source !== "clawhub")) {
+  if (!record || (record.source !== "npm" && record.source !== "PaleoHub")) {
     return false;
   }
-  if (record.source === "clawhub" && record.clawhubChannel !== "official") {
+  if (record.source === "PaleoHub" && record.clawhubChannel !== "official") {
     return false;
   }
   const candidatePackageNames = new Set(

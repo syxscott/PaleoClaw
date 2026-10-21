@@ -1,4 +1,4 @@
-import { definePage } from "@openclaw/uirouter";
+import { definePage } from "@paleoclaw/uirouter";
 import { createComponent } from "solid-js";
 import {
   INTERNAL_PLUGIN_PATH_PARAM,

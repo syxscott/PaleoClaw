@@ -1,5 +1,5 @@
-import { ProcSafeError } from "@paleoclaw/proc-safe/errors";
-import { SystemdBus } from "@paleoclaw/proc-safe/systemd";
+import { ProcSafeError } from "@openclaw/proc-safe/errors";
+import { SystemdBus } from "@openclaw/proc-safe/systemd";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import {
   withServiceInspectionBudget,
@@ -28,7 +28,7 @@ vi.mock("../shared/pid-alive.js", () => ({
   getProcessStartTime: () => kernel.startTime,
   isPidAlive: () => kernel.alive,
 }));
-vi.mock("@paleoclaw/proc-safe/systemd", async () => {
+vi.mock("@openclaw/proc-safe/systemd", async () => {
   const connect = () => ({
     close: async () => {
       kernel.closes++;

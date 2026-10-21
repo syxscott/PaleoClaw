@@ -32,7 +32,7 @@ import type {
 } from "../embedded-agent-runner/run/types.js";
 import type { SystemAgentToolOptions } from "../tools/system-agent-tool.js";
 import { copyCoreTtsAttemptResultProvenance } from "../tools/tts-tool-result-provenance.js";
-import { createOpenClawAgentHarness, isBuiltInOpenClawAgentHarness } from "./builtin-openclaw.js";
+import { createOpenClawAgentHarness, isBuiltInOpenClawAgentHarness } from "./builtin-paleoclaw.js";
 import {
   resolveContextEngineCompletionRuntimeContext,
   runWithContextEngineAssemblyAttempt,

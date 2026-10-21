@@ -1,6 +1,6 @@
 import { buildManifestModelProviderConfig } from "paleoclaw/plugin-sdk/provider-catalog-shared";
 import type { ModelDefinitionConfig } from "paleoclaw/plugin-sdk/provider-model-shared";
-import manifest from "./openclaw.plugin.json" with { type: "json" };
+import manifest from "./paleoclaw.plugin.json" with { type: "json" };
 
 const LONGCAT_MANIFEST_PROVIDER = buildManifestModelProviderConfig({
   providerId: "longcat",

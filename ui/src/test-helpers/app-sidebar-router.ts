@@ -1,4 +1,4 @@
-import { createRouter, definePage } from "@openclaw/uirouter";
+import { createRouter, definePage } from "@paleoclaw/uirouter";
 import { onTestFinished } from "vitest";
 import type { ApplicationRouter, RouteId } from "../app-routes.ts";
 

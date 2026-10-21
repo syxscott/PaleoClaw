@@ -101,7 +101,7 @@ const setupPlans: Record<
   "setup-code-auth-timeout": [60_000, "timeout", false],
 };
 vi.mock("../../scripts/lib/managed-child-process.mjs", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("../../scripts/lib/managed-child-process.mjs")>()),
+  ...(await importOriginal<typeof import("../../scripts/lib/managed-child-process.mts")>()),
   runManagedCommand: nativeMocks.command,
 }));
 vi.mock("../../scripts/lib/ios-release-e2e-build.js", () => ({

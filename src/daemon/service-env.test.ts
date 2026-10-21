@@ -1,496 +1,278 @@
+import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { resolveIsConfigReadOnly, resolveIsNixMode } from "../config/paths.js";
+import { buildLaunchAgentPlist } from "./launchd-plist.js";
 import { resolveGatewayStateDir } from "./paths.js";
 import {
-  buildMinimalServicePath,
   buildNodeServiceEnvironment,
   buildServiceEnvironment,
-  getMinimalServicePathParts,
   getMinimalServicePathPartsFromEnv,
 } from "./service-env.js";
 
-describe("getMinimalServicePathParts - Linux user directories", () => {
-  it("includes user bin directories when HOME is set on Linux", () => {
-    const result = getMinimalServicePathParts({
-      platform: "linux",
-      home: "/home/testuser",
-    });
+type PathOptions = NonNullable<Parameters<typeof getMinimalServicePathPartsFromEnv>[0]>;
+type ServiceOptions = Partial<Omit<Parameters<typeof buildServiceEnvironment>[0], "env">>;
+const home = "/home/u";
+const allExist = () => true;
+const noneExist = () => false;
+const userPath = (suffix: string) => `${home}/${suffix}`;
+const paths = (env: NodeJS.ProcessEnv = {}, options: PathOptions = {}) =>
+  getMinimalServicePathPartsFromEnv({ platform: "linux", env: { HOME: home, ...env }, ...options });
+const serviceEnv = (env: NodeJS.ProcessEnv = {}, options: ServiceOptions = {}) =>
+  buildServiceEnvironment({ env: { HOME: home, ...env }, port: 18789, ...options });
+afterEach(() => vi.restoreAllMocks());
 
-    // Should include all common user bin directories
-    expect(result).toContain("/home/testuser/.local/bin");
-    expect(result).toContain("/home/testuser/.npm-global/bin");
-    expect(result).toContain("/home/testuser/bin");
-    expect(result).toContain("/home/testuser/.nvm/current/bin");
-    expect(result).toContain("/home/testuser/.fnm/current/bin");
-    expect(result).toContain("/home/testuser/.volta/bin");
-    expect(result).toContain("/home/testuser/.asdf/shims");
-    expect(result).toContain("/home/testuser/.local/share/pnpm");
-    expect(result).toContain("/home/testuser/.bun/bin");
+function expectPathOrder(actual: string[], expected: string[]) {
+  const indices = expected.map((entry) => actual.indexOf(entry));
+  for (const index of indices) {
+    expect(index).toBeGreaterThan(-1);
+  }
+  expect(indices).toEqual(indices.toSorted((a, b) => a - b));
+  expect(new Set(indices).size).toBe(indices.length);
+}
+
+describe("service PATH", () => {
+  it("excludes user bins without HOME", () => {
+    expect(paths({ HOME: undefined })).toEqual(["/usr/local/bin", "/usr/bin", "/bin"]);
   });
-
-  it("excludes user bin directories when HOME is undefined on Linux", () => {
-    const result = getMinimalServicePathParts({
-      platform: "linux",
-      home: undefined,
-    });
-
-    // Should only include system directories
-    expect(result).toEqual(["/usr/local/bin", "/usr/bin", "/bin"]);
-
-    // Should not include any user-specific paths
-    expect(result.some((p) => p.includes(".local"))).toBe(false);
-    expect(result.some((p) => p.includes(".npm-global"))).toBe(false);
-    expect(result.some((p) => p.includes(".nvm"))).toBe(false);
-  });
-
-  it("places user directories before system directories on Linux", () => {
-    const result = getMinimalServicePathParts({
-      platform: "linux",
-      home: "/home/testuser",
-    });
-
-    const userDirIndex = result.indexOf("/home/testuser/.local/bin");
-    const systemDirIndex = result.indexOf("/usr/bin");
-
-    expect(userDirIndex).toBeGreaterThan(-1);
-    expect(systemDirIndex).toBeGreaterThan(-1);
-    expect(userDirIndex).toBeLessThan(systemDirIndex);
-  });
-
-  it("places extraDirs before user directories on Linux", () => {
-    const result = getMinimalServicePathParts({
-      platform: "linux",
-      home: "/home/testuser",
-      extraDirs: ["/custom/bin"],
-    });
-
-    const extraDirIndex = result.indexOf("/custom/bin");
-    const userDirIndex = result.indexOf("/home/testuser/.local/bin");
-
-    expect(extraDirIndex).toBeGreaterThan(-1);
-    expect(userDirIndex).toBeGreaterThan(-1);
-    expect(extraDirIndex).toBeLessThan(userDirIndex);
-  });
-
-  it("includes env-configured bin roots when HOME is set on Linux", () => {
-    const result = getMinimalServicePathPartsFromEnv({
-      platform: "linux",
-      env: {
-        HOME: "/home/testuser",
-        PNPM_HOME: "/opt/pnpm",
-        NPM_CONFIG_PREFIX: "/opt/npm",
-        BUN_INSTALL: "/opt/bun",
-        VOLTA_HOME: "/opt/volta",
-        ASDF_DATA_DIR: "/opt/asdf",
-        NVM_DIR: "/opt/nvm",
-        FNM_DIR: "/opt/fnm",
-      },
-    });
-
-    expect(result).toContain("/opt/pnpm");
-    expect(result).toContain("/opt/npm/bin");
-    expect(result).toContain("/opt/bun/bin");
-    expect(result).toContain("/opt/volta/bin");
-    expect(result).toContain("/opt/asdf/shims");
-    expect(result).toContain("/opt/nvm/current/bin");
-    expect(result).toContain("/opt/fnm/current/bin");
-  });
-
-  it("includes version manager directories on macOS when HOME is set", () => {
-    const result = getMinimalServicePathParts({
-      platform: "darwin",
-      home: "/Users/testuser",
-    });
-
-    // Should include common user bin directories
-    expect(result).toContain("/Users/testuser/.local/bin");
-    expect(result).toContain("/Users/testuser/.npm-global/bin");
-    expect(result).toContain("/Users/testuser/bin");
-
-    // Should include version manager paths (macOS specific)
-    // Note: nvm has no stable default path, relies on user's shell config
-    expect(result).toContain("/Users/testuser/Library/Application Support/fnm/aliases/default/bin"); // fnm default on macOS
-    expect(result).toContain("/Users/testuser/.fnm/aliases/default/bin"); // fnm if customized to ~/.fnm
-    expect(result).toContain("/Users/testuser/.volta/bin");
-    expect(result).toContain("/Users/testuser/.asdf/shims");
-    expect(result).toContain("/Users/testuser/Library/pnpm"); // pnpm default on macOS
-    expect(result).toContain("/Users/testuser/.local/share/pnpm"); // pnpm XDG fallback
-    expect(result).toContain("/Users/testuser/.bun/bin");
-
-    // Should also include macOS system directories
-    expect(result).toContain("/opt/homebrew/bin");
-    expect(result).toContain("/usr/local/bin");
-  });
-
-  it("includes env-configured version manager dirs on macOS", () => {
-    const result = getMinimalServicePathPartsFromEnv({
-      platform: "darwin",
-      env: {
-        HOME: "/Users/testuser",
-        FNM_DIR: "/Users/testuser/Library/Application Support/fnm",
-        NVM_DIR: "/Users/testuser/.nvm",
-        PNPM_HOME: "/Users/testuser/Library/pnpm",
-      },
-    });
-
-    // fnm uses aliases/default/bin (not current)
-    expect(result).toContain("/Users/testuser/Library/Application Support/fnm/aliases/default/bin");
-    // nvm: relies on NVM_DIR env var (no stable default path)
-    expect(result).toContain("/Users/testuser/.nvm");
-    // pnpm: binary is directly in PNPM_HOME
-    expect(result).toContain("/Users/testuser/Library/pnpm");
-  });
-
-  it("places version manager dirs before system dirs on macOS", () => {
-    const result = getMinimalServicePathParts({
-      platform: "darwin",
-      home: "/Users/testuser",
-    });
-
-    // fnm on macOS defaults to ~/Library/Application Support/fnm
-    const fnmIndex = result.indexOf(
-      "/Users/testuser/Library/Application Support/fnm/aliases/default/bin",
+  it("uses explicit service home before the invocation home", () => {
+    expect(paths({ HOME: "/home/installer" }, { home: "/home/operator" })).toContain(
+      "/home/operator/.local/bin",
     );
-    const homebrewIndex = result.indexOf("/opt/homebrew/bin");
-
-    expect(fnmIndex).toBeGreaterThan(-1);
-    expect(homebrewIndex).toBeGreaterThan(-1);
-    expect(fnmIndex).toBeLessThan(homebrewIndex);
   });
-
+  it("places package-manager bins after trusted system directories", () => {
+    vi.spyOn(fs, "existsSync").mockImplementation(allExist);
+    const result = paths({
+      PNPM_HOME: userPath(".local/share/pnpm"),
+      NPM_CONFIG_PREFIX: userPath(".npm-global"),
+    });
+    for (const suffix of [".local/share/pnpm", ".local/share/pnpm/bin", ".npm-global/bin"]) {
+      expectPathOrder(result, ["/usr/bin", userPath(suffix)]);
+    }
+  });
   it("does not include Linux user directories on Windows", () => {
-    const result = getMinimalServicePathParts({
-      platform: "win32",
-      home: "C:\\Users\\testuser",
+    expect(paths({ HOME: "C:\\Users\\u" }, { platform: "win32" })).toStrictEqual([]);
+  });
+  it("can omit missing stable user-bin defaults for audits", () => {
+    vi.spyOn(fs, "existsSync").mockImplementation(
+      (candidate) => candidate === userPath(".local/bin"),
+    );
+    const result = paths({}, { includeMissingUserBinDefaults: false });
+    expect(result).toContain(userPath(".local/bin"));
+    for (const suffix of [".npm-global/bin", "bin", ".nix-profile/bin"]) {
+      expect(result).not.toContain(userPath(suffix));
+    }
+  });
+  it("excludes env-configured bins derived from the install workspace", () => {
+    vi.spyOn(process, "cwd").mockReturnValue(userPath("workspace"));
+    vi.spyOn(fs, "existsSync").mockImplementation(noneExist);
+    const result = paths({
+      PNPM_HOME: userPath("workspace/evil-pnpm"),
+      NPM_CONFIG_PREFIX: "/proc/thread-self/cwd/evil-npm",
+      BUN_INSTALL: "/proc/12345/cwd/evil-bun",
+      VOLTA_HOME: "/opt/volta",
+      ASDF_DATA_DIR: "relative-asdf",
+      NIX_PROFILES: `/nix/default ${home}/workspace/evil-nix`,
     });
-
-    // Windows returns empty array (uses existing PATH)
-    expect(result).toEqual([]);
+    for (const entry of [
+      userPath("workspace/evil-pnpm"),
+      "/proc/thread-self/cwd/evil-npm/bin",
+      "/proc/12345/cwd/evil-bun/bin",
+      "relative-asdf/shims",
+      userPath("workspace/evil-nix/bin"),
+    ]) {
+      expect(result).not.toContain(entry);
+    }
+    expect(result).toEqual(expect.arrayContaining(["/opt/volta/bin", "/nix/default/bin"]));
+  });
+  it("excludes bins whose existing parent resolves into the workspace", () => {
+    vi.spyOn(process, "cwd").mockReturnValue(userPath("workspace"));
+    vi.spyOn(fs, "existsSync").mockImplementation(noneExist);
+    vi.spyOn(fs.realpathSync, "native").mockImplementation((candidate) => {
+      const value = String(candidate);
+      if (value === "/tmp/link") {
+        return userPath("workspace");
+      }
+      if (value === userPath("workspace") || value === home) {
+        return value;
+      }
+      throw Object.assign(new Error("missing"), { code: "ENOENT" });
+    });
+    const result = paths({ PNPM_HOME: "/tmp/link/missing", VOLTA_HOME: "/opt/volta" });
+    expect(result).not.toContain("/tmp/link/missing");
+    expect(result).toContain("/opt/volta/bin");
+  });
+  it("keeps toolchain roots when the install cwd is HOME", () => {
+    vi.spyOn(process, "cwd").mockReturnValue(home);
+    vi.spyOn(fs, "existsSync").mockImplementation(noneExist);
+    const result = paths({
+      PNPM_HOME: userPath(".local/share/pnpm"),
+      FNM_DIR: userPath(".local/share/fnm"),
+    });
+    expect(result).toEqual(
+      expect.arrayContaining(
+        [
+          ".local/share/pnpm",
+          ".local/share/pnpm/bin",
+          ".local/share/fnm/aliases/default/bin",
+          ".local/share/fnm/current/bin",
+        ].map(userPath),
+      ),
+    );
+  });
+  it("preserves Nix precedence across three profiles", () => {
+    vi.spyOn(fs, "existsSync").mockImplementation(allExist);
+    const profiles = [userPath(".nix-profile"), "/nix/custom", "/nix/default"];
+    const result = paths({ NIX_PROFILES: profiles.toReversed().join(" ") });
+    expectPathOrder(
+      result,
+      profiles.map((profile) => `${profile}/bin`),
+    );
   });
 });
 
-describe("buildMinimalServicePath", () => {
-  const splitPath = (value: string, platform: NodeJS.Platform) =>
-    value.split(platform === "win32" ? path.win32.delimiter : path.posix.delimiter);
-
-  it("includes Homebrew + system dirs on macOS", () => {
-    const result = buildMinimalServicePath({
-      platform: "darwin",
-    });
-    const parts = splitPath(result, "darwin");
-    expect(parts).toContain("/opt/homebrew/bin");
-    expect(parts).toContain("/usr/local/bin");
-    expect(parts).toContain("/usr/bin");
-    expect(parts).toContain("/bin");
+describe("service environment", () => {
+  it("preserves config write protection without enabling Nix mode", () => {
+    const env = serviceEnv({ OPENCLAW_CONFIG_READONLY: "1" }, { platform: "linux" });
+    expect([resolveIsConfigReadOnly(env), resolveIsNixMode(env)]).toEqual([true, false]);
   });
-
-  it("returns PATH as-is on Windows", () => {
-    const result = buildMinimalServicePath({
-      env: { PATH: "C:\\\\Windows\\\\System32" },
-      platform: "win32",
-    });
-    expect(result).toBe("C:\\\\Windows\\\\System32");
-  });
-
-  it("includes Linux user directories when HOME is set in env", () => {
-    const result = buildMinimalServicePath({
-      platform: "linux",
-      env: { HOME: "/home/alice" },
-    });
-    const parts = splitPath(result, "linux");
-
-    // Verify user directories are included
-    expect(parts).toContain("/home/alice/.local/bin");
-    expect(parts).toContain("/home/alice/.npm-global/bin");
-    expect(parts).toContain("/home/alice/.nvm/current/bin");
-
-    // Verify system directories are also included
-    expect(parts).toContain("/usr/local/bin");
-    expect(parts).toContain("/usr/bin");
-    expect(parts).toContain("/bin");
-  });
-
-  it("excludes Linux user directories when HOME is not in env", () => {
-    const result = buildMinimalServicePath({
-      platform: "linux",
-      env: {},
-    });
-    const parts = splitPath(result, "linux");
-
-    // Should only have system directories
-    expect(parts).toEqual(["/usr/local/bin", "/usr/bin", "/bin"]);
-
-    // No user-specific paths
-    expect(parts.some((p) => p.includes("home"))).toBe(false);
-  });
-
-  it("ensures user directories come before system directories on Linux", () => {
-    const result = buildMinimalServicePath({
-      platform: "linux",
-      env: { HOME: "/home/bob" },
-    });
-    const parts = splitPath(result, "linux");
-
-    const firstUserDirIdx = parts.indexOf("/home/bob/.local/bin");
-    const firstSystemDirIdx = parts.indexOf("/usr/local/bin");
-
-    expect(firstUserDirIdx).toBeLessThan(firstSystemDirIdx);
-  });
-
-  it("includes extra directories when provided", () => {
-    const result = buildMinimalServicePath({
-      platform: "linux",
-      extraDirs: ["/custom/tools"],
-      env: {},
-    });
-    expect(splitPath(result, "linux")).toContain("/custom/tools");
-  });
-
-  it("deduplicates directories", () => {
-    const result = buildMinimalServicePath({
-      platform: "linux",
-      extraDirs: ["/usr/bin"],
-      env: {},
-    });
-    const parts = splitPath(result, "linux");
-    const unique = [...new Set(parts)];
-    expect(parts.length).toBe(unique.length);
-  });
-});
-
-describe("buildServiceEnvironment", () => {
-  it("sets minimal PATH and gateway vars", () => {
-    const env = buildServiceEnvironment({
-      env: { HOME: "/home/user" },
-      port: 18789,
-    });
-    expect(env.HOME).toBe("/home/user");
-    if (process.platform === "win32") {
-      expect(env).not.toHaveProperty("PATH");
-    } else {
-      expect(env.PATH).toContain("/usr/bin");
-    }
-    expect(env.OPENCLAW_GATEWAY_PORT).toBe("18789");
-    expect(env.OPENCLAW_GATEWAY_TOKEN).toBeUndefined();
-    expect(env.OPENCLAW_SERVICE_MARKER).toBe("paleoclaw");
-    expect(env.OPENCLAW_SERVICE_KIND).toBe("gateway");
-    expect(typeof env.OPENCLAW_SERVICE_VERSION).toBe("string");
-    expect(env.OPENCLAW_SYSTEMD_UNIT).toBe("paleoclaw-gateway.service");
-    expect(env.OPENCLAW_WINDOWS_TASK_NAME).toBe("paleoclaw Gateway");
-    if (process.platform === "darwin") {
-      expect(env.OPENCLAW_LAUNCHD_LABEL).toBe("ai.paleoclaw.gateway");
-    }
-  });
-
-  it("forwards TMPDIR from the host environment", () => {
-    const env = buildServiceEnvironment({
-      env: { HOME: "/home/user", TMPDIR: "/var/folders/xw/abc123/T/" },
-      port: 18789,
-    });
-    expect(env.TMPDIR).toBe("/var/folders/xw/abc123/T/");
-  });
-
-  it("falls back to os.tmpdir when TMPDIR is not set", () => {
-    const env = buildServiceEnvironment({
-      env: { HOME: "/home/user" },
-      port: 18789,
-    });
-    expect(env.TMPDIR).toBe(os.tmpdir());
-  });
-
-  it("uses profile-specific unit and label", () => {
-    const env = buildServiceEnvironment({
-      env: { HOME: "/home/user", OPENCLAW_PROFILE: "work" },
-      port: 18789,
-    });
-    expect(env.OPENCLAW_SYSTEMD_UNIT).toBe("paleoclaw-gateway-work.service");
-    expect(env.OPENCLAW_WINDOWS_TASK_NAME).toBe("paleoclaw Gateway (work)");
-    if (process.platform === "darwin") {
-      expect(env.OPENCLAW_LAUNCHD_LABEL).toBe("ai.paleoclaw.work");
-    }
-  });
-
-  it("forwards proxy environment variables for launchd/systemd runtime", () => {
-    const env = buildServiceEnvironment({
-      env: {
-        HOME: "/home/user",
-        HTTP_PROXY: " http://proxy.local:7890 ",
-        HTTPS_PROXY: "https://proxy.local:7890",
-        NO_PROXY: "localhost,127.0.0.1",
-        http_proxy: "http://proxy.local:7890",
-        all_proxy: "socks5://proxy.local:1080",
+  it.each([
+    ["Linux TMPDIR", { TMPDIR: "/tmp/service/" }, "linux", { TMPDIR: "/tmp/service/" }],
+    [
+      "profile identity",
+      { OPENCLAW_PROFILE: "work" },
+      "darwin",
+      {
+        OPENCLAW_SYSTEMD_UNIT: "paleoclaw-gateway-work.service",
+        OPENCLAW_WINDOWS_TASK_NAME: "paleoclaw Gateway (work)",
+        OPENCLAW_LAUNCHD_LABEL: "ai.openclaw.work",
       },
-      port: 18789,
-    });
-
-    expect(env.HTTP_PROXY).toBe("http://proxy.local:7890");
-    expect(env.HTTPS_PROXY).toBe("https://proxy.local:7890");
-    expect(env.NO_PROXY).toBe("localhost,127.0.0.1");
-    expect(env.http_proxy).toBe("http://proxy.local:7890");
-    expect(env.all_proxy).toBe("socks5://proxy.local:1080");
-  });
-
-  it("omits PATH on Windows so Scheduled Tasks can inherit the current shell path", () => {
-    const env = buildServiceEnvironment({
-      env: {
-        HOME: "C:\\Users\\alice",
-        PATH: "C:\\Windows\\System32;C:\\Tools\\rg",
+    ],
+    [
+      "bare unit override",
+      { OPENCLAW_PROFILE: "work", OPENCLAW_SYSTEMD_UNIT: "maintenance" },
+      "linux",
+      {
+        OPENCLAW_SYSTEMD_UNIT: "maintenance.service",
       },
-      port: 18789,
-      platform: "win32",
-    });
-
+    ],
+    [
+      "suffixed unit override",
+      { OPENCLAW_SYSTEMD_UNIT: "maintenance.service" },
+      "linux",
+      {
+        OPENCLAW_SYSTEMD_UNIT: "maintenance.service",
+      },
+    ],
+    [
+      "proxy URL fallback",
+      { OPENCLAW_PROXY_URL: " http://127.0.0.1:3128 " },
+      undefined,
+      {
+        OPENCLAW_PROXY_URL: "http://127.0.0.1:3128",
+      },
+    ],
+  ] satisfies Array<
+    [string, NodeJS.ProcessEnv, NodeJS.Platform | undefined, Record<string, string>]
+  >)("preserves %s", (_name, env, platform, expected) => {
+    expect(serviceEnv(env, { platform })).toMatchObject(expected);
+  });
+  it("does not persist ambient proxy variables", () => {
+    const proxies = {
+      HTTP_PROXY: " http://proxy:7890 ",
+      HTTPS_PROXY: "https://proxy:7890",
+      NO_PROXY: "localhost,127.0.0.1",
+      http_proxy: "http://proxy:7890",
+      all_proxy: "socks5://proxy:1080",
+    };
+    const env = serviceEnv(proxies);
+    for (const key of Object.keys(proxies)) {
+      expect(env[key]).toBeUndefined();
+    }
+  });
+  it("omits Windows PATH so tasks inherit the current shell path", () => {
+    const env = serviceEnv(
+      { HOME: "C:\\Users\\u", PATH: "C:\\Windows\\System32;C:\\Tools" },
+      { platform: "win32" },
+    );
     expect(env).not.toHaveProperty("PATH");
     expect(env.OPENCLAW_WINDOWS_TASK_NAME).toBe("paleoclaw Gateway");
   });
-});
-
-describe("buildNodeServiceEnvironment", () => {
-  it("passes through HOME for node services", () => {
-    const env = buildNodeServiceEnvironment({
-      env: { HOME: "/home/user" },
-    });
-    expect(env.HOME).toBe("/home/user");
+  it.each([
+    [undefined, "--max-old-space-size=8192"],
+    ["/custom/launcher", ""],
+  ])("retains only direct Bun's prior heap budget (wrapper=%s)", (wrapper, expected) => {
+    vi.spyOn(os, "totalmem").mockReturnValue(65536 * 1024 ** 2);
+    vi.spyOn(process, "constrainedMemory").mockReturnValue(0);
+    expect(serviceEnv({ OPENCLAW_WRAPPER: wrapper }, { runtime: "bun" }).NODE_OPTIONS).toBe(
+      expected,
+    );
   });
-
-  it("passes through OPENCLAW_GATEWAY_TOKEN for node services", () => {
-    const env = buildNodeServiceEnvironment({
-      env: { HOME: "/home/user", OPENCLAW_GATEWAY_TOKEN: " node-token " },
-    });
-    expect(env.OPENCLAW_GATEWAY_TOKEN).toBe("node-token");
-  });
-
-  it("maps legacy CLAWDBOT_GATEWAY_TOKEN to OPENCLAW_GATEWAY_TOKEN for node services", () => {
-    const env = buildNodeServiceEnvironment({
-      env: { HOME: "/home/user", CLAWDBOT_GATEWAY_TOKEN: " legacy-token " },
-    });
-    expect(env.OPENCLAW_GATEWAY_TOKEN).toBe("legacy-token");
-  });
-
-  it("prefers OPENCLAW_GATEWAY_TOKEN over legacy CLAWDBOT_GATEWAY_TOKEN", () => {
-    const env = buildNodeServiceEnvironment({
-      env: {
-        HOME: "/home/user",
-        OPENCLAW_GATEWAY_TOKEN: "paleoclaw-token",
-        CLAWDBOT_GATEWAY_TOKEN: "legacy-token",
-      },
-    });
-    expect(env.OPENCLAW_GATEWAY_TOKEN).toBe("paleoclaw-token");
-  });
-
-  it("omits OPENCLAW_GATEWAY_TOKEN when both token env vars are empty", () => {
-    const env = buildNodeServiceEnvironment({
-      env: {
-        HOME: "/home/user",
-        OPENCLAW_GATEWAY_TOKEN: "   ",
-        CLAWDBOT_GATEWAY_TOKEN: " ",
-      },
-    });
-    expect(env.OPENCLAW_GATEWAY_TOKEN).toBeUndefined();
-  });
-
-  it("forwards proxy environment variables for node services", () => {
-    const env = buildNodeServiceEnvironment({
-      env: {
-        HOME: "/home/user",
-        HTTPS_PROXY: " https://proxy.local:7890 ",
-        no_proxy: "localhost,127.0.0.1",
-      },
-    });
-
-    expect(env.HTTPS_PROXY).toBe("https://proxy.local:7890");
-    expect(env.no_proxy).toBe("localhost,127.0.0.1");
-  });
-
-  it("forwards TMPDIR for node services", () => {
-    const env = buildNodeServiceEnvironment({
-      env: { HOME: "/home/user", TMPDIR: "/tmp/custom" },
-    });
-    expect(env.TMPDIR).toBe("/tmp/custom");
-  });
-
-  it("falls back to os.tmpdir for node services when TMPDIR is not set", () => {
-    const env = buildNodeServiceEnvironment({
-      env: { HOME: "/home/user" },
-    });
-    expect(env.TMPDIR).toBe(os.tmpdir());
-  });
-});
-
-describe("shared Node TLS env defaults", () => {
-  const builders = [
-    {
-      name: "gateway service env",
-      build: (env: Record<string, string | undefined>, platform?: NodeJS.Platform) =>
-        buildServiceEnvironment({ env, port: 18789, platform }),
+  it.each([
+    [
+      "ambient options",
+      { NODE_OPTIONS: "--require /tmp/preload.js --max-old-space-size=16384" },
+      {},
+      "",
+    ],
+    [
+      "existing service heap only",
+      {},
+      { existingNodeOptions: "--require /tmp/preload.js --max_old_space_size=6144" },
+      "--max-old-space-size=6144",
+    ],
+  ] satisfies Array<[string, NodeJS.ProcessEnv, ServiceOptions, string]>)(
+    "filters %s",
+    (_name, env, options, expected) => {
+      expect(serviceEnv(env, options).NODE_OPTIONS).toBe(expected);
     },
-    {
-      name: "node service env",
-      build: (env: Record<string, string | undefined>, platform?: NodeJS.Platform) =>
+  );
+  it("does not apply the Gateway heap policy to node services", () => {
+    expect(buildNodeServiceEnvironment({ env: { HOME: home } }).NODE_OPTIONS).toBeUndefined();
+  });
+  it("fences inherited Node compile cache in macOS node LaunchAgents", () => {
+    const environment = buildNodeServiceEnvironment({
+      env: { HOME: "/Users/u", NODE_COMPILE_CACHE: "/tmp/ambient-cache" },
+      platform: "darwin",
+    });
+    const plist = buildLaunchAgentPlist({
+      label: "ai.openclaw.node",
+      programArguments: ["/usr/local/bin/node", "dist/index.js", "node", "run"],
+      stdoutPath: "/tmp/node.log",
+      stderrPath: "/tmp/node.err.log",
+      environment,
+    });
+    expect(environment.NODE_DISABLE_COMPILE_CACHE).toBe("1");
+    expect(environment.NODE_COMPILE_CACHE).toBeUndefined();
+    expect(plist).toContain("<key>NODE_DISABLE_COMPILE_CACHE</key>");
+    expect(plist).not.toContain("<key>NODE_COMPILE_CACHE</key>");
+  });
+});
+
+it.each([
+  [{ HOME: "/home/$&user", OPENCLAW_STATE_DIR: "~/state" }, path.resolve("/home/$&user/state")],
+  [{ OPENCLAW_STATE_DIR: "C:\\State\\paleoclaw" }, "C:\\State\\paleoclaw"],
+])("resolves state paths literally: %j", (env, expected) => {
+  expect(resolveGatewayStateDir(env)).toBe(expected);
+});
+
+describe("process-owned egress trust", () => {
+  it.each(["darwin", "linux", "win32"] as const)(
+    "does not persist a Gateway CA on %s",
+    (platform) => {
+      const env = {
+        HOME: home,
+        NODE_EXTRA_CA_CERTS: "/state/a/secret-egress-proxy/gateway-expired/trust-bundle.pem",
+      };
+      for (const environment of [
+        buildServiceEnvironment({ env, platform, port: 18789 }),
         buildNodeServiceEnvironment({ env, platform }),
+      ]) {
+        expect(environment.NODE_EXTRA_CA_CERTS).not.toEqual(
+          expect.stringContaining("secret-egress-proxy"),
+        );
+      }
     },
-  ] as const;
-
-  it.each(builders)("$name defaults NODE_EXTRA_CA_CERTS on macOS", ({ build }) => {
-    const env = build({ HOME: "/home/user" }, "darwin");
-    expect(env.NODE_EXTRA_CA_CERTS).toBe("/etc/ssl/cert.pem");
-  });
-
-  it.each(builders)("$name does not default NODE_EXTRA_CA_CERTS on non-macOS", ({ build }) => {
-    const env = build({ HOME: "/home/user" }, "linux");
-    expect(env.NODE_EXTRA_CA_CERTS).toBeUndefined();
-  });
-
-  it.each(builders)("$name respects user-provided NODE_EXTRA_CA_CERTS", ({ build }) => {
-    const env = build({ HOME: "/home/user", NODE_EXTRA_CA_CERTS: "/custom/certs/ca.pem" });
-    expect(env.NODE_EXTRA_CA_CERTS).toBe("/custom/certs/ca.pem");
-  });
-
-  it.each(builders)("$name defaults NODE_USE_SYSTEM_CA=1 on macOS", ({ build }) => {
-    const env = build({ HOME: "/home/user" }, "darwin");
-    expect(env.NODE_USE_SYSTEM_CA).toBe("1");
-  });
-
-  it.each(builders)("$name does not default NODE_USE_SYSTEM_CA on non-macOS", ({ build }) => {
-    const env = build({ HOME: "/home/user" }, "linux");
-    expect(env.NODE_USE_SYSTEM_CA).toBeUndefined();
-  });
-
-  it.each(builders)("$name respects user-provided NODE_USE_SYSTEM_CA", ({ build }) => {
-    const env = build({ HOME: "/home/user", NODE_USE_SYSTEM_CA: "0" }, "darwin");
-    expect(env.NODE_USE_SYSTEM_CA).toBe("0");
-  });
-});
-
-describe("resolveGatewayStateDir", () => {
-  it("uses the default state dir when no overrides are set", () => {
-    const env = { HOME: "/Users/test" };
-    expect(resolveGatewayStateDir(env)).toBe(path.join("/Users/test", ".paleoclaw"));
-  });
-
-  it("appends the profile suffix when set", () => {
-    const env = { HOME: "/Users/test", OPENCLAW_PROFILE: "rescue" };
-    expect(resolveGatewayStateDir(env)).toBe(path.join("/Users/test", ".paleoclaw-rescue"));
-  });
-
-  it("treats default profiles as the base state dir", () => {
-    const env = { HOME: "/Users/test", OPENCLAW_PROFILE: "Default" };
-    expect(resolveGatewayStateDir(env)).toBe(path.join("/Users/test", ".paleoclaw"));
-  });
-
-  it("uses OPENCLAW_STATE_DIR when provided", () => {
-    const env = { HOME: "/Users/test", OPENCLAW_STATE_DIR: "/var/lib/paleoclaw" };
-    expect(resolveGatewayStateDir(env)).toBe(path.resolve("/var/lib/paleoclaw"));
-  });
-
-  it("expands ~ in OPENCLAW_STATE_DIR", () => {
-    const env = { HOME: "/Users/test", OPENCLAW_STATE_DIR: "~/paleoclaw-state" };
-    expect(resolveGatewayStateDir(env)).toBe(path.resolve("/Users/test/paleoclaw-state"));
-  });
-
-  it("preserves Windows absolute paths without HOME", () => {
-    const env = { OPENCLAW_STATE_DIR: "C:\\State\\paleoclaw" };
-    expect(resolveGatewayStateDir(env)).toBe("C:\\State\\paleoclaw");
-  });
+  );
 });

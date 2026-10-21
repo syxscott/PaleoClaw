@@ -1,5 +1,5 @@
 // @vitest-environment node
-import type { PageDefinition, RouteLoaderOptions } from "@openclaw/uirouter";
+import type { PageDefinition, RouteLoaderOptions } from "@paleoclaw/uirouter";
 import { expect, it, vi } from "vitest";
 import { createDeferred as deferred } from "../../../test/helpers/promise.js";
 import type { GatewayBrowserClient } from "../api/gateway.ts";

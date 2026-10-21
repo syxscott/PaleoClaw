@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { root as openCaptureRoot } from "@openclaw/fs-safe/root";
-import { readProcessIdentity } from "@paleoclaw/proc-safe/identity";
+import { readProcessIdentity } from "@openclaw/proc-safe/identity";
 import { runWithFailedTrailer } from "./lib/failed-trailer.mts";
 import { runManagedCommand, waitForManagedProcessGroupExit } from "./lib/managed-child-process.mts";
 
@@ -268,7 +268,9 @@ await runWithFailedTrailer("macos-native", async () => {
       }
       const eventStreamPath = path.join(root, "swift-testing-events.jsonl");
       if (appHostConfiguration) {
-        const diagnostics = fs.mkdtempSync(path.join(env.RUNNER_TEMP, "paleoclaw-recovery-events-"));
+        const diagnostics = fs.mkdtempSync(
+          path.join(env.RUNNER_TEMP, "paleoclaw-recovery-events-"),
+        );
         console.error(`[macos-native] App-host event artifacts: ${diagnostics}`);
         if (env.GITHUB_OUTPUT) {
           fs.appendFileSync(env.GITHUB_OUTPUT, `recovery-artifact-path=${diagnostics}\n`);

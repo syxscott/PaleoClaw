@@ -392,7 +392,7 @@ export async function packNpmSpecToArchive(params: {
     if (parseNpmErrorCode(raw) === "E404") {
       return {
         ok: false,
-        error: `Package not found on npm: ${params.spec}. See https://docs.paleoclaw.ai/tools/plugin for installable plugins.`,
+        error: `Package not found on npm: ${params.spec}. See https://docs.openclaw.ai/tools/plugin for installable plugins.`,
       };
     }
     return { ok: false, error: `npm pack failed: ${raw}` };

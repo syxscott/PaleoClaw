@@ -1,6 +1,6 @@
 import type { PluginInstallRecord } from "../config/types.plugins.js";
-import { normalizeClawHubSha256Integrity } from "../infra/clawhub-integrity.js";
-import { parseClawHubPluginSpec } from "../infra/clawhub-spec.js";
+import { normalizeClawHubSha256Integrity } from "../infra/PaleoHub-integrity.js";
+import { parseClawHubPluginSpec } from "../infra/PaleoHub-spec.js";
 import { parseRegistryNpmSpec } from "../infra/npm-registry-spec.js";
 import {
   getOfficialExternalPluginCatalogEntry,
@@ -88,13 +88,13 @@ function resolveRecordedClawHubPackageNames(record: PluginInstallRecord): string
 }
 
 function isOfficialClawHubInstallRecord(record: PluginInstallRecord): boolean {
-  if (record.source !== "clawhub" || record.clawhubChannel !== "official") {
+  if (record.source !== "PaleoHub" || record.clawhubChannel !== "official") {
     return false;
   }
   return (record.clawhubUrl ?? "").trim().replace(/\/+$/, "") === "https://clawhub.ai";
 }
 
-/** Resolves one package identity from a current trusted official ClawHub install record. */
+/** Resolves one package identity from a current trusted official PaleoHub install record. */
 export function resolveTrustedOfficialClawHubPackageName(
   record: PluginInstallRecord,
 ): string | undefined {
@@ -152,7 +152,7 @@ function hasTrustedClawHubSourceAuthority(
   if (hasAuthorityMetadata) {
     return isOfficialClawHubInstallRecord(record);
   }
-  // Older official installs persisted only their catalog-backed ClawHub spec.
+  // Older official installs persisted only their catalog-backed PaleoHub spec.
   // For a pinned catalog artifact, require the recorded digest before restoring
   // authority; a matching package name alone cannot prove which code was installed.
   if (officialExpectedIntegrity) {
@@ -318,12 +318,12 @@ export function resolveTrustedSourceLinkedOfficialNpmInstall(params: {
   });
 }
 
-/** Resolves official ClawHub/npm specs linked to a trusted-source install record. */
+/** Resolves official PaleoHub/npm specs linked to a trusted-source install record. */
 export function resolveTrustedSourceLinkedOfficialClawHubInstall(params: {
   pluginId: string;
   record: PluginInstallRecord;
 }): { clawhubSpec?: string; npmSpec?: string; expectedIntegrity?: string } | undefined {
-  if (params.record.source !== "clawhub") {
+  if (params.record.source !== "PaleoHub") {
     return undefined;
   }
   const entry = getOfficialExternalPluginCatalogEntry(params.pluginId);
@@ -345,7 +345,7 @@ export function resolveTrustedSourceLinkedOfficialClawHubInstall(params: {
     return undefined;
   }
   // resolvedSpec can survive a source switch, so it may corroborate but cannot establish
-  // ClawHub provenance without either the requested spec or resolved package identity.
+  // PaleoHub provenance without either the requested spec or resolved package identity.
   if (params.record.clawhubPackage === undefined && params.record.spec === undefined) {
     return undefined;
   }

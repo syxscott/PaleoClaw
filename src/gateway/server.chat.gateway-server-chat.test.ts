@@ -1,835 +1,852 @@
+// Gateway server chat tests cover WebSocket chat flow, history construction,
+// NO_REPLY handling, agent events, and connected control-UI delivery.
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { expectDefined } from "@paleoclaw/normalization-core/expect";
+import { isRecord } from "@paleoclaw/normalization-core/record-coerce";
 import { describe, expect, test, vi } from "vitest";
 import { WebSocket } from "ws";
-import { emitAgentEvent, registerAgentRunContext } from "../infra/agent-events.js";
-import { extractFirstTextBlock } from "../shared/chat-message-content.js";
-import { GATEWAY_CLIENT_MODES, GATEWAY_CLIENT_NAMES } from "../utils/message-channel.js";
+import { createDeferred, withinTest } from "../../test/helpers/promise.js";
+import type { InternalGetReplyOptions } from "../auto-reply/reply/get-reply.types.js";
+import type { ReplyDispatcher } from "../auto-reply/reply/reply-dispatcher.types.js";
+import { loadSessionEntry, updateSessionEntry } from "../config/sessions/session-accessor.js";
+import { emitAgentEvent } from "../infra/agent-events.js";
+import * as gatewayActiveWork from "../infra/gateway-active-work.js";
+import { createSafeGatewayRestartPreflight } from "../infra/restart-coordinator.js";
 import {
-  connectOk,
-  getReplyFromConfig,
-  installGatewayTestHooks,
+  getActiveGatewayRootWorkCount,
+  isGatewaySubordinateWorkAdmissionClosed,
+  markGatewayRestartDraining,
+  resetGatewayWorkAdmission,
+  tryBeginGatewaySuspendAdmission,
+} from "../process/gateway-work-admission.js";
+import { getSessionControllerOperation } from "../sessions/session-controller.js";
+import {
+  beginSessionEffect,
+  captureSessionTarget,
+  getSessionControllerWorkCount,
+} from "../sessions/session-controller.lifecycle.js";
+import { getRpcSource, isRpcSourceExecuting } from "../sessions/session-controller.rpc-sources.js";
+import * as chatRestartRecovery from "./server-methods/chat-restart-recovery.js";
+import { installGatewayServerChatTestSuite } from "./server.chat.gateway-server-chat.test-support.js";
+import { collectHistoryTextValues } from "./session-history-fixtures.test-support.js";
+import { removeChatTestDirectory as removeTempDir } from "./session-test-directories.test-support.js";
+import {
+  dispatchInboundMessageMock,
+  mockGetReplyFromConfigOnce,
   onceMessage,
+  prepareGatewayReplyRuntimeForTest,
   rpcReq,
   testState,
-  trackConnectChallengeNonce,
   writeSessionStore,
-  type RpcResponse,
 } from "./test-helpers.js";
-import { agentCommand } from "./test-helpers.mocks.js";
-import { installConnectedControlUiServerSuite } from "./test-with-server.js";
 
-installGatewayTestHooks({ scope: "suite" });
-const CHAT_RESPONSE_TIMEOUT_MS = 4_000;
-
-let ws: WebSocket;
-let port: number;
-
-installConnectedControlUiServerSuite((started) => {
-  ws = started.ws;
-  port = started.port;
-});
-
-async function waitFor(condition: () => boolean, timeoutMs = 250) {
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    if (condition()) {
-      return;
-    }
-    await new Promise((r) => setTimeout(r, 2));
-  }
-  throw new Error("timeout waiting for condition");
+function waitForFast<T>(
+  callback: () => T | Promise<T>,
+  options: { timeout?: number; interval?: number } = {},
+) {
+  return vi.waitFor(callback, { interval: 1, ...options });
 }
 
+let ws: WebSocket;
+
+const gatewaySuite = installGatewayServerChatTestSuite((started) => {
+  ws = started.ws;
+});
+const {
+  expectRecordFields,
+  sendChatAndExpectStarted,
+  settleGatewayFixture,
+  waitForAgentRunDrained,
+  withMainSessionStore,
+} = gatewaySuite;
+
 describe("gateway server chat", () => {
-  const buildNoReplyHistoryFixture = (includeMixedAssistant = false) => [
-    {
-      role: "user",
-      content: [{ type: "text", text: "hello" }],
-      timestamp: 1,
-    },
-    {
-      role: "assistant",
-      content: [{ type: "text", text: "NO_REPLY" }],
-      timestamp: 2,
-    },
-    {
-      role: "assistant",
-      content: [{ type: "text", text: "real reply" }],
-      timestamp: 3,
-    },
-    {
-      role: "assistant",
-      text: "real text field reply",
-      content: "NO_REPLY",
-      timestamp: 4,
-    },
-    {
-      role: "user",
-      content: [{ type: "text", text: "NO_REPLY" }],
-      timestamp: 5,
-    },
-    ...(includeMixedAssistant
-      ? [
-          {
-            role: "assistant",
-            content: [
-              { type: "text", text: "NO_REPLY" },
-              { type: "image", source: { type: "base64", media_type: "image/png", data: "abc" } },
-            ],
-            timestamp: 6,
-          },
-        ]
-      : []),
-  ];
-
-  const loadChatHistoryWithMessages = async (
-    messages: Array<Record<string, unknown>>,
-  ): Promise<unknown[]> => {
-    return withMainSessionStore(async (dir) => {
-      const lines = messages.map((message) => JSON.stringify({ message }));
-      await fs.writeFile(path.join(dir, "sess-main.jsonl"), lines.join("\n"), "utf-8");
-
-      const res = (await rpcReq(ws, "chat.history", {
-        sessionKey: "main",
-      })) as RpcResponse<{ messages?: unknown[] }>;
-      expect(res.ok).toBe(true);
-      return res.payload?.messages ?? [];
-    });
-  };
-
-  const withMainSessionStore = async <T>(run: (dir: string) => Promise<T>): Promise<T> => {
-    const dir = await fs.mkdtemp(path.join(os.tmpdir(), "paleoclaw-gw-"));
-    try {
-      testState.sessionStorePath = path.join(dir, "sessions.json");
-      await writeSessionStore({
-        entries: {
-          main: {
-            sessionId: "sess-main",
-            updatedAt: Date.now(),
-          },
-        },
-      });
-      return await run(dir);
-    } finally {
-      testState.sessionStorePath = undefined;
-      await fs.rm(dir, { recursive: true, force: true });
-    }
-  };
-
-  const collectHistoryTextValues = (historyMessages: unknown[]) =>
-    historyMessages
-      .map((message) => {
-        if (message && typeof message === "object") {
-          const entry = message as { text?: unknown };
-          if (typeof entry.text === "string") {
-            return entry.text;
-          }
-        }
-        return extractFirstTextBlock(message);
-      })
-      .filter((value): value is string => typeof value === "string");
-
-  const expectAgentWaitTimeout = (res: Awaited<ReturnType<typeof rpcReq>>) => {
-    expect(res.ok).toBe(true);
-    expect(res.payload?.status).toBe("timeout");
-  };
-
-  const expectAgentWaitStartedAt = (res: Awaited<ReturnType<typeof rpcReq>>, startedAt: number) => {
-    expect(res.ok).toBe(true);
-    expect(res.payload?.status).toBe("ok");
-    expect(res.payload?.startedAt).toBe(startedAt);
-  };
-
-  const mockBlockedChatReply = () => {
-    let releaseBlockedReply: (() => void) | undefined;
-    const blockedReply = new Promise<void>((resolve) => {
-      releaseBlockedReply = resolve;
-    });
-    const replySpy = vi.mocked(getReplyFromConfig);
-    replySpy.mockImplementationOnce(async (_ctx, opts) => {
-      await new Promise<void>((resolve) => {
-        let settled = false;
-        const finish = () => {
-          if (settled) {
-            return;
-          }
-          settled = true;
-          resolve();
-        };
-        void blockedReply.then(finish);
-        if (opts?.abortSignal?.aborted) {
-          finish();
-          return;
-        }
-        opts?.abortSignal?.addEventListener("abort", finish, { once: true });
-      });
-      return undefined;
-    });
-    return () => {
-      releaseBlockedReply?.();
-    };
-  };
-
-  test("sanitizes inbound chat.send message text and rejects null bytes", async () => {
-    const nullByteRes = await rpcReq(ws, "chat.send", {
-      sessionKey: "main",
-      message: "hello\u0000world",
-      idempotencyKey: "idem-null-byte-1",
-    });
-    expect(nullByteRes.ok).toBe(false);
-    expect((nullByteRes.error as { message?: string } | undefined)?.message ?? "").toMatch(
-      /null bytes/i,
+  const waitForChatEvent = (runId: string, state = "final") =>
+    onceMessage(
+      ws,
+      (event) =>
+        event.type === "event" &&
+        event.event === "chat" &&
+        event.payload?.state === state &&
+        event.payload?.runId === runId,
+      8_000,
     );
 
-    const spy = vi.mocked(getReplyFromConfig);
-    spy.mockClear();
-    const spyCalls = spy.mock.calls as unknown[][];
-    const callsBeforeSanitized = spyCalls.length;
-    const sanitizedRes = await rpcReq(ws, "chat.send", {
-      sessionKey: "main",
-      message: "Cafe\u0301\u0007\tline",
-      idempotencyKey: "idem-sanitized-1",
-    });
-    expect(sanitizedRes.ok).toBe(true);
-
-    await waitFor(() => spyCalls.length > callsBeforeSanitized);
-    const ctx = spyCalls.at(-1)?.[0] as
-      | { Body?: string; RawBody?: string; BodyForCommands?: string }
-      | undefined;
-    expect(ctx?.Body).toBe("Café\tline");
-    expect(ctx?.RawBody).toBe("Café\tline");
-    expect(ctx?.BodyForCommands).toBe("Café\tline");
+  test("chat.send rejects archived sessions before dispatch", async () => {
+    await withMainSessionStore(
+      async () => {
+        dispatchInboundMessageMock.mockClear();
+        const res = await rpcReq(ws, "chat.send", {
+          sessionKey: "main",
+          message: "blocked while archived",
+          idempotencyKey: "proof-chat-archived-session",
+        });
+        expect(res.ok).toBe(false);
+        expect(res.error).toMatchObject({
+          code: "INVALID_REQUEST",
+          message: 'Session "agent:main:main" is archived. Restore it before starting new work.',
+        });
+        expect(dispatchInboundMessageMock).not.toHaveBeenCalled();
+      },
+      { archivedAt: Date.now() },
+    );
   });
 
-  test("handles chat send and history flows", async () => {
-    const tempDirs: string[] = [];
-    let webchatWs: WebSocket | undefined;
-
-    try {
-      webchatWs = new WebSocket(`ws://127.0.0.1:${port}`, {
-        headers: { origin: `http://127.0.0.1:${port}` },
-      });
-      trackConnectChallengeNonce(webchatWs);
-      await new Promise<void>((resolve) => webchatWs?.once("open", resolve));
-      await connectOk(webchatWs, {
-        client: {
-          id: GATEWAY_CLIENT_NAMES.CONTROL_UI,
-          version: "dev",
-          platform: "web",
-          mode: GATEWAY_CLIENT_MODES.WEBCHAT,
-        },
-      });
-
-      const webchatRes = await rpcReq(webchatWs, "chat.send", {
-        sessionKey: "main",
-        message: "hello",
-        idempotencyKey: "idem-webchat-1",
-      });
-      expect(webchatRes.ok).toBe(true);
-
-      webchatWs.close();
-      webchatWs = undefined;
-
-      const spy = vi.mocked(getReplyFromConfig);
-      spy.mockClear();
-      const spyCalls = spy.mock.calls as unknown[][];
-      testState.agentConfig = { timeoutSeconds: 123 };
-      const callsBeforeTimeout = spyCalls.length;
-      const timeoutRes = await rpcReq(ws, "chat.send", {
-        sessionKey: "main",
-        message: "hello",
-        idempotencyKey: "idem-timeout-1",
-      });
-      expect(timeoutRes.ok).toBe(true);
-
-      await waitFor(() => spyCalls.length > callsBeforeTimeout);
-      const timeoutCall = spyCalls.at(-1)?.[1] as { runId?: string } | undefined;
-      expect(timeoutCall?.runId).toBe("idem-timeout-1");
-      testState.agentConfig = undefined;
-
-      const sessionRes = await rpcReq(ws, "chat.send", {
-        sessionKey: "agent:main:subagent:abc",
-        message: "hello",
-        idempotencyKey: "idem-session-key-1",
-      });
-      expect(sessionRes.ok).toBe(true);
-      expect(sessionRes.payload?.runId).toBe("idem-session-key-1");
-
-      const sendPolicyDir = await fs.mkdtemp(path.join(os.tmpdir(), "paleoclaw-gw-"));
-      tempDirs.push(sendPolicyDir);
-      testState.sessionStorePath = path.join(sendPolicyDir, "sessions.json");
-      testState.sessionConfig = {
-        sendPolicy: {
-          default: "allow",
-          rules: [
-            {
-              action: "deny",
-              match: { channel: "discord", chatType: "group" },
-            },
-          ],
-        },
-      };
-
-      await writeSessionStore({
-        entries: {
-          "discord:group:dev": {
-            sessionId: "sess-discord",
-            updatedAt: Date.now(),
-            chatType: "group",
-            channel: "discord",
-          },
-        },
-      });
-
-      const blockedRes = await rpcReq(ws, "chat.send", {
-        sessionKey: "discord:group:dev",
-        message: "hello",
-        idempotencyKey: "idem-1",
-      });
-      expect(blockedRes.ok).toBe(false);
-      expect((blockedRes.error as { message?: string } | undefined)?.message ?? "").toMatch(
-        /send blocked/i,
-      );
-
-      testState.sessionStorePath = undefined;
-      testState.sessionConfig = undefined;
-
-      const agentBlockedDir = await fs.mkdtemp(path.join(os.tmpdir(), "paleoclaw-gw-"));
-      tempDirs.push(agentBlockedDir);
-      testState.sessionStorePath = path.join(agentBlockedDir, "sessions.json");
-      testState.sessionConfig = {
-        sendPolicy: {
-          default: "allow",
-          rules: [{ action: "deny", match: { keyPrefix: "cron:" } }],
-        },
-      };
-
-      await writeSessionStore({
-        entries: {
-          "cron:job-1": {
-            sessionId: "sess-cron",
-            updatedAt: Date.now(),
-          },
-        },
-      });
-
-      const agentBlockedRes = await rpcReq(ws, "agent", {
-        sessionKey: "cron:job-1",
-        message: "hi",
-        idempotencyKey: "idem-2",
-      });
-      expect(agentBlockedRes.ok).toBe(false);
-      expect((agentBlockedRes.error as { message?: string } | undefined)?.message ?? "").toMatch(
-        /send blocked/i,
-      );
-
-      testState.sessionStorePath = undefined;
-      testState.sessionConfig = undefined;
-
-      const pngB64 =
-        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/woAAn8B9FD5fHAAAAAASUVORK5CYII=";
-
-      const reqId = "chat-img";
-      ws.send(
-        JSON.stringify({
-          type: "req",
-          id: reqId,
-          method: "chat.send",
-          params: {
-            sessionKey: "main",
-            message: "see image",
-            idempotencyKey: "idem-img",
-            attachments: [
-              {
-                type: "image",
-                mimeType: "image/png",
-                fileName: "dot.png",
-                content: `data:image/png;base64,${pngB64}`,
-              },
-            ],
-          },
-        }),
-      );
-
-      const imgRes = await onceMessage(
-        ws,
-        (o) => o.type === "res" && o.id === reqId,
-        CHAT_RESPONSE_TIMEOUT_MS,
-      );
-      expect(imgRes.ok).toBe(true);
-      expect(imgRes.payload?.runId).toBeDefined();
-      const reqIdOnly = "chat-img-only";
-      ws.send(
-        JSON.stringify({
-          type: "req",
-          id: reqIdOnly,
-          method: "chat.send",
-          params: {
-            sessionKey: "main",
-            message: "",
-            idempotencyKey: "idem-img-only",
-            attachments: [
-              {
-                type: "image",
-                mimeType: "image/png",
-                fileName: "dot.png",
-                content: `data:image/png;base64,${pngB64}`,
-              },
-            ],
-          },
-        }),
-      );
-
-      const imgOnlyRes = await onceMessage(
-        ws,
-        (o) => o.type === "res" && o.id === reqIdOnly,
-        CHAT_RESPONSE_TIMEOUT_MS,
-      );
-      expect(imgOnlyRes.ok).toBe(true);
-      expect(imgOnlyRes.payload?.runId).toBeDefined();
-
-      const historyDir = await fs.mkdtemp(path.join(os.tmpdir(), "paleoclaw-gw-"));
-      tempDirs.push(historyDir);
-      testState.sessionStorePath = path.join(historyDir, "sessions.json");
-      await writeSessionStore({
-        entries: {
-          main: {
-            sessionId: "sess-main",
-            updatedAt: Date.now(),
-          },
-        },
-      });
-
-      const lines: string[] = [];
-      for (let i = 0; i < 300; i += 1) {
-        lines.push(
-          JSON.stringify({
-            message: {
-              role: "user",
-              content: [{ type: "text", text: `m${i}` }],
-              timestamp: Date.now() + i,
-            },
-          }),
-        );
-      }
-      await fs.writeFile(path.join(historyDir, "sess-main.jsonl"), lines.join("\n"), "utf-8");
-
-      const defaultRes = (await rpcReq(ws, "chat.history", {
-        sessionKey: "main",
-      })) as RpcResponse<{ messages?: unknown[] }>;
-      expect(defaultRes.ok).toBe(true);
-      const defaultMsgs = defaultRes.payload?.messages ?? [];
-      expect(defaultMsgs.length).toBe(200);
-      expect(extractFirstTextBlock(defaultMsgs[0])).toBe("m100");
-    } finally {
-      testState.agentConfig = undefined;
-      testState.sessionStorePath = undefined;
-      testState.sessionConfig = undefined;
-      if (webchatWs) {
-        webchatWs.close();
-      }
-      await Promise.all(tempDirs.map((dir) => fs.rm(dir, { recursive: true, force: true })));
-    }
-  });
-
-  test("chat.history hides assistant NO_REPLY-only entries", async () => {
-    const historyMessages = await loadChatHistoryWithMessages(buildNoReplyHistoryFixture());
-    const textValues = collectHistoryTextValues(historyMessages);
-    // The NO_REPLY assistant message (content block) should be dropped.
-    // The assistant with text="real text field reply" + content="NO_REPLY" stays
-    // because entry.text takes precedence over entry.content for the silent check.
-    // The user message with NO_REPLY text is preserved (only assistant filtered).
-    expect(textValues).toEqual(["hello", "real reply", "real text field reply", "NO_REPLY"]);
-  });
-
-  test("routes chat.send slash commands without agent runs", async () => {
+  test("chat.send fences the admitted session settings", async () => {
     await withMainSessionStore(async () => {
-      const spy = vi.mocked(agentCommand);
-      const callsBefore = spy.mock.calls.length;
-      const eventPromise = onceMessage(
-        ws,
-        (o) =>
-          o.type === "event" &&
-          o.event === "chat" &&
-          o.payload?.state === "final" &&
-          o.payload?.runId === "idem-command-1",
-        8000,
-      );
+      const set = await rpcReq(ws, "sessions.patch", {
+        key: "main",
+        permissionMode: "guarded",
+        toolOverrides: { webSearch: false },
+      });
+      expect(set.ok).toBe(true);
+
+      const accepted = await rpcReq(ws, "chat.send", {
+        sessionKey: "main",
+        message: "use the matched settings",
+        expectedPermissionMode: "guarded",
+        expectedToolOverrides: { webSearch: false },
+        idempotencyKey: "idem-chat-settings-cas-success",
+      });
+      expect(accepted.ok).toBe(true);
+      await waitForAgentRunDrained("idem-chat-settings-cas-success");
+
+      const changed = await rpcReq(ws, "sessions.patch", {
+        key: "main",
+        permissionMode: "read-only",
+        toolOverrides: { skills: { release: false } },
+      });
+      expect(changed.ok).toBe(true);
+      const rejected = await rpcReq(ws, "chat.send", {
+        sessionKey: "main",
+        message: "do not use stale settings",
+        expectedPermissionMode: "guarded",
+        expectedToolOverrides: { webSearch: false },
+        idempotencyKey: "idem-chat-settings-cas-conflict",
+      });
+      expect(rejected).toMatchObject({
+        ok: false,
+        error: {
+          code: "INVALID_REQUEST",
+          details: { reason: "session-settings-changed" },
+        },
+      });
+    });
+  });
+
+  test("chat.send keeps stored settings for legacy callers after the session row broadens", async () => {
+    await withMainSessionStore(async () => {
+      const dispatchEntered = createDeferred<InternalGetReplyOptions | undefined>();
+      const releaseDispatch = createDeferred();
+      dispatchInboundMessageMock.mockImplementationOnce(async (args: unknown) => {
+        const params = args as { replyOptions?: InternalGetReplyOptions };
+        dispatchEntered.resolve(params.replyOptions);
+        await releaseDispatch.promise;
+        return { queuedFinal: false, counts: { tool: 0, block: 0, final: 0 } };
+      });
+      expect(
+        (
+          await rpcReq(ws, "sessions.patch", {
+            key: "main",
+            permissionMode: "guarded",
+            toolOverrides: { webSearch: false },
+          })
+        ).ok,
+      ).toBe(true);
+
+      const accepted = await rpcReq(ws, "chat.send", {
+        sessionKey: "main",
+        message: "keep admitted authority",
+        idempotencyKey: "idem-chat-settings-final-freeze",
+      });
+      expect(accepted.ok).toBe(true);
+      const admittedOptions = await dispatchEntered.promise;
+
+      expect(
+        (
+          await rpcReq(ws, "sessions.patch", {
+            key: "main",
+            permissionMode: "full",
+            toolOverrides: null,
+          })
+        ).ok,
+      ).toBe(true);
+      expect(admittedOptions?.admittedSessionSettings).toEqual({
+        permissionMode: "guarded",
+        toolOverrides: { webSearch: false },
+      });
+      releaseDispatch.resolve();
+      await waitForAgentRunDrained("idem-chat-settings-final-freeze");
+    });
+  });
+
+  test("keeps started chat dispatch on its retained request root", async () => {
+    await withMainSessionStore(async () => {
+      let subordinateAdmissionClosed: boolean | undefined;
+      dispatchInboundMessageMock.mockImplementationOnce(async (...args: unknown[]) => {
+        await new Promise<void>((resolve) => {
+          setTimeout(resolve, 0);
+        });
+        const suspension = tryBeginGatewaySuspendAdmission(() => {});
+        expect(suspension).not.toBeNull();
+        try {
+          subordinateAdmissionClosed = isGatewaySubordinateWorkAdmissionClosed();
+        } finally {
+          suspension?.rollback();
+        }
+        const [params] = args as [{ dispatcher: ReplyDispatcher }];
+        params.dispatcher.sendFinalReply({ text: "detached root stayed live" });
+        params.dispatcher.markComplete();
+        await params.dispatcher.waitForIdle();
+        return {
+          queuedFinal: true,
+          counts: params.dispatcher.getQueuedCounts(),
+        };
+      });
+      const finalPromise = waitForChatEvent("idem-chat-detached-root");
+
       const res = await rpcReq(ws, "chat.send", {
         sessionKey: "main",
-        message: "/context list",
-        idempotencyKey: "idem-command-1",
+        message: "prove detached root transfer",
+        idempotencyKey: "idem-chat-detached-root",
       });
+
       expect(res.ok).toBe(true);
-      await eventPromise;
-      expect(spy.mock.calls.length).toBe(callsBefore);
+      expect(res.payload?.status).toBe("started");
+      await waitForFast(() => {
+        expect(subordinateAdmissionClosed).toBe(false);
+      });
+      await finalPromise;
+      await gatewaySuite.requestExecution.waitForCompletion("idem-chat-detached-root");
+      expect(getActiveGatewayRootWorkCount()).toBe(0);
     });
   });
 
-  test("chat.history hides assistant NO_REPLY-only entries and keeps mixed-content assistant entries", async () => {
-    const historyMessages = await loadChatHistoryWithMessages(buildNoReplyHistoryFixture(true));
-    const roleAndText = historyMessages
-      .map((message) => {
-        const role =
-          message &&
-          typeof message === "object" &&
-          typeof (message as { role?: unknown }).role === "string"
-            ? (message as { role: string }).role
-            : "unknown";
-        const text =
-          message &&
-          typeof message === "object" &&
-          typeof (message as { text?: unknown }).text === "string"
-            ? (message as { text: string }).text
-            : (extractFirstTextBlock(message) ?? "");
-        return `${role}:${text}`;
-      })
-      .filter((entry) => entry !== "unknown:");
-
-    expect(roleAndText).toEqual([
-      "user:hello",
-      "assistant:real reply",
-      "assistant:real text field reply",
-      "user:NO_REPLY",
-      "assistant:NO_REPLY",
-    ]);
-  });
-
-  test("agent.wait resolves chat.send runs that finish without lifecycle events", async () => {
-    const dir = await fs.mkdtemp(path.join(os.tmpdir(), "paleoclaw-gw-"));
-    try {
-      testState.sessionStorePath = path.join(dir, "sessions.json");
-      await writeSessionStore({
-        entries: {
-          main: {
-            sessionId: "sess-main",
-            updatedAt: Date.now(),
-          },
-        },
-      });
-
-      const runId = "idem-wait-chat-1";
-      const sendRes = await rpcReq(ws, "chat.send", {
-        sessionKey: "main",
-        message: "/context list",
-        idempotencyKey: runId,
-      });
-      expect(sendRes.ok).toBe(true);
-      expect(sendRes.payload?.status).toBe("started");
-
-      const waitRes = await rpcReq(ws, "agent.wait", {
-        runId,
-        timeoutMs: 1_000,
-      });
-      expect(waitRes.ok).toBe(true);
-      expect(waitRes.payload?.status).toBe("ok");
-    } finally {
-      testState.sessionStorePath = undefined;
-      await fs.rm(dir, { recursive: true, force: true });
-    }
-  });
-
-  test("agent.wait ignores stale chat dedupe when an agent run with the same runId is in flight", async () => {
-    const dir = await fs.mkdtemp(path.join(os.tmpdir(), "paleoclaw-gw-"));
-    let resolveAgentRun: (() => void) | undefined;
-    const blockedAgentRun = new Promise<void>((resolve) => {
-      resolveAgentRun = resolve;
-    });
-    const agentSpy = vi.mocked(agentCommand);
-    agentSpy.mockImplementationOnce(async () => {
-      await blockedAgentRun;
-      return undefined;
-    });
-
-    try {
-      testState.sessionStorePath = path.join(dir, "sessions.json");
-      await writeSessionStore({
-        entries: {
-          main: {
-            sessionId: "sess-main",
-            updatedAt: Date.now(),
-          },
-        },
-      });
-
-      const runId = "idem-wait-chat-vs-agent";
-      const sendRes = await rpcReq(ws, "chat.send", {
-        sessionKey: "main",
-        message: "/context list",
-        idempotencyKey: runId,
-      });
-      expect(sendRes.ok).toBe(true);
-      expect(sendRes.payload?.status).toBe("started");
-
-      const chatWaitRes = await rpcReq(ws, "agent.wait", {
-        runId,
-        timeoutMs: 1_000,
-      });
-      expect(chatWaitRes.ok).toBe(true);
-      expect(chatWaitRes.payload?.status).toBe("ok");
-
-      const agentRes = await rpcReq(ws, "agent", {
-        sessionKey: "main",
-        message: "hold this run open",
-        idempotencyKey: runId,
-      });
-      expect(agentRes.ok).toBe(true);
-      expect(agentRes.payload?.status).toBe("accepted");
-
-      const waitWhileAgentInFlight = await rpcReq(ws, "agent.wait", {
-        runId,
-        timeoutMs: 40,
-      });
-      expectAgentWaitTimeout(waitWhileAgentInFlight);
-
-      resolveAgentRun?.();
-      const waitAfterAgentCompletion = await rpcReq(ws, "agent.wait", {
-        runId,
-        timeoutMs: 1_000,
-      });
-      expect(waitAfterAgentCompletion.ok).toBe(true);
-      expect(waitAfterAgentCompletion.payload?.status).toBe("ok");
-    } finally {
-      resolveAgentRun?.();
-      testState.sessionStorePath = undefined;
-      await fs.rm(dir, { recursive: true, force: true });
-    }
-  });
-
-  test("agent.wait ignores stale agent snapshots while same-runId chat.send is active", async () => {
+  test("sessions.list projects an accepted chat.send before backend execution starts", async () => {
     await withMainSessionStore(async () => {
-      const runId = "idem-wait-chat-active-vs-stale-agent";
-      const seedAgentRes = await rpcReq(ws, "agent", {
-        sessionKey: "main",
-        message: "seed stale agent snapshot",
-        idempotencyKey: runId,
+      const dispatchEntered = createDeferred();
+      const releaseDispatch = createDeferred();
+      dispatchInboundMessageMock.mockImplementationOnce(async () => {
+        dispatchEntered.resolve();
+        await releaseDispatch.promise;
+        return { queuedFinal: false, counts: { tool: 0, block: 0, final: 0 } };
       });
-      expect(seedAgentRes.ok).toBe(true);
-      expect(seedAgentRes.payload?.status).toBe("accepted");
-
-      const seedWaitRes = await rpcReq(ws, "agent.wait", {
-        runId,
-        timeoutMs: 1_000,
-      });
-      expect(seedWaitRes.ok).toBe(true);
-      expect(seedWaitRes.payload?.status).toBe("ok");
-
-      const releaseBlockedReply = mockBlockedChatReply();
-
+      const runId = "idem-chat-accepted-session-projection";
       try {
-        const chatRes = await rpcReq(ws, "chat.send", {
+        const accepted = await rpcReq(ws, "chat.send", {
           sessionKey: "main",
-          message: "hold chat run open",
+          message: "hold before backend execution",
           idempotencyKey: runId,
         });
-        expect(chatRes.ok).toBe(true);
-        expect(chatRes.payload?.status).toBe("started");
+        expect(accepted).toMatchObject({ ok: true, payload: { runId, status: "started" } });
+        await dispatchEntered.promise;
+        expect(isRpcSourceExecuting(getRpcSource(runId))).toBe(false);
 
-        const waitWhileChatActive = await rpcReq(ws, "agent.wait", {
-          runId,
-          timeoutMs: 40,
-        });
-        expectAgentWaitTimeout(waitWhileChatActive);
-
-        const abortRes = await rpcReq(ws, "chat.abort", {
-          sessionKey: "main",
-          runId,
-        });
-        expect(abortRes.ok).toBe(true);
-      } finally {
-        releaseBlockedReply();
-      }
-    });
-  });
-
-  test("agent.wait keeps lifecycle wait active while same-runId chat.send is active", async () => {
-    await withMainSessionStore(async () => {
-      const runId = "idem-wait-chat-active-with-agent-lifecycle";
-      const releaseBlockedReply = mockBlockedChatReply();
-
-      try {
-        const chatRes = await rpcReq(ws, "chat.send", {
-          sessionKey: "main",
-          message: "hold chat run open",
-          idempotencyKey: runId,
-        });
-        expect(chatRes.ok).toBe(true);
-        expect(chatRes.payload?.status).toBe("started");
-
-        const waitP = rpcReq(ws, "agent.wait", {
-          runId,
-          timeoutMs: 1_000,
-        });
-
-        await new Promise((resolve) => setTimeout(resolve, 20));
-        emitAgentEvent({
-          runId,
-          stream: "lifecycle",
-          data: { phase: "start", startedAt: 1 },
-        });
-        emitAgentEvent({
-          runId,
-          stream: "lifecycle",
-          data: { phase: "end", startedAt: 1, endedAt: 2 },
-        });
-
-        const waitRes = await waitP;
-        expect(waitRes.ok).toBe(true);
-        expect(waitRes.payload?.status).toBe("ok");
-
-        const abortRes = await rpcReq(ws, "chat.abort", {
-          sessionKey: "main",
-          runId,
-        });
-        expect(abortRes.ok).toBe(true);
-      } finally {
-        releaseBlockedReply();
-      }
-    });
-  });
-
-  test("agent events include sessionKey and agent.wait covers lifecycle flows", async () => {
-    const dir = await fs.mkdtemp(path.join(os.tmpdir(), "paleoclaw-gw-"));
-    testState.sessionStorePath = path.join(dir, "sessions.json");
-    await writeSessionStore({
-      entries: {
-        main: {
-          sessionId: "sess-main",
-          updatedAt: Date.now(),
-          verboseLevel: "off",
-        },
-      },
-    });
-
-    const webchatWs = new WebSocket(`ws://127.0.0.1:${port}`, {
-      headers: { origin: `http://127.0.0.1:${port}` },
-    });
-    trackConnectChallengeNonce(webchatWs);
-    await new Promise<void>((resolve) => webchatWs.once("open", resolve));
-    await connectOk(webchatWs, {
-      client: {
-        id: GATEWAY_CLIENT_NAMES.WEBCHAT,
-        version: "1.0.0",
-        platform: "test",
-        mode: GATEWAY_CLIENT_MODES.WEBCHAT,
-      },
-    });
-
-    try {
-      registerAgentRunContext("run-tool-1", {
-        sessionKey: "main",
-        verboseLevel: "on",
-      });
-
-      {
-        const agentEvtP = onceMessage(
-          webchatWs,
-          (o) => o.type === "event" && o.event === "agent" && o.payload?.runId === "run-tool-1",
-          8000,
+        const listed = await rpcReq<{ sessions?: unknown[] }>(ws, "sessions.list", {});
+        expect(listed.ok).toBe(true);
+        expect(listed.payload?.sessions).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              key: "agent:main:main",
+              hasActiveRun: true,
+              activeRunIds: [runId],
+              status: "queued",
+            }),
+          ]),
         );
-
-        emitAgentEvent({
-          runId: "run-tool-1",
-          stream: "assistant",
-          data: { text: "hello" },
-        });
-
-        const evt = await agentEvtP;
-        const payload = evt.payload && typeof evt.payload === "object" ? evt.payload : {};
-        expect(payload.sessionKey).toBe("main");
-        expect(payload.stream).toBe("assistant");
+      } finally {
+        releaseDispatch.resolve();
+        await waitForAgentRunDrained(runId);
       }
+    });
+  });
 
-      {
-        const waitP = rpcReq(webchatWs, "agent.wait", {
-          runId: "run-wait-1",
-          timeoutMs: 200,
-        });
-
-        queueMicrotask(() => {
+  test("chat.abort does not persist a partial after finalizing dispatch refuses cancellation", async () => {
+    await withMainSessionStore(async () => {
+      const runId = "idem-finalizing-abort-refusal";
+      const dispatchFinalizing = createDeferred();
+      const releaseDispatch = createDeferred();
+      try {
+        const partialPublished = waitForChatEvent(runId, "delta");
+        mockGetReplyFromConfigOnce(async (_ctx, replyOptions) => {
+          const replyOperation = expectDefined(
+            replyOptions?.replyOperation,
+            "expected admitted reply operation",
+          );
+          expect(replyOptions?.abortSignal).toBe(replyOperation.abortSignal);
+          replyOptions?.onAgentRunStart?.(runId);
           emitAgentEvent({
-            runId: "run-wait-1",
-            stream: "lifecycle",
-            data: { phase: "end", startedAt: 200, endedAt: 210 },
+            runId,
+            stream: "assistant",
+            data: { text: "stale aborted partial" },
           });
+          replyOperation.freezeAbort();
+          dispatchFinalizing.resolve();
+          await releaseDispatch.promise;
+          return undefined;
         });
 
-        const res = await waitP;
-        expectAgentWaitStartedAt(res, 200);
+        await sendChatAndExpectStarted(runId, "finish successfully");
+        expect((await partialPublished).payload?.message).toMatchObject({
+          role: "assistant",
+          content: [{ type: "text", text: "stale aborted partial" }],
+        });
+        await dispatchFinalizing.promise;
+        const abort = await rpcReq(ws, "chat.abort", {
+          sessionKey: "main",
+          runId,
+        });
+        expect(abort).toMatchObject({
+          ok: true,
+          payload: { ok: true, aborted: false, runIds: [] },
+        });
+
+        releaseDispatch.resolve();
+        await waitForAgentRunDrained(runId);
+        mockGetReplyFromConfigOnce(async () => undefined);
+        await sendChatAndExpectStarted(`${runId}-successor`, "continue after finalization");
+        await waitForAgentRunDrained(`${runId}-successor`);
+        await settleGatewayFixture();
+
+        const history = await rpcReq<{ messages?: unknown[] }>(ws, "chat.history", {
+          sessionKey: "main",
+        });
+        expect(history.ok).toBe(true);
+        expect(collectHistoryTextValues(history.payload?.messages ?? [])).not.toContain(
+          "stale aborted partial",
+        );
+      } finally {
+        releaseDispatch.resolve();
       }
+    });
+  });
 
-      {
-        emitAgentEvent({
-          runId: "run-wait-early",
-          stream: "lifecycle",
-          data: { phase: "end", startedAt: 50, endedAt: 55 },
+  test.each([
+    { method: "send", message: "hello from dashboard" },
+    { method: "steer", message: "follow-up from dashboard" },
+  ])(
+    "sessions.$method returns the committed history position when starting an existing session input",
+    async ({ method, message }) => {
+      const sessionKey = `agent:main:dashboard:test-${method}`;
+      const runId = `idem-sessions-${method}-1`;
+      const dir = await fs.mkdtemp(path.join(os.tmpdir(), `paleoclaw-sessions-${method}-`));
+      testState.sessionStorePath = path.join(dir, "sessions.json");
+      try {
+        await writeSessionStore({
+          entries: {
+            [sessionKey]: {
+              sessionId: `sess-dashboard-${method}`,
+              updatedAt: Date.now(),
+            },
+          },
         });
 
-        const res = await rpcReq(webchatWs, "agent.wait", {
-          runId: "run-wait-early",
-          timeoutMs: 200,
+        const res = await rpcReq(ws, `sessions.${method}`, {
+          key: sessionKey,
+          message,
+          idempotencyKey: runId,
         });
         expect(res.ok).toBe(true);
-        expect(res.payload?.status).toBe("ok");
-        expect(res.payload?.startedAt).toBe(50);
-      }
+        // Direct operator input commits through restart-safe admission before the ACK.
+        expectRecordFields(res.payload, { runId, status: "started", messageSeq: 1 });
+        await waitForAgentRunDrained(runId);
 
-      {
-        const res = await rpcReq(webchatWs, "agent.wait", {
-          runId: "run-wait-3",
-          timeoutMs: 30,
+        const history = await rpcReq<{ messages?: unknown[] }>(ws, "chat.history", { sessionKey });
+        expect(history.ok).toBe(true);
+        const users = (history.payload?.messages ?? []).filter(
+          (entry) => expectRecordFields(entry, {}).role === "user",
+        );
+        expect(users).toHaveLength(1);
+        const user = expectRecordFields(users[0], { role: "user" });
+        expectRecordFields(user["__openclaw"], {
+          seq: res.payload?.messageSeq,
+          idempotencyKey: `${runId}:user`,
         });
-        expectAgentWaitTimeout(res);
+        expect(collectHistoryTextValues(users)).toEqual([message]);
+      } finally {
+        // A failed ACK assertion must not retire storage before detached work finishes.
+        await settleGatewayFixture();
+        testState.sessionStorePath = undefined;
+        await removeTempDir(dir);
       }
+    },
+  );
 
-      {
-        const waitP = rpcReq(webchatWs, "agent.wait", {
-          runId: "run-wait-err",
-          timeoutMs: 50,
+  const startInterruptibleChatRun = async (runId: string, settlementGate?: Promise<void>) => {
+    const activeRunStarted = createDeferred();
+    const producer = { cancelled: false, settled: false };
+    mockGetReplyFromConfigOnce(async (_ctx, opts) => {
+      activeRunStarted.resolve(undefined);
+      if (!opts?.abortSignal?.aborted) {
+        await new Promise<void>((resolve) => {
+          opts?.abortSignal?.addEventListener("abort", () => resolve(), { once: true });
         });
+      }
+      producer.cancelled = true;
+      // The gate holds the real producer after cancellation, through replacement acknowledgement.
+      if (settlementGate) {
+        await settlementGate;
+      }
+      producer.settled = true;
+      return undefined;
+    });
+    const active = await rpcReq(ws, "chat.send", {
+      sessionKey: "main",
+      message: "captured active turn",
+      idempotencyKey: runId,
+    });
+    expect(active.ok).toBe(true);
+    await activeRunStarted.promise;
+    return producer;
+  };
 
-        queueMicrotask(() => {
-          emitAgentEvent({
-            runId: "run-wait-err",
-            stream: "lifecycle",
-            data: { phase: "error", error: "boom" },
+  test.each(["chat.send", "sessions.send"] as const)(
+    "%s acknowledges an interrupt before predecessor settlement",
+    async (method) => {
+      await withMainSessionStore(async () => {
+        await updateSessionEntry(
+          {
+            sessionKey: "main",
+            storePath: expectDefined(testState.sessionStorePath, "session store path"),
+          },
+          () => ({ queueMode: "interrupt" }),
+        );
+        const oldRunId = `idem-${method}-interrupt-old`;
+        const newRunId = `idem-${method}-interrupt-active`;
+        const releasePredecessor = createDeferred();
+        const predecessor = await startInterruptibleChatRun(oldRunId, releasePredecessor.promise);
+        try {
+          await expect(
+            rpcReq(ws, method, {
+              ...(method === "chat.send"
+                ? { sessionKey: "main", queueMode: "interrupt" }
+                : { key: "main" }),
+              message: "replace the captured turn",
+              idempotencyKey: newRunId,
+            }),
+          ).resolves.toMatchObject({
+            ok: true,
+            payload: { runId: newRunId, status: "started", interruptedActiveRun: true },
           });
-        });
+          expect(predecessor.cancelled).toBe(true);
+          expect(predecessor.settled).toBe(false);
+        } finally {
+          releasePredecessor.resolve();
+        }
+        await gatewaySuite.requestExecution.waitForCompletion(oldRunId);
+        await waitForAgentRunDrained(newRunId);
+      });
+    },
+  );
 
-        const res = await waitP;
-        expectAgentWaitTimeout(res);
+  test("chat.send interrupt keeps committed cancellation when the backend observer throws", async () => {
+    await withMainSessionStore(async () => {
+      await startInterruptibleChatRun("idem-chat-interrupt-throw-old");
+
+      const operation = getSessionControllerOperation(
+        "agent:main:main",
+        captureSessionTarget({
+          storeScope: expectDefined(testState.sessionStorePath, "session store path"),
+          sessionKey: "agent:main:main",
+          incarnation: "sess-main",
+        }),
+      );
+      expect(operation).toBeDefined();
+      operation?.attachBackend({
+        kind: "embedded",
+        cancel: () => {
+          throw new Error("cancel failed");
+        },
+        isStreaming: () => true,
+      });
+
+      const res = await rpcReq(ws, "chat.send", {
+        sessionKey: "main",
+        message: "replace the captured turn",
+        queueMode: "interrupt",
+        idempotencyKey: "idem-chat-interrupt-throw-new",
+      });
+      expect(res).toMatchObject({
+        ok: true,
+        payload: {
+          runId: "idem-chat-interrupt-throw-new",
+          status: "started",
+          interruptedActiveRun: true,
+        },
+      });
+      await waitForFast(() => expect(getSessionControllerWorkCount()).toBe(0));
+      await gatewaySuite.requestExecution.waitForCompletion("idem-chat-interrupt-throw-old");
+      await gatewaySuite.requestExecution.waitForCompletion("idem-chat-interrupt-throw-new");
+      expect(getActiveGatewayRootWorkCount()).toBe(0);
+
+      const reset = await rpcReq(ws, "sessions.reset", { key: "main", reason: "new" });
+      expect(reset.ok).toBe(true);
+    });
+  });
+
+  test("chat.send interrupt ignores subordinate session-effect interruption hooks", async () => {
+    await withMainSessionStore(async () => {
+      const storePath = testState.sessionStorePath;
+      if (!storePath) {
+        throw new Error("session store path was not initialized");
       }
+      const onInterrupt = vi.fn(() => {
+        throw new Error("session interruption failed");
+      });
+      const activeAdmission = await beginSessionEffect({
+        scope: storePath,
+        identities: ["agent:main:main", "sess-main"],
+        assertAllowed: () => {},
+        onInterrupt,
+      });
 
-      {
-        const waitP = rpcReq(webchatWs, "agent.wait", {
-          runId: "run-wait-start",
-          timeoutMs: 200,
+      try {
+        const res = await rpcReq(ws, "chat.send", {
+          sessionKey: "main",
+          message: "replace non-reply session work",
+          queueMode: "interrupt",
+          idempotencyKey: "idem-chat-interrupt-non-reply-throw",
         });
 
-        emitAgentEvent({
-          runId: "run-wait-start",
-          stream: "lifecycle",
-          data: { phase: "start", startedAt: 123 },
+        expect(res).toMatchObject({
+          ok: true,
+          payload: {
+            runId: "idem-chat-interrupt-non-reply-throw",
+            status: "started",
+          },
         });
-
-        queueMicrotask(() => {
-          emitAgentEvent({
-            runId: "run-wait-start",
-            stream: "lifecycle",
-            data: { phase: "end", endedAt: 456 },
-          });
-        });
-
-        const res = await waitP;
-        expectAgentWaitStartedAt(res, 123);
-        expect(res.payload?.endedAt).toBe(456);
+        expect(res.payload).not.toHaveProperty("interruptedActiveRun");
+        expect(onInterrupt).not.toHaveBeenCalled();
+        await gatewaySuite.requestExecution.waitForCompletion(
+          "idem-chat-interrupt-non-reply-throw",
+        );
+      } finally {
+        activeAdmission.release();
       }
+      await waitForFast(() => expect(getSessionControllerWorkCount()).toBe(0));
+      expect(getActiveGatewayRootWorkCount()).toBe(0);
+
+      const reset = await rpcReq(ws, "sessions.reset", { key: "main", reason: "new" });
+      expect(reset.ok).toBe(true);
+    });
+  });
+
+  test("chat.send interrupt leaves a subordinate session effect with its owner", async () => {
+    await withMainSessionStore(async () => {
+      const storePath = testState.sessionStorePath;
+      if (!storePath) {
+        throw new Error("session store path was not initialized");
+      }
+      const onInterrupt = vi.fn();
+      const interrupted = createDeferred();
+      const activeAdmission = await beginSessionEffect({
+        scope: storePath,
+        identities: ["agent:main:main", "sess-main"],
+        assertAllowed: () => {},
+        onInterrupt: () => {
+          onInterrupt();
+          interrupted.resolve(undefined);
+        },
+      });
+      const activeWork = activeAdmission.run(async () => {
+        await interrupted.promise;
+        activeAdmission.release();
+      });
+
+      try {
+        const res = await rpcReq(ws, "chat.send", {
+          sessionKey: "main",
+          message: "replace non-reply session work",
+          queueMode: "interrupt",
+          idempotencyKey: "idem-chat-interrupt-non-reply",
+        });
+
+        expect(res.ok).toBe(true);
+        expect(onInterrupt).not.toHaveBeenCalled();
+        expect(res.payload).toMatchObject({
+          runId: "idem-chat-interrupt-non-reply",
+          status: "started",
+        });
+        expect(res.payload).not.toHaveProperty("interruptedActiveRun");
+        await waitForAgentRunDrained("idem-chat-interrupt-non-reply");
+      } finally {
+        interrupted.resolve(undefined);
+        activeAdmission.release();
+        await activeWork;
+      }
+      await waitForFast(() => expect(getSessionControllerWorkCount()).toBe(0));
+    });
+  });
+
+  test("sessions.send creates a configured agent main session before sending", async () => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), "paleoclaw-sessions-send-agent-"));
+    testState.sessionStorePath = path.join(dir, "sessions.json");
+    testState.agentsConfig = {
+      entries: { main: {}, orion: {} },
+    };
+    try {
+      await writeSessionStore({ entries: {} });
+      await prepareGatewayReplyRuntimeForTest({ force: true });
+
+      const res = await rpcReq(ws, "sessions.send", {
+        key: "agent:orion:main",
+        message: "hello orion",
+        idempotencyKey: "idem-sessions-send-orion",
+      });
+      expect(res.ok).toBe(true);
+      expect(res.payload?.runId).toBe("idem-sessions-send-orion");
+
+      expect(
+        loadSessionEntry({
+          sessionKey: "agent:orion:main",
+          storePath: testState.sessionStorePath,
+        })?.sessionId,
+      ).toBeTypeOf("string");
+      await waitForAgentRunDrained("idem-sessions-send-orion");
     } finally {
-      webchatWs.close();
-      await fs.rm(dir, { recursive: true, force: true });
-      testState.sessionStorePath = undefined;
+      await settleGatewayFixture();
+      testState.agentsConfig = undefined;
+      await removeTempDir(dir);
     }
+  });
+
+  test("sessions.abort stops active dashboard runs", async () => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), "paleoclaw-sessions-abort-"));
+    testState.sessionStorePath = path.join(dir, "sessions.json");
+    try {
+      await writeSessionStore({
+        entries: {
+          "agent:main:dashboard:test-abort": {
+            sessionId: "sess-dashboard-abort",
+            updatedAt: Date.now(),
+          },
+        },
+      });
+
+      const sendRes = await rpcReq(ws, "sessions.send", {
+        key: "agent:main:dashboard:test-abort",
+        message: "hello",
+        idempotencyKey: "idem-sessions-abort-1",
+        timeoutMs: 30_000,
+      });
+      expect(sendRes.ok).toBe(true);
+
+      const cancelledEventP = onceMessage(
+        ws,
+        (o) => {
+          const data =
+            o.payload?.data && typeof o.payload.data === "object"
+              ? (o.payload.data as Record<string, unknown>)
+              : {};
+          return (
+            o.type === "event" &&
+            o.event === "agent" &&
+            o.payload?.runId === "idem-sessions-abort-1" &&
+            o.payload?.stream === "lifecycle" &&
+            data.phase === "end" &&
+            data.stopReason === "rpc"
+          );
+        },
+        8000,
+      );
+      void cancelledEventP.catch(() => undefined);
+
+      const abortRes = await rpcReq(ws, "sessions.abort", {
+        key: "agent:main:dashboard:test-abort",
+        runId: "idem-sessions-abort-1",
+      });
+      expect(abortRes.ok, JSON.stringify(abortRes.error)).toBe(true);
+      expect(["aborted", "no-active-run"]).toContain(abortRes.payload?.status);
+      if (abortRes.payload?.status === "aborted") {
+        expect(abortRes.payload?.abortedRunId).toBe("idem-sessions-abort-1");
+        const cancelledEvent = await cancelledEventP;
+        expectRecordFields(cancelledEvent.payload?.data, {
+          phase: "end",
+          status: "cancelled",
+          aborted: true,
+          stopReason: "rpc",
+        });
+        const waitRes = await rpcReq(ws, "agent.wait", {
+          runId: "idem-sessions-abort-1",
+          timeoutMs: 0,
+        });
+        expect(waitRes.ok).toBe(true);
+        expectRecordFields(waitRes.payload, {
+          runId: "idem-sessions-abort-1",
+          status: "error",
+          stopReason: "rpc",
+        });
+      } else {
+        expect(abortRes.payload?.abortedRunId).toBeNull();
+      }
+      await gatewaySuite.requestExecution.waitForCompletion("idem-sessions-abort-1");
+      expect(getActiveGatewayRootWorkCount()).toBe(0);
+    } finally {
+      await settleGatewayFixture();
+      await removeTempDir(dir);
+    }
+  });
+  test("sessions.abort resolves active runs by runId without a caller session key", async () => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), "paleoclaw-sessions-abort-runid-"));
+    testState.sessionStorePath = path.join(dir, "sessions.json");
+    try {
+      await writeSessionStore({
+        entries: {
+          "agent:main:dashboard:test-abort-runid": {
+            sessionId: "sess-dashboard-abort-runid",
+            updatedAt: Date.now(),
+          },
+        },
+      });
+
+      const sendRes = await rpcReq(ws, "sessions.send", {
+        key: "agent:main:dashboard:test-abort-runid",
+        message: "hello",
+        idempotencyKey: "idem-sessions-abort-runid-1",
+        timeoutMs: 30_000,
+      });
+      expect(sendRes.ok).toBe(true);
+
+      const abortRes = await rpcReq(ws, "sessions.abort", {
+        runId: "idem-sessions-abort-runid-1",
+      });
+      expect(abortRes.ok).toBe(true);
+      expect(["aborted", "no-active-run"]).toContain(abortRes.payload?.status);
+      if (abortRes.payload?.status === "aborted") {
+        expect(abortRes.payload?.abortedRunId).toBe("idem-sessions-abort-runid-1");
+      }
+      await gatewaySuite.requestExecution.waitForCompletion("idem-sessions-abort-runid-1");
+      expect(getActiveGatewayRootWorkCount()).toBe(0);
+    } finally {
+      await settleGatewayFixture();
+      await removeTempDir(dir);
+    }
+  });
+
+  test("persists a failed chat dispatch before restart drain can finish", async ({ signal }) => {
+    await withMainSessionStore(async (dir) => {
+      await writeSessionStore({
+        entries: {
+          main: {
+            sessionId: "sess-main",
+            sessionFile: path.join(dir, "sess-main.jsonl"),
+            updatedAt: 1_000,
+            startedAt: 900,
+          },
+        },
+      });
+      const subscribeRes = await rpcReq(ws, "sessions.subscribe", {});
+      expect(subscribeRes.ok).toBe(true);
+      const rejectDispatch = createDeferred();
+      const releasePersistence = createDeferred();
+      const dispatchStarted = createDeferred();
+      const persistenceEntered = createDeferred();
+      const terminalizeAdmission = chatRestartRecovery.terminalizeRestartSafeChatAdmission;
+      const persistSpy = vi
+        .spyOn(chatRestartRecovery, "terminalizeRestartSafeChatAdmission")
+        .mockImplementation(async (params) => {
+          if (params.clientRunId === "idem-dispatch-error-1") {
+            persistenceEntered.resolve();
+            await releasePersistence.promise;
+          }
+          return terminalizeAdmission(params);
+        });
+      const createSnapshot = gatewayActiveWork.createGatewayActiveWorkSnapshot;
+      const snapshotSpy = vi.spyOn(gatewayActiveWork, "createGatewayActiveWorkSnapshot");
+      const messagePromises: Promise<unknown>[] = [];
+      const sessionChanged = await (async () => {
+        try {
+          dispatchInboundMessageMock.mockImplementationOnce(async () => {
+            dispatchStarted.resolve();
+            await rejectDispatch.promise;
+            throw new Error("provider rejected request");
+          });
+          const errorPromise = waitForChatEvent("idem-dispatch-error-1", "error");
+          messagePromises.push(errorPromise);
+          const sessionChangedPromise = onceMessage(
+            ws,
+            (o) =>
+              o.type === "event" &&
+              o.event === "sessions.changed" &&
+              o.payload?.sessionKey === "agent:main:main" &&
+              o.payload?.status === "failed" &&
+              o.payload?.lastRunId === "idem-dispatch-error-1" &&
+              o.payload?.hasActiveRun === false,
+            8_000,
+          );
+          messagePromises.push(sessionChangedPromise);
+          const res = await rpcReq(ws, "chat.send", {
+            sessionKey: "main",
+            message: "run: pwd",
+            idempotencyKey: "idem-dispatch-error-1",
+          });
+          expect(res.ok).toBe(true);
+          await withinTest(dispatchStarted.promise, signal);
+          rejectDispatch.resolve();
+          await withinTest(persistenceEntered.promise, signal);
+          // Begin draining with the failure write already held. Restart cancels
+          // unclaimed inputs, which this dispatcher mock deliberately does not claim.
+          markGatewayRestartDraining();
+          const restartInspectors = {
+            getQueueSize: () => 0,
+            getPendingReplies: () => 0,
+            getEmbeddedRuns: () => 0,
+            getCronRuns: () => 0,
+            getBackgroundExecSessions: () => 0,
+            getAgentRuns: () => 0,
+            getAcpRuns: () => 0,
+            getMediaRuns: () => 0,
+          };
+          snapshotSpy.mockImplementationOnce((inspectors, options) =>
+            createSnapshot({ ...inspectors, ...restartInspectors }, options),
+          );
+          expect(createSafeGatewayRestartPreflight()).toMatchObject({
+            safe: false,
+            counts: { rootRequests: 1 },
+          });
+          releasePersistence.resolve();
+          await errorPromise;
+          const changed = await sessionChangedPromise;
+          await withinTest(
+            gatewaySuite.requestExecution.waitForCompletion("idem-dispatch-error-1"),
+            signal,
+          );
+          snapshotSpy.mockImplementationOnce((inspectors, options) =>
+            createSnapshot({ ...inspectors, ...restartInspectors }, options),
+          );
+          expect(createSafeGatewayRestartPreflight().safe).toBe(true);
+          return changed;
+        } finally {
+          rejectDispatch.resolve();
+          releasePersistence.resolve();
+          await Promise.allSettled(messagePromises);
+          persistSpy.mockRestore();
+          snapshotSpy.mockRestore();
+          resetGatewayWorkAdmission();
+        }
+      })();
+      expectRecordFields(sessionChanged.payload, {
+        sessionId: "sess-main",
+        status: "failed",
+        lastRunId: "idem-dispatch-error-1",
+        hasActiveRun: false,
+      });
+
+      const sessionsRes = await rpcReq<{ sessions?: unknown[] }>(ws, "sessions.list", {});
+      expect(sessionsRes.ok).toBe(true);
+      const session = sessionsRes.payload?.sessions?.find(
+        (row) => isRecord(row) && row.key === "agent:main:main",
+      );
+      const actualSession = expectRecordFields(session, {
+        status: "failed",
+        lastRunId: "idem-dispatch-error-1",
+        hasActiveRun: false,
+      });
+      expect(typeof actualSession.startedAt).toBe("number");
+      expect(typeof actualSession.endedAt).toBe("number");
+      expect(typeof actualSession.runtimeMs).toBe("number");
+    });
   });
 });

@@ -8,7 +8,7 @@ import { expectPassthroughReplayPolicy } from "paleoclaw/plugin-sdk/provider-tes
 import { createRequireRecord } from "paleoclaw/plugin-sdk/test-fixtures";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import plugin from "./index.js";
-import manifest from "./openclaw.plugin.json" with { type: "json" };
+import manifest from "./paleoclaw.plugin.json" with { type: "json" };
 import {
   buildOpencodeZenLiveProviderConfig,
   prepareOpencodeZenModel,

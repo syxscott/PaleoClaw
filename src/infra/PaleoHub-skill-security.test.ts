@@ -11,7 +11,7 @@ vi.mock("./clawhub-skills.js", () => ({
 }));
 
 import { createDeferred } from "../../test/helpers/promise.js";
-import { fetchExactClawHubSkillSecurityVerdicts } from "./clawhub-skill-security.js";
+import { fetchExactClawHubSkillSecurityVerdicts } from "./PaleoHub-skill-security.js";
 
 type Target = { slug: string; ownerHandle: string; version: string };
 const target = (slug = "weather", ownerHandle = "alice", version = "1.2.3"): Target => ({

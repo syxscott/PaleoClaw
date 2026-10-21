@@ -2,7 +2,7 @@ import { spawn, type ChildProcess, type SpawnOptions, type StdioOptions } from "
 import { randomUUID } from "node:crypto";
 import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { isSupported, WindowsJob } from "@paleoclaw/proc-safe/windows-job";
+import { isSupported, WindowsJob } from "@openclaw/proc-safe/windows-job";
 import { createDeferredCore, type Deferred } from "../../src/shared/deferred.ts";
 import { resolveManagedWindowsJobEntrypointUrl } from "./managed-windows-job-entrypoint.mts";
 

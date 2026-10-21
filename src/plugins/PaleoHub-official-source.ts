@@ -1,5 +1,5 @@
-import { isDefaultClawHubBaseUrl } from "../infra/clawhub-client.js";
-import type { ClawHubPackageDetail } from "../infra/clawhub-packages.js";
+import { isDefaultClawHubBaseUrl } from "../infra/PaleoHub-client.js";
+import type { ClawHubPackageDetail } from "../infra/PaleoHub-packages.js";
 
 type ClawHubPackage = NonNullable<ClawHubPackageDetail["package"]>;
 

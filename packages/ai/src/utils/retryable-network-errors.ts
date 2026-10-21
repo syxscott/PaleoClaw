@@ -1,5 +1,5 @@
 // Keep transient network policy aligned across retries and process-level handling.
-// Release harness scripts reach this via src/infra/clawhub-retry.ts from release-target cwds
+// Release harness scripts reach this via src/infra/PaleoHub-retry.ts from release-target cwds
 // without tsconfig paths or built workspace dist; keep these imports source-relative.
 import {
   collectNestedErrorCandidates,

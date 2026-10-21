@@ -1,12 +1,12 @@
-import { isLoopbackIpAddress } from "@paleoclaw/net-policy/ip";
-import { isHttpUrl, isWebSocketUrl } from "@paleoclaw/net-policy/url-protocol";
 // Managed proxy lifecycle installs Proxyline, injects process proxy env, and
 // restores inherited/direct routing when owner handles stop.
 import type {
   ProxylineBypassPolicy,
   ProxylineHandle,
   ProxylineUndiciOptions,
-} from "@paleoclaw/proxyline";
+} from "@openclaw/proxyline";
+import { isLoopbackIpAddress } from "@paleoclaw/net-policy/ip";
+import { isHttpUrl, isWebSocketUrl } from "@paleoclaw/net-policy/url-protocol";
 import type { ProxyConfig } from "../../../config/zod-schema.proxy.js";
 import { logInfo, logWarn } from "../../../logger.js";
 import { loadProxyline } from "../proxyline-runtime.js";

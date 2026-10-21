@@ -22,7 +22,7 @@ export * from "./schema/commands.js";
 export * from "./schema/computer.js";
 export * from "./schema/config.js";
 export * from "./schema/update-runs.js";
-export * from "./schema/openclaw.js";
+export * from "./schema/paleoclaw.js";
 export * from "./schema/cron.js";
 export * from "./schema/cron.types.js";
 export * from "./schema/error-codes.js";

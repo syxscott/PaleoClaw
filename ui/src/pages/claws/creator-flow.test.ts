@@ -120,7 +120,7 @@ describe("Create Claw from the agent's main chat", () => {
     expect(showToast).toHaveBeenCalledWith(
       expect.objectContaining({
         message: "Submitted to ClawHub. Publication pending security review.",
-        actionLabel: "View on ClawHub",
+        actionLabel: "View on PaleoHub",
         onAction: expect.any(Function),
       }),
     );

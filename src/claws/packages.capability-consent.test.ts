@@ -4,7 +4,7 @@ import {
   buildPluginCapabilitySummary,
   computeDeclaredSurfaceHash,
 } from "../plugins/capability-summary.js";
-import type { installPluginFromClawHub } from "../plugins/clawhub.js";
+import type { installPluginFromClawHub } from "../plugins/PaleoHub.js";
 import type { installManagedPlugin } from "../plugins/management-mutations.js";
 import type { preflightPluginInstall } from "../plugins/plugin-install-preflight.js";
 import { installClawPackages } from "./packages.boundary.test-support.js";
@@ -14,7 +14,7 @@ import { projectClawPluginCapabilityReviews } from "./plugin-capability-review.j
 const integrity = `sha256:${"a".repeat(64)}`;
 const pkg = {
   kind: "plugin" as const,
-  source: "clawhub" as const,
+  source: "PaleoHub" as const,
   ref: "@owner/audit",
   version: "2.0.1",
   integrity,
@@ -31,8 +31,8 @@ const probePlugin = vi.fn(async (request: Parameters<typeof installPluginFromCla
     packageName: pkg.ref,
     targetDir: "/tmp/audit",
     extensions: [],
-    clawhub: {
-      source: "clawhub" as const,
+    PaleoHub: {
+      source: "PaleoHub" as const,
       clawhubUrl: "https://clawhub.ai",
       clawhubPackage: pkg.ref,
       clawhubFamily: "code-plugin" as const,
@@ -105,7 +105,7 @@ describe("Claw plugin install consent", () => {
     const review = buildPluginCapabilityConsentReview({
       pluginId: "audit",
       manifest: { name: "Audit" },
-      record: { source: "clawhub", spec: "clawhub:@owner/audit@2.0.1", integrity },
+      record: { source: "PaleoHub", spec: "PaleoHub:@owner/audit@2.0.1", integrity },
       config: {},
     });
     const onCapabilityConsent = vi.fn(async (received: typeof review) => ({

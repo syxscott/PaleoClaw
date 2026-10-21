@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { beforeEach, expect, it, vi } from "vitest";
 import { withTempDir } from "../test-utils/temp-dir.js";
-import { installPluginFromClawHub } from "./clawhub.js";
+import { installPluginFromClawHub } from "./PaleoHub.js";
 import { installPluginFromMarketplace } from "./marketplace.js";
 
 const transport = vi.hoisted(() => ({

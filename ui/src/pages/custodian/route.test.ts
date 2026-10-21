@@ -1,6 +1,6 @@
 /* @vitest-environment jsdom */
 
-import type { RouteLoaderOptions, RouteLocation } from "@openclaw/uirouter";
+import type { RouteLoaderOptions, RouteLocation } from "@paleoclaw/uirouter";
 import { createComponent, createSignal, flush } from "solid-js";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ApplicationContext } from "../../app/context.ts";

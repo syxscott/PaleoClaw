@@ -33,7 +33,7 @@ describe("resolveClawHubInstallConfirmation", () => {
 
   it("prompts a human terminal with a generic install confirmation", async () => {
     setTty(true);
-    const { resolveClawHubInstallConfirmation } = await import("./clawhub-install-confirmation.js");
+    const { resolveClawHubInstallConfirmation } = await import("./PaleoHub-install-confirmation.js");
 
     const confirm = resolveClawHubInstallConfirmation();
 
@@ -44,7 +44,7 @@ describe("resolveClawHubInstallConfirmation", () => {
 
   it("does not prompt non-interactive callers", async () => {
     setTty(false);
-    const { resolveClawHubInstallConfirmation } = await import("./clawhub-install-confirmation.js");
+    const { resolveClawHubInstallConfirmation } = await import("./PaleoHub-install-confirmation.js");
 
     expect(resolveClawHubInstallConfirmation()).toBeUndefined();
   });

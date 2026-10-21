@@ -1,4 +1,4 @@
-import type { ProxylineHandle } from "@paleoclaw/proxyline";
+import type { ProxylineHandle } from "@openclaw/proxyline";
 import type { MockResult } from "vitest";
 
 // Inherited routing has process lifetime; fixtures own its mocked handles.

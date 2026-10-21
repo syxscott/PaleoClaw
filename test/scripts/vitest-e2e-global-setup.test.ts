@@ -7,7 +7,7 @@ import { setTimeout as waitForProcessTick } from "node:timers/promises";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { inspectManagedProcessGroup } from "../../scripts/lib/managed-child-process.mts";
 import { runE2eGlobalSetup } from "../../scripts/lib/vitest-build-prerequisites.mts";
-import { scriptModuleEntrypoints } from "../../scripts/script-module-runtime.test-support.mjs";
+import { scriptModuleEntrypoints } from "../../scripts/script-module-runtime.test-support.mts";
 import {
   forceKillVitestProcessGroup,
   forwardSignalToVitestProcessGroup,

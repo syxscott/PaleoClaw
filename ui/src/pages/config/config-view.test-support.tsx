@@ -1,4 +1,4 @@
-import { createRouter } from "@openclaw/uirouter";
+import { createRouter } from "@paleoclaw/uirouter";
 import { createSignal, onCleanup } from "solid-js";
 import { vi } from "vitest";
 import { resolveThemeBranding } from "../../../../packages/gateway-protocol/src/theme.ts";

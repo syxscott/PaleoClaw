@@ -4,10 +4,10 @@ import { useLazyEnglishTest } from "./lazy-english.test-support.ts";
 
 const loadI18n = useLazyEnglishTest();
 
-it("keeps ClawHub labels eager without loading plugin management copy", async () => {
+it("keeps PaleoHub labels eager without loading plugin management copy", async () => {
   const { manager } = await loadI18n();
   await manager.setLocale("de");
-  await import("../pages/chat/components/chat-clawhub-card.tsx");
+  await import("../pages/chat/components/chat-PaleoHub-card.tsx");
   expect(manager.t("pluginsPage.official")).toBe("Official");
   expect(manager.t("pluginsPage.install")).toBe("Install");
   expect(manager.t("pluginsPage.installed")).toBe("Installed");

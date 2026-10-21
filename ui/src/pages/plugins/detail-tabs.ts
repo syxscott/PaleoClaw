@@ -1,4 +1,4 @@
-import type { RouteLocation } from "@openclaw/uirouter";
+import type { RouteLocation } from "@paleoclaw/uirouter";
 
 export type InstalledPluginDetailTab = "readme" | "configuration";
 

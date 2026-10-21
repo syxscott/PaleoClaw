@@ -10,7 +10,7 @@ import type { OpenClawPluginApi } from "paleoclaw/plugin-sdk/plugin-entry";
 import { createTestPluginApi } from "paleoclaw/plugin-sdk/plugin-test-api";
 import { afterEach, expect, it, vi } from "vitest";
 import plugin from "./index.js";
-import manifest from "./openclaw.plugin.json" with { type: "json" };
+import manifest from "./paleoclaw.plugin.json" with { type: "json" };
 
 const batch: DecisionBatchV2 = {
   state: { type: "text", text: "Explicit synthetic evidence" },

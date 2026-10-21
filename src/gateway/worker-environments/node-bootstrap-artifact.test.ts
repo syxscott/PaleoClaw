@@ -137,7 +137,7 @@ describe("node bootstrap distribution", () => {
         'const options = require("./lib/options");',
         "module.exports = `${global}:${proxy}:${options.mode}`;",
       ].join("\n"),
-      "lib/global.js": 'module.exports = require("./state");',
+      "lib/global.js": 'module.exports = require("./state.js");',
       "lib/state/index.js": 'module.exports = "commonjs";',
       "lib/dispatcher/env-http-proxy-agent.js": 'module.exports = require("../proxy");',
       "lib/proxy/package.json": { main: "./runtime" },

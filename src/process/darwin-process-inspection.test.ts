@@ -1,14 +1,14 @@
-import { ProcSafeError } from "@paleoclaw/proc-safe/errors";
-import type { ProcessSnapshot } from "@paleoclaw/proc-safe/inspect";
+import { ProcSafeError } from "@openclaw/proc-safe/errors";
+import type { ProcessSnapshot } from "@openclaw/proc-safe/inspect";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
 const native = vi.hoisted(() => ({ census: vi.fn(), command: vi.fn(), identity: vi.fn() }));
-vi.mock("@paleoclaw/proc-safe/identity", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@paleoclaw/proc-safe/identity")>()),
+vi.mock("@openclaw/proc-safe/identity", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@openclaw/proc-safe/identity")>()),
   readProcessIdentity: native.identity,
 }));
-vi.mock("@paleoclaw/proc-safe/inspect", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@paleoclaw/proc-safe/inspect")>()),
+vi.mock("@openclaw/proc-safe/inspect", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@openclaw/proc-safe/inspect")>()),
   listProcesses: native.census,
   readProcessCommand: native.command,
 }));

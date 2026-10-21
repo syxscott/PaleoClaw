@@ -1,4 +1,4 @@
-import type { RouteLocation } from "@openclaw/uirouter";
+import type { RouteLocation } from "@paleoclaw/uirouter";
 import { createComponent, createEffect, createSignal } from "solid-js";
 import { vi } from "vitest";
 import type { GatewayBrowserClient, GatewayHelloOk } from "../../api/gateway.ts";

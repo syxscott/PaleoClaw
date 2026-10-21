@@ -1,5 +1,5 @@
 import type { PluginInstallRecord } from "../config/types.plugins.js";
-import { parseClawHubPluginSpec } from "../infra/clawhub-spec.js";
+import { parseClawHubPluginSpec } from "../infra/PaleoHub-spec.js";
 import {
   resolvePluginInstallRequestContext,
   type PluginInstallRequestContext,
@@ -38,7 +38,7 @@ type InstalledClawHubPluginResolution =
       installedVersion?: string;
     };
 
-/** Resolves one installed plugin by its stable ClawHub package identity. */
+/** Resolves one installed plugin by its stable PaleoHub package identity. */
 export async function resolveInstalledClawHubPlugin(params: {
   clawhubPackage: string;
   loadInstallRecords?: typeof loadInstalledPluginIndexInstallRecords;

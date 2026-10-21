@@ -3,7 +3,7 @@ import { createDeferred } from "../../../test/helpers/promise.js";
 import { createAdmittedRunOperatorAuthority } from "../../agents/admitted-run-context.js";
 import { runEmbeddedAttempt } from "../../agents/embedded-agent-runner/run/attempt.js";
 import type { EmbeddedAgentRunResult } from "../../agents/embedded-agent-runner/types.js";
-import { createOpenClawAgentHarness } from "../../agents/harness/builtin-openclaw.js";
+import { createOpenClawAgentHarness } from "../../agents/harness/builtin-paleoclaw.js";
 import {
   createAttemptParams,
   createAttemptResult,

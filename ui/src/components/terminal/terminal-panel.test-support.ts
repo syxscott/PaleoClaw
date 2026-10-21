@@ -1,4 +1,4 @@
-import type { CreateGhosttyTerminalOptions } from "@openclaw/libterminal/browser";
+import type { CreateGhosttyTerminalOptions } from "@paleoclaw/libterminal/browser";
 import { vi, type Mock } from "vitest";
 import { createTerminalController } from "./terminal-controller.test-support.ts";
 export { createTerminalController } from "./terminal-controller.test-support.ts";

@@ -1,5 +1,5 @@
-import type { RouteLocation } from "@openclaw/uirouter";
-import { redirect } from "@openclaw/uirouter";
+import type { RouteLocation } from "@paleoclaw/uirouter";
+import { redirect } from "@paleoclaw/uirouter";
 import { pathForRoute } from "../../app-route-paths.ts";
 import { defineSolidPage } from "../../app-route-types.ts";
 import type { ApplicationContext } from "../../app/context.ts";

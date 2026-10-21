@@ -2016,7 +2016,7 @@ const ownerWatches: readonly UiE2eOwnerWatch[] = [
     ["skills"],
     ["ui/src/components/modal-dialog.ts"],
   ),
-  pageWatch("ui/src/e2e/skills-clawhub-external-install.e2e.test.ts", ["skills"]),
+  pageWatch("ui/src/e2e/skills-PaleoHub-external-install.e2e.test.ts", ["skills"]),
   pageWatch(
     "ui/src/e2e/skills-library.e2e.test.ts",
     ["config", "skills"],

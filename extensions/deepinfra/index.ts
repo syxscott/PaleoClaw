@@ -16,7 +16,7 @@ import { deepinfraEmbeddingProviderAdapter } from "./embedding-adapter.js";
 import { buildDeepInfraImageGenerationProvider } from "./image-generation-provider.js";
 import { deepinfraMediaUnderstandingProvider } from "./media-understanding-provider.js";
 import { applyDeepInfraConfig } from "./onboard.js";
-import manifest from "./openclaw.plugin.json" with { type: "json" };
+import manifest from "./paleoclaw.plugin.json" with { type: "json" };
 import { buildDeepInfraApiKeyCatalog } from "./provider-catalog.js";
 import {
   DEEPINFRA_DEFAULT_MODEL_REF,

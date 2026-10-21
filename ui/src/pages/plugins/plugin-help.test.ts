@@ -76,7 +76,7 @@ it.each<[string, string, Record<string, string[]> | undefined]>([
   catalog.plugin.local.pluginId = local ? id : undefined;
   catalog.detail = {
     ...catalog.detail,
-    origin: local ? "local" : "clawhub",
+    origin: local ? "local" : "PaleoHub",
     packageName: local ? undefined : id,
     contracts,
     providers: [],

@@ -1,7 +1,7 @@
 import { afterEach, expect, it, vi } from "vitest";
 import { jsonResponse } from "../test-helpers/http.js";
 import { withEnvAsync } from "../test-utils/env.js";
-import { fetchClawHubPluginCatalog } from "./clawhub-plugin-catalog.js";
+import { fetchClawHubPluginCatalog } from "./PaleoHub-plugin-catalog.js";
 
 afterEach(() => vi.restoreAllMocks());
 

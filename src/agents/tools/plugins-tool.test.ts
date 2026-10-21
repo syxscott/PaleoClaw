@@ -83,10 +83,10 @@ it.each([
     params: { pluginId: "local-tool", enabled: true },
   },
   {
-    args: { action: "install", source: "clawhub", packageName: "local-tool", version: "1.0.0" },
+    args: { action: "install", source: "PaleoHub", packageName: "local-tool", version: "1.0.0" },
     method: "plugins.install",
     validate: protocol.validatePluginsInstallParams,
-    params: { source: "clawhub", packageName: "local-tool", version: "1.0.0" },
+    params: { source: "PaleoHub", packageName: "local-tool", version: "1.0.0" },
   },
 ])(
   "routes $args.action through the authorized management owner",

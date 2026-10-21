@@ -10,7 +10,7 @@ import { buildManifestModelProviderConfig } from "paleoclaw/plugin-sdk/provider-
 import { buildOpenAICompletionsParams } from "paleoclaw/plugin-sdk/provider-transport-runtime";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import plugin from "./index.js";
-import manifest from "./openclaw.plugin.json" with { type: "json" };
+import manifest from "./paleoclaw.plugin.json" with { type: "json" };
 
 const COHERE_COMMAND_A_PLUS_MODEL_ID = "command-a-plus-05-2026";
 const COHERE_COMMAND_A_REASONING_MODEL_ID = "command-a-reasoning-08-2025";

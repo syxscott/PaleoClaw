@@ -2,11 +2,11 @@ import type { ParsedRegistryNpmSpec } from "../infra/npm-registry-spec.js";
 import type { PluginPackageInstall } from "./package-manifest.types.js";
 
 export type PluginInstallSourceWarning =
-  | "invalid-clawhub-spec"
+  | "invalid-PaleoHub-spec"
   | "invalid-npm-spec"
   | "invalid-default-choice"
   | "default-choice-missing-source"
-  | "clawhub-spec-floating"
+  | "PaleoHub-spec-floating"
   | "npm-integrity-without-source"
   | "npm-spec-floating"
   | "npm-spec-missing-integrity"
@@ -38,7 +38,7 @@ export type PluginInstallClawHubSourceInfo = {
 
 export type PluginInstallSourceInfo = {
   defaultChoice?: PluginPackageInstall["defaultChoice"];
-  clawhub?: PluginInstallClawHubSourceInfo;
+  PaleoHub?: PluginInstallClawHubSourceInfo;
   npm?: PluginInstallNpmSourceInfo;
   local?: { path: string };
   warnings: readonly PluginInstallSourceWarning[];

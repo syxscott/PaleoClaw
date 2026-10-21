@@ -2,7 +2,7 @@ import { spawn } from "node:child_process";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
-import * as processIdentity from "@paleoclaw/proc-safe/identity";
+import * as processIdentity from "@openclaw/proc-safe/identity";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import * as serviceMembership from "../../daemon/service-process-membership.js";
 import type { GatewayServiceState } from "../../daemon/service-types.js";
@@ -22,8 +22,8 @@ import { createHandoffLifetimePreload } from "./update-command-handoff.test-supp
 
 const UPDATE_HANDOFF_IN_PROGRESS_EXIT_CODE = 75;
 
-vi.mock("@paleoclaw/proc-safe/identity", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@paleoclaw/proc-safe/identity")>()),
+vi.mock("@openclaw/proc-safe/identity", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@openclaw/proc-safe/identity")>()),
 }));
 
 const tempDirs = createTrackedTempDirs();

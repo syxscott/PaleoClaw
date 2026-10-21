@@ -6,7 +6,7 @@ import {
   type PluginOperatorGrants,
 } from "../../packages/gateway-protocol/src/schema/plugins.js";
 import type { PluginAcceptedDeclaredSurface } from "../config/types.plugins.js";
-import { normalizeClawHubSha256Integrity } from "../infra/clawhub-integrity.js";
+import { normalizeClawHubSha256Integrity } from "../infra/PaleoHub-integrity.js";
 import { computeDeclaredSurfaceHash } from "../plugins/capability-summary.js";
 import type { ClawAddPlan } from "./types.js";
 

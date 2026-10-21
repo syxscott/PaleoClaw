@@ -10,13 +10,13 @@ import { inspectUpdateRepairDriverAdmission } from "./update-run-activity.js";
 import type { UpdateRunRecord } from "./update-run-record.js";
 
 const readProcessAncestry = vi.hoisted(() =>
-  vi.fn<typeof import("@paleoclaw/proc-safe/identity").readProcessAncestry>(),
+  vi.fn<typeof import("@openclaw/proc-safe/identity").readProcessAncestry>(),
 );
 const readProcessIdentity = vi.hoisted(() =>
-  vi.fn<typeof import("@paleoclaw/proc-safe/identity").readProcessIdentity>(),
+  vi.fn<typeof import("@openclaw/proc-safe/identity").readProcessIdentity>(),
 );
-vi.mock("@paleoclaw/proc-safe/identity", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@paleoclaw/proc-safe/identity")>()),
+vi.mock("@openclaw/proc-safe/identity", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@openclaw/proc-safe/identity")>()),
   readProcessAncestry,
   readProcessIdentity,
 }));

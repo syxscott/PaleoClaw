@@ -1,5 +1,5 @@
-import type { RouteLoaderOptions, RouteLocation } from "@openclaw/uirouter";
-import { notFound } from "@openclaw/uirouter";
+import type { RouteLoaderOptions, RouteLocation } from "@paleoclaw/uirouter";
+import { notFound } from "@paleoclaw/uirouter";
 import { INTERNAL_SESSION_PATH_PARAM } from "../../app-route-paths.ts";
 import { pathForSession } from "../../app-session-path-builder.ts";
 import { sessionRefFromPath, type SessionPathTarget } from "../../app-session-route-paths.ts";

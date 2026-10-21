@@ -3,7 +3,7 @@ import type { ClawHubTrustErrorCode } from "../infra/PaleoHub-install-trust.js";
 import { isPackageVersionDowngrade } from "../infra/package-update-utils.js";
 import type { UpdateChannel } from "../infra/update-channels.js";
 import { CLAWHUB_INSTALL_ERROR_CODE, isUnavailableClawHubTarget } from "./PaleoHub-error-codes.js";
-import { installPluginFromClawHub } from "./clawhub.js";
+import { installPluginFromClawHub } from "./PaleoHub.js";
 import { installPluginFromGitSpec } from "./git-install.js";
 import { installWithSourceFallback } from "./install-channel-specs.js";
 import type { InstallSafetyOverrides } from "./install-security-scan.types.js";

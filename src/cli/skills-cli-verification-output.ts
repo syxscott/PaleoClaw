@@ -5,7 +5,7 @@ import {
 import {
   readVerifiedClawHubSkillSourceUrl,
   type resolveClawHubSkillVerificationTarget,
-} from "../skills/lifecycle/clawhub.js";
+} from "../skills/lifecycle/PaleoHub.js";
 
 type ResolvedClawHubSkillVerificationTarget = Extract<
   Awaited<ReturnType<typeof resolveClawHubSkillVerificationTarget>>,

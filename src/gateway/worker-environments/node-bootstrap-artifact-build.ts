@@ -10,7 +10,7 @@ import * as tar from "tar";
 import {
   collectPatchedMcpArtifactErrors,
   PATCHED_MCP_NAME,
-} from "../../../scripts/lib/package-bundled-mcp.mjs";
+} from "../../../scripts/lib/package-bundled-mcp.mts";
 import {
   collectPackageDistImportErrors,
   collectPackageDistImports,

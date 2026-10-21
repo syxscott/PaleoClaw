@@ -97,14 +97,14 @@ const {
 });
 
 const mockedModuleIds = [
-  "@paleoclaw/proxyline/dispatcher-brand",
+  "@openclaw/proxyline/dispatcher-brand",
   "node:net",
   "./proxy-env.js",
   "./undici-runtime.js",
   "../wsl.js",
 ] as const;
 
-vi.mock("@paleoclaw/proxyline/dispatcher-brand", () => ({
+vi.mock("@openclaw/proxyline/dispatcher-brand", () => ({
   isProxylineDispatcher,
 }));
 

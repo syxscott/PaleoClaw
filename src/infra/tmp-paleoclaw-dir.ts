@@ -24,7 +24,7 @@ export type ResolvePreferredOpenClawTmpDirOptions = {
 };
 
 type ResolveSecureTempRoot =
-  typeof import("@paleoclaw/fs-safe/secure-temp-root").resolveSecureTempRoot;
+  typeof import("@openclaw/fs-safe/secure-temp-root").resolveSecureTempRoot;
 
 let resolveSecureTempRootRuntime: ResolveSecureTempRoot | undefined;
 declare const SEALED_RUNTIME_BUILD: boolean;
@@ -47,7 +47,7 @@ function loadResolveSecureTempRoot(): ResolveSecureTempRoot {
   }
   const require = process.getBuiltinModule("module").createRequire(import.meta.url);
   const fsSafeTemp =
-    require("@paleoclaw/fs-safe/secure-temp-root") as typeof import("@paleoclaw/fs-safe/secure-temp-root");
+    require("@openclaw/fs-safe/secure-temp-root") as typeof import("@openclaw/fs-safe/secure-temp-root");
   resolveSecureTempRootRuntime = fsSafeTemp.resolveSecureTempRoot;
   return resolveSecureTempRootRuntime;
 }

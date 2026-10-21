@@ -7,7 +7,7 @@ import { afterEach, expect, it, vi } from "vitest";
 import { runNodeScript } from "../../test/helpers/run-node-script.js";
 import { useAutoCleanupTempDirTracker } from "../../test/helpers/temp-dir.js";
 import type { OpenClawConfig } from "../config/types.openclaw.js";
-import { clawHubSecurityResponse } from "../plugins/clawhub.test-fixtures.js";
+import { clawHubSecurityResponse } from "../plugins/PaleoHub.test-fixtures.js";
 import {
   clearLoadInstalledPluginIndexInstallRecordsCache,
   readPersistedInstalledPluginIndexInstallRecordsAsync,

@@ -48,7 +48,7 @@ import {
 } from "./config-defaults.js";
 import { resolveFastModeSupport } from "./fast-mode-policy.js";
 import { anthropicMediaUnderstandingProvider } from "./media-understanding-provider.js";
-import manifest from "./openclaw.plugin.json" with { type: "json" };
+import manifest from "./paleoclaw.plugin.json" with { type: "json" };
 import { createAnthropicAuthMethods, createAnthropicProvider } from "./provider-contract-api.js";
 import anthropicProviderDiscovery from "./provider-discovery.js";
 import { resolveThinkingProfile } from "./provider-policy-api.js";

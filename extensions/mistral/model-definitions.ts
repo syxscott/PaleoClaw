@@ -1,6 +1,6 @@
 import { readManifestProviderDefaultModelRef } from "paleoclaw/plugin-sdk/provider-catalog-shared";
 import type { ModelDefinitionConfig } from "paleoclaw/plugin-sdk/provider-model-shared";
-import manifest from "./openclaw.plugin.json" with { type: "json" };
+import manifest from "./paleoclaw.plugin.json" with { type: "json" };
 import { buildMistralProvider } from "./provider-catalog.js";
 
 const MISTRAL_MANIFEST_CATALOG = manifest.modelCatalog.providers.mistral;

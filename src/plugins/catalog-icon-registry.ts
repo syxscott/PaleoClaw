@@ -1,6 +1,6 @@
 import { LruCache } from "../infra/lru-cache.js";
 
-// Exact icon URLs learned from authenticated ClawHub catalog responses.
+// Exact icon URLs learned from authenticated PaleoHub catalog responses.
 const MAX_CATALOG_ICON_URLS = 1_024;
 
 const catalogIconUrls = new LruCache<string>(MAX_CATALOG_ICON_URLS);

@@ -13,7 +13,7 @@ import { useAutoCleanupTempDirTracker } from "../helpers/temp-dir.js";
 
 const command = vi.hoisted(() => vi.fn<(options: RunManagedCommandOptions) => Promise<number>>());
 vi.mock("../../scripts/lib/managed-child-process.mjs", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("../../scripts/lib/managed-child-process.mjs")>()),
+  ...(await importOriginal<typeof import("../../scripts/lib/managed-child-process.mts")>()),
   runManagedCommand: command,
 }));
 

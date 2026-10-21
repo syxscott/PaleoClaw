@@ -3,8 +3,8 @@ import { readWindowsProcessStartTimeSync } from "./windows-process-start.js";
 
 const spawnSyncMock = vi.hoisted(() => vi.fn());
 const nativeIdentity = vi.hoisted(() => vi.fn());
-vi.mock("@paleoclaw/proc-safe/identity", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@paleoclaw/proc-safe/identity")>()),
+vi.mock("@openclaw/proc-safe/identity", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@openclaw/proc-safe/identity")>()),
   readProcessIdentity: nativeIdentity,
 }));
 

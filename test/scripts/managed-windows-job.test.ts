@@ -7,7 +7,7 @@ vi.mock("node:child_process", async (original) => ({
   ...(await original<typeof import("node:child_process")>()),
   spawn: mocks.spawn,
 }));
-vi.mock("@paleoclaw/proc-safe/windows-job", () => ({
+vi.mock("@openclaw/proc-safe/windows-job", () => ({
   isSupported: () => true,
   WindowsJob: { create: () => ({ close: () => {} }) },
 }));

@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import { WindowsJob } from "@paleoclaw/proc-safe/windows-job";
+import { WindowsJob } from "@openclaw/proc-safe/windows-job";
 import { isDirectRunUrl } from "./direct-run.mjs";
 import type { WindowsJobLaunch } from "./managed-windows-job.mts";
 

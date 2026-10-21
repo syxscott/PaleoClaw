@@ -15,7 +15,7 @@ describe("stateless Claw package install", () => {
       };
     });
     const plan = packageInstallPlan([
-      { kind: "skill", source: "clawhub", ref: "@owner/triage", version: "1.2.3", integrity },
+      { kind: "skill", source: "PaleoHub", ref: "@owner/triage", version: "1.2.3", integrity },
     ]);
 
     const refs = await installClawPackages(plan, {

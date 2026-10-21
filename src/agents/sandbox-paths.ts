@@ -13,8 +13,8 @@ import {
   resolvePathPrefixSync,
   safeFileURLToPath,
   type PathAliasPolicy,
-} from "@paleoclaw/fs-safe/advanced";
-import { isWindowsDrivePath } from "@paleoclaw/fs-safe/archive";
+} from "@openclaw/fs-safe/advanced";
+import { isWindowsDrivePath } from "@openclaw/fs-safe/archive";
 import { isPassThroughRemoteMediaSource } from "@paleoclaw/media-core/media-source-url";
 import { isPathInside } from "../infra/path-guards.js";
 import { resolvePreferredOpenClawTmpDir } from "../infra/tmp-paleoclaw-dir.js";

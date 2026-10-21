@@ -1,15 +1,15 @@
 import type {
   ClawHubDownloadability,
   ClawHubSelectedRelease,
-} from "../../packages/gateway-protocol/src/schema/clawhub-listing.js";
+} from "../../packages/gateway-protocol/src/schema/PaleoHub-listing.js";
 import type { PluginInstallTrust } from "../../packages/gateway-protocol/src/schema/plugins.js";
 import {
   readClawHubStringField,
   readClawHubStringArrayField,
   readRequiredClawHubStringField,
   readRequiredClawHubNumberField,
-} from "./clawhub-client.js";
-import { parseClawHubPackageSecurityResponse } from "./clawhub-packages.js";
+} from "./PaleoHub-client.js";
+import { parseClawHubPackageSecurityResponse } from "./PaleoHub-packages.js";
 export type ClawHubPluginSecurity = {
   status: string;
   auditUrl?: string;
@@ -80,7 +80,7 @@ export async function readClawHubPluginReleaseFacts(params: {
       ) {
         throw new Error("ClawHub security metadata does not describe the selected release.");
       }
-      const { assessClawHubTrust } = await import("./clawhub-install-trust.js");
+      const { assessClawHubTrust } = await import("./PaleoHub-install-trust.js");
       const disposition = assessClawHubTrust(parsedSecurity);
       const securityTrust = parsedSecurity.trust;
       const moderationStatus =

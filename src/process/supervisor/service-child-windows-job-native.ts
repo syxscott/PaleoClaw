@@ -1,4 +1,4 @@
-import { WindowsJob, retainCurrentProcessJobUntilExit } from "@paleoclaw/proc-safe/windows-job";
+import { WindowsJob, retainCurrentProcessJobUntilExit } from "@openclaw/proc-safe/windows-job";
 
 let retainedProcessJob = false;
 

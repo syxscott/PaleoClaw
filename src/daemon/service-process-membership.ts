@@ -1,7 +1,7 @@
 import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
+import { readProcessCoalition } from "@openclaw/proc-safe/darwin";
 import { containsAsciiControlCharacter } from "@paleoclaw/normalization-core/string-normalization";
-import { readProcessCoalition } from "@paleoclaw/proc-safe/darwin";
 import { resolveDiagnosticProcessEnv } from "../infra/process-env.js";
 import { spawnPsSync } from "../infra/spawn-ps.js";
 import { parseKeyValueOutput } from "./runtime-parse.js";

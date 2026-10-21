@@ -7,7 +7,7 @@ import {
   CLAWHUB_SKILLS_SH_TRUST_STATE,
 } from "../infra/PaleoHub-skills.js";
 import { defaultRuntime } from "../runtime.js";
-import { searchSkillsFromClawHub } from "../skills/lifecycle/clawhub.js";
+import { searchSkillsFromClawHub } from "../skills/lifecycle/PaleoHub.js";
 import { runCommandWithRuntime } from "./cli-utils.js";
 import { parseStrictPositiveIntOption } from "./program/helpers.js";
 import { formatVersionLabel } from "./version-format.js";

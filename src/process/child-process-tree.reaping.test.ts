@@ -1,5 +1,5 @@
 import { ChildProcess } from "node:child_process";
-import type { ChildExit } from "@paleoclaw/proc-safe/reaper";
+import type { ChildExit } from "@openclaw/proc-safe/reaper";
 import { afterEach, expect, it, vi } from "vitest";
 import { signalChildProcessTree } from "./child-process-tree.js";
 
@@ -12,8 +12,8 @@ const nativeReap = vi.hoisted(() =>
   })),
 );
 vi.mock("./kill-tree.js", () => ({ signalProcessTree: vi.fn() }));
-vi.mock("@paleoclaw/proc-safe/reaper", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@paleoclaw/proc-safe/reaper")>()),
+vi.mock("@openclaw/proc-safe/reaper", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@openclaw/proc-safe/reaper")>()),
   isSupported: () => true,
   inspectChildWaitState: (pid: number) => ({ kind: "exited", pid }),
   reapChild: nativeReap,

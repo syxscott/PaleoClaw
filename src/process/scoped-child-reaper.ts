@@ -1,6 +1,6 @@
 import type { ChildProcess } from "node:child_process";
 import { readdir, readFile } from "node:fs/promises";
-import { inspectChildWaitState, isSupported, reapChild } from "@paleoclaw/proc-safe/reaper";
+import { inspectChildWaitState, isSupported, reapChild } from "@openclaw/proc-safe/reaper";
 import { hasErrnoCode } from "../infra/errno.js";
 
 type TrackedChild = Pick<ChildProcess, "pid" | "exitCode" | "signalCode" | "once">;

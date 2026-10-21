@@ -1,8 +1,8 @@
 // Native Node callers load this source closure without a TypeScript import resolver.
 import childProcess from "node:child_process";
 import fsSync from "node:fs";
-import { ProcSafeError } from "@paleoclaw/proc-safe/errors";
-import { readProcessIdentity } from "@paleoclaw/proc-safe/identity";
+import { ProcSafeError } from "@openclaw/proc-safe/errors";
+import { readProcessIdentity } from "@openclaw/proc-safe/identity";
 import { resolveDiagnosticProcessEnv } from "../infra/process-env.ts";
 import { readWindowsProcessStartTimeSync } from "../infra/windows-process-start.ts";
 import { readFreeBsdProcessStartTime } from "./freebsd-process-identity.ts";

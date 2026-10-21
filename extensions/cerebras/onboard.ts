@@ -1,6 +1,6 @@
 import { readManifestProviderDefaultModelRef } from "paleoclaw/plugin-sdk/provider-catalog-shared";
 import { createProviderConnectionPresetAppliers } from "paleoclaw/plugin-sdk/provider-onboard";
-import manifest from "./openclaw.plugin.json" with { type: "json" };
+import manifest from "./paleoclaw.plugin.json" with { type: "json" };
 import { buildCerebrasCatalogModels, CEREBRAS_BASE_URL } from "./provider-catalog.js";
 
 export const CEREBRAS_DEFAULT_MODEL_REF = readManifestProviderDefaultModelRef(

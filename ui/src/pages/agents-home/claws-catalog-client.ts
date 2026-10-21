@@ -7,7 +7,7 @@ import type {
   ClawHubClawCatalogDetail,
   ClawHubClawCatalogEntry,
   ClawHubClawCatalogPreview,
-} from "../../../../src/claws/clawhub-source.js";
+} from "../../../../src/claws/PaleoHub-source.js";
 import type { GatewayBrowserClient } from "../../api/gateway.ts";
 
 export type ClawCatalogEntry = ClawHubClawCatalogEntry;
@@ -61,7 +61,7 @@ export async function readClawDetail(
     !Array.isArray(detail.contents.integrations) ||
     !Array.isArray(detail.contents.automations)
   ) {
-    throw new Error("ClawHub did not return the contents of this Claw release.");
+    throw new Error("PaleoHub did not return the contents of this Claw release.");
   }
   return detail;
 }
@@ -84,7 +84,7 @@ export async function readClawAddReviewPlan(
 ): Promise<ClawAddReviewPlan> {
   const plan = await client.request<ClawLifecyclePlanResult>("claws.add.plan", { source });
   if (plan.operation !== "add" || !plan.planIntegrity) {
-    throw new Error("ClawHub did not return a valid Add review.");
+    throw new Error("PaleoHub did not return a valid Add review.");
   }
   return plan;
 }

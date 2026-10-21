@@ -3,7 +3,7 @@ import { httpRouter } from "convex/server";
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { httpAction, type ActionCtx } from "./_generated/server";
-import { normalizeCredentialPayloadForKind } from "./payload_validation";
+import { normalizeCredentialPayloadForKind } from "./payload_validation.js";
 
 type ActorRole = "ci" | "maintainer";
 

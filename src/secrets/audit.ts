@@ -498,7 +498,7 @@ function collectShadowingFindings(collector: AuditCollector): void {
       collector.findings.push({
         code: "REF_SHADOWED",
         severity: "warn",
-        file: "paleoclaw.json",
+        file: "openclaw.json",
         jsonPath: configPath,
         message: `Auth profile credentials (${modeText}) take precedence for provider "${provider}", so this config ref may never be used.`,
         provider,

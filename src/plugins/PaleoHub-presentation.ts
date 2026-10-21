@@ -1,11 +1,11 @@
 import { sanitizeTerminalText } from "../../packages/terminal-core/src/safe-text.js";
 import { formatTerminalLink } from "../../packages/terminal-core/src/terminal-link.js";
-import { resolveClawHubBaseUrl } from "../infra/clawhub-client.js";
-import { encodeClawHubPackagePath, formatClawHubReleaseLabel } from "../infra/clawhub-display.js";
+import { resolveClawHubBaseUrl } from "../infra/PaleoHub-client.js";
+import { encodeClawHubPackagePath, formatClawHubReleaseLabel } from "../infra/PaleoHub-display.js";
 import type {
   ClawHubPackageCompatibility,
   ClawHubPackageDetail,
-} from "../infra/clawhub-packages.js";
+} from "../infra/PaleoHub-packages.js";
 import type { PluginInstallLogger as BasePluginInstallLogger } from "./install-types.js";
 
 export type PluginInstallLogger = BasePluginInstallLogger & {

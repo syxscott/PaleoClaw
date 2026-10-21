@@ -43,7 +43,7 @@ import { isOpenRouterMistralModelId, normalizeOpenRouterApiModelId } from "./mod
 import { buildOpenRouterMusicGenerationProvider } from "./music-generation-provider.js";
 import { createOpenRouterOAuthAuthMethod } from "./oauth.js";
 import { applyOpenrouterConfig, OPENROUTER_DEFAULT_MODEL_REF } from "./onboard.js";
-import manifest from "./openclaw.plugin.json" with { type: "json" };
+import manifest from "./paleoclaw.plugin.json" with { type: "json" };
 import {
   buildOpenrouterLiveProvider,
   buildOpenrouterProvider,

@@ -78,7 +78,7 @@ import {
   buildOpenAIChatGPTAuthMethodRuns,
   buildOpenAICodexProviderHooks,
 } from "./openai-chatgpt-provider.js";
-import manifest from "./openclaw.plugin.json" with { type: "json" };
+import manifest from "./paleoclaw.plugin.json" with { type: "json" };
 import { createOpenAIProvider } from "./provider-contract-api.js";
 import { resolveAuthoredOpenAIProviderConfig } from "./provider-policy-api.js";
 import {

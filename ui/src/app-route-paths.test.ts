@@ -3,7 +3,7 @@ import {
   CONTROL_UI_RESERVED_ROUTE_SEGMENTS,
   isControlUiReservedRouteSegment,
 } from "@paleoclaw/session-url-contract";
-import { notFound, type RouteLocation, type RouterHistory } from "@openclaw/uirouter";
+import { notFound, type RouteLocation, type RouterHistory } from "@paleoclaw/uirouter";
 import { describe, expect, it, vi } from "vitest";
 import {
   agentRouteFromPath,

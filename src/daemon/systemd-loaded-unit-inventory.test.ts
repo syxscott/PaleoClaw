@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { ProcSafeError } from "@paleoclaw/proc-safe/errors";
+import { ProcSafeError } from "@openclaw/proc-safe/errors";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { resolveLiveManagedGatewayDistFence } from "../../scripts/lib/live-gateway-dist-fence.mts";
 import { assertManagedGatewayArtifactPublication } from "../cli/update-cli/update-command-service-revalidation.js";
@@ -29,8 +29,8 @@ vi.mock("./systemd-exec.js", async (original) => ({
   execBusctlSystem: busctl,
   isRunningAsRoot: root,
 }));
-vi.mock("@paleoclaw/proc-safe/systemd", async (original) => ({
-  ...(await original<typeof import("@paleoclaw/proc-safe/systemd")>()),
+vi.mock("@openclaw/proc-safe/systemd", async (original) => ({
+  ...(await original<typeof import("@openclaw/proc-safe/systemd")>()),
   SystemdBus: {
     connectBroker: connect,
     connectUserManager: connect,

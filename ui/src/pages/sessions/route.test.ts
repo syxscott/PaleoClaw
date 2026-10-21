@@ -1,6 +1,6 @@
 // @vitest-environment node
 
-import type { RouteLoaderOptions } from "@openclaw/uirouter";
+import type { RouteLoaderOptions } from "@paleoclaw/uirouter";
 import { expect, it, vi } from "vitest";
 import type { ApplicationContext } from "../../app/context.ts";
 import type { SessionListOptions } from "../../lib/sessions/index.ts";

@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { createRouter } from "@openclaw/uirouter";
+import { createRouter } from "@paleoclaw/uirouter";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createEmptyCostUsageTotals } from "../../../../src/infra/session-cost-usage-totals.js";
 import { createDeferred } from "../../../../test/helpers/promise.js";

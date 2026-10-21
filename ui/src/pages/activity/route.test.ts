@@ -1,5 +1,5 @@
 // @vitest-environment node
-import type { RouteLoaderOptions, RouteLocation } from "@openclaw/uirouter";
+import type { RouteLoaderOptions, RouteLocation } from "@paleoclaw/uirouter";
 import { expect, it } from "vitest";
 import { activityPersonFromPath, INTERNAL_ACTIVITY_PATH_PARAM } from "../../app-route-paths.ts";
 import type { ApplicationContext } from "../../app/context.ts";

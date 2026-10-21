@@ -8,7 +8,7 @@ import type {
   ModelProviderConfig,
 } from "paleoclaw/plugin-sdk/provider-model-shared";
 import { normalizeLowercaseStringOrEmpty } from "paleoclaw/plugin-sdk/string-coerce-runtime";
-import manifest from "./openclaw.plugin.json" with { type: "json" };
+import manifest from "./paleoclaw.plugin.json" with { type: "json" };
 import { parseVeniceModelPricing } from "./pricing-api.js";
 
 const VENICE_MANIFEST_CATALOG = manifest.modelCatalog.providers.venice;

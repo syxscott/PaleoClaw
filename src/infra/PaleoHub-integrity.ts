@@ -1,4 +1,4 @@
-/** Normalizes ClawHub SHA-256 metadata into Subresource Integrity format. */
+/** Normalizes PaleoHub SHA-256 metadata into Subresource Integrity format. */
 export function normalizeClawHubSha256Integrity(value: string): string | null {
   const trimmed = value.trim();
   if (!trimmed) {
@@ -20,7 +20,7 @@ export function normalizeClawHubSha256Integrity(value: string): string | null {
   return hex ? `sha256-${Buffer.from(hex, "hex").toString("base64")}` : null;
 }
 
-/** Normalizes ClawHub SHA-256 metadata into lowercase hex form. */
+/** Normalizes PaleoHub SHA-256 metadata into lowercase hex form. */
 export function normalizeClawHubSha256Hex(value: string): string | null {
   const trimmed = value.trim();
   if (!/^[A-Fa-f0-9]{64}$/.test(trimmed)) {

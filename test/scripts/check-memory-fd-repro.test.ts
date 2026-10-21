@@ -13,7 +13,7 @@ import {
   writeConfig,
 } from "../../scripts/check-memory-fd-repro.mts";
 import { createVitestResourceOwner } from "../../scripts/lib/vitest-resource-ownership.mts";
-import { scriptModuleEntrypoints } from "../../scripts/script-module-runtime.test-support.mjs";
+import { scriptModuleEntrypoints } from "../../scripts/script-module-runtime.test-support.mts";
 import { validateConfigObject } from "../../src/config/validation.js";
 import {
   resolveRuntimeWorkerArgv,

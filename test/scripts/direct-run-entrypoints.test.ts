@@ -17,7 +17,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { detectChangedScope } from "../../scripts/ci-changed-scope.mjs";
 import { isDirectRunPath } from "../../scripts/lib/direct-run.mjs";
 import * as managedChild from "../../scripts/lib/managed-child-process.mts";
-import { scriptModuleEntrypoints } from "../../scripts/script-module-runtime.test-support.mjs";
+import { scriptModuleEntrypoints } from "../../scripts/script-module-runtime.test-support.mts";
 import { resolveRuntimeWorkerUrl } from "../../src/infra/runtime-worker-url.js";
 import { readWindowsProcessStartTimeSync } from "../../src/infra/windows-process-start.js";
 import {

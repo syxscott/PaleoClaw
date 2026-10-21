@@ -24,6 +24,5 @@ export default defineConfig({
       "src/pages/chat/chat-footer-layout.browser.test.{ts,tsx}",
     ],
     environment: "node",
-    setupFiles: ["./vitest.node.setup.ts"],
   },
 });

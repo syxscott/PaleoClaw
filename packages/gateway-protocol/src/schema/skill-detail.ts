@@ -1,6 +1,6 @@
 import { Type } from "typebox";
-import { ClawHubDownloadabilitySchema, ClawHubSelectedReleaseSchema } from "./clawhub-listing.js";
 import { closedObject } from "./closed-object.js";
+import { ClawHubDownloadabilitySchema, ClawHubSelectedReleaseSchema } from "./PaleoHub-listing.js";
 import { NonEmptyString } from "./primitives.js";
 
 /** Skill registry detail, latest version, metadata, and owner info. */
@@ -17,7 +17,7 @@ const SkillDetailUnavailableSchema = closedObject({
 
 export const SkillsDetailResultSchema = closedObject({
   registry: Type.Optional(NonEmptyString),
-  source: Type.Optional(Type.Literal("clawhub")),
+  source: Type.Optional(Type.Literal("PaleoHub")),
   installRef: Type.Optional(NonEmptyString),
   selectedRelease: Type.Optional(Type.Union([ClawHubSelectedReleaseSchema, Type.Null()])),
   downloadability: Type.Optional(ClawHubDownloadabilitySchema),

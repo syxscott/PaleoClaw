@@ -26,7 +26,7 @@ const TERMINAL_PANEL_ELEMENT_NAME = defineTestTerminalPanelElement(createGhostty
 describe("OpenClawTerminalPanel reconnect", () => {
   beforeAll(async () => {
     // Load the real responder before short RPC assertions begin on a cold worker.
-    await import("@openclaw/libterminal/browser");
+    await import("@paleoclaw/libterminal/browser");
   });
 
   beforeEach(async () => {

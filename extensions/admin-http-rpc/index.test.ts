@@ -1,7 +1,7 @@
 // Admin Http Rpc tests cover index plugin behavior.
 import { describe, expect, it } from "vitest";
 import plugin from "./index.js";
-import manifest from "./openclaw.plugin.json" with { type: "json" };
+import manifest from "./paleoclaw.plugin.json" with { type: "json" };
 
 describe("admin-http-rpc plugin entry", () => {
   it("stays startup-off until the plugin entry is explicitly enabled", () => {

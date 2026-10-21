@@ -1,4 +1,4 @@
-import type { CreateGhosttyTerminalOptions } from "@openclaw/libterminal/browser";
+import type { CreateGhosttyTerminalOptions } from "@paleoclaw/libterminal/browser";
 import { asOptionalRecord } from "@paleoclaw/normalization-core/record-coerce";
 import { t } from "../../i18n/index.ts";
 import { showToast } from "../../lib/toast.ts";
@@ -14,7 +14,7 @@ export async function createIsolatedGhosttyTerminal(
   shouldFocusOnOpen?: () => boolean,
 ) {
   const [{ createGhosttyTerminal, loadGhosttyRuntime }, ghosttyModule] = await Promise.all([
-    import("@openclaw/libterminal/browser"),
+    import("@paleoclaw/libterminal/browser"),
     import("ghostty-web"),
   ]);
   // ghostty-web 0.4.0 reuses freed WASM pages, exposing stale cells and corrupting

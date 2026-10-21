@@ -5,7 +5,7 @@ import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { releaseUpdateCommandPreflightForHandoff } from "../cli/update-cli/update-command-executor.js";
 import * as installMetadata from "../infra/install-source-utils.js";
-import * as PaleoHub from "./clawhub.js";
+import * as PaleoHub from "./PaleoHub.js";
 import * as installer from "./install.js";
 import * as catalog from "./official-external-plugin-catalog.js";
 import { installableEntry } from "./official-external-plugin-catalog.test-support.js";

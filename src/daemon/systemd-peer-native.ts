@@ -1,12 +1,12 @@
 /** paleoclaw admission and budgets around native-owned systemd connections. */
-import { ProcSafeError } from "@paleoclaw/proc-safe/errors";
+import { ProcSafeError } from "@openclaw/proc-safe/errors";
 import {
   SystemdBus,
   type AuthenticatedSystemdBus,
   type SystemdArg,
   type SystemdSignature,
   type SystemdValue,
-} from "@paleoclaw/proc-safe/systemd";
+} from "@openclaw/proc-safe/systemd";
 import { getProcessStartTime, isPidAlive } from "../shared/pid-alive.js";
 import {
   getServiceInspectionClock,

@@ -5,7 +5,7 @@ import {
   projectBasetenLiveModels,
   resolveBasetenDynamicModel,
 } from "./models.js";
-import manifest from "./openclaw.plugin.json" with { type: "json" };
+import manifest from "./paleoclaw.plugin.json" with { type: "json" };
 
 describe("Baseten model catalog", () => {
   it("keeps manifest thinking controls and declared capabilities in runtime catalogs", () => {

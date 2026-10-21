@@ -2,7 +2,7 @@
 /* @vitest-environment-options {"url":"http://chat-page-retained.test/"} */
 
 import { expectDefined } from "@paleoclaw/normalization-core";
-import { createRouter } from "@openclaw/uirouter";
+import { createRouter } from "@paleoclaw/uirouter";
 import {
   afterEach,
   beforeEach,

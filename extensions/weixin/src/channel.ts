@@ -239,7 +239,7 @@ export function createWeixinPlugin() {
             error: (msg: unknown) => log?.error?.(String(msg)),
           },
           deliver: async (message, access) => {
-            const currentCfg = await rt.config.loadConfig();
+            const currentCfg = rt.config.current({ clone: true });
             // Owner-level command authorization mirrors the access decision:
             // only a sender on the effective allowlist may run control commands.
             const commandAuthorized = resolveControlCommandGate({

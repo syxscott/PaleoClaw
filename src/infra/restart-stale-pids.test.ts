@@ -1,14 +1,14 @@
-import { ProcSafeError } from "@paleoclaw/proc-safe/errors";
+import { ProcSafeError } from "@openclaw/proc-safe/errors";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import * as pidAlive from "../shared/pid-alive.js";
 import { withMockedPlatform } from "../test-utils/vitest-spies.js";
 
 const readProcessIdentity = vi.hoisted(() => vi.fn());
 const readProcessAncestry = vi.hoisted(() =>
-  vi.fn<typeof import("@paleoclaw/proc-safe/identity").readProcessAncestry>(),
+  vi.fn<typeof import("@openclaw/proc-safe/identity").readProcessAncestry>(),
 );
-vi.mock("@paleoclaw/proc-safe/identity", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@paleoclaw/proc-safe/identity")>()),
+vi.mock("@openclaw/proc-safe/identity", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@openclaw/proc-safe/identity")>()),
   readProcessAncestry,
   readProcessIdentity,
 }));

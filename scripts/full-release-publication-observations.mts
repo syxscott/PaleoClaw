@@ -15,7 +15,7 @@ import {
   collectPluginClawHubReleasePlan,
   observeClawHubPackage,
   type ClawHubPackageObservation,
-} from "./lib/plugin-clawhub-release.ts";
+} from "./lib/plugin-PaleoHub-release.ts";
 import { collectPluginReleasePlan, observeNpmPackage } from "./lib/plugin-npm-release.ts";
 import { collectExtensionPackageJsonCandidates } from "./lib/plugin-publication-candidates.ts";
 import { collectPublishablePluginPackagesFromCandidates } from "./lib/plugin-publication-collector.ts";
@@ -25,7 +25,7 @@ const MAX_RESPONSE_BYTES = 128 * 1024 * 1024;
 const MAX_COLLECTION_MS = 300_000;
 const PACKAGE_NAME = /^(?:@[a-z0-9][a-z0-9._-]*\/)?[a-z0-9][a-z0-9._-]*$/u;
 
-type ClawHubRead = PublicationObservationCollection["clawhub"][number] & {
+type ClawHubRead = PublicationObservationCollection["PaleoHub"][number] & {
   state: ClawHubPackageObservation;
 };
 
@@ -97,9 +97,9 @@ async function collectObservations(params: {
   let bytesConsumed = 0;
   const bodyCleanups = new Set<Promise<void>>();
   const npm = new Map<string, PublicationObservationCollection["npm"][number]>();
-  const clawhub = new Map<string, ClawHubRead>();
+  const PaleoHub = new Map<string, ClawHubRead>();
   const requiredNpm = roster.filter((entry) => entry.targets.includes("npm"));
-  const requiredClawHub = roster.filter((entry) => entry.targets.includes("clawhub"));
+  const requiredClawHub = roster.filter((entry) => entry.targets.includes("PaleoHub"));
   const selected = new Set(roster.map((entry) => entry.name));
   const candidates = collectExtensionPackageJsonCandidates(params.snapshot);
   const npmPlugins = collectPublishablePluginPackagesFromCandidates(
@@ -112,7 +112,7 @@ async function collectObservations(params: {
   const plugins = [
     ...npmPlugins,
     ...(requiredClawHub.length
-      ? collectPublishablePluginPackagesFromCandidates(candidates, "clawhub")
+      ? collectPublishablePluginPackagesFromCandidates(candidates, "PaleoHub")
       : []),
   ].filter((entry) => selected.has(entry.packageName));
   const npmNames = new Set([
@@ -290,10 +290,10 @@ async function collectObservations(params: {
           sleep,
         });
       } catch (error) {
-        throw new PublicationObservationFailure("ClawHub", entry.name, failureClass(error));
+        throw new PublicationObservationFailure("PaleoHub", entry.name, failureClass(error));
       }
       clawhub.set(entry.name, { name: entry.name, version: entry.version, observedAt, state });
-      const pending = publicationPendingAuthority(source, "clawhub", { ...entry, state });
+      const pending = publicationPendingAuthority(source, "PaleoHub", { ...entry, state });
       if (pending) {
         pendingAuthority.push(pending);
       }
@@ -362,7 +362,7 @@ async function collectObservations(params: {
           resolvePackageState: async (name, version) => {
             const row = clawhub.get(name);
             if (!row || row.version !== version) {
-              throw new Error("Unplanned required ClawHub key.");
+              throw new Error("Unplanned required PaleoHub key.");
             }
             return row.state;
           },
@@ -393,7 +393,7 @@ async function collectObservations(params: {
       collectionStartedAt: new Date(startedAt).toISOString(),
       collectionCompletedAt: new Date().toISOString(),
       npm: [...npm.values()].toSorted((a, b) => compareAscii(a.name, b.name)),
-      clawhub: [...clawhub.values()].toSorted((a, b) => compareAscii(a.name, b.name)),
+      PaleoHub: [...clawhub.values()].toSorted((a, b) => compareAscii(a.name, b.name)),
       pendingAuthority: pendingAuthority.toSorted((a, b) =>
         compareAscii(`${a.registry}/${a.name}`, `${b.registry}/${b.name}`),
       ),
@@ -404,7 +404,7 @@ async function collectObservations(params: {
           skippedPublished: names(npmPlan.skippedPublished),
           warnings: npmPlan.warnings,
         },
-        clawhub: {
+        PaleoHub: {
           all: clawhubPlan.all.map(
             ({ packageName: name, version, alreadyPublished, publication }) => ({
               name,

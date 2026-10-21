@@ -9,7 +9,7 @@ import {
 import { connectApnsHttp2Session, probeApnsHttp2ReachabilityViaProxy } from "./push-apns-http2.js";
 
 type ProxyConnectTunnelParams = Parameters<
-  typeof import("@paleoclaw/proxyline").openProxyConnectTunnel
+  typeof import("@openclaw/proxyline").openProxyConnectTunnel
 >[0];
 
 const {
@@ -89,7 +89,7 @@ vi.mock("node:tls", () => ({
   connect: tlsConnectSpy,
 }));
 
-vi.mock("@paleoclaw/proxyline", () => ({
+vi.mock("@openclaw/proxyline", () => ({
   openProxyConnectTunnel: tunnelSpy,
 }));
 

@@ -1,4 +1,4 @@
-import type { RouteLocation, Router } from "@openclaw/uirouter";
+import type { RouteLocation, Router } from "@paleoclaw/uirouter";
 import type { HumanMention } from "../../../packages/gateway-protocol/src/index.js";
 import type { ThemeBranding } from "../../../packages/gateway-protocol/src/theme.ts";
 import type { AgentsListResult } from "../api/types.ts";

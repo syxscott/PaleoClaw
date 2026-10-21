@@ -1,4 +1,4 @@
-import type { RouteLoadCause } from "@openclaw/uirouter";
+import type { RouteLoadCause } from "@paleoclaw/uirouter";
 import type { ApplicationContext } from "../../app/context.ts";
 import { listSelectableAgents } from "../../lib/agents/display.ts";
 import { resolveAgentId, resolveCreateTarget } from "./catalog-target.ts";

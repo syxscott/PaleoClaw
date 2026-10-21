@@ -1,4 +1,4 @@
-import { safeStatSync } from "@paleoclaw/fs-safe/path";
+import { safeStatSync } from "@openclaw/fs-safe/path";
 import {
   findNormalizedProviderValue,
   normalizeProviderId,

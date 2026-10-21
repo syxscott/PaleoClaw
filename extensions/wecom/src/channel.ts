@@ -274,7 +274,7 @@ export function createWecomPlugin() {
           account,
           deliver: async (message) => {
             const rt = getWecomRuntime();
-            const currentCfg = await rt.config.loadConfig();
+            const currentCfg = rt.config.current({ clone: true });
             // Re-resolve the account so dmPolicy / allowFrom edits take effect
             // without waiting for a channel restart.
             const liveAccount = resolveWecomAccount(currentCfg, account.accountId);

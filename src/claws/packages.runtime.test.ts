@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { MAX_PLUGIN_RELOAD_TARGETS } from "../../packages/gateway-protocol/src/schema/plugins.js";
 import { useAutoCleanupTempDirTracker } from "../../test/helpers/temp-dir.js";
 import type { PluginInstallRecord } from "../config/types.plugins.js";
-import type { installPluginFromClawHub } from "../plugins/clawhub.js";
+import type { installPluginFromClawHub } from "../plugins/PaleoHub.js";
 import { commitPluginInstallRecordsWithConfig } from "../plugins/install-record-commit.js";
 import {
   PluginInstallRuntimeBatch,

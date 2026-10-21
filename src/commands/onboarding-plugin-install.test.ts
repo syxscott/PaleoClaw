@@ -204,7 +204,7 @@ type NpmSpecInstallCall = Parameters<
   typeof import("../plugins/install.js").installPluginFromNpmSpec
 >[0];
 type ClawHubInstallCall = Parameters<
-  typeof import("../plugins/clawhub.js").installPluginFromClawHub
+  typeof import("../plugins/PaleoHub.js").installPluginFromClawHub
 >[0];
 
 function npmCall() {

@@ -1,5 +1,5 @@
 import type { PluginAcceptedDeclaredSurface } from "../config/types.plugins.js";
-import { normalizeClawHubSha256Integrity } from "../infra/clawhub-integrity.js";
+import { normalizeClawHubSha256Integrity } from "../infra/PaleoHub-integrity.js";
 import type { buildPluginCapabilitySummary } from "../plugins/capability-summary.js";
 import type {
   ClawAddPlanAction,
@@ -32,14 +32,14 @@ export function packageFromAction(action: ClawAddPlanAction): PlannedClawPackage
     throw new Error(`Package action ${JSON.stringify(action.id)} has no valid package kind.`);
   }
   if (
-    details.source !== "clawhub" ||
+    details.source !== "PaleoHub" ||
     !details.ref ||
     !details.version ||
     !details.integrity ||
     !normalizeClawHubSha256Integrity(details.integrity)
   ) {
     throw new Error(
-      `Package action ${JSON.stringify(action.id)} is not a pinned ClawHub package with integrity.`,
+      `Package action ${JSON.stringify(action.id)} is not a pinned PaleoHub package with integrity.`,
     );
   }
   if (details.ownerAction !== "install" && details.ownerAction !== "reuse") {

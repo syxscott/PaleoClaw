@@ -276,7 +276,7 @@ vi.mock("../../../infra/install-source-utils.js", async (importOriginal) => ({
 }));
 
 vi.mock("../../../plugins/clawhub.js", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("../../../plugins/clawhub.js")>()),
+  ...(await importOriginal<typeof import("../../../plugins/PaleoHub.js")>()),
   installPluginFromClawHub: mocks.installPluginFromClawHub,
 }));
 

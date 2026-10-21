@@ -1,6 +1,6 @@
 import { Compile } from "typebox/compile";
 import { expect, it } from "vitest";
-import { SystemAgentChatParamsSchema } from "./schema/openclaw.js";
+import { SystemAgentChatParamsSchema } from "./schema/paleoclaw.js";
 import { normalizeSystemAgentPluginReference } from "./system-agent-context.js";
 
 it("keeps declared capability names distinct without accepting document or value context", () => {

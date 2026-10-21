@@ -8,7 +8,7 @@ import type { ModelDefinitionConfig } from "paleoclaw/plugin-sdk/provider-model-
 import { resolveAgentModelPrimaryValue } from "paleoclaw/plugin-sdk/provider-onboard";
 import { describe, expect, it } from "vitest";
 import plugin from "./index.js";
-import manifest from "./openclaw.plugin.json" with { type: "json" };
+import manifest from "./paleoclaw.plugin.json" with { type: "json" };
 
 const COHERE_BASE_URL = "https://api.cohere.ai/compatibility/v1";
 const COHERE_DEFAULT_MODEL_REF = `cohere/${manifest.modelCatalog.providers.cohere.defaultModel}`;

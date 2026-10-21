@@ -1,9 +1,9 @@
-import { ProcSafeError } from "@paleoclaw/proc-safe/errors";
+import { ProcSafeError } from "@openclaw/proc-safe/errors";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
 const { readCommand, dead } = vi.hoisted(() => ({ readCommand: vi.fn(), dead: vi.fn() }));
-vi.mock("@paleoclaw/proc-safe/inspect", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@paleoclaw/proc-safe/inspect")>()),
+vi.mock("@openclaw/proc-safe/inspect", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@openclaw/proc-safe/inspect")>()),
   readProcessCommand: readCommand,
 }));
 vi.mock("../../logging/subsystem.js", async (importOriginal) => ({

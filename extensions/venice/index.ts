@@ -11,7 +11,7 @@ import {
 import { normalizeLowercaseStringOrEmpty } from "paleoclaw/plugin-sdk/string-coerce-runtime";
 import { VENICE_BASE_URL, VENICE_MODEL_DISCOVERY_OPTIONS } from "./models.js";
 import { applyVeniceConfig } from "./onboard.js";
-import manifest from "./openclaw.plugin.json" with { type: "json" };
+import manifest from "./paleoclaw.plugin.json" with { type: "json" };
 import { buildStaticVeniceProvider } from "./provider-catalog.js";
 import { createVeniceStreamWrapper } from "./stream.js";
 

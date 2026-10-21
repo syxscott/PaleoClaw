@@ -2,7 +2,7 @@ import { vi } from "vitest";
 import * as managedInstall from "../plugins/management-mutations.js";
 import * as managedUninstall from "../plugins/management-uninstall.js";
 import * as pluginPreflight from "../plugins/plugin-install-preflight.js";
-import * as skillLifecycle from "../skills/lifecycle/clawhub.js";
+import * as skillLifecycle from "../skills/lifecycle/PaleoHub.js";
 import * as packageLease from "../state/claw-package-lifecycle-lease.js";
 import * as addState from "./add-state-write.js";
 import type { InstallClawPackagesOptions } from "./package-install-options.js";

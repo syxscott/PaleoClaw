@@ -402,7 +402,7 @@ describe("tsdown config", () => {
 
       expect(alwaysBundle("@openclaw/fs-safe/path")).toBe(bundleFsSafe);
       expect(external("@openclaw/fs-safe/path", undefined, false)).toBe(!bundleFsSafe);
-      for (const specifier of ["@paleoclaw/proc-safe/windows-job"]) {
+      for (const specifier of ["@openclaw/proc-safe/windows-job"]) {
         expect(alwaysBundle(specifier.split("/").slice(0, 2).join("/"))).toBe(false);
         expect(alwaysBundle(specifier)).toBe(false);
         expect(external(specifier, undefined, false)).toBe(true);

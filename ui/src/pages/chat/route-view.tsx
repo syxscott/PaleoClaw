@@ -1,4 +1,4 @@
-import type { RouteMatch } from "@openclaw/uirouter";
+import type { RouteMatch } from "@paleoclaw/uirouter";
 import { For, Match, Switch } from "solid-js";
 import { PanelErrorState } from "../../components/solid/lazy-view-error.tsx";
 import { t } from "../../lib/reactive/i18n.ts";

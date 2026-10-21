@@ -514,7 +514,7 @@ async function runInteractiveAgentsAdd(opts: AgentsAddOptions, wizardOutput: Nod
         await prompter.note(
           [
             "Routing unchanged. Add bindings when you're ready.",
-            "Docs: https://docs.paleoclaw.ai/concepts/multi-agent",
+            "Docs: https://docs.openclaw.ai/concepts/multi-agent",
           ].join("\n"),
           "Routing",
         );

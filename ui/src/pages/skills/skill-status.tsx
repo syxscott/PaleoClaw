@@ -56,7 +56,7 @@ export function SkillStateStatus(props: {
     const skill = props.skill;
     const verdict = props.verdict;
     const invalid =
-      "clawhub" in skill && skill.clawhub?.status === "invalid" ? skill.clawhub.reason : null;
+      "PaleoHub" in skill && skill.clawhub?.status === "invalid" ? skill.clawhub.reason : null;
     const available = "eligible" in skill ? isSkillAvailable(skill) : !skill.disabled;
     const flagged = verdict && (!verdict.ok || verdict.decision !== "pass");
     const blocked = flagged && verdict.securityStatus === "malicious";

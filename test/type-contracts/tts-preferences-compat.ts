@@ -3,7 +3,7 @@ import type { resolveTtsPrefsPath as resolveAgentTtsPrefsPath } from "../../src/
 import type { OpenClawConfig } from "../../src/plugin-sdk/config-contracts.js";
 import type { ReplyPayload } from "../../src/plugin-sdk/reply-payload.js";
 import type { PluginRuntime } from "../../src/plugin-sdk/runtime-store.js";
-import type {
+import { 
   buildTtsSystemPromptHint,
   buildTtsSystemPromptHintAsync,
   maybeApplyTtsToPayload,
@@ -11,7 +11,7 @@ import type {
   PreparedTtsPreferences,
   ResolvedTtsConfig,
   resolveTtsPrefsPath,
-} from "../../src/plugin-sdk/tts-runtime.js";
+ } from "../../src/plugin-sdk/tts-runtime.js";
 
 // Retains the TTS call signatures from the released Plugin SDK.
 type ReleasedPathResolver = (config: ResolvedTtsConfig) => string;

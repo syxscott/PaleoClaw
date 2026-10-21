@@ -1,4 +1,4 @@
-import { createRouter, definePage } from "@openclaw/uirouter";
+import { createRouter, definePage } from "@paleoclaw/uirouter";
 import { action } from "solid-js";
 import { expect, it } from "vitest";
 import { createDeferredCore } from "../../../src/shared/deferred.ts";

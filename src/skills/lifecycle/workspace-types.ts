@@ -1,11 +1,11 @@
 /** File-host lifecycle contracts shared by local operations and remote workspace adapters. */
 import type { ArchiveLogger } from "../../infra/archive.js";
-import type { ClawHubDownloadResult } from "../../infra/clawhub-artifacts.js";
+import type { PackageDirInstallTransaction } from "../../infra/install-package-dir.js";
+import type { ClawHubDownloadResult } from "../../infra/PaleoHub-artifacts.js";
 import type {
   ClawHubSkillVerificationResponse,
   ClawHubSkillsShTrustState,
-} from "../../infra/clawhub-skills.js";
-import type { PackageDirInstallTransaction } from "../../infra/install-package-dir.js";
+} from "../../infra/PaleoHub-skills.js";
 import type {
   PluginHookSkillArtifact,
   PluginHookSkillChangedEvent,

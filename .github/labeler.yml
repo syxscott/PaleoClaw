@@ -389,7 +389,7 @@
   - changed-files:
       - any-glob-to-any-file:
           - "docs/**"
-          - ".agents/skills/openclaw-update/**"
+          - ".agents/skills/paleoclaw-update/**"
           - ".agents/skills/update-team-server/**"
 
 "cli":
@@ -969,21 +969,6 @@
   - changed-files:
       - any-glob-to-any-file:
           - "extensions/perplexity/**"
-"channel: qqbot":
-  - changed-files:
-      - any-glob-to-any-file:
-          - "extensions/qqbot/**"
-          - "docs/channels/qqbot.md"
-"channel: wecom":
-  - changed-files:
-      - any-glob-to-any-file:
-          - "extensions/wecom/**"
-          - "docs/channels/wecom.md"
-"channel: weixin":
-  - changed-files:
-      - any-glob-to-any-file:
-          - "extensions/weixin/**"
-          - "docs/channels/weixin.md"
 "extensions: sglang":
   - changed-files:
       - any-glob-to-any-file:

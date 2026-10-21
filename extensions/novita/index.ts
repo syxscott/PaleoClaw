@@ -2,7 +2,7 @@ import { readConfiguredProviderCatalogEntries } from "paleoclaw/plugin-sdk/provi
 import { defineSingleProviderPluginEntry } from "paleoclaw/plugin-sdk/provider-entry";
 import { buildProviderReplayFamilyHooks } from "paleoclaw/plugin-sdk/provider-model-shared";
 import { buildProviderToolCompatFamilyHooks } from "paleoclaw/plugin-sdk/provider-tools";
-import manifest from "./openclaw.plugin.json" with { type: "json" };
+import manifest from "./paleoclaw.plugin.json" with { type: "json" };
 import { buildNovitaVideoGenerationProvider } from "./video-generation-provider.js";
 
 const PROVIDER_ID = "novita";

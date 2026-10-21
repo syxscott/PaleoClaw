@@ -81,7 +81,7 @@ async function createDescendantScope(
   );
   const testSupportPath =
     process.platform === "win32"
-      ? createRequire(import.meta.url).resolve("@paleoclaw/proc-safe/test-support")
+      ? createRequire(import.meta.url).resolve("@openclaw/proc-safe/test-support")
       : undefined;
   await writeFile(
     rootPath,
@@ -185,7 +185,7 @@ describe("supervisor anchored shell real process ownership", () => {
     "keeps anchored Windows commands console-free",
     async () => {
       const testSupportPath = createRequire(import.meta.url).resolve(
-        "@paleoclaw/proc-safe/test-support",
+        "@openclaw/proc-safe/test-support",
       );
       const result = await runAnchoredScript(`
         const { hasConsoleWindow } = require(${JSON.stringify(testSupportPath)});

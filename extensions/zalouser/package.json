@@ -1,19 +1,47 @@
 {
   "name": "@paleoclaw/zalouser",
-  "version": "1.8.0",
-  "description": "paleoclaw Zalo Personal Account plugin via native zca-js integration",
+  "version": "2026.10.5",
+  "description": "paleoclaw Zalo Personal Account plugin via native zca-js integration.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/paleoclaw/paleoclaw"
+  },
   "type": "module",
   "dependencies": {
-    "@sinclair/typebox": "0.34.48",
-    "zca-js": "2.1.1",
-    "zod": "^4.3.6"
+    "typebox": "1.3.37",
+    "zca-js": "2.2.0",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@paleoclaw/plugin-sdk": "workspace:*",
+    "paleoclaw": "workspace:*"
+  },
+  "peerDependencies": {
+    "paleoclaw": ">=2026.10.5"
+  },
+  "peerDependenciesMeta": {
+    "paleoclaw": {
+      "optional": true
+    }
   },
   "paleoclaw": {
     "extensions": [
       "./index.ts"
     ],
+    "setupEntry": "./setup-entry.ts",
+    "setupFeatures": {
+      "configPromotion": true
+    },
     "channel": {
       "id": "zalouser",
+      "configuredState": {
+        "env": {
+          "anyOf": [
+            "ZALOUSER_PROFILE",
+            "ZCA_PROFILE"
+          ]
+        }
+      },
       "label": "Zalo Personal",
       "selectionLabel": "Zalo (Personal Account)",
       "docsPath": "/channels/zalouser",
@@ -23,12 +51,32 @@
         "zlu"
       ],
       "order": 85,
-      "quickstartAllowFrom": true
+      "quickstartAllowFrom": false,
+      "doctorCapabilities": {
+        "dmAllowFromMode": "topOnly",
+        "groupModel": "hybrid",
+        "groupAllowFromFallbackToAllowFrom": false,
+        "warnOnEmptyGroupSenderAllowlist": false
+      },
+      "setup": {
+        "fields": []
+      }
     },
     "install": {
+      "clawhubSpec": "PaleoHub:@paleoclaw/zalouser",
       "npmSpec": "@paleoclaw/zalouser",
-      "localPath": "extensions/zalouser",
-      "defaultChoice": "npm"
+      "defaultChoice": "npm",
+      "minHostVersion": ">=2026.4.10"
+    },
+    "compat": {
+      "pluginApi": ">=2026.10.5"
+    },
+    "build": {
+      "openclawVersion": "2026.10.5"
+    },
+    "release": {
+      "publishToClawHub": true,
+      "publishToNpm": true
     }
   }
 }

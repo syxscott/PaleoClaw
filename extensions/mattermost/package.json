@@ -1,29 +1,111 @@
 {
   "name": "@paleoclaw/mattermost",
-  "version": "1.8.0",
+  "version": "2026.10.5",
   "description": "paleoclaw Mattermost channel plugin",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/paleoclaw/paleoclaw"
+  },
   "type": "module",
   "dependencies": {
-    "ws": "^8.19.0",
-    "zod": "^4.3.6"
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@paleoclaw/plugin-sdk": "workspace:*",
+    "paleoclaw": "workspace:*"
+  },
+  "peerDependencies": {
+    "paleoclaw": ">=2026.10.5"
+  },
+  "peerDependenciesMeta": {
+    "paleoclaw": {
+      "optional": true
+    }
   },
   "paleoclaw": {
     "extensions": [
       "./index.ts"
     ],
+    "setupEntry": "./setup-entry.ts",
+    "setupFeatures": {
+      "configPromotion": true
+    },
     "channel": {
       "id": "mattermost",
+      "configuredState": {
+        "env": {
+          "allOf": [
+            "MATTERMOST_BOT_TOKEN",
+            "MATTERMOST_URL"
+          ]
+        }
+      },
       "label": "Mattermost",
       "selectionLabel": "Mattermost (plugin)",
       "docsPath": "/channels/mattermost",
       "docsLabel": "mattermost",
       "blurb": "self-hosted Slack-style chat; install the plugin to enable.",
-      "order": 65
+      "order": 65,
+      "setup": {
+        "fields": [
+          {
+            "key": "token",
+            "kind": "string",
+            "sensitive": true,
+            "cli": {
+              "flags": "--token <token>",
+              "description": "Mattermost bot token"
+            }
+          },
+          {
+            "key": "botToken",
+            "kind": "string",
+            "sensitive": true,
+            "cli": {
+              "flags": "--bot-token <token>",
+              "description": "Mattermost bot token"
+            }
+          },
+          {
+            "key": "httpUrl",
+            "kind": "string",
+            "cli": {
+              "flags": "--http-url <url>",
+              "description": "Mattermost server URL"
+            }
+          },
+          {
+            "key": "useEnv",
+            "kind": "boolean",
+            "cli": {
+              "flags": "--use-env",
+              "description": "Use Mattermost environment credentials"
+            },
+            "envVars": [
+              "MATTERMOST_BOT_TOKEN",
+              "MATTERMOST_URL"
+            ]
+          }
+        ]
+      }
     },
     "install": {
+      "clawhubSpec": "PaleoHub:@paleoclaw/mattermost",
       "npmSpec": "@paleoclaw/mattermost",
-      "localPath": "extensions/mattermost",
-      "defaultChoice": "npm"
+      "defaultChoice": "npm",
+      "minHostVersion": ">=2026.6.9",
+      "allowInvalidConfigRecovery": true
+    },
+    "compat": {
+      "pluginApi": ">=2026.10.5"
+    },
+    "build": {
+      "openclawVersion": "2026.10.5",
+      "bundledDist": false
+    },
+    "release": {
+      "publishToClawHub": true,
+      "publishToNpm": true
     }
   }
 }

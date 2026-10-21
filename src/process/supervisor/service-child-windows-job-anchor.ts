@@ -1,5 +1,5 @@
+import { WindowsJob, type WindowsJobChild } from "@openclaw/proc-safe/windows-job";
 import { coerceErrorMessage } from "@paleoclaw/normalization-core/error-coercion";
-import { WindowsJob, type WindowsJobChild } from "@paleoclaw/proc-safe/windows-job";
 import { mergeProcessEnv, resolveEnvironmentValue } from "../../infra/process-env.js";
 import { createWindowsOutputDecoder } from "../../infra/windows-encoding.js";
 import { getWindowsCmdExePath } from "../../infra/windows-install-roots.js";

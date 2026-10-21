@@ -50,8 +50,8 @@ const dependencies = [
   ...(manifest
     ? [
         "@openclaw/fs-safe",
-        "@paleoclaw/proc-safe",
-        "@paleoclaw/proxyline",
+        "@openclaw/proc-safe",
+        "@openclaw/proxyline",
         "acorn",
         "chalk",
         "commander",

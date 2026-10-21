@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { copyFile, mkdir, mkdtemp, readFile, rename, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod";
-import { hasUnjoinedWork, runManagedCommand } from "./managed-child-process.mjs";
+import { hasUnjoinedWork, runManagedCommand } from "./managed-child-process.mts";
 import { parseReleaseVersion } from "./release-version.mjs";
 
 const REGISTRY = "https://registry.npmjs.org";

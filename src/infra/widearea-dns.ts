@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { replaceFileAtomicSync } from "@paleoclaw/fs-safe/atomic";
+import { replaceFileAtomicSync } from "@openclaw/fs-safe/atomic";
 import { expectDefined } from "@paleoclaw/normalization-core";
 import { normalizeLowercaseStringOrEmpty } from "@paleoclaw/normalization-core/string-coerce";
 import { CONFIG_DIR } from "../utils.js";

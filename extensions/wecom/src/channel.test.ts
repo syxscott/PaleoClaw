@@ -26,7 +26,7 @@ function makeCalls(): RuntimeCalls {
 /** Minimal PluginRuntime stand-in that records what reached the agent. */
 function makeRuntime(cfg: unknown, calls: RuntimeCalls, storeAllowFrom: string[] = []) {
   return {
-    config: { loadConfig: () => cfg },
+    config: { current: () => cfg },
     channel: {
       pairing: {
         readAllowFromStore: async () => storeAllowFrom,

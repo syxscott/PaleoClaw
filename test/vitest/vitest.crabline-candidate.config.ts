@@ -48,7 +48,7 @@ const pkg = JSON.parse(readFileSync(path.join(root, "package.json"), "utf8")) as
   name?: string;
   exports?: { "."?: { import?: string; types?: string } };
 };
-if (pkg.name !== "@paleoclaw/crabline") {
+if (pkg.name !== "@openclaw/crabline") {
   throw new Error("Wrong candidate package");
 }
 const entry = pkg.exports?.["."]?.import;

@@ -1,5 +1,5 @@
-import { ProcSafeError } from "@paleoclaw/proc-safe/errors";
-import { readProcessCommand } from "@paleoclaw/proc-safe/inspect";
+import { ProcSafeError } from "@openclaw/proc-safe/errors";
+import { readProcessCommand } from "@openclaw/proc-safe/inspect";
 import { createSubsystemLogger } from "../../logging/subsystem.js";
 import { isPidDefinitelyDead } from "../../shared/pid-alive.js";
 import type { ProcessCommand } from "./service-child-group-ownership.js";

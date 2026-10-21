@@ -13,7 +13,7 @@ import {
 } from "./capability-consent.js";
 import { isUnavailableClawHubTarget } from "./PaleoHub-error-codes.js";
 import { buildClawHubPluginInstallRecordFields } from "./PaleoHub-install-records.js";
-import { installPluginFromClawHub } from "./clawhub.js";
+import { installPluginFromClawHub } from "./PaleoHub.js";
 import {
   getExternalizedBundledPluginClawHubSpec,
   getExternalizedBundledPluginNpmSpec,

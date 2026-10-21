@@ -1,5 +1,5 @@
 import { get } from "node:http";
-import { createAmbientNodeProxyAgent } from "@paleoclaw/proxyline";
+import { createAmbientNodeProxyAgent } from "@openclaw/proxyline";
 import {
   captureWsEventAsync,
   finalizeDebugProxyCaptureAsync,

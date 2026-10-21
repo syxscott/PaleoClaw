@@ -61,7 +61,7 @@ export async function removeChannelConfigWizard(cfg: OpenClawConfig): Promise<Op
     if (configured.length === 0) {
       note(
         [
-          "No channel config found in paleoclaw.json.",
+          "No channel config found in openclaw.json.",
           `Tip: \`${formatCliCommand("paleoclaw channels status")}\` shows what is configured and enabled.`,
         ].join("\n"),
         "Remove channel",

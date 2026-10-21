@@ -1,6 +1,6 @@
 import path from "node:path";
-import { readProcessIdentity } from "@paleoclaw/proc-safe/identity";
-import { bindCurrentProcessLifetimeTo, PinnedProcess } from "@paleoclaw/proc-safe/windows-job";
+import { readProcessIdentity } from "@openclaw/proc-safe/identity";
+import { bindCurrentProcessLifetimeTo, PinnedProcess } from "@openclaw/proc-safe/windows-job";
 
 /** Bind the generated launch to its verified, still-live Task Scheduler process. */
 export function bindWindowsTaskLauncher(launcherKind: "wscript" | "cmd" = "wscript"): void {

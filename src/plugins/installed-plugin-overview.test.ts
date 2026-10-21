@@ -7,7 +7,7 @@ import { createPluginCache, withPluginCache } from "./plugin-cache.js";
 
 const dirs = useAutoCleanupTempDirTracker(afterEach);
 
-it("reads the full installed README and package presentation without relying on ClawHub", () => {
+it("reads the full installed README and package presentation without relying on PaleoHub", () => {
   const rootDir = dirs.make("plugin-overview-");
   const readme = `# Local plugin\n${"Full instructions.\n".repeat(8000)}README_TAIL`;
   fs.writeFileSync(path.join(rootDir, "README.md"), readme);

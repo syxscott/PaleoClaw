@@ -809,7 +809,7 @@ syncBuiltinESMExports();
       inventory: ["dist/managed-handoff-runtime.mjs"],
       files: {
         "dist/managed-handoff-runtime.mjs":
-          'new URL("./node_modules/@paleoclaw/proc-safe/dist/identity.js", import.meta.url);\n',
+          'new URL("./node_modules/@openclaw/proc-safe/dist/identity.js", import.meta.url);\n',
       },
       options: { pack: "pnpm", postinstall: true },
       status: 0,
@@ -820,11 +820,11 @@ syncBuiltinESMExports();
       inventory: ["dist/managed-handoff-runtime.mjs"],
       files: {
         "dist/managed-handoff-runtime.mjs":
-          'import "./node_modules/@paleoclaw/proc-safe/dist/identity.js";\n',
+          'import "./node_modules/@openclaw/proc-safe/dist/identity.js";\n',
       },
       status: "nonzero",
       stderr: [
-        "dist/managed-handoff-runtime.mjs imports missing dist/node_modules/@paleoclaw/proc-safe/dist/identity.js",
+        "dist/managed-handoff-runtime.mjs imports missing dist/node_modules/@openclaw/proc-safe/dist/identity.js",
       ],
     },
     {

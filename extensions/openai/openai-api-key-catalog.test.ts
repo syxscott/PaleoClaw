@@ -1,7 +1,7 @@
 import { clearLiveCatalogCacheForTests } from "paleoclaw/plugin-sdk/provider-catalog-live-runtime";
 import { beforeEach, expect, it, vi } from "vitest";
 import { buildOpenAIProvider } from "./openai-provider.js";
-import manifest from "./openclaw.plugin.json" with { type: "json" };
+import manifest from "./paleoclaw.plugin.json" with { type: "json" };
 import { resolveModelRoutes } from "./provider-policy-api.js";
 
 type CatalogOptions = { apiKey?: string; baseUrl?: string; profileId?: string };

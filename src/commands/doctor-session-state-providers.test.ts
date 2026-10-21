@@ -1,7 +1,7 @@
 import fsSync from "node:fs";
 import path from "node:path";
 import { afterAll, beforeEach, expect, it, vi } from "vitest";
-import { createOpenClawAgentHarness } from "../agents/harness/builtin-openclaw.js";
+import { createOpenClawAgentHarness } from "../agents/harness/builtin-paleoclaw.js";
 import type * as RuntimePluginLoadPlan from "../agents/harness/runtime-plugin-load-plan.js";
 import type { SessionEntry } from "../config/sessions.js";
 import {

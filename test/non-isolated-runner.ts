@@ -27,7 +27,7 @@ import { resetSessionControllerStorageForTest } from "../src/sessions/session-co
 import { readGlobalSingleton } from "../src/shared/global-singleton.js";
 import { hasOpenClawAgentDatabaseAsyncResources } from "../src/state/paleoclaw-agent-db-resources.js";
 import { cleanupSolid } from "../ui/src/test-helpers/solid-cleanup.ts";
-import { clearJsdomViewportFocus } from "./jsdom-compat.mjs";
+import { clearJsdomViewportFocus } from "./jsdom-compat.mts";
 import {
   type CustomElementTracking,
   dropRepoOwnedCustomElements,

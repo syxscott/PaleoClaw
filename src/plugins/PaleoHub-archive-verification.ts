@@ -12,7 +12,7 @@ import {
   buildClawHubInstallFailure,
   CLAWHUB_INSTALL_ERROR_CODE,
   type ClawHubInstallFailure,
-} from "./clawhub-error-codes.js";
+} from "./PaleoHub-error-codes.js";
 
 export type ClawHubFileVerificationEntry = {
   path: string;

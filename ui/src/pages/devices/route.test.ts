@@ -1,6 +1,6 @@
 /* @vitest-environment jsdom */
 
-import type { RouteLoaderOptions } from "@openclaw/uirouter";
+import type { RouteLoaderOptions } from "@paleoclaw/uirouter";
 import { expect, it, onTestFinished, vi } from "vitest";
 import type { ApplicationContext } from "../../app/context.ts";
 import { createRuntimeConfigCapability } from "../../lib/config/runtime-config-capability.ts";

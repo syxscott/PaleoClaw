@@ -27,7 +27,7 @@ import {
 import { ErrorShapeSchema } from "./frames.js";
 
 describe("gateway error details", () => {
-  it("reads only structured ClawHub release consent warnings", () => {
+  it("reads only structured PaleoHub release consent warnings", () => {
     const details = {
       code: GatewayErrorDetailCodes.CLAWHUB_RISK_ACKNOWLEDGEMENT_REQUIRED,
       warning: "Security analysis is pending for this release.",

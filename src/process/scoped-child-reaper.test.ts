@@ -1,5 +1,5 @@
 import { ChildProcess } from "node:child_process";
-import type { ChildExit, ChildWaitState } from "@paleoclaw/proc-safe/reaper";
+import type { ChildExit, ChildWaitState } from "@openclaw/proc-safe/reaper";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createCommandTerminationController } from "./exec-termination.js";
 import { scheduleAdoptedChildZombieReapAfterExit } from "./scoped-child-reaper.js";
@@ -16,8 +16,8 @@ const proc = vi.hoisted(() => ({
 // Count synchronous filesystem work too, so restoring the old scan cannot evade the budget.
 vi.mock("node:fs", () => ({ readdirSync: proc.entries, readFileSync: proc.stat }));
 vi.mock("node:fs/promises", () => ({ readdir: proc.entries, readFile: proc.stat }));
-vi.mock("@paleoclaw/proc-safe/reaper", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@paleoclaw/proc-safe/reaper")>()),
+vi.mock("@openclaw/proc-safe/reaper", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@openclaw/proc-safe/reaper")>()),
   isSupported: proc.supported,
   inspectChildWaitState: proc.inspect,
   reapChild: proc.wait,

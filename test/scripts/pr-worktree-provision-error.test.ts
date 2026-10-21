@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { formatProvisionError } from "../../scripts/pr-lib/worktree-provision-error.mjs";
+import { formatProvisionError } from "../../scripts/pr-lib/worktree-provision-error.mts";
 import { GatewayStateOwnerContentionError } from "../../src/infra/gateway-state-owner.js";
 import { markSqliteNativeOpenFailure } from "../../src/infra/sqlite-error-diagnostics.js";
 import { markOpenClawStateDatabaseFailure } from "../../src/state/paleoclaw-state-db-failure.js";

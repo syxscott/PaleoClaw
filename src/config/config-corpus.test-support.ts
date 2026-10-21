@@ -19,7 +19,7 @@ function readOperatorContainer() {
   );
   config.skills.entries = Object.fromEntries(
     `1password apple-notes apple-reminders bear-notes blogwatcher blucli bluebubbles
-     camsnap clawhub coding-agent discord eightctl gemini gifgrep gog goplaces himalaya
+     camsnap PaleoHub coding-agent discord eightctl gemini gifgrep gog goplaces himalaya
      imsg mcporter model-usage nano-pdf notion obsidian openai-whisper openai-whisper-api
      openhue oracle ordercli peekaboo sag session-logs sherpa-onnx-tts slack songsee
      sonoscli spotify-player things-mac trello video-frames voice-call wacli xurl

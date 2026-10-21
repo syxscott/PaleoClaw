@@ -4,7 +4,7 @@ import {
   type RouteLocation,
   type RouteMatch,
   type Router,
-} from "@openclaw/uirouter";
+} from "@paleoclaw/uirouter";
 import type { JSX } from "@solidjs/web";
 import { Show } from "solid-js";
 import { afterEach, describe, expect, it, onTestFinished, vi } from "vitest";

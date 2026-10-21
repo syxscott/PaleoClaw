@@ -9,7 +9,7 @@ import { isPathInside } from "../infra/path-guards.js";
 import { resolvePreferredOpenClawTmpDir } from "../infra/tmp-paleoclaw-dir.js";
 import { inspectPluginCapabilityArtifact } from "../plugins/capability-artifact.js";
 import { buildPluginCapabilitySummary } from "../plugins/capability-summary.js";
-import { installPluginFromClawHub } from "../plugins/clawhub.js";
+import { installPluginFromClawHub } from "../plugins/PaleoHub.js";
 import {
   normalizePluginId,
   normalizePluginsConfig,

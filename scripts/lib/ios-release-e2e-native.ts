@@ -30,7 +30,7 @@ import {
   summarizeIOSBuildTiming,
 } from "./ios-release-e2e-diagnostics.js";
 import { prepareIOSReleaseGateway } from "./ios-release-gateway.js";
-import { hasUnjoinedWork, runManagedCommand } from "./managed-child-process.mjs";
+import { hasUnjoinedWork, runManagedCommand } from "./managed-child-process.mts";
 
 const DEVICE_TYPE = "com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro";
 const UUID = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/iu;

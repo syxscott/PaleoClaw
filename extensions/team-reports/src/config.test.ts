@@ -4,7 +4,7 @@ import "paleoclaw/plugin-sdk/compiled-subprocess-testing";
 import { buildJsonPluginConfigSchema } from "paleoclaw/plugin-sdk/plugin-entry";
 import { useAutoCleanupTempDirTracker } from "paleoclaw/plugin-sdk/test-env";
 import { afterAll, afterEach, expect, it, vi } from "vitest";
-import manifest from "../openclaw.plugin.json" with { type: "json" };
+import manifest from "../paleoclaw.plugin.json" with { type: "json" };
 import { parseTeamReportsConfig, resolveTeamReportsConfig } from "./config.js";
 
 vi.mock("node:fs/promises", async (importOriginal) => {

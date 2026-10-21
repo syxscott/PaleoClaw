@@ -28,8 +28,8 @@ const NATIVE_HOOK_RELAY_FORBIDDEN_STATIC_MARKERS = [
 const NATIVE_HOOK_RELAY_ALLOWED_EXTERNAL_IMPORTS = ["kysely", "@openclaw/fs-safe"];
 // These import-safe subpaths retain proc-safe's package-scoped, lazy native loader.
 const NATIVE_HOOK_RELAY_ALLOWED_EXTERNAL_SUBPATHS = new Set([
-  "@paleoclaw/proc-safe/errors",
-  "@paleoclaw/proc-safe/identity",
+  "@openclaw/proc-safe/errors",
+  "@openclaw/proc-safe/identity",
 ]);
 const WORKER_DEPLOY_ENTRYPOINTS = WORKER_BUNDLE_ARTIFACT_PATHS.map(
   (entry) => `dist/worker/${entry}`,

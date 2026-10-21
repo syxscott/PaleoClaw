@@ -1,12 +1,12 @@
-import type { ProcessAncestry, ProcessIdentity } from "@paleoclaw/proc-safe/identity";
+import type { ProcessAncestry, ProcessIdentity } from "@openclaw/proc-safe/identity";
 import { beforeEach, expect, it, vi } from "vitest";
 import { createManagedHandoffProcessIdentityReader } from "./update-managed-service-handoff-process.js";
 
 const readProcessAncestry = vi.hoisted(() =>
-  vi.fn<typeof import("@paleoclaw/proc-safe/identity").readProcessAncestry>(),
+  vi.fn<typeof import("@openclaw/proc-safe/identity").readProcessAncestry>(),
 );
-vi.mock("@paleoclaw/proc-safe/identity", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@paleoclaw/proc-safe/identity")>()),
+vi.mock("@openclaw/proc-safe/identity", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@openclaw/proc-safe/identity")>()),
   readProcessAncestry,
 }));
 vi.mock("../shared/pid-alive.js", async (importOriginal) => ({

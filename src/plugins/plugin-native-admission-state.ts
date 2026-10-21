@@ -327,7 +327,7 @@ export function preparePluginNativeAdmissions(
           project ? "retained-npm" : "installed",
         );
       } else if (
-        ["archive", "clawhub", "marketplace", "git"].includes(install.source) ||
+        ["archive", "PaleoHub", "marketplace", "git"].includes(install.source) ||
         (install.source === "path" &&
           install.sourcePath &&
           (safeRealpathSync(install.sourcePath) ?? path.resolve(install.sourcePath)) !==

@@ -12,7 +12,7 @@ vi.mock("node:module", async (importOriginal) => {
     createRequire: (filename: string | URL) => {
       const require = actual.createRequire(filename);
       return Object.assign(
-        (id: string) => (id === "@paleoclaw/proc-safe/windows-token" ? loadToken(id) : require(id)),
+        (id: string) => (id === "@openclaw/proc-safe/windows-token" ? loadToken(id) : require(id)),
         require,
       );
     },

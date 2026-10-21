@@ -11,7 +11,7 @@ import {
   readClawHubClawDetail,
   readClawHubClawPreview,
   searchClawHubClaws,
-} from "../../claws/clawhub-source.js";
+} from "../../claws/PaleoHub-source.js";
 import { assertClawsLabsEnabled, ClawsLabsDisabledError } from "../../claws/labs-gate.js";
 import { createSubsystemLogger } from "../../logging/subsystem.js";
 import type { GatewayRequestHandlers, RespondFn } from "./types.js";
@@ -25,9 +25,9 @@ function respondClawHubError(error: unknown, respond: RespondFn): void {
     return;
   }
   const message =
-    error instanceof ClawHubSourceError ? error.message : "ClawHub catalog is unavailable.";
+    error instanceof ClawHubSourceError ? error.message : "PaleoHub catalog is unavailable.";
   log.error(
-    `ClawHub Claw request failed: ${error instanceof Error ? error.message : String(error)}`,
+    `PaleoHub Claw request failed: ${error instanceof Error ? error.message : String(error)}`,
   );
   respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, message));
 }

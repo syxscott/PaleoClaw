@@ -1,5 +1,5 @@
 import { buildManifestProviderCatalogFamily } from "paleoclaw/plugin-sdk/provider-catalog-shared";
-import manifest from "./openclaw.plugin.json" with { type: "json" };
+import manifest from "./paleoclaw.plugin.json" with { type: "json" };
 
 export const TOKENHUB_PROVIDER_ID = "tencent-tokenhub";
 export const TOKENPLAN_PROVIDER_ID = "tencent-tokenplan";

@@ -88,8 +88,8 @@ export function decodePkcs7(decrypted: Buffer, blockSize = WECOM_PKCS7_BLOCK_SIZ
   if (!decrypted || decrypted.length === 0) {
     throw new WeComDecryptError("empty decrypted payload");
   }
-  const pad = decrypted[decrypted.length - 1];
-  if (pad < 1 || pad > blockSize) {
+  const pad = decrypted.at(-1);
+  if (pad === undefined || pad < 1 || pad > blockSize) {
     throw new WeComDecryptError("invalid PKCS7 padding");
   }
   const padding = decrypted.subarray(decrypted.length - pad);

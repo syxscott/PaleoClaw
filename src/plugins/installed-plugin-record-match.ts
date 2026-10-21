@@ -112,7 +112,7 @@ export function resolvePluginTrust(params: {
       record.spec === undefined &&
       record.resolvedName === undefined &&
       record.resolvedSpec === undefined) ||
-    (record.source === "clawhub" &&
+    (record.source === "PaleoHub" &&
       record.clawhubUrl === undefined &&
       record.clawhubChannel === undefined)
   ) {

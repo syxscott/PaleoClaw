@@ -14,7 +14,7 @@ import {
 } from "./index.js";
 
 const official = { source: "official", pluginId: "workboard" };
-const clawhub = { source: "clawhub", packageName: "memory-plus" };
+const PaleoHub = { source: "PaleoHub", packageName: "memory-plus" };
 const reload = { plugins: [{ pluginId: "notes" }] };
 const enable = { pluginId: "workboard", enabled: true };
 const consent = { reviewToken: "surface-sha256" };
@@ -114,7 +114,7 @@ describe("plugin lifecycle protocol validators", () => {
     expect(validatePluginsCatalogGetParams({ id: "publisher/plugin" })).toBe(false);
   });
 
-  it("keeps official and ClawHub install requests distinct", () => {
+  it("keeps official and PaleoHub install requests distinct", () => {
     expect(
       validatePluginsInstallParams({
         ...clawhub,

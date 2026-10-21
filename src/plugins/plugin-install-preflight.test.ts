@@ -8,11 +8,11 @@ describe("preflightPluginInstall", () => {
   it("reuses an exact installed version", async () => {
     const result = await preflightPluginInstall({
       clawhubPackage: "@acme/audit",
-      rawSpec: "clawhub:@acme/audit@1.2.3",
+      rawSpec: "PaleoHub:@acme/audit@1.2.3",
       expectedVersion: "1.2.3",
       loadInstallRecords: vi.fn().mockResolvedValue({
         audit: {
-          source: "clawhub",
+          source: "PaleoHub",
           clawhubPackage: "@acme/audit",
           resolvedVersion: "1.2.3",
           installedAt: "2026-07-17T00:00:00.000Z",
@@ -30,10 +30,10 @@ describe("preflightPluginInstall", () => {
   it("rejects a different installed version", async () => {
     const result = await preflightPluginInstall({
       clawhubPackage: "@acme/audit",
-      rawSpec: "clawhub:@acme/audit@1.2.3",
+      rawSpec: "PaleoHub:@acme/audit@1.2.3",
       expectedVersion: "1.2.3",
       loadInstallRecords: vi.fn().mockResolvedValue({
-        audit: { source: "clawhub", clawhubPackage: "@acme/audit", resolvedVersion: "1.1.0" },
+        audit: { source: "PaleoHub", clawhubPackage: "@acme/audit", resolvedVersion: "1.1.0" },
       }),
     });
     expect(result).toMatchObject({
@@ -45,13 +45,13 @@ describe("preflightPluginInstall", () => {
 });
 
 describe("resolveInstalledClawHubPlugin", () => {
-  it("returns the runtime plugin id for one ClawHub package", async () => {
+  it("returns the runtime plugin id for one PaleoHub package", async () => {
     await expect(
       resolveInstalledClawHubPlugin({
         clawhubPackage: "@acme/audit",
         loadInstallRecords: vi.fn().mockResolvedValue({
           "audit-runtime": {
-            source: "clawhub",
+            source: "PaleoHub",
             clawhubPackage: "@acme/audit",
             resolvedVersion: "1.2.3",
           },
@@ -69,8 +69,8 @@ describe("resolveInstalledClawHubPlugin", () => {
       resolveInstalledClawHubPlugin({
         clawhubPackage: "audit",
         loadInstallRecords: vi.fn().mockResolvedValue({
-          first: { source: "clawhub", clawhubPackage: "audit", version: "1.0.0" },
-          second: { source: "clawhub", clawhubPackage: "audit", version: "1.0.0" },
+          first: { source: "PaleoHub", clawhubPackage: "audit", version: "1.0.0" },
+          second: { source: "PaleoHub", clawhubPackage: "audit", version: "1.0.0" },
         }),
       }),
     ).resolves.toEqual({ status: "ambiguous", pluginIds: ["first", "second"] });

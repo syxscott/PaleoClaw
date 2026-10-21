@@ -4,7 +4,7 @@ import type {
   UserProfile,
   ProjectsCheckoutOptionsResult,
 } from "../../../packages/gateway-protocol/src/index.ts";
-import type { SystemAgentChatHistoryResult } from "../../../packages/gateway-protocol/src/schema/openclaw.ts";
+import type { SystemAgentChatHistoryResult } from "../../../packages/gateway-protocol/src/schema/paleoclaw.js";
 import type {
   PluginsCatalogBrowseResult,
   PluginsCatalogCategoriesResult,

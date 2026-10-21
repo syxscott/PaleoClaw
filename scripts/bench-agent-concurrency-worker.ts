@@ -14,7 +14,7 @@ import {
 import { classifyBoundedUnsignedDecimal } from "./lib/arg-utils.mts";
 
 type BenchmarkRegistryRuntime = Awaited<
-  ReturnType<typeof import("./bench-agent-concurrency-runtime.mjs").installBenchmarkRegistryRuntime>
+  ReturnType<typeof import("./bench-agent-concurrency-runtime.mts").installBenchmarkRegistryRuntime>
 >;
 
 type WorkerOptions = {
@@ -707,7 +707,7 @@ async function main(): Promise<void> {
       options.scenario === "recoverySweep"
     ) {
       const { installBenchmarkRegistryRuntime } =
-        await import("./bench-agent-concurrency-runtime.mjs");
+        await import("./bench-agent-concurrency-runtime.mts");
       registryRuntime = await installBenchmarkRegistryRuntime(
         options.scenario === "spawnPipelineDurable" ? "durable" : "memory",
       );

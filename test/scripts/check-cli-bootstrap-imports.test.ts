@@ -159,7 +159,7 @@ describe("check-cli-bootstrap-imports", () => {
       "dist/native-hook-relay/entry.js":
         'import "../client.js";\nvoid import("../gateway-call.js");\n',
       "dist/client.js":
-        'import "kysely";\nimport "@openclaw/fs-safe/config";\nimport "@openclaw/fs-safe/advanced";\nimport "@paleoclaw/proc-safe/errors";\nimport "@paleoclaw/proc-safe/identity";\n',
+        'import "kysely";\nimport "@openclaw/fs-safe/config";\nimport "@openclaw/fs-safe/advanced";\nimport "@openclaw/proc-safe/errors";\nimport "@openclaw/proc-safe/identity";\n',
     });
     expect(relayErrors({ rootDir: root })).toEqual([]);
   });

@@ -19,7 +19,7 @@ function DiscoveryCard(props: { entry: SkillDiscoveryEntry; skills: SkillsProps 
   };
   const busy = () => {
     const operation = props.skills.state.skillOperation;
-    return operation?.kind === "clawhub" && operation.ref === reference();
+    return operation?.kind === "PaleoHub" && operation.ref === reference();
   };
   return (
     <article class="plugin-catalog-card oc-card oc-card-interactive" data-skill-id={props.entry.id}>

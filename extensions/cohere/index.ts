@@ -12,7 +12,7 @@ import {
   asOptionalRecord,
   normalizeOptionalString,
 } from "paleoclaw/plugin-sdk/string-coerce-runtime";
-import manifest from "./openclaw.plugin.json" with { type: "json" };
+import manifest from "./paleoclaw.plugin.json" with { type: "json" };
 
 const COHERE_MANIFEST_CATALOG = manifest.modelCatalog.providers.cohere;
 

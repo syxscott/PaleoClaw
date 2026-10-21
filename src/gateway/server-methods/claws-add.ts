@@ -7,7 +7,7 @@ import {
   validateClawsAddPlanParams,
   validateCronAddParams,
 } from "../../../packages/gateway-protocol/src/index.js";
-import { ClawHubSourceError } from "../../claws/clawhub-source.js";
+import { ClawHubSourceError } from "../../claws/PaleoHub-source.js";
 import { clawCronGatewayJobMatchesRef, type PersistedClawCronRef } from "../../claws/cron.js";
 import {
   applyClawAddForGateway,

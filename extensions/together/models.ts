@@ -1,6 +1,6 @@
 import { buildManifestModelProviderConfig } from "paleoclaw/plugin-sdk/provider-catalog-shared";
 import type { ModelDefinitionConfig } from "paleoclaw/plugin-sdk/provider-model-shared";
-import manifest from "./openclaw.plugin.json" with { type: "json" };
+import manifest from "./paleoclaw.plugin.json" with { type: "json" };
 
 const TOGETHER_MANIFEST_CATALOG = manifest.modelCatalog.providers.together;
 export const TOGETHER_BASE_URL = TOGETHER_MANIFEST_CATALOG.baseUrl;

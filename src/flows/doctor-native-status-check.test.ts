@@ -8,7 +8,7 @@ const { fsStatus, procStatus, guard } = vi.hoisted(() => ({
   guard: vi.fn(),
 }));
 vi.mock("@openclaw/fs-safe", () => ({ getFsSafeNativeStatus: fsStatus }));
-vi.mock("@paleoclaw/proc-safe", () => ({ getProcSafeNativeStatus: procStatus }));
+vi.mock("@openclaw/proc-safe", () => ({ getProcSafeNativeStatus: procStatus }));
 vi.mock("../infra/windows-appcontainer-spawn.js", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../infra/windows-appcontainer-spawn.js")>()),
   assertAppContainerSpawnSupported: guard,

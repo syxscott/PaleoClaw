@@ -446,7 +446,7 @@ async function runIsolatedCompletionOwned(
 
       // Retain the validated plugin instance; load the built-in runner only when selected.
       const harness = selection.builtIn
-        ? (await import("./harness/builtin-openclaw.js")).createOpenClawAgentHarness()
+        ? (await import("./harness/builtin-paleoclaw.js")).createOpenClawAgentHarness()
         : selection.harness;
       assertCurrent();
       if (!harness.runIsolatedCompletionV2 && !harness.runIsolatedCompletion) {

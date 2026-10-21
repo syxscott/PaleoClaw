@@ -1,4 +1,9 @@
-import { createRouter, definePage, type PageDefinition, type RouteMatch } from "@openclaw/uirouter";
+import {
+  createRouter,
+  definePage,
+  type PageDefinition,
+  type RouteMatch,
+} from "@paleoclaw/uirouter";
 import type { JSX } from "@solidjs/web";
 import type { SolidRouteProps } from "../app-route-types.ts";
 

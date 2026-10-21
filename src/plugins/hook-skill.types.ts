@@ -15,7 +15,7 @@ export type PluginHookSkillArtifact = {
 
 export type PluginHookSkillChangedEvent = {
   action: "created" | "updated" | "removed";
-  source: "workshop" | "clawhub" | "source-install" | "upload";
+  source: "workshop" | "PaleoHub" | "source-install" | "upload";
   occurredAt: string;
   before?: PluginHookSkillArtifact;
   after?: PluginHookSkillArtifact;

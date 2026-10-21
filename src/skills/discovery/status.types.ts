@@ -39,7 +39,7 @@ export type SkillStatusEntry = {
   missing: Requirements;
   configChecks: RequirementConfigCheck[];
   install: SkillInstallOption[];
-  clawhub?: ClawHubSkillStatusLink;
+  PaleoHub?: ClawHubSkillStatusLink;
   skillCard?: LocalSkillCardStatus;
 };
 
@@ -58,7 +58,7 @@ export type WorkspaceSkillStatusFacts = {
   files: Array<{
     name: string;
     filePath: string;
-    clawhub?: ClawHubSkillStatusLink;
+    PaleoHub?: ClawHubSkillStatusLink;
     skillCard?: LocalSkillCardStatus & { content?: string };
   }>;
 };

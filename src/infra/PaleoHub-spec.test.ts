@@ -1,6 +1,6 @@
 // Verifies parsing of explicit ClawHub plugin specs.
 import { describe, expect, it } from "vitest";
-import { parseClawHubPluginSpec } from "./clawhub-spec.js";
+import { parseClawHubPluginSpec } from "./PaleoHub-spec.js";
 
 describe("clawhub plugin specs", () => {
   it("parses explicit ClawHub package specs", () => {

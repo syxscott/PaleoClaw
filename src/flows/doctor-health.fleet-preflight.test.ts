@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto";
 import { once } from "node:events";
 import fs, { readFileSync as read } from "node:fs";
 import path from "node:path";
-import * as processIdentity from "@paleoclaw/proc-safe/identity";
+import * as processIdentity from "@openclaw/proc-safe/identity";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 let { withUpdateCommandExecutor } = await import("../cli/update-cli/update-command-executor.js");
 let { parseUpdateRecoveryBackupManifest } = await import("../commands/backup-verify-manifest.js");
@@ -48,8 +48,8 @@ vi.mock("node:child_process", async (importOriginal) => {
   );
   return { ...actual, execFile: execFileSpy, fork: vi.fn(actual.fork), spawn: vi.fn(actual.spawn) };
 });
-vi.mock("@paleoclaw/proc-safe/identity", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@paleoclaw/proc-safe/identity")>();
+vi.mock("@openclaw/proc-safe/identity", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@openclaw/proc-safe/identity")>();
   return { ...actual, readProcessAncestry: vi.fn(actual.readProcessAncestry) };
 });
 
@@ -292,8 +292,8 @@ it("reuses the admitted original capture and refuses changed evidence before Doc
           originalRecoveryCapture: { runId: run.runId, installRoot, ref },
         });
       const { readProcessAncestry: readAncestry } = await vi.importActual<
-        typeof import("@paleoclaw/proc-safe/identity")
-      >("@paleoclaw/proc-safe/identity");
+        typeof import("@openclaw/proc-safe/identity")
+      >("@openclaw/proc-safe/identity");
       vi.mocked(processIdentity.readProcessAncestry).mockImplementation((pid, options) => {
         const observed = readAncestry(pid, { ...options, throughPid: process.pid });
         if (!observed || options?.throughPid === process.pid) {

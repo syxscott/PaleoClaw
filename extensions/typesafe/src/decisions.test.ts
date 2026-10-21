@@ -1,6 +1,6 @@
 import type { DecisionBatch, DecisionProviderContextV2 } from "paleoclaw/plugin-sdk/decisions";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import manifest from "../openclaw.plugin.json" with { type: "json" };
+import manifest from "../paleoclaw.plugin.json" with { type: "json" };
 import { evaluate } from "./client.js";
 import type { RuntimeConfig } from "./config.js";
 import { createPreparedDecisionProvider } from "./decisions.js";

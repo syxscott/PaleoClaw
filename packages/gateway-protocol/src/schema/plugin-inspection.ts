@@ -16,7 +16,7 @@ export const PluginHookGrantSchema = closedObject({
 export const PluginInspectSourceSchema = closedObject({
   kind: stringLiteralUnion([
     "bundled",
-    "clawhub",
+    "PaleoHub",
     "npm",
     "git",
     "path",
@@ -71,7 +71,7 @@ export const PluginOperatorGrantsSchema = closedObject({
   ),
 });
 
-/** Persisted ClawHub per-release trust verdict from the install record. */
+/** Persisted PaleoHub per-release trust verdict from the install record. */
 export const PluginInstallTrustSchema = closedObject({
   disposition: stringLiteralUnion(["clean", "review-recommended", "review-required", "blocked"]),
   reasons: Type.Optional(Type.Array(Type.String())),

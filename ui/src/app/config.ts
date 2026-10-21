@@ -1,4 +1,4 @@
-import { normalizeRouteBasePath } from "@openclaw/uirouter";
+import { normalizeRouteBasePath } from "@paleoclaw/uirouter";
 import {
   CONTROL_UI_BOOTSTRAP_CONFIG_PATH,
   CONTROL_UI_BOOTSTRAP_CONFIG_ATTRIBUTE,

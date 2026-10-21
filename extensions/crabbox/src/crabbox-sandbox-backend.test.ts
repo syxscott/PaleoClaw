@@ -17,7 +17,7 @@ import {
   createSandboxTestContext,
 } from "paleoclaw/plugin-sdk/test-fixtures";
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import manifest from "../openclaw.plugin.json" with { type: "json" };
+import manifest from "../paleoclaw.plugin.json" with { type: "json" };
 import { CRABBOX_MIN_VERSION, resolveManagedCrabboxBinaryPath } from "./crabbox-managed-binary.js";
 import {
   createCrabboxSandboxBackendFactory,

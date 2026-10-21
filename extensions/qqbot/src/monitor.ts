@@ -219,7 +219,7 @@ export async function monitorQqbotProvider(
   opts: QqbotMonitorOptions,
 ): Promise<{ stop: () => void }> {
   const core = getQqbotRuntime();
-  const cfg = (opts.config ?? (await core.config.loadConfig())) as CoreConfig;
+  const cfg = (opts.config ?? core.config.current({ clone: true })) as CoreConfig;
   const account = resolveQqbotAccount({ cfg, accountId: opts.accountId });
 
   if (!account.configured) {

@@ -1,6 +1,6 @@
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import { ProcSafeError } from "@paleoclaw/proc-safe/errors";
+import { ProcSafeError } from "@openclaw/proc-safe/errors";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { mockProcessPlatform } from "../test-utils/vitest-spies.js";
 
@@ -157,7 +157,11 @@ const custodyCases: CustodyCase[] = [
     {},
     true,
   ],
-  [["bun", "run", "--silent", "start"], { cwd: "/tmp/paleoclaw-plugin-build-abc123/package" }, true],
+  [
+    ["bun", "run", "--silent", "start"],
+    { cwd: "/tmp/paleoclaw-plugin-build-abc123/package" },
+    true,
+  ],
   [["node", "/vendor/worker.js"], { cwd: "/tmp/paleoclaw-plugin-build-abc123/package" }, true],
   [["node", "/vendor/renamed.js"], { environment: "OPENCLAW_SERVICE_MARKER=paleoclaw\0" }, true],
   ...[

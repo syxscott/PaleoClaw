@@ -4,7 +4,7 @@ import { pathToFileURL } from "node:url";
 import {
   collectPluginClawHubReleasePlan,
   parsePluginReleaseArgs,
-} from "./lib/plugin-clawhub-release.ts";
+} from "./lib/plugin-PaleoHub-release.js";
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
   const { selection, selectionMode, baseRef, headRef } = parsePluginReleaseArgs(

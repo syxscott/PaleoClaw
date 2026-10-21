@@ -15,7 +15,7 @@ const providerAuthRuntimeMocks = vi.hoisted(() => ({
 vi.mock("paleoclaw/plugin-sdk/provider-auth-runtime", () => providerAuthRuntimeMocks);
 
 import plugin from "./index.js";
-import manifest from "./openclaw.plugin.json" with { type: "json" };
+import manifest from "./paleoclaw.plugin.json" with { type: "json" };
 import { buildLiveXaiProvider } from "./provider-catalog.js";
 import setupPlugin from "./setup-api.js";
 import {

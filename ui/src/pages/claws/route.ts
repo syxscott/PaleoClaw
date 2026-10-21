@@ -1,4 +1,4 @@
-import type { RouteLocation } from "@openclaw/uirouter";
+import type { RouteLocation } from "@paleoclaw/uirouter";
 import { INTERNAL_CLAWS_PATH_PARAM, restoreBridgedRouteLocation } from "../../app-route-paths.ts";
 import { defineSolidPage } from "../../app-route-types.ts";
 import type { ApplicationContext } from "../../app/context.ts";

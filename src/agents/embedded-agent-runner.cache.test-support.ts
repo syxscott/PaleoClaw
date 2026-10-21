@@ -13,7 +13,7 @@ import {
   assertStableProviderPrefix,
   snapshotProviderPrefix,
   type ProviderPrefixSnapshot,
-} from "../../scripts/e2e/lib/anthropic-cache/prefix-stability.mjs";
+} from "../../scripts/e2e/lib/anthropic-cache/prefix-stability.mts";
 import type { OpenClawConfig } from "../config/config.js";
 import { loadAndActivateRootPluginRegistry } from "../plugins/loader.js";
 import { createPluginCache, retirePluginCache, withPluginCache } from "../plugins/plugin-cache.js";

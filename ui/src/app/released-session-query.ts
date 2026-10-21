@@ -1,4 +1,4 @@
-import type { RouteLocation } from "@openclaw/uirouter";
+import type { RouteLocation } from "@paleoclaw/uirouter";
 import type { AgentsListResult } from "../api/types.ts";
 import { pathForRoute } from "../app-route-paths.ts";
 import type { BoardFace } from "../lib/board/settings.ts";

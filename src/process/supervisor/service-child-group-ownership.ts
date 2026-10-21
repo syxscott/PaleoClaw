@@ -1,7 +1,7 @@
 import { spawnSync } from "node:child_process";
 import { readdirSync, readFileSync } from "node:fs";
 import { extractErrorCode } from "@paleoclaw/normalization-core/error-coercion";
-import { ProcSafeError } from "@paleoclaw/proc-safe/errors";
+import { ProcSafeError } from "@openclaw/proc-safe/errors";
 import { isPidDefinitelyDead } from "../../shared/pid-alive.js";
 import { readDarwinProcessCensus } from "../darwin-process-inspection.js";
 

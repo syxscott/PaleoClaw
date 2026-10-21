@@ -10,7 +10,7 @@ export const nativeStatusCheck: HealthCheck = {
   async detect() {
     const [{ getFsSafeNativeStatus }, { getProcSafeNativeStatus }] = await Promise.all([
       import("@openclaw/fs-safe"),
-      import("@paleoclaw/proc-safe"),
+      import("@openclaw/proc-safe"),
     ]);
     const statuses = await Promise.all([
       getFsSafeNativeStatus({ probe: true }),

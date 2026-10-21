@@ -16,7 +16,7 @@ vi.mock("node:module", async (importOriginal) => {
       const require = actual.createRequire(filename);
       return Object.assign(
         (id: string) =>
-          id === "@paleoclaw/proc-safe/windows-token"
+          id === "@openclaw/proc-safe/windows-token"
             ? { readCurrentAppContainerSid: () => "S-1-15-2-123" }
             : require(id),
         require,

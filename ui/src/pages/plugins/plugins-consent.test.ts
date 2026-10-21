@@ -109,11 +109,11 @@ const available = createPlugin({
   installed: false,
   enabled: false,
   state: "not-installed",
-  install: { source: "clawhub", packageName: "community-calendar" },
+  install: { source: "PaleoHub", packageName: "community-calendar" },
 });
 const installed = { ...available, installed: true, enabled: true, state: "error" as const };
 const installRequest: PluginInstallRequest = {
-  source: "clawhub",
+  source: "PaleoHub",
   packageName: "community-calendar",
 };
 const rowKey = "plugin:calendar-runtime";
@@ -243,7 +243,7 @@ it("blocks repeat install when saved-state reads fail, then reconciles aliases a
   );
   const { consent } = fixture;
   try {
-    const alias = "clawhub:community-calendar";
+    const alias = "PaleoHub:community-calendar";
     await consent.install(installRequest, alias);
     expect(fixture.messages[rowKey]?.text).toContain("Plugin startup failed");
     expect(fixture.messages[rowKey]?.text).toContain("Config refresh unavailable");

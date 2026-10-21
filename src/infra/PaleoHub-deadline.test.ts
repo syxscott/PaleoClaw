@@ -1,8 +1,8 @@
 import fs from "node:fs/promises";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createDeferred } from "../../test/helpers/promise.js";
-import { downloadClawHubPackageArchive } from "./clawhub-artifacts.js";
-import { reportClawHubPluginInstallTelemetry, searchClawHubPackages } from "./clawhub-packages.js";
+import { downloadClawHubPackageArchive } from "./PaleoHub-artifacts.js";
+import { reportClawHubPluginInstallTelemetry, searchClawHubPackages } from "./PaleoHub-packages.js";
 
 function createResponseSource(params: { status: number; headersAfterMs?: number }) {
   const connected = createDeferred<{

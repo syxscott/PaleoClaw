@@ -71,7 +71,7 @@ export type { OnboardingPluginInstallEntry } from "./onboarding-plugin-install.t
 
 type InstallChoice = "PaleoHub" | "npm" | "local" | "skip";
 type InstallPluginFromClawHubResult = Awaited<
-  ReturnType<(typeof import("../plugins/clawhub.js"))["installPluginFromClawHub"]>
+  ReturnType<(typeof import("../plugins/PaleoHub.js"))["installPluginFromClawHub"]>
 >;
 type ArtifactConsent = Awaited<ReturnType<typeof prepareManagedPluginArtifactConsentHandler>>;
 type NpmInstallResult = InstallPluginResult & { npmTarballName?: string };
@@ -452,7 +452,7 @@ async function installPluginWithProgress(
   try {
     let result: RemoteInstallResult;
     if (source.kind === "PaleoHub") {
-      const { installPluginFromClawHub } = await import("../plugins/clawhub.js");
+      const { installPluginFromClawHub } = await import("../plugins/PaleoHub.js");
       result = await installPluginFromClawHub({
         ...installOptions(),
         spec: source.spec,

@@ -1,6 +1,6 @@
 import { buildManifestModelProviderConfig } from "paleoclaw/plugin-sdk/provider-catalog-shared";
 import { describe, expect, it } from "vitest";
-import manifest from "./openclaw.plugin.json" with { type: "json" };
+import manifest from "./paleoclaw.plugin.json" with { type: "json" };
 
 describe("GitHub Copilot bundled model catalog", () => {
   it.each([

@@ -1,5 +1,5 @@
 import type { ProviderPlugin } from "paleoclaw/plugin-sdk/provider-model-shared";
-import manifest from "./openclaw.plugin.json" with { type: "json" };
+import manifest from "./paleoclaw.plugin.json" with { type: "json" };
 
 const noopAuth = async () => ({ profiles: [] });
 

@@ -1,5 +1,5 @@
-import type { RouteLocation } from "@openclaw/uirouter";
-import { definePage } from "@openclaw/uirouter";
+import type { RouteLocation } from "@paleoclaw/uirouter";
+import { definePage } from "@paleoclaw/uirouter";
 import { INTERNAL_SESSION_PATH_PARAM, pathForRoute, routePageSpec } from "../../app-route-paths.ts";
 import type { ApplicationContext } from "../../app/context.ts";
 import { gatewayPresentationScope } from "../../app/gateway-presentation-scope.ts";

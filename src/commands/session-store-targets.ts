@@ -1,95 +1,111 @@
-import { listAgentIds, resolveDefaultAgentId } from "../agents/agent-scope.js";
-import { resolveStorePath } from "../config/sessions.js";
-import type { OpenClawConfig } from "../config/types.paleoclaw.js";
-import { normalizeAgentId } from "../routing/session-key.js";
-import type { RuntimeEnv } from "../runtime.js";
+import fs from "node:fs";
+import path from "node:path";
+import { AgentSelectionRequiredError } from "../agents/agent-scope-config.js";
+import { ExpectedCliError } from "../cli/failure-output.js";
+import {
+  resolveSessionStoreTargets,
+  type SessionStoreSelectionOptions,
+  type SessionStoreTarget,
+} from "../config/sessions.js";
+import { resolveSqliteTargetFromSessionStorePath } from "../config/sessions/session-sqlite-target.js";
+import type { OpenClawConfig } from "../config/types.openclaw.js";
+import { formatErrorMessage } from "../infra/errors.js";
+import { openNodeSqliteDatabase } from "../infra/node-sqlite.js";
 
-export type SessionStoreSelectionOptions = {
-  store?: string;
-  agent?: string;
-  allAgents?: boolean;
+const SESSION_STORE_SELECTION_CONTEXT = {
+  surface: "session-store selection",
+  hint: "Pass --agent <id> to select one agent, or --all-agents to include every configured agent.",
 };
 
-export type SessionStoreTarget = {
+export function resolveExplicitSessionStorePath(params: {
   agentId: string;
+  inputStorePath: string;
   storePath: string;
-};
-
-function dedupeTargetsByStorePath(targets: SessionStoreTarget[]): SessionStoreTarget[] {
-  const deduped = new Map<string, SessionStoreTarget>();
-  for (const target of targets) {
-    if (!deduped.has(target.storePath)) {
-      deduped.set(target.storePath, target);
-    }
-  }
-  return [...deduped.values()];
-}
-
-export function resolveSessionStoreTargets(
-  cfg: OpenClawConfig,
-  opts: SessionStoreSelectionOptions,
-): SessionStoreTarget[] {
-  const defaultAgentId = resolveDefaultAgentId(cfg);
-  const hasAgent = Boolean(opts.agent?.trim());
-  const allAgents = opts.allAgents === true;
-  if (hasAgent && allAgents) {
-    throw new Error("--agent and --all-agents cannot be used together");
-  }
-  if (opts.store && (hasAgent || allAgents)) {
-    throw new Error("--store cannot be combined with --agent or --all-agents");
-  }
-
-  if (opts.store) {
-    return [
-      {
-        agentId: defaultAgentId,
-        storePath: resolveStorePath(opts.store, { agentId: defaultAgentId }),
-      },
-    ];
-  }
-
-  if (allAgents) {
-    const targets = listAgentIds(cfg).map((agentId) => ({
-      agentId,
-      storePath: resolveStorePath(cfg.session?.store, { agentId }),
-    }));
-    return dedupeTargetsByStorePath(targets);
-  }
-
-  if (hasAgent) {
-    const knownAgents = listAgentIds(cfg);
-    const requested = normalizeAgentId(opts.agent ?? "");
-    if (!knownAgents.includes(requested)) {
+}): string {
+  const storePath = path.resolve(params.storePath);
+  const resolvedPath = resolveSqliteTargetFromSessionStorePath(storePath, {
+    agentId: params.agentId,
+  }).path;
+  const displayTarget =
+    storePath === resolvedPath
+      ? resolvedPath
+      : `${resolvedPath} (resolved from --store ${JSON.stringify(params.inputStorePath)})`;
+  let stat: fs.Stats;
+  try {
+    stat = fs.statSync(resolvedPath);
+  } catch (error) {
+    if (error && typeof error === "object" && "code" in error && error.code === "ENOENT") {
       throw new Error(
-        `Unknown agent id "${opts.agent}". Use "paleoclaw agents list" to see configured agents.`,
+        `Session store target does not exist: ${displayTarget}. Pass a selector whose resolved SQLite target exists.`,
+        { cause: error },
       );
     }
-    return [
-      {
-        agentId: requested,
-        storePath: resolveStorePath(cfg.session?.store, { agentId: requested }),
-      },
-    ];
+    throw new Error(
+      `Could not inspect session store target ${displayTarget}: ${formatErrorMessage(error)}`,
+      { cause: error },
+    );
+  }
+  if (!stat.isFile()) {
+    throw new Error(
+      `Session store target is not a regular file: ${displayTarget}. Pass a selector whose resolved SQLite target is a regular file.`,
+    );
   }
 
-  return [
-    {
-      agentId: defaultAgentId,
-      storePath: resolveStorePath(cfg.session?.store, { agentId: defaultAgentId }),
-    },
-  ];
+  let database;
+  try {
+    database = openNodeSqliteDatabase(resolvedPath, { readOnly: true });
+    const applicationTables =
+      // sqlite-allow-raw -- Schema introspection distinguishes empty repair targets from foreign DBs.
+      database
+        .prepare("SELECT name FROM sqlite_schema WHERE type = 'table' AND name NOT LIKE 'sqlite_%'")
+        .all();
+    if (
+      applicationTables.length > 0 &&
+      !applicationTables.some((row) => row.name === "schema_meta")
+    ) {
+      throw new Error("the SQLite file has application tables but no paleoclaw schema metadata");
+    }
+  } catch (error) {
+    throw new Error(
+      `Session store target is not a session store: ${displayTarget}. ${formatErrorMessage(error)}. Pass a legacy store selector or SQLite target reported by paleoclaw sessions or paleoclaw status.`,
+      { cause: error },
+    );
+  } finally {
+    database?.close();
+  }
+  return storePath;
 }
 
-export function resolveSessionStoreTargetsOrExit(params: {
+/** Selection failures reach the root CLI handler for shared JSON output and cleanup. */
+export function resolveCommandSessionStoreTargets(params: {
   cfg: OpenClawConfig;
   opts: SessionStoreSelectionOptions;
-  runtime: RuntimeEnv;
-}): SessionStoreTarget[] | null {
+}): SessionStoreTarget[] {
   try {
-    return resolveSessionStoreTargets(params.cfg, params.opts);
+    const targets = resolveSessionStoreTargets(params.cfg, params.opts);
+    if (!params.opts.store) {
+      return targets;
+    }
+    const target = targets[0];
+    if (!target) {
+      throw new Error("Explicit session store selection did not resolve a target.");
+    }
+    return [
+      {
+        ...target,
+        storePath: resolveExplicitSessionStorePath({
+          ...target,
+          inputStorePath: params.opts.store,
+        }),
+      },
+    ];
   } catch (error) {
-    params.runtime.error(error instanceof Error ? error.message : String(error));
-    params.runtime.exit(1);
-    return null;
+    // The shared CLI failure owner already treats agent selection as an operator
+    // error; only the session-store surface wording is added here.
+    if (error instanceof AgentSelectionRequiredError) {
+      throw new AgentSelectionRequiredError(error.agentIds, SESSION_STORE_SELECTION_CONTEXT);
+    }
+    const message = formatErrorMessage(error);
+    throw new ExpectedCliError({ message, humanOutput: message, machineOutput: message });
   }
 }

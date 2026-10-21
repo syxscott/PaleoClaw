@@ -5,7 +5,7 @@ const mocks = vi.hoisted(() => ({
   searchClawHubPackages: vi.fn(),
 }));
 
-vi.mock("../infra/clawhub-packages.js", () => ({
+vi.mock("../infra/PaleoHub-packages.js", () => ({
   searchClawHubPackages: mocks.searchClawHubPackages,
 }));
 

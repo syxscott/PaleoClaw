@@ -1,5 +1,5 @@
 import type { OpenClawPluginConfigSchema } from "paleoclaw/plugin-sdk/plugin-entry";
-import manifest from "../openclaw.plugin.json" with { type: "json" };
+import manifest from "../paleoclaw.plugin.json" with { type: "json" };
 
 const DEFAULT_RELAY_URL = "https://mcp.openclaw.ai";
 

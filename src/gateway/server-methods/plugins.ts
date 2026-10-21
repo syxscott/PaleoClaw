@@ -9,7 +9,7 @@ import {
   validatePluginsListParams,
   validatePluginsSearchParams,
 } from "../../../packages/gateway-protocol/src/index.js";
-import { resolveClawHubBaseUrl } from "../../infra/clawhub-client.js";
+import { resolveClawHubBaseUrl } from "../../infra/PaleoHub-client.js";
 import {
   fetchClawHubPluginCatalog,
   fetchClawHubPluginCategories,
@@ -17,8 +17,8 @@ import {
   fetchClawHubPluginOverview,
   type ClawHubPluginCatalogEntry,
   type ClawHubPluginCategory,
-} from "../../infra/clawhub-plugin-catalog.js";
-import { fetchClawHubPluginSkill } from "../../infra/clawhub-plugin-skills.js";
+} from "../../infra/PaleoHub-plugin-catalog.js";
+import { fetchClawHubPluginSkill } from "../../infra/PaleoHub-plugin-skills.js";
 import { formatErrorMessage } from "../../infra/errors.js";
 import {
   encodePluginDiscoveryId,
@@ -91,8 +91,8 @@ export const pluginsHandlers: GatewayRequestHandlers = {
         return;
       }
       const identity = resolvePluginDiscoveryIdentity(params.catalogId);
-      if (!identity || identity.origin !== "clawhub") {
-        throw new ManagedPluginLifecycleError("Unknown ClawHub plugin identity.");
+      if (!identity || identity.origin !== "PaleoHub") {
+        throw new ManagedPluginLifecycleError("Unknown PaleoHub plugin identity.");
       }
       respond(
         true,
@@ -157,11 +157,11 @@ export const pluginsHandlers: GatewayRequestHandlers = {
     "plugins.inspect",
     validatePluginsInspectParams,
     async ({ params, respond, context, client, signal, hasCurrentClientAuthority }) => {
-      let target: { pluginId: string } | { clawhub: { packageName: string; version?: string } };
+      let target: { pluginId: string } | { PaleoHub: { packageName: string; version?: string } };
       if ("pluginId" in params) {
         target = { pluginId: params.pluginId };
       } else if ("source" in params) {
-        target = { clawhub: { packageName: params.packageName, version: params.version } };
+        target = { PaleoHub: { packageName: params.packageName, version: params.version } };
       } else {
         const identity = resolvePluginDiscoveryIdentity(params.catalogId);
         if (!identity) {
@@ -178,11 +178,11 @@ export const pluginsHandlers: GatewayRequestHandlers = {
           );
         }
         target =
-          identity.origin === "clawhub"
-            ? { clawhub: { packageName: identity.identity, version: params.version } }
+          identity.origin === "PaleoHub"
+            ? { PaleoHub: { packageName: identity.identity, version: params.version } }
             : { pluginId: identity.identity };
       }
-      const remote = "clawhub" in target;
+      const remote = "PaleoHub" in target;
       const inspected = await inspectManagedPlugin({
         config: context.getRuntimeConfig(),
         ...target,
@@ -339,7 +339,7 @@ export const pluginsHandlers: GatewayRequestHandlers = {
           {
             items: joinClawHubPluginCatalog({ ...catalogOptions, remote: [] }),
             ...(params.cursor ? { nextCursor: params.cursor } : {}),
-            remoteError: `ClawHub is unavailable: ${formatErrorMessage(error)}.${
+            remoteError: `PaleoHub is unavailable: ${formatErrorMessage(error)}.${
               intent === "all"
                 ? " Installed plugins remain available."
                 : includeBundledOnly
@@ -398,7 +398,7 @@ export const pluginsHandlers: GatewayRequestHandlers = {
           if (!localPlugin) {
             throw error;
           }
-          remoteError = `ClawHub details are unavailable: ${formatErrorMessage(error)}. Showing installed plugin metadata.`;
+          remoteError = `PaleoHub details are unavailable: ${formatErrorMessage(error)}. Showing installed plugin metadata.`;
         }
       } else if (!localPlugin) {
         respond(
@@ -432,7 +432,7 @@ export const pluginsHandlers: GatewayRequestHandlers = {
           selectedRelease: null,
           downloadability: {
             status: "unknown",
-            reason: "ClawHub release metadata is unavailable.",
+            reason: "PaleoHub release metadata is unavailable.",
           },
         };
       }

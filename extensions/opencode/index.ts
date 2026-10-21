@@ -16,7 +16,7 @@ import {
   normalizeLowercaseStringOrEmpty,
 } from "paleoclaw/plugin-sdk/string-coerce-runtime";
 import { applyOpencodeZenProviderConfig, OPENCODE_ZEN_DEFAULT_MODEL_REF } from "./onboard.js";
-import manifest from "./openclaw.plugin.json" with { type: "json" };
+import manifest from "./paleoclaw.plugin.json" with { type: "json" };
 import {
   buildOpencodeZenLiveProviderConfig,
   buildStaticOpencodeZenProviderConfig,

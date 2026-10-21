@@ -5,7 +5,7 @@ import os from "node:os";
 import path from "node:path";
 import { Type } from "typebox";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import { publicPluginSdkSubpaths } from "../../scripts/lib/plugin-sdk-entries.mjs";
+import { publicPluginSdkSubpaths } from "../../scripts/lib/plugin-sdk-entries.mts";
 import { useAutoCleanupTempDirTracker } from "../../test/helpers/temp-dir.js";
 import { defineToolPlugin, getToolPluginMetadata } from "../plugin-sdk/tool-plugin.js";
 import { defaultRuntime } from "../runtime.js";

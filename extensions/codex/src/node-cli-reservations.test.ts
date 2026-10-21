@@ -12,7 +12,7 @@ import {
 import { useAutoCleanupTempDirTracker } from "paleoclaw/plugin-sdk/test-env";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import plugin from "../index.js";
-import manifest from "../openclaw.plugin.json" with { type: "json" };
+import manifest from "../paleoclaw.plugin.json" with { type: "json" };
 import { resumeCodexCliSessionOnNode } from "./node-cli-sessions.js";
 import { codexCatalogHomeId } from "./session-catalog-home-id.js";
 import { readNodeSessionMarker } from "./session-catalog-node-adoption.js";

@@ -1,6 +1,6 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { prepareSystemAgentRunAdmission } from "../../admitted-run-context.js";
-import { createOpenClawAgentHarness } from "../../harness/builtin-openclaw.js";
+import { createOpenClawAgentHarness } from "../../harness/builtin-paleoclaw.js";
 import { SessionManager } from "../../sessions/session-manager.js";
 import { buildEmbeddedRunnerAssistant } from "../../test-helpers/embedded-agent-runner-e2e-fixtures.js";
 import { createSubscriptionMock } from "./attempt-spawn-workspace.subscription-mock.test-support.js";

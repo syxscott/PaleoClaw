@@ -2,7 +2,7 @@ import type { StreamFn } from "paleoclaw/plugin-sdk/agent-core";
 import { transcribeOpenAiCompatibleAudio } from "paleoclaw/plugin-sdk/media-understanding";
 import { defineSingleProviderPluginEntry } from "paleoclaw/plugin-sdk/provider-entry";
 import { createPayloadPatchStreamWrapper } from "paleoclaw/plugin-sdk/provider-stream-shared";
-import manifest from "./openclaw.plugin.json" with { type: "json" };
+import manifest from "./paleoclaw.plugin.json" with { type: "json" };
 
 const DEFAULT_GROQ_AUDIO_BASE_URL = "https://api.groq.com/openai/v1";
 const DEFAULT_GROQ_AUDIO_MODEL = "whisper-large-v3-turbo";

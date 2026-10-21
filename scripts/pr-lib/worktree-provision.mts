@@ -16,7 +16,7 @@ import {
   requireGitCommandOutput,
 } from "../../src/infra/git-exec.js";
 import { isDirectRunUrl } from "../lib/direct-run.mjs";
-import { formatProvisionError } from "./worktree-provision-error.mjs";
+import { formatProvisionError } from "./worktree-provision-error.mts";
 
 type ProvisionParams = {
   root: string;

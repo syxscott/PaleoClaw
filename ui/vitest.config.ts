@@ -191,7 +191,7 @@ export function createUiBrowserVitestConfig(
         "@noble/hashes/utils.js",
         "@paleoclaw/normalization-core > libphonenumber-js/min",
         "@paleoclaw/normalization-core > libphonenumber-js/min/metadata",
-        "@openclaw/uirouter",
+        "@paleoclaw/uirouter",
         "@panzoom/panzoom",
         "@solidjs/signals",
         "@solidjs/testing-library",

@@ -260,7 +260,7 @@ const suite = createControlUiE2eSuite({
         const executable =
           process.platform === "linux"
             ? await realpath(`/proc/${pid}/exe`)
-            : (await import("@paleoclaw/proc-safe/inspect")).readProcessCommand(pid)?.executable;
+            : (await import("@openclaw/proc-safe/inspect")).readProcessCommand(pid)?.executable;
         expect(executable).toBe(await realpath(runtime.gatewayCommandPrefix[0]));
       }
       const created = await owner.cli([

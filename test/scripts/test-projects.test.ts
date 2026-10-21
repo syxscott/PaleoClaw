@@ -15,7 +15,7 @@ import {
 import { resolveDefaultVitestNoOutputTimeoutMs } from "../../scripts/lib/vitest-process-env.mts";
 import { resolveVitestRuntimeCliSelections as runtimeSelections } from "../../scripts/lib/vitest-runtime-selection.mts";
 import { resolveShardTimingKey } from "../../scripts/lib/vitest-shard-metadata.mts";
-import { scriptModuleEntrypoints } from "../../scripts/script-module-runtime.test-support.mjs";
+import { scriptModuleEntrypoints } from "../../scripts/script-module-runtime.test-support.mts";
 import {
   applyDefaultVitestNoOutputTimeout,
   applyFullExtensionsHeapBudget,

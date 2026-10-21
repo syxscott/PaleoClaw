@@ -5,7 +5,7 @@ import {
 import { normalizeOptionalString } from "@paleoclaw/normalization-core/string-coerce";
 import { normalizeUniqueTrimmedStringList } from "@paleoclaw/normalization-core/string-normalization";
 import { buildControlUiFocusPath } from "@paleoclaw/session-url-contract";
-import type { RouteLocation } from "@openclaw/uirouter";
+import type { RouteLocation } from "@paleoclaw/uirouter";
 import {
   CONTROL_UI_BOOTSTRAP_PROFILE_FRAGMENT_PARAM,
   CONTROL_UI_OWNER_BOOTSTRAP_PROFILE_HINT,

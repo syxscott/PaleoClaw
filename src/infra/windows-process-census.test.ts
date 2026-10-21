@@ -1,5 +1,5 @@
-import { ProcSafeError } from "@paleoclaw/proc-safe/errors";
-import type { ProcessSnapshot } from "@paleoclaw/proc-safe/inspect";
+import { ProcSafeError } from "@openclaw/proc-safe/errors";
+import type { ProcessSnapshot } from "@openclaw/proc-safe/inspect";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { mockProcessPlatform } from "../test-utils/vitest-spies.js";
 
@@ -9,20 +9,20 @@ const { list, identity, spawn, pin } = vi.hoisted(() => ({
   spawn: vi.fn(),
   pin: vi.fn(),
 }));
-vi.mock("@paleoclaw/proc-safe/windows-job", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@paleoclaw/proc-safe/windows-job")>()),
+vi.mock("@openclaw/proc-safe/windows-job", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@openclaw/proc-safe/windows-job")>()),
   PinnedProcess: { open: pin },
 }));
 vi.mock("node:child_process", async (importOriginal) => ({
   ...(await importOriginal<typeof import("node:child_process")>()),
   spawnSync: spawn,
 }));
-vi.mock("@paleoclaw/proc-safe/identity", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@paleoclaw/proc-safe/identity")>()),
+vi.mock("@openclaw/proc-safe/identity", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@openclaw/proc-safe/identity")>()),
   readProcessIdentity: identity,
 }));
-vi.mock("@paleoclaw/proc-safe/inspect", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@paleoclaw/proc-safe/inspect")>()),
+vi.mock("@openclaw/proc-safe/inspect", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@openclaw/proc-safe/inspect")>()),
   listProcesses: list,
 }));
 import { readWindowsProcessCensus } from "./windows-process-census.js";

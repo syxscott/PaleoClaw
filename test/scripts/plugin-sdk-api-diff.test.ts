@@ -16,7 +16,7 @@ import {
   selectPluginSdkApiReleaseEvidence as selectEvidence,
   validatePluginSdkApiReleaseEvidence as validateEvidence,
 } from "../../scripts/plugin-sdk-api-release-evidence.mjs";
-import { scriptModuleEntrypoints } from "../../scripts/script-module-runtime.test-support.mjs";
+import { scriptModuleEntrypoints } from "../../scripts/script-module-runtime.test-support.mts";
 import {
   resolveRuntimeWorkerArgv,
   resolveRuntimeWorkerUrl,

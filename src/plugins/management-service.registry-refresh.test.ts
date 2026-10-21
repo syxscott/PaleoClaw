@@ -108,7 +108,7 @@ const emptyArtifactAcknowledgment = {
 
 function mockClawHubWorkboardInstall() {
   mocks.clawhubInstall.mockImplementation(
-    async (params: Parameters<typeof import("./clawhub.js").installPluginFromClawHub>[0]) => {
+    async (params: Parameters<typeof import("./PaleoHub.js").installPluginFromClawHub>[0]) => {
       const artifactDir = makeTrackedTempDir("managed-registry-consent", trackedArtifactDirs);
       createColdPluginFixture({
         rootDir: artifactDir,

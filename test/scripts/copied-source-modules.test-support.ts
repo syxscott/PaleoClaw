@@ -36,7 +36,7 @@ export async function prepareCopiedSourceModules(
       alwaysBundle: (id) =>
         id.startsWith("@paleoclaw/") &&
         !id.startsWith("@openclaw/fs-safe") &&
-        !id.startsWith("@paleoclaw/proxyline"),
+        !id.startsWith("@openclaw/proxyline"),
       neverBundle(id, importer) {
         if (externalModules[id]) {
           return false;
