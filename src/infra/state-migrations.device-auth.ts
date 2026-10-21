@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 // Doctor-only import for the retired device-auth JSON store.
 import fs from "node:fs";
 import path from "node:path";
-import { root } from "@paleoclaw/fs-safe";
+import { root } from "@openclaw/fs-safe";
 import { isRecord } from "@paleoclaw/normalization-core/record-coerce";
 import { normalizeDeviceAuthRole, normalizeDeviceAuthScopes } from "../shared/device-auth.js";
 import { resolveOpenClawStateSqlitePath } from "../state/paleoclaw-state-db.paths.js";

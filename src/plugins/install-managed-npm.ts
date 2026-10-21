@@ -1,5 +1,5 @@
 import fs from "node:fs/promises";
-import { tempWorkspace, type TempWorkspace } from "@paleoclaw/fs-safe/temp";
+import { tempWorkspace, type TempWorkspace } from "@openclaw/fs-safe/temp";
 import { clean as cleanSemver } from "semver";
 import { resolveInstallWorkTimeoutMs } from "../infra/install-mode-options.js";
 import {

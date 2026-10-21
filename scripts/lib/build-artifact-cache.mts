@@ -7,7 +7,7 @@ import {
   acquireFileLock,
   acquireFileLockSync,
   type FileLockHandle,
-} from "@paleoclaw/fs-safe/file-lock";
+} from "@openclaw/fs-safe/file-lock";
 
 export const ARTIFACT_CACHE_VERSION = 6;
 export type BuildCachePath = {

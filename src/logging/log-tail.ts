@@ -2,7 +2,7 @@ import type { Stats } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { StringDecoder } from "node:string_decoder";
-import { readFileWindowFully } from "@paleoclaw/fs-safe/advanced";
+import { readFileWindowFully } from "@openclaw/fs-safe/advanced";
 import { isMissingPathError } from "../infra/errno.js";
 import { clamp } from "../utils.js";
 import { isSameRollingLogFileFamily } from "./log-file-path.js";

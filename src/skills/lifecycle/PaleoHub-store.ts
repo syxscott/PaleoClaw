@@ -1,7 +1,7 @@
 import fsSync from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { replaceFileAtomicSync } from "@paleoclaw/fs-safe/atomic";
+import { replaceFileAtomicSync } from "@openclaw/fs-safe/atomic";
 import { stableStringify } from "@paleoclaw/normalization-core";
 import { normalizeOptionalString as normalizeOptionalStringValue } from "@paleoclaw/normalization-core/string-coerce";
 import {

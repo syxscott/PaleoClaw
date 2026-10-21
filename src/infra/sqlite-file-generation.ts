@@ -1,5 +1,5 @@
 import fs from "node:fs";
-import { sameFileIdentity, type FileIdentityStat } from "@paleoclaw/fs-safe/advanced";
+import { sameFileIdentity, type FileIdentityStat } from "@openclaw/fs-safe/advanced";
 import { isRecord } from "@paleoclaw/normalization-core/record-coerce";
 import type { FileMutationFingerprint } from "./file-descriptor.js";
 import { hashPublishedFileSync, sameFileStatFingerprint } from "./sqlite-snapshot-file.js";

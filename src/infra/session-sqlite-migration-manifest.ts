@@ -2,8 +2,8 @@
 import { randomUUID } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import { assertNoSymlinkParentsSync } from "@paleoclaw/fs-safe/advanced";
-import * as replaceFile from "@paleoclaw/fs-safe/atomic";
+import { assertNoSymlinkParentsSync } from "@openclaw/fs-safe/advanced";
+import * as replaceFile from "@openclaw/fs-safe/atomic";
 import { isRecord } from "@paleoclaw/normalization-core/record-coerce";
 import { z } from "zod";
 import { resolveStateDir } from "../config/paths.js";

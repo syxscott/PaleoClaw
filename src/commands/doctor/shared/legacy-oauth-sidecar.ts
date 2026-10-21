@@ -5,7 +5,7 @@ import { createDecipheriv, hash } from "node:crypto";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { isPathInside } from "@paleoclaw/fs-safe/path";
+import { isPathInside } from "@openclaw/fs-safe/path";
 import { isRecord } from "@paleoclaw/normalization-core/record-coerce";
 import { readNonBlankString as readNonEmptyString } from "@paleoclaw/normalization-core/string-coerce";
 import {

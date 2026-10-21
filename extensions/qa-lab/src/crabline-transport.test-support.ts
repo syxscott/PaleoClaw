@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import type { OpenClawCrablineChannelDriverSelection } from "@paleoclaw/crabline";
+import type { OpenClawCrablineChannelDriverSelection } from "@openclaw/crabline";
 import { fetchWithSsrFGuard } from "paleoclaw/plugin-sdk/ssrf-runtime";
 import { isRecord } from "paleoclaw/plugin-sdk/string-coerce-runtime";
 import { withTempDir } from "paleoclaw/plugin-sdk/test-env";

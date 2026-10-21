@@ -75,7 +75,7 @@ DatabaseSync.prototype.prepare = function (sql, ...args) {
 };
 `
         : `
-import { __setFsSafeTestHooksForTest } from ${JSON.stringify(import.meta.resolve("@paleoclaw/fs-safe/test-hooks"))};
+import { __setFsSafeTestHooksForTest } from ${JSON.stringify(import.meta.resolve("@openclaw/fs-safe/test-hooks"))};
 for (const [name, option] of Object.entries(${JSON.stringify(withRuntimePreload({}, preloadPath))})) {
   process.env[name] = [process.env[name], option].filter(Boolean).join(" ");
 }

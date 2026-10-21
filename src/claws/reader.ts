@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { realpath, stat } from "node:fs/promises";
 import { basename, dirname, isAbsolute, relative, resolve, sep } from "node:path";
-import { assertNoSymlinkParents, readFileHandleBounded } from "@paleoclaw/fs-safe/advanced";
+import { assertNoSymlinkParents, readFileHandleBounded } from "@openclaw/fs-safe/advanced";
 import { isRecord } from "@paleoclaw/normalization-core/record-coerce";
 import { MAX_WORKSPACE_BOOTSTRAP_FILE_BYTES } from "../agents/workspace-bootstrap-read.js";
 import { FsSafeError, root as fsSafeRoot, type OpenResult } from "../infra/fs-safe.js";

@@ -4,7 +4,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { finished, pipeline } from "node:stream/promises";
 import { isDeepStrictEqual } from "node:util";
-import { readFileHandleBounded } from "@paleoclaw/fs-safe/advanced";
+import { readFileHandleBounded } from "@openclaw/fs-safe/advanced";
 import { valid } from "semver";
 import * as tar from "tar";
 import {

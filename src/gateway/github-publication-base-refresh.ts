@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { writeTextAtomic } from "@paleoclaw/fs-safe/atomic";
+import { writeTextAtomic } from "@openclaw/fs-safe/atomic";
 import type { SessionGitHubBaseRefreshResult } from "../../packages/gateway-protocol/src/schema/session-github-publication.js";
 import { prepareGitCoauthorAttribution } from "../agents/git-coauthor-attribution.js";
 import type { PreparedGitHubPublicationIdentity } from "../agents/github-tool-identity.js";

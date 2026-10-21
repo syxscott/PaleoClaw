@@ -400,8 +400,8 @@ describe("tsdown config", () => {
         throw new Error("expected runtime graph dependency predicates");
       }
 
-      expect(alwaysBundle("@paleoclaw/fs-safe/path")).toBe(bundleFsSafe);
-      expect(external("@paleoclaw/fs-safe/path", undefined, false)).toBe(!bundleFsSafe);
+      expect(alwaysBundle("@openclaw/fs-safe/path")).toBe(bundleFsSafe);
+      expect(external("@openclaw/fs-safe/path", undefined, false)).toBe(!bundleFsSafe);
       for (const specifier of ["@paleoclaw/proc-safe/windows-job"]) {
         expect(alwaysBundle(specifier.split("/").slice(0, 2).join("/"))).toBe(false);
         expect(alwaysBundle(specifier)).toBe(false);

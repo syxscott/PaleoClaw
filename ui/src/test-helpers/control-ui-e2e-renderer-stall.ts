@@ -1,4 +1,4 @@
-import { withTimeout } from "@paleoclaw/fs-safe/advanced";
+import { withTimeout } from "@openclaw/fs-safe/advanced";
 import type { CDPSession, Page } from "playwright";
 
 const RENDERER_STALL_BUDGET_MS = 3_000;

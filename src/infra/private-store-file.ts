@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
-import { createDirectorySync, createFileSync } from "@paleoclaw/fs-safe/advanced";
-import { FsSafeError } from "@paleoclaw/fs-safe/errors";
+import { createDirectorySync, createFileSync } from "@openclaw/fs-safe/advanced";
+import { FsSafeError } from "@openclaw/fs-safe/errors";
 import { applyPrivateModeSync } from "./private-mode.js";
 
 function createPrivateIfMissing(create: () => void): boolean {

@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { lstat, realpath } from "node:fs/promises";
 import path from "node:path";
-import { assertNoWindowsNetworkPath, safeFileURLToPath } from "@paleoclaw/fs-safe/advanced";
+import { assertNoWindowsNetworkPath, safeFileURLToPath } from "@openclaw/fs-safe/advanced";
 import { maxBytesForKind, type MediaKind } from "@paleoclaw/media-core/constants";
 import { basenameFromAnyPath, extnameFromAnyPath } from "@paleoclaw/media-core/file-name";
 import {

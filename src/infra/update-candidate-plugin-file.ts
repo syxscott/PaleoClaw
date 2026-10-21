@@ -1,6 +1,6 @@
 import fsSync from "node:fs";
 import path from "node:path";
-import { assertDirectoryIdentitySync, type DirectoryIdentity } from "@paleoclaw/fs-safe/advanced";
+import { assertDirectoryIdentitySync, type DirectoryIdentity } from "@openclaw/fs-safe/advanced";
 import type { Root } from "./fs-safe.js";
 import {
   createUpdateCandidatePluginPool,

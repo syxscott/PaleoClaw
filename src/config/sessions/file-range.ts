@@ -1,5 +1,5 @@
 import type { FileHandle } from "node:fs/promises";
-import { readFileWindowFully } from "@paleoclaw/fs-safe/advanced";
+import { readFileWindowFully } from "@openclaw/fs-safe/advanced";
 
 export async function readFileRangeAsync(
   fileHandle: FileHandle,

@@ -4,7 +4,7 @@ import type { BigIntStats } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
 import tls from "node:tls";
-import { ensureDurableDirectory, publishFileExclusive } from "@paleoclaw/fs-safe/durability";
+import { ensureDurableDirectory, publishFileExclusive } from "@openclaw/fs-safe/durability";
 import { err, ok, type Result } from "@paleoclaw/normalization-core/result";
 import { normalizeTlsFingerprint } from "../../../packages/gateway-client/src/client-address-utils.js";
 import type { GatewayTlsConfig } from "../../config/types.gateway.js";

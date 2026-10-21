@@ -1,5 +1,5 @@
 import path from "node:path";
-import { readFileWindowFully, safeFileURLToPath } from "@paleoclaw/fs-safe/advanced";
+import { readFileWindowFully, safeFileURLToPath } from "@openclaw/fs-safe/advanced";
 import { detectMime, kindFromMime } from "@paleoclaw/media-core/mime";
 import { startsWithSvgRootElement } from "../../packages/gateway-protocol/src/svg-image.js";
 import { relativePathInsideSandboxRoot, resolveSandboxPathMapping } from "../agents/path-policy.js";

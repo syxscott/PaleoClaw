@@ -1,5 +1,5 @@
 import { existsSync } from "node:fs";
-import { pathExists } from "@paleoclaw/fs-safe/advanced";
+import { pathExists } from "@openclaw/fs-safe/advanced";
 import { stableHomebrewNodePathCandidates } from "@paleoclaw/normalization-core/stable-node-path";
 
 /**

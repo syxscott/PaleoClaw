@@ -2,7 +2,7 @@ import { constants as fsConstants, type Dirent } from "node:fs";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { replaceFileAtomicSync } from "@paleoclaw/fs-safe/atomic";
+import { replaceFileAtomicSync } from "@openclaw/fs-safe/atomic";
 import { filterStringRecord, isRecord } from "@paleoclaw/normalization-core/record-coerce";
 import { normalizeOptionalString as readOptionalString } from "@paleoclaw/normalization-core/string-coerce";
 import { filterStringEntries } from "@paleoclaw/normalization-core/string-normalization";

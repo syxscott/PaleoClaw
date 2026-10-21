@@ -68,7 +68,7 @@ function createLinkedCheckoutFixture() {
 }
 
 function linkCheckoutTools(root: string) {
-  for (const name of ["tsx", "@paleoclaw/fs-safe"]) {
+  for (const name of ["tsx", "@openclaw/fs-safe"]) {
     const target = path.join(root, "node_modules", name);
     fs.mkdirSync(path.dirname(target), { recursive: true });
     fs.symlinkSync(path.join(sourceRoot, "node_modules", name), target, "junction");

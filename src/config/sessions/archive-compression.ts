@@ -4,7 +4,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import { walkDirectorySync } from "@paleoclaw/fs-safe/walk";
+import { walkDirectorySync } from "@openclaw/fs-safe/walk";
 import { resolvePreferredOpenClawTmpDir } from "../../infra/tmp-paleoclaw-dir.js";
 import { resolveZstdCodec } from "../../infra/zstd-codec.js";
 import { SESSION_ARCHIVE_ZSTD_SUFFIX } from "./transcript-file-names.js";

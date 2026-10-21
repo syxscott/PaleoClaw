@@ -1,7 +1,7 @@
 // Receipt lookup and source-removal bookkeeping for legacy workspace migration.
 import path from "node:path";
 import { isDeepStrictEqual } from "node:util";
-import { root } from "@paleoclaw/fs-safe";
+import { root } from "@openclaw/fs-safe";
 import { safeParseJsonRecord } from "@paleoclaw/normalization-core/json-coercion";
 import { sha256Hex } from "@paleoclaw/normalization-core/node-crypto";
 import { WORKSPACE_DOCTOR_CLAIM_SUFFIX } from "../agents/workspace-legacy-state.js";

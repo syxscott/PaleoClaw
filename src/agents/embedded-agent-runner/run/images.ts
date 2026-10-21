@@ -1,5 +1,5 @@
 import path from "node:path";
-import { assertNoWindowsNetworkPath, safeFileURLToPath } from "@paleoclaw/fs-safe/advanced";
+import { assertNoWindowsNetworkPath, safeFileURLToPath } from "@openclaw/fs-safe/advanced";
 import { MAX_VIDEO_BYTES } from "@paleoclaw/media-core/constants";
 import { normalizeMimeType } from "@paleoclaw/media-core/mime";
 import { asNonArrayRecord } from "@paleoclaw/normalization-core/record-coerce";

@@ -4,7 +4,7 @@ import fs from "node:fs/promises";
 import { hostname } from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
-import { probeTreeClone, readCloneFileMetadata } from "@paleoclaw/fs-safe/copy";
+import { probeTreeClone, readCloneFileMetadata } from "@openclaw/fs-safe/copy";
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from "vitest";
 import { awaitGateBeforeSettlement } from "../../../test/helpers/promise.js";
 import { useAutoCleanupTempDirTracker } from "../../../test/helpers/temp-dir.js";

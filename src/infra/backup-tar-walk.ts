@@ -1,7 +1,7 @@
 import { constants, type BigIntStats, type Stats } from "node:fs";
 import fs, { type FileHandle } from "node:fs/promises";
 import path from "node:path";
-import { sameFileIdentity } from "@paleoclaw/fs-safe/advanced";
+import { sameFileIdentity } from "@openclaw/fs-safe/advanced";
 import type { HeaderData } from "tar";
 import { ignoreMissingPath } from "./errno.js";
 

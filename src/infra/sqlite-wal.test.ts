@@ -3,7 +3,7 @@ import childProcess, { spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import type { DatabaseSync } from "node:sqlite";
-import { probeTreeClone } from "@paleoclaw/fs-safe/copy";
+import { probeTreeClone } from "@openclaw/fs-safe/copy";
 import { expectDefined } from "@paleoclaw/normalization-core";
 import { describe, expect, it, vi } from "vitest";
 import { createDeferredCore } from "../shared/deferred.js";
@@ -24,7 +24,7 @@ import {
 const resources = sqliteMaintenanceFixture();
 const tempDirs = { make: resources.dir };
 
-vi.mock("@paleoclaw/fs-safe/copy", { spy: true });
+vi.mock("@openclaw/fs-safe/copy", { spy: true });
 
 function configure(
   db: DatabaseSync,

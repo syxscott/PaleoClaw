@@ -2,7 +2,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { readRegularFile, readRegularFileSync } from "@paleoclaw/fs-safe/advanced";
+import { readRegularFile, readRegularFileSync } from "@openclaw/fs-safe/advanced";
 import { parse as parseDotEnv } from "dotenv";
 import { resolveConfigDir } from "./config-dir.js";
 import { clearFsSafeEnvFallback, normalizeFsSafeNativeEnv } from "./fs-safe-env.js";

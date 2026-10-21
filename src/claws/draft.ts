@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
-import { tempWorkspace } from "@paleoclaw/fs-safe/temp";
+import { tempWorkspace } from "@openclaw/fs-safe/temp";
 import {
   type ClawDraftDocument,
   type ClawDraftReviewChoices,

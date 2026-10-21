@@ -1,27 +1,34 @@
-import type { AnyAgentTool, OpenClawPluginApi } from "paleoclaw/plugin-sdk/feishu";
+import type { OpenClawPluginToolContext } from "paleoclaw/plugin-sdk/plugin-entry";
+// Feishu plugin module implements tool factory test harness behavior.
+import type { OpenClawPluginApi } from "../runtime-api.js";
 
-type ToolContextLike = {
-  agentAccountId?: string;
-};
-
-type ToolFactoryLike = (ctx: ToolContextLike) => AnyAgentTool | AnyAgentTool[] | null | undefined;
+type ToolContextLike = Pick<
+  OpenClawPluginToolContext,
+  "agentAccountId" | "config" | "runtimeConfig"
+>;
 
 export type ToolLike = {
   name: string;
-  execute: (toolCallId: string, params: unknown) => Promise<unknown> | unknown;
+  parameters?: unknown;
+  execute: (
+    toolCallId: string,
+    params: unknown,
+  ) => Promise<{ details: Record<string, unknown> }> | { details: Record<string, unknown> };
 };
 
 type RegisteredTool = {
-  tool: AnyAgentTool | ToolFactoryLike;
+  tool: unknown;
   opts?: { name?: string };
 };
 
-function toToolList(value: AnyAgentTool | AnyAgentTool[] | null | undefined): AnyAgentTool[] {
-  if (!value) return [];
+function toToolList(value: unknown): unknown[] {
+  if (!value) {
+    return [];
+  }
   return Array.isArray(value) ? value : [value];
 }
 
-function asToolLike(tool: AnyAgentTool, fallbackName?: string): ToolLike {
+function asToolLike(tool: unknown, fallbackName?: string): ToolLike {
   const candidate = tool as Partial<ToolLike>;
   const name = candidate.name ?? fallbackName;
   const execute = candidate.execute;
@@ -30,6 +37,7 @@ function asToolLike(tool: AnyAgentTool, fallbackName?: string): ToolLike {
   }
   return {
     name,
+    parameters: candidate.parameters,
     execute: (toolCallId, params) => execute(toolCallId, params),
   };
 }
@@ -72,5 +80,6 @@ export function createToolFactoryHarness(cfg: OpenClawPluginApi["config"]) {
   return {
     api: api as OpenClawPluginApi,
     resolveTool,
+    registered,
   };
 }

@@ -1,5 +1,5 @@
 import path from "node:path";
-import { isPathRelativeEscape } from "@paleoclaw/fs-safe/path";
+import { isPathRelativeEscape } from "@openclaw/fs-safe/path";
 import { MAX_IMAGE_BYTES } from "@paleoclaw/media-core/constants";
 import { getRuntimeConfigSnapshot } from "../../../config/config.js";
 import type { ModelCompatConfig } from "../../../config/types.models.js";

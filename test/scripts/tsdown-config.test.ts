@@ -1035,8 +1035,8 @@ console.log("relocated session card renders with bundled fonts");
               ]
             : []),
           `export { root } from ${JSON.stringify(sdkSource)};`,
-          `export { configureFsSafeNative, getFsSafeNativeConfig } from ${JSON.stringify(worker ? require.resolve("@paleoclaw/fs-safe/config") : "@paleoclaw/fs-safe/config")};`,
-          `export { FsSafeError } from ${JSON.stringify(worker ? require.resolve("@paleoclaw/fs-safe/errors") : "@paleoclaw/fs-safe/errors")};`,
+          `export { configureFsSafeNative, getFsSafeNativeConfig } from ${JSON.stringify(worker ? require.resolve("@openclaw/fs-safe/config") : "@openclaw/fs-safe/config")};`,
+          `export { FsSafeError } from ${JSON.stringify(worker ? require.resolve("@openclaw/fs-safe/errors") : "@openclaw/fs-safe/errors")};`,
         ].join("\n"),
       );
       const selected = worker
@@ -1191,8 +1191,8 @@ console.log("relocated session card renders with bundled fonts");
         "@larksuiteoapi/node-sdk",
         "@matrix-org/matrix-sdk-crypto-nodejs",
         "@paleoclaw/ai",
-        "@paleoclaw/crabline",
-        "@paleoclaw/fs-safe",
+        "@openclaw/crabline",
+        "@openclaw/fs-safe",
         "@vitest/expect",
         "jimp",
         "matrix-js-sdk",
@@ -1240,7 +1240,7 @@ console.log("relocated session card renders with bundled fonts");
             !bundleAll &&
             packageName === name &&
             name !== "@lancedb/lancedb" &&
-            name !== "@paleoclaw/crabline" &&
+            name !== "@openclaw/crabline" &&
             (name !== "zod" || declarations)
           ) {
             expectedImports.push(...imports);
@@ -1475,7 +1475,7 @@ console.log("relocated session card renders with bundled fonts");
             ? {
                 "worker/worker-chunk-highlight": "node_modules/highlight.js/lib/index.js",
                 "worker/worker-chunk-fs-safe-watch-io":
-                  "node_modules/@paleoclaw/fs-safe/dist/watch-io-worker.js",
+                  "node_modules/@openclaw/fs-safe/dist/watch-io-worker.js",
               }
             : {}),
         });

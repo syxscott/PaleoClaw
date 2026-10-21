@@ -1,4 +1,4 @@
-import type { Root } from "@paleoclaw/fs-safe/root";
+import type { Root } from "@openclaw/fs-safe/root";
 
 export class ObservationSampleCloseError extends Error {
   constructor(cause: unknown) {

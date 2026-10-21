@@ -1,7 +1,7 @@
 import type { Stats } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { walkDirectory, type WalkDirectoryEntry } from "@paleoclaw/fs-safe/walk";
+import { walkDirectory, type WalkDirectoryEntry } from "@openclaw/fs-safe/walk";
 import { expectDefined } from "@paleoclaw/normalization-core";
 import { truncateUtf16Safe } from "@paleoclaw/normalization-core/utf16-slice";
 import { hasErrnoCode } from "../../infra/errors.js";

@@ -206,7 +206,7 @@ const native = createStandaloneNativeAdapter({ runtimeRoot, parse });
 native.discover(moduleEntries);
 moduleEntries.push(...native.additionalModuleEntries);
 // Include conditional ESM/CJS entries reached through computed imports.
-for (const packageName of ["@paleoclaw/fs-safe", "@paleoclaw/proc-safe", "sqlite-vec", "ws"]) {
+for (const packageName of ["@openclaw/fs-safe", "@paleoclaw/proc-safe", "sqlite-vec", "ws"]) {
   const manifest = fs.realpathSync(
     path.join(runtimeRoot, "node_modules", packageName, "package.json"),
   );

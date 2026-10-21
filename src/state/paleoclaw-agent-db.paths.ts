@@ -1,7 +1,7 @@
 import { realpathSync, statSync } from "node:fs";
 import path from "node:path";
 import { isDeepStrictEqual } from "node:util";
-import { probePathSuffixAliasesSync, resolvePathPrefixSync } from "@paleoclaw/fs-safe/advanced";
+import { probePathSuffixAliasesSync, resolvePathPrefixSync } from "@openclaw/fs-safe/advanced";
 import { normalizeAgentId } from "@paleoclaw/normalization-core/agent-id";
 import { resolveStateDir } from "../config/paths.js";
 import { hasErrnoCode } from "../infra/errno.js";

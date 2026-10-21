@@ -1,4 +1,4 @@
-import { readFileHandleBounded } from "@paleoclaw/fs-safe/advanced";
+import { readFileHandleBounded } from "@openclaw/fs-safe/advanced";
 import pLimit from "p-limit";
 import type { openLocalFileSafely } from "../infra/fs-safe.js";
 import { LruCache } from "../infra/lru-cache.js";

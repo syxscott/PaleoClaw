@@ -1,7 +1,7 @@
 // Tests atomic file replacement helpers and permission handling.
 import fs from "node:fs/promises";
 import path from "node:path";
-import { movePathWithCopyFallback } from "@paleoclaw/fs-safe/atomic";
+import { movePathWithCopyFallback } from "@openclaw/fs-safe/atomic";
 import { describe, expect, it } from "vitest";
 import { withTestDir } from "../test-helpers/temp-dir.js";
 

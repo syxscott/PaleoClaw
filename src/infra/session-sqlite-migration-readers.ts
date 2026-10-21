@@ -4,7 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import type { DatabaseSync } from "node:sqlite";
 import { TextDecoder } from "node:util";
-import { safeStatSync } from "@paleoclaw/fs-safe/path";
+import { safeStatSync } from "@openclaw/fs-safe/path";
 import { isRecord } from "@paleoclaw/normalization-core/record-coerce";
 import {
   classifySessionFileEntry,

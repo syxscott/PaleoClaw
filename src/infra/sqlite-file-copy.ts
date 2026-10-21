@@ -1,7 +1,7 @@
 import type { BigIntStats } from "node:fs";
 import path from "node:path";
-import { sameFileIdentity } from "@paleoclaw/fs-safe/advanced";
-import type { RootCopyPublicationReceipt } from "@paleoclaw/fs-safe/root";
+import { sameFileIdentity } from "@openclaw/fs-safe/advanced";
+import type { RootCopyPublicationReceipt } from "@openclaw/fs-safe/root";
 import { FsSafeError, root } from "./fs-safe.js";
 
 /** Copy a physical SQLite file, not a coherent family. Its caller owns coherence and byte checks. */

@@ -5,7 +5,7 @@ read_when:
 title: "Secure file operations"
 ---
 
-paleoclaw uses [`@paleoclaw/fs-safe`](https://github.com/paleoclaw/fs-safe) for security-sensitive local file operations: root-bounded reads/writes, atomic replacement, archive extraction, temp workspaces, JSON state, and secret-file handling.
+paleoclaw uses [`@openclaw/fs-safe`](https://github.com/paleoclaw/fs-safe) for security-sensitive local file operations: root-bounded reads/writes, atomic replacement, archive extraction, temp workspaces, JSON state, and secret-file handling.
 
 It is a **library guardrail** for trusted paleoclaw code that receives untrusted path names, not a sandbox. Host filesystem permissions, OS users, containers, and the agent/tool policy still define the potential damage.
 

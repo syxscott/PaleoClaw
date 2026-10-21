@@ -1,5 +1,5 @@
-import { FsSafeError } from "@paleoclaw/fs-safe/errors";
-import { __setFsSafeTestHooksForTest } from "@paleoclaw/fs-safe/test-hooks";
+import { FsSafeError } from "@openclaw/fs-safe/errors";
+import { __setFsSafeTestHooksForTest } from "@openclaw/fs-safe/test-hooks";
 import { writeFileWithinRoot } from "paleoclaw/plugin-sdk/file-access-runtime";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { captureEnv, setTestEnvValue } from "../test-utils/env.js";

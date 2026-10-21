@@ -3,7 +3,7 @@ import {
   matchRootFileOpenFailure,
   openRootFileSync,
   readFileWindowFullySync,
-} from "@paleoclaw/fs-safe/advanced";
+} from "@openclaw/fs-safe/advanced";
 
 export type ControlUiFileRead = {
   rootPath: string;

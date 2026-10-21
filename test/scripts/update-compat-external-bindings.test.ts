@@ -44,9 +44,9 @@ async function expectLegacy(f: ReturnType<typeof candidateFixture>) {
 }
 
 it.each([
-  'import { safePath as helper } from "@paleoclaw/fs-safe/path"; export { helper };',
+  'import { safePath as helper } from "@openclaw/fs-safe/path"; export { helper };',
   'import helper from "external-package"; export { helper };',
-  'export { safePath as helper } from "@paleoclaw/fs-safe/path";',
+  'export { safePath as helper } from "@openclaw/fs-safe/path";',
   'export * as helper from "external-package";',
   'import * as helper from "external-package"; export { helper };',
 ])("keeps published updater bridges usable beside %s", async (external) => {

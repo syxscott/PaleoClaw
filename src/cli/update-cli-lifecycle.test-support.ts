@@ -1,7 +1,7 @@
 import { EventEmitter } from "node:events";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { createDirectorySync, createFileSync } from "@paleoclaw/fs-safe/advanced";
+import { createDirectorySync, createFileSync } from "@openclaw/fs-safe/advanced";
 import { expectDefined } from "@paleoclaw/normalization-core";
 import { afterAll, afterEach, beforeEach, expect, vi } from "vitest";
 import * as sourceArtifactPreflight from "../../scripts/lib/source-update-artifact-preflight.mts";

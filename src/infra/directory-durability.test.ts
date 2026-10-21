@@ -16,8 +16,8 @@ const durabilityTestState = vi.hoisted(() => ({
     | undefined,
 }));
 
-vi.mock("@paleoclaw/fs-safe/durability", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@paleoclaw/fs-safe/durability")>();
+vi.mock("@openclaw/fs-safe/durability", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@openclaw/fs-safe/durability")>();
   return {
     ...actual,
     publishFileExclusive: async (...args: Parameters<typeof actual.publishFileExclusive>) => {

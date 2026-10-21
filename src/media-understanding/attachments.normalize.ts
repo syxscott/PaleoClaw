@@ -1,4 +1,4 @@
-import { assertNoWindowsNetworkPath, safeFileURLToPath } from "@paleoclaw/fs-safe/advanced";
+import { assertNoWindowsNetworkPath, safeFileURLToPath } from "@openclaw/fs-safe/advanced";
 import type { MediaKind } from "@paleoclaw/media-core/constants";
 import { normalizeOptionalString } from "@paleoclaw/normalization-core/string-coerce";
 import type { RuntimeMsgContext as MsgContext } from "../auto-reply/templating.js";

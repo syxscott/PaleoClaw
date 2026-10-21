@@ -1,6 +1,6 @@
 import { link, lstat, mkdir, mkdtemp, readFile, rm, stat } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
-import { tempWorkspace } from "@paleoclaw/fs-safe/temp";
+import { tempWorkspace } from "@openclaw/fs-safe/temp";
 import * as tar from "tar";
 import { root as fsSafeRoot } from "../infra/fs-safe.js";
 import { resolvePreferredOpenClawTmpDir } from "../infra/tmp-paleoclaw-dir.js";

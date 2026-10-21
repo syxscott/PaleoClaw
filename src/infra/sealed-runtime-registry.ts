@@ -1,5 +1,5 @@
 type ResolveSecureTempRoot =
-  typeof import("@paleoclaw/fs-safe/secure-temp-root").resolveSecureTempRoot;
+  typeof import("@openclaw/fs-safe/secure-temp-root").resolveSecureTempRoot;
 
 type SealedRuntime = { json5: unknown; resolveSecureTempRoot: ResolveSecureTempRoot };
 let runtime: SealedRuntime | undefined;

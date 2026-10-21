@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { constants, promises as fs, type BigIntStats } from "node:fs";
 import path from "node:path";
 import { isDeepStrictEqual } from "node:util";
-import { readFileHandleBounded } from "@paleoclaw/fs-safe/advanced";
+import { readFileHandleBounded } from "@openclaw/fs-safe/advanced";
 import { toErrorObject } from "@paleoclaw/normalization-core/error-coercion";
 import { decodeMountInfoPath } from "@paleoclaw/normalization-core/mountinfo-path";
 import { resolveStateDir } from "../config/paths.js";

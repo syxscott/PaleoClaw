@@ -3,7 +3,7 @@
 import type {
   CreateGhosttyTerminalOptions,
   GhosttyTerminalController,
-} from "@paleoclaw/libterminal/browser";
+} from "@openclaw/libterminal/browser";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { createDeferred } from "../../../../test/helpers/promise.ts";
 import {
@@ -25,7 +25,7 @@ const runtimeMocks = vi.hoisted(() => ({
   notifyResize: () => {},
 }));
 
-vi.mock("@paleoclaw/libterminal/browser", () => ({
+vi.mock("@openclaw/libterminal/browser", () => ({
   createGhosttyTerminal: runtimeMocks.create,
   loadGhosttyRuntime: runtimeMocks.load,
 }));

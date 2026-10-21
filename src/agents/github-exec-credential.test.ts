@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import type { SecureFileReadResult } from "@paleoclaw/fs-safe/secure-file";
+import type { SecureFileReadResult } from "@openclaw/fs-safe/secure-file";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { mockProcessPlatform } from "../test-utils/vitest-spies.js";
 
@@ -9,7 +9,7 @@ const permissions = vi.hoisted(() => ({
   inspect: vi.fn(),
   read: vi.fn<() => Promise<SecureFileReadResult>>(),
 }));
-vi.mock("@paleoclaw/fs-safe/permissions", () => ({ inspectPathPermissions: permissions.inspect }));
+vi.mock("@openclaw/fs-safe/permissions", () => ({ inspectPathPermissions: permissions.inspect }));
 vi.mock("../infra/fs-safe.js", () => ({ readSecureFile: permissions.read }));
 
 import { readGitHubExecToken } from "./github-exec-credential.js";

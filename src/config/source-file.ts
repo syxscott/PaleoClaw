@@ -1,12 +1,12 @@
 import nodePath from "node:path";
-import { canonicalPathFromExistingAncestor } from "@paleoclaw/fs-safe/advanced";
-import type { Root } from "@paleoclaw/fs-safe/root";
+import { canonicalPathFromExistingAncestor } from "@openclaw/fs-safe/advanced";
+import type { Root } from "@openclaw/fs-safe/root";
 import {
   watch,
   type WatchOptions,
   type WatchScope,
   type WatchSubscription,
-} from "@paleoclaw/fs-safe/watch";
+} from "@openclaw/fs-safe/watch";
 import { throwSettledAggregate } from "../infra/error-graph-internal.js";
 import {
   FS_RECONCILE_MS,

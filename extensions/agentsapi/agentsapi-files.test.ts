@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { hasNodeErrorCode } from "@paleoclaw/fs-safe/path";
+import { hasNodeErrorCode } from "@openclaw/fs-safe/path";
 import * as mediaMime from "@paleoclaw/media-core/mime";
 import { saveMediaBuffer } from "paleoclaw/plugin-sdk/media-store";
 import { createAdmittedHostCapabilityTestFixture } from "paleoclaw/plugin-sdk/plugin-test-runtime";

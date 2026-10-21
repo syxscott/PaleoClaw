@@ -36,7 +36,7 @@ export function linkPrWrapperDependencies(destination: string): void {
   mkdirSync(modulesDir, { recursive: true });
   // Use installed third-party packages only, never workspace source or loader mocks.
   for (const dependency of [
-    "@paleoclaw/fs-safe",
+    "@openclaw/fs-safe",
     "@paleoclaw/proc-safe",
     "@paleoclaw/proxyline",
     "acorn",

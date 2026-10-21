@@ -41,19 +41,19 @@ const NPM_CLI_PRELOAD = `data:text/javascript;base64,${Buffer.from(`
 
 async function probePrebuild(packageRoot) {
   const requireFromPackage = createRequire(path.join(packageRoot, "package.json"));
-  const manifestPath = requireFromPackage.resolve("@paleoclaw/fs-safe/package.json");
-  const entryDirectory = path.dirname(requireFromPackage.resolve("@paleoclaw/fs-safe"));
+  const manifestPath = requireFromPackage.resolve("@openclaw/fs-safe/package.json");
+  const entryDirectory = path.dirname(requireFromPackage.resolve("@openclaw/fs-safe"));
   const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
   const dependencies = manifest.optionalDependencies ?? {};
   const { configureFsSafeNative, getFsSafeNativeConfig } = await import(
-    pathToFileURL(requireFromPackage.resolve("@paleoclaw/fs-safe/config")).href
+    pathToFileURL(requireFromPackage.resolve("@openclaw/fs-safe/config")).href
   );
   if (getFsSafeNativeConfig().mode === "off") {
     return { status: "disabled" };
   }
   configureFsSafeNative({ mode: "require" });
   const { readCloneFileMetadata } = await import(
-    pathToFileURL(requireFromPackage.resolve("@paleoclaw/fs-safe/copy")).href
+    pathToFileURL(requireFromPackage.resolve("@openclaw/fs-safe/copy")).href
   );
   try {
     // An empty metadata query enters N-API without touching any filesystem path.
@@ -247,7 +247,7 @@ export function restoreFsSafePrebuild(packageRoot, env = process.env, log = cons
       return;
     }
     const manifest = JSON.parse(readFileSync(path.join(packageRoot, "package.json"), "utf8"));
-    if (!manifest.dependencies?.["@paleoclaw/fs-safe"]) {
+    if (!manifest.dependencies?.["@openclaw/fs-safe"]) {
       return;
     }
     const probe = runProbe(packageRoot, env);

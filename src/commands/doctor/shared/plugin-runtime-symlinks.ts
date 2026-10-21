@@ -1,8 +1,8 @@
 import fsSync from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { FsSafeError } from "@paleoclaw/fs-safe/errors";
-import { walkDirectory } from "@paleoclaw/fs-safe/walk";
+import { FsSafeError } from "@openclaw/fs-safe/errors";
+import { walkDirectory } from "@openclaw/fs-safe/walk";
 import { note } from "../../../../packages/terminal-core/src/note.js";
 import type { HealthFinding } from "../../../flows/health-checks.js";
 import { hasErrnoCode } from "../../../infra/errno.js";

@@ -1,6 +1,6 @@
 import type { BigIntStats } from "node:fs";
 import type { BackupProgressInfo, DatabaseSync } from "node:sqlite";
-import type { FileIdentityStat } from "@paleoclaw/fs-safe/advanced";
+import type { FileIdentityStat } from "@openclaw/fs-safe/advanced";
 import type { SqliteIntegrityCheckOptions } from "./sqlite-integrity.js";
 import type { SqliteFileContent } from "./sqlite-snapshot-file.js";
 

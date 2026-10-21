@@ -26,7 +26,7 @@ it.for([false, true])(
       import path from "node:path";
       import { once } from "node:events";
       import { DatabaseSync } from "node:sqlite";
-      import { root } from "@paleoclaw/fs-safe/root";
+      import { root } from "@openclaw/fs-safe/root";
       import { createManagedHandoffLeaseDatabase } from ${JSON.stringify(moduleUrl)};
       import { acquireFileLockSyncWithRetry } from ${JSON.stringify(lockModuleUrl)};
       const [kind, encoded, otherPid] = process.argv.slice(1);

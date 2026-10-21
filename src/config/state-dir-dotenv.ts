@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { readRegularFileSync } from "@paleoclaw/fs-safe/advanced";
+import { readRegularFileSync } from "@openclaw/fs-safe/advanced";
 import { parse as parseDotEnv } from "dotenv";
 import {
   isDangerousHostEnvOverrideVarName,

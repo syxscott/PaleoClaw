@@ -7,7 +7,7 @@ import fs from "node:fs/promises";
 import { createRequire } from "node:module";
 import os from "node:os";
 import path from "node:path";
-import { tryReadJson } from "@paleoclaw/fs-safe/json";
+import { tryReadJson } from "@openclaw/fs-safe/json";
 import { isRecord as isConfigRecord } from "paleoclaw/plugin-sdk/string-coerce-runtime";
 import { escapeRegExp } from "paleoclaw/plugin-sdk/text-utility-runtime";
 import { parse as parseToml } from "smol-toml";

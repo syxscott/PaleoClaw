@@ -2,7 +2,7 @@ import fsSync from "node:fs";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import * as directoryDurability from "@paleoclaw/fs-safe/durability";
+import * as directoryDurability from "@openclaw/fs-safe/durability";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createDeferred } from "../../test/helpers/promise.js";
 import { runExec } from "../process/exec.js";
@@ -43,8 +43,8 @@ const durabilityTestState = vi.hoisted(() => ({
     | undefined,
 }));
 
-vi.mock("@paleoclaw/fs-safe/durability", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@paleoclaw/fs-safe/durability")>();
+vi.mock("@openclaw/fs-safe/durability", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@openclaw/fs-safe/durability")>();
   return {
     ...actual,
     pinDirectory: async (...args: Parameters<typeof actual.pinDirectory>) => {

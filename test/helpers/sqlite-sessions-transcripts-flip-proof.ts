@@ -9,7 +9,7 @@ import { createInterface } from "node:readline";
 import { DatabaseSync, type SQLInputValue } from "node:sqlite";
 import type { Readable } from "node:stream";
 import { fileURLToPath } from "node:url";
-import { withTimeout } from "@paleoclaw/fs-safe/advanced";
+import { withTimeout } from "@openclaw/fs-safe/advanced";
 import { expectDefined } from "@paleoclaw/normalization-core";
 import { asOptionalRecord as asRecord } from "@paleoclaw/normalization-core/record-coerce";
 import { formatCliCommand } from "../../src/cli/command-format.js";

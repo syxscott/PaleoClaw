@@ -1,11 +1,11 @@
-import type { RootRemoveOptions } from "@paleoclaw/fs-safe/root";
+import type { RootRemoveOptions } from "@openclaw/fs-safe/root";
 import { beforeEach, expect, it, vi } from "vitest";
 import { createDeferred } from "../../../test/helpers/promise.js";
 import { cleanupMaterializedSubagentAttachments } from "./subagent-attachment-cleanup.js";
 
 const mocks = vi.hoisted(() => ({ root: vi.fn() }));
 vi.mock("../../infra/fs-safe.js", async () => ({
-  FsSafeError: (await import("@paleoclaw/fs-safe/errors")).FsSafeError,
+  FsSafeError: (await import("@openclaw/fs-safe/errors")).FsSafeError,
   root: mocks.root,
 }));
 vi.mock("./subagent-attachment-paths.js", () => ({

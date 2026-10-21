@@ -207,7 +207,7 @@ export function createFixture(
   // validates the fixture's entire dependency topology before and after emit.
   for (const name of [
     ".bin",
-    "@paleoclaw/fs-safe",
+    "@openclaw/fs-safe",
     "@paleoclaw/proc-safe",
     "@silvia-odwyer/photon-node",
     "highlight.js",

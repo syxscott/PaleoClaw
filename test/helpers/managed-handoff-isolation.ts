@@ -9,9 +9,9 @@ import { threadId } from "node:worker_threads";
 import {
   isPathInsideWithRealpath,
   normalizeWindowsPathForComparison,
-} from "@paleoclaw/fs-safe/path";
+} from "@openclaw/fs-safe/path";
 
-type SecureTempResolver = typeof import("@paleoclaw/fs-safe/secure-temp-root").resolveSecureTempRoot;
+type SecureTempResolver = typeof import("@openclaw/fs-safe/secure-temp-root").resolveSecureTempRoot;
 type Binding = Readonly<{
   directory: string;
   databasePath: string;
@@ -194,8 +194,8 @@ export function installManagedHandoffTestBinding(binding: Binding) {
       resolve(specifier, context, nextResolve) {
         const original = nextResolve(specifier, context);
         if (
-          specifier !== "@paleoclaw/fs-safe/temp" &&
-          specifier !== "@paleoclaw/fs-safe/secure-temp-root"
+          specifier !== "@openclaw/fs-safe/temp" &&
+          specifier !== "@openclaw/fs-safe/secure-temp-root"
         ) {
           return original;
         }
@@ -209,8 +209,8 @@ export function installManagedHandoffTestBinding(binding: Binding) {
   // Refuse the invocation before its entrypoint if the actual dependency cannot
   // honor this binding. Consumer copies are separately resolved by the hook above.
   const temp = createRequire(import.meta.url)(
-    "@paleoclaw/fs-safe/secure-temp-root",
-  ) as typeof import("@paleoclaw/fs-safe/secure-temp-root");
+    "@openclaw/fs-safe/secure-temp-root",
+  ) as typeof import("@openclaw/fs-safe/secure-temp-root");
   assert.equal(
     temp.resolveSecureTempRoot({
       preferredDir: "/tmp/paleoclaw",

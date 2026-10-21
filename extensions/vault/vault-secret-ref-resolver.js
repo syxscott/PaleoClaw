@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { text as consumeText } from "node:stream/consumers";
-import { readSecretFileSync } from "@paleoclaw/fs-safe/secret";
+import { readSecretFileSync } from "@openclaw/fs-safe/secret";
 import { parseVaultSecretId } from "./vault-secret-id.js";
 
 const KUBERNETES_SERVICE_ACCOUNT_TOKEN_PATH = "/var/run/secrets/kubernetes.io/serviceaccount/token";

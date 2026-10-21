@@ -1,6 +1,40 @@
-import type { AnyAgentTool, OpenClawPluginApi } from "paleoclaw/plugin-sdk/llm-task";
-import { createLlmTaskTool } from "./src/llm-task-tool.js";
+import { optionalPositiveIntegerSchema } from "paleoclaw/plugin-sdk/channel-actions";
+import { createLazyRuntimeModule } from "paleoclaw/plugin-sdk/lazy-runtime";
+import type { AnyAgentTool, OpenClawPluginApi } from "paleoclaw/plugin-sdk/plugin-entry";
+import { defineToolPlugin } from "paleoclaw/plugin-sdk/tool-plugin";
+import { Type } from "typebox";
+import { llmTaskToolDefinition } from "./src/llm-task-tool-definition.js";
 
-export default function register(api: OpenClawPluginApi) {
-  api.registerTool(createLlmTaskTool(api) as unknown as AnyAgentTool, { optional: true });
+function createLazyLlmTaskTool(api: OpenClawPluginApi): AnyAgentTool {
+  // Tool catalog and registration need only metadata; model/schema runtimes load on first use.
+  const loadTool = createLazyRuntimeModule(() =>
+    import("./src/llm-task-tool.js").then(({ createLlmTaskTool }) => createLlmTaskTool(api)),
+  );
+  return {
+    ...llmTaskToolDefinition,
+    execute: async (id, params, signal) => await (await loadTool()).execute(id, params, signal),
+  };
 }
+
+export default defineToolPlugin({
+  id: "llm-task",
+  name: "LLM Task",
+  description: "Generic JSON-only LLM tool for structured tasks callable from workflows.",
+  configSchema: Type.Object(
+    {
+      defaultProvider: Type.Optional(Type.String()),
+      defaultModel: Type.Optional(Type.String()),
+      defaultAuthProfileId: Type.Optional(Type.String()),
+      maxTokens: optionalPositiveIntegerSchema(),
+      timeoutMs: optionalPositiveIntegerSchema(),
+    },
+    { additionalProperties: false },
+  ),
+  tools: (tool) => [
+    tool({
+      ...llmTaskToolDefinition,
+      optional: true,
+      factory: ({ api }) => createLazyLlmTaskTool(api),
+    }),
+  ],
+});

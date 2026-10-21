@@ -5,8 +5,8 @@ import {
   createAsyncLock,
   readFileHandleBounded,
   sanitizeUntrustedFileName,
-} from "@paleoclaw/fs-safe/advanced";
-import { fileStore } from "@paleoclaw/fs-safe/store";
+} from "@openclaw/fs-safe/advanced";
+import { fileStore } from "@openclaw/fs-safe/store";
 import {
   basenameFromAnyPath,
   extnameFromAnyPath,

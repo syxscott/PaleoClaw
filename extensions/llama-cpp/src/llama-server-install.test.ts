@@ -4,7 +4,7 @@ import nodeFs from "node:fs";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import * as fileDurability from "@paleoclaw/fs-safe/durability";
+import * as fileDurability from "@openclaw/fs-safe/durability";
 import JSZip from "jszip";
 import { createDeferred } from "paleoclaw/plugin-sdk/extension-shared";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -16,8 +16,8 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("node:child_process", () => ({ execFile: mocks.execFile }));
-vi.mock("@paleoclaw/fs-safe/durability", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@paleoclaw/fs-safe/durability")>()),
+vi.mock("@openclaw/fs-safe/durability", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@openclaw/fs-safe/durability")>()),
 }));
 vi.mock("paleoclaw/plugin-sdk/ssrf-runtime", async (importOriginal) => ({
   ...(await importOriginal<typeof import("paleoclaw/plugin-sdk/ssrf-runtime")>()),

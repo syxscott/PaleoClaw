@@ -8,4 +8,4 @@ export {
   readDirectoryEntriesSync,
   safeStat,
 } from "../infra/path-existence.js";
-export { hasNodeErrorCode, isNotFoundPathError, safeStatSync } from "@paleoclaw/fs-safe/path";
+export { hasNodeErrorCode, isNotFoundPathError, safeStatSync } from "@openclaw/fs-safe/path";

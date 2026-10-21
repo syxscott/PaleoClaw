@@ -66,7 +66,7 @@ export function createStandaloneMetadataAdapter({ runtimeRoot, embeddedPaths, pa
       }
       const importedName = imported.imported.name ?? imported.imported.value;
       if (
-        statement.source.value === "@paleoclaw/fs-safe/advanced" &&
+        statement.source.value === "@openclaw/fs-safe/advanced" &&
         ["openRootFile", "openRootFileSync"].includes(expected)
       ) {
         return importedName === expected;

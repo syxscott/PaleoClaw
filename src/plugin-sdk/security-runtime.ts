@@ -4,7 +4,7 @@ import {
   replaceFileAtomic as replaceFsSafeFileAtomic,
   type ReplaceFileAtomicFileSystem,
   type ReplaceFileAtomicOptions,
-} from "@paleoclaw/fs-safe/atomic";
+} from "@openclaw/fs-safe/atomic";
 
 export {
   assertNoSymlinkParents,
@@ -67,9 +67,9 @@ export {
   resolveAbsolutePathForRead,
   resolveAbsolutePathForWrite,
 } from "../infra/fs-safe.js";
-export { sanitizeUntrustedFileName } from "@paleoclaw/fs-safe/advanced";
+export { sanitizeUntrustedFileName } from "@openclaw/fs-safe/advanced";
 export { privateFileStoreSync } from "../infra/private-file-store.js";
-export { movePathWithCopyFallback } from "@paleoclaw/fs-safe/atomic";
+export { movePathWithCopyFallback } from "@openclaw/fs-safe/atomic";
 
 // Keep the shipped, ignored adapter member source-compatible without wrapping the operation.
 export const replaceFileAtomic: (
@@ -89,7 +89,7 @@ export {
   resolveExistingPathsWithinRoot,
   pathScope,
   resolveStrictExistingPathsWithinRoot,
-} from "@paleoclaw/fs-safe/advanced";
+} from "@openclaw/fs-safe/advanced";
 
 export { resolvePreferredOpenClawTmpDir } from "../infra/tmp-paleoclaw-dir.js";
 /**

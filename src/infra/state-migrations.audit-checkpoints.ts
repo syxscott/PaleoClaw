@@ -1,8 +1,8 @@
 import { createHash } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import { statRegularFileSync } from "@paleoclaw/fs-safe/advanced";
-import { sha256FileSync } from "@paleoclaw/fs-safe/durability";
+import { statRegularFileSync } from "@openclaw/fs-safe/advanced";
+import { sha256FileSync } from "@openclaw/fs-safe/durability";
 import { createSqliteAuditRecordStore } from "./sqlite-audit-record-store.js";
 import type {
   LegacyAuditLogSource,

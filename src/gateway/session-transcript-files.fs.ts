@@ -1,7 +1,7 @@
 // Resolves, archives, and cleans up transcript files owned by Gateway sessions.
 import fs from "node:fs";
 import path from "node:path";
-import { readFileWindowFully } from "@paleoclaw/fs-safe/advanced";
+import { readFileWindowFully } from "@openclaw/fs-safe/advanced";
 import { isRecord } from "@paleoclaw/normalization-core/record-coerce";
 import { uniqueStrings } from "@paleoclaw/normalization-core/string-normalization";
 import { materializeSessionArchiveForRead } from "../config/sessions/archive-compression.js";

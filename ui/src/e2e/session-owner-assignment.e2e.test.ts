@@ -1,4 +1,4 @@
-import { withTimeout } from "@paleoclaw/fs-safe/advanced";
+import { withTimeout } from "@openclaw/fs-safe/advanced";
 import type { Locator, Page, Request, Response } from "playwright";
 import { expect as expectBrowser } from "playwright/test";
 import { expect, it } from "vitest";

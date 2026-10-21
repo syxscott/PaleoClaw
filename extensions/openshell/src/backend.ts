@@ -5,8 +5,8 @@ import path from "node:path";
 import {
   movePathWithCopyFallback,
   type MovePathPublicationReceipt,
-} from "@paleoclaw/fs-safe/atomic";
-import { GUEST_FILESYSTEM_PYTHON } from "@paleoclaw/fs-safe/guest";
+} from "@openclaw/fs-safe/atomic";
+import { GUEST_FILESYSTEM_PYTHON } from "@openclaw/fs-safe/guest";
 import { createDeferred } from "paleoclaw/plugin-sdk/extension-shared";
 import { enqueueKeyedTask } from "paleoclaw/plugin-sdk/keyed-async-queue";
 import { lstatIfExists } from "paleoclaw/plugin-sdk/path-existence-runtime";

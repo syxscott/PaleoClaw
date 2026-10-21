@@ -1,5 +1,5 @@
 import fs, { type FileHandle } from "node:fs/promises";
-import { readFileWindowFully } from "@paleoclaw/fs-safe/advanced";
+import { readFileWindowFully } from "@openclaw/fs-safe/advanced";
 import { resolveGatewayLogPaths, resolveGatewaySupervisorLogPaths } from "./restart-logs.js";
 
 const GATEWAY_LOG_ERROR_PATTERNS = [

@@ -11,7 +11,7 @@ import {
 } from "node:fs/promises";
 import { homedir, tmpdir } from "node:os";
 import path from "node:path";
-import { sanitizeUntrustedFileName } from "@paleoclaw/fs-safe/advanced";
+import { sanitizeUntrustedFileName } from "@openclaw/fs-safe/advanced";
 import { asNullableRecord } from "@paleoclaw/normalization-core/record-coerce";
 import {
   isCanonicalTerminalUploadBase64,

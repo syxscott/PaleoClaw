@@ -1,5 +1,5 @@
 import path from "node:path";
-import { assertNoWindowsNetworkPath, safeFileURLToPath } from "@paleoclaw/fs-safe/advanced";
+import { assertNoWindowsNetworkPath, safeFileURLToPath } from "@openclaw/fs-safe/advanced";
 import { estimateBase64DecodedBytes } from "@paleoclaw/media-core/base64";
 import { isAudioFileName, mimeTypeFromFilePath } from "@paleoclaw/media-core/mime";
 import { normalizeLowercaseStringOrEmpty } from "@paleoclaw/normalization-core/string-coerce";

@@ -1,7 +1,7 @@
 import { writeFileSync } from "node:fs";
 import fs, { type FileHandle } from "node:fs/promises";
 import path from "node:path";
-import { __setFsSafeTestHooksForTest } from "@paleoclaw/fs-safe/test-hooks";
+import { __setFsSafeTestHooksForTest } from "@openclaw/fs-safe/test-hooks";
 import { expect, it, vi, type MockInstance } from "vitest";
 import { withTempDir } from "../test-utils/temp-dir.js";
 import { validateScriptFileForShellBleed } from "./bash-tools.exec-script-preflight.js";

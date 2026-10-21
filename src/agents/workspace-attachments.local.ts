@@ -1,5 +1,5 @@
 import path from "node:path";
-import { readFileWindowFully } from "@paleoclaw/fs-safe/advanced";
+import { readFileWindowFully } from "@openclaw/fs-safe/advanced";
 import { classifyAttachmentBytes } from "@paleoclaw/media-core/attachment-classify";
 import type { OpenClawConfig } from "../config/types.openclaw.js";
 import { openLocalFileSafely } from "../infra/fs-safe.js";

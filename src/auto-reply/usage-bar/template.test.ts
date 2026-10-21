@@ -1,6 +1,6 @@
 import { renameSync, writeFileSync, unlinkSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
-import * as observation from "@paleoclaw/fs-safe/watch";
+import * as observation from "@openclaw/fs-safe/watch";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useAutoCleanupTempDirTracker } from "../../../test/helpers/temp-dir.js";
 import { createDeferredCore } from "../../shared/deferred.js";
@@ -12,9 +12,9 @@ const warnSpy = vi.hoisted(() => vi.fn());
 vi.mock("../../logging/subsystem.js", () => ({
   createSubsystemLogger: () => ({ warn: warnSpy }),
 }));
-vi.mock("@paleoclaw/fs-safe/watch", async () => {
+vi.mock("@openclaw/fs-safe/watch", async () => {
   const { createRequire } = await import("node:module");
-  return { ...createRequire(import.meta.url)("@paleoclaw/fs-safe/watch") };
+  return { ...createRequire(import.meta.url)("@openclaw/fs-safe/watch") };
 });
 const temp = useAutoCleanupTempDirTracker(afterEach);
 const subscriptions: observation.WatchSubscription[] = [];

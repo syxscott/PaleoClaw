@@ -1,8 +1,8 @@
 import { createHash, randomUUID } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import type { Root } from "@paleoclaw/fs-safe";
-import { readRegularFileSync } from "@paleoclaw/fs-safe/advanced";
+import type { Root } from "@openclaw/fs-safe";
+import { readRegularFileSync } from "@openclaw/fs-safe/advanced";
 import { pathMayExistSync } from "./path-existence.js";
 import {
   moveLegacyMigrationFileNoReplace,

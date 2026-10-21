@@ -1,7 +1,7 @@
 import type { ReadOptions, ReadOptionsWithBuffer, ReadPosition } from "node:fs";
 import fs, { type FileReadResult } from "node:fs/promises";
 import path from "node:path";
-import { assertNoWindowsNetworkPath, readFileHandleBounded } from "@paleoclaw/fs-safe/advanced";
+import { assertNoWindowsNetworkPath, readFileHandleBounded } from "@openclaw/fs-safe/advanced";
 import { resolveInboundPathRoot } from "@paleoclaw/media-core/inbound-path-policy";
 import { FsSafeError, openLocalFileSafely } from "../infra/fs-safe.js";
 import { isPathInside } from "../infra/path-guards.js";

@@ -1,4 +1,4 @@
-import { tempWorkspace } from "@paleoclaw/fs-safe/temp";
+import { tempWorkspace } from "@openclaw/fs-safe/temp";
 // Owns private, short-lived environment transport for Docker and Podman commands.
 import { normalizeEnvVarKey } from "./host-env-security.js";
 import { resolvePreferredOpenClawTmpDir } from "./tmp-paleoclaw-dir.js";

@@ -106,7 +106,7 @@ vi.mock("./runtime-plan/prepare-auth.js", async () => {
   return { ...actual, prepareAgentRuntimeAuth: isolatedCompletionMocks.prepareAgentRuntimeAuth };
 });
 vi.mock("./cli-runner.runtime.js", () => ({ runCliAgent: isolatedCompletionMocks.runCliAgent }));
-vi.mock("@paleoclaw/fs-safe/temp", () => ({
+vi.mock("@openclaw/fs-safe/temp", () => ({
   withTempWorkspace: async (_options: unknown, run: (value: { dir: string }) => unknown) =>
     await run({ dir: "/tmp/isolated" }),
 }));

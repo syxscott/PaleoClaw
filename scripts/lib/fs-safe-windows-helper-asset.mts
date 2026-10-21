@@ -5,13 +5,13 @@ import type { TsdownPlugin } from "tsdown";
 const NATIVE_MANIFEST_REQUIRE = 'require("../package.json")';
 
 export function resolveFsSafePackageManifest(rootDir = process.cwd()): string {
-  return fs.realpathSync(path.resolve(rootDir, "node_modules/@paleoclaw/fs-safe/package.json"));
+  return fs.realpathSync(path.resolve(rootDir, "node_modules/@openclaw/fs-safe/package.json"));
 }
 
 /** The fs-safe command runtime resolves this executable beside its bundled module. */
 export function resolveFsSafeWindowsHelper(rootDir = process.cwd()): string {
   return fs.realpathSync(
-    path.resolve(rootDir, "node_modules/@paleoclaw/fs-safe/dist/windows-security-helper.exe"),
+    path.resolve(rootDir, "node_modules/@openclaw/fs-safe/dist/windows-security-helper.exe"),
   );
 }
 

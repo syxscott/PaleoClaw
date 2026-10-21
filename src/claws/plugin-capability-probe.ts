@@ -1,5 +1,5 @@
 import path from "node:path";
-import { tempWorkspace } from "@paleoclaw/fs-safe/temp";
+import { tempWorkspace } from "@openclaw/fs-safe/temp";
 import { coerceErrorMessage } from "@paleoclaw/normalization-core";
 import type { OpenClawConfig } from "../config/types.openclaw.js";
 import type { PluginAcceptedDeclaredSurface } from "../config/types.plugins.js";

@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { resolvePathPrefixSync, sameFileIdentity } from "@paleoclaw/fs-safe/advanced";
+import { resolvePathPrefixSync, sameFileIdentity } from "@openclaw/fs-safe/advanced";
 import { tryResolvePathCaseInsensitive } from "../../infra/path-case.js";
 import { resolveSessionStorePathCore } from "./paths.js";
 

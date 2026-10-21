@@ -714,7 +714,7 @@ console.log("full-ws loaded without node_modules");
   it("captures computed fs-safe/proc-safe and sqlite-vec imports without a pnpm tree", () => {
     const { root, write, pkg } = fixture();
     const fsNative = pkg(
-      "@paleoclaw/fs-safe-darwin-arm64",
+      "@openclaw/fs-safe-darwin-arm64",
       { main: "fs-safe-native.node", os: ["darwin"], cpu: ["arm64"] },
       { "fs-safe-native.node": "fs" },
     );
@@ -725,8 +725,8 @@ console.log("full-ws loaded without node_modules");
     );
     const vecNative = pkg("sqlite-vec-darwin-arm64", {}, { "vec0.dylib": "vec" });
     const fsOwner = pkg(
-      "@paleoclaw/fs-safe",
-      { optionalDependencies: { "@paleoclaw/fs-safe-darwin-arm64": "1.0.0" } },
+      "@openclaw/fs-safe",
+      { optionalDependencies: { "@openclaw/fs-safe-darwin-arm64": "1.0.0" } },
       {
         "dist/native.js": "export const url = import.meta.url;",
         "dist/archive-parser.wasm": "wasm",
@@ -748,7 +748,7 @@ console.log("full-ws loaded without node_modules");
       path.join(root, "package.json"),
       JSON.stringify({
         dependencies: {
-          "@paleoclaw/fs-safe": "1.0.0",
+          "@openclaw/fs-safe": "1.0.0",
           "@paleoclaw/proc-safe": "1.0.0",
           "sqlite-vec": "1.0.0",
         },
@@ -770,7 +770,7 @@ console.log("full-ws loaded without node_modules");
     const { context, finalized, root: destination } = evaluate(adapter);
     const resolve = context["__openclawStandaloneNativeResolve"];
     const resolutions: Array<[string, string, string]> = [
-      [path.join(fsOwner, "dist/native.js"), "@paleoclaw/fs-safe-darwin-arm64", fsNative],
+      [path.join(fsOwner, "dist/native.js"), "@openclaw/fs-safe-darwin-arm64", fsNative],
       [path.join(procOwner, "dist/native.js"), "@paleoclaw/proc-safe-darwin-arm64", procNative],
       [path.join(vecOwner, "index.mjs"), "sqlite-vec-darwin-arm64/vec0.dylib", vecNative],
     ];
@@ -805,7 +805,7 @@ console.log("full-ws loaded without node_modules");
     expect(report.categories.dependencyLicenses?.files).toBe(1);
     expect(
       fs.readFileSync(
-        path.join(root, "native/@paleoclaw+fs-safe@1.0.0/@paleoclaw/fs-safe/LICENSE"),
+        path.join(root, "native/@paleoclaw+fs-safe@1.0.0/@openclaw/fs-safe/LICENSE"),
         "utf8",
       ),
     ).toBe("MIT");

@@ -146,7 +146,7 @@ describe("specialized Vitest discovery", () => {
       "index.d.ts": "export declare const candidate: true;\n",
       "index.js": "export const candidate = true;\n",
       "package.json": JSON.stringify({
-        name: "@paleoclaw/crabline",
+        name: "@openclaw/crabline",
         type: "module",
         exports: { ".": { import: "./index.js", types: "./index.d.ts" } },
       }),

@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { root } from "@paleoclaw/fs-safe/root";
+import { root } from "@openclaw/fs-safe/root";
 import { requireDirectorySync, syncDirectory } from "./directory-durability.js";
 import { resolveLegacyMigrationSourcePath } from "./state-migrations.source-path.js";
 import {

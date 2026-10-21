@@ -310,7 +310,7 @@ describe("check-database-first-legacy-stores", () => {
         await (await privateFileStore(stateDir).root()).writeJson("plugin-binding-approvals.json", {});
       `(filesystemWriteViolations(4, 5)),
       "flags direct fs-safe package store writes to legacy paths": sourceCase`
-        import { fileStore, jsonStore } from "@paleoclaw/fs-safe/store";
+        import { fileStore, jsonStore } from "@openclaw/fs-safe/store";
         await fileStore({ rootDir: stateDir }).writeJson("thread-bindings.json", {});
         const options = { filePath: "plugin-binding-approvals.json" };
         await jsonStore(options).write({});

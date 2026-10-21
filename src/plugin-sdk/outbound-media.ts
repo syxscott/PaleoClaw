@@ -1,6 +1,6 @@
 import { randomBytes } from "node:crypto";
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { createAsyncLock, sanitizeUntrustedFileName } from "@paleoclaw/fs-safe/advanced";
+import { createAsyncLock, sanitizeUntrustedFileName } from "@openclaw/fs-safe/advanced";
 import { normalizeMimeType } from "@paleoclaw/media-core/mime";
 import { buildOutboundMediaLoadOptions, type OutboundMediaAccess } from "../media/load-options.js";
 import type { PluginStateKeyedStore } from "./plugin-state-runtime.js";

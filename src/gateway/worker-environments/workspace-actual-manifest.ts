@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { constants, type Stats } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { readFileWindowFully } from "@paleoclaw/fs-safe/advanced";
+import { readFileWindowFully } from "@openclaw/fs-safe/advanced";
 import { sha256File } from "../../infra/directory-durability.js";
 import {
   FsSafeError,

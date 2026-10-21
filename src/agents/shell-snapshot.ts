@@ -3,7 +3,7 @@ import { statSync } from "node:fs";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { withTempWorkspace } from "@paleoclaw/fs-safe/temp";
+import { withTempWorkspace } from "@openclaw/fs-safe/temp";
 import { safeParseJsonRecord } from "@paleoclaw/normalization-core/json-coercion";
 import { resolveStateDir } from "../config/paths.js";
 import { LruCache } from "../infra/lru-cache.js";

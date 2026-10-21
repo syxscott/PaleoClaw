@@ -16,7 +16,7 @@ const hasModule = (ids: Iterable<string>, ...suffixes: string[]) =>
 
 it("preserves installed native and asset locations when filesystem helpers are bundled", () => {
   const require = createRequire(import.meta.url);
-  const packageRoot = path.dirname(require.resolve("@paleoclaw/fs-safe/package.json"));
+  const packageRoot = path.dirname(require.resolve("@openclaw/fs-safe/package.json"));
   const root = fs.realpathSync(createTempDir("paleoclaw-reader-dependency-build-"));
   // The native dependency and its build run in the shipped reader's process boundary.
   const result = execFileSync(

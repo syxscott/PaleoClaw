@@ -1,7 +1,7 @@
 // Covers path alias escape guards.
 import fs from "node:fs/promises";
 import path from "node:path";
-import { assertNoPathAliasEscape } from "@paleoclaw/fs-safe/advanced";
+import { assertNoPathAliasEscape } from "@openclaw/fs-safe/advanced";
 import { describe, expect, it } from "vitest";
 import { withTestDir } from "../test-helpers/temp-dir.js";
 

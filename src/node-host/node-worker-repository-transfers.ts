@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { withTempWorkspace } from "@paleoclaw/fs-safe/temp";
+import { withTempWorkspace } from "@openclaw/fs-safe/temp";
 import { REMOTE_GITHUB_PUBLICATION_SNAPSHOT_JS } from "../gateway/github-repository-publication-snapshot.js";
 import type {
   WorkerWorkspaceManifest,

@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { inspectPathPermissions } from "@paleoclaw/fs-safe/permissions";
+import { inspectPathPermissions } from "@openclaw/fs-safe/permissions";
 import { isRecord } from "@paleoclaw/normalization-core/record-coerce";
 import { parseDocument } from "yaml";
 import { readSecureFile } from "../infra/fs-safe.js";

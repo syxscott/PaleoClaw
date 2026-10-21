@@ -5,7 +5,7 @@ import {
   createRootFileOpenBatchSync,
   type RootFileCopyBatchSync,
   type RootFileOpenBatchSync,
-} from "@paleoclaw/fs-safe/advanced";
+} from "@openclaw/fs-safe/advanced";
 import { isPathInside } from "../infra/path-guards.js";
 import type { createPluginGenerationReceipt } from "./plugin-generation-receipt.js";
 import type { PluginRecoverySource } from "./plugin-generation-source-lookup.js";

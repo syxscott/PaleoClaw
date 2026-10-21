@@ -1,7 +1,7 @@
 import { lstatSync, realpathSync } from "node:fs";
 import path from "node:path";
-import { assertDirectoryIdentitySync } from "@paleoclaw/fs-safe/advanced";
-import { FsSafeError } from "@paleoclaw/fs-safe/errors";
+import { assertDirectoryIdentitySync } from "@openclaw/fs-safe/advanced";
+import { FsSafeError } from "@openclaw/fs-safe/errors";
 import { normalizeTrimmedStringList } from "@paleoclaw/normalization-core/string-normalization";
 import { PLUGIN_CAPABILITY_CONSENT_REQUIRED } from "../../../../packages/gateway-protocol/src/capability-consent-error-details.js";
 import { stripAnsi } from "../../../../packages/terminal-core/src/ansi.js";

@@ -155,7 +155,7 @@ it.each([
           import fs from 'node:fs';
           import path from 'node:path';
           import JSON5 from 'json5';
-          import {resolveSecureTempRoot} from '@paleoclaw/fs-safe/temp';
+          import {resolveSecureTempRoot} from '@openclaw/fs-safe/temp';
           import {registerSealedRuntime} from ${JSON.stringify(childUrl("sealedRuntime"))};
           import {CommandProcessCleanupError,hasCommandProcessCleanupError} from ${JSON.stringify(childUrl("commandCleanup"))};
           registerSealedRuntime({json5:JSON5,resolveSecureTempRoot:options=>resolveSecureTempRoot({...options,preferredDir:${JSON.stringify(control)},tmpdir:()=>${JSON.stringify(control)}})});

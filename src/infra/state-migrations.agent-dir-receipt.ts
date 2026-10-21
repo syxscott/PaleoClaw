@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { replaceFileAtomicSync } from "@paleoclaw/fs-safe/atomic";
+import { replaceFileAtomicSync } from "@openclaw/fs-safe/atomic";
 import { isMissingPathError } from "./errno.js";
 import { isPathInside } from "./path-guards.js";
 

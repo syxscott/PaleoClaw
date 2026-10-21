@@ -35,7 +35,7 @@ const endpoint: WorkerConnectionEndpoint = {
   url: "wss://gateway.example/__openclaw__/worker",
 };
 const DAEMON_TIMER_SCALE = 5;
-const fileLockModule = createRequire(import.meta.url).resolve("@paleoclaw/fs-safe/file-lock");
+const fileLockModule = createRequire(import.meta.url).resolve("@openclaw/fs-safe/file-lock");
 
 function containerFixture(options: Parameters<typeof createNodeWorkerContainerFixture>[2] = {}) {
   const capacitySnapshots: Array<{ total: number; available: number }> = [];

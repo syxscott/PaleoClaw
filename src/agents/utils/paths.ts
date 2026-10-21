@@ -1,6 +1,6 @@
 import { realpathSync } from "node:fs";
 import { relative, resolve as resolvePath, sep } from "node:path";
-import { isPathRelativeEscape } from "@paleoclaw/fs-safe/path";
+import { isPathRelativeEscape } from "@openclaw/fs-safe/path";
 
 /** Preserve the supplied spelling when the path cannot be resolved. */
 export function canonicalizePath(path: string): string {

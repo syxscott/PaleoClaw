@@ -1,109 +1,480 @@
-import type { OpenClawConfig } from "paleoclaw/plugin-sdk/msteams";
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { sendMessageMSTeams } from "./send.js";
+import { mkdir, readFile, realpath, writeFile } from "node:fs/promises";
+import { join } from "node:path";
+import {
+  createTestRegistry,
+  resetPluginRuntimeStateForTest,
+  setActivePluginRegistry,
+} from "paleoclaw/plugin-sdk/channel-test-helpers";
+import { withTempDir } from "paleoclaw/plugin-sdk/test-env";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { OpenClawConfig } from "../runtime-api.js";
+import type { StoredConversationReference } from "./conversation-store.js";
+import type { MSTeamsProactiveContext } from "./send-context.js";
+import {
+  deleteMessageMSTeams,
+  editAdaptiveCardMSTeams,
+  editMessageMSTeams,
+  sendMessageMSTeams,
+} from "./send.js";
 
 const mockState = vi.hoisted(() => ({
   loadOutboundMediaFromUrl: vi.fn(),
   resolveMSTeamsSendContext: vi.fn(),
+  resolveMarkdownTableMode: vi.fn<
+    typeof import("paleoclaw/plugin-sdk/markdown-table-runtime").resolveMarkdownTableMode
+  >(() => "off"),
+  convertMarkdownTables: vi.fn<
+    typeof import("paleoclaw/plugin-sdk/text-chunking").convertMarkdownTables
+  >((text) => text),
   requiresFileConsent: vi.fn(),
-  prepareFileConsentActivity: vi.fn(),
+  prepareFileConsentActivityFs: vi.fn(),
+  setPendingUploadActivityIdFs: vi.fn(),
   extractFilename: vi.fn(async () => "fallback.bin"),
-  sendMSTeamsMessages: vi.fn(),
+  sendMSTeamsMessages: vi.fn<typeof import("./messenger.js").sendMSTeamsMessages>(),
+  sendMSTeamsActivityWithReference: vi.fn(async () => ({ id: "message-1" })),
+  updateMSTeamsActivityWithReference: vi.fn<
+    typeof import("./sdk-proactive.js").updateMSTeamsActivityWithReference
+  >(async () => ({ id: "updated" })),
+  deleteMSTeamsActivityWithReference: vi.fn(async () => {}),
+  uploadAndShareSharePoint: vi.fn(),
+  getDriveItemProperties: vi.fn(),
+  buildTeamsFileInfoCard: vi.fn(),
 }));
 
-vi.mock("paleoclaw/plugin-sdk/msteams", () => ({
+vi.mock("paleoclaw/plugin-sdk/outbound-media", () => ({
   loadOutboundMediaFromUrl: mockState.loadOutboundMediaFromUrl,
 }));
+
+vi.mock("paleoclaw/plugin-sdk/markdown-table-runtime", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("paleoclaw/plugin-sdk/markdown-table-runtime")>();
+  return { ...actual, resolveMarkdownTableMode: mockState.resolveMarkdownTableMode };
+});
+
+vi.mock("paleoclaw/plugin-sdk/text-chunking", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("paleoclaw/plugin-sdk/text-chunking")>();
+  return {
+    ...actual,
+    convertMarkdownTables: mockState.convertMarkdownTables,
+  };
+});
 
 vi.mock("./send-context.js", () => ({
   resolveMSTeamsSendContext: mockState.resolveMSTeamsSendContext,
 }));
 
-vi.mock("./file-consent-helpers.js", () => ({
+vi.mock("./file-consent-helpers.js", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("./file-consent-helpers.js")>()),
   requiresFileConsent: mockState.requiresFileConsent,
-  prepareFileConsentActivity: mockState.prepareFileConsentActivity,
+  prepareFileConsentActivityFs: mockState.prepareFileConsentActivityFs,
 }));
 
-vi.mock("./media-helpers.js", () => ({
+vi.mock("./pending-uploads-fs.js", () => ({
+  setPendingUploadActivityIdFs: mockState.setPendingUploadActivityIdFs,
+}));
+
+vi.mock("./media-helpers.js", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("./media-helpers.js")>()),
   extractFilename: mockState.extractFilename,
   extractMessageId: () => "message-1",
 }));
 
+// mock-isolation: capture outbound messages without opening a live Teams transport.
 vi.mock("./messenger.js", () => ({
   sendMSTeamsMessages: mockState.sendMSTeamsMessages,
-  buildConversationReference: () => ({}),
-}));
-
-vi.mock("./runtime.js", () => ({
-  getMSTeamsRuntime: () => ({
-    channel: {
-      text: {
-        resolveMarkdownTableMode: () => "off",
-        convertMarkdownTables: (text: string) => text,
-      },
-    },
+  buildConversationReference: ({
+    serviceUrl = "https://service.example.com",
+    conversation = { id: "19:conversation@thread.tacv2" },
+    agent,
+    user,
+    tenantId,
+    aadObjectId,
+  }: StoredConversationReference) => ({
+    serviceUrl,
+    conversation,
+    agent,
+    user,
+    tenantId,
+    aadObjectId,
   }),
 }));
 
-describe("sendMessageMSTeams", () => {
-  beforeEach(() => {
-    mockState.loadOutboundMediaFromUrl.mockReset();
-    mockState.resolveMSTeamsSendContext.mockReset();
-    mockState.requiresFileConsent.mockReset();
-    mockState.prepareFileConsentActivity.mockReset();
-    mockState.extractFilename.mockReset();
-    mockState.sendMSTeamsMessages.mockReset();
+vi.mock("./graph-upload.js", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("./graph-upload.js")>();
+  return {
+    ...actual,
+    uploadAndShareSharePoint: mockState.uploadAndShareSharePoint,
+    getDriveItemProperties: mockState.getDriveItemProperties,
+  };
+});
 
-    mockState.extractFilename.mockResolvedValue("fallback.bin");
-    mockState.requiresFileConsent.mockReturnValue(false);
-    mockState.resolveMSTeamsSendContext.mockResolvedValue({
-      adapter: {},
-      appId: "app-id",
-      conversationId: "19:conversation@thread.tacv2",
-      ref: {},
-      log: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
-      conversationType: "personal",
-      tokenProvider: { getAccessToken: vi.fn(async () => "token") },
-      mediaMaxBytes: 8 * 1024,
-      sharePointSiteId: undefined,
+// mock-isolation: fixture file cards must not call the Graph transport.
+vi.mock("./graph-chat.js", () => ({ buildTeamsFileInfoCard: mockState.buildTeamsFileInfoCard }));
+
+vi.mock("./sdk-proactive.js", () => ({
+  sendMSTeamsActivityWithReference: mockState.sendMSTeamsActivityWithReference,
+  updateMSTeamsActivityWithReference: mockState.updateMSTeamsActivityWithReference,
+  deleteMSTeamsActivityWithReference: mockState.deleteMSTeamsActivityWithReference,
+}));
+
+const conversationId = "19:conversation@thread.tacv2";
+const destination = { cfg: {}, to: `conversation:${conversationId}` };
+
+function mockContext(
+  overrides: Partial<Omit<MSTeamsProactiveContext, "app">> & { app?: object } = {},
+) {
+  const context = {
+    app: { id: "send-app" },
+    appId: "app-id",
+    conversationId,
+    ref: {},
+    log: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
+    conversationType: "personal",
+    replyStyle: "top-level",
+    sdkCloudOptions: { cloud: "Public" },
+    tokenProvider: { getAccessToken: vi.fn(async () => "token") },
+    mediaMaxBytes: 8 * 1024,
+    sharePointSiteId: undefined,
+    ...overrides,
+  };
+  mockState.resolveMSTeamsSendContext.mockResolvedValue(context);
+}
+
+function mockPdf() {
+  mockState.loadOutboundMediaFromUrl.mockResolvedValueOnce({
+    buffer: Buffer.from("pdf"),
+    contentType: "application/pdf",
+    fileName: "report.pdf",
+    kind: "file",
+  });
+}
+
+async function useActualOutboundMediaLoader() {
+  const actual = await vi.importActual<typeof import("paleoclaw/plugin-sdk/outbound-media")>(
+    "paleoclaw/plugin-sdk/outbound-media",
+  );
+  mockState.loadOutboundMediaFromUrl.mockImplementation(actual.loadOutboundMediaFromUrl);
+}
+
+beforeEach(() => {
+  for (const mock of Object.values(mockState)) {
+    mock.mockReset();
+  }
+  mockState.resolveMarkdownTableMode.mockReturnValue("off");
+  mockState.convertMarkdownTables.mockImplementation((text) => text);
+  mockState.setPendingUploadActivityIdFs.mockResolvedValue(undefined);
+  mockState.extractFilename.mockResolvedValue("fallback.bin");
+  mockState.requiresFileConsent.mockReturnValue(false);
+  mockContext();
+  mockState.sendMSTeamsMessages.mockResolvedValue(["message-1"]);
+  mockState.sendMSTeamsActivityWithReference.mockResolvedValue({ id: "message-1" });
+  mockState.updateMSTeamsActivityWithReference.mockResolvedValue({ id: "updated" });
+  mockState.deleteMSTeamsActivityWithReference.mockResolvedValue(undefined);
+});
+
+describe("sendMessageMSTeams", () => {
+  it.each(["success", "observer failure", "persistence failure"] as const)(
+    "settles an accepted consent card after %s",
+    async (outcome) => {
+      const failure = new Error(outcome);
+      mockState.loadOutboundMediaFromUrl.mockResolvedValue({
+        buffer: Buffer.from("file contents"),
+        contentType: "application/pdf",
+        fileName: "report.pdf",
+        kind: "file",
+      });
+      mockState.requiresFileConsent.mockReturnValue(true);
+      mockState.prepareFileConsentActivityFs.mockResolvedValue({
+        activity: { type: "message", attachments: [] },
+        uploadId: "pending-file",
+      });
+      if (outcome === "persistence failure") {
+        mockState.setPendingUploadActivityIdFs.mockRejectedValue(failure);
+      }
+      const onDeliveryResult = vi.fn(async (result) => {
+        expect(result).toMatchObject({ messageId: "message-1", pendingUploadId: "pending-file" });
+        if (outcome === "observer failure") {
+          throw failure;
+        }
+      });
+
+      const send = sendMessageMSTeams({
+        ...destination,
+        text: "report",
+        mediaUrl: "file:///tmp/report.pdf",
+        onDeliveryResult,
+      });
+      if (outcome === "success") {
+        await expect(send).resolves.toMatchObject({
+          messageId: "message-1",
+          pendingUploadId: "pending-file",
+        });
+      } else {
+        await expect(send).rejects.toMatchObject({
+          cause: failure,
+          code: "CHANNEL_PARTIAL_DELIVERY",
+          deliveryResult: {
+            visibleReplySent: true,
+            receipt: {
+              platformMessageIds: ["message-1"],
+              parts: [expect.objectContaining({ kind: "card" })],
+            },
+          },
+        });
+      }
+      expect(mockState.sendMSTeamsActivityWithReference).toHaveBeenCalledOnce();
+      expect(onDeliveryResult).toHaveBeenCalledOnce();
+      expect(mockState.setPendingUploadActivityIdFs).toHaveBeenCalledExactlyOnceWith(
+        "pending-file",
+        "message-1",
+      );
+      expect(onDeliveryResult.mock.invocationCallOrder[0]).toBeLessThan(
+        mockState.setPendingUploadActivityIdFs.mock.invocationCallOrder[0]!,
+      );
+    },
+  );
+
+  it("loads workspace-relative media through the trusted host reader", async () => {
+    await withTempDir("paleoclaw-msteams-workspace-", async (dir) => {
+      const workspaceDir = await realpath(dir);
+      const filePath = join(workspaceDir, "report.txt");
+      const fileContents = Buffer.from("approved Teams attachment");
+      const approvedReader = vi.fn(async (candidate: string) => await readFile(candidate));
+      const conflictingReader = vi.fn(async () => Buffer.from("forged Teams attachment"));
+      const mediaAccess = {
+        localRoots: [workspaceDir],
+        workspaceDir,
+        readFile: approvedReader,
+      };
+
+      await writeFile(filePath, fileContents);
+      await useActualOutboundMediaLoader();
+
+      await sendMessageMSTeams({
+        ...destination,
+        text: "approved attachment",
+        mediaUrl: "report.txt",
+        mediaAccess,
+        mediaLocalRoots: [join(workspaceDir, "unapproved")],
+        mediaReadFile: conflictingReader,
+      });
+
+      expect(mockState.loadOutboundMediaFromUrl.mock.calls[0]?.[1]?.mediaAccess).toBe(mediaAccess);
+      expect(conflictingReader).not.toHaveBeenCalled();
+      expect(approvedReader).toHaveBeenCalledWith(filePath);
+      expect(mockState.sendMSTeamsMessages.mock.calls[0]?.[0].messages[1]?.mediaUrl).toBe(
+        `data:text/plain;base64,${fileContents.toString("base64")}`,
+      );
     });
-    mockState.sendMSTeamsMessages.mockResolvedValue(["message-1"]);
   });
 
-  it("loads media through shared helper and forwards mediaLocalRoots", async () => {
-    const mediaBuffer = Buffer.from("tiny-image");
-    mockState.loadOutboundMediaFromUrl.mockResolvedValueOnce({
-      buffer: mediaBuffer,
-      contentType: "image/png",
-      fileName: "inline.png",
-      kind: "image",
+  it.each([
+    [
+      "outside approved roots",
+      "../outside.txt",
+      true,
+      "Local media path is not under an allowed directory",
+    ],
+    ["without approved roots", "report.txt", false, "Host media read requires explicit localRoots"],
+  ] as const)("rejects host media %s", async (_label, mediaUrl, hasRoots, error) => {
+    await withTempDir("paleoclaw-msteams-roots-", async (dir) => {
+      const sandbox = await realpath(dir);
+      const workspaceDir = join(sandbox, "workspace");
+      const approvedReader = vi.fn(async (candidate: string) => await readFile(candidate));
+      await mkdir(workspaceDir);
+      await writeFile(join(sandbox, "outside.txt"), "outside approved workspace");
+      await useActualOutboundMediaLoader();
+      await expect(
+        sendMessageMSTeams({
+          ...destination,
+          text: "private attachment",
+          mediaUrl,
+          mediaAccess: {
+            workspaceDir,
+            readFile: approvedReader,
+            ...(hasRoots ? { localRoots: [workspaceDir] } : {}),
+          },
+        }),
+      ).rejects.toThrow(error);
+      expect(approvedReader).not.toHaveBeenCalled();
+      expect(mockState.sendMSTeamsMessages).not.toHaveBeenCalled();
+    });
+  });
+
+  it("uses the Graph-native group conversation ID for SharePoint sharing", async () => {
+    const graphConversationId = "19:group-id@thread.v2";
+
+    mockContext({
+      conversationId: graphConversationId,
+      conversationType: "groupChat",
+      mediaMaxBytes: 8 * 1024 * 1024,
+      sharePointSiteId: "site-456",
+    });
+    mockPdf();
+    mockState.uploadAndShareSharePoint.mockResolvedValue({ itemId: "item-2" });
+    mockState.getDriveItemProperties.mockResolvedValue({ name: "report.pdf" });
+    mockState.buildTeamsFileInfoCard.mockReturnValue({
+      contentType: "application/vnd.microsoft.teams.card.file.info",
     });
 
     await sendMessageMSTeams({
       cfg: {} as OpenClawConfig,
-      to: "conversation:19:conversation@thread.tacv2",
-      text: "hello",
-      mediaUrl: "file:///tmp/agent-workspace/inline.png",
-      mediaLocalRoots: ["/tmp/agent-workspace"],
+      to: `conversation:${graphConversationId}`,
+      text: "report",
+      mediaUrl: "https://example.com/report.pdf",
     });
 
-    expect(mockState.loadOutboundMediaFromUrl).toHaveBeenCalledWith(
-      "file:///tmp/agent-workspace/inline.png",
-      {
-        maxBytes: 8 * 1024,
-        mediaLocalRoots: ["/tmp/agent-workspace"],
-      },
+    expect(mockState.uploadAndShareSharePoint).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({ chatId: graphConversationId, siteId: "site-456" }),
     );
+  });
 
-    expect(mockState.sendMSTeamsMessages).toHaveBeenCalledWith(
-      expect.objectContaining({
-        messages: [
-          expect.objectContaining({
-            text: "hello",
-            mediaUrl: `data:image/png;base64,${mediaBuffer.toString("base64")}`,
-          }),
-        ],
+  it("fails clearly when a group file has no SharePoint site", async () => {
+    mockContext({
+      conversationId: "19:group-id@thread.v2",
+      conversationType: "groupChat",
+      mediaMaxBytes: 8 * 1024 * 1024,
+    });
+    mockPdf();
+
+    await expect(
+      sendMessageMSTeams({
+        cfg: {} as OpenClawConfig,
+        to: "conversation:19:group-id@thread.v2",
+        text: "report",
+        mediaUrl: "https://example.com/report.pdf",
       }),
+    ).rejects.toThrow("channels.msteams.sharePointSiteId is required");
+    expect(mockState.uploadAndShareSharePoint).not.toHaveBeenCalled();
+  });
+});
+
+describe("editMessageMSTeams", () => {
+  afterEach(resetPluginRuntimeStateForTest);
+
+  it("applies the default account table policy to edited activities", async () => {
+    setActivePluginRegistry(
+      createTestRegistry([
+        {
+          pluginId: "msteams",
+          source: "test",
+          plugin: { id: "msteams", meta: { id: "msteams" } },
+        },
+      ]),
     );
+    const markdown = await vi.importActual<
+      typeof import("paleoclaw/plugin-sdk/markdown-table-runtime")
+    >("paleoclaw/plugin-sdk/markdown-table-runtime");
+    const text = await vi.importActual<typeof import("paleoclaw/plugin-sdk/text-chunking")>(
+      "paleoclaw/plugin-sdk/text-chunking",
+    );
+    mockState.resolveMarkdownTableMode.mockImplementation(markdown.resolveMarkdownTableMode);
+    mockState.convertMarkdownTables.mockImplementation(text.convertMarkdownTables);
+    mockContext({ app: {}, ref: { conversation: { id: conversationId } } });
+    const cfg: OpenClawConfig = {
+      channels: {
+        msteams: {
+          defaultAccount: "support",
+          markdown: { tables: "off" },
+          accounts: {
+            support: { markdown: { tables: "bullets" } },
+          },
+        },
+      },
+    };
+    await editMessageMSTeams({
+      cfg,
+      accountId: undefined,
+      to: destination.to,
+      activityId: "edited-message",
+      text: "| Name | Status |\n| --- | --- |\n| Widget | Ready |",
+    });
+    const activity = mockState.updateMSTeamsActivityWithReference.mock.calls[0]?.[3];
+    expect(activity).toMatchObject({
+      type: "message",
+      id: "edited-message",
+      text: expect.stringContaining("Widget"),
+    });
+    expect(activity).toMatchObject({ text: expect.stringContaining("Status: Ready") });
+    expect(activity).not.toMatchObject({ text: expect.stringContaining("| Name |") });
+  });
+
+  it("updates an existing activity with a replacement Adaptive Card", async () => {
+    const mockApp = { id: "adaptive-card-app" };
+    mockContext({ app: mockApp, ref: { conversation: { id: conversationId } } });
+    const card = { type: "AdaptiveCard", version: "1.5", body: [] };
+
+    const result = await editAdaptiveCardMSTeams({
+      ...destination,
+      activityId: "approval-activity",
+      card,
+    });
+
+    expect(result.conversationId).toBe(conversationId);
+    expect(mockState.updateMSTeamsActivityWithReference).toHaveBeenCalledWith(
+      mockApp,
+      expect.objectContaining({ conversation: { id: conversationId } }),
+      "approval-activity",
+      {
+        type: "message",
+        id: "approval-activity",
+        attachments: [{ contentType: "application/vnd.microsoft.card.adaptive", content: card }],
+      },
+      { serviceUrlBoundary: { cloud: "Public" } },
+    );
+  });
+});
+
+describe("deleteMessageMSTeams", () => {
+  it("deletes with the resolved Teams conversation reference", async () => {
+    const mockApp = { id: "delete-app" };
+    mockContext({
+      app: mockApp,
+      conversationType: "groupChat",
+      ref: {
+        user: { id: "user-1" },
+        agent: { id: "agent-1" },
+        conversation: { id: conversationId, conversationType: "groupChat" },
+        channelId: "msteams",
+      },
+    });
+
+    const result = await deleteMessageMSTeams({
+      ...destination,
+      activityId: "activity-456",
+    });
+
+    expect(result.conversationId).toBe(conversationId);
+
+    expect(mockState.deleteMSTeamsActivityWithReference).toHaveBeenCalledWith(
+      mockApp,
+      expect.objectContaining({
+        conversation: { id: conversationId, conversationType: "groupChat" },
+        serviceUrl: "https://service.example.com",
+      }),
+      "activity-456",
+      { serviceUrlBoundary: { cloud: "Public" } },
+    );
+  });
+
+  it("throws a descriptive error when delete fails", async () => {
+    mockContext({
+      app: { id: "failing-app" },
+      ref: {
+        user: { id: "user-1" },
+        agent: { id: "agent-1" },
+        conversation: { id: conversationId },
+        channelId: "msteams",
+      },
+    });
+    mockState.deleteMSTeamsActivityWithReference.mockRejectedValue(new Error("Not found"));
+
+    await expect(
+      deleteMessageMSTeams({
+        ...destination,
+        activityId: "activity-456",
+      }),
+    ).rejects.toThrow("msteams delete failed");
   });
 });

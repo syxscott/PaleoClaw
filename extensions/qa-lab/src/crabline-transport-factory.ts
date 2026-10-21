@@ -16,7 +16,7 @@ export function createQaCrablineTransportAdapterFactory(
       const [
         { resolveOpenClawCrablineChannelDriverSelection },
         { createQaCrablineTransportDefinition },
-      ] = await Promise.all([import("@paleoclaw/crabline"), import("./crabline-transport.js")]);
+      ] = await Promise.all([import("@openclaw/crabline"), import("./crabline-transport.js")]);
       const selection = resolveOpenClawCrablineChannelDriverSelection({
         channel: context.channelId,
       });

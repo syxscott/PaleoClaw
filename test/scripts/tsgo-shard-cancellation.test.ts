@@ -28,7 +28,7 @@ it.runIf(process.platform !== "win32")(
       write("pnpm-workspace.yaml", "packages: []\n");
       installDistArtifactScripts(root, ["run-tsgo-core-test-shards.mts", "run-tsgo.mts"], {
         compiler: false,
-        dependencies: ["@paleoclaw/fs-safe"],
+        dependencies: ["@openclaw/fs-safe"],
       });
       const compiler = write(
         "compiler.cjs",

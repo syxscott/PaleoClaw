@@ -2,7 +2,7 @@
 import fsSync, { type BigIntStats, type Stats } from "node:fs";
 import fs, { type FileHandle } from "node:fs/promises";
 import path from "node:path";
-import { sameFileIdentity, type FileIdentityStat } from "@paleoclaw/fs-safe/advanced";
+import { sameFileIdentity, type FileIdentityStat } from "@openclaw/fs-safe/advanced";
 import {
   getPublishFileExclusiveFailureDetails,
   isHardlinkFallbackError,

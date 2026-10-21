@@ -78,7 +78,7 @@ beforeAll(async () => {
     return;
   }
   // Match fs-safe's Windows simulation: retain native publication, add host identity facts.
-  const nativeUrl = new URL("native.js", import.meta.resolve("@paleoclaw/fs-safe/root")).href;
+  const nativeUrl = new URL("native.js", import.meta.resolve("@openclaw/fs-safe/root")).href;
   const {
     __loadBundledNativeForTest: loadBundledNative,
     __setNativeLoaderForTest: setNativeLoader,

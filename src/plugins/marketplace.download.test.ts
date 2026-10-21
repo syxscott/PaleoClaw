@@ -2,7 +2,7 @@ import { constants } from "node:fs";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { configureFsSafeNative, getFsSafeNativeConfig } from "@paleoclaw/fs-safe/config";
+import { configureFsSafeNative, getFsSafeNativeConfig } from "@openclaw/fs-safe/config";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { resolvePreferredOpenClawTmpDir } from "../infra/tmp-paleoclaw-dir.js";
 import { installPluginFromMarketplace } from "./marketplace.js";

@@ -18,19 +18,19 @@ const dirs = useAutoCleanupTempDirTracker(afterEach);
 // Copy the real published JS and available native packages into the installation.
 // No repository node_modules link may keep the moved updater's dependencies alive.
 async function copyRuntime(root: string): Promise<void> {
-  const manifest = fileURLToPath(import.meta.resolve("@paleoclaw/fs-safe/package.json"));
+  const manifest = fileURLToPath(import.meta.resolve("@openclaw/fs-safe/package.json"));
   const require = createRequire(manifest);
   const copy = (source: string, name: string) =>
     fs.cp(path.dirname(source), path.join(root, "node_modules", name), {
       recursive: true,
       dereference: true,
     });
-  await copy(manifest, "@paleoclaw/fs-safe");
+  await copy(manifest, "@openclaw/fs-safe");
   const metadata = JSON.parse(await fs.readFile(manifest, "utf8")) as {
     optionalDependencies: Record<string, string>;
   };
   for (const name of Object.keys(metadata.optionalDependencies)) {
-    if (!name.startsWith("@paleoclaw/fs-safe-")) {
+    if (!name.startsWith("@openclaw/fs-safe-")) {
       continue;
     }
     let native: string;
@@ -90,7 +90,7 @@ it.each(["success", "doctor failure"])(
     await build({
       stdin: {
         contents:
-          'export { swapStagedPackageInstall } from "./src/infra/package-update-swap.ts"; export const installedDependencyUrl = import.meta.resolve("@paleoclaw/fs-safe/root");',
+          'export { swapStagedPackageInstall } from "./src/infra/package-update-swap.ts"; export const installedDependencyUrl = import.meta.resolve("@openclaw/fs-safe/root");',
         resolveDir: process.cwd(),
       },
       outfile: path.join(root, "dist/updater.mjs"),
@@ -110,7 +110,7 @@ it.each(["success", "doctor failure"])(
           },
         },
       ],
-      external: ["@paleoclaw/fs-safe", "@paleoclaw/fs-safe/*"],
+      external: ["@openclaw/fs-safe", "@openclaw/fs-safe/*"],
       banner: {
         js: 'import { createRequire as createFixtureRequire } from "node:module"; const require = createFixtureRequire(import.meta.url);',
       },

@@ -131,12 +131,12 @@ export function createWorkerDeployBuildPlugin(rootDir = process.cwd()) {
   );
   const fsSafeWindowsSecurityPath = fs.realpathSync(
     path.join(
-      path.dirname(require.resolve("@paleoclaw/fs-safe/package.json")),
+      path.dirname(require.resolve("@openclaw/fs-safe/package.json")),
       "dist/windows-security-command.js",
     ),
   );
   const fsSafeWatchIoPath = fs.realpathSync(
-    path.join(path.dirname(require.resolve("@paleoclaw/fs-safe/package.json")), "dist/watch-io.js"),
+    path.join(path.dirname(require.resolve("@openclaw/fs-safe/package.json")), "dist/watch-io.js"),
   );
   const fsSafeWatchWorkerPath = fs.realpathSync(
     path.join(path.dirname(fsSafeWatchIoPath), "watch-io-worker.js"),

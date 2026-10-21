@@ -2,7 +2,7 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { createServer } from "node:http";
 import path from "node:path";
-import { withTimeout } from "@paleoclaw/fs-safe/advanced";
+import { withTimeout } from "@openclaw/fs-safe/advanced";
 import { readSessionMessageIdentity } from "@paleoclaw/gateway-client/browser";
 import { asOptionalRecord } from "@paleoclaw/normalization-core/record-coerce";
 import type { Locator, Page } from "playwright";

@@ -1,6 +1,6 @@
 import os from "node:os";
 import path from "node:path";
-import { inspectPathPermissions } from "@paleoclaw/fs-safe/permissions";
+import { inspectPathPermissions } from "@openclaw/fs-safe/permissions";
 import type { WorkerHeartbeatResult } from "../../packages/gateway-protocol/src/schema/worker-admission.js";
 import { CLEARED_GITHUB_CREDENTIALS } from "../agents/github-host-runtime.js";
 import {

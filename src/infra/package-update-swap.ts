@@ -1,6 +1,6 @@
 import path from "node:path";
 import { isDeepStrictEqual } from "node:util";
-import { movePathWithCopyFallback } from "@paleoclaw/fs-safe/atomic";
+import { movePathWithCopyFallback } from "@openclaw/fs-safe/atomic";
 import { hasCommandProcessCleanupError } from "../process/exec-result.js";
 import { formatErrorMessage } from "./errors.js";
 import {

@@ -225,7 +225,7 @@ export async function startQaLabServer(
     adapterFactories?: readonly QaTransportAdapterFactory[],
   ) => {
     const crabline =
-      selection.channelDriver === "crabline" ? await import("@paleoclaw/crabline") : undefined;
+      selection.channelDriver === "crabline" ? await import("@openclaw/crabline") : undefined;
     return resolveQaLabRunPlan({
       selection,
       scenarios: scenarioCatalog.scenarios,

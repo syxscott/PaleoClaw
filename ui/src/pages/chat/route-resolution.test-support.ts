@@ -1,4 +1,4 @@
-import { createRouter } from "@paleoclaw/uirouter";
+import { createRouter } from "@openclaw/uirouter";
 import { expect, onTestFinished, vi } from "vitest";
 import type { SessionsResolveResult } from "../../../../packages/gateway-protocol/src/index.js";
 import { registerListener } from "../../../../src/shared/listeners.js";

@@ -3,7 +3,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { gzipSync } from "node:zlib";
-import { configureFsSafeNative, getFsSafeNativeConfig } from "@paleoclaw/fs-safe/config";
+import { configureFsSafeNative, getFsSafeNativeConfig } from "@openclaw/fs-safe/config";
 import { createDeferred } from "paleoclaw/plugin-sdk/extension-shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { resolveGeolocationSettings } from "./config.js";

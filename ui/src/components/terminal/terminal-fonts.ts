@@ -1,4 +1,4 @@
-import type { GhosttyTerminalController } from "@paleoclaw/libterminal/browser";
+import type { GhosttyTerminalController } from "@openclaw/libterminal/browser";
 import { inferControlUiPublicAssetPath } from "../../app/public-assets.ts";
 import { loadTypefaceStylesheet } from "../../app/typography.ts";
 import { listen } from "../../lib/reactive/listener.ts";

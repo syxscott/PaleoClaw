@@ -1,6 +1,6 @@
 /** Config IO adapter used by secrets apply/configure flows. */
 import path from "node:path";
-import { replaceFileAtomicSync } from "@paleoclaw/fs-safe/atomic";
+import { replaceFileAtomicSync } from "@openclaw/fs-safe/atomic";
 import { createConfigIO } from "../config/config.js";
 import { resolveStateDir } from "../config/paths.js";
 import { readExistingStateRootMode } from "../infra/private-dir-mode.js";

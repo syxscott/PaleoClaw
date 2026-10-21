@@ -1,4 +1,4 @@
-import { basenameFromMediaSource } from "@paleoclaw/fs-safe/advanced";
+import { basenameFromMediaSource } from "@openclaw/fs-safe/advanced";
 import { canonicalizeBase64, estimateBase64DecodedBytes } from "@paleoclaw/media-core/base64";
 import { basenameFromAnyPath } from "@paleoclaw/media-core/file-name";
 import { extensionForMime } from "@paleoclaw/media-core/mime";

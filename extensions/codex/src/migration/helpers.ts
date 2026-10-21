@@ -1,6 +1,6 @@
 import os from "node:os";
 import path from "node:path";
-import { tryReadJson } from "@paleoclaw/fs-safe/json";
+import { tryReadJson } from "@openclaw/fs-safe/json";
 import { safeStat } from "paleoclaw/plugin-sdk/path-existence-runtime";
 import { asNonArrayRecord } from "paleoclaw/plugin-sdk/string-coerce-runtime";
 

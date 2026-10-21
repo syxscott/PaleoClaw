@@ -12,8 +12,8 @@ const directoryReadState = vi.hoisted(() => ({
 }));
 
 vi.mock("./github-oauth-records.js", () => ({ listGitHubOAuthRecords: oauthMocks.list }));
-vi.mock("@paleoclaw/fs-safe/advanced", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@paleoclaw/fs-safe/advanced")>();
+vi.mock("@openclaw/fs-safe/advanced", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@openclaw/fs-safe/advanced")>();
   return {
     ...actual,
     readDirectoryIdentity: async (...args: Parameters<typeof actual.readDirectoryIdentity>) => {

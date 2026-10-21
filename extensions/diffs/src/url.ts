@@ -1,13 +1,22 @@
-import type { OpenClawConfig } from "paleoclaw/plugin-sdk/diffs";
+import {
+  resolveGatewayPublicOrigin,
+  type OpenClawConfig,
+} from "paleoclaw/plugin-sdk/config-contracts";
+import { resolveGatewayPort } from "paleoclaw/plugin-sdk/gateway-config-runtime";
 
-const DEFAULT_GATEWAY_PORT = 18789;
+type ViewerBaseUrlFieldName = "baseUrl" | "viewerBaseUrl";
 
 export function buildViewerUrl(params: {
   config: OpenClawConfig;
   viewerPath: string;
   baseUrl?: string;
+  viewerBaseUrl?: string;
 }): string {
-  const baseUrl = params.baseUrl?.trim() || resolveGatewayBaseUrl(params.config);
+  const baseUrl =
+    params.baseUrl?.trim() ||
+    params.viewerBaseUrl?.trim() ||
+    resolveGatewayPublicOrigin(params.config) ||
+    resolveGatewayBaseUrl(params.config);
   const normalizedBase = normalizeViewerBaseUrl(baseUrl);
   const viewerPath = params.viewerPath.startsWith("/")
     ? params.viewerPath
@@ -20,30 +29,29 @@ export function buildViewerUrl(params: {
   return parsedBase.toString();
 }
 
-export function normalizeViewerBaseUrl(raw: string): string {
-  let parsed: URL;
-  try {
-    parsed = new URL(raw);
-  } catch {
-    throw new Error(`Invalid baseUrl: ${raw}`);
+export function normalizeViewerBaseUrl(
+  raw: string,
+  fieldName: ViewerBaseUrlFieldName = "baseUrl",
+): string {
+  const parsed = URL.parse(raw);
+  if (!parsed) {
+    throw new Error(`Invalid ${fieldName}: ${raw}`);
   }
   if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
-    throw new Error(`baseUrl must use http or https: ${raw}`);
+    throw new Error(`${fieldName} must use http or https: ${raw}`);
   }
   if (parsed.search || parsed.hash) {
-    throw new Error(`baseUrl must not include query/hash: ${raw}`);
+    throw new Error(`${fieldName} must not include query/hash: ${raw}`);
   }
   parsed.search = "";
   parsed.hash = "";
   parsed.pathname = parsed.pathname.replace(/\/+$/, "");
-  const withoutTrailingSlash = parsed.toString().replace(/\/+$/, "");
-  return withoutTrailingSlash;
+  return parsed.toString().replace(/\/+$/, "");
 }
 
 function resolveGatewayBaseUrl(config: OpenClawConfig): string {
   const scheme = config.gateway?.tls?.enabled ? "https" : "http";
-  const port =
-    typeof config.gateway?.port === "number" ? config.gateway.port : DEFAULT_GATEWAY_PORT;
+  const port = resolveGatewayPort(config);
   const customHost = config.gateway?.customBindHost?.trim();
 
   if (config.gateway?.bind === "custom" && customHost) {

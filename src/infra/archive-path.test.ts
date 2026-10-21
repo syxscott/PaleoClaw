@@ -1,4 +1,4 @@
-import { isWindowsDrivePath } from "@paleoclaw/fs-safe/archive";
+import { isWindowsDrivePath } from "@openclaw/fs-safe/archive";
 // Covers the archive-path facade used by runtime path classification.
 import { describe, expect, it } from "vitest";
 

@@ -2,7 +2,7 @@ import { AsyncLocalStorage } from "node:async_hooks";
 import fs, { type FileHandle } from "node:fs/promises";
 import path from "node:path";
 import { parentPort, workerData } from "node:worker_threads";
-import { withTempWorkspace } from "@paleoclaw/fs-safe/temp";
+import { withTempWorkspace } from "@openclaw/fs-safe/temp";
 import {
   createConfigReadError,
   createInvalidConfigError,

@@ -5,7 +5,7 @@ import { createServer, type ServerResponse } from "node:http";
 import type { Socket } from "node:net";
 import path from "node:path";
 import { Readable } from "node:stream";
-import { __setFsSafeTestHooksForTest, getFsSafeTestHooks } from "@paleoclaw/fs-safe/test-hooks";
+import { __setFsSafeTestHooksForTest, getFsSafeTestHooks } from "@openclaw/fs-safe/test-hooks";
 import JSZip from "jszip";
 import * as tar from "tar";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";

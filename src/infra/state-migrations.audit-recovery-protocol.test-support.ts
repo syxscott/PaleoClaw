@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { root } from "@paleoclaw/fs-safe/root";
+import { root } from "@openclaw/fs-safe/root";
 import { closeOpenClawStateDatabaseAsync } from "../state/paleoclaw-state-db.js";
 import {
   readLegacyAuditSourceSnapshot,

@@ -1,7 +1,7 @@
 // Local media access tests cover workspace path authorization.
 import fs from "node:fs/promises";
 import path from "node:path";
-import { __setFsSafeTestHooksForTest } from "@paleoclaw/fs-safe/test-hooks";
+import { __setFsSafeTestHooksForTest } from "@openclaw/fs-safe/test-hooks";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { useAutoCleanupTempDirTracker } from "../../test/helpers/temp-dir.js";
 import { resolveStateDir } from "../config/paths.js";

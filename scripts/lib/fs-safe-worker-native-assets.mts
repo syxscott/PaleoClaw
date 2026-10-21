@@ -24,7 +24,7 @@ export async function prepareWorkerDarwinNativeAssets(rootDir: string, manifestP
     packages: Record<string, { resolution: { integrity: string } }>;
   };
   const pins = Object.entries(WORKER_BUNDLE_DARWIN_NATIVE_ARTIFACTS).map(([target, fileName]) => {
-    const name = `@paleoclaw/fs-safe-${target}`;
+    const name = `@openclaw/fs-safe-${target}`;
     const version = manifest.optionalDependencies[name];
     const integrity = lock.packages[`${name}@${version}`]?.resolution.integrity;
     if (!/^\d+\.\d+\.\d+$/u.test(version ?? "") || !integrity) {

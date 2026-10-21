@@ -28,8 +28,8 @@ const hooks = vi.hoisted(() => ({
 vi.mock("../../plugins/install-security-scan.js", () => ({
   evaluateSkillInstallPolicy: hooks.scan,
 }));
-vi.mock("@paleoclaw/fs-safe/atomic", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@paleoclaw/fs-safe/atomic")>();
+vi.mock("@openclaw/fs-safe/atomic", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@openclaw/fs-safe/atomic")>();
   return {
     ...actual,
     movePathWithCopyFallback: async (

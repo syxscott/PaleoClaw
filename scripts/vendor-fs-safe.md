@@ -12,8 +12,8 @@ its installation; never modify a borrowed/shared `node_modules` directory.
 Identify the root pin and any separate transitive versions:
 
 ```sh
-node -p "require('./package.json').dependencies['@paleoclaw/fs-safe']"
-pnpm -r why @paleoclaw/fs-safe
+node -p "require('./package.json').dependencies['@openclaw/fs-safe']"
+pnpm -r why @openclaw/fs-safe
 ```
 
 Obtain a reviewed [upstream checkout](https://github.com/paleoclaw/fs-safe) or known-good local package for each affected
@@ -33,8 +33,8 @@ versions distinct, including copies used by other dependencies.
 
 ```yaml
 overrides:
-  "@paleoclaw/fs-safe@<version>": file:vendor/fs-safe/<version>/core
-  "@paleoclaw/fs-safe-<target>@<version>": file:vendor/fs-safe/<version>/<target>
+  "@openclaw/fs-safe@<version>": file:vendor/fs-safe/<version>/core
+  "@openclaw/fs-safe-<target>@<version>": file:vendor/fs-safe/<version>/<target>
 ```
 
 Repeat for each affected version and its matching native packages. Leave the

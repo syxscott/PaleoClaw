@@ -97,7 +97,7 @@
       "class": "core-runtime",
       "risk": ["provider-routing", "model-io"]
     },
-    "@paleoclaw/fs-safe": {
+    "@openclaw/fs-safe": {
       "owner": "core:filesystem-safety",
       "class": "core-runtime",
       "risk": ["native", "filesystem", "path-safety", "secret-input"]

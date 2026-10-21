@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { resolvePathPrefixSync } from "@paleoclaw/fs-safe/advanced";
+import { resolvePathPrefixSync } from "@openclaw/fs-safe/advanced";
 import { hasErrnoCode } from "../../infra/errno.js";
 import { executeSqliteQuerySync } from "../../infra/kysely-sync.js";
 import { normalizeAgentId, parseAgentSessionKey } from "../../routing/session-key.js";

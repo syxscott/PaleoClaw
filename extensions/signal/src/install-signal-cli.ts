@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { walkDirectory } from "@paleoclaw/fs-safe/walk";
+import { walkDirectory } from "@openclaw/fs-safe/walk";
 import { extractErrorCode, formatErrorMessage } from "paleoclaw/plugin-sdk/error-runtime";
 import { root as fsRoot } from "paleoclaw/plugin-sdk/file-access-runtime";
 import { readProviderJsonObjectResponse } from "paleoclaw/plugin-sdk/provider-http";

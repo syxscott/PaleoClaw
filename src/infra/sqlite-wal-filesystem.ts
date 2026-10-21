@@ -1,7 +1,7 @@
 // Filesystem policy for SQLite creation and journaling.
 import fs from "node:fs";
 import path from "node:path";
-import { probeTreeClone } from "@paleoclaw/fs-safe/copy";
+import { probeTreeClone } from "@openclaw/fs-safe/copy";
 import { decodeMountInfoPath } from "@paleoclaw/normalization-core/mountinfo-path";
 import type { Result } from "@paleoclaw/normalization-core/result";
 import { createSubsystemLogger } from "../logging/subsystem.js";

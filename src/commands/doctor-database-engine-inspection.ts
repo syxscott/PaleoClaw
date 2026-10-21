@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import { parentPort, workerData } from "node:worker_threads";
-import { walkDirectory } from "@paleoclaw/fs-safe/walk";
+import { walkDirectory } from "@openclaw/fs-safe/walk";
 import type { OpenClawConfig } from "../config/types.openclaw.js";
 import { resolveAgentPortRoots } from "../infra/database-engine/agent-port.js";
 import { resolveDatabaseEngineSelection } from "../infra/database-engine/config.js";

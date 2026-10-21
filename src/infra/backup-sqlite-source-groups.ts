@@ -1,6 +1,6 @@
 import type { BigIntStats } from "node:fs";
 import fs from "node:fs/promises";
-import { sameFileIdentity } from "@paleoclaw/fs-safe/advanced";
+import { sameFileIdentity } from "@openclaw/fs-safe/advanced";
 import { ignoreMissingPath } from "./errno.js";
 import { sameFileMutationFingerprint, type FileMutationFingerprint } from "./file-descriptor.js";
 

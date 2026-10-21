@@ -2,8 +2,8 @@
 import { realpathSync, statSync, type BigIntStats, type Dirent } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { sameFileIdentity } from "@paleoclaw/fs-safe/advanced";
-import { isNotFoundPathError, isPathInside } from "@paleoclaw/fs-safe/path";
+import { sameFileIdentity } from "@openclaw/fs-safe/advanced";
+import { isNotFoundPathError, isPathInside } from "@openclaw/fs-safe/path";
 import { normalizeWindowsNamespaceAlias } from "../infra/backup-archive-path-policy.js";
 import { isTransientBackupPath, isVolatileBackupPath } from "../infra/backup-volatile-filter.js";
 import { hasErrnoCode } from "../infra/errno.js";

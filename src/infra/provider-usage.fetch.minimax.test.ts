@@ -2,150 +2,167 @@ import { describe, expect, it } from "vitest";
 import { createProviderUsageFetch, makeResponse } from "../test-utils/provider-usage-fetch.js";
 import { fetchMinimaxUsage } from "./provider-usage.fetch.minimax.js";
 
+const start = 1_774_180_800_000;
+const end = start + 4 * 3_600_000;
+const window = (usedPercent: number, label = "5h", resetAt?: number) => ({
+  label,
+  usedPercent,
+  resetAt,
+});
+const model = (fields: Record<string, unknown>) => ({
+  model_name: "general",
+  start_time: start,
+  end_time: end,
+  ...fields,
+});
+const remainingCounts = (total: number, remaining: number, period = "interval") => ({
+  [`current_${period}_total_count`]: total,
+  [`current_${period}_usage_count`]: remaining,
+});
+const counts = (total: number, remaining: number, model_name: string) =>
+  model({ model_name, ...remainingCounts(total, remaining) });
+const modelData = (...model_remains: Record<string, unknown>[]) => ({ model_remains });
+const quota = (remaining: number, status: number, period = "interval") => ({
+  [`current_${period}_remaining_percent`]: remaining,
+  [`current_${period}_status`]: status,
+});
+const emptySpeechQuota = { model_name: "speech-hd", ...remainingCounts(0, 0) };
+async function fetchUsage(payload: unknown, baseUrl?: string) {
+  const fetch = createProviderUsageFetch(async (_url, init) => {
+    expect(new Headers(init?.headers).get("Authorization")).toBe("Bearer key");
+    expect(new Headers(init?.headers).get("MM-API-Source")).toBe("paleoclaw");
+    return makeResponse(200, payload);
+  });
+  return { result: await fetchMinimaxUsage("key", 5000, fetch, { baseUrl }), fetch };
+}
+
 describe("fetchMinimaxUsage", () => {
-  it("returns HTTP errors for failed requests", async () => {
-    const mockFetch = createProviderUsageFetch(async () => makeResponse(502, "bad gateway"));
-    const result = await fetchMinimaxUsage("key", 5000, mockFetch);
-
-    expect(result.error).toBe("HTTP 502");
-    expect(result.windows).toHaveLength(0);
+  it.each([
+    ["https://api.minimax.io/anthropic", "https://api.minimax.io/v1/token_plan/remains"],
+    ["not a url", "https://api.minimaxi.com/v1/token_plan/remains"],
+  ])("resolves the usage endpoint from %s", async (baseUrl, expected) => {
+    const { result, fetch } = await fetchUsage({ data: remainingCounts(100, 98) }, baseUrl);
+    expect(fetch.mock.calls[0]?.[0]).toBe(expected);
+    expect(result.windows).toEqual([window(2)]);
   });
 
-  it("returns invalid JSON when payload cannot be parsed", async () => {
-    const mockFetch = createProviderUsageFetch(async () => makeResponse(200, "{not-json"));
-    const result = await fetchMinimaxUsage("key", 5000, mockFetch);
-
-    expect(result.error).toBe("Invalid JSON");
-    expect(result.windows).toHaveLength(0);
+  it.each([
+    ["{not-json", "Invalid JSON"],
+    [{ base_resp: { status_code: 1007, status_msg: "  auth denied  " } }, "auth denied"],
+    [{ data: { foo: "bar" } }, "Unsupported response shape"],
+  ])("reports invalid responses: %j", async (payload, error) => {
+    const { result } = await fetchUsage(payload);
+    expect(result).toMatchObject({ error, windows: [] });
   });
 
-  it("returns API errors from base_resp", async () => {
-    const mockFetch = createProviderUsageFetch(async () =>
-      makeResponse(200, {
-        base_resp: {
-          status_code: 1007,
-          status_msg: "  auth denied  ",
-        },
-      }),
-    );
-    const result = await fetchMinimaxUsage("key", 5000, mockFetch);
-
-    expect(result.error).toBe("auth denied");
-    expect(result.windows).toHaveLength(0);
-  });
-
-  it("derives usage from used/total fields and includes reset + plan", async () => {
-    const mockFetch = createProviderUsageFetch(async (_url, init) => {
-      const headers = (init?.headers as Record<string, string> | undefined) ?? {};
-      expect(headers.Authorization).toBe("Bearer key");
-      expect(headers["MM-API-Source"]).toBe("paleoclaw");
-
-      return makeResponse(200, {
-        data: {
+  it.each(
+    Object.entries<[Record<string, unknown>, ReturnType<typeof window>[], string?, boolean?]>({
+      "used/total with ordered numeric reset aliases": [
+        {
           used: 35,
           total: 100,
           window_hours: 3,
           reset_at: 1_700_000_000,
+          resetTime: "2030-01-01T00:00:00Z",
           plan_name: "Pro Max",
         },
-      });
-    });
-
-    const result = await fetchMinimaxUsage("key", 5000, mockFetch);
-
-    expect(result.plan).toBe("Pro Max");
-    expect(result.windows).toEqual([
-      {
-        label: "3h",
-        usedPercent: 35,
-        resetAt: 1_700_000_000_000,
-      },
-    ]);
-  });
-
-  it("supports usage ratio strings with minute windows and ISO reset strings", async () => {
-    const resetIso = "2026-01-08T00:00:00Z";
-    const mockFetch = createProviderUsageFetch(async () =>
-      makeResponse(200, {
-        data: {
+        [window(35, "3h", 1_700_000_000_000)],
+        "Pro Max",
+      ],
+      "nested ratios with minute windows and the first valid date alias": [
+        {
+          plan_name: "Starter",
           nested: [
             {
               usage_ratio: "0.25",
               window_minutes: "30",
-              reset_time: resetIso,
-              plan: "Starter",
+              reset_at: "not-a-date",
+              expires_at: "2026-01-08T00:00:00Z",
             },
           ],
         },
-      }),
-    );
-
-    const result = await fetchMinimaxUsage("key", 5000, mockFetch);
-    expect(result.plan).toBe("Starter");
-    expect(result.windows).toEqual([
-      {
-        label: "30m",
-        usedPercent: 25,
-        resetAt: new Date(resetIso).getTime(),
-      },
-    ]);
-  });
-
-  it("derives used from total and remaining counts", async () => {
-    const mockFetch = createProviderUsageFetch(async () =>
-      makeResponse(200, {
-        data: {
-          total: "200",
-          remaining: "50",
-          usage_percent: 75,
-          reset_at: 1_700_000_000_000,
-          plan_name: "Team",
+        [window(25, "30m", 1_767_830_400_000)],
+        "Starter",
+      ],
+      "remaining counts ahead of remaining percentages": [
+        { total: "200", remaining: "50", usage_percent: 75, reset_at: 1_700_000_000_000 },
+        [window(75, "5h", 1_700_000_000_000)],
+      ],
+      "remaining percentage with an out-of-range date": [
+        { usage_percent: 98, reset_at: 8_640_000_000_000_001 },
+        [window(2)],
+      ],
+      "highest usable score, then shallower and earlier records": [
+        {
+          branch: { deeper: { used_percent: 90, total: 100, used: 90 } },
+          lower: { total: 100, used: 10 },
+          invalid: { used_percent: "invalid", total: "invalid", used: "invalid", plan: "bad" },
+          first: { used_percent: 20, total: 100, used: 20 },
+          later: { used_percent: 30, total: 100, used: 30 },
         },
-      }),
-    );
-
-    const result = await fetchMinimaxUsage("key", 5000, mockFetch);
-    expect(result.plan).toBe("Team");
-    expect(result.windows).toEqual([
-      {
-        label: "5h",
-        usedPercent: 75,
-        resetAt: 1_700_000_000_000,
-      },
-    ]);
-  });
-
-  it("returns unsupported response shape when no usage fields are present", async () => {
-    const mockFetch = createProviderUsageFetch(async () =>
-      makeResponse(200, { data: { foo: "bar" } }),
-    );
-    const result = await fetchMinimaxUsage("key", 5000, mockFetch);
-
-    expect(result.error).toBe("Unsupported response shape");
-    expect(result.windows).toHaveLength(0);
-  });
-
-  it("handles repeated nested records while scanning usage candidates", async () => {
-    const sharedUsage = {
-      total: 100,
-      used: 20,
-      usage_percent: 90,
-      window_hours: 1,
-    };
-    const dataWithSharedReference = {
-      first: sharedUsage,
-      nested: [sharedUsage],
-    };
-    const mockFetch = createProviderUsageFetch(
-      async () =>
-        ({
-          ok: true,
-          status: 200,
-          json: async () => ({ data: dataWithSharedReference }),
-        }) as Response,
-    );
-
-    const result = await fetchMinimaxUsage("key", 5000, mockFetch);
-    expect(result.windows).toEqual([{ label: "1h", usedPercent: 20, resetAt: undefined }]);
+        [window(20)],
+      ],
+      "sixty-node traversal bound": [
+        {
+          usage_percent: 90,
+          nested: [
+            ...Array.from({ length: 57 }, () => ({})),
+            { used_percent: 25 },
+            { total: 100, used: 75 },
+          ],
+        },
+        [window(25)],
+      ],
+      "depth-four traversal bound": [
+        {
+          first: {
+            second: { third: { fourth: { used_percent: 25, fifth: { total: 100, used: 75 } } } },
+          },
+        },
+        [window(25)],
+      ],
+      "chat model ahead of empty speech quotas": [
+        modelData(emptySpeechQuota, counts(600, 595, "MiniMax-M*")),
+        [window(0.8333333333333334, "4h", end)],
+        "Coding Plan · MiniMax-M*",
+      ],
+      "authoritative current and weekly remaining percentages": [
+        modelData(
+          model({
+            start_time: String(start),
+            end_time: String(end),
+            ...remainingCounts(100, 90),
+            ...quota(97, 1),
+            ...remainingCounts(0, 0, "weekly"),
+            ...quota(77, 1, "weekly"),
+            weekly_end_time: String(end),
+          }),
+        ),
+        [window(3, "4h", end), window(23, "Week", end)],
+        "Coding Plan · general",
+        true,
+      ],
+      "unlimited windows yield a valid empty snapshot": [
+        modelData(model({ ...quota(100, 3), ...quota(100, 3, "weekly") })),
+        [],
+        "Coding Plan · general",
+      ],
+      "exhausted bounded row ahead of unlimited fallback": [
+        modelData(
+          { model_name: "video", ...quota(100, 3) },
+          model({ model_name: "other-bounded-model", ...quota(0, 2) }),
+        ),
+        [window(100, "4h", end)],
+        "Coding Plan · other-bounded-model",
+      ],
+      "first nonzero record without a chat or bounded model": [
+        modelData(emptySpeechQuota, counts(200, 150, "video-01")),
+        [window(25, "4h", end)],
+        "Coding Plan · video-01",
+      ],
+    }),
+  )("normalizes %s", async (_name, [data, windows, plan, root]) => {
+    const { result } = await fetchUsage(root ? data : { data, base_resp: { status_code: 0 } });
+    expect(result).toEqual({ provider: "minimax", displayName: "MiniMax", plan, windows });
   });
 });

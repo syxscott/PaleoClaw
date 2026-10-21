@@ -1,6 +1,6 @@
 import { writeFileSync } from "node:fs";
 import path from "node:path";
-import { withTimeout } from "@paleoclaw/fs-safe/advanced";
+import { withTimeout } from "@openclaw/fs-safe/advanced";
 import type { Locator, Page } from "playwright";
 import { expect } from "vitest";
 import type { ApplicationContext } from "../app/context.ts";

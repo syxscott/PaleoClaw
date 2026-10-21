@@ -30,12 +30,12 @@ it("keeps an inspected native image outside Doctor's disposable database snapsho
       const write = (name: string, body: string) => fs.writeFileSync(path.join(plugin, name), body);
       const writeJson = (name: string, value: unknown) => write(name, JSON.stringify(value));
       const require = createRequire(import.meta.url);
-      const nativeRequire = createRequire(require.resolve("@paleoclaw/fs-safe/package.json"));
+      const nativeRequire = createRequire(require.resolve("@openclaw/fs-safe/package.json"));
       const manifest = nativeRequire("./package.json") as {
         optionalDependencies: Record<string, string>;
       };
       const nativeImages = Object.keys(manifest.optionalDependencies)
-        .filter((name) => name.startsWith(`@paleoclaw/fs-safe-${process.platform}-${process.arch}`))
+        .filter((name) => name.startsWith(`@openclaw/fs-safe-${process.platform}-${process.arch}`))
         .flatMap((name) => {
           try {
             return [nativeRequire.resolve(name)];

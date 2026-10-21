@@ -96,7 +96,7 @@ describe.concurrent("fresh compiled subprocess invocation", () => {
       const relocated = fs.realpathSync(
         workerArtifacts.fixtureLifetime.createTempDir("worker-package-proof-"),
       );
-      const native = path.join(relocated, "node_modules/@paleoclaw/fs-safe/node_modules");
+      const native = path.join(relocated, "node_modules/@openclaw/fs-safe/node_modules");
       try {
         await prepareWorkers(owner);
         const { nativePackages } = await copyCompiledFsSafeRuntimeFixture(directory, relocated);
@@ -1447,7 +1447,7 @@ export default class {
              import path from 'node:path';
              import {createRequire} from 'node:module';
              import {pathToFileURL} from 'node:url';
-             import {configureFsSafeNative,getFsSafeNativeConfig} from '@paleoclaw/fs-safe/config';
+             import {configureFsSafeNative,getFsSafeNativeConfig} from '@openclaw/fs-safe/config';
              assert.equal(getFsSafeNativeConfig().mode,'auto');
              await import(pathToFileURL(process.argv[1]));
              assert.equal(getFsSafeNativeConfig().mode,'auto');

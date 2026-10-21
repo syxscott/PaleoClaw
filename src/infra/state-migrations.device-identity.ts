@@ -1,5 +1,5 @@
 import type { DatabaseSync } from "node:sqlite";
-import { root, type Root } from "@paleoclaw/fs-safe";
+import { root, type Root } from "@openclaw/fs-safe";
 import { resolveOpenClawStateSqlitePath } from "../state/paleoclaw-state-db.paths.js";
 import { importClientCredentialLegacy } from "./client-credential-legacy.js";
 import {

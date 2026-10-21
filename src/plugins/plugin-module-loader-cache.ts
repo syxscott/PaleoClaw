@@ -4,7 +4,7 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import type { NodePath } from "@babel/traverse";
 import type { CallExpression, Program, Statement } from "@babel/types";
-import { sameFileIdentity } from "@paleoclaw/fs-safe/advanced";
+import { sameFileIdentity } from "@openclaw/fs-safe/advanced";
 import { toSafeImportPath } from "../shared/import-specifier.js";
 import { createJiti } from "./jiti-factory.js";
 import {

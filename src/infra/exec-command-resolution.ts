@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 import path from "node:path";
-import { safeRealpathSync } from "@paleoclaw/fs-safe/path";
+import { safeRealpathSync } from "@openclaw/fs-safe/path";
 import { normalizeLowercaseStringOrEmpty } from "@paleoclaw/normalization-core/string-coerce";
 import { matchesExecAllowlistPattern } from "./exec-allowlist-pattern.js";
 import type { ExecAllowlistEntry } from "./exec-approvals.types.js";

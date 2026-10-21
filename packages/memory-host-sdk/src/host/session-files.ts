@@ -1,7 +1,7 @@
 import fsSync from "node:fs";
 import path from "node:path";
 import { isMainThread } from "node:worker_threads";
-import { safeStatSync } from "@paleoclaw/fs-safe/path";
+import { safeStatSync } from "@openclaw/fs-safe/path";
 import { sha256Hex } from "@paleoclaw/normalization-core/node-crypto";
 import { asOptionalRecord } from "@paleoclaw/normalization-core/record-coerce";
 import { normalizeAgentId } from "./config-utils.js";

@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { constants } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { syncDirectory } from "@paleoclaw/fs-safe/durability";
+import { syncDirectory } from "@openclaw/fs-safe/durability";
 import {
   acquireFileLock,
   FILE_LOCK_STALE_ERROR_CODE,

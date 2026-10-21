@@ -1,7 +1,7 @@
 import fsSync from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { assertDirectoryIdentitySync, readDirectoryIdentity } from "@paleoclaw/fs-safe/advanced";
+import { assertDirectoryIdentitySync, readDirectoryIdentity } from "@openclaw/fs-safe/advanced";
 import { isRecord } from "@paleoclaw/normalization-core/record-coerce";
 import { valid as validSemver } from "semver";
 import { GATEWAY_CONFIG_SELECTION_ENV_KEYS } from "../../config/gateway-env-selection.js";

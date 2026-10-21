@@ -3,4 +3,4 @@ export {
   createIcaclsResetCommand,
   formatIcaclsResetCommand,
   type PermissionExec as ExecFn,
-} from "@paleoclaw/fs-safe/advanced";
+} from "@openclaw/fs-safe/advanced";

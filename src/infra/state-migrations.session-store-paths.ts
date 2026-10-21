@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
-import { sameFileIdentity } from "@paleoclaw/fs-safe/advanced";
-import { isWithinDir, safeStatSync } from "@paleoclaw/fs-safe/path";
+import { sameFileIdentity } from "@openclaw/fs-safe/advanced";
+import { isWithinDir, safeStatSync } from "@openclaw/fs-safe/path";
 import { normalizeLowercaseStringOrEmpty } from "@paleoclaw/normalization-core/string-coerce";
 import { resolveStateDir } from "../config/paths.js";
 import { resolveAgentsDirFromSessionStorePath } from "../config/sessions/paths.js";

@@ -1,7 +1,7 @@
 import path from "node:path";
-import { assertDirectoryIdentitySync, readDirectoryIdentity } from "@paleoclaw/fs-safe/advanced";
-import { FsSafeError } from "@paleoclaw/fs-safe/errors";
-import { root as fsRoot, type Root } from "@paleoclaw/fs-safe/root";
+import { assertDirectoryIdentitySync, readDirectoryIdentity } from "@openclaw/fs-safe/advanced";
+import { FsSafeError } from "@openclaw/fs-safe/errors";
+import { root as fsRoot, type Root } from "@openclaw/fs-safe/root";
 import { isManagedGitHubProfileId } from "../config/github-identity-profile-id.js";
 import type { OpenClawConfig } from "../config/types.openclaw.js";
 import { hasErrnoCode } from "../infra/errno.js";

@@ -1,7 +1,7 @@
 // Sandbox workspace skill synchronization is deferred behind the sandbox runtime boundary.
 import fs from "node:fs";
 import path from "node:path";
-import { root, type Root } from "@paleoclaw/fs-safe/root";
+import { root, type Root } from "@openclaw/fs-safe/root";
 import { isRecord } from "@paleoclaw/normalization-core/record-coerce";
 import { resolveSandboxPath } from "../../agents/sandbox-paths.js";
 import { canonicalizePath } from "../../agents/utils/paths.js";

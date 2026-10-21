@@ -1,5 +1,5 @@
 import path from "node:path";
-import { FsSafeError, type FsSafeErrorCode } from "@paleoclaw/fs-safe";
+import { FsSafeError, type FsSafeErrorCode } from "@openclaw/fs-safe";
 import {
   createSecretFileAtomic as createSecretFileAtomicImpl,
   PRIVATE_SECRET_DIR_MODE,
@@ -7,7 +7,7 @@ import {
   tryReadSecretFileSync as tryReadSecretFileSyncImpl,
   writeSecretFileAtomic as writeSecretFileAtomicImpl,
   type SecretFileReadOptions as FsSafeSecretFileReadOptions,
-} from "@paleoclaw/fs-safe/secret";
+} from "@openclaw/fs-safe/secret";
 import { resolveUserPath } from "../utils.js";
 import { tightenPrivateDirChain } from "./private-dir-mode.js";
 
@@ -18,7 +18,7 @@ export {
   readSecretFile,
   readSecretFileSync,
   type SecretFileReadOptions,
-} from "@paleoclaw/fs-safe/secret";
+} from "@openclaw/fs-safe/secret";
 
 type SecretFileWriteParams = Parameters<typeof writeSecretFileAtomicImpl>[0];
 

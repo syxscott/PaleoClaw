@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { tempWorkspace } from "@paleoclaw/fs-safe/temp";
+import { tempWorkspace } from "@openclaw/fs-safe/temp";
 import { MAX_IMAGE_BYTES } from "@paleoclaw/media-core/constants";
 import {
   detectAndLoadPromptImages,

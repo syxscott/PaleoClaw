@@ -1,4 +1,4 @@
-import type { RouteLocation, RouterState } from "@paleoclaw/uirouter";
+import type { RouteLocation, RouterState } from "@openclaw/uirouter";
 import { isSessionRouteId, sameRouteLocation, type RouteId } from "../app-route-paths.ts";
 import type { ChatRouteData } from "../pages/chat/session-route-data.ts";
 import { selectRenderedRouteMatch } from "./router-outlet-presentation.ts";

@@ -2,10 +2,10 @@ import { createHash } from "node:crypto";
 import fsSync from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { syncDirectory } from "@paleoclaw/fs-safe/durability";
+import { syncDirectory } from "@openclaw/fs-safe/durability";
 import { expect, vi } from "vitest";
 
-type Publisher = typeof import("@paleoclaw/fs-safe/durability").publishFileExclusive;
+type Publisher = typeof import("@openclaw/fs-safe/durability").publishFileExclusive;
 export type PublicationFixture = (
   options: Parameters<Publisher>[0],
   publish: Publisher,

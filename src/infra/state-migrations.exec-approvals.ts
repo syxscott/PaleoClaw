@@ -1,6 +1,6 @@
 // Doctor-only import for the retired exec approvals JSON store.
 import { randomUUID } from "node:crypto";
-import { root, type Root } from "@paleoclaw/fs-safe";
+import { root, type Root } from "@openclaw/fs-safe";
 import { safeParseJsonRecord } from "@paleoclaw/normalization-core/json-coercion";
 import { isRecord } from "@paleoclaw/normalization-core/record-coerce";
 import { err, ok } from "@paleoclaw/normalization-core/result";

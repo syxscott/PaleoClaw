@@ -1,4 +1,4 @@
-import { definePage, type RouteLocation } from "@paleoclaw/uirouter";
+import { definePage, type RouteLocation } from "@openclaw/uirouter";
 import { createComponent } from "solid-js";
 import {
   INTERNAL_ACTIVITY_PATH_PARAM,

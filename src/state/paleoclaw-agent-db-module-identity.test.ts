@@ -51,8 +51,8 @@ it("shares agent ownership, worker publication, reclamation queues, and commit o
         deps: {
           alwaysBundle: (id) =>
             (id.startsWith("@paleoclaw/") || id.startsWith("paleoclaw/")) &&
-            id !== "@paleoclaw/fs-safe" &&
-            !id.startsWith("@paleoclaw/fs-safe/"),
+            id !== "@openclaw/fs-safe" &&
+            !id.startsWith("@openclaw/fs-safe/"),
         },
         platform: "node",
         format: "esm",

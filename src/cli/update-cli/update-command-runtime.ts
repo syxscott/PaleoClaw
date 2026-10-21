@@ -2,7 +2,7 @@ import { existsSync } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import type { FileLockHandle } from "@paleoclaw/fs-safe/file-lock";
+import type { FileLockHandle } from "@openclaw/fs-safe/file-lock";
 import { isRecord } from "@paleoclaw/normalization-core/record-coerce";
 import type { WithDistArtifactOwnership } from "../../../scripts/lib/runtime-artifact-contract.js";
 import { loadSourceRuntimePreparation } from "../../../scripts/lib/source-update-artifact-preflight.mts";

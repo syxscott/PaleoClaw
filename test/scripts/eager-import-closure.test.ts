@@ -74,7 +74,7 @@ function writeFixture(root: string, files: Record<string, unknown>) {
 function replaceFsSafe(root: string, canonical: string, manifest: Record<string, unknown>) {
   const dependency = join(root, "fixture-fs-safe");
   writeFixture(dependency, { "package.json": manifest, "config.js": "export {};\n" });
-  const installed = join(canonical, "node_modules/@paleoclaw/fs-safe");
+  const installed = join(canonical, "node_modules/@openclaw/fs-safe");
   rmSync(installed);
   symlinkSync(dependency, installed, process.platform === "win32" ? "junction" : "dir");
 }
@@ -334,13 +334,13 @@ itPosix.each([false, true])("launches a pre-helper anchor (manifest=%s)", (manif
   writeFixture(canonical, {
     "scripts/pr":
       '#!/bin/bash\n# OPENCLAW_PR_ANCHOR_REPO_ROOT\nexec node "$(dirname "$0")/pr-lib/legacy-entry.mjs"\n',
-    "scripts/pr-lib/legacy-entry.mjs": `import "${manifest ? "@paleoclaw/fs-safe/config" : "yaml"}";\nconsole.log("legacy anchor loaded");\n`,
+    "scripts/pr-lib/legacy-entry.mjs": `import "${manifest ? "@openclaw/fs-safe/config" : "yaml"}";\nconsole.log("legacy anchor loaded");\n`,
     "scripts/pr-lib/wrapper-components.txt": `${manifest ? "package.json\n" : ""}scripts/pr-lib/legacy-entry.mjs\n`,
   });
   chmodSync(wrapper, 0o755);
   if (manifest) {
     const packageJson = JSON.parse(readFileSync("package.json", "utf8"));
-    packageJson.dependencies["@paleoclaw/fs-safe"] = "0.0.0-fixture";
+    packageJson.dependencies["@openclaw/fs-safe"] = "0.0.0-fixture";
     writeFixture(canonical, { "package.json": packageJson });
   }
   git(canonical, "add", ".");
@@ -361,7 +361,7 @@ itPosix.each([false, true])("launches a pre-helper anchor (manifest=%s)", (manif
   if (manifest) {
     // The anchor's required version can differ from the newer parent's manifest.
     replaceFsSafe(root, canonical, {
-      name: "@paleoclaw/fs-safe",
+      name: "@openclaw/fs-safe",
       version: "0.0.0-fixture",
       type: "module",
       exports: { "./config": "./config.js" },

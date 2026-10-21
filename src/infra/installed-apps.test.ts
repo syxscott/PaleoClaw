@@ -8,8 +8,8 @@ import { mockProcessPlatform } from "../test-utils/vitest-spies.js";
 import { scanInstalledApps } from "./installed-apps.js";
 
 const redirectedRoots = vi.hoisted(() => new Map<string, string>());
-vi.mock("@paleoclaw/fs-safe/walk", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@paleoclaw/fs-safe/walk")>();
+vi.mock("@openclaw/fs-safe/walk", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@openclaw/fs-safe/walk")>();
   return {
     ...actual,
     walkDirectory: ((root, options) => {

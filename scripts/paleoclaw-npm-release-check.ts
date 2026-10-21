@@ -33,7 +33,7 @@ type PackageJson = {
 };
 
 const EXPECTED_REPOSITORY_URL = "https://github.com/paleoclaw/paleoclaw";
-const FS_SAFE_PACKAGE = "@paleoclaw/fs-safe";
+const FS_SAFE_PACKAGE = "@openclaw/fs-safe";
 const REQUIRED_PACKED_PATHS = [
   PACKAGE_DIST_INVENTORY_RELATIVE_PATH,
   "dist/control-ui/index.html",

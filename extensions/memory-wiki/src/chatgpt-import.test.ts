@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { __setFsSafeTestHooksForTest } from "@paleoclaw/fs-safe/test-hooks";
+import { __setFsSafeTestHooksForTest } from "@openclaw/fs-safe/test-hooks";
 import { KeyedAsyncQueue } from "paleoclaw/plugin-sdk/keyed-async-queue";
 import type { OpenKeyedStoreOptions } from "paleoclaw/plugin-sdk/plugin-state-runtime";
 import {

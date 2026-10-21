@@ -25,7 +25,7 @@ const NATIVE_HOOK_RELAY_FORBIDDEN_STATIC_MARKERS = [
   "runBeforeToolCallHook",
 ];
 // fs-safe must retain its package scope for optional native-platform loading.
-const NATIVE_HOOK_RELAY_ALLOWED_EXTERNAL_IMPORTS = ["kysely", "@paleoclaw/fs-safe"];
+const NATIVE_HOOK_RELAY_ALLOWED_EXTERNAL_IMPORTS = ["kysely", "@openclaw/fs-safe"];
 // These import-safe subpaths retain proc-safe's package-scoped, lazy native loader.
 const NATIVE_HOOK_RELAY_ALLOWED_EXTERNAL_SUBPATHS = new Set([
   "@paleoclaw/proc-safe/errors",

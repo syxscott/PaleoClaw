@@ -456,12 +456,12 @@ it("uses Node package resolution for external packages inherited by worktrees", 
   const resolvePackage = vi.fn((specifier: string) => path.join("/parent/node_modules", specifier));
   const aliases = resolveExternalPackageAliasesForVite(resolvePackage);
   expect(resolvePackage.mock.calls).toEqual([
-    ["@paleoclaw/libterminal/package.json"],
-    ["@paleoclaw/uirouter/package.json"],
+    ["@openclaw/libterminal/package.json"],
+    ["@openclaw/uirouter/package.json"],
   ]);
-  expect(aliases.find((alias) => alias.find === "@paleoclaw/libterminal/browser")).toEqual({
-    find: "@paleoclaw/libterminal/browser",
-    replacement: path.join("/parent/node_modules/@paleoclaw/libterminal", "dist/browser.js"),
+  expect(aliases.find((alias) => alias.find === "@openclaw/libterminal/browser")).toEqual({
+    find: "@openclaw/libterminal/browser",
+    replacement: path.join("/parent/node_modules/@openclaw/libterminal", "dist/browser.js"),
   });
 });
 

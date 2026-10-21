@@ -1,8 +1,8 @@
 import { unlinkSync } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { root as fsSafeRoot, type Root } from "@paleoclaw/fs-safe/root";
-import { __setFsSafeTestHooksForTest } from "@paleoclaw/fs-safe/test-hooks";
+import { root as fsSafeRoot, type Root } from "@openclaw/fs-safe/root";
+import { __setFsSafeTestHooksForTest } from "@openclaw/fs-safe/test-hooks";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useAutoCleanupTempDirTracker } from "../../test/helpers/temp-dir.js";
 import type { PackageUpdateTransaction } from "./package-update-swap-contract.js";

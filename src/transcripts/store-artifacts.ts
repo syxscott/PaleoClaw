@@ -1,8 +1,8 @@
 import { randomUUID } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { tempFile } from "@paleoclaw/fs-safe/advanced";
-import { root } from "@paleoclaw/fs-safe/root";
+import { tempFile } from "@openclaw/fs-safe/advanced";
+import { root } from "@openclaw/fs-safe/root";
 import { sha256Hex } from "../infra/crypto-digest.js";
 import { ignoreMissingPath } from "../infra/errno.js";
 import { removePathWithinRoot } from "../infra/fs-safe-remove.js";

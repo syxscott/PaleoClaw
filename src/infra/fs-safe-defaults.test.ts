@@ -34,7 +34,7 @@ function inspectNativeDefaults(params: {
       "--eval",
       `
       const options = JSON.parse(process.argv[1]);
-      const config = await import("@paleoclaw/fs-safe/config");
+      const config = await import("@openclaw/fs-safe/config");
       if (options.beforeImport) config.configureFsSafeNative({ mode: options.beforeImport });
       const { normalizeFsSafeNativeEnv } = await import(options.envUrl);
       normalizeFsSafeNativeEnv();

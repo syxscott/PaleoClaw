@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { root as fsSafeRoot, type Root } from "@paleoclaw/fs-safe/root";
+import { root as fsSafeRoot, type Root } from "@openclaw/fs-safe/root";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useAutoCleanupTempDirTracker } from "../../test/helpers/temp-dir.js";
 import { createSuiteTempRootTracker } from "../test-helpers/temp-dir.js";

@@ -1,7 +1,7 @@
 import type {
   createTerminalDefaultColorQueryResponder,
   GhosttyTerminalController,
-} from "@paleoclaw/libterminal/browser";
+} from "@openclaw/libterminal/browser";
 import { parseCatalogSessionKey, type CatalogSessionKey } from "../../lib/sessions/catalog-key.ts";
 import type { TerminalGatewayClient } from "./terminal-connection.ts";
 import type { TerminalPanelTab } from "./terminal-panel-tabs.tsx";

@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { sha256FileSync } from "@paleoclaw/fs-safe/durability";
+import { sha256FileSync } from "@openclaw/fs-safe/durability";
 import { asOptionalRecord, readStringField } from "paleoclaw/plugin-sdk/string-coerce-runtime";
 
 const DRIVER_PACKAGE = "@trycua/cua-driver";

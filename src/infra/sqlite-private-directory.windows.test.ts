@@ -87,7 +87,7 @@ describe.runIf(process.platform === "win32")("private SQLite directory creation 
       {
         eval: true,
         workerData: {
-          entry: fileURLToPath(import.meta.resolve("@paleoclaw/fs-safe/advanced")),
+          entry: fileURLToPath(import.meta.resolve("@openclaw/fs-safe/advanced")),
           directory: workerPath,
         },
       },

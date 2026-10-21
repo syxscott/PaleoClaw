@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { isPathInside } from "@paleoclaw/fs-safe/path";
+import { isPathInside } from "@openclaw/fs-safe/path";
 import { listAgentIds, resolveAgentDir } from "../agents/agent-scope-config.js";
 import { readExistingWorktreePaths } from "../agents/worktrees/registry-read.js";
 import { runWithLocalStateOwner } from "../cli/local-state-owner.js";

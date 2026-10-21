@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { replaceFileAtomic } from "@paleoclaw/fs-safe/atomic";
+import { replaceFileAtomic } from "@openclaw/fs-safe/atomic";
 import { jsonSchemaValuesEqual } from "@paleoclaw/normalization-core/json-schema";
 import { root } from "../infra/fs-safe.js";
 import { formatCwdRelativePathOrAbsolute as formatOutputPath } from "../infra/safe-cwd.js";

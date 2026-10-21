@@ -2,7 +2,7 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import { sameFileIdentity } from "@paleoclaw/fs-safe/advanced";
+import { sameFileIdentity } from "@openclaw/fs-safe/advanced";
 import { openRootFileSync } from "../infra/boundary-file-read.js";
 import { hashFileDescriptorSync } from "../infra/file-descriptor.js";
 import { FsSafeError, walkDirectorySync } from "../infra/fs-safe.js";

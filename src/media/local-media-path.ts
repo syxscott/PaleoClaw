@@ -1,5 +1,5 @@
 import path from "node:path";
-import { safeFileURLToPath } from "@paleoclaw/fs-safe/advanced";
+import { safeFileURLToPath } from "@openclaw/fs-safe/advanced";
 import { isPassThroughRemoteMediaSource } from "@paleoclaw/media-core/media-source-url";
 import { resolveUserPath } from "../utils.js";
 

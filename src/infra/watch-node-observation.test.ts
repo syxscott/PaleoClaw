@@ -1,7 +1,7 @@
 import { writeFileSync } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
-import * as observation from "@paleoclaw/fs-safe/watch";
+import * as observation from "@openclaw/fs-safe/watch";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createSourceObserver } from "../../scripts/watch-node-observation.mts";
 import {
@@ -13,9 +13,9 @@ import { useAutoCleanupTempDirTracker } from "../../test/helpers/temp-dir.js";
 import { createDeferredCore } from "../shared/deferred.js";
 
 // Root and watch must share the external package's module registry.
-vi.mock("@paleoclaw/fs-safe/watch", async () => {
+vi.mock("@openclaw/fs-safe/watch", async () => {
   const { createRequire } = await import("node:module");
-  return { ...createRequire(import.meta.url)("@paleoclaw/fs-safe/watch") };
+  return { ...createRequire(import.meta.url)("@openclaw/fs-safe/watch") };
 });
 const temp = useAutoCleanupTempDirTracker(afterEach);
 const observers: Array<ReturnType<typeof createSourceObserver>> = [];

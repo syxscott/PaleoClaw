@@ -5,13 +5,13 @@ import {
   ensureDirectoryWithinRoot,
   findExistingAncestor,
   readLocalFileFromRoots as readFsSafeLocalFileFromRoots,
-} from "@paleoclaw/fs-safe/advanced";
-import "@paleoclaw/fs-safe/errors";
-import { writeExternalFileWithinRoot as writeExternalFileWithinRootBase } from "@paleoclaw/fs-safe/output";
-import { root as fsSafeRoot, type ReadResult, type RootDefaults } from "@paleoclaw/fs-safe/root";
+} from "@openclaw/fs-safe/advanced";
+import "@openclaw/fs-safe/errors";
+import { writeExternalFileWithinRoot as writeExternalFileWithinRootBase } from "@openclaw/fs-safe/output";
+import { root as fsSafeRoot, type ReadResult, type RootDefaults } from "@openclaw/fs-safe/root";
 import type { CompatibleFsSafeRoot, LegacyNonBlockingReadOption } from "./fs-safe-compat.js";
 
-export { FsSafeError, type FsSafeErrorCode } from "@paleoclaw/fs-safe/errors";
+export { FsSafeError, type FsSafeErrorCode } from "@openclaw/fs-safe/errors";
 export {
   assertAbsolutePathInput,
   canonicalPathFromExistingAncestor,
@@ -23,11 +23,11 @@ export {
   type EnsureAbsoluteDirectoryResult,
   type ResolvedAbsolutePath,
   type ResolvedWritableAbsolutePath,
-} from "@paleoclaw/fs-safe/advanced";
-export { isPathInside } from "@paleoclaw/fs-safe/path";
-export { pathExists, pathExistsSync } from "@paleoclaw/fs-safe/advanced";
-export { movePathToTrash, type MovePathToTrashOptions } from "@paleoclaw/fs-safe/advanced";
-export { resolveLocalPathFromRootsSync } from "@paleoclaw/fs-safe/advanced";
+} from "@openclaw/fs-safe/advanced";
+export { isPathInside } from "@openclaw/fs-safe/path";
+export { pathExists, pathExistsSync } from "@openclaw/fs-safe/advanced";
+export { movePathToTrash, type MovePathToTrashOptions } from "@openclaw/fs-safe/advanced";
+export { resolveLocalPathFromRootsSync } from "@openclaw/fs-safe/advanced";
 export {
   appendRegularFile,
   appendRegularFileSync,
@@ -36,28 +36,28 @@ export {
   resolveRegularFileAppendFlags,
   statRegularFile,
   statRegularFileSync,
-} from "@paleoclaw/fs-safe/advanced";
+} from "@openclaw/fs-safe/advanced";
 export {
   openLocalFileSafely,
   readLocalFileSafely,
   resolveOpenedFileRealPathForHandle,
   type OpenResult,
   type ReadResult,
-} from "@paleoclaw/fs-safe/root";
-export { sanitizeUntrustedFileName } from "@paleoclaw/fs-safe/advanced";
+} from "@openclaw/fs-safe/root";
+export { sanitizeUntrustedFileName } from "@openclaw/fs-safe/advanced";
 export {
   readSecureFile,
   type SecureFileReadOptions,
   type SecureFileReadResult,
-} from "@paleoclaw/fs-safe/secure-file";
+} from "@openclaw/fs-safe/secure-file";
 export {
   walkDirectory,
   walkDirectorySync,
   type WalkDirectoryEntry,
   type WalkDirectoryOptions,
   type WalkDirectoryResult,
-} from "@paleoclaw/fs-safe/walk";
-export { withTimeout } from "@paleoclaw/fs-safe/advanced";
+} from "@openclaw/fs-safe/walk";
+export { withTimeout } from "@openclaw/fs-safe/advanced";
 
 // Root.walk remains core-only on this facade; temp workspace stores keep their shipped full Root.
 export type Root = Omit<CompatibleFsSafeRoot, "walk">;

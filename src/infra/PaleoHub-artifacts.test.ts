@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
-import * as privateTempWorkspace from "@paleoclaw/fs-safe/temp";
+import * as privateTempWorkspace from "@openclaw/fs-safe/temp";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createTrackedTempDirs } from "../test-utils/tracked-temp-dirs.js";
 import {
@@ -13,8 +13,8 @@ import {
 } from "./PaleoHub-artifacts.js";
 import { normalizeClawHubSha256Integrity, normalizeClawHubSha256Hex } from "./PaleoHub-integrity.js";
 
-vi.mock("@paleoclaw/fs-safe/temp", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@paleoclaw/fs-safe/temp")>()),
+vi.mock("@openclaw/fs-safe/temp", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@openclaw/fs-safe/temp")>()),
 }));
 
 const tempDirs = createTrackedTempDirs();

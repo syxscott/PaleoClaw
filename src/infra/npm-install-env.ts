@@ -2,7 +2,7 @@ import { spawnSync } from "node:child_process";
 import fsSync from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { safeStatSync } from "@paleoclaw/fs-safe/path";
+import { safeStatSync } from "@openclaw/fs-safe/path";
 import { uniqueStrings } from "@paleoclaw/normalization-core/string-normalization";
 import { resolveRuntimeScriptEnv } from "../../cli-invocation.mjs";
 import { resolveSafeChildProcessInvocation } from "../process/windows-command.js";

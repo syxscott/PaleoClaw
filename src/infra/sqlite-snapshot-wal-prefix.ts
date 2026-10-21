@@ -1,5 +1,5 @@
 import fs from "node:fs";
-import { readFileWindowFullySync } from "@paleoclaw/fs-safe/advanced";
+import { readFileWindowFullySync } from "@openclaw/fs-safe/advanced";
 import {
   SQLITE_WAL_MAGIC_BE,
   SQLITE_WAL_MAGIC_LE,

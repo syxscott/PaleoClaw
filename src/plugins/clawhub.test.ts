@@ -764,7 +764,7 @@ it.each<[string, string[], number | undefined, unknown]>([
   if (mode !== undefined) {
     await setClawHubArchiveEntryMode(archive.archivePath, "extra.txt", mode);
   }
-  const { configureFsSafeNative, getFsSafeNativeConfig } = await import("@paleoclaw/fs-safe/config");
+  const { configureFsSafeNative, getFsSafeNativeConfig } = await import("@openclaw/fs-safe/config");
   const previous = getFsSafeNativeConfig();
   configureFsSafeNative({ mode: "off" });
   onTestFinished(() => configureFsSafeNative(previous));

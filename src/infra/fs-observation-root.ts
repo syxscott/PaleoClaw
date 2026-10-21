@@ -1,8 +1,8 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { FsSafeError } from "@paleoclaw/fs-safe/errors";
-import { isNotFoundPathError } from "@paleoclaw/fs-safe/path";
-import { root, type Root } from "@paleoclaw/fs-safe/root";
+import { FsSafeError } from "@openclaw/fs-safe/errors";
+import { isNotFoundPathError } from "@openclaw/fs-safe/path";
+import { root, type Root } from "@openclaw/fs-safe/root";
 
 /** Probe a caller-selected prefix without following links or comparing entry names. */
 export async function observationPrefixKind(

@@ -3,7 +3,7 @@ import type {
   OpenClawCrablineInbound,
   OpenClawCrablineInboundInput,
   StartedOpenClawCrablineCorrelatedAdapter,
-} from "@paleoclaw/crabline";
+} from "@openclaw/crabline";
 import type { QaBusInboundMessageInput } from "paleoclaw/plugin-sdk/qa-channel-protocol";
 import { parseQaTarget } from "./qa-bus-protocol.js";
 

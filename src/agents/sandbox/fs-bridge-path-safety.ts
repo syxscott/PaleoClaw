@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import type { PathAliasPolicy } from "@paleoclaw/fs-safe/advanced";
+import type { PathAliasPolicy } from "@openclaw/fs-safe/advanced";
 import { openRootFile, type RootFileOpenResult } from "../../infra/boundary-file-read.js";
 import { resolveIdentityPathViaExistingAncestorSync } from "../../infra/boundary-path.js";
 import { FsSafeError } from "../../infra/fs-safe.js";

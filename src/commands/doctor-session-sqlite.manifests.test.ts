@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import * as replaceFile from "@paleoclaw/fs-safe/atomic";
+import * as replaceFile from "@openclaw/fs-safe/atomic";
 import { expectDefined } from "@paleoclaw/normalization-core";
 import { expect, it, vi } from "vitest";
 import {
@@ -41,8 +41,8 @@ import {
 
 const { createLegacyStore } = useDoctorSessionSqliteTestFixture();
 
-vi.mock("@paleoclaw/fs-safe/atomic", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@paleoclaw/fs-safe/atomic")>()),
+vi.mock("@openclaw/fs-safe/atomic", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@openclaw/fs-safe/atomic")>()),
 }));
 
 async function createImportedManifest() {

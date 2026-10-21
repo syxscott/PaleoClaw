@@ -1,7 +1,7 @@
 /** Doctor recovers only proven duplicate files, before either owner's schema changes. */
 import fs from "node:fs";
 import path from "node:path";
-import { sameFileContentsSync } from "@paleoclaw/fs-safe/advanced";
+import { sameFileContentsSync } from "@openclaw/fs-safe/advanced";
 import { isSessionArchiveArtifactName } from "../config/sessions/artifacts.js";
 import { resolveSqliteTranscriptArchiveDirectory } from "../config/sessions/session-accessor.sqlite-scope.js";
 import { normalizeAgentId } from "../routing/session-key.js";

@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import fs, { type FileHandle } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
-import { FsSafeError } from "@paleoclaw/fs-safe/errors";
+import { FsSafeError } from "@openclaw/fs-safe/errors";
 import { afterEach, aroundEach, describe, expect, it, vi } from "vitest";
 import { createDeferred } from "../../test/helpers/promise.js";
 import { useAutoCleanupTempDirTracker } from "../../test/helpers/temp-dir.js";

@@ -3,8 +3,8 @@ import fs from "node:fs/promises";
 import { endianness } from "node:os";
 import path from "node:path";
 import { text } from "node:stream/consumers";
-import { FsSafeError } from "@paleoclaw/fs-safe/errors";
-import { openLocalFileSafely } from "@paleoclaw/fs-safe/root";
+import { FsSafeError } from "@openclaw/fs-safe/errors";
+import { openLocalFileSafely } from "@openclaw/fs-safe/root";
 import { formatErrorMessage } from "./errors.js";
 import {
   readUint32,

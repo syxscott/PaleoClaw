@@ -16,13 +16,13 @@ function commitSource(fsSafeVersion: string, native: boolean, remoteBranch?: str
   git("config", "user.name", "paleoclaw test");
   writeFileSync(
     join(root, "package.json"),
-    `${JSON.stringify({ version: "2026.8.33", dependencies: { "@paleoclaw/fs-safe": fsSafeVersion } })}\n`,
+    `${JSON.stringify({ version: "2026.8.33", dependencies: { "@openclaw/fs-safe": fsSafeVersion } })}\n`,
   );
   const defaultsPath = join(root, "src/infra/fs-safe-defaults.ts");
   mkdirSync(dirname(defaultsPath), { recursive: true });
   writeFileSync(
     defaultsPath,
-    `import { configureFsSafe${native ? "Native" : "Python"} } from "@paleoclaw/fs-safe/config";\n`,
+    `import { configureFsSafe${native ? "Native" : "Python"} } from "@openclaw/fs-safe/config";\n`,
   );
   git("add", ".");
   git("commit", "-qm", "fixture");

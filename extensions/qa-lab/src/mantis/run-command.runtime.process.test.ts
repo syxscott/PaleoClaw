@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
-import { hasNodeErrorCode } from "@paleoclaw/fs-safe/path";
+import { hasNodeErrorCode } from "@openclaw/fs-safe/path";
 import { useAutoCleanupTempDirTracker } from "paleoclaw/plugin-sdk/test-env";
 import { afterEach, beforeEach, expect, it } from "vitest";
 import { removeMantisWorktree } from "./run-cleanup.runtime.js";

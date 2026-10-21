@@ -1,5 +1,5 @@
 import fs from "node:fs";
-import { readWindowsFileExtents } from "@paleoclaw/fs-safe/test-hooks";
+import { readWindowsFileExtents } from "@openclaw/fs-safe/test-hooks";
 
 /** Compare full-cluster mappings; ReFS may copy the final partial cluster. */
 export function getRefsFullClusterLcns(filePath: string): bigint[] {

@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
-import { isWindowsDrivePath } from "@paleoclaw/fs-safe/archive";
-import { isWithinDir } from "@paleoclaw/fs-safe/path";
+import { isWindowsDrivePath } from "@openclaw/fs-safe/archive";
+import { isWithinDir } from "@openclaw/fs-safe/path";
 import { parseStrictNonNegativeInteger } from "@paleoclaw/normalization-core/number-coercion";
 import { normalizeOptionalLowercaseString } from "@paleoclaw/normalization-core/string-coerce";
 import { sha256File } from "../../infra/crypto-digest.js";

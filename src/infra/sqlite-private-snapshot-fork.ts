@@ -1,6 +1,6 @@
 import fs, { type BigIntStats } from "node:fs";
 import path from "node:path";
-import { openRootFileSync } from "@paleoclaw/fs-safe/advanced";
+import { openRootFileSync } from "@openclaw/fs-safe/advanced";
 import { isRecord } from "@paleoclaw/normalization-core/record-coerce";
 import { runWithSqliteCleanup, throwSqliteLifecycleErrors } from "./sqlite-lifecycle-errors.js";
 import {

@@ -198,7 +198,7 @@ it("compiles packaged roots and invalidates them when exports or inherited paths
     fs.mkdirSync(path.dirname(path.join(root, file)), { recursive: true });
     fs.cpSync(path.resolve(file), path.join(root, file), { recursive: true });
   }
-  for (const name of ["tsx", "@paleoclaw/fs-safe", "p-map"]) {
+  for (const name of ["tsx", "@openclaw/fs-safe", "p-map"]) {
     const file = `node_modules/${name}`;
     fs.mkdirSync(path.dirname(path.join(root, file)), { recursive: true });
     fs.symlinkSync(path.resolve(file), path.join(root, file));

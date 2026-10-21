@@ -1,5 +1,5 @@
 import path from "node:path";
-import { replaceFileAtomic } from "@paleoclaw/fs-safe/atomic";
+import { replaceFileAtomic } from "@openclaw/fs-safe/atomic";
 import { readExistingStateRootMode } from "../infra/private-dir-mode.js";
 import { persistBoundedClobberedConfigSnapshot } from "./io.clobber-snapshot.js";
 import type { ConfigIoContext } from "./io.context.js";

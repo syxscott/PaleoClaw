@@ -1,7 +1,7 @@
 import fsSync from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { replaceFileAtomicSync } from "@paleoclaw/fs-safe/atomic";
+import { replaceFileAtomicSync } from "@openclaw/fs-safe/atomic";
 import { sha256Hex } from "@paleoclaw/normalization-core/node-crypto";
 import { asNullableRecord } from "@paleoclaw/normalization-core/record-coerce";
 import { sortUniqueStrings } from "@paleoclaw/normalization-core/string-normalization";

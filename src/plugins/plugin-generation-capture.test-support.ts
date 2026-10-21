@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import * as fsSafeAdvanced from "@paleoclaw/fs-safe/advanced";
+import * as fsSafeAdvanced from "@openclaw/fs-safe/advanced";
 import { expect, vi, type MockInstance } from "vitest";
 import { createPluginCache, retirePluginCache, withPluginCache } from "./plugin-cache.js";
 import { capturePluginGenerationArtifact } from "./plugin-generation-artifact.js";

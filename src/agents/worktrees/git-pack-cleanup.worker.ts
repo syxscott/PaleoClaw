@@ -1,5 +1,5 @@
 import fs from "node:fs";
-import { tryAcquireWriteLease } from "@paleoclaw/fs-safe/file-lock";
+import { tryAcquireWriteLease } from "@openclaw/fs-safe/file-lock";
 
 // Linux leases check open descriptors across UIDs, unlike an unprivileged fuser census.
 // Keep SIGIO and the leased descriptor in this disposable process, never the Gateway.

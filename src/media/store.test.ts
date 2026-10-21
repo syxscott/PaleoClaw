@@ -2,7 +2,7 @@ import "../test-utils/prepare-compiled-subprocesses.js";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { Readable } from "node:stream";
-import { __setFsSafeTestHooksForTest } from "@paleoclaw/fs-safe/test-hooks";
+import { __setFsSafeTestHooksForTest } from "@openclaw/fs-safe/test-hooks";
 import JSZip from "jszip";
 import { importFreshModule } from "paleoclaw/plugin-sdk/test-fixtures";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
@@ -15,11 +15,11 @@ import { expectSavedOriginalFilenameCase } from "./store-filename.test-support.j
 const binaryMime = "application/octet-stream";
 const streamDir = "stream-inbound";
 
-type FileStore = ReturnType<(typeof import("@paleoclaw/fs-safe/store"))["fileStore"]>;
+type FileStore = ReturnType<(typeof import("@openclaw/fs-safe/store"))["fileStore"]>;
 
 function mockFileStore(wrap: (store: FileStore) => Partial<FileStore>) {
-  vi.doMock("@paleoclaw/fs-safe/store", async (importOriginal) => {
-    const actual = await importOriginal<typeof import("@paleoclaw/fs-safe/store")>();
+  vi.doMock("@openclaw/fs-safe/store", async (importOriginal) => {
+    const actual = await importOriginal<typeof import("@openclaw/fs-safe/store")>();
     return {
       ...actual,
       fileStore: (options: Parameters<typeof actual.fileStore>[0]) => {
@@ -379,7 +379,7 @@ describe("media store filesystem faults", () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
-    vi.doUnmock("@paleoclaw/fs-safe/store");
+    vi.doUnmock("@openclaw/fs-safe/store");
     vi.unstubAllEnvs();
     vi.resetModules();
   });

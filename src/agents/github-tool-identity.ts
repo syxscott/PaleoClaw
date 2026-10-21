@@ -2,8 +2,8 @@ import { randomBytes } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { isDeepStrictEqual } from "node:util";
-import { root as fsRoot } from "@paleoclaw/fs-safe/root";
-import { readSecretFile } from "@paleoclaw/fs-safe/secret";
+import { root as fsRoot } from "@openclaw/fs-safe/root";
+import { readSecretFile } from "@openclaw/fs-safe/secret";
 import { isRecord } from "@paleoclaw/normalization-core/record-coerce";
 import { parseDocument, stringify as stringifyYaml } from "yaml";
 import type {

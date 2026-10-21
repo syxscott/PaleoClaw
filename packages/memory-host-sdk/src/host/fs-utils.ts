@@ -1,10 +1,10 @@
 import path from "node:path";
 
 // Retain fs-safe's process configuration for host-side memory file operations.
-export { root } from "@paleoclaw/fs-safe/root";
-export { isPathInside } from "@paleoclaw/fs-safe/path";
-export { readRegularFile, statRegularFile } from "@paleoclaw/fs-safe/advanced";
-export { walkDirectory } from "@paleoclaw/fs-safe/walk";
+export { root } from "@openclaw/fs-safe/root";
+export { isPathInside } from "@openclaw/fs-safe/path";
+export { readRegularFile, statRegularFile } from "@openclaw/fs-safe/advanced";
+export { walkDirectory } from "@openclaw/fs-safe/walk";
 
 export function normalizeComparablePath(pathname: string): string {
   const resolved = path.resolve(pathname);

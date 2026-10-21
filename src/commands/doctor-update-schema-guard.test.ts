@@ -2,7 +2,7 @@ import fs from "node:fs";
 import fsAsync from "node:fs/promises";
 import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
-import { replaceFileAtomicSync } from "@paleoclaw/fs-safe/atomic";
+import { replaceFileAtomicSync } from "@openclaw/fs-safe/atomic";
 import { collectNestedErrorCandidates } from "@paleoclaw/normalization-core/error-coercion";
 import { expectDefined } from "@paleoclaw/normalization-core/expect";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";

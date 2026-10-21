@@ -11,7 +11,7 @@
   "node_modules/@noble/hashes/_u64.js",
   "node_modules/@noble/hashes/sha2.js",
   "node_modules/@noble/hashes/utils.js",
-  "node_modules/@paleoclaw/uirouter/dist/index.js",
+  "node_modules/@openclaw/uirouter/dist/index.js",
   "node_modules/@solidjs/signals/dist/prod/boundaries.js",
   "node_modules/@solidjs/signals/dist/prod/core/async.js",
   "node_modules/@solidjs/signals/dist/prod/core/constants.js",

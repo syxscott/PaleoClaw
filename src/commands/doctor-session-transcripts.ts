@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { walkDirectory } from "@paleoclaw/fs-safe/walk";
+import { walkDirectory } from "@openclaw/fs-safe/walk";
 import { note } from "../../packages/terminal-core/src/note.js";
 import { repairAcpSessionMetaKeysForDoctor } from "../acp/runtime/session-meta-doctor.js";
 import { resolveAgentSessionDirs } from "../agents/session-dirs.js";

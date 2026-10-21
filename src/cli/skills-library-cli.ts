@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import * as fs from "node:fs/promises";
 import path from "node:path";
-import { readRegularFile } from "@paleoclaw/fs-safe/advanced";
+import { readRegularFile } from "@openclaw/fs-safe/advanced";
 import { Option, type Command } from "commander";
 import {
   SKILL_LIBRARY_MAX_BUNDLE_BYTES,

@@ -80,7 +80,7 @@ it.for([
         expire: transition === "expired budget",
         loader: import.meta.resolve("tsx/esm/api"),
         tsconfig: path.resolve("tsconfig.json"),
-        rootModule: import.meta.resolve("@paleoclaw/fs-safe/root"),
+        rootModule: import.meta.resolve("@openclaw/fs-safe/root"),
         lockModule: pathToFileURL(path.resolve("src/infra/file-lock-sync.ts")).href,
       },
     });

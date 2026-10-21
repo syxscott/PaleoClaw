@@ -2,7 +2,7 @@
 import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { readRegularFile } from "@paleoclaw/fs-safe/advanced";
+import { readRegularFile } from "@openclaw/fs-safe/advanced";
 import {
   escapeInternalRuntimeContextDelimiters,
   type RuntimeContextFragment,

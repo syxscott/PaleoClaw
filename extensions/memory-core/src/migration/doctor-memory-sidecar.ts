@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { walkDirectory } from "@paleoclaw/fs-safe/walk";
+import { walkDirectory } from "@openclaw/fs-safe/walk";
 import { reclaimDefinitelyStaleFileLock } from "paleoclaw/plugin-sdk/file-lock";
 import { resolveUserPath } from "paleoclaw/plugin-sdk/memory-core-host-engine-fs";
 // Doctor enumeration cold-loads this closure; the host engine schema pulls the

@@ -1,8 +1,8 @@
 import { isUtf8 } from "node:buffer";
 import fs from "node:fs";
 import path from "node:path";
-import { readFileDescriptorBoundedSync, readFileWindowFullySync } from "@paleoclaw/fs-safe/advanced";
-import { safeStatSync } from "@paleoclaw/fs-safe/path";
+import { readFileDescriptorBoundedSync, readFileWindowFullySync } from "@openclaw/fs-safe/advanced";
+import { safeStatSync } from "@openclaw/fs-safe/path";
 import { escapeRegExp } from "../shared/regexp.js";
 import { isMissingPathError } from "./errors.js";
 import { unquoteGitPath } from "./git-path-quote.js";

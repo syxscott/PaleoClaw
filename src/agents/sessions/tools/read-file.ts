@@ -1,7 +1,7 @@
 import { statSync } from "node:fs";
 import { deserialize } from "node:v8";
-import { readRegularFile } from "@paleoclaw/fs-safe/advanced";
-import { isPathInside, safeRealpathSync } from "@paleoclaw/fs-safe/path";
+import { readRegularFile } from "@openclaw/fs-safe/advanced";
+import { isPathInside, safeRealpathSync } from "@openclaw/fs-safe/path";
 import { resolveStateDir } from "../../../config/state-dir.js";
 import { resolveRuntimeProcessEntrypointUrl } from "../../../infra/runtime-process-url.js";
 import { resolveRuntimeWorkerArgv } from "../../../infra/runtime-worker-url.js";

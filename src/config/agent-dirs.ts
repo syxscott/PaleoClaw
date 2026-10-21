@@ -1,5 +1,5 @@
 import path from "node:path";
-import { resolvePathPrefixSync } from "@paleoclaw/fs-safe/advanced";
+import { resolvePathPrefixSync } from "@openclaw/fs-safe/advanced";
 import { normalizeLowercaseStringOrEmpty } from "@paleoclaw/normalization-core/string-coerce";
 import { listAgentEntries, resolveEffectiveAgentDir } from "../agents/agent-scope-config.js";
 import { isPathCaseInsensitive } from "../infra/path-case.js";

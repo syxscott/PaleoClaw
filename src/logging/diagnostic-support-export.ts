@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
-import { readRegularFileSync } from "@paleoclaw/fs-safe/advanced";
+import { readRegularFileSync } from "@openclaw/fs-safe/advanced";
 import { asOptionalRecord } from "@paleoclaw/normalization-core/record-coerce";
 import { isChannelConfigMetadataKey } from "../channels/config-metadata.js";
 import { INCLUDE_KEY } from "../config/includes.js";

@@ -1,4 +1,4 @@
-import type { RouteLoaderOptions } from "@paleoclaw/uirouter";
+import type { RouteLoaderOptions } from "@openclaw/uirouter";
 import { expect, vi } from "vitest";
 import { createEmptyCostUsageTotals } from "../../../../src/infra/session-cost-usage-totals.js";
 import { buildUsageOverview } from "../../../../src/shared/usage-overview.js";

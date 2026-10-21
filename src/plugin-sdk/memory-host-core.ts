@@ -4,7 +4,7 @@ import {
   readFileHandleBounded,
   sameFileIdentity,
   type ExactFileIdentity,
-} from "@paleoclaw/fs-safe/advanced";
+} from "@openclaw/fs-safe/advanced";
 import { isRecord } from "@paleoclaw/normalization-core/record-coerce";
 import type { OpenClawConfig } from "../config/config.js";
 import { resolveStateDir } from "../config/paths.js";

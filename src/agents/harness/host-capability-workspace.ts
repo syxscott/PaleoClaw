@@ -1,4 +1,4 @@
-import { isPathInsideWithRealpath } from "@paleoclaw/fs-safe/path";
+import { isPathInsideWithRealpath } from "@openclaw/fs-safe/path";
 import type { OpenClawConfig } from "../../config/config.js";
 import { getPluginToolMeta } from "../../plugins/tool-metadata.js";
 import { getAgentToolActionDescriptor } from "../agent-tool-metadata.js";

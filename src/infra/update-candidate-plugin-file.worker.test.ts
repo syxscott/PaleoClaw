@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { readDirectoryIdentity } from "@paleoclaw/fs-safe/advanced";
+import { readDirectoryIdentity } from "@openclaw/fs-safe/advanced";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { useAutoCleanupTempDirTracker } from "../../test/helpers/temp-dir.js";
 import "../test-utils/prepare-compiled-subprocesses.js";

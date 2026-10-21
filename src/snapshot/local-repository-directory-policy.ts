@@ -2,12 +2,12 @@ import fsSync, { type BigIntStats, type Stats } from "node:fs";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { sameFileIdentity, type FileIdentityStat } from "@paleoclaw/fs-safe/advanced";
+import { sameFileIdentity, type FileIdentityStat } from "@openclaw/fs-safe/advanced";
 import {
   readOwnerAndDaclBatch,
   type OwnerAndDaclResult,
   type WindowsAccessControlEntry,
-} from "@paleoclaw/fs-safe/permissions";
+} from "@openclaw/fs-safe/permissions";
 import { resolveSystemBin } from "../infra/resolve-system-bin.js";
 import { runExec } from "../process/exec.js";
 

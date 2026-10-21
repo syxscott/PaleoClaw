@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import path from "node:path";
-import { isWithinDir } from "@paleoclaw/fs-safe/path";
+import { isWithinDir } from "@openclaw/fs-safe/path";
 import { kindFromMime } from "@paleoclaw/media-core/mime";
 import { isControlUiFocusPath } from "@paleoclaw/session-url-contract";
 import { resolveGatewayPublicOrigin } from "../config/gateway-public-origin.js";

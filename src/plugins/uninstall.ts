@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { root } from "@paleoclaw/fs-safe/root";
+import { root } from "@openclaw/fs-safe/root";
 import type { OpenClawConfig } from "../config/types.openclaw.js";
 import type { PluginInstallRecord } from "../config/types.plugins.js";
 import { isMissingPathError } from "../infra/errno.js";

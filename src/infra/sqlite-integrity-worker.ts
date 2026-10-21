@@ -1,7 +1,7 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import { fork } from "node:child_process";
 import { performance } from "node:perf_hooks";
-import type { FileIdentityStat } from "@paleoclaw/fs-safe/advanced";
+import type { FileIdentityStat } from "@openclaw/fs-safe/advanced";
 import { toStringifiedError } from "@paleoclaw/normalization-core/error-coercion";
 import { createSubsystemLogger } from "../logging/subsystem.js";
 import { createDeferredCore } from "../shared/deferred.js";

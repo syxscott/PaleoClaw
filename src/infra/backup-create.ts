@@ -2,7 +2,7 @@
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { isPathInside } from "@paleoclaw/fs-safe/path";
+import { isPathInside } from "@openclaw/fs-safe/path";
 import { resolveDateTimestampMs } from "@paleoclaw/normalization-core/number-coercion";
 import {
   sealBackupResourceInventory,

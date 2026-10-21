@@ -1,5 +1,5 @@
 import { serialize } from "node:v8";
-import { readRegularFile } from "@paleoclaw/fs-safe/advanced";
+import { readRegularFile } from "@openclaw/fs-safe/advanced";
 
 export type FileReadResult = { buffer: Buffer } | { error: Error; code?: string };
 

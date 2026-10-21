@@ -3,7 +3,7 @@
  * copies instead of reusing host-path snapshots.
  */
 import path from "node:path";
-import { isPathRelativeEscape } from "@paleoclaw/fs-safe/path";
+import { isPathRelativeEscape } from "@openclaw/fs-safe/path";
 import { indexFirstByKey } from "../../shared/dedupe-by-key.js";
 import { resolveExplicitSkillSelectionFileHost } from "../../skills/discovery/skill-command-provenance.js";
 import { formatSkillsForPromptBounded } from "../../skills/loading/skill-prompt-limits.js";

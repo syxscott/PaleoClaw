@@ -2,7 +2,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { TextDecoder } from "node:util";
-import { readRegularFile } from "@paleoclaw/fs-safe/advanced";
+import { readRegularFile } from "@openclaw/fs-safe/advanced";
 import { note } from "../../packages/terminal-core/src/note.js";
 import { resolveAgentWorkspaceDir } from "../agents/agent-scope.js";
 import { formatCliCommand } from "../cli/command-format.js";

@@ -1,6 +1,6 @@
 import type fs from "node:fs";
 import path from "node:path";
-import { replaceFileAtomic, replaceFileAtomicSync } from "@paleoclaw/fs-safe/atomic";
+import { replaceFileAtomic, replaceFileAtomicSync } from "@openclaw/fs-safe/atomic";
 import { root } from "../infra/fs-safe.js";
 import { readExistingStateRootMode } from "../infra/private-dir-mode.js";
 import {

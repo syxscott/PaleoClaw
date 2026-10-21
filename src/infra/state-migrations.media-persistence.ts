@@ -1,6 +1,6 @@
 import path from "node:path";
-import { readRegularFileSync } from "@paleoclaw/fs-safe/advanced";
-import { replaceFileAtomicSync } from "@paleoclaw/fs-safe/atomic";
+import { readRegularFileSync } from "@openclaw/fs-safe/advanced";
+import { replaceFileAtomicSync } from "@openclaw/fs-safe/atomic";
 import {
   decodeSessionArchiveBytes,
   SESSION_ARCHIVE_ZSTD_SUFFIX,

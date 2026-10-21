@@ -1,7 +1,7 @@
 // Shared destructive-cleanup planning and guarded removal helpers.
 import fs from "node:fs/promises";
 import path from "node:path";
-import { hasNodeErrorCode, isPathInside } from "@paleoclaw/fs-safe/path";
+import { hasNodeErrorCode, isPathInside } from "@openclaw/fs-safe/path";
 import type { AgentsDeleteResult } from "../../packages/gateway-protocol/src/schema/agents-models-skills.js";
 import { listAgentIds, resolveAgentWorkspaceDir } from "../agents/agent-scope-config.js";
 import { resolveDefaultAgentWorkspaceDir } from "../agents/workspace-default.js";

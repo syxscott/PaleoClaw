@@ -1,4 +1,4 @@
-import type { RouteMatch, Router, RouterState } from "@paleoclaw/uirouter";
+import type { RouteMatch, Router, RouterState } from "@openclaw/uirouter";
 import { createEffect, createSignal, onCleanup } from "solid-js";
 import {
   isAgentDatabaseInspectionPendingError,

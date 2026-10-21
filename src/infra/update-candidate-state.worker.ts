@@ -116,7 +116,7 @@ async function snapshotCandidateState(): Promise<unknown> {
 }
 
 if (parentPort) {
-  const { assertDirectoryIdentitySync } = await import("@paleoclaw/fs-safe/advanced");
+  const { assertDirectoryIdentitySync } = await import("@openclaw/fs-safe/advanced");
   const { root } = await import("./fs-safe.js");
   const { copyUpdateCandidatePluginFile } = await import("./update-candidate-plugin-file.js");
   const { hashFileMutationSnapshotSync } = await import("./file-descriptor.js");

@@ -1,4 +1,4 @@
-import { readFileWindowFully } from "@paleoclaw/fs-safe/advanced";
+import { readFileWindowFully } from "@openclaw/fs-safe/advanced";
 import { WORKSPACE_DOWNLOAD_CHUNK_BYTES } from "../workspace-file-limits.js";
 import { resolveSessionFileReadTarget } from "./session-file-read.js";
 import { getSessionWorkspaceFile, type LoadedSessionFiles } from "./workspace-files.js";

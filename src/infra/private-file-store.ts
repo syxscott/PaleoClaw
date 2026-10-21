@@ -4,7 +4,7 @@ import {
   fileStoreSync,
   type FileStore,
   type FileStoreSync,
-} from "@paleoclaw/fs-safe/store";
+} from "@openclaw/fs-safe/store";
 import { readExistingStateRootMode, tightenPrivateDirRootSync } from "./private-dir-mode.js";
 
 const PRIVATE_STORE_DIR_MODE = 0o700;

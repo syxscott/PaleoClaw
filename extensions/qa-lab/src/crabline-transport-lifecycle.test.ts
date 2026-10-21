@@ -1,7 +1,7 @@
 import {
   startOpenClawCrablineAdapter,
   type StartOpenClawCrablineAdapterParams,
-} from "@paleoclaw/crabline";
+} from "@openclaw/crabline";
 import { withTempDir } from "paleoclaw/plugin-sdk/test-env";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createQaBusState } from "./bus-state.js";
@@ -9,8 +9,8 @@ import { telegramApi } from "./crabline-transport.test-support.js";
 import { createQaTransportAdapter } from "./qa-transport-registry.js";
 import type { QaTransportAdapter, QaTransportOutboundSequenceMatch } from "./qa-transport.js";
 
-vi.mock("@paleoclaw/crabline", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@paleoclaw/crabline")>();
+vi.mock("@openclaw/crabline", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@openclaw/crabline")>();
   return {
     ...actual,
     // Capture the public observer while preserving the real server, arguments, and events.

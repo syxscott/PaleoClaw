@@ -1,14 +1,14 @@
 import fs from "node:fs/promises";
-import type { OwnerAndDaclResult, WindowsAccessControlEntry } from "@paleoclaw/fs-safe/permissions";
+import type { OwnerAndDaclResult, WindowsAccessControlEntry } from "@openclaw/fs-safe/permissions";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { useAutoCleanupTempDirTracker } from "../../test/helpers/temp-dir.js";
 
 const aclMocks = vi.hoisted(() => ({
   readOwnerAndDaclBatch:
-    vi.fn<typeof import("@paleoclaw/fs-safe/permissions").readOwnerAndDaclBatch>(),
+    vi.fn<typeof import("@openclaw/fs-safe/permissions").readOwnerAndDaclBatch>(),
 }));
-vi.mock("@paleoclaw/fs-safe/permissions", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@paleoclaw/fs-safe/permissions")>()),
+vi.mock("@openclaw/fs-safe/permissions", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@openclaw/fs-safe/permissions")>()),
   readOwnerAndDaclBatch: aclMocks.readOwnerAndDaclBatch,
 }));
 vi.mock("../process/exec.js", () => ({

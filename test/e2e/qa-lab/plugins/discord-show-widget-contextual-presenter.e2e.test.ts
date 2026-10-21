@@ -9,7 +9,7 @@ import {
 } from "node:http";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import { resolveOpenClawCrablineChannelDriverSelection } from "@paleoclaw/crabline";
+import { resolveOpenClawCrablineChannelDriverSelection } from "@openclaw/crabline";
 import { rawDataToString } from "@paleoclaw/gateway-client/websocket-data";
 import {
   GatewayClient,

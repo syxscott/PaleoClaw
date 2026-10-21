@@ -1,7 +1,7 @@
 import type { ChildProcess } from "node:child_process";
 import { createWriteStream, write, writev } from "node:fs";
 import type { Writable } from "node:stream";
-import { createPipe } from "@paleoclaw/fs-safe/pipe";
+import { createPipe } from "@openclaw/fs-safe/pipe";
 import { toErrorObject } from "@paleoclaw/normalization-core/error-coercion";
 import type { SpawnSecretInput } from "./supervisor/types.js";
 

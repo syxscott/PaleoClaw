@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import fsPromises from "node:fs/promises";
 import path from "node:path";
-import { appendRegularFile, appendRegularFileSync } from "@paleoclaw/fs-safe/advanced";
+import { appendRegularFile, appendRegularFileSync } from "@openclaw/fs-safe/advanced";
 import { extractErrorCode } from "@paleoclaw/normalization-core/error-coercion";
 import { resolveGlobalSingleton } from "../shared/global-singleton.js";
 import { formatConsoleDiagnosticLine } from "./json-console-line.js";

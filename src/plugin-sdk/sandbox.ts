@@ -76,7 +76,7 @@ export {
   type TempWorkspaceOptions,
   type TempWorkspaceSync,
   withTempWorkspaceSync,
-} from "@paleoclaw/fs-safe/temp";
+} from "@openclaw/fs-safe/temp";
 
 export {
   tempWorkspace,

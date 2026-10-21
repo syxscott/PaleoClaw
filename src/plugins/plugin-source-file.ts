@@ -5,8 +5,8 @@ import {
   copyFileDescriptorSync,
   copyRootFileSync,
   createFileSync,
-} from "@paleoclaw/fs-safe/advanced";
-import { FsSafeError } from "@paleoclaw/fs-safe/errors";
+} from "@openclaw/fs-safe/advanced";
+import { FsSafeError } from "@openclaw/fs-safe/errors";
 import { openRootFileSync } from "../infra/boundary-file-read.js";
 import {
   collectErrorGraphCandidates,

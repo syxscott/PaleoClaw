@@ -1,6 +1,6 @@
 // Doctor-only import for the retired APNs registration JSON store.
 import path from "node:path";
-import { root, type Root } from "@paleoclaw/fs-safe";
+import { root, type Root } from "@openclaw/fs-safe";
 import { isRecord } from "@paleoclaw/normalization-core/record-coerce";
 import type { DB as OpenClawStateKyselyDatabase } from "../state/paleoclaw-state-db.generated.js";
 import { runOpenClawStateWriteTransaction } from "../state/paleoclaw-state-db.js";

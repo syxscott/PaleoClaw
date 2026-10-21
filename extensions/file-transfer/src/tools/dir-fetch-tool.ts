@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { sha256File } from "@paleoclaw/fs-safe/durability";
-import { walkDirectory } from "@paleoclaw/fs-safe/walk";
+import { sha256File } from "@openclaw/fs-safe/durability";
+import { walkDirectory } from "@openclaw/fs-safe/walk";
 import type { AnyAgentTool } from "paleoclaw/plugin-sdk/agent-harness-runtime";
 import {
   ARCHIVE_LIMIT_ERROR_CODE,

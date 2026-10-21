@@ -1,5 +1,5 @@
 import path from "node:path";
-import { safeFileURLToPath } from "@paleoclaw/fs-safe/advanced";
+import { safeFileURLToPath } from "@openclaw/fs-safe/advanced";
 import { normalizeInboundPathRoots } from "@paleoclaw/media-core/inbound-path-policy";
 import { normalizeProviderId } from "@paleoclaw/model-catalog-core/provider-id";
 import { normalizeOptionalString } from "@paleoclaw/normalization-core/string-coerce";

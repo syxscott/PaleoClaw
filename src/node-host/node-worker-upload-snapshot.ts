@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import fsp from "node:fs/promises";
-import { withTempWorkspace } from "@paleoclaw/fs-safe/temp";
+import { withTempWorkspace } from "@openclaw/fs-safe/temp";
 import { copyFileHandle } from "../infra/file-descriptor.js";
 import { root, type Root } from "../infra/fs-safe.js";
 import { resolvePreferredOpenClawTmpDir } from "../infra/tmp-paleoclaw-dir.js";

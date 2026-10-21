@@ -51,7 +51,7 @@ describe.skipIf(process.platform !== "darwin")("Mac runtime bundled filesystem p
     fs.mkdirSync(home);
     const { dependencyRoot, nativePackages } = copyFsSafePackageFixture(packageRoot);
     const nativePackage = nativePackages.find(
-      ({ name }) => name === `@paleoclaw/fs-safe-${process.platform}-${process.arch}`,
+      ({ name }) => name === `@openclaw/fs-safe-${process.platform}-${process.arch}`,
     )!;
     expect(nativePackage).toBeDefined();
     const native = createRequire(path.join(dependencyRoot, "package.json")).resolve(

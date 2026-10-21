@@ -1,8 +1,8 @@
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { ensureAbsoluteDirectory } from "@paleoclaw/fs-safe/advanced";
-import { FsSafeError } from "@paleoclaw/fs-safe/errors";
+import { ensureAbsoluteDirectory } from "@openclaw/fs-safe/advanced";
+import { FsSafeError } from "@openclaw/fs-safe/errors";
 import { isRecord } from "@paleoclaw/normalization-core/record-coerce";
 import type { OpenClawConfig } from "../config/types.openclaw.js";
 import { redactSupportString } from "../logging/diagnostic-support-redaction.js";

@@ -3,7 +3,7 @@ import { createHash, randomUUID } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { assertDirectoryIdentitySync, readDirectoryIdentity } from "@paleoclaw/fs-safe/advanced";
+import { assertDirectoryIdentitySync, readDirectoryIdentity } from "@openclaw/fs-safe/advanced";
 import { isMissingPathError } from "./errno.js";
 import { formatErrorMessage } from "./errors.js";
 import { root as openFsRoot } from "./fs-safe.js";
@@ -39,10 +39,10 @@ export type {
 
 function resolveLocalOverrideRuntimeUrls(): string[] {
   return [
-    import.meta.resolve("@paleoclaw/fs-safe/config"),
-    import.meta.resolve("@paleoclaw/fs-safe/root"),
-    import.meta.resolve("@paleoclaw/fs-safe/durability"),
-    import.meta.resolve("@paleoclaw/fs-safe/errors"),
+    import.meta.resolve("@openclaw/fs-safe/config"),
+    import.meta.resolve("@openclaw/fs-safe/root"),
+    import.meta.resolve("@openclaw/fs-safe/durability"),
+    import.meta.resolve("@openclaw/fs-safe/errors"),
   ];
 }
 

@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import { setImmediate } from "node:timers/promises";
-import { __setFsSafeTestHooksForTest } from "@paleoclaw/fs-safe/test-hooks";
+import { __setFsSafeTestHooksForTest } from "@openclaw/fs-safe/test-hooks";
 import { expectDefined } from "@paleoclaw/normalization-core";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { WizardStartResult } from "../../../packages/gateway-protocol/src/schema/wizard.js";

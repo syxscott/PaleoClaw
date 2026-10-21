@@ -1,8 +1,8 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { URL } from "node:url";
-import { hasEncodedFileUrlSeparator, trySafeFileURLToPath } from "@paleoclaw/fs-safe/advanced";
-import { isWindowsDrivePath } from "@paleoclaw/fs-safe/archive";
+import { hasEncodedFileUrlSeparator, trySafeFileURLToPath } from "@openclaw/fs-safe/advanced";
+import { isWindowsDrivePath } from "@openclaw/fs-safe/archive";
 import { detectMime } from "@paleoclaw/media-core/mime";
 import { asPositiveFiniteNumber } from "@paleoclaw/normalization-core/number-coercion";
 import type { Static, TSchema } from "typebox";

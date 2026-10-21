@@ -101,7 +101,7 @@ describe.skipIf(process.platform === "win32")("private temporary case directorie
           "--input-type=module",
           "--eval",
           `import fs from "node:fs";
-import { tempWorkspaceSync } from "@paleoclaw/fs-safe/temp";
+import { tempWorkspaceSync } from "@openclaw/fs-safe/temp";
 import { withTestDir, withTempDirSync, createSuiteTempRootTracker } from ${JSON.stringify(tempDirUrl.href)};
 process.umask(0o002);
 const options = { prefix: "private-case-", parentDir: ${JSON.stringify(parentDir)} };

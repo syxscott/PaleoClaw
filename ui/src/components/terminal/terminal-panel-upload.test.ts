@@ -1,6 +1,6 @@
 /* @vitest-environment jsdom */
 
-import type { GhosttyTerminalController } from "@paleoclaw/libterminal/browser";
+import type { GhosttyTerminalController } from "@openclaw/libterminal/browser";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { createDeferred } from "../../../../test/helpers/promise.ts";
 import { createApplicationConfigCapability } from "../../app/config.ts";
@@ -62,7 +62,7 @@ function dropFiles(panel: OpenClawTerminalPanel, files: File[]) {
 
 describe("OpenClawTerminalPanel upload lifecycle", () => {
   beforeAll(async () => {
-    await import("@paleoclaw/libterminal/browser");
+    await import("@openclaw/libterminal/browser");
   });
 
   it("does not request an upload after a pending file read is disabled", async () => {

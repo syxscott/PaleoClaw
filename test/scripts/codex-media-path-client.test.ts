@@ -2,7 +2,7 @@ import { spawn, spawnSync } from "node:child_process";
 import { once } from "node:events";
 import { appendFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { withTimeout } from "@paleoclaw/fs-safe/advanced";
+import { withTimeout } from "@openclaw/fs-safe/advanced";
 import { afterEach, describe, expect, it } from "vitest";
 import { createJsonlRequestTailer } from "../../scripts/e2e/lib/codex-media-path/jsonl-request-tail.mts";
 import { createBoundedChildOutput } from "../helpers/bounded-child-output.js";

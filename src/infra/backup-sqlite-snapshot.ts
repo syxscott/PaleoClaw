@@ -4,9 +4,9 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import type { DatabaseSync } from "node:sqlite";
 import { isMainThread } from "node:worker_threads";
-import { sameFileIdentity } from "@paleoclaw/fs-safe/advanced";
-import { isPathInside } from "@paleoclaw/fs-safe/path";
-import { walkDirectory } from "@paleoclaw/fs-safe/walk";
+import { sameFileIdentity } from "@openclaw/fs-safe/advanced";
+import { isPathInside } from "@openclaw/fs-safe/path";
+import { walkDirectory } from "@openclaw/fs-safe/walk";
 import {
   sealBackupResourceInventory,
   createBackupResourcePlan,

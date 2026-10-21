@@ -12,7 +12,7 @@ function write(root: string, relative: string, content: string) {
 export function installDistArtifactScripts(
   root: string,
   scripts: string[],
-  { compiler = true, dependencies = ["tsx", "@paleoclaw/fs-safe"] } = {},
+  { compiler = true, dependencies = ["tsx", "@openclaw/fs-safe"] } = {},
 ) {
   const sourceRoot = process.cwd();
   // Keep the checkpoint launcher when installCompiler already owns this toolchain.

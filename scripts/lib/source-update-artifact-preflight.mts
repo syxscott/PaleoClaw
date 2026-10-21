@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import type { FileLockHandle } from "@paleoclaw/fs-safe/file-lock";
+import type { FileLockHandle } from "@openclaw/fs-safe/file-lock";
 import { acquireDistArtifactOwnership } from "./dist-artifact-lock.mts";
 import { isRecord } from "./record-shared.mjs";
 import type { PrepareBundledPluginRuntime } from "./runtime-artifact-contract.js";

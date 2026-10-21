@@ -1,8 +1,8 @@
 import "../test-utils/prepare-compiled-subprocesses.js";
 import fs, { type FileHandle } from "node:fs/promises";
-import type { Root } from "@paleoclaw/fs-safe";
-import type { TempWorkspace, TempWorkspaceOptions } from "@paleoclaw/fs-safe/temp";
-import { __setFsSafeTestHooksForTest } from "@paleoclaw/fs-safe/test-hooks";
+import type { Root } from "@openclaw/fs-safe";
+import type { TempWorkspace, TempWorkspaceOptions } from "@openclaw/fs-safe/temp";
+import { __setFsSafeTestHooksForTest } from "@openclaw/fs-safe/test-hooks";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   observePlaybackSourceOpen,
@@ -34,8 +34,8 @@ vi.mock("../infra/fs-safe.js", async (importOriginal) => {
   };
 });
 
-vi.mock("@paleoclaw/fs-safe/temp", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@paleoclaw/fs-safe/temp")>();
+vi.mock("@openclaw/fs-safe/temp", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@openclaw/fs-safe/temp")>();
   return {
     ...actual,
     withTempWorkspace: <T>(
@@ -66,7 +66,7 @@ vi.mock("./media-probe.js", async (importOriginal) => ({
 const fixture = usePlaybackFixture("paleoclaw-playback-staging-", [
   "./ffmpeg-exec.js",
   "./media-probe.js",
-  "@paleoclaw/fs-safe/temp",
+  "@openclaw/fs-safe/temp",
   "../infra/fs-safe.js",
   "../logging/subsystem.js",
 ]);

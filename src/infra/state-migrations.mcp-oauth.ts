@@ -1,7 +1,7 @@
 // Doctor-only import for retired per-server MCP OAuth JSON stores.
 import fs from "node:fs";
 import path from "node:path";
-import { root, type Root } from "@paleoclaw/fs-safe";
+import { root, type Root } from "@openclaw/fs-safe";
 import { mcpOAuthStoreKeyFromLegacyFileName } from "../agents/mcp-oauth-identity.js";
 import { captureOpenClawStateWorkerContext } from "../state/paleoclaw-state-worker-context.js";
 import type { OpenClawStateWorkerContext } from "../state/paleoclaw-state-worker-context.types.js";

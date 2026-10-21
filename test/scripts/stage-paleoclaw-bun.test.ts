@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { copyFile, mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { hasNodeErrorCode } from "@paleoclaw/fs-safe/path";
+import { hasNodeErrorCode } from "@openclaw/fs-safe/path";
 import { describe } from "vitest";
 import { resolveTestNodeExecPath } from "../../src/test-utils/node-process.js";
 import { createCommandTest, type CommandFixture } from "../helpers/command-fixture.js";

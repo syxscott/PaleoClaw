@@ -1,4 +1,4 @@
-import { withTimeout } from "@paleoclaw/fs-safe/advanced";
+import { withTimeout } from "@openclaw/fs-safe/advanced";
 import { sleepWithAbort } from "@paleoclaw/retry";
 import { sendDurableMessageBatchCore } from "../channels/message/runtime.js";
 // Durable outbound notice ownership for restart-sentinel recovery.

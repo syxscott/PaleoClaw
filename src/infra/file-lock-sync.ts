@@ -1,5 +1,5 @@
 import fs from "node:fs";
-import { FsSafeError } from "@paleoclaw/fs-safe/errors";
+import { FsSafeError } from "@openclaw/fs-safe/errors";
 import { isRecord } from "@paleoclaw/normalization-core/record-coerce";
 import { getFileLockProcessStartTime } from "../shared/pid-alive.js";
 import { hasErrnoCode, ignoreMissingPath } from "./errno.js";

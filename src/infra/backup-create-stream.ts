@@ -3,7 +3,7 @@ import fs from "node:fs/promises";
 import { compose, Transform } from "node:stream";
 import { finished, pipeline } from "node:stream/promises";
 import { createGzip } from "node:zlib";
-import { sameFileIdentity } from "@paleoclaw/fs-safe/advanced";
+import { sameFileIdentity } from "@openclaw/fs-safe/advanced";
 import { sliceUtf16Safe } from "@paleoclaw/normalization-core/utf16-slice";
 import { resolveCommandProcessSignal } from "../process/exec-spawn.js";
 import { createAbortError, isAbortError } from "./abort-signal.js";

@@ -6,7 +6,7 @@ import {
   startFeishuServer,
   type ServerRequestEvent,
   type StartedFeishuServer,
-} from "@paleoclaw/crabline";
+} from "@openclaw/crabline";
 import { expect, it } from "vitest";
 import {
   createQaGatewayChild,

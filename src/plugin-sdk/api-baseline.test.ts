@@ -199,9 +199,9 @@ it("normalizes declaration import paths to repo-relative paths", () => {
 it("normalizes source paths under pnpm node_modules", () => {
   const repo = path.join(path.sep, "workspace", "paleoclaw-worktree");
   const dependency =
-    "node_modules/.pnpm/@paleoclaw+fs-safe@1.0.0/node_modules/@paleoclaw/fs-safe/dist/secret-file.d.ts";
+    "node_modules/.pnpm/@paleoclaw+fs-safe@1.0.0/node_modules/@openclaw/fs-safe/dist/secret-file.d.ts";
   expect(normalizeSourcePath(repo, path.join(repo, dependency))).toBe(
-    "node_modules/@paleoclaw/fs-safe/dist/secret-file.d.ts",
+    "node_modules/@openclaw/fs-safe/dist/secret-file.d.ts",
   );
 });
 

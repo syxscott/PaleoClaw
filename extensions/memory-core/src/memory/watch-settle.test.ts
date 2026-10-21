@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { root } from "@paleoclaw/fs-safe/root";
+import { root } from "@openclaw/fs-safe/root";
 import { createDeferred } from "paleoclaw/plugin-sdk/extension-shared";
 import type { ObservationRoot } from "paleoclaw/plugin-sdk/file-access-runtime";
 import { createOpenClawTestState } from "paleoclaw/plugin-sdk/test-state";

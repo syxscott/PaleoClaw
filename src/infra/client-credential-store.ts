@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import type { DatabaseSync } from "node:sqlite";
-import { inspectDarwinAcl } from "@paleoclaw/fs-safe/permissions";
+import { inspectDarwinAcl } from "@openclaw/fs-safe/permissions";
 import { resolveStateDir } from "../config/paths.js";
 import { resolveGlobalSingleton } from "../shared/global-singleton.js";
 import { openRootFileSync } from "./boundary-file-read.js";

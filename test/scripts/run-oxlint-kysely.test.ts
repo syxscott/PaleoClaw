@@ -16,7 +16,7 @@ function createLintFixture() {
   fs.mkdirSync(file(".git"));
   installDistArtifactScripts(root, ["run-oxlint.mjs", "run-oxlint.mts", "run-oxlint-shards.mts"], {
     compiler: false,
-    dependencies: "tsx @paleoclaw/fs-safe json5 p-map kysely oxlint oxlint-tsgolint".split(" "),
+    dependencies: "tsx @openclaw/fs-safe json5 p-map kysely oxlint oxlint-tsgolint".split(" "),
   });
   fs.symlinkSync(
     path.resolve("node_modules/.bin"),

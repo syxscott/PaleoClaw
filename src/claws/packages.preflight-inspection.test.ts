@@ -1,13 +1,13 @@
 import { lstat } from "node:fs/promises";
 import { join } from "node:path";
-import { tempWorkspace } from "@paleoclaw/fs-safe/temp";
+import { tempWorkspace } from "@openclaw/fs-safe/temp";
 import { describe, expect, it, vi } from "vitest";
 import type { installPluginFromClawHub } from "../plugins/clawhub.js";
 import { preflightClawPackage } from "./packages.js";
 import { emptyPluginCapabilityEvidence } from "./packages.test-support.js";
 
-vi.mock("@paleoclaw/fs-safe/temp", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@paleoclaw/fs-safe/temp")>();
+vi.mock("@openclaw/fs-safe/temp", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@openclaw/fs-safe/temp")>();
   return { ...actual, tempWorkspace: vi.fn(actual.tempWorkspace) };
 });
 
@@ -141,7 +141,7 @@ describe("preflightClawPackage isolated plugin inspection", () => {
     let cleanupFailureInjected = false;
     vi.mocked(tempWorkspace).mockImplementationOnce(async (options) => {
       const actual =
-        await vi.importActual<typeof import("@paleoclaw/fs-safe/temp")>("@paleoclaw/fs-safe/temp");
+        await vi.importActual<typeof import("@openclaw/fs-safe/temp")>("@openclaw/fs-safe/temp");
       const workspace = await actual.tempWorkspace(options);
       const cleanup = workspace.cleanup.bind(workspace);
       workspace.cleanup = async () => {

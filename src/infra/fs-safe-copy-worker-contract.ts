@@ -1,7 +1,7 @@
-import type { FsSafeNativeMode } from "@paleoclaw/fs-safe/config";
-import type { CloneFileMetadata, TreeCloneBackend } from "@paleoclaw/fs-safe/copy";
-import type { DarwinAclInspection } from "@paleoclaw/fs-safe/permissions";
-export type { CloneFileMetadata } from "@paleoclaw/fs-safe/copy";
+import type { FsSafeNativeMode } from "@openclaw/fs-safe/config";
+import type { CloneFileMetadata, TreeCloneBackend } from "@openclaw/fs-safe/copy";
+import type { DarwinAclInspection } from "@openclaw/fs-safe/permissions";
+export type { CloneFileMetadata } from "@openclaw/fs-safe/copy";
 
 export type FsSafeCopyRead =
   | { type: "probe"; parent: string }

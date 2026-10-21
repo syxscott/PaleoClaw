@@ -1,5 +1,5 @@
 import fs from "node:fs/promises";
-import { sameFileIdentity } from "@paleoclaw/fs-safe/advanced";
+import { sameFileIdentity } from "@openclaw/fs-safe/advanced";
 import {
   publishFileExclusive,
   syncDirectory,
@@ -7,8 +7,8 @@ import {
   type PublishFileExclusiveFailureDetails,
   type PublishFileExclusiveFailurePhase,
   type PublishFileExclusiveResult,
-} from "@paleoclaw/fs-safe/durability";
-import { FsSafeError } from "@paleoclaw/fs-safe/errors";
+} from "@openclaw/fs-safe/durability";
+import { FsSafeError } from "@openclaw/fs-safe/errors";
 
 export {
   ensureDurableDirectory,
@@ -24,7 +24,7 @@ export {
   type DirectoryReceipt,
   type ExactDirectoryReceipt,
   type PinnedDirectory,
-} from "@paleoclaw/fs-safe/durability";
+} from "@openclaw/fs-safe/durability";
 
 type DirectoryDurabilityOutcome = DirectorySyncOutcome | { status: "not-needed" };
 

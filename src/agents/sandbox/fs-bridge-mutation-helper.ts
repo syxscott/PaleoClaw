@@ -1,10 +1,10 @@
-import { PATH_ALIAS_POLICIES } from "@paleoclaw/fs-safe/advanced";
+import { PATH_ALIAS_POLICIES } from "@openclaw/fs-safe/advanced";
 /**
  * Shell plans for pinned sandbox filesystem operations.
  *
  * Selects the local interpreter and supplies quoted Python source to local and remote transports.
  */
-import { GUEST_FILESYSTEM_PYTHON } from "@paleoclaw/fs-safe/guest";
+import { GUEST_FILESYSTEM_PYTHON } from "@openclaw/fs-safe/guest";
 import type {
   PathSafetyCheck,
   PinnedSandboxDirectoryEntry,

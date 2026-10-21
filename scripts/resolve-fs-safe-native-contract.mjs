@@ -57,7 +57,7 @@ export function resolveFsSafeNativeContract({
     throw new Error("missing fs-safe package source");
   }
   const packageJson = JSON.parse(packageSource);
-  const fsSafeVersion = packageJson.dependencies?.["@paleoclaw/fs-safe"];
+  const fsSafeVersion = packageJson.dependencies?.["@openclaw/fs-safe"];
   const bundledNative = hasBundledNativeBinding(fsSafeVersion);
   if (!bundledNative) {
     return "required";

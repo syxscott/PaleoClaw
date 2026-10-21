@@ -3,8 +3,8 @@
 import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { writeTextAtomic } from "@paleoclaw/fs-safe/atomic";
-import { hasNodeErrorCode } from "@paleoclaw/fs-safe/path";
+import { writeTextAtomic } from "@openclaw/fs-safe/atomic";
+import { hasNodeErrorCode } from "@openclaw/fs-safe/path";
 import { sha256HexPrefixCore } from "@paleoclaw/normalization-core/node-crypto";
 import { resolveAgentConfig } from "../agents/agent-scope-config.js";
 import { resolveAgentWorkspaceDir, resolveDefaultAgentId } from "../agents/agent-scope.js";

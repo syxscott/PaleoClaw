@@ -19,13 +19,13 @@ afterEach(() => vi.restoreAllMocks());
 
 // Intercept real OS publication only in disposable children, never the installed dependency.
 function publicationFaultPreload(root: string, marker: string, scenario: string): string {
-  const nativeUrl = new URL("native.js", import.meta.resolve("@paleoclaw/fs-safe/root")).href;
+  const nativeUrl = new URL("native.js", import.meta.resolve("@openclaw/fs-safe/root")).href;
   return `
 import fs from 'node:fs/promises';
 import fsSync from 'node:fs';
 import path from 'node:path';
 import { __setNativeLoaderForTest, __loadBundledNativeForTest } from ${JSON.stringify(nativeUrl)};
-import { __setFsSafeTestHooksForTest } from ${JSON.stringify(import.meta.resolve("@paleoclaw/fs-safe/test-hooks"))};
+import { __setFsSafeTestHooksForTest } from ${JSON.stringify(import.meta.resolve("@openclaw/fs-safe/test-hooks"))};
 const root=${JSON.stringify(root)}, marker=${JSON.stringify(marker)}, scenario=${JSON.stringify(scenario)};
 const index=path.join(root,'dist/index.js');
 function inject(source,target) {

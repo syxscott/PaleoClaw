@@ -1,5 +1,5 @@
 import fs from "node:fs/promises";
-import * as privateTempWorkspace from "@paleoclaw/fs-safe/temp";
+import * as privateTempWorkspace from "@openclaw/fs-safe/temp";
 import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from "vitest";
 import { createDeferred, withinTest } from "../../../test/helpers/promise.js";
 import { useAutoCleanupTempDirTracker } from "../../../test/helpers/temp-dir.js";
@@ -18,8 +18,8 @@ import type { PreparedCliRunContext } from "./types.js";
 const executePreparedCliRun = wrapPreparedCliRunWithTestAdmission(executePreparedCliRunImpl);
 const tempDirs = useAutoCleanupTempDirTracker(afterEach);
 
-vi.mock("@paleoclaw/fs-safe/temp", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@paleoclaw/fs-safe/temp")>()),
+vi.mock("@openclaw/fs-safe/temp", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@openclaw/fs-safe/temp")>()),
 }));
 
 type ChildAdapterFactory =

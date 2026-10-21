@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import * as fileReplacement from "@paleoclaw/fs-safe/atomic";
+import * as fileReplacement from "@openclaw/fs-safe/atomic";
 import { afterEach, expect, it, vi } from "vitest";
 import * as healthState from "../config/io.health-state.js";
 import type { ConfigHealthState } from "../config/io.health-state.types.js";
@@ -14,8 +14,8 @@ import { withEnvAsync } from "../test-utils/env.js";
 import { runDoctorConfigPreflight } from "./doctor-config-preflight.js";
 import { withDoctorConfigPreflightHome } from "./doctor-config-preflight.test-support.js";
 
-vi.mock("@paleoclaw/fs-safe/atomic", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@paleoclaw/fs-safe/atomic")>()),
+vi.mock("@openclaw/fs-safe/atomic", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@openclaw/fs-safe/atomic")>()),
 }));
 
 vi.mock("../../packages/terminal-core/src/note.js", () => ({ note: vi.fn() }));

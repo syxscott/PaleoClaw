@@ -1,4 +1,4 @@
-import { withTimeout } from "@paleoclaw/fs-safe/advanced";
+import { withTimeout } from "@openclaw/fs-safe/advanced";
 import { Command } from "commander";
 import { describe, expect, it, vi } from "vitest";
 import { resolveAgentDir } from "../../agents/agent-scope.js";

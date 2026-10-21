@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
-import { readFileWindowFullySync } from "@paleoclaw/fs-safe/advanced";
-import { safeRealpathSync, safeStatSync } from "@paleoclaw/fs-safe/path";
+import { readFileWindowFullySync } from "@openclaw/fs-safe/advanced";
+import { safeRealpathSync, safeStatSync } from "@openclaw/fs-safe/path";
 
 function pathComponentsFromRootSync(targetPath: string): string[] {
   const parts: string[] = [];

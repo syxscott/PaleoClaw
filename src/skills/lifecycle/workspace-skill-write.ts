@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { resolveRootPathSync } from "@paleoclaw/fs-safe/advanced";
-import { isPathInside } from "@paleoclaw/fs-safe/path";
+import { resolveRootPathSync } from "@openclaw/fs-safe/advanced";
+import { isPathInside } from "@openclaw/fs-safe/path";
 import { sha256Hex } from "../../infra/crypto-digest.js";
 import { ignoreMissingPath } from "../../infra/errno.js";
 import { pathExists, root } from "../../infra/fs-safe.js";

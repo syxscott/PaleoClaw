@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import fsp from "node:fs/promises";
 import path from "node:path";
-import { root as openRoot } from "@paleoclaw/fs-safe/root";
+import { root as openRoot } from "@openclaw/fs-safe/root";
 import { requireDirectorySync, syncDirectory } from "./directory-durability.js";
 import { retainMutationAuthority } from "./mutation-authority.js";
 import { packageActivationIdentityOrAbsent as entryIdentity } from "./package-update-activation-custody.js";

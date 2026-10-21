@@ -6,7 +6,7 @@ import {
   type RouteLoaderOptions,
   type RouteLocation,
   type RouterHistory,
-} from "@paleoclaw/uirouter";
+} from "@openclaw/uirouter";
 import { describe, expect, it, vi } from "vitest";
 import { pathForRoute, routePageSpec, type RouteId } from "../../app-route-paths.ts";
 import type { ApplicationContext } from "../../app/context.ts";

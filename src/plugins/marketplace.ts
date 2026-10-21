@@ -1,8 +1,8 @@
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { readRegularFile } from "@paleoclaw/fs-safe/advanced";
-import { tempWorkspace, type TempWorkspace } from "@paleoclaw/fs-safe/temp";
+import { readRegularFile } from "@openclaw/fs-safe/advanced";
+import { tempWorkspace, type TempWorkspace } from "@openclaw/fs-safe/temp";
 import { redactSensitiveUrlLikeString } from "@paleoclaw/net-policy/redact-sensitive-url";
 import { hasHttpUrlPrefix } from "@paleoclaw/net-policy/url-protocol";
 import { normalizeOptionalString } from "@paleoclaw/normalization-core/string-coerce";

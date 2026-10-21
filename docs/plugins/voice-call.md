@@ -1,337 +1,176 @@
 ---
-summary: "Voice Call plugin: outbound + inbound calls via Twilio/Telnyx/Plivo (plugin install + config + CLI)"
+summary: "Place outbound and accept inbound voice calls via Twilio, Telnyx, or Plivo, with optional realtime voice and streaming transcription"
 read_when:
   - You want to place an outbound voice call from paleoclaw
   - You are configuring or developing the voice-call plugin
-title: "Voice Call Plugin"
+  - You need realtime voice or streaming transcription on telephony
+title: "Voice call plugin"
+sidebarTitle: "Voice call"
 ---
 
-# Voice Call (plugin)
-
-Voice calls for paleoclaw via a plugin. Supports outbound notifications and
-multi-turn conversations with inbound policies.
-
-Current providers:
-
-- `twilio` (Programmable Voice + Media Streams)
-- `telnyx` (Call Control v2)
-- `plivo` (Voice API + XML transfer + GetInput speech)
-- `mock` (dev/no network)
-
-Quick mental model:
-
-- Install plugin
-- Restart Gateway
-- Configure under `plugins.entries.voice-call.config`
-- Use `paleoclaw voicecall ...` or the `voice_call` tool
-
-## Where it runs (local vs remote)
-
-The Voice Call plugin runs **inside the Gateway process**.
-
-If you use a remote Gateway, install/configure the plugin on the **machine running the Gateway**, then restart the Gateway to load it.
-
-## Install
-
-### Option A: install from npm (recommended)
-
-```bash
-paleoclaw plugins install @paleoclaw/voice-call
-```
-
-Restart the Gateway afterwards.
-
-### Option B: install from a local folder (dev, no copying)
-
-```bash
-paleoclaw plugins install ./extensions/voice-call
-cd ./extensions/voice-call && pnpm install
-```
-
-Restart the Gateway afterwards.
-
-## Config
-
-Set config under `plugins.entries.voice-call.config`:
-
-```json5
-{
-  plugins: {
-    entries: {
-      "voice-call": {
-        enabled: true,
-        config: {
-          provider: "twilio", // or "telnyx" | "plivo" | "mock"
-          fromNumber: "+15550001234",
-          toNumber: "+15550005678",
-
-          twilio: {
-            accountSid: "ACxxxxxxxx",
-            authToken: "...",
-          },
-
-          telnyx: {
-            apiKey: "...",
-            connectionId: "...",
-            // Telnyx webhook public key from the Telnyx Mission Control Portal
-            // (Base64 string; can also be set via TELNYX_PUBLIC_KEY).
-            publicKey: "...",
-          },
-
-          plivo: {
-            authId: "MAxxxxxxxxxxxxxxxxxxxx",
-            authToken: "...",
-          },
-
-          // Webhook server
-          serve: {
-            port: 3334,
-            path: "/voice/webhook",
-          },
-
-          // Webhook security (recommended for tunnels/proxies)
-          webhookSecurity: {
-            allowedHosts: ["voice.example.com"],
-            trustedProxyIPs: ["100.64.0.1"],
-          },
-
-          // Public exposure (pick one)
-          // publicUrl: "https://example.ngrok.app/voice/webhook",
-          // tunnel: { provider: "ngrok" },
-          // tailscale: { mode: "funnel", path: "/voice/webhook" }
-
-          outbound: {
-            defaultMode: "notify", // notify | conversation
-          },
-
-          streaming: {
-            enabled: true,
-            streamPath: "/voice/stream",
-            preStartTimeoutMs: 5000,
-            maxPendingConnections: 32,
-            maxPendingConnectionsPerIp: 4,
-            maxConnections: 128,
-          },
-        },
-      },
-    },
-  },
-}
-```
-
-Notes:
-
-- Twilio/Telnyx require a **publicly reachable** webhook URL.
-- Plivo requires a **publicly reachable** webhook URL.
-- `mock` is a local dev provider (no network calls).
-- Telnyx requires `telnyx.publicKey` (or `TELNYX_PUBLIC_KEY`) unless `skipSignatureVerification` is true.
-- `skipSignatureVerification` is for local testing only.
-- If you use ngrok free tier, set `publicUrl` to the exact ngrok URL; signature verification is always enforced.
-- `tunnel.allowNgrokFreeTierLoopbackBypass: true` allows Twilio webhooks with invalid signatures **only** when `tunnel.provider="ngrok"` and `serve.bind` is loopback (ngrok local agent). Use for local dev only.
-- Ngrok free tier URLs can change or add interstitial behavior; if `publicUrl` drifts, Twilio signatures will fail. For production, prefer a stable domain or Tailscale funnel.
-- Streaming security defaults:
-  - `streaming.preStartTimeoutMs` closes sockets that never send a valid `start` frame.
-  - `streaming.maxPendingConnections` caps total unauthenticated pre-start sockets.
-  - `streaming.maxPendingConnectionsPerIp` caps unauthenticated pre-start sockets per source IP.
-  - `streaming.maxConnections` caps total open media stream sockets (pending + active).
-
-## Stale call reaper
-
-Use `staleCallReaperSeconds` to end calls that never receive a terminal webhook
-(for example, notify-mode calls that never complete). The default is `0`
-(disabled).
-
-Recommended ranges:
-
-- **Production:** `120`–`300` seconds for notify-style flows.
-- Keep this value **higher than `maxDurationSeconds`** so normal calls can
-  finish. A good starting point is `maxDurationSeconds + 30–60` seconds.
-
-Example:
-
-```json5
-{
-  plugins: {
-    entries: {
-      "voice-call": {
-        config: {
-          maxDurationSeconds: 300,
-          staleCallReaperSeconds: 360,
-        },
-      },
-    },
-  },
-}
-```
-
-## Webhook Security
-
-When a proxy or tunnel sits in front of the Gateway, the plugin reconstructs the
-public URL for signature verification. These options control which forwarded
-headers are trusted.
-
-`webhookSecurity.allowedHosts` allowlists hosts from forwarding headers.
-
-`webhookSecurity.trustForwardingHeaders` trusts forwarded headers without an allowlist.
-
-`webhookSecurity.trustedProxyIPs` only trusts forwarded headers when the request
-remote IP matches the list.
-
-Webhook replay protection is enabled for Twilio and Plivo. Replayed valid webhook
-requests are acknowledged but skipped for side effects.
-
-Twilio conversation turns include a per-turn token in `<Gather>` callbacks, so
-stale/replayed speech callbacks cannot satisfy a newer pending transcript turn.
-
-Example with a stable public host:
-
-```json5
-{
-  plugins: {
-    entries: {
-      "voice-call": {
-        config: {
-          publicUrl: "https://voice.example.com/voice/webhook",
-          webhookSecurity: {
-            allowedHosts: ["voice.example.com"],
-          },
-        },
-      },
-    },
-  },
-}
-```
-
-## TTS for calls
-
-Voice Call uses the core `messages.tts` configuration (OpenAI or ElevenLabs) for
-streaming speech on calls. You can override it under the plugin config with the
-**same shape** — it deep‑merges with `messages.tts`.
-
-```json5
-{
-  tts: {
-    provider: "elevenlabs",
-    elevenlabs: {
-      voiceId: "pMsXgVXv3BLzUgSXRplE",
-      modelId: "eleven_multilingual_v2",
-    },
-  },
-}
-```
-
-Notes:
-
-- **Edge TTS is ignored for voice calls** (telephony audio needs PCM; Edge output is unreliable).
-- Core TTS is used when Twilio media streaming is enabled; otherwise calls fall back to provider native voices.
-
-### More examples
-
-Use core TTS only (no override):
-
-```json5
-{
-  messages: {
-    tts: {
-      provider: "openai",
-      openai: { voice: "alloy" },
-    },
-  },
-}
-```
-
-Override to ElevenLabs just for calls (keep core default elsewhere):
-
-```json5
-{
-  plugins: {
-    entries: {
-      "voice-call": {
-        config: {
-          tts: {
-            provider: "elevenlabs",
-            elevenlabs: {
-              apiKey: "elevenlabs_key",
-              voiceId: "pMsXgVXv3BLzUgSXRplE",
-              modelId: "eleven_multilingual_v2",
-            },
-          },
-        },
-      },
-    },
-  },
-}
-```
-
-Override only the OpenAI model for calls (deep‑merge example):
-
-```json5
-{
-  plugins: {
-    entries: {
-      "voice-call": {
-        config: {
-          tts: {
-            openai: {
-              model: "gpt-4o-mini-tts",
-              voice: "marin",
-            },
-          },
-        },
-      },
-    },
-  },
-}
-```
-
-## Inbound calls
-
-Inbound policy defaults to `disabled`. To enable inbound calls, set:
-
-```json5
-{
-  inboundPolicy: "allowlist",
-  allowFrom: ["+15550001234"],
-  inboundGreeting: "Hello! How can I help?",
-}
-```
-
-Auto-responses use the agent system. Tune with:
-
-- `responseModel`
-- `responseSystemPrompt`
-- `responseTimeoutMs`
-
-## CLI
-
-```bash
-paleoclaw voicecall call --to "+15555550123" --message "Hello from paleoclaw"
-paleoclaw voicecall continue --call-id <id> --message "Any questions?"
-paleoclaw voicecall speak --call-id <id> --message "One moment"
-paleoclaw voicecall end --call-id <id>
-paleoclaw voicecall status --call-id <id>
-paleoclaw voicecall tail
-paleoclaw voicecall expose --mode funnel
-```
-
-## Agent tool
-
-Tool name: `voice_call`
-
-Actions:
-
-- `initiate_call` (message, to?, mode?)
-- `continue_call` (callId, message)
-- `speak_to_user` (callId, message)
-- `end_call` (callId)
-- `get_status` (callId)
-
-This repo ships a matching skill doc at `skills/voice-call/SKILL.md`.
-
-## Gateway RPC
-
-- `voicecall.initiate` (`to?`, `message`, `mode?`)
-- `voicecall.continue` (`callId`, `message`)
-- `voicecall.speak` (`callId`, `message`)
-- `voicecall.end` (`callId`)
-- `voicecall.status` (`callId`)
+Voice calls for paleoclaw via a plugin: outbound notifications, multi-turn
+conversations, full-duplex realtime voice, streaming transcription, and
+inbound calls with allowlist policies.
+
+**Providers:** `mock` (dev, no network), `plivo` (Voice API + XML transfer +
+GetInput speech), `telnyx` (Call Control v2), `twilio` (Programmable Voice +
+Media Streams).
+
+<Note>
+The Voice Call plugin runs **inside the Gateway process**. If you use a
+remote Gateway, install and configure the plugin on the machine running the
+Gateway. Installation applies to a running Gateway automatically; if it is
+offline, start it after configuration.
+</Note>
+
+## Quick start
+
+<Steps>
+  <Step title="Install the plugin">
+    <Tabs>
+      <Tab title="From npm">
+        ```bash
+        paleoclaw plugins install @paleoclaw/voice-call
+        ```
+      </Tab>
+      <Tab title="From a local folder (dev)">
+        ```bash
+        PLUGIN_SRC=./path/to/local/voice-call-plugin
+        paleoclaw plugins install "$PLUGIN_SRC"
+        cd "$PLUGIN_SRC" && pnpm install
+        ```
+      </Tab>
+    </Tabs>
+
+    Use the bare package to follow the current release tag. Pin an exact
+    version only when you need a reproducible install. Check the installation's
+    application result; see [Apply changes and inspect](/plugins/manage-plugins#apply-changes-and-inspect).
+
+  </Step>
+  <Step title="Configure provider and webhook">
+    Set config under `plugins.entries.voice-call.config` (see
+    [Configuration](/plugins/voice-call/configuration)). At minimum: `provider`, provider
+    credentials, `fromNumber`, and a publicly reachable webhook URL. With
+    multiple agents, also set `agentId` to the agent that should own calls.
+
+    For an inbound Twilio number, set its **Voice webhook** to the public Voice
+    Call webhook URL with method `POST`. Set the number-level **Status
+    Callback** to the same URL with `?type=status`, also using `POST`, so
+    terminal inbound call statuses reach the plugin.
+
+  </Step>
+  <Step title="Verify setup">
+    ```bash
+    paleoclaw voicecall setup
+    paleoclaw voicecall setup --json
+    ```
+
+    Checks plugin enablement, provider credentials, webhook exposure, agent
+    ownership, and that only one audio mode (`streaming` or `realtime`) is active.
+
+  </Step>
+  <Step title="Smoke test">
+    ```bash
+    paleoclaw voicecall smoke
+    paleoclaw voicecall smoke --to "+15555550123"
+    ```
+
+    Both are dry runs by default. Add `--yes` to place a short outbound
+    notify call:
+
+    ```bash
+    paleoclaw voicecall smoke --to "+15555550123" --yes
+    ```
+
+  </Step>
+</Steps>
+
+<Warning>
+For Twilio, Telnyx, and Plivo, setup must resolve to a **public webhook URL**.
+If `publicUrl`, the tunnel URL, the Tailscale URL, or the serve fallback
+resolves to loopback or private network space, setup fails instead of
+starting a provider that cannot receive carrier webhooks.
+</Warning>
+
+## Where each section moved
+
+Every section of the single-page version now lives on this page or on one of
+the five child pages below. The anchors from the single-page version still
+resolve here.
+
+### Voice call configuration
+
+[Voice call configuration](/plugins/voice-call/configuration) — plugin config keys, the call owner, the full config reference table, and session scope.
+
+- <a id="configuration"></a>[Configuration](/plugins/voice-call/configuration#configuration)
+- <a id="choose-the-call-owner"></a>[Choose the call owner](/plugins/voice-call/configuration#choose-the-call-owner)
+- <a id="config-reference"></a>[Config reference](/plugins/voice-call/configuration#config-reference)
+- <a id="provider-exposure-and-security-notes"></a>[Provider exposure and security notes](/plugins/voice-call/configuration#provider-exposure-and-security-notes)
+- <a id="streaming-connection-caps"></a>[Streaming connection caps](/plugins/voice-call/configuration#streaming-connection-caps)
+- <a id="legacy-config-migrations"></a>[Legacy config migrations](/plugins/voice-call/configuration#legacy-config-migrations)
+- <a id="session-scope"></a>[Session scope](/plugins/voice-call/configuration#session-scope)
+
+### Voice call realtime and streaming
+
+[Voice call realtime and streaming](/plugins/voice-call/realtime-and-streaming) — full-duplex realtime voice, hangup detection, tool and consult policy, agent voice context, and Twilio Media Streams transcription.
+
+- <a id="realtime-voice-conversations"></a>[Realtime voice conversations](/plugins/voice-call/realtime-and-streaming#realtime-voice-conversations)
+- <a id="hangup-detection"></a>[Hangup detection](/plugins/voice-call/realtime-and-streaming#hangup-detection)
+- <a id="tool-policy"></a>[Tool policy](/plugins/voice-call/realtime-and-streaming#tool-policy)
+- <a id="agent-voice-context"></a>[Agent voice context](/plugins/voice-call/realtime-and-streaming#agent-voice-context)
+- <a id="realtime-provider-examples"></a>[Realtime provider examples](/plugins/voice-call/realtime-and-streaming#realtime-provider-examples)
+- <a id="google-gemini-live"></a>[Google Gemini Live](/plugins/voice-call/realtime-and-streaming#google-gemini-live)
+- <a id="openai"></a>[OpenAI realtime example](/plugins/voice-call/realtime-and-streaming#openai)
+- <a id="streaming-transcription"></a>[Streaming transcription](/plugins/voice-call/realtime-and-streaming#streaming-transcription)
+- <a id="streaming-provider-examples"></a>[Streaming provider examples](/plugins/voice-call/realtime-and-streaming#streaming-provider-examples)
+- <a id="openai-2"></a>[OpenAI streaming example](/plugins/voice-call/realtime-and-streaming#openai-2)
+- <a id="xai"></a>[xAI](/plugins/voice-call/realtime-and-streaming#xai)
+
+### Voice call TTS and inbound calls
+
+[Voice call TTS and inbound calls](/plugins/voice-call/tts-and-inbound-calls) — telephony text-to-speech, inbound policy and per-number routing, the spoken output contract, conversation startup, and the stale call reaper.
+
+- <a id="tts-for-calls"></a>[TTS for calls](/plugins/voice-call/tts-and-inbound-calls#tts-for-calls)
+- <a id="tts-examples"></a>[TTS examples](/plugins/voice-call/tts-and-inbound-calls#tts-examples)
+- <a id="core-tts-only"></a>[Core TTS only](/plugins/voice-call/tts-and-inbound-calls#core-tts-only)
+- <a id="override-to-elevenlabs-calls-only"></a>[Override to ElevenLabs (calls only)](/plugins/voice-call/tts-and-inbound-calls#override-to-elevenlabs-calls-only)
+- <a id="openai-model-override-deep-merge"></a>[OpenAI model override (deep-merge)](/plugins/voice-call/tts-and-inbound-calls#openai-model-override-deep-merge)
+- <a id="inbound-calls"></a>[Inbound calls](/plugins/voice-call/tts-and-inbound-calls#inbound-calls)
+- <a id="per-number-routing"></a>[Per-number routing](/plugins/voice-call/tts-and-inbound-calls#per-number-routing)
+- <a id="spoken-output-contract"></a>[Spoken output contract](/plugins/voice-call/tts-and-inbound-calls#spoken-output-contract)
+- <a id="conversation-startup-behavior"></a>[Conversation startup behavior](/plugins/voice-call/tts-and-inbound-calls#conversation-startup-behavior)
+- <a id="twilio-stream-disconnect-grace"></a>[Twilio stream disconnect grace](/plugins/voice-call/tts-and-inbound-calls#twilio-stream-disconnect-grace)
+- <a id="stale-call-reaper"></a>[Stale call reaper](/plugins/voice-call/tts-and-inbound-calls#stale-call-reaper)
+
+### Voice call security and interfaces
+
+[Voice call security and interfaces](/plugins/voice-call/security-and-interfaces) — webhook signature and forwarding-header security, plus the CLI, agent tool, and Gateway RPC surfaces.
+
+- <a id="webhook-security"></a>[Webhook security](/plugins/voice-call/security-and-interfaces#webhook-security)
+- <a id="param-webhook-security-allowed-hosts"></a>[webhookSecurity.allowedHosts](/plugins/voice-call/security-and-interfaces#param-webhook-security-allowed-hosts)
+- <a id="param-webhook-security-trust-forwarding-headers"></a>[webhookSecurity.trustForwardingHeaders](/plugins/voice-call/security-and-interfaces#param-webhook-security-trust-forwarding-headers)
+- <a id="param-webhook-security-trusted-proxy-ips"></a>[webhookSecurity.trustedProxyIPs](/plugins/voice-call/security-and-interfaces#param-webhook-security-trusted-proxy-ips)
+- <a id="cli"></a>[CLI](/plugins/voice-call/security-and-interfaces#cli)
+- <a id="agent-tool"></a>[Agent tool](/plugins/voice-call/security-and-interfaces#agent-tool)
+- <a id="gateway-rpc"></a>[Gateway RPC](/plugins/voice-call/security-and-interfaces#gateway-rpc)
+
+### Voice call troubleshooting
+
+[Voice call troubleshooting](/plugins/voice-call/troubleshooting) — fixes for setup, webhook exposure, credentials, signature verification, Google Meet dial-in, and silent realtime calls.
+
+- <a id="troubleshooting"></a>[Troubleshooting](/plugins/voice-call/troubleshooting#troubleshooting)
+- <a id="call-placement-fails-to-save-its-initial-record"></a>[Call placement fails to save its initial record](/plugins/voice-call/troubleshooting#call-placement-fails-to-save-its-initial-record)
+- <a id="setup-fails-webhook-exposure"></a>[Setup fails webhook exposure](/plugins/voice-call/troubleshooting#setup-fails-webhook-exposure)
+- <a id="provider-credentials-fail"></a>[Provider credentials fail](/plugins/voice-call/troubleshooting#provider-credentials-fail)
+- <a id="calls-start-but-provider-webhooks-do-not-arrive"></a>[Calls start but provider webhooks do not arrive](/plugins/voice-call/troubleshooting#calls-start-but-provider-webhooks-do-not-arrive)
+- <a id="signature-verification-fails"></a>[Signature verification fails](/plugins/voice-call/troubleshooting#signature-verification-fails)
+- <a id="google-meet-twilio-joins-fail"></a>[Google Meet Twilio joins fail](/plugins/voice-call/troubleshooting#google-meet-twilio-joins-fail)
+- <a id="realtime-call-has-no-speech"></a>[Realtime call has no speech](/plugins/voice-call/troubleshooting#realtime-call-has-no-speech)
+
+## Related
+
+- [Talk mode](/nodes/talk)
+- [Text-to-speech](/tools/tts)
+- [Voice wake](/nodes/voicewake)
+- [Google Meet plugin](/plugins/google-meet) - Meet calls, including Twilio sessions delegated through Voice Call
+- [`paleoclaw voicecall`](/cli/voicecall) - the plugin-provided CLI command, which appears only when this plugin is installed

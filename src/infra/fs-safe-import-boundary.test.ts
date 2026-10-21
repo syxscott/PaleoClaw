@@ -72,7 +72,7 @@ function walkSourceFiles(dir: string): string[] {
 }
 
 function allow(surface: string, values: readonly string[], types?: readonly string[]) {
-  return { [`@paleoclaw/fs-safe/${surface}`]: { values, types } };
+  return { [`@openclaw/fs-safe/${surface}`]: { values, types } };
 }
 
 const PLUGIN_OWNED_FS_SAFE_IMPORTS: Record<
@@ -169,7 +169,7 @@ function hasDisallowedFsSafeImport(filePath: string, source: string): boolean {
     return false;
   }
   const checked = sourceWithoutPluginOwnedImports(filePath, source);
-  return checked.includes('"@paleoclaw/fs-safe') || checked.includes("'@paleoclaw/fs-safe");
+  return checked.includes('"@openclaw/fs-safe') || checked.includes("'@openclaw/fs-safe");
 }
 
 const parser = createNativeTypeScriptParser();
@@ -179,77 +179,77 @@ describe("fs-safe import boundary", () => {
   it("limits File Transfer's archive inventory helpers", () => {
     const owner = "extensions/file-transfer/src/tools/dir-fetch-tool.ts";
     const source =
-      'import { sha256File as hash } from "@paleoclaw/fs-safe/durability";\n' +
-      'import { walkDirectory as walk } from "@paleoclaw/fs-safe/walk";';
+      'import { sha256File as hash } from "@openclaw/fs-safe/durability";\n' +
+      'import { walkDirectory as walk } from "@openclaw/fs-safe/walk";';
     expect(hasDisallowedFsSafeImport(owner, source)).toBe(false);
     expect(hasDisallowedFsSafeImport(`${owner}.other.ts`, source)).toBe(true);
     expect(
       hasDisallowedFsSafeImport(
         owner,
-        'import { sha256File, publishFileExclusive } from "@paleoclaw/fs-safe/durability";',
+        'import { sha256File, publishFileExclusive } from "@openclaw/fs-safe/durability";',
       ),
     ).toBe(true);
     expect(
-      hasDisallowedFsSafeImport(owner, `${source}\nimport { root } from "@paleoclaw/fs-safe/root";`),
+      hasDisallowedFsSafeImport(owner, `${source}\nimport { root } from "@openclaw/fs-safe/root";`),
     ).toBe(true);
   });
 
   it("limits File Transfer's descriptor overwrite helper", () => {
     const owner = "extensions/file-transfer/src/node-host/file-write.ts";
-    const source = 'import { overwriteFileHandle as operation } from "@paleoclaw/fs-safe/advanced";';
+    const source = 'import { overwriteFileHandle as operation } from "@openclaw/fs-safe/advanced";';
     expect(hasDisallowedFsSafeImport(owner, source)).toBe(false);
     expect(hasDisallowedFsSafeImport(`${owner}.other.ts`, source)).toBe(true);
     expect(
       hasDisallowedFsSafeImport(
         owner,
-        'import { overwriteFileHandle, root } from "@paleoclaw/fs-safe/advanced";',
+        'import { overwriteFileHandle, root } from "@openclaw/fs-safe/advanced";',
       ),
     ).toBe(true);
     expect(
-      hasDisallowedFsSafeImport(owner, `${source}\nimport { root } from "@paleoclaw/fs-safe/root";`),
+      hasDisallowedFsSafeImport(owner, `${source}\nimport { root } from "@openclaw/fs-safe/root";`),
     ).toBe(true);
   });
 
   it.each([
     [
       "move and receipt",
-      'import { movePathWithCopyFallback, type MovePathPublicationReceipt } from "@paleoclaw/fs-safe/atomic";',
+      'import { movePathWithCopyFallback, type MovePathPublicationReceipt } from "@openclaw/fs-safe/atomic";',
       false,
     ],
     [
       "move alias",
-      'import { movePathWithCopyFallback as move } from "@paleoclaw/fs-safe/atomic";',
+      'import { movePathWithCopyFallback as move } from "@openclaw/fs-safe/atomic";',
       false,
     ],
     [
       "receipt alias",
-      'import type { MovePathPublicationReceipt as Receipt } from "@paleoclaw/fs-safe/atomic";',
+      'import type { MovePathPublicationReceipt as Receipt } from "@openclaw/fs-safe/atomic";',
       false,
     ],
     [
       "receipt value",
-      'import { MovePathPublicationReceipt } from "@paleoclaw/fs-safe/atomic";',
+      'import { MovePathPublicationReceipt } from "@openclaw/fs-safe/atomic";',
       true,
     ],
-    ["other atomic helper", 'import { replaceFileAtomic } from "@paleoclaw/fs-safe/atomic";', true],
+    ["other atomic helper", 'import { replaceFileAtomic } from "@openclaw/fs-safe/atomic";', true],
     [
       "misleading alias",
-      'import { replaceFileAtomic as movePathWithCopyFallback } from "@paleoclaw/fs-safe/atomic";',
+      'import { replaceFileAtomic as movePathWithCopyFallback } from "@openclaw/fs-safe/atomic";',
       true,
     ],
     [
       "mixed imports",
-      'import { movePathWithCopyFallback, replaceFileAtomic } from "@paleoclaw/fs-safe/atomic";',
+      'import { movePathWithCopyFallback, replaceFileAtomic } from "@openclaw/fs-safe/atomic";',
       true,
     ],
-    ["namespace", 'import * as atomic from "@paleoclaw/fs-safe/atomic";', true],
-    ["default", 'import atomic from "@paleoclaw/fs-safe/atomic";', true],
-    ["side effect", 'import "@paleoclaw/fs-safe/atomic";', true],
-    ["empty import", 'import {} from "@paleoclaw/fs-safe/atomic";', true],
-    ["re-export", 'export { movePathWithCopyFallback } from "@paleoclaw/fs-safe/atomic";', true],
-    ["quoted dynamic import", 'const atomic = await import("@paleoclaw/fs-safe/atomic");', true],
-    ["require", 'const atomic = require("@paleoclaw/fs-safe/atomic");', true],
-    ["other subpath", 'import { root } from "@paleoclaw/fs-safe/root";', true],
+    ["namespace", 'import * as atomic from "@openclaw/fs-safe/atomic";', true],
+    ["default", 'import atomic from "@openclaw/fs-safe/atomic";', true],
+    ["side effect", 'import "@openclaw/fs-safe/atomic";', true],
+    ["empty import", 'import {} from "@openclaw/fs-safe/atomic";', true],
+    ["re-export", 'export { movePathWithCopyFallback } from "@openclaw/fs-safe/atomic";', true],
+    ["quoted dynamic import", 'const atomic = await import("@openclaw/fs-safe/atomic");', true],
+    ["require", 'const atomic = require("@openclaw/fs-safe/atomic");', true],
+    ["other subpath", 'import { root } from "@openclaw/fs-safe/root";', true],
   ] as const)("limits the OpenShell exception: %s", (_label, source, expected) => {
     expect(hasDisallowedFsSafeImport("extensions/openshell/src/backend.ts", source)).toBe(expected);
   });
@@ -262,7 +262,7 @@ describe("fs-safe import boundary", () => {
     expect(
       hasDisallowedFsSafeImport(
         filePath,
-        'import { movePathWithCopyFallback } from "@paleoclaw/fs-safe/atomic";',
+        'import { movePathWithCopyFallback } from "@openclaw/fs-safe/atomic";',
       ),
     ).toBe(expected);
   });
@@ -271,8 +271,8 @@ describe("fs-safe import boundary", () => {
     expect(
       hasDisallowedFsSafeImport(
         "extensions/openshell/src/backend.ts",
-        'import { movePathWithCopyFallback } from "@paleoclaw/fs-safe/atomic";\n' +
-          'import { root } from "@paleoclaw/fs-safe/root";',
+        'import { movePathWithCopyFallback } from "@openclaw/fs-safe/atomic";\n' +
+          'import { root } from "@openclaw/fs-safe/root";',
       ),
     ).toBe(true);
   });

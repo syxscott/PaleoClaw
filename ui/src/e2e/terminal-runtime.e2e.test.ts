@@ -1,4 +1,4 @@
-import type { GhosttyTerminalController } from "@paleoclaw/libterminal/browser";
+import type { GhosttyTerminalController } from "@openclaw/libterminal/browser";
 import type { Page } from "playwright";
 import { expect, it } from "vitest";
 import { waitForControlUiGatewayReady } from "../test-helpers/control-ui-e2e-readiness.ts";

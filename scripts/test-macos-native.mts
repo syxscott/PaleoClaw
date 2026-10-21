@@ -2,7 +2,7 @@
 import { randomUUID } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import { root as openCaptureRoot } from "@paleoclaw/fs-safe/root";
+import { root as openCaptureRoot } from "@openclaw/fs-safe/root";
 import { readProcessIdentity } from "@paleoclaw/proc-safe/identity";
 import { runWithFailedTrailer } from "./lib/failed-trailer.mts";
 import { runManagedCommand, waitForManagedProcessGroupExit } from "./lib/managed-child-process.mts";

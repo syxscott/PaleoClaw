@@ -3,7 +3,7 @@
 import {
   writeSiblingTempFile as writeSiblingTempFileBase,
   type WriteSiblingTempFileOptions,
-} from "@paleoclaw/fs-safe/advanced";
+} from "@openclaw/fs-safe/advanced";
 
 export async function writeSiblingTempFile<T>(options: WriteSiblingTempFileOptions<T>) {
   return await writeSiblingTempFileBase({

@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import fs, { type FileHandle } from "node:fs/promises";
 import path from "node:path";
-import { root } from "@paleoclaw/fs-safe/root";
+import { root } from "@openclaw/fs-safe/root";
 import {
   ensureDurableDirectory,
   pinDirectory,

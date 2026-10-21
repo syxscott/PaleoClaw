@@ -7,8 +7,8 @@ import {
 import {
   normalizeRouteBasePath as normalizeBasePath,
   normalizeRoutePath as normalizePath,
-} from "@paleoclaw/uirouter";
-import type { RouteLocation } from "@paleoclaw/uirouter";
+} from "@openclaw/uirouter";
+import type { RouteLocation } from "@openclaw/uirouter";
 import { isValidWorkboardBoardId } from "@paleoclaw/workboard-contract";
 import { DEFAULT_AGENT_PANEL, isAgentsPanel, type AgentsPanel } from "./lib/agents/panels.ts";
 import type { BoardFace } from "./lib/board/settings.ts";

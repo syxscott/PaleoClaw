@@ -2,7 +2,7 @@ import { createHash, type Hash } from "node:crypto";
 import {
   createRootFileOpenBatchSync,
   type RootFileOpenBatchSync,
-} from "@paleoclaw/fs-safe/advanced";
+} from "@openclaw/fs-safe/advanced";
 import { hashPluginSourceFile } from "./plugin-source-file.js";
 import type { PluginCapturedSourceFact as PluginSourceContent } from "./plugin-source-verification.js";
 

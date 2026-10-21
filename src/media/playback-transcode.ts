@@ -1,9 +1,9 @@
 // Playback transcode policy and lazy media-store cache ownership.
 import fs from "node:fs/promises";
 import path from "node:path";
-import { sameFileIdentity, type ExactFileIdentity } from "@paleoclaw/fs-safe/advanced";
-import { fileStore } from "@paleoclaw/fs-safe/store";
-import { withTempWorkspace } from "@paleoclaw/fs-safe/temp";
+import { sameFileIdentity, type ExactFileIdentity } from "@openclaw/fs-safe/advanced";
+import { fileStore } from "@openclaw/fs-safe/store";
+import { withTempWorkspace } from "@openclaw/fs-safe/temp";
 import { maxBytesForKind } from "@paleoclaw/media-core/constants";
 import { extensionForMime, normalizeMimeType } from "@paleoclaw/media-core/mime";
 import { sha256Hex } from "@paleoclaw/normalization-core/node-crypto";

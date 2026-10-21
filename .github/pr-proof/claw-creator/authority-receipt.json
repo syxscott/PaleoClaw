@@ -274,7 +274,7 @@
   "limitations": [
     "Role revocation here is the real operator device-role credential revocation, not users.setRole named-policy demotion. Named delegated person publication requires an existing verified Cloudflare Access profile and host-bound person ingress grant; this isolated token-authenticated fixture does not provision that identity provider.",
     "Disconnected/revoked callers cannot receive a terminal RPC frame; actual Gateway terminal diagnostics establish that the in-flight handler finished or was cancelled before the zero-POST assertion.",
-    "The HTTP fixture validates admission at the real upload boundary. Actual ClawHub publication/storage/finalization was proven separately in the retained CLAW-1165 end-to-end receipt."
+    "The HTTP fixture validates admission at the real upload boundary. Actual PaleoHub publication/storage/finalization was proven separately in the retained CLAW-1165 end-to-end receipt."
   ],
   "sourceEquivalence": {
     "testedHead": "135ac4f40843889045a6bc2fc215a6fff1a32377",
@@ -312,7 +312,7 @@
         "testedBuildBlob": "8a71ef820384f4dcf2679f318253d3c0468e28a4"
       },
       {
-        "path": "src/infra/clawhub-client.ts",
+        "path": "src/infra/PaleoHub-client.ts",
         "testedBuildBlob": "a9c46337a316dbe6188e02ba4e983b54510e44e7"
       }
     ]

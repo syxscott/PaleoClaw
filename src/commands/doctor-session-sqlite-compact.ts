@@ -1,6 +1,6 @@
 /** Runs doctor-owned SQLite file compaction for migrated session stores. */
 import fs from "node:fs";
-import { safeStatSync } from "@paleoclaw/fs-safe/path";
+import { safeStatSync } from "@openclaw/fs-safe/path";
 import type { SessionStoreTarget } from "../config/sessions/targets.js";
 import { resolveTargetSqliteOptions } from "../infra/session-sqlite-migration-readers.js";
 import { invalidateOpenClawAgentDatabaseIntegrityBeforeMutation } from "../state/paleoclaw-agent-db-lease.js";

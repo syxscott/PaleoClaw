@@ -1,5 +1,5 @@
 import path from "node:path";
-import { isWindowsDrivePath } from "@paleoclaw/fs-safe/archive";
+import { isWindowsDrivePath } from "@openclaw/fs-safe/archive";
 
 /**
  * Collapse drive and UNC spellings of `\\?\`, `\\.\`, `//?/`, and `//./` to the

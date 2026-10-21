@@ -20,8 +20,8 @@ const durabilityTestState = vi.hoisted(() => ({
   hashedBytes: 0,
 }));
 
-vi.mock("@paleoclaw/fs-safe/durability", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@paleoclaw/fs-safe/durability")>();
+vi.mock("@openclaw/fs-safe/durability", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@openclaw/fs-safe/durability")>();
   return {
     ...actual,
     sha256File: async (...args: Parameters<typeof actual.sha256File>) => {

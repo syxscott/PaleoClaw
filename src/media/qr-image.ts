@@ -1,5 +1,5 @@
 import path from "node:path";
-import { tempWorkspace } from "@paleoclaw/fs-safe/temp";
+import { tempWorkspace } from "@openclaw/fs-safe/temp";
 import { loadQrCodeRuntime } from "./qr-runtime.ts";
 
 const QR_PNG_DATA_URL_PREFIX = "data:image/png;base64,";

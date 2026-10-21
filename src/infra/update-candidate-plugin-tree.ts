@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { assertDirectoryIdentitySync, readDirectoryIdentity } from "@paleoclaw/fs-safe/advanced";
+import { assertDirectoryIdentitySync, readDirectoryIdentity } from "@openclaw/fs-safe/advanced";
 import { isRecord } from "@paleoclaw/normalization-core/record-coerce";
 import { resolvePathViaExistingAncestorSync } from "./boundary-path.js";
 import { ignoreMissingPath as ignoreMissingUpdateCandidateFile } from "./errno.js";

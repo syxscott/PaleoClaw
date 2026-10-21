@@ -80,7 +80,7 @@ it("keeps admitted session ownership when transformed plugins import the native 
       clean: false,
       deps: {
         // Build the host and SDK together, matching the packaged host graph.
-        alwaysBundle: (id) => id !== "@paleoclaw/fs-safe" && !id.startsWith("@paleoclaw/fs-safe/"),
+        alwaysBundle: (id) => id !== "@openclaw/fs-safe" && !id.startsWith("@openclaw/fs-safe/"),
       },
       platform: "node",
       format: "esm",
@@ -97,7 +97,7 @@ it("keeps admitted session ownership when transformed plugins import the native 
         import assert from "node:assert/strict";
         import path from "node:path";
         import { registerHooks } from "node:module";
-        import { withTimeout } from "@paleoclaw/fs-safe/advanced";
+        import { withTimeout } from "@openclaw/fs-safe/advanced";
         const root = ${JSON.stringify(root)};
         const deferredModules = new Set(${JSON.stringify([...deferredModules])});
         const unexpectedImports = [];

@@ -2,10 +2,10 @@ import path from "node:path";
 import {
   canonicalPathFromExistingAncestor,
   isUnsafeDeviceReadPath,
-} from "@paleoclaw/fs-safe/advanced";
-import { FsSafeError } from "@paleoclaw/fs-safe/errors";
-import { isPathRelativeEscape } from "@paleoclaw/fs-safe/path";
-import type { Root } from "@paleoclaw/fs-safe/root";
+} from "@openclaw/fs-safe/advanced";
+import { FsSafeError } from "@openclaw/fs-safe/errors";
+import { isPathRelativeEscape } from "@openclaw/fs-safe/path";
+import type { Root } from "@openclaw/fs-safe/root";
 import { admitObservationRoot, observationPrefixKind } from "../infra/fs-observation-root.js";
 import { isPathInside } from "../infra/path-guards.js";
 import { getOrCreatePromise } from "../shared/lazy-promise.js";

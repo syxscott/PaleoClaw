@@ -1,11 +1,11 @@
-import type { ExactIdentityReceipt } from "@paleoclaw/fs-safe/durability";
-import type { Root as FsSafeRoot } from "@paleoclaw/fs-safe/root";
-import type { FileStore as FsSafeFileStore } from "@paleoclaw/fs-safe/store";
+import type { ExactIdentityReceipt } from "@openclaw/fs-safe/durability";
+import type { Root as FsSafeRoot } from "@openclaw/fs-safe/root";
+import type { FileStore as FsSafeFileStore } from "@openclaw/fs-safe/store";
 import {
   tempWorkspace as fsSafeTempWorkspace,
   withTempWorkspace as fsSafeWithTempWorkspace,
   type TempWorkspace as FsSafeTempWorkspace,
-} from "@paleoclaw/fs-safe/temp";
+} from "@openclaw/fs-safe/temp";
 
 export type LegacyNonBlockingReadOption = {
   /** @deprecated Omit this hint; safe reads always use nonblocking admission where supported. */

@@ -1,5 +1,5 @@
 import path from "node:path";
-import { root, type Root } from "@paleoclaw/fs-safe";
+import { root, type Root } from "@openclaw/fs-safe";
 import { runOpenClawStateWriteTransaction } from "../state/paleoclaw-state-db.js";
 import {
   executeSqliteQuerySync,

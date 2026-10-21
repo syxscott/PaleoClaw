@@ -1,33 +1,22 @@
-import { createServer, type RequestListener } from "node:http";
-import type { AddressInfo } from "node:net";
-import type { OpenClawConfig, PluginRuntime } from "paleoclaw/plugin-sdk/zalo";
-import { afterEach, describe, expect, it, vi } from "vitest";
-import { createEmptyPluginRegistry } from "../../../src/plugins/registry.js";
-import { setActivePluginRegistry } from "../../../src/plugins/runtime.js";
+import type { RequestListener } from "node:http";
+import type { OpenClawConfig } from "paleoclaw/plugin-sdk/config-contracts";
 import {
-  clearZaloWebhookSecurityStateForTest,
-  getZaloWebhookRateLimitStateSizeForTest,
-  getZaloWebhookStatusCounterSizeForTest,
-  handleZaloWebhookRequest,
-  registerZaloWebhookTarget,
-} from "./monitor.js";
+  createEmptyPluginRegistry,
+  setActivePluginRegistry,
+} from "paleoclaw/plugin-sdk/plugin-test-runtime";
+import { withServer } from "paleoclaw/plugin-sdk/test-env";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import type { ZaloRuntimeEnv } from "./monitor.types.js";
+import { zaloWebhookRuntime } from "./monitor.webhook.js";
 import type { ResolvedZaloAccount } from "./types.js";
+import { ZaloWebhookPayloadError } from "./webhook-spool.js";
 
-async function withServer(handler: RequestListener, fn: (baseUrl: string) => Promise<void>) {
-  const server = createServer(handler);
-  await new Promise<void>((resolve) => {
-    server.listen(0, "127.0.0.1", () => resolve());
-  });
-  const address = server.address() as AddressInfo | null;
-  if (!address) {
-    throw new Error("missing server address");
-  }
-  try {
-    await fn(`http://127.0.0.1:${address.port}`);
-  } finally {
-    await new Promise<void>((resolve) => server.close(() => resolve()));
-  }
-}
+const {
+  clearZaloWebhookSecurityStateForTest,
+  getZaloWebhookStatusCounterSizeForTest,
+  handleZaloWebhookRequest: handleZaloWebhookRequestInternal,
+  registerZaloWebhookTarget,
+} = zaloWebhookRuntime;
 
 const DEFAULT_ACCOUNT: ResolvedZaloAccount = {
   accountId: "default",
@@ -37,83 +26,76 @@ const DEFAULT_ACCOUNT: ResolvedZaloAccount = {
   config: {},
 };
 
-const webhookRequestHandler: RequestListener = async (req, res) => {
-  const handled = await handleZaloWebhookRequest(req, res);
-  if (!handled) {
-    res.statusCode = 404;
-    res.end("not found");
-  }
+const webhookRequestHandler: RequestListener = (req, res) => {
+  void (async () => {
+    const handled = await handleZaloWebhookRequestInternal(req, res);
+    if (!handled) {
+      res.statusCode = 404;
+      res.end("not found");
+    }
+  })();
 };
+
+const unregisterTargets: Array<() => void> = [];
 
 function registerTarget(params: {
   path: string;
-  secret?: string;
   statusSink?: (patch: { lastInboundAt?: number; lastOutboundAt?: number }) => void;
-  account?: ResolvedZaloAccount;
   config?: OpenClawConfig;
-  core?: PluginRuntime;
-}): () => void {
-  return registerZaloWebhookTarget({
-    token: "tok",
-    account: params.account ?? DEFAULT_ACCOUNT,
-    config: params.config ?? ({} as OpenClawConfig),
-    runtime: {},
-    core: params.core ?? ({} as PluginRuntime),
-    secret: params.secret ?? "secret",
-    path: params.path,
-    mediaMaxMb: 5,
-    statusSink: params.statusSink,
+  acceptWebhook?: (rawEvent: string) => Promise<void>;
+}): void {
+  unregisterTargets.push(
+    registerZaloWebhookTarget({
+      account: DEFAULT_ACCOUNT,
+      config: params.config ?? {},
+      runtime: {} as ZaloRuntimeEnv,
+      secret: "secret",
+      path: params.path,
+      acceptWebhook:
+        params.acceptWebhook ??
+        (async (rawEvent) => {
+          let parsed: unknown;
+          try {
+            parsed = JSON.parse(rawEvent);
+          } catch (error) {
+            throw new ZaloWebhookPayloadError("invalid JSON", { cause: error });
+          }
+          if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+            throw new ZaloWebhookPayloadError("payload must be an object");
+          }
+          params.statusSink?.({ lastInboundAt: Date.now() });
+        }),
+    }),
+  );
+}
+
+async function postWebhook(
+  baseUrl: string,
+  path: string,
+  body = "{}",
+  { secret = "secret", contentType = "application/json", forwardedFor = "" } = {},
+) {
+  return await fetch(`${baseUrl}${path}`, {
+    method: "POST",
+    headers: {
+      "x-bot-api-secret-token": secret,
+      "content-type": contentType,
+      ...(forwardedFor ? { "x-forwarded-for": forwardedFor } : {}),
+    },
+    body,
   });
 }
 
-function createPairingAuthCore(params?: { storeAllowFrom?: string[]; pairingCreated?: boolean }): {
-  core: PluginRuntime;
-  readAllowFromStore: ReturnType<typeof vi.fn>;
-  upsertPairingRequest: ReturnType<typeof vi.fn>;
-} {
-  const readAllowFromStore = vi.fn().mockResolvedValue(params?.storeAllowFrom ?? []);
-  const upsertPairingRequest = vi
-    .fn()
-    .mockResolvedValue({ code: "PAIRCODE", created: params?.pairingCreated ?? false });
-  const core = {
-    logging: {
-      shouldLogVerbose: () => false,
-    },
-    channel: {
-      pairing: {
-        readAllowFromStore,
-        upsertPairingRequest,
-        buildPairingReply: vi.fn(() => "Pairing code: PAIRCODE"),
-      },
-      commands: {
-        shouldComputeCommandAuthorized: vi.fn(() => false),
-        resolveCommandAuthorizedFromAuthorizers: vi.fn(() => false),
-      },
-    },
-  } as unknown as PluginRuntime;
-  return { core, readAllowFromStore, upsertPairingRequest };
-}
-
-async function postUntilRateLimited(params: {
-  baseUrl: string;
-  path: string;
-  secret: string;
-  withNonceQuery?: boolean;
-  attempts?: number;
-}): Promise<boolean> {
-  const attempts = params.attempts ?? 130;
+async function reachesRateLimit(
+  request: (index: number) => Promise<Response>,
+  attempts: number,
+  checkUnauthorized = false,
+) {
   for (let i = 0; i < attempts; i += 1) {
-    const url = params.withNonceQuery
-      ? `${params.baseUrl}${params.path}?nonce=${i}`
-      : `${params.baseUrl}${params.path}`;
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "x-bot-api-secret-token": params.secret,
-        "content-type": "application/json",
-      },
-      body: "{}",
-    });
+    const response = await request(i);
+    if (checkUnauthorized) {
+      expect([401, 429]).toContain(response.status);
+    }
     if (response.status === 429) {
       return true;
     }
@@ -123,263 +105,133 @@ async function postUntilRateLimited(params: {
 
 describe("handleZaloWebhookRequest", () => {
   afterEach(() => {
+    for (const unregister of unregisterTargets.splice(0)) {
+      unregister();
+    }
     clearZaloWebhookSecurityStateForTest();
     setActivePluginRegistry(createEmptyPluginRegistry());
   });
 
-  it("registers and unregisters plugin HTTP route at path boundaries", () => {
-    const registry = createEmptyPluginRegistry();
-    setActivePluginRegistry(registry);
-    const unregisterA = registerTarget({ path: "/hook" });
-    const unregisterB = registerTarget({ path: "/hook" });
-
-    expect(registry.httpRoutes).toHaveLength(1);
-    expect(registry.httpRoutes[0]).toEqual(
-      expect.objectContaining({
-        pluginId: "zalo",
-        path: "/hook",
-        source: "zalo-webhook",
-      }),
-    );
-
-    unregisterA();
-    expect(registry.httpRoutes).toHaveLength(1);
-    unregisterB();
-    expect(registry.httpRoutes).toHaveLength(0);
-  });
-
-  it("returns 400 for non-object payloads", async () => {
-    const unregister = registerTarget({ path: "/hook" });
-
-    try {
-      await withServer(webhookRequestHandler, async (baseUrl) => {
-        const response = await fetch(`${baseUrl}/hook`, {
-          method: "POST",
-          headers: {
-            "x-bot-api-secret-token": "secret",
-            "content-type": "application/json",
-          },
-          body: "null",
-        });
-
-        expect(response.status).toBe(400);
+  it.each([
+    ["non-object payload", "null", {}, 400],
+    ["non-JSON content type", "{}", { contentType: "text/plain" }, 415],
+    [
+      "invalid secret before invalid content type",
+      "not-json",
+      { secret: "invalid-token", contentType: "text/plain" }, // pragma: allowlist secret
+      401,
+    ],
+  ] as const)("rejects %s", async (_name, body, headers, status) => {
+    registerTarget({ path: "/hook" });
+    await withServer(webhookRequestHandler, async (baseUrl) => {
+      const response = await postWebhook(baseUrl, "/hook", body, headers);
+      expect(response.status).toBe(status);
+      if (status === 400) {
         expect(await response.text()).toBe("Bad Request");
-      });
-    } finally {
-      unregister();
-    }
+      }
+    });
   });
 
   it("rejects ambiguous routing when multiple targets match the same secret", async () => {
     const sinkA = vi.fn();
     const sinkB = vi.fn();
-    const unregisterA = registerTarget({ path: "/hook", statusSink: sinkA });
-    const unregisterB = registerTarget({ path: "/hook", statusSink: sinkB });
+    registerTarget({ path: "/hook", statusSink: sinkA });
+    registerTarget({ path: "/hook", statusSink: sinkB });
 
-    try {
-      await withServer(webhookRequestHandler, async (baseUrl) => {
-        const response = await fetch(`${baseUrl}/hook`, {
-          method: "POST",
-          headers: {
-            "x-bot-api-secret-token": "secret",
-            "content-type": "application/json",
-          },
-          body: "{}",
-        });
+    await withServer(webhookRequestHandler, async (baseUrl) => {
+      const response = await postWebhook(baseUrl, "/hook");
 
-        expect(response.status).toBe(401);
-        expect(sinkA).not.toHaveBeenCalled();
-        expect(sinkB).not.toHaveBeenCalled();
-      });
-    } finally {
-      unregisterA();
-      unregisterB();
-    }
+      expect(response.status).toBe(401);
+      expect(sinkA).not.toHaveBeenCalled();
+      expect(sinkB).not.toHaveBeenCalled();
+    });
   });
 
-  it("returns 415 for non-json content-type", async () => {
-    const unregister = registerTarget({ path: "/hook-content-type" });
-
-    try {
-      await withServer(webhookRequestHandler, async (baseUrl) => {
-        const response = await fetch(`${baseUrl}/hook-content-type`, {
-          method: "POST",
-          headers: {
-            "x-bot-api-secret-token": "secret",
-            "content-type": "text/plain",
-          },
-          body: "{}",
-        });
-
-        expect(response.status).toBe(415);
+  it.each([false, true])(
+    "acknowledges only successful durable admission (failed=%s)",
+    async (failed) => {
+      const admission = Promise.withResolvers<void>();
+      const acceptWebhook = vi.fn(async () => {
+        await admission.promise;
       });
-    } finally {
-      unregister();
-    }
-  });
+      const body = '{ "event_name": "message.text.received", "extra": true }';
+      registerTarget({ path: "/hook-durable-ack", acceptWebhook });
 
-  it("deduplicates webhook replay by event_name + message_id", async () => {
-    const sink = vi.fn();
-    const unregister = registerTarget({ path: "/hook-replay", statusSink: sink });
-
-    const payload = {
-      event_name: "message.text.received",
-      message: {
-        from: { id: "123" },
-        chat: { id: "123", chat_type: "PRIVATE" },
-        message_id: "msg-replay-1",
-        date: Math.floor(Date.now() / 1000),
-        text: "hello",
-      },
-    };
-
-    try {
-      await withServer(webhookRequestHandler, async (baseUrl) => {
-        const first = await fetch(`${baseUrl}/hook-replay`, {
-          method: "POST",
-          headers: {
-            "x-bot-api-secret-token": "secret",
-            "content-type": "application/json",
-          },
-          body: JSON.stringify(payload),
-        });
-        const second = await fetch(`${baseUrl}/hook-replay`, {
-          method: "POST",
-          headers: {
-            "x-bot-api-secret-token": "secret",
-            "content-type": "application/json",
-          },
-          body: JSON.stringify(payload),
-        });
-
-        expect(first.status).toBe(200);
-        expect(second.status).toBe(200);
-        expect(sink).toHaveBeenCalledTimes(1);
-      });
-    } finally {
-      unregister();
-    }
-  });
-
-  it("returns 429 when per-path request rate exceeds threshold", async () => {
-    const unregister = registerTarget({ path: "/hook-rate" });
-
-    try {
-      await withServer(webhookRequestHandler, async (baseUrl) => {
-        const saw429 = await postUntilRateLimited({
-          baseUrl,
-          path: "/hook-rate",
-          secret: "secret", // pragma: allowlist secret
-        });
-
-        expect(saw429).toBe(true);
-      });
-    } finally {
-      unregister();
-    }
-  });
-  it("does not grow status counters when query strings churn on unauthorized requests", async () => {
-    const unregister = registerTarget({ path: "/hook-query-status" });
-
-    try {
-      await withServer(webhookRequestHandler, async (baseUrl) => {
-        for (let i = 0; i < 200; i += 1) {
-          const response = await fetch(`${baseUrl}/hook-query-status?nonce=${i}`, {
-            method: "POST",
-            headers: {
-              "x-bot-api-secret-token": "invalid-token", // pragma: allowlist secret
-              "content-type": "application/json",
+      try {
+        await withServer(webhookRequestHandler, async (baseUrl) => {
+          let settled = false;
+          const responsePromise = postWebhook(baseUrl, "/hook-durable-ack", body).then(
+            (response) => {
+              settled = true;
+              return response;
             },
-            body: "{}",
-          });
-          expect(response.status).toBe(401);
-        }
+          );
 
-        expect(getZaloWebhookStatusCounterSizeForTest()).toBe(1);
-      });
-    } finally {
-      unregister();
-    }
-  });
-
-  it("rate limits authenticated requests even when query strings churn", async () => {
-    const unregister = registerTarget({ path: "/hook-query-rate" });
-
-    try {
-      await withServer(webhookRequestHandler, async (baseUrl) => {
-        const saw429 = await postUntilRateLimited({
-          baseUrl,
-          path: "/hook-query-rate",
-          secret: "secret", // pragma: allowlist secret
-          withNonceQuery: true,
+          await vi.waitFor(() => expect(acceptWebhook).toHaveBeenCalledTimes(1));
+          expect(acceptWebhook).toHaveBeenCalledWith(body);
+          expect(settled).toBe(false);
+          if (failed) {
+            admission.reject(new Error("sqlite unavailable"));
+          } else {
+            admission.resolve();
+          }
+          const response = await responsePromise;
+          expect(response.status).toBe(failed ? 500 : 200);
+          expect(response.headers.get("x-paleoclaw-delivery-accepted")).toBe(
+            failed ? null : "durable",
+          );
         });
+      } finally {
+        admission.resolve();
+      }
+    },
+  );
 
-        expect(saw429).toBe(true);
-        expect(getZaloWebhookRateLimitStateSizeForTest()).toBe(1);
-      });
-    } finally {
-      unregister();
-    }
+  it.each([true, false])("rate limits query churn (unauthorized=%s)", async (unauthorized) => {
+    const path = unauthorized ? "/hook-query-status" : "/hook-query-rate";
+    registerTarget({ path });
+    await withServer(webhookRequestHandler, async (baseUrl) => {
+      const saw429 = await reachesRateLimit(
+        (i) =>
+          postWebhook(baseUrl, `${path}?nonce=${i}`, "{}", {
+            secret: unauthorized ? "invalid-token" : "secret", // pragma: allowlist secret
+          }),
+        unauthorized ? 200 : 130,
+        unauthorized,
+      );
+      expect(saw429).toBe(true);
+      if (unauthorized) {
+        expect(getZaloWebhookStatusCounterSizeForTest()).toBe(2);
+      }
+    });
   });
 
-  it("scopes DM pairing store reads and writes to accountId", async () => {
-    const { core, readAllowFromStore, upsertPairingRequest } = createPairingAuthCore({
-      pairingCreated: false,
-    });
-    const account: ResolvedZaloAccount = {
-      ...DEFAULT_ACCOUNT,
-      accountId: "work",
+  it("does not let unauthorized floods rate-limit authenticated traffic from a different trusted forwarded client IP", async () => {
+    registerTarget({
+      path: "/hook-preauth-split",
       config: {
-        dmPolicy: "pairing",
-        allowFrom: [],
-      },
-    };
-    const unregister = registerTarget({
-      path: "/hook-account-scope",
-      account,
-      core,
+        gateway: { trustedProxies: ["127.0.0.1"] },
+      } as OpenClawConfig,
     });
 
-    const payload = {
-      event_name: "message.text.received",
-      message: {
-        from: { id: "123", name: "Attacker" },
-        chat: { id: "dm-work", chat_type: "PRIVATE" },
-        message_id: "msg-work-1",
-        date: Math.floor(Date.now() / 1000),
-        text: "hello",
-      },
-    };
+    await withServer(webhookRequestHandler, async (baseUrl) => {
+      await reachesRateLimit(
+        (i) =>
+          postWebhook(baseUrl, `/hook-preauth-split?nonce=${i}`, "{}", {
+            secret: "invalid-token", // pragma: allowlist secret
+            forwardedFor: "203.0.113.10",
+          }),
+        130,
+      );
 
-    try {
-      await withServer(webhookRequestHandler, async (baseUrl) => {
-        const response = await fetch(`${baseUrl}/hook-account-scope`, {
-          method: "POST",
-          headers: {
-            "x-bot-api-secret-token": "secret",
-            "content-type": "application/json",
-          },
-          body: JSON.stringify(payload),
-        });
+      const validResponse = await postWebhook(
+        baseUrl,
+        "/hook-preauth-split",
+        JSON.stringify({ event_name: "message.unsupported.received" }),
+        { forwardedFor: "198.51.100.20" },
+      );
 
-        expect(response.status).toBe(200);
-      });
-    } finally {
-      unregister();
-    }
-
-    expect(readAllowFromStore).toHaveBeenCalledWith(
-      expect.objectContaining({
-        channel: "zalo",
-        accountId: "work",
-      }),
-    );
-    expect(upsertPairingRequest).toHaveBeenCalledWith(
-      expect.objectContaining({
-        channel: "zalo",
-        id: "123",
-        accountId: "work",
-      }),
-    );
+      expect(validResponse.status).toBe(200);
+    });
   });
 });

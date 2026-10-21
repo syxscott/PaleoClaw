@@ -28,9 +28,9 @@ export {
   readFileHandleBounded,
   resolvePathPrefixSync,
   tempFile,
-} from "@paleoclaw/fs-safe/advanced";
-export { readFileWindowFully } from "@paleoclaw/fs-safe/advanced";
-export { inspectPathPermissions } from "@paleoclaw/fs-safe/permissions";
+} from "@openclaw/fs-safe/advanced";
+export { readFileWindowFully } from "@openclaw/fs-safe/advanced";
+export { inspectPathPermissions } from "@openclaw/fs-safe/permissions";
 export { writeFileWindowFully } from "../infra/file-descriptor.js";
 export { openRootFile } from "../infra/boundary-file-read.js";
 export {
@@ -46,10 +46,10 @@ export const removePathWithinRoot: (params: {
   recursive?: boolean;
   force?: boolean;
 }) => Promise<void> = removePathWithinRootCore;
-export { basenameFromMediaSource, safeFileURLToPath } from "@paleoclaw/fs-safe/advanced";
+export { basenameFromMediaSource, safeFileURLToPath } from "@openclaw/fs-safe/advanced";
 export { isPathInside, isPathStrictlyInside } from "../infra/path-guards.js";
 export { getFileWatchCapacityCode } from "../infra/fs-watch-errors.js";
-export type { Root as ObservationRoot } from "@paleoclaw/fs-safe/root";
+export type { Root as ObservationRoot } from "@openclaw/fs-safe/root";
 export {
   watch,
   type WatchEntry,
@@ -58,7 +58,7 @@ export {
   type WatchOptions,
   type WatchScope,
   type WatchSubscription,
-} from "@paleoclaw/fs-safe/watch";
+} from "@openclaw/fs-safe/watch";
 export {
   resolveFsObservationMode,
   resolveFsObservationIntervalMs,

@@ -5,8 +5,8 @@ import {
   probePathCaseInsensitiveSync,
   probePathSuffixAliasesSync,
   resolvePathPrefixSync,
-} from "@paleoclaw/fs-safe/advanced";
-import { isNotFoundPathError, isPathInside } from "@paleoclaw/fs-safe/path";
+} from "@openclaw/fs-safe/advanced";
+import { isNotFoundPathError, isPathInside } from "@openclaw/fs-safe/path";
 import type { OpenClawConfig } from "../config/types.openclaw.js";
 import { readClientCredentialReceipt } from "../infra/client-credential-readiness.js";
 import {

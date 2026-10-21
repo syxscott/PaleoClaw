@@ -1,7 +1,7 @@
 import "paleoclaw/plugin-sdk/compiled-subprocess-testing";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { __setFsSafeTestHooksForTest } from "@paleoclaw/fs-safe/test-hooks";
+import { __setFsSafeTestHooksForTest } from "@openclaw/fs-safe/test-hooks";
 import { useAutoCleanupTempDirTracker } from "paleoclaw/plugin-sdk/test-env";
 import { afterEach, describe, expect, it } from "vitest";
 import {

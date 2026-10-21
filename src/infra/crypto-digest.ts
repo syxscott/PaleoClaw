@@ -1,6 +1,6 @@
 import { createHash, hash } from "node:crypto";
 import { closeSync, createReadStream, openSync } from "node:fs";
-import { sha256FileSync as sha256FileSyncBase } from "@paleoclaw/fs-safe/durability";
+import { sha256FileSync as sha256FileSyncBase } from "@openclaw/fs-safe/durability";
 
 export { sha256Hex, sha256HexPrefixCore } from "@paleoclaw/normalization-core/node-crypto";
 

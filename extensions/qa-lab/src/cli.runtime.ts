@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { OPENCLAW_CRABLINE_DEFAULT_CHANNEL } from "@paleoclaw/crabline";
+import { OPENCLAW_CRABLINE_DEFAULT_CHANNEL } from "@openclaw/crabline";
 import { formatErrorMessage } from "paleoclaw/plugin-sdk/error-runtime";
 import { parseBooleanValue, uniqueStrings } from "paleoclaw/plugin-sdk/string-coerce-runtime";
 import { resolveQaParityPackScenarioIds } from "./agentic-parity.js";

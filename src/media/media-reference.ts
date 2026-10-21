@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { safeFileURLToPath } from "@paleoclaw/fs-safe/advanced";
+import { safeFileURLToPath } from "@openclaw/fs-safe/advanced";
 import { hasHttpUrlPrefix } from "@paleoclaw/net-policy/url-protocol";
 import { resolveUserPath } from "../utils.js";
 import {

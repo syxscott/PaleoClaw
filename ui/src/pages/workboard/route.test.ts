@@ -1,4 +1,4 @@
-import type { RouteLocation, RouterHistory } from "@paleoclaw/uirouter";
+import type { RouteLocation, RouterHistory } from "@openclaw/uirouter";
 import { describe, expect, it, onTestFinished, vi } from "vitest";
 import { createDeferred } from "../../../../test/helpers/promise.js";
 import { createApplicationRouter, startApplicationRouter, type RouteId } from "../../app-routes.ts";

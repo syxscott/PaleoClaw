@@ -1,6 +1,6 @@
 import fsp from "node:fs/promises";
 import path from "node:path";
-import { pathScope } from "@paleoclaw/fs-safe/advanced";
+import { pathScope } from "@openclaw/fs-safe/advanced";
 import { isRecord } from "@paleoclaw/normalization-core/record-coerce";
 import { readNonBlankString, readStringValue } from "@paleoclaw/normalization-core/string-coerce";
 import {

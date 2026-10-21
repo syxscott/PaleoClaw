@@ -1,28 +1,20 @@
+import { normalizeUniqueStringEntries } from "paleoclaw/plugin-sdk/string-coerce-runtime";
 import {
-  emptyPluginConfigSchema,
-  type OpenClawPluginApi,
+  definePluginEntry,
   type ProviderAuthContext,
   type ProviderAuthResult,
-} from "paleoclaw/plugin-sdk/copilot-proxy";
+} from "./runtime-api.js";
 
 const DEFAULT_BASE_URL = "http://localhost:3000/v1";
 const DEFAULT_API_KEY = "n/a";
 const DEFAULT_CONTEXT_WINDOW = 128_000;
 const DEFAULT_MAX_TOKENS = 8192;
 const DEFAULT_MODEL_IDS = [
-  "gpt-5.2",
-  "gpt-5.2-codex",
-  "gpt-5.1",
-  "gpt-5.1-codex",
-  "gpt-5.1-codex-max",
   "gpt-5-mini",
   "claude-opus-4.6",
-  "claude-opus-4.5",
-  "claude-sonnet-4.5",
-  "claude-haiku-4.5",
-  "gemini-3-pro",
+  "claude-opus-4.7",
+  "claude-sonnet-4.6",
   "gemini-3-flash",
-  "grok-code-fast-1",
 ] as const;
 
 function normalizeBaseUrl(value: string): string {
@@ -30,32 +22,17 @@ function normalizeBaseUrl(value: string): string {
   if (!trimmed) {
     return DEFAULT_BASE_URL;
   }
-  let normalized = trimmed;
-  while (normalized.endsWith("/")) {
-    normalized = normalized.slice(0, -1);
-  }
-  if (!normalized.endsWith("/v1")) {
-    normalized = `${normalized}/v1`;
-  }
-  return normalized;
+  const normalized = trimmed.replace(/\/+$/, "");
+  return normalized.endsWith("/v1") ? normalized : `${normalized}/v1`;
 }
 
 function validateBaseUrl(value: string): string | undefined {
   const normalized = normalizeBaseUrl(value);
-  try {
-    new URL(normalized);
-  } catch {
-    return "Enter a valid URL";
-  }
-  return undefined;
+  return URL.canParse(normalized) ? undefined : "Enter a valid URL";
 }
 
 function parseModelIds(input: string): string[] {
-  const parsed = input
-    .split(/[\n,]/)
-    .map((model) => model.trim())
-    .filter(Boolean);
-  return Array.from(new Set(parsed));
+  return normalizeUniqueStringEntries(input.split(/[\n,]/));
 }
 
 function buildModelDefinition(modelId: string) {
@@ -71,12 +48,11 @@ function buildModelDefinition(modelId: string) {
   };
 }
 
-const copilotProxyPlugin = {
+export default definePluginEntry({
   id: "copilot-proxy",
   name: "Copilot Proxy",
   description: "Local Copilot Proxy (VS Code LM) provider plugin",
-  configSchema: emptyPluginConfigSchema(),
-  register(api: OpenClawPluginApi) {
+  register(api) {
     api.registerProvider({
       id: "copilot-proxy",
       label: "Copilot Proxy",
@@ -147,8 +123,14 @@ const copilotProxyPlugin = {
           },
         },
       ],
+      wizard: {
+        setup: {
+          choiceId: "copilot-proxy",
+          choiceLabel: "Copilot Proxy",
+          choiceHint: "Configure base URL + model ids",
+          methodId: "local",
+        },
+      },
     });
   },
-};
-
-export default copilotProxyPlugin;
+});

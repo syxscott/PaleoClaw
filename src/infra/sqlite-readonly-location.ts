@@ -6,7 +6,7 @@ import {
   copyRootFileSync,
   sameFileContentsSync,
   sameFileIdentity,
-} from "@paleoclaw/fs-safe/advanced";
+} from "@openclaw/fs-safe/advanced";
 import { coerceErrorMessage, extractErrorCode } from "@paleoclaw/normalization-core/error-coercion";
 import { openNodeSqliteDatabase } from "./node-sqlite.js";
 import { backupNodeSqliteDatabase } from "./sqlite-backup.js";

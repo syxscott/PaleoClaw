@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import fsSync, { unlinkSync } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { root as fsSafeRoot, type Root } from "@paleoclaw/fs-safe/root";
+import { root as fsSafeRoot, type Root } from "@openclaw/fs-safe/root";
 import { describe, expect, it, vi } from "vitest";
 import { createDeferred } from "../../test/helpers/promise.js";
 import { withTestDir } from "../test-helpers/temp-dir.js";

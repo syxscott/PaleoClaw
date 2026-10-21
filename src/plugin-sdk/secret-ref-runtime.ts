@@ -3,8 +3,8 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { createInterface } from "node:readline/promises";
-import { FsSafeError } from "@paleoclaw/fs-safe/errors";
-import { createSecretFileAtomic } from "@paleoclaw/fs-safe/secret";
+import { FsSafeError } from "@openclaw/fs-safe/errors";
+import { createSecretFileAtomic } from "@openclaw/fs-safe/secret";
 import { isRecord } from "@paleoclaw/normalization-core/record-coerce";
 import { normalizeOptionalString } from "@paleoclaw/normalization-core/string-coerce";
 import type { OpenClawConfig } from "../config/types.openclaw.js";

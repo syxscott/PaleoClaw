@@ -18,7 +18,7 @@ async function cloneRefsDirectory(
   source: string,
   destination: string,
   options: WorktreeFilesystemOptions,
-  openRoot: typeof import("@paleoclaw/fs-safe/root").root,
+  openRoot: typeof import("@openclaw/fs-safe/root").root,
 ): Promise<void> {
   const stats = await fs.lstat(source);
   if (!stats.isDirectory()) {
@@ -82,7 +82,7 @@ export async function detectWorktreeFilesystemBackend(
         await fs.mkdir(destination);
       },
       async cloneTemplate(source, destination, cloneOptions) {
-        const { root } = await import("@paleoclaw/fs-safe/root");
+        const { root } = await import("@openclaw/fs-safe/root");
         await cloneRefsDirectory(source, destination, cloneOptions, root);
       },
     };

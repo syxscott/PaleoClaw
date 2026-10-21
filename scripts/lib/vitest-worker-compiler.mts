@@ -116,8 +116,8 @@ async function compileVitestWorkerArtifacts(directory: string): Promise<void> {
   const outDir = path.join(directory, "dist");
   const shouldBundleWorkspaceDependency = (id: string) =>
     (id.startsWith("@paleoclaw/") || id.startsWith("paleoclaw/")) &&
-    id !== "@paleoclaw/fs-safe" &&
-    !id.startsWith("@paleoclaw/fs-safe/") &&
+    id !== "@openclaw/fs-safe" &&
+    !id.startsWith("@openclaw/fs-safe/") &&
     id !== "@paleoclaw/proc-safe" &&
     !id.startsWith("@paleoclaw/proc-safe/");
   const createInputPlugins = (outputPrefix: string) => {

@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { isPathInside } from "@paleoclaw/fs-safe/path";
+import { isPathInside } from "@openclaw/fs-safe/path";
 import type { SessionEntry } from "../config/sessions/types.js";
 import { resolveUserPath } from "../utils.js";
 import { CronSessionLifecycleClaimError } from "./run-authority.js";

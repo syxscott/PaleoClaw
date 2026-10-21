@@ -1,13 +1,13 @@
 import fs, { type BigIntStats } from "node:fs";
 import path from "node:path";
-import { openRootFileSync } from "@paleoclaw/fs-safe/advanced";
-import { sha256FileSync } from "@paleoclaw/fs-safe/durability";
+import { openRootFileSync } from "@openclaw/fs-safe/advanced";
+import { sha256FileSync } from "@openclaw/fs-safe/durability";
 
 export {
   copyFileHandle,
   overwriteFileHandle,
   writeFileWindowFully,
-} from "@paleoclaw/fs-safe/advanced";
+} from "@openclaw/fs-safe/advanced";
 
 export type FileMutationFingerprint = Pick<
   BigIntStats,

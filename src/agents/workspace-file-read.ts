@@ -1,6 +1,6 @@
 import syncFs from "node:fs";
 import path from "node:path";
-import { sameFileIdentity, type FileIdentityStat } from "@paleoclaw/fs-safe/advanced";
+import { sameFileIdentity, type FileIdentityStat } from "@openclaw/fs-safe/advanced";
 import { openRootFile } from "../infra/boundary-file-read.js";
 import { hasErrnoCode } from "../infra/errno.js";
 import { retryAsync } from "../infra/retry.js";

@@ -2,9 +2,9 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import fs from "node:fs";
 import path from "node:path";
-import { resolvePathViaExistingAncestorSync as resolvePathViaExistingAncestorSyncRaw } from "@paleoclaw/fs-safe/advanced";
-import { safeRealpathSync } from "@paleoclaw/fs-safe/path";
-export { safeRealpathSync } from "@paleoclaw/fs-safe/path";
+import { resolvePathViaExistingAncestorSync as resolvePathViaExistingAncestorSyncRaw } from "@openclaw/fs-safe/advanced";
+import { safeRealpathSync } from "@openclaw/fs-safe/path";
+export { safeRealpathSync } from "@openclaw/fs-safe/path";
 
 // Bun follow-up: Remove this stable frame after fs-safe drops its N-API realpath
 // workaround for oven-sh/bun#42374. Its process-lived callback must not retain
@@ -43,4 +43,4 @@ export function resolveIdentityPathViaExistingAncestorSync(targetPath: string): 
 
 // Boundary path resolution keeps alias expansion and realpath checks in one
 // shared contract before file IO happens.
-export { resolveRootPath, resolveRootPathSync } from "@paleoclaw/fs-safe/advanced";
+export { resolveRootPath, resolveRootPathSync } from "@openclaw/fs-safe/advanced";

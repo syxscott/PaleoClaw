@@ -2,8 +2,8 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { isDeepStrictEqual } from "node:util";
-import { findExistingAncestor } from "@paleoclaw/fs-safe/advanced";
-import { isNotFoundPathError } from "@paleoclaw/fs-safe/path";
+import { findExistingAncestor } from "@openclaw/fs-safe/advanced";
+import { isNotFoundPathError } from "@openclaw/fs-safe/path";
 import { resolveAgentDir } from "../agents/agent-scope-config.js";
 import { resolveDefaultAgentId } from "../agents/agent-scope.js";
 import { clearRuntimeAuthProfileStoreSnapshot } from "../agents/auth-profiles/store.js";

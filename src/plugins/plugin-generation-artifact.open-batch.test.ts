@@ -1,13 +1,13 @@
 import fs from "node:fs";
 import path from "node:path";
-import * as fsSafe from "@paleoclaw/fs-safe/advanced";
+import * as fsSafe from "@openclaw/fs-safe/advanced";
 import { afterEach, expect, it, vi } from "vitest";
 import { useAutoCleanupTempDirTracker } from "../../test/helpers/temp-dir.js";
 import { capturePluginGenerationArtifact } from "./plugin-generation-artifact.js";
 import { withPluginSourceCaptureDirectory } from "./plugin-package-metadata-capture.js";
 
-vi.mock("@paleoclaw/fs-safe/advanced", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@paleoclaw/fs-safe/advanced")>()),
+vi.mock("@openclaw/fs-safe/advanced", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@openclaw/fs-safe/advanced")>()),
 }));
 
 const temp = useAutoCleanupTempDirTracker(afterEach);

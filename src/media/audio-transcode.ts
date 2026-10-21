@@ -1,5 +1,5 @@
 import path from "node:path";
-import { tempWorkspaceSync, withTempWorkspace } from "@paleoclaw/fs-safe/temp";
+import { tempWorkspaceSync, withTempWorkspace } from "@openclaw/fs-safe/temp";
 import { basenameFromAnyPath } from "@paleoclaw/media-core/file-name";
 import { writeExternalFileWithinRoot } from "../infra/fs-safe.js";
 import { resolvePreferredOpenClawTmpDir } from "../infra/tmp-paleoclaw-dir.js";

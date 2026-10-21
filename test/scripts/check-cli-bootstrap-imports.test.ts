@@ -159,7 +159,7 @@ describe("check-cli-bootstrap-imports", () => {
       "dist/native-hook-relay/entry.js":
         'import "../client.js";\nvoid import("../gateway-call.js");\n',
       "dist/client.js":
-        'import "kysely";\nimport "@paleoclaw/fs-safe/config";\nimport "@paleoclaw/fs-safe/advanced";\nimport "@paleoclaw/proc-safe/errors";\nimport "@paleoclaw/proc-safe/identity";\n',
+        'import "kysely";\nimport "@openclaw/fs-safe/config";\nimport "@openclaw/fs-safe/advanced";\nimport "@paleoclaw/proc-safe/errors";\nimport "@paleoclaw/proc-safe/identity";\n',
     });
     expect(relayErrors({ rootDir: root })).toEqual([]);
   });
@@ -292,7 +292,7 @@ describe("check-cli-bootstrap-imports", () => {
         'export * from "export-all";',
         'export { value } from "export-named";',
         'createRequire(import.meta.url)("../../package.json");',
-        'moduleNamespace.createRequire(import.meta.url)("@paleoclaw/fs-safe/temp");',
+        'moduleNamespace.createRequire(import.meta.url)("@openclaw/fs-safe/temp");',
         'import "final-external"',
       ].join("\n"),
       "github-exec-launcher.mjs": 'import "yaml";\n',
@@ -305,7 +305,7 @@ describe("check-cli-bootstrap-imports", () => {
     expectWorkerErrors(root, [
       importError("github-exec-launcher", "yaml"),
       importError("service-child-group-anchor", "signal-exit"),
-      ...`../../package.json ./lazy.mjs @paleoclaw/fs-safe/temp bun:ffi-extra escaped export-all
+      ...`../../package.json ./lazy.mjs @openclaw/fs-safe/temp bun:ffi-extra escaped export-all
 export-named final-external json5 koffi left-pad nested numbered optional parenthesized template-expression`
         .split(/\s+/u)
         .map((specifier) => importError("worker", specifier)),

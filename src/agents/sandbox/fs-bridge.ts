@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { promisify } from "node:util";
-import { GUEST_FILESYSTEM_CREATE_EXISTS_EXIT_CODE } from "@paleoclaw/fs-safe/guest";
+import { GUEST_FILESYSTEM_CREATE_EXISTS_EXIT_CODE } from "@openclaw/fs-safe/guest";
 import { normalizeOptionalLowercaseString } from "@paleoclaw/normalization-core/string-coerce";
 import { readFileDescriptorBounded } from "../../infra/boundary-file-read.js";
 import { parseDirectoryEntries, type DirectoryEntry } from "../../infra/directory-entries.js";

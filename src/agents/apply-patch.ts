@@ -5,7 +5,7 @@
 import type { Stats } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { PATH_ALIAS_POLICIES, type PathAliasPolicy } from "@paleoclaw/fs-safe/advanced";
+import { PATH_ALIAS_POLICIES, type PathAliasPolicy } from "@openclaw/fs-safe/advanced";
 import { Type } from "typebox";
 import { createAbortError } from "../infra/abort-signal.js";
 import {

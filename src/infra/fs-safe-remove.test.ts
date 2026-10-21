@@ -1,12 +1,12 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { setImmediate } from "node:timers/promises";
-import { root as fsSafeRoot, type Root } from "@paleoclaw/fs-safe/root";
+import { root as fsSafeRoot, type Root } from "@openclaw/fs-safe/root";
 import {
   __setFsSafeTestHooksForTest,
   holdWindowsSharingLock,
   setWindowsFileAttributes,
-} from "@paleoclaw/fs-safe/test-hooks";
+} from "@openclaw/fs-safe/test-hooks";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createDeferred } from "../../test/helpers/promise.js";
 import { createRebindableDirectoryAlias } from "../test-utils/symlink-rebind-race.js";

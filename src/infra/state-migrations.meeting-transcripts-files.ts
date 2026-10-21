@@ -4,7 +4,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { createInterface } from "node:readline";
 import type { DatabaseSync } from "node:sqlite";
-import { assertNoSymlinkParents } from "@paleoclaw/fs-safe/advanced";
+import { assertNoSymlinkParents } from "@openclaw/fs-safe/advanced";
 import { isRecord } from "@paleoclaw/normalization-core/record-coerce";
 import type {
   TranscriptSessionDescriptor,

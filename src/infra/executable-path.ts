@@ -1,7 +1,7 @@
 // Resolves executable paths from PATH and platform-specific install locations.
 import fs from "node:fs";
 import path from "node:path";
-import { safeStatSync } from "@paleoclaw/fs-safe/path";
+import { safeStatSync } from "@openclaw/fs-safe/path";
 import { normalizeLowercaseStringOrEmpty } from "@paleoclaw/normalization-core/string-coerce";
 import { expandHomePrefix } from "./home-dir.js";
 import { pruneMapToMaxSize } from "./map-size.js";

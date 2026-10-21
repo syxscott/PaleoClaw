@@ -84,7 +84,7 @@ describe("diagnostic support redaction", () => {
   it.each([
     ['"dist/index.js": fields=size,mtimeNs,ctimeNs,sha256', true],
     ['"node_modules/.package-lock.json": fields=added', true],
-    ['"node_modules/@paleoclaw/fs-safe/index.js": fields=sha256', true],
+    ['"node_modules/@openclaw/fs-safe/index.js": fields=sha256', true],
     ['".": fields=dev:ino,mode', true],
     ['"/private/state.js": fields=sha256', false],
     ['"../private/state.js": fields=sha256', false],

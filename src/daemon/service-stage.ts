@@ -1,8 +1,8 @@
 /** Native writer facts are evidence, never serialized lifecycle authority. */
 import fs from "node:fs/promises";
 import path from "node:path";
-import { readRegularFile, sameFileIdentity } from "@paleoclaw/fs-safe/advanced";
-import { replaceFileAtomic } from "@paleoclaw/fs-safe/atomic";
+import { readRegularFile, sameFileIdentity } from "@openclaw/fs-safe/advanced";
+import { replaceFileAtomic } from "@openclaw/fs-safe/atomic";
 import { sha256Hex } from "@paleoclaw/normalization-core/node-crypto";
 import { z } from "zod";
 import { ignoreMissingPath } from "../infra/errno.js";

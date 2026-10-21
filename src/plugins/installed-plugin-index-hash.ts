@@ -1,5 +1,5 @@
 import fs from "node:fs";
-import { safeStatSync } from "@paleoclaw/fs-safe/path";
+import { safeStatSync } from "@openclaw/fs-safe/path";
 import { sha256Hex } from "@paleoclaw/normalization-core/node-crypto";
 import { stableStringify } from "@paleoclaw/normalization-core/stable-stringify";
 

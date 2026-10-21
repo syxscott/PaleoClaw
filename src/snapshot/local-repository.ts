@@ -7,7 +7,7 @@ import {
   assertDirectoryIdentitySync as assertExactDirectoryIdentitySync,
   sameFileIdentity,
   type FileIdentityStat,
-} from "@paleoclaw/fs-safe/advanced";
+} from "@openclaw/fs-safe/advanced";
 import { loadSqliteVecExtension } from "../infra/database-engine/sqlite-vec.js";
 import {
   ensureDurableDirectory,

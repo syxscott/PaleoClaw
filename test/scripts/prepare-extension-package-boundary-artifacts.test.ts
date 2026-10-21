@@ -153,7 +153,7 @@ function createPreparationCli(workload = "", preparationCheckpoint = "") {
       "run-tsgo.mts",
       "run-tsgo.mjs",
     ],
-    { dependencies: ["tsx", "@paleoclaw/fs-safe", "@paleoclaw/proc-safe"] },
+    { dependencies: ["tsx", "@openclaw/fs-safe", "@paleoclaw/proc-safe"] },
   );
   write("src/shared/deferred.ts", fs.readFileSync("src/shared/deferred.ts", "utf8"));
   wrapScript(

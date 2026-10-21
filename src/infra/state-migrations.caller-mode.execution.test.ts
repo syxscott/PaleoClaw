@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
-import * as fsSafeAdvanced from "@paleoclaw/fs-safe/advanced";
+import * as fsSafeAdvanced from "@openclaw/fs-safe/advanced";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { OpenClawConfig } from "../config/types.openclaw.js";
 let { resolveDaemonRuntimePinStorePath, withDaemonRuntimePinStore } =
@@ -40,8 +40,8 @@ let { resolveLegacyProfileWorkspaceMigrationPaths } =
   await import("./state-migrations.state-dir.js");
 import type { LegacyStateMigrationStepReceipt } from "./state-migrations.types.js";
 
-vi.mock("@paleoclaw/fs-safe/advanced", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@paleoclaw/fs-safe/advanced")>()),
+vi.mock("@openclaw/fs-safe/advanced", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@openclaw/fs-safe/advanced")>()),
 }));
 
 const tempDirs = createTrackedTempDirs();

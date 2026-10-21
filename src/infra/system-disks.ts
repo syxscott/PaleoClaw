@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import os from "node:os";
-import { withTimeout } from "@paleoclaw/fs-safe/advanced";
+import { withTimeout } from "@openclaw/fs-safe/advanced";
 import { decodeMountInfoPath } from "@paleoclaw/normalization-core/mountinfo-path";
 import { z } from "zod";
 import { runCommandWithTimeout } from "../process/exec.js";

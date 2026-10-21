@@ -17,8 +17,8 @@ const storeSpy = vi.hoisted(() => ({
   onMove: null as ((from: string, to: string, rootDir: string) => void) | null,
 }));
 
-vi.mock("@paleoclaw/fs-safe/store", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@paleoclaw/fs-safe/store")>();
+vi.mock("@openclaw/fs-safe/store", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@openclaw/fs-safe/store")>();
   return {
     ...actual,
     fileStore: (options: Parameters<typeof actual.fileStore>[0]) => {

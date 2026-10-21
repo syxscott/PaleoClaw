@@ -1,4 +1,4 @@
-import { sanitizeUntrustedFileName } from "@paleoclaw/fs-safe/advanced";
+import { sanitizeUntrustedFileName } from "@openclaw/fs-safe/advanced";
 import { normalizeOptionalString } from "@paleoclaw/normalization-core/string-coerce";
 import { escapeXml } from "../shared/xml.js";
 

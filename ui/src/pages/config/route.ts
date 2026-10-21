@@ -1,5 +1,5 @@
-import type { RouteLocation } from "@paleoclaw/uirouter";
-import { definePage, redirect } from "@paleoclaw/uirouter";
+import type { RouteLocation } from "@openclaw/uirouter";
+import { definePage, redirect } from "@openclaw/uirouter";
 import { pathForRoute, routePageSpec, type RouteId } from "../../app-route-paths.ts";
 import type { ApplicationContext } from "../../app/context.ts";
 import { isNativeEmbedHost } from "../../app/native-web-chrome.ts";

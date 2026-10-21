@@ -3,8 +3,8 @@ import {
   createDirectorySync,
   createFileSync,
   type OwnedFileDescriptorSync,
-} from "@paleoclaw/fs-safe/advanced";
-import { FsSafeError } from "@paleoclaw/fs-safe/errors";
+} from "@openclaw/fs-safe/advanced";
+import { FsSafeError } from "@openclaw/fs-safe/errors";
 import { markPrivateDirectoryCreationRefused } from "./private-directory-creation.js";
 
 export function createPrivateWindowsDirectory(directoryPath: string): void {

@@ -1,4 +1,4 @@
-import { definePage } from "@paleoclaw/uirouter";
+import { definePage } from "@openclaw/uirouter";
 import { routePageSpec } from "../../app-route-paths.ts";
 import type { ApplicationContext } from "../../app/context.ts";
 import { gatewayPresentationScope } from "../../app/gateway-presentation-scope.ts";

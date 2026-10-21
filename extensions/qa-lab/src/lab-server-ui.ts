@@ -7,7 +7,7 @@ import path from "node:path";
 import type { Duplex } from "node:stream";
 import tls from "node:tls";
 import { fileURLToPath, format as formatUrl } from "node:url";
-import { walkDirectorySync } from "@paleoclaw/fs-safe/walk";
+import { walkDirectorySync } from "@openclaw/fs-safe/walk";
 import { normalizeLowercaseStringOrEmpty } from "paleoclaw/plugin-sdk/string-coerce-runtime";
 import { writeError } from "./bus-server.js";
 

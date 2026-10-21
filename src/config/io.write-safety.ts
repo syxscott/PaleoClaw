@@ -3,7 +3,7 @@ import path from "node:path";
 import {
   replaceFileAtomicSync,
   type ReplaceFileAtomicDestinationState,
-} from "@paleoclaw/fs-safe/atomic";
+} from "@openclaw/fs-safe/atomic";
 import { asFiniteNumber } from "@paleoclaw/normalization-core/number-coercion";
 import { resolvePathViaExistingAncestorSync } from "../infra/boundary-path.js";
 import { isMissingPathError } from "../infra/errors.js";

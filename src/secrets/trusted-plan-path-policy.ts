@@ -1,4 +1,4 @@
-import type { OwnerAndDaclResult } from "@paleoclaw/fs-safe/permissions";
+import type { OwnerAndDaclResult } from "@openclaw/fs-safe/permissions";
 
 const TRUSTED_INSTALLER = "s-1-5-80-956008885-3418522649-1831038044-1853292631-2271478464";
 const TRUSTED_OWNERS = new Set(["s-1-5-18", "s-1-5-32-544"]);

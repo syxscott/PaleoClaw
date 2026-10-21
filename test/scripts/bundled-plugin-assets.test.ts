@@ -61,7 +61,7 @@ it("reuses both Canvas dialects across candidates and invalidates changed inputs
     ]) {
       write(file, fs.readFileSync(path.resolve(file), "utf8"));
     }
-    const fsSafe = "node_modules/@paleoclaw/fs-safe";
+    const fsSafe = "node_modules/@openclaw/fs-safe";
     fs.mkdirSync(path.dirname(path.join(root, fsSafe)), { recursive: true });
     fs.symlinkSync(path.resolve(fsSafe), path.join(root, fsSafe), "junction");
     for (const module of [

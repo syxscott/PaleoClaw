@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
-import * as replaceFile from "@paleoclaw/fs-safe/atomic";
+import * as replaceFile from "@openclaw/fs-safe/atomic";
 import { expect, it, vi } from "vitest";
 import { SessionManager } from "../agents/sessions/session-manager.js";
 import { readSessionTranscriptHistoryEventPage as historyPage } from "../config/sessions/session-accessor.sqlite-history-events.js";
@@ -38,8 +38,8 @@ import {
 } from "./doctor-session-sqlite.test-support.js";
 import { withDoctorSqliteMaintenanceLock } from "./doctor-sqlite-maintenance-lock.js";
 
-vi.mock("@paleoclaw/fs-safe/atomic", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@paleoclaw/fs-safe/atomic")>()),
+vi.mock("@openclaw/fs-safe/atomic", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@openclaw/fs-safe/atomic")>()),
 }));
 
 const { createLegacyStore, createVerifiedRecoveryStore } = useDoctorSessionSqliteTestFixture();

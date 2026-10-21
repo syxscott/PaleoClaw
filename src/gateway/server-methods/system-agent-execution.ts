@@ -1,4 +1,4 @@
-import { createAsyncLock } from "@paleoclaw/fs-safe/advanced";
+import { createAsyncLock } from "@openclaw/fs-safe/advanced";
 import {
   getRuntimeConfigAppliedHash,
   hashRuntimeConfigValue,

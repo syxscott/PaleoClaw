@@ -372,7 +372,7 @@ describe("native check launchers in paths with spaces", () => {
           ],
           {
             compiler: false,
-            dependencies: ["tsx", "@paleoclaw/fs-safe", "json5", "p-map", "@paleoclaw/proc-safe"],
+            dependencies: ["tsx", "@openclaw/fs-safe", "json5", "p-map", "@paleoclaw/proc-safe"],
           },
         );
         const compiler = script === "run-tsgo-core-test-shards.mts";
@@ -1026,7 +1026,7 @@ describe.skipIf(process.platform === "win32")("dist artifact ownership", () => {
       const root = createCheckout();
       installScripts(root, ["run-tsgo-core-test-shards.mts", "run-tsgo.mts"], {
         compiler: false,
-        dependencies: ["@paleoclaw/fs-safe"],
+        dependencies: ["@openclaw/fs-safe"],
       });
       fs.unlinkSync(path.join(root, "scripts/tsx.mjs"));
       const compiler = executable(
@@ -1074,7 +1074,7 @@ describe.skipIf(process.platform === "win32")("dist artifact ownership", () => {
           "prepare-extension-package-boundary-artifacts.mts",
           "compile-extension-boundary.mts",
         ],
-        { dependencies: ["tsx", "@paleoclaw/fs-safe", "json5"] },
+        { dependencies: ["tsx", "@openclaw/fs-safe", "json5"] },
       );
       write(root, "tsconfig.json", "{}");
       write(

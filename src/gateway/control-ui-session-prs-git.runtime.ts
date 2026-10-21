@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import nodePath from "node:path";
-import { readRegularFile } from "@paleoclaw/fs-safe/advanced";
+import { readRegularFile } from "@openclaw/fs-safe/advanced";
 import { unavailableDiffRevision, type DiffReadTiming } from "../infra/diff-read-timing.js";
 import { GitCommandTimeoutError, requireGitCommandOutput } from "../infra/git-exec.js";
 import type { GitReadOperations } from "../infra/git-read-operations.js";

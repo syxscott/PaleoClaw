@@ -3,7 +3,7 @@ import { isUtf8 } from "node:buffer";
 import syncFs from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { readRegularFile } from "@paleoclaw/fs-safe/advanced";
+import { readRegularFile } from "@openclaw/fs-safe/advanced";
 import { sha256Hex } from "@paleoclaw/normalization-core/node-crypto";
 import { note } from "../../packages/terminal-core/src/note.js";
 import { DEFAULT_AGENTS_FILENAME, DEFAULT_TOOLS_FILENAME } from "../agents/workspace.js";

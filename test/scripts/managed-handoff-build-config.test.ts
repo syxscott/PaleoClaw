@@ -212,7 +212,7 @@ it.each(
     );
     const helperName = "windows-security-helper.exe";
     const publishedHelper = readFileSync(
-      path.join(packageDir("@paleoclaw/fs-safe"), "dist", helperName),
+      path.join(packageDir("@openclaw/fs-safe"), "dist", helperName),
     );
     expect(readFileSync(path.join(outDir, helperName))).toEqual(publishedHelper);
     const packageFiles = globSync("**/*", { cwd: outDir })
@@ -247,7 +247,7 @@ it.each(
       expect(manifest.outputs[helperName]).toBe(helperHash);
       if (manifest.cacheSignature) {
         for (const file of [`dist/${helperName}`, "package.json"]) {
-          const source = realpathSync(path.join(packageDir("@paleoclaw/fs-safe"), file));
+          const source = realpathSync(path.join(packageDir("@openclaw/fs-safe"), file));
           expect(manifest.inputs[source]).toBe(sha256(readFileSync(source)));
         }
       }

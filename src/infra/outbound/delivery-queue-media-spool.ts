@@ -2,7 +2,7 @@
 // whose producer-owned source may disappear before retry.
 import fs from "node:fs/promises";
 import path from "node:path";
-import { fileStore } from "@paleoclaw/fs-safe/store";
+import { fileStore } from "@openclaw/fs-safe/store";
 import { isPassThroughRemoteMediaSource } from "@paleoclaw/media-core/media-source-url";
 import { hasNonEmptyString as isNonEmptyMediaSource } from "@paleoclaw/normalization-core/string-coerce";
 import type { ReplyPayload } from "../../auto-reply/types.js";

@@ -1,9 +1,9 @@
 import { createHash } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { FsSafeError } from "@paleoclaw/fs-safe/errors";
-import { root, type Root } from "@paleoclaw/fs-safe/root";
-import type { WatchEntry, WatchScope } from "@paleoclaw/fs-safe/watch";
+import { FsSafeError } from "@openclaw/fs-safe/errors";
+import { root, type Root } from "@openclaw/fs-safe/root";
+import type { WatchEntry, WatchScope } from "@openclaw/fs-safe/watch";
 import { admitObservationRoot, observationPrefixKind } from "../src/infra/fs-observation-root.ts";
 import { runTasksWithConcurrency } from "../src/utils/run-with-concurrency.ts";
 import { runNodeConfigFiles } from "./run-node-watch-paths.mts";

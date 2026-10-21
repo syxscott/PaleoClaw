@@ -5,7 +5,7 @@ import {
   sameFileIdentity,
   type ExactFileIdentity,
   type FileIdentityStat,
-} from "@paleoclaw/fs-safe/advanced";
+} from "@openclaw/fs-safe/advanced";
 import { syncDirectoryIfSupported } from "../infra/directory-durability.js";
 import { isMissingPathError } from "../infra/errors.js";
 import { writeFileWindowFully } from "../infra/file-descriptor.js";

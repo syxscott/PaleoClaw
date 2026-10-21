@@ -1,5 +1,5 @@
 import fs from "node:fs/promises";
-import { root as fsRoot, type Root } from "@paleoclaw/fs-safe/root";
+import { root as fsRoot, type Root } from "@openclaw/fs-safe/root";
 import { assert, describe, expect, it, vi } from "vitest";
 import { getRefsFullClusterLcns } from "../../../test/helpers/refs.js";
 import { extractErrorCode } from "../../infra/errors.js";

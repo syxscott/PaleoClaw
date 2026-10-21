@@ -1,7 +1,7 @@
 import fsSync, { type Stats } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { readOwnerAndDaclBatch, type OwnerAndDaclResult } from "@paleoclaw/fs-safe/permissions";
+import { readOwnerAndDaclBatch, type OwnerAndDaclResult } from "@openclaw/fs-safe/permissions";
 import { trustedWindowsPlanPathFailure } from "./trusted-plan-path-policy.js";
 
 async function readShebangInterpreter(targetPath: string): Promise<string | undefined> {

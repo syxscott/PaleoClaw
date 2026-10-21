@@ -275,7 +275,7 @@ Retention copies plugin manifests and files inspected by plugin safety checks,
 so retaining the updater does not make the checkout's plugins fail hardlink
 validation. Other runtime files remain hardlinked when supported.
 
-Updaters using `@paleoclaw/fs-safe` 0.23.1 or later rely on its guarded byte-copy
+Updaters using `@openclaw/fs-safe` 0.23.1 or later rely on its guarded byte-copy
 fallback when a container or filesystem refuses file cloning. Native filesystem
 safeguards, source identity checks, file modes, snapshot verification, and SQLite
 byte-copy space admission remain active. Genuine I/O errors still fail the copy.

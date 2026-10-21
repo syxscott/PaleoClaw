@@ -2,7 +2,7 @@ import { AsyncLocalStorage } from "node:async_hooks";
 import path from "node:path";
 import type { DatabaseSync } from "node:sqlite";
 import { isMainThread, threadId } from "node:worker_threads";
-import { normalizeWindowsPathForComparison } from "@paleoclaw/fs-safe/path";
+import { normalizeWindowsPathForComparison } from "@openclaw/fs-safe/path";
 import { resolveGlobalSingleton } from "../shared/global-singleton.js";
 
 export type SqliteReaderOwner = {

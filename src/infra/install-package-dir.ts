@@ -3,11 +3,11 @@ import { randomUUID } from "node:crypto";
 import fsSync from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { assertDirectoryIdentitySync, readDirectoryIdentity } from "@paleoclaw/fs-safe/advanced";
+import { assertDirectoryIdentitySync, readDirectoryIdentity } from "@openclaw/fs-safe/advanced";
 import {
   movePathWithCopyFallback,
   type MovePathPublicationReceipt,
-} from "@paleoclaw/fs-safe/atomic";
+} from "@openclaw/fs-safe/atomic";
 import { isRecord as isObjectRecord } from "@paleoclaw/normalization-core/record-coerce";
 import { runCommandWithTimeout } from "../process/exec.js";
 import { hasErrnoCode } from "./errno.js";

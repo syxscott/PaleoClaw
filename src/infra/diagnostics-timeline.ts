@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 import { performance } from "node:perf_hooks";
-import { appendRegularFileSync } from "@paleoclaw/fs-safe/advanced";
+import { appendRegularFileSync } from "@openclaw/fs-safe/advanced";
 import type { OpenClawConfig } from "../config/types.openclaw.js";
 import { resolveGlobalSingleton } from "../shared/global-singleton.js";
 import { isDiagnosticFlagEnabled } from "./diagnostic-flags.js";

@@ -1,6 +1,6 @@
 import { lstat, realpath } from "node:fs/promises";
 import { relative, resolve } from "node:path";
-import { assertNoSymlinkParents } from "@paleoclaw/fs-safe/advanced";
+import { assertNoSymlinkParents } from "@openclaw/fs-safe/advanced";
 import type { OpenClawConfig } from "../config/types.openclaw.js";
 import { resolvePathViaExistingAncestorSync } from "../infra/boundary-path.js";
 import { FsSafeError, root as fsSafeRoot, type Root } from "../infra/fs-safe.js";

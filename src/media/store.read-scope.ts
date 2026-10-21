@@ -6,7 +6,7 @@ import {
   buildRandomTempFilePath,
   readDirectoryIdentity,
   sameFileIdentity,
-} from "@paleoclaw/fs-safe/advanced";
+} from "@openclaw/fs-safe/advanced";
 import { syncDirectoryBestEffort } from "../infra/directory-durability.js";
 import { FsSafeError, root } from "../infra/fs-safe.js";
 import { redactToolPayloadText } from "../logging/redact.js";

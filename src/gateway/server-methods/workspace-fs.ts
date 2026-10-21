@@ -2,7 +2,7 @@
 // workspace provider and its path/byte/lifecycle checks.
 import { randomUUID } from "node:crypto";
 import path from "node:path";
-import { createAsyncLock, readFileWindowFully } from "@paleoclaw/fs-safe/advanced";
+import { createAsyncLock, readFileWindowFully } from "@openclaw/fs-safe/advanced";
 import { extractErrorCode } from "@paleoclaw/normalization-core/error-coercion";
 import { sha256Hex } from "@paleoclaw/normalization-core/node-crypto";
 import { containsAsciiControlCharacter } from "@paleoclaw/normalization-core/string-normalization";

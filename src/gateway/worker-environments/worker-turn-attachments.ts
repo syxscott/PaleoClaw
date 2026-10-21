@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 import path from "node:path";
-import { sanitizeUntrustedFileName } from "@paleoclaw/fs-safe/advanced";
+import { sanitizeUntrustedFileName } from "@openclaw/fs-safe/advanced";
 import { isPassThroughRemoteMediaSource } from "@paleoclaw/media-core/media-source-url";
 import { truncateUtf16Safe } from "@paleoclaw/normalization-core/utf16-slice";
 import type { SessionPlacementTurnParams } from "../../agents/session-placement-admission.js";

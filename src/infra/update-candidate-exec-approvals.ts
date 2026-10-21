@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import type { DatabaseSync } from "node:sqlite";
-import { root } from "@paleoclaw/fs-safe";
+import { root } from "@openclaw/fs-safe";
 import { tableExists } from "../state/paleoclaw-state-db-schema-helpers.js";
 import type { DB } from "../state/paleoclaw-state-db.generated.js";
 import { ignoreMissingPath as ignoreMissingUpdateCandidateFile } from "./errno.js";

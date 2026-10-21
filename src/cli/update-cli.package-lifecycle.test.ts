@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { root as fsSafeRoot, type Root } from "@paleoclaw/fs-safe/root";
+import { root as fsSafeRoot, type Root } from "@openclaw/fs-safe/root";
 import { describe, expect, it, vi } from "vitest";
 import type { PackageUpdateTransaction } from "../infra/package-update-swap-contract.js";
 import type { UpdateDoctorConfigWriteRefusal } from "../infra/update-doctor-config.js";

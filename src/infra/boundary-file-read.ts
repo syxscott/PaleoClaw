@@ -4,8 +4,8 @@ import {
   readFileDescriptorBounded as readFileDescriptorBoundedFsSafe,
   readFileDescriptorBoundedSync as readFileDescriptorBoundedSyncFsSafe,
   type RootFileOpenFailure,
-} from "@paleoclaw/fs-safe/advanced";
-import { FsSafeError } from "@paleoclaw/fs-safe/errors";
+} from "@openclaw/fs-safe/advanced";
+import { FsSafeError } from "@openclaw/fs-safe/errors";
 
 // Root-scoped file open helpers. Use these for user paths that must stay under
 // an already trusted boundary.
@@ -16,7 +16,7 @@ export {
   openRootFileSync,
   type RootFileOpenFailure,
   type RootFileOpenResult,
-} from "@paleoclaw/fs-safe/advanced";
+} from "@openclaw/fs-safe/advanced";
 
 // fs-safe folds ENOENT, ENOTDIR, and ELOOP into its `path` reason. Only the
 // first two mean the artifact is absent; a symlink loop is an unreadable path.

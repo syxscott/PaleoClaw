@@ -62,7 +62,7 @@ if (entry?.endsWith("/scripts/pr-lib/worktree-provision.mts")) {
   assert.equal(realpathSync(storeRoot), storeRoot);
   const require = createRequire(path.join(sourceRoot, "package.json"));
   const load = (file) => import(pathToFileURL(path.join(sourceRoot, file)).href);
-  const { resolveSecureTempRoot } = require("@paleoclaw/fs-safe/temp");
+  const { resolveSecureTempRoot } = require("@openclaw/fs-safe/temp");
   const { registerSealedRuntime } = await load("src/infra/sealed-runtime-registry.ts");
   let phase = "preflight";
   const observe = (kind) => appendFileSync(observations, JSON.stringify({

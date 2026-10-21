@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import fs from "node:fs/promises";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import path from "node:path";
-import { sanitizeUntrustedFileName } from "@paleoclaw/fs-safe/advanced";
+import { sanitizeUntrustedFileName } from "@openclaw/fs-safe/advanced";
 import { maxBytesForKind, mediaKindFromMime } from "@paleoclaw/media-core/constants";
 import { mimeTypeFromFilePath } from "@paleoclaw/media-core/mime";
 import { hasHttpUrlPrefix } from "@paleoclaw/net-policy/url-protocol";

@@ -1,5 +1,5 @@
 import fs from "node:fs/promises";
-import { readFileWindowFully } from "@paleoclaw/fs-safe/advanced";
+import { readFileWindowFully } from "@openclaw/fs-safe/advanced";
 import { formatCliCommand } from "../cli/command-format.js";
 import { renderGatewayServiceStartHints } from "../cli/daemon-cli/shared.js";
 import { quoteCliArg, quotePowerShellArg } from "../cli/quote-cli-arg.js";

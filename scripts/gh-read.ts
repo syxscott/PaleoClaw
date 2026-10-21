@@ -1,7 +1,7 @@
 import { spawnSync } from "node:child_process";
 import { createPrivateKey, createSign } from "node:crypto";
 import { pathToFileURL } from "node:url";
-import { readSecretFileSync } from "@paleoclaw/fs-safe/secret";
+import { readSecretFileSync } from "@openclaw/fs-safe/secret";
 import { expectDefined } from "../packages/normalization-core/src/expect.js";
 import { truncateUtf16Safe } from "../packages/normalization-core/src/utf16-slice.js";
 import {

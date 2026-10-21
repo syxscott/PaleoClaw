@@ -2,8 +2,8 @@ import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import os from "node:os";
 import nodePath from "node:path";
-import { readFileWindowFully } from "@paleoclaw/fs-safe/advanced";
-import { root as openFsRoot, type Root } from "@paleoclaw/fs-safe/root";
+import { readFileWindowFully } from "@openclaw/fs-safe/advanced";
+import { root as openFsRoot, type Root } from "@openclaw/fs-safe/root";
 import type {
   SessionDiffFile,
   SessionsDiffResult,

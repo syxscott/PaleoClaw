@@ -37,8 +37,8 @@ import { withPluginSourceAdmissionPublisher } from "./plugin-source-admission-co
 import { createPluginSourceAdmissionPublisher } from "./plugin-source-admission-store.js";
 import type { PluginSourceAdmissionReceipt } from "./plugin-source-admission.types.js";
 
-vi.mock("@paleoclaw/fs-safe/advanced", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@paleoclaw/fs-safe/advanced")>()),
+vi.mock("@openclaw/fs-safe/advanced", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@openclaw/fs-safe/advanced")>()),
 }));
 
 type NativeIo = ReturnType<ReturnType<typeof observeFileIo>["measure"]>["io"];

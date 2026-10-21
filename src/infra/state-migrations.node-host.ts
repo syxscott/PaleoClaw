@@ -1,6 +1,6 @@
 // Doctor-only import for the retired node-host JSON config.
 import path from "node:path";
-import { root } from "@paleoclaw/fs-safe";
+import { root } from "@openclaw/fs-safe";
 import { isRecord } from "@paleoclaw/normalization-core/record-coerce";
 import {
   LEGACY_NODE_HOST_CONFIG_CLAIM_SUFFIX,

@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
-import { openRootFileSync, readFileDescriptorBoundedSync } from "@paleoclaw/fs-safe/advanced";
-import { FsSafeError } from "@paleoclaw/fs-safe/errors";
+import { openRootFileSync, readFileDescriptorBoundedSync } from "@openclaw/fs-safe/advanced";
+import { FsSafeError } from "@openclaw/fs-safe/errors";
 import {
   normalizeLowercaseStringOrEmpty,
   normalizeOptionalString,

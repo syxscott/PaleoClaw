@@ -4882,18 +4882,18 @@ SH
     const virtualModules = join(modules, ".pnpm/paleoclaw@fixture/node_modules");
     const physicalRoot = join(virtualModules, "paleoclaw");
     const logicalRoot = join(modules, "paleoclaw");
-    const fsSafe = join(virtualModules, "@paleoclaw/fs-safe");
+    const fsSafe = join(virtualModules, "@openclaw/fs-safe");
     mkdirSync(physicalRoot, { recursive: true });
     mkdirSync(fsSafe, { recursive: true });
     writeFileSync(join(physicalRoot, "package.json"), '{"name":"paleoclaw"}');
     writeFileSync(
       join(physicalRoot, "cli.cjs"),
-      'process.stdout.write(require.resolve("@paleoclaw/fs-safe"));',
+      'process.stdout.write(require.resolve("@openclaw/fs-safe"));',
     );
     writeFileSync(
       join(fsSafe, "package.json"),
       JSON.stringify({
-        name: "@paleoclaw/fs-safe",
+        name: "@openclaw/fs-safe",
         type: "module",
         exports: {
           ".": "./dist/index.js",

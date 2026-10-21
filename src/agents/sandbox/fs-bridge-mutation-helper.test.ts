@@ -6,7 +6,7 @@ import path from "node:path";
 import {
   GUEST_FILESYSTEM_CREATE_EXISTS_EXIT_CODE,
   GUEST_FILESYSTEM_PYTHON,
-} from "@paleoclaw/fs-safe/guest";
+} from "@openclaw/fs-safe/guest";
 import { describe, expect, it } from "vitest";
 import { withTestDir } from "../../test-helpers/temp-dir.js";
 import { buildPinnedMutationPlan } from "./fs-bridge-mutation-helper.js";

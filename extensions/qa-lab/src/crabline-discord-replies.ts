@@ -1,7 +1,7 @@
 import { once } from "node:events";
 import { createServer, request, type IncomingMessage } from "node:http";
 import { pipeline } from "node:stream/promises";
-import type { StartedOpenClawCrablineCorrelatedAdapter } from "@paleoclaw/crabline";
+import type { StartedOpenClawCrablineCorrelatedAdapter } from "@openclaw/crabline";
 import type {
   QaBusInboundMessageInput,
   QaBusMessage,

@@ -1,4 +1,4 @@
-import { isWithinDir } from "@paleoclaw/fs-safe/path";
+import { isWithinDir } from "@openclaw/fs-safe/path";
 // Covers safe base-dir and containment checks.
 import { describe, expect, it } from "vitest";
 

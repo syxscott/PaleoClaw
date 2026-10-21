@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import fsPromises from "node:fs/promises";
-import { hasNodeErrorCode, isNotFoundPathError } from "@paleoclaw/fs-safe/path";
+import { hasNodeErrorCode, isNotFoundPathError } from "@openclaw/fs-safe/path";
 import { ignoreMissingPath, isMissingPathError } from "./errno.js";
 
 /** Only definite absence, including a non-directory ancestor, permits an absent verdict. */

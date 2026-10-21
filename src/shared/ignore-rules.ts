@@ -1,7 +1,7 @@
 import { lstatSync, realpathSync } from "node:fs";
 import { join, relative, sep } from "node:path";
-import { readRegularFileSync } from "@paleoclaw/fs-safe/advanced";
-import { hasNodeErrorCode } from "@paleoclaw/fs-safe/path";
+import { readRegularFileSync } from "@openclaw/fs-safe/advanced";
+import { hasNodeErrorCode } from "@openclaw/fs-safe/path";
 import ignore from "ignore";
 
 const IGNORE_FILE_NAMES = [".gitignore", ".ignore", ".fdignore"];

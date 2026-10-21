@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { resolvePathPrefixSync } from "@paleoclaw/fs-safe/advanced";
+import { resolvePathPrefixSync } from "@openclaw/fs-safe/advanced";
 import type { AgentsDeleteResult } from "../../../packages/gateway-protocol/src/schema/agents-models-skills.js";
 import { normalizeAgentDirRegistryPath } from "../../agents/agent-dir-registry.js";
 import type { AgentDeletionOperation } from "../../agents/agent-lifecycle-registry.js";

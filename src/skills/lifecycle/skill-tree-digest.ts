@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { root } from "@paleoclaw/fs-safe/root";
+import { root } from "@openclaw/fs-safe/root";
 import { sha256File, sha256Hex } from "../../infra/crypto-digest.js";
 
 const EXCLUDED_METADATA_DIRS = new Set([".clawhub", ".clawdhub"]);

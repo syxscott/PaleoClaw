@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { replaceFileAtomic } from "@paleoclaw/fs-safe/atomic";
+import { replaceFileAtomic } from "@openclaw/fs-safe/atomic";
 import { resolveStateDir } from "../config/state-dir.js";
 import { sanitizeDiagnosticCpuProfile } from "./diagnostic-cpu-profile.js";
 import { sanitizeDiagnosticHeapProfile, type SamplingProfile } from "./diagnostic-heap-profile.js";

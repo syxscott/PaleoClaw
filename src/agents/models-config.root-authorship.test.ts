@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { FsSafeError } from "@paleoclaw/fs-safe/errors";
+import { FsSafeError } from "@openclaw/fs-safe/errors";
 import { afterEach, assert, beforeEach, expect, it, vi } from "vitest";
 import type { ModelProviderConfig } from "../config/types.models.js";
 import * as privateFileStoreRuntime from "../infra/private-file-store.js";

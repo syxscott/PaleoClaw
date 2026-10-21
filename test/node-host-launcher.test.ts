@@ -19,7 +19,7 @@ beforeAll(async () => {
     const built = await esbuild({
       bundle: true,
       entryPoints: [path.resolve(entry)],
-      external: ["@paleoclaw/fs-safe", "@paleoclaw/fs-safe/*"],
+      external: ["@openclaw/fs-safe", "@openclaw/fs-safe/*"],
       format: "esm",
       platform: "node",
       target: "node24",

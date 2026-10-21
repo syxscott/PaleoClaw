@@ -1,9 +1,9 @@
 import fs from "node:fs";
 import path from "node:path";
-import type { Root } from "@paleoclaw/fs-safe";
-import { sameFileIdentity, statRegularFileSync } from "@paleoclaw/fs-safe/advanced";
-import { getFsSafeNativeConfig } from "@paleoclaw/fs-safe/config";
-import { FsSafeError, isNoReplaceUnsupported } from "@paleoclaw/fs-safe/errors";
+import type { Root } from "@openclaw/fs-safe";
+import { sameFileIdentity, statRegularFileSync } from "@openclaw/fs-safe/advanced";
+import { getFsSafeNativeConfig } from "@openclaw/fs-safe/config";
+import { FsSafeError, isNoReplaceUnsupported } from "@openclaw/fs-safe/errors";
 import {
   pinDirectory,
   publishFileExclusive,

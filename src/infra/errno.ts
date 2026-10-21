@@ -1,5 +1,5 @@
-import { hasNodeErrorCode as hasErrnoCode } from "@paleoclaw/fs-safe/path";
-export { isNodeError as isErrno } from "@paleoclaw/fs-safe/path";
+import { hasNodeErrorCode as hasErrnoCode } from "@openclaw/fs-safe/path";
+export { isNodeError as isErrno } from "@openclaw/fs-safe/path";
 export { hasErrnoCode };
 
 /** Classifies missing filesystem paths across Node and fs-safe boundaries. */

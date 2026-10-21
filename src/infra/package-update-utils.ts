@@ -1,4 +1,4 @@
-import { readRootJsonObjectSync } from "@paleoclaw/fs-safe/json";
+import { readRootJsonObjectSync } from "@openclaw/fs-safe/json";
 import { compareOpenClawReleaseVersions } from "./npm-registry-spec.js";
 import { compareValidSemver } from "./semver.js";
 

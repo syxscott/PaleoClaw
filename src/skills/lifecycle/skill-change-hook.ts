@@ -1,8 +1,8 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { readFileHandleBounded } from "@paleoclaw/fs-safe/advanced";
-import { FsSafeError } from "@paleoclaw/fs-safe/errors";
-import { root } from "@paleoclaw/fs-safe/root";
+import { readFileHandleBounded } from "@openclaw/fs-safe/advanced";
+import { FsSafeError } from "@openclaw/fs-safe/errors";
+import { root } from "@openclaw/fs-safe/root";
 import { normalizeOptionalString } from "@paleoclaw/normalization-core/string-coerce";
 import { sha256Hex } from "../../infra/crypto-digest.js";
 import { sha256File } from "../../infra/directory-durability.js";

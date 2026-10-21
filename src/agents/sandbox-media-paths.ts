@@ -4,7 +4,7 @@
  * Bridges media references through sandbox filesystems while enforcing workspace-only boundaries when required.
  */
 import path from "node:path";
-import { safeFileURLToPath } from "@paleoclaw/fs-safe/advanced";
+import { safeFileURLToPath } from "@openclaw/fs-safe/advanced";
 import { isPathInside } from "../infra/path-guards.js";
 import { createBoundedOutboundMediaReadFile } from "../media/bounded-read-file.js";
 import type { OutboundMediaReadFile } from "../media/load-options.js";

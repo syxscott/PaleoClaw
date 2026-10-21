@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import { readRegularFileSync } from "@paleoclaw/fs-safe/advanced";
+import { readRegularFileSync } from "@openclaw/fs-safe/advanced";
 import { readFileDescriptorBoundedSync } from "../infra/boundary-file-read.js";
 import { resolveRootPathSync } from "../infra/boundary-path.js";
 import { materializeErrorStack } from "../infra/error-graph-internal.js";

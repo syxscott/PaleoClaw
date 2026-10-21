@@ -28,10 +28,10 @@ assert.deepEqual(fs.readFileSync(path.join(home, "native-create-proof")), Buffer
 // Resolve from fs-safe's dependency scope, including pnpm's nested install layout.
 const requireFromPackage = createRequire(path.join(packageRoot, "package.json"));
 const requireFromFsSafe = createRequire(
-  requireFromPackage.resolve("@paleoclaw/fs-safe/package.json"),
+  requireFromPackage.resolve("@openclaw/fs-safe/package.json"),
 );
 const nativeModule = requireFromFsSafe.resolve(
-  `@paleoclaw/fs-safe-${process.platform}-${process.arch}`,
+  `@openclaw/fs-safe-${process.platform}-${process.arch}`,
 );
 assert(
   nativeModule.startsWith(packageRoot + path.sep),

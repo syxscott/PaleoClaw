@@ -4,7 +4,7 @@ import fs, { existsSync, mkdtempSync, readdirSync, readFileSync } from "node:fs"
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { replaceFileAtomicSync } from "@paleoclaw/fs-safe/atomic";
+import { replaceFileAtomicSync } from "@openclaw/fs-safe/atomic";
 import { toErrorObject } from "@paleoclaw/normalization-core/error-coercion";
 import pMap from "p-map";
 import { PRECOMPUTED_SUBCOMMAND_HELP_NAMES as PRECOMPUTED_SUBCOMMAND_HELP_COMMANDS } from "../src/cli/precomputed-help-commands.js";

@@ -182,11 +182,11 @@ it("preserves consumer import/require conditions and explicitly selected caches"
   const consumer = path.join(root, "consumer-package");
   const dependency = path.join(consumer, "node_modules", "@paleoclaw", "fs-safe");
   fs.mkdirSync(dependency, { recursive: true });
-  const original = require.resolve("@paleoclaw/fs-safe/temp");
+  const original = require.resolve("@openclaw/fs-safe/temp");
   fs.writeFileSync(
     path.join(dependency, "package.json"),
     JSON.stringify({
-      name: "@paleoclaw/fs-safe",
+      name: "@openclaw/fs-safe",
       exports: { "./temp": { import: "./temp.mjs", require: "./temp-require.mjs" } },
     }),
   );
@@ -203,13 +203,13 @@ it("preserves consumer import/require conditions and explicitly selected caches"
   const manifest = path.join(consumer, "package.json");
   fs.writeFileSync(manifest, '{"name":"handoff-consumer","private":true,"type":"module"}');
   const esmConsumer = path.join(consumer, "consumer.mjs");
-  fs.writeFileSync(esmConsumer, 'export * from "@paleoclaw/fs-safe/temp";\n');
+  fs.writeFileSync(esmConsumer, 'export * from "@openclaw/fs-safe/temp";\n');
   fs.writeFileSync(
     program,
     [
       'import { createRequire } from "node:module";',
       `const require = createRequire(${JSON.stringify(manifest)});`,
-      'const required = require("@paleoclaw/fs-safe/temp");',
+      'const required = require("@openclaw/fs-safe/temp");',
       `const imported = await import(${JSON.stringify(pathToFileURL(esmConsumer).href)});`,
       "process.stdout.write(JSON.stringify([required, imported].map((temp) => ({",
       '  root: temp.resolveSecureTempRoot({ preferredDir: "/tmp/paleoclaw", fallbackPrefix: "paleoclaw", skipPreferredOnWindows: true }),',

@@ -2,7 +2,7 @@ import path from "node:path";
 import {
   GUEST_FILESYSTEM_CREATE_EXISTS_EXIT_CODE,
   GUEST_FILESYSTEM_READ_NOT_FOUND_EXIT_CODE,
-} from "@paleoclaw/fs-safe/guest";
+} from "@openclaw/fs-safe/guest";
 import { parseDirectoryEntries, type DirectoryEntry } from "../../infra/directory-entries.js";
 import type {
   SandboxBackendCommandResult,

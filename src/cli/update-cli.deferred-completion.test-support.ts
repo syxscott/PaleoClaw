@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { createDirectorySync, createFileSync } from "@paleoclaw/fs-safe/advanced";
+import { createDirectorySync, createFileSync } from "@openclaw/fs-safe/advanced";
 import { afterEach, beforeEach, vi } from "vitest";
 import { useAutoCleanupTempDirTracker } from "../../test/helpers/temp-dir.js";
 import type { OpenClawConfig } from "../config/types.openclaw.js";

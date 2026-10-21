@@ -6,7 +6,7 @@ import { beforeEach, expect, it } from "vitest";
 import { createScriptTestHarness } from "./test-helpers.js";
 
 const { createTempDirAsync } = createScriptTestHarness();
-const NATIVE_NAME = "@paleoclaw/fs-safe-linux-x64-musl";
+const NATIVE_NAME = "@openclaw/fs-safe-linux-x64-musl";
 const NATIVE_VERSION = "1.2.3";
 const NATIVE_SPEC = `${NATIVE_NAME}@${NATIVE_VERSION}`;
 const nativeManifest = { name: NATIVE_NAME, version: NATIVE_VERSION };
@@ -26,7 +26,7 @@ async function expectAbsent(file: string) {
 async function createFixture() {
   const packageRoot = await createTempDirAsync("paleoclaw-prebuild-");
   const local = (file: string) => path.join(packageRoot, file);
-  const fsSafeRoot = local("node_modules/@paleoclaw/fs-safe");
+  const fsSafeRoot = local("node_modules/@openclaw/fs-safe");
   const script = local("scripts/postinstall-bundled-plugins.mjs");
   const callsPath = local("npm-calls.jsonl");
   const npmCli = local("npm-cli.js");
@@ -40,11 +40,11 @@ async function createFixture() {
   }
   await write(local("package.json"), {
     type: "module",
-    dependencies: { "@paleoclaw/fs-safe": "1.2.3" },
+    dependencies: { "@openclaw/fs-safe": "1.2.3" },
   });
   await write(local(".openclaw-lifecycle-pending"), "pending\n");
   await write(path.join(fsSafeRoot, "package.json"), {
-    name: "@paleoclaw/fs-safe",
+    name: "@openclaw/fs-safe",
     type: "module",
     exports: {
       ".": "./copy.js",
@@ -53,7 +53,7 @@ async function createFixture() {
       "./copy": "./copy.js",
     },
     optionalDependencies: {
-      "@paleoclaw/fs-safe-linux-x64-gnu": "1.2.4",
+      "@openclaw/fs-safe-linux-x64-gnu": "1.2.4",
       [NATIVE_NAME]: NATIVE_VERSION,
       jszip: "^3.10.2",
     },
@@ -299,7 +299,7 @@ it.each([
   [
     "missing transitive platform package",
     "index.cjs",
-    "require('@paleoclaw/fs-safe-linux-x64-gnu');",
+    "require('@openclaw/fs-safe-linux-x64-gnu');",
   ],
   [
     "native operation failure",

@@ -1,9 +1,9 @@
 // Loads and saves JSON files with symlink backup handling.
 import fs from "node:fs";
 import path from "node:path";
-import { resolvePathPrefixSync } from "@paleoclaw/fs-safe/advanced";
-import { tryReadJsonSync, writeJsonSync } from "@paleoclaw/fs-safe/json";
-import { hasNodeErrorCode } from "@paleoclaw/fs-safe/path";
+import { resolvePathPrefixSync } from "@openclaw/fs-safe/advanced";
+import { tryReadJsonSync, writeJsonSync } from "@openclaw/fs-safe/json";
+import { hasNodeErrorCode } from "@openclaw/fs-safe/path";
 
 function resolveJsonSaveTarget(pathname: string): string {
   if (!fs.lstatSync(pathname, { throwIfNoEntry: false })?.isSymbolicLink()) {

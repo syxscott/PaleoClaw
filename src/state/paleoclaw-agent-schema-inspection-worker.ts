@@ -1,6 +1,6 @@
 import { fork } from "node:child_process";
 import { existsSync } from "node:fs";
-import type { FileIdentityStat } from "@paleoclaw/fs-safe/advanced";
+import type { FileIdentityStat } from "@openclaw/fs-safe/advanced";
 import { toStringifiedError } from "@paleoclaw/normalization-core/error-coercion";
 import {
   assertChildRuntimeAvailable,

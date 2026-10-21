@@ -2,7 +2,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import { openRootFileSync, readFileDescriptorBoundedSync } from "@paleoclaw/fs-safe/advanced";
+import { openRootFileSync, readFileDescriptorBoundedSync } from "@openclaw/fs-safe/advanced";
 import { MAX_THEME_DEFINITION_BYTES } from "../packages/gateway-protocol/src/theme.ts";
 import { loadPluginControlUiDeclaration } from "../src/plugins/control-ui-build-manifest.ts";
 import { createPluginCache, withPluginCache } from "../src/plugins/plugin-cache.ts";

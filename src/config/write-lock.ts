@@ -3,7 +3,7 @@ import { AsyncLocalStorage } from "node:async_hooks";
 import { realpathSync } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { assertDirectoryIdentitySync, readDirectoryIdentity } from "@paleoclaw/fs-safe/advanced";
+import { assertDirectoryIdentitySync, readDirectoryIdentity } from "@openclaw/fs-safe/advanced";
 import { isMissingPathError } from "../infra/errno.js";
 import { throwCollectedErrors } from "../infra/error-graph-internal.js";
 import { formatErrorMessage, isErrno } from "../infra/errors.js";

@@ -1,4 +1,4 @@
-import { createRouter } from "@paleoclaw/uirouter";
+import { createRouter } from "@openclaw/uirouter";
 import { flush } from "solid-js";
 import { onTestFinished, vi } from "vitest";
 import type { GatewayBrowserClient, GatewayHelloOk } from "../../api/gateway.ts";

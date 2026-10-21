@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { tempWorkspace, type TempWorkspace } from "@paleoclaw/fs-safe/temp";
+import { tempWorkspace, type TempWorkspace } from "@openclaw/fs-safe/temp";
 import { redactSensitiveUrlLikeString } from "@paleoclaw/net-policy/redact-sensitive-url";
 import { sha256Hex } from "@paleoclaw/normalization-core/node-crypto";
 import { sliceUtf16Safe, truncateUtf16Safe } from "@paleoclaw/normalization-core/utf16-slice";

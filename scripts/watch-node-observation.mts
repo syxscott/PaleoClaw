@@ -1,6 +1,6 @@
-import { FsSafeError } from "@paleoclaw/fs-safe/errors";
-import type { Root } from "@paleoclaw/fs-safe/root";
-import { watch, type WatchSubscription } from "@paleoclaw/fs-safe/watch";
+import { FsSafeError } from "@openclaw/fs-safe/errors";
+import type { Root } from "@openclaw/fs-safe/root";
+import { watch, type WatchSubscription } from "@openclaw/fs-safe/watch";
 import {
   resolveFsObservationMode,
   resolveFsObservationIntervalMs,

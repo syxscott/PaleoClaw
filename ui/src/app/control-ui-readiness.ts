@@ -1,4 +1,4 @@
-import type { RouteLocation, RouterState } from "@paleoclaw/uirouter";
+import type { RouteLocation, RouterState } from "@openclaw/uirouter";
 import type { AgentsListResult, SessionsListResult } from "../api/types.ts";
 import type { RouteId } from "../app-route-paths.ts";
 import type { AgentSelectionCapability } from "./agent-selection.ts";

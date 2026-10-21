@@ -1,9 +1,9 @@
 import fsSync, { type BigIntStats } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { movePathWithCopyFallback } from "@paleoclaw/fs-safe/atomic";
-import { FsSafeError } from "@paleoclaw/fs-safe/errors";
-import { root as fsSafeRoot } from "@paleoclaw/fs-safe/root";
+import { movePathWithCopyFallback } from "@openclaw/fs-safe/atomic";
+import { FsSafeError } from "@openclaw/fs-safe/errors";
+import { root as fsSafeRoot } from "@openclaw/fs-safe/root";
 import { createSubsystemLogger } from "../logging/subsystem.js";
 import { requireDirectorySync, syncDirectory } from "./directory-durability.js";
 import { ignoreMissingPath } from "./errno.js";

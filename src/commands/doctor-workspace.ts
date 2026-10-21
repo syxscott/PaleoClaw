@@ -1,8 +1,8 @@
 import { isUtf8 } from "node:buffer";
 import fs from "node:fs";
 import path from "node:path";
-import { readRegularFile } from "@paleoclaw/fs-safe/advanced";
-import { safeStatSync } from "@paleoclaw/fs-safe/path";
+import { readRegularFile } from "@openclaw/fs-safe/advanced";
+import { safeStatSync } from "@openclaw/fs-safe/path";
 import { note } from "../../packages/terminal-core/src/note.js";
 import { DEFAULT_AGENTS_FILENAME } from "../agents/workspace.js";
 import { safeRealpathSync } from "../infra/boundary-path.js";

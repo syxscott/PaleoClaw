@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { root } from "@paleoclaw/fs-safe/root";
+import { root } from "@openclaw/fs-safe/root";
 import { openRootFileSync } from "../../infra/boundary-file-read.js";
 
 export async function ensureWritableSkillDirectories(

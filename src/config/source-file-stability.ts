@@ -1,4 +1,4 @@
-import type { Root } from "@paleoclaw/fs-safe/root";
+import type { Root } from "@openclaw/fs-safe/root";
 import { toErrorObject } from "@paleoclaw/normalization-core/error-coercion";
 import { readObservationSnapshot } from "../infra/fs-observation-snapshot.js";
 import { createDeferredCore, type Deferred } from "../shared/deferred.js";

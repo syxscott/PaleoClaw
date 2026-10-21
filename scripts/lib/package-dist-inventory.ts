@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { walkDirectory } from "@paleoclaw/fs-safe/walk";
+import { walkDirectory } from "@openclaw/fs-safe/walk";
 import { sortUniqueStrings } from "@paleoclaw/normalization-core/string-normalization";
 import { hasErrnoCode } from "../../src/infra/errno.ts";
 import { writeJson } from "../../src/infra/json-files.ts";

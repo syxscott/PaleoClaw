@@ -97,7 +97,7 @@ describe("write-plugin-sdk-entry-dts", { timeout: WRITER_TEST_TIMEOUT_MS }, () =
     command,
   }) =>
     command.lifetime.run(async () => {
-      const watchWorker = path.resolve("node_modules/@paleoclaw/fs-safe/dist/watch-io-worker.js");
+      const watchWorker = path.resolve("node_modules/@openclaw/fs-safe/dist/watch-io-worker.js");
       const dependencyBefore = fs.readFileSync(watchWorker);
       const { root, write, declarations, production } = createFixture(command);
       for (const [name, roots] of Object.entries(declarations)) {

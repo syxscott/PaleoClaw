@@ -1,5 +1,5 @@
 import { relative } from "node:path";
-import { isPathRelativeEscape } from "@paleoclaw/fs-safe/path";
+import { isPathRelativeEscape } from "@openclaw/fs-safe/path";
 
 export function clawContainedRelativePath(root: string, target: string): string | undefined {
   const child = relative(root, target);

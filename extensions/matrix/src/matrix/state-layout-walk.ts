@@ -1,6 +1,6 @@
 import path from "node:path";
-import { hasNodeErrorCode } from "@paleoclaw/fs-safe/path";
-import { walkDirectory } from "@paleoclaw/fs-safe/walk";
+import { hasNodeErrorCode } from "@openclaw/fs-safe/path";
+import { walkDirectory } from "@openclaw/fs-safe/walk";
 import { resolveMatrixStateLayoutChildDepth } from "../storage-paths.js";
 
 /** Traverse only shipped Matrix layouts; archives and unrelated descendants stay unopened. */

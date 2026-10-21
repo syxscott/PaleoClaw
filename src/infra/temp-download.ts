@@ -2,8 +2,8 @@ import path from "node:path";
 import {
   buildRandomTempFilePath as buildRandomTempFilePathBase,
   sanitizeTempFileName,
-} from "@paleoclaw/fs-safe/advanced";
-import { tempWorkspace } from "@paleoclaw/fs-safe/temp";
+} from "@openclaw/fs-safe/advanced";
+import { tempWorkspace } from "@openclaw/fs-safe/temp";
 import { createSubsystemLogger } from "../logging/subsystem.js";
 import { resolvePreferredOpenClawTmpDir } from "./tmp-paleoclaw-dir.js";
 

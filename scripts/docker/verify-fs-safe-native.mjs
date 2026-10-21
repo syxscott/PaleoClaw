@@ -45,12 +45,12 @@ const { mode, packageRoot } = parseArgs(process.argv.slice(2));
 const requireFromPackage = createRequire(path.join(packageRoot, "package.json"));
 // `package.json` is not a public fs-safe export. Its public root entry is,
 // and the manifest beside that resolved entry declares platform packages.
-const fsSafeEntryPath = requireFromPackage.resolve("@paleoclaw/fs-safe");
+const fsSafeEntryPath = requireFromPackage.resolve("@openclaw/fs-safe");
 const fsSafeManifestPath = path.resolve(fsSafeEntryPath, "..", "..", "package.json");
 const fsSafeManifest = JSON.parse(await fsPromises.readFile(fsSafeManifestPath, "utf8"));
 const requireFromFsSafe = createRequire(fsSafeManifestPath);
 const platformPackageNames = Object.keys(fsSafeManifest.optionalDependencies ?? {}).filter((name) =>
-  name.startsWith("@paleoclaw/fs-safe-"),
+  name.startsWith("@openclaw/fs-safe-"),
 );
 const installedPlatformPackages = platformPackageNames.flatMap((name) => {
   try {
@@ -61,8 +61,8 @@ const installedPlatformPackages = platformPackageNames.flatMap((name) => {
   }
 });
 
-const configPath = requireFromPackage.resolve("@paleoclaw/fs-safe/config");
-const durabilityPath = requireFromPackage.resolve("@paleoclaw/fs-safe/durability");
+const configPath = requireFromPackage.resolve("@openclaw/fs-safe/config");
+const durabilityPath = requireFromPackage.resolve("@openclaw/fs-safe/durability");
 const { configureFsSafeNative } = await import(pathToFileURL(configPath).href);
 const { sha256File } = await import(pathToFileURL(durabilityPath).href);
 configureFsSafeNative({ mode: mode === "require" ? "require" : "off" });

@@ -9,7 +9,7 @@ export const nativeStatusCheck: HealthCheck = {
   description: "Native filesystem and process helpers are available for this runtime.",
   async detect() {
     const [{ getFsSafeNativeStatus }, { getProcSafeNativeStatus }] = await Promise.all([
-      import("@paleoclaw/fs-safe"),
+      import("@openclaw/fs-safe"),
       import("@paleoclaw/proc-safe"),
     ]);
     const statuses = await Promise.all([

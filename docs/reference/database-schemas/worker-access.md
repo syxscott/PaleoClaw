@@ -5789,7 +5789,7 @@ same anchor reader. Later appends remain valid; reset, rewrite, replacement,
 permission changes, and revocation refuse stale evidence. The review caches the
 worker's authority result against existing Gateway write receipts for the session
 key and transcript. Membership changes invalidate the session-key receipt too.
-Each asynchronous effect scope refreshes changed facts; `@paleoclaw/fs-safe`'s
+Each asynchronous effect scope refreshes changed facts; `@openclaw/fs-safe`'s
 synchronous callback checks its retained receipt immediately before mutation,
 without opening SQLite. A benign write during an effect scope or before an
 unprepared liveness check can conservatively cancel the review; a later review

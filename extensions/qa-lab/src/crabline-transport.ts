@@ -7,7 +7,7 @@ import {
   type OpenClawCrablineChannelDriverSelection,
   type OpenClawCrablineInbound,
   type StartedOpenClawCrablineCorrelatedAdapter,
-} from "@paleoclaw/crabline";
+} from "@openclaw/crabline";
 import type { OpenClawConfig } from "paleoclaw/plugin-sdk/config-contracts";
 import type {
   QaBusInboundMessageInput,

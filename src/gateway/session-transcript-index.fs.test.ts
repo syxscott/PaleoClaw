@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import readline from "node:readline";
-import * as fileReads from "@paleoclaw/fs-safe/advanced";
+import * as fileReads from "@openclaw/fs-safe/advanced";
 import { afterEach, expect, test, vi } from "vitest";
 import { createDeferred, withinTest } from "../../test/helpers/promise.js";
 import { useAutoCleanupTempDirTracker } from "../../test/helpers/temp-dir.js";
@@ -20,8 +20,8 @@ import type {
 } from "./session-transcript-read.types.js";
 import * as recordParser from "./session-transcript-record-parser.js";
 
-vi.mock("@paleoclaw/fs-safe/advanced", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@paleoclaw/fs-safe/advanced")>()),
+vi.mock("@openclaw/fs-safe/advanced", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@openclaw/fs-safe/advanced")>()),
 }));
 
 vi.mock("./session-transcript-record-parser.js", async (importOriginal) => ({

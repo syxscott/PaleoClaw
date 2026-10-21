@@ -100,7 +100,7 @@ const REVIEWED_DEPENDENCY_FINDING_LIMITS = new Map<string, number>([
   ["dangerous-exec:node_modules/@microsoft/mxc-sdk/dist/platform.js", 4],
   ["dangerous-exec:node_modules/@microsoft/mxc-sdk/dist/policy.js", 1],
   ["dangerous-exec:node_modules/@microsoft/mxc-sdk/dist/sandbox.js", 2],
-  ["dangerous-exec:node_modules/@paleoclaw/fs-safe/dist/windows-security-command.js", 2],
+  ["dangerous-exec:node_modules/@openclaw/fs-safe/dist/windows-security-command.js", 2],
   ["dangerous-exec:node_modules/@snazzah/davey/index.js", 1],
   ["dangerous-exec:node_modules/baileys/lib/Utils/messages-media.js", 1],
   ["dangerous-exec:node_modules/google-auth-library/build/src/auth/pluggable-auth-handler.js", 1],

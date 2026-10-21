@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import type { BigIntStats } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { sameFileIdentity } from "@paleoclaw/fs-safe/advanced";
+import { sameFileIdentity } from "@openclaw/fs-safe/advanced";
 import { resolveCommandProcessSignal } from "../process/exec-spawn.js";
 import {
   removePreparedBackupArchive,

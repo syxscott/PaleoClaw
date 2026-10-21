@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { startOpenClawCrablineAdapter } from "@paleoclaw/crabline";
+import { startOpenClawCrablineAdapter } from "@openclaw/crabline";
 import { createWhatsAppQaAuthState } from "@paleoclaw/whatsapp/api.js";
 import { WhatsAppConfigSchema } from "@paleoclaw/whatsapp/config-api.js";
 import { withTempDir } from "paleoclaw/plugin-sdk/test-env";
@@ -11,8 +11,8 @@ import { createQaCrablineTransportAdapter } from "./crabline-transport.js";
 import { createSelection, withTransport } from "./crabline-transport.test-support.js";
 import { readQaScenarioExecutionConfig } from "./scenario-catalog.js";
 
-vi.mock("@paleoclaw/crabline", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@paleoclaw/crabline")>();
+vi.mock("@openclaw/crabline", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@openclaw/crabline")>();
   return { ...actual, startOpenClawCrablineAdapter: vi.fn(actual.startOpenClawCrablineAdapter) };
 });
 vi.mock("@paleoclaw/whatsapp/api.js", async (importOriginal) => {

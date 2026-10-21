@@ -5,7 +5,7 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import vm from "node:vm";
-import { sameFileIdentity } from "@paleoclaw/fs-safe/advanced";
+import { sameFileIdentity } from "@openclaw/fs-safe/advanced";
 import { isRecord } from "@paleoclaw/normalization-core/record-coerce";
 import { normalizeLowercaseStringOrEmpty } from "@paleoclaw/normalization-core/string-coerce";
 import { parse } from "acorn";
@@ -1551,7 +1551,7 @@ describe("standalone image metadata", () => {
     );
   });
 
-  it.each(["", "@paleoclaw/fs-safe/advanced"])(
+  it.each(["", "@openclaw/fs-safe/advanced"])(
     "admits embedded secret resolvers with physical parent trust (%s)",
     (boundaryReaderModule) => {
       const { runtime, plugin, secretEntrypoint, undeclaredEntrypoint, rootOpen, context } =

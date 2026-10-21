@@ -1,22 +1,27 @@
 import { randomUUID } from "node:crypto";
-import { toAcpRuntimeErrorText } from "../../../acp/runtime/error-text.js";
-import type { AcpRuntimeError } from "../../../acp/runtime/errors.js";
-import type { AcpRuntimeSessionMode } from "../../../acp/runtime/types.js";
-import { DISCORD_THREAD_BINDING_CHANNEL } from "../../../channels/thread-bindings-policy.js";
+import type { AcpRuntimeSessionMode } from "@paleoclaw/acp-core/runtime/types";
+import type { Result } from "@paleoclaw/normalization-core/result";
+import {
+  normalizeOptionalLowercaseString,
+  normalizeOptionalString,
+} from "@paleoclaw/normalization-core/string-coerce";
+import { toAcpRuntimeErrorText, type AcpRuntimeErrorCode } from "../../../acp/runtime/errors.js";
+import { supportsAutomaticThreadBindingSpawn } from "../../../channels/thread-bindings-policy.js";
 import type { AcpSessionRuntimeOptions } from "../../../config/sessions/types.js";
+import { stringifyRouteThreadId } from "../../../plugin-sdk/channel-route.js";
 import { normalizeAgentId } from "../../../routing/session-key.js";
+import { commandReply } from "../command-gates.js";
 import type { CommandHandlerResult, HandleCommandsParams } from "../commands-types.js";
-import { resolveAcpCommandChannel, resolveAcpCommandThreadId } from "./context.js";
-export { resolveAcpInstallCommandHint, resolveConfiguredAcpBackendId } from "./install-hints.js";
+import { resolveConversationBindingChannelFromMessage } from "../conversation-binding-input.js";
 
 export const COMMAND = "/acp";
-export const ACP_SPAWN_USAGE =
-  "Usage: /acp spawn [harness-id] [--mode persistent|oneshot] [--thread auto|here|off] [--cwd <path>] [--label <label>].";
-export const ACP_STEER_USAGE =
+const ACP_SPAWN_USAGE =
+  "Usage: /acp spawn [harness-id] [--mode persistent|oneshot] [--thread auto|here|off] [--bind here|off] [--cwd <path>] [--label <label>].";
+const ACP_STEER_USAGE =
   "Usage: /acp steer [--session <session-key|session-id|session-label>] <instruction>";
 export const ACP_SET_MODE_USAGE =
   "Usage: /acp set-mode <mode> [session-key|session-id|session-label]";
-export const ACP_SET_USAGE = "Usage: /acp set <key> <value> [session-key|session-id|session-label]";
+const ACP_SET_USAGE = "Usage: /acp set <key> <value> [session-key|session-id|session-label]";
 export const ACP_CWD_USAGE = "Usage: /acp cwd <path> [session-key|session-id|session-label]";
 export const ACP_PERMISSIONS_USAGE =
   "Usage: /acp permissions <profile> [session-key|session-id|session-label]";
@@ -31,47 +36,24 @@ export const ACP_INSTALL_USAGE = "Usage: /acp install";
 export const ACP_DOCTOR_USAGE = "Usage: /acp doctor";
 export const ACP_SESSIONS_USAGE = "Usage: /acp sessions";
 export const ACP_STEER_OUTPUT_LIMIT = 800;
-export { SESSION_ID_RE } from "../../../sessions/session-id.js";
+type AcpSpawnThreadMode = "auto" | "here" | "off";
+type AcpSpawnBindMode = "here" | "off";
 
-export type AcpAction =
-  | "spawn"
-  | "cancel"
-  | "steer"
-  | "close"
-  | "sessions"
-  | "status"
-  | "set-mode"
-  | "set"
-  | "cwd"
-  | "permissions"
-  | "timeout"
-  | "model"
-  | "reset-options"
-  | "doctor"
-  | "install"
-  | "help";
-
-export type AcpSpawnThreadMode = "auto" | "here" | "off";
-
-export type ParsedSpawnInput = {
+type ParsedSpawnInput = {
   agentId: string;
   mode: AcpRuntimeSessionMode;
   thread: AcpSpawnThreadMode;
+  bind: AcpSpawnBindMode;
   cwd?: string;
   label?: string;
 };
 
-export type ParsedSteerInput = {
+type ParsedSteerInput = {
   sessionToken?: string;
   instruction: string;
 };
 
-export type ParsedSingleValueCommandInput = {
-  value: string;
-  sessionToken?: string;
-};
-
-export type ParsedSetCommandInput = {
+type ParsedSetCommandInput = {
   key: string;
   value: string;
   sessionToken?: string;
@@ -80,170 +62,107 @@ export type ParsedSetCommandInput = {
 const ACP_UNICODE_DASH_PREFIX_RE =
   /^[\u2010\u2011\u2012\u2013\u2014\u2015\u2212\uFE58\uFE63\uFF0D]+/;
 
-export function stopWithText(text: string): CommandHandlerResult {
-  return {
-    shouldContinue: false,
-    reply: { text },
-  };
-}
-
-export function resolveAcpAction(tokens: string[]): AcpAction {
-  const action = tokens[0]?.trim().toLowerCase();
-  if (
-    action === "spawn" ||
-    action === "cancel" ||
-    action === "steer" ||
-    action === "close" ||
-    action === "sessions" ||
-    action === "status" ||
-    action === "set-mode" ||
-    action === "set" ||
-    action === "cwd" ||
-    action === "permissions" ||
-    action === "timeout" ||
-    action === "model" ||
-    action === "reset-options" ||
-    action === "doctor" ||
-    action === "install" ||
-    action === "help"
-  ) {
-    tokens.shift();
-    return action;
+function readOptionValue(params: {
+  tokens: string[];
+  index: number;
+  flags: readonly string[];
+}): Result<{ flag: string; value: string; nextIndex: number }, string> | null {
+  const token = params.tokens[params.index] ?? "";
+  const flag = params.flags.find(
+    (candidate) => token === candidate || token.startsWith(`${candidate}=`),
+  );
+  if (!flag) {
+    return null;
   }
-  return "help";
-}
-
-function readOptionValue(params: { tokens: string[]; index: number; flag: string }):
-  | {
-      matched: true;
-      value?: string;
-      nextIndex: number;
-      error?: string;
+  let value: string;
+  let nextIndex = params.index + 1;
+  if (token === flag) {
+    const nextValue = params.tokens[params.index + 1] ?? "";
+    value = nextValue.startsWith("--") ? "" : nextValue;
+    if (value) {
+      nextIndex += 1;
     }
-  | { matched: false } {
-  const token = normalizeAcpOptionToken(params.tokens[params.index] ?? "");
-  if (token === params.flag) {
-    const nextValue = normalizeAcpOptionToken(params.tokens[params.index + 1] ?? "");
-    if (!nextValue || nextValue.startsWith("--")) {
-      return {
-        matched: true,
-        nextIndex: params.index + 1,
-        error: `${params.flag} requires a value`,
-      };
-    }
-    return {
-      matched: true,
-      value: nextValue,
-      nextIndex: params.index + 2,
-    };
+  } else {
+    value = token.slice(flag.length + 1).trim();
   }
-  if (token.startsWith(`${params.flag}=`)) {
-    const value = token.slice(`${params.flag}=`.length).trim();
-    if (!value) {
-      return {
-        matched: true,
-        nextIndex: params.index + 1,
-        error: `${params.flag} requires a value`,
-      };
-    }
-    return {
-      matched: true,
-      value,
-      nextIndex: params.index + 1,
-    };
+  if (!value) {
+    return { ok: false, error: `${flag} requires a value` };
   }
-  return { matched: false };
+  return { ok: true, value: { flag, value, nextIndex } };
 }
 
 function normalizeAcpOptionToken(raw: string): string {
-  const token = raw.trim();
-  if (!token || token.startsWith("--")) {
-    return token;
-  }
-  const dashPrefix = token.match(ACP_UNICODE_DASH_PREFIX_RE)?.[0];
-  if (!dashPrefix) {
-    return token;
-  }
-  return `--${token.slice(dashPrefix.length)}`;
-}
-
-function resolveDefaultSpawnThreadMode(params: HandleCommandsParams): AcpSpawnThreadMode {
-  if (resolveAcpCommandChannel(params) !== DISCORD_THREAD_BINDING_CHANNEL) {
-    return "off";
-  }
-  const currentThreadId = resolveAcpCommandThreadId(params);
-  return currentThreadId ? "here" : "auto";
+  return raw.trim().replace(ACP_UNICODE_DASH_PREFIX_RE, "--");
 }
 
 export function parseSpawnInput(
   params: HandleCommandsParams,
   tokens: string[],
-): { ok: true; value: ParsedSpawnInput } | { ok: false; error: string } {
-  const normalizedTokens = tokens.map((token) => normalizeAcpOptionToken(token));
+): Result<ParsedSpawnInput, string> {
+  const normalizedTokens = tokens.map(normalizeAcpOptionToken);
   let mode: AcpRuntimeSessionMode = "persistent";
-  let thread = resolveDefaultSpawnThreadMode(params);
+  const channel = resolveConversationBindingChannelFromMessage(params.ctx, params.command.channel);
+  let thread: AcpSpawnThreadMode = "off";
+  if (supportsAutomaticThreadBindingSpawn(channel)) {
+    thread = stringifyRouteThreadId(params.ctx.MessageThreadId) ? "here" : "auto";
+  }
+  let sawThreadOption = false;
+  let bind: AcpSpawnBindMode = "off";
   let cwd: string | undefined;
   let label: string | undefined;
   let rawAgentId: string | undefined;
 
-  for (let i = 0; i < normalizedTokens.length; ) {
+  for (let i = 0; i < normalizedTokens.length;) {
     const token = normalizedTokens[i] ?? "";
 
-    const modeOption = readOptionValue({ tokens: normalizedTokens, index: i, flag: "--mode" });
-    if (modeOption.matched) {
-      if (modeOption.error) {
-        return { ok: false, error: `${modeOption.error}. ${ACP_SPAWN_USAGE}` };
-      }
-      const raw = modeOption.value?.trim().toLowerCase();
-      if (raw !== "persistent" && raw !== "oneshot") {
-        return {
-          ok: false,
-          error: `Invalid --mode value "${modeOption.value}". Use persistent or oneshot.`,
-        };
-      }
-      mode = raw;
-      i = modeOption.nextIndex;
-      continue;
-    }
-
-    const threadOption = readOptionValue({
+    const option = readOptionValue({
       tokens: normalizedTokens,
       index: i,
-      flag: "--thread",
+      flags: ["--mode", "--bind", "--thread", "--cwd", "--label"],
     });
-    if (threadOption.matched) {
-      if (threadOption.error) {
-        return { ok: false, error: `${threadOption.error}. ${ACP_SPAWN_USAGE}` };
+    if (option) {
+      if (!option.ok) {
+        return { ok: false, error: `${option.error}. ${ACP_SPAWN_USAGE}` };
       }
-      const raw = threadOption.value?.trim().toLowerCase();
-      if (raw !== "auto" && raw !== "here" && raw !== "off") {
-        return {
-          ok: false,
-          error: `Invalid --thread value "${threadOption.value}". Use auto, here, or off.`,
-        };
+      const { flag, value, nextIndex } = option.value;
+      const raw = normalizeOptionalLowercaseString(value);
+      switch (flag) {
+        case "--mode":
+          if (raw !== "persistent" && raw !== "oneshot") {
+            return {
+              ok: false,
+              error: `Invalid --mode value "${value}". Use persistent or oneshot.`,
+            };
+          }
+          mode = raw;
+          break;
+        case "--bind":
+          if (raw !== "here" && raw !== "off") {
+            return {
+              ok: false,
+              error: `Invalid --bind value "${value}". Use here or off.`,
+            };
+          }
+          bind = raw;
+          break;
+        case "--thread":
+          if (raw !== "auto" && raw !== "here" && raw !== "off") {
+            return {
+              ok: false,
+              error: `Invalid --thread value "${value}". Use auto, here, or off.`,
+            };
+          }
+          thread = raw;
+          sawThreadOption = true;
+          break;
+        case "--cwd":
+          cwd = normalizeOptionalString(value);
+          break;
+        case "--label":
+          label = normalizeOptionalString(value);
+          break;
       }
-      thread = raw;
-      i = threadOption.nextIndex;
-      continue;
-    }
-
-    const cwdOption = readOptionValue({ tokens: normalizedTokens, index: i, flag: "--cwd" });
-    if (cwdOption.matched) {
-      if (cwdOption.error) {
-        return { ok: false, error: `${cwdOption.error}. ${ACP_SPAWN_USAGE}` };
-      }
-      cwd = cwdOption.value?.trim();
-      i = cwdOption.nextIndex;
-      continue;
-    }
-
-    const labelOption = readOptionValue({ tokens: normalizedTokens, index: i, flag: "--label" });
-    if (labelOption.matched) {
-      if (labelOption.error) {
-        return { ok: false, error: `${labelOption.error}. ${ACP_SPAWN_USAGE}` };
-      }
-      label = labelOption.value?.trim();
-      i = labelOption.nextIndex;
+      i = nextIndex;
       continue;
     }
 
@@ -255,7 +174,7 @@ export function parseSpawnInput(
     }
 
     if (!rawAgentId) {
-      rawAgentId = token.trim();
+      rawAgentId = normalizeOptionalString(token);
       i += 1;
       continue;
     }
@@ -266,8 +185,8 @@ export function parseSpawnInput(
     };
   }
 
-  const fallbackAgent = params.cfg.acp?.defaultAgent?.trim() || "";
-  const selectedAgent = (rawAgentId?.trim() || fallbackAgent).trim();
+  const fallbackAgent = normalizeOptionalString(params.cfg.acp?.defaultAgent) ?? "";
+  const selectedAgent = rawAgentId ?? fallbackAgent;
   if (!selectedAgent) {
     return {
       ok: false,
@@ -275,6 +194,15 @@ export function parseSpawnInput(
     };
   }
   const normalizedAgentId = normalizeAgentId(selectedAgent);
+  if (bind !== "off" && !sawThreadOption) {
+    thread = "off";
+  }
+  if (thread !== "off" && bind !== "off") {
+    return {
+      ok: false,
+      error: `Use either --thread or --bind for /acp spawn, not both. ${ACP_SPAWN_USAGE}`,
+    };
+  }
 
   return {
     ok: true,
@@ -282,34 +210,33 @@ export function parseSpawnInput(
       agentId: normalizedAgentId,
       mode,
       thread,
+      bind,
       cwd,
-      label: label || undefined,
+      label,
     },
   };
 }
 
-export function parseSteerInput(
-  tokens: string[],
-): { ok: true; value: ParsedSteerInput } | { ok: false; error: string } {
-  const normalizedTokens = tokens.map((token) => normalizeAcpOptionToken(token));
+export function parseSteerInput(tokens: string[]): Result<ParsedSteerInput, string> {
+  const normalizedTokens = tokens.map(normalizeAcpOptionToken);
   let sessionToken: string | undefined;
   const instructionTokens: string[] = [];
 
-  for (let i = 0; i < normalizedTokens.length; ) {
+  for (let i = 0; i < normalizedTokens.length;) {
     const sessionOption = readOptionValue({
       tokens: normalizedTokens,
       index: i,
-      flag: "--session",
+      flags: ["--session"],
     });
-    if (sessionOption.matched) {
-      if (sessionOption.error) {
+    if (sessionOption) {
+      if (!sessionOption.ok) {
         return {
           ok: false,
           error: `${sessionOption.error}. ${ACP_STEER_USAGE}`,
         };
       }
-      sessionToken = sessionOption.value?.trim() || undefined;
-      i = sessionOption.nextIndex;
+      sessionToken = normalizeOptionalString(sessionOption.value.value);
+      i = sessionOption.value.nextIndex;
       continue;
     }
 
@@ -334,45 +261,16 @@ export function parseSteerInput(
   };
 }
 
-export function parseSingleValueCommandInput(
-  tokens: string[],
-  usage: string,
-): { ok: true; value: ParsedSingleValueCommandInput } | { ok: false; error: string } {
-  const value = tokens[0]?.trim() || "";
-  if (!value) {
-    return { ok: false, error: usage };
-  }
-  if (tokens.length > 2) {
-    return { ok: false, error: usage };
-  }
-  const sessionToken = tokens[1]?.trim() || undefined;
-  return {
-    ok: true,
-    value: {
-      value,
-      sessionToken,
-    },
-  };
-}
-
-export function parseSetCommandInput(
-  tokens: string[],
-): { ok: true; value: ParsedSetCommandInput } | { ok: false; error: string } {
-  const key = tokens[0]?.trim() || "";
-  const value = tokens[1]?.trim() || "";
-  if (!key || !value) {
+export function parseSetCommandInput(tokens: string[]): Result<ParsedSetCommandInput, string> {
+  const key = normalizeOptionalString(tokens[0]) ?? "";
+  const value = normalizeOptionalString(tokens[1]) ?? "";
+  if (!key || !value || tokens.length > 3) {
     return {
       ok: false,
       error: ACP_SET_USAGE,
     };
   }
-  if (tokens.length > 3) {
-    return {
-      ok: false,
-      error: ACP_SET_USAGE,
-    };
-  }
-  const sessionToken = tokens[2]?.trim() || undefined;
+  const sessionToken = normalizeOptionalString(tokens[2]);
   return {
     ok: true,
     value: {
@@ -390,7 +288,7 @@ export function parseOptionalSingleTarget(
   if (tokens.length > 1) {
     return { ok: false, error: usage };
   }
-  const token = tokens[0]?.trim() || "";
+  const token = normalizeOptionalString(tokens[0]) ?? "";
   return {
     ok: true,
     ...(token ? { sessionToken: token } : {}),
@@ -401,7 +299,7 @@ export function resolveAcpHelpText(): string {
   return [
     "ACP commands:",
     "-----",
-    "/acp spawn [harness-id] [--mode persistent|oneshot] [--thread auto|here|off] [--cwd <path>] [--label <label>]",
+    "/acp spawn [harness-id] [--mode persistent|oneshot] [--thread auto|here|off] [--bind here|off] [--cwd <path>] [--label <label>]",
     "/acp cancel [session-key|session-id|session-label]",
     "/acp steer [--session <session-key|session-id|session-label>] <instruction>",
     "/acp close [session-key|session-id|session-label]",
@@ -418,8 +316,9 @@ export function resolveAcpHelpText(): string {
     "/acp sessions",
     "",
     "Notes:",
-    "- /acp spawn harness-id is an ACP runtime harness alias (for example codex), not an paleoclaw agents.list id.",
-    "- /focus and /unfocus also work with ACP session keys.",
+    "- /acp spawn harness-id is an ACP runtime harness alias (for example codex), not an paleoclaw agents.entries id.",
+    "- Use --bind here to pin the current conversation to the ACP session without creating a child thread.",
+    "- /session unbind detaches this conversation without closing its ACP session.",
     "- ACP dispatch of normal thread messages is controlled by acp.dispatch.enabled.",
   ].join("\n");
 }
@@ -434,22 +333,17 @@ export function formatRuntimeOptionsText(options: AcpSessionRuntimeOptions): str
   const parts = [
     options.runtimeMode ? `runtimeMode=${options.runtimeMode}` : null,
     options.model ? `model=${options.model}` : null,
+    options.thinking ? `thinking=${options.thinking}` : null,
     options.cwd ? `cwd=${options.cwd}` : null,
     options.permissionProfile ? `permissionProfile=${options.permissionProfile}` : null,
-    typeof options.timeoutSeconds === "number" ? `timeoutSeconds=${options.timeoutSeconds}` : null,
+    options.timeoutSeconds !== undefined ? `timeoutSeconds=${options.timeoutSeconds}` : null,
     extras ? `extras={${extras}}` : null,
-  ].filter(Boolean) as string[];
-  if (parts.length === 0) {
-    return "(none)";
-  }
-  return parts.join(", ");
+  ].filter(Boolean);
+  return parts.join(", ") || "(none)";
 }
 
 export function formatAcpCapabilitiesText(controls: string[]): string {
-  if (controls.length === 0) {
-    return "(none)";
-  }
-  return controls.toSorted().join(", ");
+  return controls.length === 0 ? "(none)" : controls.toSorted().join(", ");
 }
 
 export function resolveCommandRequestId(params: HandleCommandsParams): string {
@@ -458,8 +352,9 @@ export function resolveCommandRequestId(params: HandleCommandsParams): string {
     params.ctx.MessageSid ??
     params.ctx.MessageSidFirst ??
     params.ctx.MessageSidLast;
-  if (typeof value === "string" && value.trim()) {
-    return value.trim();
+  const normalizedValue = normalizeOptionalString(value);
+  if (normalizedValue) {
+    return normalizedValue;
   }
   if (typeof value === "number" || typeof value === "bigint") {
     return String(value);
@@ -467,34 +362,21 @@ export function resolveCommandRequestId(params: HandleCommandsParams): string {
   return randomUUID();
 }
 
-export function collectAcpErrorText(params: {
-  error: unknown;
-  fallbackCode: AcpRuntimeError["code"];
+export async function withAcpCommandErrorBoundary(params: {
+  run: () => Promise<CommandHandlerResult>;
   fallbackMessage: string;
-}): string {
-  return toAcpRuntimeErrorText({
-    error: params.error,
-    fallbackCode: params.fallbackCode,
-    fallbackMessage: params.fallbackMessage,
-  });
-}
-
-export async function withAcpCommandErrorBoundary<T>(params: {
-  run: () => Promise<T>;
-  fallbackCode: AcpRuntimeError["code"];
-  fallbackMessage: string;
-  onSuccess: (value: T) => CommandHandlerResult;
 }): Promise<CommandHandlerResult> {
   try {
-    const result = await params.run();
-    return params.onSuccess(result);
+    return await params.run();
   } catch (error) {
-    return stopWithText(
-      collectAcpErrorText({
-        error,
-        fallbackCode: params.fallbackCode,
-        fallbackMessage: params.fallbackMessage,
-      }),
-    );
+    return acpCommandErrorReply(error, params.fallbackMessage);
   }
+}
+
+export function acpCommandErrorReply(
+  error: unknown,
+  fallbackMessage: string,
+  fallbackCode: AcpRuntimeErrorCode = "ACP_TURN_FAILED",
+): CommandHandlerResult {
+  return commandReply(toAcpRuntimeErrorText({ error, fallbackCode, fallbackMessage }));
 }

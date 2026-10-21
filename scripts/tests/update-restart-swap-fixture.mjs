@@ -11,15 +11,15 @@ import { transformSync } from "esbuild";
 export async function createDiskSwap(sourceRoot, base) {
   const require = createRequire(path.join(sourceRoot, "package.json"));
   const expected = JSON.parse(await fs.readFile(path.join(sourceRoot, "package.json"), "utf8"))
-    .dependencies["@paleoclaw/fs-safe"];
+    .dependencies["@openclaw/fs-safe"];
   const installed = JSON.parse(
-    await fs.readFile(require.resolve("@paleoclaw/fs-safe/package.json"), "utf8"),
+    await fs.readFile(require.resolve("@openclaw/fs-safe/package.json"), "utf8"),
   ).version;
   assert.equal(installed, expected, "filesystem dependency must match the candidate manifest");
-  const atomic = await import(pathToFileURL(require.resolve("@paleoclaw/fs-safe/atomic")).href);
+  const atomic = await import(pathToFileURL(require.resolve("@openclaw/fs-safe/atomic")).href);
   const fsSafe = new Map();
   for (const subpath of ["errors", "path", "root"]) {
-    const specifier = `@paleoclaw/fs-safe/${subpath}`;
+    const specifier = `@openclaw/fs-safe/${subpath}`;
     fsSafe.set(specifier, await import(pathToFileURL(require.resolve(specifier)).href));
   }
   const unexpected = [];

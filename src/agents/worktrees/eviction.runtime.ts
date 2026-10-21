@@ -2,7 +2,7 @@ import fsSync from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { setImmediate as yieldTurn } from "node:timers/promises";
-import { safeRealpathSync } from "@paleoclaw/fs-safe/path";
+import { safeRealpathSync } from "@openclaw/fs-safe/path";
 import {
   readGitMetadataDirectories,
   readGitObjectStorageDependencies,

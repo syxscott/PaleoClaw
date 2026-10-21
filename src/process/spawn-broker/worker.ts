@@ -1,7 +1,7 @@
 import type { ChildProcess, SendHandle } from "node:child_process";
 import { Socket } from "node:net";
 import { setTimeout as delay } from "node:timers/promises";
-import { readRegularFile } from "@paleoclaw/fs-safe/advanced";
+import { readRegularFile } from "@openclaw/fs-safe/advanced";
 import { toErrorObject } from "@paleoclaw/normalization-core/error-coercion";
 import { createDeferredCore } from "../../shared/deferred.js";
 import { getProcessInstanceStartTime } from "../../shared/pid-alive.js";

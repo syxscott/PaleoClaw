@@ -1,14 +1,14 @@
 import { readFileSync } from "node:fs";
 import { serialize } from "node:v8";
 import { parentPort } from "node:worker_threads";
-import { configureFsSafeNative, getFsSafeNativeConfig } from "@paleoclaw/fs-safe/config";
+import { configureFsSafeNative, getFsSafeNativeConfig } from "@openclaw/fs-safe/config";
 import {
   copyTree,
   createCloneSource,
   probeTreeClone,
   readCloneFileMetadata,
-} from "@paleoclaw/fs-safe/copy";
-import { inspectDarwinAcl } from "@paleoclaw/fs-safe/permissions";
+} from "@openclaw/fs-safe/copy";
+import { inspectDarwinAcl } from "@openclaw/fs-safe/permissions";
 import type {
   FsSafeCopyRead,
   FsSafeCopyReply,

@@ -6,7 +6,7 @@ import {
   resolveOpenClawCrablineChannelDriverSelection,
   type ServerRequestEvent,
   type StartedOpenClawCrablineAdapter,
-} from "@paleoclaw/crabline";
+} from "@openclaw/crabline";
 import { isRecord } from "paleoclaw/plugin-sdk/string-coerce-runtime";
 import { expect, it, vi } from "vitest";
 import {
@@ -25,8 +25,8 @@ let retainedResources = false;
 function capturedAdapter() {
   return startedAdapter;
 }
-vi.mock("@paleoclaw/crabline", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@paleoclaw/crabline")>();
+vi.mock("@openclaw/crabline", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@openclaw/crabline")>();
   return {
     ...actual,
     // Capture the public object returned to the unchanged transport. Arguments, observer,
@@ -129,7 +129,7 @@ async function candidateIdentity() {
     name: string;
     exports: { ".": { import: string; types: string } };
   };
-  expect(pkg.name).toBe("@paleoclaw/crabline");
+  expect(pkg.name).toBe("@openclaw/crabline");
   const exports: Record<string, string> = {};
   for (const [kind, relative] of Object.entries(pkg.exports["."])) {
     const file = await fs.realpath(path.resolve(root, relative));

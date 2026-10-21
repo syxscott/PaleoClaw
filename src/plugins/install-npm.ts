@@ -1,4 +1,4 @@
-import { withTempWorkspace } from "@paleoclaw/fs-safe/temp";
+import { withTempWorkspace } from "@openclaw/fs-safe/temp";
 import { withInstallActivity } from "../infra/install-progress.js";
 import { resolveNpmSpecMetadata, type NpmSpecResolution } from "../infra/install-source-utils.js";
 import { resolveNpmIntegrityDriftWithDefaultMessage } from "../infra/npm-integrity.js";

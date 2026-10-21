@@ -49,7 +49,7 @@ const dependencies = [
   "yaml",
   ...(manifest
     ? [
-        "@paleoclaw/fs-safe",
+        "@openclaw/fs-safe",
         "@paleoclaw/proc-safe",
         "@paleoclaw/proxyline",
         "acorn",

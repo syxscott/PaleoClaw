@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import * as fileLock from "@paleoclaw/fs-safe/file-lock";
+import * as fileLock from "@openclaw/fs-safe/file-lock";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import {
   acquireDistArtifactOwnership,
@@ -10,12 +10,12 @@ import {
 import { createFixtureLifetime } from "../helpers/fixture-lifetime.js";
 import { createDeferred } from "../helpers/promise.js";
 
-vi.mock("@paleoclaw/fs-safe/file-lock", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@paleoclaw/fs-safe/file-lock")>()),
+vi.mock("@openclaw/fs-safe/file-lock", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@openclaw/fs-safe/file-lock")>()),
   acquireFileLock: vi.fn(),
 }));
-const actual = await vi.importActual<typeof import("@paleoclaw/fs-safe/file-lock")>(
-  "@paleoclaw/fs-safe/file-lock",
+const actual = await vi.importActual<typeof import("@openclaw/fs-safe/file-lock")>(
+  "@openclaw/fs-safe/file-lock",
 );
 const acquire = vi.mocked(fileLock.acquireFileLock);
 const callback = vi.fn();

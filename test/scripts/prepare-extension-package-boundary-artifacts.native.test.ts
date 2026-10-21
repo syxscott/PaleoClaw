@@ -89,7 +89,7 @@ function createPreparationFixture(mode: "package-boundary" | "all", signal: Abor
     "packages/normalization-core/package.json",
   ]);
   write("scripts/lib/plugin-sdk-entrypoints.json", '["core"]');
-  for (const name of ["tsx", "@paleoclaw/fs-safe", "@paleoclaw/proc-safe"]) {
+  for (const name of ["tsx", "@openclaw/fs-safe", "@paleoclaw/proc-safe"]) {
     const target = path.join(root, "node_modules", name);
     fs.mkdirSync(path.dirname(target), { recursive: true });
     fs.symlinkSync(path.resolve("node_modules", name), target);

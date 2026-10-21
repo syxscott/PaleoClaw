@@ -1,7 +1,7 @@
 import { X509Certificate } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
-import type * as Durability from "@paleoclaw/fs-safe/durability";
+import type * as Durability from "@openclaw/fs-safe/durability";
 import { expectDefined } from "@paleoclaw/normalization-core";
 import { afterEach, expect, it, vi } from "vitest";
 import { normalizeTlsFingerprint } from "../../../packages/gateway-client/src/client-address-utils.js";
@@ -25,8 +25,8 @@ const { durabilityTestState, runExecMock } = vi.hoisted(() => ({
   runExecMock: vi.fn<(...args: ExecArgs) => Promise<void>>(),
 }));
 
-vi.mock("@paleoclaw/fs-safe/durability", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@paleoclaw/fs-safe/durability")>();
+vi.mock("@openclaw/fs-safe/durability", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@openclaw/fs-safe/durability")>();
   return {
     ...actual,
     publishFileExclusive: async (params: PublishParams) => {

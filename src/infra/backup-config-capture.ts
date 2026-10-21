@@ -2,7 +2,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { isDeepStrictEqual } from "node:util";
-import { readFileHandleBounded } from "@paleoclaw/fs-safe/advanced";
+import { readFileHandleBounded } from "@openclaw/fs-safe/advanced";
 import { hashConfigIncludeRaw } from "../config/includes.js";
 import { createConfigIO } from "../config/io.factory.js";
 import { containsConfigIncludeDirective } from "../config/io.read-helpers.js";

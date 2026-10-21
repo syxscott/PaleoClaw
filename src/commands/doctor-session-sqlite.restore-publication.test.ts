@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import asyncFs from "node:fs/promises";
 import path from "node:path";
-import * as replaceFile from "@paleoclaw/fs-safe/atomic";
+import * as replaceFile from "@openclaw/fs-safe/atomic";
 import { expectDefined } from "@paleoclaw/normalization-core";
 import { expect, it, vi } from "vitest";
 import * as durability from "../infra/directory-durability.js";
@@ -23,8 +23,8 @@ import {
   useDoctorSessionSqliteTestFixture,
 } from "./doctor-session-sqlite.test-support.js";
 
-vi.mock("@paleoclaw/fs-safe/atomic", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@paleoclaw/fs-safe/atomic")>()),
+vi.mock("@openclaw/fs-safe/atomic", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@openclaw/fs-safe/atomic")>()),
 }));
 
 const { createHistoricalRestoreStore, createVerifiedRecoveryStore } =

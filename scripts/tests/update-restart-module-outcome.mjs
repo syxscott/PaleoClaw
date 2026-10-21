@@ -1,5 +1,5 @@
 // Production seams plus synthetic-package filesystem regression.
-// Needs the repository-pinned @paleoclaw/fs-safe; no service or full CLI runtime.
+// Needs the repository-pinned @openclaw/fs-safe; no service or full CLI runtime.
 // Node >=24: node --experimental-vm-modules --test this-file.mjs
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";

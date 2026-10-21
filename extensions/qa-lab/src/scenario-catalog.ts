@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { walkDirectorySync } from "@paleoclaw/fs-safe/walk";
+import { walkDirectorySync } from "@openclaw/fs-safe/walk";
 import YAML from "yaml";
 import { z } from "zod";
 import { qaCoverageIdSchema } from "./coverage-id.js";

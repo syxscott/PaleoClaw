@@ -1,7 +1,7 @@
 import { createHash, randomBytes } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import { readFileWindowFully } from "@paleoclaw/fs-safe/advanced";
+import { readFileWindowFully } from "@openclaw/fs-safe/advanced";
 import { syncDirectoryIfSupported } from "./directory-durability.js";
 import { writeFileWindowFully } from "./file-descriptor.js";
 import { FsSafeError, root as createFsSafeRoot } from "./fs-safe.js";

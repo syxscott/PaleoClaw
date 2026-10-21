@@ -3,7 +3,7 @@ import { once } from "node:events";
 import path from "node:path";
 import { DatabaseSync, type SQLInputValue } from "node:sqlite";
 import { zstdDecompressSync } from "node:zlib";
-import { withTimeout } from "@paleoclaw/fs-safe/advanced";
+import { withTimeout } from "@openclaw/fs-safe/advanced";
 import {
   resolveRuntimeWorkerArgv,
   resolveRuntimeWorkerUrl,

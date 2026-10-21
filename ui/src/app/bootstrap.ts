@@ -4,7 +4,7 @@ import {
   parseControlUiFocusLocation,
   type ControlUiFocusLocation,
 } from "@paleoclaw/session-url-contract";
-import type { RouteLocation } from "@paleoclaw/uirouter";
+import type { RouteLocation } from "@openclaw/uirouter";
 import { ConnectErrorDetailCodes } from "../../../packages/gateway-protocol/src/connect-error-details.js";
 import type { GatewayBrowserClient } from "../api/gateway.ts";
 import { isSettingsTakeover } from "../app-navigation.ts";

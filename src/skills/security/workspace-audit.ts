@@ -1,8 +1,8 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { withTimeout } from "@paleoclaw/fs-safe/advanced";
-import { isNotFoundPathError } from "@paleoclaw/fs-safe/path";
-import { walkDirectory } from "@paleoclaw/fs-safe/walk";
+import { withTimeout } from "@openclaw/fs-safe/advanced";
+import { isNotFoundPathError } from "@openclaw/fs-safe/path";
+import { walkDirectory } from "@openclaw/fs-safe/walk";
 import {
   listAgentWorkspaceDirs,
   listExplicitAgentWorkspaceDirs,

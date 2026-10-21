@@ -1,4 +1,4 @@
-import { FsSafeError } from "@paleoclaw/fs-safe/errors";
+import { FsSafeError } from "@openclaw/fs-safe/errors";
 import { createPrivateSqliteDirectory } from "../infra/sqlite-private-directory.js";
 
 export function isPrivateDirectoryAlreadyExists(error: unknown): boolean {

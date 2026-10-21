@@ -4,7 +4,7 @@ import { DatabaseSync } from "node:sqlite";
 import { resolveOpenClawStateSqlitePath } from "../state/paleoclaw-state-db.paths.js";
 import { readRestartSentinelRowSync } from "./restart-sentinel-store.js";
 
-const storeModulePath = createRequire(import.meta.url).resolve("@paleoclaw/fs-safe/store");
+const storeModulePath = createRequire(import.meta.url).resolve("@openclaw/fs-safe/store");
 
 /** Native fixture processes must reread state under the same cross-process write lock. */
 export function managedServiceStateUpdateScript(statePath: string, update: string): string {

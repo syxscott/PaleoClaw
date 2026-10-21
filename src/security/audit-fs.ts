@@ -4,7 +4,7 @@ import {
   inspectPathPermissions,
   type PermissionCheck,
   type PermissionCheckOptions,
-} from "@paleoclaw/fs-safe/permissions";
+} from "@openclaw/fs-safe/permissions";
 import type { SecurityAuditFinding } from "./audit.types.js";
 
 /** Filesystem permission audit facade backed by fs-safe permission helpers. */
@@ -13,7 +13,7 @@ export {
   safeStat,
   type PermissionCheck,
   type PermissionCheckOptions,
-} from "@paleoclaw/fs-safe/permissions";
+} from "@openclaw/fs-safe/permissions";
 
 /** Classifiers keep policy; this owner appends observed permissions and remediation. */
 export function createPermissionAuditor(

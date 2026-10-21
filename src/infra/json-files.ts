@@ -1,5 +1,5 @@
-import { writeTextAtomic as writeFsSafeTextAtomic } from "@paleoclaw/fs-safe/atomic";
-import { tryReadJsonSync } from "@paleoclaw/fs-safe/json";
+import { writeTextAtomic as writeFsSafeTextAtomic } from "@openclaw/fs-safe/atomic";
+import { tryReadJsonSync } from "@openclaw/fs-safe/json";
 import { asNullableRecord } from "@paleoclaw/normalization-core/record-coerce";
 
 export {
@@ -15,9 +15,9 @@ export {
   writeJson,
   writeJson as writeJsonAtomic, // Sanctioned domain alias.
   writeJsonSync,
-} from "@paleoclaw/fs-safe/json";
+} from "@openclaw/fs-safe/json";
 
-export { createAsyncLock } from "@paleoclaw/fs-safe/advanced";
+export { createAsyncLock } from "@openclaw/fs-safe/advanced";
 
 export function tryReadJsonObjectSync(filePath: string): Record<string, unknown> | null {
   return asNullableRecord(tryReadJsonSync(filePath));

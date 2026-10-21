@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import path from "node:path";
 import { TextDecoder } from "node:util";
-import type { Root } from "@paleoclaw/fs-safe";
+import type { Root } from "@openclaw/fs-safe";
 import {
   LEGACY_WORKSPACE_ATTESTATION_MAX_BYTES,
   WORKSPACE_DOCTOR_CLAIM_SUFFIX,

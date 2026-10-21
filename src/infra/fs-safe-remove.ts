@@ -2,8 +2,8 @@
 import fsSync, { type BigIntStats } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { FsSafeError } from "@paleoclaw/fs-safe/errors";
-import { root as fsSafeRoot } from "@paleoclaw/fs-safe/root";
+import { FsSafeError } from "@openclaw/fs-safe/errors";
+import { root as fsSafeRoot } from "@openclaw/fs-safe/root";
 import { isMissingPathError } from "./errno.js";
 import { retainMutationAuthority } from "./mutation-authority.js";
 

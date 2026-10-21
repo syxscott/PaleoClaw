@@ -46,7 +46,7 @@ describe("worker deploy build plugin", () => {
   it("tracks the pinned fs-safe manifest and lock before relocation", () => {
     expect(resolveWorkerDeployGeneratorInputs()).toEqual(
       expect.arrayContaining([
-        fs.realpathSync(path.resolve("node_modules/@paleoclaw/fs-safe/package.json")),
+        fs.realpathSync(path.resolve("node_modules/@openclaw/fs-safe/package.json")),
         path.resolve("pnpm-lock.yaml"),
       ]),
     );
@@ -56,7 +56,7 @@ describe("worker deploy build plugin", () => {
     "rejects changed fs-safe native manifest lookup shape %#",
     (code) => {
       const nativePath = fs.realpathSync(
-        path.resolve("node_modules/@paleoclaw/fs-safe/dist/native.js"),
+        path.resolve("node_modules/@openclaw/fs-safe/dist/native.js"),
       );
       expect(() =>
         createWorkerDeployBuildPlugin().transform.call({ error: fail }, code, nativePath),
@@ -173,13 +173,13 @@ export { createRealtimeTranscriptionWebSocketSession } from "../realtime-transcr
 export { runDesktopWebSocketRuntimeProbe } from "../gateway/desktop/websocket-runtime.test-support.js";
 export { loadActivatedBundledPluginPublicSurfaceModuleSync, listImportedBundledPluginFacadeIds } from "../plugin-sdk/facade-runtime.js";
 export { setRuntimeConfigSnapshot } from "../config/runtime-snapshot.js";
-export { getFsSafeNativeConfig } from "@paleoclaw/fs-safe/config";
-export { getNativeFallbackDiagnostic } from ${JSON.stringify(pathToFileURL(fs.realpathSync(path.resolve("node_modules/@paleoclaw/fs-safe/dist/native.js"))).href)};
-import { readOwnerAndDaclBatch as readBatch } from "@paleoclaw/fs-safe/permissions";
+export { getFsSafeNativeConfig } from "@openclaw/fs-safe/config";
+export { getNativeFallbackDiagnostic } from ${JSON.stringify(pathToFileURL(fs.realpathSync(path.resolve("node_modules/@openclaw/fs-safe/dist/native.js"))).href)};
+import { readOwnerAndDaclBatch as readBatch } from "@openclaw/fs-safe/permissions";
 export function readOwnerAndDaclBatch(paths: readonly string[]) {
   return readBatch(paths);
 }
-export { inspectDarwinAcl } from "@paleoclaw/fs-safe/permissions";
+export { inspectDarwinAcl } from "@openclaw/fs-safe/permissions";
 export { loadOrCreateDeviceIdentity } from "../infra/device-identity.js";`;
               }
               if (id === highlightSource) {
@@ -318,7 +318,7 @@ try {
           ).toEqual(
             fs.readFileSync(
               path.resolve(
-                "node_modules/@paleoclaw/fs-safe/dist",
+                "node_modules/@openclaw/fs-safe/dist",
                 WORKER_BUNDLE_WINDOWS_SECURITY_HELPER_PATH,
               ),
             ),
@@ -438,7 +438,7 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 const [entry, fault] = process.argv.slice(1);
 const require = createRequire(pathToFileURL(entry));
-assert.throws(() => require.resolve("@paleoclaw/fs-safe-darwin-" + process.arch), { code: "MODULE_NOT_FOUND" });
+assert.throws(() => require.resolve("@openclaw/fs-safe-darwin-" + process.arch), { code: "MODULE_NOT_FOUND" });
 process.argv = [process.execPath, entry, "--internal-worker-prewarm"];
 const { loadOrCreateDeviceIdentity, getNativeFallbackDiagnostic } = await import(pathToFileURL(entry).href);
 assert.throws(() => loadOrCreateDeviceIdentity(), error => {
@@ -555,7 +555,7 @@ if (process.platform === "darwin") {
 const diagnostic = getNativeFallbackDiagnostic("inspectDarwinAcl");
 assert.equal(diagnostic.reason, process.platform === "darwin" ? "loaded" : "disabled");
 if (diagnostic.packageName) {
-  const versions = ${JSON.stringify(JSON.parse(fs.readFileSync(path.resolve("node_modules/@paleoclaw/fs-safe/package.json"), "utf8")).optionalDependencies)};
+  const versions = ${JSON.stringify(JSON.parse(fs.readFileSync(path.resolve("node_modules/@openclaw/fs-safe/package.json"), "utf8")).optionalDependencies)};
   assert.equal(diagnostic.packageVersion, versions[diagnostic.packageName]);
 }
 assert.deepEqual(await readOwnerAndDaclBatch([]), []);
@@ -1074,13 +1074,13 @@ export async function createAttachedBrowserToolRuntime(params) {
   it.each([
     {
       name: "fs-safe watch worker",
-      modulePath: "node_modules/@paleoclaw/fs-safe/dist/watch-io.js",
+      modulePath: "node_modules/@openclaw/fs-safe/dist/watch-io.js",
       mutate: (source: string) => source.replace("./watch-io-worker.js", "./changed-worker.js"),
       error: "fs-safe watch worker bootstrap changed",
     },
     {
       name: "fs-safe native batch",
-      modulePath: "node_modules/@paleoclaw/fs-safe/dist/windows-security-command.js",
+      modulePath: "node_modules/@openclaw/fs-safe/dist/windows-security-command.js",
       mutate: (source: string) =>
         source.replace("if (options.native) {", "if (options.nativeBatch) {"),
       error: "fs-safe native batch bootstrap changed",

@@ -1,4 +1,4 @@
-import { createRouter, definePage, type RouteMatch, type Router } from "@paleoclaw/uirouter";
+import { createRouter, definePage, type RouteMatch, type Router } from "@openclaw/uirouter";
 import type { JSX } from "@solidjs/web";
 import { afterEach, describe, expect, it, onTestFinished, vi } from "vitest";
 import { createDeferredCore } from "../../../src/shared/deferred.js";

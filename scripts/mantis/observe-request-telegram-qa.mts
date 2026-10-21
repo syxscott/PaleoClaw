@@ -8,7 +8,7 @@ import { setTimeout as sleep } from "node:timers/promises";
 import {
   OPENCLAW_CRABLINE_CHANNEL_CAPABILITY_MATRIX_PATH,
   OPENCLAW_CRABLINE_PROVIDER_READINESS_PATH,
-} from "@paleoclaw/crabline";
+} from "@openclaw/crabline";
 import { z } from "zod";
 import { createQaCrablineTransportAdapter } from "../../extensions/qa-lab/src/crabline-transport.ts";
 import { startQaGatewayRpcClient } from "../../extensions/qa-lab/src/gateway-rpc-client.ts";

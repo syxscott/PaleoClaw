@@ -84,7 +84,7 @@ export function waitForFile(file) {
     write(file, fs.readFileSync(path.resolve(file), "utf8"));
   }
   // Only this disposable fixture gets synthetic binaries; installed tools stay untouched.
-  for (const name of ["p-map", "@paleoclaw/fs-safe", "json5"]) {
+  for (const name of ["p-map", "@openclaw/fs-safe", "json5"]) {
     const target = path.join(root, "node_modules", name);
     fs.mkdirSync(path.dirname(target), { recursive: true });
     fs.symlinkSync(path.resolve("node_modules", name), target, "junction");
@@ -119,7 +119,7 @@ export function waitForFile(file) {
       clean: false,
       write: false,
       treeshake: false,
-      deps: { neverBundle: ["p-map", "@paleoclaw/fs-safe"] },
+      deps: { neverBundle: ["p-map", "@openclaw/fs-safe"] },
       // These POSIX fixtures omit optional Windows Job and declaration compiler runtimes.
       inputOptions: {
         external: (id, importer) =>

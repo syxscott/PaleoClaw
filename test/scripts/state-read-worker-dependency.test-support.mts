@@ -11,7 +11,7 @@ if (!root) {
   throw new Error("The dependency build fixture requires its temporary directory");
 }
 const require = createRequire(import.meta.url);
-const packageRoot = path.dirname(require.resolve("@paleoclaw/fs-safe/package.json"));
+const packageRoot = path.dirname(require.resolve("@openclaw/fs-safe/package.json"));
 const nativePath = path.join(packageRoot, "dist/native.js");
 const helperPath = path.join(packageRoot, "dist/windows-security-helper.js");
 const entry = path.join(root, "entry.mjs");
@@ -31,7 +31,7 @@ const { bundles } = await build({
   platform: "node",
   dts: false,
   deps: { alwaysBundle: () => true },
-  plugins: [createPackageRuntimeUrlBuildPlugin("@paleoclaw/fs-safe")],
+  plugins: [createPackageRuntimeUrlBuildPlugin("@openclaw/fs-safe")],
   logLevel: "silent",
   outExtensions: () => ({ js: ".mjs" }),
 });

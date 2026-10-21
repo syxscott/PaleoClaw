@@ -19,9 +19,9 @@ import {
   writeFileSync,
 } from "node:fs";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
-import { copyFileDescriptorSync } from "@paleoclaw/fs-safe/advanced";
-import { sha256FileSync } from "@paleoclaw/fs-safe/durability";
-import { FsSafeError } from "@paleoclaw/fs-safe/errors";
+import { copyFileDescriptorSync } from "@openclaw/fs-safe/advanced";
+import { sha256FileSync } from "@openclaw/fs-safe/durability";
+import { FsSafeError } from "@openclaw/fs-safe/errors";
 import { z } from "zod";
 import {
   mirrorStatStamp,

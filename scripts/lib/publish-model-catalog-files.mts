@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { readRegularFileSync, writeSiblingTempFile } from "@paleoclaw/fs-safe/advanced";
+import { readRegularFileSync, writeSiblingTempFile } from "@openclaw/fs-safe/advanced";
 
 type Output = { file: string; content: string };
 type Snapshot = { buffer: Buffer; mode: number } | undefined;

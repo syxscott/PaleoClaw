@@ -2,7 +2,7 @@ import fsNode from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { isDeepStrictEqual } from "node:util";
-import { replaceFileAtomic } from "@paleoclaw/fs-safe/atomic";
+import { replaceFileAtomic } from "@openclaw/fs-safe/atomic";
 import { ALLOW_OLDER_BINARY_DESTRUCTIVE_ACTIONS_ENV } from "../../config/future-version-guard.js";
 import {
   hashConfigRaw,

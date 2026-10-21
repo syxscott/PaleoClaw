@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { isPathInside } from "@paleoclaw/fs-safe/path";
+import { isPathInside } from "@openclaw/fs-safe/path";
 import * as tar from "tar";
 import { readConfigFileSnapshot, resolveStateDir } from "../config/config.js";
 import { prepareRestoredClientCredentials } from "../infra/client-credential-restore.js";

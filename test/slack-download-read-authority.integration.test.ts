@@ -3,7 +3,7 @@ import fs from "node:fs/promises";
 import type { ServerResponse } from "node:http";
 import path from "node:path";
 import { buffer } from "node:stream/consumers";
-import { __setFsSafeTestHooksForTest } from "@paleoclaw/fs-safe/test-hooks";
+import { __setFsSafeTestHooksForTest } from "@openclaw/fs-safe/test-hooks";
 import { Agent, EnvHttpProxyAgent, FormData, ProxyAgent } from "undici";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { slackPlugin } from "../extensions/slack/api.js";

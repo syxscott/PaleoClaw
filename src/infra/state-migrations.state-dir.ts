@@ -5,8 +5,8 @@ import {
   probePathCaseInsensitiveSync,
   resolvePathPrefixSync,
   retainEntryForPublication,
-} from "@paleoclaw/fs-safe/advanced";
-import { isPathInside } from "@paleoclaw/fs-safe/path";
+} from "@openclaw/fs-safe/advanced";
+import { isPathInside } from "@openclaw/fs-safe/path";
 import { resolveProfileStateDir } from "../cli/profile-utils.js";
 import { inspectLegacyOAuthSidecarsBeforeConfigRecovery } from "../commands/doctor-auth-legacy-paths.js";
 import type { OpenClawConfigWithLegacyRoster } from "../config/legacy.roster.js";

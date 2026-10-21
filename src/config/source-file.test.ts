@@ -1,8 +1,8 @@
 import fsSync from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
-import * as observation from "@paleoclaw/fs-safe/watch";
-import type { WatchOptions, WatchSubscription } from "@paleoclaw/fs-safe/watch";
+import * as observation from "@openclaw/fs-safe/watch";
+import type { WatchOptions, WatchSubscription } from "@openclaw/fs-safe/watch";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createDeferred } from "../../test/helpers/promise.js";
 import { useAutoCleanupTempDirTracker } from "../../test/helpers/temp-dir.js";
@@ -10,8 +10,8 @@ import * as snapshots from "../infra/fs-observation-snapshot.js";
 import { admitConfigObservationRoots, configObservationEntries } from "./source-file-roots.js";
 import { createConfigFileAdapter } from "./source-file.js";
 
-vi.mock("@paleoclaw/fs-safe/watch", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@paleoclaw/fs-safe/watch")>()),
+vi.mock("@openclaw/fs-safe/watch", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@openclaw/fs-safe/watch")>()),
 }));
 
 const dirs = useAutoCleanupTempDirTracker(afterEach);

@@ -15,7 +15,7 @@ import os from "node:os";
 import path from "node:path";
 import { text as readBody } from "node:stream/consumers";
 import { setTimeout as sleep } from "node:timers/promises";
-import { startOpenClawCrablineAdapter } from "@paleoclaw/crabline";
+import { startOpenClawCrablineAdapter } from "@openclaw/crabline";
 import { asRecord } from "@paleoclaw/normalization-core/record-coerce";
 import { readStringValue } from "@paleoclaw/normalization-core/string-coerce";
 import type { OpenClawConfig } from "paleoclaw/plugin-sdk/config-contracts";

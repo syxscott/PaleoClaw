@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import path from "node:path";
-import { startOpenClawCrablineAdapter } from "@paleoclaw/crabline";
+import { startOpenClawCrablineAdapter } from "@openclaw/crabline";
 import { createDeferred } from "paleoclaw/plugin-sdk/extension-shared";
 import { isRecord } from "paleoclaw/plugin-sdk/string-coerce-runtime";
 import { withTempDir } from "paleoclaw/plugin-sdk/test-env";

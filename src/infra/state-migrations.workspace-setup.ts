@@ -2,7 +2,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { root, type Root } from "@paleoclaw/fs-safe";
+import { root, type Root } from "@openclaw/fs-safe";
 import {
   LEGACY_WORKSPACE_ATTESTATION_DIRNAME,
   WORKSPACE_DOCTOR_CLAIM_SUFFIX,

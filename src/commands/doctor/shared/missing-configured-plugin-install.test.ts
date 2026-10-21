@@ -2,7 +2,7 @@
 import "./missing-configured-plugin-install.suite.test-support.js";
 import fs from "node:fs";
 import path from "node:path";
-import { root as fsSafeRoot, type Root } from "@paleoclaw/fs-safe/root";
+import { root as fsSafeRoot, type Root } from "@openclaw/fs-safe/root";
 import { expectDefined } from "@paleoclaw/normalization-core";
 import { describe, expect, it, vi } from "vitest";
 import { PLUGIN_CAPABILITY_CONSENT_REQUIRED } from "../../../../packages/gateway-protocol/src/capability-consent-error-details.js";

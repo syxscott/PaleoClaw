@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { replaceFileAtomic } from "@paleoclaw/fs-safe/atomic";
+import { replaceFileAtomic } from "@openclaw/fs-safe/atomic";
 import { isRecord } from "@paleoclaw/normalization-core/record-coerce";
 import {
   CONTROL_UI_PLUGIN_MAX_ASSET_BYTES,

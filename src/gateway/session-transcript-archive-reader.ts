@@ -1,6 +1,6 @@
 // Reads transcript artifacts; live store acquisition stays with the caller.
 import fs from "node:fs";
-import { readFileWindowFully } from "@paleoclaw/fs-safe/advanced";
+import { readFileWindowFully } from "@openclaw/fs-safe/advanced";
 import {
   resolveIntegerOption,
   resolveNonNegativeIntegerOption,

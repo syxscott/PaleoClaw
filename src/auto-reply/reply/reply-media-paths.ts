@@ -1,5 +1,5 @@
 import path from "node:path";
-import { sanitizeUntrustedFileName } from "@paleoclaw/fs-safe/advanced";
+import { sanitizeUntrustedFileName } from "@openclaw/fs-safe/advanced";
 import { mediaKindFromMime } from "@paleoclaw/media-core/constants";
 import { basenameFromAnyPath } from "@paleoclaw/media-core/file-name";
 import { isPassThroughRemoteMediaSource } from "@paleoclaw/media-core/media-source-url";

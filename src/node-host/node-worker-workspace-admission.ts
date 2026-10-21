@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { FsSafeError } from "@paleoclaw/fs-safe";
-import { tempWorkspace, type TempWorkspaceOptions } from "@paleoclaw/fs-safe/temp";
+import { FsSafeError } from "@openclaw/fs-safe";
+import { tempWorkspace, type TempWorkspaceOptions } from "@openclaw/fs-safe/temp";
 import { isMissingPathError } from "../infra/errno.js";
 
 async function describeWritableAncestor(rootDir: string): Promise<string | undefined> {

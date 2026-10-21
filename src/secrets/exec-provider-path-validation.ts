@@ -1,5 +1,5 @@
-import { isPathInside } from "@paleoclaw/fs-safe/path";
-import { inspectPathPermissions, safeStat } from "@paleoclaw/fs-safe/permissions";
+import { isPathInside } from "@openclaw/fs-safe/path";
+import { inspectPathPermissions, safeStat } from "@openclaw/fs-safe/permissions";
 import { FsSafeError } from "../infra/fs-safe.js";
 import { resolveUserPath } from "../infra/home-dir.js";
 

@@ -4,7 +4,7 @@ import fs, { createWriteStream, type BigIntStats, type Stats } from "node:fs";
 import fsp from "node:fs/promises";
 import path from "node:path";
 import { pipeline } from "node:stream/promises";
-import { sha256File as hashFile } from "@paleoclaw/fs-safe/durability";
+import { sha256File as hashFile } from "@openclaw/fs-safe/durability";
 import {
   ARCHIVE_LIMIT_ERROR_CODE,
   ArchiveLimitError,

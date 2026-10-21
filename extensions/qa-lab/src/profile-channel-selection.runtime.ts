@@ -1,4 +1,4 @@
-import { isCrablineServerChannel, OPENCLAW_CRABLINE_DEFAULT_CHANNEL } from "@paleoclaw/crabline";
+import { isCrablineServerChannel, OPENCLAW_CRABLINE_DEFAULT_CHANNEL } from "@openclaw/crabline";
 import { listLiveTransportQaAdapterFactories } from "./live-transports/cli.js";
 import { qaTransportSupportsModuleFlows } from "./qa-transport-registry.js";
 import type { QaScorecardChannelDriver } from "./scorecard-taxonomy.js";

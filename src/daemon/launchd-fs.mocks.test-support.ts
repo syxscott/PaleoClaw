@@ -10,8 +10,8 @@ vi.mock("node:fs/promises", async () => {
   return { ...wrapped, default: wrapped };
 });
 
-vi.mock("@paleoclaw/fs-safe/advanced", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@paleoclaw/fs-safe/advanced")>();
+vi.mock("@openclaw/fs-safe/advanced", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@openclaw/fs-safe/advanced")>();
   return {
     ...actual,
     readRegularFile: (params: Parameters<typeof actual.readRegularFile>[0]) =>

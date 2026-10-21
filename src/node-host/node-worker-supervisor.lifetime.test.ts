@@ -47,7 +47,7 @@ import { NodeWorkerWorkspaceRuntime } from "./node-worker-workspace.js";
 type NodeWorkerSupervisor = ReturnType<typeof createNodeWorkerSupervisor>;
 
 const tempDirs = useStateDatabaseTempDirs();
-const fileLockModule = createRequire(import.meta.url).resolve("@paleoclaw/fs-safe/file-lock");
+const fileLockModule = createRequire(import.meta.url).resolve("@openclaw/fs-safe/file-lock");
 
 afterEach(() => {
   vi.restoreAllMocks();

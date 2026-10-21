@@ -1,4 +1,4 @@
-import { createRouter, type RouteLoaderOptions, type RouteLocation } from "@paleoclaw/uirouter";
+import { createRouter, type RouteLoaderOptions, type RouteLocation } from "@openclaw/uirouter";
 import { describe, expect, it, vi } from "vitest";
 import { createDeferred } from "../../../../test/helpers/promise.js";
 import type { SystemAgentSetupDetectResult } from "../../api/types.ts";

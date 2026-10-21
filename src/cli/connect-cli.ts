@@ -1,7 +1,7 @@
 // One-paste node onboarding from setup codes or single-use Gateway join URLs.
 import { isUtf8 } from "node:buffer";
 import fs from "node:fs/promises";
-import { readRegularFile } from "@paleoclaw/fs-safe/advanced";
+import { readRegularFile } from "@openclaw/fs-safe/advanced";
 import { normalizeMimeType } from "@paleoclaw/media-core/mime";
 import { readNonBlankString } from "@paleoclaw/normalization-core/string-coerce";
 import type { Command } from "commander";

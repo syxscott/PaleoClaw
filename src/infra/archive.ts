@@ -2,7 +2,7 @@
 import {
   extractArchive as extractArchiveWithFsSafe,
   type ExtractArchiveOptions,
-} from "@paleoclaw/fs-safe/archive";
+} from "@openclaw/fs-safe/archive";
 
 // Archive extraction facade for size limits, staged writes, and traversal checks.
 export {
@@ -21,7 +21,7 @@ export {
   type ArchiveEntryKind,
   type ArchiveExtractLimits,
   type ExtractArchiveOptions,
-} from "@paleoclaw/fs-safe/archive";
+} from "@openclaw/fs-safe/archive";
 
 /** Retain paleoclaw's durable publication default; disposable extraction opts out explicitly. */
 export async function extractArchive(params: ExtractArchiveOptions): Promise<void> {

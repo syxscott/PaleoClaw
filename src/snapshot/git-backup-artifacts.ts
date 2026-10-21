@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { hasNodeErrorCode } from "@paleoclaw/fs-safe/path";
+import { hasNodeErrorCode } from "@openclaw/fs-safe/path";
 import {
   executeGitCommand as runGit,
   normalizeGitPathForFilesystem,

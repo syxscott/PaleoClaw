@@ -3,7 +3,7 @@ import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import fsp from "node:fs/promises";
 import path from "node:path";
-import { root as fsSafeRoot } from "@paleoclaw/fs-safe/root";
+import { root as fsSafeRoot } from "@openclaw/fs-safe/root";
 import { z } from "zod";
 import { requireDirectorySync, syncDirectory } from "../infra/directory-durability.js";
 import { copyFileHandle, hashFileDescriptorSync } from "../infra/file-descriptor.js";

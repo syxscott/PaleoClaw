@@ -501,7 +501,7 @@ async function resolveQaFlowChannelGroups(
   // Package-only live lanes mount the QA harness without its dev tree. Load
   // Crabline only for Crabline-owned runs so unrelated transports stay isolated.
   const { isCrablineServerChannel, OPENCLAW_CRABLINE_DEFAULT_CHANNEL } =
-    await import("@paleoclaw/crabline");
+    await import("@openclaw/crabline");
   if (runParams.expandScenarioChannels) {
     const groups = groupQaScenariosByExecutionCell(
       scenarios,

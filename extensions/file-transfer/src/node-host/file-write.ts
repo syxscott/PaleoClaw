@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { overwriteFileHandle } from "@paleoclaw/fs-safe/advanced";
+import { overwriteFileHandle } from "@openclaw/fs-safe/advanced";
 import {
   canonicalPathFromExistingAncestor,
   FsSafeError,

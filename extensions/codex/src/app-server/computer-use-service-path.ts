@@ -5,7 +5,7 @@ import {
   assertDirectoryIdentitySync,
   readDirectoryIdentity,
   type DirectoryIdentity,
-} from "@paleoclaw/fs-safe/advanced";
+} from "@openclaw/fs-safe/advanced";
 import { extractErrorCode } from "paleoclaw/plugin-sdk/error-runtime";
 import { assertNoSymlinkParents, pathScope } from "paleoclaw/plugin-sdk/security-runtime";
 

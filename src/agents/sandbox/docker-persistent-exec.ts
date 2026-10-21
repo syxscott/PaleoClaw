@@ -1,5 +1,5 @@
 import type { Readable } from "node:stream";
-import { withTimeout } from "@paleoclaw/fs-safe/advanced";
+import { withTimeout } from "@openclaw/fs-safe/advanced";
 import { isRecord } from "@paleoclaw/normalization-core/record-coerce";
 import { runOutsideCommandProcessScope, waitForCommandSpawn } from "../../process/exec-spawn.js";
 import { isPlainCommandExitFailure, spawnCommand } from "../../process/exec.js";

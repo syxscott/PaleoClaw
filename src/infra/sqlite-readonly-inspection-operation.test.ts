@@ -1,8 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
 import type { DatabaseSync } from "node:sqlite";
-import { FsSafeError } from "@paleoclaw/fs-safe/errors";
-import { __setFsSafeTestHooksForTest } from "@paleoclaw/fs-safe/test-hooks";
+import { FsSafeError } from "@openclaw/fs-safe/errors";
+import { __setFsSafeTestHooksForTest } from "@openclaw/fs-safe/test-hooks";
 import { expectDefined } from "@paleoclaw/normalization-core";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import "../test-utils/prepare-compiled-subprocesses.js";

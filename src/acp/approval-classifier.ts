@@ -1,6 +1,6 @@
 import { homedir } from "node:os";
 import path from "node:path";
-import { trySafeFileURLToPath } from "@paleoclaw/fs-safe/advanced";
+import { trySafeFileURLToPath } from "@openclaw/fs-safe/advanced";
 import { asOptionalRecord as asRecord } from "@paleoclaw/normalization-core/record-coerce";
 import {
   normalizeLowercaseStringOrEmpty,

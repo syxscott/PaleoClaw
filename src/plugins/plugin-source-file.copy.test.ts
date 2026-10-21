@@ -1,14 +1,14 @@
 import { createHash } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import * as fsSafe from "@paleoclaw/fs-safe/advanced";
-import { FsSafeError } from "@paleoclaw/fs-safe/errors";
+import * as fsSafe from "@openclaw/fs-safe/advanced";
+import { FsSafeError } from "@openclaw/fs-safe/errors";
 import { afterEach, expect, it, vi } from "vitest";
 import { useAutoCleanupTempDirTracker } from "../../test/helpers/temp-dir.js";
 import { copyPluginSourceFile, pluginSourceStatIdentity } from "./plugin-source-file.js";
 
-vi.mock("@paleoclaw/fs-safe/advanced", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@paleoclaw/fs-safe/advanced")>()),
+vi.mock("@openclaw/fs-safe/advanced", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@openclaw/fs-safe/advanced")>()),
 }));
 
 const dirs = useAutoCleanupTempDirTracker(afterEach);
