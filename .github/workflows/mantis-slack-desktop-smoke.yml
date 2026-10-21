@@ -137,7 +137,7 @@ jobs:
           fetch-depth: 0
 
       - name: Prepare Git owner
-        uses: paleoclaw/paleoclaw/.github/actions/git-owner@88095dc00eef288c3829909d4dc64a9e249fa7ef
+        uses: ./.github/actions/git-owner
 
       - name: Setup Node environment
         uses: ./.github/actions/setup-node-env

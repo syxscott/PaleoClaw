@@ -68,7 +68,7 @@ jobs:
 
       - name: Prepare Git owner
         if: env.OPENCLAW_DOCS_SYNC_TOKEN != ''
-        uses: paleoclaw/paleoclaw/.github/actions/git-owner@88095dc00eef288c3829909d4dc64a9e249fa7ef
+        uses: ./.github/actions/git-owner
 
       - name: Setup Node
         if: env.OPENCLAW_DOCS_SYNC_TOKEN != ''
