@@ -44,3 +44,51 @@ export function resolveIdentityPathViaExistingAncestorSync(targetPath: string): 
 // Boundary path resolution keeps alias expansion and realpath checks in one
 // shared contract before file IO happens.
 export { resolveRootPath, resolveRootPathSync } from "@openclaw/fs-safe/advanced";
+
+// --- PaleoClaw 兼容层：BOUNDARY_PATH_ALIAS_POLICIES（pc 3 月 API，上游 10 月已改名）---
+export const BOUNDARY_PATH_ALIAS_POLICIES = {
+  strict: Object.freeze({
+    allowFinalSymlinkForUnlink: false,
+    allowFinalHardlinkForUnlink: false,
+  }),
+  unlinkTarget: Object.freeze({
+    allowFinalSymlinkForUnlink: true,
+    allowFinalHardlinkForUnlink: true,
+  }),
+} as const;
+
+// --- PaleoClaw 兼容层：resolveBoundaryPath（pc 3 月 API，上游 10 月已改名）---
+export async function resolveBoundaryPath(
+  params: ResolveBoundaryPathParams,
+): Promise<ResolvedBoundaryPath> {
+  const rootPath = path.resolve(params.rootPath);
+  const absolutePath = path.resolve(params.absolutePath);
+  const rootCanonicalPath = params.rootCanonicalPath
+    ? path.resolve(params.rootCanonicalPath)
+    : await resolvePathViaExistingAncestor(rootPath);
+  const context = createBoundaryResolutionContext({
+    resolveParams: params,
+    rootPath,
+    absolutePath,
+    rootCanonicalPath,
+    outsideLexicalCanonicalPath: await resolveOutsideLexicalCanonicalPathAsync({
+      rootPath,
+      absolutePath,
+    }),
+  });
+
+  const outsideResult = await resolveOutsideBoundaryPathAsync({
+    boundaryLabel: params.boundaryLabel,
+    context,
+  });
+  if (outsideResult) {
+    return outsideResult;
+  }
+
+  return resolveBoundaryPathLexicalAsync({
+    params,
+    absolutePath: context.absolutePath,
+    rootPath: context.rootPath,
+    rootCanonicalPath: context.rootCanonicalPath,
+  });
+}

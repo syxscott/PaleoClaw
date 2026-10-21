@@ -663,3 +663,6 @@ export function resolveAgentIdByWorkspacePath(
     return matchedAgentId;
   });
 }
+
+// --- PaleoClaw 兼容层：resolveAgentIdFromSessionKey（pc 3 月 API，上游 10 月已改名）---
+export { resolveAgentIdFromSessionKey } from "../routing/session-key.js";

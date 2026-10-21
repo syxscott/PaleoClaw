@@ -12,6 +12,9 @@ import {
   normalizeToolPolicyName,
   readToolAllowlistIntersection,
 } from "./tool-policy-shared.js";
+
+// --- PaleoClaw 兼容层：normalizeToolName（pc 3 月 API，上游 10 月改名为 normalizeToolPolicyName）---
+export { normalizeToolPolicyName as normalizeToolName } from "./tool-policy-shared.js";
 export {
   attachToolAllowlistIntersection,
   couldNormalizeToolNamePrefixToAllowedTool,

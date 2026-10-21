@@ -59,6 +59,11 @@ export {
 } from "@openclaw/fs-safe/walk";
 export { withTimeout } from "@openclaw/fs-safe/advanced";
 
+// --- PaleoClaw 兼容层：pc 3 月自有 API（上游 10 月已改由 @openclaw/fs-safe 提供）---
+export { SafeOpenError, openFileWithinRoot, writeFileFromPathWithinRoot } from "./fs-safe-legacy.js";
+
+export { replaceFileAtomic } from "@openclaw/fs-safe/atomic";
+
 // Root.walk remains core-only on this facade; temp workspace stores keep their shipped full Root.
 export type Root = Omit<CompatibleFsSafeRoot, "walk">;
 

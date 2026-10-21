@@ -38,3 +38,8 @@ export function normalizeWindowsPathPreservingCase(input: string): string {
     ? `\\\\${withoutPrefix.slice(4)}`
     : withoutPrefix;
 }
+
+// --- PaleoClaw 兼容层：isSymlinkOpenError（pc 3 月 API，上游 10 月已改名）---
+export function isSymlinkOpenError(value: unknown): boolean {
+  return isNodeError(value) && typeof value.code === "string" && SYMLINK_OPEN_CODES.has(value.code);
+}
