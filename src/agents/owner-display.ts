@@ -48,3 +48,15 @@ export function resolveOwnerPromptNumbers(params: {
   }
   return promptOwners;
 }
+
+// --- PaleoClaw 兼容层：resolveOwnerDisplaySetting（pc 3 月 API，上游 10 月已改名）---
+export function resolveOwnerDisplaySetting(config?: OpenClawConfig): OwnerDisplaySetting {
+  const ownerDisplay = config?.commands?.ownerDisplay;
+  if (ownerDisplay !== "hash") {
+    return { ownerDisplay, ownerDisplaySecret: undefined };
+  }
+  return {
+    ownerDisplay: "hash",
+    ownerDisplaySecret: trimToUndefined(config?.commands?.ownerDisplaySecret),
+  };
+}

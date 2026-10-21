@@ -388,7 +388,7 @@ export function getContextEngineRegistration(id: string): ContextEngineRegistrat
   return getContextEngines().get(id);
 }
 
-const listContextEngineIds = () => [...getContextEngines().keys()].toSorted();
+export const listContextEngineIds = () => [...getContextEngines().keys()].toSorted();
 
 /**
  * Return the trusted plugin id that registered a resolved context engine.
@@ -741,3 +741,14 @@ async function resolveDefaultContextEngine(
     await preparation?.completion;
   }
 }
+
+// --- PaleoClaw 兼容层：registerContextEngine（pc 3 月 API，上游 10 月已改名）---
+export function registerContextEngine(id: string, factory: ContextEngineFactory): void {
+  _engines.set(id, factory);
+}
+
+// --- PaleoClaw 兼容层：getContextEngineFactory（pc 3 月 API，上游 10 月已改名）---
+export function getContextEngineFactory(id: string): ContextEngineFactory | undefined {
+  return _engines.get(id);
+}
+

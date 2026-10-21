@@ -726,3 +726,215 @@ function mergeCronFailureAlert(
 
   return next;
 }
+
+// --- PaleoClaw 兼容层：computeJobNextRunAtMs（pc 3 月 API，上游 10 月已改名）---
+export function computeJobNextRunAtMs(job: CronJob, nowMs: number): number | undefined {
+  if (!job.enabled) {
+    return undefined;
+  }
+  if (job.schedule.kind === "every") {
+    const everyMsRaw = coerceFiniteScheduleNumber(job.schedule.everyMs);
+    if (everyMsRaw === undefined) {
+      return undefined;
+    }
+    const everyMs = Math.max(1, Math.floor(everyMsRaw));
+    const lastRunAtMs = job.state.lastRunAtMs;
+    if (typeof lastRunAtMs === "number" && Number.isFinite(lastRunAtMs)) {
+      const nextFromLastRun = Math.floor(lastRunAtMs) + everyMs;
+      if (nextFromLastRun > nowMs) {
+        return nextFromLastRun;
+      }
+    }
+    const fallbackAnchorMs = isFiniteTimestamp(job.createdAtMs) ? job.createdAtMs : nowMs;
+    const anchorMs = resolveEveryAnchorMs({
+      schedule: job.schedule,
+      fallbackAnchorMs,
+    });
+    const next = computeNextRunAtMs({ ...job.schedule, everyMs, anchorMs }, nowMs);
+    return isFiniteTimestamp(next) ? next : undefined;
+  }
+  if (job.schedule.kind === "at") {
+    // Handle both canonical `at` (string) and legacy `atMs` (number) fields.
+    // The store migration should convert atMs→at, but be defensive in case
+    // the migration hasn't run yet or was bypassed.
+    const schedule = job.schedule as { at?: string; atMs?: number | string };
+    const atMs =
+      typeof schedule.atMs === "number" && Number.isFinite(schedule.atMs) && schedule.atMs > 0
+        ? schedule.atMs
+        : typeof schedule.atMs === "string"
+          ? parseAbsoluteTimeMs(schedule.atMs)
+          : typeof schedule.at === "string"
+            ? parseAbsoluteTimeMs(schedule.at)
+            : null;
+    // One-shot jobs stay due until they successfully finish, but if the
+    // schedule was updated to a time after the last run, re-arm the job.
+    if (job.state.lastStatus === "ok" && job.state.lastRunAtMs) {
+      if (atMs !== null && Number.isFinite(atMs) && atMs > job.state.lastRunAtMs) {
+        return atMs;
+      }
+      return undefined;
+    }
+    return atMs !== null && Number.isFinite(atMs) ? atMs : undefined;
+  }
+  const next = computeStaggeredCronNextRunAtMs(job, nowMs);
+  if (next === undefined && job.schedule.kind === "cron") {
+    const nextSecondMs = Math.floor(nowMs / 1000) * 1000 + 1000;
+    return computeStaggeredCronNextRunAtMs(job, nextSecondMs);
+  }
+  return isFiniteTimestamp(next) ? next : undefined;
+}
+
+// --- PaleoClaw 兼容层：findJobOrThrow（pc 3 月 API，上游 10 月已改名）---
+export function findJobOrThrow(state: CronServiceState, id: string) {
+  const job = state.store?.jobs.find((j) => j.id === id);
+  if (!job) {
+    throw new Error(`unknown cron job id: ${id}`);
+  }
+  return job;
+}
+
+// --- PaleoClaw 兼容层：isJobDue（pc 3 月 API，上游 10 月已改名）---
+export function isJobDue(job: CronJob, nowMs: number, opts: { forced: boolean }) {
+  if (!job.state) {
+    job.state = {};
+  }
+  if (typeof job.state.runningAtMs === "number") {
+    return false;
+  }
+  if (opts.forced) {
+    return true;
+  }
+  return job.enabled && typeof job.state.nextRunAtMs === "number" && nowMs >= job.state.nextRunAtMs;
+}
+
+// --- PaleoClaw 兼容层：nextWakeAtMs（pc 3 月 API，上游 10 月已改名）---
+export function nextWakeAtMs(state: CronServiceState) {
+  const jobs = state.store?.jobs ?? [];
+  const enabled = jobs.filter((j) => j.enabled && isFiniteTimestamp(j.state.nextRunAtMs));
+  if (enabled.length === 0) {
+    return undefined;
+  }
+  const first = enabled[0]?.state.nextRunAtMs;
+  if (!isFiniteTimestamp(first)) {
+    return undefined;
+  }
+  return enabled.reduce((min, j) => {
+    const next = j.state.nextRunAtMs;
+    return isFiniteTimestamp(next) ? Math.min(min, next) : min;
+  }, first);
+}
+
+// --- PaleoClaw 兼容层：recomputeNextRuns（pc 3 月 API，上游 10 月已改名）---
+export function recomputeNextRuns(state: CronServiceState): boolean {
+  return walkSchedulableJobs(state, ({ job, nowMs: now }) => {
+    let changed = false;
+    // Only recompute if nextRunAtMs is missing or already past-due.
+    // Preserving a still-future nextRunAtMs avoids accidentally advancing
+    // a job that hasn't fired yet (e.g. during restart recovery).
+    const nextRun = job.state.nextRunAtMs;
+    const isDueOrMissing = !isFiniteTimestamp(nextRun) || now >= nextRun;
+    if (isDueOrMissing) {
+      if (recomputeJobNextRunAtMs({ state, job, nowMs: now })) {
+        changed = true;
+      }
+    }
+    return changed;
+  });
+}
+
+// --- PaleoClaw 兼容层：recomputeNextRunsForMaintenance（pc 3 月 API，上游 10 月已改名）---
+export function recomputeNextRunsForMaintenance(
+  state: CronServiceState,
+  opts?: { recomputeExpired?: boolean; nowMs?: number },
+): boolean {
+  const recomputeExpired = opts?.recomputeExpired ?? false;
+  return walkSchedulableJobs(
+    state,
+    ({ job, nowMs: now }) => {
+      let changed = false;
+      if (!isFiniteTimestamp(job.state.nextRunAtMs)) {
+        // Missing or invalid nextRunAtMs is always repaired.
+        if (recomputeJobNextRunAtMs({ state, job, nowMs: now })) {
+          changed = true;
+        }
+      } else if (
+        recomputeExpired &&
+        now >= job.state.nextRunAtMs &&
+        typeof job.state.runningAtMs !== "number"
+      ) {
+        // Only advance when the expired slot was already executed.
+        // If not, preserve the past-due value so the job can still run.
+        const lastRun = job.state.lastRunAtMs;
+        const alreadyExecutedSlot = isFiniteTimestamp(lastRun) && lastRun >= job.state.nextRunAtMs;
+        if (alreadyExecutedSlot) {
+          if (recomputeJobNextRunAtMs({ state, job, nowMs: now })) {
+            changed = true;
+          }
+        }
+      }
+      return changed;
+    },
+    opts?.nowMs,
+  );
+}
+
+// --- PaleoClaw 兼容层：computeJobPreviousRunAtMs（pc 3 月 API，上游 10 月已改名）---
+export function computeJobPreviousRunAtMs(job: CronJob, nowMs: number): number | undefined {
+  if (!job.enabled || job.schedule.kind !== "cron") {
+    return undefined;
+  }
+  const previous = computeStaggeredCronPreviousRunAtMs(job, nowMs);
+  return isFiniteTimestamp(previous) ? previous : undefined;
+}
+
+// --- PaleoClaw 兼容层：recordScheduleComputeError（pc 3 月 API，上游 10 月已改名）---
+export function recordScheduleComputeError(params: {
+  state: CronServiceState;
+  job: CronJob;
+  err: unknown;
+}): boolean {
+  const { state, job, err } = params;
+  const errorCount = (job.state.scheduleErrorCount ?? 0) + 1;
+  const errText = String(err);
+
+  job.state.scheduleErrorCount = errorCount;
+  job.state.nextRunAtMs = undefined;
+  job.state.lastError = `schedule error: ${errText}`;
+
+  if (errorCount >= MAX_SCHEDULE_ERRORS) {
+    job.enabled = false;
+    state.deps.log.error(
+      { jobId: job.id, name: job.name, errorCount, err: errText },
+      "cron: auto-disabled job after repeated schedule errors",
+    );
+
+    // Notify the user so the auto-disable is not silent (#28861).
+    const notifyText = `⚠️ Cron job "${job.name}" has been auto-disabled after ${errorCount} consecutive schedule errors. Last error: ${errText}`;
+    state.deps.enqueueSystemEvent(notifyText, {
+      agentId: job.agentId,
+      sessionKey: job.sessionKey,
+      contextKey: `cron:${job.id}:auto-disabled`,
+    });
+    state.deps.requestHeartbeatNow({
+      reason: `cron:${job.id}:auto-disabled`,
+      agentId: job.agentId,
+      sessionKey: job.sessionKey,
+    });
+  } else {
+    state.deps.log.warn(
+      { jobId: job.id, name: job.name, errorCount, err: errText },
+      "cron: failed to compute next run for job (skipping)",
+    );
+  }
+
+  return true;
+}
+
+// --- PaleoClaw 兼容层：resolveJobPayloadTextForMain（pc 3 月 API，上游 10 月已改名）---
+export function resolveJobPayloadTextForMain(job: CronJob): string | undefined {
+  if (job.payload.kind !== "systemEvent") {
+    return undefined;
+  }
+  const text = normalizePayloadToSystemText(job.payload);
+  return text.trim() ? text : undefined;
+}

@@ -204,3 +204,21 @@ export async function prepareBinaryAvailability(
   assertCurrent?.();
   return { hasBinary: (bin) => available.has(bin) };
 }
+
+// --- PaleoClaw 兼容层：resolveConfigPath（pc 3 月 API，上游 10 月已改名）---
+export function resolveConfigPath(config: unknown, pathStr: string): unknown {
+  const parts = pathStr.split(".").filter(Boolean);
+  let current: unknown = config;
+  for (const part of parts) {
+    if (typeof current !== "object" || current === null) {
+      return undefined;
+    }
+    current = (current as Record<string, unknown>)[part];
+  }
+  return current;
+}
+
+// --- PaleoClaw 兼容层：resolveRuntimePlatform（pc 3 月 API，上游 10 月已改名）---
+export function resolveRuntimePlatform(): string {
+  return process.platform;
+}

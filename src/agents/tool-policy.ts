@@ -306,3 +306,17 @@ export function mergeAlsoAllowPolicy<TPolicy extends { allow?: string[] }>(
   }
   return { ...policy, allow: uniqueStrings([...policy.allow, ...alsoAllow]) };
 }
+
+// --- PaleoClaw 兼容层：applyOwnerOnlyToolPolicy（pc 3 月 API，上游 10 月已改名）---
+export function applyOwnerOnlyToolPolicy(tools: AnyAgentTool[], senderIsOwner: boolean) {
+  const withGuard = tools.map((tool) => {
+    if (!isOwnerOnlyTool(tool)) {
+      return tool;
+    }
+    return wrapOwnerOnlyToolExecution(tool, senderIsOwner);
+  });
+  if (senderIsOwner) {
+    return withGuard;
+  }
+  return withGuard.filter((tool) => !isOwnerOnlyTool(tool));
+}

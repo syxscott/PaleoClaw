@@ -205,3 +205,9 @@ export function isHeartbeatAcknowledgementText(
 ): boolean {
   return stripHeartbeatToken(text, { mode: "heartbeat", maxAckChars, allowTruncated }).shouldSkip;
 }
+
+// --- PaleoClaw 兼容层：resolveHeartbeatPrompt（pc 3 月 API，上游 10 月已改名）---
+export function resolveHeartbeatPrompt(raw?: string): string {
+  const trimmed = typeof raw === "string" ? raw.trim() : "";
+  return trimmed || HEARTBEAT_PROMPT;
+}

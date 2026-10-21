@@ -32,3 +32,26 @@ export function loadJsonFileThroughSymlink<T = unknown>(pathname: string): T | u
   }
   return tryReadJsonSync<T>(resolved) ?? undefined;
 }
+
+// --- PaleoClaw 兼容层：loadJsonFile（pc 3 月 API，上游 10 月已改名）---
+export function loadJsonFile(pathname: string): unknown {
+  try {
+    if (!fs.existsSync(pathname)) {
+      return undefined;
+    }
+    const raw = fs.readFileSync(pathname, "utf8");
+    return JSON.parse(raw) as unknown;
+  } catch {
+    return undefined;
+  }
+}
+
+// --- PaleoClaw 兼容层：saveJsonFile（pc 3 月 API，上游 10 月已改名）---
+export function saveJsonFile(pathname: string, data: unknown) {
+  const dir = path.dirname(pathname);
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
+  }
+  fs.writeFileSync(pathname, `${JSON.stringify(data, null, 2)}\n`, "utf8");
+  fs.chmodSync(pathname, 0o600);
+}

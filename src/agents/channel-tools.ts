@@ -144,3 +144,19 @@ export function resolveChannelReactionGuidance(params: {
     channel: resolved.channelLabel?.trim() || channelId,
   };
 }
+
+// --- PaleoClaw 兼容层：listChannelSupportedActions（pc 3 月 API，上游 10 月已改名）---
+export function listChannelSupportedActions(params: {
+  cfg?: OpenClawConfig;
+  channel?: string;
+}): ChannelMessageActionName[] {
+  if (!params.channel) {
+    return [];
+  }
+  const plugin = getChannelPlugin(params.channel as Parameters<typeof getChannelPlugin>[0]);
+  if (!plugin?.actions?.listActions) {
+    return [];
+  }
+  const cfg = params.cfg ?? ({} as OpenClawConfig);
+  return runPluginListActions(plugin, cfg);
+}

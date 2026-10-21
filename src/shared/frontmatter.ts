@@ -131,3 +131,20 @@ export function applyOpenClawManifestInstallCommonFields<
   }
   return spec;
 }
+
+// --- PaleoClaw 兼容层：normalizeStringList（pc 3 月 API，上游 10 月已改名）---
+export function normalizeStringList(input: unknown): string[] {
+  if (!input) {
+    return [];
+  }
+  if (Array.isArray(input)) {
+    return input.map((value) => String(value).trim()).filter(Boolean);
+  }
+  if (typeof input === "string") {
+    return input
+      .split(",")
+      .map((value) => value.trim())
+      .filter(Boolean);
+  }
+  return [];
+}

@@ -66,3 +66,31 @@ export async function resolveOpenClawReferencePaths(
     sourcePath: packageRoot ? resolveReference(packageRoot, ".git") : null,
   };
 }
+
+// --- PaleoClaw 兼容层：resolveOpenClawDocsPath（pc 3 月 API，上游 10 月已改名）---
+export async function resolveOpenClawDocsPath(params: {
+  workspaceDir?: string;
+  argv1?: string;
+  cwd?: string;
+  moduleUrl?: string;
+}): Promise<string | null> {
+  const workspaceDir = params.workspaceDir?.trim();
+  if (workspaceDir) {
+    const workspaceDocs = path.join(workspaceDir, "docs");
+    if (fs.existsSync(workspaceDocs)) {
+      return workspaceDocs;
+    }
+  }
+
+  const packageRoot = await resolveOpenClawPackageRoot({
+    cwd: params.cwd,
+    argv1: params.argv1,
+    moduleUrl: params.moduleUrl,
+  });
+  if (!packageRoot) {
+    return null;
+  }
+
+  const packageDocs = path.join(packageRoot, "docs");
+  return fs.existsSync(packageDocs) ? packageDocs : null;
+}

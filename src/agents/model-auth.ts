@@ -45,3 +45,22 @@ export {
   requireApiKey,
 } from "./model-auth-runtime-shared.js";
 export type { ResolvedProviderAuth } from "./model-auth-runtime-shared.js";
+
+// --- PaleoClaw 兼容层：getApiKeyForModel（pc 3 月 API，上游 10 月已改名）---
+export async function getApiKeyForModel(params: {
+  model: Model<Api>;
+  cfg?: OpenClawConfig;
+  profileId?: string;
+  preferredProfile?: string;
+  store?: AuthProfileStore;
+  agentDir?: string;
+}): Promise<ResolvedProviderAuth> {
+  return resolveApiKeyForProvider({
+    provider: params.model.provider,
+    cfg: params.cfg,
+    profileId: params.profileId,
+    preferredProfile: params.preferredProfile,
+    store: params.store,
+    agentDir: params.agentDir,
+  });
+}

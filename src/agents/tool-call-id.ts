@@ -40,7 +40,7 @@ type ReplaySafeToolCallBlock = {
  * - "strict" mode: only [a-zA-Z0-9]
  * - "strict9" mode: only [a-zA-Z0-9], length 9 (Mistral tool call requirement)
  */
-function sanitizeToolCallId(id: string, mode: ToolCallIdMode = "strict"): string {
+export function sanitizeToolCallId(id: string, mode: ToolCallIdMode = "strict"): string {
   if (!id) {
     return mode === "strict9" ? "defaultid" : "defaulttoolid";
   }
@@ -435,3 +435,15 @@ export function sanitizeToolCallIdsForCloudCodeAssist(
 
   return changed ? out : messages;
 }
+// --- PaleoClaw 兼容层：isValidCloudCodeAssistToolId（pc 3 月 API，上游 10 月已改名）---
+export function isValidCloudCodeAssistToolId(id: string, mode: ToolCallIdMode = "strict"): boolean {
+  if (!id || typeof id !== "string") {
+    return false;
+  }
+  if (mode === "strict9") {
+    return /^[a-zA-Z0-9]{9}$/.test(id);
+  }
+  // Strictly alphanumeric for providers with tighter tool ID constraints
+  return /^[a-zA-Z0-9]+$/.test(id);
+}
+

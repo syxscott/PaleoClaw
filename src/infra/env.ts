@@ -43,3 +43,9 @@ export function normalizeEnv(): void {
   normalizeZaiEnv(process.env);
   normalizeFsSafeNativeEnv(process.env);
 }
+
+// --- PaleoClaw 兼容层：isDebugEnabled（pc 3 月 API，上游 10 月已改名）---
+export function isDebugEnabled(category: keyof DebugConfig): boolean {
+  const config = getDebugConfig();
+  return config[category] || config.all;
+}
