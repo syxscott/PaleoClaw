@@ -1,0 +1,52 @@
+import type { OpenClawConfig } from "paleoclaw/plugin-sdk/config-contracts";
+import { makeProxyFetch } from "paleoclaw/plugin-sdk/fetch-runtime";
+import { danger } from "paleoclaw/plugin-sdk/runtime-env";
+import type { RuntimeEnv } from "paleoclaw/plugin-sdk/runtime-env";
+import { normalizeOptionalString } from "paleoclaw/plugin-sdk/string-coerce-runtime";
+import type { ResolvedDiscordAccount } from "./accounts.js";
+
+export function resolveDiscordProxyFetchForAccount(
+  account: Pick<ResolvedDiscordAccount, "config">,
+  cfg: OpenClawConfig,
+): typeof fetch | undefined {
+  return withValidatedDiscordProxy(
+    normalizeOptionalString(account.config.proxy) ??
+      normalizeOptionalString(cfg?.channels?.discord?.proxy),
+    undefined,
+    makeProxyFetch,
+  );
+}
+
+export function withValidatedDiscordProxy<T>(
+  proxyUrl: string | undefined,
+  runtime: Pick<RuntimeEnv, "error"> | undefined,
+  createValue: (proxyUrl: string) => T,
+): T | undefined {
+  const proxy = proxyUrl?.trim();
+  if (!proxy) {
+    return undefined;
+  }
+  try {
+    validateDiscordProxyUrl(proxy);
+    return createValue(proxy);
+  } catch (err) {
+    runtime?.error?.(danger(`discord: invalid rest proxy: ${String(err)}`));
+    return undefined;
+  }
+}
+
+export function validateDiscordProxyUrl(proxyUrl: string): string {
+  let parsed: URL;
+  try {
+    parsed = new URL(proxyUrl);
+  } catch {
+    throw new Error("Proxy URL must be a valid http or https URL");
+  }
+  if (!["http:", "https:"].includes(parsed.protocol)) {
+    throw new Error("Proxy URL must use http or https");
+  }
+  if (!parsed.hostname) {
+    throw new Error("Proxy URL must include a host");
+  }
+  return proxyUrl;
+}

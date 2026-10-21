@@ -1,0 +1,27 @@
+{
+  "name": "@paleoclaw/migrate-claude",
+  "version": "2026.10.5",
+  "private": true,
+  "description": "Claude to paleoclaw migration provider",
+  "type": "module",
+  "devDependencies": {
+    "@paleoclaw/plugin-sdk": "workspace:*",
+    "paleoclaw": "workspace:*"
+  },
+  "peerDependencies": {
+    "paleoclaw": ">=2026.10.5"
+  },
+  "peerDependenciesMeta": {
+    "paleoclaw": {
+      "optional": true
+    }
+  },
+  "paleoclaw": {
+    "extensions": [
+      "./index.ts"
+    ]
+  },
+  "dependencies": {
+    "@paleoclaw/fs-safe": "0.26.8"
+  }
+}

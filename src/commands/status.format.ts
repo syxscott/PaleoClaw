@@ -1,68 +1,115 @@
-import { formatDurationPrecise } from "../infra/format-time/format-duration.ts";
+import {
+  asNonNegativeFiniteNumber,
+  asPositiveFiniteNumber,
+} from "@paleoclaw/normalization-core/number-coercion";
+import { normalizeLowercaseStringOrEmpty } from "@paleoclaw/normalization-core/string-coerce";
+import { sanitizeTerminalText } from "../../packages/terminal-core/src/safe-text.js";
+import { formatCliCommand } from "../cli/command-format.js";
+import type { BestEffortConfigSnapshot } from "../config/io.js";
+import { formatConfigIssueLines } from "../config/issue-format.js";
+import type { GatewayServiceRuntime } from "../daemon/service-runtime.js";
+import { getSystemdCgroupHygieneSummary } from "../daemon/service-runtime.js";
 import { formatRuntimeStatusWithDetails } from "../infra/runtime-status.ts";
-import type { SessionStatus } from "./status.types.js";
-export { shortenText } from "./text-format.js";
+import type { SessionStatus } from "../status/types.js";
+import { formatTokenCount } from "../utils/token-format.js";
 
-export const formatKTokens = (value: number) =>
-  `${(value / 1000).toFixed(value >= 10_000 ? 0 : 1)}k`;
+/** Formats the actionable entries shown under status config diagnostic headings. */
+export const formatStatusConfigDiagnosticEntries = (
+  diagnostics: NonNullable<BestEffortConfigSnapshot["configDiagnostics"]>,
+): string[] => [
+  `- Config file is invalid: ${sanitizeTerminalText(diagnostics.path)}`,
+  ...formatConfigIssueLines(diagnostics.issues, "-", { normalizeRoot: true }),
+  `- Fix: ${formatCliCommand("paleoclaw doctor --fix")}`,
+];
 
-export const formatDuration = (ms: number | null | undefined) => {
-  if (ms == null || !Number.isFinite(ms)) {
-    return "unknown";
-  }
-  return formatDurationPrecise(ms, { decimals: 1 });
-};
-
+/** Formats session token usage and prompt-cache hit rate for the sessions table. */
 export const formatTokensCompact = (
   sess: Pick<
     SessionStatus,
-    "totalTokens" | "contextTokens" | "percentUsed" | "cacheRead" | "cacheWrite"
+    "inputTokens" | "totalTokens" | "contextTokens" | "percentUsed" | "cacheRead" | "cacheWrite"
   >,
 ) => {
   const used = sess.totalTokens;
   const ctx = sess.contextTokens;
-  const cacheRead = sess.cacheRead;
-  const cacheWrite = sess.cacheWrite;
 
-  let result = "";
+  let result;
   if (used == null) {
-    result = ctx ? `unknown/${formatKTokens(ctx)} (?%)` : "unknown used";
+    result = ctx ? `unknown/${formatTokenCount(ctx)} (?%)` : "unknown used";
   } else if (!ctx) {
-    result = `${formatKTokens(used)} used`;
+    result = `${formatTokenCount(used)} used`;
   } else {
     const pctLabel = sess.percentUsed != null ? `${sess.percentUsed}%` : "?%";
-    result = `${formatKTokens(used)}/${formatKTokens(ctx)} (${pctLabel})`;
+    result = `${formatTokenCount(used)}/${formatTokenCount(ctx)} (${pctLabel})`;
   }
 
-  // Add cache hit rate if there are cached reads
-  if (typeof cacheRead === "number" && cacheRead > 0) {
-    const total =
-      typeof used === "number"
-        ? used
-        : cacheRead + (typeof cacheWrite === "number" ? cacheWrite : 0);
-    const hitRate = Math.round((cacheRead / total) * 100);
-    result += ` · 🗄️ ${hitRate}% cached`;
+  const cacheStats = resolvePromptCacheStats(sess);
+  if (cacheStats && cacheStats.cacheRead > 0) {
+    result += ` · 🗄️ ${cacheStats.hitRate}% cached`;
   }
 
   return result;
 };
 
-export const formatDaemonRuntimeShort = (runtime?: {
-  status?: string;
-  pid?: number;
-  state?: string;
-  detail?: string;
-  missingUnit?: boolean;
-}) => {
+/** Formats prompt-cache details for verbose sessions table output. */
+export const formatPromptCacheCompact = (
+  sess: Pick<SessionStatus, "inputTokens" | "totalTokens" | "cacheRead" | "cacheWrite">,
+) => {
+  const cacheStats = resolvePromptCacheStats(sess);
+  if (!cacheStats) {
+    return "";
+  }
+  const parts = [`${cacheStats.hitRate}% hit`];
+  if (cacheStats.cacheRead > 0) {
+    parts.push(`read ${formatTokenCount(cacheStats.cacheRead)}`);
+  }
+  if (cacheStats.cacheWrite > 0) {
+    parts.push(`write ${formatTokenCount(cacheStats.cacheWrite)}`);
+  }
+  return parts.join(" · ");
+};
+
+function resolvePromptCacheStats(
+  sess: Pick<SessionStatus, "inputTokens" | "totalTokens" | "cacheRead" | "cacheWrite">,
+) {
+  const cacheRead = asNonNegativeFiniteNumber(sess.cacheRead) ?? 0;
+  const cacheWrite = asNonNegativeFiniteNumber(sess.cacheWrite) ?? 0;
+  if (cacheRead <= 0 && cacheWrite <= 0) {
+    return null;
+  }
+  const inputTokens = asNonNegativeFiniteNumber(sess.inputTokens);
+  const promptTokensFromParts =
+    inputTokens != null ? inputTokens + cacheRead + cacheWrite : undefined;
+  // Legacy entries can carry an undersized totalTokens value. Keep the cache
+  // denominator aligned with the prompt-side token fields when available, and
+  // never let the fallback denominator drop below the known cached prompt
+  // tokens.
+  const total =
+    promptTokensFromParts ??
+    Math.max(asPositiveFiniteNumber(sess.totalTokens) ?? 0, cacheRead + cacheWrite);
+  return {
+    cacheRead,
+    cacheWrite,
+    hitRate: total > 0 ? Math.round((cacheRead / total) * 100) : 0,
+  };
+}
+
+/** Formats daemon runtime status plus launchd/systemd details into one compact string. */
+export const formatDaemonRuntimeShort = (runtime?: GatewayServiceRuntime) => {
   if (!runtime) {
     return null;
   }
   const details: string[] = [];
-  const detail = runtime.detail?.replace(/\s+/g, " ").trim() || "";
+  const detail = runtime.inspectionFailure ? "" : runtime.detail?.replace(/\s+/g, " ").trim() || "";
   const noisyLaunchctlDetail =
-    runtime.missingUnit === true && detail.toLowerCase().includes("could not find service");
+    runtime.missingUnit === true &&
+    normalizeLowercaseStringOrEmpty(detail).includes("could not find service");
+  // launchctl reports missing units noisily; installed=false already carries that signal.
   if (detail && !noisyLaunchctlDetail) {
     details.push(detail);
+  }
+  const cgroupSummary = getSystemdCgroupHygieneSummary(runtime.systemd);
+  if (cgroupSummary) {
+    details.push(cgroupSummary);
   }
   return formatRuntimeStatusWithDetails({
     status: runtime.status,

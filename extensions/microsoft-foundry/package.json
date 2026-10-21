@@ -1,0 +1,15 @@
+{
+  "name": "@paleoclaw/microsoft-foundry",
+  "version": "2026.10.5",
+  "private": true,
+  "description": "paleoclaw Microsoft Foundry provider plugin",
+  "type": "module",
+  "devDependencies": {
+    "@paleoclaw/plugin-sdk": "workspace:*"
+  },
+  "paleoclaw": {
+    "extensions": [
+      "./index.ts"
+    ]
+  }
+}

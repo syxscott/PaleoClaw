@@ -1,156 +1,125 @@
-import {
-  listDirectoryGroupEntriesFromMapKeysAndAllowFrom,
-  listDirectoryUserEntriesFromAllowFromAndMapKeys,
-} from "paleoclaw/plugin-sdk/compat";
-import type { ClawdbotConfig } from "paleoclaw/plugin-sdk/feishu";
+import type { DirectoryConfigParams } from "paleoclaw/plugin-sdk/directory-runtime";
+import { normalizeLowercaseStringOrEmpty } from "paleoclaw/plugin-sdk/string-coerce-runtime";
 import { resolveFeishuAccount } from "./accounts.js";
 import { createFeishuClient } from "./client.js";
-import { normalizeFeishuTarget } from "./targets.js";
+import {
+  listFeishuDirectoryGroups,
+  listFeishuDirectoryPeers,
+  type FeishuDirectoryGroup,
+  type FeishuDirectoryPeer,
+} from "./directory.static.js";
 
-export type FeishuDirectoryPeer = {
-  kind: "user";
-  id: string;
-  name?: string;
-};
+const MAX_FEISHU_DIRECTORY_PAGES = 100;
 
-export type FeishuDirectoryGroup = {
-  kind: "group";
-  id: string;
-  name?: string;
-};
+type LiveDirectoryParams = DirectoryConfigParams & { fallbackToStatic?: boolean };
+type DirectoryEntry = FeishuDirectoryPeer | FeishuDirectoryGroup;
 
-function toFeishuDirectoryPeers(ids: string[]): FeishuDirectoryPeer[] {
-  return ids.map((id) => ({ kind: "user", id }));
-}
-
-function toFeishuDirectoryGroups(ids: string[]): FeishuDirectoryGroup[] {
-  return ids.map((id) => ({ kind: "group", id }));
-}
-
-export async function listFeishuDirectoryPeers(params: {
-  cfg: ClawdbotConfig;
-  query?: string;
-  limit?: number;
-  accountId?: string;
-}): Promise<FeishuDirectoryPeer[]> {
-  const account = resolveFeishuAccount({ cfg: params.cfg, accountId: params.accountId });
-  const entries = listDirectoryUserEntriesFromAllowFromAndMapKeys({
-    allowFrom: account.config.allowFrom,
-    map: account.config.dms,
-    query: params.query,
-    limit: params.limit,
-    normalizeAllowFromId: (entry) => normalizeFeishuTarget(entry) ?? entry,
-    normalizeMapKeyId: (entry) => normalizeFeishuTarget(entry) ?? entry,
-  });
-  return toFeishuDirectoryPeers(entries.map((entry) => entry.id));
-}
-
-export async function listFeishuDirectoryGroups(params: {
-  cfg: ClawdbotConfig;
-  query?: string;
-  limit?: number;
-  accountId?: string;
-}): Promise<FeishuDirectoryGroup[]> {
-  const account = resolveFeishuAccount({ cfg: params.cfg, accountId: params.accountId });
-  const entries = listDirectoryGroupEntriesFromMapKeysAndAllowFrom({
-    groups: account.config.groups,
-    allowFrom: account.config.groupAllowFrom,
-    query: params.query,
-    limit: params.limit,
-  });
-  return toFeishuDirectoryGroups(entries.map((entry) => entry.id));
-}
-
-export async function listFeishuDirectoryPeersLive(params: {
-  cfg: ClawdbotConfig;
-  query?: string;
-  limit?: number;
-  accountId?: string;
-}): Promise<FeishuDirectoryPeer[]> {
+async function listFeishuDirectoryLive<TItem, TEntry extends DirectoryEntry>(
+  params: LiveDirectoryParams & { filter?: (entry: TEntry) => boolean },
+  options: {
+    kind: "peer" | "group";
+    fallback: (params: DirectoryConfigParams) => Promise<TEntry[]>;
+    fetchPage: (
+      client: ReturnType<typeof createFeishuClient>,
+      pageSize: number,
+      pageToken?: string,
+    ) => Promise<{
+      code?: number;
+      msg?: string;
+      data?: { items?: TItem[]; has_more?: boolean; page_token?: string };
+    }>;
+    toEntry: (item: TItem) => TEntry | undefined;
+  },
+): Promise<TEntry[]> {
   const account = resolveFeishuAccount({ cfg: params.cfg, accountId: params.accountId });
   if (!account.configured) {
-    return listFeishuDirectoryPeers(params);
+    return options.fallback(params);
   }
-
+  const label = `Feishu live ${options.kind}`;
   try {
     const client = createFeishuClient(account);
-    const peers: FeishuDirectoryPeer[] = [];
+    const entries: TEntry[] = [];
     const limit = params.limit ?? 50;
-
-    const response = await client.contact.user.list({
-      params: {
-        page_size: Math.min(limit, 50),
-      },
-    });
-
-    if (response.code === 0 && response.data?.items) {
-      for (const user of response.data.items) {
-        if (user.open_id) {
-          const q = params.query?.trim().toLowerCase() || "";
-          const name = user.name || "";
-          if (!q || user.open_id.toLowerCase().includes(q) || name.toLowerCase().includes(q)) {
-            peers.push({
-              kind: "user",
-              id: user.open_id,
-              name: name || undefined,
-            });
-          }
+    const q = normalizeLowercaseStringOrEmpty(params.query);
+    const peers = options.kind === "peer";
+    const pageSize = peers && q ? 50 : Math.min(limit, peers ? 50 : 100);
+    let pageToken: string | undefined;
+    const seenPageTokens = new Set<string>();
+    for (let page = 1; page <= MAX_FEISHU_DIRECTORY_PAGES; page += 1) {
+      const response = await options.fetchPage(client, pageSize, pageToken);
+      if (response.code !== 0) {
+        throw new Error(response.msg || `code ${response.code}`);
+      }
+      for (const item of response.data?.items ?? []) {
+        const entry = options.toEntry(item);
+        if (
+          entry &&
+          (!q ||
+            normalizeLowercaseStringOrEmpty(entry.id).includes(q) ||
+            normalizeLowercaseStringOrEmpty(entry.name).includes(q)) &&
+          (peers || !params.filter || params.filter(entry))
+        ) {
+          entries.push(entry);
         }
-        if (peers.length >= limit) {
+        if (entries.length >= limit) {
+          // Peer lookup accepts the limit before examining continuation; groups
+          // retain their page-token validation even when the result limit is met.
+          if (peers) {
+            return entries;
+          }
           break;
         }
       }
+      const nextPageToken = response.data?.has_more ? response.data.page_token : undefined;
+      if (peers && response.data?.has_more && !nextPageToken) {
+        throw new Error(`${label} directory returned an empty page token`);
+      }
+      if (nextPageToken && seenPageTokens.has(nextPageToken)) {
+        throw new Error(`${label} directory returned a repeated page token`);
+      }
+      if (!nextPageToken) {
+        return entries;
+      }
+      seenPageTokens.add(nextPageToken);
+      pageToken = nextPageToken;
+      if (page === MAX_FEISHU_DIRECTORY_PAGES) {
+        throw new Error(`${label} directory pagination limit exceeded`);
+      }
+      if (!peers && !(entries.length < limit)) {
+        return entries;
+      }
     }
-
-    return peers;
-  } catch {
-    return listFeishuDirectoryPeers(params);
+    throw new Error(`${label} directory pagination limit exceeded`);
+  } catch (err) {
+    if (params.fallbackToStatic === false) {
+      throw err instanceof Error ? err : new Error(`${label} lookup failed`);
+    }
+    return options.fallback(params);
   }
 }
 
-export async function listFeishuDirectoryGroupsLive(params: {
-  cfg: ClawdbotConfig;
-  query?: string;
-  limit?: number;
-  accountId?: string;
-}): Promise<FeishuDirectoryGroup[]> {
-  const account = resolveFeishuAccount({ cfg: params.cfg, accountId: params.accountId });
-  if (!account.configured) {
-    return listFeishuDirectoryGroups(params);
-  }
+export function listFeishuDirectoryPeersLive(
+  params: LiveDirectoryParams,
+): Promise<FeishuDirectoryPeer[]> {
+  return listFeishuDirectoryLive(params, {
+    kind: "peer",
+    fallback: listFeishuDirectoryPeers,
+    fetchPage: (client, pageSize, pageToken) =>
+      client.contact.user.list({ params: { page_size: pageSize, page_token: pageToken } }),
+    toEntry: (user) =>
+      user.open_id ? { kind: "user", id: user.open_id, name: user.name || undefined } : undefined,
+  });
+}
 
-  try {
-    const client = createFeishuClient(account);
-    const groups: FeishuDirectoryGroup[] = [];
-    const limit = params.limit ?? 50;
-
-    const response = await client.im.chat.list({
-      params: {
-        page_size: Math.min(limit, 100),
-      },
-    });
-
-    if (response.code === 0 && response.data?.items) {
-      for (const chat of response.data.items) {
-        if (chat.chat_id) {
-          const q = params.query?.trim().toLowerCase() || "";
-          const name = chat.name || "";
-          if (!q || chat.chat_id.toLowerCase().includes(q) || name.toLowerCase().includes(q)) {
-            groups.push({
-              kind: "group",
-              id: chat.chat_id,
-              name: name || undefined,
-            });
-          }
-        }
-        if (groups.length >= limit) {
-          break;
-        }
-      }
-    }
-
-    return groups;
-  } catch {
-    return listFeishuDirectoryGroups(params);
-  }
+export function listFeishuDirectoryGroupsLive(
+  params: LiveDirectoryParams & { filter?: (group: FeishuDirectoryGroup) => boolean },
+): Promise<FeishuDirectoryGroup[]> {
+  return listFeishuDirectoryLive(params, {
+    kind: "group",
+    fallback: listFeishuDirectoryGroups,
+    fetchPage: (client, pageSize, pageToken) =>
+      client.im.chat.list({ params: { page_size: pageSize, page_token: pageToken } }),
+    toEntry: (chat) =>
+      chat.chat_id ? { kind: "group", id: chat.chat_id, name: chat.name || undefined } : undefined,
+  });
 }

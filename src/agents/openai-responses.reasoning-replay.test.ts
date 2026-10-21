@@ -1,12 +1,15 @@
-import type { AssistantMessage, Model, ToolResultMessage } from "@mariozechner/pi-ai";
-import { streamOpenAIResponses } from "@mariozechner/pi-ai";
-import { Type } from "@sinclair/typebox";
+// Verifies OpenAI Responses replay preserves reasoning and response item ids.
+import "../test-utils/prepare-compiled-subprocesses.js";
+import type { AssistantMessage, Model, ToolResultMessage } from "paleoclaw/plugin-sdk/llm";
+import { stream } from "paleoclaw/plugin-sdk/llm";
+import { Type } from "typebox";
 import { describe, expect, it } from "vitest";
+import { createZeroUsageFixture } from "./test-helpers/usage-fixtures.js";
 
 function buildModel(): Model<"openai-responses"> {
   return {
-    id: "gpt-5.2",
-    name: "gpt-5.2",
+    id: "gpt-5.4",
+    name: "gpt-5.4",
     api: "openai-responses",
     provider: "openai",
     baseUrl: "https://api.openai.com/v1",
@@ -15,6 +18,17 @@ function buildModel(): Model<"openai-responses"> {
     cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
     contextWindow: 128_000,
     maxTokens: 4096,
+  };
+}
+
+function buildStorelessCustomModel(): Model<"openai-responses"> {
+  return {
+    ...buildModel(),
+    provider: "custom-openai-responses",
+    baseUrl: "https://custom.example.invalid/v1",
+    compat: {
+      supportsStore: false,
+    } as never,
   };
 }
 
@@ -30,14 +44,17 @@ function extractInputTypes(input: unknown[]) {
     .filter((t): t is string => typeof t === "string");
 }
 
-const ZERO_USAGE = {
-  input: 0,
-  output: 0,
-  cacheRead: 0,
-  cacheWrite: 0,
-  totalTokens: 0,
-  cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 },
-} as const;
+function extractInputMessages(input: unknown[]) {
+  return input.filter(
+    (item): item is Record<string, unknown> =>
+      Boolean(item) &&
+      typeof item === "object" &&
+      (item as Record<string, unknown>).type === "message" &&
+      (item as Record<string, unknown>).role === "assistant",
+  );
+}
+
+const ZERO_USAGE = createZeroUsageFixture();
 
 function buildReasoningPart(id = "rs_test") {
   return {
@@ -59,7 +76,7 @@ function buildAssistantMessage(params: {
     role: "assistant",
     api: "openai-responses",
     provider: "openai",
-    model: "gpt-5.2",
+    model: "gpt-5.4",
     usage: ZERO_USAGE,
     stopReason: params.stopReason,
     timestamp: Date.now(),
@@ -67,7 +84,7 @@ function buildAssistantMessage(params: {
   };
 }
 
-async function runAbortedOpenAIResponsesStream(params: {
+async function captureOpenAIResponsesPayload(params: {
   messages: Array<
     AssistantMessage | ToolResultMessage | { role: "user"; content: string; timestamp: number }
   >;
@@ -76,13 +93,15 @@ async function runAbortedOpenAIResponsesStream(params: {
     description: string;
     parameters: ReturnType<typeof Type.Object>;
   }>;
+  replayResponsesItemIds?: boolean;
+  usePolicyReplayDefault?: boolean;
+  model?: Model<"openai-responses">;
 }) {
-  const controller = new AbortController();
-  controller.abort();
+  // Stop at payload capture so tests inspect serialization without network I/O.
   let payload: Record<string, unknown> | undefined;
 
-  const stream = streamOpenAIResponses(
-    buildModel(),
+  const responseStream = stream(
+    params.model ?? buildModel(),
     {
       systemPrompt: "system",
       messages: params.messages,
@@ -90,14 +109,22 @@ async function runAbortedOpenAIResponsesStream(params: {
     },
     {
       apiKey: "test",
-      signal: controller.signal,
-      onPayload: (nextPayload) => {
+      ...(params.usePolicyReplayDefault
+        ? {}
+        : { replayResponsesItemIds: params.replayResponsesItemIds ?? true }),
+      onPayload: (nextPayload: unknown) => {
         payload = nextPayload as Record<string, unknown>;
+        throw new Error("stop after payload capture");
       },
-    },
+    } as never,
   );
 
-  await stream.result();
+  const result = await responseStream.result();
+  if (!payload) {
+    throw new Error(
+      `Provider payload callback was not invoked; stream ended with ${result.stopReason}: ${result.errorMessage ?? "no error"}`,
+    );
+  }
   const input = extractInput(payload);
   return {
     input,
@@ -106,6 +133,83 @@ async function runAbortedOpenAIResponsesStream(params: {
 }
 
 describe("openai-responses reasoning replay", () => {
+  it("omits Responses item ids for storeless custom providers while preserving tool call ids", async () => {
+    const assistantToolOnly = buildAssistantMessage({
+      stopReason: "toolUse",
+      content: [
+        buildReasoningPart("rs_storeless"),
+        {
+          type: "text",
+          text: "Checking.",
+          textSignature: JSON.stringify({ v: 1, id: "msg_storeless", phase: "final_answer" }),
+        },
+        {
+          type: "toolCall",
+          id: "call_storeless|fc_storeless",
+          name: "noop",
+          arguments: {},
+        },
+      ],
+    });
+
+    const toolResult: ToolResultMessage = {
+      role: "toolResult",
+      toolCallId: "call_storeless|fc_storeless",
+      toolName: "noop",
+      content: [{ type: "text", text: "ok" }],
+      isError: false,
+      timestamp: Date.now(),
+    };
+
+    const { input, types } = await captureOpenAIResponsesPayload({
+      model: buildStorelessCustomModel(),
+      usePolicyReplayDefault: true,
+      messages: [
+        { role: "user", content: "Call noop.", timestamp: Date.now() },
+        assistantToolOnly,
+        toolResult,
+        { role: "user", content: "Now reply with ok.", timestamp: Date.now() },
+      ],
+      tools: [
+        {
+          name: "noop",
+          description: "no-op",
+          parameters: Type.Object({}, { additionalProperties: false }),
+        },
+      ],
+    });
+
+    expect(types).toContain("message");
+    expect(types).toContain("function_call");
+    expect(types).toContain("function_call_output");
+
+    const replayedItemIds = input.filter(
+      (item): item is Record<string, unknown> =>
+        Boolean(item) &&
+        typeof item === "object" &&
+        ["reasoning", "message", "function_call"].includes(
+          String((item as Record<string, unknown>).type),
+        ) &&
+        typeof (item as Record<string, unknown>).id === "string",
+    );
+    expect(replayedItemIds).toEqual([]);
+
+    const functionCall = input.find(
+      (item) =>
+        item &&
+        typeof item === "object" &&
+        (item as Record<string, unknown>).type === "function_call",
+    ) as Record<string, unknown> | undefined;
+    const functionCallOutput = input.find(
+      (item) =>
+        item &&
+        typeof item === "object" &&
+        (item as Record<string, unknown>).type === "function_call_output",
+    ) as Record<string, unknown> | undefined;
+    expect(functionCall?.call_id).toBeTruthy();
+    expect(functionCallOutput?.call_id).toBe(functionCall?.call_id);
+  });
+
   it("replays reasoning for tool-call-only turns (OpenAI requires it)", async () => {
     const assistantToolOnly = buildAssistantMessage({
       stopReason: "toolUse",
@@ -129,7 +233,7 @@ describe("openai-responses reasoning replay", () => {
       timestamp: Date.now(),
     };
 
-    const { input, types } = await runAbortedOpenAIResponsesStream({
+    const { input, types } = await captureOpenAIResponsesPayload({
       messages: [
         {
           role: "user",
@@ -167,21 +271,70 @@ describe("openai-responses reasoning replay", () => {
     expect(functionCall?.id).toBe("fc_123");
   });
 
-  it("still replays reasoning when paired with an assistant message", async () => {
-    const assistantWithText = buildAssistantMessage({
+  it.each(["commentary"] as const)(
+    "replays assistant message id and phase metadata for %s when paired with reasoning",
+    async (phase) => {
+      const assistantWithText = buildAssistantMessage({
+        stopReason: "stop",
+        content: [
+          buildReasoningPart(),
+          {
+            type: "text",
+            text: "hello",
+            textSignature: JSON.stringify({ v: 1, id: `msg_${phase}`, phase }),
+          },
+        ],
+      });
+
+      const { input, types } = await captureOpenAIResponsesPayload({
+        messages: [
+          { role: "user", content: "Hi", timestamp: Date.now() },
+          assistantWithText,
+          { role: "user", content: "Ok", timestamp: Date.now() },
+        ],
+      });
+
+      expect(types).toContain("message");
+
+      const replayedMessage = extractInputMessages(input).find(
+        (item) => item.id === `msg_${phase}`,
+      );
+      expect(replayedMessage?.phase).toBe(phase);
+    },
+  );
+
+  it("replays a synthetic id while preserving phase for id-less text signatures", async () => {
+    // After a reasoning drop the sanitizer keeps the phase but removes the msg_*
+    // id. The conversion must then emit a unique synthetic id per text block AND
+    // retain the phase metadata (issue #88019 review follow-up).
+    const assistantWithPhaseOnly = buildAssistantMessage({
       stopReason: "stop",
-      content: [buildReasoningPart(), { type: "text", text: "hello", textSignature: "msg_test" }],
+      content: [
+        {
+          type: "text",
+          text: "commentary",
+          textSignature: JSON.stringify({ v: 1, phase: "commentary" }),
+        },
+        {
+          type: "text",
+          text: "final",
+          textSignature: JSON.stringify({ v: 1, phase: "final_answer" }),
+        },
+      ],
     });
 
-    const { types } = await runAbortedOpenAIResponsesStream({
+    const { input } = await captureOpenAIResponsesPayload({
       messages: [
         { role: "user", content: "Hi", timestamp: Date.now() },
-        assistantWithText,
+        assistantWithPhaseOnly,
         { role: "user", content: "Ok", timestamp: Date.now() },
       ],
     });
 
-    expect(types).toContain("reasoning");
-    expect(types).toContain("message");
+    const messages = extractInputMessages(input);
+    const ids = messages.map((item) => item.id);
+    expect(ids.every((id) => typeof id === "string" && id.length > 0)).toBe(true);
+    expect(new Set(ids).size).toBe(2);
+    expect(messages.map((item) => item.phase)).toEqual(["commentary", "final_answer"]);
   });
 });

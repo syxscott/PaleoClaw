@@ -1,415 +1,149 @@
-import { describe, expect, it } from "vitest";
+import { expect, it } from "vitest";
 import {
   buildParseArgv,
   getFlagValue,
-  getCommandPath,
   getCommandPositionalsWithRootOptions,
-  getCommandPathWithRootOptions,
-  getPrimaryCommand,
   getPositiveIntFlagValue,
   getVerboseFlag,
-  hasHelpOrVersion,
   hasFlag,
-  isRootHelpInvocation,
+  isHelpOrVersionInvocation,
   isRootVersionInvocation,
-  shouldMigrateState,
-  shouldMigrateStateFromPath,
+  isSimpleCommandHelpInvocation,
+  normalizeGeneratedHelpCommandArgv,
+  normalizeRootHelpTargetArgv,
+  normalizeRootLogLevelArgv,
+  normalizeRootNoColorArgv,
 } from "./argv.js";
 
-describe("argv helpers", () => {
-  it.each([
-    {
-      name: "help flag",
-      argv: ["node", "paleoclaw", "--help"],
-      expected: true,
-    },
-    {
-      name: "version flag",
-      argv: ["node", "paleoclaw", "-V"],
-      expected: true,
-    },
-    {
-      name: "normal command",
-      argv: ["node", "paleoclaw", "status"],
-      expected: false,
-    },
-    {
-      name: "root -v alias",
-      argv: ["node", "paleoclaw", "-v"],
-      expected: true,
-    },
-    {
-      name: "root -v alias with profile",
-      argv: ["node", "paleoclaw", "--profile", "work", "-v"],
-      expected: true,
-    },
-    {
-      name: "root -v alias with log-level",
-      argv: ["node", "paleoclaw", "--log-level", "debug", "-v"],
-      expected: true,
-    },
-    {
-      name: "subcommand -v should not be treated as version",
-      argv: ["node", "paleoclaw", "acp", "-v"],
-      expected: false,
-    },
-    {
-      name: "root -v alias with equals profile",
-      argv: ["node", "paleoclaw", "--profile=work", "-v"],
-      expected: true,
-    },
-    {
-      name: "subcommand path after global root flags should not be treated as version",
-      argv: ["node", "paleoclaw", "--dev", "skills", "list", "-v"],
-      expected: false,
-    },
-  ])("detects help/version flags: $name", ({ argv, expected }) => {
-    expect(hasHelpOrVersion(argv)).toBe(expected);
-  });
+const cli = (args: string) => ["node", "paleoclaw", ...args.split(" ")];
 
-  it.each([
-    {
-      name: "root --version",
-      argv: ["node", "paleoclaw", "--version"],
-      expected: true,
-    },
-    {
-      name: "root -V",
-      argv: ["node", "paleoclaw", "-V"],
-      expected: true,
-    },
-    {
-      name: "root -v alias with profile",
-      argv: ["node", "paleoclaw", "--profile", "work", "-v"],
-      expected: true,
-    },
-    {
-      name: "subcommand version flag",
-      argv: ["node", "paleoclaw", "status", "--version"],
-      expected: false,
-    },
-    {
-      name: "unknown root flag with version",
-      argv: ["node", "paleoclaw", "--unknown", "--version"],
-      expected: false,
-    },
-  ])("detects root-only version invocations: $name", ({ argv, expected }) => {
-    expect(isRootVersionInvocation(argv)).toBe(expected);
-  });
+it.each([
+  ["group short help", "--profile work backup help -h", "--profile work backup help"],
+  ["leaf positional help", "docs help --help", "docs help --help"],
+  ["group target help", "plugins help list --help", "plugins list --help"],
+  ["terminator", "backup help -- --help", "backup help -- --help"],
+  ["target after terminator", "plugins help -- list", "plugins list --help"],
+  ["literal help flag after target", "plugins help list -- --help", "plugins help list -- --help"],
+])("normalizes generated help commands: %s", (_name, argv, expected) => {
+  expect(normalizeGeneratedHelpCommandArgv(cli(argv))).toEqual(cli(expected));
+});
 
-  it.each([
-    {
-      name: "root --help",
-      argv: ["node", "paleoclaw", "--help"],
-      expected: true,
-    },
-    {
-      name: "root -h",
-      argv: ["node", "paleoclaw", "-h"],
-      expected: true,
-    },
-    {
-      name: "root --help with profile",
-      argv: ["node", "paleoclaw", "--profile", "work", "--help"],
-      expected: true,
-    },
-    {
-      name: "subcommand --help",
-      argv: ["node", "paleoclaw", "status", "--help"],
-      expected: false,
-    },
-    {
-      name: "help before subcommand token",
-      argv: ["node", "paleoclaw", "--help", "status"],
-      expected: false,
-    },
-    {
-      name: "help after -- terminator",
-      argv: ["node", "paleoclaw", "nodes", "run", "--", "git", "--help"],
-      expected: false,
-    },
-    {
-      name: "unknown root flag before help",
-      argv: ["node", "paleoclaw", "--unknown", "--help"],
-      expected: false,
-    },
-    {
-      name: "unknown root flag after help",
-      argv: ["node", "paleoclaw", "--help", "--unknown"],
-      expected: false,
-    },
-  ])("detects root-only help invocations: $name", ({ argv, expected }) => {
-    expect(isRootHelpInvocation(argv)).toBe(expected);
-  });
+it.each([
+  ["self-help", "help --help", "help --help"],
+  ["nested target", "help plugins list --help", "plugins list --help"],
+  ["nested target after terminator", "help plugins -- list", "plugins list --help"],
+  [
+    "literal root option after target",
+    "help plugins list -- --profile work",
+    "help plugins list -- --profile work",
+  ],
+])("normalizes root help targets: %s", (_name, argv, expected) => {
+  expect(normalizeRootHelpTargetArgv(cli(argv))).toEqual(cli(expected));
+});
 
-  it.each([
-    {
-      name: "single command with trailing flag",
-      argv: ["node", "paleoclaw", "status", "--json"],
-      expected: ["status"],
-    },
-    {
-      name: "two-part command",
-      argv: ["node", "paleoclaw", "agents", "list"],
-      expected: ["agents", "list"],
-    },
-    {
-      name: "terminator cuts parsing",
-      argv: ["node", "paleoclaw", "status", "--", "ignored"],
-      expected: ["status"],
-    },
-  ])("extracts command path: $name", ({ argv, expected }) => {
-    expect(getCommandPath(argv, 2)).toEqual(expected);
-  });
+it("allows final command metadata to lift no-color after boolean command flags", () => {
+  const argv = cli("doctor --lint --json --no-color");
 
-  it("extracts command path while skipping known root option values", () => {
-    expect(
-      getCommandPathWithRootOptions(
-        ["node", "paleoclaw", "--profile", "work", "--no-color", "config", "validate"],
-        2,
-      ),
-    ).toEqual(["config", "validate"]);
-  });
+  expect(
+    normalizeRootNoColorArgv(argv, {
+      shouldPreserveNoColor: ({ remainingArgs, noColorIndex }) =>
+        remainingArgs[noColorIndex - 1] === "--message",
+    }),
+  ).toEqual(cli("--no-color doctor --lint --json"));
+});
 
-  it("extracts routed config get positionals with interleaved root options", () => {
-    expect(
-      getCommandPositionalsWithRootOptions(
-        ["node", "paleoclaw", "config", "get", "--log-level", "debug", "update.channel", "--json"],
-        {
-          commandPath: ["config", "get"],
-          booleanFlags: ["--json"],
-        },
-      ),
-    ).toEqual(["update.channel"]);
-  });
+it.each([
+  ["equals", "doctor --log-level=trace --json", "--log-level=trace doctor --json"],
+  [
+    "root options first",
+    "--profile work doctor --log-level debug",
+    "--profile work --log-level debug doctor",
+  ],
+  [
+    "command option value",
+    "agent --message --log-level debug",
+    "agent --message --log-level debug",
+  ],
+  ["terminator", "nodes run -- --log-level debug", "nodes run -- --log-level debug"],
+  ["missing value", "doctor --log-level --json", "doctor --log-level --json"],
+])("normalizes root --log-level before command parsing: %s", (_name, argv, expected) => {
+  expect(normalizeRootLogLevelArgv(cli(argv))).toEqual(cli(expected));
+});
 
-  it("extracts routed config unset positionals with interleaved root options", () => {
-    expect(
-      getCommandPositionalsWithRootOptions(
-        ["node", "paleoclaw", "config", "unset", "--profile", "work", "update.channel"],
-        {
-          commandPath: ["config", "unset"],
-        },
-      ),
-    ).toEqual(["update.channel"]);
-  });
+it("preserves log-level when final command metadata owns the option", () => {
+  const argv = cli("plugin-cmd --log-level debug");
 
-  it("returns null when routed command sees unknown options", () => {
-    expect(
-      getCommandPositionalsWithRootOptions(
-        ["node", "paleoclaw", "config", "get", "--mystery", "value", "update.channel"],
-        {
-          commandPath: ["config", "get"],
-          booleanFlags: ["--json"],
-        },
-      ),
-    ).toBeNull();
-  });
+  expect(
+    normalizeRootLogLevelArgv(argv, {
+      shouldPreserveLogLevel: ({ remainingArgs, logLevelIndex }) =>
+        remainingArgs[logLevelIndex] === "--log-level",
+    }),
+  ).toEqual(argv);
+});
 
-  it.each([
-    {
-      name: "returns first command token",
-      argv: ["node", "paleoclaw", "agents", "list"],
-      expected: "agents",
-    },
-    {
-      name: "returns null when no command exists",
-      argv: ["node", "paleoclaw"],
-      expected: null,
-    },
-    {
-      name: "skips known root option values",
-      argv: ["node", "paleoclaw", "--log-level", "debug", "status"],
-      expected: "status",
-    },
-  ])("returns primary command: $name", ({ argv, expected }) => {
-    expect(getPrimaryCommand(argv)).toBe(expected);
-  });
+it.each([
+  ["unknown plugin command help", cli("external-plugin tools help"), true],
+  ["help as option value", cli("agent --message help"), false],
+  ["help after terminator", cli("nodes invoke -- help"), false],
+  ["implicit root help command after terminator", cli("-- help config"), true],
+  ["implicit parent help command after terminator", cli("config -- help"), true],
+  ["root version flag", cli("--version"), true],
+])("detects help/version invocations: %s", (_name, argv, expected) => {
+  expect(isHelpOrVersionInvocation(argv)).toBe(expected);
+});
 
-  it.each([
-    {
-      name: "detects flag before terminator",
-      argv: ["node", "paleoclaw", "status", "--json"],
-      flag: "--json",
-      expected: true,
-    },
-    {
-      name: "ignores flag after terminator",
-      argv: ["node", "paleoclaw", "--", "--json"],
-      flag: "--json",
-      expected: false,
-    },
-  ])("parses boolean flags: $name", ({ argv, flag, expected }) => {
-    expect(hasFlag(argv, flag)).toBe(expected);
-  });
+it("detects root-only version invocations with a profile", () => {
+  expect(isRootVersionInvocation(cli("--profile work -v"))).toBe(true);
+});
 
-  it.each([
-    {
-      name: "value in next token",
-      argv: ["node", "paleoclaw", "status", "--timeout", "5000"],
-      expected: "5000",
-    },
-    {
-      name: "value in equals form",
-      argv: ["node", "paleoclaw", "status", "--timeout=2500"],
-      expected: "2500",
-    },
-    {
-      name: "missing value",
-      argv: ["node", "paleoclaw", "status", "--timeout"],
-      expected: null,
-    },
-    {
-      name: "next token is another flag",
-      argv: ["node", "paleoclaw", "status", "--timeout", "--json"],
-      expected: null,
-    },
-    {
-      name: "flag appears after terminator",
-      argv: ["node", "paleoclaw", "--", "--timeout=99"],
-      expected: undefined,
-    },
-  ])("extracts flag values: $name", ({ argv, expected }) => {
-    expect(getFlagValue(argv, "--timeout")).toBe(expected);
-  });
+it("limits simple help fast paths to root options, a command, and help", () => {
+  const commands = new Set(["setup"]);
+  expect(isSimpleCommandHelpInvocation(cli("--profile work setup --help"), commands)).toBe(true);
+  expect(isSimpleCommandHelpInvocation(cli("setup --workspace --help"), commands)).toBe(false);
+  expect(isSimpleCommandHelpInvocation(cli("setup --profile work --help"), commands)).toBe(false);
+  expect(isSimpleCommandHelpInvocation(cli("--help setup"), commands)).toBe(false);
+});
 
-  it("parses verbose flags", () => {
-    expect(getVerboseFlag(["node", "paleoclaw", "status", "--verbose"])).toBe(true);
-    expect(getVerboseFlag(["node", "paleoclaw", "status", "--debug"])).toBe(false);
-    expect(getVerboseFlag(["node", "paleoclaw", "status", "--debug"], { includeDebug: true })).toBe(
-      true,
-    );
-  });
+it("returns null when routed command sees unknown options", () => {
+  expect(
+    getCommandPositionalsWithRootOptions(cli("config get --mystery value update.channel"), {
+      commandPath: ["config", "get"],
+      booleanFlags: ["--json"],
+    }),
+  ).toBeNull();
+});
 
-  it.each([
-    {
-      name: "missing flag",
-      argv: ["node", "paleoclaw", "status"],
-      expected: undefined,
-    },
-    {
-      name: "missing value",
-      argv: ["node", "paleoclaw", "status", "--timeout"],
-      expected: null,
-    },
-    {
-      name: "valid positive integer",
-      argv: ["node", "paleoclaw", "status", "--timeout", "5000"],
-      expected: 5000,
-    },
-    {
-      name: "invalid integer",
-      argv: ["node", "paleoclaw", "status", "--timeout", "nope"],
-      expected: undefined,
-    },
-  ])("parses positive integer flag values: $name", ({ argv, expected }) => {
-    expect(getPositiveIntFlagValue(argv, "--timeout")).toBe(expected);
-  });
+it("ignores boolean flags after the terminator", () => {
+  expect(hasFlag(cli("-- --json"), "--json")).toBe(false);
+});
 
-  it("builds parse argv from raw args", () => {
-    const cases = [
-      {
-        rawArgs: ["node", "paleoclaw", "status"],
-        expected: ["node", "paleoclaw", "status"],
-      },
-      {
-        rawArgs: ["node-22", "paleoclaw", "status"],
-        expected: ["node-22", "paleoclaw", "status"],
-      },
-      {
-        rawArgs: ["node-22.2.0.exe", "paleoclaw", "status"],
-        expected: ["node-22.2.0.exe", "paleoclaw", "status"],
-      },
-      {
-        rawArgs: ["node-22.2", "paleoclaw", "status"],
-        expected: ["node-22.2", "paleoclaw", "status"],
-      },
-      {
-        rawArgs: ["node-22.2.exe", "paleoclaw", "status"],
-        expected: ["node-22.2.exe", "paleoclaw", "status"],
-      },
-      {
-        rawArgs: ["/usr/bin/node-22.2.0", "paleoclaw", "status"],
-        expected: ["/usr/bin/node-22.2.0", "paleoclaw", "status"],
-      },
-      {
-        rawArgs: ["node24", "paleoclaw", "status"],
-        expected: ["node24", "paleoclaw", "status"],
-      },
-      {
-        rawArgs: ["/usr/bin/node24", "paleoclaw", "status"],
-        expected: ["/usr/bin/node24", "paleoclaw", "status"],
-      },
-      {
-        rawArgs: ["node24.exe", "paleoclaw", "status"],
-        expected: ["node24.exe", "paleoclaw", "status"],
-      },
-      {
-        rawArgs: ["nodejs", "paleoclaw", "status"],
-        expected: ["nodejs", "paleoclaw", "status"],
-      },
-      {
-        rawArgs: ["node-dev", "paleoclaw", "status"],
-        expected: ["node", "paleoclaw", "node-dev", "paleoclaw", "status"],
-      },
-      {
-        rawArgs: ["paleoclaw", "status"],
-        expected: ["node", "paleoclaw", "status"],
-      },
-      {
-        rawArgs: ["bun", "src/entry.ts", "status"],
-        expected: ["bun", "src/entry.ts", "status"],
-      },
-    ] as const;
+it.each([
+  ["flag appears after terminator", cli("-- --timeout=99"), undefined],
+  ["repeated flag uses final value", cli("status --timeout 100 --timeout=200"), "200"],
+])("extracts flag values: %s", (_name, argv, expected) => {
+  expect(getFlagValue(argv, "--timeout")).toBe(expected);
+});
 
-    for (const testCase of cases) {
-      const parsed = buildParseArgv({
-        programName: "paleoclaw",
-        rawArgs: [...testCase.rawArgs],
-      });
-      expect(parsed).toEqual([...testCase.expected]);
-    }
-  });
+it("parses verbose flags", () => {
+  expect(getVerboseFlag(cli("status --verbose"))).toBe(true);
+  expect(getVerboseFlag(cli("status --debug"))).toBe(true);
+});
 
-  it("builds parse argv from fallback args", () => {
-    const fallbackArgv = buildParseArgv({
-      programName: "paleoclaw",
-      fallbackArgv: ["status"],
-    });
-    expect(fallbackArgv).toEqual(["node", "paleoclaw", "status"]);
-  });
+it.each([
+  ["missing value", cli("status --timeout"), null],
+  ["zero", cli("status --timeout 0"), null],
+])("parses positive integer flag values: %s", (_name, argv, expected) => {
+  expect(getPositiveIntFlagValue(argv, "--timeout")).toBe(expected);
+});
 
-  it("decides when to migrate state", () => {
-    const nonMutatingArgv = [
-      ["node", "paleoclaw", "status"],
-      ["node", "paleoclaw", "health"],
-      ["node", "paleoclaw", "sessions"],
-      ["node", "paleoclaw", "config", "get", "update"],
-      ["node", "paleoclaw", "config", "unset", "update"],
-      ["node", "paleoclaw", "models", "list"],
-      ["node", "paleoclaw", "models", "status"],
-      ["node", "paleoclaw", "memory", "status"],
-      ["node", "paleoclaw", "agent", "--message", "hi"],
-    ] as const;
-    const mutatingArgv = [
-      ["node", "paleoclaw", "agents", "list"],
-      ["node", "paleoclaw", "message", "send"],
-    ] as const;
-
-    for (const argv of nonMutatingArgv) {
-      expect(shouldMigrateState([...argv])).toBe(false);
-    }
-    for (const argv of mutatingArgv) {
-      expect(shouldMigrateState([...argv])).toBe(true);
-    }
-  });
-
-  it.each([
-    { path: ["status"], expected: false },
-    { path: ["config", "get"], expected: false },
-    { path: ["models", "status"], expected: false },
-    { path: ["agents", "list"], expected: true },
-  ])("reuses command path for migrate state decisions: $path", ({ path, expected }) => {
-    expect(shouldMigrateStateFromPath(path)).toBe(expected);
-  });
+it.each([
+  ["prefixes fallback when raw args start at program name", ["paleoclaw", "status"], cli("status")],
+  [
+    "keeps bun execution argv",
+    ["bun", "src/entry.ts", "status"],
+    ["bun", "src/entry.ts", "status"],
+  ],
+] as const)("builds parse argv from raw args: %s", (_name, rawArgs, expected) => {
+  const parsed = buildParseArgv([...rawArgs]);
+  expect(parsed).toEqual([...expected]);
 });

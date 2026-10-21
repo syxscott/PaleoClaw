@@ -1,0 +1,5 @@
+[
+  { "path": "packages/ai", "name": "@paleoclaw/ai", "dependency": "@paleoclaw/ai" },
+  { "path": "packages/gateway-protocol", "name": "@paleoclaw/gateway-protocol" },
+  { "path": "packages/gateway-client", "name": "@paleoclaw/gateway-client" }
+]

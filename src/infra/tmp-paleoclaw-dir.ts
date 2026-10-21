@@ -33,8 +33,8 @@ function isNodeErrorWithCode(err: unknown, code: string): err is MaybeNodeError 
 }
 
 /**
- * PaleoClaw port of upstream tmp-openclaw-dir.ts. Exported under the historical
- * OpenClaw symbol name because existing call sites (sandbox paths, browser paths)
+ * PaleoClaw port of upstream tmp-paleoclaw-dir.ts. Exported under the historical
+ * paleoclaw symbol name because existing call sites (sandbox paths, browser paths)
  * still import it by that name.
  */
 export function resolvePreferredOpenClawTmpDir(

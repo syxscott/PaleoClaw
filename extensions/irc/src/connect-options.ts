@@ -1,3 +1,4 @@
+import { assertSecretOwnerAvailable } from "paleoclaw/plugin-sdk/channel-secret-owner-runtime";
 import type { ResolvedIrcAccount } from "./accounts.js";
 import type { IrcClientOptions } from "./client.js";
 
@@ -10,6 +11,13 @@ export function buildIrcConnectOptions(
   account: ResolvedIrcAccount,
   overrides: IrcConnectOverrides = {},
 ): IrcClientOptions {
+  assertSecretOwnerAvailable("account", `irc:${account.accountId}`);
+  if (account.tokenStatus === "configured_unavailable") {
+    throw new Error(
+      `IRC credentials for account "${account.accountId}" are configured but unavailable.`,
+    );
+  }
+
   return {
     host: account.host,
     port: account.port,
@@ -18,13 +26,7 @@ export function buildIrcConnectOptions(
     username: account.username,
     realname: account.realname,
     password: account.password,
-    nickserv: {
-      enabled: account.config.nickserv?.enabled,
-      service: account.config.nickserv?.service,
-      password: account.config.nickserv?.password,
-      register: account.config.nickserv?.register,
-      registerEmail: account.config.nickserv?.registerEmail,
-    },
+    nickserv: account.config.nickserv,
     ...overrides,
   };
 }

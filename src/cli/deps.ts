@@ -1,94 +1,63 @@
-import type { sendMessageWhatsApp } from "../channels/web/index.js";
-import type { sendMessageDiscord } from "../discord/send.js";
-import type { sendMessageIMessage } from "../imessage/send.js";
-import type { OutboundSendDeps } from "../infra/outbound/deliver.js";
-import type { sendMessageSignal } from "../signal/send.js";
-import type { sendMessageSlack } from "../slack/send.js";
-import type { sendMessageTelegram } from "../telegram/send.js";
-import { createOutboundSendDepsFromCliSource } from "./outbound-send-mapping.js";
+// Default CLI dependency surface with lazy outbound channel send adapters.
+import { normalizeChatChannelId } from "../channels/registry.js";
+import { createLazyPromise } from "../shared/lazy-promise.js";
+import type { CliDeps } from "./deps.types.js";
+import type { RuntimeSendOpts } from "./send-runtime/channel-outbound-send.js";
 
-export type CliDeps = {
-  sendMessageWhatsApp: typeof sendMessageWhatsApp;
-  sendMessageTelegram: typeof sendMessageTelegram;
-  sendMessageDiscord: typeof sendMessageDiscord;
-  sendMessageSlack: typeof sendMessageSlack;
-  sendMessageSignal: typeof sendMessageSignal;
-  sendMessageIMessage: typeof sendMessageIMessage;
-};
+export type { CliDeps } from "./deps.types.js";
+const loadSendRuntime = createLazyPromise(() => import("./send-runtime/channel-outbound-send.js"));
 
-let whatsappSenderRuntimePromise: Promise<typeof import("./deps-send-whatsapp.runtime.js")> | null =
-  null;
-let telegramSenderRuntimePromise: Promise<typeof import("./deps-send-telegram.runtime.js")> | null =
-  null;
-let discordSenderRuntimePromise: Promise<typeof import("./deps-send-discord.runtime.js")> | null =
-  null;
-let slackSenderRuntimePromise: Promise<typeof import("./deps-send-slack.runtime.js")> | null = null;
-let signalSenderRuntimePromise: Promise<typeof import("./deps-send-signal.runtime.js")> | null =
-  null;
-let imessageSenderRuntimePromise: Promise<typeof import("./deps-send-imessage.runtime.js")> | null =
-  null;
-
-function loadWhatsAppSenderRuntime() {
-  whatsappSenderRuntimePromise ??= import("./deps-send-whatsapp.runtime.js");
-  return whatsappSenderRuntimePromise;
-}
-
-function loadTelegramSenderRuntime() {
-  telegramSenderRuntimePromise ??= import("./deps-send-telegram.runtime.js");
-  return telegramSenderRuntimePromise;
-}
-
-function loadDiscordSenderRuntime() {
-  discordSenderRuntimePromise ??= import("./deps-send-discord.runtime.js");
-  return discordSenderRuntimePromise;
-}
-
-function loadSlackSenderRuntime() {
-  slackSenderRuntimePromise ??= import("./deps-send-slack.runtime.js");
-  return slackSenderRuntimePromise;
-}
-
-function loadSignalSenderRuntime() {
-  signalSenderRuntimePromise ??= import("./deps-send-signal.runtime.js");
-  return signalSenderRuntimePromise;
-}
-
-function loadIMessageSenderRuntime() {
-  imessageSenderRuntimePromise ??= import("./deps-send-imessage.runtime.js");
-  return imessageSenderRuntimePromise;
-}
+const NON_CHANNEL_DEP_KEYS = new Set([
+  "__proto__",
+  "constructor",
+  "cron",
+  "cronConfig",
+  "cronEnabled",
+  "defaultAgentId",
+  "enqueueSystemEvent",
+  "getQueueSize",
+  "hasOwnProperty",
+  "inspect",
+  "log",
+  "migrateOrphanedSessionKeys",
+  "nowMs",
+  "onEvent",
+  "requestHeartbeat",
+  "resolveSessionStorePath",
+  "runHeartbeatOnce",
+  "runIsolatedAgentJob",
+  "runtime",
+  "sendCronFailureAlert",
+  "sessionStorePath",
+  "storePath",
+  "then",
+  "toJSON",
+  "toString",
+  "valueOf",
+]);
 
 export function createDefaultDeps(): CliDeps {
-  return {
-    sendMessageWhatsApp: async (...args) => {
-      const { sendMessageWhatsApp } = await loadWhatsAppSenderRuntime();
-      return await sendMessageWhatsApp(...args);
+  // Proxy lookup preserves the historic deps.channelName shape without eagerly importing plugins.
+  const deps: CliDeps = {};
+  return new Proxy(deps, {
+    get(target, property, receiver) {
+      if (typeof property !== "string") {
+        return Reflect.get(target, property, receiver);
+      }
+      const existing = Reflect.get(target, property, receiver);
+      if (existing !== undefined || NON_CHANNEL_DEP_KEYS.has(property)) {
+        return existing;
+      }
+      const channelId = normalizeChatChannelId(property);
+      if (!channelId) {
+        return existing;
+      }
+      // Synthesized senders re-enter the full channel adapter. Keep them off the
+      // enumerable target so transport dependency mapping cannot inject them back into it.
+      return async (to: string, text: string, opts?: RuntimeSendOpts) =>
+        await (await loadSendRuntime()).sendChannelOutboundMessage(channelId, to, text, opts);
     },
-    sendMessageTelegram: async (...args) => {
-      const { sendMessageTelegram } = await loadTelegramSenderRuntime();
-      return await sendMessageTelegram(...args);
-    },
-    sendMessageDiscord: async (...args) => {
-      const { sendMessageDiscord } = await loadDiscordSenderRuntime();
-      return await sendMessageDiscord(...args);
-    },
-    sendMessageSlack: async (...args) => {
-      const { sendMessageSlack } = await loadSlackSenderRuntime();
-      return await sendMessageSlack(...args);
-    },
-    sendMessageSignal: async (...args) => {
-      const { sendMessageSignal } = await loadSignalSenderRuntime();
-      return await sendMessageSignal(...args);
-    },
-    sendMessageIMessage: async (...args) => {
-      const { sendMessageIMessage } = await loadIMessageSenderRuntime();
-      return await sendMessageIMessage(...args);
-    },
-  };
+  });
 }
 
-export function createOutboundSendDeps(deps: CliDeps): OutboundSendDeps {
-  return createOutboundSendDepsFromCliSource(deps);
-}
-
-export { logWebSelfId } from "../web/auth-store.js";
+export { createOutboundSendDeps } from "./outbound-send-deps.js";

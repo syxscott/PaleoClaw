@@ -1,0 +1,101 @@
+{
+  "name": "@paleoclaw/buzz",
+  "version": "2026.10.5",
+  "description": "Connect paleoclaw agents to Buzz rooms",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/paleoclaw/paleoclaw"
+  },
+  "type": "module",
+  "dependencies": {
+    "nostr-tools": "2.25.2",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@paleoclaw/plugin-sdk": "workspace:*",
+    "paleoclaw": "workspace:*"
+  },
+  "peerDependencies": {
+    "paleoclaw": ">=2026.10.5"
+  },
+  "peerDependenciesMeta": {
+    "paleoclaw": {
+      "optional": true
+    }
+  },
+  "paleoclaw": {
+    "extensions": [
+      "./index.ts"
+    ],
+    "setupEntry": "./setup-entry.ts",
+    "setupFeatures": {
+      "configPromotion": "preserve-root"
+    },
+    "channel": {
+      "id": "buzz",
+      "configuredState": {
+        "env": {
+          "allOf": [
+            "BUZZ_RELAY_URL",
+            "BUZZ_PRIVATE_KEY"
+          ]
+        }
+      },
+      "label": "Buzz",
+      "selectionLabel": "Buzz",
+      "docsPath": "/channels/buzz",
+      "docsLabel": "buzz",
+      "blurb": "Connect paleoclaw agents to Buzz team rooms.",
+      "markdownCapable": true,
+      "order": 56,
+      "setup": {
+        "fields": [
+          {
+            "key": "relayUrl",
+            "kind": "string",
+            "cli": {
+              "flags": "--relay-url <url>",
+              "description": "Buzz relay WebSocket URL"
+            }
+          },
+          {
+            "key": "privateKey",
+            "kind": "string",
+            "sensitive": true,
+            "cli": {
+              "flags": "--private-key <key>",
+              "description": "Buzz bot Nostr private key"
+            }
+          },
+          {
+            "key": "useEnv",
+            "kind": "boolean",
+            "cli": {
+              "flags": "--use-env",
+              "description": "Use BUZZ_PRIVATE_KEY with the supplied relay URL"
+            },
+            "envVars": [
+              "BUZZ_PRIVATE_KEY"
+            ]
+          }
+        ]
+      }
+    },
+    "install": {
+      "clawhubSpec": "PaleoHub:@paleoclaw/buzz",
+      "npmSpec": "@paleoclaw/buzz",
+      "defaultChoice": "npm",
+      "minHostVersion": ">=2026.7.2"
+    },
+    "compat": {
+      "pluginApi": ">=2026.10.5"
+    },
+    "build": {
+      "openclawVersion": "2026.10.5"
+    },
+    "release": {
+      "publishToClawHub": true,
+      "publishToNpm": true
+    }
+  }
+}

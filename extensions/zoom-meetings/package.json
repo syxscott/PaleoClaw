@@ -1,0 +1,44 @@
+{
+  "name": "@paleoclaw/zoom-meetings",
+  "version": "2026.10.5",
+  "description": "paleoclaw Zoom browser meeting participant plugin.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/paleoclaw/paleoclaw"
+  },
+  "type": "module",
+  "devDependencies": {
+    "@paleoclaw/plugin-sdk": "workspace:*",
+    "paleoclaw": "workspace:*"
+  },
+  "peerDependencies": {
+    "paleoclaw": ">=2026.10.5"
+  },
+  "peerDependenciesMeta": {
+    "paleoclaw": {
+      "optional": true
+    }
+  },
+  "paleoclaw": {
+    "extensions": [
+      "./index.ts"
+    ],
+    "install": {
+      "clawhubSpec": "PaleoHub:@paleoclaw/zoom-meetings",
+      "npmSpec": "@paleoclaw/zoom-meetings",
+      "defaultChoice": "npm",
+      "minHostVersion": ">=2026.9.8"
+    },
+    "compat": {
+      "pluginApi": ">=2026.10.5"
+    },
+    "build": {
+      "openclawVersion": "2026.10.5",
+      "bundledDist": false
+    },
+    "release": {
+      "publishToClawHub": true,
+      "publishToNpm": true
+    }
+  }
+}

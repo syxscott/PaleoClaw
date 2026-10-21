@@ -1,13 +1,27 @@
-import fs from "node:fs/promises";
+// This never contacts the gateway; it inspects configured agents and their read-only session stores.
+
 import path from "node:path";
 import { resolveAgentWorkspaceDir } from "../agents/agent-scope.js";
-import type { OpenClawConfig } from "../config/config.js";
-import { loadConfig } from "../config/config.js";
-import { loadSessionStore, resolveStorePath } from "../config/sessions.js";
-import { listAgentsForGateway } from "../gateway/session-utils.js";
+import { measureCliCommandStartup } from "../cli/command-startup-timing.js";
+import type { OpenClawConfig } from "../config/types.js";
+import { listGatewayAgentsBasic } from "../gateway/agent-list.js";
+import { pathExists } from "../infra/fs-safe.js";
+import {
+  evaluateAgentDatabaseAdmissions,
+  hasAgentDatabaseAdmissions,
+  recordAgentDatabaseAdmissions,
+  type AgentDatabaseAdmissionRefusal,
+} from "../state/agent-database-admission.js";
+import {
+  prepareStatusSessionStores,
+  STATUS_RECENT_SESSION_LIMIT,
+  type StatusSessionStores,
+} from "../status/session-stores.js";
 
 export type AgentLocalStatus = {
   id: string;
+  status?: "degraded";
+  admissionRefusal?: AgentDatabaseAdmissionRefusal;
   name?: string;
   workspaceDir: string | null;
   bootstrapPending: boolean | null;
@@ -17,76 +31,87 @@ export type AgentLocalStatus = {
   lastActiveAgeMs: number | null;
 };
 
-type AgentLocalStatusesResult = {
-  defaultId: string;
-  agents: AgentLocalStatus[];
-  totalSessions: number;
-  bootstrapPendingCount: number;
-};
+export type PreparedStatusLocalSnapshot = Awaited<ReturnType<typeof collectStatusLocalSnapshot>>;
+export type AgentLocalStatusesResult = ReturnType<PreparedStatusLocalSnapshot["publish"]>;
 
-async function fileExists(p: string): Promise<boolean> {
-  try {
-    await fs.access(p);
-    return true;
-  } catch {
-    return false;
+/** Prepares local workspace and session facts for a final synchronous publication. */
+export async function collectStatusLocalSnapshot(cfg: OpenClawConfig) {
+  if (!hasAgentDatabaseAdmissions()) {
+    recordAgentDatabaseAdmissions(
+      await measureCliCommandStartup(
+        "status.agent-admission",
+        () => evaluateAgentDatabaseAdmissions(cfg),
+        { config: cfg },
+      ),
+    );
   }
-}
-
-export async function getAgentLocalStatuses(
-  cfg: OpenClawConfig = loadConfig(),
-): Promise<AgentLocalStatusesResult> {
-  const agentList = listAgentsForGateway(cfg);
+  const agentList = await listGatewayAgentsBasic(cfg);
   const now = Date.now();
 
-  const statuses: AgentLocalStatus[] = [];
+  const sessionStores = await measureCliCommandStartup(
+    "status.session-stores",
+    () => prepareStatusSessionStores(cfg, agentList.agents, STATUS_RECENT_SESSION_LIMIT),
+    { config: cfg },
+  );
+  const workspaces = new Map<
+    string,
+    { workspaceDir: string | null; bootstrapPending: boolean | null }
+  >();
   for (const agent of agentList.agents) {
     const agentId = agent.id;
     const workspaceDir = (() => {
       try {
         return resolveAgentWorkspaceDir(cfg, agentId);
       } catch {
+        // A malformed workspace setting should not prevent status from showing other agents.
         return null;
       }
     })();
 
     const bootstrapPath = workspaceDir != null ? path.join(workspaceDir, "BOOTSTRAP.md") : null;
-    const bootstrapPending = bootstrapPath != null ? await fileExists(bootstrapPath) : null;
+    const bootstrapPending = bootstrapPath != null ? await pathExists(bootstrapPath) : null;
 
-    const sessionsPath = resolveStorePath(cfg.session?.store, { agentId });
-    const store = (() => {
-      try {
-        return loadSessionStore(sessionsPath);
-      } catch {
-        return {};
-      }
-    })();
-    const sessions = Object.entries(store)
-      .filter(([key]) => key !== "global" && key !== "unknown")
-      .map(([, entry]) => entry);
-    const sessionsCount = sessions.length;
-    const lastUpdatedAt = sessions.reduce((max, e) => Math.max(max, e?.updatedAt ?? 0), 0);
-    const resolvedLastUpdatedAt = lastUpdatedAt > 0 ? lastUpdatedAt : null;
-    const lastActiveAgeMs = resolvedLastUpdatedAt ? now - resolvedLastUpdatedAt : null;
-
-    statuses.push({
-      id: agentId,
-      name: agent.name,
-      workspaceDir,
-      bootstrapPending,
-      sessionsPath,
-      sessionsCount,
-      lastUpdatedAt: resolvedLastUpdatedAt,
-      lastActiveAgeMs,
-    });
+    workspaces.set(agentId, { workspaceDir, bootstrapPending });
   }
-
-  const totalSessions = statuses.reduce((sum, s) => sum + s.sessionsCount, 0);
-  const bootstrapPendingCount = statuses.reduce((sum, s) => sum + (s.bootstrapPending ? 1 : 0), 0);
+  const defaultId = agentList.selectionRequired ? null : agentList.defaultId;
   return {
-    defaultId: agentList.defaultId,
-    agents: statuses,
-    totalSessions,
-    bootstrapPendingCount,
+    defaultId,
+    sessionStores,
+    publish(published: StatusSessionStores = sessionStores.publish()) {
+      const statuses: AgentLocalStatus[] = published.byAgent.map(
+        ({ agent, path: sessionsPath, count, recent }) => {
+          const lastUpdatedAt = recent[0]?.entry.updatedAt ?? 0;
+          const resolvedLastUpdatedAt = lastUpdatedAt > 0 ? lastUpdatedAt : null;
+          return {
+            id: agent.id,
+            ...(agent.admissionRefusal
+              ? { status: agent.status, admissionRefusal: agent.admissionRefusal }
+              : {}),
+            name: agent.name,
+            ...workspaces.get(agent.id)!,
+            sessionsPath,
+            sessionsCount: count,
+            lastUpdatedAt: resolvedLastUpdatedAt,
+            lastActiveAgeMs: resolvedLastUpdatedAt ? now - resolvedLastUpdatedAt : null,
+          };
+        },
+      );
+
+      const bootstrapPendingCount = statuses.reduce(
+        (sum, s) => sum + (s.bootstrapPending ? 1 : 0),
+        0,
+      );
+      return {
+        // Keep explicit fleets unselected; the prepared default still owns local inspection.
+        defaultId: defaultId
+          ? ((statuses.find(({ id }) => id === defaultId) ?? statuses[0])?.id ?? null)
+          : null,
+        ownership: agentList.ownership,
+        selectionRequired: agentList.selectionRequired,
+        agents: statuses,
+        totalSessions: published.count,
+        bootstrapPendingCount,
+      };
+    },
   };
 }

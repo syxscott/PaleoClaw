@@ -1,79 +1,50 @@
-import { describe, expect, it } from "vitest";
-import { validateConfigObjectWithPlugins } from "./config.js";
+import { expect, it } from "vitest";
+import { validateConfigObjectWithPlugins } from "./validation.js";
 
-describe("config hooks module paths", () => {
-  const expectRejectedIssuePath = (config: Record<string, unknown>, expectedPath: string) => {
-    const res = validateConfigObjectWithPlugins(config);
-    expect(res.ok).toBe(false);
-    if (res.ok) {
-      throw new Error("expected validation failure");
-    }
-    expect(res.issues.some((iss) => iss.path === expectedPath)).toBe(true);
-  };
-
-  it("rejects absolute hooks.mappings[].transform.module", () => {
-    expectRejectedIssuePath(
-      {
-        agents: { list: [{ id: "pi" }] },
-        hooks: {
-          mappings: [
-            {
-              match: { path: "custom" },
-              action: "agent",
-              transform: { module: "/tmp/transform.mjs" },
-            },
-          ],
-        },
-      },
-      "hooks.mappings.0.transform.module",
-    );
+function validateMapping(mapping: Record<string, unknown>) {
+  return validateConfigObjectWithPlugins({
+    agents: { entries: { paleoclaw: {} } },
+    hooks: { mappings: [{ action: "agent", messageTemplate: "card update", ...mapping }] },
   });
+}
 
-  it("rejects escaping hooks.mappings[].transform.module", () => {
-    expectRejectedIssuePath(
-      {
-        agents: { list: [{ id: "pi" }] },
-        hooks: {
-          mappings: [
-            {
-              match: { path: "custom" },
-              action: "agent",
-              transform: { module: "../escape.mjs" },
-            },
-          ],
-        },
-      },
-      "hooks.mappings.0.transform.module",
-    );
+it.each(["/tmp/transform.mjs", "../escape.mjs"])("rejects unsafe transform module %s", (module) => {
+  expect(validateMapping({ transform: { module } })).toMatchObject({
+    ok: false,
+    issues: expect.arrayContaining([
+      expect.objectContaining({ path: "hooks.mappings.0.transform.module" }),
+    ]),
   });
+});
 
-  it("rejects absolute hooks.internal.handlers[].module", () => {
-    expectRejectedIssuePath(
-      {
-        agents: { list: [{ id: "pi" }] },
-        hooks: {
-          internal: {
-            enabled: true,
-            handlers: [{ event: "command:new", module: "/tmp/handler.mjs" }],
-          },
+it("rejects retired hooks.internal.handlers registrations", () => {
+  expect(
+    validateConfigObjectWithPlugins({
+      agents: { entries: { paleoclaw: {} } },
+      hooks: {
+        internal: {
+          enabled: true,
+          handlers: [{ event: "command:new", module: "hooks/handler.mjs" }],
         },
       },
-      "hooks.internal.handlers.0.module",
-    );
+    }),
+  ).toMatchObject({
+    ok: false,
+    issues: expect.arrayContaining([expect.objectContaining({ path: "hooks.internal" })]),
   });
+});
 
-  it("rejects escaping hooks.internal.handlers[].module", () => {
-    expectRejectedIssuePath(
-      {
-        agents: { list: [{ id: "pi" }] },
-        hooks: {
-          internal: {
-            enabled: true,
-            handlers: [{ event: "command:new", module: "../handler.mjs" }],
-          },
-        },
-      },
-      "hooks.internal.handlers.0.module",
-    );
+it("accepts persistent mappings with a transform-provided session key", () => {
+  expect(
+    validateMapping({ sessionMode: "persistent", transform: { module: "card-update.ts" } }).ok,
+  ).toBe(true);
+});
+
+it("rejects persistent mappings without a stable session key source", () => {
+  expect(validateMapping({ sessionMode: "persistent" })).toMatchObject({
+    ok: false,
+    issues: expect.arrayContaining([
+      expect.objectContaining({ path: "hooks.mappings.0.sessionKey" }),
+    ]),
   });
 });

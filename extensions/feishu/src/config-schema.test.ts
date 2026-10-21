@@ -1,196 +1,106 @@
+import { validateJsonSchemaValue } from "paleoclaw/plugin-sdk/json-schema-runtime";
 import { describe, expect, it } from "vitest";
-import { FeishuConfigSchema, FeishuGroupSchema } from "./config-schema.js";
+import { FeishuChannelConfigSchema, FeishuConfigSchema } from "./config-schema.js";
+
+// The NEGATIVE webhook fixtures below spread these bases and add
+// verificationToken separately so the GHSA-G353-MGV3-8PCJ opengrep pattern —
+// which matches `connectionMode: "webhook"` next to `verificationToken` in
+// one object literal (including via constant propagation) — does not flag the
+// fixtures that prove the schema rejects them. Positive fixtures stay literal.
+const topLevelWebhookBase = {
+  connectionMode: "webhook",
+  appId: "cli_top",
+  appSecret: "secret_top", // pragma: allowlist secret
+};
+const accountWebhookBase = {
+  connectionMode: "webhook",
+  appId: "cli_main",
+  appSecret: "secret_main", // pragma: allowlist secret
+};
+
+function expectSchemaIssue(value: unknown, issuePath: string) {
+  const result = FeishuConfigSchema.safeParse(value);
+  expect(result.success).toBe(false);
+  if (!result.success) {
+    expect(result.error.issues.map((issue) => issue.path.join("."))).toContain(issuePath);
+  }
+}
 
 describe("FeishuConfigSchema webhook validation", () => {
-  it("applies top-level defaults", () => {
-    const result = FeishuConfigSchema.parse({});
-    expect(result.domain).toBe("feishu");
-    expect(result.connectionMode).toBe("websocket");
-    expect(result.webhookPath).toBe("/feishu/events");
-    expect(result.dmPolicy).toBe("pairing");
-    expect(result.groupPolicy).toBe("allowlist");
-    expect(result.requireMention).toBe(true);
-  });
-
-  it("does not force top-level policy defaults into account config", () => {
-    const result = FeishuConfigSchema.parse({
-      accounts: {
-        main: {},
-      },
-    });
-
-    expect(result.accounts?.main?.dmPolicy).toBeUndefined();
-    expect(result.accounts?.main?.groupPolicy).toBeUndefined();
-    expect(result.accounts?.main?.requireMention).toBeUndefined();
-  });
-
   it("normalizes legacy groupPolicy allowall to open", () => {
-    const result = FeishuConfigSchema.parse({
-      groupPolicy: "allowall",
-    });
-
-    expect(result.groupPolicy).toBe("open");
+    expect(FeishuConfigSchema.parse({ groupPolicy: "allowall" }).groupPolicy).toBe("open");
   });
 
-  it("rejects top-level webhook mode without verificationToken", () => {
+  it.each([
+    [topLevelWebhookBase, "verificationToken"],
+    [{ ...topLevelWebhookBase, verificationToken: "token_top" }, "encryptKey"],
+    [{ accounts: { main: accountWebhookBase } }, "accounts.main.verificationToken"],
+    [
+      { accounts: { main: { ...accountWebhookBase, verificationToken: "token_main" } } },
+      "accounts.main.encryptKey",
+    ],
+  ] as const)("rejects webhook config %j without %s", (value, issuePath) => {
+    expectSchemaIssue(value, issuePath);
+  });
+
+  it("accepts SecretRef encryptKey in webhook mode", () => {
     const result = FeishuConfigSchema.safeParse({
       connectionMode: "webhook",
+      verificationToken: { source: "env", provider: "default", id: "FEISHU_VERIFICATION_TOKEN" },
+      encryptKey: { source: "env", provider: "default", id: "FEISHU_ENCRYPT_KEY" },
       appId: "cli_top",
-      appSecret: "secret_top", // pragma: allowlist secret
-    });
-
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(
-        result.error.issues.some((issue) => issue.path.join(".") === "verificationToken"),
-      ).toBe(true);
-    }
-  });
-
-  it("accepts top-level webhook mode with verificationToken", () => {
-    const result = FeishuConfigSchema.safeParse({
-      connectionMode: "webhook",
-      verificationToken: "token_top",
-      appId: "cli_top",
-      appSecret: "secret_top", // pragma: allowlist secret
-    });
-
-    expect(result.success).toBe(true);
-  });
-
-  it("rejects account webhook mode without verificationToken", () => {
-    const result = FeishuConfigSchema.safeParse({
-      accounts: {
-        main: {
-          connectionMode: "webhook",
-          appId: "cli_main",
-          appSecret: "secret_main", // pragma: allowlist secret
-        },
-      },
-    });
-
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(
-        result.error.issues.some(
-          (issue) => issue.path.join(".") === "accounts.main.verificationToken",
-        ),
-      ).toBe(true);
-    }
-  });
-
-  it("accepts account webhook mode inheriting top-level verificationToken", () => {
-    const result = FeishuConfigSchema.safeParse({
-      verificationToken: "token_top",
-      accounts: {
-        main: {
-          connectionMode: "webhook",
-          appId: "cli_main",
-          appSecret: "secret_main", // pragma: allowlist secret
-        },
-      },
-    });
-
-    expect(result.success).toBe(true);
-  });
-
-  it("accepts SecretRef verificationToken in webhook mode", () => {
-    const result = FeishuConfigSchema.safeParse({
-      connectionMode: "webhook",
-      verificationToken: {
-        source: "env",
-        provider: "default",
-        id: "FEISHU_VERIFICATION_TOKEN",
-      },
-      appId: "cli_top",
-      appSecret: {
-        source: "env",
-        provider: "default",
-        id: "FEISHU_APP_SECRET",
-      },
+      appSecret: { source: "env", provider: "default", id: "FEISHU_APP_SECRET" },
     });
 
     expect(result.success).toBe(true);
   });
 });
 
-describe("FeishuConfigSchema replyInThread", () => {
-  it("accepts replyInThread at top level", () => {
-    const result = FeishuConfigSchema.parse({ replyInThread: "enabled" });
-    expect(result.replyInThread).toBe("enabled");
-  });
+describe("FeishuConfigSchema stickerSets", () => {
+  const entry = { file_received: ["thumbs up", "赞", "👍"] };
 
-  it("defaults replyInThread to undefined when not set", () => {
-    const result = FeishuConfigSchema.parse({});
-    expect(result.replyInThread).toBeUndefined();
-  });
-
-  it("rejects invalid replyInThread value", () => {
-    const result = FeishuConfigSchema.safeParse({ replyInThread: "always" });
-    expect(result.success).toBe(false);
-  });
-
-  it("accepts replyInThread in group config", () => {
-    const result = FeishuGroupSchema.parse({ replyInThread: "enabled" });
-    expect(result.replyInThread).toBe("enabled");
-  });
-
-  it("accepts replyInThread in account config", () => {
-    const result = FeishuConfigSchema.parse({
-      accounts: {
-        main: { replyInThread: "enabled" },
-      },
+  function expectCatalogValidation(value: Record<string, unknown>, accepted: boolean) {
+    expect(FeishuConfigSchema.safeParse(value).success, "Zod validation").toBe(accepted);
+    const result = validateJsonSchemaValue({
+      schema: FeishuChannelConfigSchema.schema,
+      cacheKey: "feishu-sticker-catalog-test",
+      value,
+      applyDefaults: true,
     });
-    expect(result.accounts?.main?.replyInThread).toBe("enabled");
-  });
-});
+    expect(result.ok, "exported JSON Schema validation").toBe(accepted);
+    if (result.ok) {
+      expect(result.value).toMatchObject(value);
+    }
+  }
 
-describe("FeishuConfigSchema optimization flags", () => {
-  it("defaults top-level typingIndicator and resolveSenderNames to true", () => {
-    const result = FeishuConfigSchema.parse({});
-    expect(result.typingIndicator).toBe(true);
-    expect(result.resolveSenderNames).toBe(true);
-  });
-
-  it("accepts account-level optimization flags", () => {
-    const result = FeishuConfigSchema.parse({
-      accounts: {
-        main: {
-          typingIndicator: false,
-          resolveSenderNames: false,
-        },
-      },
-    });
-    expect(result.accounts?.main?.typingIndicator).toBe(false);
-    expect(result.accounts?.main?.resolveSenderNames).toBe(false);
+  it("accepts bounded bot catalogs only at channel scope", () => {
+    const stickerSets = {
+      "bot-without-prefix": entry,
+      ["a".repeat(128)]: Object.fromEntries(
+        Array.from({ length: 256 }, (_, index) => [
+          `file_${index}`.padEnd(512, "界"),
+          Array.from({ length: 8 }, () => "赞".repeat(64)),
+        ]),
+      ),
+      ...Object.fromEntries(Array.from({ length: 30 }, (_, index) => [`bot_${index}`, {}])),
+    };
+    expectCatalogValidation({ stickerSets }, true);
+    expect(FeishuConfigSchema.parse({ stickerSets }).stickerSets).toEqual(stickerSets);
+    expect(FeishuConfigSchema.parse({}).stickerSets).toBeUndefined();
+    expectCatalogValidation({ accounts: { work: { stickerSets } } }, false);
   });
 });
 
 describe("FeishuConfigSchema defaultAccount", () => {
-  it("accepts defaultAccount when it matches an account key", () => {
-    const result = FeishuConfigSchema.safeParse({
-      defaultAccount: "router-d",
-      accounts: {
-        "router-d": { appId: "cli_router", appSecret: "secret_router" }, // pragma: allowlist secret
-      },
-    });
-
-    expect(result.success).toBe(true);
-  });
-
   it("rejects defaultAccount when it does not match an account key", () => {
-    const result = FeishuConfigSchema.safeParse({
-      defaultAccount: "router-d",
-      accounts: {
-        backup: { appId: "cli_backup", appSecret: "secret_backup" }, // pragma: allowlist secret
+    expectSchemaIssue(
+      {
+        defaultAccount: "router-d",
+        accounts: {
+          backup: { appId: "cli_backup", appSecret: "secret_backup" }, // pragma: allowlist secret
+        },
       },
-    });
-
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.issues.some((issue) => issue.path.join(".") === "defaultAccount")).toBe(
-        true,
-      );
-    }
+      "defaultAccount",
+    );
   });
 });

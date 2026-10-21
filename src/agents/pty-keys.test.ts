@@ -1,27 +1,66 @@
+/**
+ * Regression coverage for PTY key encoding.
+ * Protects terminal control bytes used by process send-keys and PTY sessions.
+ */
 import { expect, test } from "vitest";
-import { buildCursorPositionResponse, stripDsrRequests } from "./pty-dsr.js";
-import {
-  BRACKETED_PASTE_END,
-  BRACKETED_PASTE_START,
-  encodeKeySequence,
-  encodePaste,
-} from "./pty-keys.js";
+import { encodeKeySequence, encodePaste } from "./pty-keys.js";
+
+const ESC = "\x1b";
 
 test("encodeKeySequence maps common keys and modifiers", () => {
   const enter = encodeKeySequence({ keys: ["Enter"] });
-  expect(enter.data).toBe("\r");
+  expect(enter.data).toEqual(Buffer.from("\r"));
 
   const ctrlC = encodeKeySequence({ keys: ["C-c"] });
-  expect(ctrlC.data).toBe("\x03");
+  expect(ctrlC.data).toEqual(Buffer.from("\x03"));
 
   const altX = encodeKeySequence({ keys: ["M-x"] });
-  expect(altX.data).toBe("\x1bx");
+  expect(altX.data).toEqual(Buffer.from("\x1bx"));
 
   const shiftTab = encodeKeySequence({ keys: ["S-Tab"] });
-  expect(shiftTab.data).toBe("\x1b[Z");
+  expect(shiftTab.data).toEqual(Buffer.from("\x1b[Z"));
 
   const kpEnter = encodeKeySequence({ keys: ["KPEnter"] });
-  expect(kpEnter.data).toBe("\x1bOM");
+  expect(kpEnter.data).toEqual(Buffer.from("\x1bOM"));
+});
+
+test("encodeKeySequence uses SS3 sequences in application cursor key mode", () => {
+  // Application mode (smkx) uses SS3 sequences.
+  const up = encodeKeySequence({ keys: ["up"] }, "application");
+  expect(up.data).toEqual(Buffer.from(`${ESC}OA`));
+
+  const down = encodeKeySequence({ keys: ["down"] }, "application");
+  expect(down.data).toEqual(Buffer.from(`${ESC}OB`));
+
+  const right = encodeKeySequence({ keys: ["right"] }, "application");
+  expect(right.data).toEqual(Buffer.from(`${ESC}OC`));
+
+  const left = encodeKeySequence({ keys: ["left"] }, "application");
+  expect(left.data).toEqual(Buffer.from(`${ESC}OD`));
+
+  // Home/End also use SS3 sequences in application mode.
+  const home = encodeKeySequence({ keys: ["home"] }, "application");
+  expect(home.data).toEqual(Buffer.from(`${ESC}OH`));
+
+  const end = encodeKeySequence({ keys: ["end"] }, "application");
+  expect(end.data).toEqual(Buffer.from(`${ESC}OF`));
+});
+
+test.each([
+  ["M-up", `${ESC}[1;3A`],
+  ["S-M-C-PgDn", `${ESC}[6;8~`],
+  ["S-F4", `${ESC}[1;2S`],
+])("encodeKeySequence applies xterm modifiers to %s in every cursor mode", (key, data) => {
+  for (const mode of [undefined, "normal", "application"] as const) {
+    expect(encodeKeySequence({ keys: [key] }, mode)).toEqual({
+      data: Buffer.from(data),
+      warnings: [],
+    });
+  }
+});
+
+test.each([["C-M-Space", `${ESC}\x00`]])("encodeKeySequence encodes %s", (key, data) => {
+  expect(encodeKeySequence({ keys: [key] })).toEqual({ data: Buffer.from(data), warnings: [] });
 });
 
 test("encodeKeySequence supports hex + literal with warnings", () => {
@@ -30,24 +69,12 @@ test("encodeKeySequence supports hex + literal with warnings", () => {
     hex: ["0d", "0x0a", "zz"],
     keys: ["Enter"],
   });
-  expect(result.data).toBe("hi\r\n\r");
-  expect(result.warnings.length).toBe(1);
+  expect(result.data).toEqual(Buffer.from("hi\r\n\r"));
+  expect(result.warnings).toStrictEqual(["Invalid hex byte: zz"]);
 });
 
 test("encodePaste wraps bracketed sequences by default", () => {
   const payload = encodePaste("line1\nline2\n");
-  expect(payload.startsWith(BRACKETED_PASTE_START)).toBe(true);
-  expect(payload.endsWith(BRACKETED_PASTE_END)).toBe(true);
-});
-
-test("stripDsrRequests removes cursor queries and counts them", () => {
-  const input = "hi\x1b[6nthere\x1b[?6n";
-  const { cleaned, requests } = stripDsrRequests(input);
-  expect(cleaned).toBe("hithere");
-  expect(requests).toBe(2);
-});
-
-test("buildCursorPositionResponse returns CPR sequence", () => {
-  expect(buildCursorPositionResponse()).toBe("\x1b[1;1R");
-  expect(buildCursorPositionResponse(12, 34)).toBe("\x1b[12;34R");
+  expect(payload.startsWith(`${ESC}[200~`)).toBe(true);
+  expect(payload.endsWith(`${ESC}[201~`)).toBe(true);
 });

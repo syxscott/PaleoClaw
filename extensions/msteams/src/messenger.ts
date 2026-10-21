@@ -1,72 +1,49 @@
+import { PlatformMessageNotDispatchedError } from "paleoclaw/plugin-sdk/error-runtime";
+import type { ChunkMode } from "paleoclaw/plugin-sdk/reply-chunking";
 import {
-  type ChunkMode,
-  isSilentReplyText,
-  loadWebMedia,
-  type MarkdownTableMode,
-  type MSTeamsReplyStyle,
+  resolveSendableOutboundReplyParts,
   type ReplyPayload,
-  SILENT_REPLY_TOKEN,
-  sleep,
-} from "paleoclaw/plugin-sdk/msteams";
+} from "paleoclaw/plugin-sdk/reply-payload";
+import { retryAsync } from "paleoclaw/plugin-sdk/retry-runtime";
+import { sleepWithAbort } from "paleoclaw/plugin-sdk/runtime-env";
+import { normalizeOptionalLowercaseString } from "paleoclaw/plugin-sdk/string-coerce-runtime";
+import { loadWebMedia } from "paleoclaw/plugin-sdk/web-media";
+import type { MarkdownTableMode, MSTeamsReplyStyle } from "../runtime-api.js";
 import type { MSTeamsAccessTokenProvider } from "./attachments/types.js";
+import type { MSTeamsSdkCloudOptions } from "./cloud.js";
 import type { StoredConversationReference } from "./conversation-store.js";
 import { classifyMSTeamsSendError } from "./errors.js";
 import { prepareFileConsentActivity, requiresFileConsent } from "./file-consent-helpers.js";
+import { formatMSTeamsMarkdown } from "./format.js";
 import { buildTeamsFileInfoCard } from "./graph-chat.js";
 import {
   getDriveItemProperties,
-  uploadAndShareOneDrive,
+  requireMSTeamsSharePointSiteId,
   uploadAndShareSharePoint,
 } from "./graph-upload.js";
-import { extractFilename, extractMessageId, getMimeType, isLocalPath } from "./media-helpers.js";
-import { parseMentions } from "./mentions.js";
-import { withRevokedProxyFallback } from "./revoked-context.js";
+import { normalizeMSTeamsConversationId } from "./inbound.js";
+import {
+  extractFilename,
+  extractMessageId,
+  getMimeType,
+  isLocalPath,
+  MSTEAMS_MAX_MEDIA_BYTES,
+} from "./media-helpers.js";
+import { buildMSTeamsMessageActivity } from "./message-activity.js";
+import { setPendingUploadActivityId } from "./pending-uploads.js";
 import { getMSTeamsRuntime } from "./runtime.js";
+import { sendMSTeamsActivityWithReference } from "./sdk-proactive.js";
+import type { MSTeamsActivityLike } from "./sdk-types.js";
+import type { MSTeamsApp } from "./sdk.js";
+import {
+  assertMSTeamsSendHandoff,
+  withMSTeamsConnectorHandoff,
+  type MSTeamsSendHandoff,
+} from "./send-handoff.js";
 
-/**
- * MSTeams-specific media size limit (100MB).
- * Higher than the default because OneDrive upload handles large files well.
- */
-const MSTEAMS_MAX_MEDIA_BYTES = 100 * 1024 * 1024;
-
-/**
- * Threshold for large files that require FileConsentCard flow in personal chats.
- * Files >= 4MB use consent flow; smaller images can use inline base64.
- */
-const FILE_CONSENT_THRESHOLD_BYTES = 4 * 1024 * 1024;
-
-type SendContext = {
-  sendActivity: (textOrActivity: string | object) => Promise<unknown>;
-};
-
-export type MSTeamsConversationReference = {
-  activityId?: string;
-  user?: { id?: string; name?: string; aadObjectId?: string };
-  agent?: { id?: string; name?: string; aadObjectId?: string } | null;
-  conversation: { id: string; conversationType?: string; tenantId?: string };
-  channelId: string;
-  serviceUrl?: string;
-  locale?: string;
-};
-
-export type MSTeamsAdapter = {
-  continueConversation: (
-    appId: string,
-    reference: MSTeamsConversationReference,
-    logic: (context: SendContext) => Promise<void>,
-  ) => Promise<void>;
-  process: (
-    req: unknown,
-    res: unknown,
-    logic: (context: unknown) => Promise<void>,
-  ) => Promise<void>;
-};
-
-export type MSTeamsReplyRenderOptions = {
+type MSTeamsReplyRenderOptions = {
   textChunkLimit: number;
-  chunkText?: boolean;
-  mediaMode?: "split" | "inline";
-  tableMode?: MarkdownTableMode;
+  tableMode: MarkdownTableMode;
   chunkMode?: ChunkMode;
 };
 
@@ -79,13 +56,10 @@ export type MSTeamsRenderedMessage = {
   mediaUrl?: string;
 };
 
-export type MSTeamsSendRetryOptions = {
-  maxAttempts?: number;
-  baseDelayMs?: number;
-  maxDelayMs?: number;
-};
+const MSTEAMS_SEND_ATTEMPTS = 3;
+const MSTEAMS_SEND_RETRY_MAX_DELAY_MS = 10_000;
 
-export type MSTeamsSendRetryEvent = {
+type MSTeamsSendRetryEvent = {
   messageIndex: number;
   messageCount: number;
   nextAttempt: number;
@@ -94,18 +68,13 @@ export type MSTeamsSendRetryEvent = {
   classification: ReturnType<typeof classifyMSTeamsSendError>;
 };
 
-function normalizeConversationId(rawId: string): string {
-  return rawId.split(";")[0] ?? rawId;
-}
-
-export function buildConversationReference(
-  ref: StoredConversationReference,
-): MSTeamsConversationReference {
+export function buildConversationReference(ref: StoredConversationReference) {
   const conversationId = ref.conversation?.id?.trim();
   if (!conversationId) {
     throw new Error("Invalid stored reference: missing conversation.id");
   }
-  const agent = ref.agent ?? ref.bot ?? undefined;
+  // Legacy imported rows may only carry `bot`; see StoredConversationReference.bot.
+  const agent = ref.agent ?? ref.bot;
   if (agent == null || !agent.id) {
     throw new Error("Invalid stored reference: missing agent.id");
   }
@@ -113,90 +82,27 @@ export function buildConversationReference(
   if (!user?.id) {
     throw new Error("Invalid stored reference: missing user.id");
   }
+  // Bot Framework proactive sends require `tenantId` on the outbound activity
+  // so the connector routes to the correct Azure AD tenant; otherwise it rejects
+  // with HTTP 403. Prefer the explicit top-level `ref.tenantId` (captured from
+  // `channelData.tenant.id` inbound) and fall back to `conversation.tenantId`.
+  const tenantId = ref.tenantId ?? ref.conversation?.tenantId;
+  const aadObjectId = ref.aadObjectId ?? user.aadObjectId;
   return {
     activityId: ref.activityId,
-    user,
+    user: aadObjectId ? { ...user, aadObjectId } : user,
     agent,
     conversation: {
-      id: normalizeConversationId(conversationId),
+      id: normalizeMSTeamsConversationId(conversationId),
       conversationType: ref.conversation?.conversationType,
-      tenantId: ref.conversation?.tenantId,
+      tenantId,
     },
     channelId: ref.channelId ?? "msteams",
     serviceUrl: ref.serviceUrl,
     locale: ref.locale,
+    ...(tenantId ? { tenantId } : {}),
+    ...(aadObjectId ? { aadObjectId } : {}),
   };
-}
-
-function pushTextMessages(
-  out: MSTeamsRenderedMessage[],
-  text: string,
-  opts: {
-    chunkText: boolean;
-    chunkLimit: number;
-    chunkMode: ChunkMode;
-  },
-) {
-  if (!text) {
-    return;
-  }
-  if (opts.chunkText) {
-    for (const chunk of getMSTeamsRuntime().channel.text.chunkMarkdownTextWithMode(
-      text,
-      opts.chunkLimit,
-      opts.chunkMode,
-    )) {
-      const trimmed = chunk.trim();
-      if (!trimmed || isSilentReplyText(trimmed, SILENT_REPLY_TOKEN)) {
-        continue;
-      }
-      out.push({ text: trimmed });
-    }
-    return;
-  }
-
-  const trimmed = text.trim();
-  if (!trimmed || isSilentReplyText(trimmed, SILENT_REPLY_TOKEN)) {
-    return;
-  }
-  out.push({ text: trimmed });
-}
-
-function clampMs(value: number, maxMs: number): number {
-  if (!Number.isFinite(value) || value < 0) {
-    return 0;
-  }
-  return Math.min(value, maxMs);
-}
-
-function resolveRetryOptions(
-  retry: false | MSTeamsSendRetryOptions | undefined,
-): Required<MSTeamsSendRetryOptions> & { enabled: boolean } {
-  if (!retry) {
-    return { enabled: false, maxAttempts: 1, baseDelayMs: 0, maxDelayMs: 0 };
-  }
-  return {
-    enabled: true,
-    maxAttempts: Math.max(1, retry?.maxAttempts ?? 3),
-    baseDelayMs: Math.max(0, retry?.baseDelayMs ?? 250),
-    maxDelayMs: Math.max(0, retry?.maxDelayMs ?? 10_000),
-  };
-}
-
-function computeRetryDelayMs(
-  attempt: number,
-  classification: ReturnType<typeof classifyMSTeamsSendError>,
-  opts: Required<MSTeamsSendRetryOptions>,
-): number {
-  if (classification.retryAfterMs != null) {
-    return clampMs(classification.retryAfterMs, opts.maxDelayMs);
-  }
-  const exponential = opts.baseDelayMs * 2 ** Math.max(0, attempt - 1);
-  return clampMs(exponential, opts.maxDelayMs);
-}
-
-function shouldRetry(classification: ReturnType<typeof classifyMSTeamsSendError>): boolean {
-  return classification.kind === "throttled" || classification.kind === "transient";
 }
 
 export function renderReplyPayloadsToMessages(
@@ -205,57 +111,31 @@ export function renderReplyPayloadsToMessages(
 ): MSTeamsRenderedMessage[] {
   const out: MSTeamsRenderedMessage[] = [];
   const chunkLimit = Math.min(options.textChunkLimit, 4000);
-  const chunkText = options.chunkText !== false;
   const chunkMode = options.chunkMode ?? "length";
-  const mediaMode = options.mediaMode ?? "split";
-  const tableMode =
-    options.tableMode ??
-    getMSTeamsRuntime().channel.text.resolveMarkdownTableMode({
-      cfg: getMSTeamsRuntime().config.loadConfig(),
-      channel: "msteams",
-    });
 
   for (const payload of replies) {
-    const mediaList = payload.mediaUrls ?? (payload.mediaUrl ? [payload.mediaUrl] : []);
-    const text = getMSTeamsRuntime().channel.text.convertMarkdownTables(
-      payload.text ?? "",
-      tableMode,
-    );
+    const reply = resolveSendableOutboundReplyParts(payload, {
+      text: formatMSTeamsMarkdown(payload.text ?? "", options.tableMode),
+    });
 
-    if (!text && mediaList.length === 0) {
+    if (!reply.hasContent) {
       continue;
     }
 
-    if (mediaList.length === 0) {
-      pushTextMessages(out, text, { chunkText, chunkLimit, chunkMode });
-      continue;
-    }
-
-    if (mediaMode === "inline") {
-      // For inline mode, combine text with first media as attachment
-      const firstMedia = mediaList[0];
-      if (firstMedia) {
-        out.push({ text: text || undefined, mediaUrl: firstMedia });
-        // Additional media URLs as separate messages
-        for (let i = 1; i < mediaList.length; i++) {
-          if (mediaList[i]) {
-            out.push({ mediaUrl: mediaList[i] });
-          }
+    if (reply.text) {
+      const chunks = getMSTeamsRuntime().channel.text.chunkMarkdownTextWithMode(
+        reply.text,
+        chunkLimit,
+        chunkMode,
+      );
+      for (const chunk of chunks) {
+        const text = chunk.trim();
+        if (text) {
+          out.push({ text });
         }
-      } else {
-        pushTextMessages(out, text, { chunkText, chunkLimit, chunkMode });
       }
-      continue;
     }
-
-    // mediaMode === "split"
-    pushTextMessages(out, text, { chunkText, chunkLimit, chunkMode });
-    for (const mediaUrl of mediaList) {
-      if (!mediaUrl) {
-        continue;
-      }
-      out.push({ mediaUrl });
-    }
+    out.push(...reply.mediaUrls.map((mediaUrl) => ({ mediaUrl })));
   }
 
   return out;
@@ -267,19 +147,14 @@ async function buildActivity(
   tokenProvider?: MSTeamsAccessTokenProvider,
   sharePointSiteId?: string,
   mediaMaxBytes?: number,
-): Promise<Record<string, unknown>> {
-  const activity: Record<string, unknown> = { type: "message" };
+  options?: { feedbackLoopEnabled?: boolean } & MSTeamsSendHandoff,
+): Promise<{ activity: Record<string, unknown>; pendingUploadId?: string }> {
+  const activity: Record<string, unknown> = buildMSTeamsMessageActivity(msg.text);
 
-  if (msg.text) {
-    // Parse mentions from text (format: @[Name](id))
-    const { text: formattedText, entities } = parseMentions(msg.text);
-    activity.text = formattedText;
-
-    // Add mention entities if any mentions were found
-    if (entities.length > 0) {
-      activity.entities = entities;
-    }
-  }
+  // Mark as AI-generated so Teams renders the "AI generated" badge.
+  activity.channelData = {
+    feedbackLoopEnabled: options?.feedbackLoopEnabled ?? false,
+  };
 
   if (msg.mediaUrl) {
     let contentUrl = msg.mediaUrl;
@@ -292,9 +167,10 @@ async function buildActivity(
       contentType = media.contentType ?? contentType;
       fileName = media.fileName ?? fileName;
 
-      // Determine conversation type and file type
       // Teams only accepts base64 data URLs for images
-      const conversationType = conversationRef.conversation?.conversationType?.toLowerCase();
+      const conversationType = normalizeOptionalLowercaseString(
+        conversationRef.conversation?.conversationType,
+      );
       const isPersonal = conversationType === "personal";
       const isImage = media.kind === "image";
 
@@ -303,65 +179,49 @@ async function buildActivity(
           conversationType,
           contentType,
           bufferSize: media.buffer.length,
-          thresholdBytes: FILE_CONSENT_THRESHOLD_BYTES,
         })
       ) {
-        // Large file or non-image in personal chat: use FileConsentCard flow
         const conversationId = conversationRef.conversation?.id ?? "unknown";
-        const { activity: consentActivity } = prepareFileConsentActivity({
+        assertMSTeamsSendHandoff(options);
+        const { activity: consentActivity, uploadId } = prepareFileConsentActivity({
           media: { buffer: media.buffer, filename: fileName, contentType },
           conversationId,
           description: msg.text || undefined,
         });
 
-        // Return the consent activity (caller sends it)
-        return consentActivity;
+        return { activity: consentActivity, pendingUploadId: uploadId };
       }
 
-      if (!isPersonal && !isImage && tokenProvider && sharePointSiteId) {
-        // Non-image in group chat/channel with SharePoint site configured:
-        // Upload to SharePoint and use native file card attachment
+      if (!isPersonal && !isImage) {
+        // Non-images in group chats/channels require SharePoint because an
+        // application token has no signed-in `/me/drive` to fall back to.
+        const siteId = requireMSTeamsSharePointSiteId(sharePointSiteId);
+        if (!tokenProvider) {
+          throw new Error("MS Teams Graph token provider unavailable for SharePoint file send");
+        }
         const chatId = conversationRef.conversation?.id;
 
-        // Upload to SharePoint
         const uploaded = await uploadAndShareSharePoint({
+          assertDirectAdapterHandoff: options?.assertDirectAdapterHandoff,
           buffer: media.buffer,
           filename: fileName,
           contentType,
           tokenProvider,
-          siteId: sharePointSiteId,
-          chatId: chatId ?? undefined,
+          siteId,
+          chatId,
           usePerUserSharing: conversationType === "groupchat",
         });
 
-        // Get driveItem properties needed for native file card attachment
         const driveItem = await getDriveItemProperties({
-          siteId: sharePointSiteId,
+          assertDirectAdapterHandoff: options?.assertDirectAdapterHandoff,
+          siteId,
           itemId: uploaded.itemId,
           tokenProvider,
         });
 
-        // Build native Teams file card attachment
-        const fileCardAttachment = buildTeamsFileInfoCard(driveItem);
-        activity.attachments = [fileCardAttachment];
+        activity.attachments = [buildTeamsFileInfoCard(driveItem)];
 
-        return activity;
-      }
-
-      if (!isPersonal && media.kind !== "image" && tokenProvider) {
-        // Fallback: no SharePoint site configured, try OneDrive upload
-        const uploaded = await uploadAndShareOneDrive({
-          buffer: media.buffer,
-          filename: fileName,
-          contentType,
-          tokenProvider,
-        });
-
-        // Bot Framework doesn't support "reference" attachment type for sending
-        const fileLink = `📎 [${uploaded.name}](${uploaded.shareUrl})`;
-        const existingText = typeof activity.text === "string" ? activity.text : undefined;
-        activity.text = existingText ? `${existingText}\n\n${fileLink}` : fileLink;
-        return activity;
+        return { activity };
       }
 
       // Image (any chat): use base64 (works for images in all conversation types)
@@ -378,25 +238,30 @@ async function buildActivity(
     ];
   }
 
-  return activity;
+  return { activity };
 }
 
-export async function sendMSTeamsMessages(params: {
-  replyStyle: MSTeamsReplyStyle;
-  adapter: MSTeamsAdapter;
-  appId: string;
-  conversationRef: StoredConversationReference;
-  context?: SendContext;
-  messages: MSTeamsRenderedMessage[];
-  retry?: false | MSTeamsSendRetryOptions;
-  onRetry?: (event: MSTeamsSendRetryEvent) => void;
-  /** Token provider for OneDrive/SharePoint uploads in group chats/channels */
-  tokenProvider?: MSTeamsAccessTokenProvider;
-  /** SharePoint site ID for file uploads in group chats/channels */
-  sharePointSiteId?: string;
-  /** Max media size in bytes. Default: 100MB. */
-  mediaMaxBytes?: number;
-}): Promise<string[]> {
+export async function sendMSTeamsMessages(
+  params: {
+    replyStyle: MSTeamsReplyStyle;
+    accountId?: string | null;
+    app: MSTeamsApp;
+    conversationRef: StoredConversationReference;
+    context?: { sendActivity: (activity: MSTeamsActivityLike) => Promise<unknown> };
+    messages: MSTeamsRenderedMessage[];
+    onRetry?: (event: MSTeamsSendRetryEvent) => void;
+    onMessageSent?: (messageId: string, messageIndex: number) => Promise<void> | void;
+    /** Token provider for SharePoint uploads in group chats/channels */
+    tokenProvider?: MSTeamsAccessTokenProvider;
+    /** SharePoint site ID for file uploads in group chats/channels */
+    sharePointSiteId?: string;
+    /** Max media size in bytes. Default: 100MB. */
+    mediaMaxBytes?: number;
+    /** Enable the Teams feedback loop (thumbs up/down) on sent messages. */
+    feedbackLoopEnabled?: boolean;
+    serviceUrlBoundary?: MSTeamsSdkCloudOptions;
+  } & MSTeamsSendHandoff,
+): Promise<string[]> {
   const messages = params.messages.filter(
     (m) => (m.text && m.text.trim().length > 0) || m.mediaUrl,
   );
@@ -404,121 +269,117 @@ export async function sendMSTeamsMessages(params: {
     return [];
   }
 
-  const retryOptions = resolveRetryOptions(params.retry);
-
-  const sendWithRetry = async (
-    sendOnce: () => Promise<unknown>,
-    meta: { messageIndex: number; messageCount: number },
-  ): Promise<unknown> => {
-    if (!retryOptions.enabled) {
-      return await sendOnce();
-    }
-
-    let attempt = 1;
-    while (true) {
-      try {
-        return await sendOnce();
-      } catch (err) {
-        const classification = classifyMSTeamsSendError(err);
-        const canRetry = attempt < retryOptions.maxAttempts && shouldRetry(classification);
-        if (!canRetry) {
-          throw err;
-        }
-
-        const delayMs = computeRetryDelayMs(attempt, classification, retryOptions);
-        const nextAttempt = attempt + 1;
-        params.onRetry?.({
-          messageIndex: meta.messageIndex,
-          messageCount: meta.messageCount,
-          nextAttempt,
-          maxAttempts: retryOptions.maxAttempts,
-          delayMs,
-          classification,
-        });
-
-        await sleep(delayMs);
-        attempt = nextAttempt;
-      }
-    }
-  };
-
+  let providerDispatchStarted = false;
   const sendMessageInContext = async (
-    ctx: SendContext,
+    sendFn: (activity: MSTeamsActivityLike) => Promise<unknown>,
     message: MSTeamsRenderedMessage,
     messageIndex: number,
   ): Promise<string> => {
-    const response = await sendWithRetry(
-      async () =>
-        await ctx.sendActivity(
-          await buildActivity(
+    let prepared: Awaited<ReturnType<typeof buildActivity>> | undefined;
+    let response: unknown;
+    try {
+      response = await retryAsync(
+        async () => {
+          assertMSTeamsSendHandoff(params);
+          // Retry failed preparation, but keep its successful I/O and SharePoint work
+          // out of subsequent provider retries.
+          prepared ??= await buildActivity(
             message,
             params.conversationRef,
             params.tokenProvider,
             params.sharePointSiteId,
             params.mediaMaxBytes,
-          ),
-        ),
-      { messageIndex, messageCount: messages.length },
-    );
-    return extractMessageId(response) ?? "unknown";
-  };
+            {
+              feedbackLoopEnabled: params.feedbackLoopEnabled,
+              assertDirectAdapterHandoff: params.assertDirectAdapterHandoff,
+            },
+          );
 
-  const sendMessageBatchInContext = async (
-    ctx: SendContext,
-    batch: MSTeamsRenderedMessage[],
-    startIndex: number,
-  ): Promise<string[]> => {
-    const messageIds: string[] = [];
-    for (const [idx, message] of batch.entries()) {
-      messageIds.push(await sendMessageInContext(ctx, message, startIndex + idx));
-    }
-    return messageIds;
-  };
-
-  const sendProactively = async (
-    batch: MSTeamsRenderedMessage[],
-    startIndex: number,
-  ): Promise<string[]> => {
-    const baseRef = buildConversationReference(params.conversationRef);
-    const proactiveRef: MSTeamsConversationReference = {
-      ...baseRef,
-      activityId: undefined,
-    };
-
-    const messageIds: string[] = [];
-    await params.adapter.continueConversation(params.appId, proactiveRef, async (ctx) => {
-      messageIds.push(...(await sendMessageBatchInContext(ctx, batch, startIndex)));
-    });
-    return messageIds;
-  };
-
-  if (params.replyStyle === "thread") {
-    const ctx = params.context;
-    if (!ctx) {
-      throw new Error("Missing context for replyStyle=thread");
-    }
-    const messageIds: string[] = [];
-    for (const [idx, message] of messages.entries()) {
-      const result = await withRevokedProxyFallback({
-        run: async () => ({
-          ids: [await sendMessageInContext(ctx, message, idx)],
-          fellBack: false,
-        }),
-        onRevoked: async () => {
-          const remaining = messages.slice(idx);
-          return {
-            ids: remaining.length > 0 ? await sendProactively(remaining, idx) : [],
-            fellBack: true,
-          };
+          assertMSTeamsSendHandoff(params);
+          providerDispatchStarted = true;
+          return await sendFn(prepared.activity);
         },
-      });
-      messageIds.push(...result.ids);
-      if (result.fellBack) {
-        return messageIds;
+        {
+          attempts: MSTEAMS_SEND_ATTEMPTS,
+          minDelayMs: 0,
+          maxDelayMs: MSTEAMS_SEND_RETRY_MAX_DELAY_MS,
+          shouldRetry: (err) => classifyMSTeamsSendError(err).kind === "replay-safe",
+          delayMs: ({ attempt, err }) => {
+            const classification = classifyMSTeamsSendError(err);
+            const retryAfterMs =
+              classification.kind === "replay-safe" ? classification.retryAfterMs : undefined;
+            return Math.min(
+              retryAfterMs ?? 250 * 2 ** (attempt - 1),
+              MSTEAMS_SEND_RETRY_MAX_DELAY_MS,
+            );
+          },
+          onRetry: ({ attempt, err, delayMs }) => {
+            params.onRetry?.({
+              messageIndex,
+              messageCount: messages.length,
+              nextAttempt: attempt + 1,
+              maxAttempts: MSTEAMS_SEND_ATTEMPTS,
+              delayMs,
+              classification: classifyMSTeamsSendError(err),
+            });
+          },
+          sleep: (delayMs) => sleepWithAbort(delayMs),
+        },
+      );
+    } catch (error) {
+      if (!providerDispatchStarted && !(error instanceof PlatformMessageNotDispatchedError)) {
+        throw new PlatformMessageNotDispatchedError(
+          error instanceof Error ? error.message : "Teams activity preparation failed",
+          { cause: error },
+        );
       }
+      throw error;
     }
-    return messageIds;
-  }
+    const messageId = extractMessageId(response) ?? "unknown";
+    await params.onMessageSent?.(messageId, messageIndex);
 
-  return await sendProactively(messages, 0);
+    // Store the activity ID so the accept handler can replace the consent card in-place
+    const pendingUploadId = prepared?.pendingUploadId;
+    if (pendingUploadId && messageId !== "unknown") {
+      setPendingUploadActivityId(pendingUploadId, messageId);
+    }
+
+    return messageId;
+  };
+
+  let sendFn: (activity: MSTeamsActivityLike) => Promise<unknown>;
+  const ctx = params.replyStyle === "thread" ? params.context : undefined;
+  if (ctx) {
+    sendFn = (activity) => withMSTeamsConnectorHandoff(params, () => ctx.sendActivity(activity));
+  } else {
+    let baseRef: ReturnType<typeof buildConversationReference>;
+    try {
+      baseRef = buildConversationReference(params.conversationRef);
+    } catch (error) {
+      throw new PlatformMessageNotDispatchedError(
+        error instanceof Error ? error.message : "Teams conversation preparation failed",
+        { cause: error },
+      );
+    }
+    const isChannel = params.conversationRef.conversation?.conversationType === "channel";
+    // `threadId` is canonical; older stored references only carry `activityId`.
+    // Top-level replies deliberately omit the stored thread root.
+    const threadActivityId =
+      params.replyStyle === "thread" && isChannel
+        ? (params.conversationRef.threadId ?? params.conversationRef.activityId)
+        : undefined;
+    sendFn = (activity) =>
+      sendMSTeamsActivityWithReference(params.app, baseRef, activity, {
+        accountId: params.accountId,
+        assertDirectAdapterHandoff: params.assertDirectAdapterHandoff,
+        onPlatformSendDispatch: params.onPlatformSendDispatch,
+        threadActivityId,
+        serviceUrlBoundary: params.serviceUrlBoundary,
+      });
+  }
+  const messageIds: string[] = [];
+  for (const [idx, message] of messages.entries()) {
+    messageIds.push(await sendMessageInContext(sendFn, message, idx));
+  }
+  return messageIds;
 }

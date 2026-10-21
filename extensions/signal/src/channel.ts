@@ -1,323 +1,635 @@
+import { resolveChannelMediaMaxBytes } from "paleoclaw/plugin-sdk/account-helpers";
+import { DEFAULT_ACCOUNT_ID } from "paleoclaw/plugin-sdk/account-id";
+import { buildDmGroupAccountAllowlistAdapter } from "paleoclaw/plugin-sdk/allowlist-config-edit";
+import type { ChannelOutboundAdapter } from "paleoclaw/plugin-sdk/channel-contract";
 import {
-  buildAccountScopedDmSecurityPolicy,
-  createScopedAccountConfigAccessors,
-  collectAllowlistProviderRestrictSendersWarnings,
-} from "paleoclaw/plugin-sdk/compat";
-import {
-  applyAccountNameToChannelSection,
-  buildBaseAccountStatusSnapshot,
-  buildBaseChannelStatusSummary,
-  buildChannelConfigSchema,
-  collectStatusIssuesFromLastError,
-  createDefaultChannelRuntimeState,
-  DEFAULT_ACCOUNT_ID,
-  deleteAccountFromConfigSection,
-  getChatChannelMeta,
-  listSignalAccountIds,
-  looksLikeSignalTargetId,
-  migrateBaseNameToDefaultAccount,
-  normalizeAccountId,
-  normalizeE164,
-  normalizeSignalMessagingTarget,
-  PAIRING_APPROVED_MESSAGE,
-  resolveChannelMediaMaxBytes,
-  resolveDefaultSignalAccountId,
-  resolveSignalAccount,
-  setAccountEnabledInConfigSection,
-  signalOnboardingAdapter,
-  SignalConfigSchema,
-  type ChannelMessageActionAdapter,
+  createChatChannelPlugin,
   type ChannelPlugin,
+  type PluginRuntime,
+} from "paleoclaw/plugin-sdk/channel-core";
+import {
+  createAccountStatusSink,
+  createReplyToFanout,
+  defineChannelMessageAdapter,
+  resolveOutboundSendDep,
+} from "paleoclaw/plugin-sdk/channel-outbound";
+import { createPairingPrefixStripper } from "paleoclaw/plugin-sdk/channel-pairing";
+import { attachChannelToResult } from "paleoclaw/plugin-sdk/channel-send-result";
+import { PAIRING_APPROVED_MESSAGE } from "paleoclaw/plugin-sdk/channel-status";
+import { createLazyRuntimeModule } from "paleoclaw/plugin-sdk/lazy-runtime";
+import { resolveMarkdownTableMode } from "paleoclaw/plugin-sdk/markdown-table-runtime";
+import {
+  chunkText,
+  resolveChunkMode,
+  resolveTextChunkLimit,
+} from "paleoclaw/plugin-sdk/reply-chunking";
+import { buildOutboundBaseSessionKey } from "paleoclaw/plugin-sdk/routing";
+import {
+  buildBaseChannelStatusSummary,
+  collectStatusIssuesFromLastError,
+  createComputedAccountStatusAdapter,
+  createDefaultChannelRuntimeState,
+} from "paleoclaw/plugin-sdk/status-helpers";
+import {
+  normalizeLowercaseStringOrEmpty,
+  normalizeOptionalString,
+} from "paleoclaw/plugin-sdk/string-coerce-runtime";
+import { sanitizeAssistantVisibleText } from "paleoclaw/plugin-sdk/text-chunking";
+import {
+  resolveSignalAccount,
+  resolveSignalReplyToMode,
   type ResolvedSignalAccount,
-} from "paleoclaw/plugin-sdk/signal";
-import { getSignalRuntime } from "./runtime.js";
+} from "./accounts.js";
+import { listSignalAliasDirectoryEntries, resolveSignalTarget } from "./aliases.js";
+import {
+  shouldSuppressLocalSignalExecApprovalPrompt,
+  signalApprovalCapability,
+} from "./approval-native.js";
+import { markdownToSignalTextChunks } from "./format.js";
+import { formatSignalMediaText } from "./media-text.js";
+import { signalMessageActions } from "./message-actions.js";
+import { looksLikeSignalTargetId, normalizeSignalMessagingTarget } from "./normalize.js";
+import { resolveSignalOutboundTarget } from "./outbound-session.js";
+import { materializeSignalPresentationFallback } from "./presentation-fallback.js";
+import { resolveSignalReactionLevel } from "./reaction-level.js";
+import { resolveSignalReplyContextWithPersistence } from "./reply-authors.js";
+import { signalSetupContract } from "./setup-core.js";
+import {
+  createSignalPluginBase,
+  signalConfigAdapter,
+  signalSecurityAdapter,
+  signalSetupWizard,
+} from "./shared.js";
 
-const signalMessageActions: ChannelMessageActionAdapter = {
-  listActions: (ctx) => getSignalRuntime().channel.signal.messageActions?.listActions?.(ctx) ?? [],
-  supportsAction: (ctx) =>
-    getSignalRuntime().channel.signal.messageActions?.supportsAction?.(ctx) ?? false,
-  handleAction: async (ctx) => {
-    const ma = getSignalRuntime().channel.signal.messageActions;
-    if (!ma?.handleAction) {
-      throw new Error("Signal message actions not available");
-    }
-    return ma.handleAction(ctx);
-  },
-};
+type SignalSendFn = typeof import("./send.js").sendMessageSignal;
+type SignalProbe = import("./probe.js").SignalProbe;
 
-const meta = getChatChannelMeta("signal");
+const loadSignalMonitorModule = createLazyRuntimeModule(() => import("./monitor.js"));
 
-const signalConfigAccessors = createScopedAccountConfigAccessors({
-  resolveAccount: ({ cfg, accountId }) => resolveSignalAccount({ cfg, accountId }),
-  resolveAllowFrom: (account: ResolvedSignalAccount) => account.config.allowFrom,
-  formatAllowFrom: (allowFrom) =>
-    allowFrom
-      .map((entry) => String(entry).trim())
-      .filter(Boolean)
-      .map((entry) => (entry === "*" ? "*" : normalizeE164(entry.replace(/^signal:/i, ""))))
-      .filter(Boolean),
-  resolveDefaultTo: (account: ResolvedSignalAccount) => account.config.defaultTo,
-});
+const loadSignalProbeModule = createLazyRuntimeModule(() => import("./probe.js"));
 
-function buildSignalSetupPatch(input: {
-  signalNumber?: string;
-  cliPath?: string;
-  httpUrl?: string;
-  httpHost?: string;
-  httpPort?: string;
+const loadSignalSendRuntime = createLazyRuntimeModule(() => import("./send.js"));
+
+const loadSignalApprovalReactionsModule = createLazyRuntimeModule(
+  () => import("./approval-reactions.js"),
+);
+
+async function createSignalOutboundSender(params: {
+  cfg: Parameters<typeof resolveSignalAccount>[0]["cfg"];
+  accountId?: string | null;
+  deps?: { [channelId: string]: unknown };
+  assertDirectAdapterHandoff?: () => void;
 }) {
-  return {
-    ...(input.signalNumber ? { account: input.signalNumber } : {}),
-    ...(input.cliPath ? { cliPath: input.cliPath } : {}),
-    ...(input.httpUrl ? { httpUrl: input.httpUrl } : {}),
-    ...(input.httpHost ? { httpHost: input.httpHost } : {}),
-    ...(input.httpPort ? { httpPort: Number(input.httpPort) } : {}),
+  const send =
+    resolveOutboundSendDep<SignalSendFn>(params.deps, "signal") ??
+    (await loadSignalSendRuntime()).sendMessageSignal;
+  const maxBytes = resolveChannelMediaMaxBytes({
+    cfg: params.cfg,
+    resolveChannelLimitMb: () => resolveSignalAccount(params).config.mediaMaxMb,
+  });
+  return async (
+    to: string,
+    text: string,
+    { replyToId, ...options }: Omit<Parameters<SignalSendFn>[2], "cfg" | "maxBytes" | "accountId">,
+  ) => {
+    const replyOptions = await resolveSignalReplyOptions({ ...params, to, replyToId });
+    return await send(to, text, {
+      cfg: params.cfg,
+      ...options,
+      maxBytes,
+      accountId: params.accountId ?? undefined,
+      assertDirectAdapterHandoff: params.assertDirectAdapterHandoff,
+      ...replyOptions,
+    });
   };
 }
 
-type SignalSendFn = ReturnType<typeof getSignalRuntime>["channel"]["signal"]["sendMessageSignal"];
+function resolveSignalSendTarget(params: {
+  cfg: Parameters<typeof resolveSignalAccount>[0]["cfg"];
+  accountId?: string | null;
+  to: string;
+}) {
+  return (
+    resolveSignalTarget({
+      cfg: params.cfg,
+      accountId: params.accountId,
+      input: params.to,
+    })?.to ?? params.to.trim()
+  );
+}
 
 async function sendSignalOutbound(params: {
   cfg: Parameters<typeof resolveSignalAccount>[0]["cfg"];
   to: string;
   text: string;
   mediaUrl?: string;
+  mediaAccess?: Parameters<SignalSendFn>[2]["mediaAccess"];
   mediaLocalRoots?: readonly string[];
-  accountId?: string;
-  deps?: { sendSignal?: SignalSendFn };
+  mediaReadFile?: (filePath: string) => Promise<Buffer>;
+  accountId?: string | null;
+  deps?: { [channelId: string]: unknown };
+  replyToId?: string | null;
+  assertDirectAdapterHandoff?: () => void;
 }) {
-  const send = params.deps?.sendSignal ?? getSignalRuntime().channel.signal.sendMessageSignal;
-  const maxBytes = resolveChannelMediaMaxBytes({
-    cfg: params.cfg,
-    resolveChannelLimitMb: ({ cfg, accountId }) =>
-      cfg.channels?.signal?.accounts?.[accountId]?.mediaMaxMb ?? cfg.channels?.signal?.mediaMaxMb,
-    accountId: params.accountId,
-  });
-  return await send(params.to, params.text, {
-    cfg: params.cfg,
+  const send = await createSignalOutboundSender(params);
+  const to = resolveSignalSendTarget(params);
+  return await send(to, params.text, {
+    replyToId: params.replyToId,
     ...(params.mediaUrl ? { mediaUrl: params.mediaUrl } : {}),
+    ...(params.mediaAccess ? { mediaAccess: params.mediaAccess } : {}),
     ...(params.mediaLocalRoots?.length ? { mediaLocalRoots: params.mediaLocalRoots } : {}),
-    maxBytes,
-    accountId: params.accountId ?? undefined,
+    ...(params.mediaReadFile ? { mediaReadFile: params.mediaReadFile } : {}),
   });
 }
 
-export const signalPlugin: ChannelPlugin<ResolvedSignalAccount> = {
+async function resolveSignalReplyOptions(params: {
+  cfg: Parameters<typeof resolveSignalAccount>[0]["cfg"];
+  to: string;
+  accountId?: string | null;
+  replyToId?: string | null;
+}): Promise<
+  { replyToId: string; replyToAuthor?: string; replyToBody?: string } | Record<string, never>
+> {
+  const replyToId = normalizeOptionalString(params.replyToId);
+  if (!replyToId) {
+    return {};
+  }
+  const accountId = resolveSignalAccount({
+    cfg: params.cfg,
+    accountId: params.accountId,
+  }).accountId;
+  const persistedContext = await resolveSignalReplyContextWithPersistence({
+    accountId,
+    to: params.to,
+    replyToId,
+  });
+  const replyToAuthor = persistedContext?.ambiguous === true ? undefined : persistedContext?.author;
+  const replyToBody =
+    persistedContext?.ambiguous === true
+      ? ""
+      : [persistedContext?.body, formatSignalMediaText(persistedContext?.media ?? [])]
+          .filter(Boolean)
+          .join("\n");
+  return {
+    replyToId,
+    ...(replyToAuthor ? { replyToAuthor } : {}),
+    ...(replyToBody ? { replyToBody } : {}),
+  };
+}
+
+function inferSignalTargetChatType(rawTo: string) {
+  const to = rawTo
+    .trim()
+    .replace(/^signal:/i, "")
+    .trim();
+  if (!to) {
+    return undefined;
+  }
+  const lower = normalizeLowercaseStringOrEmpty(to);
+  if (lower.startsWith("group:")) {
+    return "group" as const;
+  }
+  return "direct" as const;
+}
+
+function attachSignalVisibleText<T extends object>(result: T, visibleText: string) {
+  const meta =
+    "meta" in result && result.meta && typeof result.meta === "object"
+      ? (result.meta as Record<string, unknown>)
+      : {};
+  return {
+    ...result,
+    meta: {
+      ...meta,
+      visibleText,
+      signalVisibleText: visibleText,
+    },
+  };
+}
+
+const signalMessageAdapter = defineChannelMessageAdapter({
   id: "signal",
-  meta: {
-    ...meta,
-  },
-  onboarding: signalOnboardingAdapter,
-  pairing: {
-    idLabel: "signalNumber",
-    normalizeAllowEntry: (entry) => entry.replace(/^signal:/i, ""),
-    notifyApproval: async ({ id }) => {
-      await getSignalRuntime().channel.signal.sendMessageSignal(id, PAIRING_APPROVED_MESSAGE);
+  durableFinal: {
+    capabilities: {
+      text: true,
+      media: true,
+      payload: true,
+      replyTo: true,
+      messageSendingHooks: true,
     },
   },
-  capabilities: {
-    chatTypes: ["direct", "group"],
-    media: true,
-    reactions: true,
+  send: {
+    text: sendSignalOutbound,
+    media: sendSignalOutbound,
   },
-  actions: signalMessageActions,
-  streaming: {
-    blockStreamingCoalesceDefaults: { minChars: 1500, idleMs: 1000 },
-  },
-  reload: { configPrefixes: ["channels.signal"] },
-  configSchema: buildChannelConfigSchema(SignalConfigSchema),
-  config: {
-    listAccountIds: (cfg) => listSignalAccountIds(cfg),
-    resolveAccount: (cfg, accountId) => resolveSignalAccount({ cfg, accountId }),
-    defaultAccountId: (cfg) => resolveDefaultSignalAccountId(cfg),
-    setAccountEnabled: ({ cfg, accountId, enabled }) =>
-      setAccountEnabledInConfigSection({
-        cfg,
-        sectionKey: "signal",
-        accountId,
-        enabled,
-        allowTopLevel: true,
+});
+
+function resolveSignalOutboundSessionRoute(params: {
+  cfg: Parameters<typeof resolveSignalAccount>[0]["cfg"];
+  agentId: string;
+  accountId?: string | null;
+  target: string;
+  resolvedTarget?: { to: string };
+}) {
+  const target = params.resolvedTarget?.to ?? params.target;
+  const resolved = resolveSignalOutboundTarget(target);
+  if (!resolved) {
+    return null;
+  }
+  const normalizedTarget = target.replace(/^signal:/i, "").trim();
+  const recipientSessionExact: true | "direct-alias" =
+    resolved.chatType === "group" || /^\+?\d{3,15}$/.test(normalizedTarget) ? true : "direct-alias";
+  const baseSessionKey = buildOutboundBaseSessionKey({
+    channel: "signal",
+    cfg: params.cfg,
+    agentId: params.agentId,
+    accountId: params.accountId,
+    peer: resolved.peer,
+  });
+  return {
+    sessionKey: baseSessionKey,
+    baseSessionKey,
+    recipientSessionExact,
+    ...resolved,
+  };
+}
+
+async function sendFormattedSignalText(
+  ctx: Parameters<NonNullable<ChannelOutboundAdapter["sendFormattedText"]>>[0],
+) {
+  const send = await createSignalOutboundSender(ctx);
+  const limit = resolveTextChunkLimit(ctx.cfg, "signal", ctx.accountId ?? undefined, {
+    fallbackLimit: 4000,
+  });
+  const to = resolveSignalSendTarget(ctx);
+  const tableMode = resolveMarkdownTableMode({
+    cfg: ctx.cfg,
+    channel: "signal",
+    accountId: ctx.accountId ?? undefined,
+  });
+  let chunks = markdownToSignalTextChunks(ctx.text, limit ?? Number.POSITIVE_INFINITY, {
+    tableMode,
+    chunkMode: ctx.formatting?.chunkMode ?? resolveChunkMode(ctx.cfg, "signal", ctx.accountId),
+  });
+  if (chunks.length === 0 && ctx.text) {
+    chunks = [{ text: ctx.text, styles: [] }];
+  }
+  const effectiveReplyToMode =
+    ctx.replyToMode ??
+    resolveSignalReplyToMode({
+      cfg: ctx.cfg,
+      accountId: ctx.accountId,
+      chatType: inferSignalTargetChatType(to),
+    });
+  const nextReplyToId = createReplyToFanout({
+    replyToId: ctx.replyToId,
+    replyToIdSource: ctx.replyToIdSource,
+    replyToMode: effectiveReplyToMode,
+  });
+  const results = [];
+  for (const chunk of chunks) {
+    ctx.abortSignal?.throwIfAborted();
+    const result = await send(to, chunk.text, {
+      replyToId: nextReplyToId(),
+      textMode: "plain",
+      textStyles: chunk.styles,
+    });
+    const deliveryResult = attachChannelToResult(
+      "signal",
+      attachSignalVisibleText(result, chunk.text),
+    );
+    results.push(deliveryResult);
+    await ctx.onDeliveryResult?.(deliveryResult);
+  }
+  return results;
+}
+
+async function sendFormattedSignalMedia(
+  ctx: Parameters<NonNullable<ChannelOutboundAdapter["sendFormattedMedia"]>>[0],
+) {
+  ctx.abortSignal?.throwIfAborted();
+  const send = await createSignalOutboundSender(ctx);
+  const to = resolveSignalSendTarget(ctx);
+  const tableMode = resolveMarkdownTableMode({
+    cfg: ctx.cfg,
+    channel: "signal",
+    accountId: ctx.accountId ?? undefined,
+  });
+  const formatted = markdownToSignalTextChunks(ctx.text, Number.POSITIVE_INFINITY, {
+    tableMode,
+  })[0] ?? {
+    text: ctx.text,
+    styles: [],
+  };
+  const result = await send(to, formatted.text, {
+    replyToId: ctx.replyToId,
+    mediaUrl: ctx.mediaUrl,
+    ...(ctx.mediaAccess ? { mediaAccess: ctx.mediaAccess } : {}),
+    mediaLocalRoots: ctx.mediaLocalRoots,
+    ...(ctx.mediaReadFile ? { mediaReadFile: ctx.mediaReadFile } : {}),
+    textMode: "plain",
+    textStyles: formatted.styles,
+  });
+  return attachChannelToResult("signal", attachSignalVisibleText(result, formatted.text));
+}
+
+async function registerDeliveredSignalApprovalPayloadForReactions(
+  params: Parameters<NonNullable<ChannelOutboundAdapter["afterDeliverPayload"]>>[0],
+) {
+  const account = resolveSignalAccount({
+    cfg: params.cfg,
+    accountId: params.target.accountId ?? undefined,
+  });
+  const targetAuthor = normalizeOptionalString(account.config.account);
+  const targetAuthorUuid = normalizeOptionalString(account.config.accountUuid);
+  if (!targetAuthor && !targetAuthorUuid) {
+    return;
+  }
+  const { registerSignalApprovalReactionTargetForDeliveredPayload } =
+    await loadSignalApprovalReactionsModule();
+  await registerSignalApprovalReactionTargetForDeliveredPayload({
+    cfg: params.cfg,
+    target: { ...params.target, accountId: account.accountId },
+    payload: params.payload,
+    results: params.results,
+    targetAuthor,
+    targetAuthorUuid,
+  });
+}
+
+async function renderSignalApprovalPayloadForReactions(
+  params: Parameters<NonNullable<ChannelOutboundAdapter["renderPresentation"]>>[0],
+) {
+  const account = resolveSignalAccount({
+    cfg: params.ctx.cfg,
+    accountId: params.ctx.accountId ?? undefined,
+  });
+  const targetAuthor = normalizeOptionalString(account.config.account);
+  const targetAuthorUuid = normalizeOptionalString(account.config.accountUuid);
+  if (!targetAuthor && !targetAuthorUuid) {
+    return null;
+  }
+  const { addSignalApprovalReactionHintToStructuredPayload } =
+    await loadSignalApprovalReactionsModule();
+  const payload = materializeSignalPresentationFallback(params.payload, params.presentation);
+  return addSignalApprovalReactionHintToStructuredPayload({
+    cfg: params.ctx.cfg,
+    accountId: params.ctx.accountId ?? undefined,
+    to: params.ctx.to,
+    payload,
+    targetAuthor,
+    targetAuthorUuid,
+  });
+}
+
+export const signalPlugin: ChannelPlugin<ResolvedSignalAccount, SignalProbe> =
+  createChatChannelPlugin({
+    base: {
+      ...createSignalPluginBase({
+        setupWizard: signalSetupWizard,
+        setupContract: signalSetupContract,
       }),
-    deleteAccount: ({ cfg, accountId }) =>
-      deleteAccountFromConfigSection({
-        cfg,
-        sectionKey: "signal",
-        accountId,
-        clearBaseFields: ["account", "httpUrl", "httpHost", "httpPort", "cliPath", "name"],
+      actions: signalMessageActions,
+      approvalCapability: signalApprovalCapability,
+      allowlist: buildDmGroupAccountAllowlistAdapter({
+        channelId: "signal",
+        resolveAccount: resolveSignalAccount,
+        normalize: ({ cfg, accountId, values }) =>
+          signalConfigAdapter.formatAllowFrom!({ cfg, accountId, allowFrom: values }),
+        resolveDmAllowFrom: (account) => account.config.allowFrom,
+        resolveGroupAllowFrom: (account) => account.config.groupAllowFrom,
+        resolveDmPolicy: (account) => account.config.dmPolicy,
+        resolveGroupPolicy: (account) => account.config.groupPolicy,
       }),
-    isConfigured: (account) => account.configured,
-    describeAccount: (account) => ({
-      accountId: account.accountId,
-      name: account.name,
-      enabled: account.enabled,
-      configured: account.configured,
-      baseUrl: account.baseUrl,
-    }),
-    ...signalConfigAccessors,
-  },
-  security: {
-    resolveDmPolicy: ({ cfg, accountId, account }) => {
-      return buildAccountScopedDmSecurityPolicy({
-        cfg,
-        channelKey: "signal",
-        accountId,
-        fallbackAccountId: account.accountId ?? DEFAULT_ACCOUNT_ID,
-        policy: account.config.dmPolicy,
-        allowFrom: account.config.allowFrom ?? [],
-        policyPathSuffix: "dmPolicy",
-        normalizeEntry: (raw) => normalizeE164(raw.replace(/^signal:/i, "").trim()),
-      });
-    },
-    collectWarnings: ({ account, cfg }) => {
-      return collectAllowlistProviderRestrictSendersWarnings({
-        cfg,
-        providerConfigPresent: cfg.channels?.signal !== undefined,
-        configuredGroupPolicy: account.config.groupPolicy,
-        surface: "Signal groups",
-        openScope: "any member",
-        groupPolicyPath: "channels.signal.groupPolicy",
-        groupAllowFromPath: "channels.signal.groupAllowFrom",
-        mentionGated: false,
-      });
-    },
-  },
-  messaging: {
-    normalizeTarget: normalizeSignalMessagingTarget,
-    targetResolver: {
-      looksLikeId: looksLikeSignalTargetId,
-      hint: "<E.164|uuid:ID|group:ID|signal:group:ID|signal:+E.164>",
-    },
-  },
-  setup: {
-    resolveAccountId: ({ accountId }) => normalizeAccountId(accountId),
-    applyAccountName: ({ cfg, accountId, name }) =>
-      applyAccountNameToChannelSection({
-        cfg,
-        channelKey: "signal",
-        accountId,
-        name,
-      }),
-    validateInput: ({ input }) => {
-      if (
-        !input.signalNumber &&
-        !input.httpUrl &&
-        !input.httpHost &&
-        !input.httpPort &&
-        !input.cliPath
-      ) {
-        return "Signal requires --signal-number or --http-url/--http-host/--http-port/--cli-path.";
-      }
-      return null;
-    },
-    applyAccountConfig: ({ cfg, accountId, input }) => {
-      const namedConfig = applyAccountNameToChannelSection({
-        cfg,
-        channelKey: "signal",
-        accountId,
-        name: input.name,
-      });
-      const next =
-        accountId !== DEFAULT_ACCOUNT_ID
-          ? migrateBaseNameToDefaultAccount({
-              cfg: namedConfig,
-              channelKey: "signal",
-            })
-          : namedConfig;
-      if (accountId === DEFAULT_ACCOUNT_ID) {
-        return {
-          ...next,
-          channels: {
-            ...next.channels,
-            signal: {
-              ...next.channels?.signal,
-              enabled: true,
-              ...buildSignalSetupPatch(input),
-            },
-          },
-        };
-      }
-      return {
-        ...next,
-        channels: {
-          ...next.channels,
-          signal: {
-            ...next.channels?.signal,
-            enabled: true,
-            accounts: {
-              ...next.channels?.signal?.accounts,
-              [accountId]: {
-                ...next.channels?.signal?.accounts?.[accountId],
-                enabled: true,
-                ...buildSignalSetupPatch(input),
-              },
-            },
+      agentPrompt: {
+        reactionGuidance: ({ cfg, accountId }) => {
+          const level = resolveSignalReactionLevel({
+            cfg,
+            accountId: accountId ?? undefined,
+          }).agentReactionGuidance;
+          return level ? { level, channelLabel: "Signal" } : undefined;
+        },
+      },
+      messaging: {
+        targetPrefixes: ["signal"],
+        normalizeTarget: normalizeSignalMessagingTarget,
+        inferTargetChatType: ({ to }) => inferSignalTargetChatType(to),
+        resolveOutboundSessionRoute: resolveSignalOutboundSessionRoute,
+        targetResolver: {
+          looksLikeId: looksLikeSignalTargetId,
+          hint: "<E.164|uuid:ID|group:ID|signal:group:ID|signal:+E.164>",
+          resolveTarget: async ({ cfg, accountId, input }) => {
+            let target: ReturnType<typeof resolveSignalTarget>;
+            try {
+              target = resolveSignalTarget({ cfg, accountId, input });
+            } catch {
+              return null;
+            }
+            if (!target) {
+              return null;
+            }
+            return {
+              to: target.to,
+              kind: target.kind,
+              display: target.source === "alias" ? target.alias : undefined,
+              source: target.source === "alias" ? "directory" : "normalized",
+            };
           },
         },
-      };
+      },
+      directory: {
+        listPeers: async ({ cfg, accountId, query, limit }) =>
+          listSignalAliasDirectoryEntries({
+            cfg,
+            accountId,
+            query,
+            limit,
+            kind: "user",
+          }),
+        listGroups: async ({ cfg, accountId, query, limit }) =>
+          listSignalAliasDirectoryEntries({
+            cfg,
+            accountId,
+            query,
+            limit,
+            kind: "group",
+          }),
+      },
+      heartbeat: {
+        sendTyping: async ({ cfg, to, accountId }) => {
+          await (
+            await loadSignalSendRuntime()
+          ).sendTypingSignal(to, {
+            cfg,
+            ...(accountId ? { accountId } : {}),
+          });
+        },
+        clearTyping: async ({ cfg, to, accountId }) => {
+          await (
+            await loadSignalSendRuntime()
+          ).sendTypingSignal(to, {
+            cfg,
+            ...(accountId ? { accountId } : {}),
+            stop: true,
+          });
+        },
+      },
+      status: createComputedAccountStatusAdapter<ResolvedSignalAccount, SignalProbe>({
+        defaultRuntime: createDefaultChannelRuntimeState(DEFAULT_ACCOUNT_ID),
+        collectStatusIssues: (accounts) => collectStatusIssuesFromLastError("signal", accounts),
+        buildChannelSummary: ({ snapshot }) =>
+          buildBaseChannelStatusSummary(snapshot, {
+            baseUrl: snapshot.baseUrl ?? null,
+            probe: snapshot.probe,
+            lastProbeAt: snapshot.lastProbeAt ?? null,
+          }),
+        probeAccount: async ({ account, timeoutMs }) => {
+          const { probeSignalAccount } = await loadSignalProbeModule();
+          return await probeSignalAccount({
+            baseUrl: account.baseUrl,
+            timeoutMs,
+            transportKind: account.transport.kind,
+            account: account.config.account,
+          });
+        },
+        formatCapabilitiesProbe: ({ probe }) =>
+          probe?.version ? [{ text: `Signal daemon: ${probe.version}` }] : [],
+        resolveAccountSnapshot: ({ account }) => ({
+          accountId: account.accountId,
+          name: account.name,
+          enabled: account.enabled,
+          configured: account.configured,
+          extra: {
+            baseUrl: account.baseUrl,
+          },
+        }),
+      }),
+      gateway: {
+        startAccount: async (ctx) => {
+          const account = ctx.account;
+          const statusSink = createAccountStatusSink({
+            accountId: account.accountId,
+            setStatus: ctx.setStatus,
+          });
+          statusSink({
+            baseUrl: account.baseUrl,
+          });
+          ctx.log?.info(`[${account.accountId}] starting provider (${account.baseUrl})`);
+          const { monitorSignalProvider } = await loadSignalMonitorModule();
+          return await monitorSignalProvider({
+            accountId: account.accountId,
+            config: ctx.cfg,
+            runtime: ctx.runtime,
+            channelRuntime: ctx.channelRuntime as PluginRuntime["channel"],
+            abortSignal: ctx.abortSignal,
+            mediaMaxMb: account.config.mediaMaxMb,
+            statusSink,
+          });
+        },
+      },
+      message: signalMessageAdapter,
     },
-  },
-  outbound: {
-    deliveryMode: "direct",
-    chunker: (text, limit) => getSignalRuntime().channel.text.chunkText(text, limit),
-    chunkerMode: "text",
-    textChunkLimit: 4000,
-    sendText: async ({ cfg, to, text, accountId, deps }) => {
-      const result = await sendSignalOutbound({
-        cfg,
-        to,
-        text,
-        accountId: accountId ?? undefined,
-        deps,
-      });
-      return { channel: "signal", ...result };
+    pairing: {
+      text: {
+        idLabel: "signalNumber",
+        message: PAIRING_APPROVED_MESSAGE,
+        normalizeAllowEntry: createPairingPrefixStripper(/^signal:/i),
+        notify: async ({ cfg, id, message, accountId }) => {
+          await (
+            await loadSignalSendRuntime()
+          ).sendMessageSignal(id, message, {
+            cfg,
+            accountId,
+          });
+        },
+      },
     },
-    sendMedia: async ({ cfg, to, text, mediaUrl, mediaLocalRoots, accountId, deps }) => {
-      const result = await sendSignalOutbound({
-        cfg,
-        to,
-        text,
-        mediaUrl,
-        mediaLocalRoots,
-        accountId: accountId ?? undefined,
-        deps,
-      });
-      return { channel: "signal", ...result };
+    security: signalSecurityAdapter,
+    threading: {
+      resolveReplyToMode: resolveSignalReplyToMode,
+      matchesToolContextTarget: ({ target, toolContext }) => {
+        const normalizedTarget = normalizeSignalMessagingTarget(target);
+        if (!normalizedTarget) {
+          return false;
+        }
+        return [toolContext.currentMessagingTarget, toolContext.currentChannelId].some(
+          (currentTarget) =>
+            currentTarget != null &&
+            normalizeSignalMessagingTarget(currentTarget) === normalizedTarget,
+        );
+      },
+      buildToolContext: ({ cfg, accountId, context, hasRepliedRef }) => {
+        const currentMessagingTarget = normalizeOptionalString(context.To);
+        const currentChatType =
+          context.ChatType === "direct" || context.ChatType === "group"
+            ? context.ChatType
+            : undefined;
+        return {
+          currentChannelId:
+            normalizeOptionalString(context.NativeChannelId) ?? currentMessagingTarget,
+          currentChatType,
+          currentMessagingTarget,
+          currentMessageId: context.ReplyToId ?? context.CurrentMessageId,
+          replyToMode: resolveSignalReplyToMode({
+            cfg,
+            accountId,
+            chatType: currentChatType,
+          }),
+          hasRepliedRef,
+        };
+      },
     },
-  },
-  status: {
-    defaultRuntime: createDefaultChannelRuntimeState(DEFAULT_ACCOUNT_ID),
-    collectStatusIssues: (accounts) => collectStatusIssuesFromLastError("signal", accounts),
-    buildChannelSummary: ({ snapshot }) => ({
-      ...buildBaseChannelStatusSummary(snapshot),
-      baseUrl: snapshot.baseUrl ?? null,
-      probe: snapshot.probe,
-      lastProbeAt: snapshot.lastProbeAt ?? null,
-    }),
-    probeAccount: async ({ account, timeoutMs }) => {
-      const baseUrl = account.baseUrl;
-      return await getSignalRuntime().channel.signal.probeSignal(baseUrl, timeoutMs);
+    outbound: {
+      base: {
+        deliveryMode: "direct",
+        resolveTarget: ({ cfg, to, accountId }) => {
+          const raw = to?.trim();
+          if (!raw) {
+            return { ok: false, error: new Error("Signal target is required") };
+          }
+          let target: ReturnType<typeof resolveSignalTarget>;
+          try {
+            target = resolveSignalTarget({
+              cfg: cfg ?? {},
+              accountId,
+              input: raw,
+            });
+          } catch (error) {
+            return {
+              ok: false,
+              error: error instanceof Error ? error : new Error(String(error)),
+            };
+          }
+          if (!target) {
+            return {
+              ok: false,
+              error: new Error(
+                `Unknown Signal alias or target "${raw}". Configure channels.signal.aliases.${raw.replace(/^signal:/i, "")} or use E.164, uuid:<id>, username:<name>, or group:<id>.`,
+              ),
+            };
+          }
+          return { ok: true, to: target.to };
+        },
+        chunker: chunkText,
+        chunkerMode: "text",
+        textChunkLimit: 4000,
+        sanitizeText: ({ text }) => sanitizeAssistantVisibleText(text),
+        shouldSuppressLocalPayloadPrompt: ({ cfg, accountId, payload, hint }) =>
+          shouldSuppressLocalSignalExecApprovalPrompt({
+            cfg,
+            accountId,
+            payload,
+            hint,
+          }),
+        afterDeliverPayload: registerDeliveredSignalApprovalPayloadForReactions,
+        renderPresentation: renderSignalApprovalPayloadForReactions,
+        sendFormattedText: sendFormattedSignalText,
+        sendFormattedMedia: sendFormattedSignalMedia,
+      },
+      attachedResults: {
+        channel: "signal",
+        sendText: sendSignalOutbound,
+        sendMedia: sendSignalOutbound,
+      },
     },
-    buildAccountSnapshot: ({ account, runtime, probe }) => ({
-      ...buildBaseAccountStatusSnapshot({ account, runtime, probe }),
-      baseUrl: account.baseUrl,
-    }),
-  },
-  gateway: {
-    startAccount: async (ctx) => {
-      const account = ctx.account;
-      ctx.setStatus({
-        accountId: account.accountId,
-        baseUrl: account.baseUrl,
-      });
-      ctx.log?.info(`[${account.accountId}] starting provider (${account.baseUrl})`);
-      // Lazy import: the monitor pulls the reply pipeline; avoid ESM init cycles.
-      return getSignalRuntime().channel.signal.monitorSignalProvider({
-        accountId: account.accountId,
-        config: ctx.cfg,
-        runtime: ctx.runtime,
-        abortSignal: ctx.abortSignal,
-        mediaMaxMb: account.config.mediaMaxMb,
-      });
-    },
-  },
-};
+  });

@@ -1,34 +1,112 @@
-import type { OpenClawConfig } from "../config/config.js";
-import type { DmScope } from "../config/types.base.js";
+import fs from "node:fs";
+import path from "node:path";
+import { listAgentEntries } from "../agents/agent-scope-config.js";
+import { resolveDefaultAgentWorkspaceDir } from "../agents/workspace-default.js";
+import { resolveStateDir } from "../config/paths.js";
+import type { OpenClawConfig } from "../config/types.openclaw.js";
 import type { ToolProfileId } from "../config/types.tools.js";
+import { resolveUserPath } from "../utils.js";
 
-export const ONBOARDING_DEFAULT_DM_SCOPE: DmScope = "per-channel-peer";
-export const ONBOARDING_DEFAULT_TOOLS_PROFILE: ToolProfileId = "coding";
+const ONBOARDING_DEFAULT_TOOLS_PROFILE: ToolProfileId = "full";
 
-export function applyOnboardingLocalWorkspaceConfig(
+export type OnboardingWorkspaceConflict = {
+  currentWorkspaceDir: string;
+  requestedWorkspaceDir: string;
+};
+
+function hasExistingAgentState(env: NodeJS.ProcessEnv): boolean {
+  const stateDir = resolveStateDir(env);
+  const agentsDir = path.join(stateDir, "agents");
+  try {
+    if (fs.readdirSync(agentsDir, { withFileTypes: true }).some((entry) => entry.isDirectory())) {
+      return true;
+    }
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
+      return true;
+    }
+  }
+  return [path.join(stateDir, "agent"), path.join(stateDir, "sessions")].some((candidate) => {
+    try {
+      return fs.statSync(candidate).isDirectory();
+    } catch (error) {
+      return (error as NodeJS.ErrnoException).code !== "ENOENT";
+    }
+  });
+}
+
+export function resolveOnboardingWorkspaceConflict(
+  baseConfig: OpenClawConfig,
+  requestedWorkspaceDir: string,
+  env: NodeJS.ProcessEnv = process.env,
+): OnboardingWorkspaceConflict | undefined {
+  const configuredWorkspace = baseConfig.agents?.defaults?.workspace?.trim();
+  const currentWorkspaceDir = configuredWorkspace
+    ? resolveUserPath(configuredWorkspace, env)
+    : resolveDefaultAgentWorkspaceDir(env);
+  const normalizedCurrent = path.resolve(currentWorkspaceDir);
+  const normalizedRequested = path.resolve(resolveUserPath(requestedWorkspaceDir, env));
+  if (normalizedCurrent === normalizedRequested) {
+    return undefined;
+  }
+
+  const hasRoster = listAgentEntries(baseConfig).length > 0;
+  if (!hasRoster && !(configuredWorkspace && hasExistingAgentState(env))) {
+    return undefined;
+  }
+  return {
+    currentWorkspaceDir: normalizedCurrent,
+    requestedWorkspaceDir: normalizedRequested,
+  };
+}
+
+// Deliberately writes no session.dmScope: the schema default "main" (one rolling
+// personal-agent session across channels) is the product default. Multi-user DM
+// isolation is opt-in; `paleoclaw security audit` nudges it when traffic warrants.
+export function applyLocalSetupWorkspaceConfig(
   baseConfig: OpenClawConfig,
   workspaceDir: string,
+  options: {
+    allowWorkspaceChange?: boolean;
+    preserveWorkspace?: boolean;
+    env?: NodeJS.ProcessEnv;
+  } = {},
 ): OpenClawConfig {
+  const shouldUpdateWorkspace =
+    !options.preserveWorkspace &&
+    (options.allowWorkspaceChange ||
+      (listAgentEntries(baseConfig).length === 0 &&
+        !resolveOnboardingWorkspaceConflict(baseConfig, workspaceDir, options.env)));
   return {
     ...baseConfig,
-    agents: {
-      ...baseConfig.agents,
-      defaults: {
-        ...baseConfig.agents?.defaults,
-        workspace: workspaceDir,
-      },
-    },
+    ...(shouldUpdateWorkspace
+      ? {
+          agents: {
+            ...baseConfig.agents,
+            defaults: {
+              ...baseConfig.agents?.defaults,
+              workspace: workspaceDir,
+            },
+          },
+        }
+      : {}),
     gateway: {
       ...baseConfig.gateway,
       mode: "local",
     },
-    session: {
-      ...baseConfig.session,
-      dmScope: baseConfig.session?.dmScope ?? ONBOARDING_DEFAULT_DM_SCOPE,
-    },
     tools: {
       ...baseConfig.tools,
       profile: baseConfig.tools?.profile ?? ONBOARDING_DEFAULT_TOOLS_PROFILE,
+    },
+  };
+}
+
+export function applySkipBootstrapConfig(cfg: OpenClawConfig): OpenClawConfig {
+  return {
+    ...cfg,
+    agents: {
+      ...cfg.agents,
+      defaults: { ...cfg.agents?.defaults, skipBootstrap: true },
     },
   };
 }

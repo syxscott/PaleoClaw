@@ -1,13 +1,13 @@
-import { normalizeChannelId } from "../channels/plugins/index.js";
-import { resolveAccountEntry } from "../routing/account-lookup.js";
+import { isStringArray } from "@paleoclaw/normalization-core/record-coerce";
+import { normalizeStringEntries } from "@paleoclaw/normalization-core/string-normalization";
+import { normalizeAnyChannelId } from "../channels/registry.js";
+import { resolveChannelAccountEntry } from "../routing/account-lookup.js";
 import { normalizeAccountId } from "../routing/session-key.js";
 import type { OpenClawConfig } from "./config.js";
+import type { SlackCapabilitiesConfig } from "./types.slack.js";
 import type { TelegramCapabilitiesConfig } from "./types.telegram.js";
 
-type CapabilitiesConfig = TelegramCapabilitiesConfig;
-
-const isStringArray = (value: unknown): value is string[] =>
-  Array.isArray(value) && value.every((entry) => typeof entry === "string");
+type CapabilitiesConfig = TelegramCapabilitiesConfig | SlackCapabilitiesConfig;
 
 function normalizeCapabilities(capabilities: CapabilitiesConfig | undefined): string[] | undefined {
   // Handle object-format capabilities (e.g., { inlineButtons: "dm" }) gracefully.
@@ -15,31 +15,8 @@ function normalizeCapabilities(capabilities: CapabilitiesConfig | undefined): st
   if (!isStringArray(capabilities)) {
     return undefined;
   }
-  const normalized = capabilities.map((entry) => entry.trim()).filter(Boolean);
+  const normalized = normalizeStringEntries(capabilities);
   return normalized.length > 0 ? normalized : undefined;
-}
-
-function resolveAccountCapabilities(params: {
-  cfg?: { accounts?: Record<string, { capabilities?: CapabilitiesConfig }> } & {
-    capabilities?: CapabilitiesConfig;
-  };
-  accountId?: string | null;
-}): string[] | undefined {
-  const cfg = params.cfg;
-  if (!cfg) {
-    return undefined;
-  }
-  const normalizedAccountId = normalizeAccountId(params.accountId);
-
-  const accounts = cfg.accounts;
-  if (accounts && typeof accounts === "object") {
-    const match = resolveAccountEntry(accounts, normalizedAccountId);
-    if (match) {
-      return normalizeCapabilities(match.capabilities) ?? normalizeCapabilities(cfg.capabilities);
-    }
-  }
-
-  return normalizeCapabilities(cfg.capabilities);
 }
 
 export function resolveChannelCapabilities(params: {
@@ -48,20 +25,30 @@ export function resolveChannelCapabilities(params: {
   accountId?: string | null;
 }): string[] | undefined {
   const cfg = params.cfg;
-  const channel = normalizeChannelId(params.channel);
+  const channel = normalizeAnyChannelId(params.channel);
   if (!cfg || !channel) {
     return undefined;
   }
 
   const channelsConfig = cfg.channels as Record<string, unknown> | undefined;
-  const channelConfig = (channelsConfig?.[channel] ?? (cfg as Record<string, unknown>)[channel]) as
+  const channelConfig = channelsConfig?.[channel] as
     | {
         accounts?: Record<string, { capabilities?: CapabilitiesConfig }>;
         capabilities?: CapabilitiesConfig;
       }
     | undefined;
-  return resolveAccountCapabilities({
-    cfg: channelConfig,
-    accountId: params.accountId,
-  });
+  if (!channelConfig) {
+    return undefined;
+  }
+  const normalizedAccountId = normalizeAccountId(params.accountId);
+  const accounts = channelConfig.accounts;
+  const accountConfig =
+    accounts && typeof accounts === "object"
+      ? resolveChannelAccountEntry(accounts, normalizedAccountId, channel)
+      : undefined;
+  // Account capabilities override channel capabilities; empty/object account values fall back.
+  return (
+    normalizeCapabilities(accountConfig?.capabilities) ??
+    normalizeCapabilities(channelConfig.capabilities)
+  );
 }

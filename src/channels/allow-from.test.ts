@@ -25,16 +25,6 @@ describe("mergeDmAllowFromSources", () => {
       }),
     ).toEqual(["+1111"]);
   });
-
-  it("keeps pairing-store entries for non-allowlist policies", () => {
-    expect(
-      mergeDmAllowFromSources({
-        allowFrom: ["+1111"],
-        storeAllowFrom: ["+2222"],
-        dmPolicy: "pairing",
-      }),
-    ).toEqual(["+1111", "+2222"]);
-  });
 });
 
 describe("resolveGroupAllowFromSources", () => {
@@ -63,7 +53,7 @@ describe("resolveGroupAllowFromSources", () => {
         groupAllowFrom: [],
         fallbackToAllowFrom: false,
       }),
-    ).toEqual([]);
+    ).toStrictEqual([]);
   });
 });
 
@@ -76,49 +66,11 @@ describe("firstDefined", () => {
 
 describe("isSenderIdAllowed", () => {
   it("supports per-channel empty-list defaults and wildcard/id matches", () => {
-    expect(
-      isSenderIdAllowed(
-        {
-          entries: [],
-          hasEntries: false,
-          hasWildcard: false,
-        },
-        "123",
-        true,
-      ),
-    ).toBe(true);
-    expect(
-      isSenderIdAllowed(
-        {
-          entries: [],
-          hasEntries: false,
-          hasWildcard: false,
-        },
-        "123",
-        false,
-      ),
-    ).toBe(false);
-    expect(
-      isSenderIdAllowed(
-        {
-          entries: ["111", "222"],
-          hasEntries: true,
-          hasWildcard: true,
-        },
-        undefined,
-        false,
-      ),
-    ).toBe(true);
-    expect(
-      isSenderIdAllowed(
-        {
-          entries: ["111", "222"],
-          hasEntries: true,
-          hasWildcard: false,
-        },
-        "222",
-        false,
-      ),
-    ).toBe(true);
+    const empty = { entries: [], hasEntries: false, hasWildcard: false };
+    const populated = { entries: ["111", "222"], hasEntries: true, hasWildcard: false };
+    expect(isSenderIdAllowed(empty, "123", true)).toBe(true);
+    expect(isSenderIdAllowed(empty, "123", false)).toBe(false);
+    expect(isSenderIdAllowed({ ...populated, hasWildcard: true }, undefined, false)).toBe(true);
+    expect(isSenderIdAllowed(populated, "222", false)).toBe(true);
   });
 });

@@ -1,14 +1,25 @@
+// Onboard channels e2e tests cover setup wizard adapters, plugin install hooks, and channel picker behavior.
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { createExitThrowingRuntime, createWizardPrompter } from "../../test/helpers/auth-wizard.js";
+import type { ChannelPluginCatalogEntry } from "../channels/plugins/catalog.js";
+import type { ChannelSetupWizardAdapter } from "../channels/plugins/setup-wizard-types.js";
+import {
+  ensureChannelSetupPluginInstalled,
+  loadChannelSetupPluginRegistrySnapshotForChannel,
+} from "../commands/channel-setup/plugin-install.js";
 import type { OpenClawConfig } from "../config/config.js";
 import { createEmptyPluginRegistry } from "../plugins/registry.js";
 import { setActivePluginRegistry } from "../plugins/runtime.js";
+import { createChannelTestPluginBase, createTestRegistry } from "../test-utils/channel-plugins.js";
 import type { WizardPrompter } from "../wizard/prompts.js";
-import {
-  patchChannelOnboardingAdapter,
-  setDefaultChannelPluginRegistryForTests,
-} from "./channel-test-helpers.js";
-import { setupChannels } from "./onboard-channels.js";
-import { createExitThrowingRuntime, createWizardPrompter } from "./test-wizard-helpers.js";
+
+const catalogMocks = vi.hoisted(() => ({
+  listChannelPluginCatalogEntries: vi.fn(),
+}));
+
+const manifestRegistryMocks = vi.hoisted(() => ({
+  loadPluginManifestRegistryCore: vi.fn(() => ({ plugins: [], diagnostics: [] })),
+}));
 
 function createPrompter(overrides: Partial<WizardPrompter>): WizardPrompter {
   return createWizardPrompter(
@@ -31,7 +42,10 @@ function createUnexpectedPromptGuards() {
   };
 }
 
-type SetupChannelsOptions = Parameters<typeof setupChannels>[3];
+type SetupChannels = typeof import("../flows/channel-setup.js").setupChannels;
+let setupChannels: SetupChannels;
+
+type SetupChannelsOptions = Parameters<SetupChannels>[3];
 
 function runSetupChannels(
   cfg: OpenClawConfig,
@@ -44,228 +58,442 @@ function runSetupChannels(
   });
 }
 
-function createQuickstartTelegramSelect(options?: {
-  configuredAction?: "skip";
-  strictUnexpected?: boolean;
-}) {
-  return vi.fn(async ({ message }: { message: string }) => {
-    if (message === "Select channel (QuickStart)") {
-      return "telegram";
-    }
-    if (options?.configuredAction && message.includes("already configured")) {
-      return options.configuredAction;
-    }
-    if (options?.strictUnexpected) {
-      throw new Error(`unexpected select prompt: ${message}`);
-    }
-    return "__done__";
-  });
-}
-
-function createUnexpectedQuickstartPrompter(select: WizardPrompter["select"]) {
-  const { multiselect, text } = createUnexpectedPromptGuards();
+function createMSTeamsCatalogEntry(): ChannelPluginCatalogEntry {
   return {
-    prompter: createPrompter({ select, multiselect, text }),
-    multiselect,
-    text,
+    id: "external-chat",
+    pluginId: "@paleoclaw/external-chat-plugin",
+    meta: {
+      id: "external-chat",
+      label: "External Chat",
+      selectionLabel: "External Chat",
+      docsPath: "/channels/external-chat",
+      blurb: "external chat channel",
+    },
+    install: {
+      npmSpec: "@paleoclaw/external-chat",
+    },
   };
 }
 
-function createTelegramCfg(botToken: string, enabled?: boolean): OpenClawConfig {
+function createMSTeamsPluginRegistryEntry(params?: { includeSetupWizard?: boolean }) {
   return {
-    channels: {
-      telegram: {
-        botToken,
-        ...(typeof enabled === "boolean" ? { enabled } : {}),
+    pluginId: "@paleoclaw/external-chat-plugin",
+    source: "test",
+    plugin: {
+      id: "external-chat",
+      meta: createMSTeamsCatalogEntry().meta,
+      capabilities: { chatTypes: ["direct"] as const },
+      config: {
+        listAccountIds: () => [],
+        resolveAccount: () => ({ accountId: "default" }),
       },
+      ...(params?.includeSetupWizard
+        ? {
+            setupWizard: {
+              channel: "external-chat",
+              status: {
+                configuredLabel: "configured",
+                unconfiguredLabel: "installed",
+                resolveConfigured: () => false,
+                resolveStatusLines: async () => [],
+                resolveSelectionHint: async () => "installed",
+              },
+              credentials: [],
+            },
+          }
+        : {}),
+      outbound: { deliveryMode: "direct" as const },
     },
-  } as OpenClawConfig;
+  };
 }
 
-function patchTelegramAdapter(overrides: Parameters<typeof patchChannelOnboardingAdapter>[1]) {
-  return patchChannelOnboardingAdapter("telegram", {
-    ...overrides,
-    getStatus:
-      overrides.getStatus ??
-      vi.fn(async ({ cfg }: { cfg: OpenClawConfig }) => ({
-        channel: "telegram",
-        configured: Boolean(cfg.channels?.telegram?.botToken),
-        statusLines: [],
-      })),
-  });
-}
-
-function createUnexpectedConfigureCall(message: string) {
-  return vi.fn(async () => {
-    throw new Error(message);
-  });
-}
-
-async function runConfiguredTelegramSetup(params: {
-  strictUnexpected?: boolean;
-  configureWhenConfigured: NonNullable<
-    Parameters<typeof patchTelegramAdapter>[0]["configureWhenConfigured"]
-  >;
-  configureErrorMessage: string;
-}) {
-  const select = createQuickstartTelegramSelect({ strictUnexpected: params.strictUnexpected });
-  const selection = vi.fn();
-  const onAccountId = vi.fn();
-  const configure = createUnexpectedConfigureCall(params.configureErrorMessage);
-  const restore = patchTelegramAdapter({
-    configureInteractive: undefined,
-    configureWhenConfigured: params.configureWhenConfigured,
-    configure,
-  });
-  const { prompter } = createUnexpectedQuickstartPrompter(
-    select as unknown as WizardPrompter["select"],
+function mockMSTeamsRegistrySnapshot(params?: { includeSetupWizard?: boolean }) {
+  vi.mocked(loadChannelSetupPluginRegistrySnapshotForChannel).mockImplementation(
+    async ({ channel }: { channel: string }) => {
+      const registry = createEmptyPluginRegistry();
+      if (channel === "external-chat") {
+        if (params?.includeSetupWizard) {
+          registry.channelSetups.push(createMSTeamsPluginRegistryEntry(params) as never);
+        } else {
+          registry.channels.push(createMSTeamsPluginRegistryEntry(params) as never);
+        }
+      }
+      return registry;
+    },
   );
-
-  try {
-    const cfg = await runSetupChannels(createTelegramCfg("old-token"), prompter, {
-      quickstartDefaults: true,
-      onSelection: selection,
-      onAccountId,
-    });
-    return { cfg, selection, onAccountId, configure };
-  } finally {
-    restore();
-  }
 }
 
-async function runQuickstartTelegramSetupWithInteractive(params: {
-  configureInteractive: NonNullable<
-    Parameters<typeof patchTelegramAdapter>[0]["configureInteractive"]
-  >;
-  configure?: NonNullable<Parameters<typeof patchTelegramAdapter>[0]["configure"]>;
-}) {
-  const select = createQuickstartTelegramSelect();
-  const selection = vi.fn();
-  const onAccountId = vi.fn();
-  const restore = patchTelegramAdapter({
-    configureInteractive: params.configureInteractive,
-    ...(params.configure ? { configure: params.configure } : {}),
-  });
-  const { prompter } = createUnexpectedQuickstartPrompter(
-    select as unknown as WizardPrompter["select"],
+vi.mock("../channels/plugins/catalog.js", async () => {
+  const actual = await vi.importActual<typeof import("../channels/plugins/catalog.js")>(
+    "../channels/plugins/catalog.js",
   );
+  const listRawChannelPluginCatalogEntries = (
+    ...args: Parameters<typeof actual.listRawChannelPluginCatalogEntries>
+  ) => {
+    const implementation = catalogMocks.listChannelPluginCatalogEntries.getMockImplementation();
+    if (implementation) {
+      return catalogMocks.listChannelPluginCatalogEntries(...args);
+    }
+    return actual.listRawChannelPluginCatalogEntries(...args);
+  };
+  return {
+    ...actual,
+    listRawChannelPluginCatalogEntries,
+  };
+});
 
-  try {
-    const cfg = await runSetupChannels({} as OpenClawConfig, prompter, {
-      quickstartDefaults: true,
-      onSelection: selection,
-      onAccountId,
-    });
-    return { cfg, selection, onAccountId };
-  } finally {
-    restore();
-  }
-}
+vi.mock("../plugins/manifest-registry.js", async () => {
+  const actual = await vi.importActual<typeof import("../plugins/manifest-registry.js")>(
+    "../plugins/manifest-registry.js",
+  );
+  return {
+    ...actual,
+    loadPluginManifestRegistryCore: manifestRegistryMocks.loadPluginManifestRegistryCore,
+  };
+});
 
-vi.mock("node:fs/promises", () => ({
-  default: {
-    access: vi.fn(async () => {
-      throw new Error("ENOENT");
-    }),
-  },
-}));
-
-vi.mock("../channel-web.js", () => ({
-  loginWeb: vi.fn(async () => {}),
+// mock-isolation: Channel setup exercises the synthetic plugin catalog, not bundled plugin loading.
+vi.mock("../channels/plugins/bundled.js", () => ({
+  getBundledChannelSetupPlugin: () => undefined,
 }));
 
 vi.mock("./onboard-helpers.js", () => ({
   detectBinary: vi.fn(async () => false),
 }));
 
-vi.mock("./onboarding/plugin-install.js", async (importOriginal) => {
-  const actual = await importOriginal();
+vi.mock("../commands/channel-setup/plugin-install.js", async () => {
+  const actual = await vi.importActual("../commands/channel-setup/plugin-install.js");
   return {
     ...(actual as Record<string, unknown>),
-    // Allow tests to simulate an empty plugin registry during onboarding.
-    reloadOnboardingPluginRegistry: vi.fn(() => {}),
+    ensureChannelSetupPluginInstalled: vi.fn(async ({ cfg }: { cfg: OpenClawConfig }) => ({
+      cfg,
+      installed: true,
+    })),
+    // Allow tests to simulate an empty plugin registry during setup.
+    loadChannelSetupPluginRegistrySnapshotForChannel: vi.fn(async () =>
+      createEmptyPluginRegistry(),
+    ),
   };
 });
 
 describe("setupChannels", () => {
-  beforeEach(() => {
-    setDefaultChannelPluginRegistryForTests();
+  beforeEach(async () => {
+    ({ setupChannels } = await import("../flows/channel-setup.js"));
+    catalogMocks.listChannelPluginCatalogEntries.mockReset();
+    catalogMocks.listChannelPluginCatalogEntries.mockReturnValue([]);
+    manifestRegistryMocks.loadPluginManifestRegistryCore.mockReset();
+    manifestRegistryMocks.loadPluginManifestRegistryCore.mockReturnValue({
+      plugins: [],
+      diagnostics: [],
+    });
+    vi.mocked(ensureChannelSetupPluginInstalled).mockClear();
+    vi.mocked(ensureChannelSetupPluginInstalled).mockImplementation(async ({ cfg }) => ({
+      cfg,
+      installed: true,
+      status: "installed",
+    }));
+    vi.mocked(loadChannelSetupPluginRegistrySnapshotForChannel).mockClear();
   });
-  it("QuickStart uses single-select (no multiselect) and doesn't prompt for Telegram token when WhatsApp is chosen", async () => {
-    const select = vi.fn(async () => "whatsapp");
-    const multiselect = vi.fn(async () => {
-      throw new Error("unexpected multiselect");
-    });
-    const text = vi.fn(async ({ message }: { message: string }) => {
-      if (message.includes("Enter Telegram bot token")) {
-        throw new Error("unexpected Telegram token prompt");
-      }
-      if (message.includes("Your personal WhatsApp number")) {
-        return "+15555550123";
-      }
-      throw new Error(`unexpected text prompt: ${message}`);
-    });
 
+  it.each([
+    {
+      name: "explicitly confirmed",
+      configureOwner: true,
+      confirmOwner: true,
+      owners: undefined,
+      expected: ["discord:123456789012345678"],
+    },
+    {
+      name: "skipped",
+      configureOwner: false,
+      confirmOwner: false,
+      owners: undefined,
+      expected: undefined,
+    },
+    {
+      name: "declined at confirmation",
+      configureOwner: true,
+      confirmOwner: false,
+      owners: undefined,
+      expected: undefined,
+    },
+    {
+      name: "already configured",
+      configureOwner: true,
+      confirmOwner: true,
+      owners: ["telegram:existing-owner"],
+      expected: ["telegram:existing-owner"],
+    },
+  ])(
+    "keeps Discord guild-only owner setup $name",
+    async ({ configureOwner, confirmOwner, owners, expected }) => {
+      const channels: OpenClawConfig["channels"] = {
+        discord: {
+          enabled: true,
+          dm: { enabled: false },
+          allowFrom: ["987654321098765432"],
+          guilds: { "234567890123456789": { users: ["987654321098765432"] } },
+        },
+      };
+      setActivePluginRegistry(
+        createTestRegistry([
+          {
+            pluginId: "discord",
+            source: "test",
+            plugin: {
+              ...createChannelTestPluginBase({
+                id: "discord",
+                label: "Discord",
+                capabilities: { chatTypes: ["direct", "group"] },
+              }),
+              setupWizard: {
+                channel: "discord",
+                getStatus: async () => ({ channel: "discord", configured: true, statusLines: [] }),
+                configure: async ({ cfg }: { cfg: OpenClawConfig }) => ({
+                  cfg,
+                  accountId: "default",
+                }),
+                configureInteractive: async ({ cfg }: { cfg: OpenClawConfig }) => ({
+                  cfg,
+                  accountId: "default",
+                }),
+              },
+            },
+          },
+        ]),
+      );
+      const prompter = createPrompter({
+        select: vi.fn(async ({ message, options }: Parameters<WizardPrompter["select"]>[0]) => {
+          if (message === "Set up administration from your own chat account?") {
+            const label = configureOwner ? "Set up my operator account" : "Skip for now";
+            const option = options.find((entry) => entry.label === label);
+            if (!option) {
+              throw new Error(`missing owner setup choice: ${label}`);
+            }
+            return option.value;
+          }
+          throw new Error(`unexpected selection: ${message}`);
+        }) as WizardPrompter["select"],
+        text: vi.fn(async () => "123456789012345678"),
+        confirm: vi.fn(async () => confirmOwner),
+      });
+      const next = await runSetupChannels(
+        { channels, commands: { restart: false, ownerAllowFrom: owners } },
+        prompter,
+        {
+          initialSelection: ["discord"],
+          finishAfterInitialSelection: true,
+          skipDmPolicyPrompt: true,
+        },
+      );
+
+      expect(next.commands?.ownerAllowFrom).toEqual(expected);
+      expect(next.commands?.restart).toBe(false);
+      expect(next.channels).toEqual(channels);
+      if (!owners) {
+        const setupPrompt = vi
+          .mocked(prompter.select)
+          .mock.calls.find(
+            ([prompt]) => prompt.message === "Set up administration from your own chat account?",
+          )?.[0];
+        expect(
+          setupPrompt?.options.find((option) => option.value === setupPrompt.initialValue)?.label,
+        ).toBe("Skip for now");
+      }
+      if (owners || !configureOwner) {
+        expect(prompter.text).not.toHaveBeenCalled();
+        expect(prompter.confirm).not.toHaveBeenCalled();
+      } else {
+        expect(prompter.text).toHaveBeenCalledWith(
+          expect.objectContaining({
+            message: "Your personal Discord user ID (not a bot, server, or channel ID)",
+          }),
+        );
+        expect(vi.mocked(prompter.text).mock.calls[0]?.[0].initialValue).toBeUndefined();
+        expect(prompter.confirm).toHaveBeenCalledWith({
+          message:
+            "This is my account: allow discord:123456789012345678 to administer this installation?",
+          initialValue: false,
+        });
+      }
+    },
+  );
+
+  it.each(["incomplete", "removed", "disabled", "account-disabled", "unverifiable"] as const)(
+    "offers owner setup only for final configured channels: %s",
+    async (outcome) => {
+      let setupReturned = false;
+      const setupWizard: ChannelSetupWizardAdapter = {
+        channel: "discord",
+        getStatus: async ({ cfg }) => {
+          if (setupReturned && outcome === "unverifiable") {
+            throw new Error("controlled status failure");
+          }
+          return {
+            channel: "discord",
+            configured: Boolean(cfg.channels?.discord?.token),
+            statusLines: [],
+          };
+        },
+        configure: async ({ cfg }) => {
+          setupReturned = true;
+          return {
+            cfg: {
+              ...cfg,
+              channels: {
+                ...cfg.channels,
+                discord: {
+                  ...cfg.channels?.discord,
+                  ...(outcome === "incomplete" ? {} : { token: "synthetic-token" }),
+                  ...(outcome === "account-disabled"
+                    ? { accounts: { secondary: { enabled: false } } }
+                    : {}),
+                },
+              },
+            },
+            accountId: outcome === "account-disabled" ? "secondary" : "default",
+          };
+        },
+      };
+      setActivePluginRegistry(
+        createTestRegistry([
+          {
+            pluginId: "discord",
+            source: "test",
+            plugin: {
+              ...createChannelTestPluginBase({
+                id: "discord",
+                label: "Discord",
+                config: {
+                  resolveAccount: (cfg, accountId) =>
+                    cfg.channels?.discord?.accounts?.[accountId ?? "default"] ??
+                    cfg.channels?.discord ??
+                    {},
+                  deleteAccount: ({ cfg }) => {
+                    const channels = { ...cfg.channels };
+                    delete channels.discord;
+                    return { ...cfg, channels };
+                  },
+                  setAccountEnabled: ({ cfg, enabled }) => ({
+                    ...cfg,
+                    channels: {
+                      ...cfg.channels,
+                      discord: { ...cfg.channels?.discord, enabled },
+                    },
+                  }),
+                },
+              }),
+              setupWizard,
+            },
+          },
+        ]),
+      );
+      const choices = [
+        "discord",
+        ...(outcome === "removed" || outcome === "disabled" ? ["discord"] : []),
+        "__done__",
+      ];
+      const prompter = createPrompter({
+        select: vi.fn(async ({ message, options }: Parameters<WizardPrompter["select"]>[0]) => {
+          if (message === "Select a channel") {
+            return choices.shift();
+          }
+          if (message === "Discord already configured. What do you want to do?") {
+            return outcome === "removed" ? "delete" : "disable";
+          }
+          if (message === "Set up administration from your own chat account?") {
+            return options.find((option) => option.label === "Set up my operator account")?.value;
+          }
+          throw new Error(`unexpected selection: ${message}`);
+        }) as WizardPrompter["select"],
+        text: vi.fn(async () => "123456789012345678"),
+        confirm: vi.fn(async () => true),
+      });
+      const next = await runSetupChannels(
+        { channels: { discord: { enabled: true, allowFrom: ["987654321098765432"] } } },
+        prompter,
+        { allowDisable: true, skipDmPolicyPrompt: true },
+      );
+
+      expect(next.commands?.ownerAllowFrom).toBeUndefined();
+      expect(next.channels?.discord?.token).toBe(
+        ["incomplete", "removed"].includes(outcome) ? undefined : "synthetic-token",
+      );
+      expect(prompter.text).not.toHaveBeenCalled();
+      if (outcome === "unverifiable") {
+        expect(prompter.note).toHaveBeenCalledWith(
+          expect.stringContaining("controlled status failure"),
+          "Channel status",
+        );
+      }
+    },
+  );
+
+  it("keeps configured external plugin channels visible when the active registry starts empty", async () => {
+    setActivePluginRegistry(createEmptyPluginRegistry());
+    catalogMocks.listChannelPluginCatalogEntries.mockReturnValue([createMSTeamsCatalogEntry()]);
+    mockMSTeamsRegistrySnapshot();
+    const select = vi.fn(async ({ message, options }: { message: string; options: unknown[] }) => {
+      if (message === "Select a channel") {
+        const entries = options as Array<{ value: string; hint?: string }>;
+        const msteams = entries.find((entry) => entry.value === "external-chat");
+        if (msteams === undefined) {
+          throw new Error("expected Teams catalog entry");
+        }
+        expect(msteams.hint ?? "").not.toContain("plugin");
+        expect(msteams.hint ?? "").not.toContain("install");
+        return "__done__";
+      }
+      return "__done__";
+    });
+    const { multiselect, text } = createUnexpectedPromptGuards();
     const prompter = createPrompter({
       select: select as unknown as WizardPrompter["select"],
       multiselect,
-      text: text as unknown as WizardPrompter["text"],
+      text,
     });
 
-    await runSetupChannels({} as OpenClawConfig, prompter, {
-      quickstartDefaults: true,
-      forceAllowFromChannels: ["whatsapp"],
-    });
+    await runSetupChannels(
+      {
+        channels: {
+          "external-chat": {
+            tenantId: "tenant-1",
+          },
+        },
+        plugins: {
+          entries: {
+            "@paleoclaw/external-chat-plugin": { enabled: true },
+          },
+        },
+      } as OpenClawConfig,
+      prompter,
+    );
 
-    expect(select).toHaveBeenCalledWith(
-      expect.objectContaining({ message: "Select channel (QuickStart)" }),
+    expect(loadChannelSetupPluginRegistrySnapshotForChannel).toHaveBeenCalledWith(
+      expect.objectContaining({
+        channel: "external-chat",
+        pluginId: "@paleoclaw/external-chat-plugin",
+      }),
     );
     expect(multiselect).not.toHaveBeenCalled();
   });
 
-  it("continues Telegram onboarding even when plugin registry is empty (avoids 'plugin not available' block)", async () => {
-    // Simulate missing registry entries (the scenario reported in #25545).
-    setActivePluginRegistry(createEmptyPluginRegistry());
-    // Avoid accidental env-token configuration changing the prompt path.
-    process.env.TELEGRAM_BOT_TOKEN = "";
+  it("treats installed external plugin channels as installed without reinstall prompts", async () => {
+    setActivePluginRegistry(
+      createTestRegistry([createMSTeamsPluginRegistryEntry({ includeSetupWizard: true }) as never]),
+    );
+    catalogMocks.listChannelPluginCatalogEntries.mockReturnValue([createMSTeamsCatalogEntry()]);
 
-    const note = vi.fn(async (_message?: string, _title?: string) => {});
+    let channelSelectionCount = 0;
     const select = vi.fn(async ({ message }: { message: string }) => {
-      if (message === "Select channel (QuickStart)") {
-        return "telegram";
+      if (message === "Select a channel") {
+        channelSelectionCount += 1;
+        return channelSelectionCount === 1 ? "external-chat" : "__done__";
       }
       return "__done__";
     });
-    const text = vi.fn(async () => "123:token");
-
-    const prompter = createPrompter({
-      note,
-      select: select as unknown as WizardPrompter["select"],
-      text: text as unknown as WizardPrompter["text"],
-    });
-
-    await runSetupChannels({} as OpenClawConfig, prompter, {
-      quickstartDefaults: true,
-    });
-
-    // The new flow should not stop setup with a hard "plugin not available" note.
-    const sawHardStop = note.mock.calls.some((call) => {
-      const message = call[0];
-      const title = call[1];
-      return (
-        title === "Channel setup" && String(message).trim() === "telegram plugin not available."
-      );
-    });
-    expect(sawHardStop).toBe(false);
-  });
-
-  it("shows explicit dmScope config command in channel primer", async () => {
-    const note = vi.fn(async (_message?: string, _title?: string) => {});
-    const select = vi.fn(async () => "__done__");
     const { multiselect, text } = createUnexpectedPromptGuards();
-
     const prompter = createPrompter({
-      note,
       select: select as unknown as WizardPrompter["select"],
       multiselect,
       text,
@@ -273,183 +501,8 @@ describe("setupChannels", () => {
 
     await runSetupChannels({} as OpenClawConfig, prompter);
 
-    const sawPrimer = note.mock.calls.some(
-      ([message, title]) =>
-        title === "How channels work" &&
-        String(message).includes('config set session.dmScope "per-channel-peer"'),
-    );
-    expect(sawPrimer).toBe(true);
+    expect(ensureChannelSetupPluginInstalled).not.toHaveBeenCalled();
+    expect(loadChannelSetupPluginRegistrySnapshotForChannel).not.toHaveBeenCalled();
     expect(multiselect).not.toHaveBeenCalled();
-  });
-
-  it("prompts for configured channel action and skips configuration when told to skip", async () => {
-    const select = createQuickstartTelegramSelect({
-      configuredAction: "skip",
-      strictUnexpected: true,
-    });
-    const { prompter, multiselect, text } = createUnexpectedQuickstartPrompter(
-      select as unknown as WizardPrompter["select"],
-    );
-
-    await runSetupChannels(createTelegramCfg("token"), prompter, {
-      quickstartDefaults: true,
-    });
-
-    expect(select).toHaveBeenCalledWith(
-      expect.objectContaining({ message: "Select channel (QuickStart)" }),
-    );
-    expect(select).toHaveBeenCalledWith(
-      expect.objectContaining({ message: expect.stringContaining("already configured") }),
-    );
-    expect(multiselect).not.toHaveBeenCalled();
-    expect(text).not.toHaveBeenCalled();
-  });
-
-  it("adds disabled hint to channel selection when a channel is disabled", async () => {
-    let selectionCount = 0;
-    const select = vi.fn(async ({ message, options }: { message: string; options: unknown[] }) => {
-      if (message === "Select a channel") {
-        selectionCount += 1;
-        const opts = options as Array<{ value: string; hint?: string }>;
-        const telegram = opts.find((opt) => opt.value === "telegram");
-        expect(telegram?.hint).toContain("disabled");
-        return selectionCount === 1 ? "telegram" : "__done__";
-      }
-      if (message.includes("already configured")) {
-        return "skip";
-      }
-      return "__done__";
-    });
-    const multiselect = vi.fn(async () => {
-      throw new Error("unexpected multiselect");
-    });
-    const prompter = createPrompter({
-      select: select as unknown as WizardPrompter["select"],
-      multiselect,
-      text: vi.fn(async () => "") as unknown as WizardPrompter["text"],
-    });
-
-    await runSetupChannels(createTelegramCfg("token", false), prompter);
-
-    expect(select).toHaveBeenCalledWith(expect.objectContaining({ message: "Select a channel" }));
-    expect(multiselect).not.toHaveBeenCalled();
-  });
-
-  it("uses configureInteractive skip without mutating selection/account state", async () => {
-    const configureInteractive = vi.fn(async () => "skip" as const);
-    const { cfg, selection, onAccountId } = await runQuickstartTelegramSetupWithInteractive({
-      configureInteractive,
-    });
-
-    expect(configureInteractive).toHaveBeenCalledWith(
-      expect.objectContaining({ configured: false, label: expect.any(String) }),
-    );
-    expect(selection).toHaveBeenCalledWith([]);
-    expect(onAccountId).not.toHaveBeenCalled();
-    expect(cfg.channels?.telegram?.botToken).toBeUndefined();
-  });
-
-  it("applies configureInteractive result cfg/account updates", async () => {
-    const configureInteractive = vi.fn(async ({ cfg }: { cfg: OpenClawConfig }) => ({
-      cfg: {
-        ...cfg,
-        channels: {
-          ...cfg.channels,
-          telegram: { ...cfg.channels?.telegram, botToken: "new-token" },
-        },
-      } as OpenClawConfig,
-      accountId: "acct-1",
-    }));
-    const configure = createUnexpectedConfigureCall(
-      "configure should not be called when configureInteractive is present",
-    );
-    const { cfg, selection, onAccountId } = await runQuickstartTelegramSetupWithInteractive({
-      configureInteractive,
-      configure,
-    });
-
-    expect(configureInteractive).toHaveBeenCalledTimes(1);
-    expect(configure).not.toHaveBeenCalled();
-    expect(selection).toHaveBeenCalledWith(["telegram"]);
-    expect(onAccountId).toHaveBeenCalledWith("telegram", "acct-1");
-    expect(cfg.channels?.telegram?.botToken).toBe("new-token");
-  });
-
-  it("uses configureWhenConfigured when channel is already configured", async () => {
-    const configureWhenConfigured = vi.fn(async ({ cfg }: { cfg: OpenClawConfig }) => ({
-      cfg: {
-        ...cfg,
-        channels: {
-          ...cfg.channels,
-          telegram: { ...cfg.channels?.telegram, botToken: "updated-token" },
-        },
-      } as OpenClawConfig,
-      accountId: "acct-2",
-    }));
-    const { cfg, selection, onAccountId, configure } = await runConfiguredTelegramSetup({
-      configureWhenConfigured,
-      configureErrorMessage:
-        "configure should not be called when configureWhenConfigured handles updates",
-    });
-
-    expect(configureWhenConfigured).toHaveBeenCalledTimes(1);
-    expect(configureWhenConfigured).toHaveBeenCalledWith(
-      expect.objectContaining({ configured: true, label: expect.any(String) }),
-    );
-    expect(configure).not.toHaveBeenCalled();
-    expect(selection).toHaveBeenCalledWith(["telegram"]);
-    expect(onAccountId).toHaveBeenCalledWith("telegram", "acct-2");
-    expect(cfg.channels?.telegram?.botToken).toBe("updated-token");
-  });
-
-  it("respects configureWhenConfigured skip without mutating selection or account state", async () => {
-    const configureWhenConfigured = vi.fn(async () => "skip" as const);
-    const { cfg, selection, onAccountId, configure } = await runConfiguredTelegramSetup({
-      strictUnexpected: true,
-      configureWhenConfigured,
-      configureErrorMessage: "configure should not run when configureWhenConfigured handles skip",
-    });
-
-    expect(configureWhenConfigured).toHaveBeenCalledWith(
-      expect.objectContaining({ configured: true, label: expect.any(String) }),
-    );
-    expect(configure).not.toHaveBeenCalled();
-    expect(selection).toHaveBeenCalledWith([]);
-    expect(onAccountId).not.toHaveBeenCalled();
-    expect(cfg.channels?.telegram?.botToken).toBe("old-token");
-  });
-
-  it("prefers configureInteractive over configureWhenConfigured when both hooks exist", async () => {
-    const select = createQuickstartTelegramSelect({ strictUnexpected: true });
-    const selection = vi.fn();
-    const onAccountId = vi.fn();
-    const configureInteractive = vi.fn(async () => "skip" as const);
-    const configureWhenConfigured = vi.fn(async () => {
-      throw new Error("configureWhenConfigured should not run when configureInteractive exists");
-    });
-    const restore = patchTelegramAdapter({
-      configureInteractive,
-      configureWhenConfigured,
-    });
-    const { prompter } = createUnexpectedQuickstartPrompter(
-      select as unknown as WizardPrompter["select"],
-    );
-
-    try {
-      await runSetupChannels(createTelegramCfg("old-token"), prompter, {
-        quickstartDefaults: true,
-        onSelection: selection,
-        onAccountId,
-      });
-
-      expect(configureInteractive).toHaveBeenCalledWith(
-        expect.objectContaining({ configured: true, label: expect.any(String) }),
-      );
-      expect(configureWhenConfigured).not.toHaveBeenCalled();
-      expect(selection).toHaveBeenCalledWith([]);
-      expect(onAccountId).not.toHaveBeenCalled();
-    } finally {
-      restore();
-    }
   });
 });

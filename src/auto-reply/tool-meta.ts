@@ -1,78 +1,66 @@
-import { formatToolSummary, resolveToolDisplay } from "../agents/tool-display.js";
-import { shortenHomeInString, shortenHomePath } from "../utils.js";
+import { normalizeLowercaseStringOrEmpty } from "@paleoclaw/normalization-core/string-coerce";
+import { isShellToolDisplayName, resolveToolDisplay } from "../agents/tool-display.js";
+import { formatInlineCodeSpan } from "../shared/markdown-code.js";
+import { shortenHomeInString } from "../utils.js";
 
 type ToolAggregateOptions = {
   markdown?: boolean;
 };
 
-export function shortenPath(p: string): string {
-  return shortenHomePath(p);
-}
-
-export function shortenMeta(meta: string): string {
-  if (!meta) {
-    return meta;
-  }
-  return shortenHomeInString(meta);
-}
-
-export function formatToolAggregate(
+/**
+ * Formats one grouped tool-progress label and returns the detail segment it was
+ * composed from. Callers that need both must not re-parse the label: recovering
+ * the detail by stripping the rendered prefix silently yields nothing whenever
+ * the prefix shape changes.
+ */
+export function formatToolAggregateParts(
   toolName?: string,
   metas?: string[],
   options?: ToolAggregateOptions,
-): string {
-  const filtered = (metas ?? []).filter(Boolean).map(shortenMeta);
+): { text: string; detail?: string } {
+  const filtered = (metas ?? []).filter(Boolean).map(shortenHomeInString);
   const display = resolveToolDisplay({ name: toolName });
-  const prefix = `${display.emoji} ${display.label}`;
+  const compactCommandSummary = filtered.length > 0 && isShellToolDisplayName(toolName);
   if (!filtered.length) {
-    return prefix;
+    return { text: display.label };
   }
 
   const rawSegments: string[] = [];
-  // Group by directory and brace-collapse filenames
+  // Group by directory and brace-collapse filenames to keep progress text short.
   const grouped: Record<string, string[]> = {};
   for (const m of filtered) {
-    if (!isPathLike(m)) {
+    if (!isPathLike(m) || m.includes("→")) {
       rawSegments.push(m);
       continue;
     }
-    if (m.includes("→")) {
-      rawSegments.push(m);
-      continue;
-    }
-    const parts = m.split("/");
-    if (parts.length > 1) {
-      const dir = parts.slice(0, -1).join("/");
-      const base = parts.at(-1) ?? m;
-      if (!grouped[dir]) {
-        grouped[dir] = [];
-      }
-      grouped[dir].push(base);
-    } else {
-      if (!grouped["."]) {
-        grouped["."] = [];
-      }
-      grouped["."].push(m);
-    }
+    const slash = m.lastIndexOf("/");
+    const dir = m.slice(0, slash);
+    const base = m.slice(slash + 1);
+    grouped[dir] ??= [];
+    grouped[dir].push(base);
   }
 
   const segments = Object.entries(grouped).map(([dir, files]) => {
     const brace = files.length > 1 ? `{${files.join(", ")}}` : files[0];
-    if (dir === ".") {
-      return brace;
-    }
     return `${dir}/${brace}`;
   });
 
   const allSegments = [...rawSegments, ...segments];
   const meta = allSegments.join("; ");
-  return `${prefix}: ${formatMetaForDisplay(toolName, meta, options?.markdown)}`;
+  const detail = formatMetaForDisplay(toolName, meta, options?.markdown);
+  return {
+    text: compactCommandSummary ? detail : `${display.label}: ${detail}`,
+    detail,
+  };
 }
 
-export function formatToolPrefix(toolName?: string, meta?: string) {
-  const extra = meta?.trim() ? shortenMeta(meta) : undefined;
-  const display = resolveToolDisplay({ name: toolName, meta: extra });
-  return formatToolSummary(display);
+/** Formats one grouped tool-progress label from a tool name and metadata entries. */
+export function formatToolAggregate(
+  toolName?: string,
+  metas?: string[],
+  options?: ToolAggregateOptions,
+): string {
+  return formatToolAggregateParts(toolName, metas, options).text;
 }
 
 function formatMetaForDisplay(
@@ -80,64 +68,33 @@ function formatMetaForDisplay(
   meta: string,
   markdown?: boolean,
 ): string {
-  const normalized = (toolName ?? "").trim().toLowerCase();
+  const normalized = normalizeLowercaseStringOrEmpty(toolName);
   if (normalized === "exec" || normalized === "bash") {
-    const { flags, body } = splitExecFlags(meta);
+    const flags: string[] = [];
+    const bodyParts: string[] = [];
+    for (const part of meta
+      .split(" · ")
+      .map((segment) => segment.trim())
+      .filter(Boolean)) {
+      (part === "elevated" || part === "pty" ? flags : bodyParts).push(part);
+    }
     if (flags.length > 0) {
+      const body = bodyParts.join(" · ");
       if (!body) {
         return flags.join(" · ");
       }
-      return `${flags.join(" · ")} · ${maybeWrapMarkdown(body, markdown)}`;
+      return `${flags.join(" · ")} · ${markdown ? formatInlineCodeSpan(body) : body}`;
     }
   }
-  return maybeWrapMarkdown(meta, markdown);
-}
-
-function splitExecFlags(meta: string): { flags: string[]; body: string } {
-  const parts = meta
-    .split(" · ")
-    .map((part) => part.trim())
-    .filter(Boolean);
-  if (parts.length === 0) {
-    return { flags: [], body: "" };
-  }
-  const flags: string[] = [];
-  const bodyParts: string[] = [];
-  for (const part of parts) {
-    if (part === "elevated" || part === "pty") {
-      flags.push(part);
-      continue;
-    }
-    bodyParts.push(part);
-  }
-  return { flags, body: bodyParts.join(" · ") };
+  return markdown ? formatInlineCodeSpan(meta) : meta;
 }
 
 function isPathLike(value: string): boolean {
-  if (!value) {
-    return false;
-  }
-  if (value.includes(" ")) {
-    return false;
-  }
-  if (value.includes("://")) {
-    return false;
-  }
-  if (value.includes("·")) {
-    return false;
-  }
-  if (value.includes("&&") || value.includes("||")) {
-    return false;
-  }
-  return /^~?(\/[^\s]+)+$/.test(value);
-}
-
-function maybeWrapMarkdown(value: string, markdown?: boolean): string {
-  if (!markdown) {
-    return value;
-  }
-  if (value.includes("`")) {
-    return value;
-  }
-  return `\`${value}\``;
+  return (
+    !value.includes("://") &&
+    !value.includes("·") &&
+    !value.includes("&&") &&
+    !value.includes("||") &&
+    /^~?(\/[^\s]+)+$/.test(value)
+  );
 }

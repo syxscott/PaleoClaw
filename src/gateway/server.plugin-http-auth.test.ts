@@ -1,631 +1,297 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { describe, expect, test, vi } from "vitest";
-import { canonicalizePathVariant, isProtectedPluginRoutePath } from "./security-path.js";
+import { beforeAll, describe, expect, test, vi } from "vitest";
+import { createSubsystemLogger } from "../logging/subsystem.js";
+import type { PluginHttpRouteRegistration } from "../plugins/registry.js";
+import { getPluginRuntimeGatewayRequestScope } from "../plugins/runtime/gateway-request-scope.js";
+import { authorizeOperatorScopesForMethod } from "./method-scopes.js";
+import { canonicalizePathVariant } from "./security-path.js";
 import {
   AUTH_NONE,
   AUTH_TOKEN,
   buildChannelPathFuzzCorpus,
-  CANONICAL_AUTH_VARIANTS,
-  CANONICAL_UNAUTH_VARIANTS,
-  createCanonicalizedChannelPluginHandler,
   createHooksHandler,
   createTestGatewayServer,
-  expectAuthorizedVariants,
   expectUnauthorizedResponse,
   expectUnauthorizedVariants,
   sendRequest,
-  withGatewayServer,
-  withGatewayTempConfig,
 } from "./server-http.test-harness.js";
+import { createGatewayTestRegistry } from "./server/__tests__/test-utils.js";
+import {
+  createGatewayPluginRequestHandler,
+  isPluginAuthenticatedRoutePath,
+  shouldEnforceGatewayAuthForPluginPath,
+} from "./server/plugins-http.js";
 import { withTempConfig } from "./test-temp-config.js";
 
-type PluginRequestHandler = (req: IncomingMessage, res: ServerResponse) => Promise<boolean>;
-
-function canonicalizePluginPath(pathname: string): string {
-  return canonicalizePathVariant(pathname);
+type ServerOptions = Parameters<typeof createTestGatewayServer>[0];
+type RequestOptions = Parameters<typeof sendRequest>[1];
+type Request = (
+  path: string,
+  options?: Omit<RequestOptions, "path">,
+) => ReturnType<typeof sendRequest>;
+const log = createSubsystemLogger("test/plugin-http-auth");
+const requestFor =
+  (server: Parameters<typeof sendRequest>[0]): Request =>
+  (path, options) =>
+    sendRequest(server, { path, ...options });
+function withServer(
+  run: (request: Request, server: Parameters<typeof sendRequest>[0]) => Promise<void>,
+  overrides: ServerOptions["overrides"] = {},
+  resolvedAuth = AUTH_TOKEN,
+  cfg: Parameters<typeof withTempConfig>[0]["cfg"] = { gateway: { trustedProxies: [] } },
+) {
+  return withTempConfig({
+    prefix: "plugin-http-auth-",
+    cfg,
+    run: async () => {
+      const server = createTestGatewayServer({ resolvedAuth, overrides });
+      await run(requestFor(server), server);
+    },
+  });
 }
-
-function respondJsonRoute(res: ServerResponse, route: string): true {
+function pluginRoutes(
+  routes: [string, PluginHttpRouteRegistration["handler"], Partial<PluginHttpRouteRegistration>][],
+) {
+  const httpRoutes = routes.map(([path, handler, options]) => ({
+    pluginId: path,
+    path,
+    handler,
+    match: "exact" as const,
+    auth: "plugin" as const,
+    ...options,
+  }));
+  const registry = createGatewayTestRegistry({ httpRoutes });
+  return { registry, handlePluginRequest: createGatewayPluginRequestHandler({ registry, log }) };
+}
+function respond(res: ServerResponse, body: string) {
   res.statusCode = 200;
-  res.setHeader("Content-Type", "application/json; charset=utf-8");
-  res.end(JSON.stringify({ ok: true, route }));
+  res.end(body);
   return true;
 }
-
-function createRootMountedControlUiOverrides(handlePluginRequest: PluginRequestHandler) {
-  return {
-    controlUiEnabled: true,
-    controlUiBasePath: "",
-    controlUiRoot: { kind: "missing" as const },
-    handlePluginRequest,
-  };
+function expectResponse(
+  response: Awaited<ReturnType<typeof sendRequest>>,
+  status: number,
+  body: string,
+) {
+  expect(response.res.statusCode).toBe(status);
+  expect(response.getBody()).toBe(body);
 }
-
-const withRootMountedControlUiServer = (params: {
-  prefix: string;
-  handlePluginRequest: PluginRequestHandler;
-  run: Parameters<typeof withGatewayServer>[0]["run"];
-}) =>
-  withPluginGatewayServer({
-    prefix: params.prefix,
-    resolvedAuth: AUTH_NONE,
-    overrides: createRootMountedControlUiOverrides(params.handlePluginRequest),
-    run: params.run,
+function claimingPlugin(paths?: string[]) {
+  return vi.fn(async (req: IncomingMessage, res: ServerResponse) => {
+    const pathname = new URL(req.url ?? "/", "http://localhost").pathname;
+    return !paths || paths.includes(pathname) ? respond(res, "plugin-owned") : false;
   });
-
-const withPluginGatewayServer = (params: Parameters<typeof withGatewayServer>[0]) =>
-  withGatewayServer(params);
-
-const PROBE_CASES = [
-  { path: "/health", status: "live" },
-  { path: "/healthz", status: "live" },
-  { path: "/ready", status: "ready" },
-  { path: "/readyz", status: "ready" },
-] as const;
-
-async function expectProbeRoutesHealthy(server: Parameters<typeof sendRequest>[0]) {
-  for (const probeCase of PROBE_CASES) {
-    const response = await sendRequest(server, { path: probeCase.path });
-    expect(response.res.statusCode, probeCase.path).toBe(200);
-    expect(response.getBody(), probeCase.path).toBe(
-      JSON.stringify({ ok: true, status: probeCase.status }),
-    );
-  }
 }
-
-function createProtectedPluginAuthOverrides(handlePluginRequest: PluginRequestHandler) {
-  return {
-    handlePluginRequest,
-    shouldEnforcePluginGatewayAuth: (pathContext: { pathname: string }) =>
-      isProtectedPluginRoutePath(pathContext.pathname),
-  };
-}
+const callbackPath = "/api/channels/mattermost/command";
+const profilePath = "/api/channels/nostr/default/profile";
 
 describe("gateway plugin HTTP auth boundary", () => {
-  test("applies default security headers and optional strict transport security", async () => {
-    await withGatewayTempConfig("paleoclaw-plugin-http-security-headers-test-", async () => {
-      const withoutHsts = createTestGatewayServer({ resolvedAuth: AUTH_NONE });
-      const withoutHstsResponse = await sendRequest(withoutHsts, { path: "/missing" });
-      expect(withoutHstsResponse.setHeader).toHaveBeenCalledWith(
-        "X-Content-Type-Options",
-        "nosniff",
-      );
-      expect(withoutHstsResponse.setHeader).toHaveBeenCalledWith("Referrer-Policy", "no-referrer");
-      expect(withoutHstsResponse.setHeader).not.toHaveBeenCalledWith(
-        "Strict-Transport-Security",
-        expect.any(String),
-      );
+  beforeAll(async () => {
+    await import("./control-ui.js");
+  });
 
-      const withHsts = createTestGatewayServer({
-        resolvedAuth: AUTH_NONE,
-        overrides: {
-          strictTransportSecurityHeader: "max-age=31536000; includeSubDomains",
+  test.each([
+    ["preview", true, "GET", 200, 'content="paleoclaw dashboard"'],
+    ["preview", false, "GET", 404, "Not Found"],
+    ["approval", true, "GET", 503, "Control UI assets not found"],
+    ["approval", true, "POST", 404, "Not Found"],
+    ["approval", false, "GET", 404, "Not Found"],
+  ] as const)(
+    "reserves %s routes ahead of plugins (UI: %s, method: %s)",
+    async (surface, controlUiEnabled, method, status, body) => {
+      const plugin = claimingPlugin();
+      const preview = surface === "preview";
+      await withServer(
+        async (request) => {
+          const response = await request(
+            preview ? "/control/share/dashboard/example/session" : "/approve/plugin%3Arequest.json",
+            preview ? { host: "gateway.example.test" } : { method },
+          );
+          expect(response.res.statusCode).toBe(status);
+          expect(response.getBody()).toContain(body);
+          if (preview) {
+            for (const path of ["/control/share", "/control/share/api/private"]) {
+              expect((await request(path)).res.statusCode).toBe(404);
+            }
+          }
+          expect(plugin).not.toHaveBeenCalled();
         },
-      });
-      const withHstsResponse = await sendRequest(withHsts, { path: "/missing" });
-      expect(withHstsResponse.setHeader).toHaveBeenCalledWith(
-        "Strict-Transport-Security",
-        "max-age=31536000; includeSubDomains",
+        {
+          controlUiEnabled,
+          controlUiBasePath: preview ? "/control" : "",
+          ...(preview ? {} : { controlUiRoot: { kind: "missing" as const } }),
+          handlePluginRequest: plugin,
+        },
+        preview ? AUTH_TOKEN : AUTH_NONE,
       );
-    });
-  });
-
-  test("serves unauthenticated liveness/readiness probe routes when no other route handles them", async () => {
-    await withGatewayServer({
-      prefix: "paleoclaw-plugin-http-probes-test-",
-      resolvedAuth: AUTH_TOKEN,
-      run: async (server) => {
-        await expectProbeRoutesHealthy(server);
-      },
-    });
-  });
-
-  test("does not shadow plugin routes mounted on probe paths", async () => {
-    const handlePluginRequest = vi.fn(async (req: IncomingMessage, res: ServerResponse) => {
-      const pathname = new URL(req.url ?? "/", "http://localhost").pathname;
-      if (pathname === "/healthz") {
-        res.statusCode = 200;
-        res.setHeader("Content-Type", "application/json; charset=utf-8");
-        res.end(JSON.stringify({ ok: true, route: "plugin-health" }));
-        return true;
-      }
-      return false;
-    });
-
-    await withGatewayServer({
-      prefix: "paleoclaw-plugin-http-probes-shadow-test-",
-      resolvedAuth: AUTH_NONE,
-      overrides: { handlePluginRequest },
-      run: async (server) => {
-        const response = await sendRequest(server, { path: "/healthz" });
-        expect(response.res.statusCode).toBe(200);
-        expect(response.getBody()).toBe(JSON.stringify({ ok: true, route: "plugin-health" }));
-        expect(handlePluginRequest).toHaveBeenCalledTimes(1);
-      },
-    });
-  });
-
-  test("rejects non-GET/HEAD methods on probe routes", async () => {
-    await withGatewayServer({
-      prefix: "paleoclaw-plugin-http-probes-method-test-",
-      resolvedAuth: AUTH_NONE,
-      run: async (server) => {
-        const postResponse = await sendRequest(server, { path: "/healthz", method: "POST" });
-        expect(postResponse.res.statusCode).toBe(405);
-        expect(postResponse.setHeader).toHaveBeenCalledWith("Allow", "GET, HEAD");
-        expect(postResponse.getBody()).toBe("Method Not Allowed");
-
-        const headResponse = await sendRequest(server, { path: "/readyz", method: "HEAD" });
-        expect(headResponse.res.statusCode).toBe(200);
-        expect(headResponse.getBody()).toBe("");
-      },
-    });
-  });
-
-  test("requires gateway auth for protected plugin route space and allows authenticated pass-through", async () => {
-    const handlePluginRequest = vi.fn(async (req: IncomingMessage, res: ServerResponse) => {
-      const pathname = new URL(req.url ?? "/", "http://localhost").pathname;
-      if (pathname === "/api/channels") {
-        res.statusCode = 200;
-        res.setHeader("Content-Type", "application/json; charset=utf-8");
-        res.end(JSON.stringify({ ok: true, route: "channel-root" }));
-        return true;
-      }
-      if (pathname === "/api/channels/nostr/default/profile") {
-        res.statusCode = 200;
-        res.setHeader("Content-Type", "application/json; charset=utf-8");
-        res.end(JSON.stringify({ ok: true, route: "channel" }));
-        return true;
-      }
-      if (pathname === "/plugin/public") {
-        res.statusCode = 200;
-        res.setHeader("Content-Type", "application/json; charset=utf-8");
-        res.end(JSON.stringify({ ok: true, route: "public" }));
-        return true;
-      }
-      return false;
-    });
-
-    await withGatewayServer({
-      prefix: "paleoclaw-plugin-http-auth-test-",
-      resolvedAuth: AUTH_TOKEN,
-      overrides: {
-        handlePluginRequest,
-        shouldEnforcePluginGatewayAuth: (pathContext) =>
-          isProtectedPluginRoutePath(pathContext.pathname) ||
-          pathContext.pathname === "/plugin/public",
-      },
-      run: async (server) => {
-        const unauthenticated = await sendRequest(server, {
-          path: "/api/channels/nostr/default/profile",
-        });
-        expectUnauthorizedResponse(unauthenticated);
-        expect(handlePluginRequest).not.toHaveBeenCalled();
-
-        const unauthenticatedRoot = await sendRequest(server, { path: "/api/channels" });
-        expectUnauthorizedResponse(unauthenticatedRoot);
-        expect(handlePluginRequest).not.toHaveBeenCalled();
-
-        const authenticated = await sendRequest(server, {
-          path: "/api/channels/nostr/default/profile",
-          authorization: "Bearer test-token",
-        });
-        expect(authenticated.res.statusCode).toBe(200);
-        expect(authenticated.getBody()).toContain('"route":"channel"');
-
-        const unauthenticatedPublic = await sendRequest(server, { path: "/plugin/public" });
-        expectUnauthorizedResponse(unauthenticatedPublic);
-
-        expect(handlePluginRequest).toHaveBeenCalledTimes(1);
-      },
-    });
-  });
-
-  test("allows unauthenticated Mattermost slash callback routes while keeping other channel routes protected", async () => {
-    const handlePluginRequest = vi.fn(async (req: IncomingMessage, res: ServerResponse) => {
-      const pathname = new URL(req.url ?? "/", "http://localhost").pathname;
-      if (pathname === "/api/channels/mattermost/command") {
-        res.statusCode = 200;
-        res.end("ok:mm-callback");
-        return true;
-      }
-      if (pathname === "/api/channels/nostr/default/profile") {
-        res.statusCode = 200;
-        res.end("ok:nostr");
-        return true;
-      }
-      return false;
-    });
-
-    await withTempConfig({
-      cfg: {
-        gateway: { trustedProxies: [] },
-        channels: {
-          mattermost: {
-            commands: { callbackPath: "/api/channels/mattermost/command" },
-          },
-        },
-      },
-      prefix: "paleoclaw-plugin-http-auth-mm-callback-",
-      run: async () => {
-        const server = createTestGatewayServer({
-          resolvedAuth: AUTH_TOKEN,
-          overrides: { handlePluginRequest },
-        });
-
-        const slashCallback = await sendRequest(server, {
-          path: "/api/channels/mattermost/command",
-          method: "POST",
-        });
-        expect(slashCallback.res.statusCode).toBe(200);
-        expect(slashCallback.getBody()).toBe("ok:mm-callback");
-
-        const otherChannelUnauthed = await sendRequest(server, {
-          path: "/api/channels/nostr/default/profile",
-        });
-        expect(otherChannelUnauthed.res.statusCode).toBe(401);
-        expect(otherChannelUnauthed.getBody()).toContain("Unauthorized");
-      },
-    });
-  });
-
-  test("does not bypass auth when mattermost callbackPath points to non-mattermost channel routes", async () => {
-    const handlePluginRequest = vi.fn(async (req: IncomingMessage, res: ServerResponse) => {
-      const pathname = new URL(req.url ?? "/", "http://localhost").pathname;
-      if (pathname === "/api/channels/nostr/default/profile") {
-        res.statusCode = 200;
-        res.end("ok:nostr");
-        return true;
-      }
-      return false;
-    });
-
-    await withTempConfig({
-      cfg: {
-        gateway: { trustedProxies: [] },
-        channels: {
-          mattermost: {
-            commands: { callbackPath: "/api/channels/nostr/default/profile" },
-          },
-        },
-      },
-      prefix: "paleoclaw-plugin-http-auth-mm-misconfig-",
-      run: async () => {
-        const server = createTestGatewayServer({
-          resolvedAuth: AUTH_TOKEN,
-          overrides: { handlePluginRequest },
-        });
-
-        const unauthenticated = await sendRequest(server, {
-          path: "/api/channels/nostr/default/profile",
-          method: "POST",
-        });
-
-        expect(unauthenticated.res.statusCode).toBe(401);
-        expect(unauthenticated.getBody()).toContain("Unauthorized");
-        expect(handlePluginRequest).not.toHaveBeenCalled();
-      },
-    });
-  });
-
-  test("keeps wildcard plugin handlers ungated when auth enforcement predicate excludes their paths", async () => {
-    const handlePluginRequest = vi.fn(async (req: IncomingMessage, res: ServerResponse) => {
-      const pathname = new URL(req.url ?? "/", "http://localhost").pathname;
-      if (pathname === "/plugin/routed") {
-        return respondJsonRoute(res, "routed");
-      }
-      if (pathname === "/googlechat") {
-        return respondJsonRoute(res, "wildcard-handler");
-      }
-      return false;
-    });
-
-    await withGatewayServer({
-      prefix: "paleoclaw-plugin-http-auth-wildcard-handler-test-",
-      resolvedAuth: AUTH_TOKEN,
-      overrides: {
-        handlePluginRequest,
-        shouldEnforcePluginGatewayAuth: (pathContext) =>
-          pathContext.pathname.startsWith("/api/channels") ||
-          pathContext.pathname === "/plugin/routed",
-      },
-      run: async (server) => {
-        const unauthenticatedRouted = await sendRequest(server, { path: "/plugin/routed" });
-        expectUnauthorizedResponse(unauthenticatedRouted);
-
-        const unauthenticatedWildcard = await sendRequest(server, { path: "/googlechat" });
-        expect(unauthenticatedWildcard.res.statusCode).toBe(200);
-        expect(unauthenticatedWildcard.getBody()).toContain('"route":"wildcard-handler"');
-
-        const authenticatedRouted = await sendRequest(server, {
-          path: "/plugin/routed",
-          authorization: "Bearer test-token",
-        });
-        expect(authenticatedRouted.res.statusCode).toBe(200);
-        expect(authenticatedRouted.getBody()).toContain('"route":"routed"');
-      },
-    });
-  });
-
-  test("uses /api/channels auth by default while keeping wildcard handlers ungated with no predicate", async () => {
-    const handlePluginRequest = vi.fn(async (req: IncomingMessage, res: ServerResponse) => {
-      const pathname = new URL(req.url ?? "/", "http://localhost").pathname;
-      if (canonicalizePluginPath(pathname) === "/api/channels/nostr/default/profile") {
-        return respondJsonRoute(res, "channel-default");
-      }
-      if (pathname === "/googlechat") {
-        return respondJsonRoute(res, "wildcard-default");
-      }
-      return false;
-    });
-
-    await withGatewayServer({
-      prefix: "paleoclaw-plugin-http-auth-wildcard-default-test-",
-      resolvedAuth: AUTH_TOKEN,
-      overrides: { handlePluginRequest },
-      run: async (server) => {
-        const unauthenticated = await sendRequest(server, { path: "/googlechat" });
-        expect(unauthenticated.res.statusCode).toBe(200);
-        expect(unauthenticated.getBody()).toContain('"route":"wildcard-default"');
-
-        const unauthenticatedChannel = await sendRequest(server, {
-          path: "/api/channels/nostr/default/profile",
-        });
-        expectUnauthorizedResponse(unauthenticatedChannel);
-
-        const unauthenticatedDeepEncodedChannel = await sendRequest(server, {
-          path: "/api%2525252fchannels%2525252fnostr%2525252fdefault%2525252fprofile",
-        });
-        expectUnauthorizedResponse(unauthenticatedDeepEncodedChannel);
-
-        const authenticated = await sendRequest(server, {
-          path: "/googlechat",
-          authorization: "Bearer test-token",
-        });
-        expect(authenticated.res.statusCode).toBe(200);
-        expect(authenticated.getBody()).toContain('"route":"wildcard-default"');
-
-        const authenticatedChannel = await sendRequest(server, {
-          path: "/api/channels/nostr/default/profile",
-          authorization: "Bearer test-token",
-        });
-        expect(authenticatedChannel.res.statusCode).toBe(200);
-        expect(authenticatedChannel.getBody()).toContain('"route":"channel-default"');
-
-        const authenticatedDeepEncodedChannel = await sendRequest(server, {
-          path: "/api%2525252fchannels%2525252fnostr%2525252fdefault%2525252fprofile",
-          authorization: "Bearer test-token",
-        });
-        expect(authenticatedDeepEncodedChannel.res.statusCode).toBe(200);
-        expect(authenticatedDeepEncodedChannel.getBody()).toContain('"route":"channel-default"');
-      },
-    });
-  });
-
-  test("serves plugin routes before control ui spa fallback", async () => {
-    const handlePluginRequest = vi.fn(async (req: IncomingMessage, res: ServerResponse) => {
-      const pathname = new URL(req.url ?? "/", "http://localhost").pathname;
-      if (pathname === "/plugins/diffs/view/demo-id/demo-token") {
-        res.statusCode = 200;
-        res.setHeader("Content-Type", "text/html; charset=utf-8");
-        res.end("<!doctype html><title>diff-view</title>");
-        return true;
-      }
-      return false;
-    });
-
-    await withRootMountedControlUiServer({
-      prefix: "paleoclaw-plugin-http-control-ui-precedence-test-",
-      handlePluginRequest,
-      run: async (server) => {
-        const response = await sendRequest(server, {
-          path: "/plugins/diffs/view/demo-id/demo-token",
-        });
-
-        expect(response.res.statusCode).toBe(200);
-        expect(response.getBody()).toContain("diff-view");
-        expect(handlePluginRequest).toHaveBeenCalledTimes(1);
-      },
-    });
-  });
-
-  test("passes POST webhook routes through root-mounted control ui to plugins", async () => {
-    const handlePluginRequest = vi.fn(async (req: IncomingMessage, res: ServerResponse) => {
-      const pathname = new URL(req.url ?? "/", "http://localhost").pathname;
-      if (req.method !== "POST" || pathname !== "/bluebubbles-webhook") {
-        return false;
-      }
-      res.statusCode = 200;
-      res.setHeader("Content-Type", "text/plain; charset=utf-8");
-      res.end("plugin-webhook");
-      return true;
-    });
-
-    await withRootMountedControlUiServer({
-      prefix: "paleoclaw-plugin-http-control-ui-webhook-post-test-",
-      handlePluginRequest,
-      run: async (server) => {
-        const response = await sendRequest(server, {
-          path: "/bluebubbles-webhook",
-          method: "POST",
-        });
-
-        expect(response.res.statusCode).toBe(200);
-        expect(response.getBody()).toBe("plugin-webhook");
-        expect(handlePluginRequest).toHaveBeenCalledTimes(1);
-      },
-    });
-  });
-
-  test("plugin routes take priority over control ui catch-all", async () => {
-    const handlePluginRequest = vi.fn(async (req: IncomingMessage, res: ServerResponse) => {
-      const pathname = new URL(req.url ?? "/", "http://localhost").pathname;
-      if (pathname === "/my-plugin/inbound") {
-        res.statusCode = 200;
-        res.setHeader("Content-Type", "text/plain; charset=utf-8");
-        res.end("plugin-handled");
-        return true;
-      }
-      return false;
-    });
-
-    await withRootMountedControlUiServer({
-      prefix: "paleoclaw-plugin-http-control-ui-shadow-test-",
-      handlePluginRequest,
-      run: async (server) => {
-        const response = await sendRequest(server, { path: "/my-plugin/inbound" });
-
-        expect(response.res.statusCode).toBe(200);
-        expect(response.getBody()).toContain("plugin-handled");
-        expect(handlePluginRequest).toHaveBeenCalledTimes(1);
-      },
-    });
-  });
-
-  test("unmatched plugin paths fall through to control ui", async () => {
-    const handlePluginRequest = vi.fn(async () => false);
-
-    await withRootMountedControlUiServer({
-      prefix: "paleoclaw-plugin-http-control-ui-fallthrough-test-",
-      handlePluginRequest,
-      run: async (server) => {
-        const response = await sendRequest(server, { path: "/chat" });
-
-        expect(handlePluginRequest).toHaveBeenCalledTimes(1);
-        expect(response.res.statusCode).toBe(503);
-        expect(response.getBody()).toContain("Control UI assets not found");
-      },
-    });
-  });
-
-  test("root-mounted control ui does not swallow gateway probe routes", async () => {
-    const handlePluginRequest = vi.fn(async () => false);
-
-    await withRootMountedControlUiServer({
-      prefix: "paleoclaw-plugin-http-control-ui-probes-test-",
-      handlePluginRequest,
-      run: async (server) => {
-        await expectProbeRoutesHealthy(server);
-        expect(handlePluginRequest).toHaveBeenCalledTimes(PROBE_CASES.length);
-      },
-    });
-  });
-
-  test("root-mounted control ui still lets plugins claim probe paths first", async () => {
-    const handlePluginRequest = vi.fn(async (req: IncomingMessage, res: ServerResponse) => {
-      const pathname = new URL(req.url ?? "/", "http://localhost").pathname;
-      if (pathname !== "/healthz") {
-        return false;
-      }
-      res.statusCode = 200;
-      res.setHeader("Content-Type", "application/json; charset=utf-8");
-      res.end(JSON.stringify({ ok: true, route: "plugin-health" }));
-      return true;
-    });
-
-    await withRootMountedControlUiServer({
-      prefix: "paleoclaw-plugin-http-control-ui-probe-shadow-test-",
-      handlePluginRequest,
-      run: async (server) => {
-        const response = await sendRequest(server, { path: "/healthz" });
-
-        expect(response.res.statusCode).toBe(200);
-        expect(response.getBody()).toBe(JSON.stringify({ ok: true, route: "plugin-health" }));
-        expect(handlePluginRequest).toHaveBeenCalledTimes(1);
-      },
-    });
-  });
-
-  test("requires gateway auth for canonicalized /api/channels variants", async () => {
-    const handlePluginRequest = createCanonicalizedChannelPluginHandler();
-
-    await withPluginGatewayServer({
-      prefix: "paleoclaw-plugin-http-auth-canonicalized-test-",
-      resolvedAuth: AUTH_TOKEN,
-      overrides: createProtectedPluginAuthOverrides(handlePluginRequest),
-      run: async (server) => {
-        await expectUnauthorizedVariants({ server, variants: CANONICAL_UNAUTH_VARIANTS });
-        expect(handlePluginRequest).not.toHaveBeenCalled();
-
-        await expectAuthorizedVariants({
-          server,
-          variants: CANONICAL_AUTH_VARIANTS,
-          authorization: "Bearer test-token",
-        });
-        expect(handlePluginRequest).toHaveBeenCalledTimes(CANONICAL_AUTH_VARIANTS.length);
-      },
-    });
-  });
-
-  test("rejects unauthenticated plugin-channel fuzz corpus variants", async () => {
-    const handlePluginRequest = createCanonicalizedChannelPluginHandler();
-
-    await withPluginGatewayServer({
-      prefix: "paleoclaw-plugin-http-auth-fuzz-corpus-test-",
-      resolvedAuth: AUTH_TOKEN,
-      overrides: createProtectedPluginAuthOverrides(handlePluginRequest),
-      run: async (server) => {
-        await expectUnauthorizedVariants({
-          server,
-          variants: buildChannelPathFuzzCorpus(),
-        });
-        expect(handlePluginRequest).not.toHaveBeenCalled();
-      },
-    });
-  });
-
-  test("enforces auth before plugin handlers on encoded protected-path variants", async () => {
-    const encodedVariants = buildChannelPathFuzzCorpus().filter((variant) =>
-      variant.path.includes("%"),
-    );
-    const handlePluginRequest = vi.fn(async (_req: IncomingMessage, res: ServerResponse) => {
-      res.statusCode = 200;
-      res.setHeader("Content-Type", "application/json; charset=utf-8");
-      res.end(JSON.stringify({ ok: true, route: "should-not-run" }));
-      return true;
-    });
-
-    await withGatewayServer({
-      prefix: "paleoclaw-plugin-http-auth-encoded-order-test-",
-      resolvedAuth: AUTH_TOKEN,
-      overrides: { handlePluginRequest },
-      run: async (server) => {
-        await expectUnauthorizedVariants({ server, variants: encodedVariants });
-        expect(handlePluginRequest).not.toHaveBeenCalled();
-      },
-    });
-  });
-
-  test.each(["0.0.0.0", "::"])(
-    "returns 404 (not 500) for non-hook routes with hooks enabled and bindHost=%s",
-    async (bindHost) => {
-      await withGatewayTempConfig("paleoclaw-plugin-http-hooks-bindhost-", async () => {
-        const handleHooksRequest = createHooksHandler(bindHost);
-        const server = createTestGatewayServer({
-          resolvedAuth: AUTH_NONE,
-          overrides: { handleHooksRequest },
-        });
-
-        const response = await sendRequest(server, { path: "/" });
-
-        expect(response.res.statusCode).toBe(404);
-        expect(response.getBody()).toBe("Not Found");
-      });
     },
   );
 
-  test("rejects query-token hooks requests with bindHost=::", async () => {
-    await withGatewayTempConfig("paleoclaw-plugin-http-hooks-query-token-", async () => {
-      const handleHooksRequest = createHooksHandler("::");
-      const server = createTestGatewayServer({
-        resolvedAuth: AUTH_NONE,
-        overrides: { handleHooksRequest },
-      });
+  test.each(["write-default", "trusted-operator"] as const)(
+    "preserves %s runtime authority for shared-secret bearer auth",
+    async (surface) => {
+      const trusted = surface === "trusted-operator";
+      const scopes: string[][] = [];
+      const allowed: boolean[] = [];
+      const { handlePluginRequest } = pluginRoutes([
+        [
+          "/secure-hook",
+          async (_req, res) => {
+            const observed = getPluginRuntimeGatewayRequestScope()?.client?.connect?.scopes ?? [];
+            scopes.push([...observed]);
+            allowed.push(
+              authorizeOperatorScopesForMethod(trusted ? "set-heartbeats" : "node.invoke", observed)
+                .allowed,
+            );
+            return respond(res, "ok");
+          },
+          { pluginId: "runtime-scope", auth: "gateway", gatewayRuntimeScopeSurface: surface },
+        ],
+      ]);
+      await withServer(
+        async (request) => {
+          const response = await request("/secure-hook", {
+            authorization: "Bearer test-token",
+            headers: trusted ? {} : { "x-paleoclaw-scopes": "operator.read" },
+          });
+          expectResponse(response, 200, "ok");
+        },
+        { handlePluginRequest, shouldEnforcePluginGatewayAuth: () => true },
+      );
+      expect(scopes).toEqual([
+        trusted
+          ? expect.arrayContaining(["operator.admin", "operator.read", "operator.write"])
+          : ["operator.write"],
+      ]);
+      expect(allowed).toEqual([true]);
+    },
+  );
 
-      const response = await sendRequest(server, { path: "/hooks/wake?token=bad" });
+  test.each([callbackPath, profilePath])(
+    "limits Mattermost auth bypass to its own channel (%s)",
+    async (path) => {
+      const plugin = claimingPlugin(
+        path === callbackPath ? [callbackPath, profilePath] : [profilePath],
+      );
+      await withServer(
+        async (request) => {
+          if (path === callbackPath) {
+            expectResponse(await request(callbackPath, { method: "POST" }), 200, "plugin-owned");
+            expectUnauthorizedResponse(await request(profilePath));
+          } else {
+            expectUnauthorizedResponse(await request(profilePath, { method: "POST" }));
+            expect(plugin).not.toHaveBeenCalled();
+          }
+        },
+        { handlePluginRequest: plugin },
+        AUTH_TOKEN,
+        {
+          gateway: { trustedProxies: [] },
+          channels: { mattermost: { commands: { callbackPath: path } } },
+        },
+      );
+    },
+  );
 
-      expect(response.res.statusCode).toBe(400);
-      expect(response.getBody()).toContain("Hook token must be provided");
+  test("routes unattributable proxy traffic only to plugin-authenticated webhooks", async () => {
+    const ips: Array<string | undefined> = [];
+    const { registry, handlePluginRequest } = pluginRoutes([
+      [
+        "/googlechat",
+        async (_req, res) => {
+          ips.push(getPluginRuntimeGatewayRequestScope()?.client?.clientIp);
+          return respond(res, "ok");
+        },
+        { pluginId: "googlechat" },
+      ],
+      [
+        "/plugins/diffs",
+        async (_req, res) => respond(res, "plugin-prefix"),
+        { pluginId: "diffs", match: "prefix" },
+      ],
+    ]);
+    const hooks = vi.fn(async (req: IncomingMessage, res: ServerResponse) =>
+      req.url?.startsWith("/plugins/diffs") ? respond(res, "hooks") : false,
+    );
+    await withServer(
+      async (request) => {
+        const proxy = (path: string, method = "GET") =>
+          request(path, {
+            method,
+            remoteAddress: "127.0.0.1",
+            headers: { "x-forwarded-for": "198.51.100.20" },
+          });
+        expect((await proxy("/googlechat", "POST")).res.statusCode).toBe(200);
+        expect(ips).toEqual(["127.0.0.1"]);
+        expectResponse(await proxy("/plugins/diffs/view"), 200, "plugin-prefix");
+        expect(hooks).not.toHaveBeenCalled();
+        const gateway = await proxy("/ready");
+        expect(gateway.res.statusCode).toBe(403);
+        expect(gateway.getBody()).toContain("proxy_attribution_required");
+      },
+      {
+        handlePluginRequest,
+        handleHooksRequest: hooks,
+        shouldEnforcePluginGatewayAuth: (path) =>
+          shouldEnforceGatewayAuthForPluginPath(registry, path),
+        isPluginAuthenticatedRoute: (path) => isPluginAuthenticatedRoutePath(registry, path),
+      },
+    );
+  });
+
+  test("protects canonical and encoded channel paths while leaving wildcard routes ungated", async () => {
+    const plugin = vi.fn(async (req: IncomingMessage, res: ServerResponse) => {
+      const path = new URL(req.url ?? "/", "http://localhost").pathname;
+      if (canonicalizePathVariant(path) === profilePath) {
+        return respond(res, "channel");
+      }
+      return path === "/googlechat" ? respond(res, "wildcard") : false;
     });
+    await withServer(
+      async (request) => {
+        for (const path of [
+          "/googlechat",
+          profilePath,
+          "/api%2525252fchannels%2525252fnostr%2525252fdefault%2525252fprofile",
+        ]) {
+          const isPublic = path === "/googlechat";
+          const unauthenticated = await request(path);
+          if (isPublic) {
+            expectResponse(unauthenticated, 200, "wildcard");
+          } else {
+            expectUnauthorizedResponse(unauthenticated);
+          }
+          const authenticated = await request(path, { authorization: "Bearer test-token" });
+          expectResponse(authenticated, 200, isPublic ? "wildcard" : "channel");
+        }
+      },
+      { handlePluginRequest: plugin },
+    );
+  });
+
+  test("enforces auth before plugin handlers on encoded protected-path variants", async () => {
+    const plugin = claimingPlugin();
+    await withServer(
+      async (_request, server) => {
+        await expectUnauthorizedVariants({
+          server,
+          variants: buildChannelPathFuzzCorpus().filter((variant) => variant.path.includes("%")),
+        });
+        expect(plugin).not.toHaveBeenCalled();
+      },
+      { handlePluginRequest: plugin },
+    );
+  });
+
+  test("rejects query-token hooks requests with bindHost=::", async () => {
+    await withServer(
+      async (request) => {
+        const response = await request("/hooks/wake?token=bad");
+        expect(response.res.statusCode).toBe(400);
+        expect(response.getBody()).toContain("Hook token must be provided");
+      },
+      { handleHooksRequest: createHooksHandler("::") },
+      AUTH_NONE,
+    );
   });
 });

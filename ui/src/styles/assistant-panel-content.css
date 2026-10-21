@@ -1,0 +1,74 @@
+.assistant-panel > paleoclaw-assistant-panel-content {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex: 1 1 0;
+  flex-direction: column;
+}
+
+paleoclaw-assistant-panel-content[hidden] {
+  display: none;
+}
+
+paleoclaw-assistant-panel-content > paleoclaw-custodian-surface,
+paleoclaw-assistant-panel-content > paleoclaw-home-session {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 0;
+}
+
+.assistant-panel .custodian-surface {
+  width: 100%;
+  min-height: 0;
+  padding: 0 12px 12px;
+}
+
+.assistant-panel .custodian__messages {
+  padding-block: 16px;
+}
+
+.assistant-panel .custodian__option-card {
+  margin-right: 0;
+  margin-left: 42px;
+}
+
+paleoclaw-assistant-panel-content,
+paleoclaw-assistant-panel-content > paleoclaw-home-session {
+  flex-direction: column;
+  min-width: 0;
+}
+
+paleoclaw-home-session > paleoclaw-chat-pane {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+}
+
+.assistant-panel-context {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 0 12px 8px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.assistant-panel-context details {
+  min-width: 0;
+  flex: 1;
+}
+
+.assistant-panel-context summary {
+  overflow: hidden;
+  padding-block: 6px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.assistant-panel-context pre {
+  max-height: 160px;
+  overflow: auto;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}

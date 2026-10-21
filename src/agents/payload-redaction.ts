@@ -1,64 +1,28 @@
-import crypto from "node:crypto";
-import { estimateBase64DecodedBytes } from "../media/base64.js";
-
-export const REDACTED_IMAGE_DATA = "<redacted>";
-
-function toLowerTrimmed(value: unknown): string {
-  return typeof value === "string" ? value.trim().toLowerCase() : "";
-}
-
-function hasImageMime(record: Record<string, unknown>): boolean {
-  const candidates = [
-    toLowerTrimmed(record.mimeType),
-    toLowerTrimmed(record.media_type),
-    toLowerTrimmed(record.mime_type),
-  ];
-  return candidates.some((value) => value.startsWith("image/"));
-}
-
-function shouldRedactImageData(record: Record<string, unknown>): record is Record<string, string> {
-  if (typeof record.data !== "string") {
-    return false;
-  }
-  const type = toLowerTrimmed(record.type);
-  return type === "image" || hasImageMime(record);
-}
-
-function digestBase64Payload(data: string): string {
-  return crypto.createHash("sha256").update(data).digest("hex");
-}
-
 /**
- * Redacts image/base64 payload data from diagnostic objects before persistence.
+ * Redacts diagnostic payloads before persistence. It removes credential-like
+ * fields, masks embedded auth strings, and replaces media/base64 data with
+ * size and digest metadata.
  */
-export function redactImageDataForDiagnostics(value: unknown): unknown {
-  const seen = new WeakSet<object>();
+import { projectDiagnosticValue, type DiagnosticProjectionPolicy } from "@paleoclaw/ai/diagnostics";
+import { sha256Hex } from "@paleoclaw/normalization-core/node-crypto";
 
-  const visit = (input: unknown): unknown => {
-    if (Array.isArray(input)) {
-      return input.map((entry) => visit(entry));
-    }
-    if (!input || typeof input !== "object") {
-      return input;
-    }
-    if (seen.has(input)) {
-      return "[Circular]";
-    }
-    seen.add(input);
+const REDACTED_MEDIA_DATA = "<redacted>";
 
-    const record = input as Record<string, unknown>;
-    const out: Record<string, unknown> = {};
-    for (const [key, val] of Object.entries(record)) {
-      out[key] = visit(val);
-    }
+const CORE_DIAGNOSTIC_PROJECTION = {
+  omitField: (key) => key === "providerReplay",
+  propertyScope: "enumerable",
+  projectBinary: (binary) => ({
+    redacted: REDACTED_MEDIA_DATA,
+    bytes: binary.byteLength,
+    sha256: sha256Hex(binary),
+  }),
+  projectMedia: (key, media) => ({
+    [key]: REDACTED_MEDIA_DATA,
+    ...(media.source === undefined ? {} : { bytes: media.bytes, sha256: sha256Hex(media.source) }),
+  }),
+} satisfies DiagnosticProjectionPolicy;
 
-    if (shouldRedactImageData(record)) {
-      out.data = REDACTED_IMAGE_DATA;
-      out.bytes = estimateBase64DecodedBytes(record.data);
-      out.sha256 = digestBase64Payload(record.data);
-    }
-    return out;
-  };
-
-  return visit(value);
+/** Removes credentials and inline media bytes from diagnostic payloads before persistence. */
+export function sanitizeDiagnosticPayload(value: unknown): unknown {
+  return projectDiagnosticValue(value, CORE_DIAGNOSTIC_PROJECTION);
 }

@@ -1,0 +1,61 @@
+{
+  "name": "@paleoclaw/team-reports",
+  "version": "2026.10.5",
+  "description": "paleoclaw team activity reports plugin (GitHub org + Discord activity with model summaries)",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/paleoclaw/paleoclaw"
+  },
+  "type": "module",
+  "devDependencies": {
+    "@paleoclaw/plugin-sdk": "workspace:*",
+    "paleoclaw": "workspace:*"
+  },
+  "peerDependencies": {
+    "paleoclaw": ">=2026.10.5"
+  },
+  "peerDependenciesMeta": {
+    "paleoclaw": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "zod": "4.6.7"
+  },
+  "paleoclaw": {
+    "extensions": [
+      "./index.ts"
+    ],
+    "install": {
+      "clawhubSpec": "PaleoHub:@paleoclaw/team-reports",
+      "npmSpec": "@paleoclaw/team-reports",
+      "defaultChoice": "npm",
+      "minHostVersion": ">=2026.9.2"
+    },
+    "compat": {
+      "pluginApi": ">=2026.10.5"
+    },
+    "build": {
+      "openclawVersion": "2026.10.5",
+      "bundledDist": false,
+      "workerEntries": [
+        "./src/store.worker.ts",
+        "./src/run.worker.ts"
+      ],
+      "staticAssets": [
+        {
+          "source": "./src/team-reports-schema.postgres.sql",
+          "output": "./src/team-reports-schema.postgres.sql"
+        },
+        {
+          "source": "./assets/crab.avif",
+          "output": "assets/crab.avif"
+        }
+      ]
+    },
+    "release": {
+      "publishToClawHub": true,
+      "publishToNpm": true
+    }
+  }
+}

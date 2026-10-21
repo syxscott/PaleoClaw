@@ -1,4 +1,8 @@
-import fs from "node:fs";
+// Parses execution allowlist patterns for approval policy checks.
+import path from "node:path";
+import { safeRealpathSync } from "@paleoclaw/fs-safe/path";
+import { normalizeLowercaseStringOrEmpty } from "@paleoclaw/normalization-core/string-coerce";
+import { escapeRegExp as escapeRegExpLiteral } from "../shared/regexp.js";
 import { expandHomePrefix } from "./home-dir.js";
 
 const GLOB_REGEX_CACHE_LIMIT = 512;
@@ -7,59 +11,58 @@ const globRegexCache = new Map<string, RegExp>();
 function normalizeMatchTarget(value: string): string {
   if (process.platform === "win32") {
     const stripped = value.replace(/^\\\\[?.]\\/, "");
-    return stripped.replace(/\\/g, "/").toLowerCase();
+    return normalizeLowercaseStringOrEmpty(stripped.replace(/\\/g, "/"));
   }
-  return value.replace(/\\\\/g, "/").toLowerCase();
+  const normalized = value.replace(/\\\\/g, "/");
+  if (process.platform === "darwin") {
+    if (normalized === "/private/var") {
+      return "/var";
+    }
+    if (normalized.startsWith("/private/var/")) {
+      return normalized.slice("/private".length);
+    }
+  }
+  return normalized;
 }
 
-function tryRealpath(value: string): string | null {
-  try {
-    return fs.realpathSync(value);
-  } catch {
-    return null;
-  }
+function hasDotPathSegment(value: string): boolean {
+  return value
+    .replace(/\\/g, "/")
+    .split("/")
+    .some((segment) => segment === "." || segment === "..");
 }
 
-function escapeRegExpLiteral(input: string): string {
-  return input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+function normalizeDotPathSegments(value: string): string {
+  const normalized =
+    process.platform === "win32" ? path.win32.normalize(value) : path.posix.normalize(value);
+  return normalizeMatchTarget(normalized);
 }
 
 function compileGlobRegex(pattern: string): RegExp {
-  const cached = globRegexCache.get(pattern);
+  const cacheKey = `${process.platform}:${pattern}`;
+  const cached = globRegexCache.get(cacheKey);
   if (cached) {
     return cached;
   }
 
-  let regex = "^";
-  let i = 0;
-  while (i < pattern.length) {
-    const ch = pattern[i];
-    if (ch === "*") {
-      const next = pattern[i + 1];
-      if (next === "*") {
-        regex += ".*";
-        i += 2;
-        continue;
-      }
-      regex += "[^/]*";
-      i += 1;
-      continue;
+  const regex = pattern.replace(/\*\*|[*?]|[^*?]+/g, (token) => {
+    switch (token) {
+      case "**":
+        return ".*";
+      case "*":
+        return "[^/]*";
+      case "?":
+        return "[^/]";
+      default:
+        return escapeRegExpLiteral(token);
     }
-    if (ch === "?") {
-      regex += ".";
-      i += 1;
-      continue;
-    }
-    regex += escapeRegExpLiteral(ch);
-    i += 1;
-  }
-  regex += "$";
+  });
 
-  const compiled = new RegExp(regex, "i");
+  const compiled = new RegExp(`^${regex}$`, process.platform === "win32" ? "i" : "");
   if (globRegexCache.size >= GLOB_REGEX_CACHE_LIMIT) {
     globRegexCache.clear();
   }
-  globRegexCache.set(pattern, compiled);
+  globRegexCache.set(cacheKey, compiled);
   return compiled;
 }
 
@@ -74,10 +77,15 @@ export function matchesExecAllowlistPattern(pattern: string, target: string): bo
   let normalizedPattern = expanded;
   let normalizedTarget = target;
   if (process.platform === "win32" && !hasWildcard) {
-    normalizedPattern = tryRealpath(expanded) ?? expanded;
-    normalizedTarget = tryRealpath(target) ?? target;
+    normalizedPattern = safeRealpathSync(expanded) ?? expanded;
+    normalizedTarget = safeRealpathSync(target) ?? target;
   }
   normalizedPattern = normalizeMatchTarget(normalizedPattern);
   normalizedTarget = normalizeMatchTarget(normalizedTarget);
+  // Normalize only the target. Glob patterns are operator-authored strings, and
+  // normalizing them can change wildcard structure such as `*/..`.
+  if (hasWildcard && hasDotPathSegment(normalizedTarget)) {
+    normalizedTarget = normalizeDotPathSegments(normalizedTarget);
+  }
   return compileGlobRegex(normalizedPattern).test(normalizedTarget);
 }

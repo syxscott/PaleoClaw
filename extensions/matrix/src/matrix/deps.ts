@@ -1,64 +1,135 @@
 import fs from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
-import { runPluginCommandWithTimeout, type RuntimeEnv } from "paleoclaw/plugin-sdk/matrix";
+import { formatErrorMessage } from "paleoclaw/plugin-sdk/error-runtime";
+import { runCommandWithTimeout } from "paleoclaw/plugin-sdk/process-runtime";
+import type { RuntimeEnv } from "paleoclaw/plugin-sdk/runtime";
 
-const MATRIX_SDK_PACKAGE = "@vector-im/matrix-bot-sdk";
-const MATRIX_CRYPTO_DOWNLOAD_HELPER = "@matrix-org/matrix-sdk-crypto-nodejs/download-lib.js";
+const REQUIRED_MATRIX_PACKAGES = [
+  "matrix-js-sdk",
+  "@matrix-org/matrix-sdk-crypto-nodejs",
+  "@matrix-org/matrix-sdk-crypto-wasm",
+];
+const MIN_MATRIX_CRYPTO_NATIVE_BINDING_BYTES = 1_000_000;
+const MATRIX_COMMAND_OUTPUT_TAIL_BYTES = 64 * 1024;
 
-function formatCommandError(result: { stderr: string; stdout: string }): string {
-  const stderr = result.stderr.trim();
-  if (stderr) {
-    return stderr;
-  }
-  const stdout = result.stdout.trim();
-  if (stdout) {
-    return stdout;
-  }
-  return "unknown error";
-}
-
-function isMissingMatrixCryptoRuntimeError(err: unknown): boolean {
-  const message = err instanceof Error ? err.message : String(err ?? "");
-  return (
-    message.includes("Cannot find module") &&
-    message.includes("@matrix-org/matrix-sdk-crypto-nodejs-")
-  );
+function resolveMissingMatrixPackages(resolveFn?: (id: string) => string): string[] {
+  const resolve = resolveFn ?? defaultResolveFn;
+  return REQUIRED_MATRIX_PACKAGES.filter((pkg) => {
+    try {
+      resolve(pkg);
+      return false;
+    } catch {
+      return true;
+    }
+  });
 }
 
 export function isMatrixSdkAvailable(): boolean {
+  return resolveMissingMatrixPackages().length === 0;
+}
+
+let defaultMatrixCryptoRuntimeEnsurePromise: Promise<void> | null = null;
+
+const defaultRequireFn = createRequire(import.meta.url);
+const defaultResolveFn = defaultRequireFn.resolve;
+
+function isMissingMatrixCryptoRuntimeError(error: unknown): boolean {
+  const message = formatErrorMessage(error);
+  return (
+    message.includes("@matrix-org/matrix-sdk-crypto-nodejs-") ||
+    message.includes("matrix-sdk-crypto-nodejs") ||
+    message.includes("download-lib.js")
+  );
+}
+
+function isMuslRuntime(): boolean {
   try {
-    const req = createRequire(import.meta.url);
-    req.resolve(MATRIX_SDK_PACKAGE);
-    return true;
+    const report = process.report?.getReport?.() as
+      | { header?: { glibcVersionRuntime?: string } }
+      | undefined;
+    return !report?.header?.glibcVersionRuntime;
   } catch {
-    return false;
+    return true;
   }
 }
 
-function resolvePluginRoot(): string {
-  const currentDir = path.dirname(fileURLToPath(import.meta.url));
-  return path.resolve(currentDir, "..", "..");
+function resolveMatrixCryptoNativeBindingFilename(): string | null {
+  switch (process.platform) {
+    case "darwin":
+      return ["arm64", "x64"].includes(process.arch)
+        ? `matrix-sdk-crypto.darwin-${process.arch}.node`
+        : null;
+    case "linux":
+      if (process.arch === "x64") {
+        return `matrix-sdk-crypto.linux-x64-${isMuslRuntime() ? "musl" : "gnu"}.node`;
+      }
+      if (process.arch === "arm64" && !isMuslRuntime()) {
+        return "matrix-sdk-crypto.linux-arm64-gnu.node";
+      }
+      if (process.arch === "arm") {
+        return "matrix-sdk-crypto.linux-arm-gnueabihf.node";
+      }
+      if (process.arch === "s390x") {
+        return "matrix-sdk-crypto.linux-s390x-gnu.node";
+      }
+      return null;
+    case "win32":
+      return ["x64", "ia32", "arm64"].includes(process.arch)
+        ? `matrix-sdk-crypto.win32-${process.arch}-msvc.node`
+        : null;
+    default:
+      return null;
+  }
 }
 
-export async function ensureMatrixCryptoRuntime(
-  params: {
-    log?: (message: string) => void;
-    requireFn?: (id: string) => unknown;
-    resolveFn?: (id: string) => string;
-    runCommand?: typeof runPluginCommandWithTimeout;
-    nodeExecutable?: string;
-  } = {},
-): Promise<void> {
-  const req = createRequire(import.meta.url);
-  const requireFn = params.requireFn ?? ((id: string) => req(id));
-  const resolveFn = params.resolveFn ?? ((id: string) => req.resolve(id));
-  const runCommand = params.runCommand ?? runPluginCommandWithTimeout;
-  const nodeExecutable = params.nodeExecutable ?? process.execPath;
-
+function resolveMatrixCryptoNativeBindingPath(): string | null {
+  const filename = resolveMatrixCryptoNativeBindingFilename();
+  if (!filename) {
+    return null;
+  }
   try {
-    requireFn(MATRIX_SDK_PACKAGE);
+    return path.join(
+      path.dirname(defaultResolveFn("@matrix-org/matrix-sdk-crypto-nodejs/download-lib.js")),
+      filename,
+    );
+  } catch {
+    return null;
+  }
+}
+
+function removeIncompleteMatrixCryptoNativeBinding(bindingPath: string | null): void {
+  if (!bindingPath) {
+    return;
+  }
+  try {
+    const stat = fs.statSync(bindingPath);
+    if (!stat.isFile() || stat.size >= MIN_MATRIX_CRYPTO_NATIVE_BINDING_BYTES) {
+      return;
+    }
+    fs.unlinkSync(bindingPath);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
+      throw error;
+    }
+  }
+}
+
+export async function ensureMatrixCryptoRuntime(): Promise<void> {
+  defaultMatrixCryptoRuntimeEnsurePromise ??= ensureMatrixCryptoRuntimeOnce().catch(
+    (error: unknown) => {
+      defaultMatrixCryptoRuntimeEnsurePromise = null;
+      throw error;
+    },
+  );
+  await defaultMatrixCryptoRuntimeEnsurePromise;
+}
+
+async function ensureMatrixCryptoRuntimeOnce(): Promise<void> {
+  const nativeBindingPath = resolveMatrixCryptoNativeBindingPath();
+  removeIncompleteMatrixCryptoNativeBinding(nativeBindingPath);
+  try {
+    defaultRequireFn("@matrix-org/matrix-sdk-crypto-nodejs");
     return;
   } catch (err) {
     if (!isMissingMatrixCryptoRuntimeError(err)) {
@@ -66,61 +137,42 @@ export async function ensureMatrixCryptoRuntime(
     }
   }
 
-  const scriptPath = resolveFn(MATRIX_CRYPTO_DOWNLOAD_HELPER);
-  params.log?.("matrix: crypto runtime missing; downloading platform library…");
-  const result = await runCommand({
-    argv: [nodeExecutable, scriptPath],
-    cwd: path.dirname(scriptPath),
-    timeoutMs: 300_000,
-    env: { COREPACK_ENABLE_DOWNLOAD_PROMPT: "0" },
-  });
-  if (result.code !== 0) {
-    throw new Error(`Matrix crypto runtime bootstrap failed: ${formatCommandError(result)}`);
-  }
-
+  const scriptPath = defaultResolveFn("@matrix-org/matrix-sdk-crypto-nodejs/download-lib.js");
+  let failure: string | undefined;
   try {
-    requireFn(MATRIX_SDK_PACKAGE);
-  } catch (err) {
-    throw new Error(
-      `Matrix crypto runtime remains unavailable after bootstrap: ${err instanceof Error ? err.message : String(err)}`,
-    );
+    const result = await runCommandWithTimeout([process.execPath, scriptPath], {
+      cwd: path.dirname(scriptPath),
+      env: { COREPACK_ENABLE_DOWNLOAD_PROMPT: "0" },
+      killProcessTree: true,
+      maxOutputBytes: MATRIX_COMMAND_OUTPUT_TAIL_BYTES,
+      outputCapture: "tail",
+      timeoutMs: 300_000,
+    });
+    const timedOut = result.termination === "timeout";
+    if (timedOut || (result.code ?? 1) !== 0) {
+      const stderr = result.stderr || (timedOut ? "command timed out after 300000ms" : "");
+      failure = stderr.trim() || result.stdout.trim();
+    }
+  } catch (error) {
+    failure = (error instanceof Error ? error.message : String(error)).trim();
   }
+  removeIncompleteMatrixCryptoNativeBinding(nativeBindingPath);
+  if (failure !== undefined) {
+    throw new Error(failure || "Matrix crypto runtime bootstrap failed.");
+  }
+  defaultRequireFn("@matrix-org/matrix-sdk-crypto-nodejs");
 }
 
-export async function ensureMatrixSdkInstalled(params: {
-  runtime: RuntimeEnv;
+export async function ensureMatrixSdkInstalled(params?: {
+  runtime?: RuntimeEnv;
   confirm?: (message: string) => Promise<boolean>;
+  resolveFn?: (id: string) => string;
 }): Promise<void> {
-  if (isMatrixSdkAvailable()) {
+  const missing = resolveMissingMatrixPackages(params?.resolveFn);
+  if (missing.length === 0) {
     return;
   }
-  const confirm = params.confirm;
-  if (confirm) {
-    const ok = await confirm("Matrix requires @vector-im/matrix-bot-sdk. Install now?");
-    if (!ok) {
-      throw new Error("Matrix requires @vector-im/matrix-bot-sdk (install dependencies first).");
-    }
-  }
-
-  const root = resolvePluginRoot();
-  const command = fs.existsSync(path.join(root, "pnpm-lock.yaml"))
-    ? ["pnpm", "install"]
-    : ["npm", "install", "--omit=dev", "--silent"];
-  params.runtime.log?.(`matrix: installing dependencies via ${command[0]} (${root})…`);
-  const result = await runPluginCommandWithTimeout({
-    argv: command,
-    cwd: root,
-    timeoutMs: 300_000,
-    env: { COREPACK_ENABLE_DOWNLOAD_PROMPT: "0" },
-  });
-  if (result.code !== 0) {
-    throw new Error(
-      result.stderr.trim() || result.stdout.trim() || "Matrix dependency install failed.",
-    );
-  }
-  if (!isMatrixSdkAvailable()) {
-    throw new Error(
-      "Matrix dependency install completed but @vector-im/matrix-bot-sdk is still missing.",
-    );
-  }
+  throw new Error(
+    `Matrix plugin dependencies are missing: ${missing.join(", ")}. Repair this plugin with \`paleoclaw plugins update matrix\` or run \`paleoclaw doctor --fix\`.`,
+  );
 }

@@ -1,4 +1,6 @@
-import fs from "node:fs/promises";
+import { existsSync } from "node:fs";
+import { pathExists } from "@paleoclaw/fs-safe/advanced";
+import { stableHomebrewNodePathCandidates } from "@paleoclaw/normalization-core/stable-node-path";
 
 /**
  * Homebrew Cellar paths (e.g. /opt/homebrew/Cellar/node/25.7.0/bin/node)
@@ -8,32 +10,18 @@ import fs from "node:fs/promises";
  *   - Versioned formula "node@22":  <prefix>/opt/node@22/bin/node  (keg-only)
  */
 export async function resolveStableNodePath(nodePath: string): Promise<string> {
-  const cellarMatch = nodePath.match(/^(.+?)\/Cellar\/([^/]+)\/[^/]+\/bin\/node$/);
-  if (!cellarMatch) {
-    return nodePath;
-  }
-  const prefix = cellarMatch[1]; // e.g. /opt/homebrew
-  const formula = cellarMatch[2]; // e.g. "node" or "node@22"
-
-  // Try the Homebrew opt symlink first — works for both default and versioned formulas.
-  const optPath = `${prefix}/opt/${formula}/bin/node`;
-  try {
-    await fs.access(optPath);
-    return optPath;
-  } catch {
-    // fall through
-  }
-
-  // For the default "node" formula, also try the direct bin symlink.
-  if (formula === "node") {
-    const binPath = `${prefix}/bin/node`;
-    try {
-      await fs.access(binPath);
-      return binPath;
-    } catch {
-      // fall through
+  for (const candidate of stableHomebrewNodePathCandidates(nodePath)) {
+    if (await pathExists(candidate)) {
+      return candidate;
     }
   }
-
   return nodePath;
+}
+
+// Keep the running Node version until Homebrew removes its Cellar keg.
+export function resolveLaunchableNodePath(nodePath = process.execPath): string {
+  if (existsSync(nodePath)) {
+    return nodePath;
+  }
+  return stableHomebrewNodePathCandidates(nodePath).find(existsSync) ?? nodePath;
 }

@@ -1,79 +1,120 @@
+import {
+  normalizeLowercaseStringOrEmpty,
+  normalizeOptionalString,
+} from "@paleoclaw/normalization-core/string-coerce";
+
+/**
+ * Shared node-selection policy for CLI, gateway-facing SDK helpers, and plugins.
+ *
+ * Exact ids, remote IPs, normalized display names, and long id prefixes are the
+ * only accepted query shapes; fuzzy ordering lives here so callers agree.
+ */
+
 export type NodeMatchCandidate = {
   nodeId: string;
   displayName?: string;
+  /** Tailscale or network address accepted as an exact match. */
   remoteIp?: string;
+  /** Connected nodes win only after the strongest match type is chosen. */
   connected?: boolean;
+  /** Client id included in ambiguous-node diagnostics. */
+  clientId?: string;
 };
 
-export function normalizeNodeKey(value: string) {
-  return value
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
+function normalizeNodeKey(value: string) {
+  // Emoji components can also be marks (variation selectors and keycaps); drop
+  // them so decorated and plain display-name selectors stay equivalent.
+  // Retain script marks only when attached to a surviving letter/number; marks
+  // on stripped emoji or symbols must not become invisible selector bytes.
+  const normalized = normalizeLowercaseStringOrEmpty(value.normalize("NFC"))
+    .replace(/(?=\p{M})\p{Emoji_Component}/gu, "")
+    .replace(/(?<![\p{L}\p{M}\p{N}])\p{M}+/gu, "");
+  return normalized
+    .replace(/[^\p{L}\p{M}\p{N}]+/gu, "-")
     .replace(/^-+/, "")
     .replace(/-+$/, "");
 }
 
-function listKnownNodes(nodes: NodeMatchCandidate[]): string {
-  return nodes
-    .map((n) => n.displayName || n.remoteIp || n.nodeId)
-    .filter(Boolean)
-    .join(", ");
+function formatNodeCandidateLabel(node: NodeMatchCandidate): string {
+  const label = node.displayName || node.remoteIp || node.nodeId;
+  const details = [`node=${node.nodeId}`];
+  const clientId = normalizeOptionalString(node.clientId);
+  if (clientId) {
+    details.push(`client=${clientId}`);
+  }
+  return `${label} [${details.join(", ")}]`;
 }
 
-export function resolveNodeMatches(
+function resolveMatchScore(
+  node: NodeMatchCandidate,
+  query: string,
+  queryNormalized: string,
+  queryCompact: string | undefined,
+): number {
+  const name = typeof node.displayName === "string" ? node.displayName : "";
+  const nameNormalized = name ? normalizeNodeKey(name) : "";
+  if (nameNormalized && nameNormalized === queryNormalized) {
+    return 2_000;
+  }
+  if (
+    queryCompact !== undefined &&
+    nameNormalized &&
+    nameNormalized.replace(/-/g, "") === queryCompact
+  ) {
+    return 1_900;
+  }
+  if (query.length >= 6 && node.nodeId.startsWith(query)) {
+    return 1_000;
+  }
+  return 0;
+}
+
+export function resolveNodeIdFromCandidates(
   nodes: NodeMatchCandidate[],
   query: string,
-): NodeMatchCandidate[] {
-  const q = query.trim();
-  if (!q) {
-    return [];
-  }
-
-  const qNorm = normalizeNodeKey(q);
-  return nodes.filter((n) => {
-    if (n.nodeId === q) {
-      return true;
-    }
-    if (typeof n.remoteIp === "string" && n.remoteIp === q) {
-      return true;
-    }
-    const name = typeof n.displayName === "string" ? n.displayName : "";
-    if (name && normalizeNodeKey(name) === qNorm) {
-      return true;
-    }
-    if (q.length >= 6 && n.nodeId.startsWith(q)) {
-      return true;
-    }
-    return false;
-  });
-}
-
-export function resolveNodeIdFromCandidates(nodes: NodeMatchCandidate[], query: string): string {
+  allowCompactDisplayName = false,
+): string {
   const q = query.trim();
   if (!q) {
     throw new Error("node required");
   }
 
-  const rawMatches = resolveNodeMatches(nodes, q);
-  if (rawMatches.length === 1) {
-    return rawMatches[0]?.nodeId ?? "";
+  // Exact ids and IPs outrank names; retain every tie before applying heuristics.
+  let strongestMatches = nodes.filter((node) => node.nodeId === q);
+  if (strongestMatches.length === 0) {
+    strongestMatches = nodes.filter((node) => node.remoteIp === q);
   }
-  if (rawMatches.length === 0) {
-    const known = listKnownNodes(nodes);
+  if (strongestMatches.length === 0) {
+    const normalized = normalizeNodeKey(q);
+    const compact = allowCompactDisplayName ? normalized.replace(/-/g, "") : undefined;
+    let topMatchScore = 0;
+    nodes.forEach((node) => {
+      const score = resolveMatchScore(node, q, normalized, compact);
+      if (score > topMatchScore) {
+        topMatchScore = score;
+        strongestMatches.length = 0;
+      }
+      if (score > 0 && score === topMatchScore) {
+        strongestMatches.push(node);
+      }
+    });
+  }
+  if (strongestMatches.length === 0) {
+    const known = nodes
+      .map((node) => node.displayName || node.remoteIp || node.nodeId)
+      .filter(Boolean)
+      .join(", ");
     throw new Error(`unknown node: ${q}${known ? ` (known: ${known})` : ""}`);
   }
 
-  // Re-pair/reinstall flows can leave multiple nodes with the same display name.
-  // Prefer a unique connected match when available.
-  const connectedMatches = rawMatches.filter((match) => match.connected === true);
-  const matches = connectedMatches.length > 0 ? connectedMatches : rawMatches;
+  // Connected state only breaks ties within the strongest match class.
+  const connectedMatches = strongestMatches.filter((match) => match.connected === true);
+  const matches = connectedMatches.length > 0 ? connectedMatches : strongestMatches;
   if (matches.length === 1) {
     return matches[0]?.nodeId ?? "";
   }
 
   throw new Error(
-    `ambiguous node: ${q} (matches: ${matches
-      .map((n) => n.displayName || n.remoteIp || n.nodeId)
-      .join(", ")})`,
+    `ambiguous node: ${q} (matches: ${matches.map(formatNodeCandidateLabel).join(", ")})`,
   );
 }

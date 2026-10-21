@@ -1,99 +1,77 @@
+import { importFreshModule } from "paleoclaw/plugin-sdk/test-fixtures";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createDefaultDeps } from "./deps.js";
+import type { CliDeps } from "./deps.js";
+import { createOutboundSendDeps } from "./outbound-send-deps.js";
 
-const moduleLoads = vi.hoisted(() => ({
-  whatsapp: vi.fn(),
-  telegram: vi.fn(),
-  discord: vi.fn(),
-  slack: vi.fn(),
-  signal: vi.fn(),
-  imessage: vi.fn(),
+const mocks = vi.hoisted(() => ({
+  runtimeLoaded: vi.fn(),
+  sendMessage: vi.fn(async () => ({ messageId: "sent" })),
 }));
 
-const sendFns = vi.hoisted(() => ({
-  whatsapp: vi.fn(async () => ({ messageId: "w1", toJid: "whatsapp:1" })),
-  telegram: vi.fn(async () => ({ messageId: "t1", chatId: "telegram:1" })),
-  discord: vi.fn(async () => ({ messageId: "d1", channelId: "discord:1" })),
-  slack: vi.fn(async () => ({ messageId: "s1", channelId: "slack:1" })),
-  signal: vi.fn(async () => ({ messageId: "sg1", conversationId: "signal:1" })),
-  imessage: vi.fn(async () => ({ messageId: "i1", chatId: "imessage:1" })),
-}));
-
-vi.mock("../channels/web/index.js", () => {
-  moduleLoads.whatsapp();
-  return { sendMessageWhatsApp: sendFns.whatsapp };
-});
-
-vi.mock("../telegram/send.js", () => {
-  moduleLoads.telegram();
-  return { sendMessageTelegram: sendFns.telegram };
-});
-
-vi.mock("../discord/send.js", () => {
-  moduleLoads.discord();
-  return { sendMessageDiscord: sendFns.discord };
-});
-
-vi.mock("../slack/send.js", () => {
-  moduleLoads.slack();
-  return { sendMessageSlack: sendFns.slack };
-});
-
-vi.mock("../signal/send.js", () => {
-  moduleLoads.signal();
-  return { sendMessageSignal: sendFns.signal };
-});
-
-vi.mock("../imessage/send.js", () => {
-  moduleLoads.imessage();
-  return { sendMessageIMessage: sendFns.imessage };
+vi.mock("./send-runtime/channel-outbound-send.js", async (importOriginal) => {
+  mocks.runtimeLoaded();
+  return {
+    ...(await importOriginal<typeof import("./send-runtime/channel-outbound-send.js")>()),
+    sendChannelOutboundMessage: mocks.sendMessage,
+  };
 });
 
 describe("createDefaultDeps", () => {
-  function expectUnusedModulesNotLoaded(exclude: keyof typeof moduleLoads): void {
-    const keys = Object.keys(moduleLoads) as Array<keyof typeof moduleLoads>;
-    for (const key of keys) {
-      if (key === exclude) {
-        continue;
-      }
-      expect(moduleLoads[key]).not.toHaveBeenCalled();
-    }
-  }
-
-  beforeEach(() => {
+  let deps: CliDeps;
+  beforeEach(async ({ task }) => {
     vi.clearAllMocks();
+    deps = (
+      await importFreshModule<typeof import("./deps.js")>(
+        import.meta.url,
+        `./deps.js?scope=${task.id}`,
+      )
+    ).createDefaultDeps();
   });
 
-  it("does not load provider modules until a dependency is used", async () => {
-    const deps = createDefaultDeps();
+  it("loads the send runtime only when used and routes each call to its channel", async () => {
+    const sendTelegram = deps.telegram as (...args: unknown[]) => Promise<unknown>;
+    const sendDiscord = deps.discord as (...args: unknown[]) => Promise<unknown>;
 
-    expect(moduleLoads.whatsapp).not.toHaveBeenCalled();
-    expect(moduleLoads.telegram).not.toHaveBeenCalled();
-    expect(moduleLoads.discord).not.toHaveBeenCalled();
-    expect(moduleLoads.slack).not.toHaveBeenCalled();
-    expect(moduleLoads.signal).not.toHaveBeenCalled();
-    expect(moduleLoads.imessage).not.toHaveBeenCalled();
+    expect(mocks.runtimeLoaded).not.toHaveBeenCalled();
+    expect(mocks.sendMessage).not.toHaveBeenCalled();
 
-    const sendTelegram = deps.sendMessageTelegram as unknown as (
-      ...args: unknown[]
-    ) => Promise<unknown>;
     await sendTelegram("chat", "hello", { verbose: false });
-
-    expect(moduleLoads.telegram).toHaveBeenCalledTimes(1);
-    expect(sendFns.telegram).toHaveBeenCalledTimes(1);
-    expectUnusedModulesNotLoaded("telegram");
-  });
-
-  it("reuses module cache after first dynamic import", async () => {
-    const deps = createDefaultDeps();
-    const sendDiscord = deps.sendMessageDiscord as unknown as (
-      ...args: unknown[]
-    ) => Promise<unknown>;
-
     await sendDiscord("channel", "first", { verbose: false });
     await sendDiscord("channel", "second", { verbose: false });
 
-    expect(moduleLoads.discord).toHaveBeenCalledTimes(1);
-    expect(sendFns.discord).toHaveBeenCalledTimes(2);
+    expect(mocks.runtimeLoaded).toHaveBeenCalledOnce();
+    expect(mocks.sendMessage.mock.calls).toEqual([
+      ["telegram", "chat", "hello", { verbose: false }],
+      ["discord", "channel", "first", { verbose: false }],
+      ["discord", "channel", "second", { verbose: false }],
+    ]);
+  });
+
+  it("does not create channel senders for Discord voice helper keys", async () => {
+    expect([deps.discordVoice, deps.sendDiscordVoice]).toEqual([undefined, undefined]);
+    expect(mocks.sendMessage).not.toHaveBeenCalled();
+  });
+
+  it("does not expose lazy channel senders as low-level outbound transports", async () => {
+    const sendTelegram = deps.telegram as (...args: unknown[]) => Promise<unknown>;
+    await sendTelegram("chat", "hello", { verbose: false });
+
+    const outbound = createOutboundSendDeps(deps);
+    expect([outbound.telegram, outbound.sendTelegram]).toEqual([undefined, undefined]);
+    expect(mocks.sendMessage).toHaveBeenCalledOnce();
+  });
+
+  it("allows another send after a transient channel failure", async () => {
+    mocks.sendMessage.mockRejectedValueOnce(new Error("transient channel failure"));
+    const sendTelegram = deps.telegram as (...args: unknown[]) => Promise<unknown>;
+
+    await expect(sendTelegram("chat", "first", { verbose: false })).rejects.toThrow(
+      "transient channel failure",
+    );
+    await expect(sendTelegram("chat", "second", { verbose: false })).resolves.toEqual({
+      messageId: "sent",
+    });
+
+    expect(mocks.sendMessage).toHaveBeenCalledTimes(2);
   });
 });

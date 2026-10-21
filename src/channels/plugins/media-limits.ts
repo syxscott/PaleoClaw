@@ -1,8 +1,9 @@
-import type { OpenClawConfig } from "../../config/config.js";
+import type { OpenClawConfig } from "../../config/types.openclaw.js";
 import { normalizeAccountId } from "../../routing/session-key.js";
 
 const MB = 1024 * 1024;
 
+/** Resolves channel media limit bytes from account-specific config or agent defaults. */
 export function resolveChannelMediaMaxBytes(params: {
   cfg: OpenClawConfig;
   // Channel-specific config lives under different keys; keep this helper generic
@@ -15,11 +16,6 @@ export function resolveChannelMediaMaxBytes(params: {
     cfg: params.cfg,
     accountId,
   });
-  if (channelLimit) {
-    return channelLimit * MB;
-  }
-  if (params.cfg.agents?.defaults?.mediaMaxMb) {
-    return params.cfg.agents.defaults.mediaMaxMb * MB;
-  }
-  return undefined;
+  const limitMb = channelLimit || params.cfg.agents?.defaults?.mediaMaxMb;
+  return limitMb ? Math.floor(limitMb * MB) : undefined;
 }

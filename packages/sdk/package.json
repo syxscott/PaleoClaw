@@ -1,0 +1,30 @@
+{
+  "name": "@paleoclaw/sdk",
+  "version": "0.0.0-private",
+  "private": true,
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "main": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs",
+      "default": "./dist/index.mjs"
+    }
+  },
+  "scripts": {
+    "build": "node --import ../../scripts/tsx.mjs ../../scripts/build-workspace-package.mts sdk"
+  },
+  "dependencies": {
+    "@paleoclaw/gateway-client": "workspace:*",
+    "@paleoclaw/gateway-protocol": "workspace:*",
+    "@paleoclaw/normalization-core": "workspace:*",
+    "@paleoclaw/retry": "workspace:*"
+  },
+  "devDependencies": {
+    "@paleoclaw/session-url-contract": "workspace:*"
+  }
+}

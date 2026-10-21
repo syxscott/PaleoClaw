@@ -1,7 +1,12 @@
-import * as crypto from "crypto";
-import * as Lark from "@larksuiteoapi/node-sdk";
-import type { ClawdbotConfig, RuntimeEnv, HistoryEntry } from "paleoclaw/plugin-sdk/feishu";
-import { resolveFeishuAccount } from "./accounts.js";
+import * as crypto from "node:crypto";
+import type * as Lark from "@larksuiteoapi/node-sdk";
+import { resolveGatewayPort } from "paleoclaw/plugin-sdk/gateway-config-runtime";
+import {
+  isRecord,
+  normalizeOptionalString,
+  readStringValue as readString,
+} from "paleoclaw/plugin-sdk/string-coerce-runtime";
+import type { ClawdbotConfig, PluginRuntime, RuntimeEnv, HistoryEntry } from "../runtime-api.js";
 import { raceWithTimeoutAndAbort } from "./async.js";
 import {
   handleFeishuMessage,
@@ -11,30 +16,32 @@ import {
 } from "./bot.js";
 import { handleFeishuCardAction, type FeishuCardActionEvent } from "./card-action.js";
 import { createEventDispatcher } from "./client.js";
-import {
-  hasRecordedMessage,
-  hasRecordedMessagePersistent,
-  tryRecordMessage,
-  tryRecordMessagePersistent,
-  warmupDedupFromDisk,
-} from "./dedup.js";
-import { isMentionForwardRequest } from "./mention.js";
+import { hasProcessedFeishuMessage, warmupDedupFromPluginState } from "./dedup.js";
+import { createFeishuDurableIngress, type FeishuIngressLifecycle } from "./feishu-ingress.js";
+import { applyBotIdentityState, startBotIdentityRecovery } from "./monitor.bot-identity.js";
+import { createFeishuBotMenuHandler } from "./monitor.bot-menu-handler.js";
+import { createFeishuDriveCommentNoticeHandler } from "./monitor.comment-notice-handler.js";
+import type { FeishuStatusSink } from "./monitor.js";
+import { createFeishuMessageReceiveHandler } from "./monitor.message-handler.js";
 import { fetchBotIdentityForMonitor } from "./monitor.startup.js";
-import { botNames, botOpenIds } from "./monitor.state.js";
+import { botOpenIds } from "./monitor.state.js";
 import { monitorWebhook, monitorWebSocket } from "./monitor.transport.js";
+import { createFeishuVcMeetingInvitedHandler } from "./monitor.vc-meeting-invited-handler.js";
 import { getFeishuRuntime } from "./runtime.js";
 import { getMessageFeishu } from "./send.js";
-import type { ResolvedFeishuAccount } from "./types.js";
+import { getFeishuSequentialKey } from "./sequential-key.js";
+import { createFeishuThreadBindingManager } from "./thread-bindings.js";
+import { normalizeFeishuEventChatType, type ResolvedFeishuAccount } from "./types.js";
 
 const FEISHU_REACTION_VERIFY_TIMEOUT_MS = 1_500;
 
 export type FeishuReactionCreatedEvent = {
   message_id: string;
   chat_id?: string;
-  chat_type?: "p2p" | "group" | "private";
+  chat_type?: string;
   reaction_type?: { emoji_type?: string };
   operator_type?: string;
-  user_id?: { open_id?: string };
+  user_id?: { open_id?: string; user_id?: string };
   action_time?: string;
 };
 
@@ -43,35 +50,27 @@ type ResolveReactionSyntheticEventParams = {
   accountId: string;
   event: FeishuReactionCreatedEvent;
   botOpenId?: string;
-  fetchMessage?: typeof getMessageFeishu;
-  verificationTimeoutMs?: number;
   logger?: (message: string) => void;
-  uuid?: () => string;
+  action?: "created" | "deleted";
 };
 
 export async function resolveReactionSyntheticEvent(
   params: ResolveReactionSyntheticEventParams,
 ): Promise<FeishuMessageEvent | null> {
-  const {
-    cfg,
-    accountId,
-    event,
-    botOpenId,
-    fetchMessage = getMessageFeishu,
-    verificationTimeoutMs = FEISHU_REACTION_VERIFY_TIMEOUT_MS,
-    logger,
-    uuid = () => crypto.randomUUID(),
-  } = params;
+  const { cfg, accountId, event, botOpenId, logger, action = "created" } = params;
 
   const emoji = event.reaction_type?.emoji_type;
   const messageId = event.message_id;
-  const senderId = event.user_id?.open_id;
+  const senderOpenId = event.user_id?.open_id?.trim();
+  const senderUserId = event.user_id?.user_id?.trim();
+  const senderId = senderOpenId || senderUserId;
   if (!emoji || !messageId || !senderId) {
     return null;
   }
 
+  const { resolveFeishuAccount } = await import("./accounts.js");
   const account = resolveFeishuAccount({ cfg, accountId });
-  const reactionNotifications = account.config.reactionNotifications ?? "own";
+  const reactionNotifications = account.config.reactionNotifications;
   if (reactionNotifications === "off") {
     return null;
   }
@@ -91,9 +90,12 @@ export async function resolveReactionSyntheticEvent(
     return null;
   }
 
-  const reactedMsg = await raceWithTimeoutAndAbort(fetchMessage({ cfg, messageId, accountId }), {
-    timeoutMs: verificationTimeoutMs,
-  })
+  const reactedMsg = await raceWithTimeoutAndAbort(
+    getMessageFeishu({ cfg, messageId, accountId }),
+    {
+      timeoutMs: FEISHU_REACTION_VERIFY_TIMEOUT_MS,
+    },
+  )
     .then((result) => (result.status === "resolved" ? result.value : null))
     .catch(() => null);
   const isBotMessage = reactedMsg?.senderType === "app" || reactedMsg?.senderOpenId === botOpenId;
@@ -105,22 +107,39 @@ export async function resolveReactionSyntheticEvent(
     return null;
   }
 
+  const resolvedChatType = normalizeFeishuEventChatType(event.chat_type) ?? reactedMsg.chatType;
+  if (!resolvedChatType) {
+    logger?.(
+      `feishu[${accountId}]: skipping reaction ${emoji} on ${messageId} without chat type context`,
+    );
+    return null;
+  }
+
   const syntheticChatIdRaw = event.chat_id ?? reactedMsg.chatId;
   const syntheticChatId = syntheticChatIdRaw?.trim() ? syntheticChatIdRaw : `p2p:${senderId}`;
-  const syntheticChatType: "p2p" | "group" | "private" =
-    event.chat_type === "group" ? "group" : "p2p";
   return {
     sender: {
-      sender_id: { open_id: senderId },
+      sender_id: {
+        ...(senderOpenId ? { open_id: senderOpenId } : {}),
+        ...(senderUserId ? { user_id: senderUserId } : {}),
+      },
       sender_type: "user",
     },
     message: {
-      message_id: `${messageId}:reaction:${emoji}:${uuid()}`,
+      message_id: `${messageId}:reaction:${emoji}:${crypto.randomUUID()}`,
+      // Synthetic IDs are local-only; replies and topic routing must retain the real message facts.
+      reply_target_message_id: messageId,
+      typing_target_message_id: messageId,
+      ...(reactedMsg.rootId ? { root_id: reactedMsg.rootId } : {}),
+      ...(reactedMsg.threadId ? { thread_id: reactedMsg.threadId } : {}),
       chat_id: syntheticChatId,
-      chat_type: syntheticChatType,
+      chat_type: resolvedChatType,
       message_type: "text",
       content: JSON.stringify({
-        text: `[reacted with ${emoji} to message ${messageId}]`,
+        text:
+          action === "deleted"
+            ? `[removed reaction ${emoji} from message ${messageId}]`
+            : `[reacted with ${emoji} to message ${messageId}]`,
       }),
     },
   };
@@ -129,372 +148,243 @@ export async function resolveReactionSyntheticEvent(
 type RegisterEventHandlersContext = {
   cfg: ClawdbotConfig;
   accountId: string;
+  channelRuntime: PluginRuntime["channel"];
   runtime?: RuntimeEnv;
   chatHistories: Map<string, HistoryEntry[]>;
   fireAndForget?: boolean;
+  isAccountActive: () => boolean;
+  trackTask: (task: Promise<void>) => void;
+  vcAutoJoin: boolean;
+  /** Owning account signal; retrying handlers must propagate it. */
+  abortSignal?: AbortSignal;
+  /**
+   * Optional status sink. When provided, the message handler will publish
+   * `lastEventAt` on every inbound message for message recency. Transport
+   * liveness is published by the transport layer.
+   */
+  statusSink?: FeishuStatusSink;
+  resolveIngressLifecycle: (data: unknown) => FeishuIngressLifecycle | undefined;
 };
 
-/**
- * Per-chat serial queue that ensures messages from the same chat are processed
- * in arrival order while allowing different chats to run concurrently.
- */
-function createChatQueue() {
-  const queues = new Map<string, Promise<void>>();
-  return (chatId: string, task: () => Promise<void>): Promise<void> => {
-    const prev = queues.get(chatId) ?? Promise.resolve();
-    const next = prev.then(task, task);
-    queues.set(chatId, next);
-    void next.finally(() => {
-      if (queues.get(chatId) === next) {
-        queues.delete(chatId);
-      }
-    });
-    return next;
-  };
+function parseFeishuBotAddedEventPayload(value: unknown): FeishuBotAddedEvent | null {
+  if (!isRecord(value) || !readString(value.chat_id) || !isRecord(value.operator_id)) {
+    return null;
+  }
+  return value as FeishuBotAddedEvent;
 }
 
-function mergeFeishuDebounceMentions(
-  entries: FeishuMessageEvent[],
-): FeishuMessageEvent["message"]["mentions"] | undefined {
-  const merged = new Map<string, NonNullable<FeishuMessageEvent["message"]["mentions"]>[number]>();
-  for (const entry of entries) {
-    for (const mention of entry.message.mentions ?? []) {
-      const stableId =
-        mention.id.open_id?.trim() || mention.id.user_id?.trim() || mention.id.union_id?.trim();
-      const mentionName = mention.name?.trim();
-      const mentionKey = mention.key?.trim();
-      const fallback =
-        mentionName && mentionKey ? `${mentionName}|${mentionKey}` : mentionName || mentionKey;
-      const key = stableId || fallback;
-      if (!key || merged.has(key)) {
-        continue;
-      }
-      merged.set(key, mention);
-    }
+function parseFeishuBotRemovedChatId(value: unknown): string | null {
+  if (!isRecord(value)) {
+    return null;
   }
-  if (merged.size === 0) {
-    return undefined;
-  }
-  return Array.from(merged.values());
+  return readString(value.chat_id) ?? null;
 }
 
-function dedupeFeishuDebounceEntriesByMessageId(
-  entries: FeishuMessageEvent[],
-): FeishuMessageEvent[] {
-  const seen = new Set<string>();
-  const deduped: FeishuMessageEvent[] = [];
-  for (const entry of entries) {
-    const messageId = entry.message.message_id?.trim();
-    if (!messageId) {
-      deduped.push(entry);
-      continue;
+function firstString(...values: unknown[]): string | undefined {
+  for (const value of values) {
+    const trimmed = normalizeOptionalString(value);
+    if (trimmed) {
+      return trimmed;
     }
-    if (seen.has(messageId)) {
-      continue;
-    }
-    seen.add(messageId);
-    deduped.push(entry);
   }
-  return deduped;
+  return undefined;
 }
 
-function resolveFeishuDebounceMentions(params: {
-  entries: FeishuMessageEvent[];
-  botOpenId?: string;
-}): FeishuMessageEvent["message"]["mentions"] | undefined {
-  const { entries, botOpenId } = params;
-  if (entries.length === 0) {
-    return undefined;
+function parseFeishuCardActionEventPayload(value: unknown): FeishuCardActionEvent | null {
+  if (!isRecord(value)) {
+    return null;
   }
-  for (let index = entries.length - 1; index >= 0; index -= 1) {
-    const entry = entries[index];
-    if (isMentionForwardRequest(entry, botOpenId)) {
-      // Keep mention-forward semantics scoped to a single source message.
-      return mergeFeishuDebounceMentions([entry]);
-    }
+  const operator = isRecord(value.operator) ? value.operator : {};
+  const action = value.action;
+  const context = isRecord(value.context) ? value.context : {};
+  if (!isRecord(action)) {
+    return null;
   }
-  const merged = mergeFeishuDebounceMentions(entries);
-  if (!merged) {
-    return undefined;
-  }
-  const normalizedBotOpenId = botOpenId?.trim();
-  if (!normalizedBotOpenId) {
-    return undefined;
-  }
-  const botMentions = merged.filter(
-    (mention) => mention.id.open_id?.trim() === normalizedBotOpenId,
+  const operatorUserId = isRecord(operator.user_id) ? operator.user_id : undefined;
+  const token = readString(value.token);
+  const openId = firstString(
+    operator.open_id,
+    operatorUserId?.open_id,
+    value.open_id,
+    context.open_id,
   );
-  return botMentions.length > 0 ? botMentions : undefined;
+  const userId = firstString(
+    operator.user_id,
+    operatorUserId?.user_id,
+    value.user_id,
+    context.user_id,
+  );
+  const unionId = firstString(operator.union_id, operatorUserId?.union_id);
+  const tag = readString(action.tag);
+  const actionValue = action.value;
+  // Prefer context.open_message_id (original card message) over value.open_message_id
+  // which may be a temporary card-action-c-* ID that is not a valid Feishu message ID.
+  const openMessageId = firstString(context.open_message_id, value.open_message_id);
+  const contextOpenId = firstString(context.open_id, openId);
+  const contextUserId = firstString(context.user_id, userId);
+  const chatId = firstString(context.chat_id, context.open_chat_id);
+  if (!token || !openId || !tag || !isRecord(actionValue)) {
+    return null;
+  }
+  return {
+    operator: {
+      open_id: openId,
+      ...(userId ? { user_id: userId } : {}),
+      ...(unionId ? { union_id: unionId } : {}),
+    },
+    token,
+    action: {
+      value: actionValue,
+      tag,
+    },
+    ...(openMessageId ? { open_message_id: openMessageId } : {}),
+    context: {
+      ...(openMessageId ? { open_message_id: openMessageId } : {}),
+      ...(contextOpenId ? { open_id: contextOpenId } : {}),
+      ...(contextUserId ? { user_id: contextUserId } : {}),
+      ...(chatId ? { chat_id: chatId } : {}),
+    },
+  };
 }
 
 function registerEventHandlers(
   eventDispatcher: Lark.EventDispatcher,
   context: RegisterEventHandlersContext,
 ): void {
-  const { cfg, accountId, runtime, chatHistories, fireAndForget } = context;
-  const core = getFeishuRuntime();
-  const inboundDebounceMs = core.channel.debounce.resolveInboundDebounceMs({
-    cfg,
-    channel: "feishu",
-  });
+  const { cfg, accountId, channelRuntime, runtime, chatHistories, fireAndForget } = context;
   const log = runtime?.log ?? console.log;
   const error = runtime?.error ?? console.error;
-  const enqueue = createChatQueue();
-  const dispatchFeishuMessage = async (event: FeishuMessageEvent) => {
-    const chatId = event.message.chat_id?.trim() || "unknown";
-    const task = () =>
-      handleFeishuMessage({
-        cfg,
-        event,
-        botOpenId: botOpenIds.get(accountId),
-        botName: botNames.get(accountId),
-        runtime,
-        chatHistories,
-        accountId,
-      });
-    await enqueue(chatId, task);
-  };
-  const resolveSenderDebounceId = (event: FeishuMessageEvent): string | undefined => {
-    const senderId =
-      event.sender.sender_id.open_id?.trim() || event.sender.sender_id.user_id?.trim();
-    return senderId || undefined;
-  };
-  const resolveDebounceText = (event: FeishuMessageEvent): string => {
-    const botOpenId = botOpenIds.get(accountId);
-    const parsed = parseFeishuMessageEvent(event, botOpenId, botNames.get(accountId));
-    return parsed.content.trim();
-  };
-  const recordSuppressedMessageIds = async (
-    entries: FeishuMessageEvent[],
-    dispatchMessageId?: string,
-  ) => {
-    const keepMessageId = dispatchMessageId?.trim();
-    const suppressedIds = new Set(
-      entries
-        .map((entry) => entry.message.message_id?.trim())
-        .filter((id): id is string => Boolean(id) && (!keepMessageId || id !== keepMessageId)),
-    );
-    if (suppressedIds.size === 0) {
+  const runFeishuHandler = async (params: { task: () => Promise<void>; errorMessage: string }) => {
+    if (!context.isAccountActive()) {
       return;
     }
-    for (const messageId of suppressedIds) {
-      // Keep in-memory dedupe in sync with handleFeishuMessage's keying.
-      tryRecordMessage(`${accountId}:${messageId}`);
-      try {
-        await tryRecordMessagePersistent(messageId, accountId, log);
-      } catch (err) {
-        error(
-          `feishu[${accountId}]: failed to record merged dedupe id ${messageId}: ${String(err)}`,
-        );
-      }
+    const task = params.task();
+    context.trackTask(task);
+    const handled = task.catch((err: unknown) => {
+      error(`${params.errorMessage}: ${String(err)}`);
+    });
+    if (!fireAndForget) {
+      await handled;
     }
   };
-  const isMessageAlreadyProcessed = async (entry: FeishuMessageEvent): Promise<boolean> => {
-    const messageId = entry.message.message_id?.trim();
-    if (!messageId) {
-      return false;
-    }
-    const memoryKey = `${accountId}:${messageId}`;
-    if (hasRecordedMessage(memoryKey)) {
-      return true;
-    }
-    return hasRecordedMessagePersistent(messageId, accountId, log);
-  };
-  const inboundDebouncer = core.channel.debounce.createInboundDebouncer<FeishuMessageEvent>({
-    debounceMs: inboundDebounceMs,
-    buildKey: (event) => {
-      const chatId = event.message.chat_id?.trim();
-      const senderId = resolveSenderDebounceId(event);
-      if (!chatId || !senderId) {
-        return null;
-      }
-      const rootId = event.message.root_id?.trim();
-      const threadKey = rootId ? `thread:${rootId}` : "chat";
-      return `feishu:${accountId}:${chatId}:${threadKey}:${senderId}`;
-    },
-    shouldDebounce: (event) => {
-      if (event.message.message_type !== "text") {
-        return false;
-      }
-      const text = resolveDebounceText(event);
-      if (!text) {
-        return false;
-      }
-      return !core.channel.text.hasControlCommand(text, cfg);
-    },
-    onFlush: async (entries) => {
-      const last = entries.at(-1);
-      if (!last) {
-        return;
-      }
-      if (entries.length === 1) {
-        await dispatchFeishuMessage(last);
-        return;
-      }
-      const dedupedEntries = dedupeFeishuDebounceEntriesByMessageId(entries);
-      const freshEntries: FeishuMessageEvent[] = [];
-      for (const entry of dedupedEntries) {
-        if (!(await isMessageAlreadyProcessed(entry))) {
-          freshEntries.push(entry);
-        }
-      }
-      const dispatchEntry = freshEntries.at(-1);
-      if (!dispatchEntry) {
-        return;
-      }
-      await recordSuppressedMessageIds(dedupedEntries, dispatchEntry.message.message_id);
-      const combinedText = freshEntries
-        .map((entry) => resolveDebounceText(entry))
-        .filter(Boolean)
-        .join("\n");
-      const mergedMentions = resolveFeishuDebounceMentions({
-        entries: freshEntries,
-        botOpenId: botOpenIds.get(accountId),
-      });
-      if (!combinedText.trim()) {
-        await dispatchFeishuMessage({
-          ...dispatchEntry,
-          message: {
-            ...dispatchEntry.message,
-            mentions: mergedMentions ?? dispatchEntry.message.mentions,
-          },
-        });
-        return;
-      }
-      await dispatchFeishuMessage({
-        ...dispatchEntry,
-        message: {
-          ...dispatchEntry.message,
-          message_type: "text",
-          content: JSON.stringify({ text: combinedText }),
-          mentions: mergedMentions ?? dispatchEntry.message.mentions,
-        },
-      });
-    },
-    onError: (err) => {
-      error(`feishu[${accountId}]: inbound debounce flush failed: ${String(err)}`);
-    },
-  });
 
-  eventDispatcher.register({
-    "im.message.receive_v1": async (data) => {
-      const processMessage = async () => {
-        const event = data as unknown as FeishuMessageEvent;
-        await inboundDebouncer.enqueue(event);
-      };
-      if (fireAndForget) {
-        void processMessage().catch((err) => {
-          error(`feishu[${accountId}]: error handling message: ${String(err)}`);
-        });
-        return;
-      }
-      try {
-        await processMessage();
-      } catch (err) {
-        error(`feishu[${accountId}]: error handling message: ${String(err)}`);
-      }
-    },
-    "im.message.message_read_v1": async () => {
-      // Ignore read receipts
-    },
-    "im.chat.member.bot.added_v1": async (data) => {
-      try {
-        const event = data as unknown as FeishuBotAddedEvent;
-        log(`feishu[${accountId}]: bot added to chat ${event.chat_id}`);
-      } catch (err) {
-        error(`feishu[${accountId}]: error handling bot added event: ${String(err)}`);
-      }
-    },
-    "im.chat.member.bot.deleted_v1": async (data) => {
-      try {
-        const event = data as unknown as { chat_id: string };
-        log(`feishu[${accountId}]: bot removed from chat ${event.chat_id}`);
-      } catch (err) {
-        error(`feishu[${accountId}]: error handling bot removed event: ${String(err)}`);
-      }
-    },
-    "im.message.reaction.created_v1": async (data) => {
-      const processReaction = async () => {
-        const event = data as FeishuReactionCreatedEvent;
+  const handleReaction = (data: unknown, action: "created" | "deleted") =>
+    runFeishuHandler({
+      errorMessage: `feishu[${accountId}]: error handling reaction ${action === "deleted" ? "removal event" : "event"}`,
+      task: async () => {
         const myBotId = botOpenIds.get(accountId);
         const syntheticEvent = await resolveReactionSyntheticEvent({
           cfg,
           accountId,
-          event,
+          event: data as FeishuReactionCreatedEvent,
           botOpenId: myBotId,
           logger: log,
+          action,
         });
-        if (!syntheticEvent) {
+        if (!syntheticEvent || !context.isAccountActive()) {
           return;
         }
-        const promise = handleFeishuMessage({
+        await handleFeishuMessage({
+          trackTask: context.trackTask,
           cfg,
           event: syntheticEvent,
           botOpenId: myBotId,
-          botName: botNames.get(accountId),
           runtime,
+          channelRuntime,
           chatHistories,
           accountId,
         });
-        if (fireAndForget) {
-          promise.catch((err) => {
-            error(`feishu[${accountId}]: error handling reaction: ${String(err)}`);
-          });
-          return;
-        }
-        await promise;
-      };
+      },
+    });
 
-      if (fireAndForget) {
-        void processReaction().catch((err) => {
-          error(`feishu[${accountId}]: error handling reaction event: ${String(err)}`);
-        });
-        return;
+  const handleBotMembership = async (data: unknown, action: "added" | "removed") => {
+    try {
+      const chatId =
+        action === "added"
+          ? parseFeishuBotAddedEventPayload(data)?.chat_id
+          : parseFeishuBotRemovedChatId(data);
+      if (chatId) {
+        log(
+          `feishu[${accountId}]: bot ${action === "added" ? "added to" : "removed from"} chat ${chatId}`,
+        );
       }
+    } catch (err) {
+      error(`feishu[${accountId}]: error handling bot ${action} event: ${String(err)}`);
+    }
+  };
 
-      try {
-        await processReaction();
-      } catch (err) {
-        error(`feishu[${accountId}]: error handling reaction event: ${String(err)}`);
-      }
+  eventDispatcher.register({
+    "im.message.receive_v1": createFeishuMessageReceiveHandler({
+      ...context,
+      handleMessage: handleFeishuMessage,
+      resolveDebounceText: ({ event, botOpenId }) =>
+        parseFeishuMessageEvent(event, botOpenId).content,
+      hasProcessedMessage: hasProcessedFeishuMessage,
+      getBotOpenId: (id) => botOpenIds.get(id),
+      resolveSequentialKey: getFeishuSequentialKey,
+    }),
+    "im.message.message_read_v1": async () => {
+      // Ignore read receipts
     },
-    "im.message.reaction.deleted_v1": async () => {
-      // Ignore reaction removals
+    "im.chat.access_event.bot_p2p_chat_entered_v1": async () => {
+      // Ignore p2p chat entry notifications — no action needed
     },
+    "im.chat.member.bot.added_v1": (data) => handleBotMembership(data, "added"),
+    "im.chat.member.bot.deleted_v1": (data) => handleBotMembership(data, "removed"),
+    "drive.notice.comment_add_v1": createFeishuDriveCommentNoticeHandler(context),
+    "vc.bot.meeting_invited_v1": createFeishuVcMeetingInvitedHandler({
+      ...context,
+      autoJoin: context.vcAutoJoin,
+    }),
+    "im.message.reaction.created_v1": (data) => handleReaction(data, "created"),
+    "im.message.reaction.deleted_v1": (data) => handleReaction(data, "deleted"),
+    "application.bot.menu_v6": createFeishuBotMenuHandler(context),
     "card.action.trigger": async (data: unknown) => {
-      try {
-        const event = data as unknown as FeishuCardActionEvent;
-        const promise = handleFeishuCardAction({
-          cfg,
-          event,
-          botOpenId: botOpenIds.get(accountId),
-          runtime,
-          accountId,
-        });
-        if (fireAndForget) {
-          promise.catch((err) => {
-            error(`feishu[${accountId}]: error handling card action: ${String(err)}`);
+      await runFeishuHandler({
+        errorMessage: `feishu[${accountId}]: error handling card action`,
+        task: async () => {
+          const event = parseFeishuCardActionEventPayload(data);
+          if (!event) {
+            error(`feishu[${accountId}]: ignoring malformed card action payload`);
+            return;
+          }
+          await handleFeishuCardAction({
+            cfg,
+            event,
+            botOpenId: botOpenIds.get(accountId),
+            runtime,
+            channelRuntime,
+            accountId,
+            trackTask: context.trackTask,
           });
-        } else {
-          await promise;
-        }
-      } catch (err) {
-        error(`feishu[${accountId}]: error handling card action: ${String(err)}`);
-      }
+        },
+      });
     },
   });
 }
 
-export type BotOpenIdSource =
-  | { kind: "prefetched"; botOpenId?: string; botName?: string }
+type BotOpenIdSource =
+  | {
+      kind: "prefetched";
+      botOpenId?: string;
+      source?: "provider" | "cache";
+    }
   | { kind: "fetch" };
 
-export type MonitorSingleAccountParams = {
+type MonitorSingleAccountParams = {
   cfg: ClawdbotConfig;
   account: ResolvedFeishuAccount;
+  channelRuntime?: PluginRuntime["channel"];
   runtime?: RuntimeEnv;
   abortSignal?: AbortSignal;
   botOpenIdSource?: BotOpenIdSource;
+  fireAndForget?: boolean;
+  /**
+   * Optional status sink for Feishu channel health. When provided, it is
+   * propagated to the event dispatcher for message recency and the transport
+   * layer for lifecycle status.
+   */
+  statusSink?: FeishuStatusSink;
 };
 
 export async function monitorSingleAccount(params: MonitorSingleAccountParams): Promise<void> {
@@ -505,41 +395,120 @@ export async function monitorSingleAccount(params: MonitorSingleAccountParams): 
   const botOpenIdSource = params.botOpenIdSource ?? { kind: "fetch" };
   const botIdentity =
     botOpenIdSource.kind === "prefetched"
-      ? { botOpenId: botOpenIdSource.botOpenId, botName: botOpenIdSource.botName }
+      ? {
+          botOpenId: botOpenIdSource.botOpenId,
+          source: botOpenIdSource.source,
+        }
       : await fetchBotIdentityForMonitor(account, { runtime, abortSignal });
-  const botOpenId = botIdentity.botOpenId;
-  const botName = botIdentity.botName?.trim();
-  botOpenIds.set(accountId, botOpenId ?? "");
-  if (botName) {
-    botNames.set(accountId, botName);
-  } else {
-    botNames.delete(accountId);
-  }
+  const botOpenId = applyBotIdentityState(accountId, botIdentity);
   log(`feishu[${accountId}]: bot open_id resolved: ${botOpenId ?? "unknown"}`);
 
-  const connectionMode = account.config.connectionMode ?? "websocket";
+  if ((!botOpenId || botIdentity.source === "cache") && !abortSignal?.aborted) {
+    startBotIdentityRecovery({
+      account,
+      accountId,
+      runtime,
+      abortSignal,
+      currentSource: botIdentity.source,
+    });
+  }
+
+  const connectionMode = account.config.connectionMode;
   if (connectionMode === "webhook" && !account.verificationToken?.trim()) {
     throw new Error(`Feishu account "${accountId}" webhook mode requires verificationToken`);
   }
+  if (connectionMode === "webhook" && !account.encryptKey?.trim()) {
+    throw new Error(`Feishu account "${accountId}" webhook mode requires encryptKey`);
+  }
 
-  const warmupCount = await warmupDedupFromDisk(accountId, log);
+  const warmupCount = await warmupDedupFromPluginState(accountId, log);
+  if (abortSignal?.aborted) {
+    return;
+  }
   if (warmupCount > 0) {
-    log(`feishu[${accountId}]: dedup warmup loaded ${warmupCount} entries from disk`);
+    log(`feishu[${accountId}]: dedup warmup loaded ${warmupCount} entries from plugin state`);
   }
 
-  const eventDispatcher = createEventDispatcher(account);
-  const chatHistories = new Map<string, HistoryEntry[]>();
+  let threadBindingManager: ReturnType<typeof createFeishuThreadBindingManager> | null | undefined;
+  const accountStopped = new AbortController();
+  const accountAbortSignal = abortSignal
+    ? AbortSignal.any([abortSignal, accountStopped.signal])
+    : accountStopped.signal;
+  const pendingTasks = new Set<Promise<void>>();
+  const trackTask = (task: Promise<void>) => {
+    pendingTasks.add(task);
+    void task.then(
+      () => pendingTasks.delete(task),
+      () => pendingTasks.delete(task),
+    );
+  };
+  try {
+    const eventDispatcher = createEventDispatcher(account);
+    const durableIngress = createFeishuDurableIngress({
+      accountId,
+      dispatcher: eventDispatcher,
+      ...(account.encryptKey ? { encryptKey: account.encryptKey } : {}),
+      runtime: runtime ?? {},
+    });
+    const durableEventDispatcher = Object.assign(Object.create(eventDispatcher), {
+      invoke: durableIngress.invoke,
+    }) as Lark.EventDispatcher;
+    const chatHistories = new Map<string, HistoryEntry[]>();
+    threadBindingManager = createFeishuThreadBindingManager({ accountId, cfg });
+    const channelRuntime = params.channelRuntime?.inbound
+      ? params.channelRuntime
+      : getFeishuRuntime().channel;
 
-  registerEventHandlers(eventDispatcher, {
-    cfg,
-    accountId,
-    runtime,
-    chatHistories,
-    fireAndForget: true,
-  });
+    registerEventHandlers(eventDispatcher, {
+      cfg,
+      accountId,
+      channelRuntime,
+      runtime,
+      chatHistories,
+      fireAndForget: params.fireAndForget ?? true,
+      isAccountActive: () => !accountAbortSignal.aborted,
+      trackTask,
+      vcAutoJoin: account.config.vcAutoJoin === true,
+      abortSignal: accountAbortSignal,
+      resolveIngressLifecycle: durableIngress.resolveLifecycle,
+      ...(params.statusSink ? { statusSink: params.statusSink } : {}),
+    });
 
-  if (connectionMode === "webhook") {
-    return monitorWebhook({ account, accountId, runtime, abortSignal, eventDispatcher });
+    try {
+      durableIngress.start();
+      if (connectionMode === "webhook") {
+        return await monitorWebhook({
+          gatewayPort: resolveGatewayPort(cfg),
+          account,
+          accountId,
+          runtime,
+          abortSignal,
+          eventDispatcher: durableEventDispatcher,
+          invokeWebhookEvent: durableIngress.invokeWebhook,
+          ...(params.statusSink ? { statusSink: params.statusSink } : {}),
+        });
+      }
+      return await monitorWebSocket({
+        account,
+        accountId,
+        runtime,
+        abortSignal,
+        eventDispatcher: durableEventDispatcher,
+        setSocketTerminator: durableIngress.setSocketTerminator,
+        ...(params.statusSink ? { statusSink: params.statusSink } : {}),
+      });
+    } finally {
+      accountStopped.abort(new Error("Feishu account stopped"));
+      try {
+        await durableIngress.stop();
+      } finally {
+        // A claim can register its detached settlement while the account is closing.
+        while (pendingTasks.size > 0) {
+          await Promise.allSettled(pendingTasks);
+        }
+      }
+    }
+  } finally {
+    threadBindingManager?.stop();
   }
-  return monitorWebSocket({ account, accountId, runtime, abortSignal, eventDispatcher });
 }

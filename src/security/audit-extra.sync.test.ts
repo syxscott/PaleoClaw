@@ -1,55 +1,82 @@
-import { describe, expect, it } from "vitest";
+// Covers synchronous extra security audit aggregation.
+import { expectDefined } from "@paleoclaw/normalization-core/expect";
+import { describe, expect, it, vi } from "vitest";
 import type { OpenClawConfig } from "../config/config.js";
-import { collectAttackSurfaceSummaryFindings } from "./audit-extra.sync.js";
-import { safeEqualSecret } from "./secret-equal.js";
+import { setConfigResolutionFacts } from "../config/resolution-facts.js";
+import {
+  collectAttackSurfaceSummaryFindings,
+  collectSmallModelRiskFindings,
+} from "./audit-extra.summary.js";
+import { collectSecretsInConfigFindings } from "./audit-extra.sync.js";
 
-describe("collectAttackSurfaceSummaryFindings", () => {
-  it("distinguishes external webhooks from internal hooks when only internal hooks are enabled", () => {
-    const cfg: OpenClawConfig = {
-      hooks: { internal: { enabled: true } },
-    };
+vi.mock("../plugins/web-search-credential-presence.js", () => ({
+  hasConfiguredWebSearchCredential: () => false,
+}));
 
-    const [finding] = collectAttackSurfaceSummaryFindings(cfg);
-    expect(finding.checkId).toBe("summary.attack_surface");
-    expect(finding.detail).toContain("hooks.webhooks: disabled");
-    expect(finding.detail).toContain("hooks.internal: enabled");
-  });
+describe("collectSecretsInConfigFindings", () => {
+  it("distinguishes an unresolved password from byte-identical literal text", () => {
+    const config = {
+      gateway: { auth: { password: "${GATEWAY_PASSWORD}" } },
+    } satisfies OpenClawConfig;
+    setConfigResolutionFacts(config, new Set(["gateway.auth.password"]));
+    expect(collectSecretsInConfigFindings(config)).toHaveLength(0);
 
-  it("reports both hook systems as enabled when both are configured", () => {
-    const cfg: OpenClawConfig = {
-      hooks: { enabled: true, internal: { enabled: true } },
-    };
-
-    const [finding] = collectAttackSurfaceSummaryFindings(cfg);
-    expect(finding.detail).toContain("hooks.webhooks: enabled");
-    expect(finding.detail).toContain("hooks.internal: enabled");
-  });
-
-  it("reports both hook systems as disabled when neither is configured", () => {
-    const cfg: OpenClawConfig = {};
-
-    const [finding] = collectAttackSurfaceSummaryFindings(cfg);
-    expect(finding.detail).toContain("hooks.webhooks: disabled");
-    expect(finding.detail).toContain("hooks.internal: disabled");
+    setConfigResolutionFacts(config, new Set());
+    expect(collectSecretsInConfigFindings(config)).toHaveLength(1);
   });
 });
 
-describe("safeEqualSecret", () => {
-  it("matches identical secrets", () => {
-    expect(safeEqualSecret("secret-token", "secret-token")).toBe(true);
+describe("collectAttackSurfaceSummaryFindings", () => {
+  it.each([
+    ["internal hooks enabled", { hooks: { internal: { enabled: true } } }, "enabled"],
+    ["internal hooks unconfigured", {}, "disabled"],
+  ] satisfies [string, OpenClawConfig, string][])("%s", async (_name, cfg, internalStatus) => {
+    const finding = expectDefined(
+      (await collectAttackSurfaceSummaryFindings(cfg)).at(0),
+      "attack surface summary finding",
+    );
+    expect(finding.checkId).toBe("summary.attack_surface");
+    for (const snippet of ["hooks.webhooks: disabled", `hooks.internal: ${internalStatus}`]) {
+      expect(finding.detail).toContain(snippet);
+    }
   });
+});
 
-  it("rejects mismatched secrets", () => {
-    expect(safeEqualSecret("secret-token", "secret-tokEn")).toBe(false);
-  });
+describe("collectSmallModelRiskFindings", () => {
+  const browserDefaultCfg = {
+    agents: { defaults: { model: { primary: "ollama/mistral-8b" } } },
+    tools: { web: { fetch: { enabled: false } } },
+  } satisfies OpenClawConfig;
+  const configuredBrowserBlockedByPluginPolicyCfg = {
+    ...browserDefaultCfg,
+    plugins: { allow: ["openai"] },
+    browser: { enabled: true },
+  } satisfies OpenClawConfig;
 
-  it("rejects different-length secrets", () => {
-    expect(safeEqualSecret("short", "much-longer")).toBe(false);
-  });
+  it.each([
+    ["browser disabled", { ...browserDefaultCfg, browser: { enabled: false } }, "info"],
+    ["browser enabled by default", browserDefaultCfg, "critical"],
+    ["plugin policy blocks configured browser", configuredBrowserBlockedByPluginPolicyCfg, "info"],
+  ] satisfies [string, OpenClawConfig, string][])("%s", (_name, cfg, expectedSeverity) => {
+    const finding = expectDefined(
+      collectSmallModelRiskFindings({
+        cfg,
+        env: {},
+      }).at(0),
+      "small model risk finding",
+    );
 
-  it("rejects missing values", () => {
-    expect(safeEqualSecret(undefined, "secret")).toBe(false);
-    expect(safeEqualSecret("secret", undefined)).toBe(false);
-    expect(safeEqualSecret(null, "secret")).toBe(false);
+    expect(finding.checkId).toBe("models.small_params");
+    expect(finding.severity).toBe(expectedSeverity);
+    expect(finding.detail).toContain("ollama/mistral-8b");
+    const unsafe = expectedSeverity === "critical";
+    for (const snippet of unsafe
+      ? ["web=[browser]"]
+      : ["web=[off]", "No web/browser tools detected"]) {
+      expect(finding.detail).toContain(snippet);
+    }
+    expect(finding.detail).not.toContain(
+      unsafe ? "No web/browser tools detected" : "web=[browser]",
+    );
   });
 });

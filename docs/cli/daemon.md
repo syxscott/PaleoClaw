@@ -3,14 +3,12 @@ summary: "CLI reference for `paleoclaw daemon` (legacy alias for gateway service
 read_when:
   - You still use `paleoclaw daemon ...` in scripts
   - You need service lifecycle commands (install/start/stop/restart/status)
-title: "daemon"
+title: "Daemon"
 ---
 
 # `paleoclaw daemon`
 
-Legacy alias for Gateway service management commands.
-
-`paleoclaw daemon ...` maps to the same service control surface as `paleoclaw gateway ...` service commands.
+Legacy alias for Gateway service management. `paleoclaw daemon ...` maps to the same service-control commands as `paleoclaw gateway ...`. Prefer [`paleoclaw gateway`](/cli/gateway) for current docs and examples.
 
 ## Usage
 
@@ -23,29 +21,38 @@ paleoclaw daemon restart
 paleoclaw daemon uninstall
 ```
 
-## Subcommands
+## Subcommands and options
 
-- `status`: show service install state and probe Gateway health
-- `install`: install service (`launchd`/`systemd`/`schtasks`)
-- `uninstall`: remove service
-- `start`: start service
-- `stop`: stop service
-- `restart`: restart service
+| Subcommand  | Options                                                                                                        |
+| ----------- | -------------------------------------------------------------------------------------------------------------- |
+| `status`    | `--url`, `--port`, `--token`, `--password`, `--timeout`, `--no-probe`, `--require-rpc`, `--deep`, `--json`     |
+| `install`   | `--port`, `--runtime <node\|bun>`, `--runtime-path <path>`, `--token`, `--wrapper <path>`, `--force`, `--json` |
+| `uninstall` | `--json`                                                                                                       |
+| `start`     | `--json`                                                                                                       |
+| `stop`      | `--force`, `--json`, `--disable` (launchd only: suppress KeepAlive/RunAtLoad until next start)                 |
+| `restart`   | `--force`, `--safe`, `--skip-deferral`, `--wait <duration>`, `--json`                                          |
 
-## Common options
+`--json` is accepted before or after every subcommand (for example, `daemon --json status` and `daemon status --json`).
 
-- `status`: `--url`, `--token`, `--password`, `--timeout`, `--no-probe`, `--deep`, `--json`
-- `install`: `--port`, `--runtime <node|bun>`, `--token`, `--force`, `--json`
-- lifecycle (`uninstall|start|stop|restart`): `--json`
+- `status`: shows service install state (launchd/systemd/schtasks) and checks Gateway health.
+- `status --port <port>`: selects a local Gateway using the invoking CLI config for auth and TLS. Cannot combine with `--url`. Native service details remain diagnostic-only.
+- `install`: installs and starts the service. `--force` reinstalls an existing install and may restart a running Gateway. Finish offline configuration and runtime repairs before installation.
+- Node is the primary, default, and recommended service runtime. Bun 1.4.3+ with WAL-reset-safe `node:sqlite` is available as an explicit opt-in with `install --runtime bun`.
+- `restart --safe`: asks the running Gateway to preflight active work and schedule one coalesced restart after work drains, bounded to 5 minutes. When that budget expires, the restart is forced anyway. Plain `restart` normally uses the service manager directly. On Windows, commands launched from a Gateway service automatically use the [safe restart path](/cli/gateway#restart-the-gateway). Explicit lifecycle controls retain their behavior. `--force` is the immediate override.
+- `restart --safe --skip-deferral`: bypasses only the active-work deferral gate. Shutdown may still wait for pending replies to drain before the Gateway process exits. Requires `--safe`.
 
-Notes:
+## Notes
 
-- `status` resolves configured auth SecretRefs for probe auth when possible.
-- On Linux systemd installs, `status` token-drift checks include both `Environment=` and `EnvironmentFile=` unit sources.
-- When token auth requires a token and `gateway.auth.token` is SecretRef-managed, `install` validates that the SecretRef is resolvable but does not persist the resolved token into service environment metadata.
-- If token auth requires a token and the configured token SecretRef is unresolved, install fails closed.
-- If both `gateway.auth.token` and `gateway.auth.password` are configured and `gateway.auth.mode` is unset, install is blocked until mode is set explicitly.
+- `status` resolves configured auth SecretRefs for check auth when possible. If a required SecretRef is unresolved, `status --json` reports `rpc.authWarning`. Pass `--token`/`--password` explicitly, or resolve the secret source first. Unresolved-auth warnings are suppressed once the check otherwise succeeds.
+- `status --deep` adds a best-effort system-level scan for other gateway-like services. The scan prints cleanup hints. One Gateway per machine is still the recommendation. `status --deep` also runs config validation in plugin-aware mode. That mode surfaces plugin manifest warnings that the fast default path skips.
+- On Linux systemd installs, token-drift checks inspect both `Environment=` and `EnvironmentFile=` unit sources.
+- Token-drift checks resolve `gateway.auth.token` SecretRefs using merged runtime env (service command env first, then process env). If token auth is not effectively active (`gateway.auth.mode` of `password`/`none`/`trusted-proxy`, or unset with password able to win), config token resolution is skipped.
+- `install` validates that a SecretRef-managed `gateway.auth.token` is resolvable. It never persists the resolved value into service environment metadata. If it cannot resolve the token, `install` stops.
+- If both `gateway.auth.token` and `gateway.auth.password` are configured and `gateway.auth.mode` is unset, `install` blocks until you set the mode explicitly.
+- On macOS, `install` writes LaunchAgent plists with mode `0644`. Secrets stay in the generated owner-only environment file (`0600`), loaded through an owner-only wrapper (`0700`).
+- Running multiple Gateways on one host: isolate ports, config/state, and workspaces. See [Multiple gateways](/gateway#multiple-gateways-same-host).
 
-## Prefer
+## Related
 
-Use [`paleoclaw gateway`](/cli/gateway) for current docs and examples.
+- [CLI reference](/cli)
+- [Gateway runbook](/gateway)

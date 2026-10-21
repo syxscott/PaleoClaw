@@ -1,5 +1,13 @@
-import type { ChannelDirectoryEntry } from "paleoclaw/plugin-sdk/matrix";
+import type { ChannelDirectoryEntry } from "paleoclaw/plugin-sdk/channel-contract";
+import {
+  isRecord,
+  normalizeLowercaseStringOrEmpty,
+  normalizeOptionalString,
+} from "paleoclaw/plugin-sdk/string-coerce-runtime";
 import { resolveMatrixAuth } from "./matrix/client.js";
+import { MatrixAuthedHttpClient } from "./matrix/sdk/http-client.js";
+import { isMatrixQualifiedUserId, normalizeMatrixMessagingTarget } from "./matrix/target-ids.js";
+import type { CoreConfig } from "./types.js";
 
 type MatrixUserResult = {
   user_id?: string;
@@ -14,14 +22,6 @@ type MatrixJoinedRoomsResponse = {
   joined_rooms?: string[];
 };
 
-type MatrixRoomNameState = {
-  name?: string;
-};
-
-type MatrixAliasLookup = {
-  room_id?: string;
-};
-
 type MatrixDirectoryLiveParams = {
   cfg: unknown;
   accountId?: string | null;
@@ -29,75 +29,65 @@ type MatrixDirectoryLiveParams = {
   limit?: number | null;
 };
 
-type MatrixResolvedAuth = Awaited<ReturnType<typeof resolveMatrixAuth>>;
-
-async function fetchMatrixJson<T>(params: {
-  homeserver: string;
-  path: string;
-  accessToken: string;
-  method?: "GET" | "POST";
-  body?: unknown;
-}): Promise<T> {
-  const res = await fetch(`${params.homeserver}${params.path}`, {
-    method: params.method ?? "GET",
-    headers: {
-      Authorization: `Bearer ${params.accessToken}`,
-      "Content-Type": "application/json",
-    },
-    body: params.body ? JSON.stringify(params.body) : undefined,
-  });
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(`Matrix API ${params.path} failed (${res.status}): ${text || "unknown error"}`);
-  }
-  return (await res.json()) as T;
-}
-
-function normalizeQuery(value?: string | null): string {
-  return value?.trim().toLowerCase() ?? "";
-}
+const MATRIX_DIRECTORY_TIMEOUT_MS = 10_000;
 
 function resolveMatrixDirectoryLimit(limit?: number | null): number {
-  return typeof limit === "number" && limit > 0 ? limit : 20;
+  return typeof limit === "number" && Number.isFinite(limit) && limit > 0
+    ? Math.max(1, Math.floor(limit))
+    : 20;
 }
 
-async function resolveMatrixDirectoryContext(
+async function createMatrixDirectoryClient(
   params: MatrixDirectoryLiveParams,
-): Promise<{ query: string; auth: MatrixResolvedAuth } | null> {
-  const query = normalizeQuery(params.query);
-  if (!query) {
-    return null;
-  }
-  const auth = await resolveMatrixAuth({ cfg: params.cfg as never, accountId: params.accountId });
-  return { query, auth };
+): Promise<MatrixAuthedHttpClient> {
+  const auth = await resolveMatrixAuth({
+    cfg: params.cfg as CoreConfig,
+    accountId: params.accountId,
+  });
+  return new MatrixAuthedHttpClient({
+    homeserver: auth.homeserver,
+    accessToken: auth.accessToken,
+    ssrfPolicy: auth.ssrfPolicy,
+    dispatcherPolicy: auth.dispatcherPolicy,
+  });
 }
 
-function createGroupDirectoryEntry(params: {
-  id: string;
-  name: string;
-  handle?: string;
-}): ChannelDirectoryEntry {
-  return {
-    kind: "group",
-    id: params.id,
-    name: params.name,
-    handle: params.handle,
-  } satisfies ChannelDirectoryEntry;
+async function requestMatrixJson<T>(
+  client: MatrixAuthedHttpClient,
+  params: {
+    method: "GET" | "POST";
+    endpoint: string;
+    body?: unknown;
+  },
+): Promise<T> {
+  const result = await client.requestJson({
+    method: params.method,
+    endpoint: params.endpoint,
+    body: params.body,
+    timeoutMs: MATRIX_DIRECTORY_TIMEOUT_MS,
+  });
+  if (!isRecord(result)) {
+    throw new Error(`Matrix homeserver returned a non-object JSON response for ${params.endpoint}`);
+  }
+  return result as T;
 }
 
 export async function listMatrixDirectoryPeersLive(
   params: MatrixDirectoryLiveParams,
 ): Promise<ChannelDirectoryEntry[]> {
-  const context = await resolveMatrixDirectoryContext(params);
-  if (!context) {
+  const query = normalizeOptionalString(params.query) ?? "";
+  if (!query) {
     return [];
   }
-  const { query, auth } = context;
-  const res = await fetchMatrixJson<MatrixUserDirectoryResponse>({
-    homeserver: auth.homeserver,
-    accessToken: auth.accessToken,
-    path: "/_matrix/client/v3/user_directory/search",
+  const directUserId = normalizeMatrixMessagingTarget(query);
+  if (directUserId && isMatrixQualifiedUserId(directUserId)) {
+    return [{ kind: "user", id: directUserId }];
+  }
+  const client = await createMatrixDirectoryClient(params);
+
+  const res = await requestMatrixJson<MatrixUserDirectoryResponse>(client, {
     method: "POST",
+    endpoint: "/_matrix/client/v3/user_directory/search",
     body: {
       search_term: query,
       limit: resolveMatrixDirectoryLimit(params.limit),
@@ -106,50 +96,33 @@ export async function listMatrixDirectoryPeersLive(
   const results = res.results ?? [];
   return results
     .map((entry) => {
-      const userId = entry.user_id?.trim();
+      const userId = normalizeOptionalString(entry.user_id);
       if (!userId) {
         return null;
       }
+      const displayName = normalizeOptionalString(entry.display_name);
       return {
         kind: "user",
         id: userId,
-        name: entry.display_name?.trim() || undefined,
-        handle: entry.display_name ? `@${entry.display_name.trim()}` : undefined,
+        name: displayName,
+        handle: displayName ? `@${displayName}` : undefined,
         raw: entry,
       } satisfies ChannelDirectoryEntry;
     })
     .filter(Boolean) as ChannelDirectoryEntry[];
 }
 
-async function resolveMatrixRoomAlias(
-  homeserver: string,
-  accessToken: string,
-  alias: string,
+async function readOptionalMatrixDirectoryString(
+  client: MatrixAuthedHttpClient,
+  endpoint: string,
+  field: string,
 ): Promise<string | null> {
   try {
-    const res = await fetchMatrixJson<MatrixAliasLookup>({
-      homeserver,
-      accessToken,
-      path: `/_matrix/client/v3/directory/room/${encodeURIComponent(alias)}`,
+    const res = await requestMatrixJson<Record<string, unknown>>(client, {
+      method: "GET",
+      endpoint,
     });
-    return res.room_id?.trim() || null;
-  } catch {
-    return null;
-  }
-}
-
-async function fetchMatrixRoomName(
-  homeserver: string,
-  accessToken: string,
-  roomId: string,
-): Promise<string | null> {
-  try {
-    const res = await fetchMatrixJson<MatrixRoomNameState>({
-      homeserver,
-      accessToken,
-      path: `/_matrix/client/v3/rooms/${encodeURIComponent(roomId)}/state/m.room.name`,
-    });
-    return res.name?.trim() || null;
+    return normalizeOptionalString(res[field]) ?? null;
   } catch {
     return null;
   }
@@ -158,40 +131,48 @@ async function fetchMatrixRoomName(
 export async function listMatrixDirectoryGroupsLive(
   params: MatrixDirectoryLiveParams,
 ): Promise<ChannelDirectoryEntry[]> {
-  const context = await resolveMatrixDirectoryContext(params);
-  if (!context) {
+  const query = normalizeOptionalString(params.query) ?? "";
+  if (!query) {
     return [];
   }
-  const { query, auth } = context;
+  const directTarget = normalizeMatrixMessagingTarget(query);
+
+  if (directTarget?.startsWith("!")) {
+    return [{ kind: "group", id: directTarget, name: directTarget, handle: undefined }];
+  }
+
+  const client = await createMatrixDirectoryClient(params);
+  const queryLower = normalizeLowercaseStringOrEmpty(query);
   const limit = resolveMatrixDirectoryLimit(params.limit);
 
-  if (query.startsWith("#")) {
-    const roomId = await resolveMatrixRoomAlias(auth.homeserver, auth.accessToken, query);
+  if (directTarget?.startsWith("#")) {
+    const roomId = await readOptionalMatrixDirectoryString(
+      client,
+      `/_matrix/client/v3/directory/room/${encodeURIComponent(directTarget)}`,
+      "room_id",
+    );
     if (!roomId) {
       return [];
     }
-    return [createGroupDirectoryEntry({ id: roomId, name: query, handle: query })];
+    return [{ kind: "group", id: roomId, name: directTarget, handle: directTarget }];
   }
 
-  if (query.startsWith("!")) {
-    const originalId = params.query?.trim() ?? query;
-    return [createGroupDirectoryEntry({ id: originalId, name: originalId })];
-  }
-
-  const joined = await fetchMatrixJson<MatrixJoinedRoomsResponse>({
-    homeserver: auth.homeserver,
-    accessToken: auth.accessToken,
-    path: "/_matrix/client/v3/joined_rooms",
+  const joined = await requestMatrixJson<MatrixJoinedRoomsResponse>(client, {
+    method: "GET",
+    endpoint: "/_matrix/client/v3/joined_rooms",
   });
-  const rooms = joined.joined_rooms ?? [];
+  const rooms = (joined.joined_rooms ?? [])
+    .map((roomId) => normalizeOptionalString(roomId))
+    .filter((roomId): roomId is string => Boolean(roomId));
   const results: ChannelDirectoryEntry[] = [];
 
   for (const roomId of rooms) {
-    const name = await fetchMatrixRoomName(auth.homeserver, auth.accessToken, roomId);
-    if (!name) {
-      continue;
-    }
-    if (!name.toLowerCase().includes(query)) {
+    const name = await readOptionalMatrixDirectoryString(
+      client,
+      `/_matrix/client/v3/rooms/${encodeURIComponent(roomId)}/state/m.room.name`,
+      "name",
+    );
+    if (!name || !normalizeLowercaseStringOrEmpty(name).includes(queryLower)) {
       continue;
     }
     results.push({

@@ -1,0 +1,27 @@
+{
+  "name": "@paleoclaw/vault",
+  "version": "2026.10.5",
+  "private": true,
+  "description": "HashiCorp Vault SecretRef provider integration for paleoclaw",
+  "type": "module",
+  "devDependencies": {
+    "@paleoclaw/plugin-sdk": "workspace:*"
+  },
+  "paleoclaw": {
+    "extensions": [
+      "./index.ts"
+    ],
+    "build": {
+      "staticAssets": [
+        {
+          "source": "./vault-secret-ref-resolver.js",
+          "output": "vault-secret-ref-resolver.js"
+        },
+        {
+          "source": "./vault-secret-id.js",
+          "output": "vault-secret-id.js"
+        }
+      ]
+    }
+  }
+}

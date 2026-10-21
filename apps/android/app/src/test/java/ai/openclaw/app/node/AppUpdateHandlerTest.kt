@@ -51,7 +51,7 @@ class AppUpdateHandlerTest {
 
   @Test
   fun sha256Hex_computesExpectedDigest() {
-    val tmp = File.createTempFile("openclaw-update-hash", ".bin")
+    val tmp = File.createTempFile("paleoclaw-update-hash", ".bin")
     try {
       tmp.writeText("hello", Charsets.UTF_8)
       assertEquals(

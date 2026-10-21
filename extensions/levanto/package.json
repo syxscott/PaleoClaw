@@ -1,0 +1,35 @@
+{
+  "name": "@paleoclaw/levanto",
+  "version": "2026.10.4",
+  "description": "paleoclaw Levanto Sage native decision provider",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/paleoclaw/paleoclaw"
+  },
+  "type": "module",
+  "devDependencies": {
+    "@paleoclaw/plugin-sdk": "workspace:*"
+  },
+  "paleoclaw": {
+    "extensions": [
+      "./index.ts"
+    ],
+    "install": {
+      "clawhubSpec": "PaleoHub:@paleoclaw/levanto",
+      "npmSpec": "@paleoclaw/levanto",
+      "defaultChoice": "npm",
+      "minHostVersion": ">=2026.9.6"
+    },
+    "compat": {
+      "pluginApi": ">=2026.10.4"
+    },
+    "build": {
+      "bundledDist": false,
+      "openclawVersion": "2026.10.4"
+    },
+    "release": {
+      "publishToClawHub": true,
+      "publishToNpm": true
+    }
+  }
+}

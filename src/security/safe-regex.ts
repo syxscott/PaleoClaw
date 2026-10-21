@@ -1,3 +1,6 @@
+// Performs lightweight safe-regex checks for user-supplied patterns.
+import { expectDefined } from "@paleoclaw/normalization-core";
+import { pruneMapToMaxSize } from "../infra/map-size.js";
 type QuantifierRead = {
   consumed: number;
   minRepeat: number;
@@ -21,16 +24,25 @@ type ParseFrame = {
   altMaxLength: number | null;
 };
 
-type PatternToken =
-  | { kind: "simple-token" }
-  | { kind: "group-open" }
-  | { kind: "group-close" }
-  | { kind: "alternation" }
-  | { kind: "quantifier"; quantifier: QuantifierRead };
-
 const SAFE_REGEX_CACHE_MAX = 256;
 const SAFE_REGEX_TEST_WINDOW = 2048;
-const safeRegexCache = new Map<string, RegExp | null>();
+export type SafeRegexRejectReason = "empty" | "unsafe-nested-repetition" | "invalid-regex";
+
+export type SafeRegexCompileResult =
+  | {
+      regex: RegExp;
+      source: string;
+      flags: string;
+      reason: null;
+    }
+  | {
+      regex: null;
+      source: string;
+      flags: string;
+      reason: SafeRegexRejectReason;
+    };
+
+const safeRegexCache = new Map<string, SafeRegexCompileResult>();
 
 function createParseFrame(): ParseFrame {
   return {
@@ -85,7 +97,7 @@ function readQuantifier(source: string, index: number): QuantifierRead | null {
   }
 
   let i = index + 1;
-  while (i < source.length && /\d/.test(source[i])) {
+  while (i < source.length && /\d/.test(source.charAt(i))) {
     i += 1;
   }
   if (i === index + 1) {
@@ -97,7 +109,7 @@ function readQuantifier(source: string, index: number): QuantifierRead | null {
   if (source[i] === ",") {
     i += 1;
     const maxStart = i;
-    while (i < source.length && /\d/.test(source[i])) {
+    while (i < source.length && /\d/.test(source.charAt(i))) {
       i += 1;
     }
     maxRepeat = i === maxStart ? null : Number.parseInt(source.slice(maxStart, i), 10);
@@ -117,65 +129,12 @@ function readQuantifier(source: string, index: number): QuantifierRead | null {
   return { consumed: i - index, minRepeat, maxRepeat };
 }
 
-function tokenizePattern(source: string): PatternToken[] {
-  const tokens: PatternToken[] = [];
+function hasNestedRepetition(source: string): boolean {
+  const frames: ParseFrame[] = [createParseFrame()];
   let inCharClass = false;
 
-  for (let i = 0; i < source.length; i += 1) {
-    const ch = source[i];
-
-    if (ch === "\\") {
-      i += 1;
-      tokens.push({ kind: "simple-token" });
-      continue;
-    }
-
-    if (inCharClass) {
-      if (ch === "]") {
-        inCharClass = false;
-      }
-      continue;
-    }
-
-    if (ch === "[") {
-      inCharClass = true;
-      tokens.push({ kind: "simple-token" });
-      continue;
-    }
-
-    if (ch === "(") {
-      tokens.push({ kind: "group-open" });
-      continue;
-    }
-
-    if (ch === ")") {
-      tokens.push({ kind: "group-close" });
-      continue;
-    }
-
-    if (ch === "|") {
-      tokens.push({ kind: "alternation" });
-      continue;
-    }
-
-    const quantifier = readQuantifier(source, i);
-    if (quantifier) {
-      tokens.push({ kind: "quantifier", quantifier });
-      i += quantifier.consumed - 1;
-      continue;
-    }
-
-    tokens.push({ kind: "simple-token" });
-  }
-
-  return tokens;
-}
-
-function analyzeTokensForNestedRepetition(tokens: PatternToken[]): boolean {
-  const frames: ParseFrame[] = [createParseFrame()];
-
   const emitToken = (token: TokenState) => {
-    const frame = frames[frames.length - 1];
+    const frame = expectDefined(frames[frames.length - 1], "frames entry at frames.length 1");
     frame.lastToken = token;
     if (token.containsRepetition) {
       frame.containsRepetition = true;
@@ -193,18 +152,33 @@ function analyzeTokensForNestedRepetition(tokens: PatternToken[]): boolean {
     });
   };
 
-  for (const token of tokens) {
-    if (token.kind === "simple-token") {
+  for (let i = 0; i < source.length; i += 1) {
+    const ch = source[i];
+    if (inCharClass) {
+      if (ch === "\\") {
+        i += 1;
+      } else if (ch === "]") {
+        inCharClass = false;
+      }
+      continue;
+    }
+    if (ch === "\\") {
+      i += 1;
+      emitSimpleToken();
+      continue;
+    }
+    if (ch === "[") {
+      inCharClass = true;
       emitSimpleToken();
       continue;
     }
 
-    if (token.kind === "group-open") {
+    if (ch === "(") {
       frames.push(createParseFrame());
       continue;
     }
 
-    if (token.kind === "group-close") {
+    if (ch === ")") {
       if (frames.length > 1) {
         const frame = frames.pop() as ParseFrame;
         if (frame.hasAlternation) {
@@ -230,8 +204,8 @@ function analyzeTokensForNestedRepetition(tokens: PatternToken[]): boolean {
       continue;
     }
 
-    if (token.kind === "alternation") {
-      const frame = frames[frames.length - 1];
+    if (ch === "|") {
+      const frame = expectDefined(frames[frames.length - 1], "frames entry at frames.length 1");
       frame.hasAlternation = true;
       recordAlternative(frame);
       frame.branchMinLength = 0;
@@ -240,7 +214,13 @@ function analyzeTokensForNestedRepetition(tokens: PatternToken[]): boolean {
       continue;
     }
 
-    const frame = frames[frames.length - 1];
+    const quantifier = readQuantifier(source, i);
+    if (!quantifier) {
+      emitSimpleToken();
+      continue;
+    }
+    i += quantifier.consumed - 1;
+    const frame = expectDefined(frames[frames.length - 1], "frames entry at frames.length 1");
     const previousToken = frame.lastToken;
     if (!previousToken) {
       continue;
@@ -248,17 +228,17 @@ function analyzeTokensForNestedRepetition(tokens: PatternToken[]): boolean {
     if (previousToken.containsRepetition) {
       return true;
     }
-    if (previousToken.hasAmbiguousAlternation && token.quantifier.maxRepeat === null) {
+    if (previousToken.hasAmbiguousAlternation && quantifier.maxRepeat === null) {
       return true;
     }
 
     const previousMinLength = previousToken.minLength;
     const previousMaxLength = previousToken.maxLength;
-    previousToken.minLength = multiplyLength(previousToken.minLength, token.quantifier.minRepeat);
+    previousToken.minLength = multiplyLength(previousToken.minLength, quantifier.minRepeat);
     previousToken.maxLength =
-      token.quantifier.maxRepeat === null
+      quantifier.maxRepeat === null
         ? Number.POSITIVE_INFINITY
-        : multiplyLength(previousToken.maxLength, token.quantifier.maxRepeat);
+        : multiplyLength(previousToken.maxLength, quantifier.maxRepeat);
     previousToken.containsRepetition = true;
     frame.containsRepetition = true;
     frame.branchMinLength = frame.branchMinLength - previousMinLength + previousToken.minLength;
@@ -296,37 +276,33 @@ export function testRegexWithBoundedInput(
   return testRegexFromStart(regex, input.slice(-maxWindow));
 }
 
-export function hasNestedRepetition(source: string): boolean {
-  // Conservative parser: tokenize first, then check if repeated tokens/groups are repeated again.
-  // Non-goal: complete regex AST support; keep strict enough for config safety checks.
-  return analyzeTokensForNestedRepetition(tokenizePattern(source));
+export function compileSafeRegexDetailed(source: string, flags = ""): SafeRegexCompileResult {
+  const trimmed = source.trim();
+  if (!trimmed) {
+    return { regex: null, source: trimmed, flags, reason: "empty" };
+  }
+  const cacheKey = `${flags}::${trimmed}`;
+  const cached = safeRegexCache.get(cacheKey);
+  if (cached) {
+    return cached;
+  }
+
+  let result: SafeRegexCompileResult;
+  if (hasNestedRepetition(trimmed)) {
+    result = { regex: null, source: trimmed, flags, reason: "unsafe-nested-repetition" };
+  } else {
+    try {
+      result = { regex: new RegExp(trimmed, flags), source: trimmed, flags, reason: null };
+    } catch {
+      result = { regex: null, source: trimmed, flags, reason: "invalid-regex" };
+    }
+  }
+
+  safeRegexCache.set(cacheKey, result);
+  pruneMapToMaxSize(safeRegexCache, SAFE_REGEX_CACHE_MAX);
+  return result;
 }
 
 export function compileSafeRegex(source: string, flags = ""): RegExp | null {
-  const trimmed = source.trim();
-  if (!trimmed) {
-    return null;
-  }
-  const cacheKey = `${flags}::${trimmed}`;
-  if (safeRegexCache.has(cacheKey)) {
-    return safeRegexCache.get(cacheKey) ?? null;
-  }
-
-  let compiled: RegExp | null = null;
-  if (!hasNestedRepetition(trimmed)) {
-    try {
-      compiled = new RegExp(trimmed, flags);
-    } catch {
-      compiled = null;
-    }
-  }
-
-  safeRegexCache.set(cacheKey, compiled);
-  if (safeRegexCache.size > SAFE_REGEX_CACHE_MAX) {
-    const oldestKey = safeRegexCache.keys().next().value;
-    if (oldestKey) {
-      safeRegexCache.delete(oldestKey);
-    }
-  }
-  return compiled;
+  return compileSafeRegexDetailed(source, flags).regex;
 }

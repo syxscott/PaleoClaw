@@ -1,44 +1,37 @@
-import type { OpenClawConfig } from "../../config/config.js";
-import type { DispatchInboundResult } from "../dispatch.js";
+// Dispatch adapters that bridge provider reply resolution into inbound dispatchers.
 import {
   dispatchInboundMessageWithBufferedDispatcher,
   dispatchInboundMessageWithDispatcher,
 } from "../dispatch.js";
-import type { FinalizedMsgContext, MsgContext } from "../templating.js";
-import type { GetReplyOptions } from "../types.js";
 import type {
-  ReplyDispatcherOptions,
-  ReplyDispatcherWithTypingOptions,
-} from "./reply-dispatcher.js";
+  DispatchReplyWithBufferedBlockDispatcher,
+  DispatchReplyWithDispatcher,
+} from "./provider-dispatcher.types.js";
 
-export async function dispatchReplyWithBufferedBlockDispatcher(params: {
-  ctx: MsgContext | FinalizedMsgContext;
-  cfg: OpenClawConfig;
-  dispatcherOptions: ReplyDispatcherWithTypingOptions;
-  replyOptions?: Omit<GetReplyOptions, "onToolResult" | "onBlockReply">;
-  replyResolver?: typeof import("../reply.js").getReplyFromConfig;
-}): Promise<DispatchInboundResult> {
-  return await dispatchInboundMessageWithBufferedDispatcher({
+export type {
+  DispatchReplyWithBufferedBlockDispatcher,
+  DispatchReplyWithDispatcher,
+} from "./provider-dispatcher.types.js";
+
+function projectDispatchParams(params: Parameters<DispatchReplyWithDispatcher>[0]) {
+  return {
     ctx: params.ctx,
     cfg: params.cfg,
     dispatcherOptions: params.dispatcherOptions,
+    toolsAllow: params.toolsAllow,
     replyResolver: params.replyResolver,
     replyOptions: params.replyOptions,
-  });
+  };
 }
 
-export async function dispatchReplyWithDispatcher(params: {
-  ctx: MsgContext | FinalizedMsgContext;
-  cfg: OpenClawConfig;
-  dispatcherOptions: ReplyDispatcherOptions;
-  replyOptions?: Omit<GetReplyOptions, "onToolResult" | "onBlockReply">;
-  replyResolver?: typeof import("../reply.js").getReplyFromConfig;
-}): Promise<DispatchInboundResult> {
-  return await dispatchInboundMessageWithDispatcher({
-    ctx: params.ctx,
-    cfg: params.cfg,
-    dispatcherOptions: params.dispatcherOptions,
-    replyResolver: params.replyResolver,
-    replyOptions: params.replyOptions,
-  });
-}
+/** Dispatch a reply using the buffered block dispatcher path. */
+export const dispatchReplyWithBufferedBlockDispatcherCore: DispatchReplyWithBufferedBlockDispatcher =
+  async (params) =>
+    await dispatchInboundMessageWithBufferedDispatcher({
+      ...projectDispatchParams(params),
+      dispatchReplyFromConfig: params.dispatchReplyFromConfig,
+    });
+
+/** Dispatch a reply using the standard dispatcher path. */
+export const dispatchReplyWithDispatcherCore: DispatchReplyWithDispatcher = async (params) =>
+  await dispatchInboundMessageWithDispatcher(projectDispatchParams(params));

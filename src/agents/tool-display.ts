@@ -1,40 +1,34 @@
-import SHARED_TOOL_DISPLAY_JSON from "../../apps/shared/OpenClawKit/Sources/OpenClawKit/Resources/tool-display.json" with { type: "json" };
-import { redactToolDetail } from "../logging/redact.js";
+/**
+ * User-facing tool display formatter.
+ *
+ * Builds labels and compact details from tool metadata without affecting execution semantics.
+ */
+import { asOptionalObjectRecord } from "@paleoclaw/normalization-core/record-coerce";
+import {
+  normalizeLowercaseStringOrEmpty,
+  normalizeOptionalString,
+} from "@paleoclaw/normalization-core/string-coerce";
 import { shortenHomeInString } from "../utils.js";
+import { unwrapToolCallForDisplay } from "./tool-display-call.js";
 import {
   defaultTitle,
-  formatToolDetailText,
   formatDetailKey,
-  normalizeToolName,
-  resolveToolVerbAndDetailForArgs,
-  type ToolDisplaySpec as ToolDisplaySpecBase,
+  normalizeToolDisplayName,
+  resolveToolDetailForArgs,
 } from "./tool-display-common.js";
-import TOOL_DISPLAY_OVERRIDES_JSON from "./tool-display-overrides.json" with { type: "json" };
+import { TOOL_DISPLAY_CONFIG } from "./tool-display-config.js";
+import type { ToolDetailMode } from "./tool-display-exec.js";
 
-type ToolDisplaySpec = ToolDisplaySpecBase & {
-  emoji?: string;
-};
-
-type ToolDisplayConfig = {
-  version?: number;
-  fallback?: ToolDisplaySpec;
-  tools?: Record<string, ToolDisplaySpec>;
-};
-
-export type ToolDisplay = {
+type ToolDisplay = {
   name: string;
-  emoji: string;
+  icon: string;
   title: string;
   label: string;
-  verb?: string;
   detail?: string;
 };
 
-const SHARED_TOOL_DISPLAY_CONFIG = SHARED_TOOL_DISPLAY_JSON as ToolDisplayConfig;
-const TOOL_DISPLAY_OVERRIDES = TOOL_DISPLAY_OVERRIDES_JSON as ToolDisplayConfig;
-const FALLBACK = TOOL_DISPLAY_OVERRIDES.fallback ??
-  SHARED_TOOL_DISPLAY_CONFIG.fallback ?? { emoji: "🧩" };
-const TOOL_MAP = Object.assign({}, SHARED_TOOL_DISPLAY_CONFIG.tools, TOOL_DISPLAY_OVERRIDES.tools);
+const FALLBACK = TOOL_DISPLAY_CONFIG.fallback;
+const TOOL_MAP = TOOL_DISPLAY_CONFIG.tools;
 const DETAIL_LABEL_OVERRIDES: Record<string, string> = {
   agentId: "agent",
   sessionKey: "session",
@@ -53,52 +47,79 @@ const DETAIL_LABEL_OVERRIDES: Record<string, string> = {
   pollQuestion: "poll",
   maxChars: "max chars",
 };
-const MAX_DETAIL_ENTRIES = 8;
 
+/** Resolves the display model for a tool invocation. */
 export function resolveToolDisplay(params: {
   name?: string;
   args?: unknown;
   meta?: string;
+  detailMode?: ToolDetailMode;
 }): ToolDisplay {
-  const name = normalizeToolName(params.name);
-  const key = name.toLowerCase();
+  const call = unwrapToolCallForDisplay({ name: params.name, args: params.args });
+  const name = normalizeToolDisplayName(call.name);
+  const key = normalizeLowercaseStringOrEmpty(name);
   const spec = TOOL_MAP[key];
-  const emoji = spec?.emoji ?? FALLBACK.emoji ?? "🧩";
   const title = spec?.title ?? defaultTitle(name);
   const label = spec?.label ?? title;
-  let { verb, detail } = resolveToolVerbAndDetailForArgs({
+  const detail = resolveToolDetailForArgs({
     toolKey: key,
-    args: params.args,
+    args: call.args,
     meta: params.meta,
     spec,
     fallbackDetailKeys: FALLBACK.detailKeys,
     detailMode: "summary",
-    detailMaxEntries: MAX_DETAIL_ENTRIES,
+    toolDetailMode: params.detailMode,
     detailFormatKey: (raw) => formatDetailKey(raw, DETAIL_LABEL_OVERRIDES),
   });
-
-  if (detail) {
-    detail = shortenHomeInString(detail);
-  }
-
   return {
     name,
-    emoji,
+    icon: spec?.icon ?? FALLBACK.icon,
     title,
     label,
-    verb,
-    detail,
+    detail: detail ? shortenHomeInString(detail) : detail,
   };
 }
 
+/** Formats detail text for display. */
 export function formatToolDetail(display: ToolDisplay): string | undefined {
-  const detailRaw = display.detail ? redactToolDetail(display.detail) : undefined;
-  return formatToolDetailText(detailRaw);
+  return display.detail || undefined;
 }
 
+/** Infers compact display metadata for a tool invocation from its arguments. */
+export function inferToolMetaFromArgsCore(
+  toolName: string,
+  args: unknown,
+  options?: { detailMode?: ToolDetailMode },
+): string | undefined {
+  return formatToolDetail(
+    resolveToolDisplay({ name: toolName, args, detailMode: options?.detailMode }),
+  );
+}
+
+/**
+ * Shell-family tools render their command as the whole line instead of
+ * "Label: detail". Backends spell the same tool differently — the Claude CLI
+ * sends "Bash" where embedded runs send "bash"/"exec" — so every caller must
+ * compare the normalized name or the shell line silently loses its detail.
+ */
+export function isShellToolDisplayName(name: string | undefined): boolean {
+  const normalized = normalizeLowercaseStringOrEmpty(name);
+  return normalized === "bash" || normalized === "exec" || normalized === "shell";
+}
+
+/** Provider-defined tool names are not enough: namespaced tools can carry executable commands. */
+export function isCommandBearingToolCall(name: string | undefined, args?: unknown): boolean {
+  if (isShellToolDisplayName(name)) {
+    return true;
+  }
+  return normalizeOptionalString(asOptionalObjectRecord(args)?.command) !== undefined;
+}
+
+/** Builds the compact one-line summary shown in transcripts and logs. */
 export function formatToolSummary(display: ToolDisplay): string {
   const detail = formatToolDetail(display);
-  return detail
-    ? `${display.emoji} ${display.label}: ${detail}`
-    : `${display.emoji} ${display.label}`;
+  if (detail && isShellToolDisplayName(display.name)) {
+    return detail;
+  }
+  return detail ? `${display.label}: ${detail}` : display.label;
 }

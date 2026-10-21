@@ -1,394 +1,393 @@
 import type { Command } from "commander";
-import JSON5 from "json5";
-import { readConfigFileSnapshot, writeConfigFile } from "../config/config.js";
+import { isConfigReadFailure } from "../config/io.invalid-config.js";
+import { AUTO_MANAGED_CONFIG_META_PATHS } from "../config/io.meta.js";
 import { formatConfigIssueLines, normalizeConfigIssues } from "../config/issue-format.js";
-import { CONFIG_PATH } from "../config/paths.js";
-import { isBlockedObjectKey } from "../config/prototype-keys.js";
-import { redactConfigObject } from "../config/redact-snapshot.js";
-import { danger, info, success } from "../globals.js";
-import type { RuntimeEnv } from "../runtime.js";
-import { defaultRuntime } from "../runtime.js";
-import { formatDocsLink } from "../terminal/links.js";
-import { theme } from "../terminal/theme.js";
+import { renderConfigValidationIssueLines } from "../config/issue-location.js";
+import { CONFIG_PATH, resolveConfigPath } from "../config/paths.js";
+import { danger, success, warn } from "../globals.js";
+import { getDatabaseEngineSelection } from "../infra/database-engine/context.js";
+import { formatErrorMessage } from "../infra/errors.js";
+import {
+  ExitError,
+  type RuntimeEnv,
+  defaultRuntime,
+  writeRuntimeJson,
+  writeRuntimeStdout,
+} from "../runtime.js";
+import { parseConcreteConfigPathTokens } from "../shared/dot-path.js";
 import { shortenHomePath } from "../utils.js";
 import { formatCliCommand } from "./command-format.js";
+import type {
+  ConfigMutationOptions,
+  ConfigPatchOptions,
+  ConfigUnsetOptions,
+} from "./config-cli-input.js";
+import { getAtPath, isConfigSchemaPath, parseConfigSetPath } from "./config-cli-path.js";
+import { isConfigMachineOutput, isConfigSetJsonParseOnly } from "./config-output-mode.js";
+import type { ConfigSetOptions } from "./config-set-input.js";
+import { formatCliJsonFailure } from "./failure-output.js";
+import { formatDocsHelp } from "./help-format.js";
+import { exitCliAfterOutput } from "./one-shot-exit.js";
+import { collectOption } from "./program/helpers.js";
+import { setCommandJsonMode } from "./program/json-mode.js";
+import { quoteCliArg } from "./quote-cli-arg.js";
 
-type PathSegment = string;
-type ConfigSetParseOpts = {
-  strictJson?: boolean;
-};
+const CONFIG_SET_DESCRIPTION = [
+  "Set config values by path (value mode, ref/provider builder mode, or batch JSON mode).",
+  "Examples:",
+  formatCliCommand("paleoclaw config set gateway.port 19001 --strict-json"),
+  formatCliCommand(
+    "paleoclaw config set channels.discord.token --ref-provider default --ref-source env --ref-id DISCORD_BOT_TOKEN",
+  ),
+  formatCliCommand(
+    "paleoclaw config set secrets.providers.vault --provider-source file --provider-path /etc/paleoclaw/secrets.json --provider-mode json",
+  ),
+  formatCliCommand("paleoclaw config set --batch-file ./config-set.batch.json --dry-run"),
+].join("\n");
 
-const OLLAMA_API_KEY_PATH: PathSegment[] = ["models", "providers", "ollama", "apiKey"];
-const OLLAMA_PROVIDER_PATH: PathSegment[] = ["models", "providers", "ollama"];
-const OLLAMA_DEFAULT_BASE_URL = "http://127.0.0.1:11434";
+const CONFIG_PATCH_DESCRIPTION = [
+  "Patch config from a JSON5 object in one validated write.",
+  "Objects merge recursively, arrays/scalars replace, and null deletes a path.",
+  "Examples:",
+  formatCliCommand("paleoclaw config patch --file ./openclaw.patch.json5 --dry-run"),
+  formatCliCommand("paleoclaw config patch --stdin"),
+].join("\n");
 
-function isIndexSegment(raw: string): boolean {
-  return /^[0-9]+$/.test(raw);
-}
+type ConfigOperationParams = Parameters<
+  typeof import("./config-cli-runner.js").runConfigOperations
+>[0];
+type ConfigMutationOwner = { method: string; target: string };
 
-function parsePath(raw: string): PathSegment[] {
-  const trimmed = raw.trim();
-  if (!trimmed) {
-    return [];
-  }
-  const parts: string[] = [];
-  let current = "";
-  let i = 0;
-  while (i < trimmed.length) {
-    const ch = trimmed[i];
-    if (ch === "\\") {
-      const next = trimmed[i + 1];
-      if (next) {
-        current += next;
-      }
-      i += 2;
-      continue;
-    }
-    if (ch === ".") {
-      if (current) {
-        parts.push(current);
-      }
-      current = "";
-      i += 1;
-      continue;
-    }
-    if (ch === "[") {
-      if (current) {
-        parts.push(current);
-      }
-      current = "";
-      const close = trimmed.indexOf("]", i);
-      if (close === -1) {
-        throw new Error(`Invalid path (missing "]"): ${raw}`);
-      }
-      const inside = trimmed.slice(i + 1, close).trim();
-      if (!inside) {
-        throw new Error(`Invalid path (empty "[]"): ${raw}`);
-      }
-      parts.push(inside);
-      i = close + 1;
-      continue;
-    }
-    current += ch;
-    i += 1;
-  }
-  if (current) {
-    parts.push(current);
-  }
-  return parts.map((part) => part.trim()).filter(Boolean);
-}
-
-function parseValue(raw: string, opts: ConfigSetParseOpts): unknown {
-  const trimmed = raw.trim();
-  if (opts.strictJson) {
-    try {
-      return JSON5.parse(trimmed);
-    } catch (err) {
-      throw new Error(`Failed to parse JSON5 value: ${String(err)}`, { cause: err });
-    }
-  }
-
+async function runConfigMutation(
+  opts: {
+    cliOptions: ConfigMutationOptions;
+    runtime?: RuntimeEnv;
+    throwOnError?: boolean;
+    localStateOwner?: ConfigMutationOwner;
+  },
+  prepare: () => Promise<Omit<ConfigOperationParams, "runtime" | "options">>,
+  jsonOutput = Boolean(opts.cliOptions.json),
+) {
+  const runtime = opts.runtime ?? defaultRuntime;
+  const { handleConfigMutationError, runConfigOperations } = await import("./config-cli-runner.js");
   try {
-    return JSON5.parse(trimmed);
-  } catch {
-    return raw;
+    const prepared = await prepare();
+    const databaseOnly =
+      opts.localStateOwner !== undefined &&
+      prepared.operations.length > 0 &&
+      prepared.operations.every(({ setPath }) => setPath[0] === "database");
+    // Previews inspect installed plugin state without acquiring write custody.
+    if (
+      opts.localStateOwner &&
+      opts.cliOptions.dryRun &&
+      !databaseOnly &&
+      !getDatabaseEngineSelection()
+    ) {
+      const { readConfigSnapshotForEngineSelection } =
+        await import("../commands/config-preflight-snapshot.js");
+      await readConfigSnapshotForEngineSelection();
+    }
+    const runLocal = () =>
+      runConfigOperations({
+        runtime,
+        options: opts.cliOptions,
+        ...prepared,
+        ...(databaseOnly ? { databaseOnly: true } : {}),
+      });
+    if (!opts.localStateOwner || opts.cliOptions.dryRun) {
+      await runLocal();
+    } else {
+      const { runWithLocalStateOwner } = await import("./local-state-owner.js");
+      await runWithLocalStateOwner({
+        ...opts.localStateOwner,
+        params: {},
+        onForeignOwner: "refuse",
+        ...(databaseOnly ? { databaseAccess: "none" } : { databaseEngine: "configured" }),
+        runLocal,
+      });
+    }
+  } catch (err) {
+    if (opts.throwOnError) {
+      throw err;
+    }
+    handleConfigMutationError({ err, runtime, options: opts.cliOptions, jsonOutput });
   }
 }
 
-function hasOwnPathKey(value: Record<string, unknown>, key: string): boolean {
-  return Object.prototype.hasOwnProperty.call(value, key);
-}
-
-function formatDoctorHint(message: string): string {
-  return `Run \`${formatCliCommand("paleoclaw doctor")}\` ${message}`;
-}
-
-function validatePathSegments(path: PathSegment[]): void {
-  for (const segment of path) {
-    if (!isIndexSegment(segment) && isBlockedObjectKey(segment)) {
-      throw new Error(`Invalid path segment: ${segment}`);
-    }
-  }
-}
-
-function getAtPath(root: unknown, path: PathSegment[]): { found: boolean; value?: unknown } {
-  let current: unknown = root;
-  for (const segment of path) {
-    if (!current || typeof current !== "object") {
-      return { found: false };
-    }
-    if (Array.isArray(current)) {
-      if (!isIndexSegment(segment)) {
-        return { found: false };
-      }
-      const index = Number.parseInt(segment, 10);
-      if (!Number.isFinite(index) || index < 0 || index >= current.length) {
-        return { found: false };
-      }
-      current = current[index];
-      continue;
-    }
-    const record = current as Record<string, unknown>;
-    if (!hasOwnPathKey(record, segment)) {
-      return { found: false };
-    }
-    current = record[segment];
-  }
-  return { found: true, value: current };
-}
-
-function setAtPath(root: Record<string, unknown>, path: PathSegment[], value: unknown): void {
-  let current: unknown = root;
-  for (let i = 0; i < path.length - 1; i += 1) {
-    const segment = path[i];
-    const next = path[i + 1];
-    const nextIsIndex = Boolean(next && isIndexSegment(next));
-    if (Array.isArray(current)) {
-      if (!isIndexSegment(segment)) {
-        throw new Error(`Expected numeric index for array segment "${segment}"`);
-      }
-      const index = Number.parseInt(segment, 10);
-      const existing = current[index];
-      if (!existing || typeof existing !== "object") {
-        current[index] = nextIsIndex ? [] : {};
-      }
-      current = current[index];
-      continue;
-    }
-    if (!current || typeof current !== "object") {
-      throw new Error(`Cannot traverse into "${segment}" (not an object)`);
-    }
-    const record = current as Record<string, unknown>;
-    const existing = hasOwnPathKey(record, segment) ? record[segment] : undefined;
-    if (!existing || typeof existing !== "object") {
-      record[segment] = nextIsIndex ? [] : {};
-    }
-    current = record[segment];
-  }
-
-  const last = path[path.length - 1];
-  if (Array.isArray(current)) {
-    if (!isIndexSegment(last)) {
-      throw new Error(`Expected numeric index for array segment "${last}"`);
-    }
-    const index = Number.parseInt(last, 10);
-    current[index] = value;
-    return;
-  }
-  if (!current || typeof current !== "object") {
-    throw new Error(`Cannot set "${last}" (parent is not an object)`);
-  }
-  (current as Record<string, unknown>)[last] = value;
-}
-
-function unsetAtPath(root: Record<string, unknown>, path: PathSegment[]): boolean {
-  let current: unknown = root;
-  for (let i = 0; i < path.length - 1; i += 1) {
-    const segment = path[i];
-    if (!current || typeof current !== "object") {
-      return false;
-    }
-    if (Array.isArray(current)) {
-      if (!isIndexSegment(segment)) {
-        return false;
-      }
-      const index = Number.parseInt(segment, 10);
-      if (!Number.isFinite(index) || index < 0 || index >= current.length) {
-        return false;
-      }
-      current = current[index];
-      continue;
-    }
-    const record = current as Record<string, unknown>;
-    if (!hasOwnPathKey(record, segment)) {
-      return false;
-    }
-    current = record[segment];
-  }
-
-  const last = path[path.length - 1];
-  if (Array.isArray(current)) {
-    if (!isIndexSegment(last)) {
-      return false;
-    }
-    const index = Number.parseInt(last, 10);
-    if (!Number.isFinite(index) || index < 0 || index >= current.length) {
-      return false;
-    }
-    current.splice(index, 1);
-    return true;
-  }
-  if (!current || typeof current !== "object") {
-    return false;
-  }
-  const record = current as Record<string, unknown>;
-  if (!hasOwnPathKey(record, last)) {
-    return false;
-  }
-  delete record[last];
-  return true;
-}
-
-async function loadValidConfig(runtime: RuntimeEnv = defaultRuntime) {
-  const snapshot = await readConfigFileSnapshot();
-  if (snapshot.valid) {
-    return snapshot;
-  }
-  runtime.error(`Config invalid at ${shortenHomePath(snapshot.path)}.`);
-  for (const line of formatConfigIssueLines(snapshot.issues, "-", { normalizeRoot: true })) {
-    runtime.error(line);
-  }
-  runtime.error(formatDoctorHint("to repair, then retry."));
-  runtime.exit(1);
-  return snapshot;
-}
-
-function parseRequiredPath(path: string): PathSegment[] {
-  const parsedPath = parsePath(path);
-  if (parsedPath.length === 0) {
-    throw new Error("Path is empty.");
-  }
-  validatePathSegments(parsedPath);
-  return parsedPath;
-}
-
-function pathEquals(path: PathSegment[], expected: PathSegment[]): boolean {
-  return (
-    path.length === expected.length && path.every((segment, index) => segment === expected[index])
+export async function runConfigSet(opts: {
+  path?: string;
+  value?: string;
+  cliOptions: ConfigSetOptions;
+  runtime?: RuntimeEnv;
+  beforePersistentApply?: () => void;
+  /** Embedded recovery needs the writer's typed postcommit/rollback outcome. */
+  throwOnError?: boolean;
+  localStateOwner?: ConfigMutationOwner;
+}) {
+  return runConfigMutation(
+    opts,
+    async () => {
+      const { buildConfigSetOperations } = await import("./config-cli-input.js");
+      const { parseConfigSetCurrentExpectation } = await import("./config-set-input.js");
+      const currentExpectation = parseConfigSetCurrentExpectation(opts.cliOptions);
+      const operations = buildConfigSetOperations({
+        path: opts.path,
+        value: opts.value,
+        opts: opts.cliOptions,
+      });
+      return {
+        operations,
+        successMode: "set",
+        ...(currentExpectation ? { currentExpectation } : {}),
+        ...(opts.beforePersistentApply
+          ? { beforePersistentApply: opts.beforePersistentApply }
+          : {}),
+      };
+    },
+    Boolean(opts.cliOptions.dryRun && opts.cliOptions.json),
   );
 }
 
-function ensureValidOllamaProviderForApiKeySet(
-  root: Record<string, unknown>,
-  path: PathSegment[],
-): void {
-  if (!pathEquals(path, OLLAMA_API_KEY_PATH)) {
-    return;
-  }
-  const existing = getAtPath(root, OLLAMA_PROVIDER_PATH);
-  if (existing.found) {
-    return;
-  }
-  setAtPath(root, OLLAMA_PROVIDER_PATH, {
-    baseUrl: OLLAMA_DEFAULT_BASE_URL,
-    api: "ollama",
-    models: [],
+export async function runConfigPatch(opts: {
+  cliOptions: ConfigPatchOptions;
+  runtime?: RuntimeEnv;
+  localStateOwner?: ConfigMutationOwner;
+}) {
+  return runConfigMutation(opts, async () => {
+    const { configPatchModeError, readConfigPatchOperations } =
+      await import("./config-cli-input.js");
+    if (opts.cliOptions.allowExec && !opts.cliOptions.dryRun) {
+      throw configPatchModeError("--allow-exec requires --dry-run.");
+    }
+    if (opts.cliOptions.json && !opts.cliOptions.dryRun) {
+      throw configPatchModeError("--json requires --dry-run.");
+    }
+    return {
+      operations: await readConfigPatchOperations(opts.cliOptions),
+      successMode: "patch",
+    };
   });
 }
 
 export async function runConfigGet(opts: { path: string; json?: boolean; runtime?: RuntimeEnv }) {
   const runtime = opts.runtime ?? defaultRuntime;
   try {
-    const parsedPath = parseRequiredPath(opts.path);
-    const snapshot = await loadValidConfig(runtime);
-    const redacted = redactConfigObject(snapshot.config);
-    const res = getAtPath(redacted, parsedPath);
-    if (!res.found) {
-      runtime.error(danger(`Config path not found: ${opts.path}`));
-      runtime.exit(1);
-      return;
+    const parsedPath = parseConfigSetPath(opts.path);
+    const { readConfigFileSnapshotWithPluginMetadata } = await import("../config/config.js");
+    const { ensureValidConfigSnapshotForCli } = await import("./config-cli-validation.js");
+    // Plugins also extend provider model parameters within agent configuration.
+    const needsPluginSchema = ["plugins", "channels", "agents"].includes(parsedPath[0] ?? "");
+    const read = await readConfigFileSnapshotWithPluginMetadata({
+      observe: false,
+      completePluginMetadata: needsPluginSchema,
+    });
+    const { snapshot, pluginMetadataSnapshot } = read;
+    ensureValidConfigSnapshotForCli(snapshot, runtime, { json: opts.json });
+    if (needsPluginSchema && !pluginMetadataSnapshot) {
+      throw new Error("Config plugin metadata unavailable; refusing to display config values.");
     }
-    if (opts.json) {
-      runtime.log(JSON.stringify(res.value ?? null, null, 2));
-      return;
+    const { redactConfigObject } = await import("../config/redact-snapshot.js");
+    const runtimeSchema =
+      needsPluginSchema && pluginMetadataSnapshot
+        ? (await import("../config/runtime-schema.js")).buildRuntimeConfigSchemaFromRegistry(
+            pluginMetadataSnapshot.manifestRegistry,
+            snapshot.sourceConfig,
+          )
+        : undefined;
+    const uiHints =
+      runtimeSchema?.uiHints ??
+      (await import("../config/schema-base.js")).computeBaseConfigUiHints();
+    const res = getAtPath(redactConfigObject(snapshot.config, uiHints), parsedPath);
+    if (!res.found || res.value === undefined) {
+      const schema =
+        runtimeSchema?.schema ??
+        (await import("../config/schema.js")).buildConfigSchemaCore().schema;
+      const autoManaged = AUTO_MANAGED_CONFIG_META_PATHS.some(
+        (managedPath) =>
+          parsedPath.every((segment, index) => managedPath[index] === segment) ||
+          managedPath.every((segment, index) => parsedPath[index] === segment),
+      );
+      const message = isConfigSchemaPath(schema, parsedPath)
+        ? autoManaged
+          ? `Config path is valid but unset: ${opts.path}. This path contains metadata managed automatically by paleoclaw on config writes; it cannot be authored with config set.`
+          : `Config path is valid but unset: ${opts.path}. The runtime default applies until you set an authored value with ${formatCliCommand(`paleoclaw config set ${quoteCliArg(opts.path)} <value>`)}.`
+        : `Unknown config path: ${opts.path}. Run ${formatCliCommand("paleoclaw config schema")} to inspect valid paths.`;
+      if (opts.json) {
+        writeRuntimeJson(runtime, formatCliJsonFailure(message));
+        exitCliAfterOutput(runtime, 1);
+      }
+      runtime.error(danger(message));
+      exitCliAfterOutput(runtime, 1);
     }
     if (
-      typeof res.value === "string" ||
-      typeof res.value === "number" ||
-      typeof res.value === "boolean"
+      !opts.json &&
+      (typeof res.value === "string" ||
+        typeof res.value === "number" ||
+        typeof res.value === "boolean")
     ) {
-      runtime.log(String(res.value));
+      writeRuntimeStdout(runtime, `${String(res.value)}\n`);
+    } else {
+      writeRuntimeJson(runtime, res.value);
+    }
+  } catch (err) {
+    if (err instanceof ExitError) {
+      throw err;
+    }
+    if (opts.json) {
+      writeRuntimeJson(runtime, formatCliJsonFailure(err));
+      exitCliAfterOutput(runtime, 1);
+    }
+    runtime.error(danger(formatErrorMessage(err)));
+    exitCliAfterOutput(runtime, 1);
+  }
+}
+
+export async function runConfigUnset(opts: {
+  path: string;
+  cliOptions?: ConfigUnsetOptions;
+  runtime?: RuntimeEnv;
+  beforePersistentApply?: () => void;
+  localStateOwner?: ConfigMutationOwner;
+}) {
+  const cliOptions = opts.cliOptions ?? {};
+  return runConfigMutation({ ...opts, cliOptions }, async () => {
+    const { buildUnsetOperation } = await import("./config-cli-input.js");
+    if (cliOptions.allowExec && !cliOptions.dryRun) {
+      throw new Error("--allow-exec can only be used with --dry-run.");
+    }
+    if (cliOptions.json && !cliOptions.dryRun) {
+      throw new Error("--json can only be used with --dry-run.");
+    }
+    const pathTokens = parseConcreteConfigPathTokens(opts.path);
+    return {
+      operations: [buildUnsetOperation(pathTokens.map(String), pathTokens)],
+      successMode: "set",
+      ...(opts.beforePersistentApply ? { beforePersistentApply: opts.beforePersistentApply } : {}),
+    };
+  });
+}
+
+async function runConfigFile(opts: { json?: boolean; runtime?: RuntimeEnv }) {
+  const runtime = opts.runtime ?? defaultRuntime;
+  try {
+    const path = resolveConfigPath();
+    if (opts.json) {
+      writeRuntimeJson(runtime, { path });
       return;
     }
-    runtime.log(JSON.stringify(res.value ?? null, null, 2));
+    writeRuntimeStdout(runtime, `${path}\n`);
   } catch (err) {
-    runtime.error(danger(String(err)));
-    runtime.exit(1);
+    runtime.error(danger(formatErrorMessage(err)));
+    exitCliAfterOutput(runtime, 1);
   }
 }
 
-export async function runConfigUnset(opts: { path: string; runtime?: RuntimeEnv }) {
+async function runConfigSchema(opts: { runtime?: RuntimeEnv } = {}) {
   const runtime = opts.runtime ?? defaultRuntime;
   try {
-    const parsedPath = parseRequiredPath(opts.path);
-    const snapshot = await loadValidConfig(runtime);
-    // Use snapshot.resolved (config after $include and ${ENV} resolution, but BEFORE runtime defaults)
-    // instead of snapshot.config (runtime-merged with defaults).
-    // This prevents runtime defaults from leaking into the written config file (issue #6070)
-    const next = structuredClone(snapshot.resolved) as Record<string, unknown>;
-    const removed = unsetAtPath(next, parsedPath);
-    if (!removed) {
-      runtime.error(danger(`Config path not found: ${opts.path}`));
-      runtime.exit(1);
-      return;
-    }
-    await writeConfigFile(next, { unsetPaths: [parsedPath] });
-    runtime.log(info(`Removed ${opts.path}. Restart the gateway to apply.`));
+    const { readBestEffortRuntimeConfigSchema } = await import("../config/runtime-schema.js");
+    const schema = (await readBestEffortRuntimeConfigSchema()).schema as {
+      properties?: Record<string, unknown>;
+    };
+    writeRuntimeJson(runtime, {
+      ...schema,
+      properties: { $schema: { type: "string" }, ...schema.properties },
+    });
   } catch (err) {
-    runtime.error(danger(String(err)));
-    runtime.exit(1);
+    runtime.error(danger(`Config schema error: ${formatErrorMessage(err)}`));
+    exitCliAfterOutput(runtime, 1);
   }
 }
 
-export async function runConfigFile(opts: { runtime?: RuntimeEnv }) {
+async function runConfigValidate(opts: { json?: boolean; runtime?: RuntimeEnv } = {}) {
   const runtime = opts.runtime ?? defaultRuntime;
+  let outputPath = CONFIG_PATH ?? "openclaw.json";
   try {
-    const snapshot = await readConfigFileSnapshot();
-    runtime.log(shortenHomePath(snapshot.path));
-  } catch (err) {
-    runtime.error(danger(String(err)));
-    runtime.exit(1);
-  }
-}
-
-export async function runConfigValidate(opts: { json?: boolean; runtime?: RuntimeEnv } = {}) {
-  const runtime = opts.runtime ?? defaultRuntime;
-  let outputPath = CONFIG_PATH ?? "paleoclaw.json";
-
-  try {
-    const snapshot = await readConfigFileSnapshot();
+    const { readConfigSnapshotForEngineSelection } =
+      await import("../commands/config-preflight-snapshot.js");
+    const { readConfigFileSnapshotWithPluginMetadata } = await import("../config/config.js");
+    const { finishConfigValidationForCli } = await import("./config-cli-validation.js");
+    const { formatInvalidConfigRepairHint } = await import("./config-recovery-hints.js");
+    const selected = await readConfigSnapshotForEngineSelection();
+    const snapshot =
+      isConfigReadFailure(selected) ||
+      selected.issues.some((issue) => issue.errorCode === "CONFIG_SOURCE_INVALID")
+        ? selected
+        : await finishConfigValidationForCli(
+            await readConfigFileSnapshotWithPluginMetadata({
+              observe: false,
+              prepareValidation: "strict",
+              completePluginMetadata: false,
+            }),
+          );
     outputPath = snapshot.path;
     const shortPath = shortenHomePath(outputPath);
-
     if (!snapshot.exists) {
       if (opts.json) {
-        runtime.log(JSON.stringify({ valid: false, path: outputPath, error: "file not found" }));
+        writeRuntimeJson(
+          runtime,
+          { ...formatCliJsonFailure("file not found"), valid: false, path: outputPath },
+          0,
+        );
       } else {
         runtime.error(danger(`Config file not found: ${shortPath}`));
+        runtime.error(
+          `Create one with ${formatCliCommand("paleoclaw onboard")} or run ${formatCliCommand("paleoclaw doctor --fix")}.`,
+        );
       }
-      runtime.exit(1);
-      return;
+      exitCliAfterOutput(runtime, 1);
     }
-
     if (!snapshot.valid) {
       const issues = normalizeConfigIssues(snapshot.issues);
-
       if (opts.json) {
-        runtime.log(JSON.stringify({ valid: false, path: outputPath, issues }, null, 2));
+        writeRuntimeJson(runtime, {
+          ...formatCliJsonFailure(`paleoclaw config is invalid: ${shortPath}`),
+          repairHint: formatInvalidConfigRepairHint(snapshot, "to repair, then retry."),
+          valid: false,
+          path: outputPath,
+          issues,
+        });
       } else {
-        runtime.error(danger(`Config invalid at ${shortPath}:`));
-        for (const line of formatConfigIssueLines(issues, danger("×"), { normalizeRoot: true })) {
+        runtime.error(`Config needs correction: ${shortPath}`);
+        for (const line of renderConfigValidationIssueLines(snapshot, "-")) {
           runtime.error(`  ${line}`);
         }
         runtime.error("");
-        runtime.error(formatDoctorHint("to repair, or fix the keys above manually."));
+        runtime.error(
+          formatInvalidConfigRepairHint(snapshot, "to repair, or fix the keys above manually."),
+        );
+        runtime.error(
+          `Run ${formatCliCommand("paleoclaw config schema")} to inspect supported settings and values, then rerun ${formatCliCommand("paleoclaw config validate")}.`,
+        );
       }
-      runtime.exit(1);
-      return;
+      exitCliAfterOutput(runtime, 1);
     }
-
+    const warnings = normalizeConfigIssues(snapshot.warnings);
     if (opts.json) {
-      runtime.log(JSON.stringify({ valid: true, path: outputPath }));
+      writeRuntimeJson(runtime, { valid: true, path: outputPath, warnings }, 0);
     } else {
       runtime.log(success(`Config valid: ${shortPath}`));
+      if (warnings.length > 0) {
+        runtime.log(warn(`${warnings.length} warning(s):`));
+        for (const line of formatConfigIssueLines(warnings, warn("!"), { normalizeRoot: true })) {
+          runtime.log(`  ${line}`);
+        }
+      }
     }
   } catch (err) {
-    if (opts.json) {
-      runtime.log(JSON.stringify({ valid: false, path: outputPath, error: String(err) }));
-    } else {
-      runtime.error(danger(`Config validation error: ${String(err)}`));
+    if (err instanceof ExitError) {
+      throw err;
     }
-    runtime.exit(1);
+    if (opts.json) {
+      writeRuntimeJson(
+        runtime,
+        { ...formatCliJsonFailure(err), valid: false, path: outputPath },
+        0,
+      );
+    } else {
+      runtime.error(danger(`Config validation error: ${formatErrorMessage(err)}`));
+    }
+    exitCliAfterOutput(runtime, 1);
   }
 }
 
@@ -396,23 +395,20 @@ export function registerConfigCli(program: Command) {
   const cmd = program
     .command("config")
     .description(
-      "Non-interactive config helpers (get/set/unset/file/validate). Run without subcommand for the setup wizard.",
+      "Non-interactive config helpers (get/set/patch/unset/file/schema/validate). Run without subcommand for guided setup.",
     )
-    .addHelpText(
-      "after",
-      () =>
-        `\n${theme.muted("Docs:")} ${formatDocsLink("/cli/config", "docs.paleoclaw.ai/cli/config")}\n`,
-    )
+    .addHelpText("after", () => formatDocsHelp("/cli/config"))
     .option(
       "--section <section>",
-      "Configure wizard sections (repeatable). Use with no subcommand.",
-      (value: string, previous: string[]) => [...previous, value],
+      "Configuration sections for guided setup (repeatable). Use with no subcommand.",
+      collectOption,
       [] as string[],
     )
     .action(async (opts) => {
-      const { configureCommandFromSectionsArg } = await import("../commands/configure.js");
-      await configureCommandFromSectionsArg(opts.section, defaultRuntime);
+      const { configureCommandFromSectionsArg } = await import("../commands/configure.commands.js");
+      await configureCommandFromSectionsArg(opts.section);
     });
+  setCommandJsonMode(cmd, "output", ({ argv }) => isConfigMachineOutput(argv));
 
   cmd
     .command("get")
@@ -423,49 +419,140 @@ export function registerConfigCli(program: Command) {
       await runConfigGet({ path, json: Boolean(opts.json) });
     });
 
-  cmd
-    .command("set")
-    .description("Set a config value by dot path")
-    .argument("<path>", "Config path (dot or bracket notation)")
-    .argument("<value>", "Value (JSON5 or raw string)")
-    .option("--strict-json", "Strict JSON5 parsing (error instead of raw string fallback)", false)
+  setCommandJsonMode(cmd.command("set"), "parse-only", ({ argv }) => isConfigSetJsonParseOnly(argv))
+    .description(CONFIG_SET_DESCRIPTION)
+    .argument("[path]", "Config path (dot or bracket notation)")
+    .argument("[value]", "Value (JSON/JSON5 or raw string)")
+    .option("--strict-json", "Strict JSON parsing (error instead of raw string fallback)", false)
     .option("--json", "Legacy alias for --strict-json", false)
-    .action(async (path: string, value: string, opts) => {
-      try {
-        const parsedPath = parseRequiredPath(path);
-        const parsedValue = parseValue(value, {
-          strictJson: Boolean(opts.strictJson || opts.json),
-        });
-        const snapshot = await loadValidConfig();
-        // Use snapshot.resolved (config after $include and ${ENV} resolution, but BEFORE runtime defaults)
-        // instead of snapshot.config (runtime-merged with defaults).
-        // This prevents runtime defaults from leaking into the written config file (issue #6070)
-        const next = structuredClone(snapshot.resolved) as Record<string, unknown>;
-        ensureValidOllamaProviderForApiKeySet(next, parsedPath);
-        setAtPath(next, parsedPath, parsedValue);
-        await writeConfigFile(next);
-        defaultRuntime.log(info(`Updated ${path}. Restart the gateway to apply.`));
-      } catch (err) {
-        defaultRuntime.error(danger(String(err)));
-        defaultRuntime.exit(1);
-      }
+    .option("--expect-current-absent", "Write only when the authored path is absent", false)
+    .option(
+      "--expect-current-json <json>",
+      "Write only when the authored path exactly matches this strict JSON value",
+    )
+    .option(
+      "--dry-run",
+      "Validate changes without writing openclaw.json (checks run in builder/json/batch modes; exec SecretRefs are skipped unless --allow-exec is set)",
+      false,
+    )
+    .option(
+      "--allow-exec",
+      "Dry-run only: allow exec SecretRef resolvability checks (may execute provider commands)",
+      false,
+    )
+    .option("--merge", "Merge object/map values instead of replacing the target path", false)
+    .option(
+      "--replace",
+      "Allow full replacement of protected map/list paths such as agents.defaults.models",
+      false,
+    )
+    .option("--ref-provider <alias>", "SecretRef builder: provider alias")
+    .option("--ref-source <source>", "SecretRef builder: source (env|file|exec|store)")
+    .option("--ref-id <id>", "SecretRef builder: ref id")
+    .option("--provider-source <source>", "Provider builder: source (env|file|exec|store)")
+    .option(
+      "--provider-allowlist <envVar>",
+      "Provider builder (env): allowlist entry (repeatable)",
+      collectOption,
+      [] as string[],
+    )
+    .option("--provider-path <path>", "Provider builder (file): path")
+    .option("--provider-mode <mode>", "Provider builder (file): mode (singleValue|json)")
+    .option("--provider-timeout-ms <ms>", "Provider builder (file|exec): timeout ms")
+    .option("--provider-max-bytes <bytes>", "Provider builder (file): max bytes")
+    .option("--provider-command <path>", "Provider builder (exec): absolute command path")
+    .option(
+      "--provider-arg <arg>",
+      "Provider builder (exec): command arg (repeatable)",
+      collectOption,
+      [] as string[],
+    )
+    .option("--provider-no-output-timeout-ms <ms>", "Provider builder (exec): no-output timeout ms")
+    .option("--provider-max-output-bytes <bytes>", "Provider builder (exec): max output bytes")
+    .option("--provider-json-only", "Provider builder (exec): require JSON output", false)
+    .option(
+      "--provider-env <key=value>",
+      "Provider builder (exec): env assignment (repeatable)",
+      collectOption,
+      [] as string[],
+    )
+    .option(
+      "--provider-pass-env <envVar>",
+      "Provider builder (exec): pass host env var (repeatable)",
+      collectOption,
+      [] as string[],
+    )
+    .option(
+      "--provider-trusted-dir <path>",
+      "Provider builder (exec): trusted directory (repeatable)",
+      collectOption,
+      [] as string[],
+    )
+    .option("--batch-json <json>", "Batch mode: JSON array of set operations")
+    .option("--batch-file <path>", "Batch mode: read JSON array of set operations from file")
+    .action(async (path: string | undefined, value: string | undefined, opts: ConfigSetOptions) => {
+      await runConfigSet({
+        path,
+        value,
+        cliOptions: opts,
+        localStateOwner: { method: "config set", target: path ?? "config" },
+      });
+    });
+
+  cmd
+    .command("patch")
+    .description(CONFIG_PATCH_DESCRIPTION)
+    .option("--file <path>", "Read a JSON5 config patch object from file")
+    .option("--stdin", "Read a JSON5 config patch object from stdin", false)
+    .option(
+      "--dry-run",
+      "Validate changes without writing openclaw.json (checks schema and SecretRef resolvability; exec SecretRefs are skipped unless --allow-exec is set)",
+      false,
+    )
+    .option(
+      "--allow-exec",
+      "Dry-run only: allow exec SecretRef resolvability checks (may execute provider commands)",
+      false,
+    )
+    .option("--json", "Output dry-run result as JSON", false)
+    .option(
+      "--replace-path <path>",
+      "Replace the object or array at this dot/bracket path instead of recursively applying it (repeatable)",
+      collectOption,
+      [] as string[],
+    )
+    .action(async (opts: ConfigPatchOptions) => {
+      await runConfigPatch({
+        cliOptions: opts,
+        localStateOwner: { method: "config patch", target: "config" },
+      });
     });
 
   cmd
     .command("unset")
     .description("Remove a config value by dot path")
     .argument("<path>", "Config path (dot or bracket notation)")
-    .action(async (path: string) => {
-      await runConfigUnset({ path });
+    .option("--dry-run", "validate the removal without writing the config file")
+    .option("--allow-exec", "allow exec SecretRef providers during --dry-run")
+    .option("--json", "print dry-run result as JSON")
+    .action(async (path: string, options: ConfigUnsetOptions) => {
+      await runConfigUnset({
+        path,
+        cliOptions: options,
+        localStateOwner: { method: "config unset", target: path },
+      });
     });
 
   cmd
     .command("file")
     .description("Print the active config file path")
-    .action(async () => {
-      await runConfigFile({});
-    });
-
+    .option("--json", "Output JSON", false)
+    .action((opts: { json?: boolean }) => runConfigFile(opts));
+  cmd
+    .command("schema")
+    .description("Print the JSON schema for openclaw.json")
+    .option("--json", "Output JSON", false)
+    .action(runConfigSchema);
   cmd
     .command("validate")
     .description("Validate the current config against the schema without starting the gateway")

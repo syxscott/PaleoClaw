@@ -1,41 +1,53 @@
-import type { VoiceCallConfig } from "../config.js";
+import type { KeyedAsyncQueue } from "paleoclaw/plugin-sdk/keyed-async-queue";
+import type { VoiceCallConfig, VoiceCallCoreSessionConfig } from "../config.js";
 import type { VoiceCallProvider } from "../providers/base.js";
+import type { VoiceCallStateRuntime } from "../runtime-state.js";
 import type { CallId, CallRecord } from "../types.js";
 
-export type TranscriptWaiter = {
+export type CallEndResult = { success: boolean; error?: string };
+
+type TranscriptWaiter = {
   resolve: (text: string) => void;
   reject: (err: Error) => void;
   timeout: NodeJS.Timeout;
   turnToken?: string;
 };
 
-export type CallManagerRuntimeState = {
+export type CallManagerContext = {
   activeCalls: Map<CallId, CallRecord>;
   providerCallIdMap: Map<string, CallId>;
   processedEventIds: Set<string>;
-  /** Provider call IDs we already sent a reject hangup for; avoids duplicate hangup calls. */
+  /** Provider call IDs reserved for reject hangup; avoids duplicate hangup calls. */
   rejectedProviderCallIds: Set<string>;
-};
-
-export type CallManagerRuntimeDeps = {
   provider: VoiceCallProvider | null;
   config: VoiceCallConfig;
+  coreSession?: VoiceCallCoreSessionConfig;
   storePath: string;
+  stateRuntime?: VoiceCallStateRuntime["state"];
   webhookUrl: string | null;
-};
-
-export type CallManagerTransientState = {
+  mutationQueue: KeyedAsyncQueue;
+  pendingCallAdmissions: Set<CallId>;
+  trackCallWork: (work: Promise<unknown>) => void;
+  isStopping: () => boolean;
   activeTurnCalls: Set<CallId>;
+  endCallOperations: Map<CallId, Promise<CallEndResult>>;
   transcriptWaiters: Map<CallId, TranscriptWaiter>;
   maxDurationTimers: Map<CallId, NodeJS.Timeout>;
-};
-
-export type CallManagerHooks = {
-  /** Optional runtime hook invoked after an event transitions a call into answered state. */
+  notifyHangupTimers: Map<CallId, NodeJS.Timeout>;
+  initialMessageInFlight: Set<CallId>;
+  onCallUpdated?: (call: CallRecord) => void | Promise<void>;
+  beforeCallEnd?: (call: CallRecord) => Promise<void>;
+  playRealtimeVoicemail?: (callId: CallId, instructions: string) => Promise<void> | undefined;
+  beforeCarrierPlayback?: (callId: CallId) => Promise<void>;
   onCallAnswered?: (call: CallRecord) => void;
+  onCallerSpeech?: (call: CallRecord) => void;
+  streamSessionIssuer?: StreamSessionIssuer;
 };
 
-export type CallManagerContext = CallManagerRuntimeState &
-  CallManagerRuntimeDeps &
-  CallManagerTransientState &
-  CallManagerHooks;
+export type StreamSessionIssuer = (request: {
+  providerName: "twilio" | "telnyx";
+  callId: CallId;
+  from?: string;
+  to?: string;
+  direction: "inbound" | "outbound";
+}) => { token: string; streamUrl: string } | undefined;

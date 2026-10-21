@@ -1,10 +1,6 @@
-import { isRecord } from "../../../utils.js";
-import type { ChannelAccountSnapshot, ChannelStatusIssue } from "../types.js";
-export { isRecord };
-
-export function asString(value: unknown): string | undefined {
-  return typeof value === "string" && value.trim().length > 0 ? value.trim() : undefined;
-}
+import { normalizeOptionalString } from "@paleoclaw/normalization-core/string-coerce";
+import type { ChannelAccountSnapshot, ChannelStatusIssue } from "../types.public.js";
+export { isRecord } from "../../../utils.js";
 
 export function formatMatchMetadata(params: {
   matchKey?: unknown;
@@ -16,7 +12,7 @@ export function formatMatchMetadata(params: {
       : typeof params.matchKey === "number"
         ? String(params.matchKey)
         : undefined;
-  const matchSource = asString(params.matchSource);
+  const matchSource = normalizeOptionalString(params.matchSource);
   const parts = [
     matchKey ? `matchKey=${matchKey}` : null,
     matchSource ? `matchSource=${matchSource}` : null,
@@ -37,7 +33,7 @@ export function resolveEnabledConfiguredAccountId(account: {
   enabled?: unknown;
   configured?: unknown;
 }): string | null {
-  const accountId = asString(account.accountId) ?? "default";
+  const accountId = normalizeOptionalString(account.accountId) ?? "default";
   const enabled = account.enabled !== false;
   const configured = account.configured === true;
   return enabled && configured ? accountId : null;
@@ -53,10 +49,12 @@ export function collectIssuesForEnabledAccounts<
   const issues: ChannelStatusIssue[] = [];
   for (const entry of params.accounts) {
     const account = params.readAccount(entry);
+    // Disabled accounts should not produce missing credential/runtime issues in
+    // status output; they are intentionally inactive.
     if (!account || account.enabled === false) {
       continue;
     }
-    const accountId = asString(account.accountId) ?? "default";
+    const accountId = normalizeOptionalString(account.accountId) ?? "default";
     params.collectIssues({ account, accountId, issues });
   }
   return issues;

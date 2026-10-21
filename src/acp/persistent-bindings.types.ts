@@ -1,9 +1,20 @@
-import { createHash } from "node:crypto";
+import type { AcpRuntimeSessionMode } from "@paleoclaw/acp-core/runtime/types";
+import {
+  normalizeOptionalLowercaseString,
+  normalizeOptionalString as normalizeText,
+} from "@paleoclaw/normalization-core/string-coerce";
+import type { ChannelId } from "../channels/plugins/types.public.js";
+import { sha256HexPrefixCore } from "../infra/crypto-digest.js";
 import type { SessionBindingRecord } from "../infra/outbound/session-binding-service.js";
-import { sanitizeAgentId } from "../routing/session-key.js";
-import type { AcpRuntimeSessionMode } from "./runtime/types.js";
+import {
+  normalizeAccountId,
+  resolveAgentIdFromSessionKey,
+  sanitizeAgentId,
+} from "../routing/session-key.js";
 
-export type ConfiguredAcpBindingChannel = "discord" | "telegram";
+export { normalizeOptionalString as normalizeText } from "@paleoclaw/normalization-core/string-coerce";
+
+export type ConfiguredAcpBindingChannel = ChannelId;
 
 export type ConfiguredAcpBindingSpec = {
   channel: ConfiguredAcpBindingChannel;
@@ -15,6 +26,9 @@ export type ConfiguredAcpBindingSpec = {
   /** ACP harness agent id override (falls back to agentId when omitted). */
   acpAgentId?: string;
   mode: AcpRuntimeSessionMode;
+  model?: string;
+  /** Owner agent's effective thinking default, forwarded as the ACP session's thinking runtime option. */
+  thinking?: string;
   cwd?: string;
   backend?: string;
   label?: string;
@@ -25,23 +39,15 @@ export type ResolvedConfiguredAcpBinding = {
   record: SessionBindingRecord;
 };
 
-export type AcpBindingConfigShape = {
+type AcpBindingConfigShape = {
   mode?: string;
   cwd?: string;
   backend?: string;
   label?: string;
 };
 
-export function normalizeText(value: unknown): string | undefined {
-  if (typeof value !== "string") {
-    return undefined;
-  }
-  const trimmed = value.trim();
-  return trimmed || undefined;
-}
-
 export function normalizeMode(value: unknown): AcpRuntimeSessionMode {
-  const raw = normalizeText(value)?.toLowerCase();
+  const raw = normalizeOptionalLowercaseString(value);
   return raw === "oneshot" ? "oneshot" : "persistent";
 }
 
@@ -59,23 +65,8 @@ export function normalizeBindingConfig(raw: unknown): AcpBindingConfigShape {
   };
 }
 
-function buildBindingHash(params: {
-  channel: ConfiguredAcpBindingChannel;
-  accountId: string;
-  conversationId: string;
-}): string {
-  return createHash("sha256")
-    .update(`${params.channel}:${params.accountId}:${params.conversationId}`)
-    .digest("hex")
-    .slice(0, 16);
-}
-
 export function buildConfiguredAcpSessionKey(spec: ConfiguredAcpBindingSpec): string {
-  const hash = buildBindingHash({
-    channel: spec.channel,
-    accountId: spec.accountId,
-    conversationId: spec.conversationId,
-  });
+  const hash = sha256HexPrefixCore(`${spec.channel}:${spec.accountId}:${spec.conversationId}`, 16);
   return `agent:${sanitizeAgentId(spec.agentId)}:acp:binding:${spec.channel}:${spec.accountId}:${hash}`;
 }
 
@@ -98,8 +89,64 @@ export function toConfiguredAcpBindingRecord(spec: ConfiguredAcpBindingSpec): Se
       agentId: spec.agentId,
       ...(spec.acpAgentId ? { acpAgentId: spec.acpAgentId } : {}),
       label: spec.label,
+      ...(spec.model ? { model: spec.model } : {}),
+      ...(spec.thinking ? { thinking: spec.thinking } : {}),
       ...(spec.backend ? { backend: spec.backend } : {}),
       ...(spec.cwd ? { cwd: spec.cwd } : {}),
     },
+  };
+}
+
+export function parseConfiguredAcpSessionKey(
+  sessionKey: string,
+): { channel: ConfiguredAcpBindingChannel; accountId: string } | null {
+  const tokens = sessionKey.trim().split(":");
+  if (
+    tokens.length !== 7 ||
+    tokens[0] !== "agent" ||
+    tokens[2] !== "acp" ||
+    tokens[3] !== "binding"
+  ) {
+    return null;
+  }
+  const channel = normalizeOptionalLowercaseString(tokens[4]);
+  if (!channel) {
+    return null;
+  }
+  return {
+    channel: channel as ConfiguredAcpBindingChannel,
+    accountId: normalizeAccountId(tokens[5] ?? "default"),
+  };
+}
+
+export function resolveConfiguredAcpBindingSpecFromRecord(
+  record: SessionBindingRecord,
+): ConfiguredAcpBindingSpec | null {
+  if (record.targetKind !== "session") {
+    return null;
+  }
+  const conversationId = record.conversation.conversationId.trim();
+  if (!conversationId) {
+    return null;
+  }
+  const agentId =
+    normalizeText(record.metadata?.agentId) ??
+    resolveAgentIdFromSessionKey(record.targetSessionKey);
+  if (!agentId) {
+    return null;
+  }
+  return {
+    channel: record.conversation.channel as ConfiguredAcpBindingChannel,
+    accountId: normalizeAccountId(record.conversation.accountId),
+    conversationId,
+    parentConversationId: normalizeText(record.conversation.parentConversationId),
+    agentId,
+    acpAgentId: normalizeText(record.metadata?.acpAgentId),
+    mode: normalizeMode(record.metadata?.mode),
+    model: normalizeText(record.metadata?.model),
+    thinking: normalizeText(record.metadata?.thinking),
+    cwd: normalizeText(record.metadata?.cwd),
+    backend: normalizeText(record.metadata?.backend),
+    label: normalizeText(record.metadata?.label),
   };
 }

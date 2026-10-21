@@ -13,7 +13,7 @@
 
 ### 1. 项目复制与初始化
 
-- [x] 完整复制 openclaw-main 全部内容到 PaleoClaw
+- [x] 完整复制 paleoclaw-main 全部内容到 PaleoClaw
 - [x] 删除原有 .git 文件夹
 - [x] 重新初始化 git 仓库
   - 分支：main
@@ -26,15 +26,15 @@
 
 | 原名称                         | 新名称                           |
 | ------------------------------ | -------------------------------- |
-| `OpenClaw`                     | `PaleoClaw`                      |
-| `openclaw`                     | `paleoclaw`                      |
+| `paleoclaw`                     | `PaleoClaw`                      |
+| `paleoclaw`                     | `paleoclaw`                      |
 | `OPENCLAW`                     | `PALEOCLAW`                      |
 | `openclaw.mjs`                 | `paleoclaw.mjs`                  |
-| `github.com/openclaw/openclaw` | `github.com/paleoclaw/paleoclaw` |
+| `github.com/paleoclaw/paleoclaw` | `github.com/paleoclaw/paleoclaw` |
 | `ai.openclaw.`                 | `ai.paleoclaw.`                  |
-| `@openclaw/`                   | `@paleoclaw/`                    |
+| `@paleoclaw/`                   | `@paleoclaw/`                    |
 | `docs.openclaw.ai`             | `docs.paleoclaw.ai`              |
-| `ClawHub`                      | `PaleoHub`                       |
+| `PaleoHub`                      | `PaleoHub`                       |
 
 ### 3. 核心配置文件更新
 
@@ -193,7 +193,7 @@ paleoclaw agent --message "Write a literature review on sauropod gigantism"
 
 ## 🔍 验证清单
 
-- [x] 所有 `OpenClaw` 引用已替换为 `PaleoClaw`
+- [x] 所有 `paleoclaw` 引用已替换为 `PaleoClaw`
 - [x] package.json 配置正确
 - [x] README.md 完全重写为古生物学主题
 - [x] System Prompt 定制完成
@@ -206,9 +206,9 @@ paleoclaw agent --message "Write a literature review on sauropod gigantism"
 
 ## 📝 重要说明
 
-### 保持 OpenClaw 架构
+### 保持 paleoclaw 架构
 
-PaleoClaw **完全保持** OpenClaw 的原有架构：
+PaleoClaw **完全保持** paleoclaw 的原有架构：
 
 - ✅ Gateway 系统
 - ✅ Agents 框架
@@ -228,10 +228,10 @@ PaleoClaw **新增**的功能：
 
 ### 兼容性
 
-PaleoClaw **完全兼容** OpenClaw 生态系统：
+PaleoClaw **完全兼容** paleoclaw 生态系统：
 
-- ✅ 所有 OpenClaw Channels
-- ✅ 所有 OpenClaw Skills
+- ✅ 所有 paleoclaw Channels
+- ✅ 所有 paleoclaw Skills
 - ✅ 所有 AI Provider
 - ✅ 所有配置选项
 
@@ -277,7 +277,7 @@ PaleoClaw **完全兼容** OpenClaw 生态系统：
 
 PaleoClaw 基于以下项目构建：
 
-- **OpenClaw Project** - 基础框架
+- **paleoclaw Project** - 基础框架
 - **Paleobiology Database** - 化石数据
 - **CrossRef** - 文献元数据
 - **Semantic Scholar** - 引用分析

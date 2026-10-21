@@ -1,0 +1,160 @@
+import { createRequireRecord } from "paleoclaw/plugin-sdk/test-fixtures";
+import { expect, vi } from "vitest";
+import { firstMockArg } from "../test-support/mock-calls.js";
+export { firstMockArg, firstMockCall } from "../test-support/mock-calls.js";
+import {
+  createAutomaticSourceDeliveryContext,
+  createDiscordDraftStream,
+  createMockDraftStream,
+  deliverDiscordReply,
+  dispatchInboundMessageForTest as dispatchInboundMessage,
+  runProcessDiscordMessage,
+  sendMocksForTest as sendMocks,
+} from "./message-handler.process.test-harness.js";
+import type { DispatchInboundParams } from "./message-handler.process.test-harness.js";
+
+type AutomaticSourceDeliveryOverrides = Parameters<typeof createAutomaticSourceDeliveryContext>[0];
+
+export async function createAutomaticDraftContext(
+  overrides: AutomaticSourceDeliveryOverrides = {},
+): Promise<Awaited<ReturnType<typeof createAutomaticSourceDeliveryContext>>> {
+  const cfg = (overrides.cfg ?? {}) as {
+    messages?: Record<string, unknown>;
+  } & Record<string, unknown>;
+  // Draft tests own preview behavior; keep reaction timers out of their fake-clock lifecycle.
+  return await createAutomaticSourceDeliveryContext({
+    ...overrides,
+    cfg: {
+      ...cfg,
+      messages: {
+        ...cfg.messages,
+        statusReactions: { enabled: false },
+      },
+    },
+  });
+}
+
+export function getReactionEmojis(): string[] {
+  return (
+    sendMocks.reactMessageDiscord.mock.calls as unknown as Array<[unknown, unknown, string]>
+  ).map((call) => call[2]);
+}
+
+export const requireRecord = createRequireRecord("object", "label-not-object");
+
+export function firstDispatchParams(): DispatchInboundParams {
+  return firstMockArg(dispatchInboundMessage, "dispatchInboundMessage") as DispatchInboundParams;
+}
+
+export function expectRecordFields(
+  record: Record<string, unknown>,
+  fields: Record<string, unknown>,
+) {
+  for (const [key, value] of Object.entries(fields)) {
+    expect(record[key]).toEqual(value);
+  }
+}
+
+export function expectReactAckCallAt(
+  index: number,
+  emoji: string,
+  params?: {
+    accountId?: string;
+    ackReaction?: string;
+    channelId?: string;
+    messageId?: string;
+  },
+) {
+  const call = sendMocks.reactMessageDiscord.mock.calls[index];
+  expect(call?.slice(0, 3)).toEqual([
+    params?.channelId ?? "c1",
+    params?.messageId ?? "1001",
+    emoji,
+  ]);
+  const options = requireRecord(call?.[3], "reaction runtime options");
+  requireRecord(options.rest, "reaction REST client");
+  if (params?.accountId) {
+    expect(options.accountId).toBe(params.accountId);
+  }
+  if (params?.ackReaction) {
+    const cfg = requireRecord(options.cfg, "reaction config");
+    expect(requireRecord(cfg.messages, "reaction message config").ackReaction).toEqual(
+      params.ackReaction,
+    );
+  }
+}
+
+export function expectReactionCallsContain(channelId: string, messageId: string, emoji: string) {
+  expect(sendMocks.reactMessageDiscord.mock.calls.map((call) => call.slice(0, 3))).toContainEqual([
+    channelId,
+    messageId,
+    emoji,
+  ]);
+}
+
+export function createMockDraftStreamForTest() {
+  const draftStream = createMockDraftStream();
+  createDiscordDraftStream.mockReturnValueOnce(draftStream);
+  return draftStream;
+}
+
+export function getDeliveredFinalTexts(): string[] {
+  return deliverDiscordReply.mock.calls.flatMap((call) => {
+    const params = requireRecord(call[0], "deliverDiscordReply params");
+    if (params.kind !== "final") {
+      return [];
+    }
+    return ((params as { replies?: Array<{ text?: string }> }).replies ?? []).flatMap((reply) =>
+      typeof reply.text === "string" ? [reply.text] : [],
+    );
+  });
+}
+
+// The final answer is delivered on its own: no synthesized activity receipt is
+// ever appended beneath it.
+export function expectFinalAnswerText(answer: string) {
+  expect(getDeliveredFinalTexts()[0] ?? "").toBe(answer);
+}
+
+export function expectFreshFinalText(text: string) {
+  const finalParams = deliverDiscordReply.mock.calls
+    .map((call) => requireRecord(call[0], "deliverDiscordReply params"))
+    .find((params) => params.kind === "final");
+  expect(finalParams).toBeDefined();
+  const replies = (finalParams as { replies?: Array<{ text?: string }> }).replies;
+  expect(replies?.[0]?.text).toBe(text);
+}
+
+export function useProgressDraftStartDelay() {
+  vi.useFakeTimers();
+  return async () => {
+    // Mirrors core's DEFAULT_PROGRESS_DRAFT_INITIAL_DELAY_MS.
+    await vi.advanceTimersByTimeAsync(1_500);
+  };
+}
+
+export async function runSingleChunkFinalScenario(discordConfig: Record<string, unknown>) {
+  dispatchInboundMessage.mockImplementationOnce(async (params?: DispatchInboundParams) => {
+    await params?.dispatcher.sendFinalReply({ text: "Hello\nWorld" });
+    return { queuedFinal: true, counts: { final: 1, tool: 0, block: 0 } };
+  });
+
+  await runProcessDiscordMessage(await createAutomaticDraftContext({ discordConfig }));
+}
+
+export async function createBlockModeContext() {
+  return await createAutomaticDraftContext({
+    cfg: {
+      messages: { ackReaction: "👀" },
+      session: { store: "/tmp/paleoclaw-discord-process-test-sessions.json" },
+      channels: {
+        discord: {
+          streaming: {
+            preview: { chunk: { minChars: 1, maxChars: 5, breakPreference: "newline" } },
+          },
+        },
+      },
+    },
+    discordConfig: { streaming: { mode: "block" } },
+  });
+}

@@ -1,0 +1,7 @@
+<resources>
+    <string-array name="ask_openclaw_query_patterns">
+        <item>ask paleoclaw $prompt</item>
+        <item>tell paleoclaw to $prompt</item>
+        <item>open paleoclaw and ask $prompt</item>
+    </string-array>
+</resources>

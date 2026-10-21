@@ -1,6 +1,15 @@
-import type { OpenClawConfig } from "../config/config.js";
+import { isIpv6Address, parseCanonicalIpAddress } from "@paleoclaw/net-policy/ip";
+import { expectDefined } from "@paleoclaw/normalization-core";
+import { normalizeLowercaseStringOrEmpty } from "@paleoclaw/normalization-core/string-coerce";
+import { formatPortRangeHint } from "../cli/error-format.js";
+import { resolveControlUiAllowedOrigins } from "../config/gateway-control-ui-origins.js";
+import type { OpenClawConfig } from "../config/types.openclaw.js";
 import { getTailnetHostname } from "../infra/tailscale.js";
-import { isIpv6Address, parseCanonicalIpAddress } from "../shared/net/ip.js";
+import { parseTcpPort } from "../infra/tcp-port.js";
+
+export function validateGatewayPortInput(value: unknown): string | undefined {
+  return parseTcpPort(value) === null ? formatPortRangeHint() : undefined;
+}
 
 export const TAILSCALE_EXPOSURE_OPTIONS = [
   { value: "off", label: "Off", hint: "No Tailscale exposure" },
@@ -18,7 +27,7 @@ export const TAILSCALE_EXPOSURE_OPTIONS = [
 
 export const TAILSCALE_MISSING_BIN_NOTE_LINES = [
   "Tailscale binary not found in PATH or /Applications.",
-  "Ensure Tailscale is installed from:",
+  "Install Tailscale from:",
   "  https://tailscale.com/download/mac",
   "",
   "You can continue setup, but serve/funnel will fail at runtime.",
@@ -30,37 +39,17 @@ export const TAILSCALE_DOCS_LINES = [
   "https://docs.paleoclaw.ai/web",
 ] as const;
 
-function normalizeTailnetHostForUrl(rawHost: string): string | null {
+function buildTailnetHttpsOrigin(rawHost: string): string | null {
   const trimmed = rawHost.trim().replace(/\.$/, "");
   if (!trimmed) {
     return null;
   }
   const parsed = parseCanonicalIpAddress(trimmed);
-  if (parsed && isIpv6Address(parsed)) {
-    return `[${parsed.toString().toLowerCase()}]`;
-  }
-  return trimmed;
-}
-
-export function buildTailnetHttpsOrigin(rawHost: string): string | null {
-  const normalizedHost = normalizeTailnetHostForUrl(rawHost);
-  if (!normalizedHost) {
-    return null;
-  }
-  try {
-    return new URL(`https://${normalizedHost}`).origin;
-  } catch {
-    return null;
-  }
-}
-
-export function appendAllowedOrigin(existing: string[] | undefined, origin: string): string[] {
-  const current = existing ?? [];
-  const normalized = origin.toLowerCase();
-  if (current.some((entry) => entry.toLowerCase() === normalized)) {
-    return current;
-  }
-  return [...current, origin];
+  const normalizedHost =
+    parsed && isIpv6Address(parsed)
+      ? `[${normalizeLowercaseStringOrEmpty(parsed.toString())}]`
+      : trimmed;
+  return URL.parse(`https://${normalizedHost}`)?.origin ?? null;
 }
 
 export async function maybeAddTailnetOriginToControlUiAllowedOrigins(params: {
@@ -72,21 +61,28 @@ export async function maybeAddTailnetOriginToControlUiAllowedOrigins(params: {
     return params.config;
   }
   const tsOrigin = await getTailnetHostname(undefined, params.tailscaleBin ?? undefined)
-    .then((host) => buildTailnetHttpsOrigin(host))
+    .then((host) =>
+      buildTailnetHttpsOrigin(expectDefined(host, "gateway config prompts.shared host")),
+    )
     .catch(() => null);
   if (!tsOrigin) {
     return params.config;
   }
 
-  const existing = params.config.gateway?.controlUi?.allowedOrigins ?? [];
-  const updatedOrigins = appendAllowedOrigin(existing, tsOrigin);
+  const existing = resolveControlUiAllowedOrigins(params.config) ?? [];
+  const normalized = normalizeLowercaseStringOrEmpty(tsOrigin);
+  if (existing.some((entry) => normalizeLowercaseStringOrEmpty(entry) === normalized)) {
+    return params.config;
+  }
+  // Preserve all unrelated gateway/controlUi config while adding the derived
+  // tailnet origin, because setup writes partial gateway config objects.
   return {
     ...params.config,
     gateway: {
       ...params.config.gateway,
       controlUi: {
         ...params.config.gateway?.controlUi,
-        allowedOrigins: updatedOrigins,
+        allowedOrigins: [...existing, tsOrigin],
       },
     },
   };

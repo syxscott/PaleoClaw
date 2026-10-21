@@ -1,134 +1,164 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { createDeferred, withinTest } from "../../test/helpers/promise.js";
 import type { MsgContext } from "../auto-reply/templating.js";
+import { recordInboundSession } from "./session.js";
 
-const recordSessionMetaFromInboundMock = vi.fn((_args?: unknown) => Promise.resolve(undefined));
-const updateLastRouteMock = vi.fn((_args?: unknown) => Promise.resolve(undefined));
+type InboundRuntime = typeof import("../config/sessions/inbound.runtime.js");
+const { recordMeta, updateRoute } = vi.hoisted(() => ({
+  recordMeta: vi.fn<InboundRuntime["recordInboundSessionMeta"]>(),
+  updateRoute: vi.fn<InboundRuntime["updateSessionLastRoute"]>(),
+}));
 
-vi.mock("../config/sessions.js", () => ({
-  recordSessionMetaFromInbound: (args: unknown) => recordSessionMetaFromInboundMock(args),
-  updateLastRoute: (args: unknown) => updateLastRouteMock(args),
+// mock-isolation: routing assertions record writes without opening durable session stores.
+vi.mock("../config/sessions/inbound.runtime.js", () => ({
+  recordInboundSessionMeta: recordMeta,
+  updateSessionLastRoute: updateRoute,
 }));
 
 describe("recordInboundSession", () => {
-  const ctx: MsgContext = {
-    Provider: "telegram",
-    From: "telegram:1234",
-    SessionKey: "agent:main:telegram:1234:thread:42",
-    OriginatingTo: "telegram:1234",
-  };
+  const sessionKey = "agent:main:demo-channel:1234:thread:42";
+  const route = { sessionKey: "agent:main:main", channel: "demo-channel", to: "demo-channel:1234" };
+  function record(overrides: Partial<Parameters<typeof recordInboundSession>[0]> = {}) {
+    return recordInboundSession({
+      storePath: "/tmp/paleoclaw-session-store.json",
+      sessionKey,
+      ctx: { SessionKey: sessionKey },
+      onRecordError: vi.fn(),
+      ...overrides,
+    });
+  }
+
+  async function admissionFailure(pending: boolean) {
+    const { AgentDatabaseAdmissionError } = await import("../state/agent-database-admission.js");
+    return new AgentDatabaseAdmissionError({
+      agentId: "main",
+      paths: ["/tmp/paleoclaw-agent.sqlite"],
+      code: pending ? "agent-database-inspection-pending" : "agent-database-inspection-failed",
+      reason: pending ? "Startup preparation is pending" : "Startup preparation failed",
+      repairHint: pending ? "Wait for startup preparation to finish" : "Run paleoclaw doctor --fix",
+    });
+  }
 
   beforeEach(() => {
-    recordSessionMetaFromInboundMock.mockClear();
-    updateLastRouteMock.mockClear();
+    recordMeta.mockReset().mockResolvedValue(null);
+    updateRoute.mockReset().mockResolvedValue(null);
   });
 
-  it("does not pass ctx when updating a different session key", async () => {
-    const { recordInboundSession } = await import("./session.js");
-
-    await recordInboundSession({
-      storePath: "/tmp/paleoclaw-session-store.json",
-      sessionKey: "agent:main:telegram:1234:thread:42",
-      ctx,
-      updateLastRoute: {
-        sessionKey: "agent:main:main",
-        channel: "telegram",
-        to: "telegram:1234",
-      },
-      onRecordError: vi.fn(),
+  it("settles metadata persistence before returning to the dispatcher", async () => {
+    const started = createDeferred();
+    const writer = createDeferred<null>();
+    recordMeta.mockImplementationOnce(() => {
+      started.resolve();
+      return writer.promise;
     });
-
-    expect(updateLastRouteMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        sessionKey: "agent:main:main",
-        ctx: undefined,
-        deliveryContext: expect.objectContaining({
-          channel: "telegram",
-          to: "telegram:1234",
-        }),
-      }),
-    );
+    const returned = vi.fn();
+    const work = record().then(returned);
+    try {
+      await started.promise;
+      await Promise.resolve();
+      expect(returned).not.toHaveBeenCalled();
+    } finally {
+      writer.resolve(null);
+      await work;
+    }
+    expect(returned).toHaveBeenCalledOnce();
   });
 
-  it("passes ctx when updating the same session key", async () => {
-    const { recordInboundSession } = await import("./session.js");
-
-    await recordInboundSession({
-      storePath: "/tmp/paleoclaw-session-store.json",
-      sessionKey: "agent:main:telegram:1234:thread:42",
-      ctx,
-      updateLastRoute: {
-        sessionKey: "agent:main:telegram:1234:thread:42",
-        channel: "telegram",
-        to: "telegram:1234",
-      },
-      onRecordError: vi.fn(),
-    });
-
-    expect(updateLastRouteMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        sessionKey: "agent:main:telegram:1234:thread:42",
-        ctx,
-        deliveryContext: expect.objectContaining({
-          channel: "telegram",
-          to: "telegram:1234",
-        }),
-      }),
-    );
+  it("tracks slow reporting without blocking failed-write dispatch", async ({ signal }) => {
+    const failure = new Error("metadata write failed");
+    const reporter = createDeferred();
+    const onRecordError = vi.fn(() => reporter.promise);
+    const reported = vi.fn();
+    const trackSessionMetaTask = vi.fn((task: Promise<unknown>) => void task.then(reported));
+    recordMeta.mockRejectedValueOnce(failure);
+    const work = record({ onRecordError, trackSessionMetaTask });
+    try {
+      await withinTest(work, signal);
+      expect(onRecordError).toHaveBeenCalledExactlyOnceWith(failure);
+      expect(trackSessionMetaTask.mock.calls[0]?.[0]).toBeInstanceOf(Promise);
+      expect(reported).not.toHaveBeenCalled();
+    } finally {
+      reporter.reject(new Error("reporting failed"));
+      await work;
+      await trackSessionMetaTask.mock.calls[0]?.[0];
+    }
+    expect(reported).toHaveBeenCalledOnce();
   });
 
-  it("normalizes mixed-case session keys before recording and route updates", async () => {
-    const { recordInboundSession } = await import("./session.js");
+  it.each([true, false])("handles pending database admission (%s)", async (pending) => {
+    const failure = await admissionFailure(pending);
+    const onRecordError = vi.fn(() => {
+      if (pending) {
+        throw new Error("reporting failed");
+      }
+    });
+    const trackSessionMetaTask = vi.fn<(task: Promise<unknown>) => void>();
+    recordMeta.mockRejectedValueOnce(failure);
+    const work = record({
+      onRecordError,
+      trackSessionMetaTask,
+      updateLastRoute: { ...route, sessionKey },
+    });
+    if (pending) {
+      await expect(work).rejects.toBe(failure);
+      expect(updateRoute).not.toHaveBeenCalled();
+    } else {
+      await expect(work).resolves.toBeUndefined();
+    }
+    expect(onRecordError).toHaveBeenCalledExactlyOnceWith(failure);
+    expect(trackSessionMetaTask).toHaveBeenCalledOnce();
+    await expect(trackSessionMetaTask.mock.calls[0]?.[0]).resolves.toBeUndefined();
+  });
 
-    await recordInboundSession({
-      storePath: "/tmp/paleoclaw-session-store.json",
-      sessionKey: "Agent:Main:Telegram:1234:Thread:42",
-      ctx,
-      updateLastRoute: {
-        sessionKey: "agent:main:telegram:1234:thread:42",
-        channel: "telegram",
-        to: "telegram:1234",
-      },
-      onRecordError: vi.fn(),
+  it("preserves Signal group ids before recording and route updates", async () => {
+    const mixedGroupId = "VWATodkf2hc8zdOS76q9Tb0+5Bi522E03qLdaQ/9ypg=";
+    const group = `signal:group:${mixedGroupId}`;
+    const key = `agent:main:${group}`;
+    const mixedKey = `Agent:Main:Signal:Group:${mixedGroupId}`;
+    const signalCtx: MsgContext = { Provider: "signal", From: group, SessionKey: key };
+
+    await record({
+      sessionKey: mixedKey,
+      ctx: signalCtx,
+      updateLastRoute: { sessionKey: mixedKey, channel: "signal", to: group },
     });
 
-    expect(recordSessionMetaFromInboundMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        sessionKey: "agent:main:telegram:1234:thread:42",
-      }),
-    );
-    expect(updateLastRouteMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        sessionKey: "agent:main:telegram:1234:thread:42",
-        ctx,
-      }),
-    );
+    expect(recordMeta.mock.calls[0]?.[0].sessionKey).toBe(key);
+    expect(updateRoute.mock.calls[0]?.[0].sessionKey).toBe(key);
+    expect(updateRoute.mock.calls[0]?.[0].ctx).toBe(signalCtx);
   });
 
   it("skips last-route updates when main DM owner pin mismatches sender", async () => {
-    const { recordInboundSession } = await import("./session.js");
     const onSkip = vi.fn();
 
-    await recordInboundSession({
-      storePath: "/tmp/paleoclaw-session-store.json",
-      sessionKey: "agent:main:telegram:1234:thread:42",
-      ctx,
+    await record({
       updateLastRoute: {
-        sessionKey: "agent:main:main",
-        channel: "telegram",
-        to: "telegram:1234",
+        ...route,
         mainDmOwnerPin: {
           ownerRecipient: "1234",
           senderRecipient: "9999",
           onSkip,
         },
       },
-      onRecordError: vi.fn(),
     });
 
-    expect(updateLastRouteMock).not.toHaveBeenCalled();
+    expect(updateRoute).not.toHaveBeenCalled();
     expect(onSkip).toHaveBeenCalledWith({
       ownerRecipient: "1234",
       senderRecipient: "9999",
+    });
+  });
+
+  it("forwards session creation policy to last-route updates", async () => {
+    await record({
+      createIfMissing: false,
+      updateLastRoute: route,
+    });
+
+    expect(recordMeta.mock.calls[0]?.[0].createIfMissing).toBe(false);
+    expect(updateRoute.mock.calls[0]?.[0]).toMatchObject({
+      sessionKey: route.sessionKey,
+      createIfMissing: false,
     });
   });
 });

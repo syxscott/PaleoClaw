@@ -1,61 +1,85 @@
-import { Type } from "@sinclair/typebox";
-import { SILENT_REPLY_TOKEN } from "../../auto-reply/tokens.js";
-import type { OpenClawConfig } from "../../config/config.js";
-import { loadConfig } from "../../config/config.js";
+import { Type } from "typebox";
+import { getRuntimeConfig } from "../../config/config.js";
+import type { OpenClawConfig } from "../../config/types.openclaw.js";
 import { textToSpeech } from "../../tts/tts.js";
-import type { GatewayMessageChannel } from "../../utils/message-channel.js";
 import type { AnyAgentTool } from "./common.js";
-import { readStringParam } from "./common.js";
+import { readPositiveIntegerParam, readToolStringParam } from "./common.js";
+import { markCoreTtsToolResult } from "./tts-tool-result-provenance.js";
 
 const TtsToolSchema = Type.Object({
-  text: Type.String({ description: "Text to convert to speech." }),
-  channel: Type.Optional(
-    Type.String({ description: "Optional channel id to pick output format (e.g. telegram)." }),
+  text: Type.String({ description: "Text to speak." }),
+  channel: Type.Optional(Type.String({ description: "Channel id; output-format hint." })),
+  timeoutMs: Type.Optional(
+    Type.Integer({
+      description: "Provider timeout ms.",
+      minimum: 1,
+    }),
   ),
 });
 
+/**
+ * Defuse reply-directive tokens inside spoken transcripts before they flow
+ * through tool-result content. Insert a zero-width word joiner so transcript
+ * text cannot be mistaken for assistant control tags if it is reused later.
+ */
+function sanitizeTranscriptForToolContent(text: string): string {
+  return text
+    .replace(/\[\[/g, "[\u2060[")
+    .replace(/^(\s*)(MEDIA:)/gim, "$1\u2060$2")
+    .replace(/^([ \t]*)(`)(`{2,})/gm, "$1$2\u2060$3");
+}
+
 export function createTtsTool(opts?: {
   config?: OpenClawConfig;
-  agentChannel?: GatewayMessageChannel;
+  agentChannel?: string;
+  agentId?: string;
+  agentAccountId?: string;
 }): AnyAgentTool {
   return {
     label: "TTS",
     name: "tts",
-    description: `Convert text to speech. Audio is delivered automatically from the tool result — reply with ${SILENT_REPLY_TOKEN} after a successful call to avoid duplicate messages.`,
+    displaySummary: "Text to speech audio.",
+    description:
+      "Convert text to spoken audio (TTS) with the configured voice provider. Only explicit voice/speech/TTS intent or active TTS config; never ordinary text reply. Audio auto-delivered. After success follow reply instructions; no duplicate text/audio.",
     parameters: TtsToolSchema,
     execute: async (_toolCallId, args) => {
       const params = args as Record<string, unknown>;
-      const text = readStringParam(params, "text", { required: true });
-      const channel = readStringParam(params, "channel");
-      const cfg = opts?.config ?? loadConfig();
+      const text = readToolStringParam(params, "text", { required: true });
+      const channel = readToolStringParam(params, "channel");
+      const timeoutMs = readPositiveIntegerParam(params, "timeoutMs", {
+        message: "timeoutMs must be a positive integer in milliseconds.",
+      });
+      const cfg = opts?.config ?? getRuntimeConfig();
       const result = await textToSpeech({
         text,
         cfg,
         channel: channel ?? opts?.agentChannel,
+        timeoutMs,
+        agentId: opts?.agentId,
+        accountId: opts?.agentAccountId,
       });
 
       if (result.success && result.audioPath) {
-        const lines: string[] = [];
-        // Tag Telegram Opus output as a voice bubble instead of a file attachment.
-        if (result.voiceCompatible) {
-          lines.push("[[audio_as_voice]]");
-        }
-        lines.push(`MEDIA:${result.audioPath}`);
-        return {
-          content: [{ type: "text", text: lines.join("\n") }],
-          details: { audioPath: result.audioPath, provider: result.provider },
-        };
+        // Retain spoken text across turns without admitting reply directives from it.
+        return markCoreTtsToolResult(
+          {
+            content: [{ type: "text", text: `(spoken) ${sanitizeTranscriptForToolContent(text)}` }],
+            details: {
+              audioPath: result.audioPath,
+              provider: result.provider,
+              ...(timeoutMs !== undefined ? { timeoutMs } : {}),
+              media: {
+                mediaUrl: result.audioPath,
+                trustedLocalMedia: true,
+                ...(result.audioAsVoice ? { audioAsVoice: true } : {}),
+              },
+            },
+          },
+          [result.audioPath],
+        );
       }
 
-      return {
-        content: [
-          {
-            type: "text",
-            text: result.error ?? "TTS conversion failed",
-          },
-        ],
-        details: { error: result.error },
-      };
+      throw new Error(result.error ?? "TTS conversion failed");
     },
   };
 }

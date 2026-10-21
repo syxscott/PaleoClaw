@@ -22,11 +22,11 @@ function deriveMentionPatterns(identity?: { name?: string; emoji?: string }) {
 
 const BACKSPACE_CHAR = "\u0008";
 const CANONICAL_BRAND = "paleoclaw";
-// PaleoClaw was renamed from "openclaw"; configured mention patterns and inbound
+// PaleoClaw was renamed from "paleoclaw"; configured mention patterns and inbound
 // text may still use the legacy brand. Normalize both sides to the canonical
 // name so existing patterns keep matching after the rename.
-const LEGACY_BRAND_REGEX = /openclaw/gi;
-const LEGACY_BRAND_TEST_REGEX = /openclaw/i;
+const LEGACY_BRAND_REGEX = /paleoclaw/gi;
+const LEGACY_BRAND_TEST_REGEX = /paleoclaw/i;
 const mentionRegexCompileCache = new Map<string, RegExp[]>();
 const brandRewrittenRegexCache = new WeakMap<RegExp, RegExp>();
 const MAX_MENTION_REGEX_COMPILE_CACHE_KEYS = 512;

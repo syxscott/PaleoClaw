@@ -139,7 +139,7 @@ paleoclaw agent --message "Generate my daily log in Markdown"
 - [README.md](README.md) - Project overview
 - [PALEOCLAW_IDENTITY.md](PALEOCLAW_IDENTITY.md) - System identity
 - [VISION.md](VISION.md) - Project vision
-- [CHANGELOG.md](CHANGELOG.md) - Technical changelog (inherited from OpenClaw)
+- [CHANGELOG.md](CHANGELOG.md) - Technical changelog (inherited from paleoclaw)
 
 ---
 

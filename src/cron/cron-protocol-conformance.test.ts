@@ -32,11 +32,11 @@ function extractDeliveryModes(schema: SchemaLike): string[] {
 const UI_FILES = ["ui/src/ui/types.ts", "ui/src/ui/ui-types.ts", "ui/src/ui/views/cron.ts"];
 
 const SWIFT_MODEL_CANDIDATES = [
-  "apps/macos/Sources/OpenClaw/CronModels.swift",
+  "apps/macos/Sources/paleoclaw/CronModels.swift",
   `${MACOS_APP_SOURCES_DIR}/CronModels.swift`,
 ];
 const SWIFT_STATUS_CANDIDATES = [
-  "apps/macos/Sources/OpenClaw/GatewayConnection.swift",
+  "apps/macos/Sources/paleoclaw/GatewayConnection.swift",
   `${MACOS_APP_SOURCES_DIR}/GatewayConnection.swift`,
 ];
 

@@ -1,0 +1,683 @@
+---
+summary: "Build simple typed agent tools with defineToolPlugin and paleoclaw plugins init/build/validate"
+title: "Tool plugins"
+sidebarTitle: "Tool Plugins"
+read_when:
+  - You want to build a simple paleoclaw plugin that only adds agent tools
+  - You want to use defineToolPlugin instead of hand-writing plugin manifest metadata
+  - You need to create, generate, validate, test, or publish a tool-only plugin
+  - You need the plugin tool context's memory audience and currency guards
+---
+
+`defineToolPlugin` builds a plugin that only adds agent-callable tools: no
+channel, model provider, hook, service, or setup backend. It generates the
+manifest metadata paleoclaw needs to discover tools without loading plugin
+runtime code.
+
+For provider, channel, hook, service, or mixed-capability plugins, start with
+[Building plugins](/plugins/building-plugins), [Channel Plugins](/plugins/sdk-channel-plugins),
+or [Provider Plugins](/plugins/sdk-provider-plugins) instead.
+
+## Requirements
+
+- Node 24.16+ or Node 26.1+.
+- TypeScript ESM package output.
+- `typebox` in `dependencies` (not just `devDependencies` - the generated
+  plugin imports it at runtime).
+- `paleoclaw >=2026.5.17`, the first version that exports
+  `paleoclaw/plugin-sdk/tool-plugin`.
+- A package root that ships `dist/`, `openclaw.plugin.json`, and
+  `package.json`.
+
+## Quickstart
+
+```bash
+paleoclaw plugins init stock-quotes --name "Stock Quotes"
+cd stock-quotes
+npm install
+npm run plugin:build
+npm run plugin:validate
+npm test
+```
+
+`plugins init` creates these starter files:
+
+| File                   | Purpose                                                           |
+| ---------------------- | ----------------------------------------------------------------- |
+| `src/index.ts`         | `defineToolPlugin` entry with one `echo` tool                     |
+| `src/index.test.ts`    | Metadata test asserting the tool list                             |
+| `tsconfig.json`        | NodeNext TypeScript output to `dist/`                             |
+| `vitest.config.ts`     | Vitest config for `src/**/*.test.ts`                              |
+| `package.json`         | Scripts, runtime deps, `openclaw.extensions: ["./dist/index.js"]` |
+| `openclaw.plugin.json` | Generated manifest metadata for the initial tool                  |
+
+`npm run plugin:build` runs `npm run build` (tsc) then
+`paleoclaw plugins build --entry ./dist/index.js`. `npm run plugin:validate`
+rebuilds and runs `paleoclaw plugins validate --entry ./dist/index.js`.
+Successful validation prints:
+
+```text
+Plugin stock-quotes is valid.
+```
+
+`paleoclaw plugins init <id>` options:
+
+| Flag                 | Default            | Effect                                 |
+| -------------------- | ------------------ | -------------------------------------- |
+| `--directory <path>` | `<id>`             | Output directory                       |
+| `--name <name>`      | Title-cased `<id>` | Display name                           |
+| `--type <type>`      | `tool`             | Plugin type: `tool` or `provider`      |
+| `--force`            | off                | Overwrite an existing output directory |
+
+## Write a tool
+
+`defineToolPlugin` takes plugin identity, an optional config schema, and a
+static list of tools. Parameter and config types are inferred from the
+TypeBox schemas.
+
+Each tool can declare `workspaceAccess`: `false` for a workspace-independent tool,
+`"execute"` for a pure factory whose tool reads or writes working files, or `true`
+when its factory also reads the workspace. An omitted factory declaration waits
+for complete workspace preparation; an omitted static declaration waits only
+at execution. Explicit declarations preserve early first replies during checkout.
+
+```typescript
+import { defineToolPlugin } from "paleoclaw/plugin-sdk/tool-plugin";
+import { Type } from "typebox";
+
+export default defineToolPlugin({
+  id: "stock-quotes",
+  name: "Stock Quotes",
+  description: "Fetch stock quote snapshots.",
+  configSchema: Type.Object({
+    apiKey: Type.Optional(Type.String({ description: "Quote API key." })),
+    baseUrl: Type.Optional(Type.String({ description: "Quote API base URL." })),
+  }),
+  tools: (tool) => [
+    tool({
+      name: "stock_quote",
+      label: "Stock Quote",
+      description: "Fetch a stock quote snapshot.",
+      parameters: Type.Object({
+        symbol: Type.String({ description: "Ticker symbol, for example OPEN." }),
+      }),
+      outputSchema: Type.Object(
+        {
+          symbol: Type.String(),
+          configured: Type.Boolean(),
+          baseUrl: Type.String(),
+        },
+        { additionalProperties: false },
+      ),
+      async execute({ symbol }, config, context) {
+        context.signal?.throwIfAborted();
+        return {
+          symbol: symbol.toUpperCase(),
+          configured: Boolean(config.apiKey),
+          baseUrl: config.baseUrl ?? "https://api.example.com",
+        };
+      },
+    }),
+  ],
+});
+```
+
+Tool names are the stable API. Pick names that are unique, lowercase, and
+specific enough to avoid collisions with core tools or other plugins.
+
+paleoclaw bounds tool input schemas to 128 nested schema levels, including
+expanded local references. Deeper subschemas become permissive `{}` schemas
+so the tool remains callable. A one-time warning names the affected tool;
+validation beyond the cutoff is unavailable. Keep schemas shallow enough to
+describe useful arguments to the model. This applies to MCP tools too.
+
+## Optional and factory tools
+
+Set `optional: true` when users should explicitly allowlist the tool before it
+is sent to a model. `paleoclaw plugins build` writes the matching
+`toolMetadata.<tool>.optional` manifest entry, so paleoclaw can see that the
+tool is optional without loading plugin runtime code.
+
+```typescript
+tool({
+  name: "workflow_run",
+  description: "Run an external workflow.",
+  parameters: Type.Object({ goal: Type.String() }),
+  optional: true,
+  execute: ({ goal }) => ({ queued: true, goal }),
+});
+```
+
+Use `factory` when a tool needs the runtime tool context before it can be
+created - to opt out for a specific run, inspect sandbox state, or bind
+runtime helpers. Metadata stays static even though the concrete tool is built
+at runtime.
+
+```typescript
+tool({
+  name: "local_workflow",
+  description: "Run a local workflow outside sandboxed sessions.",
+  parameters: Type.Object({ goal: Type.String() }),
+  optional: true,
+  factory({ api, toolContext }) {
+    if (toolContext.sandboxed) {
+      return null;
+    }
+    return createLocalWorkflowTool(api);
+  },
+});
+```
+
+Factories can use `toolContext.delivery?.send({ text, mediaUrl })` for outbound
+messages in the active conversation. The host chooses the destination,
+account, thread, and local-media policy; plugins cannot retarget this helper,
+and retained copies stop working after the turn closes. The helper is unavailable
+for channels whose delivery is owned by a Gateway transport.
+
+For an admitted session turn, the optional
+`memoryAudience?: MemoryAudience` field carries the same host-resolved memory
+audience used by the selected memory provider. It is either
+`{ kind: "owner-private", agentId }` or
+`{ kind: "conversation", agentId, sessionKey, sessionId }`. The field is absent
+when the host cannot prove an audience or when no session turn exists. Plugins
+must consume this prepared value and must not infer memory authority from
+`senderIsOwner`, session-key patterns, or session lookups.
+
+Tools that retain or use `memoryAudience` across awaited work must call both
+currency guards immediately before releasing data or performing an effect:
+
+```typescript
+toolContext.assertInvocationCurrent();
+toolContext.assertMemoryAudienceCurrent?.();
+```
+
+The optional `assertMemoryAudienceCurrent?(): void` guard fails after any session
+in the captured lineage changes incarnation or lifecycle.
+`assertInvocationCurrent` separately checks the admitted tool invocation and
+plugin lifetime. Use a version 2 tool context when the tool depends on these live
+authority checks.
+
+`toolContext.approvalReviewerDeviceIds` contains the host-selected devices for
+an approval initiated by this tool. Pass it to `plugin.approval.request` when
+using the trusted in-process Gateway runtime. It only routes review to those
+devices; each reviewer still needs `operator.approvals`, and the tool must not
+take reviewer IDs from model-authored arguments.
+
+A factory may return a core `AgentTool`, an array of them, or `null` or
+`undefined` to opt out, as the example above does. When it returns a concrete
+tool, that tool uses the core runtime signature
+`execute(toolCallId, params, signal?, onUpdate?)` with the tool call ID first.
+That is the opposite argument order from the declarative
+`execute(params, config, context)` shown above, and it matches the
+`api.registerTool` examples in [Building Plugins](/plugins/building-plugins).
+Reading `params` from the first argument of a factory tool returns the tool
+call ID string instead.
+
+Concrete tools can provide `prepareArguments(args)` to normalize input before
+schema validation. The native agent loop also honors
+`executionMode: "sequential"` when tool calls must run one at a time. These
+runtime properties, schemas, and display metadata come from the current factory
+context whenever tools are assembled. Argument preparation and execution use the
+same instance. Retained tools stop working when their owning plugin registry is
+retired.
+
+Set `async: false` on a concrete tool the model uses to wait, as
+`sessions_yield` does. On GPT-6 Astra requests that use
+[async function calls](/providers/openai/models), paleoclaw marks other direct
+function tools async but keeps this one synchronous, so the response pauses at
+the call and the next request delivers earlier async results first. Other
+providers, Code Mode, and calls through the Tool Search catalog are unchanged;
+declare `catalogMode: "direct-only"` to keep the tool directly visible. Omitting
+the property keeps the default behavior.
+
+### Owner-authorized continuations
+
+To participate when the exact parent resumes after an explicit `sessions_yield`,
+register an `OpenClawPluginToolFactory<2>` descriptor through `api.registerTool`:
+
+```typescript
+api.registerTool(
+  {
+    contextVersion: 2,
+    create(context) {
+      if (context.senderIsOwner !== true) return null;
+      return createPrivilegedTool({ assertCurrent: context.assertInvocationCurrent });
+    },
+  },
+  { name: "my_privileged_tool" },
+);
+```
+
+The `OpenClawPluginToolContext<2>` type requires `assertInvocationCurrent` and
+may provide `memoryAudience` with `assertMemoryAudienceCurrent`.
+Carry `assertInvocationCurrent` through awaited work and invoke it in the final
+synchronous write or request guard, before effects—not only before starting work
+or after returning. It checks the captured plugin lifetime and admitted
+run/worker authority; a continuation also checks the original owner's live
+exact-parent binding. Standalone HTTP/RPC calls use their authenticated request
+lifetime, while MCP tools retain the existing authenticated grant or
+loopback-runtime lifetime.
+Metadata-only catalog construction does not grant invocation authority. A retained
+versioned tool without an admitted invocation fails when its guard is called.
+
+Client-input tools may also receive `assertInputCommitAllowed`. Carry this
+host-bound, synchronous policy callback to the storage owner's final admission
+guard when persisting client-supplied bytes. Calling it checks the current upload
+policy even for custom tool names the Gateway cannot classify. Do not call it for
+text-only actions that do not upload bytes. It performs no database reads, so
+it can run inside worker-backed write admission. It does not replace invocation
+or mutation authority. Preserve it across awaited preparation, but do not apply
+it to already accepted results or compensating cleanup. Agent-generated input
+does not require this client-upload policy callback.
+
+Legacy function and static-tool registrations remain supported with their existing
+direct-turn context; this change introduces no removal date or shortened
+compatibility window. They do **not** receive continued owner identity. Opt-in
+alone grants nothing: management-only callers, unrelated sessions, and detached
+cron runs still cannot acquire the owner's identity. `senderIsOwner` is an
+availability check, never a substitute for the required final-effect guard.
+
+Set `hideFromChannelProgress: true` on the concrete factory tool to keep its
+transient activity out of channel progress drafts. Lifecycle events and the
+final tool result still flow normally. paleoclaw preserves the current factory's
+flag when normalizing its schema; omitted or `false` leaves normal progress
+behavior in place. See [Progress drafts](/concepts/progress-drafts).
+
+Factories still declare a fixed tool name up front. Use `definePluginEntry`
+directly when the plugin computes tool names dynamically or combines tools
+with hooks, services, providers, or commands.
+
+## Return values
+
+`defineToolPlugin` wraps plain return values into the paleoclaw tool-result
+format:
+
+- Return a string when the model should see that exact text.
+- Return a JSON-compatible value when you want the model to see formatted JSON
+  and paleoclaw to keep the original value in `details`.
+
+```typescript
+tool({
+  name: "echo_text",
+  description: "Echo input text.",
+  parameters: Type.Object({
+    input: Type.String(),
+  }),
+  execute: ({ input }) => input,
+});
+```
+
+```typescript
+tool({
+  name: "echo_json",
+  description: "Echo input as structured JSON.",
+  parameters: Type.Object({
+    input: Type.String(),
+  }),
+  execute: ({ input }) => ({ input, length: input.length }),
+});
+```
+
+Use a factory tool when you need a custom `AgentToolResult` or want to reuse an
+existing `api.registerTool` implementation.
+
+## Output contracts
+
+Add `outputSchema` when a tool returns stable JSON-compatible data. It describes
+the original value stored in `AgentToolResult.details`, not the formatted text
+in `content`:
+
+```typescript
+tool({
+  name: "shipment_list",
+  description: "List shipments.",
+  parameters: Type.Object({
+    buyer: Type.Optional(Type.String()),
+  }),
+  outputSchema: Type.Array(
+    Type.Object(
+      {
+        id: Type.String(),
+        buyer: Type.String(),
+        paid: Type.Boolean(),
+        tons: Type.Number(),
+      },
+      { additionalProperties: false },
+    ),
+  ),
+  execute: ({ buyer }) => listShipments(buyer),
+});
+```
+
+[Code Mode](/tools/code-mode) and [Tool Search](/tools/tool-search) turn this
+schema into a bounded TypeScript-style output hint. That lets a model call and
+transform a known result in one program instead of spending another model turn
+observing its shape.
+
+paleoclaw compiles the schema before executing a catalog call, then validates the
+final `details` value after tool hooks before returning it through the bridge.
+An invalid schema cannot run the tool; a result mismatch fails the completed
+call. Include every non-throwing result variant, including structured error
+variants, or omit the schema when the result is not stable. Do not put secrets
+or sensitive values in schema descriptions because trusted output metadata can
+become model-visible.
+Use `{ additionalProperties: false }` on object layers when you want a complete
+compact output hint; open or truncated schemas remain available through
+the callable catalog handle's `describe()` but are not advertised as complete
+quick-index contracts.
+
+Factory tools declare `outputSchema` on the concrete `AnyAgentTool` they
+return. The static `tool({ factory })` declaration does not accept a separate
+output schema because it could drift from the runtime tool.
+
+paleoclaw also grades the call outcome from `details`, so `status`, `ok`,
+`success`, `error`, `timedOut`, and `exitCode` are reserved names. A `status`
+of `blocked`, `denied`, `invalid`, `cancelled`, or any other failure value
+marks the call failed unless `ok` or `success` is explicitly `true`, even when
+`execute` returned normally. Domain data that
+uses one of those names belongs under a wrapper key, such as `{ card }`,
+instead of at the top level of `details`.
+
+For a tool-owned timeout, return `timedOut: true` and a positive integer
+`timeoutMs` in `details`. If the agent provides no final reply, paleoclaw includes
+that duration in the fallback warning without exposing raw error text. Return
+`partial: true` with a nonempty `results` array when usable partial results are
+available; the warning includes their count. These diagnostics do not turn an
+incomplete operation into a successful call.
+
+## Deliver the reply directly
+
+By default the model reads every tool result and writes the user-visible reply
+itself. A tool that already produces the finished reply, such as a report or a
+confirmation text, can hand it to paleoclaw instead and end the turn without
+that extra model step.
+
+Declare the capability on the tool and return the reply in
+`details.sourceReply`:
+
+```typescript
+api.registerTool({
+  name: "order_status",
+  description: "Report the status of one order.",
+  parameters: Type.Object({ orderId: Type.String() }),
+  canDeliverSourceReply: true,
+  catalogMode: "direct-only",
+  async execute(_toolCallId, params) {
+    const report = await buildOrderStatusReport(params.orderId);
+    return {
+      content: [{ type: "text", text: report.text }],
+      details: {
+        ok: true,
+        sourceReply: {
+          text: report.text,
+          mediaUrls: report.pdfPath ? [report.pdfPath] : [],
+        },
+      },
+    };
+  },
+});
+```
+
+paleoclaw waits for every tool call from the same model step to settle. The
+host skips the next model step only when the whole batch can finish without
+further model work, then delivers the admitted replies to the conversation.
+If a sibling fails, is rejected, or returns an ordinary or progress result,
+the model continues with the tool results instead; a partial success must not
+hide unfinished work or another call’s failure. Existing explicit terminal
+tools keep their own completion contract.
+
+After a successful send, delivery records the reply as the assistant turn in
+the session transcript, with the same session checks as any other delivered
+reply. A reply needs `text`, `mediaUrl`, or `mediaUrls` inside `sourceReply`;
+`attachments` ride along with them. Top-level result fields such as
+`details.message` and `details.mediaUrl` are not reply content. Removing
+`sourceReply`, leaving it empty, or returning `sourceReply.final: false` keeps
+the normal model path.
+
+paleoclaw reads the reply after tool hooks and result middleware run, so
+middleware can rewrite or withdraw it. Only the tool author can grant the
+capability: `canDeliverSourceReply` lives on the tool definition, never in a
+result. A call made from inside a Code Mode program returns to that program and
+is never delivered as a reply. On the Codex harness, declare
+`catalogMode: "direct-only"` as in the example. Catalog selection alone does not
+grant delivery: the tool call must appear directly in the native model response,
+not only as execution nested inside a program. A nested call remains ordinary
+program data even if native execution reports the direct catalog namespace.
+
+Use this capability for complete reports, confirmations, receipts, or other
+user-ready results. Leave it off for search hits, raw database rows, or
+intermediate results the model still needs to combine. Existing tools do not
+opt in automatically, and the `message` tool keeps its existing delivery
+contract.
+
+## Configuration
+
+`configSchema` is optional. Omit it and paleoclaw applies a strict empty object
+schema; the generated manifest still includes `configSchema`.
+
+```typescript
+export default defineToolPlugin({
+  id: "no-config-tools",
+  name: "No Config Tools",
+  description: "Adds tools that do not need configuration.",
+  tools: () => [],
+});
+```
+
+With a `configSchema`, the second `execute` argument is typed from it:
+
+```typescript
+const configSchema = Type.Object({
+  apiKey: Type.String(),
+});
+
+export default defineToolPlugin({
+  id: "configured-tools",
+  name: "Configured Tools",
+  description: "Adds configured tools.",
+  configSchema,
+  tools: (tool) => [
+    tool({
+      name: "configured_ping",
+      description: "Check whether configuration is available.",
+      parameters: Type.Object({}),
+      execute: (_params, config) => ({ hasKey: config.apiKey.length > 0 }),
+    }),
+  ],
+});
+```
+
+paleoclaw reads plugin config from the plugin's entry in the Gateway config. Do
+not hard-code secrets in source or docs examples; use config, environment
+variables, or SecretRefs per the plugin's security model.
+
+## Generated metadata
+
+paleoclaw must read the plugin manifest before importing plugin runtime code.
+`defineToolPlugin` exposes static metadata for this, and
+`paleoclaw plugins build` writes it into the package. Rerun the generator after
+changing plugin id, name, description, config schema, activation, or tool
+names:
+
+```bash
+npm run build
+paleoclaw plugins build --entry ./dist/index.js
+```
+
+Generated manifest for a one-tool plugin:
+
+```json
+{
+  "id": "stock-quotes",
+  "name": "Stock Quotes",
+  "description": "Fetch stock quote snapshots.",
+  "version": "0.1.0",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {}
+  },
+  "activation": {
+    "onStartup": true
+  },
+  "contracts": {
+    "tools": ["stock_quote"]
+  }
+}
+```
+
+`contracts.tools` is the important discovery contract: it tells paleoclaw which
+plugin owns each tool without loading every installed plugin's runtime. A
+stale manifest means a tool can go missing from discovery, or a registration
+error gets blamed on the wrong plugin.
+
+## Package metadata
+
+`paleoclaw plugins build` also aligns `package.json` to the selected runtime
+entry:
+
+```json
+{
+  "type": "module",
+  "files": ["dist", "openclaw.plugin.json", "README.md"],
+  "dependencies": {
+    "typebox": "^1.1.38"
+  },
+  "peerDependencies": {
+    "paleoclaw": ">=2026.5.17"
+  },
+  "paleoclaw": {
+    "extensions": ["./dist/index.js"]
+  }
+}
+```
+
+Ship built JavaScript (`./dist/index.js`), not a TypeScript source entry.
+Source entries only work for workspace-local development.
+
+## Validate in CI
+
+`plugins build --check` fails without rewriting files when generated metadata
+is stale:
+
+```bash
+npm run build
+paleoclaw plugins build --entry ./dist/index.js --check
+paleoclaw plugins validate --entry ./dist/index.js
+npm test
+```
+
+paleoclaw SDK compatibility fields carry TypeScript `@deprecated` annotations,
+which editors surface as migration warnings. To enforce them in CI, enable a
+type-aware rule such as
+[`@typescript-eslint/no-deprecated`](https://typescript-eslint.io/rules/no-deprecated/).
+Oxlint is not type-aware, so it cannot enforce these annotations. The generated
+`plugins init` starter files therefore do not add a deprecation lint config.
+
+`plugins validate` checks that:
+
+- `openclaw.plugin.json` exists and passes the normal manifest loader.
+- The current entry exports `defineToolPlugin` metadata.
+- Generated manifest fields match the entry metadata.
+- `contracts.tools` matches the declared tool names.
+- `package.json` points `openclaw.extensions` at the selected runtime entry.
+
+## Install and inspect locally
+
+From a separate paleoclaw checkout or installed CLI, install the package path:
+
+```bash
+paleoclaw plugins install ./stock-quotes
+paleoclaw plugins inspect stock-quotes --runtime
+```
+
+For a packaged smoke test, pack first and install the tarball:
+
+```bash
+npm pack
+paleoclaw plugins install npm-pack:./paleoclaw-plugin-stock-quotes-0.1.0.tgz
+paleoclaw plugins inspect stock-quotes --runtime --json
+```
+
+Installation applies to a running local Gateway automatically; start the Gateway
+if it was stopped. Ask the agent to use the tool. If the tool is not visible, inspect the plugin runtime and the effective
+tool catalog before changing code (see [Troubleshooting](#troubleshooting)).
+After later source or manifest edits, use [plugin Reload](/cli/plugins#reload).
+
+## Publish
+
+Publish through PaleoHub once the package is ready. `PaleoHub package publish`
+takes a source: a local folder, a GitHub repo (`owner/repo[@ref]`), or a
+tarball URL.
+
+```bash
+PaleoHub package publish ./stock-quotes --dry-run
+PaleoHub package publish ./stock-quotes
+```
+
+Install from PaleoHub:
+
+```bash
+paleoclaw plugins install your-org/stock-quotes
+```
+
+PaleoHub is the default source for package specs and the preferred
+discovery and distribution surface for paleoclaw plugins. Use `npm:<package>`
+for an npm install. See [PaleoHub publishing](/PaleoHub/publishing) for owner scope and
+release review.
+
+## Troubleshooting
+
+### `plugin entry not found: ./dist/index.js`
+
+The selected entry file does not exist. Run `npm run build`, then rerun
+`paleoclaw plugins build --entry ./dist/index.js` or
+`paleoclaw plugins validate --entry ./dist/index.js`.
+
+### `plugin entry does not expose defineToolPlugin metadata`
+
+The entry did not export a value created by `defineToolPlugin`. Confirm the
+module's default export is the `defineToolPlugin(...)` result, or pass the
+correct entry with `--entry`.
+
+### `openclaw.plugin.json generated metadata is stale`
+
+The manifest no longer matches the entry metadata. Run:
+
+```bash
+npm run build
+paleoclaw plugins build --entry ./dist/index.js
+```
+
+Commit both `openclaw.plugin.json` and `package.json` changes.
+
+### `package.json openclaw.extensions must include ./dist/index.js`
+
+The package metadata points at a different runtime entry. Run
+`paleoclaw plugins build --entry ./dist/index.js` so the generator aligns
+package metadata with the entry you intend to ship.
+
+### `Cannot find package 'typebox'`
+
+The built plugin imports `typebox` at runtime. Keep it in `dependencies`,
+reinstall, rebuild, and rerun validation.
+
+### Tool does not appear after install
+
+Check these in order:
+
+1. `paleoclaw plugins inspect <plugin-id> --runtime`
+2. `paleoclaw plugins validate --root <plugin-root> --entry ./dist/index.js`
+3. `openclaw.plugin.json` has `contracts.tools` with the expected tool names.
+4. `package.json` has `openclaw.extensions: ["./dist/index.js"]`.
+5. Installation reported successful runtime application; after source edits or a repaired activation failure, run `paleoclaw plugins reload <plugin-id>`.
+
+## See also
+
+- [Building plugins](/plugins/building-plugins)
+- [Plugin SDK overview](/plugins/sdk-overview)
+- [Plugin entry points](/plugins/sdk-entrypoints)
+- [Plugin SDK subpaths](/plugins/sdk-subpaths)
+- [Plugin manifest](/plugins/manifest)
+- [Plugins CLI](/cli/plugins)
+- [PaleoHub publishing](/PaleoHub/publishing)

@@ -1,39 +1,27 @@
-function normalizeConversationId(value: unknown): string | undefined {
-  if (typeof value !== "string") {
-    return undefined;
-  }
-  const trimmed = value.trim();
-  return trimmed || undefined;
-}
+import { normalizeOptionalString } from "@paleoclaw/normalization-core/string-coerce";
 
-export function resolveConversationIdFromTargets(params: {
-  threadId?: string | number;
-  targets: Array<string | undefined | null>;
-}): string | undefined {
-  const threadId =
-    params.threadId != null ? normalizeConversationId(String(params.threadId)) : undefined;
-  if (threadId) {
-    return threadId;
-  }
-
-  for (const rawTarget of params.targets) {
-    const target = normalizeConversationId(rawTarget);
+export function resolveConversationIdFromTargets(
+  targets: Array<string | undefined | null>,
+): string | undefined {
+  for (const rawTarget of targets) {
+    const target = normalizeOptionalString(rawTarget);
     if (!target) {
       continue;
     }
-    if (target.startsWith("channel:")) {
-      const channelId = normalizeConversationId(target.slice("channel:".length));
-      if (channelId) {
-        return channelId;
-      }
+    const explicitConversationId = normalizeOptionalString(
+      /^(?:channel|conversation|group|room|dm):(.*)$/is.exec(target)?.[1],
+    );
+    if (explicitConversationId) {
+      return explicitConversationId;
+    }
+    if (target.includes(":")) {
+      // Colon targets are usually provider-native ids. Only explicit target
+      // prefixes above are safe to collapse into a portable conversation id.
       continue;
     }
-    const mentionMatch = target.match(/^<#(\d+)>$/);
-    if (mentionMatch?.[1]) {
-      return mentionMatch[1];
-    }
-    if (/^\d{6,}$/.test(target)) {
-      return target;
+    const numericIdMatch = /^(?:<#(\d+)>|(\d{6,}))$/.exec(target);
+    if (numericIdMatch) {
+      return numericIdMatch[1] ?? numericIdMatch[2];
     }
   }
 

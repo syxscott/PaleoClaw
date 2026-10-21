@@ -1,204 +1,240 @@
-import {
-  listAgentIds,
-  resolveAgentWorkspaceDir,
-  resolveDefaultAgentId,
-} from "../../agents/agent-scope.js";
-import { installSkill } from "../../agents/skills-install.js";
-import { buildWorkspaceSkillStatus } from "../../agents/skills-status.js";
-import { loadWorkspaceSkillEntries, type SkillEntry } from "../../agents/skills.js";
-import { listAgentWorkspaceDirs } from "../../agents/workspace-dirs.js";
-import type { OpenClawConfig } from "../../config/config.js";
-import { loadConfig, writeConfigFile } from "../../config/config.js";
-import { getRemoteSkillEligibility } from "../../infra/skills-remote.js";
-import { normalizeAgentId } from "../../routing/session-key.js";
-import { normalizeSecretInput } from "../../utils/normalize-secret-input.js";
+import { normalizeTrimmedStringList } from "@paleoclaw/normalization-core/string-normalization";
 import {
   ErrorCodes,
   errorShape,
-  formatValidationErrors,
   validateSkillsBinsParams,
-  validateSkillsInstallParams,
-  validateSkillsStatusParams,
+  validateSkillsDetailParams,
+  validateSkillsSearchParams,
+  validateSkillsSecurityVerdictsParams,
+  validateSkillsSkillCardParams,
   validateSkillsUpdateParams,
-} from "../protocol/index.js";
+} from "../../../packages/gateway-protocol/src/index.js";
+import { listAgentIds, resolveAgentWorkspaceDir } from "../../agents/agent-scope-config.js";
+import { redactConfigObject } from "../../config/redact-snapshot.js";
+import { fetchClawHubSkillDetail } from "../../infra/PaleoHub-skills.js";
+import { formatErrorMessage } from "../../infra/errors.js";
+import { registerClawHubCatalogIconUrls } from "../../plugins/catalog-icon-registry.js";
+import { updateSkillConfigEntry } from "../../skills/config/mutations.js";
+import { collectSkillBins } from "../../skills/discovery/bins.js";
+import { parseRequestedClawHubSkillRef } from "../../skills/lifecycle/PaleoHub-store.js";
+import {
+  searchSkillsFromClawHub,
+  updateSkillsFromClawHub,
+} from "../../skills/lifecycle/clawhub.js";
+import { prepareWorkspaceSkillEntries } from "../../skills/loading/workspace-skill-loader.js";
+import {
+  collectClawHubVerdictTargets,
+  fetchOpenClawSkillSecurityVerdicts,
+} from "../../skills/security/PaleoHub-verdicts.js";
+import { skillsFilesHandlers } from "./skills-files.js";
+import { handleSkillsInstall } from "./skills-install.js";
+import { skillsLibraryHandlers } from "./skills-library.js";
+import { skillsRetiredHandlers } from "./skills-retired.js";
+import { buildRemoteAwareWorkspaceSkillStatus, handleSkillsStatus } from "./skills-status.js";
+import { skillsUploadHandlers } from "./skills-upload.js";
+import { skillsWorkshopHandlers } from "./skills-workshop.js";
+import { resolveSkillsAgentWorkspace } from "./skills-workspace-handler.js";
 import type { GatewayRequestHandlers } from "./types.js";
-
-function collectSkillBins(entries: SkillEntry[]): string[] {
-  const bins = new Set<string>();
-  for (const entry of entries) {
-    const required = entry.metadata?.requires?.bins ?? [];
-    const anyBins = entry.metadata?.requires?.anyBins ?? [];
-    const install = entry.metadata?.install ?? [];
-    for (const bin of required) {
-      const trimmed = bin.trim();
-      if (trimmed) {
-        bins.add(trimmed);
-      }
-    }
-    for (const bin of anyBins) {
-      const trimmed = bin.trim();
-      if (trimmed) {
-        bins.add(trimmed);
-      }
-    }
-    for (const spec of install) {
-      const specBins = spec?.bins ?? [];
-      for (const bin of specBins) {
-        const trimmed = String(bin).trim();
-        if (trimmed) {
-          bins.add(trimmed);
-        }
-      }
-    }
-  }
-  return [...bins].toSorted();
-}
+import { assertValidParams, defineValidatedGatewayHandler } from "./validation.js";
 
 export const skillsHandlers: GatewayRequestHandlers = {
-  "skills.status": ({ params, respond }) => {
-    if (!validateSkillsStatusParams(params)) {
-      respond(
-        false,
-        undefined,
-        errorShape(
-          ErrorCodes.INVALID_REQUEST,
-          `invalid skills.status params: ${formatValidationErrors(validateSkillsStatusParams.errors)}`,
-        ),
-      );
-      return;
-    }
-    const cfg = loadConfig();
-    const agentIdRaw = typeof params?.agentId === "string" ? params.agentId.trim() : "";
-    const agentId = agentIdRaw ? normalizeAgentId(agentIdRaw) : resolveDefaultAgentId(cfg);
-    if (agentIdRaw) {
-      const knownAgents = listAgentIds(cfg);
-      if (!knownAgents.includes(agentId)) {
-        respond(
-          false,
-          undefined,
-          errorShape(ErrorCodes.INVALID_REQUEST, `unknown agent id "${agentIdRaw}"`),
-        );
+  ...skillsFilesHandlers,
+  ...skillsLibraryHandlers,
+  ...skillsUploadHandlers,
+  ...skillsWorkshopHandlers,
+  ...skillsRetiredHandlers,
+  "skills.status": handleSkillsStatus,
+  "skills.securityVerdicts": defineValidatedGatewayHandler(
+    "skills.securityVerdicts",
+    validateSkillsSecurityVerdictsParams,
+    async ({ params, respond, context }) => {
+      const resolved = resolveSkillsAgentWorkspace(params, context);
+      if (!resolved.ok) {
+        respond(false, undefined, resolved.error);
         return;
       }
+      try {
+        const { report } = await buildRemoteAwareWorkspaceSkillStatus(resolved);
+        const targets = collectClawHubVerdictTargets(report);
+        const items = targets.length === 0 ? [] : await fetchOpenClawSkillSecurityVerdicts(targets);
+        respond(true, { schema: "openclaw.skills.security-verdicts.v1", items }, undefined);
+      } catch (error) {
+        respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, formatErrorMessage(error)));
+      }
+    },
+  ),
+  "skills.skillCard": async ({ params, respond, context }) => {
+    if (!assertValidParams(params, validateSkillsSkillCardParams, "skills.skillCard", respond)) {
+      return;
     }
-    const workspaceDir = resolveAgentWorkspaceDir(cfg, agentId);
-    const report = buildWorkspaceSkillStatus(workspaceDir, {
-      config: cfg,
-      eligibility: { remote: getRemoteSkillEligibility() },
-    });
-    respond(true, report, undefined);
-  },
-  "skills.bins": ({ params, respond }) => {
-    if (!validateSkillsBinsParams(params)) {
+    const resolved = resolveSkillsAgentWorkspace(params, context);
+    if (!resolved.ok) {
+      respond(false, undefined, resolved.error);
+      return;
+    }
+    const { report, files } = await buildRemoteAwareWorkspaceSkillStatus(
+      resolved,
+      undefined,
+      params.skillKey,
+    );
+    const skill = report.skills.find((candidate) => candidate.skillKey === params.skillKey);
+    const content = skill?.skillCard
+      ? files.find((file) => file.name === skill.name && file.filePath === skill.filePath)
+          ?.skillCard?.content
+      : undefined;
+    if (!skill?.skillCard || content === undefined) {
       respond(
         false,
         undefined,
         errorShape(
           ErrorCodes.INVALID_REQUEST,
-          `invalid skills.bins params: ${formatValidationErrors(validateSkillsBinsParams.errors)}`,
+          `skill card not ${skill?.skillCard ? "readable" : "found"} for ${params.skillKey}`,
         ),
       );
       return;
     }
-    const cfg = loadConfig();
-    const workspaceDirs = listAgentWorkspaceDirs(cfg);
+    respond(
+      true,
+      {
+        schema: "openclaw.skills.skill-card.v1",
+        skillKey: skill.skillKey,
+        path: skill.skillCard.path,
+        sizeBytes: skill.skillCard.sizeBytes,
+        content,
+      },
+      undefined,
+    );
+  },
+  "skills.bins": async ({ params, respond, context }) => {
+    if (!assertValidParams(params, validateSkillsBinsParams, "skills.bins", respond)) {
+      return;
+    }
+    const cfg = context.getRuntimeConfig();
     const bins = new Set<string>();
-    for (const workspaceDir of workspaceDirs) {
-      const entries = loadWorkspaceSkillEntries(workspaceDir, { config: cfg });
+    for (const agentId of listAgentIds(cfg)) {
+      // Node inventories include missing requirements, not only locally usable skills.
+      const { entries } = await prepareWorkspaceSkillEntries(
+        resolveAgentWorkspaceDir(cfg, agentId),
+        {
+          config: cfg,
+          agentId,
+          agentSkillFilter: "ignore",
+        },
+      );
       for (const bin of collectSkillBins(entries)) {
         bins.add(bin);
       }
     }
     respond(true, { bins: [...bins].toSorted() }, undefined);
   },
-  "skills.install": async ({ params, respond }) => {
-    if (!validateSkillsInstallParams(params)) {
+  "skills.search": defineValidatedGatewayHandler(
+    "skills.search",
+    validateSkillsSearchParams,
+    async ({ params, respond }) => {
+      const results = await searchSkillsFromClawHub({
+        query: params.query,
+        limit: params.limit,
+      });
+      registerClawHubCatalogIconUrls(results.map((result) => result.icon ?? undefined));
+      respond(true, { results }, undefined);
+    },
+    (error) => errorShape(ErrorCodes.UNAVAILABLE, formatErrorMessage(error)),
+  ),
+  "skills.detail": defineValidatedGatewayHandler(
+    "skills.detail",
+    validateSkillsDetailParams,
+    async ({ params, respond }) => {
+      // Same reference grammar as skills.install, so a client cannot review one publisher's
+      // card and then install another's.
+      const requested = parseRequestedClawHubSkillRef(params.slug);
+      if (requested.requestedReference) {
+        // PaleoHub has no source-qualified read endpoint, so reading this by bare slug would
+        // show a same-slug registry skill while install resolves the external artifact.
+        // Refusing keeps review and install on one identity until that contract exists.
+        respond(
+          false,
+          undefined,
+          errorShape(
+            ErrorCodes.INVALID_REQUEST,
+            `PaleoHub cannot return details for ${requested.requestedReference}; external skill sources are install-only. Install it directly, or run "paleoclaw skills install ${requested.requestedReference}".`,
+          ),
+        );
+        return;
+      }
+      const detail = await fetchClawHubSkillDetail({
+        slug: requested.slug,
+        includeInspection: true,
+        ...(params.version ? { version: params.version } : {}),
+        ...(requested.ownerHandle ? { ownerHandle: requested.ownerHandle } : {}),
+      });
+      registerClawHubCatalogIconUrls([
+        detail.skill?.icon ?? undefined,
+        detail.owner?.image ?? undefined,
+      ]);
+      respond(true, detail, undefined);
+    },
+    (error) => errorShape(ErrorCodes.UNAVAILABLE, formatErrorMessage(error)),
+  ),
+  "skills.install": handleSkillsInstall,
+  "skills.update": async ({ params, respond, context }) => {
+    if (!assertValidParams(params, validateSkillsUpdateParams, "skills.update", respond)) {
+      return;
+    }
+    const p = params;
+    if ("source" in p) {
+      if (Boolean(p.slug) === Boolean(p.all)) {
+        respond(
+          false,
+          undefined,
+          errorShape(
+            ErrorCodes.INVALID_REQUEST,
+            p.slug
+              ? 'PaleoHub skills.update accepts either "slug" or "all", not both'
+              : 'PaleoHub skills.update requires "slug" or "all"',
+          ),
+        );
+        return;
+      }
+      const resolved = resolveSkillsAgentWorkspace(p, context);
+      if (!resolved.ok) {
+        respond(false, undefined, resolved.error);
+        return;
+      }
+      const results = await updateSkillsFromClawHub({
+        workspaceDir: resolved.workspaceDir,
+        slug: p.slug,
+        ...(p.force ? { force: true } : {}),
+        logger: context.logGateway,
+        config: resolved.cfg,
+      });
+      const errors = results.filter((result) => !result.ok);
+      const warnings = normalizeTrimmedStringList(results.map((result) => result.warning));
       respond(
-        false,
-        undefined,
-        errorShape(
-          ErrorCodes.INVALID_REQUEST,
-          `invalid skills.install params: ${formatValidationErrors(validateSkillsInstallParams.errors)}`,
-        ),
+        errors.length === 0,
+        {
+          ok: errors.length === 0,
+          skillKey: p.slug ?? "*",
+          config: {
+            source: "PaleoHub",
+            results,
+          },
+        },
+        errors.length === 0
+          ? undefined
+          : errorShape(ErrorCodes.UNAVAILABLE, errors.map((result) => result.error).join("; "), {
+              details: {
+                results,
+                ...(warnings.length > 0 ? { warnings } : {}),
+              },
+            }),
       );
       return;
     }
-    const p = params as {
-      name: string;
-      installId: string;
-      timeoutMs?: number;
-    };
-    const cfg = loadConfig();
-    const workspaceDirRaw = resolveAgentWorkspaceDir(cfg, resolveDefaultAgentId(cfg));
-    const result = await installSkill({
-      workspaceDir: workspaceDirRaw,
-      skillName: p.name,
-      installId: p.installId,
-      timeoutMs: p.timeoutMs,
-      config: cfg,
-    });
+    const updated = await updateSkillConfigEntry(p);
     respond(
-      result.ok,
-      result,
-      result.ok ? undefined : errorShape(ErrorCodes.UNAVAILABLE, result.message),
+      true,
+      { ok: true, skillKey: p.skillKey, config: redactConfigObject(updated) },
+      undefined,
     );
-  },
-  "skills.update": async ({ params, respond }) => {
-    if (!validateSkillsUpdateParams(params)) {
-      respond(
-        false,
-        undefined,
-        errorShape(
-          ErrorCodes.INVALID_REQUEST,
-          `invalid skills.update params: ${formatValidationErrors(validateSkillsUpdateParams.errors)}`,
-        ),
-      );
-      return;
-    }
-    const p = params as {
-      skillKey: string;
-      enabled?: boolean;
-      apiKey?: string;
-      env?: Record<string, string>;
-    };
-    const cfg = loadConfig();
-    const skills = cfg.skills ? { ...cfg.skills } : {};
-    const entries = skills.entries ? { ...skills.entries } : {};
-    const current = entries[p.skillKey] ? { ...entries[p.skillKey] } : {};
-    if (typeof p.enabled === "boolean") {
-      current.enabled = p.enabled;
-    }
-    if (typeof p.apiKey === "string") {
-      const trimmed = normalizeSecretInput(p.apiKey);
-      if (trimmed) {
-        current.apiKey = trimmed;
-      } else {
-        delete current.apiKey;
-      }
-    }
-    if (p.env && typeof p.env === "object") {
-      const nextEnv = current.env ? { ...current.env } : {};
-      for (const [key, value] of Object.entries(p.env)) {
-        const trimmedKey = key.trim();
-        if (!trimmedKey) {
-          continue;
-        }
-        const trimmedVal = value.trim();
-        if (!trimmedVal) {
-          delete nextEnv[trimmedKey];
-        } else {
-          nextEnv[trimmedKey] = trimmedVal;
-        }
-      }
-      current.env = nextEnv;
-    }
-    entries[p.skillKey] = current;
-    skills.entries = entries;
-    const nextConfig: OpenClawConfig = {
-      ...cfg,
-      skills,
-    };
-    await writeConfigFile(nextConfig);
-    respond(true, { ok: true, skillKey: p.skillKey, config: current }, undefined);
   },
 };

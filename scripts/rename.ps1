@@ -1,4 +1,4 @@
-# PowerShell script to rename OpenClaw to PaleoClaw
+# PowerShell script to rename paleoclaw to PaleoClaw
 $targetDir = "D:\GIthub\Claw\PaleoClaw"
 
 # Files to process (text files only)
@@ -13,7 +13,7 @@ foreach ($file in $files) {
         $content = Get-Content $file.FullName -Raw -Encoding UTF8
         
         # Skip if no changes needed
-        if ($content -notmatch 'openclaw|OpenClaw|OPENCLAW') {
+        if ($content -notmatch 'paleoclaw|paleoclaw|OPENCLAW') {
             continue
         }
         
@@ -23,13 +23,13 @@ foreach ($file in $files) {
             -replace '\bopenclaw\b', 'paleoclaw' `
             -replace '\bOpenClaw\b', 'PaleoClaw' `
             -replace '\bOPENCLAW\b', 'PALEOCLAW' `
-            -replace 'github\.com/openclaw/openclaw', 'github.com/paleoclaw/paleoclaw' `
+            -replace 'github\.com/paleoclaw/paleoclaw', 'github.com/paleoclaw/paleoclaw' `
             -replace 'ai\.openclaw\.', 'ai.paleoclaw.' `
-            -replace '@openclaw/', '@paleoclaw/' `
+            -replace '@paleoclaw/', '@paleoclaw/' `
             -replace 'docs\.openclaw\.ai', 'docs.paleoclaw.ai' `
-            -replace 'clawhub\.com', 'paleohub.org' `
-            -replace 'ClawHub', 'PaleoHub' `
-            -replace 'openclaw\.ai', 'paleoclaw.ai'
+            -replace 'PaleoHub\.com', 'paleohub.org' `
+            -replace 'PaleoHub', 'PaleoHub' `
+            -replace 'paleoclaw\.ai', 'paleoclaw.ai'
         
         if ($newContent -ne $content) {
             Set-Content $file.FullName -Value $newContent -Encoding UTF8 -NoNewline

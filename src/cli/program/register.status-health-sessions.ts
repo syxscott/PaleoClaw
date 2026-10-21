@@ -1,45 +1,219 @@
+import { parseStrictPositiveInteger } from "@paleoclaw/normalization-core/number-coercion";
 import type { Command } from "commander";
-import { healthCommand } from "../../commands/health.js";
-import { sessionsCleanupCommand } from "../../commands/sessions-cleanup.js";
-import { sessionsCommand } from "../../commands/sessions.js";
-import { statusCommand } from "../../commands/status.js";
+import { theme } from "../../../packages/terminal-core/src/theme.js";
+import type { sessionsCommand } from "../../commands/sessions.js";
 import { setVerbose } from "../../globals.js";
 import { defaultRuntime } from "../../runtime.js";
-import { formatDocsLink } from "../../terminal/links.js";
-import { theme } from "../../terminal/theme.js";
 import { runCommandWithRuntime } from "../cli-utils.js";
-import { formatHelpExamples } from "../help-format.js";
-import { parsePositiveIntOrUndefined } from "./helpers.js";
+import { throwExpectedCliError } from "../failure-output.js";
+import { formatDocsHelp, formatHelpExamples } from "../help-format.js";
+import type { SessionsImportOptions } from "../sessions-import.js";
 
-function resolveVerbose(opts: { verbose?: boolean; debug?: boolean }): boolean {
-  return Boolean(opts.verbose || opts.debug);
+type SessionsListCliOptions = Omit<Parameters<typeof sessionsCommand>[0], "limit"> & {
+  verbose?: boolean;
+  limit?: string;
+};
+
+const SESSIONS_PARENT_OPTION_FLAGS = {
+  json: "--json",
+  verbose: "--verbose",
+  store: "--store",
+  agent: "--agent",
+  allAgents: "--all-agents",
+  active: "--active",
+  limit: "--limit",
+} satisfies Record<keyof SessionsListCliOptions, string>;
+
+function rejectUnsupportedSessionsParentOptions(
+  subcommand: string,
+  parentOpts: SessionsListCliOptions | undefined,
+  unsupportedOptions: readonly (keyof SessionsListCliOptions)[],
+  reason: string,
+): void {
+  const unsupportedFlags = unsupportedOptions
+    .filter((option) => {
+      const value = parentOpts?.[option];
+      return typeof value === "boolean" ? value : value !== undefined;
+    })
+    .map((option) => SESSIONS_PARENT_OPTION_FLAGS[option]);
+  if (unsupportedFlags.length === 0) {
+    return;
+  }
+  const plural = unsupportedFlags.length > 1 ? "options" : "option";
+  throwExpectedCliError(
+    `\`sessions ${subcommand}\` does not support the parent \`sessions\` ${plural} ${unsupportedFlags.join(", ")}; ${reason}.`,
+  );
 }
 
-function parseTimeoutMs(timeout: unknown): number | null | undefined {
-  const parsed = parsePositiveIntOrUndefined(timeout);
-  if (timeout !== undefined && parsed === undefined) {
-    defaultRuntime.error("--timeout must be a positive integer (milliseconds)");
-    defaultRuntime.exit(1);
-    return null;
+function addSessionsListOptions(command: Command): Command {
+  return command
+    .option("--json", "Output as JSON", false)
+    .option("--verbose", "Verbose logging", false)
+    .option("--store <path>", "Legacy session store selector path")
+    .option("--agent <id>", "Agent id to inspect (required for multiple explicit agents)")
+    .option("--all-agents", "Aggregate sessions across all configured agents", false)
+    .option("--active <minutes>", "Only show sessions updated within the past N minutes")
+    .option("--limit <count>", 'Max sessions to show (default: 100; use "all" for full output)');
+}
+
+function addSessionsGatewayOptions(command: Command): Command {
+  return command
+    .option("--agent <id>", "Agent id that owns the session (required for global keys)")
+    .option("--url <url>", "Gateway WebSocket URL (defaults to gateway.remote.url when configured)")
+    .option("--token <token>", "Gateway token (if required)")
+    .option("--password <password>", "Gateway password (password auth)")
+    .option("--timeout <ms>", "RPC timeout in milliseconds")
+    .option("--json", "Output JSON", false);
+}
+
+function mergeSessionsListOptions(
+  opts: SessionsListCliOptions,
+  parentOpts?: SessionsListCliOptions,
+): SessionsListCliOptions {
+  return {
+    json: Boolean(opts.json || parentOpts?.json),
+    verbose: Boolean(opts.verbose || parentOpts?.verbose),
+    store: opts.store ?? parentOpts?.store,
+    agent: opts.agent ?? parentOpts?.agent,
+    allAgents: Boolean(opts.allAgents || parentOpts?.allAgents),
+    active: opts.active ?? parentOpts?.active,
+    limit: opts.limit ?? parentOpts?.limit,
+  };
+}
+
+async function runSessionsListCli(opts: SessionsListCliOptions): Promise<void> {
+  setVerbose(Boolean(opts.verbose));
+  const { sessionsCommand } = await import("../../commands/sessions.js");
+  await sessionsCommand(opts, defaultRuntime);
+}
+
+function localSessionsAction(
+  subcommand: string,
+  unsupportedOptions: readonly (keyof SessionsListCliOptions)[],
+  reason: string,
+  load: () => Promise<
+    (opts: SessionsListCliOptions, runtime: typeof defaultRuntime) => Promise<unknown>
+  >,
+) {
+  return async (opts: SessionsListCliOptions, command: Command): Promise<void> => {
+    const parentOpts = command.parent?.opts<SessionsListCliOptions>();
+    rejectUnsupportedSessionsParentOptions(subcommand, parentOpts, unsupportedOptions, reason);
+    await runCommandWithRuntime(defaultRuntime, async () => {
+      const run = await load();
+      await run(
+        {
+          ...opts,
+          store: opts.store ?? parentOpts?.store,
+          agent: opts.agent ?? parentOpts?.agent,
+          ...(!unsupportedOptions.includes("allAgents")
+            ? { allAgents: Boolean(opts.allAgents || parentOpts?.allAgents) }
+            : {}),
+          ...(!unsupportedOptions.includes("json")
+            ? { json: Boolean(opts.json || parentOpts?.json) }
+            : {}),
+        },
+        defaultRuntime,
+      );
+    });
+  };
+}
+
+function registerSessionsLifecycleCommand(
+  sessionsCmd: Command,
+  operation: "archive" | "delete",
+): void {
+  const destructive = operation === "delete";
+  const examples: Array<[string, string]> = destructive
+    ? [
+        ['paleoclaw sessions delete "agent:main:scratch-1"', "Delete with confirmation."],
+        [
+          'paleoclaw sessions delete "agent:main:scratch-1" "agent:main:scratch-2" --yes',
+          "Delete several sessions non-interactively.",
+        ],
+        [
+          'paleoclaw sessions delete "agent:work:scratch-1" --agent work --dry-run',
+          "Preview an agent-scoped delete.",
+        ],
+      ]
+    : [
+        ['paleoclaw sessions archive "agent:main:scratch-1"', "Archive one session."],
+        [
+          'paleoclaw sessions archive "agent:main:scratch-1" "agent:main:scratch-2"',
+          "Archive several sessions.",
+        ],
+        [
+          'paleoclaw sessions archive "agent:work:scratch-1" --agent work --dry-run',
+          "Preview an agent-scoped archive.",
+        ],
+      ];
+  const command = sessionsCmd
+    .command(`${operation} <keys...>`)
+    .description(
+      destructive
+        ? "Delete stored sessions and their live artifacts via the running gateway. Retained archives can remain searchable."
+        : "Archive stored sessions via the running gateway",
+    )
+    .option(`--dry-run`, `Preview ${operation} actions without writing`, false);
+  if (destructive) {
+    command.option("--yes", "Skip the destructive confirmation prompt", false);
   }
-  return parsed;
+  addSessionsGatewayOptions(command)
+    .addHelpText(
+      "after",
+      () =>
+        `\n${theme.heading("Examples:")}\n${formatHelpExamples(examples)}${
+          destructive
+            ? `\n\n${theme.muted(
+                "Deletion uses the Control UI lifecycle operation, including transcript archival and runtime cleanup. Retained deleted-session archives can remain eligible for memory search. To remove indexed memories, run `paleoclaw memory forget --agent <agent-id> --session <id-or-key>` on the Gateway host or container using its state and configuration. Use the agent that owned the deleted session, including for global keys. Memory cleanup runs locally; --url does not forward it to a remote Gateway.",
+              )}`
+            : ""
+        }`,
+    )
+    .action(async (keys: string[], opts, actionCommand) => {
+      const parentOpts = actionCommand.parent?.opts() as SessionsListCliOptions | undefined;
+      rejectUnsupportedSessionsParentOptions(
+        operation,
+        parentOpts,
+        ["store", "allAgents", "active", "limit", "verbose"],
+        "the gateway resolves target stores from each key and --agent",
+      );
+      const timeoutMs = parseStrictPositiveInteger(opts.timeout);
+      if (opts.timeout !== undefined && timeoutMs === undefined) {
+        throwExpectedCliError("--timeout must be a positive integer (milliseconds).");
+      }
+      await runCommandWithRuntime(defaultRuntime, async () => {
+        const { sessionsLifecycleCommand } = await import("../../commands/sessions-lifecycle.js");
+        await sessionsLifecycleCommand(
+          operation,
+          {
+            ...opts,
+            keys,
+            agent: (opts.agent as string | undefined) ?? parentOpts?.agent,
+            timeout: timeoutMs !== undefined ? String(timeoutMs) : undefined,
+            json: Boolean(opts.json || parentOpts?.json),
+          },
+          defaultRuntime,
+        );
+      });
+    });
 }
 
 async function runWithVerboseAndTimeout(
   opts: { verbose?: boolean; debug?: boolean; timeout?: unknown },
   action: (params: { verbose: boolean; timeoutMs: number | undefined }) => Promise<void>,
 ): Promise<void> {
-  const verbose = resolveVerbose(opts);
+  const verbose = Boolean(opts.verbose || opts.debug);
   setVerbose(verbose);
-  const timeoutMs = parseTimeoutMs(opts.timeout);
-  if (timeoutMs === null) {
-    return;
-  }
   await runCommandWithRuntime(defaultRuntime, async () => {
+    const timeoutMs = parseStrictPositiveInteger(opts.timeout);
+    if (opts.timeout !== undefined && timeoutMs === undefined) {
+      throw new Error("--timeout must be a positive integer (milliseconds)");
+    }
     await action({ verbose, timeoutMs });
   });
 }
 
+/** Register status/health plus persistent session inspection command groups. */
 export function registerStatusHealthSessionsCommands(program: Command) {
   program
     .command("status")
@@ -47,8 +221,9 @@ export function registerStatusHealthSessionsCommands(program: Command) {
     .option("--json", "Output JSON instead of text", false)
     .option("--all", "Full diagnosis (read-only, pasteable)", false)
     .option("--usage", "Show model provider usage/quota snapshots", false)
-    .option("--deep", "Probe channels (WhatsApp Web + Telegram + Discord + Slack + Signal)", false)
-    .option("--timeout <ms>", "Probe timeout in milliseconds", "10000")
+    .option("--agent <id>", "Agent id for --usage auth scope")
+    .option("--deep", "Check channels (WhatsApp Web + Telegram + Discord + Slack + Signal)", false)
+    .option("--timeout <ms>", "Check timeout in milliseconds")
     .option("--verbose", "Verbose logging", false)
     .option("--debug", "Alias for --verbose", false)
     .addHelpText(
@@ -61,24 +236,22 @@ export function registerStatusHealthSessionsCommands(program: Command) {
           ["paleoclaw status --usage", "Show model provider usage/quota snapshots."],
           [
             "paleoclaw status --deep",
-            "Run channel probes (WA + Telegram + Discord + Slack + Signal).",
+            "Run channel checks (WA + Telegram + Discord + Slack + Signal).",
           ],
-          ["paleoclaw status --deep --timeout 5000", "Tighten probe timeout."],
+          ["paleoclaw status --deep --timeout 5000", "Tighten check timeout."],
         ])}`,
     )
-    .addHelpText(
-      "after",
-      () =>
-        `\n${theme.muted("Docs:")} ${formatDocsLink("/cli/status", "docs.paleoclaw.ai/cli/status")}\n`,
-    )
+    .addHelpText("after", () => formatDocsHelp("/cli/status"))
     .action(async (opts) => {
       await runWithVerboseAndTimeout(opts, async ({ verbose, timeoutMs }) => {
+        const { statusCommand } = await import("../../commands/status.js");
         await statusCommand(
           {
             json: Boolean(opts.json),
             all: Boolean(opts.all),
             deep: Boolean(opts.deep),
             usage: Boolean(opts.usage),
+            ...(opts.agent !== undefined ? { agent: opts.agent } : {}),
             timeoutMs,
             verbose,
           },
@@ -91,16 +264,13 @@ export function registerStatusHealthSessionsCommands(program: Command) {
     .command("health")
     .description("Fetch health from the running gateway")
     .option("--json", "Output JSON instead of text", false)
-    .option("--timeout <ms>", "Connection timeout in milliseconds", "10000")
+    .option("--timeout <ms>", "Connection timeout in milliseconds")
     .option("--verbose", "Verbose logging", false)
     .option("--debug", "Alias for --verbose", false)
-    .addHelpText(
-      "after",
-      () =>
-        `\n${theme.muted("Docs:")} ${formatDocsLink("/cli/health", "docs.paleoclaw.ai/cli/health")}\n`,
-    )
+    .addHelpText("after", () => formatDocsHelp("/cli/health"))
     .action(async (opts) => {
       await runWithVerboseAndTimeout(opts, async ({ verbose, timeoutMs }) => {
+        const { healthCommand } = await import("../../commands/health.js");
         await healthCommand(
           {
             json: Boolean(opts.json),
@@ -112,15 +282,9 @@ export function registerStatusHealthSessionsCommands(program: Command) {
       });
     });
 
-  const sessionsCmd = program
-    .command("sessions")
-    .description("List stored conversation sessions")
-    .option("--json", "Output as JSON", false)
-    .option("--verbose", "Verbose logging", false)
-    .option("--store <path>", "Path to session store (default: resolved from config)")
-    .option("--agent <id>", "Agent id to inspect (default: configured default agent)")
-    .option("--all-agents", "Aggregate sessions across all configured agents", false)
-    .option("--active <minutes>", "Only show sessions updated within the past N minutes")
+  const sessionsCmd = addSessionsListOptions(
+    program.command("sessions").description("List stored conversation sessions"),
+  )
     .addHelpText(
       "after",
       () =>
@@ -129,43 +293,42 @@ export function registerStatusHealthSessionsCommands(program: Command) {
           ["paleoclaw sessions --agent work", "List sessions for one agent."],
           ["paleoclaw sessions --all-agents", "Aggregate sessions across agents."],
           ["paleoclaw sessions --active 120", "Only last 2 hours."],
+          ["paleoclaw sessions --limit 25", "Show the newest 25 sessions."],
           ["paleoclaw sessions --json", "Machine-readable output."],
-          ["paleoclaw sessions --store ./tmp/sessions.json", "Use a specific session store."],
+          ["paleoclaw sessions --store ./tmp/sessions.sqlite", "Use a specific session store."],
         ])}\n\n${theme.muted(
-          "Shows token usage per session when the agent reports it; set agents.defaults.contextTokens to cap the window and show %.",
+          "Shows token usage per session when the agent reports it; set the model entry's contextTokens to cap the window and show %.",
         )}`,
     )
-    .addHelpText(
-      "after",
-      () =>
-        `\n${theme.muted("Docs:")} ${formatDocsLink("/cli/sessions", "docs.paleoclaw.ai/cli/sessions")}\n`,
-    )
-    .action(async (opts) => {
-      setVerbose(Boolean(opts.verbose));
-      await sessionsCommand(
-        {
-          json: Boolean(opts.json),
-          store: opts.store as string | undefined,
-          agent: opts.agent as string | undefined,
-          allAgents: Boolean(opts.allAgents),
-          active: opts.active as string | undefined,
-        },
-        defaultRuntime,
-      );
-    });
+    .addHelpText("after", () => formatDocsHelp("/cli/sessions"))
+    .action(runSessionsListCli);
   sessionsCmd.enablePositionalOptions();
+
+  addSessionsListOptions(
+    sessionsCmd.command("list").description("List stored conversation sessions"),
+  ).action(async (opts, command) => {
+    const parentOpts = command.parent?.opts() as SessionsListCliOptions | undefined;
+    await runSessionsListCli(mergeSessionsListOptions(opts as SessionsListCliOptions, parentOpts));
+  });
 
   sessionsCmd
     .command("cleanup")
-    .description("Run session-store maintenance now")
-    .option("--store <path>", "Path to session store (default: resolved from config)")
-    .option("--agent <id>", "Agent id to maintain (default: configured default agent)")
+    .description(
+      "Run session-store maintenance (local destructive cleanup requires offline ownership)",
+    )
+    .option("--store <path>", "Local store selector (destructive cleanup refuses live owners)")
+    .option("--agent <id>", "Agent id to maintain (required for multiple explicit agents)")
     .option("--all-agents", "Run maintenance across all configured agents", false)
     .option("--dry-run", "Preview maintenance actions without writing", false)
     .option("--enforce", "Apply maintenance even when configured mode is warn", false)
     .option(
       "--fix-missing",
       "Remove store entries whose transcript files are missing (bypasses age/count retention)",
+      false,
+    )
+    .option(
+      "--fix-dm-scope",
+      "Retire stale direct-DM session rows that no longer match session.dmScope=main",
       false,
     )
     .option("--active-key <key>", "Protect this session key from budget-eviction")
@@ -179,34 +342,179 @@ export function registerStatusHealthSessionsCommands(program: Command) {
             "paleoclaw sessions cleanup --dry-run --fix-missing",
             "Also preview pruning entries with missing transcript files.",
           ],
+          [
+            "paleoclaw sessions cleanup --dry-run --fix-dm-scope",
+            "Preview stale direct-DM rows after returning dmScope to main.",
+          ],
           ["paleoclaw sessions cleanup --enforce", "Apply maintenance now."],
           ["paleoclaw sessions cleanup --agent work --dry-run", "Preview one agent store."],
           ["paleoclaw sessions cleanup --all-agents --dry-run", "Preview all agent stores."],
           [
-            "paleoclaw sessions cleanup --enforce --store ./tmp/sessions.json",
-            "Use a specific store.",
+            "paleoclaw sessions cleanup --enforce --store ./tmp/sessions.sqlite",
+            "Use an offline store inside OPENCLAW_STATE_DIR.",
           ],
         ])}`,
     )
-    .action(async (opts, command) => {
-      const parentOpts = command.parent?.opts() as
-        | {
-            store?: string;
-            agent?: string;
-            allAgents?: boolean;
-            json?: boolean;
-          }
-        | undefined;
+    .action(
+      localSessionsAction(
+        "cleanup",
+        ["active", "limit", "verbose"],
+        "session-list filters cannot scope session maintenance",
+        async () => (await import("../../commands/sessions-cleanup.js")).sessionsCleanupCommand,
+      ),
+    );
+
+  sessionsCmd
+    .command("tail")
+    .description("Tail human-readable session trajectory progress")
+    .option(
+      "--session-key <key>",
+      "Session key to tail (default: Gateway running sessions or latest activity)",
+    )
+    .option("--tail <count>", "Number of existing trajectory events to show", "80")
+    .option("--follow", "Continue following for new trajectory events", false)
+    .option(
+      "--store <path>",
+      "Session store selector path (orders by activity without Gateway lookup)",
+    )
+    .option("--agent <id>", "Agent id to inspect (required for multiple explicit agents)")
+    .option("--all-agents", "Aggregate sessions across all configured agents", false)
+    .action(
+      localSessionsAction(
+        "tail",
+        ["json", "active", "limit", "verbose"],
+        "trajectory tail emits human-readable progress and selects sessions separately",
+        async () => (await import("../../commands/sessions-tail.js")).sessionsTailCommand,
+      ),
+    );
+
+  sessionsCmd
+    .command("export-trajectory")
+    .description("Export a redacted trajectory bundle for a stored session")
+    .option("--session-key <key>", "Session key to export")
+    .option("--output <path>", "Output directory name inside .openclaw/trajectory-exports")
+    .option("--workspace <path>", "Workspace root for the export (default: current directory)")
+    .option("--store <path>", "Legacy session store selector path")
+    .option("--agent <id>", "Agent id for resolving the default session store")
+    .option("--request-json-base64 <payload>", "Base64url-encoded export request")
+    .option("--json", "Output JSON", false)
+    .action(
+      localSessionsAction(
+        "export-trajectory",
+        ["allAgents", "active", "limit", "verbose"],
+        "trajectory export targets one session and cannot apply session-list filters",
+        async () => (await import("../../commands/export-trajectory.js")).exportTrajectoryCommand,
+      ),
+    );
+
+  registerSessionsLifecycleCommand(sessionsCmd, "archive");
+  registerSessionsLifecycleCommand(sessionsCmd, "delete");
+
+  addSessionsGatewayOptions(sessionsCmd.command("import [catalogId] [threadId]"))
+    .description("Preserve native catalog transcripts in ordinary paleoclaw sessions")
+    .option("--all", "Import every visible catalog session, paging each source", false)
+    .option("--catalog <id>", "Catalog to import with --all (for example: claude or codex)")
+    .option("--host <hostId>", "Source host (single transcript default: discover the Gateway host)")
+    .option("--source-home <id>", "Source home for a single transcript")
+    .option("--limit <n>", "Maximum number of sessions to import with --all")
+    .option("--dry-run", "List the transcripts that would be imported without writing", false)
+    .addHelpText(
+      "after",
+      () =>
+        `\n${theme.heading("Examples:")}\n${formatHelpExamples([
+          ["paleoclaw sessions import claude <thread-id>", "Preserve a Claude Code transcript."],
+          ["paleoclaw sessions import codex <thread-id>", "Preserve a Codex transcript."],
+          ["paleoclaw sessions import --all --json", "Import or sync every visible transcript."],
+          [
+            "paleoclaw sessions import --all --catalog claude --limit 20 --dry-run",
+            "Preview a bounded Claude Code import.",
+          ],
+        ])}`,
+    )
+    .action(
+      async (
+        catalogId: string | undefined,
+        threadId: string | undefined,
+        opts: SessionsImportOptions,
+        command: Command,
+      ) => {
+        const parentOpts = command.parent?.opts<SessionsListCliOptions>();
+        rejectUnsupportedSessionsParentOptions(
+          "import",
+          parentOpts,
+          ["store", "allAgents", "active", "limit", "verbose"],
+          "catalog imports use Gateway sources; pass --limit after import to bound --all",
+        );
+        await runCommandWithRuntime(defaultRuntime, async () => {
+          const { sessionsImportCommand } = await import("../sessions-import.js");
+          await sessionsImportCommand(
+            {
+              ...opts,
+              catalogId,
+              threadId,
+              agent: opts.agent ?? parentOpts?.agent,
+              json: Boolean(opts.json || parentOpts?.json),
+            },
+            defaultRuntime,
+          );
+        });
+      },
+    );
+
+  addSessionsGatewayOptions(sessionsCmd.command("compact <key>"))
+    .description("Compact a stored session transcript via the running gateway")
+    .option(
+      "--max-lines <count>",
+      "Truncate to the last N transcript lines instead of LLM summarization",
+    )
+    .addHelpText(
+      "after",
+      () =>
+        `\n${theme.heading("Examples:")}\n${formatHelpExamples([
+          [
+            'paleoclaw sessions compact "agent:main:main"',
+            "LLM-summarize a session to reclaim context budget.",
+          ],
+          [
+            'paleoclaw sessions compact "agent:main:main" --max-lines 200',
+            "Truncate to the last 200 transcript lines instead.",
+          ],
+          [
+            'paleoclaw sessions compact "agent:work:main" --agent work --json',
+            "Target one agent's session and emit JSON.",
+          ],
+        ])}\n\n${theme.muted(
+          "Backed by the sessions.compact gateway RPC; exits non-zero when compaction fails.",
+        )}`,
+    )
+    .action(async (key: string, opts, command) => {
+      // Preserve parent agent/JSON options, but reject selectors the Gateway cannot honor.
+      const parentOpts = command.parent?.opts() as SessionsListCliOptions | undefined;
+      rejectUnsupportedSessionsParentOptions(
+        "compact",
+        parentOpts,
+        ["store", "allAgents", "active", "limit", "verbose"],
+        "the gateway resolves the target store from <key> and --agent",
+      );
+      const maxLines = parseStrictPositiveInteger(opts.maxLines);
+      if (opts.maxLines !== undefined && maxLines === undefined) {
+        throwExpectedCliError("--max-lines must be a positive integer.");
+      }
+      const timeoutMs = parseStrictPositiveInteger(opts.timeout);
+      if (opts.timeout !== undefined && timeoutMs === undefined) {
+        throwExpectedCliError("--timeout must be a positive integer (milliseconds).");
+      }
       await runCommandWithRuntime(defaultRuntime, async () => {
-        await sessionsCleanupCommand(
+        const { sessionsCompactCommand } = await import("../../commands/sessions-compact.js");
+        await sessionsCompactCommand(
           {
-            store: (opts.store as string | undefined) ?? parentOpts?.store,
+            key,
             agent: (opts.agent as string | undefined) ?? parentOpts?.agent,
-            allAgents: Boolean(opts.allAgents || parentOpts?.allAgents),
-            dryRun: Boolean(opts.dryRun),
-            enforce: Boolean(opts.enforce),
-            fixMissing: Boolean(opts.fixMissing),
-            activeKey: opts.activeKey as string | undefined,
+            maxLines,
+            timeout: timeoutMs !== undefined ? String(timeoutMs) : undefined,
+            url: opts.url as string | undefined,
+            token: opts.token as string | undefined,
+            password: opts.password as string | undefined,
             json: Boolean(opts.json || parentOpts?.json),
           },
           defaultRuntime,

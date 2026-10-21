@@ -1,0 +1,19 @@
+{
+  "name": "@paleoclaw/xai-plugin",
+  "version": "2026.10.5",
+  "private": true,
+  "description": "paleoclaw xAI plugin",
+  "type": "module",
+  "dependencies": {
+    "typebox": "1.3.37",
+    "ws": "8.22.0"
+  },
+  "devDependencies": {
+    "@paleoclaw/plugin-sdk": "workspace:*"
+  },
+  "paleoclaw": {
+    "extensions": [
+      "./index.ts"
+    ]
+  }
+}

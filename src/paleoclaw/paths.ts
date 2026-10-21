@@ -22,7 +22,7 @@ export function atomicWriteFile(filePath: string, content: string): void {
 
 /**
  * Create a directory restricted to the current user (mode 0o700 on POSIX;
- * ignored on Windows). Borrowed from OpenClaw's private-file-store semantics:
+ * ignored on Windows). Borrowed from paleoclaw's private-file-store semantics:
  * session/memory/credential state must never be world-readable. Existing
  * directories are left as-is so repeated calls never loosen permissions.
  */

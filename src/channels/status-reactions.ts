@@ -1,66 +1,48 @@
-/**
- * Channel-agnostic status reaction controller.
- * Provides a unified interface for displaying agent status via message reactions.
- */
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Types
-// ─────────────────────────────────────────────────────────────────────────────
+import { normalizeOptionalLowercaseString } from "@paleoclaw/normalization-core/string-coerce";
+import { TOOL_REACTION_EMOJIS } from "./status-reaction-tool-emojis.js";
 
 export type StatusReactionAdapter = {
-  /** Set/replace the current reaction emoji. */
   setReaction: (emoji: string) => Promise<void>;
+  /** Clear all status reactions for single-slot platforms such as WhatsApp. */
+  clearReaction?: () => Promise<void>;
   /** Remove a specific reaction emoji (optional — needed for Discord-style platforms). */
   removeReaction?: (emoji: string) => Promise<void>;
 };
 
-export type StatusReactionEmojis = {
-  queued?: string; // Default: uses initialEmoji param
-  thinking?: string; // Default: "🧠"
-  tool?: string; // Default: "🛠️"
-  coding?: string; // Default: "💻"
-  web?: string; // Default: "🌐"
-  done?: string; // Default: "✅"
-  error?: string; // Default: "❌"
-  stallSoft?: string; // Default: "⏳"
-  stallHard?: string; // Default: "⚠️"
-};
+export type StatusReactionEmojis = Partial<typeof DEFAULT_EMOJIS>;
 
-export type StatusReactionTiming = {
-  debounceMs?: number; // Default: 700
-  stallSoftMs?: number; // Default: 10000
-  stallHardMs?: number; // Default: 30000
-  doneHoldMs?: number; // Default: 1500 (not used in controller, but exported for callers)
-  errorHoldMs?: number; // Default: 2500 (not used in controller, but exported for callers)
-};
+export type StatusReactionTiming = Partial<typeof DEFAULT_TIMING>;
 
 export type StatusReactionController = {
   setQueued: () => Promise<void> | void;
   setThinking: () => Promise<void> | void;
   setTool: (toolName?: string) => Promise<void> | void;
+  setCompacting: () => Promise<void> | void;
+  /** Cancel any pending debounced emoji (useful before forcing a state transition). */
+  cancelPending: () => void;
   setDone: () => Promise<void>;
   setError: () => Promise<void>;
   clear: () => Promise<void>;
   restoreInitial: () => Promise<void>;
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Constants
-// ─────────────────────────────────────────────────────────────────────────────
-
-export const DEFAULT_EMOJIS: Required<StatusReactionEmojis> = {
+export const DEFAULT_EMOJIS = {
   queued: "👀",
-  thinking: "🤔",
-  tool: "🔥",
-  coding: "👨‍💻",
-  web: "⚡",
-  done: "👍",
-  error: "😱",
-  stallSoft: "🥱",
-  stallHard: "😨",
+  thinking: "🧠",
+  tool: "🛠️",
+  coding: "💻",
+  web: "🌐",
+  deploy: "🛫",
+  build: "🏗️",
+  concierge: "💁",
+  done: "✅",
+  error: "❌",
+  stallSoft: "⏳",
+  stallHard: "⚠️",
+  compacting: "🗜️",
 };
 
-export const DEFAULT_TIMING: Required<StatusReactionTiming> = {
+export const DEFAULT_TIMING = {
   debounceMs: 700,
   stallSoftMs: 10_000,
   stallHardMs: 30_000,
@@ -86,50 +68,87 @@ export const WEB_TOOL_TOKENS: string[] = [
   "browser",
 ];
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Functions
-// ─────────────────────────────────────────────────────────────────────────────
+export const DEPLOY_TOOL_TOKENS: string[] = [
+  "fastlane",
+  "deploy",
+  "upload",
+  "testflight",
+  "ship",
+  "release",
+  "publish",
+  "distribute",
+];
 
-/**
- * Resolve the appropriate emoji for a tool invocation.
- */
+export const BUILD_TOOL_TOKENS: string[] = [
+  "build",
+  "compile",
+  "xcode",
+  "swift",
+  "gradle",
+  "cargo",
+  "make",
+  "cmake",
+  "webpack",
+  "vite",
+  "tsc",
+  "lint",
+];
+
+export const CONCIERGE_TOOL_TOKENS: string[] = [
+  "navigate",
+  "click",
+  "fill",
+  "screenshot",
+  "scroll",
+  "page",
+  "form",
+  "puppeteer",
+  "playwright",
+  "selenium",
+  "chromedp",
+];
+
 export function resolveToolEmoji(
   toolName: string | undefined,
   emojis: Required<StatusReactionEmojis>,
+  emojiOverrides?: StatusReactionEmojis,
 ): string {
-  const normalized = toolName?.trim().toLowerCase() ?? "";
+  const normalized = normalizeOptionalLowercaseString(toolName) ?? "";
   if (!normalized) {
     return emojis.tool;
   }
-  if (WEB_TOOL_TOKENS.some((token) => normalized.includes(token))) {
-    return emojis.web;
+
+  const category = DEPLOY_TOOL_TOKENS.some((token) => normalized.includes(token))
+    ? "deploy"
+    : BUILD_TOOL_TOKENS.some((token) => normalized.includes(token))
+      ? "build"
+      : CONCIERGE_TOOL_TOKENS.some((token) => normalized.includes(token))
+        ? "concierge"
+        : WEB_TOOL_TOKENS.some((token) => normalized.includes(token))
+          ? "web"
+          : CODING_TOOL_TOKENS.some((token) => normalized.includes(token))
+            ? "coding"
+            : "tool";
+  if (emojiOverrides?.[category] !== undefined) {
+    return emojis[category];
   }
-  if (CODING_TOOL_TOKENS.some((token) => normalized.includes(token))) {
-    return emojis.coding;
-  }
-  return emojis.tool;
+  return TOOL_REACTION_EMOJIS.get(normalized) ?? emojis[category];
 }
 
-/**
- * Create a status reaction controller.
- *
- * Features:
- * - Promise chain serialization (prevents concurrent API calls)
- * - Debouncing (intermediate states debounce, terminal states are immediate)
- * - Stall timers (soft/hard warnings on inactivity)
- * - Terminal state protection (done/error mark finished, subsequent updates ignored)
- */
+/** Defer reaction removal until cleanup to avoid flicker without atomic replacement. */
 export function createStatusReactionController(params: {
   enabled: boolean;
   adapter: StatusReactionAdapter;
   initialEmoji: string;
+  /** Acknowledgement keeps one working reaction; only actual errors replace it. */
+  presentation?: "activity" | "acknowledgement";
   emojis?: StatusReactionEmojis;
   timing?: StatusReactionTiming;
   onError?: (err: unknown) => void;
 }): StatusReactionController {
   const { enabled, adapter, initialEmoji, onError } = params;
+  const showActivity = params.presentation !== "acknowledgement";
 
-  // Merge user-provided overrides with defaults
   const emojis: Required<StatusReactionEmojis> = {
     ...DEFAULT_EMOJIS,
     queued: params.emojis?.queued ?? initialEmoji,
@@ -141,58 +160,57 @@ export function createStatusReactionController(params: {
     ...params.timing,
   };
 
-  // State
   let currentEmoji = "";
   let pendingEmoji = "";
   let debounceTimer: NodeJS.Timeout | null = null;
-  let stallSoftTimer: NodeJS.Timeout | null = null;
-  let stallHardTimer: NodeJS.Timeout | null = null;
+  let stallTimers: NodeJS.Timeout[] = [];
+  let terminalHold: { timer: NodeJS.Timeout; resolve: () => void } | null = null;
+  let terminalHoldGeneration = 0;
   let finished = false;
   let chainPromise = Promise.resolve();
+  const activeEmojis = new Set<string>();
 
-  // Known emojis for clear operation
-  const knownEmojis = new Set<string>([
-    initialEmoji,
-    emojis.queued,
-    emojis.thinking,
-    emojis.tool,
-    emojis.coding,
-    emojis.web,
-    emojis.done,
-    emojis.error,
-    emojis.stallSoft,
-    emojis.stallHard,
-  ]);
-
-  /**
-   * Serialize async operations to prevent race conditions.
-   */
   function enqueue(fn: () => Promise<void>): Promise<void> {
     chainPromise = chainPromise.then(fn, fn);
     return chainPromise;
   }
 
-  /**
-   * Clear all timers.
-   */
-  function clearAllTimers(): void {
-    if (debounceTimer) {
-      clearTimeout(debounceTimer);
-      debounceTimer = null;
-    }
-    if (stallSoftTimer) {
-      clearTimeout(stallSoftTimer);
-      stallSoftTimer = null;
-    }
-    if (stallHardTimer) {
-      clearTimeout(stallHardTimer);
-      stallHardTimer = null;
-    }
+  function clearActivityTimers(): void {
+    clearDebounceTimer();
+    clearStallTimers();
   }
 
-  /**
-   * Clear debounce timer only (used during phase transitions).
-   */
+  function clearStallTimers(): void {
+    for (const timer of stallTimers) {
+      clearTimeout(timer);
+    }
+    stallTimers = [];
+  }
+
+  function cancelTerminalHold(): void {
+    terminalHoldGeneration += 1;
+    const hold = terminalHold;
+    if (!hold) {
+      return;
+    }
+    terminalHold = null;
+    clearTimeout(hold.timer);
+    hold.resolve();
+  }
+
+  function waitForTerminalHold(holdMs: number, generation: number): Promise<void> {
+    if (holdMs <= 0 || generation !== terminalHoldGeneration) {
+      return Promise.resolve();
+    }
+    return new Promise((resolve) => {
+      const timer = setTimeout(() => {
+        terminalHold = null;
+        resolve();
+      }, holdMs);
+      terminalHold = { timer, resolve };
+    });
+  }
+
   function clearDebounceTimer(): void {
     if (debounceTimer) {
       clearTimeout(debounceTimer);
@@ -200,63 +218,60 @@ export function createStatusReactionController(params: {
     }
   }
 
-  /**
-   * Reset stall timers (called on each phase change).
-   */
   function resetStallTimers(): void {
-    if (stallSoftTimer) {
-      clearTimeout(stallSoftTimer);
+    if (!showActivity) {
+      return;
     }
-    if (stallHardTimer) {
-      clearTimeout(stallHardTimer);
-    }
-
-    stallSoftTimer = setTimeout(() => {
-      scheduleEmoji(emojis.stallSoft, { immediate: true, skipStallReset: true });
-    }, timing.stallSoftMs);
-
-    stallHardTimer = setTimeout(() => {
-      scheduleEmoji(emojis.stallHard, { immediate: true, skipStallReset: true });
-    }, timing.stallHardMs);
+    clearStallTimers();
+    stallTimers = (["stallSoft", "stallHard"] as const).map((phase) =>
+      setTimeout(() => {
+        scheduleEmoji(emojis[phase], { immediate: true, skipStallReset: true });
+      }, timing[`${phase}Ms`]),
+    );
   }
 
-  /**
-   * Apply an emoji: set new reaction and optionally remove old one.
-   */
-  async function applyEmoji(newEmoji: string): Promise<void> {
-    if (!enabled) {
+  async function removeActiveEmojis(options: { keepEmoji?: string } = {}): Promise<void> {
+    if (!adapter.removeReaction) {
       return;
     }
 
-    try {
-      const previousEmoji = currentEmoji;
-      await adapter.setReaction(newEmoji);
-
-      // If adapter supports removeReaction and there's a different previous emoji, remove it
-      if (adapter.removeReaction && previousEmoji && previousEmoji !== newEmoji) {
-        await adapter.removeReaction(previousEmoji);
+    for (const emoji of activeEmojis) {
+      if (emoji === options.keepEmoji) {
+        continue;
       }
-
-      currentEmoji = newEmoji;
-    } catch (err) {
-      if (onError) {
-        onError(err);
+      try {
+        await adapter.removeReaction(emoji);
+      } catch (err) {
+        onError?.(err);
+      } finally {
+        activeEmojis.delete(emoji);
       }
     }
   }
 
-  /**
-   * Schedule an emoji change (debounced or immediate).
-   */
+  async function applyEmoji(newEmoji: string): Promise<void> {
+    try {
+      if (!adapter.removeReaction || !activeEmojis.has(newEmoji)) {
+        await adapter.setReaction(newEmoji);
+      }
+
+      activeEmojis.add(newEmoji);
+      currentEmoji = newEmoji;
+    } catch (err) {
+      onError?.(err);
+    }
+  }
+
   function scheduleEmoji(
-    emoji: string,
+    requestedEmoji: string,
     options: { immediate?: boolean; skipStallReset?: boolean } = {},
   ): void {
     if (!enabled || finished) {
       return;
     }
+    const emoji = showActivity ? requestedEmoji : initialEmoji;
 
-    // Deduplicate: if already scheduled/current, skip send but keep stall timers fresh
+    // Skip duplicate sends while still refreshing stall timers for active phases.
     if (emoji === currentEmoji || emoji === pendingEmoji) {
       if (!options.skipStallReset) {
         resetStallTimers();
@@ -266,67 +281,41 @@ export function createStatusReactionController(params: {
 
     pendingEmoji = emoji;
     clearDebounceTimer();
+    const applyPendingEmoji = async () => {
+      await applyEmoji(emoji);
+      pendingEmoji = "";
+    };
 
     if (options.immediate) {
-      // Immediate execution for terminal states
-      void enqueue(async () => {
-        await applyEmoji(emoji);
-        pendingEmoji = "";
-      });
+      void enqueue(applyPendingEmoji);
     } else {
-      // Debounced execution for intermediate states
       debounceTimer = setTimeout(() => {
-        void enqueue(async () => {
-          await applyEmoji(emoji);
-          pendingEmoji = "";
-        });
+        debounceTimer = null;
+        void enqueue(applyPendingEmoji);
       }, timing.debounceMs);
     }
 
-    // Reset stall timers on phase change (unless triggered by stall timer itself)
     if (!options.skipStallReset) {
       resetStallTimers();
     }
   }
 
-  // ───────────────────────────────────────────────────────────────────────────
-  // Controller API
-  // ───────────────────────────────────────────────────────────────────────────
-
-  function setQueued(): void {
-    scheduleEmoji(emojis.queued, { immediate: true });
-  }
-
-  function setThinking(): void {
-    scheduleEmoji(emojis.thinking);
-  }
-
-  function setTool(toolName?: string): void {
-    const emoji = resolveToolEmoji(toolName, emojis);
-    scheduleEmoji(emoji);
-  }
-
-  function finishWithEmoji(emoji: string): Promise<void> {
+  function finishWithEmoji(emoji: string, holdMs: number): Promise<void> {
     if (!enabled) {
       return Promise.resolve();
     }
 
     finished = true;
-    clearAllTimers();
+    clearActivityTimers();
+    const holdGeneration = terminalHoldGeneration;
 
-    // Directly enqueue to ensure we return the updated promise
+    // The serialized hold keeps an immediate restore queued, while explicit clear can cancel it.
     return enqueue(async () => {
       await applyEmoji(emoji);
+      await removeActiveEmojis({ keepEmoji: emoji });
       pendingEmoji = "";
+      await waitForTerminalHold(holdMs, holdGeneration);
     });
-  }
-
-  function setDone(): Promise<void> {
-    return finishWithEmoji(emojis.done);
-  }
-
-  function setError(): Promise<void> {
-    return finishWithEmoji(emojis.error);
   }
 
   async function clear(): Promise<void> {
@@ -334,25 +323,21 @@ export function createStatusReactionController(params: {
       return;
     }
 
-    clearAllTimers();
+    clearActivityTimers();
+    cancelTerminalHold();
     finished = true;
 
     await enqueue(async () => {
-      if (adapter.removeReaction) {
-        // Remove all known emojis (Discord-style)
-        const emojisToRemove = Array.from(knownEmojis);
-        for (const emoji of emojisToRemove) {
-          try {
-            await adapter.removeReaction(emoji);
-          } catch (err) {
-            if (onError) {
-              onError(err);
-            }
-          }
+      if (adapter.clearReaction) {
+        try {
+          await adapter.clearReaction();
+        } catch (err) {
+          onError?.(err);
+        } finally {
+          activeEmojis.clear();
         }
       } else {
-        // For platforms without removeReaction, set empty or just skip
-        // (Telegram handles this atomically on the next setReaction)
+        await removeActiveEmojis();
       }
       currentEmoji = "";
       pendingEmoji = "";
@@ -364,19 +349,46 @@ export function createStatusReactionController(params: {
       return;
     }
 
-    clearAllTimers();
+    const alreadyInitial = currentEmoji === initialEmoji;
+    const pendingBeforeClear = pendingEmoji;
+    const hadDebouncedPending = debounceTimer !== null;
+    const hasExtraActiveEmoji = activeEmojis.size > (activeEmojis.has(initialEmoji) ? 1 : 0);
+    clearActivityTimers();
+    if (
+      !finished &&
+      alreadyInitial &&
+      (!pendingBeforeClear || hadDebouncedPending) &&
+      !hasExtraActiveEmoji
+    ) {
+      pendingEmoji = "";
+      return;
+    }
+    if (!finished && pendingBeforeClear === initialEmoji && !hadDebouncedPending) {
+      await chainPromise;
+      return;
+    }
+
     await enqueue(async () => {
       await applyEmoji(initialEmoji);
+      await removeActiveEmojis({ keepEmoji: initialEmoji });
       pendingEmoji = "";
     });
   }
 
   return {
-    setQueued,
-    setThinking,
-    setTool,
-    setDone,
-    setError,
+    setQueued: () => scheduleEmoji(emojis.queued, { immediate: true }),
+    setThinking: () => scheduleEmoji(emojis.thinking),
+    setTool: (toolName) => scheduleEmoji(resolveToolEmoji(toolName, emojis, params.emojis)),
+    setCompacting: () => scheduleEmoji(emojis.compacting),
+    cancelPending() {
+      clearDebounceTimer();
+      pendingEmoji = "";
+    },
+    setDone: () =>
+      showActivity
+        ? finishWithEmoji(emojis.done, timing.doneHoldMs)
+        : finishWithEmoji(initialEmoji, 0),
+    setError: () => finishWithEmoji(emojis.error, timing.errorHoldMs),
     clear,
     restoreInitial,
   };

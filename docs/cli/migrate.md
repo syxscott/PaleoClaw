@@ -1,0 +1,294 @@
+---
+summary: "CLI reference for `paleoclaw migrate` (import state from another agent system)"
+read_when:
+  - You want to migrate from Hermes or another agent system into paleoclaw
+  - You are adding a plugin-owned migration provider
+title: "Migrate"
+---
+
+# `paleoclaw migrate`
+
+Import state from another agent system through a plugin-owned migration provider. Bundled providers cover Claude, Codex CLI, and [Hermes](/install/migrating-hermes). Plugins can register additional providers.
+
+<Tip>
+For user-facing walkthroughs, see [Migrating from Claude](/install/migrating-claude) and [Migrating from Hermes](/install/migrating-hermes). The [migration hub](/install/migrating) lists all paths.
+</Tip>
+
+Migration provider loading, preview, and import require exclusive local state
+ownership. Stop a running Gateway through its service manager or original
+terminal, wait for it to stop, then rerun the command. If the Gateway still owns
+the state directory, the command refuses before loading a provider or changing
+state. The command retains offline ownership through provider cleanup and any
+import rollback. Memory imports invoked inside the Gateway continue to use that
+Gateway's ownership.
+
+## Commands
+
+```bash
+paleoclaw migrate list
+paleoclaw migrate claude --dry-run
+paleoclaw migrate codex --dry-run
+paleoclaw migrate codex --skill gog-vault77-google-workspace
+paleoclaw migrate codex --plugin google-calendar --dry-run
+paleoclaw migrate codex --plugin google-calendar --verify-plugin-apps --dry-run
+paleoclaw migrate hermes --dry-run
+paleoclaw migrate hermes
+paleoclaw migrate apply codex --yes --skill gog-vault77-google-workspace
+paleoclaw migrate apply codex --yes --plugin google-calendar
+paleoclaw migrate apply codex --yes
+paleoclaw migrate apply claude --yes
+paleoclaw migrate apply hermes --yes
+paleoclaw migrate apply hermes --include-secrets --yes
+paleoclaw onboard --flow import
+paleoclaw onboard --import-from claude --import-source ~/.claude
+paleoclaw onboard --import-from hermes --import-source ~/.hermes
+```
+
+Running `paleoclaw migrate <provider>` with no other flags plans, previews, and (in a TTY) prompts before applying. `paleoclaw migrate plan <provider>` and `paleoclaw migrate apply <provider>` split preview and apply into separate subcommands with the same flags.
+
+Shared flags work in either position, so `paleoclaw migrate --no-auth-credentials apply hermes --yes` and `paleoclaw migrate apply hermes --no-auth-credentials --yes` behave the same. A flag placed on the subcommand overrides the same flag placed before it. `--dry-run` is the exception: `paleoclaw migrate apply` rejects it instead of applying, because apply always changes state.
+
+<ParamField path="<provider>" type="string">
+  Name of a registered migration provider, for example `hermes`. Run `paleoclaw migrate list` to see installed providers.
+</ParamField>
+<ParamField path="--dry-run" type="boolean">
+  Build the plan and exit without changing state. Not accepted by `paleoclaw migrate apply`; use `paleoclaw migrate plan <provider>` instead.
+</ParamField>
+<ParamField path="--from <path>" type="string">
+  Override the source state directory. Hermes follows `$HERMES_HOME` and the active profile, then uses the platform default (`~/.hermes` or `%LOCALAPPDATA%\hermes`). Codex defaults to `~/.codex` (or `$CODEX_HOME`), Claude defaults to `~/.claude`.
+</ParamField>
+<ParamField path="--agent <id>" type="string">
+  Import into a configured agent. Omit this only when the configured default agent is the intended owner. Invalid and unknown agent IDs are rejected.
+</ParamField>
+<ParamField path="--include-secrets" type="boolean">
+  Import supported credentials without an paleoclaw confirmation prompt. Codex may still request operating-system credential-store access, such as macOS Keychain access. Interactive apply asks before inspecting and importing auth credentials, with yes selected by default. Non-interactive `--yes` requires `--include-secrets` to import them.
+</ParamField>
+<ParamField path="--no-auth-credentials" type="boolean">
+  Skip auth credential import, including the interactive prompt.
+</ParamField>
+<ParamField path="--overwrite" type="boolean">
+  Allow apply to replace existing targets when the plan reports conflicts.
+</ParamField>
+<ParamField path="--yes" type="boolean">
+  Skip the confirmation prompt. Required in non-interactive mode.
+</ParamField>
+<ParamField path="--skill <name>" type="string">
+  Select one skill copy item by skill name or item id. Repeat the flag to migrate multiple skills. When omitted, interactive Codex migrations show a checkbox selector and non-interactive migrations keep all planned skills.
+</ParamField>
+<ParamField path="--plugin <name>" type="string">
+  Select one Codex plugin install item by plugin name or item id. Repeat the flag to migrate multiple Codex plugins. When omitted, interactive Codex migrations show a native Codex plugin checkbox selector and non-interactive migrations keep all planned plugins. Applies only to source-installed `openai-curated` Codex plugins discovered by the Codex app-server inventory.
+</ParamField>
+<ParamField path="--item <id>" type="string">
+  Select one exact migration item by its plan ID. Repeat the flag to migrate multiple items. For example, `--item auth:openai` limits a Codex migration to the detected OpenAI credential item.
+</ParamField>
+<ParamField path="--verify-plugin-apps" type="boolean">
+  Codex only. Forces a fresh source Codex app-server `app/installed` snapshot read before planning native plugin activation. Off by default to keep migration planning fast.
+</ParamField>
+<ParamField path="--backup-output <path>" type="string">
+  Pre-migration backup archive path or directory. Passed through to `paleoclaw backup create`.
+</ParamField>
+<ParamField path="--no-backup" type="boolean">
+  Skip the pre-apply backup. Requires `--force` when local paleoclaw state exists.
+</ParamField>
+<ParamField path="--force" type="boolean">
+  Required alongside `--no-backup` when apply would otherwise refuse to skip the backup.
+</ParamField>
+<ParamField path="--json" type="boolean">
+  Print the plan or apply result as JSON. With `--json` and no `--yes`, apply prints the plan and does not mutate state.
+</ParamField>
+
+## Safety model
+
+`paleoclaw migrate` is preview-first.
+
+<AccordionGroup>
+  <Accordion title="Preview before apply">
+    The provider returns an itemized plan before anything changes, including conflicts, skipped items, and sensitive items. JSON plans, apply output, and migration reports redact nested secret-looking keys such as API keys, tokens, authorization headers, cookies, and passwords.
+
+    `paleoclaw migrate apply <provider>` previews the plan and prompts before changing state unless `--yes` is set. In non-interactive mode, apply requires `--yes`.
+
+  </Accordion>
+  <Accordion title="Backups">
+    Apply creates and verifies an paleoclaw backup before applying the migration. If no local paleoclaw state exists yet, the backup step is skipped and the migration continues. To skip a backup when state exists, pass both `--no-backup` and `--force`.
+  </Accordion>
+  <Accordion title="Conflicts">
+    Apply refuses to continue when the plan has conflicts. Review the plan, then rerun with `--overwrite` if replacing existing targets is intentional. Providers may still write item-level backups for overwritten files in the migration report directory.
+  </Accordion>
+  <Accordion title="Secrets">
+    Interactive apply asks whether to import detected auth credentials, with yes selected by default. Use `--no-auth-credentials` to skip them, or `--include-secrets` for unattended credential import with `--yes`.
+  </Accordion>
+</AccordionGroup>
+
+## Claude provider
+
+The bundled Claude provider detects Claude Code state at `~/.claude` by default. Use `--from <path>` to import a specific Claude Code home or project root.
+
+<Tip>
+For a user-facing walkthrough, see [Migrating from Claude](/install/migrating-claude).
+</Tip>
+
+### What Claude imports
+
+- Claude Code auto-memory Markdown from `~/.claude/projects/*/memory` and a
+  user-configured `autoMemoryDirectory`, copied under
+  `memory/imports/claude-code/` for indexed recall.
+- Project `CLAUDE.md` and `.claude/CLAUDE.md` into the paleoclaw agent workspace (`AGENTS.md`).
+- User `~/.claude/CLAUDE.md` appended to workspace `USER.md`.
+- MCP server definitions from project `.mcp.json`, Claude Code `~/.claude.json` (including its per-project entries), and Claude Desktop `claude_desktop_config.json`.
+- Claude skill directories that include `SKILL.md` (user `~/.claude/skills` and project `.claude/skills`).
+- Claude command Markdown files (user `~/.claude/commands` and project `.claude/commands`) converted into paleoclaw skills with manual invocation only.
+
+### Archive and manual-review state
+
+Claude hooks, permissions, environment defaults, project `CLAUDE.local.md`, `.claude/rules`, user and project `agents/` directories, and project history (`projects`, `cache`, `plans` under `~/.claude`) are preserved in the migration report or reported as manual-review items. paleoclaw does not execute hooks, copy broad allowlists, or import OAuth/Desktop credential state automatically.
+
+## Codex provider
+
+The bundled Codex provider detects Codex CLI state at `~/.codex` by default, or at `CODEX_HOME` when that environment variable is set. Use `--from <path>` to inventory a specific Codex home.
+
+Use this provider when moving to the paleoclaw Codex harness and you want to promote useful personal Codex CLI assets deliberately. Local Codex app-server launches use a per-agent `CODEX_HOME`, so they do not read your personal `~/.codex` by default. The normal process `HOME` is still inherited, so Codex can see shared `$HOME/.agents/*` skills/plugin marketplace entries and subprocesses can find user-home config and tokens.
+
+Codex credentials are sensitive migration inputs. Initial credential planning
+offers import without inspecting native credential storage. Accepting the
+interactive credential prompt or passing `--include-secrets` allows inspection
+and import from Codex's selected storage; macOS may request Keychain access.
+Native plugin inventory discovery separately follows Codex's authentication
+behavior, including during a dry run. The default
+agent-scoped runtime does not consume a copied or mounted `auth.json` directly.
+Import those credentials into the owning agent's paleoclaw auth store explicitly.
+Replace `<agent-id>` with that configured agent's ID:
+
+```bash
+paleoclaw migrate plan codex --from <codex-home> --agent <agent-id> --include-secrets --item auth:openai
+paleoclaw migrate apply codex --from <codex-home> --agent <agent-id> --include-secrets --item auth:openai --yes
+```
+
+For callers embedding the Codex migration provider, an explicit
+`providerOptions.allowKeychainPrompt: false` disables credential inspection for
+auth import, including file-backed imports, even with `includeSecrets: true`.
+Earlier tagged versions could import file credentials with that override. Native
+startup can access credential storage before paleoclaw can inspect the selected
+store, so the auth-import step does not start its native reader when this override
+is false. The normal migration CLI and onboarding consent flows do not set this
+override. Plugin discovery is separate and can still request operating-system
+credential access.
+
+Running `paleoclaw migrate codex` in an interactive terminal previews the full plan, then opens checkbox selectors before the final apply confirmation. Skill copy items are prompted first. Use `Toggle all on` or `Toggle all off` for bulk selection. Press Space to toggle rows, or Enter to activate the highlighted row and continue. Planned skills start checked, conflict skills start unchecked, and `Skip for now` skips skill copies for this run while still continuing to plugin selection. When source-installed curated Codex plugins are migratable and `--plugin` was not supplied, migration then prompts for native Codex plugin activation by plugin name. Plugin items start checked unless the target paleoclaw Codex plugin config already has that plugin. Existing target plugins start unchecked and show a conflict hint such as `conflict: plugin exists`. Choose `Toggle all off` to migrate no native Codex plugins in that run, or `Skip for now` to stop before applying.
+
+For scripted or exact runs, select one or more skills or plugins explicitly:
+
+```bash
+paleoclaw migrate codex --dry-run --skill gog-vault77-google-workspace
+paleoclaw migrate apply codex --yes --skill gog-vault77-google-workspace
+paleoclaw migrate codex --dry-run --plugin google-calendar
+paleoclaw migrate apply codex --yes --plugin google-calendar
+```
+
+### What Codex imports
+
+- ChatGPT OAuth or OpenAI API-key credentials from Codex's selected native storage,
+  imported into the agent's paleoclaw auth store only when `--include-secrets`
+  is set.
+- Consolidated Codex `MEMORY.md` and `memory_summary.md` from
+  `$CODEX_HOME/memories`, copied under `memory/imports/codex/` for indexed
+  recall. Raw rollout memory is not imported.
+- Codex CLI skill directories under `$CODEX_HOME/skills`, excluding Codex's `.system` cache.
+- Personal AgentSkills under `$HOME/.agents/skills`, copied into the current paleoclaw agent workspace for per-agent ownership.
+- Source-installed `openai-curated` Codex plugins discovered through Codex app-server `plugin/installed`. Planning reads `plugin/read` for each enabled installed plugin.
+
+Codex sessions and chat history are not imported. Consolidated memories are not conversation transcripts. Migration does not move or delete your source files.
+
+During onboarding, the migration offer explains this scope before asking whether to continue. Continuing opens the import options; credentials require separate consent, skills and eligible plugins can be selected, and a final confirmation is required before applying.
+
+App-backed plugin migration has extra gates:
+
+- App-backed plugins require the source Codex app-server account to be a ChatGPT subscription account. Non-ChatGPT or missing account responses are skipped with `codex_subscription_required`.
+- By default, migration does not read the source app inventory. App-backed plugins that pass the account gate are therefore planned without source app-accessibility verification. Account-lookup transport failures skip with `codex_account_unavailable`.
+- Pass `--verify-plugin-apps` to force a fresh source `app/installed` snapshot, with authorized metadata from batched `app/read`. That mode requires every owned app to be present, enabled, and accessible before it plans native activation. In that mode, account-lookup transport failures fall through to source app-inventory verification. The snapshot is kept in memory for the current process only. It is never written to migration output or target config.
+
+Disabled plugins, unreadable plugin details, subscription-gated source accounts, and (when `--verify-plugin-apps` is set) missing, disabled, or inaccessible apps become manual skipped items with typed reasons instead of target config entries. Apply calls app-server `plugin/install` for each selected eligible plugin, even if the target app-server already reports that plugin as installed and enabled. Migrated Codex plugins are usable only in sessions that select the native Codex harness. They are not exposed to paleoclaw provider runs, ACP conversation bindings, or other harnesses.
+
+### Manual-review Codex state
+
+Codex `config.toml`, native `hooks/hooks.json`, non-curated marketplaces, cached plugin bundles that are not source-installed curated plugins, and source-installed plugins that fail the source subscription gate are not activated automatically. When `--verify-plugin-apps` is set, plugins that fail the source app-inventory gate are also skipped. All of these are copied or reported in the migration report for manual review.
+
+For migrated source-installed curated plugins, apply writes:
+
+- `plugins.entries.codex.enabled: true`
+- `plugins.entries.codex.config.codexPlugins.enabled: true`
+- `plugins.entries.codex.config.codexPlugins.allow_destructive_actions: true`
+- one explicit plugin entry with `marketplaceName: "openai-curated"` and `pluginName` for each selected plugin
+
+Migration never writes `plugins["*"]` and never stores local marketplace cache paths.
+
+Skipped plugins are not written to target config. Source-side subscription failures are reported on manual items with typed reasons: `codex_subscription_required`, `codex_account_unavailable`, `plugin_disabled`, or `plugin_read_unavailable`. With `--verify-plugin-apps`, source app-inventory failures can also appear as `app_inaccessible`, `app_disabled`, `app_missing`, or `app_inventory_unavailable`. Target-side auth-required installs are reported on the affected plugin item with `status: "skipped"`, `reason: "auth_required"`, and sanitized app identifiers. Their explicit config entries are written disabled until you reauthorize and enable them. Other install failures are item-scoped `error` results.
+
+If Codex app-server plugin inventory is unavailable during planning, migration falls back to cached bundle advisory items instead of failing the whole migration.
+
+## Hermes provider
+
+The bundled Hermes provider follows `$HERMES_HOME` and the active profile, then uses the platform default (`~/.hermes` or `%LOCALAPPDATA%\hermes`). Use `--from <path>` to override discovery.
+
+### What Hermes imports
+
+- Default model configuration from `config.yaml`. `--agent <id>` applies the model to the selected agent without changing shared defaults or other agents.
+- Configured model providers and custom OpenAI-compatible endpoints from `model`, `providers`, and `custom_providers`, including supported Hermes transport aliases, camelCase fields, and model list metadata.
+- MCP server definitions from `mcp_servers` or `mcp.servers`. Exact paleoclaw mappings cover default Streamable HTTP routing, OAuth scope, boolean TLS verification, separate client certificate/key paths, and Hermes native/resource/prompt tool policy. Unsupported Hermes-only runtime or credential fields are reported for manual review.
+- `SOUL.md` and `AGENTS.md` into the paleoclaw agent workspace.
+- `memories/MEMORY.md` and `memories/USER.md` appended to workspace memory files.
+  Memory-only surfaces (the onboarding memory page and the Control UI Memory
+  import page) instead copy these files under `memory/imports/hermes/` for
+  indexed recall without touching existing workspace memory.
+- Memory config defaults for paleoclaw file memory, plus archive or manual-review items for external memory providers such as Honcho.
+- Skills that include a `SKILL.md` file under active directories in `skills/`. Nested skills are flattened into the workspace skill directory, and organization mirrors follow `_org/.active_org`.
+- Per-skill config values from `skills.config` and global disabled state from `skills.disabled`.
+- Current Hermes OpenAI Codex OAuth credentials and OpenCode OpenAI OAuth credentials when interactive credential migration is accepted, or when `--include-secrets` is set. Do not keep Hermes and paleoclaw using the same imported refresh grant.
+- Supported API keys and tokens from Hermes `.env` and OpenCode `auth.json` when interactive credential migration is accepted, or when `--include-secrets` is set.
+
+### Supported `.env` keys
+
+`AI_GATEWAY_API_KEY`, `ALIBABA_API_KEY`, `ALIBABA_CODING_PLAN_API_KEY`, `ANTHROPIC_API_KEY`, `ARCEEAI_API_KEY`, `CEREBRAS_API_KEY`, `CHUTES_API_KEY`, `CLOUDFLARE_AI_GATEWAY_API_KEY`, `COPILOT_GITHUB_TOKEN`, `DASHSCOPE_API_KEY`, `DEEPINFRA_API_KEY`, `DEEPSEEK_API_KEY`, `FIREWORKS_API_KEY`, `GEMINI_API_KEY`, `GLM_API_KEY`, `GOOGLE_API_KEY`, `GROQ_API_KEY`, `HF_TOKEN`, `HUGGINGFACE_HUB_TOKEN`, `KILOCODE_API_KEY`, `KIMICODE_API_KEY`, `KIMI_API_KEY`, `KIMI_CN_API_KEY`, `KIMI_CODING_API_KEY`, `MINIMAX_API_KEY`, `MINIMAX_CN_API_KEY`, `MINIMAX_CODING_API_KEY`, `MISTRAL_API_KEY`, `MODELSTUDIO_API_KEY`, `MOONSHOT_API_KEY`, `NVIDIA_API_KEY`, `OPENAI_API_KEY`, `OPENCODE_API_KEY`, `OPENCODE_GO_API_KEY`, `OPENCODE_ZEN_API_KEY`, `OPENROUTER_API_KEY`, `QIANFAN_API_KEY`, `QWEN_API_KEY`, `TOGETHER_API_KEY`, `VENICE_API_KEY`, `XAI_API_KEY`, `XIAOMI_API_KEY`, `ZAI_API_KEY`, `Z_AI_API_KEY`.
+
+### Archive-only state
+
+Hermes state that paleoclaw cannot safely interpret is copied into the migration report for manual review. It is not loaded into live paleoclaw config or credentials. This includes `plugins/`, `sessions/`, `logs/`, `cron/`, `mcp-tokens/`, `plans/`, `workspace/`, `skins/`, `kanban/`, pairing/platform state, gateway routing/process state, and the detected Hermes SQLite databases.
+
+### After applying
+
+```bash
+paleoclaw doctor
+```
+
+## Plugin contract
+
+Migration sources are plugins. A plugin declares its provider ids in `openclaw.plugin.json`:
+
+```json
+{
+  "contracts": {
+    "migrationProviders": ["hermes"]
+  }
+}
+```
+
+At runtime the plugin calls `api.registerMigrationProvider(...)`. The provider implements `detect`, `plan`, and `apply`. Core owns CLI orchestration, backup policy, prompts, JSON output, and conflict preflight. Core passes the reviewed plan into `apply(ctx, plan)`, and providers may rebuild the plan only when that argument is absent for compatibility. Migration items may set `applyPhase: "after-promotion"` for external activation effects that onboarding must defer until staged local data is durably published. Those providers must declare `deferredApply: { retrySafe: true }` and make each deferred effect safe to replay after an interrupted process. Onboarding rejects undeclared deferred effects. An already-completed effect should return a non-mutating item with `deferredCompletion: true` so recovery can record it as complete. Standalone `paleoclaw migrate` still applies the complete plan through its normal backup-backed flow.
+
+Provider plugins can use `paleoclaw/plugin-sdk/migration` for item construction and summary counts, plus `paleoclaw/plugin-sdk/migration-runtime` for conflict-aware file copies, archive-only report copies, cached config-runtime wrappers, and migration reports.
+
+In JSON mode, an apply that finishes with item errors or conflicts writes one complete migration report and exits with code `1`. Inspect `summary` and `items` to identify partial results.
+
+## Onboarding integration
+
+Onboarding can offer migration when a provider detects a known source. Both `paleoclaw onboard --flow import` and `paleoclaw setup --wizard --import-from hermes` use the same plugin migration provider and still show a preview before applying. Unlike standalone migration, the fresh-target onboarding path stages local artifacts and imported credentials. It verifies or repairs imported inference inside staging. It then promotes workspace and agent state before it commits configuration. A mode-`0600` promotion journal lets the next run finish or roll back an interrupted publish, including any deferred external activation, without replaying imported local data.
+
+<Note>
+Onboarding imports require a fresh paleoclaw setup. Reset config, credentials, sessions, and the workspace first if you already have local state. Backup-plus-overwrite or merge imports are feature-gated for existing setups.
+</Note>
+
+## Related
+
+- [Migrating from Hermes](/install/migrating-hermes): user-facing walkthrough.
+- [Migrating from Claude](/install/migrating-claude): user-facing walkthrough.
+- [Migrating](/install/migrating): move paleoclaw to a new machine.
+- [Doctor](/gateway/doctor): health check after applying a migration.
+- [Plugins](/tools/plugin): plugin install and registration.

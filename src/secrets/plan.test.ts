@@ -1,15 +1,11 @@
-import { describe, expect, it } from "vitest";
+/** Tests secrets plan normalization, target validation, and ref conversion. */
+import { beforeAll, describe, expect, it } from "vitest";
 import { isSecretsApplyPlan, resolveValidatedPlanTarget } from "./plan.js";
+import { resolveConfigSecretTargetByPath } from "./target-registry.js";
 
 describe("secrets plan validation", () => {
-  it("accepts legacy provider target types", () => {
-    const resolved = resolveValidatedPlanTarget({
-      type: "models.providers.apiKey",
-      path: "models.providers.openai.apiKey",
-      pathSegments: ["models", "providers", "openai", "apiKey"],
-      providerId: "openai",
-    });
-    expect(resolved?.pathSegments).toEqual(["models", "providers", "openai", "apiKey"]);
+  beforeAll(() => {
+    resolveConfigSecretTargetByPath(["channels", "telegram", "botToken"]);
   });
 
   it("accepts expanded target types beyond legacy surface", () => {
@@ -21,22 +17,6 @@ describe("secrets plan validation", () => {
     expect(resolved?.pathSegments).toEqual(["channels", "telegram", "botToken"]);
   });
 
-  it("accepts model provider header targets with wildcard-backed paths", () => {
-    const resolved = resolveValidatedPlanTarget({
-      type: "models.providers.headers",
-      path: "models.providers.openai.headers.x-api-key",
-      pathSegments: ["models", "providers", "openai", "headers", "x-api-key"],
-      providerId: "openai",
-    });
-    expect(resolved?.pathSegments).toEqual([
-      "models",
-      "providers",
-      "openai",
-      "headers",
-      "x-api-key",
-    ]);
-  });
-
   it("rejects target paths that do not match the registered shape", () => {
     const resolved = resolveValidatedPlanTarget({
       type: "channels.telegram.botToken",
@@ -46,56 +26,51 @@ describe("secrets plan validation", () => {
     expect(resolved).toBeNull();
   });
 
-  it("validates plan files with non-legacy target types", () => {
+  it("rejects path-like channel ids without throwing", () => {
+    expect(
+      resolveValidatedPlanTarget({
+        type: "channels.foo/bar.token",
+        path: "channels.foo/bar.token",
+        pathSegments: ["channels", "foo/bar", "token"],
+      }),
+    ).toBeNull();
+  });
+
+  it("accepts plugin-managed exec provider upserts in plan files", () => {
     const isValid = isSecretsApplyPlan({
       version: 1,
       protocolVersion: 1,
       generatedAt: "2026-02-28T00:00:00.000Z",
       generatedBy: "manual",
-      targets: [
-        {
-          type: "talk.apiKey",
-          path: "talk.apiKey",
-          pathSegments: ["talk", "apiKey"],
-          ref: { source: "env", provider: "default", id: "TALK_API_KEY" },
+      providerUpserts: {
+        "team-secrets": {
+          source: "exec",
+          pluginIntegration: {
+            pluginId: "acme-secrets",
+            integrationId: "secret-store",
+          },
         },
-      ],
+      },
+      targets: [],
     });
     expect(isValid).toBe(true);
   });
 
   it("requires agentId for auth-profiles plan targets", () => {
-    const withoutAgent = isSecretsApplyPlan({
+    const target = {
+      type: "auth-profiles.api_key.key",
+      path: "profiles.openai:default.key",
+      pathSegments: ["profiles", "openai:default", "key"],
+      ref: { source: "env", provider: "default", id: "OPENAI_API_KEY" },
+    };
+    const plan = {
       version: 1,
       protocolVersion: 1,
       generatedAt: "2026-02-28T00:00:00.000Z",
       generatedBy: "manual",
-      targets: [
-        {
-          type: "auth-profiles.api_key.key",
-          path: "profiles.openai:default.key",
-          pathSegments: ["profiles", "openai:default", "key"],
-          ref: { source: "env", provider: "default", id: "OPENAI_API_KEY" },
-        },
-      ],
-    });
-    expect(withoutAgent).toBe(false);
-
-    const withAgent = isSecretsApplyPlan({
-      version: 1,
-      protocolVersion: 1,
-      generatedAt: "2026-02-28T00:00:00.000Z",
-      generatedBy: "manual",
-      targets: [
-        {
-          type: "auth-profiles.api_key.key",
-          path: "profiles.openai:default.key",
-          pathSegments: ["profiles", "openai:default", "key"],
-          agentId: "main",
-          ref: { source: "env", provider: "default", id: "OPENAI_API_KEY" },
-        },
-      ],
-    });
-    expect(withAgent).toBe(true);
+      targets: [target],
+    };
+    expect(isSecretsApplyPlan(plan)).toBe(false);
+    expect(isSecretsApplyPlan({ ...plan, targets: [{ ...target, agentId: "main" }] })).toBe(true);
   });
 });

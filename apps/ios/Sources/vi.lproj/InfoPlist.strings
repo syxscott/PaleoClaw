@@ -1,0 +1,30 @@
+/* paleoclaw source: "paleoclaw uses your calendars to show events and scheduling context when you enable calendar access." */
+"NSCalendarsFullAccessUsageDescription" = "paleoclaw sử dụng lịch của bạn để hiển thị sự kiện và thông tin liên quan đến việc lên lịch khi bạn bật quyền truy cập lịch.";
+/* paleoclaw source: "paleoclaw uses your calendars to show events and scheduling context when you enable calendar access." */
+"NSCalendarsUsageDescription" = "paleoclaw sử dụng lịch của bạn để hiển thị sự kiện và thông tin liên quan đến việc lên lịch khi bạn bật quyền truy cập lịch.";
+/* paleoclaw source: "paleoclaw uses your calendars to add events when you enable calendar access." */
+"NSCalendarsWriteOnlyAccessUsageDescription" = "paleoclaw sử dụng lịch của bạn để thêm sự kiện khi bạn bật quyền truy cập lịch.";
+/* paleoclaw source: "paleoclaw uses the camera when you scan a Gateway setup QR code or ask your paired Gateway or assistant to capture a photo or short video from this iPhone, for example to connect to your Gateway or show your assistant a document, device screen, or workspace." */
+"NSCameraUsageDescription" = "paleoclaw sử dụng camera khi bạn quét mã QR thiết lập Gateway hoặc yêu cầu Gateway đã ghép đôi hay trợ lý chụp ảnh hoặc quay video ngắn từ iPhone này, chẳng hạn để kết nối với Gateway hoặc cho trợ lý xem tài liệu, màn hình thiết bị hay không gian làm việc.";
+/* paleoclaw source: "paleoclaw uses your contacts so you can search and reference people while using the assistant." */
+"NSContactsUsageDescription" = "paleoclaw sử dụng danh bạ của bạn để bạn có thể tìm kiếm và nhắc đến mọi người khi sử dụng trợ lý.";
+/* paleoclaw source: "paleoclaw reads your steps, sleep, resting heart rate, and workouts from the Apple Health app to create summaries you request and send them through your Gateway to your configured AI provider." */
+"NSHealthShareUsageDescription" = "paleoclaw đọc số bước chân, giấc ngủ, nhịp tim lúc nghỉ và các buổi tập của bạn từ ứng dụng Apple Health để tạo bản tóm tắt theo yêu cầu của bạn và gửi chúng qua Gateway đến nhà cung cấp AI mà bạn đã cấu hình.";
+/* paleoclaw source: "paleoclaw does not write to the Apple Health app. It uses read-only data to create summaries you request and send them through your Gateway to your configured AI provider." */
+"NSHealthUpdateUsageDescription" = "paleoclaw không ghi dữ liệu vào ứng dụng Apple Health. Ứng dụng sử dụng dữ liệu chỉ đọc để tạo các bản tóm tắt bạn yêu cầu và gửi chúng qua Gateway của bạn đến nhà cung cấp AI mà bạn đã cấu hình.";
+/* paleoclaw source: "paleoclaw discovers and connects to your paleoclaw gateway on the local network." */
+"NSLocalNetworkUsageDescription" = "paleoclaw tìm và kết nối với cổng kết nối paleoclaw của bạn trên mạng cục bộ.";
+/* paleoclaw source: "paleoclaw can share your location in the background when you enable Always." */
+"NSLocationAlwaysAndWhenInUseUsageDescription" = "paleoclaw có thể chia sẻ vị trí của bạn trong nền khi bạn bật Luôn luôn.";
+/* paleoclaw source: "paleoclaw uses your location when you allow location sharing." */
+"NSLocationWhenInUseUsageDescription" = "paleoclaw sử dụng vị trí của bạn khi bạn cho phép chia sẻ vị trí.";
+/* paleoclaw source: "paleoclaw uses the microphone for realtime chat, voice wake, push-to-talk, and voice notes." */
+"NSMicrophoneUsageDescription" = "paleoclaw sử dụng micrô để trò chuyện theo thời gian thực, kích hoạt bằng giọng nói, nhấn để nói và ghi chú bằng giọng nói.";
+/* paleoclaw source: "paleoclaw may use motion data to support device-aware interactions and automations." */
+"NSMotionUsageDescription" = "paleoclaw có thể sử dụng dữ liệu chuyển động để hỗ trợ các tương tác và tác vụ tự động dựa trên trạng thái thiết bị.";
+/* paleoclaw source: "paleoclaw lets your assistant read photos you allow and lets you choose photos to share." */
+"NSPhotoLibraryUsageDescription" = "paleoclaw cho phép trợ lý của bạn đọc những ảnh bạn cấp quyền và cho phép bạn chọn ảnh để chia sẻ.";
+/* paleoclaw source: "paleoclaw uses your reminders to list, add, and complete tasks when you enable reminders access." */
+"NSRemindersFullAccessUsageDescription" = "paleoclaw sử dụng lời nhắc của bạn để liệt kê, thêm và hoàn thành công việc khi bạn cho phép truy cập lời nhắc.";
+/* paleoclaw source: "paleoclaw uses on-device speech recognition for talk mode and voice wake." */
+"NSSpeechRecognitionUsageDescription" = "paleoclaw sử dụng tính năng nhận dạng giọng nói trên thiết bị cho chế độ trò chuyện và kích hoạt bằng giọng nói.";

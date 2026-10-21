@@ -1,27 +1,22 @@
-import { theme } from "../terminal/theme.js";
+import { formatDocsLink } from "../../packages/terminal-core/src/links.js";
+import { theme } from "../../packages/terminal-core/src/theme.js";
 
-export type HelpExample = readonly [command: string, description: string];
-
-export function formatHelpExample(command: string, description: string): string {
-  return `  ${theme.command(command)}\n    ${theme.muted(description)}`;
+export function formatDocsHelp(path: string): string {
+  return `\n${theme.muted("Docs:")} ${formatDocsLink(path, `docs.openclaw.ai${path}`)}\n`;
 }
 
-export function formatHelpExampleLine(command: string, description: string): string {
-  if (!description) {
-    return `  ${theme.command(command)}`;
-  }
-  return `  ${theme.command(command)} ${theme.muted(`# ${description}`)}`;
-}
+type HelpExample = readonly [command: string, description: string];
 
 export function formatHelpExamples(examples: ReadonlyArray<HelpExample>, inline = false): string {
-  const formatter = inline ? formatHelpExampleLine : formatHelpExample;
-  return examples.map(([command, description]) => formatter(command, description)).join("\n");
-}
-
-export function formatHelpExampleGroup(
-  label: string,
-  examples: ReadonlyArray<HelpExample>,
-  inline = false,
-) {
-  return `${theme.muted(label)}\n${formatHelpExamples(examples, inline)}`;
+  return examples
+    .map(([command, description]) => {
+      const formattedCommand = `  ${theme.command(command)}`;
+      if (inline) {
+        return description
+          ? `${formattedCommand} ${theme.muted(`# ${description}`)}`
+          : formattedCommand;
+      }
+      return `${formattedCommand}\n    ${theme.muted(description)}`;
+    })
+    .join("\n");
 }

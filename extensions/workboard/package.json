@@ -1,0 +1,55 @@
+{
+  "name": "@paleoclaw/workboard",
+  "version": "2026.10.5",
+  "private": true,
+  "description": "paleoclaw dashboard workboard plugin",
+  "type": "module",
+  "dependencies": {
+    "@paleoclaw/gateway-protocol": "workspace:*",
+    "@paleoclaw/workboard-contract": "workspace:*",
+    "@solidjs/web": "2.0.0-rc.14",
+    "solid-js": "2.0.0-rc.14",
+    "typebox": "1.3.37",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@paleoclaw/gateway-client": "workspace:*",
+    "@paleoclaw/normalization-core": "workspace:*",
+    "@paleoclaw/plugin-sdk": "workspace:*",
+    "@solidjs/compiler": "2.0.0-rc.14",
+    "esbuild": "0.28.2",
+    "paleoclaw": "workspace:*"
+  },
+  "peerDependencies": {
+    "paleoclaw": ">=2026.10.5"
+  },
+  "peerDependenciesMeta": {
+    "paleoclaw": {
+      "optional": true
+    }
+  },
+  "paleoclaw": {
+    "extensions": [
+      "./index.ts"
+    ],
+    "controlUi": "./browser/index.ts",
+    "assetScripts": {
+      "build": "cd ../.. && node --import ./scripts/tsx.mjs scripts/build-plugin-control-ui.mts extensions/workboard",
+      "copy": "cd ../.. && node --import ./scripts/tsx.mjs scripts/build-plugin-control-ui.mts extensions/workboard --copy",
+      "buildOutputs": [
+        "dist/openclaw.plugin.json"
+      ]
+    },
+    "build": {
+      "staticAssets": [
+        {
+          "source": "./src/workboard-schema.postgres.sql",
+          "output": "./src/workboard-schema.postgres.sql"
+        }
+      ],
+      "workerEntries": [
+        "./src/sqlite-store.worker.ts"
+      ]
+    }
+  }
+}

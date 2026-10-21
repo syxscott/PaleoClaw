@@ -1,0 +1,4 @@
+interface:
+  display_name: "paleoclaw Release CI"
+  short_description: "Verify and debug paleoclaw release validation runs"
+  default_prompt: "Use $release-paleoclaw-ci to validate one frozen release SHA with one active parent run, recover only the smallest failed lane, and stop on a precise external blocker."

@@ -1,0 +1,26 @@
+{
+  "name": "@paleoclaw/crabbox-provider",
+  "version": "2026.10.5",
+  "private": true,
+  "description": "paleoclaw cloud worker provider backed by the Crabbox CLI",
+  "type": "module",
+  "exports": {
+    "./cli-runtime-api.js": "./cli-runtime-api.ts"
+  },
+  "devDependencies": {
+    "@paleoclaw/plugin-sdk": "workspace:*"
+  },
+  "paleoclaw": {
+    "extensions": [
+      "./index.ts"
+    ],
+    "build": {
+      "staticAssets": [
+        {
+          "source": "./assets/paleoclaw-worker-wallpaper.png",
+          "output": "assets/paleoclaw-worker-wallpaper.png"
+        }
+      ]
+    }
+  }
+}

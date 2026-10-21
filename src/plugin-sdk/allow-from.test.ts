@@ -1,140 +1,94 @@
-import { describe, expect, it } from "vitest";
+import { expect, it } from "vitest";
 import {
   formatAllowFromLowercase,
   formatNormalizedAllowFromEntries,
-  isAllowedParsedChatSender,
   isNormalizedSenderAllowed,
+  mapAllowlistResolutionInputs,
+  parseAllowFromEntries,
+  resolveBasicAllowFromEntries,
 } from "./allow-from.js";
 
-function parseAllowTarget(
-  entry: string,
-):
-  | { kind: "chat_id"; chatId: number }
-  | { kind: "chat_guid"; chatGuid: string }
-  | { kind: "chat_identifier"; chatIdentifier: string }
-  | { kind: "handle"; handle: string } {
-  const trimmed = entry.trim();
-  const lower = trimmed.toLowerCase();
-  if (lower.startsWith("chat_id:")) {
-    return { kind: "chat_id", chatId: Number.parseInt(trimmed.slice("chat_id:".length), 10) };
-  }
-  if (lower.startsWith("chat_guid:")) {
-    return { kind: "chat_guid", chatGuid: trimmed.slice("chat_guid:".length) };
-  }
-  if (lower.startsWith("chat_identifier:")) {
-    return {
-      kind: "chat_identifier",
-      chatIdentifier: trimmed.slice("chat_identifier:".length),
-    };
-  }
-  return { kind: "handle", handle: lower };
-}
-
-describe("isAllowedParsedChatSender", () => {
-  it("denies when allowFrom is empty", () => {
-    const allowed = isAllowedParsedChatSender({
-      allowFrom: [],
-      sender: "+15551234567",
-      normalizeSender: (sender) => sender,
-      parseAllowTarget,
-    });
-
-    expect(allowed).toBe(false);
-  });
-
-  it("allows wildcard entries", () => {
-    const allowed = isAllowedParsedChatSender({
-      allowFrom: ["*"],
-      sender: "user@example.com",
-      normalizeSender: (sender) => sender.toLowerCase(),
-      parseAllowTarget,
-    });
-
-    expect(allowed).toBe(true);
-  });
-
-  it("matches normalized handles", () => {
-    const allowed = isAllowedParsedChatSender({
-      allowFrom: ["User@Example.com"],
-      sender: "user@example.com",
-      normalizeSender: (sender) => sender.toLowerCase(),
-      parseAllowTarget,
-    });
-
-    expect(allowed).toBe(true);
-  });
-
-  it("matches chat IDs when provided", () => {
-    const allowed = isAllowedParsedChatSender({
-      allowFrom: ["chat_id:42"],
-      sender: "+15551234567",
-      chatId: 42,
-      normalizeSender: (sender) => sender,
-      parseAllowTarget,
-    });
-
-    expect(allowed).toBe(true);
-  });
+it.each([
+  ["*", undefined, true],
+  ["zl:12345", /^(zalo|zl):/i, false],
+] as const)("checks sender against %s", (entry, stripPrefixRe, expected) => {
+  expect(isNormalizedSenderAllowed({ senderId: "999", allowFrom: [entry], stripPrefixRe })).toBe(
+    expected,
+  );
 });
 
-describe("isNormalizedSenderAllowed", () => {
-  it("allows wildcard", () => {
-    expect(
-      isNormalizedSenderAllowed({
-        senderId: "attacker",
-        allowFrom: ["*"],
-      }),
-    ).toBe(true);
-  });
-
-  it("normalizes case and strips prefixes", () => {
-    expect(
-      isNormalizedSenderAllowed({
-        senderId: "12345",
-        allowFrom: ["ZALO:12345", "zl:777"],
-        stripPrefixRe: /^(zalo|zl):/i,
-      }),
-    ).toBe(true);
-  });
-
-  it("rejects when sender is missing", () => {
-    expect(
-      isNormalizedSenderAllowed({
-        senderId: "999",
-        allowFrom: ["zl:12345"],
-        stripPrefixRe: /^(zalo|zl):/i,
-      }),
-    ).toBe(false);
-  });
+it("trims, strips prefixes, and lowercases entries", () => {
+  expect(
+    formatAllowFromLowercase({
+      allowFrom: [" Telegram:UserA ", "tg:UserB", "  "],
+      stripPrefixRe: /^(telegram|tg):/i,
+    }),
+  ).toEqual(["usera", "userb"]);
 });
 
-describe("formatAllowFromLowercase", () => {
-  it("trims, strips prefixes, and lowercases entries", () => {
-    expect(
-      formatAllowFromLowercase({
-        allowFrom: [" Telegram:UserA ", "tg:UserB", "  "],
-        stripPrefixRe: /^(telegram|tg):/i,
-      }),
-    ).toEqual(["usera", "userb"]);
-  });
+it("filters empty normalized entries", () => {
+  const normalizeEntry = (entry: string) => entry.replace(/^@$/, "");
+  const entries = formatNormalizedAllowFromEntries({ allowFrom: ["@", "valid"], normalizeEntry });
+  expect(entries).toEqual(["valid"]);
 });
 
-describe("formatNormalizedAllowFromEntries", () => {
-  it("applies custom normalization after trimming", () => {
-    expect(
-      formatNormalizedAllowFromEntries({
-        allowFrom: ["  @Alice ", "", " @Bob "],
-        normalizeEntry: (entry) => entry.replace(/^@/, "").toLowerCase(),
-      }),
-    ).toEqual(["alice", "bob"]);
+it("preserves wildcard entries and returns the first parser error", () => {
+  const parse = (raw: string) =>
+    parseAllowFromEntries(raw, (entry) =>
+      entry === "bad" ? { error: "invalid" } : { value: entry.toLowerCase() },
+    );
+
+  expect(parse(" Alice, *, alice ")).toEqual({ entries: ["alice", "*"] });
+  expect(parse("ok; bad; later")).toEqual({ entries: [], error: "invalid" });
+});
+
+it("uses unresolved records without a token and canonicalizes resolved ids", async () => {
+  const resolveEntries = async ({ entries }: { token: string; entries: string[] }) =>
+    entries.map((input) => ({
+      input,
+      resolved: true,
+      id: input === "missing" ? undefined : "1",
+    }));
+
+  await expect(
+    resolveBasicAllowFromEntries({ entries: ["alice"], resolveEntries }),
+  ).resolves.toEqual([{ input: "alice", resolved: false, id: null }]);
+  await expect(
+    resolveBasicAllowFromEntries({
+      token: " token ",
+      entries: ["alice", "missing"],
+      resolveEntries,
+    }),
+  ).resolves.toEqual([
+    { input: "alice", resolved: true, id: "1" },
+    { input: "missing", resolved: true, id: null },
+  ]);
+});
+
+it("maps inputs sequentially and preserves order", async () => {
+  const firstStarted = Promise.withResolvers<void>();
+  const firstResolution = Promise.withResolvers<void>();
+  const visited: string[] = [];
+  const result = mapAllowlistResolutionInputs({
+    inputs: ["one", "two", "three"],
+    mapInput: async (input) => {
+      visited.push(input);
+      if (input === "one") {
+        firstStarted.resolve();
+        await firstResolution.promise;
+      }
+      return input.toUpperCase();
+    },
   });
 
-  it("filters empty normalized entries", () => {
-    expect(
-      formatNormalizedAllowFromEntries({
-        allowFrom: ["@", "valid"],
-        normalizeEntry: (entry) => entry.replace(/^@$/, ""),
-      }),
-    ).toEqual(["valid"]);
-  });
+  try {
+    await Promise.race([firstStarted.promise, result]);
+    expect(visited).toEqual(["one"]);
+  } finally {
+    firstResolution.resolve();
+    await result;
+  }
+
+  expect(visited).toEqual(["one", "two", "three"]);
+  expect(await result).toEqual(["ONE", "TWO", "THREE"]);
 });

@@ -1,8 +1,15 @@
-import type { OpenClawConfig } from "../../config/config.js";
+/** Shared command-handler test harness and config fixtures. */
+import type { OpenClawConfig } from "../../config/types.openclaw.js";
 import type { MsgContext } from "../templating.js";
+import { buildCommandContextForTest as buildCommandContext } from "./commands-context.test-support.js";
 import type { HandleCommandsParams } from "./commands-types.js";
-import { buildCommandContext } from "./commands.js";
-import { parseInlineDirectives } from "./directive-handling.js";
+import { parseInlineSessionDirectives } from "./directive-handling.parse.js";
+
+export const baseCommandTestConfig = {
+  commands: { text: true },
+  channels: { whatsapp: { allowFrom: ["*"] } },
+  session: { mainKey: "main", scope: "per-sender" },
+} as OpenClawConfig;
 
 export function buildCommandTestParams(
   commandBody: string,
@@ -26,15 +33,16 @@ export function buildCommandTestParams(
     ctx,
     cfg,
     isGroup: false,
-    triggerBodyNormalized: commandBody.trim().toLowerCase(),
+    triggerBodyNormalized: commandBody.trim(),
     commandAuthorized: true,
   });
 
   const params: HandleCommandsParams = {
     ctx,
     cfg,
+    agentId: "main",
     command,
-    directives: parseInlineDirectives(commandBody),
+    directives: parseInlineSessionDirectives(commandBody),
     elevated: { enabled: true, allowed: true, failures: [] },
     sessionKey: "agent:main:main",
     workspaceDir: options?.workspaceDir ?? "/tmp",
@@ -48,4 +56,60 @@ export function buildCommandTestParams(
     isGroup: false,
   };
   return params;
+}
+
+export type ConfigSnapshotMock = {
+  path?: string;
+  hash?: string | null;
+  parsed?: OpenClawConfig | null;
+  sourceConfig?: OpenClawConfig;
+  resolved?: OpenClawConfig;
+  runtimeConfig?: OpenClawConfig;
+};
+
+export function buildPluginsCommandParams(params: {
+  commandBodyNormalized: string;
+  cfg?: OpenClawConfig;
+  workspaceDir?: string;
+  gatewayClientScopes?: string[];
+}): HandleCommandsParams {
+  const commandBodyNormalized = params.commandBodyNormalized;
+  return {
+    cfg:
+      params.cfg ??
+      ({
+        commands: {
+          text: true,
+          plugins: true,
+        },
+        plugins: { enabled: true },
+      } as OpenClawConfig),
+    ctx: {
+      Provider: "whatsapp",
+      Surface: "whatsapp",
+      CommandSource: "text",
+      GatewayClientScopes: params.gatewayClientScopes ?? ["operator.write", "operator.pairing"],
+      AccountId: undefined,
+    },
+    command: {
+      commandBodyNormalized,
+      rawBodyNormalized: commandBodyNormalized,
+      isAuthorizedSender: true,
+      senderIsOwner: true,
+      senderId: "owner",
+      channel: "whatsapp",
+      channelId: "whatsapp",
+      surface: "whatsapp",
+      ownerList: [],
+      from: "test-user",
+      to: "test-bot",
+    },
+    sessionKey: "agent:main:whatsapp:direct:test-user",
+    agentId: "main",
+    sessionEntry: {
+      sessionId: "session-plugin-command",
+      updatedAt: Date.now(),
+    },
+    workspaceDir: params.workspaceDir ?? "/tmp/plugins-workspace",
+  } as unknown as HandleCommandsParams;
 }

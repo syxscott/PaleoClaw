@@ -1,19 +1,21 @@
+import { normalizeOptionalString } from "@paleoclaw/normalization-core/string-coerce";
 import type { TypingMode } from "../../config/types.js";
-import { isSilentReplyText, SILENT_REPLY_TOKEN } from "../tokens.js";
+import type { SourceReplyDeliveryMode } from "../get-reply-options.types.js";
 import type { TypingPolicy } from "../types.js";
 import type { TypingController } from "./typing.js";
 
-export type TypingModeContext = {
+/** Inputs that decide when a channel typing indicator should be shown. */
+type TypingModeContext = {
   configured?: TypingMode;
   isGroupChat: boolean;
   wasMentioned: boolean;
   isHeartbeat: boolean;
   typingPolicy?: TypingPolicy;
   suppressTyping?: boolean;
+  sourceReplyDeliveryMode?: SourceReplyDeliveryMode;
 };
 
-export const DEFAULT_GROUP_TYPING_MODE: TypingMode = "message";
-
+/** Resolves the effective typing mode for the current auto-reply turn. */
 export function resolveTypingMode({
   configured,
   isGroupChat,
@@ -21,6 +23,7 @@ export function resolveTypingMode({
   isHeartbeat,
   typingPolicy,
   suppressTyping,
+  sourceReplyDeliveryMode,
 }: TypingModeContext): TypingMode {
   if (
     isHeartbeat ||
@@ -34,12 +37,14 @@ export function resolveTypingMode({
   if (configured) {
     return configured;
   }
-  if (!isGroupChat || wasMentioned) {
+  if (sourceReplyDeliveryMode === "message_tool_only" || !isGroupChat || wasMentioned) {
     return "instant";
   }
-  return DEFAULT_GROUP_TYPING_MODE;
+  // Group chats wait for visible text to avoid noisy indicators.
+  return "message";
 }
 
+/** Event-driven typing signaler used by streaming reply dispatch. */
 export type TypingSignaler = {
   mode: TypingMode;
   shouldStartImmediately: boolean;
@@ -51,8 +56,10 @@ export type TypingSignaler = {
   signalTextDelta: (text?: string) => Promise<void>;
   signalReasoningDelta: () => Promise<void>;
   signalToolStart: () => Promise<void>;
+  signalExecutionActivity?: () => Promise<void>;
 };
 
+/** Creates a typing signaler that starts or refreshes typing from stream events. */
 export function createTypingSignaler(params: {
   typing: TypingController;
   mode: TypingMode;
@@ -66,75 +73,13 @@ export function createTypingSignaler(params: {
   const disabled = isHeartbeat || mode === "never";
   let hasRenderableText = false;
 
-  const isRenderableText = (text?: string): boolean => {
-    const trimmed = text?.trim();
-    if (!trimmed) {
-      return false;
-    }
-    return !isSilentReplyText(trimmed, SILENT_REPLY_TOKEN);
-  };
-
-  const signalRunStart = async () => {
-    if (disabled || !shouldStartImmediately) {
-      return;
-    }
-    await typing.startTypingLoop();
-  };
-
-  const signalMessageStart = async () => {
-    if (disabled || !shouldStartOnMessageStart) {
-      return;
-    }
-    if (!hasRenderableText) {
-      return;
-    }
-    await typing.startTypingLoop();
-  };
-
-  const signalTextDelta = async (text?: string) => {
-    if (disabled) {
-      return;
-    }
-    const renderable = isRenderableText(text);
-    if (renderable) {
-      hasRenderableText = true;
-    } else if (text?.trim()) {
-      return;
-    }
-    if (shouldStartOnText) {
-      await typing.startTypingOnText(text);
-      return;
-    }
-    if (shouldStartOnReasoning) {
-      if (!typing.isActive()) {
-        await typing.startTypingLoop();
-      }
-      typing.refreshTypingTtl();
-    }
-  };
-
-  const signalReasoningDelta = async () => {
-    if (disabled || !shouldStartOnReasoning) {
-      return;
-    }
-    if (!hasRenderableText) {
-      return;
-    }
-    await typing.startTypingLoop();
-    typing.refreshTypingTtl();
-  };
-
-  const signalToolStart = async () => {
-    if (disabled) {
-      return;
-    }
-    // Start typing as soon as tools begin executing, even before the first text delta.
+  const refreshTyping = async (allowStart: boolean) => {
     if (!typing.isActive()) {
+      if (!allowStart) {
+        return;
+      }
       await typing.startTypingLoop();
-      typing.refreshTypingTtl();
-      return;
     }
-    // Keep typing indicator alive during tool execution.
     typing.refreshTypingTtl();
   };
 
@@ -144,10 +89,46 @@ export function createTypingSignaler(params: {
     shouldStartOnMessageStart,
     shouldStartOnText,
     shouldStartOnReasoning,
-    signalRunStart,
-    signalMessageStart,
-    signalTextDelta,
-    signalReasoningDelta,
-    signalToolStart,
+    async signalRunStart() {
+      if (!disabled && shouldStartImmediately) {
+        await typing.startTypingLoop();
+      }
+    },
+    async signalMessageStart() {
+      if (!disabled && shouldStartOnMessageStart && hasRenderableText) {
+        await typing.startTypingLoop();
+      }
+    },
+    async signalTextDelta(text?: string) {
+      const trimmed = disabled ? undefined : normalizeOptionalString(text);
+      if (!trimmed) {
+        return;
+      }
+      hasRenderableText = true;
+      if (shouldStartOnText) {
+        await typing.startTypingOnText(text);
+      } else if (shouldStartOnReasoning) {
+        await refreshTyping(true);
+      }
+    },
+    async signalReasoningDelta() {
+      if (disabled || !shouldStartOnReasoning) {
+        return;
+      }
+      // Thinking mode starts before visible assistant text arrives.
+      await typing.startTypingLoop();
+      typing.refreshTypingTtl();
+    },
+    async signalToolStart() {
+      if (!disabled) {
+        // Message mode cannot start typing before visible text.
+        await refreshTyping(!shouldStartOnMessageStart || hasRenderableText);
+      }
+    },
+    async signalExecutionActivity() {
+      if (!disabled) {
+        await refreshTyping(true);
+      }
+    },
   };
 }

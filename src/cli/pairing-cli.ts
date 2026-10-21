@@ -1,38 +1,42 @@
+import {
+  normalizeLowercaseStringOrEmpty,
+  normalizeStringifiedOptionalString,
+} from "@paleoclaw/normalization-core/string-coerce";
 import type { Command } from "commander";
+import type {
+  ChannelsPairingCliListResult,
+  ChannelsPairingCodeApproveResult,
+} from "../../packages/gateway-protocol/src/schema/channel-pairing.js";
+import { GATEWAY_SERVER_CAPS } from "../../packages/gateway-protocol/src/server-capabilities.js";
+import { getTerminalTableWidth, renderTable } from "../../packages/terminal-core/src/table.js";
+import { theme } from "../../packages/terminal-core/src/theme.js";
 import { normalizeChannelId } from "../channels/plugins/index.js";
 import { listPairingChannels, notifyPairingApproved } from "../channels/plugins/pairing.js";
-import { loadConfig } from "../config/config.js";
+import { captureRuntimeConfigAsyncReader } from "../config/config.js";
+import { bootstrapCommandOwnerFromPairing } from "../pairing/command-owner.js";
 import { resolvePairingIdLabel } from "../pairing/pairing-labels.js";
-import {
-  approveChannelPairingCode,
-  listChannelPairingRequests,
-  type PairingChannel,
-} from "../pairing/pairing-store.js";
+import { approveChannelPairingCode, listChannelPairingRequests } from "../pairing/pairing-store.js";
+import type { PairingChannel } from "../pairing/pairing-store.types.js";
 import { defaultRuntime } from "../runtime.js";
-import { formatDocsLink } from "../terminal/links.js";
-import { renderTable } from "../terminal/table.js";
-import { theme } from "../terminal/theme.js";
 import { formatCliCommand } from "./command-format.js";
+import { formatDocsHelp } from "./help-format.js";
+import { runWithLocalStateOwner } from "./local-state-owner.js";
 
 /** Parse channel, allowing extension channels not in core registry. */
 function parseChannel(raw: unknown, channels: PairingChannel[]): PairingChannel {
-  const value = (
-    typeof raw === "string"
-      ? raw
-      : typeof raw === "number" || typeof raw === "boolean"
-        ? String(raw)
-        : ""
-  )
-    .trim()
-    .toLowerCase();
+  const value = normalizeLowercaseStringOrEmpty(normalizeStringifiedOptionalString(raw) ?? "");
   if (!value) {
-    throw new Error("Channel required");
+    throw new Error(
+      `Missing channel. Use ${formatCliCommand("paleoclaw pairing list --channel <channel>")}.`,
+    );
   }
 
   const normalized = normalizeChannelId(value);
   if (normalized) {
     if (!channels.includes(normalized)) {
-      throw new Error(`Channel ${normalized} does not support pairing`);
+      throw new Error(
+        `Channel "${normalized}" does not support pairing. Supported pairing channels: ${channels.join(", ") || "none"}.`,
+      );
     }
     return normalized;
   }
@@ -41,46 +45,70 @@ function parseChannel(raw: unknown, channels: PairingChannel[]): PairingChannel 
   if (/^[a-z][a-z0-9_-]{0,63}$/.test(value)) {
     return value as PairingChannel;
   }
-  throw new Error(`Invalid channel: ${value}`);
+  throw new Error(
+    `Invalid channel "${value}". Use lowercase letters, numbers, "_" or "-", for example "telegram".`,
+  );
 }
 
-async function notifyApproved(channel: PairingChannel, id: string) {
-  const cfg = loadConfig();
-  await notifyPairingApproved({ channelId: channel, id, cfg });
+function resolveAccountId(raw: unknown): string | undefined {
+  const accountId = normalizeStringifiedOptionalString(raw);
+  // Omission intentionally leaves pairing unscoped; an explicit blank must not
+  // silently remove the account restriction.
+  if (raw !== undefined && !accountId) {
+    throw new Error("--account must not be blank");
+  }
+  return accountId;
 }
 
 export function registerPairingCli(program: Command) {
   const channels = listPairingChannels();
+  // Avoid rendering a bare "()" enum when no channels are configured.
+  const channelHint = channels.length > 0 ? channels.join(", ") : "none configured";
   const pairing = program
     .command("pairing")
     .description("Secure DM pairing (approve inbound requests)")
-    .addHelpText(
-      "after",
-      () =>
-        `\n${theme.muted("Docs:")} ${formatDocsLink("/cli/pairing", "docs.paleoclaw.ai/cli/pairing")}\n`,
-    );
+    .addHelpText("after", () => formatDocsHelp("/cli/pairing"));
 
   pairing
     .command("list")
     .description("List pending pairing requests")
-    .option("--channel <channel>", `Channel (${channels.join(", ")})`)
+    .option("--channel <channel>", `Channel (${channelHint})`)
     .option("--account <accountId>", "Account id (for multi-account channels)")
-    .argument("[channel]", `Channel (${channels.join(", ")})`)
+    .argument("[channel]", `Channel (${channelHint})`)
     .option("--json", "Print JSON", false)
     .action(async (channelArg, opts) => {
       const channelRaw = opts.channel ?? channelArg ?? (channels.length === 1 ? channels[0] : "");
       if (!channelRaw) {
-        throw new Error(
-          `Channel required. Use --channel <channel> or pass it as the first argument (expected one of: ${channels.join(", ")})`,
-        );
+        if (channels.length === 0) {
+          // `pairing` is chat DM only; TUI/device approvals live under `paleoclaw devices`.
+          throw new Error(
+            `No chat DM pairing channels are configured. To approve a TUI or device request, ` +
+              `use ${formatCliCommand("paleoclaw devices approve")} instead.`,
+          );
+        }
+        throw new Error(`Channel required (expected one of: ${channelHint}).`);
       }
       const channel = parseChannel(channelRaw, channels);
-      const accountId = String(opts.account ?? "").trim();
-      const requests = accountId
-        ? await listChannelPairingRequests(channel, process.env, accountId)
-        : await listChannelPairingRequests(channel);
+      if (opts.channel && channelArg) {
+        const positionalChannel = parseChannel(channelArg, channels);
+        if (channel !== positionalChannel) {
+          throw new Error(
+            `Conflicting pairing channels: "${channel}" and "${positionalChannel}". ` +
+              `Pass the channel either positionally or with --channel.`,
+          );
+        }
+      }
+      const accountId = resolveAccountId(opts.account);
+      const requests = await runWithLocalStateOwner<ChannelsPairingCliListResult>({
+        method: "channels.pairing.list",
+        params: { channel, format: "cli", ...(accountId ? { accountId } : {}) },
+        target: `${channel} pairing requests`,
+        requiredCapabilities: [GATEWAY_SERVER_CAPS.CHANNELS_PAIRING_LIST_OWNER],
+        runLocal: async ({ env, assertCurrent }) =>
+          await listChannelPairingRequests(channel, env, accountId, assertCurrent),
+      });
       if (opts.json) {
-        defaultRuntime.log(JSON.stringify({ channel, requests }, null, 2));
+        defaultRuntime.writeJson({ channel, requests });
         return;
       }
       if (requests.length === 0) {
@@ -88,7 +116,7 @@ export function registerPairingCli(program: Command) {
         return;
       }
       const idLabel = resolvePairingIdLabel(channel);
-      const tableWidth = Math.max(60, (process.stdout.columns ?? 120) - 1);
+      const tableWidth = getTerminalTableWidth();
       defaultRuntime.log(
         `${theme.heading("Pairing requests")} ${theme.muted(`(${requests.length})`)}`,
       );
@@ -103,7 +131,7 @@ export function registerPairingCli(program: Command) {
           ],
           rows: requests.map((r) => ({
             Code: r.code,
-            ID: r.id,
+            ID: r.meta?.senderId ?? r.id,
             Meta: r.meta ? JSON.stringify(r.meta) : "",
             Requested: r.createdAt,
           })),
@@ -114,25 +142,16 @@ export function registerPairingCli(program: Command) {
   pairing
     .command("approve")
     .description("Approve a pairing code and allow that sender")
-    .option("--channel <channel>", `Channel (${channels.join(", ")})`)
+    .option("--channel <channel>", `Channel (${channelHint})`)
     .option("--account <accountId>", "Account id (for multi-account channels)")
     .argument("<codeOrChannel>", "Pairing code (or channel when using 2 args)")
     .argument("[code]", "Pairing code (when channel is passed as the 1st arg)")
     .option("--notify", "Notify the requester on the same channel", false)
     .action(async (codeOrChannel, code, opts) => {
       const defaultChannel = channels.length === 1 ? channels[0] : "";
-      const usingExplicitChannel = Boolean(opts.channel);
-      const hasPositionalCode = code != null;
-      const channelRaw = usingExplicitChannel
-        ? opts.channel
-        : hasPositionalCode
-          ? codeOrChannel
-          : defaultChannel;
-      const resolvedCode = usingExplicitChannel
-        ? codeOrChannel
-        : hasPositionalCode
-          ? code
-          : codeOrChannel;
+      const usingPositionalChannel = !opts.channel && code != null;
+      const channelRaw = opts.channel || (usingPositionalChannel ? codeOrChannel : defaultChannel);
+      const resolvedCode = usingPositionalChannel ? code : codeOrChannel;
       if (!channelRaw || !resolvedCode) {
         throw new Error(
           `Usage: ${formatCliCommand("paleoclaw pairing approve <channel> <code>")} (or: ${formatCliCommand("paleoclaw pairing approve --channel <channel> <code>")})`,
@@ -144,30 +163,51 @@ export function registerPairingCli(program: Command) {
         );
       }
       const channel = parseChannel(channelRaw, channels);
-      const accountId = String(opts.account ?? "").trim();
-      const approved = accountId
-        ? await approveChannelPairingCode({
-            channel,
-            code: String(resolvedCode),
-            accountId,
-          })
-        : await approveChannelPairingCode({
-            channel,
-            code: String(resolvedCode),
-          });
+      const accountId = resolveAccountId(opts.account);
+      const params = { channel, code: String(resolvedCode), ...(accountId ? { accountId } : {}) };
+      const approved = await runWithLocalStateOwner<ChannelsPairingCodeApproveResult>({
+        method: "channels.pairing.approve",
+        params,
+        target: `${channel} pairing request`,
+        recoveryCommand: `paleoclaw pairing list --channel ${channel}`,
+        requiredCapabilities: [GATEWAY_SERVER_CAPS.CHANNELS_PAIRING_APPROVE_OWNER],
+        runLocal: async ({ env, assertCurrent }) =>
+          await approveChannelPairingCode({ ...params, env, assertCurrent }),
+      });
       if (!approved) {
-        throw new Error(`No pending pairing request found for code: ${String(resolvedCode)}`);
+        throw new Error(
+          `No pending pairing request found for code "${String(resolvedCode)}". Run ${formatCliCommand(`paleoclaw pairing list --channel ${channel}`)} to list pending requests.`,
+        );
       }
 
       defaultRuntime.log(
-        `${theme.success("Approved")} ${theme.muted(channel)} sender ${theme.command(approved.id)}.`,
+        `${theme.success("Approved")} ${theme.muted(channel)} sender ${theme.command(approved.entry.meta?.senderId ?? approved.id)}.`,
       );
+      const ownerBootstrap = await bootstrapCommandOwnerFromPairing({
+        channel,
+        id: approved.id,
+      });
+      if (ownerBootstrap.status === "configured" && ownerBootstrap.ownerEntry) {
+        defaultRuntime.log(
+          `${theme.success("Command owner configured")} ${theme.command(ownerBootstrap.ownerEntry)} ${theme.muted("(commands.ownerAllowFrom was empty).")}`,
+        );
+      }
 
       if (!opts.notify) {
         return;
       }
-      await notifyApproved(channel, approved.id).catch((err) => {
+      const approvedAccountId =
+        accountId || normalizeStringifiedOptionalString(approved.entry?.meta?.accountId);
+      try {
+        await notifyPairingApproved({
+          channelId: channel,
+          id: approved.id,
+          cfg: await captureRuntimeConfigAsyncReader()(),
+          ...(approvedAccountId ? { accountId: approvedAccountId } : {}),
+          ...(approved.entry.meta ? { meta: approved.entry.meta } : {}),
+        });
+      } catch (err) {
         defaultRuntime.log(theme.warn(`Failed to notify requester: ${String(err)}`));
-      });
+      }
     });
 }

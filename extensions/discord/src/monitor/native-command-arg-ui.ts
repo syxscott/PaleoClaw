@@ -1,0 +1,164 @@
+import {
+  ButtonStyle,
+  ComponentType,
+  type APIActionRowComponent,
+  type APIButtonComponent,
+} from "discord-api-types/v10";
+import {
+  buildCommandTextFromArgs,
+  findCommandByNativeName,
+  formatCommandArgMenuTitle,
+  listChatCommands,
+  serializeCommandArgs,
+  type ChatCommandDefinition,
+  type CommandArgDefinition,
+  type CommandArgs,
+} from "paleoclaw/plugin-sdk/command-auth-native";
+import { chunkItems } from "paleoclaw/plugin-sdk/text-chunking";
+import { decodeCustomIdComponent, encodeCustomIdComponent } from "../custom-id-codec.js";
+import type {
+  BaseMessageInteractiveComponent,
+  BaseComponentInteraction,
+  ComponentData,
+} from "../internal/discord.js";
+import { resolveDiscordSlashCommandConfig } from "./commands.js";
+import type { DispatchDiscordCommandInteraction } from "./native-command-dispatch.js";
+import type {
+  DiscordCommandArgContext,
+  SafeDiscordInteractionCall,
+} from "./native-command-ui.types.js";
+
+const DISCORD_COMMAND_ARG_CUSTOM_ID_KEY = "cmdarg";
+
+function buildDiscordCommandArgCustomId(params: {
+  command: string;
+  arg: string;
+  value: string;
+  userId: string;
+}): string {
+  return [
+    `${DISCORD_COMMAND_ARG_CUSTOM_ID_KEY}:command=${encodeCustomIdComponent(params.command)}`,
+    `arg=${encodeCustomIdComponent(params.arg)}`,
+    `value=${encodeCustomIdComponent(params.value)}`,
+    `user=${encodeCustomIdComponent(params.userId)}`,
+  ].join(";");
+}
+
+function parseDiscordCommandArgData(
+  data: ComponentData,
+): { command: string; arg: string; value: string; userId: string } | null {
+  if (!data || typeof data !== "object") {
+    return null;
+  }
+  const coerce = (value: unknown) =>
+    typeof value === "string" || typeof value === "number" ? String(value) : "";
+  const rawCommand = coerce(data.command);
+  const rawArg = coerce(data.arg);
+  const rawValue = coerce(data.value);
+  const rawUser = coerce(data.user);
+  if (!rawCommand || !rawArg || !rawValue || !rawUser) {
+    return null;
+  }
+  return {
+    command: decodeCustomIdComponent(rawCommand),
+    arg: decodeCustomIdComponent(rawArg),
+    value: decodeCustomIdComponent(rawValue),
+    userId: decodeCustomIdComponent(rawUser),
+  };
+}
+
+async function handleDiscordCommandArgInteraction(
+  params: DiscordCommandArgButtonParams & {
+    interaction: BaseComponentInteraction;
+    data: ComponentData;
+  },
+) {
+  const { interaction, data, ctx } = params;
+  const clearWithMessage = async (content: string) =>
+    await params.safeInteractionCall("command arg update", () =>
+      interaction.update({ content, components: [] }),
+    );
+  const parsed = parseDiscordCommandArgData(data);
+  if (!parsed) {
+    await clearWithMessage("Sorry, that selection is no longer available.");
+    return;
+  }
+  if (interaction.user?.id && interaction.user.id !== parsed.userId) {
+    await params.safeInteractionCall("command arg ack", () => interaction.acknowledge());
+    return;
+  }
+  const commandDefinition =
+    findCommandByNativeName(parsed.command, "discord") ??
+    listChatCommands().find((entry) => entry.key === parsed.command);
+  if (!commandDefinition) {
+    await clearWithMessage("Sorry, that command is no longer available.");
+    return;
+  }
+  const argUpdateResult = await clearWithMessage(`⏳ Applying ${parsed.value}...`);
+  if (argUpdateResult === null) {
+    return;
+  }
+  const commandArgs: CommandArgs = { values: { [parsed.arg]: parsed.value } };
+  const commandArgsWithRaw: CommandArgs = {
+    ...commandArgs,
+    raw: serializeCommandArgs(commandDefinition, commandArgs),
+  };
+  const prompt = buildCommandTextFromArgs(commandDefinition, commandArgsWithRaw);
+  await params.dispatchCommandInteraction({
+    ...ctx,
+    interaction,
+    prompt,
+    command: commandDefinition,
+    commandArgs: commandArgsWithRaw,
+    preferFollowUp: true,
+    responseEphemeral: resolveDiscordSlashCommandConfig(ctx.discordConfig?.slashCommand).ephemeral,
+    pluginCommandDispatch: { kind: "non-plugin" },
+  });
+}
+
+type DiscordCommandArgButtonParams = {
+  ctx: DiscordCommandArgContext;
+  safeInteractionCall: SafeDiscordInteractionCall;
+  dispatchCommandInteraction: DispatchDiscordCommandInteraction;
+};
+
+export function buildDiscordCommandArgMenu(params: {
+  command: ChatCommandDefinition;
+  menu: {
+    arg: CommandArgDefinition;
+    choices: Array<{ value: string; label: string }>;
+    title?: string;
+  };
+  userId: string;
+}): { content: string; components: APIActionRowComponent<APIButtonComponent>[] } {
+  const { command, menu, userId } = params;
+  const commandLabel = command.nativeName ?? command.key;
+  const rows = chunkItems(menu.choices, 4).map((choices) => {
+    const buttons = choices.map((choice) => ({
+      type: ComponentType.Button as const,
+      label: choice.label,
+      custom_id: buildDiscordCommandArgCustomId({
+        command: commandLabel,
+        arg: menu.arg.name,
+        value: choice.value,
+        userId,
+      }),
+      style: ButtonStyle.Secondary as const,
+    }));
+    return { type: ComponentType.ActionRow as const, components: buttons };
+  });
+  const content = formatCommandArgMenuTitle({ command, menu });
+  return { content, components: rows };
+}
+
+export function createDiscordCommandArgFallbackButton(
+  params: DiscordCommandArgButtonParams,
+): BaseMessageInteractiveComponent {
+  return {
+    type: ComponentType.Button,
+    customId: "cmdarg:seed=1",
+    async run(interaction, data) {
+      await handleDiscordCommandArgInteraction({ ...params, interaction, data });
+    },
+  };
+}

@@ -1,47 +1,70 @@
-import { EnvHttpProxyAgent, ProxyAgent, fetch as undiciFetch } from "undici";
+import { normalizeOptionalString } from "@paleoclaw/normalization-core/string-coerce";
 import { logWarn } from "../../logger.js";
+import { formatErrorMessage } from "../errors.js";
+import { resolveEnvHttpProxyAgentOptions } from "./proxy-env.js";
+import { fetchWithPreparedRuntimeDispatcher } from "./runtime-fetch.js";
+import {
+  createHttp1EnvHttpProxyAgent,
+  createHttp1ProxyAgent,
+  loadUndiciRuntimeDeps,
+} from "./undici-runtime.js";
+
+/** Non-enumerable marker used to recover the explicit proxy URL from proxy fetch wrappers. */
+const PROXY_FETCH_PROXY_URL = Symbol.for("openclaw.proxyFetch.proxyUrl");
+type ProxyFetchWithMetadata = typeof fetch & {
+  [PROXY_FETCH_PROXY_URL]?: string;
+};
 
 /**
  * Create a fetch function that routes requests through the given HTTP proxy.
  * Uses undici's ProxyAgent under the hood.
  */
 export function makeProxyFetch(proxyUrl: string): typeof fetch {
-  const agent = new ProxyAgent(proxyUrl);
-  // undici's fetch is runtime-compatible with global fetch but the types diverge
-  // on stream/body internals. Single cast at the boundary keeps the rest type-safe.
-  return ((input: RequestInfo | URL, init?: RequestInit) =>
-    undiciFetch(input as string | URL, {
-      ...(init as Record<string, unknown>),
+  const runtimeDeps = loadUndiciRuntimeDeps();
+  let agent: ReturnType<typeof createHttp1ProxyAgent> | null = null;
+  const proxyFetch: ProxyFetchWithMetadata = (input, init) => {
+    agent ??= createHttp1ProxyAgent({ uri: proxyUrl });
+    return fetchWithPreparedRuntimeDispatcher(runtimeDeps, input, {
+      ...init,
       dispatcher: agent,
-    }) as unknown as Promise<Response>) as typeof fetch;
+    });
+  };
+  Object.defineProperty(proxyFetch, PROXY_FETCH_PROXY_URL, {
+    value: proxyUrl,
+  });
+  return proxyFetch;
+}
+
+/** Return the explicit proxy URL attached by {@link makeProxyFetch}, if present. */
+export function getProxyUrlFromFetch(fetchImpl?: typeof fetch): string | undefined {
+  const proxyUrl = (fetchImpl as ProxyFetchWithMetadata | undefined)?.[PROXY_FETCH_PROXY_URL];
+  return normalizeOptionalString(proxyUrl);
 }
 
 /**
- * Resolve a proxy-aware fetch from standard environment variables
- * (HTTPS_PROXY, HTTP_PROXY, https_proxy, http_proxy).
+ * Resolve a proxy-aware fetch from standard environment variables.
  * Respects NO_PROXY / no_proxy exclusions via undici's EnvHttpProxyAgent.
  * Returns undefined when no proxy is configured.
  * Gracefully returns undefined if the proxy URL is malformed.
  */
-export function resolveProxyFetchFromEnv(): typeof fetch | undefined {
-  const proxyUrl =
-    process.env.HTTPS_PROXY ||
-    process.env.HTTP_PROXY ||
-    process.env.https_proxy ||
-    process.env.http_proxy;
-  if (!proxyUrl?.trim()) {
+export function resolveProxyFetchFromEnv(
+  env: NodeJS.ProcessEnv = process.env,
+): typeof fetch | undefined {
+  const proxyOptions = resolveEnvHttpProxyAgentOptions(env);
+  if (!proxyOptions) {
     return undefined;
   }
   try {
-    const agent = new EnvHttpProxyAgent();
+    const runtimeDeps = loadUndiciRuntimeDeps();
+    const agent = createHttp1EnvHttpProxyAgent(proxyOptions, undefined, env);
     return ((input: RequestInfo | URL, init?: RequestInit) =>
-      undiciFetch(input as string | URL, {
-        ...(init as Record<string, unknown>),
+      fetchWithPreparedRuntimeDispatcher(runtimeDeps, input, {
+        ...init,
         dispatcher: agent,
-      }) as unknown as Promise<Response>) as typeof fetch;
+      })) as typeof fetch;
   } catch (err) {
     logWarn(
-      `Proxy env var set but agent creation failed — falling back to direct fetch: ${err instanceof Error ? err.message : String(err)}`,
+      `Proxy env var set but agent creation failed — falling back to direct fetch: ${formatErrorMessage(err)}`,
     );
     return undefined;
   }

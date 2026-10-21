@@ -1,31 +1,77 @@
+import {
+  normalizeLowercaseStringOrEmpty,
+  normalizeOptionalString,
+  readStringValue,
+} from "@paleoclaw/normalization-core/string-coerce";
+import { colorize, isRich, theme } from "../../packages/terminal-core/src/theme.js";
+import { parseGatewayPortOption } from "../cli/gateway-port-option.js";
+import { parseTimeoutMsWithFallback } from "../cli/parse-timeout.js";
 import { withProgress } from "../cli/progress.js";
-import { readBestEffortConfig, resolveGatewayPort } from "../config/config.js";
+import { readBestEffortConfig } from "../config/config.js";
+import { ensureExplicitGatewayAuth, resolveExplicitGatewayAuth } from "../gateway/call.js";
+import { resolveGatewaySshRemotePort } from "../gateway/connection-details.js";
 import { probeGateway } from "../gateway/probe.js";
+import { isAbortError } from "../infra/abort-signal.js";
 import { discoverGatewayBeacons } from "../infra/bonjour-discovery.js";
-import { resolveSshConfig } from "../infra/ssh-config.js";
-import { parseSshTarget, startSshPortForward } from "../infra/ssh-tunnel.js";
+import { formatErrorMessage } from "../infra/errors.js";
 import { resolveWideAreaDiscoveryDomain } from "../infra/widearea-dns.js";
-import type { RuntimeEnv } from "../runtime.js";
-import { colorize, isRich, theme } from "../terminal/theme.js";
+import { writeRuntimeJson, type RuntimeEnv } from "../runtime.js";
+import { pickGatewaySelfPresence } from "./gateway-presence.js";
+import {
+  inferSshTargetFromRemoteUrl,
+  pickAutoSshTargetFromDiscovery,
+  resolveSshTarget,
+  serializeGatewayDiscoveryBeacon,
+} from "./gateway-status/discovery.js";
 import {
   buildNetworkHints,
   extractConfigSummary,
-  type GatewayStatusTarget,
-  parseTimeoutMs,
-  pickGatewaySelfPresence,
-  renderProbeSummaryLine,
-  renderTargetHeader,
   resolveAuthForTarget,
   resolveProbeBudgetMs,
+  type GatewayConfigSummary,
+  type GatewayStatusTarget,
   resolveTargets,
   sanitizeSshTarget,
+  isProbeReachable,
+  isPostConnectProbeFailure,
+  isScopeLimitedProbeFailure,
+  summarizeGatewayProbeCapability,
+  renderProbeSummaryLine,
+  renderTargetHeader,
 } from "./gateway-status/helpers.js";
+type GatewayStatusProbedTarget = {
+  target: GatewayStatusTarget;
+  probe: Awaited<ReturnType<typeof probeGateway>>;
+  configSummary: GatewayConfigSummary | null;
+  self: ReturnType<typeof pickGatewaySelfPresence>;
+  authDiagnostics: string[];
+};
+
+function gatewaySelfIdentityKey(entry: GatewayStatusProbedTarget): string | null {
+  if (!entry.self) {
+    return null;
+  }
+  const host = normalizeLowercaseStringOrEmpty(entry.self.host);
+  const ip = normalizeLowercaseStringOrEmpty(entry.self.ip);
+  const instanceId = normalizeLowercaseStringOrEmpty(entry.self.instanceId);
+  const deviceId = normalizeLowercaseStringOrEmpty(entry.self.deviceId);
+  const discriminator = instanceId
+    ? `instance:${instanceId}`
+    : deviceId
+      ? `device:${deviceId}`
+      : "";
+  if ((!host && !ip) || !discriminator) {
+    return null;
+  }
+  return `${host}\0${ip}\0${discriminator}`;
+}
 
 export async function gatewayStatusCommand(
   opts: {
     url?: string;
     token?: string;
     password?: string;
+    port?: unknown;
     timeout?: unknown;
     json?: boolean;
     ssh?: string;
@@ -34,37 +80,50 @@ export async function gatewayStatusCommand(
   },
   runtime: RuntimeEnv,
 ) {
+  await ensureExplicitGatewayAuth({
+    urlOverride: opts.url?.trim(),
+    urlOverrideSource: "cli",
+    explicitAuth: resolveExplicitGatewayAuth(opts),
+    errorHint: "Fix: pass --token or --password with --url.",
+  });
   const startedAt = Date.now();
   const cfg = await readBestEffortConfig();
   const rich = isRich() && opts.json !== true;
-  const overallTimeoutMs = parseTimeoutMs(opts.timeout, 3000);
+  const defaultTimeoutMs = 3000;
+  const overallTimeoutMs = parseTimeoutMsWithFallback(opts.timeout, defaultTimeoutMs, {
+    invalidType: "error",
+  });
+  const portOverride = parseGatewayPortOption(opts.port);
   const wideAreaDomain = resolveWideAreaDiscoveryDomain({
     configDomain: cfg.discovery?.wideArea?.domain,
   });
-
-  const baseTargets = resolveTargets(cfg, opts.url);
-  const network = buildNetworkHints(cfg);
-
+  const baseTargets = resolveTargets(cfg, opts.url, portOverride);
+  const network = buildNetworkHints(cfg, portOverride);
+  const remotePort = portOverride ?? resolveGatewaySshRemotePort(cfg);
   const discoveryTimeoutMs = Math.min(1200, overallTimeoutMs);
-  const discoveryPromise = discoverGatewayBeacons({
-    timeoutMs: discoveryTimeoutMs,
-    wideAreaDomain,
-  });
+  const hasExplicitUrl = typeof opts.url === "string" && opts.url.trim().length > 0;
+  const useConfiguredRemoteTargets = portOverride === undefined || hasExplicitUrl;
 
-  let sshTarget = sanitizeSshTarget(opts.ssh) ?? sanitizeSshTarget(cfg.gateway?.remote?.sshTarget);
+  let sshTarget =
+    sanitizeSshTarget(opts.ssh) ??
+    (useConfiguredRemoteTargets ? sanitizeSshTarget(cfg.gateway?.remote?.sshTarget) : null);
   let sshIdentity =
-    sanitizeSshTarget(opts.sshIdentity) ?? sanitizeSshTarget(cfg.gateway?.remote?.sshIdentity);
-  const remotePort = resolveGatewayPort(cfg);
+    sanitizeSshTarget(opts.sshIdentity) ??
+    (useConfiguredRemoteTargets ? sanitizeSshTarget(cfg.gateway?.remote?.sshIdentity) : null);
 
-  let sshTunnelError: string | null = null;
-  let sshTunnelStarted = false;
-
-  if (!sshTarget) {
+  if (!sshTarget && useConfiguredRemoteTargets) {
+    // Remote URL inference gives users a useful SSH default without requiring
+    // gateway.remote.sshTarget when the host already appears in config.
     sshTarget = inferSshTargetFromRemoteUrl(cfg.gateway?.remote?.url);
   }
 
+  const sshRouteTarget = sshTarget;
   if (sshTarget) {
-    const resolved = await resolveSshTarget(sshTarget, sshIdentity, overallTimeoutMs);
+    const resolved = await resolveSshTarget({
+      rawTarget: sshTarget,
+      identity: sshIdentity,
+      overallTimeoutMs,
+    });
     if (resolved) {
       sshTarget = resolved.target;
       if (!sshIdentity && resolved.identity) {
@@ -73,159 +132,237 @@ export async function gatewayStatusCommand(
     }
   }
 
-  const { discovery, probed } = await withProgress(
-    {
-      label: "Inspecting gateways…",
-      indeterminate: true,
-      enabled: opts.json !== true,
-    },
-    async () => {
-      const tryStartTunnel = async () => {
-        if (!sshTarget) {
-          return null;
-        }
-        try {
-          const tunnel = await startSshPortForward({
-            target: sshTarget,
-            identity: sshIdentity ?? undefined,
-            localPortPreferred: remotePort,
-            remotePort,
-            timeoutMs: Math.min(1500, overallTimeoutMs),
+  const localCertificate =
+    cfg.gateway?.tls?.enabled === true
+      ? await import("../infra/tls/gateway.js").then(({ inspectGatewayTlsCertificate }) =>
+          inspectGatewayTlsCertificate(cfg.gateway?.tls),
+        )
+      : undefined;
+
+  const controller = new AbortController();
+  let abortSignal: "SIGINT" | "SIGTERM" | undefined;
+  const onSignal = (signal: "SIGINT" | "SIGTERM") => {
+    if (!abortSignal) {
+      abortSignal = signal;
+      controller.abort();
+    }
+  };
+  const onSigInt = () => onSignal("SIGINT");
+  const onSigTerm = () => onSignal("SIGTERM");
+  process.on("SIGINT", onSigInt);
+  process.on("SIGTERM", onSigTerm);
+  const probePass = await (async (): Promise<{
+    discovery: Awaited<ReturnType<typeof discoverGatewayBeacons>>;
+    probed: GatewayStatusProbedTarget[];
+    sshTarget: string | null;
+    sshTunnelStarted: boolean;
+    sshTunnelError: string | null;
+  }> => {
+    try {
+      return await withProgress(
+        {
+          label: "Inspecting gateways…",
+          indeterminate: true,
+          enabled: opts.json !== true,
+        },
+        async () => {
+          const discoveryPromise = discoverGatewayBeacons({
+            timeoutMs: discoveryTimeoutMs,
+            wideAreaDomain,
           });
-          sshTunnelStarted = true;
-          return tunnel;
-        } catch (err) {
-          sshTunnelError = err instanceof Error ? err.message : String(err);
-          return null;
-        }
-      };
 
-      const discoveryTask = discoveryPromise.catch(() => []);
-      const tunnelTask = sshTarget ? tryStartTunnel() : Promise.resolve(null);
+          let sshTunnelError: string | null = null;
 
-      const [discovery, tunnelFirst] = await Promise.all([discoveryTask, tunnelTask]);
-
-      if (!sshTarget && opts.sshAuto) {
-        const user = process.env.USER?.trim() || "";
-        const candidates = discovery
-          .map((b) => {
-            const host = b.tailnetDns || b.lanHost || b.host;
-            if (!host?.trim()) {
+          const tryStartTunnel = async () => {
+            if (!sshTarget) {
               return null;
             }
-            const sshPort = typeof b.sshPort === "number" && b.sshPort > 0 ? b.sshPort : 22;
-            const base = user ? `${user}@${host.trim()}` : host.trim();
-            return sshPort !== 22 ? `${base}:${sshPort}` : base;
-          })
-          .filter((candidate): candidate is string =>
-            Boolean(candidate && parseSshTarget(candidate)),
-          );
-        if (candidates.length > 0) {
-          sshTarget = candidates[0] ?? null;
-        }
-      }
+            if (controller.signal?.aborted) {
+              sshTunnelError = "Aborted";
+              return null;
+            }
+            try {
+              const { startSshPortForward } = await import("../infra/ssh-tunnel.js");
+              return await startSshPortForward({
+                target: sshTarget,
+                identity: sshIdentity ?? undefined,
+                hostKeyPolicy: cfg.gateway?.remote?.sshHostKeyPolicy,
+                localPortPreferred: remotePort,
+                remotePort,
+                timeoutMs: Math.min(1500, overallTimeoutMs),
+                signal: controller.signal,
+              });
+            } catch (err) {
+              sshTunnelError = isAbortError(err) ? "Aborted" : formatErrorMessage(err);
+              return null;
+            }
+          };
 
-      const tunnel =
-        tunnelFirst ||
-        (sshTarget && !sshTunnelStarted && !sshTunnelError ? await tryStartTunnel() : null);
+          const discoveryTask = discoveryPromise.catch(() => []);
+          const tunnelTask = sshTarget ? tryStartTunnel() : Promise.resolve(null);
+          const [discovery, tunnelFirst] = await Promise.all([discoveryTask, tunnelTask]);
 
-      const tunnelTarget: GatewayStatusTarget | null = tunnel
-        ? {
-            id: "sshTunnel",
-            kind: "sshTunnel",
-            url: `ws://127.0.0.1:${tunnel.localPort}`,
-            active: true,
-            tunnel: {
-              kind: "ssh",
-              target: sshTarget ?? "",
-              localPort: tunnel.localPort,
-              remotePort,
-              pid: tunnel.pid,
-            },
+          if (!sshTarget && opts.sshAuto) {
+            const { parseSshTarget } = await import("../infra/ssh-tunnel.js");
+            sshTarget = pickAutoSshTargetFromDiscovery({
+              discovery,
+              parseSshTarget,
+              sshUser: normalizeOptionalString(process.env.USER) ?? "",
+            });
           }
-        : null;
 
-      const targets: GatewayStatusTarget[] = tunnelTarget
-        ? [tunnelTarget, ...baseTargets.filter((t) => t.url !== tunnelTarget.url)]
-        : baseTargets;
+          // Prefer the concurrently-started tunnel, but allow auto-discovered SSH
+          // targets to start after Bonjour finishes.
+          const tunnel =
+            tunnelFirst || (sshTarget && !sshTunnelError ? await tryStartTunnel() : null);
 
-      try {
-        const probed = await Promise.all(
-          targets.map(async (target) => {
-            const authResolution = await resolveAuthForTarget(cfg, target, {
-              token: typeof opts.token === "string" ? opts.token : undefined,
-              password: typeof opts.password === "string" ? opts.password : undefined,
-            });
-            const auth = {
-              token: authResolution.token,
-              password: authResolution.password,
-            };
-            const timeoutMs = resolveProbeBudgetMs(overallTimeoutMs, target.kind);
-            const probe = await probeGateway({
-              url: target.url,
-              auth,
-              timeoutMs,
-            });
-            const configSummary = probe.configSnapshot
-              ? extractConfigSummary(probe.configSnapshot)
-              : null;
-            const self = pickGatewaySelfPresence(probe.presence);
-            return {
-              target,
-              probe,
-              configSummary,
-              self,
-              authDiagnostics: authResolution.diagnostics ?? [],
-            };
-          }),
-        );
+          const tunnelTarget: GatewayStatusTarget | null = tunnel
+            ? {
+                id: "sshTunnel",
+                kind: "sshTunnel",
+                url: `ws://127.0.0.1:${tunnel.localPort}`,
+                active: true,
+                tunnel: {
+                  kind: "ssh",
+                  target: sshTarget ?? "",
+                  localPort: tunnel.localPort,
+                  remotePort,
+                  pid: tunnel.pid,
+                },
+              }
+            : null;
 
-        return { discovery, probed };
-      } finally {
-        if (tunnel) {
+          const targets: GatewayStatusTarget[] = tunnelTarget
+            ? [tunnelTarget, ...baseTargets.filter((target) => target.url !== tunnelTarget.url)]
+            : baseTargets;
+
           try {
-            await tunnel.stop();
-          } catch {
-            // best-effort
+            const probed = await Promise.all(
+              targets.map(async (target) => {
+                const authResolution = await resolveAuthForTarget(cfg, target, {
+                  token: readStringValue(opts.token),
+                  password: readStringValue(opts.password),
+                });
+                const probe = await probeGateway({
+                  url: target.url,
+                  config: cfg,
+                  configuredRemote: target.kind === "configRemote",
+                  // The same selected route owns both token lookup and the live tunnel.
+                  // Transfer that lifetime to the client; the finally block also covers
+                  // failures before client construction.
+                  ...(target.kind === "sshTunnel"
+                    ? {
+                        originScopedDeviceAuth: true,
+                        sshTunnel: {
+                          target: sshRouteTarget ?? sshTarget ?? "",
+                          remotePort,
+                          ...(sshIdentity ? { identity: sshIdentity } : {}),
+                        },
+                        preparedSshTunnel: tunnel ?? undefined,
+                      }
+                    : target.kind !== "localLoopback"
+                      ? { originScopedDeviceAuth: true }
+                      : {}),
+                  auth: {
+                    token: authResolution.token,
+                    password: authResolution.password,
+                  },
+                  tlsFingerprint:
+                    target.kind === "localLoopback" && target.url.startsWith("wss://")
+                      ? localCertificate?.ok
+                        ? localCertificate.value.fingerprintSha256
+                        : undefined
+                      : undefined,
+                  timeoutMs: resolveProbeBudgetMs(overallTimeoutMs, target),
+                  signal: controller.signal,
+                });
+                return {
+                  target,
+                  probe,
+                  configSummary: probe.configSnapshot
+                    ? extractConfigSummary(probe.configSnapshot)
+                    : null,
+                  self: pickGatewaySelfPresence(probe.presence),
+                  authDiagnostics: authResolution.diagnostics ?? [],
+                };
+              }),
+            );
+
+            return {
+              discovery,
+              probed,
+              sshTarget,
+              sshTunnelStarted: Boolean(tunnel),
+              sshTunnelError,
+            };
+          } finally {
+            if (tunnel) {
+              try {
+                await tunnel.stop();
+              } catch {
+                // Status output must not fail just because tunnel cleanup races process exit.
+              }
+            }
           }
-        }
-      }
-    },
-  );
+        },
+      );
+    } finally {
+      process.off("SIGINT", onSigInt);
+      process.off("SIGTERM", onSigTerm);
+    }
+  })();
+  if (abortSignal) {
+    runtime.exit(abortSignal === "SIGINT" ? 130 : 143);
+    return;
+  }
 
-  const reachable = probed.filter((p) => p.probe.ok);
-  const ok = reachable.length > 0;
-  const multipleGateways = reachable.length > 1;
+  const reachable = probePass.probed.filter((entry) => isProbeReachable(entry.probe));
   const primary =
-    reachable.find((p) => p.target.kind === "explicit") ??
-    reachable.find((p) => p.target.kind === "sshTunnel") ??
-    reachable.find((p) => p.target.kind === "configRemote") ??
-    reachable.find((p) => p.target.kind === "localLoopback") ??
+    reachable.find((entry) => entry.target.kind === "explicit") ??
+    reachable.find((entry) => entry.target.kind === "sshTunnel") ??
+    reachable.find((entry) => entry.target.kind === "configRemote") ??
+    reachable.find((entry) => entry.target.kind === "localLoopback") ??
     null;
-
-  const warnings: Array<{
-    code: string;
-    message: string;
-    targetIds?: string[];
-  }> = [];
-  if (sshTarget && !sshTunnelStarted) {
+  const warnings: Array<{ code: string; message: string; targetIds?: string[] }> = [];
+  if (probePass.sshTarget && !probePass.sshTunnelStarted) {
     warnings.push({
       code: "ssh_tunnel_failed",
-      message: sshTunnelError
-        ? `SSH tunnel failed: ${String(sshTunnelError)}`
-        : "SSH tunnel failed to start; falling back to direct probes.",
+      message: probePass.sshTunnelError
+        ? `SSH tunnel failed: ${probePass.sshTunnelError}`
+        : "SSH tunnel failed to start; falling back to direct checks.",
     });
   }
-  if (multipleGateways) {
+  if (localCertificate && !localCertificate.ok && localCertificate.error) {
+    warnings.push({
+      code: "local_tls_runtime_unavailable",
+      message: `Local gateway TLS is enabled but paleoclaw could not load the local certificate fingerprint: ${localCertificate.error}`,
+      targetIds: ["localLoopback"],
+    });
+  }
+  if (reachable.length === 0 && probePass.discovery.length === 0) {
+    warnings.push({
+      code: "no_gateway_reachable",
+      message:
+        "No gateway answered any check and Bonjour discovery returned no local gateways. Run `paleoclaw gateway status --deep --require-rpc` to inspect service state, config paths, listener owners, and logs; include `ss -ltnp` or `lsof -nP -iTCP:<port> -sTCP:LISTEN` for the configured port when filing a report.",
+      targetIds: probePass.probed.map((entry) => entry.target.id),
+    });
+  }
+  const identityKeys = reachable.map(gatewaySelfIdentityKey);
+  if (
+    reachable.length > 1 &&
+    (identityKeys.some((key) => key === null) || new Set(identityKeys).size > 1)
+  ) {
+    // Multiple reachable gateways are valid for isolated profiles but surprising
+    // enough to call out before users debug against the wrong process.
     warnings.push({
       code: "multiple_gateways",
       message:
-        "Unconventional setup: multiple reachable gateways detected. Usually one gateway per network is recommended unless you intentionally run isolated profiles, like a rescue bot (see docs: /gateway#multiple-gateways-same-host).",
-      targetIds: reachable.map((p) => p.target.id),
+        "Unconventional setup: multiple reachable gateway identities detected. Usually one gateway per network is recommended unless you intentionally run isolated profiles, like a rescue bot (see docs: /gateway#multiple-gateways-same-host).",
+      targetIds: reachable.map((entry) => entry.target.id),
     });
   }
-  for (const result of probed) {
-    if (result.authDiagnostics.length === 0) {
+  for (const result of probePass.probed) {
+    if (result.authDiagnostics.length === 0 || isProbeReachable(result.probe)) {
       continue;
     }
     for (const diagnostic of result.authDiagnostics) {
@@ -236,79 +373,89 @@ export async function gatewayStatusCommand(
       });
     }
   }
+  for (const result of probePass.probed.filter((entry) =>
+    isScopeLimitedProbeFailure(entry.probe),
+  )) {
+    warnings.push({
+      code: "probe_scope_limited",
+      message:
+        "Read-check diagnostics are limited by gateway scopes (missing operator.read). Connection succeeded, but read-only status calls are incomplete. Hint: pair device identity or use credentials with operator.read.",
+      targetIds: [result.target.id],
+    });
+  }
+  for (const result of probePass.probed.filter(
+    (entry) => isPostConnectProbeFailure(entry.probe) && !isScopeLimitedProbeFailure(entry.probe),
+  )) {
+    const detail = result.probe.error ? `: ${result.probe.error}` : ".";
+    warnings.push({
+      code: "probe_detail_failed",
+      message: `Gateway accepted the WebSocket connection, but follow-up read diagnostics failed${detail}`,
+      targetIds: [result.target.id],
+    });
+  }
+  const capability = summarizeGatewayProbeCapability(reachable.map((entry) => entry.probe));
 
   if (opts.json) {
-    runtime.log(
-      JSON.stringify(
-        {
-          ok,
-          ts: Date.now(),
-          durationMs: Date.now() - startedAt,
-          timeoutMs: overallTimeoutMs,
-          primaryTargetId: primary?.target.id ?? null,
-          warnings,
-          network,
-          discovery: {
-            timeoutMs: discoveryTimeoutMs,
-            count: discovery.length,
-            beacons: discovery.map((b) => ({
-              instanceName: b.instanceName,
-              displayName: b.displayName ?? null,
-              domain: b.domain ?? null,
-              host: b.host ?? null,
-              lanHost: b.lanHost ?? null,
-              tailnetDns: b.tailnetDns ?? null,
-              gatewayPort: b.gatewayPort ?? null,
-              sshPort: b.sshPort ?? null,
-              wsUrl: (() => {
-                const host = b.tailnetDns || b.lanHost || b.host;
-                const port = b.gatewayPort ?? 18789;
-                return host ? `ws://${host}:${port}` : null;
-              })(),
-            })),
-          },
-          targets: probed.map((p) => ({
-            id: p.target.id,
-            kind: p.target.kind,
-            url: p.target.url,
-            active: p.target.active,
-            tunnel: p.target.tunnel ?? null,
-            connect: {
-              ok: p.probe.ok,
-              latencyMs: p.probe.connectLatencyMs,
-              error: p.probe.error,
-              close: p.probe.close,
-            },
-            self: p.self,
-            config: p.configSummary,
-            health: p.probe.health,
-            summary: p.probe.status,
-            presence: p.probe.presence,
-          })),
+    const degraded = probePass.probed.some((entry) => isPostConnectProbeFailure(entry.probe));
+    writeRuntimeJson(runtime, {
+      ok: reachable.length > 0,
+      degraded,
+      capability,
+      ts: Date.now(),
+      durationMs: Date.now() - startedAt,
+      timeoutMs: overallTimeoutMs,
+      primaryTargetId: primary?.target.id ?? null,
+      warnings,
+      network,
+      discovery: {
+        timeoutMs: discoveryTimeoutMs,
+        count: probePass.discovery.length,
+        beacons: probePass.discovery.map(serializeGatewayDiscoveryBeacon),
+      },
+      targets: probePass.probed.map((entry) => ({
+        id: entry.target.id,
+        kind: entry.target.kind,
+        url: entry.target.url,
+        active: entry.target.active,
+        tunnel: entry.target.tunnel ?? null,
+        connect: {
+          ok: isProbeReachable(entry.probe),
+          rpcOk: entry.probe.ok,
+          scopeLimited: isScopeLimitedProbeFailure(entry.probe),
+          latencyMs: entry.probe.connectLatencyMs,
+          error: entry.probe.error,
+          close: entry.probe.close,
         },
-        null,
-        2,
-      ),
-    );
-    if (!ok) {
+        auth: entry.probe.auth,
+        server: entry.probe.server,
+        self: entry.self,
+        config: entry.configSummary,
+        health: entry.probe.health,
+        summary: entry.probe.status,
+        presence: entry.probe.presence,
+      })),
+    });
+    if (reachable.length === 0) {
       runtime.exit(1);
     }
     return;
   }
 
+  const ok = reachable.length > 0;
   runtime.log(colorize(rich, theme.heading, "Gateway Status"));
   runtime.log(
     ok
       ? `${colorize(rich, theme.success, "Reachable")}: yes`
       : `${colorize(rich, theme.error, "Reachable")}: no`,
   );
-  runtime.log(colorize(rich, theme.muted, `Probe budget: ${overallTimeoutMs}ms`));
+  runtime.log(`${colorize(rich, theme.info, "Capability")}: ${capability.replaceAll("_", "-")}`);
+  runtime.log(colorize(rich, theme.muted, `Check budget: ${overallTimeoutMs}ms`));
 
   if (warnings.length > 0) {
     runtime.log("");
     runtime.log(colorize(rich, theme.warn, "Warning:"));
-    for (const w of warnings) {
-      runtime.log(`- ${w.message}`);
+    for (const warning of warnings) {
+      runtime.log(`- ${warning.message}`);
     }
   }
 
@@ -316,11 +463,9 @@ export async function gatewayStatusCommand(
   runtime.log(colorize(rich, theme.heading, "Discovery (this machine)"));
   const discoveryDomains = wideAreaDomain ? `local. + ${wideAreaDomain}` : "local.";
   runtime.log(
-    discovery.length > 0
-      ? `Found ${discovery.length} gateway(s) via Bonjour (${discoveryDomains})`
-      : `Found 0 gateways via Bonjour (${discoveryDomains})`,
+    `Found ${probePass.discovery.length} ${probePass.discovery.length > 0 ? "gateway(s)" : "gateways"} via Bonjour (${discoveryDomains})`,
   );
-  if (discovery.length === 0) {
+  if (probePass.discovery.length === 0) {
     runtime.log(
       colorize(
         rich,
@@ -332,27 +477,26 @@ export async function gatewayStatusCommand(
 
   runtime.log("");
   runtime.log(colorize(rich, theme.heading, "Targets"));
-  for (const p of probed) {
-    runtime.log(renderTargetHeader(p.target, rich));
-    runtime.log(`  ${renderProbeSummaryLine(p.probe, rich)}`);
-    if (p.target.tunnel?.kind === "ssh") {
+  for (const result of probePass.probed) {
+    runtime.log(renderTargetHeader(result.target, rich));
+    runtime.log(`  ${renderProbeSummaryLine(result.probe, rich)}`);
+    if (result.target.tunnel?.kind === "ssh") {
       runtime.log(
-        `  ${colorize(rich, theme.muted, "ssh")}: ${colorize(rich, theme.command, p.target.tunnel.target)}`,
+        `  ${colorize(rich, theme.muted, "ssh")}: ${colorize(rich, theme.command, result.target.tunnel.target)}`,
       );
     }
-    if (p.probe.ok && p.self) {
-      const host = p.self.host ?? "unknown";
-      const ip = p.self.ip ? ` (${p.self.ip})` : "";
-      const platform = p.self.platform ? ` · ${p.self.platform}` : "";
-      const version = p.self.version ? ` · app ${p.self.version}` : "";
+    if (result.probe.ok && result.self) {
+      const host = result.self.host ?? "unknown";
+      const ip = result.self.ip ? ` (${result.self.ip})` : "";
+      const platform = result.self.platform ? ` · ${result.self.platform}` : "";
+      const version = result.self.version ? ` · app ${result.self.version}` : "";
       runtime.log(`  ${colorize(rich, theme.info, "Gateway")}: ${host}${ip}${platform}${version}`);
     }
-    if (p.configSummary) {
-      const c = p.configSummary;
+    if (result.configSummary) {
       const wideArea =
-        c.discovery.wideAreaEnabled === true
+        result.configSummary.discovery.wideAreaEnabled === true
           ? "enabled"
-          : c.discovery.wideAreaEnabled === false
+          : result.configSummary.discovery.wideAreaEnabled === false
             ? "disabled"
             : "unknown";
       runtime.log(`  ${colorize(rich, theme.info, "Wide-area discovery")}: ${wideArea}`);
@@ -363,68 +507,4 @@ export async function gatewayStatusCommand(
   if (!ok) {
     runtime.exit(1);
   }
-}
-
-function inferSshTargetFromRemoteUrl(rawUrl?: string | null): string | null {
-  if (typeof rawUrl !== "string") {
-    return null;
-  }
-  const trimmed = rawUrl.trim();
-  if (!trimmed) {
-    return null;
-  }
-  let host: string | null = null;
-  try {
-    host = new URL(trimmed).hostname || null;
-  } catch {
-    return null;
-  }
-  if (!host) {
-    return null;
-  }
-  const user = process.env.USER?.trim() || "";
-  return user ? `${user}@${host}` : host;
-}
-
-function buildSshTarget(input: { user?: string; host?: string; port?: number }): string | null {
-  const host = input.host?.trim() ?? "";
-  if (!host) {
-    return null;
-  }
-  const user = input.user?.trim() ?? "";
-  const base = user ? `${user}@${host}` : host;
-  const port = input.port ?? 22;
-  if (port && port !== 22) {
-    return `${base}:${port}`;
-  }
-  return base;
-}
-
-async function resolveSshTarget(
-  rawTarget: string,
-  identity: string | null,
-  overallTimeoutMs: number,
-): Promise<{ target: string; identity?: string } | null> {
-  const parsed = parseSshTarget(rawTarget);
-  if (!parsed) {
-    return null;
-  }
-  const config = await resolveSshConfig(parsed, {
-    identity: identity ?? undefined,
-    timeoutMs: Math.min(800, overallTimeoutMs),
-  });
-  if (!config) {
-    return { target: rawTarget, identity: identity ?? undefined };
-  }
-  const target = buildSshTarget({
-    user: config.user ?? parsed.user,
-    host: config.host ?? parsed.host,
-    port: config.port ?? parsed.port,
-  });
-  if (!target) {
-    return { target: rawTarget, identity: identity ?? undefined };
-  }
-  const identityFile =
-    identity ?? config.identityFiles.find((entry) => entry.trim().length > 0)?.trim() ?? undefined;
-  return { target, identity: identityFile };
 }

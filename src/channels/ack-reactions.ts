@@ -1,13 +1,26 @@
+import { toErrorObject } from "../infra/errors.js";
+
 export type AckReactionScope = "all" | "direct" | "group-all" | "group-mentions" | "off" | "none";
 
-export type WhatsAppAckReactionMode = "always" | "mentions" | "never";
+export type AckReactionHandle = {
+  ackReactionPromise: Promise<boolean>;
+  ackReactionValue: string;
+  remove: () => Promise<void>;
+};
 
+/**
+ * Inputs for the reusable direct/group/mention gate shared by channel plugins.
+ *
+ * `effectiveWasMentioned` should already include any channel-specific mention
+ * normalization. `shouldBypassMention` is only for an earlier channel gate that
+ * proved the active conversation, such as a group activation state.
+ */
 export type AckReactionGateParams = {
   scope: AckReactionScope | undefined;
+  inboundEventKind?: "user_request" | "room_event";
   isDirect: boolean;
   isGroup: boolean;
   isMentionableGroup: boolean;
-  requireMention: boolean;
   canDetectMention: boolean;
   effectiveWasMentioned: boolean;
   shouldBypassMention?: boolean;
@@ -16,6 +29,11 @@ export type AckReactionGateParams = {
 export function shouldAckReaction(params: AckReactionGateParams): boolean {
   const scope = params.scope ?? "group-mentions";
   if (scope === "off" || scope === "none") {
+    return false;
+  }
+  // Ambient room events stay silent unless the operator explicitly chose the
+  // unconditional scope. This keeps every channel on the same `all` contract.
+  if (params.inboundEventKind === "room_event" && scope !== "all") {
     return false;
   }
   if (scope === "all") {
@@ -28,54 +46,49 @@ export function shouldAckReaction(params: AckReactionGateParams): boolean {
     return params.isGroup;
   }
   if (scope === "group-mentions") {
-    if (!params.isMentionableGroup) {
+    if (!params.isMentionableGroup || !params.canDetectMention) {
       return false;
     }
-    if (!params.requireMention) {
-      return false;
-    }
-    if (!params.canDetectMention) {
-      return false;
-    }
+    // Whether the group *requires* a mention is a separate policy: a group that
+    // answers everything still acks the messages that address the agent.
+    // Group activation can stand in for a literal mention when another gate already established
+    // that this inbound message belongs to the active conversation.
     return params.effectiveWasMentioned || params.shouldBypassMention === true;
   }
   return false;
 }
 
-export function shouldAckReactionForWhatsApp(params: {
-  emoji: string;
-  isDirect: boolean;
-  isGroup: boolean;
-  directEnabled: boolean;
-  groupMode: WhatsAppAckReactionMode;
-  wasMentioned: boolean;
-  groupActivated: boolean;
-}): boolean {
-  if (!params.emoji) {
-    return false;
+export function createAckReactionHandle(params: {
+  ackReactionValue: string;
+  send: () => Promise<void>;
+  remove: () => Promise<void>;
+  onSendError?: (err: unknown) => void;
+}): AckReactionHandle | null {
+  const ackReactionValue = params.ackReactionValue.trim();
+  if (!ackReactionValue) {
+    return null;
   }
-  if (params.isDirect) {
-    return params.directEnabled;
+
+  let sendPromise: Promise<void>;
+  try {
+    // Send starts eagerly so callers can keep processing while the channel API resolves.
+    sendPromise = params.send();
+  } catch (err) {
+    // Convert sync throws into the same Promise<boolean> flow used for async send failures.
+    sendPromise = Promise.reject(toErrorObject(err, "Non-Error rejection"));
   }
-  if (!params.isGroup) {
-    return false;
-  }
-  if (params.groupMode === "never") {
-    return false;
-  }
-  if (params.groupMode === "always") {
-    return true;
-  }
-  return shouldAckReaction({
-    scope: "group-mentions",
-    isDirect: false,
-    isGroup: true,
-    isMentionableGroup: true,
-    requireMention: true,
-    canDetectMention: true,
-    effectiveWasMentioned: params.wasMentioned,
-    shouldBypassMention: params.groupActivated,
-  });
+
+  return {
+    ackReactionPromise: sendPromise.then(
+      () => true,
+      (err: unknown) => {
+        params.onSendError?.(err);
+        return false;
+      },
+    ),
+    ackReactionValue,
+    remove: params.remove,
+  };
 }
 
 export function removeAckReactionAfterReply(params: {
@@ -85,19 +98,28 @@ export function removeAckReactionAfterReply(params: {
   remove: () => Promise<void>;
   onError?: (err: unknown) => void;
 }) {
-  if (!params.removeAfterReply) {
+  if (!params.removeAfterReply || !params.ackReactionPromise || !params.ackReactionValue) {
     return;
   }
-  if (!params.ackReactionPromise) {
-    return;
-  }
-  if (!params.ackReactionValue) {
-    return;
-  }
+  // Only remove if the send actually succeeded; failed sends are already reported by the handle.
   void params.ackReactionPromise.then((didAck) => {
     if (!didAck) {
       return;
     }
-    params.remove().catch((err) => params.onError?.(err));
+    params.remove().catch((err: unknown) => params.onError?.(err));
+  });
+}
+
+export function removeAckReactionHandleAfterReply(params: {
+  removeAfterReply: boolean;
+  ackReaction: AckReactionHandle | null | undefined;
+  onError?: (err: unknown) => void;
+}) {
+  removeAckReactionAfterReply({
+    removeAfterReply: params.removeAfterReply,
+    ackReactionPromise: params.ackReaction?.ackReactionPromise ?? null,
+    ackReactionValue: params.ackReaction?.ackReactionValue ?? null,
+    remove: params.ackReaction?.remove ?? (async () => {}),
+    onError: params.onError,
   });
 }

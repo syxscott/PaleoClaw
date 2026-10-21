@@ -1,58 +1,22 @@
-import { resolveDefaultAgentId } from "../agents/agent-scope.js";
-import { normalizeChatChannelId } from "../channels/registry.js";
-import { listRouteBindings } from "../config/bindings.js";
-import type { OpenClawConfig } from "../config/config.js";
-import type { AgentRouteBinding } from "../config/types.agents.js";
-import { normalizeAccountId, normalizeAgentId } from "./session-key.js";
-
-function normalizeBindingChannelId(raw?: string | null): string | null {
-  const normalized = normalizeChatChannelId(raw);
-  if (normalized) {
-    return normalized;
-  }
-  const fallback = (raw ?? "").trim().toLowerCase();
-  return fallback || null;
-}
-
-export function listBindings(cfg: OpenClawConfig): AgentRouteBinding[] {
-  return listRouteBindings(cfg);
-}
-
-function resolveNormalizedBindingMatch(binding: AgentRouteBinding): {
-  agentId: string;
-  accountId: string;
-  channelId: string;
-} | null {
-  if (!binding || typeof binding !== "object") {
-    return null;
-  }
-  const match = binding.match;
-  if (!match || typeof match !== "object") {
-    return null;
-  }
-  const channelId = normalizeBindingChannelId(match.channel);
-  if (!channelId) {
-    return null;
-  }
-  const accountId = typeof match.accountId === "string" ? match.accountId.trim() : "";
-  if (!accountId || accountId === "*") {
-    return null;
-  }
-  return {
-    agentId: normalizeAgentId(binding.agentId),
-    accountId: normalizeAccountId(accountId),
-    channelId,
-  };
-}
+import { tryResolveAgentOperationAgentId } from "../agents/agent-scope-config.js";
+import { isRouteBinding, listConfiguredBindings, listRouteBindings } from "../config/bindings.js";
+import type { OpenClawConfig } from "../config/types.openclaw.js";
+import {
+  normalizeRouteBindingChannelId,
+  resolveNormalizedRouteBindingMatch,
+} from "./binding-scope.js";
+import { normalizeAgentId } from "./session-key.js";
 
 export function listBoundAccountIds(cfg: OpenClawConfig, channelId: string): string[] {
-  const normalizedChannel = normalizeBindingChannelId(channelId);
+  const normalizedChannel = normalizeRouteBindingChannelId(channelId);
   if (!normalizedChannel) {
     return [];
   }
   const ids = new Set<string>();
-  for (const binding of listBindings(cfg)) {
-    const resolved = resolveNormalizedBindingMatch(binding);
+  for (const binding of listRouteBindings(cfg)) {
+    const resolved = resolveNormalizedRouteBindingMatch(binding, {
+      includeImplicitDefaultAccount: true,
+    });
     if (!resolved || resolved.channelId !== normalizedChannel) {
       continue;
     }
@@ -65,13 +29,20 @@ export function resolveDefaultAgentBoundAccountId(
   cfg: OpenClawConfig,
   channelId: string,
 ): string | null {
-  const normalizedChannel = normalizeBindingChannelId(channelId);
+  const normalizedChannel = normalizeRouteBindingChannelId(channelId);
   if (!normalizedChannel) {
     return null;
   }
-  const defaultAgentId = normalizeAgentId(resolveDefaultAgentId(cfg));
-  for (const binding of listBindings(cfg)) {
-    const resolved = resolveNormalizedBindingMatch(binding);
+  const ownerAgentId = tryResolveAgentOperationAgentId(cfg);
+  if (!ownerAgentId) {
+    return null;
+  }
+  const defaultAgentId = normalizeAgentId(ownerAgentId);
+  for (const binding of listConfiguredBindings(cfg)) {
+    if (!isRouteBinding(binding)) {
+      continue;
+    }
+    const resolved = resolveNormalizedRouteBindingMatch(binding);
     if (
       !resolved ||
       resolved.channelId !== normalizedChannel ||
@@ -86,11 +57,15 @@ export function resolveDefaultAgentBoundAccountId(
 
 export function buildChannelAccountBindings(cfg: OpenClawConfig) {
   const map = new Map<string, Map<string, string[]>>();
-  for (const binding of listBindings(cfg)) {
-    const resolved = resolveNormalizedBindingMatch(binding);
+  for (const binding of listRouteBindings(cfg)) {
+    const resolved = resolveNormalizedRouteBindingMatch(binding, {
+      includeImplicitDefaultAccount: true,
+    });
     if (!resolved) {
       continue;
     }
+    // Map shape is channel -> agent -> accounts so callers can answer both
+    // "what accounts exist here" and "which accounts are bound to this agent".
     const byAgent = map.get(resolved.channelId) ?? new Map<string, string[]>();
     const list = byAgent.get(resolved.agentId) ?? [];
     if (!list.includes(resolved.accountId)) {
@@ -103,12 +78,8 @@ export function buildChannelAccountBindings(cfg: OpenClawConfig) {
 }
 
 export function resolvePreferredAccountId(params: {
-  accountIds: string[];
   defaultAccountId: string;
   boundAccounts: string[];
 }): string {
-  if (params.boundAccounts.length > 0) {
-    return params.boundAccounts[0];
-  }
-  return params.defaultAccountId;
+  return params.boundAccounts[0] ?? params.defaultAccountId;
 }

@@ -1,33 +1,7 @@
-import type { RuntimeEnv } from "paleoclaw/plugin-sdk/tlon";
+import { formatErrorMessage } from "paleoclaw/plugin-sdk/error-runtime";
+import type { RuntimeEnv } from "paleoclaw/plugin-sdk/runtime";
+import { asNullableRecord as asRecord } from "paleoclaw/plugin-sdk/string-coerce-runtime";
 import type { Foreigns } from "../urbit/foreigns.js";
-import { formatChangesDate } from "./utils.js";
-
-export async function fetchGroupChanges(
-  api: { scry: (path: string) => Promise<unknown> },
-  runtime: RuntimeEnv,
-  daysAgo = 5,
-) {
-  try {
-    const changeDate = formatChangesDate(daysAgo);
-    runtime.log?.(`[tlon] Fetching group changes since ${daysAgo} days ago (${changeDate})...`);
-    const changes = await api.scry(`/groups-ui/v5/changes/${changeDate}.json`);
-    if (changes) {
-      runtime.log?.("[tlon] Successfully fetched changes data");
-      return changes;
-    }
-    return null;
-  } catch (error: any) {
-    runtime.log?.(
-      `[tlon] Failed to fetch changes (falling back to full init): ${error?.message ?? String(error)}`,
-    );
-    return null;
-  }
-}
-
-export interface InitData {
-  channels: string[];
-  foreigns: Foreigns | null;
-}
 
 /**
  * Fetch groups-ui init data, returning channels and foreigns.
@@ -36,23 +10,16 @@ export interface InitData {
 export async function fetchInitData(
   api: { scry: (path: string) => Promise<unknown> },
   runtime: RuntimeEnv,
-): Promise<InitData> {
+) {
   try {
     runtime.log?.("[tlon] Fetching groups-ui init data...");
-    const initData = (await api.scry("/groups-ui/v6/init.json")) as any;
+    const initData = asRecord(await api.scry("/groups-ui/v6/init.json"));
 
-    const channels: string[] = [];
-    if (initData?.groups) {
-      for (const groupData of Object.values(initData.groups as Record<string, any>)) {
-        if (groupData && typeof groupData === "object" && groupData.channels) {
-          for (const channelNest of Object.keys(groupData.channels)) {
-            if (channelNest.startsWith("chat/")) {
-              channels.push(channelNest);
-            }
-          }
-        }
-      }
-    }
+    const channels = Object.values(asRecord(initData?.groups) ?? {}).flatMap((group) =>
+      Object.keys(asRecord(asRecord(group)?.channels) ?? {}).filter((nest) =>
+        nest.startsWith("chat/"),
+      ),
+    );
 
     if (channels.length > 0) {
       runtime.log?.(`[tlon] Auto-discovered ${channels.length} chat channel(s)`);
@@ -60,7 +27,8 @@ export async function fetchInitData(
       runtime.log?.("[tlon] No chat channels found via auto-discovery");
     }
 
-    const foreigns = (initData?.foreigns as Foreigns) || null;
+    const foreignsValue = asRecord(initData?.foreigns);
+    const foreigns = foreignsValue ? (foreignsValue as Foreigns) : null;
     if (foreigns) {
       const pendingCount = Object.values(foreigns).filter((f) =>
         f.invites?.some((i) => i.valid),
@@ -71,16 +39,8 @@ export async function fetchInitData(
     }
 
     return { channels, foreigns };
-  } catch (error: any) {
-    runtime.log?.(`[tlon] Init data fetch failed: ${error?.message ?? String(error)}`);
+  } catch (error: unknown) {
+    runtime.log?.(`[tlon] Init data fetch failed: ${formatErrorMessage(error)}`);
     return { channels: [], foreigns: null };
   }
-}
-
-export async function fetchAllChannels(
-  api: { scry: (path: string) => Promise<unknown> },
-  runtime: RuntimeEnv,
-): Promise<string[]> {
-  const { channels } = await fetchInitData(api, runtime);
-  return channels;
 }

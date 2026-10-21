@@ -1,39 +1,70 @@
-import type { FeishuMessageEvent } from "./bot.js";
+import { escapeRegExp } from "paleoclaw/plugin-sdk/text-utility-runtime";
+import type { FeishuMessageEvent } from "./event-types.js";
+import type { MentionTarget } from "./mention-target.types.js";
+import { isFeishuGroupChatType } from "./types.js";
 
-/**
- * Escape regex metacharacters so user-controlled mention fields are treated literally.
- */
-export function escapeRegExp(input: string): string {
-  return input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-/**
- * Mention target user info
- */
-export type MentionTarget = {
-  openId: string;
-  name: string;
-  key: string; // Placeholder in original message, e.g. @_user_1
+type FeishuMentionLike = {
+  key?: string;
+  id?: {
+    open_id?: string;
+    user_id?: string;
+    union_id?: string;
+  };
+  name?: string;
 };
 
-/**
- * Extract mention targets from message event (excluding the bot itself)
- */
+export type FeishuTextMention = {
+  key: string;
+  id: string | { open_id?: string };
+  name: string;
+};
+
+export function normalizeMentions(
+  text: string,
+  mentions?: ReadonlyArray<FeishuTextMention>,
+  botStripId?: string,
+): string {
+  if (!mentions || mentions.length === 0) {
+    return text;
+  }
+  const escapeName = (value: string) => value.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const replacements = new Map<string, string>();
+  for (const mention of mentions) {
+    // Events nest open_id; message get/list return the selected identifier directly.
+    const mentionId = typeof mention.id === "string" ? mention.id : mention.id.open_id;
+    const replacement =
+      botStripId && mentionId === botStripId
+        ? ""
+        : mentionId
+          ? `<at user_id="${mentionId}">${escapeName(mention.name)}</at>`
+          : `@${mention.name}`;
+    replacements.set(mention.key, replacement);
+  }
+  // Longest keys win; a single pass keeps placeholder-like display names literal.
+  const keys = [...replacements.keys()].toSorted((a, b) => b.length - a.length).map(escapeRegExp);
+  return text.replace(new RegExp(keys.join("|"), "g"), (key) => replacements.get(key)!).trim();
+}
+
+export function isFeishuBroadcastMention(mention: FeishuMentionLike): boolean {
+  const normalizedKey = mention.key?.trim().toLowerCase();
+  if (normalizedKey === "@all" || normalizedKey === "@_all") {
+    return true;
+  }
+
+  const mentionIds = [mention.id?.open_id, mention.id?.user_id, mention.id?.union_id];
+  return mentionIds.some((id) => id?.trim().toLowerCase() === "all");
+}
+
 export function extractMentionTargets(
   event: FeishuMessageEvent,
-  botOpenId?: string,
+  botOpenId: string,
 ): MentionTarget[] {
   const mentions = event.message.mentions ?? [];
 
   return mentions
-    .filter((m) => {
-      // Exclude the bot itself
-      if (botOpenId && m.id.open_id === botOpenId) {
-        return false;
-      }
-      // Must have open_id
-      return !!m.id.open_id;
-    })
+    .filter(
+      (m) => !isFeishuBroadcastMention(m) && m.id.open_id !== botOpenId && Boolean(m.id.open_id),
+    )
     .map((m) => ({
       openId: m.id.open_id!,
       name: m.name,
@@ -52,82 +83,26 @@ export function isMentionForwardRequest(event: FeishuMessageEvent, botOpenId?: s
   if (mentions.length === 0) {
     return false;
   }
-
-  const isDirectMessage = event.message.chat_type !== "group";
-  const hasOtherMention = mentions.some((m) => m.id.open_id !== botOpenId);
-
-  if (isDirectMessage) {
-    // DM: trigger if any non-bot user is mentioned
-    return hasOtherMention;
-  } else {
-    // Group: need to mention both bot and other users
-    const hasBotMention = mentions.some((m) => m.id.open_id === botOpenId);
-    return hasBotMention && hasOtherMention;
-  }
-}
-
-/**
- * Extract message body from text (remove @ placeholders)
- */
-export function extractMessageBody(text: string, allMentionKeys: string[]): string {
-  let result = text;
-
-  // Remove all @ placeholders
-  for (const key of allMentionKeys) {
-    result = result.replace(new RegExp(escapeRegExp(key), "g"), "");
+  const normalizedBotOpenId = botOpenId?.trim();
+  if (!normalizedBotOpenId) {
+    return false;
   }
 
-  return result.replace(/\s+/g, " ").trim();
+  const isDirectMessage = !isFeishuGroupChatType(event.message.chat_type);
+  const userMentions = mentions.filter((m) => !isFeishuBroadcastMention(m));
+  const hasOtherMention = userMentions.some((m) => m.id.open_id !== normalizedBotOpenId);
+
+  return (
+    hasOtherMention &&
+    (isDirectMessage || userMentions.some((m) => m.id.open_id === normalizedBotOpenId))
+  );
 }
 
-/**
- * Format @mention for text message
- */
-export function formatMentionForText(target: MentionTarget): string {
-  return `<at user_id="${target.openId}">${target.name}</at>`;
-}
-
-/**
- * Format @everyone for text message
- */
-export function formatMentionAllForText(): string {
-  return `<at user_id="all">Everyone</at>`;
-}
-
-/**
- * Format @mention for card message (lark_md)
- */
-export function formatMentionForCard(target: MentionTarget): string {
-  return `<at id=${target.openId}></at>`;
-}
-
-/**
- * Format @everyone for card message
- */
-export function formatMentionAllForCard(): string {
-  return `<at id=all></at>`;
-}
-
-/**
- * Build complete message with @mentions (text format)
- */
-export function buildMentionedMessage(targets: MentionTarget[], message: string): string {
-  if (targets.length === 0) {
-    return message;
-  }
-
-  const mentionParts = targets.map((t) => formatMentionForText(t));
-  return `${mentionParts.join(" ")} ${message}`;
-}
-
-/**
- * Build card content with @mentions (Markdown format)
- */
 export function buildMentionedCardContent(targets: MentionTarget[], message: string): string {
   if (targets.length === 0) {
     return message;
   }
 
-  const mentionParts = targets.map((t) => formatMentionForCard(t));
+  const mentionParts = targets.map((target) => `<at id=${target.openId}></at>`);
   return `${mentionParts.join(" ")} ${message}`;
 }

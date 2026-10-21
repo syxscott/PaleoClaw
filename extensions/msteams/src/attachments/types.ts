@@ -1,4 +1,5 @@
 export type MSTeamsAttachmentLike = {
+  id?: string | null;
   contentType?: string | null;
   contentUrl?: string | null;
   name?: string | null;
@@ -11,9 +12,11 @@ export type MSTeamsAccessTokenProvider = {
 };
 
 export type MSTeamsInboundMedia = {
-  path: string;
+  path?: string;
   contentType?: string;
-  placeholder: string;
+  kind: Extract<import("paleoclaw/plugin-sdk/media-runtime").MediaKind, "image" | "document">;
+  /** Transport resource identity used only to align fallback downloads. */
+  sourceId?: string;
 };
 
 export type MSTeamsHtmlAttachmentSummary = {
@@ -22,7 +25,6 @@ export type MSTeamsHtmlAttachmentSummary = {
   dataImages: number;
   cidImages: number;
   srcHosts: string[];
-  attachmentTags: number;
   attachmentIds: string[];
 };
 
@@ -32,6 +34,5 @@ export type MSTeamsGraphMediaResult = {
   attachmentCount?: number;
   hostedStatus?: number;
   attachmentStatus?: number;
-  messageUrl?: string;
   tokenError?: boolean;
 };

@@ -1,165 +1,105 @@
-import path from "node:path";
-import { resolveAgentSessionDirs } from "../../agents/session-dirs.js";
-import type { OpenClawConfig } from "../../config/config.js";
-import { loadConfig } from "../../config/config.js";
-import { resolveStateDir } from "../../config/paths.js";
-import { loadSessionStore, resolveStorePath, updateSessionStore } from "../../config/sessions.js";
+/** SQLite-backed ACP session metadata storage keyed through session-store entries. */
+import type { SessionAcpMeta } from "../../config/sessions/types.js";
+import type { OpenClawConfig } from "../../config/types.openclaw.js";
+import { warnPluginSdkDeprecation } from "../../plugins/sdk-deprecation.js";
+import { isIncognitoSessionKey } from "../../routing/session-key.js";
+import { sessionChanges } from "../../sessions/session-row-changes.js";
+import { IncognitoSessionSyncAccessError } from "../../state/incognito-session-error.js";
 import {
-  mergeSessionEntry,
-  type SessionAcpMeta,
-  type SessionEntry,
-} from "../../config/sessions/types.js";
-import { parseAgentSessionKey } from "../../routing/session-key.js";
+  type OpenClawStateDatabaseOptions,
+  runOpenClawStateWriteTransaction,
+} from "../../state/paleoclaw-state-db.js";
+import { parseAcpDatabaseSessionKey, upsertAcpSessionMetaRow } from "./session-meta-keys.js";
+import { readAcpSessionMetaForEntry } from "./session-meta-readonly.js";
+import { readSessionEntryFromStore, type AcpSessionStoreEntry } from "./session-meta-store.js";
+import { bindAcpSessionMeta } from "./session-meta-write.kernel.js";
 
-export type AcpSessionStoreEntry = {
-  cfg: OpenClawConfig;
-  storePath: string;
+/** ACP metadata joined with its legacy session-store row and config context. */
+export { resolveSessionStorePathForAcp } from "./session-meta-store.js";
+
+export type { AcpSessionStoreEntry } from "./session-meta-store.js";
+
+export function writeAcpSessionMetaForMigration(params: {
   sessionKey: string;
-  storeSessionKey: string;
-  entry?: SessionEntry;
-  acp?: SessionAcpMeta;
-  storeReadFailed?: boolean;
-};
-
-function resolveStoreSessionKey(store: Record<string, SessionEntry>, sessionKey: string): string {
-  const normalized = sessionKey.trim();
-  if (!normalized) {
-    return "";
+  sessionId?: string;
+  lifecycleRevision?: string;
+  meta: SessionAcpMeta;
+  env?: NodeJS.ProcessEnv;
+  database?: OpenClawStateDatabaseOptions["database"];
+  databasePath?: string;
+  now?: () => number;
+}): void {
+  const sessionKey = params.sessionKey.trim();
+  if (!sessionKey) {
+    return;
   }
-  if (store[normalized]) {
-    return normalized;
-  }
-  const lower = normalized.toLowerCase();
-  if (store[lower]) {
-    return lower;
-  }
-  for (const key of Object.keys(store)) {
-    if (key.toLowerCase() === lower) {
-      return key;
-    }
-  }
-  return lower;
-}
-
-export function resolveSessionStorePathForAcp(params: {
-  sessionKey: string;
-  cfg?: OpenClawConfig;
-}): { cfg: OpenClawConfig; storePath: string } {
-  const cfg = params.cfg ?? loadConfig();
-  const parsed = parseAgentSessionKey(params.sessionKey);
-  const storePath = resolveStorePath(cfg.session?.store, {
-    agentId: parsed?.agentId,
+  const row = bindAcpSessionMeta({
+    sessionKey,
+    sessionId: params.sessionId,
+    lifecycleRevision: params.lifecycleRevision,
+    meta: params.meta,
+    updatedAt: params.now?.() ?? Date.now(),
   });
-  return { cfg, storePath };
+  runOpenClawStateWriteTransaction(
+    (database) => {
+      upsertAcpSessionMetaRow(database.db, row);
+      const identity = parseAcpDatabaseSessionKey(sessionKey);
+      if (identity) {
+        sessionChanges.emit(
+          { sessionKey: identity.storeSessionKey, agentId: identity.agentId },
+          database.db,
+        );
+      }
+    },
+    { database: params.database, env: params.env, path: params.databasePath },
+  );
 }
 
+/** @deprecated Use readAcpSessionEntryAsync; final compatibility day: 2026-12-31. Removal in the first January 2027 stable release. */
 export function readAcpSessionEntry(params: {
   sessionKey: string;
+  agentId?: string;
   cfg?: OpenClawConfig;
+  clone?: boolean;
+  env?: NodeJS.ProcessEnv;
+  databasePath?: string;
 }): AcpSessionStoreEntry | null {
+  warnPluginSdkDeprecation({
+    family: "acp-session",
+    method: "readAcpSessionEntry",
+    replacement: "readAcpSessionEntryAsync",
+  });
   const sessionKey = params.sessionKey.trim();
   if (!sessionKey) {
     return null;
   }
-  const { cfg, storePath } = resolveSessionStorePathForAcp({
-    sessionKey,
-    cfg: params.cfg,
-  });
-  let store: Record<string, SessionEntry>;
-  let storeReadFailed = false;
-  try {
-    store = loadSessionStore(storePath);
-  } catch {
-    storeReadFailed = true;
-    store = {};
+  if (isIncognitoSessionKey(sessionKey)) {
+    throw new IncognitoSessionSyncAccessError("readAcpSessionEntry", "readAcpSessionEntryAsync");
   }
-  const storeSessionKey = resolveStoreSessionKey(store, sessionKey);
-  const entry = store[storeSessionKey];
+  const storeEntry = readSessionEntryFromStore(params);
+  const acp = readAcpSessionMetaForEntry({
+    sessionKey: storeEntry.storeSessionKey,
+    agentId: storeEntry.agentId,
+    cfg: storeEntry.cfg,
+    entry: storeEntry.entry,
+    env: params.env,
+    databasePath: params.databasePath,
+  });
   return {
-    cfg,
-    storePath,
+    cfg: storeEntry.cfg,
+    agentId: storeEntry.agentId,
+    storePath: storeEntry.storePath,
     sessionKey,
-    storeSessionKey,
-    entry,
-    acp: entry?.acp,
-    storeReadFailed,
+    storeSessionKey: storeEntry.storeSessionKey,
+    entry: storeEntry.entry,
+    acp,
+    storeReadFailed: storeEntry.storeReadFailed,
   };
 }
 
-export async function listAcpSessionEntries(params: {
-  cfg?: OpenClawConfig;
-}): Promise<AcpSessionStoreEntry[]> {
-  const cfg = params.cfg ?? loadConfig();
-  const stateDir = resolveStateDir(process.env);
-  const sessionDirs = await resolveAgentSessionDirs(stateDir);
-  const entries: AcpSessionStoreEntry[] = [];
+export { listAcpSessionEntries } from "./session-meta-list.js";
 
-  for (const sessionsDir of sessionDirs) {
-    const storePath = path.join(sessionsDir, "sessions.json");
-    let store: Record<string, SessionEntry>;
-    try {
-      store = loadSessionStore(storePath);
-    } catch {
-      continue;
-    }
-    for (const [sessionKey, entry] of Object.entries(store)) {
-      if (!entry?.acp) {
-        continue;
-      }
-      entries.push({
-        cfg,
-        storePath,
-        sessionKey,
-        storeSessionKey: sessionKey,
-        entry,
-        acp: entry.acp,
-      });
-    }
-  }
+export { readAcpSessionEntryAsync, readAcpSessionMetaAsync } from "./session-meta-read.js";
+export { upsertAcpSessionMeta, upsertAcpSessionMetaForControl } from "./session-meta-write.js";
 
-  return entries;
-}
-
-export async function upsertAcpSessionMeta(params: {
-  sessionKey: string;
-  cfg?: OpenClawConfig;
-  mutate: (
-    current: SessionAcpMeta | undefined,
-    entry: SessionEntry | undefined,
-  ) => SessionAcpMeta | null | undefined;
-}): Promise<SessionEntry | null> {
-  const sessionKey = params.sessionKey.trim();
-  if (!sessionKey) {
-    return null;
-  }
-  const { storePath } = resolveSessionStorePathForAcp({
-    sessionKey,
-    cfg: params.cfg,
-  });
-  return await updateSessionStore(
-    storePath,
-    (store) => {
-      const storeSessionKey = resolveStoreSessionKey(store, sessionKey);
-      const currentEntry = store[storeSessionKey];
-      const nextMeta = params.mutate(currentEntry?.acp, currentEntry);
-      if (nextMeta === undefined) {
-        return currentEntry ?? null;
-      }
-      if (nextMeta === null && !currentEntry) {
-        return null;
-      }
-
-      const nextEntry = mergeSessionEntry(currentEntry, {
-        acp: nextMeta ?? undefined,
-      });
-      if (nextMeta === null) {
-        delete nextEntry.acp;
-      }
-      store[storeSessionKey] = nextEntry;
-      return nextEntry;
-    },
-    {
-      activeSessionKey: sessionKey.toLowerCase(),
-    },
-  );
-}
+export { prepareAcpSessionControlRead } from "./session-meta-control.js";

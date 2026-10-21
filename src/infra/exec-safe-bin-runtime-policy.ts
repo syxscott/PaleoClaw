@@ -6,14 +6,14 @@ import {
   type SafeBinProfileFixture,
   type SafeBinProfileFixtures,
 } from "./exec-safe-bin-policy.js";
+import { normalizeSafeBinName } from "./exec-safe-bin-semantics.js";
 import {
   getTrustedSafeBinDirs,
   listWritableExplicitTrustedSafeBinDirs,
   normalizeTrustedSafeBinDirs,
-  type WritableTrustedSafeBinDir,
 } from "./exec-safe-bin-trust.js";
 
-export type ExecSafeBinConfigScope = {
+type ExecSafeBinConfigScope = {
   safeBins?: string[] | null;
   safeBinProfiles?: SafeBinProfileFixtures | null;
   safeBinTrustedDirs?: string[] | null;
@@ -21,6 +21,7 @@ export type ExecSafeBinConfigScope = {
 
 const INTERPRETER_LIKE_SAFE_BINS = new Set([
   "ash",
+  "awk",
   "bash",
   "busybox",
   "bun",
@@ -30,8 +31,12 @@ const INTERPRETER_LIKE_SAFE_BINS = new Set([
   "dash",
   "deno",
   "fish",
+  "gawk",
+  "gsed",
   "ksh",
   "lua",
+  "mawk",
+  "nawk",
   "node",
   "nodejs",
   "perl",
@@ -45,29 +50,16 @@ const INTERPRETER_LIKE_SAFE_BINS = new Set([
   "python2",
   "python3",
   "ruby",
+  "sed",
   "sh",
   "toybox",
   "wscript",
   "zsh",
 ]);
 
-const INTERPRETER_LIKE_PATTERNS = [
-  /^python\d+(?:\.\d+)?$/,
-  /^ruby\d+(?:\.\d+)?$/,
-  /^perl\d+(?:\.\d+)?$/,
-  /^php\d+(?:\.\d+)?$/,
-  /^node\d+(?:\.\d+)?$/,
-];
+const VERSIONED_INTERPRETER_PATTERN = /^(?:python|ruby|perl|php|node)\d+(?:\.\d+)?$/;
 
-function normalizeSafeBinName(raw: string): string {
-  const trimmed = raw.trim().toLowerCase();
-  if (!trimmed) {
-    return "";
-  }
-  const tail = trimmed.split(/[\\/]/).at(-1);
-  return tail ?? trimmed;
-}
-
+/** Returns true for safeBins that can interpret scripts or execute broad embedded programs. */
 export function isInterpreterLikeSafeBin(raw: string): boolean {
   const normalized = normalizeSafeBinName(raw);
   if (!normalized) {
@@ -76,7 +68,7 @@ export function isInterpreterLikeSafeBin(raw: string): boolean {
   if (INTERPRETER_LIKE_SAFE_BINS.has(normalized)) {
     return true;
   }
-  return INTERPRETER_LIKE_PATTERNS.some((pattern) => pattern.test(normalized));
+  return VERSIONED_INTERPRETER_PATTERN.test(normalized);
 }
 
 export function listInterpreterLikeSafeBins(entries: Iterable<string>): string[] {
@@ -86,6 +78,7 @@ export function listInterpreterLikeSafeBins(entries: Iterable<string>): string[]
     .toSorted();
 }
 
+/** Merges global and local safe-bin profile fixtures, with local definitions winning. */
 export function resolveMergedSafeBinProfileFixtures(params: {
   global?: ExecSafeBinConfigScope | null;
   local?: ExecSafeBinConfigScope | null;
@@ -111,7 +104,6 @@ export function resolveExecSafeBinRuntimePolicy(params: {
   trustedSafeBinDirs: ReadonlySet<string>;
   unprofiledSafeBins: string[];
   unprofiledInterpreterSafeBins: string[];
-  writableTrustedSafeBinDirs: ReadonlyArray<WritableTrustedSafeBinDir>;
 } {
   const safeBins = resolveSafeBins(params.local?.safeBins ?? params.global?.safeBins);
   const safeBinProfiles = resolveSafeBinProfiles(
@@ -129,18 +121,11 @@ export function resolveExecSafeBinRuntimePolicy(params: {
   ];
   const trustedSafeBinDirs = getTrustedSafeBinDirs({
     extraDirs: explicitTrustedSafeBinDirs,
+    safeBins: Array.from(safeBins),
   });
-  const writableTrustedSafeBinDirs = listWritableExplicitTrustedSafeBinDirs(
-    explicitTrustedSafeBinDirs,
-  );
   if (params.onWarning) {
-    for (const hit of writableTrustedSafeBinDirs) {
-      const scope =
-        hit.worldWritable || hit.groupWritable
-          ? hit.worldWritable
-            ? "world-writable"
-            : "group-writable"
-          : "writable";
+    for (const hit of listWritableExplicitTrustedSafeBinDirs(explicitTrustedSafeBinDirs)) {
+      const scope = hit.worldWritable ? "world-writable" : "group-writable";
       params.onWarning(
         `exec: safeBinTrustedDirs includes ${scope} directory '${hit.dir}'; remove trust or tighten permissions (for example chmod 755).`,
       );
@@ -152,6 +137,5 @@ export function resolveExecSafeBinRuntimePolicy(params: {
     trustedSafeBinDirs,
     unprofiledSafeBins,
     unprofiledInterpreterSafeBins: listInterpreterLikeSafeBins(unprofiledSafeBins),
-    writableTrustedSafeBinDirs,
   };
 }

@@ -1,0 +1,47 @@
+{
+  "name": "@paleoclaw/google-meet",
+  "version": "2026.10.5",
+  "description": "paleoclaw Google Meet participant plugin for joining calls through Chrome or Twilio transports.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/paleoclaw/paleoclaw"
+  },
+  "type": "module",
+  "dependencies": {
+    "jszip": "3.10.2",
+    "typebox": "1.3.37"
+  },
+  "devDependencies": {
+    "@paleoclaw/plugin-sdk": "workspace:*",
+    "paleoclaw": "workspace:*"
+  },
+  "peerDependencies": {
+    "paleoclaw": ">=2026.10.5"
+  },
+  "peerDependenciesMeta": {
+    "paleoclaw": {
+      "optional": true
+    }
+  },
+  "paleoclaw": {
+    "extensions": [
+      "./index.ts"
+    ],
+    "install": {
+      "clawhubSpec": "PaleoHub:@paleoclaw/google-meet",
+      "npmSpec": "@paleoclaw/google-meet",
+      "defaultChoice": "npm",
+      "minHostVersion": ">=2026.4.20"
+    },
+    "compat": {
+      "pluginApi": ">=2026.10.5"
+    },
+    "build": {
+      "openclawVersion": "2026.10.5"
+    },
+    "release": {
+      "publishToClawHub": true,
+      "publishToNpm": true
+    }
+  }
+}

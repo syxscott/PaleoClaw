@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: paleoclaw
+  labels:
+    app: paleoclaw
+spec:
+  type: ClusterIP
+  selector:
+    app: paleoclaw
+  ports:
+    - name: gateway
+      port: 18789
+      targetPort: 18789
+      protocol: TCP

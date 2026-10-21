@@ -1,0 +1,6 @@
+{
+  "name": "@acme/delegating-agent",
+  "version": "1.0.0",
+  "type": "module",
+  "paleoclaw": { "claw": "CLAW.md" }
+}

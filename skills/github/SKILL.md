@@ -1,6 +1,6 @@
 ---
 name: github
-description: "GitHub operations via `gh` CLI: issues, PRs, CI runs, code review, API queries. Use when: (1) checking PR status or CI, (2) creating/commenting on issues, (3) listing/filtering PRs or issues, (4) viewing run logs. NOT for: complex web UI interactions requiring manual browser flows (use browser tooling when available), bulk operations across many repos (script with gh api), or when gh auth is not configured."
+description: "GitHub CLI for issues, PRs, CI/check logs, comments, reviews, releases, repos, and gh api queries."
 metadata:
   {
     "paleoclaw":
@@ -16,148 +16,125 @@ metadata:
               "bins": ["gh"],
               "label": "Install GitHub CLI (brew)",
             },
-            {
-              "id": "apt",
-              "kind": "apt",
-              "package": "gh",
-              "bins": ["gh"],
-              "label": "Install GitHub CLI (apt)",
-            },
           ],
       },
   }
 ---
 
-# GitHub Skill
+# GitHub
 
-Use the `gh` CLI to interact with GitHub repositories, issues, PRs, and CI.
+Use `gh` for GitHub. Use `git` for local commits/branches/push/pull. Use code-reading tools for deep reviews.
 
-## When to Use
-
-✅ **USE this skill when:**
-
-- Checking PR status, reviews, or merge readiness
-- Viewing CI/workflow run status and logs
-- Creating, closing, or commenting on issues
-- Creating or merging pull requests
-- Querying GitHub API for repository data
-- Listing repos, releases, or collaborators
-
-## When NOT to Use
-
-❌ **DON'T use this skill when:**
-
-- Local git operations (commit, push, pull, branch) → use `git` directly
-- Non-GitHub repos (GitLab, Bitbucket, self-hosted) → different CLIs
-- Cloning repositories → use `git clone`
-- Reviewing actual code changes → use `coding-agent` skill
-- Complex multi-file diffs → use `coding-agent` or read files directly
-
-## Setup
+## Auth
 
 ```bash
-# Authenticate (one-time)
-gh auth login
-
-# Verify
 gh auth status
+gh auth login
 ```
 
-## Common Commands
+Gateway HOME can differ from operator HOME. If `gh` auth exists elsewhere, set `GH_CONFIG_DIR` in the gateway service env and restart.
 
-### Pull Requests
+## PRs
 
 ```bash
-# List PRs
-gh pr list --repo owner/repo
-
-# Check CI status
+gh pr list --repo owner/repo --json number,title,state,author,url
+gh pr view 55 --repo owner/repo --json title,body,author,files,commits,reviews,reviewDecision
 gh pr checks 55 --repo owner/repo
-
-# View PR details
-gh pr view 55 --repo owner/repo
-
-# Create PR
-gh pr create --title "feat: add feature" --body "Description"
-
-# Merge PR
-gh pr merge 55 --squash --repo owner/repo
+gh pr diff 55 --repo owner/repo
+gh pr create --repo owner/repo --title "feat: title" --body-file /tmp/pr.md
 ```
 
-### Issues
+When creating or refreshing a PR body, append this final footer only when the Runtime line supplies `sessionUrl=<exact-url>`. Replace `<sessionUrl>` with that URL verbatim; do not construct or modify it. `sessionUrl` is supplied only for an explicitly public session. Omit the footer when it is absent; never substitute a private chat URL or enable sharing to obtain one. Preserve any publication marker before exactly one footer, and keep the footer final:
 
-```bash
-# List issues
-gh issue list --repo owner/repo --state open
-
-# Create issue
-gh issue create --title "Bug: something broken" --body "Details..."
-
-# Close issue
-gh issue close 42 --repo owner/repo
+```text
+---
+[View the paleoclaw team session](<sessionUrl>)
 ```
 
-### CI/Workflow Runs
+URLs work directly: `gh pr view https://github.com/owner/repo/pull/55`.
+
+### Async merges
+
+Use the repository's native landing workflow when provided. For authorized
+programmatic merges elsewhere, use GitHub's [async merge API](https://docs.github.com/en/rest/pulls/pulls#merge-a-pull-request-asynchronously)
+through `gh api`; `gh pr merge` does not select this API. Supply the reviewed head
+SHA, preserve required reviews/checks, and check stack membership first: submitting
+a stacked PR also merges or queues its open downstack PRs, which need their own
+review and authorization.
 
 ```bash
-# List recent runs
+gh api -H 'X-Octopool-Require: merge-async-v1' \
+  --method PUT repos/owner/repo/pulls/55/merge-async \
+  -H 'X-GitHub-Api-Version: 2026-03-10' \
+  -f sha=REVIEWED_HEAD_SHA -f merge_method=squash -f merge_action=direct_merge
+gh api -H 'X-Octopool-Require: merge-async-v1' \
+  repos/owner/repo/pulls/55/merge-async/REQUEST_UUID \
+  -H 'X-GitHub-Api-Version: 2026-03-10' -H 'Cache-Control: max-age=0'
+```
+
+Keep the Octopool guard header first after `api`. Protected older wrappers reject
+it before they can rewrite merge authority; use an Octopool build containing
+[the async guard](https://github.com/paleoclaw/octopool/pull/231) if it is refused.
+The supported wrapper preserves SHA/method/action/bypass and only rewrites commit
+text. Native `gh` can pass the header through. Do not remove it, disable policy,
+or select a raw binary to work around a rejection.
+
+Retain `details.uuid` from a `202` response before polling. `pending` means wait;
+`merged` includes `details.sha`, which still needs final PR/head verification.
+`enqueued` means queued, not merged: monitor the PR itself. To honor a configured
+queue, use `merge_action=default` (or `merge_queue` to explicitly enqueue), omitting
+direct-only method/title/message fields. Never enable `bypass_rules` without authorization.
+
+On `failed`, report `details.message`. A `409` identifies an existing request;
+inspect its UUID and options without resubmitting. Lost replies, polling errors,
+and result expiry after 24 hours require reconciliation, never a blind retry or
+synchronous fallback. Poll with bounded waits and fresh reads. Async processing
+does not arm auto-merge for unmet checks; use the native workflow or `gh pr merge
+--auto` when that behavior is authorized.
+
+### Landing ownership
+
+When the user asks to land or merge a PR, the terminal outcome is the PR's verified
+GitHub state, not the end of a review, worker turn, or CI observation.
+
+- Keep the job active until `gh pr view ... --json state,mergedAt,mergeCommit`
+  proves `state` is `MERGED`.
+- Treat review findings, merge conflicts, failed checks, and requested changes as
+  continuation work when they are in scope. Patch them, rerun the required gates,
+  and re-evaluate the exact updated head.
+- A pending check is a wait state, not completion. Use the repository's supported
+  wait or merge workflow; do not claim success from partial green checks.
+- If work was delegated to a persistent session and that run stops before merge,
+  continue the same session rather than treating its report as the final result.
+- Stop as blocked only when continuing requires new authority, unavailable
+  credentials, or a product decision that cannot be inferred safely. Report the
+  exact blocker and leave the PR unmerged.
+
+## Issues
+
+```bash
+gh issue list --repo owner/repo --state open --json number,title,labels,url
+gh issue view 42 --repo owner/repo --json title,body,comments,labels,state
+gh issue create --repo owner/repo --title "Bug: ..." --body-file /tmp/issue.md
+gh issue comment 42 --repo owner/repo --body-file /tmp/comment.md
+gh issue close 42 --repo owner/repo --comment "Fixed in ..."
+```
+
+## CI/runs
+
+```bash
 gh run list --repo owner/repo --limit 10
-
-# View specific run
-gh run view <run-id> --repo owner/repo
-
-# View failed step logs only
+gh run view <run-id> --repo owner/repo --json status,conclusion,headSha,url
 gh run view <run-id> --repo owner/repo --log-failed
-
-# Re-run failed jobs
-gh run rerun <run-id> --failed --repo owner/repo
+gh run rerun <run-id> --repo owner/repo --failed
 ```
 
-### API Queries
+## API
 
 ```bash
-# Get PR with specific fields
 gh api repos/owner/repo/pulls/55 --jq '.title, .state, .user.login'
-
-# List all labels
 gh api repos/owner/repo/labels --jq '.[].name'
-
-# Get repo stats
-gh api repos/owner/repo --jq '{stars: .stargazers_count, forks: .forks_count}'
+gh api --cache 1h repos/owner/repo --jq '{stars: .stargazers_count, forks: .forks_count}'
 ```
 
-## JSON Output
-
-Most commands support `--json` for structured output with `--jq` filtering:
-
-```bash
-gh issue list --repo owner/repo --json number,title --jq '.[] | "\(.number): \(.title)"'
-gh pr list --json number,title,state,mergeable --jq '.[] | select(.mergeable == "MERGEABLE")'
-```
-
-## Templates
-
-### PR Review Summary
-
-```bash
-# Get PR overview for review
-PR=55 REPO=owner/repo
-echo "## PR #$PR Summary"
-gh pr view $PR --repo $REPO --json title,body,author,additions,deletions,changedFiles \
-  --jq '"**\(.title)** by @\(.author.login)\n\n\(.body)\n\n📊 +\(.additions) -\(.deletions) across \(.changedFiles) files"'
-gh pr checks $PR --repo $REPO
-```
-
-### Issue Triage
-
-```bash
-# Quick issue triage view
-gh issue list --repo owner/repo --state open --json number,title,labels,createdAt \
-  --jq '.[] | "[\(.number)] \(.title) - \([.labels[].name] | join(", ")) (\(.createdAt[:10]))"'
-```
-
-## Notes
-
-- Always specify `--repo owner/repo` when not in a git directory
-- Use URLs directly: `gh pr view https://github.com/owner/repo/pull/55`
-- Rate limits apply; use `gh api --cache 1h` for repeated queries
+Use `--json` + `--jq` for structured output. Use `--body-file` for comments/bodies containing backticks, shell snippets, env names, or user text.

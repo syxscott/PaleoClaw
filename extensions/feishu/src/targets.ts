@@ -4,7 +4,7 @@ const CHAT_ID_PREFIX = "oc_";
 const OPEN_ID_PREFIX = "ou_";
 const USER_ID_REGEX = /^[a-zA-Z0-9_-]+$/;
 
-function stripProviderPrefix(raw: string): string {
+export function stripFeishuProviderPrefix(raw: string): string {
   return raw.replace(/^(feishu|lark):/i, "").trim();
 }
 
@@ -28,39 +28,9 @@ export function normalizeFeishuTarget(raw: string): string | null {
     return null;
   }
 
-  const withoutProvider = stripProviderPrefix(trimmed);
-  const lowered = withoutProvider.toLowerCase();
-  if (lowered.startsWith("chat:")) {
-    return withoutProvider.slice("chat:".length).trim() || null;
-  }
-  if (lowered.startsWith("group:")) {
-    return withoutProvider.slice("group:".length).trim() || null;
-  }
-  if (lowered.startsWith("channel:")) {
-    return withoutProvider.slice("channel:".length).trim() || null;
-  }
-  if (lowered.startsWith("user:")) {
-    return withoutProvider.slice("user:".length).trim() || null;
-  }
-  if (lowered.startsWith("dm:")) {
-    return withoutProvider.slice("dm:".length).trim() || null;
-  }
-  if (lowered.startsWith("open_id:")) {
-    return withoutProvider.slice("open_id:".length).trim() || null;
-  }
-
-  return withoutProvider;
-}
-
-export function formatFeishuTarget(id: string, type?: FeishuIdType): string {
-  const trimmed = id.trim();
-  if (type === "chat_id" || trimmed.startsWith(CHAT_ID_PREFIX)) {
-    return `chat:${trimmed}`;
-  }
-  if (type === "open_id" || trimmed.startsWith(OPEN_ID_PREFIX)) {
-    return `user:${trimmed}`;
-  }
-  return trimmed;
+  const withoutProvider = stripFeishuProviderPrefix(trimmed);
+  const prefix = /^(chat|group|channel|user|dm|open_id):/i.exec(withoutProvider);
+  return prefix ? withoutProvider.slice(prefix[0].length).trim() || null : withoutProvider;
 }
 
 export function resolveReceiveIdType(id: string): "chat_id" | "open_id" | "user_id" {
@@ -90,7 +60,7 @@ export function resolveReceiveIdType(id: string): "chat_id" | "open_id" | "user_
 }
 
 export function looksLikeFeishuId(raw: string): boolean {
-  const trimmed = stripProviderPrefix(raw.trim());
+  const trimmed = stripFeishuProviderPrefix(raw.trim());
   if (!trimmed) {
     return false;
   }

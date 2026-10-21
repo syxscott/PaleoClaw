@@ -1,56 +1,96 @@
-import { describe, expect, it } from "vitest";
+import nodeFs from "node:fs";
+import fs from "node:fs/promises";
+import path from "node:path";
+import { afterEach, expect, it, vi } from "vitest";
+import { useAutoCleanupTempDirTracker } from "../../test/helpers/temp-dir.js";
 import type { OpenClawConfig } from "../config/config.js";
 import {
-  applyOnboardingLocalWorkspaceConfig,
-  ONBOARDING_DEFAULT_DM_SCOPE,
-  ONBOARDING_DEFAULT_TOOLS_PROFILE,
+  applyLocalSetupWorkspaceConfig,
+  applySkipBootstrapConfig,
+  resolveOnboardingWorkspaceConflict,
 } from "./onboard-config.js";
 
-describe("applyOnboardingLocalWorkspaceConfig", () => {
-  it("defaults local onboarding tool profile to coding", () => {
-    expect(ONBOARDING_DEFAULT_TOOLS_PROFILE).toBe("coding");
+const tempDirs = useAutoCleanupTempDirTracker(afterEach);
+const current = "/tmp/current-workspace";
+const requested = "/tmp/requested-workspace";
+const workspaceConfig: OpenClawConfig = { agents: { defaults: { workspace: current } } };
+afterEach(() => vi.restoreAllMocks());
+
+it("sets skipBootstrap without mutating the existing agent defaults or other config", () => {
+  const config: OpenClawConfig = {
+    agents: {
+      defaults: { workspace: "/tmp/workspace" },
+      entries: { ops: { name: "Operations" } },
+    },
+    gateway: { mode: "remote" },
+  };
+  const result = applySkipBootstrapConfig(config);
+
+  expect(result).toEqual({
+    ...config,
+    agents: { ...config.agents, defaults: { workspace: "/tmp/workspace", skipBootstrap: true } },
   });
+  expect(config.agents?.defaults).toEqual({ workspace: "/tmp/workspace" });
+});
 
-  it("sets secure dmScope default when unset", () => {
-    const baseConfig: OpenClawConfig = {};
-    const result = applyOnboardingLocalWorkspaceConfig(baseConfig, "/tmp/workspace");
+it("defaults to full tools and preserves independent policies on rerun", () => {
+  const baseConfig: OpenClawConfig = {
+    tools: {
+      allow: ["group:paleoclaw"],
+      deny: ["exec"],
+      byProvider: { anthropic: { profile: "messaging", deny: ["browser"] } },
+      exec: { security: "deny", ask: "always" },
+      fs: { workspaceOnly: true },
+      sandbox: { tools: { deny: ["paleoclaw"] } },
+    },
+    agents: {
+      defaults: { sandbox: { mode: "all" } },
+      entries: { main: { tools: { profile: "minimal", alsoAllow: ["message"] } } },
+    },
+  };
+  const result = applyLocalSetupWorkspaceConfig(baseConfig, "/tmp/workspace");
 
-    expect(result.session?.dmScope).toBe(ONBOARDING_DEFAULT_DM_SCOPE);
-    expect(result.gateway?.mode).toBe("local");
-    expect(result.agents?.defaults?.workspace).toBe("/tmp/workspace");
-    expect(result.tools?.profile).toBe(ONBOARDING_DEFAULT_TOOLS_PROFILE);
+  expect(result.tools).toEqual({ ...baseConfig.tools, profile: "full" });
+  expect(result.agents).toEqual(baseConfig.agents);
+});
+
+it.each([false, true])("moves a roster workspace only with confirmation (%s)", (confirmed) => {
+  const baseConfig: OpenClawConfig = {
+    agents: {
+      ...workspaceConfig.agents,
+      entries: { main: {}, ops: {} },
+    },
+  };
+
+  expect(resolveOnboardingWorkspaceConflict(baseConfig, requested)).toEqual({
+    currentWorkspaceDir: current,
+    requestedWorkspaceDir: requested,
   });
+  expect(
+    applyLocalSetupWorkspaceConfig(baseConfig, requested, {
+      allowWorkspaceChange: confirmed,
+    }).agents?.defaults?.workspace,
+  ).toBe(confirmed ? requested : current);
+});
 
-  it("preserves existing dmScope when already configured", () => {
-    const baseConfig: OpenClawConfig = {
-      session: {
-        dmScope: "main",
-      },
-    };
-    const result = applyOnboardingLocalWorkspaceConfig(baseConfig, "/tmp/workspace");
+it("keeps fresh-install workspace writes when only inference state exists on disk", async () => {
+  const stateDir = tempDirs.make("paleoclaw-onboard-state-");
+  await fs.mkdir(path.join(stateDir, "agents", "main", "sessions"), { recursive: true });
+  const env = { HOME: stateDir, OPENCLAW_STATE_DIR: stateDir };
 
-    expect(result.session?.dmScope).toBe("main");
+  const result = applyLocalSetupWorkspaceConfig({}, requested, { env });
+
+  expect(result.agents?.defaults?.workspace).toBe(requested);
+  const rerun = applyLocalSetupWorkspaceConfig(workspaceConfig, requested, { env });
+  expect(rerun.agents?.defaults?.workspace).toBe(current);
+});
+
+it("fails closed when existing agent state cannot be inspected", () => {
+  vi.spyOn(nodeFs, "readdirSync").mockImplementationOnce(() => {
+    throw Object.assign(new Error("permission denied"), { code: "EACCES" });
   });
-
-  it("preserves explicit non-main dmScope values", () => {
-    const baseConfig: OpenClawConfig = {
-      session: {
-        dmScope: "per-account-channel-peer",
-      },
-    };
-    const result = applyOnboardingLocalWorkspaceConfig(baseConfig, "/tmp/workspace");
-
-    expect(result.session?.dmScope).toBe("per-account-channel-peer");
+  const result = applyLocalSetupWorkspaceConfig(workspaceConfig, requested, {
+    env: { HOME: "/tmp/unreadable-home", OPENCLAW_STATE_DIR: "/tmp/unreadable-state" },
   });
-
-  it("preserves an explicit tools.profile when already configured", () => {
-    const baseConfig: OpenClawConfig = {
-      tools: {
-        profile: "full",
-      },
-    };
-    const result = applyOnboardingLocalWorkspaceConfig(baseConfig, "/tmp/workspace");
-
-    expect(result.tools?.profile).toBe("full");
-  });
+  expect(result.agents?.defaults?.workspace).toBe(current);
 });

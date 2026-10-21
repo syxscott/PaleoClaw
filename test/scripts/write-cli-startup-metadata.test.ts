@@ -1,0 +1,1587 @@
+import { spawn } from "node:child_process";
+import { EventEmitter } from "node:events";
+import fs, { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { syncBuiltinESMExports } from "node:module";
+import os from "node:os";
+import path from "node:path";
+import { PassThrough } from "node:stream";
+import { setTimeout as waitForRuntimeTick } from "node:timers/promises";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+import { scriptProcessEntrypoints } from "../../scripts/script-process-runtime.test-support.js";
+import { testing } from "../../scripts/write-cli-startup-metadata.ts";
+import {
+  resolveRuntimeWorkerArgv,
+  resolveRuntimeWorkerUrl,
+} from "../../src/infra/runtime-worker-url.js";
+import {
+  fixtureReceiptClientSource,
+  openFixtureReceiptChannel,
+  type FixtureReceiptChannel,
+} from "../helpers/fixture-receipts.js";
+import { withinTest } from "../helpers/promise.js";
+import { createScriptTestHarness } from "./test-helpers.js";
+
+vi.mock("node:child_process", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("node:child_process")>();
+  return { ...actual, spawn: vi.fn(actual.spawn) };
+});
+const { spawn: actualSpawn } =
+  await vi.importActual<typeof import("node:child_process")>("node:child_process");
+
+// These subprocess tests use explicit ready/close signals; timeout only catches broken fixtures.
+const LOAD_SENSITIVE_PROCESS_TIMEOUT_MS = process.env.CI ? 30_000 : 15_000;
+const metadataUrl = resolveRuntimeWorkerUrl(scriptProcessEntrypoints.cliStartupMetadata);
+const COMMAND_HELP_RENDER_CONCURRENCY = 2;
+const DEFAULT_COMMAND_HELP_NAMES = [
+  "browser",
+  "secrets",
+  "nodes",
+  "config",
+  "doctor",
+  "gateway",
+  "models",
+  "plugins",
+  "sessions",
+] as const;
+
+function sourceSubcommandHelp(banner = "") {
+  const help = (name: string) => `${banner}Usage: paleoclaw ${name}\n`;
+  return {
+    config: help("config"),
+    doctor: help("doctor"),
+    gateway: help("gateway"),
+    models: help("models"),
+    plugins: help("plugins"),
+    sessions: help("sessions"),
+  };
+}
+
+const sourceHelpRenderers = {
+  renderSourceBrowserHelpText: () => "Usage: paleoclaw browser\n",
+  renderSourceSecretsHelpText: () => "Usage: paleoclaw secrets\n",
+  renderSourceNodesHelpText: () => "Usage: paleoclaw nodes\n",
+  renderSourceSubcommandHelpTextRecord: () => sourceSubcommandHelp(),
+};
+
+type WrittenMetadata = {
+  channelOptions: string[];
+  generatorSignature: string;
+  rootHelpText: string;
+  browserHelpText: string;
+  secretsHelpText: string;
+  nodesHelpText: string;
+  subcommandHelpText: ReturnType<typeof sourceSubcommandHelp>;
+};
+const readMetadata = (file: string): WrittenMetadata => JSON.parse(readFileSync(file, "utf8"));
+
+function spawnHelp(
+  args: string[],
+  overrides: Partial<Parameters<typeof testing.spawnText>[1]> = {},
+) {
+  return testing.spawnText(args, {
+    cwd: process.cwd(),
+    env: process.env,
+    failureMessage: "render failed",
+    killGraceMs: 25,
+    maxOutputBytes: 1024,
+    timeoutMs: 5_000,
+    ...overrides,
+  });
+}
+
+function descendantScript(markerPath: string, terminal: string) {
+  const grandchild = "process.on('SIGTERM', () => {}); setInterval(() => {}, 1000);";
+  return [
+    "const { spawn } = await import('node:child_process');",
+    "const { writeFileSync } = await import('node:fs');",
+    `const grandchild = spawn(process.execPath, ["--eval", ${JSON.stringify(grandchild)}], { stdio: "ignore" });`,
+    `writeFileSync(${JSON.stringify(markerPath)}, String(grandchild.pid));`,
+    terminal,
+  ].join("\n");
+}
+
+function writeFixtureFile(rootDir: string, relativePath: string, contents: string): void {
+  const filePath = path.join(rootDir, relativePath);
+  mkdirSync(path.dirname(filePath), { recursive: true });
+  writeFileSync(filePath, contents, "utf8");
+}
+
+function writeStartupMetadataSourceSignatureFixture(rootDir: string): void {
+  for (const relativePath of [
+    "extensions/browser/src/cli/browser-cli.ts",
+    "extensions/canvas/cli-metadata.ts",
+    "extensions/canvas/index.ts",
+    "extensions/canvas/src/cli.ts",
+    "src/cli/banner.ts",
+    "src/cli/gateway-cli.ts",
+    "src/cli/gateway-cli/register.ts",
+    "src/cli/gateway-cli/run-command.ts",
+    "src/cli/help-format.ts",
+    "src/cli/config-cli.ts",
+    "src/cli/models-cli.ts",
+    "src/cli/nodes-cli/register.ts",
+    "src/cli/program/register.maintenance.ts",
+    "src/cli/program/context.ts",
+    "src/cli/program/help.ts",
+    "src/cli/plugins-cli.ts",
+    "src/cli/secrets-cli.ts",
+    "packages/terminal-core/src/links.ts",
+    "packages/terminal-core/src/theme.ts",
+    "src/cli/daemon-cli/register-service-commands.ts",
+    "src/cli/program/register.status-health-sessions.ts",
+    "src/plugins/cli.ts",
+  ]) {
+    writeFixtureFile(rootDir, relativePath, "export {};\n");
+  }
+}
+
+function processIsAlive(pid: number): boolean {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    return (error as NodeJS.ErrnoException).code === "EPERM";
+  }
+}
+
+function createSpawnTextChild() {
+  return Object.assign(new EventEmitter(), {
+    kill: vi.fn((_signal?: NodeJS.Signals) => true),
+    stderr: new PassThrough(),
+    stdout: new PassThrough(),
+  });
+}
+
+function childClosed(child: ReturnType<typeof spawn>) {
+  return new Promise<{ code: number | null; signal: NodeJS.Signals | null }>((resolve, reject) => {
+    child.once("error", reject);
+    child.once("close", (code, signal) => resolve({ code, signal }));
+  });
+}
+
+// The renderer joins stopped process groups; only the OS reaper owns final PID
+// disappearance, so this residual preserves the stronger absence assertion.
+async function waitForProcessExit(pid: number, signal: AbortSignal): Promise<void> {
+  try {
+    while (processIsAlive(pid)) {
+      signal.throwIfAborted();
+      await waitForRuntimeTick(10, undefined, { signal });
+    }
+  } catch (error) {
+    if (signal.aborted) {
+      throw new Error(`process ${pid} was still alive when the test aborted`, { cause: error });
+    }
+    throw error;
+  }
+}
+
+let receipts: FixtureReceiptChannel;
+beforeAll(async () => {
+  receipts = await openFixtureReceiptChannel();
+});
+afterAll(async () => {
+  await receipts.close();
+});
+
+describe("write-cli-startup-metadata", () => {
+  const { createTempDir } = createScriptTestHarness();
+
+  function metadataFixture(prefix: string, bundled = true) {
+    const tempRoot = createTempDir(prefix);
+    const distDir = path.join(tempRoot, "dist");
+    const extensionsDir = path.join(tempRoot, "extensions");
+    const outputPath = path.join(distDir, "cli-startup-metadata.json");
+    writeStartupMetadataSourceSignatureFixture(tempRoot);
+    mkdirSync(distDir, { recursive: true });
+    if (bundled) {
+      writeFixtureFile(distDir, "root-help-fixture.js", "export function outputRootHelp() {}\n");
+    }
+    return { sourceRootDir: tempRoot, distDir, extensionsDir, outputPath };
+  }
+
+  function writeWithFixtureHelp(
+    metadata: ReturnType<typeof metadataFixture>,
+    overrides: Partial<Parameters<typeof testing.writeCliStartupMetadata>[0]> = {},
+  ) {
+    return testing.writeCliStartupMetadata({
+      ...metadata,
+      renderBundledRootHelpText: async () => "Usage: paleoclaw\n",
+      ...sourceHelpRenderers,
+      ...overrides,
+    });
+  }
+
+  it("renders source root help without blocking sibling child events", async () => {
+    const child = createSpawnTextChild();
+    const spawnMock = vi.mocked(spawn);
+    spawnMock.mockImplementationOnce(() => child as unknown as ReturnType<typeof spawn>);
+    const siblingEvent = new Promise<void>((resolve) => {
+      setImmediate(() => {
+        resolve();
+      });
+    });
+
+    const render = testing.renderSourceRootHelpText();
+    child.stdout.write("Usage: paleoclaw\n");
+    setImmediate(() => {
+      child.emit("close", 0, null);
+    });
+
+    await siblingEvent;
+    await expect(render).resolves.toBe("Usage: paleoclaw\n");
+    expect(spawnMock).toHaveBeenCalledOnce();
+    expect(spawnMock.mock.calls[0]?.[1]).toEqual([
+      "--import",
+      "tsx",
+      "--input-type=module",
+      "--eval",
+      expect.any(String),
+    ]);
+    expect(spawnMock.mock.calls[0]?.[2]).toMatchObject({
+      detached: process.platform !== "win32",
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+  });
+
+  it("finishes root help before rendering at most two command snapshots", async () => {
+    const spawnMock = vi.mocked(spawn);
+    const metadata = metadataFixture("paleoclaw-startup-metadata-scheduling-");
+    const startedCommands: string[] = [];
+    let activeCommands = 0;
+    let maxActiveCommands = 0;
+    let writePromise: Promise<void> | undefined;
+    const rootHelpStarted = Promise.withResolvers<void>();
+    const rootHelpBlocked = Promise.withResolvers<void>();
+
+    spawnMock.mockImplementation((_command, args) => {
+      const commandName = String(args[1]);
+      const child = createSpawnTextChild();
+      startedCommands.push(commandName);
+      activeCommands += 1;
+      maxActiveCommands = Math.max(maxActiveCommands, activeCommands);
+      setImmediate(() => {
+        child.stdout.write(`Usage: paleoclaw ${commandName}\n`);
+        activeCommands -= 1;
+        child.emit("close", 0, null);
+      });
+      return child as unknown as ReturnType<typeof spawn>;
+    });
+
+    try {
+      writePromise = testing.writeCliStartupMetadata({
+        ...metadata,
+        renderBundledRootHelpText: async () => {
+          rootHelpStarted.resolve();
+          await rootHelpBlocked.promise;
+          return "Usage: paleoclaw\n";
+        },
+      });
+
+      await rootHelpStarted.promise;
+      await new Promise((resolve) => {
+        setImmediate(resolve);
+      });
+      expect(startedCommands).toEqual([]);
+
+      rootHelpBlocked.resolve();
+      await writePromise;
+
+      expect(startedCommands).toEqual(DEFAULT_COMMAND_HELP_NAMES);
+      expect(maxActiveCommands).toBe(COMMAND_HELP_RENDER_CONCURRENCY);
+    } finally {
+      rootHelpBlocked.resolve();
+      await writePromise?.catch(() => {});
+      spawnMock.mockImplementation(actualSpawn);
+    }
+  });
+
+  it("fails command help rendering when stderr emits a stream error", async () => {
+    const streamName = "stderr";
+    const child = createSpawnTextChild();
+    const spawnProcess = vi.fn(() => child as unknown as ReturnType<typeof spawn>);
+    const streamError = new Error(`${streamName} pipe failed`);
+
+    const render = spawnHelp(["--help"], {
+      spawnProcess: spawnProcess as typeof spawn,
+    });
+    child[streamName].emit("error", streamError);
+    child.emit("close", null, "SIGTERM");
+
+    await expect(render).rejects.toMatchObject({
+      message: expect.stringContaining(
+        `render failed: ${streamName} read error: ${streamName} pipe failed`,
+      ),
+      cause: streamError,
+    });
+    expect(child.kill).toHaveBeenCalledWith("SIGTERM");
+  });
+
+  it("preserves an output-limit failure when shutdown also errors a stream", async () => {
+    const child = createSpawnTextChild();
+    const spawnProcess = vi.fn(() => child as unknown as ReturnType<typeof spawn>);
+    const render = spawnHelp(["--help"], {
+      maxOutputBytes: 5,
+      spawnProcess: spawnProcess as typeof spawn,
+    });
+
+    child.stdout.emit("data", "123456");
+    child.stdout.emit("error", new Error("pipe closed during shutdown"));
+    child.emit("close", null, "SIGTERM");
+
+    await expect(render).rejects.toThrow("render failed: output exceeded 5 bytes");
+  });
+
+  it("aborts and drains the default command batch before removing shared state", async () => {
+    const spawnMock = vi.mocked(spawn);
+    const metadata = metadataFixture("paleoclaw-startup-metadata-batch-failure-");
+    const { outputPath } = metadata;
+    const events: string[] = [];
+    const children: Array<ReturnType<typeof createSpawnTextChild> & { commandName: string }> = [];
+    const batchStarted = Promise.withResolvers<void>();
+    const realRmSync = fs.rmSync.bind(fs);
+    const removeState = vi.spyOn(fs, "rmSync").mockImplementation((target, options) => {
+      events.push("cleanup");
+      return realRmSync(target, options);
+    });
+
+    spawnMock.mockImplementation((_command, args) => {
+      const commandName = String(args[1]);
+      const child = Object.assign(createSpawnTextChild(), { commandName });
+      child.kill.mockImplementation((signal) => {
+        events.push(`kill:${commandName}:${signal}`);
+        queueMicrotask(() => {
+          events.push(`close:${commandName}`);
+          child.emit("close", null, signal);
+        });
+        return true;
+      });
+      children.push(child);
+      if (children.length === COMMAND_HELP_RENDER_CONCURRENCY) {
+        batchStarted.resolve();
+      }
+      return child as unknown as ReturnType<typeof spawn>;
+    });
+
+    try {
+      const writePromise = testing.writeCliStartupMetadata({
+        ...metadata,
+        renderBundledRootHelpText: async () => "Usage: paleoclaw\n",
+      });
+      await batchStarted.promise;
+      expect(children.map((child) => child.commandName)).toEqual(
+        DEFAULT_COMMAND_HELP_NAMES.slice(0, COMMAND_HELP_RENDER_CONCURRENCY),
+      );
+
+      const browser = children[0];
+      expect(browser).toBeDefined();
+      browser?.stderr.write("browser renderer failed\n");
+      browser?.emit("close", 7, null);
+
+      await expect(writePromise).rejects.toThrow("Failed to render source browser help");
+      await expect(writePromise).rejects.toThrow(/browser renderer failed \(elapsed \d+ms\)/u);
+      expect(children.map((child) => child.commandName)).not.toContain("tasks");
+      for (const child of children.slice(1)) {
+        expect(child.kill).toHaveBeenCalledWith("SIGTERM");
+        expect(events).toContain(`close:${child.commandName}`);
+      }
+      expect(events.at(-1)).toBe("cleanup");
+      expect(existsSync(outputPath)).toBe(false);
+    } finally {
+      removeState.mockRestore();
+      spawnMock.mockImplementation(actualSpawn);
+    }
+  });
+
+  it.runIf(process.platform !== "win32")(
+    "preserves shared state when a canceled process group cannot be proven dead",
+    async () => {
+      const metadata = metadataFixture("paleoclaw-startup-metadata-undrained-tree-");
+      const { sourceRootDir: tempRoot, outputPath } = metadata;
+      const child = Object.assign(createSpawnTextChild(), { pid: 123 });
+      const realProcessKill = process.kill.bind(process);
+      const processKill = vi.spyOn(process, "kill").mockImplementation((pid, signal) => {
+        if (pid === -123) {
+          return true;
+        }
+        return realProcessKill(pid, signal);
+      });
+      let renderStateDir = "";
+
+      try {
+        const writePromise = writeWithFixtureHelp(metadata, {
+          renderSourceBrowserHelpText: (renderContext, taskContext) => {
+            renderStateDir = renderContext.env?.OPENCLAW_STATE_DIR ?? "";
+            if (!taskContext) {
+              throw new Error("missing render task context");
+            }
+            return spawnHelp(["openclaw.mjs", "browser", "--help"], {
+              cwd: tempRoot,
+              failureMessage: "browser render failed",
+              killGraceMs: 10,
+              onTerminalFailure: taskContext.reportFailure,
+              signal: taskContext.signal,
+              spawnProcess: (() => child as unknown as ReturnType<typeof spawn>) as typeof spawn,
+            });
+          },
+        });
+        await new Promise((resolve) => {
+          setImmediate(resolve);
+        });
+        child.stderr.write("primary browser failure\n");
+        child.emit("close", 7, null);
+
+        await expect(writePromise).rejects.toMatchObject({
+          message: expect.stringContaining("primary browser failure"),
+          preserveRenderState: true,
+          processTreeCleanupFailure: {
+            code: "EPROCESSGROUP_CLEANUP_FAILED",
+          },
+        });
+        await expect(writePromise).rejects.toThrow(
+          `Preserved CLI startup metadata render state: ${renderStateDir}`,
+        );
+        expect(existsSync(renderStateDir)).toBe(true);
+        expect(existsSync(outputPath)).toBe(false);
+      } finally {
+        processKill.mockRestore();
+        if (renderStateDir) {
+          fs.rmSync(renderStateDir, { force: true, recursive: true });
+        }
+      }
+    },
+  );
+
+  it.runIf(process.platform === "linux")(
+    "supervised exited descendant accepts stopped work without accepting live or unknown work",
+    async () => {
+      const repoRoot = fs.realpathSync(process.cwd());
+      const workerArgs = resolveRuntimeWorkerArgv(metadataUrl).slice(0, -1);
+      const actor = String.raw`
+import fs from "node:fs";
+import path from "node:path";
+import { spawn } from "node:child_process";
+const [root, role] = process.argv.slice(2);
+const file = (name) => path.join(root, name);
+const publish = (name, value) => {
+  const temporary = file(name + ".tmp");
+  fs.writeFileSync(temporary, JSON.stringify(value));
+  fs.renameSync(temporary, file(name));
+};
+const wait = async (name, timeout = 5000) => {
+  const deadline = Date.now() + timeout;
+  while (!fs.existsSync(file(name))) {
+    if (fs.existsSync(file("stop"))) process.exit(2);
+    if (Date.now() >= deadline) throw new Error("fixture gate deadline: " + name);
+    await new Promise((resolve) => setTimeout(resolve, 5));
+  }
+  if (fs.existsSync(file("stop"))) process.exit(2);
+};
+publish(role + ".ready", { pid: process.pid });
+if (role === "leaf") {
+  await wait("leaf.exit", 45000);
+} else {
+  await wait(role + ".go");
+  const childRole = role === "leader" ? "forker" : "leaf";
+  const child = spawn(process.execPath, [process.argv[1], root, childRole], {
+    stdio: "ignore", env: process.env,
+  });
+  if (role === "forker") {
+    child.unref();
+    await wait("forker.exit");
+  } else {
+    const joined = await new Promise((resolve, reject) => {
+      child.once("error", reject);
+      child.once("close", (code, signal) => resolve({ code, signal }));
+    });
+    publish("forker.joined", joined);
+    await wait("leader.exit", 45000);
+    process.stdout.write("Usage: paleoclaw nodes\n");
+  }
+}
+`;
+      const controller = String.raw`
+import fs from "node:fs";
+import path from "node:path";
+import childProcess, { spawn } from "node:child_process";
+import { syncBuiltinESMExports } from "node:module";
+import { pathToFileURL } from "node:url";
+const [root, mode, repo] = process.argv.slice(2);
+let ownedLeaderPid, completedPsFault;
+const originalSpawnSync = childProcess.spawnSync;
+if (mode === "unknown") {
+  childProcess.spawnSync = function (...args) {
+    const result = Reflect.apply(originalSpawnSync, this, args);
+    const [command, argv] = args;
+    if (command === "ps" && ownedLeaderPid !== undefined && Array.isArray(argv) &&
+        argv.length === 5 && argv[0] === "-s" && argv[1] === String(ownedLeaderPid) &&
+        argv[2] === "-L" && argv[3] === "-o" && argv[4] === "pgid=,state=" &&
+        result.status === 23 && result.signal === null && !result.error) {
+      completedPsFault ??= { groupPid: ownedLeaderPid, status: result.status,
+        signal: result.signal, errorPresent: !!result.error };
+    }
+    return result;
+  };
+  syncBuiltinESMExports();
+}
+const { testing } = await import(${JSON.stringify(metadataUrl.href)});
+const { inspectManagedProcessGroup, waitForManagedProcessGroupExit } =
+  await import(pathToFileURL(path.join(repo, "scripts/lib/managed-child-process.mts")));
+const file = (name) => path.join(root, name);
+const publish = (name, value) => {
+  const temporary = file(name + ".tmp");
+  fs.writeFileSync(temporary, JSON.stringify(value));
+  fs.renameSync(temporary, file(name));
+};
+let renderState = "", liveControl;
+const events = [];
+const started = Date.now();
+const outputPath = file("dist/cli-startup-metadata.json");
+let outcome;
+try {
+  await testing.writeCliStartupMetadata({
+    sourceRootDir: root, distDir: file("dist"), extensionsDir: file("extensions"), outputPath,
+    renderBundledRootHelpText: () => "Usage: paleoclaw\n",
+    renderSourceRootHelpText: () => "Usage: paleoclaw\n",
+    renderSourceBrowserHelpText: () => "Usage: paleoclaw browser\n",
+    renderSourceSecretsHelpText: () => "Usage: paleoclaw secrets\n",
+    renderSourceSubcommandHelpTextRecord: () => Object.fromEntries(
+      ["config", "doctor", "gateway", "models", "plugins", "sessions", "tasks"]
+        .map((name) => [name, "Usage: paleoclaw " + name + "\n"])),
+    renderSourceNodesHelpText: (context, taskContext) => {
+      if (!taskContext) throw new Error("missing actual supervisor task context");
+      renderState = context.env.OPENCLAW_STATE_DIR;
+      // Unknown mode fails every snapshot while the reaper holds the stopped group.
+      return testing.spawnText([file("actor.mjs"), root, "leader"], {
+        cwd: root, env: process.env, failureMessage: "supervised nodes fixture failed",
+        timeoutMs: 120000, killGraceMs: mode === "unknown" ? 1000 : 5000, maxOutputBytes: 16384,
+        onTerminalFailure: taskContext.reportFailure, signal: taskContext.signal,
+        spawnProcess: (...args) => {
+          const child = spawn(...args);
+          ownedLeaderPid = child.pid;
+          child.once("exit", (code, signal) => events.push({ event: "exit", code, signal }));
+          child.once("close", (code, signal) => {
+            events.push({ event: "close", code, signal });
+            publish("leader.closed", { code, signal });
+          });
+          if (mode === "live") {
+            liveControl = (async () => {
+              const readyBy = Date.now() + 5000;
+              while (!fs.existsSync(file("live-control.go"))) {
+                if (Date.now() >= readyBy) throw new Error("live control setup deadline");
+                await new Promise((resolve) => setTimeout(resolve, 5));
+              }
+              const start = Date.now();
+              const deadlineAt = start + 100;
+              const observation = inspectManagedProcessGroup(child, {
+                deadlineAt, errorPolicy: "alive-on-eperm",
+              });
+              const stopped = await waitForManagedProcessGroupExit(child, 100, {
+                deadlineAt, errorPolicy: "alive-on-eperm",
+                clampPollToDeadline: true, pollIntervalMs: 10,
+              });
+              publish("live-control.json", { observation, stopped, elapsedMs: Date.now() - start });
+            })();
+          }
+          return child;
+        },
+      });
+    },
+  });
+  outcome = { ok: true, nodesHelpText: JSON.parse(fs.readFileSync(outputPath, "utf8")).nodesHelpText };
+} catch (error) {
+  outcome = { ok: false, code: error.code ?? null,
+    cleanupCode: error.processTreeCleanupFailure?.code ?? null,
+    preserveRenderState: error.preserveRenderState === true };
+} finally {
+  if (mode === "unknown") {
+    childProcess.spawnSync = originalSpawnSync;
+    syncBuiltinESMExports();
+  }
+}
+await liveControl;
+publish("outcome.json", { ...outcome, completedPsFault, events, elapsedMs: Date.now() - started,
+  outputPresent: fs.existsSync(outputPath), statePresent: !!renderState && fs.existsSync(renderState) });
+`;
+      // The reaper owns the controller and adopted leaf. It never scans or signals unrelated PIDs.
+      const reaper = String.raw`
+import ctypes, errno, json, os, pathlib, select, shutil, signal, subprocess, sys, time
+root, mode, node, repo, worker_json = sys.argv[1:]
+root = pathlib.Path(root)
+started = time.monotonic()
+deadline = started + 45
+registered, reaped, snapshots = {}, [], {}
+controller = None
+leader = None
+cancelled = False
+captured = bytearray()
+report = {"mode": mode}
+def interrupt(_signum, _frame):
+    global cancelled
+    cancelled = True
+signal.signal(signal.SIGTERM, interrupt)
+signal.signal(signal.SIGINT, interrupt)
+def identity(pid):
+    try:
+        fields = pathlib.Path("/proc", str(pid), "stat").read_text().rsplit(")", 1)[1].split()
+    except FileNotFoundError:
+        return None
+    return {"pid": pid, "state": fields[0], "ppid": int(fields[1]),
+            "pgid": int(fields[2]), "sid": int(fields[3]), "start": fields[19]}
+def register(pid):
+    current = identity(pid)
+    if current is None:
+        raise RuntimeError("owned process disappeared before admission")
+    previous = registered.get(pid)
+    if previous is not None and previous["start"] != current["start"]:
+        raise RuntimeError("owned PID identity changed")
+    registered[pid] = previous or current
+    if len(registered) > 64:
+        raise RuntimeError("owned identity limit")
+    return current
+def present(pid):
+    current = identity(pid)
+    if current is not None and current["start"] != registered[pid]["start"]:
+        raise RuntimeError("refusing recycled PID")
+    return current
+def group_present():
+    if leader is None:
+        return False
+    try:
+        os.killpg(leader, 0)
+        return True
+    except ProcessLookupError:
+        return False
+def read(name):
+    p = root / name
+    return json.loads(p.read_text()) if p.exists() else None
+def gate(name):
+    (root / name).touch()
+def drain():
+    if controller is None or controller.stdout.closed:
+        return
+    while select.select([controller.stdout], [], [], 0)[0]:
+        data = os.read(controller.stdout.fileno(), 4096)
+        if not data:
+            return
+        captured.extend(data)
+        if len(captured) > 4096:
+            raise RuntimeError("controller output limit")
+def wait(predicate, seconds=5):
+    stop = min(deadline, time.monotonic() + seconds)
+    while True:
+        drain()
+        if cancelled:
+            raise RuntimeError("fixture interrupted")
+        value = predicate()
+        if value:
+            return value
+        if time.monotonic() >= stop:
+            raise RuntimeError("fixture handshake deadline")
+        if controller is not None and controller.poll() is not None:
+            raise RuntimeError("controller exited before handshake")
+        time.sleep(.005)
+def threads(pid):
+    entries = list(pathlib.Path("/proc", str(pid), "task").iterdir())
+    if not entries or len(entries) > 256:
+        raise RuntimeError("thread bound")
+    rows = []
+    for entry in entries:
+        try:
+            fields = (entry / "stat").read_text().rsplit(")", 1)[1].split()
+        except (FileNotFoundError, ProcessLookupError):
+            if entry.name == str(pid):
+                raise
+            continue
+        rows.append({"pid": pid, "tid": int(entry.name), "state": fields[0],
+                     "pgid": int(fields[2]), "sid": int(fields[3])})
+    if not any(row["tid"] == pid for row in rows):
+        raise RuntimeError("owned process leader missing from thread snapshot")
+    return sorted(rows, key=lambda r: r["tid"])
+def session_rows(ps):
+    raw = subprocess.run([ps, "-s", str(leader), "-L", "-o", "pid=,ppid=,pgid=,sid=,lwp=,stat="],
+                         stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=1, check=True)
+    if len(raw.stdout) > 8192 or len(raw.stderr) > 1024:
+        raise RuntimeError("ps output bound")
+    rows = []
+    for line in raw.stdout.decode("ascii").splitlines():
+        pid, ppid, pgid, sid, tid, state = line.split()
+        row = dict(zip(["pid", "ppid", "pgid", "sid", "tid"],
+                       map(int, [pid, ppid, pgid, sid, tid])))
+        row["state"] = state
+        if row["pid"] not in registered or row["pgid"] != leader or row["sid"] != leader:
+            raise RuntimeError("unexpected session member")
+        present(row["pid"])
+        rows.append(row)
+    if not rows or len(rows) > 256:
+        raise RuntimeError("session thread bound")
+    return rows
+def discover_owned():
+    pending, seen = [os.getpid()], set()
+    while pending:
+        pid = pending.pop()
+        if pid in seen:
+            continue
+        seen.add(pid)
+        try:
+            children = pathlib.Path("/proc", str(pid), "task", str(pid), "children").read_text()
+        except FileNotFoundError:
+            continue
+        for child in map(int, children.split()):
+            if identity(child) is not None:
+                register(child)
+                pending.append(child)
+def reap():
+    while True:
+        try:
+            pid, status = os.waitpid(-1, os.WNOHANG)
+        except ChildProcessError:
+            return True
+        if pid == 0:
+            return False
+        reaped.append({"pid": pid, "status": status})
+        if controller is not None and pid == controller.pid:
+            controller.returncode = os.waitstatus_to_exitcode(status)
+def signal_owned(sig):
+    discover_owned()
+    current = [item for pid in registered if (item := present(pid)) is not None]
+    members = [item for item in current if item["pgid"] == leader and item["sid"] == leader]
+    covered = set()
+    if leader is not None and any(item["state"] != "Z" for item in members):
+        os.killpg(leader, sig)
+        covered = {item["pid"] for item in members}
+    elif leader is not None and group_present() and not members:
+        raise RuntimeError("group ownership no longer provable")
+    for pid in registered:
+        if pid in covered:
+            continue
+        item = present(pid)
+        if item is not None and item["state"] != "Z":
+            try:
+                os.kill(pid, sig)
+            except ProcessLookupError:
+                pass
+try:
+    if ctypes.CDLL(None, use_errno=True).prctl(36, 1, 0, 0, 0) != 0:
+        raise RuntimeError("subreaper unavailable")
+    ps = shutil.which("ps")
+    if not ps or not pathlib.Path(ps).is_absolute():
+        raise RuntimeError("absolute ps unavailable")
+    env = dict(os.environ)
+    if mode == "unknown":
+        shim = root / "bin"
+        shim.mkdir()
+        (shim / "ps").write_text("#!/bin/sh\nexit 23\n")
+        (shim / "ps").chmod(0o700)
+        env["PATH"] = str(shim) + os.pathsep + env["PATH"]
+    controller = subprocess.Popen([node, *json.loads(worker_json), str(root / "controller.mjs"),
+                                   str(root), mode, repo], cwd=repo, env=env,
+                                  stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    register(controller.pid)
+    leader = wait(lambda: read("leader.ready"))["pid"]
+    leader_identity = register(leader)
+    if leader_identity["pgid"] != leader or leader_identity["sid"] != leader:
+        raise RuntimeError("renderer did not own a detached group")
+    gate("leader.go")
+    forker = wait(lambda: read("forker.ready"))["pid"]
+    register(forker)
+    gate("forker.go")
+    leaf = wait(lambda: read("leaf.ready"))["pid"]
+    leaf_identity = register(leaf)
+    if leaf_identity["pgid"] != leader or leaf_identity["sid"] != leader:
+        raise RuntimeError("leaf escaped renderer group")
+    gate("forker.exit")
+    joined = wait(lambda: read("forker.joined"))
+    if joined != {"code": 0, "signal": None}:
+        raise RuntimeError("forker was not joined successfully")
+    adopted = wait(lambda: (item if (item := present(leaf)) and item["ppid"] == os.getpid() else None))
+    report["adopted"] = adopted
+    if mode == "live":
+        gate("live-control.go")
+        report["liveControl"] = wait(lambda: read("live-control.json"))
+        snapshots["heldLive"] = threads(leaf)
+        if any(row["state"] == "Z" for row in snapshots["heldLive"]):
+            raise RuntimeError("live control leaf already exited")
+    gate("leaf.exit")
+    wait(lambda: all(row["state"] == "Z" for row in threads(leaf)))
+    gate("leader.exit")
+    report["leaderClose"] = wait(lambda: read("leader.closed"))
+    snapshots["stoppedGroup"] = session_rows(ps)
+    if not all(row["state"].startswith("Z") for row in snapshots["stoppedGroup"]):
+        raise RuntimeError("positive boundary contains live threads")
+    report["signalZeroPresent"] = group_present()
+    report["outcome"] = wait(lambda: read("outcome.json"), 35)
+    snapshots["terminalGroup"] = session_rows(ps)
+    if not all(row["state"].startswith("Z") for row in snapshots["terminalGroup"]):
+        raise RuntimeError("terminal group contains live threads")
+    leaf_at_reap = present(leaf)
+    if (leaf_at_reap is None or leaf_at_reap["ppid"] != os.getpid() or
+            leaf_at_reap["pgid"] != leader or leaf_at_reap["sid"] != leader or
+            leaf_at_reap["state"] != "Z"):
+        raise RuntimeError("owned leaf identity or zombie state changed before reap")
+    reaped_pid, reaped_status = os.waitpid(leaf, os.WNOHANG)
+    if reaped_pid != leaf or reaped_status != 0:
+        raise RuntimeError("owned leaf did not reap with status zero")
+    reaped.append({"pid": reaped_pid, "status": reaped_status})
+    if group_present():
+        raise RuntimeError("renderer group remains after exact leaf reap")
+    report["controllerCode"] = controller.wait(timeout=max(0, min(5, deadline - time.monotonic())))
+except BaseException as error:
+    report["fixtureError"] = type(error).__name__ + ": " + str(error).replace(str(root), "<fixture>")
+finally:
+    cleanup_start = time.monotonic()
+    cleanup_deadline = cleanup_start + 15
+    gate("stop")
+    for name in ["leaf.exit", "forker.exit", "leader.exit"]:
+        gate(name)
+    try:
+        signal_owned(signal.SIGTERM)
+        killed = False
+        while time.monotonic() < cleanup_deadline:
+            discover_owned()
+            all_reaped = reap()
+            remaining = [pid for pid in registered if present(pid) is not None]
+            if all_reaped and not remaining and not group_present():
+                break
+            if not killed and time.monotonic() >= cleanup_start + 2:
+                signal_owned(signal.SIGKILL)
+                killed = True
+            time.sleep(.005)
+        remaining = [pid for pid in registered if present(pid) is not None]
+        report["cleanup"] = {"joined": not remaining and not group_present() and
+                             (controller is None or controller.returncode is not None),
+                             "remaining": remaining, "reaped": reaped,
+                             "groupPresent": group_present()}
+    except BaseException as error:
+        report["cleanup"] = {"joined": False, "error": type(error).__name__ + ": " + str(error)}
+    if controller is not None:
+        drain()
+        controller.stdout.close()
+    report["identities"] = list(registered.values())
+    report["snapshots"] = snapshots
+    report["elapsedMs"] = round((time.monotonic() - started) * 1000)
+    if captured:
+        report["controllerOutput"] = captured.decode("utf8", errors="replace").replace(str(root), "<fixture>")
+    encoded = json.dumps(report, separators=(",", ":"))
+    if len(encoded.encode()) > 5000:
+        raise RuntimeError("structured evidence limit")
+    print(encoded, flush=True)
+`;
+      type Probe = {
+        mode: string;
+        fixtureError?: string;
+        cleanup: {
+          joined: boolean;
+          groupPresent: boolean;
+          reaped: { pid: number; status: number }[];
+        };
+        adopted: { pid: number; pgid: number };
+        signalZeroPresent: boolean;
+        controllerCode: number;
+        leaderClose: { code: number; signal: string | null };
+        outcome: {
+          ok: boolean;
+          code?: string;
+          cleanupCode?: string;
+          nodesHelpText?: string;
+          preserveRenderState?: boolean;
+          outputPresent: boolean;
+          statePresent: boolean;
+          events: { event: string; code: number; signal: string | null }[];
+          completedPsFault?: {
+            groupPid: number;
+            status: number;
+            signal: string | null;
+            errorPresent: boolean;
+          };
+        };
+        liveControl?: { observation: string; stopped: boolean; elapsedMs: number };
+      };
+      const runProbe = async (mode: string): Promise<Probe> => {
+        const root = fs.mkdtempSync(path.join(os.tmpdir(), "paleoclaw-supervised-descendant-"));
+        let settled = false;
+        writeStartupMetadataSourceSignatureFixture(root);
+        writeFixtureFile(
+          root,
+          "dist/root-help-fixture.js",
+          "export function outputRootHelp() {}\n",
+        );
+        writeFixtureFile(root, "actor.mjs", actor);
+        writeFixtureFile(root, "controller.mjs", controller);
+        mkdirSync(path.join(root, "home"));
+        const child = actualSpawn(
+          "python3",
+          ["-c", reaper, root, mode, process.execPath, repoRoot, JSON.stringify(workerArgs)],
+          {
+            cwd: repoRoot,
+            env: {
+              PATH: process.env.PATH,
+              HOME: path.join(root, "home"),
+              TMPDIR: root,
+              OPENCLAW_STATE_DIR: path.join(root, "state"),
+              OPENCLAW_CONFIG_PATH: path.join(root, "state", "openclaw.json"),
+              LANG: "C.UTF-8",
+              CI: "1",
+            },
+            stdio: ["ignore", "pipe", "pipe"],
+          },
+        );
+        let overflow = false;
+        const term = setTimeout(() => child.kill("SIGTERM"), 45_000);
+        const kill = setTimeout(() => child.kill("SIGKILL"), 60_000);
+        const output = { stdout: "", stderr: "" };
+        for (const stream of ["stdout", "stderr"] as const) {
+          child[stream].on("data", (chunk: Buffer) => {
+            const limit = stream === "stdout" ? 16_384 : 4096;
+            if (Buffer.byteLength(output[stream]) + chunk.length <= limit) {
+              output[stream] += chunk.toString();
+            } else {
+              overflow = true;
+              child.kill("SIGTERM");
+            }
+          });
+        }
+        try {
+          const closed = await childClosed(child);
+          expect(overflow, "fixture output exceeded its bound").toBe(false);
+          expect(closed, output.stderr).toEqual({ code: 0, signal: null });
+          const evidence = JSON.parse(output.stdout) as Probe;
+          settled = evidence.cleanup.joined;
+          console.log(`SUPERVISED_EXITED_DESCENDANT ${output.stdout.trim()}`);
+          expect(evidence.fixtureError).toBeUndefined();
+          expect(evidence, "subreaper must join every owned child").toMatchObject({
+            cleanup: { joined: true, groupPresent: false },
+            controllerCode: 0,
+            leaderClose: { code: 0, signal: null },
+            signalZeroPresent: true,
+          });
+          expect(evidence.cleanup.reaped).toContainEqual({ pid: evidence.adopted.pid, status: 0 });
+          expect(evidence.outcome.events).toEqual([
+            { event: "exit", code: 0, signal: null },
+            { event: "close", code: 0, signal: null },
+          ]);
+          return evidence;
+        } finally {
+          clearTimeout(term);
+          clearTimeout(kill);
+          // Failed settlement retains the synthetic state until the owned remote lease is stopped.
+          if (settled) {
+            fs.rmSync(root, { recursive: true, force: true });
+          }
+        }
+      };
+      const stopped = await runProbe("stopped");
+      const live = await runProbe("live");
+      expect(live.liveControl?.observation).not.toBe("dead");
+      expect(live.liveControl?.stopped).toBe(false);
+      expect(live.liveControl?.elapsedMs).toBeGreaterThanOrEqual(100);
+      const unknown = await runProbe("unknown");
+      expect(unknown.outcome).toMatchObject({
+        ok: false,
+        code: "EPROCESSGROUP_CLEANUP_FAILED",
+        preserveRenderState: true,
+        statePresent: true,
+        outputPresent: false,
+      });
+      expect(unknown.outcome.completedPsFault).toEqual({
+        groupPid: unknown.adopted.pgid,
+        status: 23,
+        signal: null,
+        errorPresent: false,
+      });
+      expect(stopped.outcome, JSON.stringify(stopped.outcome)).toMatchObject({
+        ok: true,
+        nodesHelpText: "Usage: paleoclaw nodes\n",
+        outputPresent: true,
+        statePresent: false,
+      });
+    },
+    185_000,
+  );
+
+  it.runIf(process.platform !== "win32")(
+    "cancels a default-batch sibling process tree after another command fails",
+    async ({ signal }) => {
+      const spawnMock = vi.mocked(spawn);
+      const metadata = metadataFixture("paleoclaw-startup-metadata-batch-tree-");
+      const { sourceRootDir: tempRoot, outputPath } = metadata;
+      const grandchildPidPath = path.join(tempRoot, "grandchild.pid");
+      const startedCommands: string[] = [];
+      const startedChildren: Array<ReturnType<typeof spawn>> = [];
+      let grandchildPid = 0;
+
+      const failingScript = [
+        "const { existsSync } = await import('node:fs');",
+        `const marker = ${JSON.stringify(grandchildPidPath)};`,
+        "const timer = setInterval(() => {",
+        "  if (!existsSync(marker)) return;",
+        "  clearInterval(timer);",
+        "  process.stderr.write('browser sentinel failure\\n', () => process.exit(9));",
+        "}, 5);",
+      ].join("\n");
+      const grandchildScript = [
+        "process.on('SIGTERM', () => setTimeout(() => process.exit(0), 50));",
+        "setInterval(() => {}, 1000);",
+      ].join("\n");
+      const siblingScript = [
+        "const { spawn } = await import('node:child_process');",
+        "const { writeFileSync } = await import('node:fs');",
+        `const grandchild = spawn(process.execPath, ["--eval", ${JSON.stringify(grandchildScript)}], { stdio: "ignore" });`,
+        `writeFileSync(${JSON.stringify(grandchildPidPath)}, String(grandchild.pid));`,
+        "process.on('SIGTERM', () => setTimeout(() => process.exit(0), 100));",
+        "setInterval(() => {}, 1000);",
+      ].join("\n");
+      const idleScript = [
+        "process.on('SIGTERM', () => process.exit(0));",
+        "setInterval(() => {}, 1000);",
+      ].join("\n");
+
+      spawnMock.mockImplementation((_command, args, options) => {
+        const commandName = String(args[1]);
+        startedCommands.push(commandName);
+        const script =
+          commandName === "browser"
+            ? failingScript
+            : commandName === "secrets"
+              ? siblingScript
+              : idleScript;
+        const child = actualSpawn(
+          process.execPath,
+          ["--input-type=module", "--eval", script],
+          options,
+        );
+        startedChildren.push(child);
+        return child;
+      });
+
+      try {
+        const startedAt = Date.now();
+        await expect(
+          testing.writeCliStartupMetadata({
+            ...metadata,
+            renderBundledRootHelpText: async () => "Usage: paleoclaw\n",
+          }),
+        ).rejects.toThrow("browser sentinel failure");
+
+        grandchildPid = Number(readFileSync(grandchildPidPath, "utf8"));
+        expect(Number.isInteger(grandchildPid)).toBe(true);
+        expect(grandchildPid).toBeGreaterThan(0);
+        expect(Date.now() - startedAt).toBeLessThan(LOAD_SENSITIVE_PROCESS_TIMEOUT_MS);
+        expect(startedCommands).toHaveLength(COMMAND_HELP_RENDER_CONCURRENCY);
+        expect(startedCommands).not.toContain("tasks");
+        await waitForProcessExit(grandchildPid, signal);
+        expect(existsSync(outputPath)).toBe(false);
+      } finally {
+        spawnMock.mockImplementation(actualSpawn);
+        for (const child of startedChildren) {
+          if (child.pid && processIsAlive(child.pid)) {
+            try {
+              process.kill(-child.pid, "SIGKILL");
+            } catch {}
+          }
+        }
+        if (grandchildPid > 0 && processIsAlive(grandchildPid)) {
+          try {
+            process.kill(grandchildPid, "SIGKILL");
+          } catch {}
+        }
+      }
+    },
+  );
+
+  it.runIf(process.platform !== "win32").for([
+    {
+      mode: "timeout",
+      timeoutMs: 500,
+      terminal: "process.on('SIGTERM', () => {}); setInterval(() => {}, 1000);",
+      error: "render failed: timed out after 500ms",
+    },
+    {
+      mode: "nonzero exit",
+      timeoutMs: 5_000,
+      terminal: "process.stderr.write('leader failed\\n', () => process.exit(7));",
+      error: /render failed: leader failed.*elapsed \d+ms/u,
+    },
+  ])(
+    "drains descendants after command $mode",
+    async ({ timeoutMs, terminal, error }, { signal }) => {
+      const tempRoot = createTempDir("paleoclaw-startup-metadata-descendants-");
+      const markerPath = path.join(tempRoot, "grandchild.pid");
+      await expect(
+        spawnHelp(["--input-type=module", "--eval", descendantScript(markerPath, terminal)], {
+          cwd: tempRoot,
+          timeoutMs,
+        }),
+      ).rejects.toThrow(error);
+      const grandchildPid = Number(readFileSync(markerPath, "utf8"));
+      expect(Number.isInteger(grandchildPid)).toBe(true);
+      expect(grandchildPid).toBeGreaterThan(0);
+      await waitForProcessExit(grandchildPid, signal);
+    },
+  );
+
+  it.runIf(process.platform !== "win32")(
+    "waits for all command help descendants before re-raising parent signals",
+    async ({ signal }) => {
+      const tempRoot = createTempDir("paleoclaw-startup-metadata-signal-");
+      const fastCommandPath = path.join(tempRoot, "fast-command.mjs");
+      const fastReadyPath = path.join(tempRoot, "fast-ready");
+      const commandPath = path.join(tempRoot, "command.mjs");
+      const runnerPath = path.join(tempRoot, "runner.mjs");
+      const grandchildPidPath = path.join(tempRoot, "grandchild.pid");
+      const renderStatePath = path.join(tempRoot, "render-state.txt");
+      const distDir = path.join(tempRoot, "dist");
+      const outputPath = path.join(distDir, "cli-startup-metadata.json");
+      const grandchildScript = [
+        "process.on('SIGTERM', () => {});",
+        "process.send('ready');",
+        "setInterval(() => {}, 1000);",
+      ].join("\n");
+      writeFixtureFile(
+        tempRoot,
+        "fast-command.mjs",
+        [
+          "import { writeFileSync } from 'node:fs';",
+          fixtureReceiptClientSource(receipts.endpoint),
+          "process.on('SIGTERM', () => process.exit(0));",
+          `writeFileSync(${JSON.stringify(fastReadyPath)}, "ready");`,
+          `sendReceipt(${JSON.stringify(fastReadyPath)}, "ready");`,
+          "setInterval(() => {}, 1000);",
+        ].join("\n"),
+      );
+      writeFixtureFile(
+        tempRoot,
+        "command.mjs",
+        [
+          "import { spawn } from 'node:child_process';",
+          "import { writeFileSync } from 'node:fs';",
+          fixtureReceiptClientSource(receipts.endpoint),
+          `const grandchild = spawn(process.execPath, ["--eval", ${JSON.stringify(
+            grandchildScript,
+          )}], { stdio: ["ignore", "ignore", "ignore", "ipc"] });`,
+          "process.on('SIGTERM', () => process.exit(0));",
+          "grandchild.once('message', () => {",
+          "  grandchild.disconnect();",
+          `  writeFileSync(${JSON.stringify(grandchildPidPath)}, String(grandchild.pid));`,
+          `  sendReceipt(${JSON.stringify(grandchildPidPath)}, "ready");`,
+          "});",
+          "setInterval(() => {}, 1000);",
+        ].join("\n"),
+      );
+      writeStartupMetadataSourceSignatureFixture(tempRoot);
+      writeFixtureFile(distDir, "root-help-fixture.js", "export function outputRootHelp() {}\n");
+      writeFixtureFile(
+        tempRoot,
+        "runner.mjs",
+        [
+          `const { testing } = await import(${JSON.stringify(metadataUrl.href)});`,
+          "const { writeFileSync } = await import('node:fs');",
+          "const renderCommand = (commandPath, failureMessage) => (context, taskContext) => {",
+          "  if (!taskContext) throw new Error('missing render task context');",
+          `  writeFileSync(${JSON.stringify(renderStatePath)}, context.env.OPENCLAW_STATE_DIR);`,
+          "  return testing.spawnText([commandPath], {",
+          `    cwd: ${JSON.stringify(tempRoot)},`,
+          "    env: process.env,",
+          "    failureMessage,",
+          "    killGraceMs: 100,",
+          "    maxOutputBytes: 1024,",
+          "    onTerminalFailure: taskContext.reportFailure,",
+          "    signal: taskContext.signal,",
+          "    timeoutMs: 30_000,",
+          "  });",
+          "};",
+          "await testing.writeCliStartupMetadata({",
+          `  distDir: ${JSON.stringify(distDir)},`,
+          `  outputPath: ${JSON.stringify(outputPath)},`,
+          `  extensionsDir: ${JSON.stringify(path.join(tempRoot, "extensions"))},`,
+          `  sourceRootDir: ${JSON.stringify(tempRoot)},`,
+          "  renderBundledRootHelpText: async () => 'Usage: paleoclaw\\n',",
+          `  renderSourceBrowserHelpText: renderCommand(${JSON.stringify(fastCommandPath)}, 'fast render failed'),`,
+          `  renderSourceSecretsHelpText: renderCommand(${JSON.stringify(commandPath)}, 'render failed'),`,
+          "  renderSourceNodesHelpText: () => 'Usage: paleoclaw nodes\\n',",
+          "  renderSourceSubcommandHelpTextRecord: () => ({",
+          "    config: 'Usage: paleoclaw config\\n',",
+          "    doctor: 'Usage: paleoclaw doctor\\n', gateway: 'Usage: paleoclaw gateway\\n',",
+          "    models: 'Usage: paleoclaw models\\n', plugins: 'Usage: paleoclaw plugins\\n',",
+          "    sessions: 'Usage: paleoclaw sessions\\n',",
+          "  }),",
+          "});",
+        ].join("\n"),
+      );
+
+      const runner = spawn(
+        process.execPath,
+        [...resolveRuntimeWorkerArgv(metadataUrl).slice(0, -1), runnerPath],
+        {
+          cwd: process.cwd(),
+          stdio: "ignore",
+        },
+      );
+      const closed = childClosed(runner);
+      let grandchildPid = 0;
+      let stopRequested = false;
+
+      try {
+        const readReadyRecords = () => {
+          const pid = existsSync(grandchildPidPath)
+            ? Number(readFileSync(grandchildPidPath, "utf8"))
+            : Number.NaN;
+          if (!Number.isInteger(pid) || pid <= 0) {
+            throw new Error(`timeout waiting for pid in ${grandchildPidPath}`);
+          }
+          expect(readFileSync(fastReadyPath, "utf8")).toBe("ready");
+          return pid;
+        };
+        // Both records precede their receipts. A runner exit can overtake socket
+        // delivery, so settlement checks the durable records before failing.
+        grandchildPid = await withinTest(
+          Promise.race([
+            Promise.all([
+              receipts.waitFor(grandchildPidPath, "ready"),
+              receipts.waitFor(fastReadyPath, "ready"),
+            ]).then(readReadyRecords),
+            closed.then(readReadyRecords),
+          ]),
+          signal,
+        );
+        expect(readFileSync(fastReadyPath, "utf8")).toBe("ready");
+        expect(grandchildPid).toBeGreaterThan(0);
+        expect(processIsAlive(grandchildPid)).toBe(true);
+
+        stopRequested = true;
+        runner.kill("SIGTERM");
+
+        await expect(withinTest(closed, signal)).resolves.toEqual({
+          code: null,
+          signal: "SIGTERM",
+        });
+        await waitForProcessExit(grandchildPid, signal);
+        const renderStateDir = readFileSync(renderStatePath, "utf8");
+        expect(existsSync(renderStateDir)).toBe(false);
+      } finally {
+        if (!stopRequested) {
+          runner.kill("SIGTERM");
+        }
+        await closed;
+        if (grandchildPid > 0 && processIsAlive(grandchildPid)) {
+          process.kill(grandchildPid, "SIGKILL");
+        }
+      }
+    },
+  );
+  it("writes complete startup metadata with existing output and source-rendered help", async () => {
+    const tempRoot = createTempDir("paleoclaw-startup-metadata-");
+    const distDir = path.join(tempRoot, "dist");
+    const extensionsDir = path.join(tempRoot, "extensions");
+    const outputPath = path.join(distDir, "cli-startup-metadata.json");
+
+    mkdirSync(distDir, { recursive: true });
+    writeFileSync(outputPath, '{"rootHelpText":"old help"}\n');
+    fs.chmodSync(outputPath, 0o640);
+    fs.chmodSync(distDir, 0o750);
+    mkdirSync(path.join(extensionsDir, "matrix"), { recursive: true });
+    writeFileSync(
+      path.join(extensionsDir, "matrix", "package.json"),
+      JSON.stringify({
+        paleoclaw: {
+          channel: {
+            id: "matrix",
+            order: 120,
+            label: "Matrix",
+          },
+        },
+      }),
+      "utf8",
+    );
+
+    await testing.writeCliStartupMetadata({
+      distDir,
+      outputPath,
+      extensionsDir,
+      renderSourceRootHelpText: () => "Usage: paleoclaw\n",
+      ...sourceHelpRenderers,
+    });
+
+    expect(readMetadata(outputPath)).toMatchObject({
+      channelOptions: expect.arrayContaining(["matrix"]),
+      generatorSignature: expect.stringMatching(/^[a-f0-9]{40}$/u),
+      browserHelpText: "Usage: paleoclaw browser\n",
+      secretsHelpText: "Usage: paleoclaw secrets\n",
+      nodesHelpText: "Usage: paleoclaw nodes\n",
+      rootHelpText: "Usage: paleoclaw\n",
+      subcommandHelpText: sourceSubcommandHelp(),
+    });
+    expect(fs.readdirSync(distDir)).toEqual(["cli-startup-metadata.json"]);
+    if (process.platform !== "win32") {
+      expect(fs.statSync(distDir).mode & 0o777).toBe(0o750);
+      expect(fs.statSync(outputPath).mode & 0o777).toBe(0o640);
+    }
+  });
+
+  it.each(["partial write", "rename"] as const)(
+    "preserves the prior startup metadata after a failed %s",
+    async (failurePhase) => {
+      const metadata = metadataFixture("paleoclaw-startup-metadata-publication-", false);
+      const { distDir, outputPath } = metadata;
+      let revision = "before";
+      const options = {
+        ...metadata,
+        renderSourceRootHelpText: () => `Usage: paleoclaw ${revision}\n`,
+        ...sourceHelpRenderers,
+      };
+      await testing.writeCliStartupMetadata(options);
+      const previous = readFileSync(outputPath, "utf8");
+      revision = "after";
+      const failure = Object.assign(new Error(`publication ${failurePhase} failed`), {
+        code: failurePhase === "partial write" ? "ENOSPC" : "EACCES",
+      });
+      const realWrite = fs.writeFileSync.bind(fs);
+      const realRename = fs.renameSync.bind(fs);
+      const write = vi
+        .spyOn(fs, "writeFileSync")
+        .mockImplementation((target, data, writeOptions) => {
+          if (
+            failurePhase === "partial write" &&
+            typeof data === "string" &&
+            data.includes('"generatedBy": "scripts/write-cli-startup-metadata.ts"')
+          ) {
+            realWrite(target, data.slice(0, 32), writeOptions);
+            throw failure;
+          }
+          realWrite(target, data, writeOptions);
+        });
+      const rename = vi.spyOn(fs, "renameSync").mockImplementation((source, destination) => {
+        if (
+          failurePhase === "rename" &&
+          path.basename(String(destination)) === path.basename(outputPath)
+        ) {
+          throw failure;
+        }
+        realRename(source, destination);
+      });
+      try {
+        syncBuiltinESMExports();
+        await expect(testing.writeCliStartupMetadata(options)).rejects.toBe(failure);
+        expect(readFileSync(outputPath, "utf8")).toBe(previous);
+        expect(fs.readdirSync(distDir)).toEqual([path.basename(outputPath)]);
+      } finally {
+        write.mockRestore();
+        rename.mockRestore();
+        syncBuiltinESMExports();
+      }
+    },
+  );
+
+  it("does not source-fallback a bundled root resource failure", async () => {
+    const metadata = metadataFixture("paleoclaw-startup-metadata-root-resource-failure-");
+    const { outputPath } = metadata;
+    const renderSourceRootHelpText = vi.fn(() => "Usage: source fallback\n");
+
+    await expect(
+      writeWithFixtureHelp(metadata, {
+        renderBundledRootHelpText: async () => {
+          throw Object.assign(new Error("bundled root timed out"), { code: "ETIMEDOUT" });
+        },
+        renderSourceRootHelpText,
+      }),
+    ).rejects.toThrow("bundled root timed out");
+    expect(renderSourceRootHelpText).not.toHaveBeenCalled();
+    expect(existsSync(outputPath)).toBe(false);
+  });
+
+  it("selects the .mjs root-help renderer beside a .js helper", async () => {
+    const metadata = metadataFixture("paleoclaw-startup-metadata-bundle-selection-", false);
+    const { sourceRootDir: tempRoot, distDir, outputPath } = metadata;
+    const renderSourceRootHelpText = vi.fn(() => "Usage: source fallback\n");
+
+    writeFixtureFile(tempRoot, "package.json", '{"type":"module"}\n');
+    writeFixtureFile(
+      distDir,
+      "root-help-live-config-fixture.js",
+      "async function loadRootHelpRenderOptionsForConfigSensitivePlugins() { return null; }\nexport { loadRootHelpRenderOptionsForConfigSensitivePlugins };\n",
+    );
+    writeFixtureFile(
+      distDir,
+      "root-help-renderer-fixture.mjs",
+      "import \"./root-help-live-config-fixture.js\";\nasync function outputRootHelp() { process.stdout.write('Usage: bundled renderer\\n'); }\nexport { outputRootHelp };\n",
+    );
+
+    await testing.writeCliStartupMetadata({
+      ...metadata,
+      renderSourceRootHelpText,
+      ...sourceHelpRenderers,
+    });
+
+    expect(readMetadata(outputPath).rootHelpText).toBe("Usage: bundled renderer\n");
+    expect(renderSourceRootHelpText).not.toHaveBeenCalled();
+  });
+
+  it("renders independent startup help snapshots concurrently", async () => {
+    const metadata = metadataFixture("paleoclaw-startup-metadata-concurrency-");
+    const { outputPath } = metadata;
+    const started: string[] = [];
+    const expectedStarted = ["browser", "secrets", "nodes", "subcommands"];
+    const allStarted = Promise.withResolvers<void>();
+    const unblocked = Promise.withResolvers<void>();
+    const renderAfterUnblock =
+      <T>(label: string, output: T) =>
+      async () => {
+        started.push(label);
+        if (expectedStarted.every((name) => started.includes(name))) {
+          allStarted.resolve();
+        }
+        await unblocked.promise;
+        return output;
+      };
+
+    const writePromise = writeWithFixtureHelp(metadata, {
+      renderSourceBrowserHelpText: renderAfterUnblock("browser", "Usage: paleoclaw browser\n"),
+      renderSourceSecretsHelpText: renderAfterUnblock("secrets", "Usage: paleoclaw secrets\n"),
+      renderSourceNodesHelpText: renderAfterUnblock("nodes", "Usage: paleoclaw nodes\n"),
+      renderSourceSubcommandHelpTextRecord: renderAfterUnblock(
+        "subcommands",
+        sourceSubcommandHelp(),
+      ),
+    });
+
+    await allStarted.promise;
+    unblocked.resolve();
+    await writePromise;
+
+    expect(readMetadata(outputPath)).toMatchObject({
+      browserHelpText: expect.stringContaining("paleoclaw browser"),
+      secretsHelpText: expect.stringContaining("paleoclaw secrets"),
+      nodesHelpText: expect.stringContaining("paleoclaw nodes"),
+    });
+  });
+
+  it("does not let shared-state cleanup mask the primary render failure", async () => {
+    const metadata = metadataFixture("paleoclaw-startup-metadata-cleanup-failure-");
+    const cleanupFailure = new Error("cleanup failed");
+    const realRmSync = fs.rmSync.bind(fs);
+    let renderStateDir = "";
+    const removeState = vi.spyOn(fs, "rmSync").mockImplementation((target, options) => {
+      if (String(target) === renderStateDir) {
+        throw cleanupFailure;
+      }
+      return realRmSync(target, options);
+    });
+
+    try {
+      const writePromise = writeWithFixtureHelp(metadata, {
+        renderSourceBrowserHelpText: (renderContext) => {
+          renderStateDir = renderContext.env?.OPENCLAW_STATE_DIR ?? "";
+          throw new Error("primary browser failure");
+        },
+      });
+      await expect(writePromise).rejects.toThrow("primary browser failure");
+      await expect(writePromise).rejects.toMatchObject({ cleanupError: cleanupFailure });
+    } finally {
+      removeState.mockRestore();
+      if (renderStateDir) {
+        realRmSync(renderStateDir, { force: true, recursive: true });
+      }
+    }
+  });
+
+  it("regenerates nodes help when canvas or plugin CLI registration sources change", async () => {
+    const metadata = metadataFixture("paleoclaw-startup-metadata-signature-");
+    const { sourceRootDir: tempRoot, outputPath } = metadata;
+    let nodesRenderCount = 0;
+
+    const writeMetadata = () =>
+      writeWithFixtureHelp(metadata, {
+        renderSourceNodesHelpText: () => {
+          nodesRenderCount += 1;
+          return `Usage: paleoclaw nodes ${nodesRenderCount}\n`;
+        },
+      });
+
+    await writeMetadata();
+    await writeMetadata();
+    expect(nodesRenderCount).toBe(1);
+
+    const staleGeneratorMetadata = readMetadata(outputPath);
+    staleGeneratorMetadata.generatorSignature = "stale-generator";
+    writeFileSync(outputPath, `${JSON.stringify(staleGeneratorMetadata, null, 2)}\n`, "utf8");
+
+    await writeMetadata();
+    expect(nodesRenderCount).toBe(2);
+
+    writeFixtureFile(
+      tempRoot,
+      "extensions/canvas/src/cli.ts",
+      "export const canvasCliHelp = 'canvas changed help';\n",
+    );
+
+    await writeMetadata();
+
+    expect(nodesRenderCount).toBe(3);
+    expect(readMetadata(outputPath).nodesHelpText).toContain("paleoclaw nodes 3");
+
+    writeFixtureFile(tempRoot, "src/plugins/cli.ts", "export const pluginCliHelp = 'changed';\n");
+
+    await writeMetadata();
+
+    expect(nodesRenderCount).toBe(4);
+    expect(readMetadata(outputPath).nodesHelpText).toContain("paleoclaw nodes 4");
+  });
+
+  it("regenerates help when build version or commit changes", async () => {
+    const metadata = metadataFixture("paleoclaw-startup-metadata-build-identity-");
+    const { distDir, outputPath } = metadata;
+    let renderCount = 0;
+    let commandRenderCount = 0;
+
+    const renderSubcommandHelp = () => {
+      commandRenderCount += 1;
+      const buildInfo = JSON.parse(readFileSync(path.join(distDir, "build-info.json"), "utf8")) as {
+        commit: string;
+        version: string;
+      };
+      const banner = `paleoclaw ${buildInfo.version} (${buildInfo.commit.slice(0, 7)})`;
+      return sourceSubcommandHelp(`${banner}\n`);
+    };
+
+    const countedHelp = (command: string) => () => {
+      commandRenderCount += 1;
+      return `Usage: paleoclaw ${command}\n`;
+    };
+    const writeMetadata = () =>
+      writeWithFixtureHelp(metadata, {
+        renderBundledRootHelpText: async () => {
+          renderCount += 1;
+          return `Usage: paleoclaw ${renderCount}\n`;
+        },
+        renderSourceBrowserHelpText: countedHelp("browser"),
+        renderSourceSecretsHelpText: countedHelp("secrets"),
+        renderSourceNodesHelpText: countedHelp("nodes"),
+        renderSourceSubcommandHelpTextRecord: renderSubcommandHelp,
+      });
+
+    for (const [index, [version, commit, banner]] of (
+      [
+        ["2026.7.2", "a", "paleoclaw 2026.7.2 (aaaaaaa)"],
+        ["2026.7.2", "b", "paleoclaw 2026.7.2 (bbbbbbb)"],
+        ["2026.7.3", "b", "paleoclaw 2026.7.3 (bbbbbbb)"],
+      ] as const
+    ).entries()) {
+      writeFixtureFile(
+        distDir,
+        "build-info.json",
+        JSON.stringify({ version, commit: commit.repeat(40) }),
+      );
+      await writeMetadata();
+      if (index === 0) {
+        await writeMetadata();
+      }
+      expect({ renderCount, commandRenderCount }).toEqual({
+        renderCount: index + 1,
+        commandRenderCount: (index + 1) * 4,
+      });
+      expect(readFileSync(outputPath, "utf8")).toContain(banner);
+    }
+    expect(readMetadata(outputPath).subcommandHelpText.models).toContain(
+      "paleoclaw 2026.7.3 (bbbbbbb)",
+    );
+  });
+});

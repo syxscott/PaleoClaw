@@ -50,7 +50,7 @@ apps/ios/.derivedData/
 apps/ios/.local-signing.xcconfig
 vendor/*
 !vendor/a2ui/
-# PaleoClaw intentionally vendors openclaw normalization-core/retry sources:
+# PaleoClaw intentionally vendors paleoclaw normalization-core/retry sources:
 !src/vendor/
 apps/ios/Clawdbot.xcodeproj/
 apps/ios/Clawdbot.xcodeproj/**

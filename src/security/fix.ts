@@ -1,36 +1,26 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { resolveDefaultAgentId } from "../agents/agent-scope.js";
-import type { OpenClawConfig } from "../config/config.js";
-import { createConfigIO } from "../config/config.js";
+import { modeBits } from "@paleoclaw/fs-safe/permissions";
+import { walkDirectory } from "@paleoclaw/fs-safe/walk";
+import { listAgentIds, tryResolveDefaultAgentId } from "../agents/agent-scope.js";
+import { resolveAuthProfileDatabaseFilePaths } from "../agents/auth-profiles/sqlite.js";
+import type { AnyChannelPlugin as ChannelPlugin } from "../channels/plugins/types.plugin.js";
+import { createConfigIO, replaceConfigFile } from "../config/config.js";
 import { collectIncludePathsRecursive } from "../config/includes-scan.js";
 import { resolveConfigPath, resolveOAuthDir, resolveStateDir } from "../config/paths.js";
-import { readChannelAllowFromStore } from "../pairing/pairing-store.js";
+import type { OpenClawConfig } from "../config/types.openclaw.js";
 import { runExec } from "../process/exec.js";
-import { DEFAULT_ACCOUNT_ID, normalizeAgentId } from "../routing/session-key.js";
-import { createIcaclsResetCommand, formatIcaclsResetCommand, type ExecFn } from "./windows-acl.js";
+import { LEGACY_IMPLICIT_AGENT_ID } from "../routing/session-key.js";
+import { createIcaclsResetCommand, formatIcaclsResetCommand } from "./windows-acl.js";
 
-export type SecurityFixChmodAction = {
-  kind: "chmod";
+type SecurityFixAction = {
   path: string;
-  mode: number;
   ok: boolean;
   skipped?: string;
   error?: string;
-};
+} & ({ kind: "chmod"; mode: number } | { kind: "icacls"; command: string });
 
-export type SecurityFixIcaclsAction = {
-  kind: "icacls";
-  path: string;
-  command: string;
-  ok: boolean;
-  skipped?: string;
-  error?: string;
-};
-
-export type SecurityFixAction = SecurityFixChmodAction | SecurityFixIcaclsAction;
-
-export type SecurityFixResult = {
+type SecurityFixResult = {
   ok: boolean;
   stateDir: string;
   configPath: string;
@@ -40,146 +30,61 @@ export type SecurityFixResult = {
   errors: string[];
 };
 
-async function safeChmod(params: {
+type SecurityPermissionTarget = {
   path: string;
   mode: number;
   require: "dir" | "file";
-}): Promise<SecurityFixChmodAction> {
-  try {
-    const st = await fs.lstat(params.path);
-    if (st.isSymbolicLink()) {
-      return {
-        kind: "chmod",
-        path: params.path,
-        mode: params.mode,
-        ok: false,
-        skipped: "symlink",
-      };
-    }
-    if (params.require === "dir" && !st.isDirectory()) {
-      return {
-        kind: "chmod",
-        path: params.path,
-        mode: params.mode,
-        ok: false,
-        skipped: "not-a-directory",
-      };
-    }
-    if (params.require === "file" && !st.isFile()) {
-      return {
-        kind: "chmod",
-        path: params.path,
-        mode: params.mode,
-        ok: false,
-        skipped: "not-a-file",
-      };
-    }
-    const current = st.mode & 0o777;
-    if (current === params.mode) {
-      return {
-        kind: "chmod",
-        path: params.path,
-        mode: params.mode,
-        ok: false,
-        skipped: "already",
-      };
-    }
-    await fs.chmod(params.path, params.mode);
-    return { kind: "chmod", path: params.path, mode: params.mode, ok: true };
-  } catch (err) {
-    const code = (err as { code?: string }).code;
-    if (code === "ENOENT") {
-      return {
-        kind: "chmod",
-        path: params.path,
-        mode: params.mode,
-        ok: false,
-        skipped: "missing",
-      };
-    }
-    return {
-      kind: "chmod",
-      path: params.path,
-      mode: params.mode,
-      ok: false,
-      error: String(err),
-    };
-  }
-}
+};
 
-async function safeAclReset(params: {
-  path: string;
-  require: "dir" | "file";
-  env: NodeJS.ProcessEnv;
-  exec?: ExecFn;
-}): Promise<SecurityFixIcaclsAction> {
-  const display = formatIcaclsResetCommand(params.path, {
-    isDir: params.require === "dir",
-    env: params.env,
-  });
+async function applyPermissionFix(
+  target: SecurityPermissionTarget,
+  env: NodeJS.ProcessEnv,
+): Promise<SecurityFixAction> {
+  const action: SecurityFixAction =
+    process.platform === "win32"
+      ? {
+          kind: "icacls",
+          path: target.path,
+          command: formatIcaclsResetCommand(target.path, {
+            isDir: target.require === "dir",
+            env,
+          }),
+          ok: false,
+        }
+      : { kind: "chmod", path: target.path, mode: target.mode, ok: false };
   try {
-    const st = await fs.lstat(params.path);
+    const st = await fs.lstat(target.path);
     if (st.isSymbolicLink()) {
-      return {
-        kind: "icacls",
-        path: params.path,
-        command: display,
-        ok: false,
-        skipped: "symlink",
-      };
+      return { ...action, skipped: "symlink" };
     }
-    if (params.require === "dir" && !st.isDirectory()) {
-      return {
-        kind: "icacls",
-        path: params.path,
-        command: display,
-        ok: false,
-        skipped: "not-a-directory",
-      };
+    if (target.require === "dir" && !st.isDirectory()) {
+      return { ...action, skipped: "not-a-directory" };
     }
-    if (params.require === "file" && !st.isFile()) {
-      return {
-        kind: "icacls",
-        path: params.path,
-        command: display,
-        ok: false,
-        skipped: "not-a-file",
-      };
+    if (target.require === "file" && !st.isFile()) {
+      return { ...action, skipped: "not-a-file" };
     }
-    const cmd = createIcaclsResetCommand(params.path, {
-      isDir: st.isDirectory(),
-      env: params.env,
-    });
-    if (!cmd) {
-      return {
-        kind: "icacls",
-        path: params.path,
-        command: display,
-        ok: false,
-        skipped: "missing-user",
-      };
+    if (action.kind === "chmod") {
+      if (modeBits(st.mode) === target.mode) {
+        return { ...action, skipped: "already" };
+      }
+      await fs.chmod(target.path, target.mode);
+    } else {
+      const cmd = createIcaclsResetCommand(target.path, {
+        isDir: st.isDirectory(),
+        env,
+      });
+      if (!cmd) {
+        return { ...action, skipped: "missing-user" };
+      }
+      await runExec(cmd.command, cmd.args);
+      action.command = cmd.display;
     }
-    const exec = params.exec ?? runExec;
-    await exec(cmd.command, cmd.args);
-    return { kind: "icacls", path: params.path, command: cmd.display, ok: true };
+    return { ...action, ok: true };
   } catch (err) {
     const code = (err as { code?: string }).code;
-    if (code === "ENOENT") {
-      return {
-        kind: "icacls",
-        path: params.path,
-        command: display,
-        ok: false,
-        skipped: "missing",
-      };
-    }
-    return {
-      kind: "icacls",
-      path: params.path,
-      command: display,
-      ok: false,
-      error: String(err),
-    };
+    return code === "ENOENT"
+      ? { ...action, skipped: "missing" }
+      : { ...action, error: String(err) };
   }
 }
 
@@ -187,7 +92,6 @@ function setGroupPolicyAllowlist(params: {
   cfg: OpenClawConfig;
   channel: string;
   changes: string[];
-  policyFlips: Set<string>;
 }): void {
   if (!params.cfg.channels) {
     return;
@@ -203,7 +107,6 @@ function setGroupPolicyAllowlist(params: {
   if (topPolicy === "open") {
     section.groupPolicy = "allowlist";
     params.changes.push(`channels.${params.channel}.groupPolicy=open -> allowlist`);
-    params.policyFlips.add(`channels.${params.channel}.`);
   }
 
   const accounts = section.accounts;
@@ -223,185 +126,133 @@ function setGroupPolicyAllowlist(params: {
       params.changes.push(
         `channels.${params.channel}.accounts.${accountId}.groupPolicy=open -> allowlist`,
       );
-      params.policyFlips.add(`channels.${params.channel}.accounts.${accountId}.`);
     }
   }
 }
 
-function setWhatsAppGroupAllowFromFromStore(params: {
+async function applySecurityFixConfigMutations(params: {
   cfg: OpenClawConfig;
-  storeAllowFrom: string[];
+  env: NodeJS.ProcessEnv;
+  channelPlugins?: ChannelPlugin[];
+}): Promise<{
+  cfg: OpenClawConfig;
   changes: string[];
-  policyFlips: Set<string>;
-}): void {
-  const section = params.cfg.channels?.whatsapp as Record<string, unknown> | undefined;
-  if (!section || typeof section !== "object") {
-    return;
-  }
-  if (params.storeAllowFrom.length === 0) {
-    return;
-  }
-
-  const maybeApply = (prefix: string, obj: Record<string, unknown>) => {
-    if (!params.policyFlips.has(prefix)) {
-      return;
+}> {
+  let nextCfg = params.cfg;
+  const channelChanges: string[] = [];
+  const collectPlugins = async (): Promise<ChannelPlugin[]> => {
+    if (params.channelPlugins) {
+      return params.channelPlugins;
     }
-    const allowFrom = Array.isArray(obj.allowFrom) ? obj.allowFrom : [];
-    const groupAllowFrom = Array.isArray(obj.groupAllowFrom) ? obj.groupAllowFrom : [];
-    if (allowFrom.length > 0) {
-      return;
+    try {
+      const pluginIds = Object.keys(params.cfg.channels ?? {}).filter(Boolean);
+      if (pluginIds.length === 0) {
+        return [];
+      }
+      const wanted = new Set(pluginIds);
+      const { listBundledChannelPlugins } = await import("../channels/plugins/bundled.js");
+      return listBundledChannelPlugins().filter((plugin) => wanted.has(plugin.id));
+    } catch {
+      return [];
     }
-    if (groupAllowFrom.length > 0) {
-      return;
-    }
-    obj.groupAllowFrom = params.storeAllowFrom;
-    params.changes.push(`${prefix}groupAllowFrom=pairing-store`);
   };
 
-  maybeApply("channels.whatsapp.", section);
-
-  const accounts = section.accounts;
-  if (!accounts || typeof accounts !== "object") {
-    return;
-  }
-  for (const [accountId, accountValue] of Object.entries(accounts)) {
-    if (!accountValue || typeof accountValue !== "object") {
+  for (const plugin of await collectPlugins()) {
+    const mutation = await plugin.security?.applyConfigFixes?.({
+      cfg: nextCfg,
+      env: params.env,
+    });
+    if (!mutation || mutation.changes.length === 0) {
       continue;
     }
-    const account = accountValue as Record<string, unknown>;
-    maybeApply(`channels.whatsapp.accounts.${accountId}.`, account);
+    nextCfg = mutation.config;
+    channelChanges.push(...mutation.changes);
   }
-}
-
-function applyConfigFixes(params: { cfg: OpenClawConfig; env: NodeJS.ProcessEnv }): {
-  cfg: OpenClawConfig;
-  changes: string[];
-  policyFlips: Set<string>;
-} {
-  const next = structuredClone(params.cfg ?? {});
+  const cfg = structuredClone(nextCfg ?? {});
   const changes: string[] = [];
-  const policyFlips = new Set<string>();
-
-  if (next.logging?.redactSensitive === "off") {
-    next.logging = { ...next.logging, redactSensitive: "tools" };
-    changes.push('logging.redactSensitive=off -> "tools"');
+  for (const channel of Object.keys(cfg.channels ?? {})) {
+    setGroupPolicyAllowlist({ cfg, channel, changes });
   }
-
-  for (const channel of [
-    "telegram",
-    "whatsapp",
-    "discord",
-    "signal",
-    "imessage",
-    "slack",
-    "msteams",
-  ]) {
-    setGroupPolicyAllowlist({ cfg: next, channel, changes, policyFlips });
-  }
-
-  return { cfg: next, changes, policyFlips };
+  return { cfg, changes: [...changes, ...channelChanges] };
 }
 
-async function chmodCredentialsAndAgentState(params: {
+async function collectSecurityPermissionTargets(params: {
   env: NodeJS.ProcessEnv;
   stateDir: string;
+  configPath: string;
   cfg: OpenClawConfig;
-  actions: SecurityFixAction[];
-  applyPerms: (params: {
-    path: string;
-    mode: number;
-    require: "dir" | "file";
-  }) => Promise<SecurityFixAction>;
-}): Promise<void> {
+  includePaths?: readonly string[];
+}): Promise<SecurityPermissionTarget[]> {
+  const targets: SecurityPermissionTarget[] = [
+    { path: params.stateDir, mode: 0o700, require: "dir" },
+    { path: params.configPath, mode: 0o600, require: "file" },
+    ...(params.includePaths ?? []).map((targetPath) => ({
+      path: targetPath,
+      mode: 0o600,
+      require: "file" as const,
+    })),
+  ];
   const credsDir = resolveOAuthDir(params.env, params.stateDir);
-  params.actions.push(await safeChmod({ path: credsDir, mode: 0o700, require: "dir" }));
+  targets.push({ path: credsDir, mode: 0o700, require: "dir" });
+  const collectFiles = async (directory: string, suffix: string) => {
+    const { entries } = await walkDirectory(directory, {
+      maxDepth: 1,
+      symlinks: "skip",
+      include: (entry) => entry.kind === "file" && entry.name.endsWith(suffix),
+    }).catch(() => ({ entries: [] }));
+    for (const entry of entries) {
+      targets.push({ path: path.join(directory, entry.name), mode: 0o600, require: "file" });
+    }
+  };
+  await collectFiles(credsDir, ".json");
 
-  const credsEntries = await fs.readdir(credsDir, { withFileTypes: true }).catch(() => []);
-  for (const entry of credsEntries) {
-    if (!entry.isFile()) {
-      continue;
-    }
-    if (!entry.name.endsWith(".json")) {
-      continue;
-    }
-    const p = path.join(credsDir, entry.name);
-    // eslint-disable-next-line no-await-in-loop
-    params.actions.push(await safeChmod({ path: p, mode: 0o600, require: "file" }));
+  const ids = new Set([LEGACY_IMPLICIT_AGENT_ID]);
+  const defaultAgentId = tryResolveDefaultAgentId(params.cfg);
+  if (defaultAgentId) {
+    ids.add(defaultAgentId);
+  }
+  for (const id of listAgentIds(params.cfg)) {
+    ids.add(id);
   }
 
-  const ids = new Set<string>();
-  ids.add(resolveDefaultAgentId(params.cfg));
-  const list = Array.isArray(params.cfg.agents?.list) ? params.cfg.agents?.list : [];
-  for (const agent of list ?? []) {
-    if (!agent || typeof agent !== "object") {
-      continue;
-    }
-    const id =
-      typeof (agent as { id?: unknown }).id === "string" ? (agent as { id: string }).id.trim() : "";
-    if (id) {
-      ids.add(id);
-    }
-  }
-
-  for (const agentId of ids) {
-    const normalizedAgentId = normalizeAgentId(agentId);
+  for (const normalizedAgentId of ids) {
     const agentRoot = path.join(params.stateDir, "agents", normalizedAgentId);
     const agentDir = path.join(agentRoot, "agent");
     const sessionsDir = path.join(agentRoot, "sessions");
 
-    // eslint-disable-next-line no-await-in-loop
-    params.actions.push(await safeChmod({ path: agentRoot, mode: 0o700, require: "dir" }));
-    // eslint-disable-next-line no-await-in-loop
-    params.actions.push(await params.applyPerms({ path: agentDir, mode: 0o700, require: "dir" }));
+    targets.push({ path: agentRoot, mode: 0o700, require: "dir" });
+    targets.push({ path: agentDir, mode: 0o700, require: "dir" });
 
+    for (const databasePath of resolveAuthProfileDatabaseFilePaths(agentDir)) {
+      targets.push({ path: databasePath, mode: 0o600, require: "file" });
+    }
     const authPath = path.join(agentDir, "auth-profiles.json");
-    // eslint-disable-next-line no-await-in-loop
-    params.actions.push(await params.applyPerms({ path: authPath, mode: 0o600, require: "file" }));
+    targets.push({ path: authPath, mode: 0o600, require: "file" });
 
-    // eslint-disable-next-line no-await-in-loop
-    params.actions.push(
-      await params.applyPerms({ path: sessionsDir, mode: 0o700, require: "dir" }),
-    );
+    targets.push({ path: sessionsDir, mode: 0o700, require: "dir" });
 
     const storePath = path.join(sessionsDir, "sessions.json");
-    // eslint-disable-next-line no-await-in-loop
-    params.actions.push(await params.applyPerms({ path: storePath, mode: 0o600, require: "file" }));
+    targets.push({ path: storePath, mode: 0o600, require: "file" });
 
-    // Fix permissions on session transcript files (*.jsonl)
-    // eslint-disable-next-line no-await-in-loop
-    const sessionEntries = await fs.readdir(sessionsDir, { withFileTypes: true }).catch(() => []);
-    for (const entry of sessionEntries) {
-      if (!entry.isFile()) {
-        continue;
-      }
-      if (!entry.name.endsWith(".jsonl")) {
-        continue;
-      }
-      const p = path.join(sessionsDir, entry.name);
-      // eslint-disable-next-line no-await-in-loop
-      params.actions.push(await params.applyPerms({ path: p, mode: 0o600, require: "file" }));
-    }
+    await collectFiles(sessionsDir, ".jsonl");
   }
+  return targets;
 }
 
 export async function fixSecurityFootguns(opts?: {
   env?: NodeJS.ProcessEnv;
   stateDir?: string;
   configPath?: string;
-  platform?: NodeJS.Platform;
-  exec?: ExecFn;
+  channelPlugins?: ChannelPlugin[];
 }): Promise<SecurityFixResult> {
   const env = opts?.env ?? process.env;
-  const platform = opts?.platform ?? process.platform;
-  const exec = opts?.exec ?? runExec;
-  const isWindows = platform === "win32";
   const stateDir = opts?.stateDir ?? resolveStateDir(env);
   const configPath = opts?.configPath ?? resolveConfigPath(env, stateDir);
   const actions: SecurityFixAction[] = [];
   const errors: string[] = [];
 
   const io = createConfigIO({ env, configPath });
-  const snap = await io.readConfigFileSnapshot();
+  const { snapshot: snap, writeOptions } = await io.readConfigFileSnapshotForWrite();
   if (!snap.valid) {
     errors.push(...snap.issues.map((i) => `${i.path}: ${i.message}`));
   }
@@ -409,61 +260,51 @@ export async function fixSecurityFootguns(opts?: {
   let configWritten = false;
   let changes: string[] = [];
   if (snap.valid) {
-    const fixed = applyConfigFixes({ cfg: snap.config, env });
-    changes = fixed.changes;
-
-    const whatsappStoreAllowFrom = await readChannelAllowFromStore(
-      "whatsapp",
+    const fixed = await applySecurityFixConfigMutations({
+      cfg: snap.config,
       env,
-      DEFAULT_ACCOUNT_ID,
-    ).catch(() => []);
-    if (whatsappStoreAllowFrom.length > 0) {
-      setWhatsAppGroupAllowFromFromStore({
-        cfg: fixed.cfg,
-        storeAllowFrom: whatsappStoreAllowFrom,
-        changes,
-        policyFlips: fixed.policyFlips,
-      });
-    }
+      channelPlugins: opts?.channelPlugins,
+    });
+    changes = fixed.changes;
 
     if (changes.length > 0) {
       try {
-        await io.writeConfigFile(fixed.cfg);
+        await replaceConfigFile({
+          nextConfig: fixed.cfg,
+          snapshot: snap,
+          writeOptions,
+          io,
+          afterWrite: { mode: "auto" },
+        });
         configWritten = true;
       } catch (err) {
-        errors.push(`writeConfigFile failed: ${String(err)}`);
+        errors.push(`replaceConfigFile failed: ${String(err)}`);
       }
     }
   }
 
-  const applyPerms = (params: { path: string; mode: number; require: "dir" | "file" }) =>
-    isWindows
-      ? safeAclReset({ path: params.path, require: params.require, env, exec })
-      : safeChmod({ path: params.path, mode: params.mode, require: params.require });
-
-  actions.push(await applyPerms({ path: stateDir, mode: 0o700, require: "dir" }));
-  actions.push(await applyPerms({ path: configPath, mode: 0o600, require: "file" }));
-
+  let includePaths: string[] = [];
   if (snap.exists) {
-    const includePaths = await collectIncludePathsRecursive({
+    includePaths = await collectIncludePathsRecursive({
       configPath: snap.path,
       parsed: snap.parsed,
+      env,
     }).catch(() => []);
-    for (const p of includePaths) {
-      // eslint-disable-next-line no-await-in-loop
-      actions.push(await applyPerms({ path: p, mode: 0o600, require: "file" }));
-    }
   }
 
-  await chmodCredentialsAndAgentState({
+  const permissionTargets = await collectSecurityPermissionTargets({
     env,
     stateDir,
+    configPath,
     cfg: snap.config ?? {},
-    actions,
-    applyPerms,
-  }).catch((err) => {
-    errors.push(`chmodCredentialsAndAgentState failed: ${String(err)}`);
+    includePaths,
+  }).catch((err: unknown) => {
+    errors.push(`collectSecurityPermissionTargets failed: ${String(err)}`);
+    return [] as SecurityPermissionTarget[];
   });
+  for (const target of permissionTargets) {
+    actions.push(await applyPermissionFix(target, env));
+  }
 
   return {
     ok: errors.length === 0,

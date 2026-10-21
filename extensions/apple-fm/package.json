@@ -1,0 +1,27 @@
+{
+  "name": "@paleoclaw/apple-fm-provider",
+  "version": "2026.10.5",
+  "private": true,
+  "description": "paleoclaw on-device Apple Foundation Models provider",
+  "type": "module",
+  "dependencies": {
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@paleoclaw/plugin-sdk": "workspace:*"
+  },
+  "paleoclaw": {
+    "extensions": [
+      "./index.ts"
+    ],
+    "build": {
+      "openclawVersion": "2026.10.5",
+      "staticAssets": [
+        {
+          "source": "./assets/AppleFoundationModels.swift",
+          "output": "assets/AppleFoundationModels.swift"
+        }
+      ]
+    }
+  }
+}

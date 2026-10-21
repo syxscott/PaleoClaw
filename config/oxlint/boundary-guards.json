@@ -1,0 +1,13 @@
+{
+  "$schema": "../../node_modules/oxlint/configuration_schema.json",
+  "plugins": [],
+  "jsPlugins": ["../../scripts/oxlint-boundary-guards.mjs"],
+  "categories": { "correctness": "off" },
+  "rules": {
+    "paleoclaw-boundaries/no-forced-process-exit": "error",
+    "paleoclaw-boundaries/no-raw-window-open-call": "error",
+    "paleoclaw-boundaries/no-register-http-handler-call": "error",
+    "paleoclaw-boundaries/no-widen-then-assert": "error",
+    "paleoclaw-boundaries/no-chained-type-assertions": "error"
+  }
+}

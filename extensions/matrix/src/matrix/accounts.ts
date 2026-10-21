@@ -1,26 +1,25 @@
-import { normalizeAccountId } from "paleoclaw/plugin-sdk/account-id";
-import { createAccountListHelpers } from "paleoclaw/plugin-sdk/matrix";
-import { hasConfiguredSecretInput } from "../secret-input.js";
+import { DEFAULT_ACCOUNT_ID, normalizeAccountId } from "paleoclaw/plugin-sdk/account-id";
+import { hasConfiguredSecretInput } from "paleoclaw/plugin-sdk/secret-input";
+import { normalizeOptionalString } from "paleoclaw/plugin-sdk/string-coerce-runtime";
+import {
+  resolveConfiguredMatrixAccountIds,
+  resolveMatrixDefaultOrOnlyAccountId,
+} from "../account-selection.js";
+import { resolveMatrixAccountStringValues } from "../auth-precedence.js";
 import type { CoreConfig, MatrixConfig } from "../types.js";
-import { resolveMatrixConfigForAccount } from "./client.js";
-import { credentialsMatchConfig, loadMatrixCredentials } from "./credentials.js";
-
-/** Merge account config with top-level defaults, preserving nested objects. */
-function mergeAccountConfig(base: MatrixConfig, account: MatrixConfig): MatrixConfig {
-  const merged = { ...base, ...account };
-  // Deep-merge known nested objects so partial overrides inherit base fields
-  for (const key of ["dm", "actions"] as const) {
-    const b = base[key];
-    const o = account[key];
-    if (typeof b === "object" && b != null && typeof o === "object" && o != null) {
-      (merged as Record<string, unknown>)[key] = { ...b, ...o };
-    }
-  }
-  // Don't propagate the accounts map into the merged per-account config
-  delete (merged as Record<string, unknown>).accounts;
-  delete (merged as Record<string, unknown>).defaultAccount;
-  return merged;
-}
+import {
+  findMatrixAccountConfig,
+  resolveMatrixAccountConfig,
+  resolveMatrixBaseConfig,
+} from "./account-config.js";
+import { resolveGlobalMatrixEnvConfig, resolveScopedMatrixEnvConfig } from "./client/env-auth.js";
+import {
+  captureMatrixCredentialsEnv,
+  credentialsMatchConfig,
+  loadMatrixCredentials,
+  loadMatrixCredentialsAsync,
+} from "./credentials-read.js";
+import type { MatrixStoredCredentials } from "./credentials-state.js";
 
 export type ResolvedMatrixAccount = {
   accountId: string;
@@ -32,83 +31,208 @@ export type ResolvedMatrixAccount = {
   config: MatrixConfig;
 };
 
-const {
-  listAccountIds: listMatrixAccountIds,
-  resolveDefaultAccountId: resolveDefaultMatrixAccountId,
-} = createAccountListHelpers("matrix", { normalizeAccountId });
-export { listMatrixAccountIds, resolveDefaultMatrixAccountId };
-
-function resolveAccountConfig(cfg: CoreConfig, accountId: string): MatrixConfig | undefined {
-  const accounts = cfg.channels?.matrix?.accounts;
-  if (!accounts || typeof accounts !== "object") {
-    return undefined;
-  }
-  // Direct lookup first (fast path for already-normalized keys)
-  if (accounts[accountId]) {
-    return accounts[accountId] as MatrixConfig;
-  }
-  // Fall back to case-insensitive match (user may have mixed-case keys in config)
-  const normalized = normalizeAccountId(accountId);
-  for (const key of Object.keys(accounts)) {
-    if (normalizeAccountId(key) === normalized) {
-      return accounts[key] as MatrixConfig;
-    }
-  }
-  return undefined;
+function clean(value: unknown): string {
+  return normalizeOptionalString(value) ?? "";
 }
 
-export function resolveMatrixAccount(params: {
+function resolveMatrixAccountAuthView(params: {
   cfg: CoreConfig;
-  accountId?: string | null;
-}): ResolvedMatrixAccount {
-  const accountId = normalizeAccountId(params.accountId);
-  const matrixBase = params.cfg.channels?.matrix ?? {};
-  const base = resolveMatrixAccountConfig({ cfg: params.cfg, accountId });
-  const enabled = base.enabled !== false && matrixBase.enabled !== false;
-
-  const resolved = resolveMatrixConfigForAccount(params.cfg, accountId, process.env);
-  const hasHomeserver = Boolean(resolved.homeserver);
-  const hasUserId = Boolean(resolved.userId);
-  const hasAccessToken = Boolean(resolved.accessToken);
-  const hasPassword = Boolean(resolved.password);
-  const hasPasswordAuth = hasUserId && (hasPassword || hasConfiguredSecretInput(base.password));
-  const stored = loadMatrixCredentials(process.env, accountId);
-  const hasStored =
-    stored && resolved.homeserver
-      ? credentialsMatchConfig(stored, {
-          homeserver: resolved.homeserver,
-          userId: resolved.userId || "",
-        })
-      : false;
-  const configured = hasHomeserver && (hasAccessToken || hasPasswordAuth || Boolean(hasStored));
+  accountId: string;
+  env: NodeJS.ProcessEnv;
+}): {
+  homeserver: string;
+  userId: string;
+  accessToken?: string;
+  password?: string;
+} {
+  const normalizedAccountId = normalizeAccountId(params.accountId);
+  const matrix = resolveMatrixBaseConfig(params.cfg);
+  const account = findMatrixAccountConfig(params.cfg, normalizedAccountId) ?? {};
+  const resolvedStrings = resolveMatrixAccountStringValues({
+    accountId: normalizedAccountId,
+    account: {
+      homeserver: clean(account.homeserver),
+      userId: clean(account.userId),
+      accessToken: typeof account.accessToken === "string" ? clean(account.accessToken) : "",
+      password: typeof account.password === "string" ? clean(account.password) : "",
+      deviceId: clean(account.deviceId),
+      deviceName: clean(account.deviceName),
+    },
+    scopedEnv: resolveScopedMatrixEnvConfig(normalizedAccountId, params.env),
+    channel: {
+      homeserver: clean(matrix.homeserver),
+      userId: clean(matrix.userId),
+      accessToken: typeof matrix.accessToken === "string" ? clean(matrix.accessToken) : "",
+      password: typeof matrix.password === "string" ? clean(matrix.password) : "",
+      deviceId: clean(matrix.deviceId),
+      deviceName: clean(matrix.deviceName),
+    },
+    globalEnv: resolveGlobalMatrixEnvConfig(params.env),
+  });
   return {
-    accountId,
-    enabled,
-    name: base.name?.trim() || undefined,
-    configured,
-    homeserver: resolved.homeserver || undefined,
-    userId: resolved.userId || undefined,
-    config: base,
+    homeserver: resolvedStrings.homeserver,
+    userId: resolvedStrings.userId,
+    accessToken: resolvedStrings.accessToken || undefined,
+    password: resolvedStrings.password || undefined,
   };
 }
 
-export function resolveMatrixAccountConfig(params: {
-  cfg: CoreConfig;
-  accountId?: string | null;
-}): MatrixConfig {
-  const accountId = normalizeAccountId(params.accountId);
-  const matrixBase = params.cfg.channels?.matrix ?? {};
-  const accountConfig = resolveAccountConfig(params.cfg, accountId);
-  if (!accountConfig) {
-    return matrixBase;
+function resolveMatrixAccountUserId(
+  authView: ReturnType<typeof resolveMatrixAccountAuthView>,
+  stored: MatrixStoredCredentials | null,
+): string | null {
+  const configuredUserId = authView.userId.trim();
+  if (configuredUserId) {
+    return configuredUserId;
   }
-  // Merge account-specific config with top-level defaults so settings like
-  // groupPolicy and blockStreaming inherit when not overridden.
-  return mergeAccountConfig(matrixBase, accountConfig);
+  if (!stored) {
+    return null;
+  }
+  if (authView.homeserver && stored.homeserver !== authView.homeserver) {
+    return null;
+  }
+  if (authView.accessToken && stored.accessToken !== authView.accessToken) {
+    return null;
+  }
+  return stored.userId.trim() || null;
 }
 
-export function listEnabledMatrixAccounts(cfg: CoreConfig): ResolvedMatrixAccount[] {
-  return listMatrixAccountIds(cfg)
-    .map((accountId) => resolveMatrixAccount({ cfg, accountId }))
-    .filter((account) => account.enabled);
+export function listMatrixAccountIds(cfg: CoreConfig): string[] {
+  const ids = resolveConfiguredMatrixAccountIds(cfg, process.env);
+  return ids.length > 0 ? ids : [DEFAULT_ACCOUNT_ID];
 }
+
+export function resolveDefaultMatrixAccountId(
+  cfg: CoreConfig,
+  env: NodeJS.ProcessEnv = process.env,
+): string {
+  return normalizeAccountId(resolveMatrixDefaultOrOnlyAccountId(cfg, env));
+}
+
+export async function resolveConfiguredMatrixBotUserIds(params: {
+  cfg: CoreConfig;
+  accountId?: string | null;
+  env?: NodeJS.ProcessEnv;
+  abortSignal?: AbortSignal;
+}): Promise<Set<string>> {
+  const env = params.env ?? process.env;
+  const currentAccountId = normalizeAccountId(params.accountId);
+  const accountIds = new Set([
+    ...resolveConfiguredMatrixAccountIds(params.cfg, env),
+    DEFAULT_ACCOUNT_ID,
+  ]);
+  // Capture config/env facts before storage yields; each identity uses one credential observation.
+  const accounts = [...accountIds]
+    .filter((accountId) => normalizeAccountId(accountId) !== currentAccountId)
+    .map((accountId) => prepareMatrixAccount({ cfg: params.cfg, accountId, env }));
+  const ids = new Set<string>();
+  if (accounts.length === 0 || params.abortSignal?.aborted) {
+    return ids;
+  }
+  const credentialsEnv = captureMatrixCredentialsEnv(env);
+  for (const prepared of accounts) {
+    if (params.abortSignal?.aborted) {
+      break;
+    }
+    const stored = await loadMatrixCredentialsAsync(credentialsEnv, prepared.account.accountId);
+    if (!isMatrixAccountConfigured(prepared, stored)) {
+      continue;
+    }
+    const userId = resolveMatrixAccountUserId(prepared.authView, stored);
+    if (userId) {
+      ids.add(userId);
+    }
+  }
+  return ids;
+}
+
+function prepareMatrixAccount(params: {
+  cfg: CoreConfig;
+  accountId?: string | null;
+  env?: NodeJS.ProcessEnv;
+}) {
+  const env = params.env ?? process.env;
+  const accountId = normalizeAccountId(
+    params.accountId ?? resolveDefaultMatrixAccountId(params.cfg, env),
+  );
+  const matrixBase = resolveMatrixBaseConfig(params.cfg);
+  const base = resolveMatrixAccountConfig({ cfg: params.cfg, accountId, env });
+  const explicitAuthConfig =
+    accountId === DEFAULT_ACCOUNT_ID
+      ? base
+      : (findMatrixAccountConfig(params.cfg, accountId) ?? {});
+  const enabled = base.enabled !== false && matrixBase.enabled !== false;
+
+  const authView = resolveMatrixAccountAuthView({
+    cfg: params.cfg,
+    accountId,
+    env,
+  });
+  const hasHomeserver = Boolean(authView.homeserver);
+  const hasUserId = Boolean(authView.userId);
+  const hasAccessToken =
+    Boolean(authView.accessToken) || hasConfiguredSecretInput(explicitAuthConfig.accessToken);
+  const hasPassword = Boolean(authView.password);
+  const hasPasswordAuth =
+    hasUserId && (hasPassword || hasConfiguredSecretInput(explicitAuthConfig.password));
+  return {
+    authView,
+    hasHomeserver,
+    hasConfiguredAuth: hasAccessToken || hasPasswordAuth,
+    account: {
+      accountId,
+      enabled,
+      name: normalizeOptionalString(base.name),
+      homeserver: authView.homeserver || undefined,
+      userId: authView.userId || undefined,
+      config: base,
+    },
+  };
+}
+
+function isMatrixAccountConfigured(
+  prepared: ReturnType<typeof prepareMatrixAccount>,
+  stored: MatrixStoredCredentials | null,
+): boolean {
+  const { authView } = prepared;
+  const hasStored =
+    stored && authView.homeserver
+      ? credentialsMatchConfig(stored, {
+          homeserver: authView.homeserver,
+          userId: authView.userId || "",
+        })
+      : false;
+  return prepared.hasHomeserver && (prepared.hasConfiguredAuth || hasStored);
+}
+
+/** @deprecated Use resolveMatrixAccountAsync. Final compatibility day: 2026-12-31. Removal in the first January 2027 stable release. */
+export function resolveMatrixAccount(params: {
+  cfg: CoreConfig;
+  accountId?: string | null;
+  env?: NodeJS.ProcessEnv;
+}): ResolvedMatrixAccount {
+  const prepared = prepareMatrixAccount(params);
+  const stored =
+    prepared.hasHomeserver && !prepared.hasConfiguredAuth
+      ? loadMatrixCredentials(params.env ?? process.env, prepared.account.accountId)
+      : null;
+  return { ...prepared.account, configured: isMatrixAccountConfigured(prepared, stored) };
+}
+
+export async function resolveMatrixAccountAsync(params: {
+  cfg: CoreConfig;
+  accountId?: string | null;
+  env?: NodeJS.ProcessEnv;
+}): Promise<ResolvedMatrixAccount> {
+  const prepared = prepareMatrixAccount(params);
+  const stored =
+    prepared.hasHomeserver && !prepared.hasConfiguredAuth
+      ? await loadMatrixCredentialsAsync(
+          captureMatrixCredentialsEnv(params.env ?? process.env),
+          prepared.account.accountId,
+        )
+      : null;
+  return { ...prepared.account, configured: isMatrixAccountConfigured(prepared, stored) };
+}
+
+export { resolveMatrixAccountConfig } from "./account-config.js";

@@ -1,44 +1,67 @@
-import { createHash, randomUUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import fs from "node:fs";
-import os from "node:os";
 import path from "node:path";
+import * as tar from "tar";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { expectSingleNpmPackIgnoreScriptsCall } from "../test-utils/exec-assertions.js";
+import { expectedNpmCommand, npmCommandArgs } from "../test-utils/npm-command.js";
 import {
   expectInstallUsesIgnoreScripts,
   expectIntegrityDriftRejected,
-  expectUnsupportedNpmSpec,
   mockNpmPackMetadataResult,
 } from "../test-utils/npm-spec-install-test-helpers.js";
-import { isAddressInUseError } from "./gmail-watcher.js";
+import { writeHookFixture } from "./hook-fixture.test-support.js";
+import { createZipBuffer, createZipHookPackBuffer } from "./install-archive.test-support.js";
 
-const fixtureRoot = path.join(os.tmpdir(), `paleoclaw-hook-install-${randomUUID()}`);
-const sharedArchiveDir = path.join(fixtureRoot, "_archives");
-let tempDirIndex = 0;
-const sharedArchivePathByName = new Map<string, string>();
+type InstallHooksFromPath = typeof import("./install.js").installHooksFromPath;
 
-const fixturesDir = path.resolve(process.cwd(), "test", "fixtures", "hooks-install");
-const zipHooksBuffer = fs.readFileSync(path.join(fixturesDir, "zip-hooks.zip"));
-const zipTraversalBuffer = fs.readFileSync(path.join(fixturesDir, "zip-traversal.zip"));
-const tarHooksBuffer = fs.readFileSync(path.join(fixturesDir, "tar-hooks.tar"));
-const tarTraversalBuffer = fs.readFileSync(path.join(fixturesDir, "tar-traversal.tar"));
-const tarEvilIdBuffer = fs.readFileSync(path.join(fixturesDir, "tar-evil-id.tar"));
-const tarReservedIdBuffer = fs.readFileSync(path.join(fixturesDir, "tar-reserved-id.tar"));
-const npmPackHooksBuffer = fs.readFileSync(path.join(fixturesDir, "npm-pack-hooks.tgz"));
+const commandSuccess = {
+  code: 0,
+  stdout: "",
+  stderr: "",
+  signal: null,
+  killed: false,
+  termination: "exit",
+};
+const runCommandWithTimeoutMock = vi.fn();
+const scanPackageInstallSourceMock = vi.fn();
+const scanInstalledPackageDependencyTreeMock = vi.fn();
 
 vi.mock("../process/exec.js", () => ({
-  runCommandWithTimeout: vi.fn(),
+  runCommandWithTimeout: (...args: unknown[]) => runCommandWithTimeoutMock(...args),
 }));
+
+vi.mock("../plugins/install-security-scan.js", () => ({
+  scanPackageInstallSource: (...args: unknown[]) => scanPackageInstallSourceMock(...args),
+  scanInstalledPackageDependencyTree: (...args: unknown[]) =>
+    scanInstalledPackageDependencyTreeMock(...args),
+}));
+
+vi.resetModules();
+
+const { HOOK_INSTALL_ERROR_CODE, installHooksFromNpmSpec, installHooksFromPath } =
+  await import("./install.js");
+const hookInstallRuntime = await import("./install.runtime.js");
+
+const fixtureRoot = path.join(process.cwd(), ".tmp", `paleoclaw-hook-install-${randomUUID()}`);
+let tempDirIndex = 0;
+
+const fixturesDir = path.resolve(process.cwd(), "test", "fixtures", "hooks-install");
+const zipHooksBuffer = await createZipHookPackBuffer({
+  packageName: "@paleoclaw/zip-hooks",
+  hookName: "zip-hook",
+  hookDescription: "Zip hook",
+  heading: "Zip Hook",
+});
+const zipTraversalBuffer = await createZipBuffer([{ path: "../pwned.txt", contents: "pwned" }]);
+const tarTraversalBuffer = fs.readFileSync(path.join(fixturesDir, "tar-traversal.tar"));
+const tarEvilIdBuffer = fs.readFileSync(path.join(fixturesDir, "tar-evil-id.tar"));
+const npmPackHooksBuffer = await createTarGzHookPackBuffer();
 
 function makeTempDir() {
   const dir = path.join(fixtureRoot, `case-${tempDirIndex++}`);
   fs.mkdirSync(dir);
   return dir;
 }
-
-const { runCommandWithTimeout } = await import("../process/exec.js");
-const { installHooksFromArchive, installHooksFromNpmSpec, installHooksFromPath } =
-  await import("./install.js");
 
 afterAll(() => {
   try {
@@ -49,33 +72,26 @@ afterAll(() => {
 });
 
 beforeEach(() => {
-  vi.clearAllMocks();
+  runCommandWithTimeoutMock.mockReset();
+  scanPackageInstallSourceMock.mockReset();
+  scanPackageInstallSourceMock.mockResolvedValue(undefined);
+  scanInstalledPackageDependencyTreeMock.mockReset();
+  scanInstalledPackageDependencyTreeMock.mockResolvedValue(undefined);
 });
 
 beforeAll(() => {
   fs.mkdirSync(fixtureRoot, { recursive: true });
-  fs.mkdirSync(sharedArchiveDir, { recursive: true });
 });
 
 function writeArchiveFixture(params: { fileName: string; contents: Buffer }) {
   const stateDir = makeTempDir();
-  const archiveHash = createHash("sha256").update(params.contents).digest("hex").slice(0, 12);
-  const archiveKey = `${params.fileName}:${archiveHash}`;
-  let archivePath = sharedArchivePathByName.get(archiveKey);
-  if (!archivePath) {
-    archivePath = path.join(sharedArchiveDir, `${archiveHash}-${params.fileName}`);
-    fs.writeFileSync(archivePath, params.contents);
-    sharedArchivePathByName.set(archiveKey, archivePath);
-  }
-  return {
-    stateDir,
-    archivePath,
-    hooksDir: path.join(stateDir, "hooks"),
-  };
+  const archivePath = path.join(stateDir, params.fileName);
+  fs.writeFileSync(archivePath, params.contents);
+  return { stateDir, archivePath, hooksDir: path.join(stateDir, "hooks") };
 }
 
 function expectInstallFailureContains(
-  result: Awaited<ReturnType<typeof installHooksFromArchive>>,
+  result: Awaited<ReturnType<InstallHooksFromPath>>,
   snippets: string[],
 ) {
   expect(result.ok).toBe(false);
@@ -90,238 +106,425 @@ function expectInstallFailureContains(
 function writeHookPackManifest(params: {
   pkgDir: string;
   hooks: string[];
+  packageName?: string;
   dependencies?: Record<string, string>;
+  extensions?: string[];
 }) {
   fs.writeFileSync(
     path.join(params.pkgDir, "package.json"),
     JSON.stringify({
-      name: "@paleoclaw/test-hooks",
+      name: params.packageName ?? "@paleoclaw/test-hooks",
       version: "0.0.1",
-      paleoclaw: { hooks: params.hooks },
+      paleoclaw: {
+        hooks: params.hooks,
+        ...(params.extensions ? { extensions: params.extensions } : {}),
+      },
       ...(params.dependencies ? { dependencies: params.dependencies } : {}),
     }),
     "utf-8",
   );
 }
 
+function writeHookPackFiles(params: {
+  pkgDir: string;
+  packageName?: string;
+  dependencies?: Record<string, string>;
+}) {
+  writeHookPackManifest({
+    pkgDir: params.pkgDir,
+    packageName: params.packageName,
+    hooks: ["./hooks/one-hook"],
+    dependencies: params.dependencies,
+  });
+  const hookDir = path.join(params.pkgDir, "hooks", "one-hook");
+  writeHookFixture(
+    hookDir,
+    '---\nname: one-hook\ndescription: One hook\nmetadata: {"paleoclaw":{"events":["command:new"]}}\n---\n\n# One Hook',
+  );
+}
+
+async function createTarGzHookPackBuffer() {
+  const workDir = path.join(fixtureRoot, "_generated", `pack-${randomUUID()}`);
+  const packageDir = path.join(workDir, "package");
+  fs.mkdirSync(packageDir, { recursive: true });
+  writeHookPackFiles({ pkgDir: packageDir });
+  const archivePath = path.join(workDir, "pack.tgz");
+  await tar.c({ cwd: workDir, file: archivePath, gzip: true }, ["package"]);
+  return fs.readFileSync(archivePath);
+}
+
 async function installArchiveFixture(params: { fileName: string; contents: Buffer }) {
   const fixture = writeArchiveFixture(params);
-  const result = await installHooksFromArchive({
-    archivePath: fixture.archivePath,
+  const result = await installHooksFromPath({
+    path: fixture.archivePath,
     hooksDir: fixture.hooksDir,
   });
   return { fixture, result };
 }
 
-function expectPathInstallFailureContains(
-  result: Awaited<ReturnType<typeof installHooksFromPath>>,
-  snippet: string,
-) {
-  expect(result.ok).toBe(false);
-  if (result.ok) {
-    throw new Error("expected install failure");
-  }
-  expect(result.error).toContain(snippet);
-}
-
-describe("installHooksFromArchive", () => {
+describe("installHooksFromPath archives", () => {
   it.each([
-    {
-      name: "zip",
-      fileName: "hooks.zip",
-      contents: zipHooksBuffer,
-      expectedPackId: "zip-hooks",
-      expectedHook: "zip-hook",
-    },
-    {
-      name: "tar",
-      fileName: "hooks.tar",
-      contents: tarHooksBuffer,
-      expectedPackId: "tar-hooks",
-      expectedHook: "tar-hook",
-    },
-  ])("installs hook packs from $name archives", async (tc) => {
+    { name: "zip", fileName: "traversal.zip", contents: zipTraversalBuffer },
+    { name: "tar", fileName: "traversal.tar", contents: tarTraversalBuffer },
+  ])("rejects $name archives with traversal entries", async (tc) => {
     const { fixture, result } = await installArchiveFixture({
       fileName: tc.fileName,
       contents: tc.contents,
     });
-
-    expect(result.ok).toBe(true);
-    if (!result.ok) {
-      return;
-    }
-    expect(result.hookPackId).toBe(tc.expectedPackId);
-    expect(result.hooks).toContain(tc.expectedHook);
-    expect(result.targetDir).toBe(path.join(fixture.stateDir, "hooks", tc.expectedPackId));
-    expect(fs.existsSync(path.join(result.targetDir, "hooks", tc.expectedHook, "HOOK.md"))).toBe(
-      true,
-    );
+    expectInstallFailureContains(result, ["failed to extract archive", "ArchiveSecurityError"]);
+    expect(fs.existsSync(fixture.hooksDir)).toBe(false);
   });
 
-  it.each([
-    {
-      name: "zip",
-      fileName: "traversal.zip",
-      contents: zipTraversalBuffer,
-      expectedDetail: "archive entry",
-    },
-    {
-      name: "tar",
-      fileName: "traversal.tar",
-      contents: tarTraversalBuffer,
-      expectedDetail: "escapes destination",
-    },
-  ])("rejects $name archives with traversal entries", async (tc) => {
-    const { result } = await installArchiveFixture({
-      fileName: tc.fileName,
-      contents: tc.contents,
-    });
-    expectInstallFailureContains(result, ["failed to extract archive", tc.expectedDetail]);
-  });
-
-  it.each([
-    {
-      name: "traversal-like ids",
-      contents: tarEvilIdBuffer,
-    },
-    {
-      name: "reserved ids",
-      contents: tarReservedIdBuffer,
-    },
-  ])("rejects hook packs with $name", async (tc) => {
+  it("rejects hook packs with traversal-like ids", async () => {
     const { result } = await installArchiveFixture({
       fileName: "hooks.tar",
-      contents: tc.contents,
+      contents: tarEvilIdBuffer,
     });
     expectInstallFailureContains(result, ["reserved path segment"]);
   });
 });
 
+function makePackage(packageName = "@acme/canonical-hooks", dependencies?: Record<string, string>) {
+  const pkgDir = makeTempDir();
+  const hooksDir = path.join(makeTempDir(), "hooks");
+  writeHookPackFiles({ pkgDir, packageName, dependencies });
+  return { pkgDir, hooksDir };
+}
+
+function writeBareHook(hookDir: string, name = "my-hook") {
+  writeHookFixture(hookDir, `---\nname: ${name}\n---\n`);
+}
+
 describe("installHooksFromPath", () => {
-  it("uses --ignore-scripts for dependency install", async () => {
-    const workDir = makeTempDir();
-    const stateDir = makeTempDir();
-    const pkgDir = path.join(workDir, "package");
-    fs.mkdirSync(path.join(pkgDir, "hooks", "one-hook"), { recursive: true });
-    writeHookPackManifest({
-      pkgDir,
-      hooks: ["./hooks/one-hook"],
-      dependencies: { "left-pad": "1.3.0" },
-    });
+  it.each([
+    {
+      paleoclaw: {},
+      error: "package.json missing openclaw.hooks",
+      code: HOOK_INSTALL_ERROR_CODE.MISSING_OPENCLAW_HOOKS,
+    },
+    {
+      paleoclaw: { hooks: [] },
+      error: "package.json openclaw.hooks is empty",
+      code: HOOK_INSTALL_ERROR_CODE.EMPTY_OPENCLAW_HOOKS,
+    },
+  ])("returns a stable code for $error", async ({ paleoclaw, error, code }) => {
+    const pkgDir = makeTempDir();
     fs.writeFileSync(
-      path.join(pkgDir, "hooks", "one-hook", "HOOK.md"),
-      [
-        "---",
-        "name: one-hook",
-        "description: One hook",
-        'metadata: {"paleoclaw":{"events":["command:new"]}}',
-        "---",
-        "",
-        "# One Hook",
-      ].join("\n"),
-      "utf-8",
-    );
-    fs.writeFileSync(
-      path.join(pkgDir, "hooks", "one-hook", "handler.ts"),
-      "export default async () => {};\n",
-      "utf-8",
+      path.join(pkgDir, "package.json"),
+      JSON.stringify({ name: "@paleoclaw/test-hooks", paleoclaw }),
     );
 
-    const run = vi.mocked(runCommandWithTimeout);
+    const result = await installHooksFromPath({ path: pkgDir, hooksDir: makeTempDir() });
+
+    expect(result).toEqual({ ok: false, error, code });
+  });
+
+  it("validates hook-name uniqueness before package inspection side effects", async () => {
+    const names = ["shared-hook", "shared-hook"];
+    const pkgDir = makeTempDir();
+    const hooksDir = path.join(makeTempDir(), "managed-hooks");
+    writeHookPackManifest({
+      pkgDir,
+      hooks: names.map((_, index) => `./hooks/${index}`),
+    });
+    for (const [index, name] of names.entries()) {
+      const hookDir = path.join(pkgDir, "hooks", String(index));
+      fs.mkdirSync(hookDir, { recursive: true });
+      fs.writeFileSync(path.join(hookDir, "HOOK.md"), `---\nname: ${name}\n---\n`);
+      fs.writeFileSync(path.join(hookDir, "handler.js"), "export default async () => {};\n");
+    }
+    const targetAvailability = vi.spyOn(hookInstallRuntime, "ensureInstallTargetAvailable");
+
+    try {
+      const result = await installHooksFromPath({
+        path: pkgDir,
+        hooksDir,
+        inspection: "package-kind",
+      });
+      expect(result).toEqual({
+        ok: false,
+        error: 'duplicate hook name "shared-hook" in hook package',
+      });
+      expect(targetAvailability).not.toHaveBeenCalled();
+      expect(scanPackageInstallSourceMock).not.toHaveBeenCalled();
+      expect(runCommandWithTimeoutMock).not.toHaveBeenCalled();
+      expect(fs.existsSync(hooksDir)).toBe(false);
+    } finally {
+      targetAvailability.mockRestore();
+    }
+  });
+
+  it("installs dependencies with lifecycle scripts disabled", async () => {
+    const { pkgDir, hooksDir } = makePackage("@paleoclaw/test-hooks", { "left-pad": "1.3.0" });
+
+    const run = runCommandWithTimeoutMock;
     await expectInstallUsesIgnoreScripts({
       run,
-      install: async () =>
-        await installHooksFromPath({
-          path: pkgDir,
-          hooksDir: path.join(stateDir, "hooks"),
-        }),
+      install: async () => await installHooksFromPath({ path: pkgDir, hooksDir }),
     });
   });
 
-  it("installs a single hook directory", async () => {
+  it("preserves the declared paleoclaw dependency during update", async () => {
+    const { pkgDir, hooksDir } = makePackage("@paleoclaw/test-hooks", { paleoclaw: ">=2026.4.5" });
+    fs.mkdirSync(path.join(hooksDir, "test-hooks"), { recursive: true });
+    runCommandWithTimeoutMock.mockImplementation(async (_argv, optionsOrTimeout) => {
+      const cwd = typeof optionsOrTimeout === "number" ? undefined : optionsOrTimeout.cwd;
+      if (!cwd) {
+        throw new Error("expected staged hook install cwd");
+      }
+      const manifest = JSON.parse(fs.readFileSync(path.join(cwd, "package.json"), "utf8"));
+      expect(manifest.dependencies?.openclaw).toBe(">=2026.4.5");
+      return commandSuccess;
+    });
+
+    const result = await installHooksFromPath({ path: pkgDir, hooksDir, mode: "update" });
+
+    expect(result.ok).toBe(true);
+    expect(runCommandWithTimeoutMock).toHaveBeenCalled();
+  });
+
+  it.each([
+    { name: "single hook", pluginId: "my-hook", error: "blocked staged hook", dependencies: false },
+    {
+      name: "materialized dependencies",
+      pluginId: "canonical-hooks",
+      error: "blocked materialized dependency tree",
+      dependencies: true,
+    },
+  ])("blocks $name before publishing the target", async ({ pluginId, error, dependencies }) => {
+    const fixture = dependencies
+      ? makePackage("@acme/canonical-hooks", { "blocked-transitive": "1.0.0" })
+      : {
+          pkgDir: path.join(makeTempDir(), "my-hook"),
+          hooksDir: path.join(makeTempDir(), "hooks"),
+        };
+    if (dependencies) {
+      runCommandWithTimeoutMock.mockResolvedValue(commandSuccess);
+    } else {
+      writeBareHook(fixture.pkgDir);
+    }
+    scanInstalledPackageDependencyTreeMock.mockResolvedValue({
+      blocked: { code: "security_scan_blocked", reason: error },
+    });
+    const result = await installHooksFromPath({ path: fixture.pkgDir, hooksDir: fixture.hooksDir });
+    expect(result).toEqual({ ok: false, code: "security_scan_blocked", error });
+    expect(scanInstalledPackageDependencyTreeMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        mode: "install",
+        pluginId,
+        requestKind: "plugin-dir",
+      }),
+    );
+    expect(scanInstalledPackageDependencyTreeMock.mock.calls[0]?.[0]?.packageDir).toContain(
+      ".openclaw-install-stage-",
+    );
+    expect(fs.existsSync(path.join(fixture.hooksDir, pluginId))).toBe(false);
+  });
+
+  it("rejects an oversized HOOK.md to prevent OOM during frontmatter parsing", async () => {
     const stateDir = makeTempDir();
     const workDir = makeTempDir();
     const hookDir = path.join(workDir, "my-hook");
     fs.mkdirSync(hookDir, { recursive: true });
-    fs.writeFileSync(
-      path.join(hookDir, "HOOK.md"),
-      [
-        "---",
-        "name: my-hook",
-        "description: My hook",
-        'metadata: {"paleoclaw":{"events":["command:new"]}}',
-        "---",
-        "",
-        "# My Hook",
-      ].join("\n"),
-      "utf-8",
-    );
+    fs.writeFileSync(path.join(hookDir, "HOOK.md"), "x".repeat(1024 * 1024 + 1), "utf8");
     fs.writeFileSync(path.join(hookDir, "handler.ts"), "export default async () => {};\n");
 
-    const hooksDir = path.join(stateDir, "hooks");
-    const result = await installHooksFromPath({ path: hookDir, hooksDir });
-
-    expect(result.ok).toBe(true);
-    if (!result.ok) {
-      return;
-    }
-    expect(result.hookPackId).toBe("my-hook");
-    expect(result.hooks).toEqual(["my-hook"]);
-    expect(result.targetDir).toBe(path.join(stateDir, "hooks", "my-hook"));
-    expect(fs.existsSync(path.join(result.targetDir, "HOOK.md"))).toBe(true);
+    await expect(
+      installHooksFromPath({ path: hookDir, hooksDir: path.join(stateDir, "hooks") }),
+    ).rejects.toThrow(/File exceeds 1048576 bytes/);
   });
 
-  it("rejects hook pack entries that traverse outside package directory", async () => {
+  it.runIf(process.platform !== "win32")("rejects a symlinked HOOK.md", async () => {
     const stateDir = makeTempDir();
     const workDir = makeTempDir();
-    const pkgDir = path.join(workDir, "package");
-    const outsideHookDir = path.join(workDir, "outside");
-    fs.mkdirSync(pkgDir, { recursive: true });
-    fs.mkdirSync(outsideHookDir, { recursive: true });
-    writeHookPackManifest({
-      pkgDir,
-      hooks: ["../outside"],
+    const hookDir = path.join(workDir, "my-hook");
+    const externalHookMd = path.join(workDir, "external-HOOK.md");
+    fs.mkdirSync(hookDir, { recursive: true });
+    fs.writeFileSync(externalHookMd, "---\nname: external\n---\n", "utf8");
+    fs.symlinkSync(externalHookMd, path.join(hookDir, "HOOK.md"), "file");
+    fs.writeFileSync(path.join(hookDir, "handler.ts"), "export default async () => {};\n");
+
+    await expect(
+      installHooksFromPath({ path: hookDir, hooksDir: path.join(stateDir, "hooks") }),
+    ).rejects.toThrow(/path must be a regular file/);
+  });
+
+  it.each(["extensions", "bundle marker"])(
+    "classifies packages with %s as plugin-capable",
+    async (kind) => {
+      const { pkgDir, hooksDir } = makePackage("@paleoclaw/test-hooks");
+      if (kind === "extensions") {
+        writeHookPackManifest({
+          pkgDir,
+          hooks: ["./hooks/one-hook"],
+          extensions: ["./dist/index.js"],
+        });
+      } else {
+        fs.writeFileSync(path.join(pkgDir, "hooks/hooks.json"), "{}\n", "utf8");
+      }
+      expect(await installHooksFromPath({ path: pkgDir, hooksDir, dryRun: true })).toMatchObject({
+        ok: true,
+        packageKind: "plugin-capable",
+      });
+      if (kind === "bundle marker") {
+        const rejected = await installHooksFromPath({
+          path: pkgDir,
+          hooksDir,
+          expectedPackageKind: "hook-only",
+        });
+        expectInstallFailureContains(rejected, ["hook package kind mismatch"]);
+        expect(fs.existsSync(path.join(hooksDir, "test-hooks"))).toBe(false);
+      }
+    },
+  );
+
+  it("enforces install policy with the validated hook identity before local install side effects", async () => {
+    const { pkgDir, hooksDir } = makePackage();
+    scanPackageInstallSourceMock.mockResolvedValue({
+      blocked: { code: "security_scan_blocked", reason: "blocked by operator install policy" },
     });
-    fs.writeFileSync(path.join(outsideHookDir, "HOOK.md"), "---\nname: outside\n---\n", "utf-8");
-    fs.writeFileSync(path.join(outsideHookDir, "handler.ts"), "export default async () => {};\n");
 
     const result = await installHooksFromPath({
       path: pkgDir,
-      hooksDir: path.join(stateDir, "hooks"),
+      hooksDir,
+      config: { security: { installPolicy: { enabled: true } } },
+      mode: "update",
     });
 
-    expectPathInstallFailureContains(result, "paleoclaw.hooks entry escapes package directory");
-  });
-
-  it("rejects hook pack entries that escape via symlink", async () => {
-    const stateDir = makeTempDir();
-    const workDir = makeTempDir();
-    const pkgDir = path.join(workDir, "package");
-    const outsideHookDir = path.join(workDir, "outside");
-    const linkedDir = path.join(pkgDir, "linked");
-    fs.mkdirSync(pkgDir, { recursive: true });
-    fs.mkdirSync(outsideHookDir, { recursive: true });
-    fs.writeFileSync(path.join(outsideHookDir, "HOOK.md"), "---\nname: outside\n---\n", "utf-8");
-    fs.writeFileSync(path.join(outsideHookDir, "handler.ts"), "export default async () => {};\n");
-    try {
-      fs.symlinkSync(outsideHookDir, linkedDir, process.platform === "win32" ? "junction" : "dir");
-    } catch {
-      return;
-    }
-    writeHookPackManifest({
-      pkgDir,
-      hooks: ["./linked"],
+    expect(result).toEqual({
+      ok: false,
+      code: "security_scan_blocked",
+      error: "blocked by operator install policy",
     });
-
-    const result = await installHooksFromPath({
-      path: pkgDir,
-      hooksDir: path.join(stateDir, "hooks"),
-    });
-
-    expectPathInstallFailureContains(
-      result,
-      "paleoclaw.hooks entry resolves outside package directory",
+    expect(scanPackageInstallSourceMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        packageDir: pkgDir,
+        pluginId: "canonical-hooks",
+        packageName: "@acme/canonical-hooks",
+        version: "0.0.1",
+        extensions: ["./hooks/one-hook"],
+        mode: "install",
+        requestKind: "plugin-dir",
+        requestedSpecifier: pkgDir,
+        source: { kind: "local-path", authority: "user", mutable: true, network: false },
+      }),
     );
+    expect(fs.existsSync(path.join(hooksDir, "canonical-hooks"))).toBe(false);
+  });
+
+  it("inspects hook package kind without running install policy or target availability checks", async () => {
+    const { pkgDir, hooksDir } = makePackage();
+    const ensureInstallTargetAvailableSpy = vi.spyOn(
+      hookInstallRuntime,
+      "ensureInstallTargetAvailable",
+    );
+
+    try {
+      const result = await installHooksFromPath({
+        path: pkgDir,
+        hooksDir,
+        inspection: "package-kind",
+      });
+
+      expect(result).toMatchObject({ ok: true, packageKind: "hook-only" });
+      expect(scanPackageInstallSourceMock).not.toHaveBeenCalled();
+      expect(ensureInstallTargetAvailableSpy).not.toHaveBeenCalled();
+      expect(fs.existsSync(hooksDir)).toBe(false);
+    } finally {
+      ensureInstallTargetAvailableSpy.mockRestore();
+    }
+  });
+
+  it("enforces archive install policy against the validated extracted hook package", async () => {
+    const { stateDir, archivePath } = writeArchiveFixture({
+      fileName: "policy-hooks.zip",
+      contents: zipHooksBuffer,
+    });
+    let scannedExtractedPackage = false;
+    scanPackageInstallSourceMock.mockImplementation(async (params: { packageDir: string }) => {
+      scannedExtractedPackage =
+        params.packageDir !== archivePath &&
+        fs.existsSync(path.join(params.packageDir, "package.json"));
+      return {
+        blocked: { code: "security_scan_blocked", reason: "blocked extracted hook package" },
+      };
+    });
+
+    const hooksDir = path.join(stateDir, "hooks");
+    const result = await installHooksFromPath({ path: archivePath, hooksDir });
+
+    expect(result).toEqual({
+      ok: false,
+      code: "security_scan_blocked",
+      error: "blocked extracted hook package",
+    });
+    expect(scannedExtractedPackage).toBe(true);
+    expect(scanPackageInstallSourceMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        pluginId: "zip-hooks",
+        requestKind: "plugin-archive",
+        requestedSpecifier: archivePath,
+        source: { kind: "archive", authority: "user", mutable: true, network: false },
+      }),
+    );
+    expect(fs.existsSync(path.join(hooksDir, "zip-hooks"))).toBe(false);
+  });
+
+  it("fails closed when hook install policy evaluation throws", async () => {
+    const { pkgDir, hooksDir } = makePackage();
+    scanPackageInstallSourceMock.mockRejectedValue(new Error("policy runner unavailable"));
+
+    const result = await installHooksFromPath({ path: pkgDir, hooksDir });
+
+    expect(result).toMatchObject({
+      ok: false,
+      code: "security_scan_failed",
+      error: expect.stringContaining("policy runner unavailable"),
+    });
+  });
+
+  it("rejects out-of-package hook entries", async () => {
+    const cases = [
+      {
+        hooks: ["../outside"],
+        setupLink: false,
+        expected: "openclaw.hooks entry escapes package directory",
+      },
+      {
+        hooks: ["./linked"],
+        setupLink: true,
+        expected: "openclaw.hooks entry resolves outside package directory",
+      },
+    ] as const;
+
+    for (const testCase of cases) {
+      const stateDir = makeTempDir();
+      const workDir = makeTempDir();
+      const pkgDir = path.join(workDir, "package");
+      const outsideHookDir = path.join(workDir, "outside");
+      const linkedDir = path.join(pkgDir, "linked");
+      fs.mkdirSync(pkgDir, { recursive: true });
+      writeBareHook(outsideHookDir, "outside");
+      if (testCase.setupLink) {
+        try {
+          fs.symlinkSync(
+            outsideHookDir,
+            linkedDir,
+            process.platform === "win32" ? "junction" : "dir",
+          );
+        } catch {
+          continue;
+        }
+      }
+      writeHookPackManifest({ pkgDir, hooks: [...testCase.hooks] });
+
+      const result = await installHooksFromPath({
+        path: pkgDir,
+        hooksDir: path.join(stateDir, "hooks"),
+      });
+
+      expectInstallFailureContains(result, [testCase.expected]);
+    }
   });
 });
 
@@ -329,15 +532,15 @@ describe("installHooksFromNpmSpec", () => {
   it("uses --ignore-scripts for npm pack and cleans up temp dir", async () => {
     const stateDir = makeTempDir();
 
-    const run = vi.mocked(runCommandWithTimeout);
+    const run = runCommandWithTimeoutMock;
     let packTmpDir = "";
     const packedName = "test-hooks-0.0.1.tgz";
     run.mockImplementation(async (argv, opts) => {
-      if (argv[0] === "npm" && argv[1] === "pack") {
-        packTmpDir = String(typeof opts === "number" ? "" : (opts.cwd ?? ""));
+      if (npmCommandArgs(argv)?.[0] === "pack") {
+        packTmpDir = typeof opts === "number" ? "" : (opts.cwd ?? "");
         fs.writeFileSync(path.join(packTmpDir, packedName), npmPackHooksBuffer);
         return {
-          code: 0,
+          ...commandSuccess,
           stdout: JSON.stringify([
             {
               id: "@paleoclaw/test-hooks@0.0.1",
@@ -348,10 +551,6 @@ describe("installHooksFromNpmSpec", () => {
               shasum: "hookshasum",
             },
           ]),
-          stderr: "",
-          signal: null,
-          killed: false,
-          termination: "exit",
         };
       }
       throw new Error(`unexpected command: ${argv.join(" ")}`);
@@ -367,26 +566,34 @@ describe("installHooksFromNpmSpec", () => {
     if (!result.ok) {
       return;
     }
-    expect(result.hookPackId).toBe("test-hooks");
-    expect(result.npmResolution?.resolvedSpec).toBe("@paleoclaw/test-hooks@0.0.1");
-    expect(result.npmResolution?.integrity).toBe("sha512-hook-test");
+    expect(result).toMatchObject({
+      hookPackId: "test-hooks",
+      packageKind: "hook-only",
+      npmResolution: { resolvedSpec: "@paleoclaw/test-hooks@0.0.1", integrity: "sha512-hook-test" },
+    });
     expect(fs.existsSync(path.join(result.targetDir, "hooks", "one-hook", "HOOK.md"))).toBe(true);
 
-    expectSingleNpmPackIgnoreScriptsCall({
-      calls: run.mock.calls,
-      expectedSpec: "@paleoclaw/test-hooks@0.0.1",
-    });
+    expect(run).toHaveBeenCalledExactlyOnceWith(
+      expectedNpmCommand([
+        "pack",
+        "@paleoclaw/test-hooks@0.0.1",
+        "--ignore-scripts",
+        "--json",
+        "--dry-run=false",
+        `--pack-destination=${packTmpDir}`,
+      ]),
+      expect.objectContaining({
+        cwd: packTmpDir,
+        env: expect.objectContaining({ NPM_CONFIG_IGNORE_SCRIPTS: "true" }),
+      }),
+    );
 
     expect(packTmpDir).not.toBe("");
     expect(fs.existsSync(packTmpDir)).toBe(false);
   });
 
-  it("rejects non-registry npm specs", async () => {
-    await expectUnsupportedNpmSpec((spec) => installHooksFromNpmSpec({ spec }));
-  });
-
   it("aborts when integrity drift callback rejects the fetched artifact", async () => {
-    const run = vi.mocked(runCommandWithTimeout);
+    const run = runCommandWithTimeoutMock;
     mockNpmPackMetadataResult(run, {
       id: "@paleoclaw/test-hooks@0.0.1",
       name: "@paleoclaw/test-hooks",
@@ -408,37 +615,5 @@ describe("installHooksFromNpmSpec", () => {
       expectedIntegrity: "sha512-old",
       actualIntegrity: "sha512-new",
     });
-  });
-
-  it("rejects bare npm specs that resolve to prerelease versions", async () => {
-    const run = vi.mocked(runCommandWithTimeout);
-    mockNpmPackMetadataResult(run, {
-      id: "@paleoclaw/test-hooks@0.0.2-beta.1",
-      name: "@paleoclaw/test-hooks",
-      version: "0.0.2-beta.1",
-      filename: "test-hooks-0.0.2-beta.1.tgz",
-      integrity: "sha512-beta",
-      shasum: "betashasum",
-    });
-
-    const result = await installHooksFromNpmSpec({
-      spec: "@paleoclaw/test-hooks",
-      logger: { info: () => {}, warn: () => {} },
-    });
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.error).toContain("prerelease version 0.0.2-beta.1");
-      expect(result.error).toContain('"@paleoclaw/test-hooks@beta"');
-    }
-  });
-});
-
-describe("gmail watcher", () => {
-  it("detects address already in use errors", () => {
-    expect(isAddressInUseError("listen tcp 127.0.0.1:8788: bind: address already in use")).toBe(
-      true,
-    );
-    expect(isAddressInUseError("EADDRINUSE: address already in use")).toBe(true);
-    expect(isAddressInUseError("some other error")).toBe(false);
   });
 });

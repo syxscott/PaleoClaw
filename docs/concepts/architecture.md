@@ -2,34 +2,31 @@
 summary: "WebSocket gateway architecture, components, and client flows"
 read_when:
   - Working on gateway protocol, clients, or transports
-title: "Gateway Architecture"
+title: "Gateway architecture"
 ---
-
-# Gateway architecture
-
-Last updated: 2026-01-22
 
 ## Overview
 
-- A single long‑lived **Gateway** owns all messaging surfaces (WhatsApp via
+- A single long-lived **Gateway** owns all messaging surfaces (WhatsApp via
   Baileys, Telegram via grammY, Slack, Discord, Signal, iMessage, WebChat).
 - Control-plane clients (macOS app, CLI, web UI, automations) connect to the
   Gateway over **WebSocket** on the configured bind host (default
   `127.0.0.1:18789`).
 - **Nodes** (macOS/iOS/Android/headless) also connect over **WebSocket**, but
   declare `role: node` with explicit caps/commands.
-- One Gateway per host; it is the only place that opens a WhatsApp session.
-- The **canvas host** is served by the Gateway HTTP server under:
-  - `/__openclaw__/canvas/` (agent-editable HTML/CSS/JS)
-  - `/__openclaw__/a2ui/` (A2UI host)
-    It uses the same port as the Gateway (default `18789`).
+- One Gateway per host. It is the only place that opens a WhatsApp session.
+- The **hosted widget surface** is served by the Gateway HTTP server under:
+  - `/__openclaw__/canvas/` (hosted widget documents)
+  - `/__openclaw__/a2ui/` (A2UI renderer assets)
+
+  It uses the same port as the Gateway (default `18789`).
 
 ## Components and flows
 
 ### Gateway (daemon)
 
 - Maintains provider connections.
-- Exposes a typed WS API (requests, responses, server‑push events).
+- Exposes a typed WS API (requests, responses, server-push events).
 - Validates inbound frames against JSON Schema.
 - Emits events like `agent`, `chat`, `presence`, `health`, `heartbeat`, `cron`.
 
@@ -42,13 +39,12 @@ Last updated: 2026-01-22
 ### Nodes (macOS / iOS / Android / headless)
 
 - Connect to the **same WS server** with `role: node`.
-- Provide a device identity in `connect`; pairing is **device‑based** (role `node`) and
+- Provide a device identity in `connect`. Pairing is **device-based** (role `node`) and
   approval lives in the device pairing store.
-- Expose commands like `canvas.*`, `camera.*`, `screen.record`, `location.get`.
+- Expose commands like `camera.*`, `screen.record`, and `location.get`. The
+  macOS app also exposes widget-panel commands under `canvas.*`.
 
-Protocol details:
-
-- [Gateway protocol](/gateway/protocol)
+Protocol details: [Gateway protocol](/gateway/protocol)
 
 ### WebChat
 
@@ -84,24 +80,37 @@ sequenceDiagram
 - After handshake:
   - Requests: `{type:"req", id, method, params}` → `{type:"res", id, ok, payload|error}`
   - Events: `{type:"event", event, payload, seq?, stateVersion?}`
-- If `OPENCLAW_GATEWAY_TOKEN` (or `--token`) is set, `connect.params.auth.token`
-  must match or the socket closes.
-- Idempotency keys are required for side‑effecting methods (`send`, `agent`) to
-  safely retry; the server keeps a short‑lived dedupe cache.
+- `hello-ok.features.methods` / `events` are discovery metadata, not a
+  generated dump of every callable helper route.
+- Shared-secret auth accepts the configured secret in either
+  `connect.params.auth.token` or `connect.params.auth.password`.
+  `gateway.auth.mode` selects the configured value (`gateway.auth.token` or
+  `gateway.auth.password`), not the required wire field.
+- Identity-bearing modes such as Tailscale Serve
+  (`gateway.auth.allowTailscale: true`) or non-loopback
+  `gateway.auth.mode: "trusted-proxy"` satisfy auth from request headers
+  instead of `connect.params.auth.*`.
+- Private-ingress `gateway.auth.mode: "none"` disables shared-secret auth
+  entirely. Keep that mode off public or untrusted ingress.
+- Idempotency keys are required for side-effecting methods (`send`, `agent`) to
+  safely retry. The server keeps a short-lived dedupe cache.
 - Nodes must include `role: "node"` plus caps/commands/permissions in `connect`.
 
-## Pairing + local trust
+## Pairing and local trust
 
 - All WS clients (operators + nodes) include a **device identity** on `connect`.
-- New device IDs require pairing approval; the Gateway issues a **device token**
+- New device IDs require pairing approval. The Gateway issues a **device token**
   for subsequent connects.
-- **Local** connects (loopback or the gateway host’s own tailnet address) can be
-  auto‑approved to keep same‑host UX smooth.
-- All connects must sign the `connect.challenge` nonce.
-- Signature payload `v3` also binds `platform` + `deviceFamily`; the gateway
-  pins paired metadata on reconnect and requires repair pairing for metadata
-  changes.
-- **Non‑local** connects still require explicit approval.
+- Direct local loopback connects can be auto-approved to keep same-host UX
+  smooth.
+- paleoclaw also has a narrow backend/container-local self-connect path for
+  trusted shared-secret helper flows.
+- Tailnet and LAN connects, including same-host tailnet binds, still require
+  explicit pairing approval.
+- All connects must sign the `connect.challenge` nonce. Signature payload `v3`
+  also binds `platform` and `deviceFamily`. The gateway pins paired metadata on
+  reconnect and requires repair pairing for metadata changes.
+- **Non-local** connects still require explicit approval.
 - Gateway auth (`gateway.auth.*`) still applies to **all** connections, local or
   remote.
 
@@ -120,7 +129,7 @@ Details: [Gateway protocol](/gateway/protocol), [Pairing](/channels/pairing),
 - Alternative: SSH tunnel
 
   ```bash
-  ssh -N -L 18789:127.0.0.1:18789 user@host
+  ssh -N -L 18789:127.0.0.1:18789 user@gateway-host
   ```
 
 - The same handshake + auth token apply over the tunnel.
@@ -130,10 +139,45 @@ Details: [Gateway protocol](/gateway/protocol), [Pairing](/channels/pairing),
 
 - Start: `paleoclaw gateway` (foreground, logs to stdout).
 - Health: `health` over WS (also included in `hello-ok`).
-- Supervision: launchd/systemd for auto‑restart.
+- Supervision: launchd/systemd for auto-restart.
+
+### Timed work and shutdown
+
+The Gateway kernel owns one `GatewayScheduler` for registered maintenance and cron
+wakeups. Owners receive that instance and register jobs; one host timer drives the
+next wake. For durable work, stores retain deadlines and their owners reconstruct
+schedules at startup rather than persisting a second scheduler state.
+
+After sleep, a late wake dispatches each runnable, due registration once for that
+wake. A periodic registration waits for its callback and tracked work to finish
+before starting its next interval; missed ticks are coalesced. Wall time catches
+sleep, while elapsed time keeps relative delays and cadences moving through a
+backward clock correction. Rescheduling replaces a waiting job by default;
+`mode: "earliest"` preserves earlier wall and elapsed deadlines for the same job ID
+so a stale read cannot postpone an already promised wake.
+
+`beginClose()` closes scheduling admission, cancels pending wakes, and signals
+shutdown. `stop()` joins callbacks already running and work tracked by their async
+scope; the Gateway lifecycle owns the outer shutdown budget and resource teardown.
+Request deadlines, stream-local timers, and child-process cleanup stay with their
+operation owners. SQLite WAL checkpoint timers stay with the storage owner.
+
+Plugins receive the versioned `PluginServiceSchedulerV1` capability through their
+service or channel-account lifetime. Its `beginClose()` cancels pending work and
+closes admission; `stop()` joins running callbacks and child scopes before the host
+releases the lifetime. Plugins still own domain cleanup ordering, including socket
+closure and durable flushes. See [Service scheduling](/plugins/sdk-runtime/gateway-and-nodes#service-scheduling).
 
 ## Invariants
 
 - Exactly one Gateway controls a single Baileys session per host.
-- Handshake is mandatory; any non‑JSON or non‑connect first frame is a hard close.
-- Events are not replayed; clients must refresh on gaps.
+- Handshake is mandatory. Any non-JSON or non-connect first frame is a hard close.
+- Events are not replayed. Clients must refresh on gaps.
+
+## Related
+
+- [Agent Loop](/concepts/agent-loop) — detailed agent execution cycle
+- [Gateway Protocol](/gateway/protocol) — WebSocket protocol contract
+- [Queue](/concepts/queue) — command queue and concurrency
+- [Security](/gateway/security) — trust model and hardening
+- [Network](/network) — the hub for how paleoclaw connects, pairs, and secures devices across localhost, LAN, and tailnet

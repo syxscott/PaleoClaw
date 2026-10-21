@@ -1,39 +1,41 @@
-import { beforeEach } from "vitest";
-import { slackPlugin } from "../../extensions/slack/src/channel.js";
-import { setSlackRuntime } from "../../extensions/slack/src/runtime.js";
-import { telegramPlugin } from "../../extensions/telegram/src/channel.js";
-import { setTelegramRuntime } from "../../extensions/telegram/src/runtime.js";
-import { whatsappPlugin } from "../../extensions/whatsapp/src/channel.js";
-import { setWhatsAppRuntime } from "../../extensions/whatsapp/src/runtime.js";
-import type { ChannelPlugin } from "../channels/plugins/types.plugin.js";
-import { setActivePluginRegistry } from "../plugins/runtime.js";
-import { createPluginRuntime } from "../plugins/runtime/index.js";
+// Installs channel plugin fixtures for heartbeat runner tests.
+import { beforeEach, vi } from "vitest";
+import {
+  heartbeatRunnerSlackPlugin,
+  heartbeatRunnerTelegramPlugin,
+  heartbeatRunnerWhatsAppPlugin,
+} from "../../test/helpers/infra/heartbeat-runner-channel-plugins.js";
+import * as runtimePlugins from "../agents/runtime-plugins.js";
+import { getActivePluginRegistry, setActivePluginRegistry } from "../plugins/runtime.js";
 import { createTestRegistry } from "../test-utils/channel-plugins.js";
 
-const slackChannelPlugin = slackPlugin as unknown as ChannelPlugin;
-const telegramChannelPlugin = telegramPlugin as unknown as ChannelPlugin;
-const whatsappChannelPlugin = whatsappPlugin as unknown as ChannelPlugin;
-
+// Heartbeat runner tests install lightweight channel plugin facades so delivery
+// behavior can be verified without real channel credentials.
+/** Install the heartbeat runner channel registry before each test. */
 export function installHeartbeatRunnerTestRuntime(params?: { includeSlack?: boolean }): void {
   beforeEach(() => {
-    const runtime = createPluginRuntime();
-    setTelegramRuntime(runtime);
-    setWhatsAppRuntime(runtime);
+    // Model resolution is injected; use the same channel fixtures at dispatch's registry boundary.
+    vi.spyOn(runtimePlugins, "loadAgentRuntimePluginRegistryHandle").mockImplementation(() => {
+      const registry = getActivePluginRegistry();
+      if (!registry) {
+        throw new Error("Expected heartbeat channel fixture registry");
+      }
+      return registry;
+    });
     if (params?.includeSlack) {
-      setSlackRuntime(runtime);
       setActivePluginRegistry(
         createTestRegistry([
-          { pluginId: "slack", plugin: slackChannelPlugin, source: "test" },
-          { pluginId: "whatsapp", plugin: whatsappChannelPlugin, source: "test" },
-          { pluginId: "telegram", plugin: telegramChannelPlugin, source: "test" },
+          { pluginId: "slack", plugin: heartbeatRunnerSlackPlugin, source: "test" },
+          { pluginId: "whatsapp", plugin: heartbeatRunnerWhatsAppPlugin, source: "test" },
+          { pluginId: "telegram", plugin: heartbeatRunnerTelegramPlugin, source: "test" },
         ]),
       );
       return;
     }
     setActivePluginRegistry(
       createTestRegistry([
-        { pluginId: "whatsapp", plugin: whatsappChannelPlugin, source: "test" },
-        { pluginId: "telegram", plugin: telegramChannelPlugin, source: "test" },
+        { pluginId: "whatsapp", plugin: heartbeatRunnerWhatsAppPlugin, source: "test" },
+        { pluginId: "telegram", plugin: heartbeatRunnerTelegramPlugin, source: "test" },
       ]),
     );
   });

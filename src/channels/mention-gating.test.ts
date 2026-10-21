@@ -1,67 +1,88 @@
 import { describe, expect, it } from "vitest";
-import { resolveMentionGating, resolveMentionGatingWithBypass } from "./mention-gating.js";
+import {
+  allowedImplicitMentionKindsFromConfig,
+  type InboundMentionFacts,
+  type InboundMentionPolicy,
+  resolveBotThreadMentionPolicy,
+  resolveInboundMentionDecision,
+} from "./mention-gating.js";
 
-describe("resolveMentionGating", () => {
-  it("combines explicit, implicit, and bypass mentions", () => {
-    const res = resolveMentionGating({
-      requireMention: true,
-      canDetectMention: true,
-      wasMentioned: false,
-      implicitMention: true,
-      shouldBypassMention: false,
+const defaultFacts = { canDetectMention: true, wasMentioned: false, implicitMentionKinds: [] };
+const defaultPolicy = {
+  isGroup: true,
+  requireMention: true,
+  allowTextCommands: true,
+  hasControlCommand: false,
+  commandAuthorized: false,
+};
+function decide(facts: Partial<InboundMentionFacts>, policy: Partial<InboundMentionPolicy> = {}) {
+  return resolveInboundMentionDecision({
+    facts: { ...defaultFacts, ...facts },
+    policy: { ...defaultPolicy, ...policy },
+  });
+}
+
+describe("resolveInboundMentionDecision", () => {
+  it("translates positive implicit mention config inside the evaluator", () => {
+    const res = decide(
+      { implicitMentionKinds: ["reply_to_bot", "quoted_bot", "bot_thread_participant", "native"] },
+      {
+        implicitMentions: { replyToBot: false, quotedBot: true, threadParticipation: false },
+      },
+    );
+    expect(res.matchedImplicitMentionKinds).toEqual(["quoted_bot", "native"]);
+  });
+
+  it("keeps the flat call shape for compatibility", () => {
+    const res = resolveInboundMentionDecision({
+      ...defaultFacts,
+      ...defaultPolicy,
+      implicitMentionKinds: ["reply_to_bot"],
     });
     expect(res.effectiveWasMentioned).toBe(true);
-    expect(res.shouldSkip).toBe(false);
-  });
-
-  it("skips when mention required and none detected", () => {
-    const res = resolveMentionGating({
-      requireMention: true,
-      canDetectMention: true,
-      wasMentioned: false,
-      implicitMention: false,
-      shouldBypassMention: false,
-    });
-    expect(res.effectiveWasMentioned).toBe(false);
-    expect(res.shouldSkip).toBe(true);
-  });
-
-  it("does not skip when mention detection is unavailable", () => {
-    const res = resolveMentionGating({
-      requireMention: true,
-      canDetectMention: false,
-      wasMentioned: false,
-    });
-    expect(res.shouldSkip).toBe(false);
   });
 });
 
-describe("resolveMentionGatingWithBypass", () => {
+describe("bot-owned thread mention policy", () => {
   it.each([
-    {
-      name: "enables bypass when control commands are authorized",
-      commandAuthorized: true,
-      shouldBypassMention: true,
-      shouldSkip: false,
+    ["disabled for owned threads", false, true, false, false],
+    ["unset override", undefined, true, false, true],
+    ["required despite ordinary gate", true, false, false, true],
+    ["authorized command bypass", true, true, true, false],
+  ] as const)(
+    "%s",
+    (_name, requireMentionInBotThreads, requireMention, commandAuthorized, skip) => {
+      const threadPolicy = resolveBotThreadMentionPolicy({
+        isBotOwnedThread: true,
+        requireMentionInBotThreads,
+        requireMention,
+        implicitMentionKinds:
+          requireMentionInBotThreads && !requireMention
+            ? ["reply_to_bot", "quoted_bot", "bot_thread_participant"]
+            : undefined,
+      });
+      expect(
+        decide(
+          { implicitMentionKinds: threadPolicy.implicitMentionKinds },
+          {
+            requireMention: threadPolicy.requireMention,
+            hasControlCommand: commandAuthorized,
+            commandAuthorized,
+          },
+        ).shouldSkip,
+      ).toBe(skip);
     },
-    {
-      name: "does not bypass when control commands are not authorized",
-      commandAuthorized: false,
-      shouldBypassMention: false,
-      shouldSkip: true,
-    },
-  ])("$name", ({ commandAuthorized, shouldBypassMention, shouldSkip }) => {
-    const res = resolveMentionGatingWithBypass({
-      isGroup: true,
-      requireMention: true,
-      canDetectMention: true,
-      wasMentioned: false,
-      hasAnyMention: false,
-      allowTextCommands: true,
-      hasControlCommand: true,
-      commandAuthorized,
-    });
-    expect(res.shouldBypassMention).toBe(shouldBypassMention);
-    expect(res.shouldSkip).toBe(shouldSkip);
+  );
+});
+
+describe("allowedImplicitMentionKindsFromConfig", () => {
+  it("maps positive config flags to evaluator kinds while preserving native mentions", () => {
+    expect(
+      allowedImplicitMentionKindsFromConfig({
+        replyToBot: true,
+        quotedBot: false,
+        threadParticipation: false,
+      }),
+    ).toEqual(["reply_to_bot", "native"]);
   });
 });

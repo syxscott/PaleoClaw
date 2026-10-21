@@ -1,0 +1,75 @@
+import type { OpenClawConfig } from "paleoclaw/plugin-sdk/config-contracts";
+import { jsonResult, readStringParam } from "paleoclaw/plugin-sdk/provider-web-search";
+import { getRuntimeConfigSnapshot } from "paleoclaw/plugin-sdk/runtime-config-snapshot";
+import {
+  buildMissingCodeExecutionApiKeyPayload,
+  createCodeExecutionToolDefinition,
+} from "./code-execution-tool-shared.js";
+import {
+  readPluginCodeExecutionConfig,
+  resolveCodeExecutionEnabled,
+} from "./src/code-execution-config.js";
+import {
+  requestXaiCodeExecution,
+  resolveXaiCodeExecutionMaxTurns,
+  resolveXaiCodeExecutionModel,
+} from "./src/code-execution-shared.js";
+import { resolveXaiToolApiKeyWithAuth, type XaiToolAuthContext } from "./src/tool-auth-shared.js";
+
+export function createCodeExecutionTool(options?: {
+  config?: OpenClawConfig;
+  runtimeConfig?: OpenClawConfig | null;
+  auth?: XaiToolAuthContext;
+}) {
+  const runtimeConfig = options?.runtimeConfig ?? getRuntimeConfigSnapshot();
+  const codeExecutionConfig =
+    readPluginCodeExecutionConfig(runtimeConfig ?? undefined) ??
+    readPluginCodeExecutionConfig(options?.config);
+  if (
+    !resolveCodeExecutionEnabled({
+      sourceConfig: options?.config,
+      runtimeConfig: runtimeConfig ?? undefined,
+      config: codeExecutionConfig,
+      auth: options?.auth,
+    })
+  ) {
+    return null;
+  }
+
+  return createCodeExecutionToolDefinition(
+    async (_toolCallId: string, args: Record<string, unknown>) => {
+      const apiKey = await resolveXaiToolApiKeyWithAuth({
+        runtimeConfig: runtimeConfig ?? undefined,
+        sourceConfig: options?.config,
+        auth: options?.auth,
+      });
+      if (!apiKey) {
+        return jsonResult(buildMissingCodeExecutionApiKeyPayload());
+      }
+
+      const task = readStringParam(args, "task", { required: true });
+      const model = resolveXaiCodeExecutionModel(codeExecutionConfig);
+      const maxTurns = resolveXaiCodeExecutionMaxTurns(codeExecutionConfig);
+      const timeoutSeconds =
+        typeof codeExecutionConfig?.timeoutSeconds === "number" &&
+        Number.isFinite(codeExecutionConfig.timeoutSeconds)
+          ? codeExecutionConfig.timeoutSeconds
+          : 30;
+      const startedAt = Date.now();
+      const result = await requestXaiCodeExecution({
+        apiKey,
+        model,
+        timeoutSeconds,
+        maxTurns,
+        task,
+      });
+      return jsonResult({
+        task,
+        provider: "xai",
+        model,
+        tookMs: Date.now() - startedAt,
+        ...result,
+      });
+    },
+  );
+}
