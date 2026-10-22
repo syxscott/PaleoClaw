@@ -250,4 +250,3 @@ vendor/*
 .claude/
 .agents/
 .agents
-Swabble/build/

@@ -21,7 +21,7 @@ let package = Package(
         .package(url: "https://github.com/sparkle-project/Sparkle", from: "2.8.1"),
         .package(url: "https://github.com/steipete/Peekaboo.git", branch: "main"),
         .package(path: "../shared/OpenClawKit"),
-        .package(path: "../../Swabble"),
+        .package(path: "../swabble"),
     ],
     targets: [
         .target(
@@ -57,10 +57,15 @@ let package = Package(
             ],
             exclude: [
                 "Resources/Info.plist",
+                "Resources/Localizable.xcstrings",
             ],
+            path: "Sources/OpenClaw",
             resources: [
                 .copy("Resources/paleoclaw.icns"),
+                .copy("Resources/NativeSessionCatalogs.json"),
+                .copy("Resources/AppIcons"),
                 .copy("Resources/DeviceModels"),
+                .copy("Resources/ProviderIcons"),
             ],
             swiftSettings: [
                 .enableUpcomingFeature("StrictConcurrency"),
