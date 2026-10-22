@@ -34,7 +34,7 @@ public struct SkillStatus: Codable, Identifiable, Sendable {
     public let missing: SkillMissing
     public let configChecks: [SkillStatusConfigCheck]
     public let install: [SkillInstallOption]
-    public let PaleoHub: ClawHubInstalledSkillLink?
+    public let clawhub: ClawHubInstalledSkillLink?
 
     public var id: String {
         self.skillKey
@@ -61,7 +61,7 @@ public struct SkillStatus: Codable, Identifiable, Sendable {
         missing: SkillMissing,
         configChecks: [SkillStatusConfigCheck],
         install: [SkillInstallOption],
-        PaleoHub: ClawHubInstalledSkillLink? = nil)
+        clawhub: ClawHubInstalledSkillLink? = nil)
     {
         self.name = name
         self.description = description
@@ -83,7 +83,7 @@ public struct SkillStatus: Codable, Identifiable, Sendable {
         self.missing = missing
         self.configChecks = configChecks
         self.install = install
-        self.clawhub = PaleoHub
+        self.clawhub = clawhub
     }
 }
 
