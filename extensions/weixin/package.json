@@ -1,6 +1,6 @@
 {
   "name": "@paleoclaw/weixin",
-  "version": "1.8.0",
+  "version": "2026.10.5",
   "description": "paleoclaw 微信 WeChat channel plugin (iLink bot bridge: QR login + long-poll getupdates)",
   "type": "module",
   "paleoclaw": {

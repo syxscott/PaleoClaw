@@ -150,7 +150,7 @@ Before delivering any scientific claim:
 
 ## Version
 
-PaleoClaw System Identity v1.8.0
+PaleoClaw System Identity v2026.10.5
 Built on the PaleoClaw Framework
 
 **PaleoClaw: An AI Assistant for Paleontological Research**

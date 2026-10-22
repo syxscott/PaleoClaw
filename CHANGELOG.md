@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2026.10.5] - 2026-10-22
+
+### 🔧 Changed
+
+- **Version scheme**: the package version moves from the `1.x` line to calendar versioning, so the CLI, the npm package, the iOS and macOS apps and the QQ, WeCom and WeChat plugin packages all report `2026.10.5`. The release tooling derives the iOS and Android versions from that same number, which is what the iOS and macOS release checks were waiting on.
+- **App versions**: the iOS bundle version and the Android version name and code now come from the shared release version files instead of copies pasted into the app manifests, so the app and the gateway can no longer report different versions.
+
+### 🛠 Fixed
+
+- **Fresh installs**: the published launcher no longer starts with a byte-order mark, so `paleoclaw --version` succeeds right after `npm install -g paleoclaw@latest` instead of exiting with an error.
+- **Desktop companion**: the Linux, Windows and macOS companion apps build again. The companion was staged from a Bun release repository that does not exist, and the Windows runtime was checked against a signing identity that the published release does not carry.
+
 ## [1.8.0] - 2026-09-08
 
 ### 🛠 Fixed

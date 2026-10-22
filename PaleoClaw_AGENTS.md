@@ -227,4 +227,4 @@ pnpm test -- <test-name>
 
 ## Version
 
-PaleoClaw v1.8.0
+PaleoClaw v2026.10.5

@@ -10,7 +10,7 @@
 
 <p>
   <a href="https://github.com/syxscott/PaleoClaw/actions/workflows/ci.yml?branch=main"><img src="https://img.shields.io/github/actions/workflow/status/syxscott/PaleoClaw/ci.yml?branch=main&style=flat-square&label=CI" alt="CI status"></a>
-  <img src="https://img.shields.io/badge/version-1.8.0-blue?style=flat-square" alt="Version 1.8.0">
+  <img src="https://img.shields.io/badge/version-2026.10.5-blue?style=flat-square" alt="Version 2026.10.5">
   <img src="https://img.shields.io/badge/node-%E2%89%A522.12-339933?style=flat-square&logo=nodedotjs&logoColor=white" alt="Node.js >= 22.12">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="License: MIT"></a>
   <a href="https://github.com/syxscott/PaleoClaw/stargazers"><img src="https://img.shields.io/github/stars/syxscott/PaleoClaw?style=flat-square&color=yellow" alt="Stars"></a>
@@ -277,7 +277,7 @@ PaleoClaw/
 ## 📰 Release Highlights
 
 <details>
-<summary><strong>v1.8.0 (2026-09-08) — hardening & borrowed engines</strong></summary>
+<summary><strong>v2026.10.5 (2026-09-08) — hardening & borrowed engines</strong></summary>
 
 - **Fixed**: startup crash in `memory/index.ts` re-exports; unhandled-rejection crash path in the keyed async queue; LINE signature length handling; Discord embed validation; missing imports in session/task-memory stores; Android `Log` import and version naming; six dead help links and a strict-mode type error in the control UI.
 - **Added**: SQLite session store (WAL + FTS5, self-repairing, JSON fallback) with two-stage session titles; chat-turn daily memory (ported from GeoClaw-OpenAI v3.2.4); skill lifecycle curator; declarative pipeline registry; vendored `normalization-core` + `retry` packages wired into PBDB/CrossRef fetches; wake-reconnect, composer drafts and scroll memory in the control UI; website i18n (zh/en/ja) + SEO infrastructure.

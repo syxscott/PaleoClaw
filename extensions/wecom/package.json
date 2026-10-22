@@ -1,6 +1,6 @@
 {
   "name": "@paleoclaw/wecom",
-  "version": "1.8.0",
+  "version": "2026.10.5",
   "description": "paleoclaw 企业微信 WeCom channel plugin (encrypted callback + QYAPI proactive send)",
   "type": "module",
   "paleoclaw": {

@@ -1,6 +1,6 @@
 {
   "name": "@paleoclaw/qqbot",
-  "version": "1.8.0",
+  "version": "2026.10.5",
   "description": "paleoclaw QQ 机器人 channel plugin (QQ open platform official bot, WebSocket gateway)",
   "type": "module",
   "dependencies": {
