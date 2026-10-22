@@ -10,6 +10,10 @@ on:
 jobs:
   build-and-publish:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # npm provenance is attested with the workflow identity.
+      id-token: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -42,15 +46,29 @@ jobs:
           echo "Build output verified:"
           ls -la dist/
 
+      - name: Prepare the publishable package
+        # The root package depends on workspace packages, so it cannot be packed directly.
+        # Build the self-contained tarball the release tooling expects instead.
+        run: |
+          set -euo pipefail
+          VERSION=$(node -p "require('./package.json').version")
+          node scripts/package-paleoclaw-for-docker.mjs \
+            --pnpm-pack \
+            --allow-unreleased-changelog \
+            --output-dir .release-tarball \
+            --output-name "paleoclaw-${VERSION}.tgz"
+          ls -la .release-tarball/
+
       - name: Publish to npm
         if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
         run: |
+          set -euo pipefail
           VERSION=$(node -p "require('./package.json').version")
           if npm view paleoclaw@$VERSION version 2>/dev/null; then
             echo "Version $VERSION already published, skipping..."
             exit 0
           fi
-          npm publish --access public
+          bash scripts/paleoclaw-npm-publish.sh --publish ".release-tarball/paleoclaw-${VERSION}.tgz"
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
