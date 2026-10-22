@@ -230,7 +230,7 @@ importers:
         specifier: 0.133.0
         version: 0.133.0(zod@4.6.7)
       '@anthropic-ai/vertex-sdk':
-        specifier: ^0.15.0
+        specifier: 0.15.0
         version: 0.15.0(supports-color@10.2.2)(zod@4.6.7)
       '@aws-sdk/client-bedrock':
         specifier: 3.1028.0
@@ -242,7 +242,7 @@ importers:
         specifier: 3.972.86
         version: 3.972.86
       '@aws/bedrock-token-generator':
-        specifier: ^1.1.0
+        specifier: 1.1.0
         version: 1.1.0
       '@babel/generator':
         specifier: 8.0.6
@@ -263,7 +263,7 @@ importers:
         specifier: 1.8.1
         version: 1.8.1
       '@discordjs/voice':
-        specifier: ^0.19.0
+        specifier: 0.19.2
         version: 0.19.2(@emnapi/core@1.11.3)(@emnapi/runtime@1.11.3)(opusscript@0.1.1)
       '@earendil-works/pi-tui':
         specifier: 1.2.0
@@ -272,7 +272,7 @@ importers:
         specifier: 2.28.0
         version: 2.28.0(@modelcontextprotocol/sdk@1.32.1(supports-color@10.2.2)(zod@4.6.7))(supports-color@10.2.2)
       '@grammyjs/runner':
-        specifier: ^2.0.3
+        specifier: 2.0.3
         version: 2.0.3(grammy@1.46.0(supports-color@10.2.2))
       '@grammyjs/transformer-throttler':
         specifier: 1.2.1
@@ -281,13 +281,13 @@ importers:
         specifier: 1.3.12
         version: 1.3.12(supports-color@10.2.2)
       '@lancedb/lancedb':
-        specifier: ^0.27.2
+        specifier: 0.27.2
         version: 0.27.2(apache-arrow@21.2.0)
       '@larksuiteoapi/node-sdk':
-        specifier: ^1.60.0
+        specifier: 1.75.0
         version: 1.75.0(debug@4.4.3(supports-color@10.2.2))(supports-color@10.2.2)
       '@line/bot-sdk':
-        specifier: ^11.0.0
+        specifier: 11.3.0
         version: 11.3.0
       '@lydell/node-pty':
         specifier: 1.2.0-beta.15
@@ -353,10 +353,10 @@ importers:
         specifier: 0.34.49
         version: 0.34.49
       '@slack/bolt':
-        specifier: ^4.7.0
+        specifier: 4.7.3
         version: 4.7.3(@types/express@5.0.6)(debug@4.4.3(supports-color@10.2.2))(supports-color@10.2.2)
       '@slack/web-api':
-        specifier: ^7.15.0
+        specifier: 7.19.0
         version: 7.19.0(debug@4.4.3(supports-color@10.2.2))(supports-color@10.2.2)
       '@trycua/cua-driver':
         specifier: 0.34.1
@@ -365,7 +365,7 @@ importers:
         specifier: 8.19.0
         version: 8.19.0
       ajv:
-        specifier: ^8.18.0
+        specifier: 8.20.0
         version: 8.20.0
       axios:
         specifier: 1.20.0
@@ -374,7 +374,7 @@ importers:
         specifier: 6.0.1
         version: 6.0.1
       chokidar:
-        specifier: ^5.0.0
+        specifier: 5.0.0
         version: 5.0.0
       chrome-devtools-mcp:
         specifier: 1.10.1
@@ -383,7 +383,7 @@ importers:
         specifier: 0.3.2
         version: 0.3.2
       cli-highlight:
-        specifier: ^2.1.11
+        specifier: 2.1.11
         version: 2.1.11
       commander:
         specifier: 15.0.0
@@ -395,7 +395,7 @@ importers:
         specifier: 9.0.0
         version: 9.0.0
       discord-api-types:
-        specifier: ^0.38.45
+        specifier: 0.38.56
         version: 0.38.56
       dotenv:
         specifier: 18.0.7
@@ -422,7 +422,7 @@ importers:
         specifier: 7.1.4
         version: 7.1.4(supports-color@10.2.2)
       google-auth-library:
-        specifier: ^10.6.2
+        specifier: 10.9.1
         version: 10.9.1(supports-color@10.2.2)
       grammy:
         specifier: 1.46.0
@@ -440,7 +440,7 @@ importers:
         specifier: 12.0.0
         version: 12.0.0
       https-proxy-agent:
-        specifier: ^9.0.0
+        specifier: 9.1.0
         version: 9.1.0(supports-color@10.2.2)
       iconv-lite:
         specifier: 0.7.3
@@ -452,10 +452,10 @@ importers:
         specifier: 4.2.0
         version: 4.2.0
       ipaddr.js:
-        specifier: ^2.3.0
+        specifier: 2.5.0
         version: 2.5.0
       jimp:
-        specifier: ^1.6.1
+        specifier: 1.6.1
         version: 1.6.1(supports-color@10.2.2)
       jiti:
         specifier: 2.7.0
@@ -473,7 +473,7 @@ importers:
         specifier: 0.18.13
         version: 0.18.13
       long:
-        specifier: ^5.3.2
+        specifier: 5.3.2
         version: 5.3.2
       markdown-it:
         specifier: 14.1.1
@@ -482,7 +482,7 @@ importers:
         specifier: 10.2.6
         version: 10.2.6
       mpg123-decoder:
-        specifier: ^1.0.3
+        specifier: 1.0.3
         version: 1.0.3
       node-edge-tts:
         specifier: 1.2.11
@@ -491,7 +491,7 @@ importers:
         specifier: 3.18.1
         version: 3.18.1(supports-color@10.2.2)(typescript@7.1.0-dev.20261012.1)
       nostr-tools:
-        specifier: ^2.23.3
+        specifier: 2.25.2
         version: 2.25.2(typescript@7.1.0-dev.20261012.1)
       npm:
         specifier: 12.2.0
@@ -503,10 +503,10 @@ importers:
         specifier: 6.8.8
         version: 6.8.8
       opusscript:
-        specifier: ^0.1.1
+        specifier: 0.1.1
         version: 0.1.1
       osc-progress:
-        specifier: ^0.3.0
+        specifier: 0.3.4
         version: 0.3.4
       p-limit:
         specifier: 7.3.3
@@ -521,7 +521,7 @@ importers:
         specifier: 0.1.7
         version: 0.1.7
       pdfjs-dist:
-        specifier: ^5.6.205
+        specifier: 5.7.284
         version: 5.7.284
       pg:
         specifier: 8.23.1
@@ -530,13 +530,13 @@ importers:
         specifier: 1.64.0
         version: 1.64.0
       proxy-agent:
-        specifier: ^8.0.1
+        specifier: 8.0.2
         version: 8.0.2(supports-color@10.2.2)
       qrcode:
         specifier: 1.5.4
         version: 1.5.4
       qrcode-terminal:
-        specifier: ^0.12.0
+        specifier: 0.12.0
         version: 0.12.0
       rastermill:
         specifier: 0.4.0
@@ -545,13 +545,13 @@ importers:
         specifier: 7.8.5
         version: 7.8.5
       sharp:
-        specifier: ^0.34.5
+        specifier: 0.34.5
         version: 0.34.5
       silk-wasm:
-        specifier: ^3.7.1
+        specifier: 3.7.1
         version: 3.7.1
       strip-ansi:
-        specifier: ^7.2.0
+        specifier: 7.2.0
         version: 7.2.0
       tar:
         specifier: 7.5.22
@@ -597,13 +597,13 @@ importers:
         specifier: 1.45.1
         version: 1.45.1(vitest@5.0.3)
       '@grammyjs/types':
-        specifier: ^3.26.0
+        specifier: 3.28.0
         version: 3.28.0
       '@lit-labs/signals':
-        specifier: ^0.2.0
+        specifier: 0.2.0
         version: 0.2.0
       '@lit/context':
-        specifier: ^1.1.6
+        specifier: 1.1.6
         version: 1.1.6
       '@mdx-js/mdx':
         specifier: 3.1.1
@@ -693,7 +693,7 @@ importers:
         specifier: 8.23.1
         version: 8.23.1
       '@types/qrcode-terminal':
-        specifier: ^0.12.2
+        specifier: 0.12.2
         version: 0.12.2
       '@types/semver':
         specifier: 7.8.0
@@ -721,7 +721,7 @@ importers:
         version: 21.2.0
       baileys:
         specifier: 7.0.0-rc14
-        version: 7.0.0-rc14(patch_hash=c3c4601486630c689ffd1a0e7a34f4b8cf8e7231e41c312ad33afdf4487d8ded)(audio-decode@3.12.0)(jimp@1.6.1(supports-color@10.2.2))(sharp@0.34.5)(supports-color@10.2.2)
+        version: 7.0.0-rc14(patch_hash=c3c4601486630c689ffd1a0e7a34f4b8cf8e7231e41c312ad33afdf4487d8ded)(audio-decode@3.12.0)(jimp@1.6.1(supports-color@10.2.2))(supports-color@10.2.2)
       jscpd:
         specifier: 5.4.1
         version: 5.4.1
@@ -729,10 +729,10 @@ importers:
         specifier: 30.1.2
         version: 30.1.2(@noble/hashes@2.4.0)
       lit:
-        specifier: ^3.3.2
+        specifier: 3.3.3
         version: 3.3.3
       madge:
-        specifier: ^8.0.0
+        specifier: 8.0.0
         version: 8.0.0(supports-color@10.2.2)(typescript@7.1.0-dev.20261012.1)
       markdown-it-anchor:
         specifier: 10.0.0
@@ -2781,7 +2781,7 @@ importers:
         version: 3.12.0
       baileys:
         specifier: 7.0.0-rc14
-        version: 7.0.0-rc14(patch_hash=c3c4601486630c689ffd1a0e7a34f4b8cf8e7231e41c312ad33afdf4487d8ded)(audio-decode@3.12.0)(jimp@1.6.1(supports-color@10.2.2))(sharp@0.34.5)(supports-color@10.2.2)
+        version: 7.0.0-rc14(patch_hash=c3c4601486630c689ffd1a0e7a34f4b8cf8e7231e41c312ad33afdf4487d8ded)(audio-decode@3.12.0)(jimp@1.6.1(supports-color@10.2.2))(supports-color@10.2.2)
       paleoclaw:
         specifier: '>=2026.10.5'
         version: link:../..
@@ -8423,15 +8423,12 @@ packages:
       audio-decode: 3.12.0
       jimp: ^1.6.1
       link-preview-js: ^3.0.0
-      sharp: '*'
     peerDependenciesMeta:
       audio-decode:
         optional: true
       jimp:
         optional: true
       link-preview-js:
-        optional: true
-      sharp:
         optional: true
 
   balanced-match@4.0.4:
@@ -18728,7 +18725,7 @@ snapshots:
 
   bail@2.0.2: {}
 
-  baileys@7.0.0-rc14(patch_hash=c3c4601486630c689ffd1a0e7a34f4b8cf8e7231e41c312ad33afdf4487d8ded)(audio-decode@3.12.0)(jimp@1.6.1(supports-color@10.2.2))(sharp@0.34.5)(supports-color@10.2.2):
+  baileys@7.0.0-rc14(patch_hash=c3c4601486630c689ffd1a0e7a34f4b8cf8e7231e41c312ad33afdf4487d8ded)(audio-decode@3.12.0)(jimp@1.6.1(supports-color@10.2.2))(supports-color@10.2.2):
     dependencies:
       '@cacheable/node-cache': 1.7.6
       '@hapi/boom': 9.1.4
@@ -18745,7 +18742,6 @@ snapshots:
     optionalDependencies:
       audio-decode: 3.12.0
       jimp: 1.6.1(supports-color@10.2.2)
-      sharp: 0.34.5
     transitivePeerDependencies:
       - bufferutil
       - supports-color
