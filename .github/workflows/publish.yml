@@ -107,6 +107,7 @@ jobs:
           RESOLVED_TAG="$(printf '%s\n' "${PUBLISH_PLAN}" | tail -n 1)"
           echo "Resolved release channel: $(printf '%s\n' "${PUBLISH_PLAN}" | head -n 1)"
           echo "Resolved publish tag: ${RESOLVED_TAG}"
+          echo "npm identity: $(npm whoami 2>&1 || echo '<unknown>')"
           npm publish "${TARBALL}" --access public --tag "${RESOLVED_TAG}" --provenance
 
       - name: Upload build artifacts

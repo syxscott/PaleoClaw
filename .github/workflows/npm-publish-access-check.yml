@@ -1,0 +1,34 @@
+name: npm publish access check
+
+on:
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24.21.0"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Report the token identity and its write access
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          set -uo pipefail
+          echo "### token identity (npm whoami)"
+          npm whoami 2>&1 || echo "whoami failed"
+          echo
+          echo "### write access to paleoclaw (npm access list packages)"
+          npm access list packages paleoclaw 2>&1 || echo "access list failed"
+          echo
+          echo "### every package this token may write"
+          npm access list packages 2>&1 || echo "access list failed"
+          echo
+          echo "### registry view of the package (public)"
+          npm view paleoclaw maintainers versions --json 2>&1 || echo "view failed"
