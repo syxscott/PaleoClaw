@@ -24,6 +24,9 @@ packages:
   Sodium:
     url: https://github.com/jedisct1/swift-sodium.git
     revision: cfd195c76882aa9b997560ca7cb95d72fbf5db00
+  WebRTC:
+    url: https://github.com/stasel/WebRTC.git
+    exactVersion: 154.0.0
 
 schemes:
   paleoclaw:
@@ -57,8 +60,10 @@ targets:
         product: OpenClawProtocol
       - package: Swabble
         product: SwabbleKit
+      - package: WebRTC
       - package: Sodium
       - sdk: AppIntents.framework
+      - sdk: HealthKit.framework
     preBuildScripts:
       - name: SwiftFormat (lint)
         basedOnDependencyAnalysis: false
