@@ -1,7 +1,7 @@
 import Foundation
 import OpenClawKit
 
-struct WideAreaGatewayBeacon: Sendable, Equatable {
+struct WideAreaGatewayBeacon: Equatable {
     var instanceName: String
     var displayName: String
     var host: String
@@ -9,60 +9,55 @@ struct WideAreaGatewayBeacon: Sendable, Equatable {
     var lanHost: String?
     var tailnetDns: String?
     var gatewayPort: Int?
+    var gatewayTls: Bool
+    var gatewayDirectReachable: Bool
     var sshPort: Int?
     var cliPath: String?
 }
 
 enum WideAreaGatewayDiscovery {
-    private static let maxCandidates = 40
     private static let digPath = "/usr/bin/dig"
     private static let defaultTimeoutSeconds: TimeInterval = 0.2
-    private static let nameserverProbeConcurrency = 6
+    // Security: wide-area discovery must trust only the Tailscale MagicDNS resolver.
+    // Probing arbitrary tailnet peers lets the fastest responder become DNS-SD authority.
+    private static let tailscaleDNSResolver = "100.100.100.100"
 
-    struct DiscoveryContext: Sendable {
-        var tailscaleStatus: @Sendable () -> String?
-        var dig: @Sendable (_ args: [String], _ timeout: TimeInterval) -> String?
+    struct DiscoveryContext {
+        var tailscaleStatus: @Sendable () async -> String?
+        var dig: @Sendable (_ args: [String], _ timeout: TimeInterval) async -> String?
 
         static let live = DiscoveryContext(
-            tailscaleStatus: { readTailscaleStatus() },
+            tailscaleStatus: { await readTailscaleStatus() },
             dig: { args, timeout in
-                runDig(args: args, timeout: timeout)
+                await BoundedCommand.run(path: digPath, arguments: args, timeout: timeout)
             })
     }
 
     static func discover(
         timeoutSeconds: TimeInterval = 2.0,
-        context: DiscoveryContext = .live) -> [WideAreaGatewayBeacon]
+        context: DiscoveryContext = .live) async -> [WideAreaGatewayBeacon]
     {
         let startedAt = Date()
         let remaining = {
             timeoutSeconds - Date().timeIntervalSince(startedAt)
         }
 
-        guard let ips = collectTailnetIPv4s(
-            statusJson: context.tailscaleStatus()).nonEmpty else { return [] }
-        var candidates = Array(ips.prefix(self.maxCandidates))
-        guard let nameserver = findNameserver(
-            candidates: &candidates,
-            remaining: remaining,
-            dig: context.dig)
-        else {
-            return []
-        }
+        guard let statusJson = await context.tailscaleStatus(),
+              hasTailnetIPv4(statusJson: statusJson),
+              let domain = OpenClawBonjour.wideAreaGatewayServiceDomain
+        else { return [] }
 
-        guard let domain = OpenClawBonjour.wideAreaGatewayServiceDomain else { return [] }
         let domainTrimmed = domain.trimmingCharacters(in: CharacterSet(charactersIn: "."))
-        let probeName = "_openclaw-gw._tcp.\(domainTrimmed)"
-        guard let ptrLines = context.dig(
-            ["+short", "+time=1", "+tries=1", "@\(nameserver)", probeName, "PTR"],
-            min(defaultTimeoutSeconds, remaining()))?.split(whereSeparator: \.isNewline),
-            !ptrLines.isEmpty
-        else {
-            return []
-        }
+        let nameserver = self.tailscaleDNSResolver
+        let budget = max(0, remaining())
+        guard budget > 0,
+              let ptrRecords = await context.dig(
+                  ["+short", "+time=1", "+tries=1", "@\(nameserver)", "_openclaw-gw._tcp.\(domainTrimmed)", "PTR"],
+                  min(defaultTimeoutSeconds, budget))
+        else { return [] }
 
         var beacons: [WideAreaGatewayBeacon] = []
-        for raw in ptrLines {
+        for raw in ptrRecords.split(whereSeparator: \.isNewline) {
             let ptr = raw.trimmingCharacters(in: .whitespacesAndNewlines)
             if ptr.isEmpty { continue }
             let ptrName = ptr.hasSuffix(".") ? String(ptr.dropLast()) : ptr
@@ -72,13 +67,13 @@ enum WideAreaGatewayDiscovery {
                 : ptrName
             let instanceName = self.decodeDnsSdEscapes(rawInstanceName)
 
-            guard let srv = context.dig(
+            guard let srv = await context.dig(
                 ["+short", "+time=1", "+tries=1", "@\(nameserver)", ptrName, "SRV"],
                 min(defaultTimeoutSeconds, remaining()))
             else { continue }
             guard let (host, port) = parseSrv(srv) else { continue }
 
-            let txtRaw = context.dig(
+            let txtRaw = await context.dig(
                 ["+short", "+time=1", "+tries=1", "@\(nameserver)", ptrName, "TXT"],
                 min(self.defaultTimeoutSeconds, remaining()))
             let txtTokens = txtRaw.map(self.parseTxtTokens) ?? []
@@ -93,7 +88,9 @@ enum WideAreaGatewayDiscovery {
                 lanHost: txt["lanHost"],
                 tailnetDns: txt["tailnetDns"],
                 gatewayPort: parseInt(txt["gatewayPort"]),
-                sshPort: parseInt(txt["sshPort"]),
+                gatewayTls: GatewayDiscoveryText.txtBoolValue(txt, key: "gatewayTls"),
+                gatewayDirectReachable: GatewayDiscoveryText.txtBoolValue(txt, key: "gatewayDirectReachable"),
+                sshPort: self.parseInt(txt["sshPort"]),
                 cliPath: txt["cliPath"])
             beacons.append(beacon)
         }
@@ -101,148 +98,22 @@ enum WideAreaGatewayDiscovery {
         return beacons
     }
 
-    private static func collectTailnetIPv4s(statusJson: String?) -> [String] {
-        guard let statusJson else { return [] }
-        let decoder = JSONDecoder()
+    private static func hasTailnetIPv4(statusJson: String) -> Bool {
         guard let data = statusJson.data(using: .utf8),
-              let status = try? decoder.decode(TailscaleStatus.self, from: data)
-        else { return [] }
-
-        var ips: [String] = []
-        ips.append(contentsOf: status.selfNode?.resolvedIPs ?? [])
-        if let peers = status.peer {
-            for peer in peers.values {
-                ips.append(contentsOf: peer.resolvedIPs)
-            }
-        }
-
-        var seen = Set<String>()
-        return ips.filter { value in
-            guard self.isTailnetIPv4(value) else { return false }
-            if seen.contains(value) { return false }
-            seen.insert(value)
-            return true
-        }
+              let status = try? JSONDecoder().decode(TailscaleStatus.self, from: data)
+        else { return false }
+        return status.selfNode?.tailscaleIPs?.contains(where: TailscaleNetwork.isTailnetIPv4) == true ||
+            status.peer?.values
+            .contains { $0.tailscaleIPs?.contains(where: TailscaleNetwork.isTailnetIPv4) == true } == true
     }
 
-    private static func readTailscaleStatus() -> String? {
-        let candidates = [
-            "/usr/local/bin/tailscale",
-            "/opt/homebrew/bin/tailscale",
-            "/Applications/Tailscale.app/Contents/MacOS/Tailscale",
-            "tailscale",
-        ]
-
-        var output: String?
-        for candidate in candidates {
-            if let result = run(
+    private static func readTailscaleStatus() async -> String? {
+        await BoundedCommand.tailscaleStatus { candidate in
+            await BoundedCommand.run(
                 path: candidate,
-                args: ["status", "--json"],
+                arguments: ["status", "--json"],
                 timeout: 0.7)
-            {
-                output = result
-                break
-            }
         }
-
-        return output
-    }
-
-    private static func findNameserver(
-        candidates: inout [String],
-        remaining: () -> TimeInterval,
-        dig: @escaping @Sendable (_ args: [String], _ timeout: TimeInterval) -> String?) -> String?
-    {
-        guard let domain = OpenClawBonjour.wideAreaGatewayServiceDomain else { return nil }
-        let domainTrimmed = domain.trimmingCharacters(in: CharacterSet(charactersIn: "."))
-        let probeName = "_openclaw-gw._tcp.\(domainTrimmed)"
-
-        let ips = candidates
-        candidates.removeAll(keepingCapacity: true)
-        if ips.isEmpty { return nil }
-
-        final class ProbeState: @unchecked Sendable {
-            let lock = NSLock()
-            var nextIndex = 0
-            var found: String?
-        }
-
-        let state = ProbeState()
-        let deadline = Date().addingTimeInterval(max(0, remaining()))
-        let workerCount = min(self.nameserverProbeConcurrency, ips.count)
-        let group = DispatchGroup()
-
-        for _ in 0..<workerCount {
-            group.enter()
-            DispatchQueue.global(qos: .utility).async {
-                defer { group.leave() }
-
-                while Date() < deadline {
-                    state.lock.lock()
-                    if state.found != nil {
-                        state.lock.unlock()
-                        return
-                    }
-                    let i = state.nextIndex
-                    state.nextIndex += 1
-                    state.lock.unlock()
-
-                    if i >= ips.count { return }
-                    let ip = ips[i]
-                    let budget = deadline.timeIntervalSinceNow
-                    if budget <= 0 { return }
-
-                    if let stdout = dig(
-                        ["+short", "+time=1", "+tries=1", "@\(ip)", probeName, "PTR"],
-                        min(defaultTimeoutSeconds, budget)),
-                        stdout.split(whereSeparator: \.isNewline).isEmpty == false
-                    {
-                        state.lock.lock()
-                        if state.found == nil {
-                            state.found = ip
-                        }
-                        state.lock.unlock()
-                        return
-                    }
-                }
-            }
-        }
-
-        _ = group.wait(timeout: .now() + max(0.0, remaining()))
-        return state.found
-    }
-
-    private static func runDig(args: [String], timeout: TimeInterval) -> String? {
-        self.run(path: self.digPath, args: args, timeout: timeout)
-    }
-
-    private static func run(path: String, args: [String], timeout: TimeInterval) -> String? {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: path)
-        process.arguments = args
-        let outPipe = Pipe()
-        process.standardOutput = outPipe
-        // Avoid stderr pipe backpressure; we don't consume it.
-        process.standardError = FileHandle.nullDevice
-
-        do {
-            try process.run()
-        } catch {
-            return nil
-        }
-
-        let deadline = Date().addingTimeInterval(timeout)
-        while process.isRunning, Date() < deadline {
-            Thread.sleep(forTimeInterval: 0.02)
-        }
-        if process.isRunning {
-            process.terminate()
-        }
-        process.waitUntilExit()
-
-        let data = (try? outPipe.fileHandleForReading.readToEnd()) ?? Data()
-        let output = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines)
-        return output?.isEmpty == false ? output : nil
     }
 
     private static func parseSrv(_ stdout: String) -> (String, Int)? {
@@ -259,17 +130,9 @@ enum WideAreaGatewayDiscovery {
     }
 
     private static func parseTxtTokens(_ stdout: String) -> [String] {
-        let lines = stdout.split(whereSeparator: \.isNewline)
-        var tokens: [String] = []
-        for raw in lines {
-            let line = raw.trimmingCharacters(in: .whitespacesAndNewlines)
-            if line.isEmpty { continue }
-            let matches = line.matches(of: /"([^"]*)"/)
-            for match in matches {
-                tokens.append(self.unescapeTxt(String(match.1)))
-            }
+        stdout.split(whereSeparator: \.isNewline).flatMap { line in
+            line.matches(of: /"([^"]*)"/).map { self.unescapeTxt(String($0.1)) }
         }
-        return tokens
     }
 
     private static func unescapeTxt(_ value: String) -> String {
@@ -298,26 +161,8 @@ enum WideAreaGatewayDiscovery {
         return Int(trimmed)
     }
 
-    private static func isTailnetIPv4(_ value: String) -> Bool {
-        let parts = value.split(separator: ".")
-        if parts.count != 4 { return false }
-        let octets = parts.compactMap { Int($0) }
-        if octets.count != 4 { return false }
-        let a = octets[0]
-        let b = octets[1]
-        return a == 100 && b >= 64 && b <= 127
-    }
-
     private static func decodeDnsSdEscapes(_ value: String) -> String {
         var bytes: [UInt8] = []
-        var pending = ""
-
-        func flushPending() {
-            guard !pending.isEmpty else { return }
-            bytes.append(contentsOf: pending.utf8)
-            pending = ""
-        }
-
         let chars = Array(value)
         var i = 0
         while i < chars.count {
@@ -327,32 +172,21 @@ enum WideAreaGatewayDiscovery {
                 if digits.allSatisfy(\.isNumber),
                    let byte = UInt8(digits)
                 {
-                    flushPending()
                     bytes.append(byte)
                     i += 4
                     continue
                 }
             }
-            pending.append(ch)
+            bytes.append(contentsOf: String(ch).utf8)
             i += 1
         }
-        flushPending()
-
-        if bytes.isEmpty { return value }
-        if let decoded = String(bytes: bytes, encoding: .utf8) {
-            return decoded
-        }
-        return value
+        return String(bytes: bytes, encoding: .utf8) ?? value
     }
 }
 
 private struct TailscaleStatus: Decodable {
     struct Node: Decodable {
         let tailscaleIPs: [String]?
-
-        var resolvedIPs: [String] {
-            self.tailscaleIPs ?? []
-        }
 
         private enum CodingKeys: String, CodingKey {
             case tailscaleIPs = "TailscaleIPs"
@@ -365,11 +199,5 @@ private struct TailscaleStatus: Decodable {
     private enum CodingKeys: String, CodingKey {
         case selfNode = "Self"
         case peer = "Peer"
-    }
-}
-
-extension Collection {
-    fileprivate var nonEmpty: Self? {
-        isEmpty ? nil : self
     }
 }
