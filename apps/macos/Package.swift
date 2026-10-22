@@ -26,7 +26,7 @@ let package = Package(
     targets: [
         .target(
             name: "OpenClawIPC",
-            dependencies: [],
+            dependencies: [.product(name: "OpenClawNativeState", package: "OpenClawKit")],
             swiftSettings: [
                 .enableUpcomingFeature("StrictConcurrency"),
             ]),

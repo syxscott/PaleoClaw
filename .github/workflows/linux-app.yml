@@ -111,6 +111,16 @@ jobs:
           cache-mode: restore
           install-bun: "false"
 
+      - name: Build the workspace packages the native builds import
+        # The onboarding fixture's Vite config reaches the root source through the
+        # shared control UI config, and that source imports these workspace packages
+        # by their published entry points. Without the dist the config fails to load,
+        # the build loses its source aliases, and the fixture cannot resolve them.
+        run: |
+          for package in net-policy normalization-core retry; do
+            node --import ./scripts/tsx.mjs ./scripts/build-workspace-package.mts "$package"
+          done
+
       - name: Test native dashboard authentication and runtime boundaries
         run: |
           node --test \
@@ -174,12 +184,6 @@ jobs:
           retention-days: 14
           if-no-files-found: warn
           path: ${{ runner.temp }}/linux-inline-browser
-
-      - name: Build the workspace packages the onboarding fixture imports
-        # The fixture's Vite config reaches the shared normalization package through the
-        # root source, and that package only exposes built entry points. Without the
-        # dist the config fails to load and the fixture build loses its aliases.
-        run: node --import ./scripts/tsx.mjs ./scripts/build-workspace-package.mts normalization-core
 
       - name: Test native Gateway switching
         id: gateway-switch
