@@ -60,7 +60,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "24.21.0"
-          registry-url: "https://registry.npmjs.org"
+          # No registry-url: it writes an .npmrc with an _authToken placeholder,
+          # and npm then prefers that credential over exchanging the workflow's
+          # OIDC identity, so trusted publishing would never be attempted.
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v2
