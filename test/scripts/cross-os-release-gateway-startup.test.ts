@@ -227,7 +227,7 @@ it.each([0, 1, null])(
     try {
       const result = exerciseManagedGatewayLifecycle({
         lane,
-        cliPath: "C:\\fixture\\openclaw.exe",
+        cliPath: "C:\\fixture\\paleoclaw.exe",
         env: {},
         logPrefix,
       }).catch((error: unknown) => error);

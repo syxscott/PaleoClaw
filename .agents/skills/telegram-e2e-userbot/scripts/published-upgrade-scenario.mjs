@@ -33,7 +33,7 @@ export async function drivePublishedUpgrade(args, source, credential) {
   const candidateHead = candidate.buildInfo.commit;
   const mockPath = join(source, "scripts/e2e/mock-openai-server.mjs");
   requireFact(
-    realpathSync(join(prefix, "bin/paleoclaw")) === join(packageRoot, "openclaw.mjs"),
+    realpathSync(join(prefix, "bin/paleoclaw")) === join(packageRoot, "paleoclaw.mjs"),
     "OWNED_INSTALLED_PREFIX_REQUIRED",
   );
   const beforeBuild = json(join(packageRoot, "dist/build-info.json"));
@@ -393,7 +393,7 @@ export async function drivePublishedUpgrade(args, source, credential) {
         result.afterBuild.buildId !== beforeBuild.buildId &&
         result.lifecyclePendingAbsent &&
         result.legacyInstallGuardAbsent &&
-        realpathSync(join(prefix, "bin/paleoclaw")) === join(packageRoot, "openclaw.mjs"),
+        realpathSync(join(prefix, "bin/paleoclaw")) === join(packageRoot, "paleoclaw.mjs"),
       "PUBLISHED_UPDATER_FAILED_OR_UNSETTLED",
     );
     save(join(proof, "runtime-candidate.json"), installedIdentity(candidate));

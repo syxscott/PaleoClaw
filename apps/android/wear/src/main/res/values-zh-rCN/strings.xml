@@ -86,7 +86,7 @@
     <string name="model_catalog_update_required" tools:ignore="MissingTranslation,Typos,TypographyDashes,TypographyEllipsis">"请更新手机上的 paleoclaw 和 Gateway，以便为此聊天选择模型。"</string>
     <string name="try_again" tools:ignore="Typos,TypographyDashes,TypographyEllipsis">"请从手表重试。"</string>
     <string name="update_required" tools:ignore="Typos,TypographyDashes,TypographyEllipsis">"需要更新"</string>
-    <string name="update_required_detail" tools:ignore="Typos,TypographyDashes,TypographyEllipsis">"请更新手机和手表上的 OpenClaw."</string>
+    <string name="update_required_detail" tools:ignore="Typos,TypographyDashes,TypographyEllipsis">"请更新手机和手表上的 paleoclaw."</string>
     <string name="refresh" tools:ignore="Typos,TypographyDashes,TypographyEllipsis">"刷新"</string>
     <string name="retry" tools:ignore="Typos,TypographyDashes,TypographyEllipsis">"重试"</string>
     <string name="notification_channel_name" tools:ignore="Typos,TypographyDashes,TypographyEllipsis">"paleoclaw 回复"</string>

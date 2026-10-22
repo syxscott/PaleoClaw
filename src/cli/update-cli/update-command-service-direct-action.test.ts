@@ -20,7 +20,7 @@ it.each(["inspect", "prepare"] as const)(
       let running = true;
       const service = createMockGatewayService({
         readCommand: async () => ({
-          programArguments: [process.execPath, path.join(process.cwd(), "openclaw.mjs"), "gateway"],
+          programArguments: [process.execPath, path.join(process.cwd(), "paleoclaw.mjs"), "gateway"],
         }),
         isLoaded: async () => true,
         readRuntime: async () => ({ status: running ? "running" : "stopped" }),

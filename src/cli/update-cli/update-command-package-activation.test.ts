@@ -89,14 +89,14 @@ function expectPreview(note: RegExp, targetVersion?: string) {
   );
 }
 function writeRunnablePackage(root: string, entry = 'import "./dist/index.js";\n') {
-  fs.writeFileSync(path.join(root, "openclaw.mjs"), entry);
+  fs.writeFileSync(path.join(root, "paleoclaw.mjs"), entry);
   fs.writeFileSync(
     path.join(root, "package.json"),
     JSON.stringify({
       name: "paleoclaw",
       version: "1.0.0",
       type: "module",
-      bin: { paleoclaw: "openclaw.mjs" },
+      bin: { paleoclaw: "paleoclaw.mjs" },
     }),
   );
 }
@@ -213,7 +213,7 @@ describe.skipIf(process.platform === "win32")("package activation admission", ()
     fs.writeFileSync(resolvePackageActivationHelper(f.anchor), "retained helper");
     writeRunnablePackage(f.packageRoot, "export {};\n");
     fs.unlinkSync(f.launcher);
-    fs.symlinkSync("../lib/node_modules/paleoclaw/openclaw.mjs", f.launcher);
+    fs.symlinkSync("../lib/node_modules/paleoclaw/paleoclaw.mjs", f.launcher);
     preparePreview(f);
     await expectUnchanged(preview);
     expectPreview(/publication-retired/);

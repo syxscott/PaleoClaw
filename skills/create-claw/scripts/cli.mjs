@@ -3,7 +3,7 @@
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
-const paleoclaw = fileURLToPath(new URL("../../../openclaw.mjs", import.meta.url));
+const paleoclaw = fileURLToPath(new URL("../../../paleoclaw.mjs", import.meta.url));
 const result = spawnSync(process.execPath, [paleoclaw, ...process.argv.slice(2)], {
   env: process.env,
   stdio: "inherit",

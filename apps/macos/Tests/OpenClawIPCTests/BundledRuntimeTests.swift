@@ -48,7 +48,7 @@ struct BundledRuntimeTests {
             ofItemAtPath: runtime.appendingPathComponent("bin/bun").path)
         try Data().write(to: runtime.appendingPathComponent("lib/libsqlite3.dylib"))
         try "printf '%s\\n' \"$OPENCLAW_PROFILE\" \"$OPENCLAW_SQLITE_LIBRARY\" \"$@\"\n".write(
-            to: runtime.appendingPathComponent("lib/node_modules/paleoclaw/openclaw.mjs"),
+            to: runtime.appendingPathComponent("lib/node_modules/paleoclaw/paleoclaw.mjs"),
             atomically: true,
             encoding: .utf8)
         try JSONSerialization.data(withJSONObject: [

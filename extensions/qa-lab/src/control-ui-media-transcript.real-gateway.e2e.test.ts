@@ -54,7 +54,7 @@ function startGateway(owner: ReturnType<typeof createQaLiveLaneGateway>) {
     // Reuse the prepared runtime on restart; repository fixtures stage auth directly.
     command: {
       executablePath: process.execPath,
-      argsPrefix: [path.join(process.cwd(), "openclaw.mjs")],
+      argsPrefix: [path.join(process.cwd(), "paleoclaw.mjs")],
       cwd: process.cwd(),
       usePackagedPlugins: false,
     },

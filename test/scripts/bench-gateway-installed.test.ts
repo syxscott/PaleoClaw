@@ -67,7 +67,7 @@ async function fixture(
   await writeJson(path.join(packageRoot, "dist", "build-info.json"), { commit });
   const events = path.join(root, "events.jsonl");
   await fs.writeFile(
-    path.join(packageRoot, "openclaw.mjs"),
+    path.join(packageRoot, "paleoclaw.mjs"),
     `
 import { createServer } from "node:http";
 import { appendFileSync, existsSync, readFileSync, writeFileSync } from "node:fs";

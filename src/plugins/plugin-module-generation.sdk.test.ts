@@ -94,7 +94,7 @@ it.each([
       "package.json": JSON.stringify({
         name: "paleoclaw",
         type: "module",
-        bin: { paleoclaw: "./openclaw.mjs" },
+        bin: { paleoclaw: "./paleoclaw.mjs" },
         exports: {
           "./plugin-sdk/identity": "./dist/plugin-sdk/identity.js",
           "./plugin-sdk/identity-peer": "./dist/plugin-sdk/identity-peer.js",

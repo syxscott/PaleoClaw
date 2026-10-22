@@ -15,7 +15,7 @@ const tempDirs = useAutoCleanupTempDirTracker(afterEach);
 const nodePath = String.raw`C:\Program Files\nodejs\node.exe`;
 const options = {
   nodePath,
-  nodeArgs: [String.raw`C:\Users\crabbox\runtime\openclaw.mjs`, "connect", "--ephemeral"],
+  nodeArgs: [String.raw`C:\Users\crabbox\runtime\paleoclaw.mjs`, "connect", "--ephemeral"],
   cwd: String.raw`C:\Users\crabbox\runtime`,
   stateDir: String.raw`C:\Users\crabbox\.openclaw\cloud-workers\cbx_fixture`,
   logPath: String.raw`C:\Users\crabbox\.openclaw\cloud-workers\cbx_fixture\node.log`,

@@ -73,7 +73,7 @@ export function createStandaloneArtifactAdapter({
     const entry = relative(target);
     if (!bundledEntries.has(entry)) return;
     requireEmbedded ??= globalThis.__openclawStandaloneCreateRequire(
-      import.meta.require("node:module").createRequire, path.join(root, "openclaw.mjs"));
+      import.meta.require("node:module").createRequire, path.join(root, "paleoclaw.mjs"));
     return { moduleExport: requireEmbedded(entries[entry]) };
   };
   globalThis.__openclawStandaloneCaptureOperationArtifact = (capture, rootDir, selected, ...rest) => {

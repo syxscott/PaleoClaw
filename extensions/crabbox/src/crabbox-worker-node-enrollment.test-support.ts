@@ -73,7 +73,7 @@ export async function createNodePackageFixture(
       scripts: { postinstall: "node install.cjs" },
     }),
     "install.cjs": `require("node:fs").writeFileSync("installed.json", JSON.stringify({ token: process.env.CRABBOX_WORKER_BOOTSTRAP_TOKEN, setupCode: process.env.CRABBOX_WORKER_SETUP_CODE, scriptsRan: true }));${postinstall}`,
-    "openclaw.mjs": `import fs from "node:fs";
+    "paleoclaw.mjs": `import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
 ${fixtureReceiptClientSource(receipts.endpoint)}

@@ -11,7 +11,7 @@ it.each(["package", "symlinked wrapper"] as const)(
   async (launcher) => {
     const fixture = tempDirs.make("paleoclaw-control-ui-package-root-");
     const root = path.join(fixture, "lib", "node_modules", "paleoclaw");
-    const entrypoint = path.join(root, "openclaw.mjs");
+    const entrypoint = path.join(root, "paleoclaw.mjs");
     const indexPath = path.join(root, "dist", "control-ui", "index.html");
     fs.mkdirSync(path.dirname(indexPath), { recursive: true });
     fs.writeFileSync(path.join(root, "package.json"), JSON.stringify({ name: "paleoclaw" }));

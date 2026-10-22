@@ -44,7 +44,7 @@ async function extract(root: string, artifact: { tarballPath: string }) {
   await tar.extract({ file: artifact.tarballPath, cwd: installed });
   return path.join(installed, "package");
 }
-async function runNode(root: string, entry = "openclaw.mjs") {
+async function runNode(root: string, entry = "paleoclaw.mjs") {
   const { stdout } = await promisify(execFile)(process.execPath, [path.join(root, entry)]);
   return stdout.trim();
 }
@@ -181,7 +181,7 @@ describe("node bootstrap distribution", () => {
       ).rejects.toHaveProperty("code", "ENOENT");
     }
     for (const entry of [
-      "openclaw.mjs",
+      "paleoclaw.mjs",
       "node_modules/@fixture/browser/build/src/bin/browser.js",
     ]) {
       expect(await runNode(target, entry)).toBe("bundled-notice");
@@ -328,7 +328,7 @@ describe("node bootstrap distribution", () => {
       );
       if (process.platform !== "win32") {
         for (const [relative, requestedMode] of [
-          ["openclaw.mjs", 0o755],
+          ["paleoclaw.mjs", 0o755],
           ["dist/shared.js", 0o644],
         ] as const) {
           const sourceMode = (await fs.stat(path.join(packageRoot, relative))).mode;
@@ -358,7 +358,7 @@ describe("node bootstrap distribution", () => {
       await promisify(execFile)(process.execPath, [path.join(target, "scripts/postinstall.mjs")]);
       await expect(fs.access(lifecycleMarker)).rejects.toHaveProperty("code", "ENOENT");
       const { stdout } = await promisify(execFile)(process.execPath, [
-        path.join(target, "openclaw.mjs"),
+        path.join(target, "paleoclaw.mjs"),
       ]);
       expect(stdout.trim()).toBe("local-ai:cloud-ready");
       expect(JSON.parse(await fs.readFile(path.join(packageRoot, "package.json"), "utf8"))).toEqual(
@@ -399,7 +399,7 @@ describe("node bootstrap distribution", () => {
     await writeOwnedChunks(packageRoot, chunks);
     const importer =
       entry === "launcher"
-        ? "openclaw.mjs"
+        ? "paleoclaw.mjs"
         : entry === "install"
           ? "scripts/preinstall.mjs"
           : "dist/entry.js";

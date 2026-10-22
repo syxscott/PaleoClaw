@@ -75,7 +75,7 @@ function fixture({
   const entry = path.join(plugin, "index.js");
   const doctor = path.join(plugin, "doctor-contract-api.js");
   const sdkEntry = path.join(sdk, "example.js");
-  const launcher = path.join(runtime, "openclaw.mjs");
+  const launcher = path.join(runtime, "paleoclaw.mjs");
   const bridge = path.join(runtime, "dist/mcp/plugin-tools-serve.js");
   const hookDir = path.join(runtime, "dist/bundled/image-hook");
   const hookHandler = path.join(hookDir, "handler.js");
@@ -844,7 +844,7 @@ describe("standalone image metadata", () => {
         argv: [process.execPath, launcher],
         env: {},
         cwd: runtime,
-        wrapperEntryPairs: [{ wrapperBasename: "openclaw.mjs", entryBasename: "entry.js" }],
+        wrapperEntryPairs: [{ wrapperBasename: "paleoclaw.mjs", entryBasename: "entry.js" }],
       };
       expect(context.isMainModule(launch)).toBe(true);
       expect(native.mock.calls).toEqual([[mainEntry], [launcher]]);
@@ -1635,7 +1635,7 @@ describe("standalone image metadata", () => {
       command: process.execPath,
       args: ["--import", "tsx", path.join(external, "src/mcp/plugin-tools-serve.ts")],
     });
-    const externalLauncher = path.join(external, "openclaw.mjs");
+    const externalLauncher = path.join(external, "paleoclaw.mjs");
     fs.writeFileSync(externalLauncher, "external");
     const link = path.join(runtime, "external-launcher");
     fs.symlinkSync(externalLauncher, link);

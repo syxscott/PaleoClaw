@@ -93,7 +93,7 @@ it("names both installations when the admitted Gateway command moves to another 
     const otherRoot = path.join(home, "other-paleoclaw");
     await fs.mkdir(otherRoot);
     await fs.writeFile(path.join(otherRoot, "package.json"), '{"name":"paleoclaw"}');
-    await fs.writeFile(path.join(otherRoot, "openclaw.mjs"), "");
+    await fs.writeFile(path.join(otherRoot, "paleoclaw.mjs"), "");
     const service = mockService(home, () => 2001);
     const before = await inspect();
     expect(before.serviceUpdateVerdict?.kind).toBe("owned");
@@ -105,7 +105,7 @@ it("names both installations when the admitted Gateway command moves to another 
       "Required: admitted service ownership owned; manager UID 2001; detected: foreign; runtime running; manager UID 2001",
       `Update install root: ${process.cwd()}`,
       `Gateway install root: ${otherRoot}`,
-      `Update binary: ${path.join(process.cwd(), "openclaw.mjs")}`,
+      `Update binary: ${path.join(process.cwd(), "paleoclaw.mjs")}`,
       "Different installations: align PATH",
       "paleoclaw gateway status --deep",
     ]) {

@@ -150,7 +150,7 @@ async function startHandoffAndReadCommand(params: {
     ...(params.reapplyLocalOverrides ? { reapplyLocalOverrides: true } : {}),
     parentPid: process.pid,
     execPath: `/usr/local/bin/${params.runtime ?? "node"}`,
-    argv1: params.argv1 ?? "/opt/paleoclaw/openclaw.mjs",
+    argv1: params.argv1 ?? "/opt/paleoclaw/paleoclaw.mjs",
     meta: {},
     ...(params.devTarget ? { devTarget: params.devTarget } : {}),
     ...(params.env ? { env: params.env } : {}),
@@ -199,7 +199,7 @@ describe("managed service update handoff command", () => {
     const releaseB = path.join(root, "release-b");
     for (const release of [releaseA, releaseB]) {
       await fs.mkdir(release);
-      await fs.writeFile(path.join(release, "openclaw.mjs"), "export {};\n");
+      await fs.writeFile(path.join(release, "paleoclaw.mjs"), "export {};\n");
     }
     const current = path.join(root, "current");
     await fs.symlink(releaseA, current, "junction");
@@ -210,7 +210,7 @@ describe("managed service update handoff command", () => {
     });
 
     const prepared = await startHandoffAndReadCommand({
-      argv1: path.join(current, "openclaw.mjs"),
+      argv1: path.join(current, "paleoclaw.mjs"),
       channel: "beta",
     });
     expect(prepared.triageCommandArgv.slice(-3)).toEqual(["triage", "--json", "--non-interactive"]);
@@ -221,7 +221,7 @@ describe("managed service update handoff command", () => {
       prepared.triageCommandArgv,
     ]) {
       expect(await fs.realpath(expectDefined(argv?.[1], "prepared handoff entry"))).toBe(
-        path.join(releaseA, "openclaw.mjs"),
+        path.join(releaseA, "paleoclaw.mjs"),
       );
     }
   });
@@ -271,7 +271,7 @@ describe("managed service update handoff command", () => {
         supervisor: "systemd",
         env: { ...process.env, OPENCLAW_STATE_DIR: root },
         execPath: process.execPath,
-        argv1: path.join(root, "openclaw.mjs"),
+        argv1: path.join(root, "paleoclaw.mjs"),
         meta: {},
       });
       if (!writable) {
@@ -342,7 +342,7 @@ describe("managed service update handoff command", () => {
           restartDrainTimeoutMs: phase === "park" ? budgetMs - 30_000 : 300_000,
           parentPid: process.pid,
           execPath: "/usr/local/bin/node",
-          argv1: "/opt/paleoclaw/openclaw.mjs",
+          argv1: "/opt/paleoclaw/paleoclaw.mjs",
           meta: {},
         }).then(
           (value) => ({ kind: "ready" as const, value }),
@@ -607,7 +607,7 @@ describe("managed service update handoff command", () => {
       expect(result.commandArgv).toEqual([
         `/usr/local/bin/${runtime}`,
         ...(runtime === "bun" ? ["--no-install"] : []),
-        "/opt/paleoclaw/openclaw.mjs",
+        "/opt/paleoclaw/paleoclaw.mjs",
         "update",
         "--yes",
         "--json",

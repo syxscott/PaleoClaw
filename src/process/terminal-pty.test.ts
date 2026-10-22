@@ -416,7 +416,7 @@ describe("terminal PTY invocation", () => {
       const nodePath = path.join(nodeDir, "node.exe");
       fs.copyFileSync(resolveTestNodeExecPath(), nodePath);
       vi.spyOn(process, "execPath", "get").mockReturnValue(
-        "C:\\Program Files\\paleoclaw\\openclaw.exe",
+        "C:\\Program Files\\paleoclaw\\paleoclaw.exe",
       );
       mocks.spawn.mockReturnValueOnce(fakePty());
 
@@ -439,7 +439,7 @@ describe("terminal PTY invocation", () => {
     async () => {
       const { shimPath } = createWindowsNpmShim("codex");
       vi.spyOn(process, "execPath", "get").mockReturnValue(
-        "C:\\Program Files\\paleoclaw\\openclaw.exe",
+        "C:\\Program Files\\paleoclaw\\paleoclaw.exe",
       );
 
       await expect(

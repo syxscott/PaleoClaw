@@ -188,7 +188,7 @@ test.each([
 ] as const)("settles only verified remounted preparation: %s", async (scenario) => {
   const f = await remounted("different-files", "previous");
   if (scenario === "candidate") {
-    fs.appendFileSync(path.join(f.anchor, "candidate/openclaw.mjs"), "damaged unused candidate");
+    fs.appendFileSync(path.join(f.anchor, "candidate/paleoclaw.mjs"), "damaged unused candidate");
   } else if (scenario === "content") {
     fs.appendFileSync(path.join(f.packageRoot, "package.json"), " ");
   } else if (scenario === "launcher") {
@@ -414,15 +414,15 @@ test.each([
     expect(fs.lstatSync(f.launcher, { bigint: true }).ino).toBe(before.ino);
   }
   if (scenario === "content") {
-    fs.appendFileSync(path.join(f.packageRoot, "openclaw.mjs"), "changed");
+    fs.appendFileSync(path.join(f.packageRoot, "paleoclaw.mjs"), "changed");
   }
   if (scenario === "metadata") {
-    const target = path.join(f.packageRoot, "openclaw.mjs");
+    const target = path.join(f.packageRoot, "paleoclaw.mjs");
     fs.chmodSync(target, (fs.statSync(target).mode & 0o777) ^ 0o100);
   }
   if (scenario === "after-verification") {
     afterLauncherSync(f.launcher, () => {
-      fs.appendFileSync(path.join(f.packageRoot, "openclaw.mjs"), "changed after verification");
+      fs.appendFileSync(path.join(f.packageRoot, "paleoclaw.mjs"), "changed after verification");
     });
   }
   if (scenario === "launcher") {

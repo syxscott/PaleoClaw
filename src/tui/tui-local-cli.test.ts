@@ -78,7 +78,7 @@ beforeEach(() => {
   vi.mocked(resolveCurrentOpenClawCliInvocation).mockReset();
   vi.mocked(resolveCurrentOpenClawCliInvocation).mockImplementation((args) => ({
     command: "/host/node",
-    args: ["/host/openclaw.mjs", ...args],
+    args: ["/host/paleoclaw.mjs", ...args],
     cwd: "/host/package",
     env: { TSX_TSCONFIG_PATH: "/host/tsconfig.json" },
   }));
@@ -102,7 +102,7 @@ describe("TUI local CLI subprocess owner", () => {
       expect(h.spawn).toHaveBeenCalledWith(
         expect.objectContaining({
           mode: "child",
-          argv: ["/host/node", "/host/openclaw.mjs", "browser", "extension", "setup"],
+          argv: ["/host/node", "/host/paleoclaw.mjs", "browser", "extension", "setup"],
           cwd: "/host/package",
           captureOutput: false,
           stdinMode: "pipe-closed",

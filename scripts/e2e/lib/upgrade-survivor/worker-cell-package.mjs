@@ -41,7 +41,7 @@ export function readWorkerCellPackageIdentity(packageRoot) {
       files[relative] = { sha256: hash(fs.readFileSync(file)), size: stat.size };
     }
   };
-  for (const relative of ["package.json", "openclaw.mjs", "dist"]) {
+  for (const relative of ["package.json", "paleoclaw.mjs", "dist"]) {
     visit(relative);
   }
   const manifest = readJson(path.join(packageRoot, "package.json"));
@@ -143,7 +143,7 @@ function inspectTarball(tarball, runtimeRoot) {
         "-C",
         scratch,
         "package/package.json",
-        "package/openclaw.mjs",
+        "package/paleoclaw.mjs",
         "package/dist",
       ],
       { stdio: ["ignore", "pipe", "pipe"] },
@@ -191,7 +191,7 @@ async function main() {
     });
     writeJson(path.join(artifacts, "baseline-package-identity.json"), {
       url: published.url,
-      cli: fs.realpathSync(path.join(packageRoot, "openclaw.mjs")),
+      cli: fs.realpathSync(path.join(packageRoot, "paleoclaw.mjs")),
       ...expected,
     });
   } else if (mode === "candidate") {
@@ -237,7 +237,7 @@ async function main() {
       files: expected.files,
     });
     writeJson(path.join(artifacts, "installed-package-identity.json"), {
-      cli: fs.realpathSync(path.join(packageRoot, "openclaw.mjs")),
+      cli: fs.realpathSync(path.join(packageRoot, "paleoclaw.mjs")),
       ...actual,
     });
   } else {

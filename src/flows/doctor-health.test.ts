@@ -91,7 +91,7 @@ it.each(["unresolved-unknown", "windows-queued", "windows-startup-unknown", "spl
           ...(windows ? { sourcePath: state.path("foreign-state", "gateway.cmd") } : {}),
           programArguments: [
             split ? state.path("runtime", "bun") : process.execPath,
-            windows || split ? path.join(serviceRoot, "openclaw.mjs") : "operator-wrapper",
+            windows || split ? path.join(serviceRoot, "paleoclaw.mjs") : "operator-wrapper",
             "gateway",
           ],
           environment: {

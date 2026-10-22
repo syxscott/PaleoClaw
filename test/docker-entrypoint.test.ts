@@ -29,7 +29,7 @@ if (args.includes('doctor')) {
   } else process.exit(Number(process.env.DOCTOR_EXIT || 0));
 }
 `;
-  fs.writeFileSync(path.join(root, "openclaw.mjs"), cli, { mode: 0o755 });
+  fs.writeFileSync(path.join(root, "paleoclaw.mjs"), cli, { mode: 0o755 });
   fs.writeFileSync(path.join(root, "dist/index.js"), cli);
   fs.writeFileSync(path.join(root, "package.json"), '{"type":"module"}');
   const record = path.join(root, "calls.jsonl");
@@ -61,21 +61,21 @@ if (args.includes('doctor')) {
 
 describe.skipIf(process.platform === "win32")("Docker image activation", () => {
   it.for([
-    { args: ["openclaw.mjs", "gateway"], rootOptions: [] },
+    { args: ["paleoclaw.mjs", "gateway"], rootOptions: [] },
     { args: ["paleoclaw", "gateway"], rootOptions: [], installed: true },
     { args: ["dist/index.js", "gateway", "--bind", "lan", "--port", "18789"], rootOptions: [] },
     {
-      args: ["openclaw.mjs", "--profile", "demo", "gateway", "run", "--no-color"],
+      args: ["paleoclaw.mjs", "--profile", "demo", "gateway", "run", "--no-color"],
       rootOptions: ["--profile", "demo", "--no-color"],
     },
-    { args: ["openclaw.mjs", "gateway", "--profile=demo"], rootOptions: ["--profile=demo"] },
-    { args: ["openclaw.mjs", "--dev", "gateway"], rootOptions: ["--dev"] },
-    { args: ["openclaw.mjs", "gateway", "--dev"], rootOptions: [] },
-    { args: ["openclaw.mjs", "gateway", "--token", "--reset"], rootOptions: [] },
+    { args: ["paleoclaw.mjs", "gateway", "--profile=demo"], rootOptions: ["--profile=demo"] },
+    { args: ["paleoclaw.mjs", "--dev", "gateway"], rootOptions: ["--dev"] },
+    { args: ["paleoclaw.mjs", "gateway", "--dev"], rootOptions: [] },
+    { args: ["paleoclaw.mjs", "gateway", "--token", "--reset"], rootOptions: [] },
   ])("execs after Doctor: $args", async ({ args, rootOptions, installed }, { command }) => {
     const f = fixture(command);
     if (installed) {
-      fs.symlinkSync("openclaw.mjs", path.join(f.root, "paleoclaw"));
+      fs.symlinkSync("paleoclaw.mjs", path.join(f.root, "paleoclaw"));
     }
     const result = installed
       ? await f.runCommand(args, { PATH: `${f.root}:${nodePath}` })
@@ -100,7 +100,7 @@ describe.skipIf(process.platform === "win32")("Docker image activation", () => {
     ].map((args) => ({ args })),
   )("skips Doctor: $args", async ({ args }, { command }) => {
     const f = fixture(command);
-    expect((await f.run(["openclaw.mjs", ...args])).status).toBe(0);
+    expect((await f.run(["paleoclaw.mjs", ...args])).status).toBe(0);
     expect(f.read().map((row) => row.args)).toEqual([args]);
   });
 
@@ -137,7 +137,7 @@ describe.skipIf(process.platform === "win32")("Docker image activation", () => {
     const env: Record<string, string> = signal
       ? { INTERRUPT_DOCTOR: signal }
       : { DOCTOR_EXIT: "78" };
-    expect((await f.run(["openclaw.mjs", "gateway"], env)).status).toBe(status);
+    expect((await f.run(["paleoclaw.mjs", "gateway"], env)).status).toBe(status);
     expect(f.read()).toEqual([
       {
         args: ["doctor", "--fix", "--non-interactive"],
@@ -153,9 +153,9 @@ describe.skipIf(process.platform === "win32")("Docker image activation", () => {
     const f = fixture(command);
     // An inherited path never replaces the marker this container's activation owns.
     const inherited = { OPENCLAW_IMAGE_ACTIVATION_CAPTURE_MARKER: "/elsewhere/marker" };
-    expect((await f.run(["openclaw.mjs", "gateway"], inherited)).status).toBe(0);
-    expect((await f.run(["openclaw.mjs", "gateway"])).status).toBe(0);
-    expect((await f.run(["openclaw.mjs", "--profile", "demo", "gateway"])).status).toBe(0);
+    expect((await f.run(["paleoclaw.mjs", "gateway"], inherited)).status).toBe(0);
+    expect((await f.run(["paleoclaw.mjs", "gateway"])).status).toBe(0);
+    expect((await f.run(["paleoclaw.mjs", "--profile", "demo", "gateway"])).status).toBe(0);
     const rows = f.read();
     const markers = rows.filter((row) => row.args.includes("doctor")).map((row) => row.marker);
     expect(markers).toHaveLength(3);

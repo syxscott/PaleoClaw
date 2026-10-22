@@ -1,4 +1,4 @@
-import type { RouteLocation } from "@paleoclaw/uirouter";
+import type { RouteLocation } from "@openclaw/uirouter";
 import { For, createMemo } from "solid-js";
 import { Icon } from "../../components/solid/icon.tsx";
 import { PanelEmptyState } from "../../components/solid/panel-empty-state.tsx";

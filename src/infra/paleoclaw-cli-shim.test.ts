@@ -146,7 +146,7 @@ it.each([
       await prepareGatewayAgentCliShim({
         stateDir,
         env: {},
-        invocation: { command: process.execPath, args: ["openclaw.mjs"], cwd: stateDir },
+        invocation: { command: process.execPath, args: ["paleoclaw.mjs"], cwd: stateDir },
       });
       const config = execConfig(configured);
       expect(config.pathPrepend?.[0]).toBe(path.join(stateDir, "tmp", "agent-cli"));
@@ -174,7 +174,7 @@ it("renders a Windows PATH launcher for the running CLI", () =>
         cwd: "C:\\paleoclaw %USERPROFILE%!",
       },
     });
-    expect(await fs.readFile(path.join(root, "tmp", "agent-cli", "openclaw.cmd"), "utf8")).toBe(
+    expect(await fs.readFile(path.join(root, "tmp", "agent-cli", "paleoclaw.cmd"), "utf8")).toBe(
       '@echo off\r\nsetlocal DisableDelayedExpansion\r\n"C:\\Program Files\\nodejs\\node.exe" C:\\paleoclaw\\dist\\index.js --profile work %*\r\n',
     );
   }));

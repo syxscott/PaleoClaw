@@ -68,7 +68,7 @@ export async function prepareGatewayAgentCliShim(
   const invocation = options.invocation ?? resolveCurrentOpenClawCliInvocation([]);
   const profile = normalizeProfileName(env.OPENCLAW_PROFILE);
   const binDir = path.join(options.stateDir ?? resolveStateDir(env), AGENT_CLI_BIN_DIR);
-  const executablePath = path.join(binDir, platform === "win32" ? "openclaw.cmd" : "paleoclaw");
+  const executablePath = path.join(binDir, platform === "win32" ? "paleoclaw.cmd" : "paleoclaw");
   const content = renderCliShim(invocation, profile, platform === "win32");
 
   await fs.mkdir(binDir, { recursive: true, mode: 0o700 });

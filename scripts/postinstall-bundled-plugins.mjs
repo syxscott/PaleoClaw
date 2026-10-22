@@ -414,7 +414,7 @@ if (isDirectPostinstallInvocation()) {
       installPackageBunCliLauncher({ packageRoot: DEFAULT_PACKAGE_ROOT });
     } catch (error) {
       console.warn(
-        `[postinstall] Bun CLI launcher repair deferred: ${String(error)}. Run Bun with this package's openclaw.mjs doctor --fix.`,
+        `[postinstall] Bun CLI launcher repair deferred: ${String(error)}. Run Bun with this package's paleoclaw.mjs doctor --fix.`,
       );
     }
   }

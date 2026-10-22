@@ -70,7 +70,7 @@ async function writePackage(root: string, version: string, body: string, schema 
     process.platform === "win32" ? "junction" : "dir",
   );
   for (const name of [
-    "openclaw.mjs",
+    "paleoclaw.mjs",
     "cli-invocation.mjs",
     "node-host-launcher.mjs",
     "node-compile-cache.mjs",
@@ -151,7 +151,7 @@ async function fixture(body = "throw new Error('the selected runtime must own th
     runProgram(
       base,
       stateDir,
-      [process.execPath, ...execArgv, path.join(base, "openclaw.mjs"), ...args],
+      [process.execPath, ...execArgv, path.join(base, "paleoclaw.mjs"), ...args],
       env,
     );
   const update = (

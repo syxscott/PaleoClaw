@@ -3,7 +3,7 @@ import {
   definePage,
   type PageDefinition,
   type RouteMatch,
-} from "@paleoclaw/uirouter";
+} from "@openclaw/uirouter";
 import type { JSX } from "@solidjs/web";
 import type { SolidRouteProps } from "../app-route-types.ts";
 

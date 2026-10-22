@@ -51,7 +51,7 @@ describe("managed handoff Node selection", () => {
     "keeps %s runtime flags outside foreground CLI respawn policy",
     (runtime) => {
       const execPath = path.resolve("fixture", runtime);
-      const argv1 = path.resolve("fixture", "openclaw.mjs");
+      const argv1 = path.resolve("fixture", "paleoclaw.mjs");
       const command = resolveManagedServiceCliArgv({ execPath, argv1 }, ["gateway", "run"]);
       const prepared = prepareManagedHandoffCliRuntime(command, {}, execPath);
       expect(prepared).toEqual({ nodeExecArgv: [], readyEnv: {} });

@@ -30,7 +30,7 @@ assert(
   fs.existsSync(path.join(packageRoot, "dist/control-ui/index.html")),
   "Bundled Control UI is missing",
 );
-assert(fs.existsSync(path.join(packageRoot, "openclaw.mjs")), "Bundled CLI is missing");
+assert(fs.existsSync(path.join(packageRoot, "paleoclaw.mjs")), "Bundled CLI is missing");
 assert(fs.existsSync(sqliteLibrary), "Bundled SQLite library is missing");
 const expected = JSON.parse(fs.readFileSync(expectedInfoPath, "utf8"));
 const actual = JSON.parse(fs.readFileSync(path.join(packageRoot, "dist/build-info.json"), "utf8"));
@@ -327,7 +327,7 @@ try {
     }
   }
   Object.assign(process.env, proofEnvironment(home));
-  const cli = path.join(packageRoot, "openclaw.mjs");
+  const cli = path.join(packageRoot, "paleoclaw.mjs");
   const versionOutput = execFileSync(bun, [cli, "--version"], {
     cwd: home,
     env: proofEnvironment(home),

@@ -326,7 +326,7 @@ describe("check-package-dist-imports", () => {
 
   it("ignores import.meta.url probes outside packaged dist", () => {
     const probes = [
-      "../../openclaw.mjs",
+      "../../paleoclaw.mjs",
       "../../scripts/run-node.mjs",
       "../../dist/entry.js",
       "../../dist/entry.mjs",

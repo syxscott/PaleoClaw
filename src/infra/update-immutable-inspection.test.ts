@@ -146,7 +146,7 @@ function fixture() {
       paleoclaw: { schemaVersions: { state: 1, agent } },
     });
     write(
-      path.join(generationPath, "openclaw.mjs"),
+      path.join(generationPath, "paleoclaw.mjs"),
       'throw new Error("must not boot candidate");\n',
     );
   }

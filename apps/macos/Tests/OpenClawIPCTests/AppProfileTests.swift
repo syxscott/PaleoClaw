@@ -136,7 +136,7 @@ struct AppProfileTests {
             fromPropertyList: [
                 "ProgramArguments": [
                     "/bin/sh", wrapper.path, environment.path,
-                    "node", "openclaw.mjs", "gateway", "--port", "55636",
+                    "node", "paleoclaw.mjs", "gateway", "--port", "55636",
                 ],
             ],
             format: .xml,

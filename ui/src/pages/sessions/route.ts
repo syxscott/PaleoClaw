@@ -1,4 +1,4 @@
-import type { RouteLocation } from "@paleoclaw/uirouter";
+import type { RouteLocation } from "@openclaw/uirouter";
 import { defineSolidPage } from "../../app-route-types.ts";
 import type { ApplicationContext } from "../../app/context.ts";
 import type { SessionArchivedFilter } from "../../lib/sessions/index.ts";

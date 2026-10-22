@@ -70,7 +70,7 @@ export async function retireStandaloneGitWrapper(params: {
   assertCurrent?: () => void;
 }): Promise<{ error?: string }> {
   const platform = params.platform ?? process.platform;
-  const wrapperName = platform === "win32" ? "openclaw.cmd" : "paleoclaw";
+  const wrapperName = platform === "win32" ? "paleoclaw.cmd" : "paleoclaw";
   const searchDirs = params.searchDirs ?? (process.env.PATH ?? "").split(path.delimiter);
   const expectedEntry =
     platform === "win32"

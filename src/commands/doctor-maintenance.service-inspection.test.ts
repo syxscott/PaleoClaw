@@ -96,7 +96,7 @@ it.each([
     await fs.mkdir(unitDir, { recursive: true });
     await fs.writeFile(
       path.join(unitDir, "paleoclaw-gateway.service"),
-      "[Service]\nExecStart=/usr/bin/node /opt/paleoclaw/openclaw.mjs gateway\n",
+      "[Service]\nExecStart=/usr/bin/node /opt/paleoclaw/paleoclaw.mjs gateway\n",
     );
   } else {
     const plistDir = path.join(home, "Library/LaunchAgents");
@@ -105,7 +105,7 @@ it.each([
       path.join(plistDir, "ai.openclaw.gateway.plist"),
       `<plist><dict><key>Label</key><string>ai.openclaw.gateway</string>
       <key>ProgramArguments</key><array><string>/usr/bin/node</string>
-      <string>/opt/paleoclaw/openclaw.mjs</string><string>gateway</string></array></dict></plist>`,
+      <string>/opt/paleoclaw/paleoclaw.mjs</string><string>gateway</string></array></dict></plist>`,
     );
   }
   vi.mocked(execFileUtf8).mockImplementation(async (command, args) => {
@@ -135,7 +135,7 @@ it.each([
     await expect.soft(command).rejects.toMatchObject({ reason: scenario.reason });
   } else {
     await expect(command).resolves.toMatchObject({
-      programArguments: ["/usr/bin/node", "/opt/paleoclaw/openclaw.mjs", "gateway"],
+      programArguments: ["/usr/bin/node", "/opt/paleoclaw/paleoclaw.mjs", "gateway"],
     });
   }
   const inspection = await maybeStopManagedServiceBeforeMutableUpdate({

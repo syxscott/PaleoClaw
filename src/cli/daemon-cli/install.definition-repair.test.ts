@@ -213,7 +213,7 @@ async function fixture(
   await writeJson(path.join(native.root, "package.json"), {
     name: "paleoclaw",
     version: "2026.9.5",
-    ...(cliBinDir ? { bin: { paleoclaw: "openclaw.mjs" } } : {}),
+    ...(cliBinDir ? { bin: { paleoclaw: "paleoclaw.mjs" } } : {}),
   });
   process.env = {
     NODE_ENV: "test",
@@ -230,7 +230,7 @@ async function fixture(
   let initialCli = entry;
   if (cliBinDir) {
     await fs.mkdir(cliBinDir, { recursive: true, mode: 0o700 });
-    const publicEntry = path.join(native.root, "openclaw.mjs");
+    const publicEntry = path.join(native.root, "paleoclaw.mjs");
     await writeFixture(publicEntry, '#!/usr/bin/env node\nimport "./dist/index.js";\n', 0o700);
     initialCli = path.join(cliBinDir, "paleoclaw");
     await fs.symlink(publicEntry, initialCli);

@@ -43,7 +43,7 @@ export function createGitAdmissionFixture(
   git(source, "config", "user.name", "Update fixture");
   git(source, "config", "user.email", "fixture@example.invalid");
   write(source, ".gitignore", "node_modules/\ndist/\n.artifacts/\n");
-  write(source, "openclaw.mjs", "export {};\n");
+  write(source, "paleoclaw.mjs", "export {};\n");
   const targets = new Map<string, Parameters<UpdateRunnerOptions["inspectGitTarget"]>[0]>();
   const commit = (version: string, agentSchema: number) => {
     write(

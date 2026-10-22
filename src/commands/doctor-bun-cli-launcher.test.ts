@@ -163,7 +163,7 @@ describe("Bun-only Doctor CLI launcher repair", () => {
         ),
         "Bun CLI launcher",
       );
-      expect(vi.mocked(note).mock.calls.at(-1)?.[0]).toContain("openclaw.mjs");
+      expect(vi.mocked(note).mock.calls.at(-1)?.[0]).toContain("paleoclaw.mjs");
       expect(vi.mocked(note).mock.calls.at(-1)?.[0]).toContain("instead");
       expect(prompt.confirmAutoFix).not.toHaveBeenCalled();
       expect(installBunCliLauncher).not.toHaveBeenCalled();

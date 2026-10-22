@@ -58,7 +58,7 @@ function fixture(character = "", field: "bunPath" | "entryPath" = "entryPath", g
   const bunPath = quoted("runtime", field === "bunPath" ? character : "");
   fs.mkdirSync(packageRoot);
   fs.mkdirSync(binDir);
-  const entryPath = join(packageRoot, "openclaw.mjs");
+  const entryPath = join(packageRoot, "paleoclaw.mjs");
   fs.writeFileSync(entryPath, "#!/usr/bin/env node\n// Installed entry stays unchanged.\n");
   const path = join(binDir, "paleoclaw");
   if (globalLink) {
@@ -122,13 +122,13 @@ else { process.stdout.write(JSON.stringify(process.argv.slice(2))); process.exit
     const args = ["two words", "$literal", ""];
     const result = execute(target, args);
     expect(result.status, result.stderr).toBe(0);
-    expect(result.stdout.split("\0")).toEqual([join(liveRoot, "openclaw.mjs"), ...args, ""]);
+    expect(result.stdout.split("\0")).toEqual([join(liveRoot, "paleoclaw.mjs"), ...args, ""]);
     expect(content.split("\n").filter((line) => line.includes(`${target.packageRoot}/`))).toEqual([
       `#paleoclaw-entry=${target.entryPath}`,
     ]);
     expect(parseInstalled(target)).toEqual({
       bunPath: target.bunPath,
-      entryPath: join(liveRoot, "openclaw.mjs"),
+      entryPath: join(liveRoot, "paleoclaw.mjs"),
     });
   });
 
@@ -216,7 +216,7 @@ else { process.stdout.write(JSON.stringify(process.argv.slice(2))); process.exit
       if (kind === "foreign package") {
         content = render({
           ...target,
-          entryPath: join(target.root, "another-package/openclaw.mjs"),
+          entryPath: join(target.root, "another-package/paleoclaw.mjs"),
         });
       }
       if (kind === "symlink") {
@@ -247,7 +247,7 @@ else { process.stdout.write(JSON.stringify(process.argv.slice(2))); process.exit
 
 it.each(["relative/bun", "/runtime\0next"])("rejects unstable launcher paths: %j", (invalid) => {
   for (const target of [
-    { bunPath: invalid, entryPath: "/pkg/openclaw.mjs" },
+    { bunPath: invalid, entryPath: "/pkg/paleoclaw.mjs" },
     { bunPath: "/runtime/bun", entryPath: invalid },
   ]) {
     expect(() => render(target)).toThrow("absolute, single-line");

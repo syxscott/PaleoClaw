@@ -55,7 +55,7 @@ function fixture(
     if (typeof options === "number") {
       throw new Error("expected process options");
     }
-    expect(argv.slice(0, 2)).toEqual([process.execPath, "/host/paleoclaw/openclaw.mjs"]);
+    expect(argv.slice(0, 2)).toEqual([process.execPath, "/host/paleoclaw/paleoclaw.mjs"]);
     expect(argv).not.toContain("--config");
     expect(argv).not.toContain("--isolated");
     expect(options.baseEnv).toBeUndefined();
@@ -114,7 +114,7 @@ function fixture(
         },
       },
     },
-    modelExecution: { cliEntryPath: "/host/paleoclaw/openclaw.mjs", run },
+    modelExecution: { cliEntryPath: "/host/paleoclaw/paleoclaw.mjs", run },
     sandbox: {
       workspaceDir: "/guest/current-repo",
       installedSkillRoots: { autoreview: "/protected/autoreview" },

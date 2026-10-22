@@ -161,7 +161,7 @@ describe("update-cli", () => {
     const candidateVersion = "2026.5.14";
     const packageEntry = path.join(pkgRoot, "dist", "index.js");
     const launcherDir = path.join(tempDir, "bin");
-    const launcherNames = ["paleoclaw", "openclaw.cmd", "openclaw.ps1"];
+    const launcherNames = ["paleoclaw", "paleoclaw.cmd", "paleoclaw.ps1"];
     await fs.writeFile(packageEntry, "old package entry\n", "utf8");
     await fs.mkdir(launcherDir, { recursive: true });
     await Promise.all(
@@ -493,7 +493,7 @@ describe("update-cli", () => {
     mockRunningManagedGateway([process.execPath, entryPath, "gateway", "run"]);
     vi.mocked(resolveGatewayInstallEntrypoint).mockResolvedValue(entryPath);
     const targetShim = path.join(prefix, "bin", "paleoclaw");
-    const oldLauncher = path.join(pkgRoot, "openclaw.mjs");
+    const oldLauncher = path.join(pkgRoot, "paleoclaw.mjs");
     await fs.writeFile(oldLauncher, "old shim\n");
     await fs.mkdir(path.dirname(targetShim), { recursive: true });
     await fs.symlink(path.relative(path.dirname(targetShim), oldLauncher), targetShim);

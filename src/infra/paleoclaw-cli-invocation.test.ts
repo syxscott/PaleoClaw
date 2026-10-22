@@ -48,7 +48,7 @@ it.each([true, false])("uses standalone sidecar (sidecar cwd=%s)", async (sideca
   expectInvocation(
     {
       execPath,
-      argv1: sidecarCwd ? path.join(packageRoot, "openclaw.mjs") : "/$bunfs/root/cli.js",
+      argv1: sidecarCwd ? path.join(packageRoot, "paleoclaw.mjs") : "/$bunfs/root/cli.js",
       execArgv: ["--trace-warnings"],
       cwd: sidecarCwd ? root : repoRoot,
     },
@@ -81,7 +81,7 @@ it.each([false, true])("pins TSX but not debugger ownership (equals=%s)", (equal
   ]);
 });
 
-it.each(["openclaw.mjs", path.join("dist", "index.js")])(
+it.each(["paleoclaw.mjs", path.join("dist", "index.js")])(
   "pins a prepared %s invocation across an installation switch",
   async (entryName) => {
     const root = tempDirs.make("paleoclaw-cli-release-switch-");
@@ -130,7 +130,7 @@ it.each(["Bun source", "installed wrapper", "foreign entry"])("resolves %s", asy
       }
     : { argv1: bun ? path.join(root, "scripts", "test-live.mts") : "/app/dist/index.js" };
   const entryArgs = installed
-    ? [path.join(root, "openclaw.mjs")]
+    ? [path.join(root, "paleoclaw.mjs")]
     : bun
       ? ["--no-install", repoSourceEntry]
       : ["--import", trustedTsxLoader, repoSourceEntry];

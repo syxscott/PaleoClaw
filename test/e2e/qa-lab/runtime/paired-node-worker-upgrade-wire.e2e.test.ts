@@ -34,7 +34,7 @@ const RESULT_BYTES = "Completed worker result must survive the Gateway update.\n
 const tempDirs = useAutoCleanupTempDirTracker(afterEach);
 const runtimeFiles = collectRuntimeImportClosure(process.cwd(), [
   "package.json",
-  "openclaw.mjs",
+  "paleoclaw.mjs",
   "cli-invocation.mjs",
   "node-version.mjs",
   "node-sqlite.mjs",

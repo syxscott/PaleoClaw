@@ -152,7 +152,7 @@ describe("update failure report", () => {
           "unc \\\\server\\Alice Smith\\private\\project after unc marker",
           "rooted \\Users\\Alice Smith\\private\\rooted-secret.txt after rooted marker",
           'quoted "/Users/Alice Smith/private project" after quoted marker',
-          "openclaw.exe doctor --token paleoclaw-exe-secret",
+          "paleoclaw.exe doctor --token paleoclaw-exe-secret",
           '"npm.cmd" install --token npm-cmd-secret',
           "npm.ps1 install --token npm-ps1-secret",
           '"PowerShell.EXE" -EncodedCommand powershell-exe-secret',

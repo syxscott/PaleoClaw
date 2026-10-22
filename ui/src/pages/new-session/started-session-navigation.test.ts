@@ -1,4 +1,4 @@
-import { createRouter } from "@paleoclaw/uirouter";
+import { createRouter } from "@openclaw/uirouter";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createDeferred } from "../../../../test/helpers/promise.ts";
 import type { RouteId } from "../../app-routes.ts";

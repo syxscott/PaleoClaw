@@ -58,7 +58,7 @@ function run(adapter: "packaged" | "installed" = "packaged") {
 it.each(["packaged", "installed"] as const)("uses the exact %s invocation", async (adapter) => {
   await expect(run(adapter)).resolves.toBe(success);
   const prefix = process.platform === "win32" ? "prefix" : "prefix/lib";
-  const entry = join(dir, prefix, "node_modules/paleoclaw/openclaw.mjs");
+  const entry = join(dir, prefix, "node_modules/paleoclaw/paleoclaw.mjs");
   expect(runCommand).toHaveBeenCalledExactlyOnceWith(
     {
       command: adapter === "packaged" ? process.execPath : join(dir, "paleoclaw"),

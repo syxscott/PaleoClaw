@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { createRouter } from "@paleoclaw/uirouter";
+import { createRouter } from "@openclaw/uirouter";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { createDeferred } from "../../../../test/helpers/promise.js";
 import type { AgentsListResult } from "../../api/types.ts";

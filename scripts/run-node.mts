@@ -722,7 +722,7 @@ const refuseImmutableDeploymentMutation = (
 ) => {
   const message =
     `[paleoclaw] Cannot regenerate ${artifactKind} artifacts in an immutable deployment (${reason}). ` +
-    "Replace this deployment with a complete release, then use its installed `paleoclaw` command or run `node openclaw.mjs ...` from that release.\n";
+    "Replace this deployment with a complete release, then use its installed `paleoclaw` command or run `node paleoclaw.mjs ...` from that release.\n";
   deps.stderr.write(message);
   deps.outputTee?.write(message);
   return 1;
@@ -1143,7 +1143,7 @@ const runNodeChild = async (deps: RunNodeDeps, args: string[], execPath = deps.e
   // The parent route grants lifecycle IPC; generic children must not extend
   // the launcher's five-second force-kill boundary with a shaped message.
   const acceptShutdownGrace =
-    getCommandArgsWithRootOptions([deps.execPath, "openclaw.mjs", ...deps.args], {
+    getCommandArgsWithRootOptions([deps.execPath, "paleoclaw.mjs", ...deps.args], {
       commandPath: ["qa", "mantis", "run"],
       mode: "command-path",
     }) !== null;
@@ -1172,7 +1172,7 @@ const runOpenClaw = (deps: RunNodeDeps) => {
   const bun = resolveTestRuntime(deps.env) === "bun" ? requirePinnedBun(deps.env) : undefined;
   return runNodeChild(
     bun ? { ...deps, env: { ...deps.env, ...pinnedBunEnv(bun, deps.env) } } : deps,
-    [...resolveRunNodeDiagnosticArgs(deps), "openclaw.mjs", ...deps.args],
+    [...resolveRunNodeDiagnosticArgs(deps), "paleoclaw.mjs", ...deps.args],
     bun ?? deps.execPath,
   );
 };
@@ -1414,7 +1414,7 @@ const withRunNodeRuntimePublication = async <T,>(deps: RunNodeDeps, publish: () 
   const { withGatewayRuntimeArtifactPublication } =
     await import("../src/cli/update-cli/update-command-service-publication.ts");
   deps.cancellation.signal.throwIfAborted();
-  const selected = parseCliProfileArgs([deps.execPath, "openclaw.mjs", ...deps.args]);
+  const selected = parseCliProfileArgs([deps.execPath, "paleoclaw.mjs", ...deps.args]);
   if (!selected.ok) {
     throw new Error(selected.error);
   }

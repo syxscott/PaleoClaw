@@ -50,7 +50,7 @@ describe("native hook relay CLI", () => {
 
     await expect(
       runNativeHookRelayCliFromArgvForTest(
-        "node openclaw.mjs hooks relay --provider=codex --relay-id relay-1 --state-db /tmp/profile/state/openclaw.sqlite --generation generation-1 --event pre_tool_use --pre-tool-use-unavailable noop --timeout 1234".split(
+        "node paleoclaw.mjs hooks relay --provider=codex --relay-id relay-1 --state-db /tmp/profile/state/openclaw.sqlite --generation generation-1 --event pre_tool_use --pre-tool-use-unavailable noop --timeout 1234".split(
           " ",
         ),
         { stdin: createReadableTextStream("{}"), invokeBridge: invokeBridge as never },

@@ -581,7 +581,7 @@ class GatewayOnboardingFixture(GatewaySwitchFixture):
             "name": "This computer", "kind": "local",
         } for r in self.reports.values()), "shell setup capability installed before the real card boots")
         installed = json.loads(Path("fixture-runtime-installed.json").read_text())
-        if not installed["entry"].endswith("/package/node_modules/paleoclaw/openclaw.mjs"):
+        if not installed["entry"].endswith("/package/node_modules/paleoclaw/paleoclaw.mjs"):
             raise RuntimeError("The native installer did not select the staged CLI")
         if not self.document_requests or self.document_requests[0] != {
             "path": "/fixture/custodian", "query": {"onboarding": ["1"]},

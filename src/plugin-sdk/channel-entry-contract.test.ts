@@ -216,12 +216,12 @@ function runCompiledEsmSidecarFastPathProbe(): SpawnSyncReturns<string> {
   writeJson(path.join(tempRoot, "package.json"), {
     name: "paleoclaw",
     type: "module",
-    bin: { paleoclaw: "./openclaw.mjs" },
+    bin: { paleoclaw: "./paleoclaw.mjs" },
     exports: {
       "./plugin-sdk/channel-outbound": "./dist/plugin-sdk/channel-outbound.js",
     },
   });
-  writeFile(tempRoot, "openclaw.mjs", "#!/usr/bin/env node\n");
+  writeFile(tempRoot, "paleoclaw.mjs", "#!/usr/bin/env node\n");
   fs.mkdirSync(path.join(tempRoot, "src"));
   fs.mkdirSync(path.join(tempRoot, "extensions"));
   fs.mkdirSync(path.join(tempRoot, "dist", "plugin-sdk"), { recursive: true });

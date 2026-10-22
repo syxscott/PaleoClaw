@@ -13,7 +13,7 @@ struct BundledRuntime: Sendable {
     }
 
     var cliCommand: [String] {
-        [self.bun.path, self.packageRoot.appendingPathComponent("openclaw.mjs").path]
+        [self.bun.path, self.packageRoot.appendingPathComponent("paleoclaw.mjs").path]
     }
 
     var environment: [String: String] {

@@ -57,11 +57,11 @@ describe("detectBinary", () => {
     },
   );
 
-  it.each(["paleoclaw", "openclaw.cmd", "openclaw.custom"])(
+  it.each(["paleoclaw", "paleoclaw.cmd", "openclaw.custom"])(
     "finds Windows PATH executable %s without spawning where.exe",
     async (name) => {
       const root = tempDirs.make("paleoclaw-binary-win-path-");
-      const file = path.join(root, name === "paleoclaw" ? "openclaw.cmd" : name);
+      const file = path.join(root, name === "paleoclaw" ? "paleoclaw.cmd" : name);
       fs.writeFileSync(file, "");
       vi.stubEnv("PATH", root);
       vi.stubEnv("PATHEXT", ".EXE;.CMD");

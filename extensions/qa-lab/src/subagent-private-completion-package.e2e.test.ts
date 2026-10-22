@@ -178,7 +178,7 @@ describe.skipIf(!candidateTarball)("private completion installed-package compati
   it("preserves ordinary state through Doctor upgrade and backup rollback without publishing private replies", async () => {
     const prefix = tempDirs.make("paleoclaw-private-package-");
     const installedRoot = path.join(prefix, "lib", "node_modules", "paleoclaw");
-    const cli = path.join(installedRoot, "openclaw.mjs");
+    const cli = path.join(installedRoot, "paleoclaw.mjs");
     const evidenceDir = path.join(repoRoot, ".crabbox", "captures", "issue-27445-package");
     await mkdir(evidenceDir, { recursive: true });
     const candidateSha256 = createHash("sha256")

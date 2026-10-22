@@ -114,7 +114,7 @@ export function restoreNativeRuntime(root, directory, revision) {
   fs.mkdirSync(bin, { recursive: true, mode: 0o700 });
   fs.writeFileSync(
     path.join(bin, "paleoclaw"),
-    `#!/bin/sh\nexec ${quote(process.execPath)} ${quote(path.join(root, "openclaw.mjs"))} "$@"\n`,
+    `#!/bin/sh\nexec ${quote(process.execPath)} ${quote(path.join(root, "paleoclaw.mjs"))} "$@"\n`,
     { mode: 0o700 },
   );
   return bin;

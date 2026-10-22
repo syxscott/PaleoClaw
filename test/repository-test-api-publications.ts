@@ -50,7 +50,7 @@ const publications: Record<string, string | symbol> = {
   "src/flows/doctor-health-contributions.ts": Symbol.for(
     "openclaw.doctorHealthContributionsTestApi",
   ),
-  "src/infra/exec-approvals-store.ts": Symbol.for("openclaw.execApprovalsStoreTestApi"),
+  "src/infra/exec-approvals-store.ts": Symbol.for("paleoclaw.execApprovalsStoreTestApi"),
   "src/logging/diagnostic-run-activity.ts": Symbol.for("openclaw.diagnosticRunActivityTestApi"),
   "src/logging/secret-redaction-registry.ts": Symbol.for("openclaw.secretRedactionRegistryTestApi"),
   "src/node-host/plugin-node-host.ts": Symbol.for("openclaw.nodeHostPluginTestApi"),

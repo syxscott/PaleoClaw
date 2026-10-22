@@ -1,6 +1,6 @@
 /* @vitest-environment jsdom */
 
-import { createRouter, definePage, type RouteRedirect } from "@paleoclaw/uirouter";
+import { createRouter, definePage, type RouteRedirect } from "@openclaw/uirouter";
 import { assert, expect, it, onTestFinished, vi } from "vitest";
 import { isRouteId, locationForRoute, routePageSpec, type RouteId } from "../app-route-paths.ts";
 import { filterCommandPaletteItems } from "../components/command-palette-catalog-search.ts";

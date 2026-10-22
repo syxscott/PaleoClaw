@@ -34,7 +34,7 @@ const action = (path: string, args: string) => ({
 });
 const task = (
   taskPath: string,
-  executable: string | ReturnType<typeof action>[] = "C:\\paleoclaw\\openclaw.exe",
+  executable: string | ReturnType<typeof action>[] = "C:\\paleoclaw\\paleoclaw.exe",
   args = "gateway run",
 ) => ({
   taskPath,
@@ -77,7 +77,7 @@ it("inventories native and launcher-backed Node services without admitting a bra
       "--gateway-url http://127.0.0.1:18789",
     ),
     task("\\paleoclaw CrossAction", [
-      action("C:\\paleoclaw\\openclaw.exe", "node run"),
+      action("C:\\paleoclaw\\paleoclaw.exe", "node run"),
       action("C:\\tools\\helper.exe", "gateway run"),
     ]),
     task("\\Custom Service", "C:\\fixtures\\service.cmd", ""),
@@ -126,7 +126,7 @@ const knownTasks = ["\\paleoclaw Gateway", "\\Selected Custom"].map((taskPath) =
 const mixedTasks = [
   task("\\Mixed Assistant", [
     action("C:\\clawdbot\\clawdbot.exe", "run"),
-    action("C:\\paleoclaw\\openclaw.exe", "gateway run"),
+    action("C:\\paleoclaw\\paleoclaw.exe", "gateway run"),
   ]),
 ];
 it.each<[string, ScheduledTaskSnapshot[], string?, string?]>([

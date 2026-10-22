@@ -77,7 +77,7 @@
     <string name="open_phone_app" tools:ignore="Typos,TypographyDashes,TypographyEllipsis">"Открыть paleoclaw на телефоне"</string>
     <string name="phone_not_ready_detail" tools:ignore="Typos,TypographyDashes,TypographyEllipsis">"Часы никогда не запускают Gateway и не выполняют его аутентификацию самостоятельно."</string>
     <string name="phone_unavailable" tools:ignore="Typos,TypographyDashes,TypographyEllipsis">"Телефон недоступен"</string>
-    <string name="phone_unavailable_detail" tools:ignore="Typos,TypographyDashes,TypographyEllipsis">"Держите сопряжённый телефон поблизости и установите соответствующее приложение OpenClaw."</string>
+    <string name="phone_unavailable_detail" tools:ignore="Typos,TypographyDashes,TypographyEllipsis">"Держите сопряжённый телефон поблизости и установите соответствующее приложение paleoclaw."</string>
     <string name="selection_not_found" tools:ignore="Typos,TypographyDashes,TypographyEllipsis">"Выбранный элемент больше недоступен"</string>
     <string name="message_not_sent" tools:ignore="Typos,TypographyDashes,TypographyEllipsis">"Действие не принято"</string>
     <string name="something_went_wrong" tools:ignore="Typos,TypographyDashes,TypographyEllipsis">"Что-то пошло не так"</string>

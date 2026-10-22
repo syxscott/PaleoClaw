@@ -1,4 +1,4 @@
-import type { RouteLoaderOptions } from "@paleoclaw/uirouter";
+import type { RouteLoaderOptions } from "@openclaw/uirouter";
 import { describe, expect, it, vi } from "vitest";
 import type { AgentsListResult } from "../../api/types.ts";
 import type { ApplicationContext } from "../../app/context.ts";

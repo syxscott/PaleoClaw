@@ -18,7 +18,7 @@ scenario:
     - docs/install/index.md
     - docs/help/troubleshooting.md
   codeRefs:
-    - openclaw.mjs
+    - paleoclaw.mjs
     - test/paleoclaw-launcher.e2e.test.ts
   execution:
     kind: vitest

@@ -72,7 +72,7 @@ it.skipIf(process.platform === "win32")(
       path.join(sourceRoot, "package.json"),
       JSON.stringify({ name: "paleoclaw", version: "2026.3.1" }),
     );
-    await fs.writeFile(path.join(sourceRoot, "openclaw.mjs"), 'import "./dist/index.js";');
+    await fs.writeFile(path.join(sourceRoot, "paleoclaw.mjs"), 'import "./dist/index.js";');
     await fs.writeFile(
       path.join(sourceRoot, "dist", "index.js"),
       'console.log("node service fixture");',
@@ -100,7 +100,7 @@ it.skipIf(process.platform === "win32")(
       "lib",
       "node_modules",
       "paleoclaw",
-      "openclaw.mjs",
+      "paleoclaw.mjs",
     );
     expect(plan.programArguments[1]).toBe(expectedEntrypoint);
     expect(writeJson).toHaveBeenCalledWith(

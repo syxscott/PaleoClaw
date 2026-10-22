@@ -483,7 +483,7 @@ export { flush };
       JSON.stringify({
         name: "paleoclaw",
         type: "module",
-        bin: { paleoclaw: "openclaw.mjs" },
+        bin: { paleoclaw: "paleoclaw.mjs" },
         exports: { "./plugin-sdk/control-ui": { default: "./dist/plugin-sdk/control-ui.js" } },
       }),
     );

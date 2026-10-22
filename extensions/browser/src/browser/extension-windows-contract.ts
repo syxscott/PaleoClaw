@@ -76,7 +76,7 @@ const originsSchema = z
 export const nativeWindowsContextSchema = z.strictObject({
   nodePath: windowsPathSchema.refine((v) => windowsPathKey(path.win32.basename(v)) === "node.exe"),
   cliPath: windowsPathSchema.refine(
-    (v) => windowsPathKey(path.win32.basename(v)) === "openclaw.mjs",
+    (v) => windowsPathKey(path.win32.basename(v)) === "paleoclaw.mjs",
   ),
   stateDir: windowsPathSchema,
   configPath: windowsPathSchema,

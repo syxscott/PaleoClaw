@@ -206,7 +206,7 @@ describe("installGatewayDaemonNonInteractive", () => {
       const pin = { runtime: "bun", path: "/opt/pinned/bun" } as const;
       const expected = { revision: "installed-pin", stored: true, pin };
       const existingCommand = {
-        programArguments: [pin.path, "/app/openclaw.mjs", "gateway"],
+        programArguments: [pin.path, "/app/paleoclaw.mjs", "gateway"],
         environment: { OPENCLAW_WRAPPER: "/opt/wrapper" },
       };
       serviceReadCommand.mockResolvedValue(existingCommand);

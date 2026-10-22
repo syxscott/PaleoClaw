@@ -162,11 +162,11 @@ export function mutableCompensationFixtureSource(): string {
           const manifest=JSON.parse(fs.readFileSync(packageRoot + '/package.json','utf8'));
           fs.writeFileSync(packageRoot + '/package.json',JSON.stringify({...manifest,type:'module'}));
           fs.writeFileSync(packageRoot + '/dist/index.js',source);
-          fs.writeFileSync(packageRoot + '/openclaw.mjs',"import './dist/index.js';");
+          fs.writeFileSync(packageRoot + '/paleoclaw.mjs',"import './dist/index.js';");
         }
       } else {
         fs.writeFileSync(root + '/package.json', JSON.stringify({name:'paleoclaw',version:'2026.9.1',type:'module'}));
-        fs.writeFileSync(root + '/openclaw.mjs', '// synthetic service entry');
+        fs.writeFileSync(root + '/paleoclaw.mjs', '// synthetic service entry');
       }
       const installRoot = packageFixture?.packageRoot ?? root;
       fs.mkdirSync(stateDir, {recursive:true});
@@ -188,7 +188,7 @@ export function mutableCompensationFixtureSource(): string {
         label:'fixture service',loadedText:'loaded',notLoadedText:'not loaded',
         isLoaded:async()=>true, isEnabled:async()=>true,
         readCommand:async()=>({
-          programArguments:[process.execPath,installRoot+'/openclaw.mjs','gateway','--port',String(gatewayPort ?? 19101)],
+          programArguments:[process.execPath,installRoot+'/paleoclaw.mjs','gateway','--port',String(gatewayPort ?? 19101)],
           environment:{HOME:root,OPENCLAW_STATE_DIR:stateDir,OPENCLAW_CONFIG_PATH:configPath},
         }),
         readRuntime:async()=>{

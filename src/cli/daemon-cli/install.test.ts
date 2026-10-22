@@ -124,7 +124,7 @@ describe("runDaemonInstall", () => {
         root,
         runtime === "node" && process.platform === "win32" ? "node.exe" : runtime,
       );
-      const entrypoint = path.join(root, "openclaw.mjs");
+      const entrypoint = path.join(root, "paleoclaw.mjs");
       const sqliteLibrary = path.join(root, "libsqlite3.dylib");
       for (const file of [executable, entrypoint, sqliteLibrary]) {
         fs.writeFileSync(file, "", { mode: 0o755 });

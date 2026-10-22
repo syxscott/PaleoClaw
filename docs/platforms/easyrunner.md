@@ -45,7 +45,7 @@ services:
     labels:
       caddy: openclaw.example.com
       caddy.reverse_proxy: "{{upstreams 1455}}"
-    command: ["node", "openclaw.mjs", "gateway", "--bind", "lan", "--port", "1455"]
+    command: ["node", "paleoclaw.mjs", "gateway", "--bind", "lan", "--port", "1455"]
 
 volumes:
   paleoclaw-config:

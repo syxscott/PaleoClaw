@@ -178,7 +178,7 @@ describe("repairLoadedGatewayServiceForStart", () => {
     const failure = new Error("Runtime pin migration pending; run paleoclaw doctor.");
     pinMigrationMock.mockRejectedValueOnce(failure);
     const { service, params } = repairFixture({
-      programArguments: ["/usr/bin/node", "/fixture/openclaw.mjs", "gateway"],
+      programArguments: ["/usr/bin/node", "/fixture/paleoclaw.mjs", "gateway"],
     });
     await expect(repairLoadedGatewayServiceForStart(params)).rejects.toBe(failure);
     expect(pinSnapshotMock).not.toHaveBeenCalled();

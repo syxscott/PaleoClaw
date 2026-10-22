@@ -531,7 +531,7 @@ export async function tryWriteCompletionCache(
   timeoutMs = COMPLETION_CACHE_WRITE_TIMEOUT_MS,
   nodeRunner = resolveNodeRunner(),
 ): Promise<"completed" | "failed" | "skipped"> {
-  const binPath = path.join(root, "openclaw.mjs");
+  const binPath = path.join(root, "paleoclaw.mjs");
   const standalone = isStandaloneRuntimeExecutable(nodeRunner);
   if (!standalone && !(await pathExists(binPath))) {
     return "skipped";

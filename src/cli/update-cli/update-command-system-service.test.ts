@@ -96,7 +96,7 @@ it.runIf(process.platform === "linux").each([
           message: expect.stringContaining(restartCommand),
         });
         expect(String(failure)).toContain(
-          `${path.join(root, "openclaw.mjs")} update --yes --no-restart`,
+          `${path.join(root, "paleoclaw.mjs")} update --yes --no-restart`,
         );
         expect(String(failure)).toContain(`sudo -u '#${(await fs.stat(root)).uid}' -- env `);
       } else {

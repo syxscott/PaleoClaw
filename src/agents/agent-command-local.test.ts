@@ -660,7 +660,7 @@ describe("agent command static capabilities", () => {
           const { stdout } = await promisify(execFile)(
             process.execPath,
             [
-              path.resolve("openclaw.mjs"),
+              path.resolve("paleoclaw.mjs"),
               "agent",
               "--local",
               "--agent",

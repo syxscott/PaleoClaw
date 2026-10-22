@@ -440,7 +440,7 @@ test("leaves exec spans parentless rather than naming a span nobody exported", a
   await waitForDiagnosticEventsDrained();
   await service.stop?.(ctx);
 
-  const execSpan = spanNamed(sdk.exporter.getFinishedSpans(), "openclaw.exec");
+  const execSpan = spanNamed(sdk.exporter.getFinishedSpans(), "paleoclaw.exec");
   expect(execSpan).toBeDefined();
   expect(execSpan?.parentSpanContext).toBeUndefined();
 }, 30_000);

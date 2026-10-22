@@ -34,7 +34,7 @@ async function resolveCliPath(pluginRoot?: string): Promise<string> {
     return await fs.realpath(process.argv[1]!);
   }
   for (let cursor = path.resolve(pluginRoot); ;) {
-    const candidate = path.join(cursor, "openclaw.mjs");
+    const candidate = path.join(cursor, "paleoclaw.mjs");
     try {
       return await fs.realpath(candidate);
     } catch (error) {

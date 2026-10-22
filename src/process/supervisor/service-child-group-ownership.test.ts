@@ -168,7 +168,7 @@ it.each([
 );
 
 it("preserves Linux command argument boundaries and process ancestry in command mode", () => {
-  const argv = ["node", "/app with spaces/openclaw.mjs", "doctor", "--profile", "two words"];
+  const argv = ["node", "/app with spaces/paleoclaw.mjs", "doctor", "--profile", "two words"];
   rows.set(owner, stat(owner, owner + 1, "S", unusualName, owner + 2));
   commands.set(owner, `${argv.join("\0")}\0`);
   expect(inspect()).toEqual([
@@ -177,7 +177,7 @@ it("preserves Linux command argument boundaries and process ancestry in command 
 });
 
 it("joins Darwin ancestry and relative ownership to exact native command facts", () => {
-  const argv = ["node", "/app with spaces/openclaw.mjs", "doctor"];
+  const argv = ["node", "/app with spaces/paleoclaw.mjs", "doctor"];
   const foreign = { argvUnavailable: true, executable: "/sbin/launchd", owner: "different" };
   darwinCensus([
     { pid: owner, pgid: owner, state: "S", ppid: 1, owner: "same" },

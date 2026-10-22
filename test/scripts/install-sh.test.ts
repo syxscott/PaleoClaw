@@ -1078,8 +1078,8 @@ case "\${1:-}" in
   config) printf 'null\n'; exit 0 ;;
 esac
 mkdir -p "$NPM_FAKE_ROOT/paleoclaw/dist"
-printf '%s\n' '#!/usr/bin/env node' 'process.stdout.write("npm-version\\n")' > "$NPM_FAKE_ROOT/paleoclaw/openclaw.mjs"
-chmod +x "$NPM_FAKE_ROOT/paleoclaw/openclaw.mjs"
+printf '%s\n' '#!/usr/bin/env node' 'process.stdout.write("npm-version\\n")' > "$NPM_FAKE_ROOT/paleoclaw/paleoclaw.mjs"
+chmod +x "$NPM_FAKE_ROOT/paleoclaw/paleoclaw.mjs"
 if [[ "$NPM_FAKE_MODE" == guard-failure ]]; then
   : > "$NPM_FAKE_ROOT/paleoclaw/.openclaw-lifecycle-pending"
 else
@@ -1122,7 +1122,7 @@ EOF
       repo="$root/repo"
       npm_root="$root/lib/node_modules"
       bin="$HOME/.local/bin"
-      launcher="$npm_root/paleoclaw/openclaw.mjs"
+      launcher="$npm_root/paleoclaw/paleoclaw.mjs"
       calls="$root/candidate-calls"
       mkdir -p "$repo/dist" "$npm_root/paleoclaw" "$bin"
       printf '%s\n' 'process.stdout.write("git-version\\n")' > "$repo/dist/entry.js"
@@ -1204,7 +1204,7 @@ EOF
         'begin_openclaw_bin_backup "$BACKUP_TARGET" "$BACKUP_CANDIDATE" 1',
         'kill -TERM "$$"',
       ].join("\n"),
-      { BACKUP_CANDIDATE: join(tmp, "openclaw.mjs"), BACKUP_TARGET: target },
+      { BACKUP_CANDIDATE: join(tmp, "paleoclaw.mjs"), BACKUP_TARGET: target },
     );
     expect(result.status).toBe(143);
     expect(readFileSync(target, "utf8")).toBe("original-wrapper\n");
@@ -1800,7 +1800,7 @@ EOF
       }
       if (launcher !== "missing") {
         writeFileSync(
-          join(packageDir, "openclaw.mjs"),
+          join(packageDir, "paleoclaw.mjs"),
           launcher === "valid"
             ? '#!/usr/bin/env node\nprocess.stdout.write("paleoclaw fixture\\n");\n'
             : "#!/bin/sh\nexit 7\n",

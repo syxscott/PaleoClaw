@@ -139,7 +139,7 @@ describe("candidate node database compatibility", () => {
         expect(argv.slice(0, commandIndex + 2)).toEqual([
           process.execPath,
           ...(process.versions.bun ? ["--no-install"] : []),
-          path.join(fixture.packageRoot, "openclaw.mjs"),
+          path.join(fixture.packageRoot, "paleoclaw.mjs"),
           "database",
           kind === "state" ? "preflight" : "preflight-agent",
         ]);

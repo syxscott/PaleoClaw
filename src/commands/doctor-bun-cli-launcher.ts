@@ -53,7 +53,7 @@ export async function noteBunCliLauncherIssues(params: {
   if (!owner) {
     return;
   }
-  const entryPath = path.join(params.root, "openclaw.mjs");
+  const entryPath = path.join(params.root, "paleoclaw.mjs");
   const pathIssue = getBunCliLauncherPathIssue({ bunPath: process.execPath, entryPath });
   if (pathIssue) {
     const command = `${quoteCliArg(process.execPath)} ${quoteCliArg(entryPath)}`;

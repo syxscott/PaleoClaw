@@ -42,7 +42,7 @@ export async function inspectNpmGlobalDestination(
   const quote = process.platform === "win32" ? quotePowerShellArg : quoteCliArg;
   const retry = formatCliCommand("paleoclaw update").replace(
     /^paleoclaw\b/,
-    () => `node ${quote(path.resolve(root, "openclaw.mjs"))}`,
+    () => `node ${quote(path.resolve(root, "paleoclaw.mjs"))}`,
   );
   const unknown = (prefix: string | null, cause: "permission" | "unreadable-layout") => ({
     kind: "unknown" as const,

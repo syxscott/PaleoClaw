@@ -54,7 +54,7 @@ function processFixture(version = "2026.7.1-2", source = "") {
   mkdirSync(ipcRoot, { recursive: true, mode: 0o700 });
   const ipc = join(ipcRoot, "paleoclaw-update-doctor-123-00000000-0000-4000-8000-000000000000.json");
   const manifest = join(root, "package.json");
-  const entrypoint = join(root, "openclaw.mjs");
+  const entrypoint = join(root, "paleoclaw.mjs");
   writeJson(manifest, { name: "paleoclaw", version });
   writeFileSync(entrypoint, source);
   const env = { TMPDIR: tmp, TEMP: tmp, TMP: tmp, OPENCLAW_UPGRADE_SURVIVOR_ARTIFACT_ROOT: root };

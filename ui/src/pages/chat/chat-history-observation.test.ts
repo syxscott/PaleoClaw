@@ -2,7 +2,7 @@
 
 import { expectDefined } from "@paleoclaw/normalization-core";
 import { asOptionalRecord } from "@paleoclaw/normalization-core/record-coerce";
-import { createRouter, definePage } from "@paleoclaw/uirouter";
+import { createRouter, definePage } from "@openclaw/uirouter";
 import { IDBFactory } from "fake-indexeddb";
 import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 import { createDeferred } from "../../../../test/helpers/promise.js";

@@ -31,8 +31,8 @@ if (relative !== undefined) {
   process.argv = [process.argv[0], entry, ...args];
   await load();
 } else {
-  process.argv[1] = path.join(root, "openclaw.mjs");
-  await import(${JSON.stringify(path.join(runtimeRoot, "openclaw.mjs"))});
+  process.argv[1] = path.join(root, "paleoclaw.mjs");
+  await import(${JSON.stringify(path.join(runtimeRoot, "paleoclaw.mjs"))});
 }
 `;
 }

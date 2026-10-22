@@ -68,7 +68,7 @@ beforeEach(() => {
   }));
   vi.mocked(service.isLoaded).mockResolvedValue(true);
   vi.mocked(service.readCommand).mockResolvedValue({
-    programArguments: ["/failed/node", "/failed/openclaw.mjs", "node", "run"],
+    programArguments: ["/failed/node", "/failed/paleoclaw.mjs", "node", "run"],
     workingDirectory,
   });
 });
@@ -79,10 +79,10 @@ afterEach(() => {
 });
 
 it.each([
-  { runtime: "node", pinned: false, changed: false, launcher: "openclaw.mjs" },
-  { runtime: "bun", pinned: true, changed: false, launcher: "openclaw.mjs" },
+  { runtime: "node", pinned: false, changed: false, launcher: "paleoclaw.mjs" },
+  { runtime: "bun", pinned: true, changed: false, launcher: "paleoclaw.mjs" },
   { runtime: "node", pinned: false, changed: false, launcher: "dist/entry.js" },
-  { runtime: "node", pinned: false, changed: true, launcher: "openclaw.mjs" },
+  { runtime: "node", pinned: false, changed: true, launcher: "paleoclaw.mjs" },
 ] as const)(
   "restores a retained $runtime CLI through $launcher with pin=$pinned and changed custody=$changed",
   async ({ runtime, pinned, changed, launcher }) => {
@@ -178,7 +178,7 @@ it.each([true, false])(
       expect(mocks.pin).toHaveBeenCalledWith(
         expect.objectContaining({ kind: "node" }),
         expect.objectContaining({
-          programArguments: ["/failed/node", "/failed/openclaw.mjs", "node", "run"],
+          programArguments: ["/failed/node", "/failed/paleoclaw.mjs", "node", "run"],
         }),
       );
     } else {

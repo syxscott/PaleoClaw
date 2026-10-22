@@ -9,7 +9,7 @@ import { readDarwinProcessCommand } from "./darwin-process-command.js";
 it.runIf(process.platform === "darwin")(
   "inspects exact child arguments and selected environment on the main thread and a Worker",
   async ({ signal }) => {
-    const args = ["/app with spaces/openclaw.mjs", "", '"quoted"', "工作"];
+    const args = ["/app with spaces/paleoclaw.mjs", "", '"quoted"', "工作"];
     const script = "process.on('message', () => process.exit(0)); process.send('ready');";
     const argv = [process.execPath, "--eval", script, "--", ...args];
     const expected = { argv, executable: process.execPath, serviceMarker: "fixture" };

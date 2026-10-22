@@ -20,7 +20,7 @@ export function runBuiltCli(
   delete env.VITEST;
   Object.assign(env, envOverrides);
 
-  const entry = path.resolve(process.cwd(), "openclaw.mjs");
+  const entry = path.resolve(process.cwd(), "paleoclaw.mjs");
   // Without the runner's V8 policy, process.exit can deadlock joining a background
   // compiler that waits for main-thread GC; spawnSync then reports status null.
   const nodeArgs = process.versions.bun ? [] : resolveVitestNodeArgs(env);

@@ -59,7 +59,7 @@ const SERVICE_ID = `${DOMAIN}/ai.openclaw.gateway`;
 const ENV_FILE = "/Users/test/.openclaw/service-env/ai.openclaw.gateway.env";
 const WRAPPER = "/Users/test/.openclaw/service-env/ai.openclaw.gateway-env-wrapper.sh";
 const PLIST = resolveLaunchAgentPlistPath(ENV);
-const PREVIOUS_ARGS = ["/previous/node", "/previous/openclaw.mjs", "gateway"];
+const PREVIOUS_ARGS = ["/previous/node", "/previous/paleoclaw.mjs", "gateway"];
 const WRAPPED_ARGS = [
   LAUNCH_AGENT_ENV_WRAPPER_SHELL,
   WRAPPER,
@@ -383,7 +383,7 @@ describe("launchctl list detection", () => {
   const configuredUpdater = { XPC_SERVICE_NAME: "0", OPENCLAW_LAUNCHD_LABEL: updater };
   const gatewayProfile = { LAUNCH_JOB_LABEL: updater, OPENCLAW_PROFILE: "update.2026.5.12" };
   const handoff = { ...ENV, OPENCLAW_UPDATE_RUN_HANDOFF: "1" };
-  const nodeUpdateArgs = ["/usr/local/bin/node", "/opt/paleoclaw/openclaw.mjs", "update", "--yes"];
+  const nodeUpdateArgs = ["/usr/local/bin/node", "/opt/paleoclaw/paleoclaw.mjs", "update", "--yes"];
   const gatewayMarker = {
     LAUNCH_JOB_LABEL: updater,
     OPENCLAW_LAUNCHD_LABEL: updater,
@@ -675,7 +675,7 @@ describe("launchd install", () => {
     const legacyPlistPath = `${ENV.HOME}/Library/LaunchAgents/${legacyLabel}.plist`;
     const previousLegacy = setLaunchAgentPlist(ENV, legacyLabel, [
       "/legacy/node",
-      "/legacy/openclaw.mjs",
+      "/legacy/paleoclaw.mjs",
       "gateway",
     ]);
 

@@ -50,7 +50,7 @@ export function resolveCiCheckFamilyScope(changedPaths: readonly string[]): CiCh
   const facts = changedPaths.map((path) => getChangedPathFacts(normalizeChangedPath(path)));
   const bunLauncher = changedPaths.some(
     (file) =>
-      file === "openclaw.mjs" ||
+      file === "paleoclaw.mjs" ||
       file === "cli-invocation.mjs" ||
       file === "test/paleoclaw-launcher.e2e.test.ts" ||
       /^src\/plugins\/plugin-module-generation(?:\.|-)/u.test(file) ||

@@ -1,4 +1,4 @@
-import type { RouteLocation } from "@paleoclaw/uirouter";
+import type { RouteLocation } from "@openclaw/uirouter";
 import type { AgentsListResult } from "../../api/types.ts";
 import { defineSolidPage } from "../../app-route-types.ts";
 import type { ApplicationContext, ApplicationGatewaySnapshot } from "../../app/context.ts";

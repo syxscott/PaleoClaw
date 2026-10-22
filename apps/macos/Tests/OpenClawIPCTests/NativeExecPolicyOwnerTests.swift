@@ -363,7 +363,7 @@ private final class NativePolicyFixture: @unchecked Sendable {
           config.database.postgres.connection = 'postgresql://nativeproof@127.0.0.1:1/postgres?connect_timeout=1';
           fs.writeFileSync(configPath, JSON.stringify(config));
         }
-        const child = spawn(process.execPath, [path.join(repo, 'openclaw.mjs'), ...process.argv.slice(2)],
+        const child = spawn(process.execPath, [path.join(repo, 'paleoclaw.mjs'), ...process.argv.slice(2)],
           { cwd: repo, env: process.env, stdio: ['pipe', 'pipe', 'inherit'] });
         const output = [];
         child.stdout.on('data', chunk => output.push(chunk));

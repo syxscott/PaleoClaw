@@ -499,7 +499,10 @@ fun OnboardingFlow(viewModel: MainViewModel, modifier: Modifier = Modifier) {
       title = { Text(stringResource(R.string.onboarding_trust_this_gateway)) },
       text = {
         Text(
-          stringResource(R.string.onboarding_first_time_tls_connection_verify_this_sha_256_fi),
+          stringResource(
+            R.string.onboarding_first_time_tls_connection_verify_this_sha_256_fi,
+            prompt.fingerprintSha256,
+          ),
         )
       },
       confirmButton = {
@@ -550,7 +553,7 @@ fun OnboardingFlow(viewModel: MainViewModel, modifier: Modifier = Modifier) {
             color = onboardingText,
           )
           Text(
-            stringResource(R.string.onboarding_step_step_index_of_4),
+            stringResource(R.string.onboarding_step_step_index_of_4, step.index),
             style = onboardingCaption1Style,
             color = onboardingAccent,
           )
@@ -894,7 +897,7 @@ fun OnboardingFlow(viewModel: MainViewModel, modifier: Modifier = Modifier) {
                     disabledContentColor = Color.White,
                   ),
               ) {
-                Text(stringResource(R.string.onboarding_connect_at_module_verifyandroidappi18n_d_github_), style = onboardingHeadlineStyle.copy(fontWeight = FontWeight.Bold))
+                Text(stringResource(R.string.onboarding_connect), style = onboardingHeadlineStyle.copy(fontWeight = FontWeight.Bold))
               }
             }
           }
@@ -989,7 +992,7 @@ private fun GatewayStep(
   StepShell(title = stringResource(R.string.onboarding_gateway_connection)) {
     GuideBlock(title = stringResource(R.string.onboarding_scan_onboarding_qr)) {
       Text(stringResource(R.string.onboarding_run_these_on_the_gateway_host), style = onboardingCalloutStyle, color = onboardingTextSecondary)
-      CommandBlock("openclaw qr")
+      CommandBlock("paleoclaw qr")
       Text(stringResource(R.string.onboarding_then_scan_with_this_device), style = onboardingCalloutStyle, color = onboardingTextSecondary)
     }
     Button(
@@ -1037,8 +1040,8 @@ private fun GatewayStep(
       Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         GuideBlock(title = stringResource(R.string.onboarding_manual_setup_commands)) {
           Text(stringResource(R.string.onboarding_run_these_on_the_gateway_host_2), style = onboardingCalloutStyle, color = onboardingTextSecondary)
-          CommandBlock("openclaw qr --setup-code-only")
-          CommandBlock("openclaw qr --json")
+          CommandBlock("paleoclaw qr --setup-code-only")
+          CommandBlock("paleoclaw qr --json")
           Text(
             stringResource(R.string.onboarding_json_prints_setupcode_and_gatewayurl),
             style = onboardingCalloutStyle,
@@ -1560,15 +1563,15 @@ private fun FinalStep(
     if (!attemptedConnect) {
       Text(stringResource(R.string.onboarding_press_connect_to_verify_gateway_reachability_and), style = onboardingCalloutStyle, color = onboardingTextSecondary)
     } else {
-      Text(stringResource(R.string.onboarding_status_statustext), style = onboardingCalloutStyle, color = if (isConnected) onboardingSuccess else onboardingTextSecondary)
+      Text(stringResource(R.string.onboarding_status_statustext, statusText), style = onboardingCalloutStyle, color = if (isConnected) onboardingSuccess else onboardingTextSecondary)
       if (isConnected) {
-        Text(stringResource(R.string.onboarding_connected_to_servername_remoteaddress)gateway"}", style = onboardingCalloutStyle, color = onboardingSuccess)
+        Text(stringResource(R.string.onboarding_connected_to_servername_remoteaddress, serverName ?: remoteAddress ?: "gateway"), style = onboardingCalloutStyle, color = onboardingSuccess)
       } else {
         GuideBlock(title = stringResource(R.string.onboarding_pairing_required)) {
           Text(stringResource(R.string.onboarding_run_these_on_the_gateway_host_3), style = onboardingCalloutStyle, color = onboardingTextSecondary)
-          CommandBlock("openclaw devices list")
-          CommandBlock("openclaw devices approve <requestId>")
-          Text(stringResource(R.string.onboarding_then_tap_connect_again_at_module_verifyandroidap), style = onboardingCalloutStyle, color = onboardingTextSecondary)
+          CommandBlock("paleoclaw devices list")
+          CommandBlock("paleoclaw devices approve <requestId>")
+          Text(stringResource(R.string.onboarding_then_tap_connect_again), style = onboardingCalloutStyle, color = onboardingTextSecondary)
         }
       }
     }

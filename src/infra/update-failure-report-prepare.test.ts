@@ -269,7 +269,7 @@ it("preserves classified destination ownership and recovery without exposing use
         runningRoot: "/Users/Fixture Owner/.npm-global/lib/node_modules/paleoclaw",
         runningPrefix: "/Users/Fixture Owner/.npm-global",
         launcher: "/home/Other Owner/.npm-global/bin/paleoclaw",
-        launcherTarget: "/home/Other Owner/openclaw.mjs\nprivate-second-line",
+        launcherTarget: "/home/Other Owner/paleoclaw.mjs\nprivate-second-line",
       },
     },
     redaction.env,

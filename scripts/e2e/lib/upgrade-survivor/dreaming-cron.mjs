@@ -143,7 +143,7 @@ function seed(stateDir, artifacts, baselineRoot, candidateTarball) {
       "-C",
       scratch,
       "package/package.json",
-      "package/openclaw.mjs",
+      "package/paleoclaw.mjs",
       "package/dist",
     ]);
     const root = path.join(scratch, "package");

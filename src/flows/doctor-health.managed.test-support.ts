@@ -186,7 +186,7 @@ async function runManagedRepair(
     const packageRoot = process.cwd();
     mocks.packageRoot.mockReturnValue(packageRoot);
     const command = {
-      programArguments: [process.execPath, path.join(packageRoot, "openclaw.mjs"), "gateway"],
+      programArguments: [process.execPath, path.join(packageRoot, "paleoclaw.mjs"), "gateway"],
       environment: {
         OPENCLAW_STATE_DIR: state.stateDir,
         OPENCLAW_CONFIG_PATH: state.configPath,

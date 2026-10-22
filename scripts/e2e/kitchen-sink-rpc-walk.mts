@@ -2609,7 +2609,7 @@ export function resolveResourceGatewayRuntime() {
     );
   }
   const runner = resolveOpenClawRunner();
-  const allowedEntries = ["openclaw.mjs", "dist/index.mjs", "dist/index.js"].map((entry) =>
+  const allowedEntries = ["paleoclaw.mjs", "dist/index.mjs", "dist/index.js"].map((entry) =>
     path.resolve(entry),
   );
   if (runner.pnpm || !allowedEntries.includes(path.resolve(runner.baseArgs[0] ?? ""))) {

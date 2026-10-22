@@ -204,7 +204,7 @@ it("defaults the runtime picker to recorded Bun and honors it", async () => {
   const recordedPath = "/opt/recorded/bin/bun";
   reinstall();
   service.readCommand.mockResolvedValue({
-    programArguments: [recordedPath, "/app/openclaw.mjs", "gateway"],
+    programArguments: [recordedPath, "/app/paleoclaw.mjs", "gateway"],
   });
   select.mockResolvedValueOnce("bun");
 
@@ -256,7 +256,7 @@ it.each([undefined, "node"] as const)(
     const pin = { runtime: "bun", path: "/opt/pinned/bun" } as const;
     const expected = { revision: "installed-pin", stored: true, pin };
     const existingCommand = {
-      programArguments: [pin.path, "/app/openclaw.mjs", "gateway"],
+      programArguments: [pin.path, "/app/paleoclaw.mjs", "gateway"],
       environment: { OPENCLAW_WRAPPER: "/opt/wrapper" },
     };
     service.readCommand.mockResolvedValue(existingCommand);

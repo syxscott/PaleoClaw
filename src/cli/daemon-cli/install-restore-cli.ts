@@ -42,7 +42,7 @@ const restoreServiceCliSchema = z.strictObject({
   executable: z.string(),
   entrypoint: serviceFile.refine(
     (entry) =>
-      path.basename(entry) === "openclaw.mjs" ||
+      path.basename(entry) === "paleoclaw.mjs" ||
       buildGatewayInstallEntrypointCandidates(path.dirname(path.dirname(entry))).includes(
         path.normalize(entry),
       ),

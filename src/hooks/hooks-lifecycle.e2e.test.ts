@@ -26,7 +26,7 @@ afterEach(clearInternalHooks);
 
 async function runHooksCli(args: string[], env: NodeJS.ProcessEnv) {
   try {
-    return await execFileAsync(process.execPath, ["openclaw.mjs", "hooks", ...args], {
+    return await execFileAsync(process.execPath, ["paleoclaw.mjs", "hooks", ...args], {
       cwd: process.cwd(),
       env,
       encoding: "utf8",

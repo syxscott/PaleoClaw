@@ -394,7 +394,7 @@ export function resolveUpgradeSurvivorOpenClawCommand(
     command: windows
       ? (params.comSpec ?? resolveWindowsCmdExePath(params.env ?? process.env))
       : "paleoclaw",
-    args: windows ? ["/d", "/s", "/c", buildCmdExeCommandLine("openclaw.cmd", argv)] : argv,
+    args: windows ? ["/d", "/s", "/c", buildCmdExeCommandLine("paleoclaw.cmd", argv)] : argv,
     commandLabel: ["paleoclaw", ...argv].join(" "),
     shell: false,
     ...(windows ? { windowsVerbatimArguments: true } : {}),

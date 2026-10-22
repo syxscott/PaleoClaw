@@ -40,7 +40,7 @@ async function writeStoredRuntime(packageRoot: string, store: string, generation
   await fs.rm(join(modules, "aged-runtime"), { force: true });
   await fs.symlink(relative(modules, payload), join(modules, "aged-runtime"));
   await writeLauncher(
-    join(packageRoot, "openclaw.mjs"),
+    join(packageRoot, "paleoclaw.mjs"),
     '#!/usr/bin/env node\nimport value from "./node_modules/aged-runtime/index.cjs";\nconsole.log(value);\n',
   );
 }
@@ -93,7 +93,7 @@ describe.skipIf(process.platform === "win32")("native package stage", () => {
           { manager, command: manager, globalRoot, packageRoot },
           liveBinDir,
         );
-        const liveEntry = join(packageRoot, "openclaw.mjs");
+        const liveEntry = join(packageRoot, "paleoclaw.mjs");
         const liveOutput = () => output(process.execPath, [liveEntry]);
         const expectModules = async (file: string, store = virtualStoreDir) =>
           expect(await readJson(file)).toEqual({ virtualStoreDir: store, storeDir: external });
@@ -106,7 +106,7 @@ describe.skipIf(process.platform === "win32")("native package stage", () => {
           await fs.symlink(candidateRoot, join(stage.projectRoot, "owned-package"));
         }
         const liveCandidateRoot = join(project, relative(stage.projectRoot, candidateRoot));
-        const candidateEntry = join(candidateRoot, "openclaw.mjs");
+        const candidateEntry = join(candidateRoot, "paleoclaw.mjs");
         const candidateStore = join(stage.projectRoot, relative(project, virtualStoreDir));
         expect((await fs.lstat(candidateStore)).isSymbolicLink()).toBe(false);
         expect(await fs.realpath(candidateStore)).toBe(candidateStore);

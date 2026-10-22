@@ -1,4 +1,4 @@
-import { definePage } from "@paleoclaw/uirouter";
+import { definePage } from "@openclaw/uirouter";
 import { createComponent } from "solid-js";
 import { routePageSpec } from "../../app-route-paths.ts";
 import { ShellLayoutBoundary } from "../../app/shell-layout-traits-solid.tsx";

@@ -163,7 +163,7 @@ it("keeps Windows Node diagnostics with inspection advice", async () => {
     {
       platform: "win32",
       label: "\\paleoclaw Node",
-      detail: "task: \\paleoclaw Node, run: C:\\paleoclaw\\openclaw.exe node run",
+      detail: "task: \\paleoclaw Node, run: C:\\paleoclaw\\paleoclaw.exe node run",
       scope: "system",
       legacy: false,
     },

@@ -7,7 +7,7 @@ it.each([
     name: "symlink target drift",
     type: "symlink",
     mode: 0o120700,
-    contents: "../lib/node_modules/other/openclaw.mjs",
+    contents: "../lib/node_modules/other/paleoclaw.mjs",
     matches: false,
   },
   { name: "launcher type drift", type: "file", mode: 0o100755, matches: false },
@@ -20,7 +20,7 @@ it.each([
   },
 ] as const)("checks recorded launcher integrity for $name", (scenario) => {
   const expectedType = scenario.expectedType ?? "symlink";
-  const contents = "../lib/node_modules/paleoclaw/openclaw.mjs";
+  const contents = "../lib/node_modules/paleoclaw/paleoclaw.mjs";
   const recorded = JSON.stringify([
     expectedType,
     String(expectedType === "file" ? 0o100755 : 0o120755),

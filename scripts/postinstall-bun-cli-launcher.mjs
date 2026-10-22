@@ -30,7 +30,7 @@ export function installPackageBunCliLauncher(params) {
     return;
   }
   if (
-    getBunCliLauncherPathIssue({ bunPath, entryPath: join(params.packageRoot, "openclaw.mjs") })
+    getBunCliLauncherPathIssue({ bunPath, entryPath: join(params.packageRoot, "paleoclaw.mjs") })
   ) {
     return;
   }

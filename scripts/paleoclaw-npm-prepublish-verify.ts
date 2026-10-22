@@ -153,7 +153,7 @@ function main(argv = process.argv.slice(2)): void {
         prefixDir,
         "node_modules",
         ".bin",
-        process.platform === "win32" ? "openclaw.cmd" : "paleoclaw",
+        process.platform === "win32" ? "paleoclaw.cmd" : "paleoclaw",
       );
       binaryInvocation =
         process.platform === "win32"

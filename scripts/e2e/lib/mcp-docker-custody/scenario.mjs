@@ -55,7 +55,7 @@ async function waitForReady(directory, cli) {
 function startMcpCommand(stateDir, args) {
   const child = spawn(
     process.execPath,
-    ["/app/openclaw.mjs", "--profile", "docker-custody", "mcp", ...args],
+    ["/app/paleoclaw.mjs", "--profile", "docker-custody", "mcp", ...args],
     {
       cwd: "/app",
       env: {

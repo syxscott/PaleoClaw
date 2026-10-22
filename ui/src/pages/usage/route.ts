@@ -1,4 +1,4 @@
-import { definePage, type RouteLoaderOptions } from "@paleoclaw/uirouter";
+import { definePage, type RouteLoaderOptions } from "@openclaw/uirouter";
 import { createComponent } from "solid-js";
 import { routePageSpec } from "../../app-route-paths.ts";
 import type { SolidRouteProps } from "../../app-route-types.ts";

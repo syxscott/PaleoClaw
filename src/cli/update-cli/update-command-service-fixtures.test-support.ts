@@ -11,7 +11,7 @@ export const maintenanceDefaults = {
 
 export function gatewayCommand(home: string, root = process.cwd()) {
   return {
-    programArguments: [process.execPath, path.join(root, "openclaw.mjs"), "gateway"],
+    programArguments: [process.execPath, path.join(root, "paleoclaw.mjs"), "gateway"],
     environment: { HOME: home },
   };
 }

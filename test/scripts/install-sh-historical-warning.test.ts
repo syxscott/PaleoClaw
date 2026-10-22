@@ -27,7 +27,7 @@ function runFixture(options: Fixture = {}) {
   const packageRoot = path.join(npmRoot, "paleoclaw");
   mkdirSync(bin);
   mkdirSync(packageRoot, { recursive: true });
-  const cli = path.join(packageRoot, "openclaw.mjs");
+  const cli = path.join(packageRoot, "paleoclaw.mjs");
   const body = `#!/usr/bin/env bash
 case "$1" in
   update) cat "$PAYLOAD"; printf '%s\\n' "$UPDATE_WARNING" >&2; exit "$UPDATE_EXIT" ;;
@@ -46,7 +46,7 @@ esac
   json(path.join(packageRoot, "package.json"), {
     name: "paleoclaw",
     version: options.manifestVersion ?? "2026.9.5",
-    bin: { paleoclaw: "openclaw.mjs" },
+    bin: { paleoclaw: "paleoclaw.mjs" },
   });
   const payload = path.join(root, "payload.json");
   const url = "https://candidate.invalid/candidate.tgz";

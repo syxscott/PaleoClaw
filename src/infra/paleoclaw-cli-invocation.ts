@@ -13,7 +13,7 @@ import { resolveRuntimeArgs, resolveRuntimeWorkerArgv } from "./runtime-worker-u
 import { tryProcessCwd } from "./safe-cwd.js";
 
 const requireFromHere = createRequire(import.meta.url);
-const OPENCLAW_CLI_ENTRY_BASENAMES = new Set(["paleoclaw", "openclaw.mjs"]);
+const OPENCLAW_CLI_ENTRY_BASENAMES = new Set(["paleoclaw", "paleoclaw.mjs"]);
 const OPENCLAW_PACKAGE_ENTRY_PATHS = new Set([
   path.join("dist", "entry.js"),
   path.join("dist", "entry.mjs"),
@@ -72,7 +72,7 @@ function buildPackageRootCliArgs(packageRoot: string, execPath: string): string[
       // A checkout without TSX can still use its built package launcher.
     }
   }
-  return [...resolveRuntimeArgs(execPath), path.join(packageRoot, "openclaw.mjs")];
+  return [...resolveRuntimeArgs(execPath), path.join(packageRoot, "paleoclaw.mjs")];
 }
 
 export function resolveOpenClawCliEntryPath(argv1: string | undefined): string | undefined {

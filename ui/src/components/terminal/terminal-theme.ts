@@ -1,7 +1,7 @@
 import type {
   CreateGhosttyTerminalOptions,
   TerminalDefaultColors,
-} from "@paleoclaw/libterminal/browser";
+} from "@openclaw/libterminal/browser";
 import { resolveThemeColor } from "../../lib/theme-color.ts";
 
 type TerminalTheme = NonNullable<

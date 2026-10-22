@@ -57,7 +57,7 @@ const serviceState: GatewayServiceState = {
   running: true,
   env: serviceEnv,
   command: {
-    programArguments: [nodePath, "/fixture/openclaw.mjs", "gateway", "run"],
+    programArguments: [nodePath, "/fixture/paleoclaw.mjs", "gateway", "run"],
     workingDirectory: "/fixture/service",
     environment: serviceEnv,
   },
@@ -69,7 +69,7 @@ const loadedJob = {
     target: "gui/501/ai.openclaw.gateway",
     sourcePath: "/fixture/Library/LaunchAgents/ai.openclaw.gateway.plist",
     program: nodePath,
-    programArguments: [nodePath, "/fixture/openclaw.mjs", "gateway", "run"],
+    programArguments: [nodePath, "/fixture/paleoclaw.mjs", "gateway", "run"],
     workingDirectory: "/fixture/service",
     environment: serviceEnv,
   },

@@ -265,7 +265,7 @@ beforeEach(() => {
     params.onStopped?.(stopped);
     return stopped;
   });
-  const command = { programArguments: ["/synthetic/node", `${root}/openclaw.mjs`, "gateway"] };
+  const command = { programArguments: ["/synthetic/node", `${root}/paleoclaw.mjs`, "gateway"] };
   boundary.command.mockResolvedValue(command);
   boundary.revalidate.mockResolvedValue(verdict);
   boundary.read.mockResolvedValue({

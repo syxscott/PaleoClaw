@@ -382,7 +382,7 @@ it("wraps the Windows installed npm shim without Node shell argv", () => {
     ),
   ).toEqual({
     command: "C:\\Windows\\System32\\cmd.exe",
-    args: ["/d", "/s", "/c", '""C:\\paleoclaw prefix\\openclaw.cmd" agent --message "hello world""'],
+    args: ["/d", "/s", "/c", '""C:\\paleoclaw prefix\\paleoclaw.cmd" agent --message "hello world""'],
     windowsVerbatimArguments: true,
   });
 });

@@ -44,7 +44,7 @@ const {
   runManagedServiceManagerBoundary: runBoundary,
 } = useManagedServiceHandoffLifecycleFixture();
 const nodeTempDirs = useAutoCleanupTempDirTracker(afterEach);
-const entrypoint = "/opt/paleoclaw/openclaw.mjs";
+const entrypoint = "/opt/paleoclaw/paleoclaw.mjs";
 const nodeExec = "/usr/local/bin/node";
 const sessionKey = "agent:test:webchat:dm:user-123";
 const success = { updaterExitCode: 0, updaterResult: { status: "ok", mode: "npm" } };
@@ -125,7 +125,7 @@ describe("managed service update handoff", () => {
     const result = await startHandoff({
       root,
       execPath: path.join(root, "bun"),
-      argv1: path.join(root, "openclaw.mjs"),
+      argv1: path.join(root, "paleoclaw.mjs"),
     });
     const { command, args, dir, scriptPath, paramsPath } = handoffArtifacts(0, result.logPath);
     expect(command).toBe(path.join(root, "bun"));
@@ -618,7 +618,7 @@ describe("managed service update handoff", () => {
     if (wrapperScenario) {
       await fs.writeFile(
         wrapper,
-        `#!/bin/sh\nexec '${replacement}' /opt/paleoclaw/openclaw.mjs "$@"\n`,
+        `#!/bin/sh\nexec '${replacement}' /opt/paleoclaw/paleoclaw.mjs "$@"\n`,
         { mode: 0o755 },
       );
     }
@@ -641,7 +641,7 @@ describe("managed service update handoff", () => {
         ? [wrapper, "gateway", "--port", "18789"]
         : [
             scenario === "versioned-service" ? replacement : removed,
-            "/opt/paleoclaw/openclaw.mjs",
+            "/opt/paleoclaw/paleoclaw.mjs",
             "gateway",
           ],
     });

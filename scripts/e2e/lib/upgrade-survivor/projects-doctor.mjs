@@ -125,7 +125,7 @@ async function artifactPreservingReader(ctx, stage, packageRoot) {
     ),
   );
   assert.equal(
-    fs.realpathSync(path.join(packageRoot, "openclaw.mjs")),
+    fs.realpathSync(path.join(packageRoot, "paleoclaw.mjs")),
     identity.cli,
     "Snapshot package differs from the verified installed CLI",
   );

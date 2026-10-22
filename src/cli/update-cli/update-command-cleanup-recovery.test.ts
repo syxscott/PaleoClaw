@@ -135,7 +135,7 @@ it.each([
       {
         ...(uncertain ? { cause: new CommandProcessCleanupError() } : {}),
         recoverySteps: [
-          { kind: "continue-update", command: "node /synthetic/openclaw.mjs update" },
+          { kind: "continue-update", command: "node /synthetic/paleoclaw.mjs update" },
         ],
       },
     );

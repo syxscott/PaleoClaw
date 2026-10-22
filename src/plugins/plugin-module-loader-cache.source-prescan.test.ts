@@ -15,13 +15,13 @@ it.each(["prepared", "explicit"] as const)(
     const visit = vi.spyOn(sourceReferences, "visitPluginSourceReferences");
     try {
       fs.mkdirSync(path.join(root, "dist", "plugin-sdk"), { recursive: true });
-      fs.writeFileSync(path.join(root, "openclaw.mjs"), "export {};\n");
+      fs.writeFileSync(path.join(root, "paleoclaw.mjs"), "export {};\n");
       fs.writeFileSync(
         path.join(root, "package.json"),
         JSON.stringify({
           name: "paleoclaw",
           type: "module",
-          bin: { paleoclaw: "openclaw.mjs" },
+          bin: { paleoclaw: "paleoclaw.mjs" },
           exports: { "./plugin-sdk/core": "./dist/plugin-sdk/core.js" },
         }),
       );

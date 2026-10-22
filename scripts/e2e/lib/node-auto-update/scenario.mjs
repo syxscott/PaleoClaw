@@ -433,7 +433,7 @@ try {
     installEnv,
     900_000,
   );
-  cliEntry = path.join(prefix, "lib/node_modules/paleoclaw/openclaw.mjs");
+  cliEntry = path.join(prefix, "lib/node_modules/paleoclaw/paleoclaw.mjs");
   const globalManifest = path.join(prefix, "lib/node_modules/paleoclaw/package.json");
   const globalHash = fileHash(globalManifest);
   const gateway = await startGateway("gateway");
@@ -535,7 +535,7 @@ try {
   assert(
     updatedArguments.some(
       (arg) =>
-        typeof arg === "string" && arg.includes(`${versions[0]}-`) && arg.endsWith("/openclaw.mjs"),
+        typeof arg === "string" && arg.includes(`${versions[0]}-`) && arg.endsWith("/paleoclaw.mjs"),
     ),
     "supervisor did not run the private package entrypoint",
   );
@@ -859,7 +859,7 @@ try {
     publishedEnv,
     900_000,
   );
-  const publishedEntry = path.join(publishedPackage, "openclaw.mjs");
+  const publishedEntry = path.join(publishedPackage, "paleoclaw.mjs");
   assert(
     (
       await command(

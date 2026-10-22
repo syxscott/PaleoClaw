@@ -104,7 +104,7 @@ function runUpdateProcess(
 ) {
   const configPath = path.join(root, "config", "openclaw.json");
   const stateDir = path.join(root, "state");
-  const entryPath = path.resolve("openclaw.mjs");
+  const entryPath = path.resolve("paleoclaw.mjs");
   return runCliProcessChild({
     nodeArgs: [...(preload ? ["--import", preload] : []), entryPath, ...args],
     env: {
@@ -615,7 +615,7 @@ it.each([
     delete env.VITEST_WORKER_ID;
     const result = await runCliProcessChild({
       nodeArgs: [
-        path.resolve(scenario.entry === "cli" ? "openclaw.mjs" : "dist/mac-node-worker.js"),
+        path.resolve(scenario.entry === "cli" ? "paleoclaw.mjs" : "dist/mac-node-worker.js"),
         "node",
         "worker",
       ],

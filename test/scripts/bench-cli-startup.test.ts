@@ -30,7 +30,7 @@ function cliSample(overrides: Partial<CliSample> = {}): CliSample {
   return { ms: 10, firstOutputMs: 5, maxRssMb: 50, exitCode: 0, signal: null, ...overrides };
 }
 
-const failures = (overrides: Partial<CaseResult> = {}, entry = "openclaw.mjs") =>
+const failures = (overrides: Partial<CaseResult> = {}, entry = "paleoclaw.mjs") =>
   testing.collectFailedSamples({
     entry,
     cases: [
@@ -371,7 +371,7 @@ it.each<[Partial<CaseResult>, string[], string?]>([
       " sample 1: exited with expected code 1 but output did not match expected clean-state markers (Gateway target:)",
     ],
   ],
-])("reports failures for %j", (overrides, expected, entry = "openclaw.mjs") => {
+])("reports failures for %j", (overrides, expected, entry = "paleoclaw.mjs") => {
   const label = `${entry} ${overrides.id ?? "version"}`;
   expect(failures(overrides, entry)).toEqual(expected.map((suffix) => label + suffix));
 });

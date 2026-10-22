@@ -562,7 +562,7 @@ verify_elevation_code() (
   build_id="$(plist_value "$app" OpenClawRuntimeBuildID)"
   [[ -n "$version" && -n "$commit" && -n "$built_at" && -n "$build_id" ]] ||
     fail 'elevation app is missing runtime build identity'
-  for required in bin/bun lib/libsqlite3.dylib lib/node_modules/paleoclaw/openclaw.mjs \
+  for required in bin/bun lib/libsqlite3.dylib lib/node_modules/paleoclaw/paleoclaw.mjs \
     lib/node_modules/paleoclaw/dist/mac-node-worker.js \
     lib/node_modules/paleoclaw/dist/extensions/browser/setup-entry.js \
     lib/node_modules/paleoclaw/dist/control-ui/index.html \

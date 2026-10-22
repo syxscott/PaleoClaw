@@ -559,7 +559,7 @@ describe.skipIf(process.platform !== "darwin")(
         }),
     );
 
-    it.concurrent.for(["lib/node_modules/paleoclaw/openclaw.mjs"])(
+    it.concurrent.for(["lib/node_modules/paleoclaw/paleoclaw.mjs"])(
       "rejects an incomplete runtime missing %s",
       async (relative, { mac }) =>
         mac.lifetime.run(async () => {

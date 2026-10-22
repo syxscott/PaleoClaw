@@ -69,7 +69,7 @@ export async function maybeRepairNodeServiceConfig(
       managed.environment?.OPENCLAW_WRAPPER?.trim()
     ) {
       note(
-        "Node service has a custom launcher. Update that launcher to invoke openclaw.mjs or dist/entry.js; it was left unchanged.",
+        "Node service has a custom launcher. Update that launcher to invoke paleoclaw.mjs or dist/entry.js; it was left unchanged.",
         "Node service",
       );
       return;

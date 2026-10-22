@@ -34,14 +34,14 @@ export async function createInterruptedPackagePublication(
     type: "module",
     main: "dist/index.js",
     exports: { ".": { import: "./dist/index.js", default: ["./dist/index.js", null] } },
-    bin: { paleoclaw: "openclaw.mjs" },
+    bin: { paleoclaw: "paleoclaw.mjs" },
   });
-  write("openclaw.mjs", 'import "./dist/index.js";\n');
+  write("paleoclaw.mjs", 'import "./dist/index.js";\n');
   write("dist/scoped/package.json", { type: "module" });
   write("dist/build-info.json", { version: "2.0.0" });
   const stagedLauncher = path.join(f.params.stage.layout.binDir, "paleoclaw");
   fs.unlinkSync(stagedLauncher);
-  fs.symlinkSync("../lib/node_modules/paleoclaw/openclaw.mjs", stagedLauncher);
+  fs.symlinkSync("../lib/node_modules/paleoclaw/paleoclaw.mjs", stagedLauncher);
   for (const dependency of ["dep-a", "@scope/dep-b", "dep-a/node_modules/dep-c"]) {
     write(`node_modules/${dependency}/package.json`, { type: "commonjs" });
   }

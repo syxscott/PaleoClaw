@@ -115,7 +115,7 @@ async function owners(ctx, packageRoot, baseline, bindingFile) {
     assert.match(candidateCommit ?? "", /^[a-f0-9]{40}$/u);
   }
   assert.equal(identity.buildInfo.commit, baseline ? BASELINE : candidateCommit);
-  assert.equal(fs.realpathSync(path.join(packageRoot, "openclaw.mjs")), identity.cli);
+  assert.equal(fs.realpathSync(path.join(packageRoot, "paleoclaw.mjs")), identity.cli);
   let bindings = BASELINE_BINDINGS;
   let agentSchema = BASELINE_AGENT_SCHEMA;
   if (!baseline) {

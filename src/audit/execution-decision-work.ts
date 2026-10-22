@@ -24,7 +24,7 @@ type ExecutionDecisionReceiptFacts = ExecutionDecisionWork["receipt"];
 type ExecutionDecisionWorkSink = (work: ExecutionDecisionWork) => boolean;
 
 const state = resolveGlobalSingleton<{ sink: ExecutionDecisionWorkSink | undefined }>(
-  Symbol.for("openclaw.executionDecisionWorkSink"),
+  Symbol.for("paleoclaw.executionDecisionWorkSink"),
   () => ({ sink: undefined }),
 );
 

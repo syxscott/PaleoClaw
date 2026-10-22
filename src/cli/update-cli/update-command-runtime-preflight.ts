@@ -241,7 +241,7 @@ export async function resolvePackageRuntimePreflight(params: {
       .filter(Boolean)
       .join(" ");
     const retainedRoot = params.sourceRoot ?? params.root ?? params.installedRoot;
-    const retainedEntry = retainedRoot ? path.resolve(retainedRoot, "openclaw.mjs") : undefined;
+    const retainedEntry = retainedRoot ? path.resolve(retainedRoot, "paleoclaw.mjs") : undefined;
     const continuation = retainedEntry
       ? formatCliCommand(recoveryTarget, env).replace(
           /^paleoclaw\b/,

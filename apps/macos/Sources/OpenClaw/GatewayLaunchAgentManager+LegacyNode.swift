@@ -128,7 +128,7 @@ extension GatewayLaunchAgentManager {
               fileManager.fileExists(atPath: manifest.path) else { return nil }
         let metadata = try JSONSerialization.jsonObject(with: Data(contentsOf: manifest)) as? [String: Any]
         guard metadata?["name"] as? String == "paleoclaw" else { return nil }
-        for entry in ["dist/entry.js", "openclaw.mjs"] {
+        for entry in ["dist/entry.js", "paleoclaw.mjs"] {
             let command = [
                 nodeRoot.appendingPathComponent("bin/node").path,
                 package.appendingPathComponent(entry).path,

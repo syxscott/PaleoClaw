@@ -135,7 +135,7 @@ const DEFAULT_WARMUP = 1;
 const DEFAULT_TIMEOUT_MS = 30_000;
 const DEFAULT_TIMEOUT_KILL_GRACE_MS = 1_000;
 const TIMEOUT_KILL_GRACE_MS = resolveTimeoutKillGraceMs(process.env);
-const DEFAULT_ENTRY = "openclaw.mjs";
+const DEFAULT_ENTRY = "paleoclaw.mjs";
 const MAX_RSS_MARKER = "__OPENCLAW_MAX_RSS_KB__=";
 
 type SampleTransport = {
@@ -749,7 +749,7 @@ function memoryInvocationEntries(entry: string): string[] {
   const resolvedEntry = realpathSync(entry);
   const entries = [resolvedEntry];
   // The wrapper's compile-cache handoff can enter dist directly.
-  if (path.basename(resolvedEntry) === "openclaw.mjs") {
+  if (path.basename(resolvedEntry) === "paleoclaw.mjs") {
     for (const name of ["entry.js", "entry.mjs"]) {
       try {
         entries.push(realpathSync(path.join(path.dirname(resolvedEntry), "dist", name)));
@@ -1252,7 +1252,7 @@ Options:
   --preset <startup|real|response|all>
                                Command preset to run (default: startup)
   --case <id>                  Specific case id to run; repeatable
-  --entry <path>               Primary entry file (default: openclaw.mjs)
+  --entry <path>               Primary entry file (default: paleoclaw.mjs)
   --entry-secondary <path>     Secondary entry file for avg delta comparison
   --runs <n>                   Measured runs per case (default: ${DEFAULT_RUNS})
   --warmup <n>                 Warmup runs per case (default: ${DEFAULT_WARMUP})

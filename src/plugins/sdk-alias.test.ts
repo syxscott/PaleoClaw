@@ -45,14 +45,14 @@ function makeTempDir() {
 
 function createTrustedOpenClawPackageFixture(version: string) {
   const root = makeTempDir();
-  fs.writeFileSync(path.join(root, "openclaw.mjs"), "export {};\n", "utf-8");
+  fs.writeFileSync(path.join(root, "paleoclaw.mjs"), "export {};\n", "utf-8");
   fs.writeFileSync(
     path.join(root, "package.json"),
     JSON.stringify(
       {
         name: "paleoclaw",
         version,
-        bin: { paleoclaw: "openclaw.mjs" },
+        bin: { paleoclaw: "paleoclaw.mjs" },
         exports: { "./plugin-sdk/core": { default: "./dist/plugin-sdk/core.js" } },
       },
       null,
@@ -500,7 +500,7 @@ describe("plugin sdk alias helpers", () => {
     });
     const externalAliases = withEnv(
       { OPENCLAW_ENABLE_PRIVATE_QA_CLI: undefined, NODE_ENV: undefined },
-      () => buildPluginLoaderAliasMap(externalEntry, path.join(fixture.root, "openclaw.mjs")),
+      () => buildPluginLoaderAliasMap(externalEntry, path.join(fixture.root, "paleoclaw.mjs")),
     );
     expect(externalAliases["paleoclaw/plugin-sdk/qa-runner-runtime"]).toBeUndefined();
   });
@@ -573,7 +573,7 @@ describe("plugin sdk alias helpers", () => {
       withEnv({ OPENCLAW_ENABLE_PRIVATE_QA_CLI: undefined }, () =>
         listPluginSdkExportedSubpaths({
           modulePath: installedCodexEntry,
-          argv1: path.join(fixture.root, "openclaw.mjs"),
+          argv1: path.join(fixture.root, "paleoclaw.mjs"),
         }),
       ),
     );
@@ -581,7 +581,7 @@ describe("plugin sdk alias helpers", () => {
       withEnv({ OPENCLAW_ENABLE_PRIVATE_QA_CLI: undefined }, () =>
         listPluginSdkExportedSubpaths({
           modulePath: installedOtherEntry,
-          argv1: path.join(fixture.root, "openclaw.mjs"),
+          argv1: path.join(fixture.root, "paleoclaw.mjs"),
         }),
       ),
     );
@@ -589,7 +589,7 @@ describe("plugin sdk alias helpers", () => {
       withEnv({ OPENCLAW_ENABLE_PRIVATE_QA_CLI: undefined }, () =>
         listPluginSdkExportedSubpaths({
           modulePath: shadowCodexEntry,
-          argv1: path.join(fixture.root, "openclaw.mjs"),
+          argv1: path.join(fixture.root, "paleoclaw.mjs"),
         }),
       ),
     );
@@ -896,7 +896,7 @@ describe("plugin sdk alias helpers", () => {
       () =>
         buildPluginLoaderAliasMap(
           distCodexEntry,
-          path.join(fixture.root, "openclaw.mjs"),
+          path.join(fixture.root, "paleoclaw.mjs"),
           undefined,
           "dist",
           devFixture.root,
@@ -906,7 +906,7 @@ describe("plugin sdk alias helpers", () => {
       withEnv({ OPENCLAW_ENABLE_PRIVATE_QA_CLI: undefined, NODE_ENV: undefined }, () =>
         buildPluginLoaderAliasMap(
           installedCodexEntry,
-          path.join(fixture.root, "openclaw.mjs"),
+          path.join(fixture.root, "paleoclaw.mjs"),
           undefined,
           "dist",
         ),
@@ -916,7 +916,7 @@ describe("plugin sdk alias helpers", () => {
       withEnv({ OPENCLAW_ENABLE_PRIVATE_QA_CLI: undefined, NODE_ENV: undefined }, () =>
         buildPluginLoaderAliasMap(
           shadowCodexEntry,
-          path.join(fixture.root, "openclaw.mjs"),
+          path.join(fixture.root, "paleoclaw.mjs"),
           undefined,
           "dist",
         ),
@@ -926,7 +926,7 @@ describe("plugin sdk alias helpers", () => {
       withEnv({ OPENCLAW_ENABLE_PRIVATE_QA_CLI: undefined, NODE_ENV: undefined }, () =>
         buildPluginLoaderAliasMap(
           installedOtherEntry,
-          path.join(fixture.root, "openclaw.mjs"),
+          path.join(fixture.root, "paleoclaw.mjs"),
           undefined,
           "dist",
         ),
@@ -1087,7 +1087,7 @@ describe("plugin sdk alias helpers", () => {
       withEnv({ OPENCLAW_ENABLE_PRIVATE_QA_CLI: undefined, NODE_ENV: undefined }, () =>
         buildPluginLoaderAliasMap(
           installedOllamaEntry,
-          path.join(fixture.root, "openclaw.mjs"),
+          path.join(fixture.root, "paleoclaw.mjs"),
           undefined,
           "dist",
         ),
@@ -1097,7 +1097,7 @@ describe("plugin sdk alias helpers", () => {
       withEnv({ OPENCLAW_ENABLE_PRIVATE_QA_CLI: undefined, NODE_ENV: undefined }, () =>
         buildPluginLoaderAliasMap(
           installedLlamaEntry,
-          path.join(fixture.root, "openclaw.mjs"),
+          path.join(fixture.root, "paleoclaw.mjs"),
           undefined,
           "dist",
         ),
@@ -1546,7 +1546,7 @@ describe("plugin sdk alias helpers", () => {
 
     const aliases = withCwd(externalPluginRoot, () =>
       withEnv({ NODE_ENV: undefined }, () =>
-        buildPluginLoaderAliasMap(externalPluginEntry, path.join(fixture.root, "openclaw.mjs")),
+        buildPluginLoaderAliasMap(externalPluginEntry, path.join(fixture.root, "paleoclaw.mjs")),
       ),
     );
 
@@ -1598,7 +1598,7 @@ describe("plugin sdk alias helpers", () => {
             ? undefined
             : mode === "missing-argv"
               ? path.join(makeTempDir(), "missing-launcher")
-              : path.join(noHost ? host.root : sibling.root, "openclaw.mjs"),
+              : path.join(noHost ? host.root : sibling.root, "paleoclaw.mjs"),
         devSourceRoot: mode === "development" ? sibling.root : null,
         pluginSdkResolution: preference,
       });
@@ -1625,8 +1625,8 @@ describe("plugin sdk alias helpers", () => {
     // Simulate loader.ts passing its own import.meta.url as the moduleUrl hint.
     // This covers installations where argv1 does not resolve to the paleoclaw root
     // (e.g. single-binary distributions or custom process launchers).
-    // Use openclaw.mjs which is created by createPluginSdkAliasFixture (bin+marker mode).
-    const loaderModuleUrl = pathToFileURL(path.join(fixture.root, "openclaw.mjs")).href;
+    // Use paleoclaw.mjs which is created by createPluginSdkAliasFixture (bin+marker mode).
+    const loaderModuleUrl = pathToFileURL(path.join(fixture.root, "paleoclaw.mjs")).href;
 
     // Use externalPluginRoot as cwd so process.cwd() fallback cannot accidentally
     // resolve to the fixture root — only the moduleUrl hint can bridge the gap.
@@ -1751,12 +1751,12 @@ describe("plugin sdk alias helpers", () => {
   it("reuses prepared aliases in the same generation", () => {
     const first = preparePluginLoaderAliases({
       modulePath: `/repo/${bundledDistPluginFile("browser", "index.js")}`,
-      argv1: "/repo/openclaw.mjs",
+      argv1: "/repo/paleoclaw.mjs",
       moduleUrl: "file:///repo/src/plugins/public-surface-loader.ts",
     });
     const second = preparePluginLoaderAliases({
       modulePath: `/repo/${bundledDistPluginFile("browser", "index.js")}`,
-      argv1: "/repo/openclaw.mjs",
+      argv1: "/repo/paleoclaw.mjs",
       moduleUrl: "file:///repo/src/plugins/public-surface-loader.ts",
     });
 
@@ -1805,19 +1805,19 @@ describe("plugin sdk alias helpers", () => {
     const { auto, dist, distAgain } = withEnv({ NODE_ENV: undefined }, () => ({
       auto: preparePluginLoaderAliases({
         modulePath: sourcePluginEntry,
-        argv1: path.join(fixture.root, "openclaw.mjs"),
+        argv1: path.join(fixture.root, "paleoclaw.mjs"),
         moduleUrl: pathToFileURL(path.join(fixture.root, "src/plugins/loader.ts")).href,
         pluginSdkResolution: "auto",
       }),
       dist: preparePluginLoaderAliases({
         modulePath: sourcePluginEntry,
-        argv1: path.join(fixture.root, "openclaw.mjs"),
+        argv1: path.join(fixture.root, "paleoclaw.mjs"),
         moduleUrl: pathToFileURL(path.join(fixture.root, "src/plugins/loader.ts")).href,
         pluginSdkResolution: "dist",
       }),
       distAgain: preparePluginLoaderAliases({
         modulePath: sourcePluginEntry,
-        argv1: path.join(fixture.root, "openclaw.mjs"),
+        argv1: path.join(fixture.root, "paleoclaw.mjs"),
         moduleUrl: pathToFileURL(path.join(fixture.root, "src/plugins/loader.ts")).href,
         pluginSdkResolution: "dist",
       }),
@@ -1921,7 +1921,7 @@ export const syntheticRuntimeMarker = {
     {
       name: "resolves plugin runtime module from package root when loader runs from transpiler cache path",
       modulePath: () => "/tmp/tsx-cache/paleoclaw-loader.js",
-      argv1: (root: string) => path.join(root, "openclaw.mjs"),
+      argv1: (root: string) => path.join(root, "paleoclaw.mjs"),
       env: { NODE_ENV: undefined },
       expected: "src" as const,
     },

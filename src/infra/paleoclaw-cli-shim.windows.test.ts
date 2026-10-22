@@ -40,7 +40,7 @@ async function sourceFixture(root: string) {
     async shim(env = {}) {
       const stateDir = path.join(root, "state");
       await prepareGatewayAgentCliShim({ env, invocation: f.invocation, stateDir });
-      return path.join(stateDir, "tmp", "agent-cli", "openclaw.cmd");
+      return path.join(stateDir, "tmp", "agent-cli", "paleoclaw.cmd");
     },
     cmd(file: string, args: string[], expansion = "on") {
       return runSourceCliProbe(

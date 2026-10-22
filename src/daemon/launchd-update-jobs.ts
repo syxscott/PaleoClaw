@@ -19,7 +19,7 @@ const OPENCLAW_UPDATE_LAUNCHD_LABEL_PREFIX = "ai.openclaw.update.";
 const MANUAL_UPDATE_LAUNCHD_LABEL_PATTERN = /^ai\.openclaw\.manual-update\.\d+$/;
 const OPENCLAW_PROFILE_UPDATE_LAUNCHD_LABEL_PATTERN =
   /^ai\.openclaw\.[A-Za-z0-9._-]+\.update\.[A-Za-z0-9._-]+$/;
-const OPENCLAW_DIRECT_CLI_NAMES = new Set(["paleoclaw", "openclaw.mjs"]);
+const OPENCLAW_DIRECT_CLI_NAMES = new Set(["paleoclaw", "paleoclaw.mjs"]);
 const OPENCLAW_NODE_RUNTIME_NAMES = new Set(["bun", "bun.exe", "node", "node.exe"]);
 export type StaleOpenClawUpdateLaunchdJob = {
   label: string;
@@ -129,7 +129,7 @@ function isOpenClawUpdateProgramArguments(programArguments: string[] | undefined
       ? OPENCLAW_DIRECT_CLI_NAMES.has(executable)
       : updateIndex === 2 &&
         OPENCLAW_NODE_RUNTIME_NAMES.has(executable) &&
-        path.basename(programArguments[1] ?? "").toLowerCase() === "openclaw.mjs";
+        path.basename(programArguments[1] ?? "").toLowerCase() === "paleoclaw.mjs";
   return updateCommand && !programArguments.some((arg) => arg.trim() === "gateway");
 }
 

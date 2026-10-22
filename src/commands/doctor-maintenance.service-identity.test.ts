@@ -69,7 +69,7 @@ it.each([
             path.join(serviceRoot, "paleoclaw-install-owner.json"),
             '{"schemaVersion":1,"owner":"macos-app","displayName":"OpenClaw.app","updateHint":"Update OpenClaw.app to update this Gateway."}',
           );
-          fs.writeFileSync(path.join(serviceRoot, "openclaw.mjs"), "");
+          fs.writeFileSync(path.join(serviceRoot, "paleoclaw.mjs"), "");
         }
         mocks.service = createMockGatewayService({
           isLoaded: vi.fn(async () => !appOwned || running),
@@ -79,7 +79,7 @@ it.each([
             ...(appOwned ? { systemd: { managerUid: process.getuid?.() ?? 501 } } : {}),
           })),
           readCommand: vi.fn(async () => ({
-            programArguments: [process.execPath, path.join(serviceRoot, "openclaw.mjs"), "gateway"],
+            programArguments: [process.execPath, path.join(serviceRoot, "paleoclaw.mjs"), "gateway"],
             environment: { HOME: home, OPENCLAW_HOME: home },
           })),
         });

@@ -66,7 +66,7 @@ function runGatewayOwnershipFixture(scenario: OwnershipScenario, expectedStatus 
   const outputDir = path.join(root, "output");
   // Synthetic unjoined Gateway lifetimes belong to this fixture, not the compiler generation.
   const owner = createVitestResourceOwner(root);
-  fs.writeFileSync(path.join(root, "openclaw.mjs"), "export {};\n");
+  fs.writeFileSync(path.join(root, "paleoclaw.mjs"), "export {};\n");
   fs.writeFileSync(
     preloadPath,
     [
@@ -647,7 +647,7 @@ describe("check-memory-fd-repro", () => {
         );
       }
       expect(journal.launch).toEqual({
-        entry: path.join(fixtureRoot, "openclaw.mjs"),
+        entry: path.join(fixtureRoot, "paleoclaw.mjs"),
         noCompileCache: "1",
         devSourceRoot:
           scenario === "owned-success-inherited-root"

@@ -79,13 +79,13 @@ function lifecycleInvocation(
   }
   if (["node", "bun"].includes(path.basename(words[0] ?? ""))) {
     words = words.slice(1);
-    if (path.basename(words[0] ?? "") !== "openclaw.mjs") {
+    if (path.basename(words[0] ?? "") !== "paleoclaw.mjs") {
       return undefined;
     }
   }
   if (
     !path.isAbsolute(words[0] ?? "") ||
-    !["paleoclaw", "openclaw.mjs"].includes(path.basename(words[0] ?? ""))
+    !["paleoclaw", "paleoclaw.mjs"].includes(path.basename(words[0] ?? ""))
   ) {
     return undefined;
   }
@@ -268,7 +268,7 @@ async function inspectJob(
   const programScript =
     !isShell &&
     (shellEnvironmentDiagnostic ||
-      !["paleoclaw", "openclaw.mjs", "node", "bun", "env"].includes(programName))
+      !["paleoclaw", "paleoclaw.mjs", "node", "bun", "env"].includes(programName))
       ? await readOwnedText(program)
       : undefined;
   let isShellScript = programScript !== undefined && hasShellShebang(programScript);

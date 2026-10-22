@@ -31,7 +31,7 @@ describe("memory index CLI", () => {
 
       const result = spawnSync(
         process.execPath,
-        [path.resolve("openclaw.mjs"), "memory", "index", "--agent", "main", "--force"],
+        [path.resolve("paleoclaw.mjs"), "memory", "index", "--agent", "main", "--force"],
         {
           cwd: path.resolve("."),
           encoding: "utf8",

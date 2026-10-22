@@ -215,13 +215,13 @@ export function expectedBuildSpawn() {
 }
 
 export function statusCommandSpawn() {
-  return [process.execPath, "openclaw.mjs", "status"];
+  return [process.execPath, "paleoclaw.mjs", "status"];
 }
 
 export function gatewayStatusCommandSpawn() {
   return [
     process.execPath,
-    "openclaw.mjs",
+    "paleoclaw.mjs",
     "gateway",
     "status",
     "--deep",

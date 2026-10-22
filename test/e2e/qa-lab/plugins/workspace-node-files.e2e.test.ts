@@ -128,7 +128,7 @@ it(
         repoRoot: process.cwd(),
         command: {
           executablePath: process.execPath,
-          argsPrefix: [path.resolve("openclaw.mjs")],
+          argsPrefix: [path.resolve("paleoclaw.mjs")],
           cwd: process.cwd(),
           usePackagedPlugins: true,
         },
@@ -198,7 +198,7 @@ it(
         node = spawn(
           process.execPath,
           [
-            path.resolve("openclaw.mjs"),
+            path.resolve("paleoclaw.mjs"),
             "node",
             "run",
             ...(setupCode ? ["--pair-if-needed", setupCode] : []),

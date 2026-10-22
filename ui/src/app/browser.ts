@@ -1,4 +1,4 @@
-import type { RouteLocation, RouterHistory } from "@paleoclaw/uirouter";
+import type { RouteLocation, RouterHistory } from "@openclaw/uirouter";
 import { CONTROL_UI_BASE_PATH_ATTRIBUTE } from "../../../src/gateway/control-ui-bootstrap-contract.js";
 import {
   inferBasePathFromPathname,

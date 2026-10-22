@@ -32,7 +32,7 @@ const sentinel = {
   ppid: 10,
   cwd: "/smoke",
   argv: trace.cmd.slice(1),
-  ancestors: [{ pid: 10, cmdline: "bun\0openclaw.mjs\0gateway\0run\0\0" }],
+  ancestors: [{ pid: 10, cmdline: "bun\0paleoclaw.mjs\0gateway\0run\0\0" }],
 };
 const blocker = {
   id: "terminal-pty",
@@ -85,7 +85,7 @@ describe("Bun-only Node spawn ledger", () => {
       if (kind === "unexpected") {
         const report = markdown(result);
         expect(report).toContain(JSON.stringify(["node", ...sentinel.argv]));
-        expect(report).toContain('ancestor 10: "bun openclaw.mjs gateway run"');
+        expect(report).toContain('ancestor 10: "bun paleoclaw.mjs gateway run"');
         expect(report).toContain("spawnNodeTerminalPty");
         expect(result.attempts).toMatchObject([{ ancestors: sentinel.ancestors }]);
         expect(markdown({ ...result, bunVersion: "1", bunRevision: "rev" })).toContain(

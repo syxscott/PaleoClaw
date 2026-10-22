@@ -16,9 +16,9 @@ describe("gateway daemon runtime", () => {
   });
 
   it("detects Bun service commands without changing the Node fallback", () => {
-    expect(resolveGatewayDaemonRuntime(["/home/test/.bun/bin/bun", "openclaw.mjs"])).toBe("bun");
+    expect(resolveGatewayDaemonRuntime(["/home/test/.bun/bin/bun", "paleoclaw.mjs"])).toBe("bun");
     expect(resolveGatewayDaemonRuntime(["C:\\Users\\test\\.bun\\bin\\BUN.EXE"])).toBe("bun");
-    expect(resolveGatewayDaemonRuntime(["/usr/bin/node", "openclaw.mjs"])).toBe("node");
+    expect(resolveGatewayDaemonRuntime(["/usr/bin/node", "paleoclaw.mjs"])).toBe("node");
     expect(resolveGatewayDaemonRuntime(["/usr/local/bin/custom-wrapper"])).toBe("node");
   });
 });

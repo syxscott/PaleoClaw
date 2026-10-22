@@ -124,7 +124,7 @@ function samePath(left, right) {
 
 /** @param {{packageRoot: string, bunPath: string, binDir: string}} params */
 export function inspectBunCliLauncher(params) {
-  const target = { bunPath: params.bunPath, entryPath: join(params.packageRoot, "openclaw.mjs") };
+  const target = { bunPath: params.bunPath, entryPath: join(params.packageRoot, "paleoclaw.mjs") };
   const content = renderBunCliLauncher(target);
   const path = join(params.binDir, "paleoclaw");
   let stat;
@@ -168,7 +168,7 @@ export function installBunCliLauncher(params) {
   }
   const content = renderBunCliLauncher({
     bunPath: params.bunPath,
-    entryPath: join(params.packageRoot, "openclaw.mjs"),
+    entryPath: join(params.packageRoot, "paleoclaw.mjs"),
   });
   mkdirSync(params.binDir, { recursive: true });
   const temporary = mkdtempSync(join(params.binDir, ".openclaw-launcher-"));

@@ -18,7 +18,7 @@ def stage_onboarding_runtime(runtime):
     package = runtime / "package"
     if package.exists():
         shutil.rmtree(package)
-    entry = "package/node_modules/paleoclaw/openclaw.mjs"
+    entry = "package/node_modules/paleoclaw/paleoclaw.mjs"
     content = (Path(__file__).parent / "fixtures/onboarding-cli.mjs").read_bytes()
     destination = runtime / entry
     destination.parent.mkdir(parents=True)

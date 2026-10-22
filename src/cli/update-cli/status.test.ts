@@ -415,7 +415,7 @@ it.each([
     versions: { ...process.versions, node: "26.8.1" },
   });
   service.readCommand.mockResolvedValue({
-    programArguments: ["/fixture/node", "openclaw.mjs", "gateway"],
+    programArguments: ["/fixture/node", "paleoclaw.mjs", "gateway"],
   });
   service.resolveNodeRuntimeInfo.mockResolvedValue({
     status: state === "unsupported" ? "unsupported" : "supported",

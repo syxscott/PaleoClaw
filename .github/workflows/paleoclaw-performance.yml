@@ -897,7 +897,7 @@ jobs:
           fi
 
           mkdir -p "$SOURCE_PERF_DIR/mock-hello"
-          if ! node -e "const fs=require('node:fs'); const scripts=require('./package.json').scripts||{}; const extensionProbe=['scripts/profile-extension-memory.mts','scripts/profile-extension-memory.mjs'].some((entry)=>fs.existsSync(entry)); process.exit(scripts['test:gateway:cpu-scenarios'] && scripts['test:extensions:memory'] && scripts.openclaw && fs.existsSync('openclaw.mjs') && extensionProbe ? 0 : 1)"; then
+          if ! node -e "const fs=require('node:fs'); const scripts=require('./package.json').scripts||{}; const extensionProbe=['scripts/profile-extension-memory.mts','scripts/profile-extension-memory.mjs'].some((entry)=>fs.existsSync(entry)); process.exit(scripts['test:gateway:cpu-scenarios'] && scripts['test:extensions:memory'] && scripts.openclaw && fs.existsSync('paleoclaw.mjs') && extensionProbe ? 0 : 1)"; then
             cat > "$SOURCE_PERF_DIR/index.md" <<EOF
           # paleoclaw Source Performance
 
@@ -909,7 +909,7 @@ jobs:
 
           - Tested ref: ${TESTED_REF}
           - Tested SHA: ${TESTED_SHA}
-          - Required scripts: test:gateway:cpu-scenarios, test:extensions:memory, paleoclaw, openclaw.mjs, scripts/profile-extension-memory.{mts,mjs}
+          - Required scripts: test:gateway:cpu-scenarios, test:extensions:memory, paleoclaw, paleoclaw.mjs, scripts/profile-extension-memory.{mts,mjs}
           EOF
             cat "$SOURCE_PERF_DIR/index.md" >> "$GITHUB_STEP_SUMMARY"
             exit 0
@@ -1070,7 +1070,7 @@ jobs:
 
           OPENCLAW_GATEWAY_TOKEN="$gateway_token" OPENCLAW_HOME="$gateway_home" OPENCLAW_STATE_DIR="$gateway_state" OPENCLAW_CONFIG_PATH="$gateway_config" OPENCLAW_GATEWAY_PORT="$gateway_port" \
             node --import tsx "$PERFORMANCE_HELPER_DIR/scripts/bench-cli-startup.ts" \
-            --entry "$GITHUB_WORKSPACE/openclaw.mjs" \
+            --entry "$GITHUB_WORKSPACE/paleoclaw.mjs" \
             --case gatewayHealthJsonWarmState \
             --case gatewayHealthJsonFreshState \
             --case configGetGatewayPort \

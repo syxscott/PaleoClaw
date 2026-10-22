@@ -208,7 +208,7 @@ function hasTrustedOpenClawRootIndicator(params: {
   return (facts.trustedRoot =
     hasCliEntryExport ||
     hasOpenClawBin ||
-    pluginCacheExistsSync(path.join(params.packageRoot, "openclaw.mjs")));
+    pluginCacheExistsSync(path.join(params.packageRoot, "paleoclaw.mjs")));
 }
 
 function readPluginSdkSubpathsFromPackageRoot(packageRoot: string): string[] | null {

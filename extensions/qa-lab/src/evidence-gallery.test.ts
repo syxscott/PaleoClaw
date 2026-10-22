@@ -181,7 +181,7 @@ describe("evidence gallery", () => {
     absoluteEntry.result = {
       status: "blocked",
       failure: {
-        reason: `Command failed at ${repoRoot}/openclaw.mjs and file://${repoRoot}/trace.log`,
+        reason: `Command failed at ${repoRoot}/paleoclaw.mjs and file://${repoRoot}/trace.log`,
       },
     };
     absoluteEntry.coverage = [{ id: "qa-lab.absolute-artifact-path", role: `${repoRoot}/role` }];
@@ -223,7 +223,7 @@ describe("evidence gallery", () => {
       id: "<repo-root>/qa-lab.absolute-artifact-path",
       kind: "<repo-root>/vitest-test",
       title: "Absolute artifact path at <repo-root>",
-      failureReason: "Command failed at <repo-root>/openclaw.mjs and file://<repo-root>/trace.log",
+      failureReason: "Command failed at <repo-root>/paleoclaw.mjs and file://<repo-root>/trace.log",
     });
     expect(model.profile).toBe("<repo-root>/qa-profile");
     expect(JSON.stringify(model)).not.toContain(repoRoot);

@@ -296,7 +296,7 @@ it.skipIf(process.platform === "win32")(
         });
         const readiness = await applyPostPluginUpdateReadiness({
           root: f.root,
-          entryPath: path.join(f.root, "openclaw.mjs"),
+          entryPath: path.join(f.root, "paleoclaw.mjs"),
           timeoutMs: 1_000,
           pluginUpdate: createPostCorePluginUpdateResult({ status: "ok" }),
         });

@@ -23,7 +23,7 @@ async function replay(
 ) {
   const stateDir = path.join(home, ".openclaw", "cloud-workers", leaseId);
   const runtimeDir = path.join(home, ".openclaw-worker", "node-runtimes", "a".repeat(64));
-  const cli = path.join(runtimeDir, "node_modules", "paleoclaw", "openclaw.mjs");
+  const cli = path.join(runtimeDir, "node_modules", "paleoclaw", "paleoclaw.mjs");
   const interruptedPath = interrupted
     ? path.join(stateDir, interrupted === "receipt-only" ? "node-launch.json" : "runtime")
     : undefined;

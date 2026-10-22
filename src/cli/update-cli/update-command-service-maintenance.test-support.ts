@@ -114,7 +114,7 @@ export function mockRegisteredWindowsLauncher(
   home: string,
   running = false,
 ): GatewayServiceCommandConfig {
-  const entrypoint = path.join(process.cwd(), "openclaw.mjs");
+  const entrypoint = path.join(process.cwd(), "paleoclaw.mjs");
   const command = {
     programArguments: [process.execPath, entrypoint, "gateway", "--port", "18789"],
     environment: { HOME: home },

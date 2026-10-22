@@ -87,7 +87,7 @@ type GatewayScenario = MockModelBehavior & {
 };
 
 const SHARED_GATEWAY_AGENT_ID = "tui-pty-gateway";
-// These cases spawn openclaw.mjs outside the source TUI runner. CI opts in only
+// These cases spawn paleoclaw.mjs outside the source TUI runner. CI opts in only
 // after the exact head has a complete build, so source-mode PTY smoke must skip them.
 const itWithBuiltCli = process.env.OPENCLAW_TUI_PTY_USE_BUILT_CLI === "1" ? it : it.skip;
 
@@ -1644,7 +1644,7 @@ describe("TUI PTY real backends", () => {
       });
       try {
         await fixture.run.waitForOutput("local ready", LOCAL_STARTUP_TIMEOUT_MS);
-        const cliPath = path.join(process.cwd(), "openclaw.mjs");
+        const cliPath = path.join(process.cwd(), "paleoclaw.mjs");
         const cli = `${JSON.stringify(process.execPath)} ${JSON.stringify(cliPath)}`;
         await fixture.run.write(`!${cli} config set tools.profile minimal\r`);
         await fixture.run.waitForOutput("Allow local shell commands for this session?");

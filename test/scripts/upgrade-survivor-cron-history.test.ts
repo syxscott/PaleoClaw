@@ -54,8 +54,8 @@ function prepare(version = "2026.9.4") {
   const tarball = path.join(root, "candidate.tgz");
   execFileSync("tar", ["-czf", tarball, "-C", root, "package"]);
   seedCronHistory(stateDir, artifacts, baseline, tarball);
-  const entry = path.join(candidate, "openclaw.mjs");
-  const updater = path.join(baseline, "openclaw.mjs");
+  const entry = path.join(candidate, "paleoclaw.mjs");
+  const updater = path.join(baseline, "paleoclaw.mjs");
   const preloads = [path.resolve("scripts/tsx.mjs"), diagnostics, helper].flatMap((file) => [
     "--import",
     file,

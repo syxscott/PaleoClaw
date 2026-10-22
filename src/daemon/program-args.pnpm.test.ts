@@ -26,7 +26,7 @@ async function createPnpmInstall(nestedStore: boolean) {
       path.join(root, "package.json"),
       JSON.stringify({ name: "paleoclaw", version }),
     );
-    await fs.writeFile(path.join(root, "openclaw.mjs"), 'import "./dist/index.js";\n');
+    await fs.writeFile(path.join(root, "paleoclaw.mjs"), 'import "./dist/index.js";\n');
     await fs.writeFile(path.join(root, "dist", "index.js"), `export default "${version}";\n`);
     return root;
   };
@@ -40,7 +40,7 @@ async function createPnpmInstall(nestedStore: boolean) {
 
 describe("pnpm Scheduled Task entrypoint", () => {
   it.each([
-    { layout: "global/5/.pnpm", nestedStore: false, entry: "openclaw.mjs" },
+    { layout: "global/5/.pnpm", nestedStore: false, entry: "paleoclaw.mjs" },
     { layout: "global/5/node_modules/.pnpm", nestedStore: true, entry: "dist/index.js" },
   ])(
     "keeps the saved launcher usable after replacement in $layout",
@@ -144,7 +144,7 @@ describe("pnpm Scheduled Task entrypoint", () => {
   );
 });
 
-it.each(["openclaw.mjs", "dist/index.js"])(
+it.each(["paleoclaw.mjs", "dist/index.js"])(
   "keeps the persisted pnpm v11 systemd command usable after project replacement (%s)",
   async (entry) => {
     const home = tempDirs.make("paleoclaw-pnpm-systemd-");
@@ -165,7 +165,7 @@ it.each(["openclaw.mjs", "dist/index.js"])(
         path.join(root, "package.json"),
         JSON.stringify({ name: "paleoclaw", version }),
       );
-      await fs.writeFile(path.join(root, "openclaw.mjs"), 'import "./dist/index.js";\n');
+      await fs.writeFile(path.join(root, "paleoclaw.mjs"), 'import "./dist/index.js";\n');
       await fs.writeFile(path.join(root, "dist", "index.js"), `export default "${version}";\n`);
       await fs.writeFile(
         path.join(project, "package.json"),
@@ -208,7 +208,7 @@ it.each(["openclaw.mjs", "dist/index.js"])(
     await expect(fs.readFile(savedEntry, "utf8")).resolves.toBe('export default "2026.10.2";\n');
     expect(savedEntry).toBe(path.join(projectLink, "node_modules", "paleoclaw", "dist", "index.js"));
     const nodeEntry = node.programArguments[1]!;
-    expect(nodeEntry).toBe(path.join(projectLink, "node_modules", "paleoclaw", "openclaw.mjs"));
+    expect(nodeEntry).toBe(path.join(projectLink, "node_modules", "paleoclaw", "paleoclaw.mjs"));
     await expect(fs.readFile(nodeEntry, "utf8")).resolves.toBe('import "./dist/index.js";\n');
   },
 );

@@ -54,9 +54,9 @@ export function registerCurrentCoreServiceReceiptTests({
         await fs.mkdir(stateDir);
         await fs.writeFile(
           path.join(root, "package.json"),
-          JSON.stringify({ name: "paleoclaw", version: VERSION, bin: "openclaw.mjs" }),
+          JSON.stringify({ name: "paleoclaw", version: VERSION, bin: "paleoclaw.mjs" }),
         );
-        await fs.writeFile(path.join(root, "openclaw.mjs"), "// Inert service fixture.\n");
+        await fs.writeFile(path.join(root, "paleoclaw.mjs"), "// Inert service fixture.\n");
         await fs.writeFile(env.OPENCLAW_CONFIG_PATH, "{}");
         vi.stubEnv("OPENCLAW_STATE_DIR", stateDir);
         vi.stubEnv("OPENCLAW_CONFIG_PATH", env.OPENCLAW_CONFIG_PATH);
@@ -92,7 +92,7 @@ export function registerCurrentCoreServiceReceiptTests({
           },
           env,
           command: {
-            programArguments: [process.execPath, path.join(root, "openclaw.mjs"), "gateway"],
+            programArguments: [process.execPath, path.join(root, "paleoclaw.mjs"), "gateway"],
             environment: env,
           },
         }));

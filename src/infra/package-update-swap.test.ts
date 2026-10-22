@@ -201,7 +201,7 @@ describe("launcher backup capture", () => {
     const secondLauncher = `${launcher}.cmd`;
     await fs.writeFile(secondLauncher, "old command launcher\n");
     await fs.writeFile(
-      path.join(params.stage.layout.binDir, "openclaw.cmd"),
+      path.join(params.stage.layout.binDir, "paleoclaw.cmd"),
       "candidate command launcher\n",
     );
     const originals = await inodes([packageRoot, launcher, secondLauncher]);
@@ -296,9 +296,9 @@ describe("launcher observations", () => {
     "handles a relinked launcher during verification (foreign=%s)",
     async (foreign) => {
       const { params, packageRoot, launcher } = await createPackageSwapFixture(base);
-      const target = "../lib/node_modules/paleoclaw/openclaw.mjs";
+      const target = "../lib/node_modules/paleoclaw/paleoclaw.mjs";
       const replacement = foreign ? "../lib/node_modules/foreign/cli.mjs" : target;
-      await fs.writeFile(path.join(packageRoot, "openclaw.mjs"), "old launcher\n");
+      await fs.writeFile(path.join(packageRoot, "paleoclaw.mjs"), "old launcher\n");
       await fs.unlink(launcher);
       await fs.symlink(target, launcher);
       let injected = false;

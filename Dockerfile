@@ -77,7 +77,7 @@ COPY cli-root-options.mjs gateway-run-argv.mjs gateway-shutdown-budget.mjs ./
 COPY node-host-launcher.mjs ./
 COPY node-compile-cache.mjs ./
 COPY docker-entrypoint.mjs ./
-COPY openclaw.mjs ./
+COPY paleoclaw.mjs ./
 COPY ui/package.json ./ui/package.json
 COPY tools/solid-lint/package.json ./tools/solid-lint/package.json
 COPY patches ./patches
@@ -299,7 +299,7 @@ COPY --from=runtime-assets --chown=node:node /app/cli-root-options.mjs /app/gate
 COPY --from=runtime-assets --chown=node:node /app/node-host-launcher.mjs .
 COPY --from=runtime-assets --chown=node:node /app/node-compile-cache.mjs .
 COPY --from=runtime-assets --chown=node:node /app/docker-entrypoint.mjs .
-COPY --from=runtime-assets --chown=node:node /app/openclaw.mjs .
+COPY --from=runtime-assets --chown=node:node /app/paleoclaw.mjs .
 COPY --from=runtime-assets --chown=node:node /app/.runtime-bootstrap/scripts ./scripts
 COPY --from=runtime-assets --chown=node:node /app/scripts/lib/guard-inventory-utils.mjs ./scripts/lib/
 COPY --from=runtime-assets --chown=node:node /app/${OPENCLAW_BUNDLED_PLUGIN_DIR} ./${OPENCLAW_BUNDLED_PLUGIN_DIR}
@@ -314,7 +314,7 @@ ARG OPENCLAW_DOCKER_BUILD_VERSION
 RUN if [ -n "$OPENCLAW_DOCKER_BUILD_VERSION" ]; then \
       test "$(node -p "require(\"/app/package.json\").version")" = "$OPENCLAW_DOCKER_BUILD_VERSION"; \
       test "$(node -p "require(\"/app/dist/build-info.json\").version")" = "$OPENCLAW_DOCKER_BUILD_VERSION"; \
-      test "$(node /app/openclaw.mjs --version | cut -d ' ' -f 2)" = "$OPENCLAW_DOCKER_BUILD_VERSION"; \
+      test "$(node /app/paleoclaw.mjs --version | cut -d ' ' -f 2)" = "$OPENCLAW_DOCKER_BUILD_VERSION"; \
     fi
 
 # Keep pnpm available in the runtime image for container-local workflows.
@@ -423,8 +423,8 @@ RUN --mount=type=cache,id=paleoclaw-trixie-apt-cache,target=/var/cache/apt,shari
     fi
 
 # Expose the CLI binary without requiring npm global writes as non-root.
-RUN ln -sf /app/openclaw.mjs /usr/local/bin/paleoclaw \
- && chmod 755 /app/openclaw.mjs
+RUN ln -sf /app/paleoclaw.mjs /usr/local/bin/paleoclaw \
+ && chmod 755 /app/paleoclaw.mjs
 
 # Pre-create default named-volume mount points so first-run Docker volumes copy
 # node ownership from the image instead of starting as root-owned directories.
@@ -467,4 +467,4 @@ RUN COREPACK_ENABLE_NETWORK=0 PNPM_CONFIG_OFFLINE=true pnpm --version
 HEALTHCHECK --interval=3m --timeout=10s --start-period=15s --retries=3 \
   CMD ["node", "dist/docker-healthcheck.js"]
 ENTRYPOINT ["tini", "-s", "--", "node", "/app/docker-entrypoint.mjs"]
-CMD ["node", "openclaw.mjs", "gateway"]
+CMD ["node", "paleoclaw.mjs", "gateway"]

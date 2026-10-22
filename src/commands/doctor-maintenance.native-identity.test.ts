@@ -155,7 +155,7 @@ async function repair(scenario: Scenario) {
     if (args[0] === "get-property") {
       const command = [
         process.execPath,
-        path.join(process.cwd(), "openclaw.mjs"),
+        path.join(process.cwd(), "paleoclaw.mjs"),
         "gateway",
         "--port",
         String(port),

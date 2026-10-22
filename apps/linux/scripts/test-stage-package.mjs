@@ -28,7 +28,7 @@ for (const platform of ["linux", "windows"]) {
     const core = "node_modules/paleoclaw";
     const native = `node_modules/@openai/codex-${platform === "windows" ? "win32" : platform}-x64`;
     write(installed, `${core}/package.json`, { name: "paleoclaw" });
-    write(installed, `${core}/openclaw.mjs`, "export {};\n");
+    write(installed, `${core}/paleoclaw.mjs`, "export {};\n");
     write(installed, `${core}/dist/build-info.json`, { commit });
     write(installed, `${core}/dist/plugin-sdk/index.d.ts`, "export declare const sdk: string;\n");
     write(installed, "node_modules/openai/package.json", { name: "openai", version: "7.30.1", main: "index.js" });
@@ -189,7 +189,7 @@ test("reuses npm tarballs across isolated same-commit package installs", async (
   const sourceCommit = execFileSync("git", ["-C", source, "rev-parse", "HEAD"], { encoding: "utf8" }).trim();
   write(source, "dist/build-info.json", { commit: sourceCommit });
   write(core, "package/package.json", manifest);
-  write(core, "package/openclaw.mjs", "export {};\n");
+  write(core, "package/paleoclaw.mjs", "export {};\n");
   write(core, "package/dist/build-info.json", { commit: sourceCommit });
   write(core, "package/dist/extensions/codex/package.json", { paleoclaw: { extensions: ["./index.js"] } });
   write(core, "package/dist/extensions/codex/index.js", "export {};\n");

@@ -6289,7 +6289,7 @@ surfaces:
             description: Node, Git, pnpm, npm, and PATH bootstrap for native Windows.
           - name: npm global install
             coverageIds: [windows.npm-global-install]
-            description: npm global install, git checkout install, and generated openclaw.cmd.
+            description: npm global install, git checkout install, and generated paleoclaw.cmd.
           - name: Packaged CLI launcher
             coverageIds: [windows.packaged-cli-launcher]
             description: Packaged paleoclaw CLI launcher, version, and doctor entrypoints.
@@ -6318,7 +6318,7 @@ surfaces:
           - native windows cli setup
           - install.ps1
           - PowerShell
-          - openclaw.cmd
+          - paleoclaw.cmd
           - PATHEXT
           - paleoclaw onboard
           - Local Gateway config

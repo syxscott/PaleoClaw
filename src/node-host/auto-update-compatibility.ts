@@ -57,7 +57,7 @@ export async function readNodeRuntimeUpdateManifest(packageRoot: string): Promis
   const schemaVersions = parsePackageOpenClawSchemaVersions(manifest);
   assertNodeRuntimeSchemaVersions(schemaVersions);
   for (const relativePath of [
-    "openclaw.mjs",
+    "paleoclaw.mjs",
     "node-host-launcher.mjs",
     "dist/node-host-launcher-bootstrap.js",
   ]) {
@@ -137,7 +137,7 @@ export async function assertNodeRuntimeUpdateCompatible(params: {
       );
       const invocation = resolveOpenClawCliInvocation({
         execArgv: resolveRuntimeArgs(),
-        entryPath: path.join(params.packageRoot, "openclaw.mjs"),
+        entryPath: path.join(params.packageRoot, "paleoclaw.mjs"),
         args: [
           "database",
           agentId === undefined ? "preflight" : "preflight-agent",

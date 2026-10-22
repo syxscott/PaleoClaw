@@ -101,7 +101,7 @@ for cell in default compose old-shape unsafe; do
       # This is the sole entrypoint override, not a separately built baseline image.
       docker_e2e_docker_cmd run -d --name "$name" --label "$LABEL=$RUN_ID" \
         "${mounts[@]}" "${environment[@]}" --entrypoint tini "$IMAGE_ID" \
-        -s -- node openclaw.mjs gateway >/dev/null ;;
+        -s -- node paleoclaw.mjs gateway >/dev/null ;;
   esac
   if [ "$cell" = default ] || [ "$cell" = compose ]; then
     docker_e2e_wait_container_bash "$name" 180 1 'node /proof/scripts/e2e/lib/container-image-upgrade/fixture.mjs ready'

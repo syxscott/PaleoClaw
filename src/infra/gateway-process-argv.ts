@@ -20,7 +20,7 @@ function normalizeProcArg(arg: string): string {
 }
 
 const ENTRY_CANDIDATES = [
-  "openclaw.mjs",
+  "paleoclaw.mjs",
   "dist/index.js",
   "dist/entry.js",
   "scripts/run-node.mjs",

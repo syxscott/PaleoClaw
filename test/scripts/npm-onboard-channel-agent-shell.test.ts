@@ -190,7 +190,7 @@ export OPENCLAW_STATE_DIR="$HOME/.openclaw"
 export OPENCLAW_CONFIG_PATH="$OPENCLAW_STATE_DIR/openclaw.json"
 openclaw_e2e_install_package() { mkdir -p "$HOME/.openclaw"; }
 openclaw_e2e_package_root() { printf '%s' "$PACKAGE_ROOT"; }
-openclaw_e2e_package_entrypoint() { printf '%s/openclaw.mjs' "$PACKAGE_ROOT"; }
+openclaw_e2e_package_entrypoint() { printf '%s/paleoclaw.mjs' "$PACKAGE_ROOT"; }
 openclaw_e2e_start_mock_openai() { :; }
 openclaw_e2e_wait_mock_openai() { :; }
 openclaw_e2e_start_gateway() { "$FIXTURE_CLI" gateway-start; printf '%s' fixture-gateway; }

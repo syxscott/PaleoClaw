@@ -862,7 +862,7 @@ it.each([
       );
     }
     installedGatewayPath = path.join(options.installDir, "node_modules/paleoclaw");
-    return { cwd: installedGatewayPath, entrypoint: ["openclaw.mjs"], identity: gatewayIdentity };
+    return { cwd: installedGatewayPath, entrypoint: ["paleoclaw.mjs"], identity: gatewayIdentity };
   });
   const preflightCleanup = vi.fn(async () => {
     lifecycle.push("gateway-preflight-cleanup");
@@ -1006,7 +1006,7 @@ it.each([
     return { setupCode: `synthetic-code-${instances.length}` };
   });
   nativeMocks.gateway.mockImplementation(async (options) => {
-    expect(options).toMatchObject({ cwd: installedGatewayPath, entrypoint: ["openclaw.mjs"] });
+    expect(options).toMatchObject({ cwd: installedGatewayPath, entrypoint: ["paleoclaw.mjs"] });
     if (options.name === "ios-release-e2e-preflight") {
       lifecycle.push("gateway-preflight-create");
       return {

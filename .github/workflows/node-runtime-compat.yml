@@ -105,8 +105,8 @@ jobs:
         run: |
           pnpm build
           pnpm ui:build
-          node openclaw.mjs --help
-          node openclaw.mjs status --json --timeout 1
+          node paleoclaw.mjs --help
+          node paleoclaw.mjs status --json --timeout 1
           pnpm test:build:singleton
           pnpm test src/config/sessions/session-accessor.test.ts src/config/sessions/store-writer.test.ts src/config/sessions/sessions.test.ts
 

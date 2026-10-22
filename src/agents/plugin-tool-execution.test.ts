@@ -300,7 +300,7 @@ it("selects the permitted default before execution and holds its current authori
       };
     },
   });
-  expect(execution.cliEntryPath).toBe(path.resolve(import.meta.dirname, "../../openclaw.mjs"));
+  expect(execution.cliEntryPath).toBe(path.resolve(import.meta.dirname, "../../paleoclaw.mjs"));
   const action = vi.fn(async ({ model, agentId }: { model: string; agentId: string }) => ({
     model,
     agentId,

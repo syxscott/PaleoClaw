@@ -133,7 +133,7 @@ it.each([
       const run = { runId, env: { ...process.env }, activationTimeoutMs };
       const { recordPhase } = createUpdateCommandExecutionGuards({ run }, root);
       let running = true;
-      let programArguments = [process.execPath, path.join(root, "openclaw.mjs"), "gateway"];
+      let programArguments = [process.execPath, path.join(root, "paleoclaw.mjs"), "gateway"];
       mocks.service.mockReturnValue(
         createMockGatewayService({
           label: "Scheduled Task",
@@ -192,7 +192,7 @@ it.each([
           mocks.enabled = true;
           programArguments =
             outcome === "replaced task"
-              ? [process.execPath, path.join(home, "other-install", "openclaw.mjs"), "gateway"]
+              ? [process.execPath, path.join(home, "other-install", "paleoclaw.mjs"), "gateway"]
               : [...programArguments, "--port", "20000"];
           throw new Error("candidate finalizer disappeared");
         }
@@ -223,7 +223,7 @@ it.each([
           mocks.enabled = true;
           programArguments = [
             process.execPath,
-            path.join(home, "other-install", "openclaw.mjs"),
+            path.join(home, "other-install", "paleoclaw.mjs"),
             "gateway",
           ];
           const candidateDatabase = new DatabaseSync(resolveOpenClawStateSqlitePath());

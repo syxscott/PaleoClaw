@@ -53,7 +53,7 @@ export function registerStatusTimeoutTests(params: {
                     actions: [
                       {
                         type: 0,
-                        path: "C:\\Fixture\\openclaw.exe",
+                        path: "C:\\Fixture\\paleoclaw.exe",
                         arguments: "gateway",
                         workingDirectory: "",
                       },

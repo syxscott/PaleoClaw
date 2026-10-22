@@ -177,7 +177,7 @@ type ApnsPushResult = {
   transport: ApnsTransport;
 };
 
-const EXEC_APPROVAL_NOTIFICATION_CATEGORY = "openclaw.exec-approval";
+const EXEC_APPROVAL_NOTIFICATION_CATEGORY = "paleoclaw.exec-approval";
 const PLUGIN_APPROVAL_NOTIFICATION_CATEGORY = "openclaw.plugin-approval";
 
 type ApnsPushType = "alert" | "background";

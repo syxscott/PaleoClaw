@@ -4,12 +4,12 @@ import { isMainModule } from "./is-main.js";
 const detect = (overrides: Partial<Parameters<typeof isMainModule>[0]> = {}) =>
   isMainModule({
     currentFile: "/repo/dist/index.js",
-    argv: ["node", "/repo/openclaw.mjs"],
+    argv: ["node", "/repo/paleoclaw.mjs"],
     cwd: "/repo",
     env: {},
     ...overrides,
   });
-const wrapperEntryPairs = [{ wrapperBasename: "openclaw.mjs", entryBasename: "entry.js" }];
+const wrapperEntryPairs = [{ wrapperBasename: "paleoclaw.mjs", entryBasename: "entry.js" }];
 
 describe("isMainModule", () => {
   it("returns true when argv[1] matches current file", () => {

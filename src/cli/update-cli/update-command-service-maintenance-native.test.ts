@@ -88,9 +88,9 @@ it
         await fs.mkdir(callerRoot);
         await fs.writeFile(
           path.join(callerRoot, "package.json"),
-          JSON.stringify({ name: "paleoclaw", version: "2026.9.6", bin: "openclaw.mjs" }),
+          JSON.stringify({ name: "paleoclaw", version: "2026.9.6", bin: "paleoclaw.mjs" }),
         );
-        await fs.writeFile(path.join(callerRoot, "openclaw.mjs"), "");
+        await fs.writeFile(path.join(callerRoot, "paleoclaw.mjs"), "");
       }
       const runId = randomUUID();
       const label = "ai.openclaw.native-stop-test";

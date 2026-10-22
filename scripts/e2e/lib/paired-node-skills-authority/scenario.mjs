@@ -70,7 +70,7 @@ function writeConfig(kind, config) {
 function start(kind, args, extra = {}) {
   const home = path.join(root, kind);
   const output = fs.openSync(path.join(root, kind + ".log"), "a");
-  const child = spawn(process.execPath, [path.join(packageDir, "openclaw.mjs"), ...args], {
+  const child = spawn(process.execPath, [path.join(packageDir, "paleoclaw.mjs"), ...args], {
     env: {
       ...process.env,
       HOME: home,

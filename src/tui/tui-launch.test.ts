@@ -17,7 +17,7 @@ import { launchTuiCli } from "./tui-launch.js";
 
 const originalArgv = [...process.argv];
 const originalExecArgv = [...process.execArgv];
-const cli = ["/repo/openclaw.mjs", "tui"];
+const cli = ["/repo/paleoclaw.mjs", "tui"];
 
 function createChildProcess(pid?: number): ChildProcess {
   return Object.assign(new EventEmitter(), { pid }) as ChildProcess;
@@ -43,7 +43,7 @@ function emitChild(event: "exit" | "error", ...args: unknown[]) {
 describe("launchTuiCli", () => {
   beforeEach(() => {
     process.argv = [...originalArgv];
-    process.argv[1] = "/repo/openclaw.mjs";
+    process.argv[1] = "/repo/paleoclaw.mjs";
     process.execArgv.length = 0;
     spawnMock.mockReset();
     emitChild("exit", 0, null);
@@ -93,7 +93,7 @@ describe("launchTuiCli", () => {
     expect(resumeSpy).not.toHaveBeenCalled();
   });
 
-  it.each(["/standalone/runtime/openclaw.mjs", undefined])(
+  it.each(["/standalone/runtime/paleoclaw.mjs", undefined])(
     "launches standalone TUI with entry %s",
     async (entry) => {
       vi.stubGlobal("__openclawStandaloneRootUrl", "file:///standalone/runtime/");

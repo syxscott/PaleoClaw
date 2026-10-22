@@ -72,7 +72,7 @@ beforeEach(() => {
   fs.symlinkSync(path.join(dependencies, "fixture"), path.join(dependencies, "absolute"));
   fs.symlinkSync("fixture", path.join(dependencies, "relative"));
   writeSource(
-    "openclaw.mjs",
+    "paleoclaw.mjs",
     `
 import fs from 'node:fs';
 import { createRequire } from 'node:module';

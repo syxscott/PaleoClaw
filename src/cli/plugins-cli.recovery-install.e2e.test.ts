@@ -211,8 +211,8 @@ it("confines invalid-config recovery to npm catalog and canonical-ID owners thro
         npm_config_cache: path.join(stateDir, "npm-cache"),
       };
       const cliEntry = scenario.unbundled
-        ? ["--import", offlineCatalogBootstrap, "openclaw.mjs"]
-        : ["openclaw.mjs"];
+        ? ["--import", offlineCatalogBootstrap, "paleoclaw.mjs"]
+        : ["paleoclaw.mjs"];
       const run = async (...args: string[]) => {
         const result = await runNodeScript([...cliEntry, ...args], env, 30_000, {
           cwd: process.cwd(),

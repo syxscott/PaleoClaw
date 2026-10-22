@@ -52,10 +52,10 @@ case "$1" in
     if [[ "\${OMIT_PACKAGE_PIN:-0}" != 1 ]]; then
       cp "$FIXTURE_ROOT/\${PACKAGE_PIN:-pin.json}" "$HOME/package/scripts/lib/paleoclaw-bun.json"
     fi
-    printf '#!/bin/sh\\nexec "%s" "%s/package/openclaw.mjs" "$@"\\n#paleoclaw-bun=%s\\n#paleoclaw-entry=%s/package/openclaw.mjs\\n' "$0" "$HOME" "$0" "$HOME" > "$HOME/.bun/bin/paleoclaw"
+    printf '#!/bin/sh\\nexec "%s" "%s/package/paleoclaw.mjs" "$@"\\n#paleoclaw-bun=%s\\n#paleoclaw-entry=%s/package/paleoclaw.mjs\\n' "$0" "$HOME" "$0" "$HOME" > "$HOME/.bun/bin/paleoclaw"
     chmod +x "$HOME/.bun/bin/paleoclaw"
     ;;
-  */openclaw.mjs)
+  */paleoclaw.mjs)
     shift
     printf 'cli:%s\\n' "$*" >> "$FIXTURE_ROOT/effects"
     case "$1" in

@@ -3,7 +3,7 @@ import { mockProcessPlatform } from "../test-utils/vitest-spies.js";
 import { normalizeWindowsArgv } from "./windows-argv.js";
 
 const nodePath = "C:\\Program Files\\nodejs\\node.exe";
-const scriptPath = "C:\\pkg\\openclaw.mjs";
+const scriptPath = "C:\\pkg\\paleoclaw.mjs";
 
 describe("normalizeWindowsArgv", () => {
   beforeEach(() => {
@@ -43,7 +43,7 @@ describe("normalizeWindowsArgv", () => {
   });
 
   it("does not normalize POSIX argv", () => {
-    const argv = ["/usr/bin/node", "/opt/paleoclaw/openclaw.mjs", "node.exe", "--help"];
+    const argv = ["/usr/bin/node", "/opt/paleoclaw/paleoclaw.mjs", "node.exe", "--help"];
     expect(normalizeWindowsArgv(argv, { platform: "linux" })).toBe(argv);
   });
 });

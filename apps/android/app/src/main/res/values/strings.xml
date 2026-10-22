@@ -1,5 +1,5 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <string name="app_name">OpenClaw Node</string>
+    <string name="app_name">paleoclaw Node</string>
     <string name="trust_this_gateway">Trust this gateway?</string>
     <string name="trust_and_continue">Trust and continue</string>
     <string name="cancel">Cancel</string>
@@ -16,8 +16,8 @@
     <string name="about_build_date_accessibility">Build date %1$s</string>
     <string name="about_build_copy_commit">Copy full Git commit hash</string>
     <string name="about_build_copy_timestamp">Copy full build timestamp</string>
-    <string name="about_build_commit_clipboard_label">OpenClaw Git commit</string>
-    <string name="about_build_timestamp_clipboard_label">OpenClaw build timestamp</string>
+    <string name="about_build_commit_clipboard_label">paleoclaw Git commit</string>
+    <string name="about_build_timestamp_clipboard_label">paleoclaw build timestamp</string>
     <string name="about_build_commit_copied">Git commit copied</string>
     <string name="about_build_timestamp_copied">Build timestamp copied</string>
     <string name="onboarding_what_you_get">What You Get</string>
@@ -34,7 +34,7 @@
     <string name="onboarding_json_prints_setupcode_and_gatewayurl">`--json` prints `setupCode` and `gatewayUrl`.</string>
     <string name="onboarding_auto_url_discovery_is_not_wired_yet_android_emul">Auto URL discovery is not wired yet. Android emulator uses `10.0.2.2`; real devices need LAN/Tailscale host.</string>
     <string name="onboarding_setup_code">SETUP CODE</string>
-    <string name="onboarding_paste_code_from_openclaw_qr_setup_code_only">Paste code from `openclaw qr --setup-code-only`</string>
+    <string name="onboarding_paste_code_from_openclaw_qr_setup_code_only">Paste code from `paleoclaw qr --setup-code-only`</string>
     <string name="onboarding_android_emulator">Android Emulator</string>
     <string name="onboarding_localhost">Localhost</string>
     <string name="onboarding_host">HOST</string>
@@ -81,38 +81,26 @@
     <string name="onboarding_gateway">Gateway</string>
     <string name="onboarding_enabled_permissions">Enabled Permissions</string>
     <string name="onboarding_press_connect_to_verify_gateway_reachability_and">Press Connect to verify gateway reachability and auth.</string>
-    <string name="onboarding_status_statustext">Status: $statusText</string>
-    <string name="onboarding_connected_to_servername_remoteaddress">Connected to ${serverName ?: remoteAddress ?:</string>
+    <string name="onboarding_status_statustext">Status: %1$s</string>
+    <string name="onboarding_connected_to_servername_remoteaddress">Connected to %1$s</string>
     <string name="onboarding_pairing_required">Pairing Required</string>
     <string name="onboarding_run_these_on_the_gateway_host_3">Run these on the gateway host:</string>
-    <string name="onboarding_then_tap_connect_again_at_module_verifyandroidap">Then tap Connect again.
-    at Module.verifyAndroidAppI18n (D:\GIthub\Claw\PaleoClaw\scripts\android-app-i18n.ts:1345:11)
-    at async main (D:\GIthub\Claw\PaleoClaw\scripts\native-app-i18n.ts:1584:7)
-    at async &lt;anonymous&gt; (D:\GIthub\Claw\PaleoClaw\scripts\native-app-i18n.ts:1609:3)
-
-Node.js v24.22.0
- ELIFECYCLE  Command failed with exit code 1.</string>
+    <string name="onboarding_then_tap_connect_again">Then tap Connect again.</string>
     <string name="onboarding_trust_this_gateway">Trust this gateway?</string>
     <string name="onboarding_first_time_tls_connection_verify_this_sha_256_fi">First-time TLS connection.
 
 Verify this SHA-256 fingerprint before trusting:
-${prompt.fingerprintSha256}</string>
+%1$s</string>
     <string name="onboarding_trust_and_continue">Trust and continue</string>
     <string name="onboarding_cancel">Cancel</string>
     <string name="onboarding_first_run">FIRST RUN</string>
-    <string name="onboarding_openclaw_mobile_setup">OpenClaw
+    <string name="onboarding_openclaw_mobile_setup">paleoclaw
 Mobile Setup</string>
-    <string name="onboarding_step_step_index_of_4">Step ${step.index} of 4</string>
+    <string name="onboarding_step_step_index_of_4">Step %1$d of 4</string>
     <string name="onboarding_back">Back</string>
     <string name="onboarding_next">Next</string>
     <string name="onboarding_next_2">Next</string>
     <string name="onboarding_next_3">Next</string>
     <string name="onboarding_finish">Finish</string>
-    <string name="onboarding_connect_at_module_verifyandroidappi18n_d_github_">Connect
-    at Module.verifyAndroidAppI18n (D:\GIthub\Claw\PaleoClaw\scripts\android-app-i18n.ts:1345:11)
-    at async main (D:\GIthub\Claw\PaleoClaw\scripts\native-app-i18n.ts:1584:7)
-    at async &lt;anonymous&gt; (D:\GIthub\Claw\PaleoClaw\scripts\native-app-i18n.ts:1609:3)
-
-Node.js v24.22.0
- ELIFECYCLE  Command failed with exit code 1.</string>
+    <string name="onboarding_connect">Connect</string>
 </resources>

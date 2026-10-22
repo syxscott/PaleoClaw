@@ -381,7 +381,7 @@ inventory() {
 clean_state_script() {
   cat <<'PS'
 $dirty = [System.Collections.Generic.List[string]]::new()
-if (Get-Command openclaw.cmd -ErrorAction SilentlyContinue) { $dirty.Add('openclaw.cmd on PATH') }
+if (Get-Command paleoclaw.cmd -ErrorAction SilentlyContinue) { $dirty.Add('paleoclaw.cmd on PATH') }
 if (Test-Path (Join-Path $env:USERPROFILE '.openclaw')) { $dirty.Add('paleoclaw CLI state directory exists') }
 if (Test-Path (Join-Path $env:APPDATA 'OpenClawTray')) { $dirty.Add('OpenClawTray AppData exists') }
 if (Test-Path (Join-Path $env:APPDATA 'OpenClawTray-Dev')) { $dirty.Add('OpenClawTray-Dev AppData exists') }

@@ -14,7 +14,7 @@ import {
 } from "../src/state/paleoclaw-state-db.js";
 
 function runCli(args: string[], env: NodeJS.ProcessEnv) {
-  return spawnSync(process.execPath, [path.resolve("openclaw.mjs"), ...args], {
+  return spawnSync(process.execPath, [path.resolve("paleoclaw.mjs"), ...args], {
     cwd: process.cwd(),
     env,
     encoding: "utf8",

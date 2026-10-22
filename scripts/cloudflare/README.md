@@ -111,7 +111,7 @@ Inside the Container, run the non-interactive SecretRef bootstrap. This example 
 
 ```bash
 cd /app
-node openclaw.mjs onboard --non-interactive --accept-risk --skip-health \
+node paleoclaw.mjs onboard --non-interactive --accept-risk --skip-health \
   --mode local \
   --auth-choice openai-api-key \
   --secret-input-mode ref \
@@ -119,8 +119,8 @@ node openclaw.mjs onboard --non-interactive --accept-risk --skip-health \
   --gateway-token-ref-env OPENCLAW_GATEWAY_TOKEN \
   --skip-channels \
   --no-install-daemon
-node openclaw.mjs channels add --channel telegram --use-env
-node openclaw.mjs doctor --json
+node paleoclaw.mjs channels add --channel telegram --use-env
+node paleoclaw.mjs doctor --json
 ```
 
 Keep the exact bootstrap recipe in a private, reproducible runbook. Litestream does not replicate `openclaw.json`, credential files, installed plugin files, or workspaces.

@@ -98,7 +98,7 @@ class OnboardingResourcesTests(unittest.TestCase):
                 }))
                 stage_onboarding_runtime(runtime)
                 manifest = json.loads((runtime / "manifest.json").read_text())
-                entry = "package/node_modules/paleoclaw/openclaw.mjs"
+                entry = "package/node_modules/paleoclaw/paleoclaw.mjs"
                 content = (Path(__file__).parent / "fixtures/onboarding-cli.mjs").read_bytes()
                 self.assertEqual(manifest, {"revision": "pinned", "files": {
                     "bin/bun": "runtime-hash", entry: hashlib.sha256(content).hexdigest(),

@@ -200,7 +200,7 @@ describe("run-node script", () => {
       expect(spawnCalls).toEqual([]);
       expect(runRuntimePostBuild).not.toHaveBeenCalled();
       expect(stderrChunks.join("")).toContain(expectedReason);
-      expect(stderrChunks.join("")).toContain("node openclaw.mjs");
+      expect(stderrChunks.join("")).toContain("node paleoclaw.mjs");
     });
   }
 

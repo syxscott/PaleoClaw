@@ -282,7 +282,7 @@ enum CLIInstaller {
             guard let runtime = try BundledRuntime.seeded() else { return .missing(location: location) }
             _ = try BundledRuntime.resolve(root: runtime.root, bundle: .main)
             let version = GatewayEnvironment.appVersionString() ?? "unknown"
-            return .ready(location: runtime.packageRoot.appendingPathComponent("openclaw.mjs").path, version: version)
+            return .ready(location: runtime.packageRoot.appendingPathComponent("paleoclaw.mjs").path, version: version)
         } catch {
             return .unusable(location: location)
         }

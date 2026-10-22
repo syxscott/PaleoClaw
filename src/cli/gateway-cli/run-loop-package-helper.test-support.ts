@@ -264,7 +264,7 @@ export async function writePackageLifecycleFixture(
         export const { assertForegroundUpdateOrigin } = handoff;
         `,
   );
-  const entrypoint = path.join(root, "openclaw.mjs");
+  const entrypoint = path.join(root, "paleoclaw.mjs");
   await fs.writeFile(
     entrypoint,
     `${bootstrap}

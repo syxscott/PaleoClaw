@@ -385,7 +385,7 @@ describe("successful update finalization ordering", () => {
   it("restarts when completion cache refresh reports failure", async () => {
     const root = tempDirs.make("paleoclaw-completion-failure-");
     await fs.writeFile(
-      path.join(root, "openclaw.mjs"),
+      path.join(root, "paleoclaw.mjs"),
       'process.stderr.write("injected completion cache failure"); process.exit(1);',
     );
 

@@ -76,7 +76,7 @@ const ownerHint = "Managed by OpenClaw.app. Update OpenClaw.app to update this G
 async function hostRoot() {
   const root = tempDirs.make("paleoclaw-doctor-host-runtime-");
   await fs.writeFile(path.join(root, "package.json"), JSON.stringify({ name: "paleoclaw" }));
-  await fs.writeFile(path.join(root, "openclaw.mjs"), "");
+  await fs.writeFile(path.join(root, "paleoclaw.mjs"), "");
   await fs.writeFile(
     path.join(root, "paleoclaw-install-owner.json"),
     JSON.stringify({
@@ -92,8 +92,8 @@ async function hostRoot() {
 function setHostService(root: string, running: boolean) {
   const command = {
     programArguments: running
-      ? ["/fixture/node", path.join(root, "openclaw.mjs"), "gateway"]
-      : ["/app/bun", path.join(root, "openclaw.mjs"), "gateway", "run"],
+      ? ["/fixture/node", path.join(root, "paleoclaw.mjs"), "gateway"]
+      : ["/app/bun", path.join(root, "paleoclaw.mjs"), "gateway", "run"],
     ...(!running ? { environment: {} } : {}),
   };
   mocks.readCommand.mockResolvedValue(command);

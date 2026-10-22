@@ -229,7 +229,7 @@ describe("Crabbox project snapshot provisioning", () => {
         JSON.stringify({ name: "paleoclaw", version: failure === "runtime" ? "0.0.0" : "2026.8.1" }),
       );
       writeFile(
-        path.join(packageRoot, "openclaw.mjs"),
+        path.join(packageRoot, "paleoclaw.mjs"),
         `import fs from "node:fs";
 import path from "node:path";
 if (process.env.CRABBOX_WORKER_BOOTSTRAP_TOKEN || !fs.existsSync(${JSON.stringify(privateFiles[0])})) process.exit(9);

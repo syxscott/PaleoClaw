@@ -76,7 +76,7 @@ function runCli(ctx, label, args) {
       "update-report-cli",
       helper,
       process.execPath,
-      path.join(ctx.packageRoot, "openclaw.mjs"),
+      path.join(ctx.packageRoot, "paleoclaw.mjs"),
       ...args,
     ],
     { env: cliEnv(), encoding: "utf8", maxBuffer: 16 * 1024 * 1024 },
@@ -216,7 +216,7 @@ async function drivePty(ctx, cell, bin, missing) {
     '[ "$report_size" = "50 160" ] || exit 1',
   ].join("; ");
   // script(1) on Linux does not propagate the child status without -e.
-  const command = `${[process.execPath, path.join(ctx.packageRoot, "openclaw.mjs"), "update", "--tag", `file:${missing}`, "--no-restart"].map(quote).join(" ")}; report_exit=$?; printf '\n${footer}%s\n' "$report_exit"; exit "$report_exit"`;
+  const command = `${[process.execPath, path.join(ctx.packageRoot, "paleoclaw.mjs"), "update", "--tag", `file:${missing}`, "--no-restart"].map(quote).join(" ")}; report_exit=$?; printf '\n${footer}%s\n' "$report_exit"; exit "$report_exit"`;
   const child = spawn(
     "/bin/bash",
     [

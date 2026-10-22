@@ -38,7 +38,7 @@ vi.mock("../process/exec.js", async (original) => ({
 }));
 vi.mock("../daemon/gateway-entrypoint.js", async (original) => ({
   ...(await original<typeof import("../daemon/gateway-entrypoint.js")>()),
-  resolveGatewayInstallEntrypoint: async (root: string) => path.join(root, "openclaw.mjs"),
+  resolveGatewayInstallEntrypoint: async (root: string) => path.join(root, "paleoclaw.mjs"),
 }));
 vi.mock("../cli/update-cli/update-command-service-maintenance.js", () => ({
   maybeStopManagedServiceBeforeMutableUpdate: mocks.serviceStop,

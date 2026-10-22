@@ -40,7 +40,7 @@
     <string name="agent" tools:ignore="Typos,TypographyDashes,TypographyEllipsis">"Agent"</string>
     <string name="system" tools:ignore="Typos,TypographyDashes,TypographyEllipsis">"System"</string>
     <string name="start_conversation" tools:ignore="Typos,TypographyDashes,TypographyEllipsis">"Rozpocznij rozmowę"</string>
-    <string name="start_conversation_detail" tools:ignore="Typos,TypographyDashes,TypographyEllipsis">"Mów lub pisz na zegarku. Sparowany telefon wysyła wiadomość za pośrednictwem uwierzytelnionej sesji OpenClaw."</string>
+    <string name="start_conversation_detail" tools:ignore="Typos,TypographyDashes,TypographyEllipsis">"Mów lub pisz na zegarku. Sparowany telefon wysyła wiadomość za pośrednictwem uwierzytelnionej sesji paleoclaw."</string>
     <string name="current_session" tools:ignore="Typos,TypographyDashes,TypographyEllipsis">"Bieżąca sesja"</string>
     <string name="context_label_value" tools:ignore="MissingTranslation,Typos,TypographyDashes,TypographyEllipsis">"%1$s: %2$s"</string>
     <string name="close" tools:ignore="MissingTranslation,Typos,TypographyDashes,TypographyEllipsis">"Zamknij"</string>
@@ -77,7 +77,7 @@
     <string name="open_phone_app" tools:ignore="Typos,TypographyDashes,TypographyEllipsis">"Otwórz paleoclaw na telefonie"</string>
     <string name="phone_not_ready_detail" tools:ignore="Typos,TypographyDashes,TypographyEllipsis">"Zegarek nigdy samodzielnie nie uruchamia ani nie uwierzytelnia Gateway."</string>
     <string name="phone_unavailable" tools:ignore="Typos,TypographyDashes,TypographyEllipsis">"Telefon jest nieosiągalny"</string>
-    <string name="phone_unavailable_detail" tools:ignore="Typos,TypographyDashes,TypographyEllipsis">"Trzymaj sparowany telefon w pobliżu i zainstaluj odpowiednią aplikację OpenClaw."</string>
+    <string name="phone_unavailable_detail" tools:ignore="Typos,TypographyDashes,TypographyEllipsis">"Trzymaj sparowany telefon w pobliżu i zainstaluj odpowiednią aplikację paleoclaw."</string>
     <string name="selection_not_found" tools:ignore="Typos,TypographyDashes,TypographyEllipsis">"Wybrana pozycja nie jest już dostępna"</string>
     <string name="message_not_sent" tools:ignore="Typos,TypographyDashes,TypographyEllipsis">"Działanie nie zostało zaakceptowane"</string>
     <string name="something_went_wrong" tools:ignore="Typos,TypographyDashes,TypographyEllipsis">"Coś poszło nie tak"</string>

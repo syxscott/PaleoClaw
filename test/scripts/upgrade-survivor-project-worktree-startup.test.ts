@@ -108,7 +108,7 @@ function doctorOwnerFixture(chunks: string[], definition = schemaDefinition) {
   const root = tempDirs.make("paleoclaw-doctor-owner-binding-");
   mkdirSync(path.join(root, "dist"));
   writeJson(path.join(root, "package.json"), { name: "paleoclaw", version: "0.0.0-test" });
-  writeFileSync(path.join(root, "openclaw.mjs"), "// synthetic package identity\n");
+  writeFileSync(path.join(root, "paleoclaw.mjs"), "// synthetic package identity\n");
   writeJson(path.join(root, "dist/build-info.json"), {
     version: "0.0.0-test",
     commit: "1".repeat(40),

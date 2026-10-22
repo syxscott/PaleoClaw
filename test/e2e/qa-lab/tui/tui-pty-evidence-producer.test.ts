@@ -197,11 +197,11 @@ it.each([
   expectFailure(evidence, reason);
 });
 
-it.each(["openclaw.mjs", "dist"])(
+it.each(["paleoclaw.mjs", "dist"])(
   "fails built preflight without %s before spawning",
   async (missing) => {
     const producer = await makeProducer(true);
-    await writeFiles(producer.repoRoot, ["openclaw.mjs", "dist/entry.js"]);
+    await writeFiles(producer.repoRoot, ["paleoclaw.mjs", "dist/entry.js"]);
     await fs.rm(path.join(producer.repoRoot, missing), { recursive: true });
     const runCommand = vi.fn(async () => ({ exitCode: 0, signal: null }));
     const evidence = await producer.run({ runCommand });
@@ -213,7 +213,7 @@ it.each(["openclaw.mjs", "dist"])(
     ]);
     expectFailure(
       evidence,
-      "cliMode=built requires readable openclaw.mjs and at least one readable dist/entry.js or dist/entry.mjs",
+      "cliMode=built requires readable paleoclaw.mjs and at least one readable dist/entry.js or dist/entry.mjs",
     );
   },
 );
@@ -228,7 +228,7 @@ it.each([null, "entry.js", "entry.mjs"] as const)(
     const testFile = built ? LOCAL_FILE : HARNESS_FILE;
     const { repoRoot, artifactBase, run, readArtifact } = await makeProducer(built);
     if (entry) {
-      await writeFiles(repoRoot, ["openclaw.mjs", `dist/${entry}`]);
+      await writeFiles(repoRoot, ["paleoclaw.mjs", `dist/${entry}`]);
     }
     const evidence = await run({
       runCommand: async (command) => {

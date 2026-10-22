@@ -25,7 +25,7 @@ const packageRelative =
 const packageRoot = (prefix: string) => path.join(prefix, packageRelative);
 const binRoot = (prefix: string) =>
   process.platform === "win32" ? prefix : path.join(prefix, "bin");
-const entrypoint = (root: string) => path.join(root, "openclaw.mjs");
+const entrypoint = (root: string) => path.join(root, "paleoclaw.mjs");
 const contents = (root: string) => fs.readFile(entrypoint(root), "utf8");
 const quote = process.platform === "win32" ? quotePowerShellArg : quoteCliArg;
 const opts = { tag: "2026.9.2", json: true, yes: true };
@@ -47,12 +47,12 @@ async function writeLauncher(prefix: string, root: string, destination = "") {
   const foreign = ["foreign-launcher", "foreign-live-launcher"].includes(destination);
   if (process.platform === "win32") {
     await fs.writeFile(
-      path.join(bin, "openclaw.cmd"),
+      path.join(bin, "paleoclaw.cmd"),
       destination === "foreign-launcher"
         ? '@"%~dp0\\unrelated-launcher" %*\n'
         : destination === "foreign-live-launcher"
           ? '@"%~dp0\\..\\unrelated-launcher" %*\n'
-          : '@"%~dp0\\node_modules\\paleoclaw\\openclaw.mjs" %*\n',
+          : '@"%~dp0\\node_modules\\paleoclaw\\paleoclaw.mjs" %*\n',
     );
   } else {
     await fs.symlink(
@@ -233,7 +233,7 @@ it.each([
       expect(result).toMatchObject({ dryRun: true, root: oldRoot });
     }
     if (separatePackage && destination !== "claimed") {
-      const launcher = path.join(bin, process.platform === "win32" ? "openclaw.cmd" : "paleoclaw");
+      const launcher = path.join(bin, process.platform === "win32" ? "paleoclaw.cmd" : "paleoclaw");
       const entry = await fs.realpath(entrypoint(newRoot));
       const ownerMessage = managedForeign
         ? `The selected service (${sourcePath}) uses ${entrypoint(oldRoot)}; it does not own this destination.`

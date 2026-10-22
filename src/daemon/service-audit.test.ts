@@ -240,7 +240,7 @@ it.each([
 });
 it("classifies expired egress trust as repairable drift, not a custom setting", async () => {
   const expectedCommand = {
-    programArguments: ["/usr/bin/node", "/opt/paleoclaw/openclaw.mjs", "gateway"],
+    programArguments: ["/usr/bin/node", "/opt/paleoclaw/paleoclaw.mjs", "gateway"],
     environment: { PATH: "/usr/local/bin:/usr/bin:/bin", CUSTOM_SETTING: "retained" },
   };
   const result = await audit(

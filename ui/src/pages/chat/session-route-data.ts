@@ -1,4 +1,4 @@
-import type { RouteLocation } from "@paleoclaw/uirouter";
+import type { RouteLocation } from "@openclaw/uirouter";
 import type { BoardFace } from "../../lib/board/settings.ts";
 import type { MissingSessionRouteData } from "./route-loader-session-reference.ts";
 

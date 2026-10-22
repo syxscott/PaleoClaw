@@ -11,7 +11,7 @@ export function createQaPreparedRepoCliCommand(repoRoot: string) {
       `OPENCLAW_DEV_SOURCE_ROOT=${repoRoot}`,
       "--",
       process.execPath,
-      path.join(repoRoot, "openclaw.mjs"),
+      path.join(repoRoot, "paleoclaw.mjs"),
     ],
     cwd: repoRoot,
     usePackagedPlugins: true,

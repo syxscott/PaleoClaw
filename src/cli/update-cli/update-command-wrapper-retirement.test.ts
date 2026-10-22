@@ -13,7 +13,7 @@ const installerWrapper = (root: string) =>
 async function fixture(platform: NodeJS.Platform = "linux") {
   const base = dirs.make("paleoclaw-wrapper-");
   const root = platform === "win32" ? "C:\\old checkout" : path.join(base, "old checkout");
-  const wrapper = path.join(base, platform === "win32" ? "openclaw.cmd" : "paleoclaw");
+  const wrapper = path.join(base, platform === "win32" ? "paleoclaw.cmd" : "paleoclaw");
   const original =
     platform === "win32"
       ? `@echo off\r\nnode "${path.win32.join(root, "dist", "entry.js")}" %*\r\n`
@@ -121,7 +121,7 @@ describe("retireStandaloneGitWrapper", () => {
     await expect(fs.stat(wrapper)).rejects.toMatchObject({ code: "ENOENT" });
     await expect(fs.stat(secondWrapper)).rejects.toMatchObject({ code: "ENOENT" });
 
-    await write("#!/usr/bin/env node\nimport '../lib/node_modules/paleoclaw/openclaw.mjs';\n");
+    await write("#!/usr/bin/env node\nimport '../lib/node_modules/paleoclaw/paleoclaw.mjs';\n");
     await expect(retire()).resolves.toEqual({});
     await expect(fs.stat(wrapper)).resolves.toBeDefined();
   });

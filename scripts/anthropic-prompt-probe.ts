@@ -601,7 +601,7 @@ async function startGatewayProcess(params: {
   const parentSignalController = createPromptProbeParentSignalController();
   const child = spawn(
     NODE_BIN,
-    ["openclaw.mjs", "gateway", "--port", String(params.port), "--bind", "loopback", "--force"],
+    ["paleoclaw.mjs", "gateway", "--port", String(params.port), "--bind", "loopback", "--force"],
     {
       cwd: process.cwd(),
       env: {

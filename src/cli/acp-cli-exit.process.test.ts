@@ -92,7 +92,7 @@ function waitForJsonLine(child: ChildProcessWithoutNullStreams, id: number) {
 
 it("exits when the client disconnects after sending an initialize frame", async () => {
   const result = await runCliProcessChild({
-    nodeArgs: [path.resolve("openclaw.mjs"), "acp", "--require-existing"],
+    nodeArgs: [path.resolve("paleoclaw.mjs"), "acp", "--require-existing"],
     env: await createAcpProcessEnv(),
     input: `${JSON.stringify(INITIALIZE_FRAME)}\n`,
   });
@@ -131,7 +131,7 @@ it("processes an initialize frame buffered before Gateway hello", async () => {
     let response: Record<string, unknown> | undefined;
     const result = await runCliProcessChild({
       nodeArgs: [
-        path.resolve("openclaw.mjs"),
+        path.resolve("paleoclaw.mjs"),
         "acp",
         "--require-existing",
         "--url",

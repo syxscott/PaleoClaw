@@ -257,7 +257,7 @@ run_sut() {
     cd "$paleoclaw"
     local source_dir="$paleoclaw/.artifacts/paleoclaw-performance/source/mock-provider"
     mkdir -p "$source_dir/mock-hello"
-    if ! node -e "const fs=require('node:fs'); const scripts=require('./package.json').scripts||{}; const extensionProbe=['scripts/profile-extension-memory.mts','scripts/profile-extension-memory.mjs'].some((entry)=>fs.existsSync(entry)); process.exit(scripts['test:gateway:cpu-scenarios'] && scripts['test:extensions:memory'] && scripts.openclaw && fs.existsSync('openclaw.mjs') && extensionProbe ? 0 : 1)"; then
+    if ! node -e "const fs=require('node:fs'); const scripts=require('./package.json').scripts||{}; const extensionProbe=['scripts/profile-extension-memory.mts','scripts/profile-extension-memory.mjs'].some((entry)=>fs.existsSync(entry)); process.exit(scripts['test:gateway:cpu-scenarios'] && scripts['test:extensions:memory'] && scripts.openclaw && fs.existsSync('paleoclaw.mjs') && extensionProbe ? 0 : 1)"; then
       printf 'Source probes skipped: required probe entry points are unavailable in this tested ref.\n'
       return
     fi
@@ -427,9 +427,9 @@ source_cli_probes() (
   local paleoclaw="$1" source_dir="$2" repeat="$3" helpers="$4" supported="$5"
   [[ "$supported" == true || "$supported" == false ]] || die "invalid CLI capability"
   mkdir -p "$source_dir"
-  printf '{"supported":%s,"entry":"openclaw.mjs"}\n' "$supported" > "$source_dir/cli-capability.json"
+  printf '{"supported":%s,"entry":"paleoclaw.mjs"}\n' "$supported" > "$source_dir/cli-capability.json"
   if [[ "$supported" == false ]]; then
-    printf '# paleoclaw Source Performance\n\nTrusted CLI measurement unsupported: the pinned target has no openclaw.mjs entry.\n' > "$source_dir/index.md"
+    printf '# paleoclaw Source Performance\n\nTrusted CLI measurement unsupported: the pinned target has no paleoclaw.mjs entry.\n' > "$source_dir/index.md"
     return
   fi
   local gateway_home gateway_readiness_home gateway_port gateway_token gateway_pid=""
@@ -502,7 +502,7 @@ EOF
     OPENCLAW_GATEWAY_TOKEN="$gateway_token" OPENCLAW_HOME="$gateway_home" \
     OPENCLAW_STATE_DIR="$gateway_state" OPENCLAW_CONFIG_PATH="$gateway_config" \
     OPENCLAW_GATEWAY_PORT="$gateway_port" \
-    node "$helpers/bench-cli-startup.mjs" --entry "$paleoclaw/openclaw.mjs" \
+    node "$helpers/bench-cli-startup.mjs" --entry "$paleoclaw/paleoclaw.mjs" \
     --case gatewayHealthJsonWarmState --case gatewayHealthJsonFreshState \
     --case configGetGatewayPort --runs "$repeat" --warmup 1 --output "$source_dir/cli-startup.json"
 )
@@ -722,9 +722,9 @@ remote_main() {
   local source_cli_supported=false source_cli_entry
   if [[ "$lane" == source ]]; then
     # Capture immutable entry availability before any candidate lifecycle code runs.
-    source_cli_entry="$(as_sut /usr/bin/git -C "$root/paleoclaw" ls-tree --name-only "$openclaw_sha" -- openclaw.mjs)"
+    source_cli_entry="$(as_sut /usr/bin/git -C "$root/paleoclaw" ls-tree --name-only "$openclaw_sha" -- paleoclaw.mjs)"
     case "$source_cli_entry" in
-      openclaw.mjs) source_cli_supported=true ;;
+      paleoclaw.mjs) source_cli_supported=true ;;
       "") ;;
       *) die "unexpected CLI entry inventory" ;;
     esac

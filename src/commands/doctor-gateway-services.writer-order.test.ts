@@ -86,7 +86,7 @@ function prepareService(
   ctx: Awaited<ReturnType<typeof prepareWriterContext>>,
   token?: string,
 ) {
-  const programArguments = [process.execPath, path.join(home, "openclaw.mjs"), "gateway"];
+  const programArguments = [process.execPath, path.join(home, "paleoclaw.mjs"), "gateway"];
   service.readCommand.mockResolvedValue({
     programArguments,
     environment: token ? { OPENCLAW_GATEWAY_TOKEN: token } : {},

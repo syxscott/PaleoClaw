@@ -1947,7 +1947,7 @@ if [[ "\${1:-}" == */verify-fs-safe-native.mjs ]]; then
   test "\${5:-}" = "require"
   exit 0
 fi
-if [[ "\${1:-}" == */openclaw.mjs ]]; then
+if [[ "\${1:-}" == */paleoclaw.mjs ]]; then
   if [ "$FAKE_BUN_RUNTIME" = "unsupported" ]; then
     echo 'paleoclaw: the Bun runtime is unsupported because paleoclaw requires node:sqlite.' >&2
     exit 1
@@ -1957,7 +1957,7 @@ if [[ "\${1:-}" == */openclaw.mjs ]]; then
     exit 42
   fi
   shift
-  exec node "$BUN_INSTALL/install/global/node_modules/paleoclaw/openclaw.mjs" "$@"
+  exec node "$BUN_INSTALL/install/global/node_modules/paleoclaw/paleoclaw.mjs" "$@"
 fi
 test "\${1:-}" = "install"
 case " $* " in
@@ -1982,7 +1982,7 @@ printf '%s\\n' "\${override#file:}" >"$FAKE_AI_TARBALL_PATH"
 cat >"$package_root/dist/plugin-sdk/logging-core.js" <<'REDACTOR'
 exports.redactSensitiveText = (text) => text;
 REDACTOR
-cat >"$package_root/openclaw.mjs" <<'OPENCLAW'
+cat >"$package_root/paleoclaw.mjs" <<'OPENCLAW'
 #!/usr/bin/env node
 import fs from "node:fs";
 import http from "node:http";
@@ -2024,8 +2024,8 @@ if (args[0] === "--version") {
   process.exit(1);
 }
 OPENCLAW
-chmod +x "$package_root/openclaw.mjs"
-ln -s "$package_root/openclaw.mjs" "$BUN_INSTALL/bin/paleoclaw"
+chmod +x "$package_root/paleoclaw.mjs"
+ln -s "$package_root/paleoclaw.mjs" "$BUN_INSTALL/bin/paleoclaw"
 node -e 'const fs=require("node:fs");const p=process.argv[1];const value=JSON.parse(fs.readFileSync(p,"utf8"));value.trustedDependencies=["paleoclaw"];fs.writeFileSync(p,JSON.stringify(value))' "$BUN_INSTALL/install/global/package.json"
 `,
     );

@@ -300,7 +300,7 @@ describe("package update recovery safety", () => {
     async (outcome) => {
       await withTestDir({ prefix: "paleoclaw-package-recovery-swap-" }, async (base) => {
         const { globalRoot, packageRoot, binDir } = await npmPackage(base);
-        const shimNames = ["paleoclaw", "openclaw.cmd", "openclaw.ps1"];
+        const shimNames = ["paleoclaw", "paleoclaw.cmd", "paleoclaw.ps1"];
         const stateCanary = path.join(base, "candidate-doctor-state");
         await writeShims(binDir, shimNames, "old");
 
@@ -351,8 +351,8 @@ describe("package update recovery safety", () => {
     await withTestDir({ prefix: "paleoclaw-package-recovery-failed-rollback-" }, async (base) => {
       const { globalRoot, packageRoot, binDir } = await npmPackage(base);
       const targetShim = path.join(binDir, "paleoclaw");
-      const targetCmdShim = path.join(binDir, "openclaw.cmd");
-      await writeShims(binDir, ["paleoclaw", "openclaw.cmd"], "old");
+      const targetCmdShim = path.join(binDir, "paleoclaw.cmd");
+      await writeShims(binDir, ["paleoclaw", "paleoclaw.cmd"], "old");
       const prototype = Object.getPrototypeOf(await fsSafeRoot(base)) as Root;
       // oxlint-disable-next-line typescript/unbound-method -- Called below with the intercepted Root receiver to preserve its path and mutation authority.
       const copy = prototype.copyIn;
@@ -365,7 +365,7 @@ describe("package update recovery safety", () => {
       ) {
         if (
           typeof source === "string" &&
-          path.basename(source) === "openclaw.cmd" &&
+          path.basename(source) === "paleoclaw.cmd" &&
           path.basename(path.dirname(source)).startsWith(".openclaw.shim-backup-")
         ) {
           injections += 1;
@@ -379,7 +379,7 @@ describe("package update recovery safety", () => {
           ...createNpmUpdateOptions(globalRoot),
           packageRoot,
           runStep: async ({ name, argv }) => {
-            const { prefix: cwd } = await stagePackage(argv, "2.0.0", ["paleoclaw", "openclaw.cmd"]);
+            const { prefix: cwd } = await stagePackage(argv, "2.0.0", ["paleoclaw", "paleoclaw.cmd"]);
             return packageUpdateStepResult({ name, argv, cwd }, { durationMs: 0 });
           },
           postVerifyStep: async (candidateRoot) => ({
@@ -410,15 +410,15 @@ describe("package update recovery safety", () => {
       });
       expect(result.afterVersion).toBe("1.0.0");
       await expectText(targetShim).toBe("old paleoclaw\n");
-      await expectText(targetCmdShim).toBe("new openclaw.cmd\n");
+      await expectText(targetCmdShim).toBe("new paleoclaw.cmd\n");
       const backupDirs = (await fs.readdir(globalRoot)).filter((entry) =>
         entry.startsWith(".openclaw.shim-backup-"),
       );
       expect(backupDirs).toHaveLength(1);
       expect(result.failedStep?.stderrTail).toContain(
-        path.join(globalRoot, backupDirs[0] ?? "", "openclaw.cmd"),
+        path.join(globalRoot, backupDirs[0] ?? "", "paleoclaw.cmd"),
       );
-      await expectText(globalRoot, backupDirs[0] ?? "", "openclaw.cmd").toBe("old openclaw.cmd\n");
+      await expectText(globalRoot, backupDirs[0] ?? "", "paleoclaw.cmd").toBe("old paleoclaw.cmd\n");
     });
   });
 });
@@ -443,7 +443,7 @@ async function writeSourceCheckout(checkoutRoot: string): Promise<void> {
   })) {
     await fs.writeFile(path.join(checkoutRoot, file), contents);
   }
-  await fs.writeFile(path.join(checkoutRoot, "openclaw.mjs"), "#!/usr/bin/env node\n", {
+  await fs.writeFile(path.join(checkoutRoot, "paleoclaw.mjs"), "#!/usr/bin/env node\n", {
     mode: 0o755,
   });
 }
@@ -472,7 +472,7 @@ describe("runGlobalPackageUpdateSteps", () => {
             process.platform === "win32" ? "junction" : undefined,
           );
           await fs.symlink(
-            "../lib/node_modules/paleoclaw/openclaw.mjs",
+            "../lib/node_modules/paleoclaw/paleoclaw.mjs",
             path.join(layout.binDir, "paleoclaw"),
           );
           return { name, command: argv.join(" "), cwd: stagePrefix, durationMs: 0, exitCode: 0 };
@@ -579,7 +579,7 @@ describe("runGlobalPackageUpdateSteps", () => {
           remove: "dist/control-ui/assets/startup.js",
           error: "ui=incomplete",
         },
-        { name: "missing launcher", remove: "openclaw.mjs", error: "missing" },
+        { name: "missing launcher", remove: "paleoclaw.mjs", error: "missing" },
       ].filter(({ name }) =>
         manager === "npm"
           ? name !== "prepared checkout" && name !== "wrong checkout"
@@ -667,7 +667,7 @@ describe("runGlobalPackageUpdateSteps", () => {
               targetRoot = path.join(stageLayout.globalRoot, "paleoclaw");
               await fs.mkdir(stageLayout.binDir, { recursive: true });
               await fs.symlink(
-                "../lib/node_modules/paleoclaw/openclaw.mjs",
+                "../lib/node_modules/paleoclaw/paleoclaw.mjs",
                 path.join(stageLayout.binDir, "paleoclaw"),
               );
             } else {
@@ -686,7 +686,7 @@ describe("runGlobalPackageUpdateSteps", () => {
               }
               await fs.rm(targetRoot, { recursive: true });
               await fs.symlink(
-                path.relative(stagedBin, path.join(targetRoot, "openclaw.mjs")),
+                path.relative(stagedBin, path.join(targetRoot, "paleoclaw.mjs")),
                 path.join(stagedBin, "paleoclaw"),
               );
             }
@@ -732,11 +732,11 @@ describe("runGlobalPackageUpdateSteps", () => {
             "candidate doctor",
           ]);
           await expect(fs.realpath(path.join(binDir, "paleoclaw"))).resolves.toBe(
-            path.join(checkoutRoot, "openclaw.mjs"),
+            path.join(checkoutRoot, "paleoclaw.mjs"),
           );
           if (manager === "npm") {
             await expect(fs.readlink(path.join(prefix, "bin", "paleoclaw"))).resolves.toBe(
-              "../lib/node_modules/paleoclaw/openclaw.mjs",
+              "../lib/node_modules/paleoclaw/paleoclaw.mjs",
             );
             expect(
               (await fs.readdir(globalRoot)).filter((entry) =>

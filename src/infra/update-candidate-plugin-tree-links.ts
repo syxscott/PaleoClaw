@@ -28,7 +28,7 @@ export function ignoreUnresolvedPluginLink(error: unknown): undefined {
 
 export const isUpdateCandidateHostLauncher = (file: string) =>
   path.basename(path.dirname(file)) === ".bin" &&
-  ["paleoclaw", "openclaw.cmd", "openclaw.ps1"].includes(path.basename(file));
+  ["paleoclaw", "paleoclaw.cmd", "paleoclaw.ps1"].includes(path.basename(file));
 
 export function assertUpdateCandidatePluginEntryStat(
   entry: UpdateCandidatePluginEntry,

@@ -485,7 +485,7 @@ runtimeIt.for([false, true])(
           runRuntimePostBuild,
         }),
       ).toBe(0);
-      expect(spawnCalls).toEqual([[process.execPath, "openclaw.mjs", "--version"]]);
+      expect(spawnCalls).toEqual([[process.execPath, "paleoclaw.mjs", "--version"]]);
       expect(runRuntimePostBuild).not.toHaveBeenCalled();
     }
   },

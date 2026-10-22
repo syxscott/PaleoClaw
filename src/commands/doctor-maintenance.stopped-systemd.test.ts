@@ -36,7 +36,7 @@ it.each(["current-policy", "short-timeout", "removed-system-unit"] as const)(
       const removed = scenario === "removed-system-unit";
       const sourcePath = state.path(".config", "systemd", "user", "paleoclaw-gateway.service");
       const command = {
-        programArguments: [process.execPath, path.join(process.cwd(), "openclaw.mjs"), "gateway"],
+        programArguments: [process.execPath, path.join(process.cwd(), "paleoclaw.mjs"), "gateway"],
         environment: {
           HOME: state.home,
           PATH: "/usr/bin:/bin",

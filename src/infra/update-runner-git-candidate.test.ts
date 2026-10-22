@@ -660,16 +660,16 @@ describe("Git candidate activation", () => {
   registerGitRuntimeStagingTests(fixture);
 
   it("refuses activation when validation commits source outside the selected commit", async () => {
-    await fs.writeFile(path.join(remote, "openclaw.mjs"), "throw new Error('broken launcher');\n");
+    await fs.writeFile(path.join(remote, "paleoclaw.mjs"), "throw new Error('broken launcher');\n");
     const target = await advanceRemote();
     const onStepComplete = vi.fn();
     const result = await update({
       devTarget: { mode: "detached", ref: target },
       progress: { onStepComplete },
       validateCandidate: async (candidateRoot) => {
-        const launcher = path.join(candidateRoot, "openclaw.mjs");
+        const launcher = path.join(candidateRoot, "paleoclaw.mjs");
         await fs.writeFile(launcher, "export {};\n");
-        await git(candidateRoot, "add", "openclaw.mjs");
+        await git(candidateRoot, "add", "paleoclaw.mjs");
         await git(candidateRoot, "commit", "-m", "repair launcher");
         const probe = await runCommandWithTimeout([process.execPath, launcher], {
           timeoutMs: 5000,
@@ -685,7 +685,7 @@ describe("Git candidate activation", () => {
     expect(result).toMatchObject({ status: "error", reason: "preflight-no-good-commit" });
     expect(stopped).toBe(false);
     await expectHead(root, beforeSha);
-    await expectFile(path.join(root, "openclaw.mjs"), "export {};\n");
+    await expectFile(path.join(root, "paleoclaw.mjs"), "export {};\n");
     await expectNoRuntimeStagingPaths();
   });
 

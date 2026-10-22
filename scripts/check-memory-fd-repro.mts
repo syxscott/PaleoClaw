@@ -732,7 +732,7 @@ async function main() {
     completion = runManagedCommand({
       bin: process.execPath,
       args: [
-        path.resolve("openclaw.mjs"),
+        path.resolve("paleoclaw.mjs"),
         "gateway",
         "run",
         "--port",

@@ -27,7 +27,7 @@ services:
     name: openclaw
     runtime: docker
     plan: starter
-    dockerCommand: node openclaw.mjs gateway --allow-unconfigured
+    dockerCommand: node paleoclaw.mjs gateway --allow-unconfigured
     healthCheckPath: /startupz
     envVars:
       - key: OPENCLAW_GATEWAY_PORT
@@ -139,7 +139,7 @@ docker build -t openclaw:local -f Dockerfile .
 docker run --rm -p 8080:8080 \
   -e OPENCLAW_GATEWAY_PORT=8080 \
   -e OPENCLAW_GATEWAY_TOKEN="$(openssl rand -hex 32)" \
-  openclaw:local node openclaw.mjs gateway --allow-unconfigured
+  openclaw:local node paleoclaw.mjs gateway --allow-unconfigured
 ```
 
 The token is required, not optional: in a container the Gateway selects the

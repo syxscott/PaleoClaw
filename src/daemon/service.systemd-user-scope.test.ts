@@ -64,7 +64,7 @@ it("keeps strict legacy-user inspection on one admitted unit until its operation
   await fs.mkdir(path.dirname(unitPath), { recursive: true, mode: 0o755 });
   await fs.mkdir(control, { mode: 0o700 });
   await fs.mkdir(env.OPENCLAW_STATE_DIR, { mode: 0o700 });
-  const programArguments = ["/usr/bin/node", "/opt/paleoclaw/openclaw.mjs", "gateway"];
+  const programArguments = ["/usr/bin/node", "/opt/paleoclaw/paleoclaw.mjs", "gateway"];
   const unitSource = `[Service]\nExecStart=${programArguments.join(" ")}\nEnvironment=HOME=${home}\nEnvironment=OPENCLAW_PROFILE=lisa\n`;
   await fs.writeFile(unitPath, unitSource, { mode: 0o644 });
   vi.spyOn(temporaryState, "resolvePreferredOpenClawTmpDir").mockReturnValue(control);

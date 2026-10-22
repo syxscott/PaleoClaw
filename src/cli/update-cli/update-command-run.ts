@@ -484,7 +484,7 @@ export async function prepareUpdateCommand(opts: UpdateCommandOptions) {
       required: `Node ${SUPPORTED_NODE_VERSION_RANGE}`,
       detected: `Node ${process.versions.node} at ${process.execPath}`,
       installRoot: root,
-      binaryPath: path.join(root, "openclaw.mjs"),
+      binaryPath: path.join(root, "paleoclaw.mjs"),
       remedy: `${formatUnsupportedNodeVersionMessage(process.versions.node)}\n${runtimeFailure}`,
     });
     const error = diagnostics.message;

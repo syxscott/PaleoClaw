@@ -241,7 +241,7 @@ async function readGeneratedLaunchAgentFixture(params: {
   const envFilePath = path.join(envDir, `${label}.env`);
   const wrapperPath = path.join(envDir, `${label}-env-wrapper.sh`);
   const plistPath = path.join(params.root, `${label}.plist`);
-  const gatewayArgs = ["/opt/node", "openclaw.mjs", "gateway", "run"];
+  const gatewayArgs = ["/opt/node", "paleoclaw.mjs", "gateway", "run"];
   fs.mkdirSync(envDir, { recursive: true, mode: 0o700 });
   fs.writeFileSync(
     envFilePath,

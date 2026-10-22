@@ -1,4 +1,4 @@
-import { createRouter } from "@paleoclaw/uirouter";
+import { createRouter } from "@openclaw/uirouter";
 import type {
   PageDefinition,
   RouteLocation,
@@ -6,7 +6,7 @@ import type {
   RouteNotFound,
   Router,
   RouterHistory,
-} from "@paleoclaw/uirouter";
+} from "@openclaw/uirouter";
 import type { JSX } from "@solidjs/web";
 import {
   agentRouteFromPath,

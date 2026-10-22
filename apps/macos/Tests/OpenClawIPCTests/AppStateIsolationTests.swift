@@ -27,7 +27,7 @@ struct AppStateIsolationTests {
                 fromPropertyList: [
                     "ProgramArguments": [
                         runtime.appendingPathComponent("bin/bun").path,
-                        runtime.appendingPathComponent("lib/node_modules/paleoclaw/openclaw.mjs").path,
+                        runtime.appendingPathComponent("lib/node_modules/paleoclaw/paleoclaw.mjs").path,
                         "gateway", "--port", String(defaultProfile.defaultGatewayPort),
                     ],
                 ],

@@ -46,7 +46,7 @@ afterEach(() => {
 });
 
 const relayEntry = path.join(mocks.packageRoot, "dist", "native-hook-relay", "entry.js");
-const generalCli = path.join(mocks.packageRoot, "openclaw.mjs");
+const generalCli = path.join(mocks.packageRoot, "paleoclaw.mjs");
 const override = path.resolve("/custom/paleoclaw-entry.mjs");
 it.each([
   { name: "standalone without a loose entry", standalone: true },

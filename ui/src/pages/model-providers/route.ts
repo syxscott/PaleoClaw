@@ -1,4 +1,4 @@
-import type { RouteLoaderOptions } from "@paleoclaw/uirouter";
+import type { RouteLoaderOptions } from "@openclaw/uirouter";
 import { defineSolidPage } from "../../app-route-types.ts";
 import type { ApplicationContext } from "../../app/context.ts";
 import type { ModelProvidersData } from "./load.ts";

@@ -36,7 +36,7 @@ function interruptionScript(
     const verdict = { kind: "owned", root, fingerprint: "fixture", refreshDefinition: false };
     const stopped = { stopped: true, inspected: true, runtimeInspected: true, running: false,
       offline: true, serviceEnv: env, serviceUpdateVerdict: verdict };
-    const command = { programArguments: [process.execPath, root + "/openclaw.mjs", "gateway"] };
+    const command = { programArguments: [process.execPath, root + "/paleoclaw.mjs", "gateway"] };
     const fixture = globalThis.doctorFixture = {
       record, env, root, verdict,
       async stop(params) {

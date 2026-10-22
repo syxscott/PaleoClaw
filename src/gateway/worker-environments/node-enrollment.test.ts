@@ -122,7 +122,7 @@ describe("worker node enrollment", () => {
         path.join(packageRoot, "package.json"),
         JSON.stringify({ name: "paleoclaw", version: "2026.8.1", type: "module" }),
       ),
-      fs.writeFile(path.join(packageRoot, "openclaw.mjs"), 'import "./dist/entry.js";'),
+      fs.writeFile(path.join(packageRoot, "paleoclaw.mjs"), 'import "./dist/entry.js";'),
       fs.writeFile(path.join(packageRoot, "node-version.mjs"), "export const supported = true;"),
       fs.writeFile(path.join(packageRoot, "node-sqlite.mjs"), "export const probe = true;"),
       fs.writeFile(

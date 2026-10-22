@@ -471,7 +471,7 @@ it("captures only the actual baseline updater's released integrity envelope and 
     version: "2026.9.4",
     type: "module",
   });
-  const entry = path.join(f.root, "openclaw.mjs");
+  const entry = path.join(f.root, "paleoclaw.mjs");
   fs.writeFileSync(
     entry,
     `import fs from "node:fs";
@@ -738,7 +738,7 @@ it.each([
     version: "2026.9.5",
     type: "module",
   });
-  const entry = path.join(f.root, "openclaw.mjs");
+  const entry = path.join(f.root, "paleoclaw.mjs");
   const uid = process.getuid?.();
   const doctorRoot = path.join(f.root, uid === undefined ? "paleoclaw" : `paleoclaw-${uid}`);
   fs.mkdirSync(doctorRoot, { mode: 0o700 });

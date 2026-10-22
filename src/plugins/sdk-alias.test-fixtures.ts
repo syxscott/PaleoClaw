@@ -26,7 +26,7 @@ export function createPluginSdkAliasFixtureFactory(makeTempDir: () => string) {
     };
     if (trustedRootIndicatorMode === "bin+marker") {
       packageJson.bin = {
-        paleoclaw: "openclaw.mjs",
+        paleoclaw: "paleoclaw.mjs",
       };
     }
     if (params?.packageExports || trustedRootIndicatorMode === "cli-entry-only") {
@@ -46,7 +46,7 @@ export function createPluginSdkAliasFixtureFactory(makeTempDir: () => string) {
       "utf-8",
     );
     if (trustedRootIndicatorMode === "bin+marker") {
-      fs.writeFileSync(path.join(root, "openclaw.mjs"), "export {};\n", "utf-8");
+      fs.writeFileSync(path.join(root, "paleoclaw.mjs"), "export {};\n", "utf-8");
     }
     mkdirSafeDir(path.join(root, "scripts", "lib"));
     fs.writeFileSync(

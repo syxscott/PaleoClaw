@@ -247,7 +247,7 @@ function resolveOpenClawInvocation(
   // QA Suite builds once before this producer starts. Keep every client command on that
   // immutable dist tree so a rebuild cannot remove chunks beneath the installed gateway.
   return {
-    args: [path.join(options.repoRoot, "openclaw.mjs"), "--profile", profile, ...args],
+    args: [path.join(options.repoRoot, "paleoclaw.mjs"), "--profile", profile, ...args],
     command: process.execPath,
   };
 }

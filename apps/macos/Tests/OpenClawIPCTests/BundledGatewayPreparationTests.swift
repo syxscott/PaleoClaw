@@ -29,8 +29,8 @@ struct BundledGatewayPreparationTests {
             self.nodeRoot = state.appendingPathComponent("tools/node-\(id)")
             let node = self.nodeRoot.appendingPathComponent("bin/node")
             let entry = inferredLegacy
-                ? self.nodeRoot.appendingPathComponent("lib/node_modules/paleoclaw/openclaw.mjs")
-                : self.root.appendingPathComponent("openclaw.mjs")
+                ? self.nodeRoot.appendingPathComponent("lib/node_modules/paleoclaw/paleoclaw.mjs")
+                : self.root.appendingPathComponent("paleoclaw.mjs")
             self.cli = .init(prefix: [node.path, entry.path], sqliteLibrary: nil)
             self.plist = nodeService
                 ? home.appendingPathComponent("Library/LaunchAgents/\(nodeLaunchdLabel).plist")
@@ -1338,7 +1338,7 @@ struct BundledGatewayPreparationTests {
         try Data("#!/bin/sh\nexit 0\n".utf8).write(to: runtime.bun)
         try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: runtime.bun.path)
         try Data().write(to: runtime.sqliteLibrary)
-        try Data().write(to: runtime.packageRoot.appendingPathComponent("openclaw.mjs"))
+        try Data().write(to: runtime.packageRoot.appendingPathComponent("paleoclaw.mjs"))
         try JSONSerialization.data(withJSONObject: [
             "version": "2026.9.1", "commit": "fixture", "builtAt": "fixture", "buildId": runtime.root.lastPathComponent,
         ]).write(to: runtime.packageRoot.appendingPathComponent("dist/build-info.json"))

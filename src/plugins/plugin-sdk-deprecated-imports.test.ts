@@ -64,7 +64,7 @@ it.each([false, true])(
     write(host, "package.json", {
       name: "paleoclaw",
       type: "module",
-      bin: { paleoclaw: "./openclaw.mjs" },
+      bin: { paleoclaw: "./paleoclaw.mjs" },
       exports: {
         "./plugin-sdk/agent-runtime": "./dist/plugin-sdk/agent-runtime.js",
         "./plugin-sdk/command-auth-native": "./dist/plugin-sdk/command-auth-native.js",

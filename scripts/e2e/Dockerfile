@@ -138,11 +138,11 @@ COPY --chown=appuser:appuser scripts/docker/verify-fs-safe-native.mjs /tmp/verif
 # a pending package lifecycle. Create the package self-link afterward so
 # postinstall's prune walks cannot cycle through it.
 RUN tar -xzf /tmp/paleoclaw-current.tgz -C /app --strip-components=1 \
- && chmod +x /app/openclaw.mjs \
+ && chmod +x /app/paleoclaw.mjs \
  && node /app/scripts/postinstall-bundled-plugins.mjs \
  && ln -sfn /app /app/node_modules/paleoclaw \
  && mkdir -p "$HOME/.local/bin" \
- && ln -sf /app/openclaw.mjs "$HOME/.local/bin/paleoclaw" \
+ && ln -sf /app/paleoclaw.mjs "$HOME/.local/bin/paleoclaw" \
  && OPENCLAW_FS_SAFE_NATIVE_CONTRACT="$OPENCLAW_FS_SAFE_NATIVE_CONTRACT" \
       node /tmp/verify-fs-safe-native.mjs --package-root /app --mode require \
  && rm -f /tmp/paleoclaw-current.tgz

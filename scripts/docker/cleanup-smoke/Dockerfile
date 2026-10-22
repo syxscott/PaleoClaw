@@ -14,7 +14,7 @@ RUN --mount=type=cache,id=paleoclaw-cleanup-smoke-apt-cache,target=/var/cache/ap
 
 WORKDIR /repo
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
-COPY openclaw.mjs ./
+COPY paleoclaw.mjs ./
 COPY node-version.mjs ./
 COPY node-sqlite.mjs ./
 COPY node-runtime-update.mjs ./

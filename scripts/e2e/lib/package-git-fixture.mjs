@@ -59,7 +59,7 @@ function prepare(root) {
   delete packageJson.devDependencies;
   packageJson.scripts = {
     ...packageJson.scripts,
-    paleoclaw: "node openclaw.mjs",
+    paleoclaw: "node paleoclaw.mjs",
   };
   delete packageJson.scripts.postinstall;
   const aiRuntimeSource = path.join(root, "node_modules", "@paleoclaw", "ai");

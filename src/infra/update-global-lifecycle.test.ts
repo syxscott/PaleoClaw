@@ -92,21 +92,21 @@ describe("custom npm global installation ownership", () => {
         const pkgRoot = path.join(layout.globalRoot, "paleoclaw");
         await fs.mkdir(pkgRoot, { recursive: true });
         await fs.mkdir(layout.binDir, { recursive: true });
-        await fs.writeFile(path.join(pkgRoot, "openclaw.mjs"), "#!/usr/bin/env node\n");
+        await fs.writeFile(path.join(pkgRoot, "paleoclaw.mjs"), "#!/usr/bin/env node\n");
         if (platform === "win32") {
           await fs.writeFile(
-            path.join(layout.binDir, "openclaw.cmd"),
+            path.join(layout.binDir, "paleoclaw.cmd"),
             [
               "SETLOCAL",
               "SET dp0=%~dp0",
               'SET "_prog=node"',
-              'endLocal & goto #_undefined_# 2>NUL || title %COMSPEC% & "%_prog%"  "%dp0%\\node_modules\\paleoclaw\\openclaw.mjs" %*',
+              'endLocal & goto #_undefined_# 2>NUL || title %COMSPEC% & "%_prog%"  "%dp0%\\node_modules\\paleoclaw\\paleoclaw.mjs" %*',
               "",
             ].join("\r\n"),
           );
         } else {
           await fs.symlink(
-            "../lib/node_modules/paleoclaw/openclaw.mjs",
+            "../lib/node_modules/paleoclaw/paleoclaw.mjs",
             path.join(layout.binDir, "paleoclaw"),
           );
         }

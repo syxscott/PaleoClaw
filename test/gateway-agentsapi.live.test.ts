@@ -34,7 +34,7 @@ it.skipIf(!isLiveTestEnabled() || process.env.OPENCLAW_LIVE_AGENTS_API !== "1")(
     const profile = "agentsapi-live-" + randomUUID();
     const instance = await createOpenClawTestInstance({
       name: profile,
-      entrypoint: ["openclaw.mjs", "--profile", profile],
+      entrypoint: ["paleoclaw.mjs", "--profile", profile],
       state: { layout: "split" },
       env: {
         OPENAI_API_KEY: apiKey,

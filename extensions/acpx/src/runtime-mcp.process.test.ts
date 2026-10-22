@@ -70,7 +70,7 @@ it.each([process.platform === "win32" ? "bridge" : "env-bridge", "catalog", "pal
     await withOpenClawTestState({ label: "acpx-mcp-process" }, async (state) => {
       const directory = path.join(state.root, "peer");
       await fs.mkdir(directory);
-      const wrapper = path.join(state.root, "openclaw.mjs");
+      const wrapper = path.join(state.root, "paleoclaw.mjs");
       await fs.writeFile(
         wrapper,
         `process.argv.splice(2, 1); await import(${JSON.stringify(new URL("../../../test/fixtures/acp/owner-agent.mjs", import.meta.url).href)});`,

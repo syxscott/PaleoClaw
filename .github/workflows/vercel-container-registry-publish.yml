@@ -203,7 +203,7 @@ jobs:
                 --image "${repository}:${VERSION}" \
                 --workdir /app \
                 --env "EXPECTED_VERSION=${VERSION}" \
-                -- /bin/sh -lc 'test "$(node -p "require(\"./package.json\").version")" = "${EXPECTED_VERSION}" && node openclaw.mjs --version' \
+                -- /bin/sh -lc 'test "$(node -p "require(\"./package.json\").version")" = "${EXPECTED_VERSION}" && node paleoclaw.mjs --version' \
                 2>&1
             )"
             status=$?

@@ -23,12 +23,12 @@ type CronExecHostPolicyUse = {
   accepts: (file: ExecApprovalsFile) => boolean;
 };
 const cronPolicyUses = resolveGlobalSingleton(
-  Symbol.for("openclaw.execApprovalsCronPolicyUses"),
+  Symbol.for("paleoclaw.execApprovalsCronPolicyUses"),
   () => new Map<string, Set<CronExecHostPolicyUse>>(),
 );
 
 const pendingPolicyPublications = resolveGlobalSingleton(
-  Symbol.for("openclaw.execApprovalsPendingPolicyPublications"),
+  Symbol.for("paleoclaw.execApprovalsPendingPolicyPublications"),
   () => new Map<string, Set<ExecApprovalsFile>>(),
 );
 

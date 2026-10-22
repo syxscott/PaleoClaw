@@ -751,7 +751,7 @@ describe("runtime recovery discovery", () => {
         mocks.admissible.add(candidate);
         process.argv = [
           process.execPath,
-          "/fixture/openclaw.mjs",
+          "/fixture/paleoclaw.mjs",
           "--profile",
           "fixture",
           "doctor",
@@ -839,7 +839,7 @@ describe("runtime recovery discovery", () => {
     await withRecoveryHome(async (home) => {
       const candidate = await writeFixture(path.join(home, "bin/node"));
       mocks.admissible.add(candidate);
-      process.argv = [process.execPath, "/fixture/openclaw.mjs", ...args];
+      process.argv = [process.execPath, "/fixture/paleoclaw.mjs", ...args];
 
       expect(await recoverNodeRuntime({ homeDir: home })).toBe(false);
       expect(mocks.probe).not.toHaveBeenCalled();

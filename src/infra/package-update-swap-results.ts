@@ -66,7 +66,7 @@ export function createPackageSwapResults(
       }
       for (const { destination } of launchers) {
         try {
-          await verifyRuntimeLauncher(destination, "openclaw.mjs");
+          await verifyRuntimeLauncher(destination, "paleoclaw.mjs");
         } catch (error) {
           warnings.push(
             `Published launcher ${destination} could not be verified: ${formatErrorMessage(error)}. Reinstall the current ${params.packageName} version with ${params.installTarget.manager} to recreate the launcher.`,

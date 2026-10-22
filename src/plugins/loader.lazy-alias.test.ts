@@ -55,7 +55,7 @@ function fixture() {
     JSON.stringify({
       name: "paleoclaw",
       type: "module",
-      bin: { paleoclaw: "./openclaw.mjs" },
+      bin: { paleoclaw: "./paleoclaw.mjs" },
       exports: {
         "./plugin-sdk/used": "./dist/plugin-sdk/used.js",
         "./plugin-sdk/unused": "./dist/plugin-sdk/unused.js",

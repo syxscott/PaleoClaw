@@ -106,7 +106,7 @@ afterEach(() => vi.restoreAllMocks());
 
 async function packageEntry(root: string, name = "paleoclaw") {
   await fs.mkdir(root);
-  const entry = path.join(root, "openclaw.mjs");
+  const entry = path.join(root, "paleoclaw.mjs");
   await fs.writeFile(entry, "export {};\n");
   await fs.writeFile(path.join(root, "package.json"), JSON.stringify({ name }));
   return entry;

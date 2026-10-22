@@ -638,7 +638,7 @@ describe("update-cli", () => {
     );
     serviceStop.mockImplementationOnce(async () => {
       fixture.primeServiceCommand(
-        [nodeExecutable, "/another-install/openclaw.mjs", "gateway", "run"],
+        [nodeExecutable, "/another-install/paleoclaw.mjs", "gateway", "run"],
         undefined,
         resolveGatewayTaskScriptPath(process.env),
       );

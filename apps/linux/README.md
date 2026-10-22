@@ -128,7 +128,7 @@ Release jobs pass `RELEASE_TAG` and its verified `RELEASE_SHA`, so shallow check
 without tag refs still omit the source package. Staging rejects a release identity
 that disagrees with the package version or source commit. Local builds without an
 explicit release identity continue to use exact tag refs.
-The managed launcher is `%USERPROFILE%\.openclaw\bin\openclaw.cmd`; app actions
+The managed launcher is `%USERPROFILE%\.openclaw\bin\paleoclaw.cmd`; app actions
 execute Bun directly, without interpreting arguments in a command shell.
 `OPENCLAW_DESKTOP_CLI` can select an existing development CLI.
 

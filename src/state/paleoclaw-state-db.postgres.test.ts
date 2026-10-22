@@ -867,7 +867,7 @@ describe.skipIf(!connection)("PostgreSQL local runtime pins", () => {
 
       const scope = { kind: "gateway" as const, env };
       const pin = { runtime: "node" as const, path: "/runtime tools/node" };
-      const command = { programArguments: [pin.path, "/app/openclaw.mjs", "gateway"] };
+      const command = { programArguments: [pin.path, "/app/paleoclaw.mjs", "gateway"] };
       expect(readDaemonRuntimePinMigrationPending(env)).toBe(false);
       expect(readDaemonRuntimePin(scope, command).stored).toBe(false);
       expect(

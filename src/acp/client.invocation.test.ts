@@ -82,7 +82,7 @@ describe("ACP client self-invocation", () => {
   });
 
   it("keeps the loose entry before the ACP arguments", async () => {
-    const entry = path.join(tempDirs.make("paleoclaw-acp-loose-"), "openclaw.mjs");
+    const entry = path.join(tempDirs.make("paleoclaw-acp-loose-"), "paleoclaw.mjs");
     await writeFile(entry, "export {};\n");
     process.argv = [process.execPath, entry];
 
@@ -134,7 +134,7 @@ describe("ACP client self-invocation", () => {
 
   it("rejects unresolved Windows wrappers before spawning a shell", async () => {
     const dir = tempDirs.make("paleoclaw-acp-client-test-");
-    const shimPath = path.join(dir, "openclaw.cmd");
+    const shimPath = path.join(dir, "paleoclaw.cmd");
     await writeFile(shimPath, "@ECHO off\r\necho wrapper\r\n", "utf8");
     vi.stubGlobal(
       "process",

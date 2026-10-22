@@ -83,15 +83,15 @@ describe("Gateway install PATH preservation", () => {
         fs.mkdirSync(path.join(packageRoot, "dist"), { recursive: true });
         fs.mkdirSync(path.join(packageRoot, "bin"));
         fs.writeFileSync(path.join(packageRoot, "package.json"), '{"name":"paleoclaw"}');
-        fs.writeFileSync(path.join(packageRoot, "openclaw.mjs"), "");
+        fs.writeFileSync(path.join(packageRoot, "paleoclaw.mjs"), "");
         fs.writeFileSync(path.join(packageRoot, "dist", "index.js"), "");
         fs.symlinkSync(
-          path.join(packageRoot, "openclaw.mjs"),
+          path.join(packageRoot, "paleoclaw.mjs"),
           path.join(packageRoot, "bin", "paleoclaw"),
         );
       }
       const executable = path.join(root, "runtime", "node");
-      const entrypoint = path.join(root, "retained", "openclaw.mjs");
+      const entrypoint = path.join(root, "retained", "paleoclaw.mjs");
       const originalArgv = process.argv;
       process.argv = [process.execPath, path.join(root, "installer", "src", "entry.ts")];
       try {

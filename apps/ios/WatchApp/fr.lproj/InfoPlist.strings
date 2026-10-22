@@ -1,4 +1,1 @@
-/* paleoclaw source: "paleoclaw connects this Apple Watch directly to your Gateway on trusted local networks." */
-"NSLocalNetworkUsageDescription" = "paleoclaw connecte cette Apple Watch directement à votre Gateway sur des réseaux locaux de confiance.";
-/* paleoclaw source: "paleoclaw uses the microphone for voice conversations you start on Apple Watch." */
-"NSMicrophoneUsageDescription" = "paleoclaw utilise le microphone pour les conversations vocales que vous lancez sur l’Apple Watch.";
+

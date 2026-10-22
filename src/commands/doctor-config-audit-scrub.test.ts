@@ -29,7 +29,7 @@ describe("detectConfigAuditScrubIssue", () => {
     await fs.mkdir(path.dirname(auditPath), { recursive: true, mode: 0o700 });
     const record = {
       ts: "2026-05-02T00:03:48.471Z",
-      argv: ["node", "openclaw.mjs", "config", "set", "x", "xoxb-bad-token-1234567890abcdef"],
+      argv: ["node", "paleoclaw.mjs", "config", "set", "x", "xoxb-bad-token-1234567890abcdef"],
       execArgv: [],
     };
     await fs.writeFile(auditPath, `${JSON.stringify(record)}\n`, { encoding: "utf8", mode: 0o600 });

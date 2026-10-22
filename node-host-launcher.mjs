@@ -106,7 +106,7 @@ function resolveManagedRuntime(runtimeRoot, runtimeDirectory, expectedVersion) {
   if (expectedVersion && manifest.version !== expectedVersion) {
     throw new Error("The selected node runtime version changed before activation.");
   }
-  for (const filename of ["openclaw.mjs", "node-host-launcher.mjs"]) {
+  for (const filename of ["paleoclaw.mjs", "node-host-launcher.mjs"]) {
     if (!existsSync(path.join(packageRoot, filename))) {
       throw new Error(`The selected node runtime is missing ${filename}.`);
     }
@@ -121,7 +121,7 @@ function resolveManagedRuntime(runtimeRoot, runtimeDirectory, expectedVersion) {
     runtimeRoot: resolved,
     packageRoot,
     manifest,
-    entryPath: path.join(packageRoot, "openclaw.mjs"),
+    entryPath: path.join(packageRoot, "paleoclaw.mjs"),
   };
 }
 

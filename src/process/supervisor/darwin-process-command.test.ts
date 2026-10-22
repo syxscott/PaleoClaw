@@ -30,7 +30,7 @@ beforeEach(() => {
 });
 
 it.each([
-  { argv: ["node", "/app with spaces/openclaw.mjs", "", "doctor"], serviceMarker: undefined },
+  { argv: ["node", "/app with spaces/paleoclaw.mjs", "", "doctor"], serviceMarker: undefined },
   { argv: ["paleoclaw-gateway", "", "", ""], serviceMarker: "" },
   { argv: ["node", "dist/index.js"], serviceMarker: "paleoclaw" },
 ])("preserves exact argv $argv and selects only the service marker", ({ argv, serviceMarker }) => {

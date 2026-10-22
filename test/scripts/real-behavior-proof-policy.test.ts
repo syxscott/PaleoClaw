@@ -283,7 +283,7 @@ describe("real-behavior-proof-policy", () => {
       "- Real environment tested: Local macOS source checkout, Node v24.8.0, paleoclaw 2026.5.21 (c8a35c4), local `paleoclaw` shim pointed at the freshly built checkout. No channel credentials or provider API keys were used.",
       "- Exact steps or command run after this patch:",
       "  1. Built the local checkout with `node --import tsx scripts/build-all.mts`.",
-      "  2. Updated `/Users/example/.local/bin/paleoclaw` to run this checkout's `openclaw.mjs` and verified `/Users/example/.local/bin/paleoclaw --version`.",
+      "  2. Updated `/Users/example/.local/bin/paleoclaw` to run this checkout's `paleoclaw.mjs` and verified `/Users/example/.local/bin/paleoclaw --version`.",
       "  3. Ran a redacted behavior probe for the reported cron validation decision with `provider=google`, `model=gemini-3-flash-preview`, `configuredThinkingDefault=low`, and `catalogReasoning=false`.",
       '- Evidence after fix: `.artifacts/behavior-85156/after-installed.json` from the local checkout recorded `lowSupported: true` and `fallbackFromLow: "low"`.',
       "- Observed result after fix:",

@@ -51,7 +51,7 @@ async function createGitRollbackFixture(base: string) {
     path.join(remote, "package.json"),
     JSON.stringify({ name: "paleoclaw", version: VERSION, packageManager: "pnpm@12.0.0" }),
   );
-  await fs.writeFile(path.join(remote, "openclaw.mjs"), "export {};\n");
+  await fs.writeFile(path.join(remote, "paleoclaw.mjs"), "export {};\n");
   await fs.writeFile(path.join(remote, ".gitignore"), "dist/\nnode_modules/\n.artifacts/\n");
   await runFixtureGit(remote, "add", ".");
   await runFixtureGit(remote, "commit", "-m", "fixture");

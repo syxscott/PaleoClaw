@@ -45,8 +45,8 @@ import { defaultRuntime, ExitError } from "./runtime.js";
 const inheritedRuntimeEnv = { ...process.env };
 
 const ENTRY_WRAPPER_PAIRS = [
-  { wrapperBasename: "openclaw.mjs", entryBasename: "entry.js" },
-  { wrapperBasename: "openclaw.mjs", entryBasename: "entry.mjs" },
+  { wrapperBasename: "paleoclaw.mjs", entryBasename: "entry.js" },
+  { wrapperBasename: "paleoclaw.mjs", entryBasename: "entry.mjs" },
   { wrapperBasename: "openclaw.js", entryBasename: "entry.js" },
 ] as const;
 

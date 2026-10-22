@@ -22,7 +22,7 @@ afterEach(() => {
 function entrypoint(folder: string, packaged = false) {
   const dir = path.join(root, folder);
   fs.mkdirSync(dir, { recursive: true });
-  const file = path.join(dir, "openclaw.mjs");
+  const file = path.join(dir, "paleoclaw.mjs");
   fs.writeFileSync(file, "");
   if (packaged) {
     fs.writeFileSync(path.join(dir, "package.json"), '{"name":"paleoclaw"}');

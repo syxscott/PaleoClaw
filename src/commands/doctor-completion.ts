@@ -70,7 +70,7 @@ async function generateCompletionCache(
     return false;
   }
 
-  const binPath = path.join(root, "openclaw.mjs");
+  const binPath = path.join(root, "paleoclaw.mjs");
   const args = ["completion", "--write-state"];
   if (options.shell) {
     args.push("--shell", options.shell);

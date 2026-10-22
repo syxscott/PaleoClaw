@@ -836,7 +836,7 @@ describe("finalizeSetupWizard", () => {
     });
     const resolveArguments = vi
       .spyOn(programArgs, "resolveGatewayProgramArguments")
-      .mockResolvedValue({ programArguments: [process.execPath, "/app/openclaw.mjs", "gateway"] });
+      .mockResolvedValue({ programArguments: [process.execPath, "/app/paleoclaw.mjs", "gateway"] });
     buildGatewayInstallPlan.mockImplementationOnce(realPlan);
     const prompter = buildWizardPrompter();
     try {
@@ -1329,7 +1329,7 @@ describe("finalizeSetupWizard", () => {
       runExec.mockResolvedValue(createRuntimeProbeResult("1.4.3"));
       gatewayServiceIsLoaded.mockResolvedValue(true);
       gatewayServiceReadCommand.mockResolvedValue({
-        programArguments: [recordedPath, "/app/openclaw.mjs", "gateway"],
+        programArguments: [recordedPath, "/app/paleoclaw.mjs", "gateway"],
       });
       const prompter = buildWizardPrompter();
       const selectRuntime = vi

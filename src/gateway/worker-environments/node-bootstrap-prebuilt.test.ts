@@ -160,7 +160,7 @@ it.each([
   await fs.mkdir(installed);
   await tar.extract({ file: artifact.tarballPath, cwd: installed });
   const { stdout } = await promisify(execFile)(process.execPath, [
-    path.join(installed, "package/openclaw.mjs"),
+    path.join(installed, "package/paleoclaw.mjs"),
   ]);
   expect(stdout.trim()).toBe("local-ai:changed-runtime");
   expect(await fs.readFile(archive)).toEqual(bytes);

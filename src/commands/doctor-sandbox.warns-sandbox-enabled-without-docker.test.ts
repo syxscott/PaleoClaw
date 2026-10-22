@@ -337,7 +337,7 @@ describe("sandbox health", () => {
             path.join(installed, "package.json"),
             JSON.stringify({ name: "paleoclaw" }),
           );
-          argv1 = path.join(installed, "openclaw.mjs");
+          argv1 = path.join(installed, "paleoclaw.mjs");
           fs.writeFileSync(argv1, "");
           cwd = expectedRoot = mkRepo("ocsbx-source-");
           expect(resolveOpenClawPackageRootSync({ argv1, cwd })).toBe(installed);

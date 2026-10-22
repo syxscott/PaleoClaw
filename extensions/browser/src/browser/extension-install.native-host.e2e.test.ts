@@ -26,7 +26,7 @@ const writePrivate = (file: string, content: string, mode = 0o600) =>
 const writeJson = (file: string, value: unknown) =>
   writePrivate(file, `${JSON.stringify(value)}\n`);
 const extensionArgs = (...args: string[]) => [
-  path.resolve("openclaw.mjs"),
+  path.resolve("paleoclaw.mjs"),
   "browser",
   "extension",
   ...args,

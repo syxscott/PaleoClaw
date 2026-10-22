@@ -1895,18 +1895,18 @@ jobs:
 
       - name: Smoke test CLI launcher help
         if: ${{ !cancelled() && (steps.dist_build.outcome == 'success' || steps.dist_build_cache.outputs.cache-hit == 'true') }}
-        run: node openclaw.mjs --help
+        run: node paleoclaw.mjs --help
 
       - name: Smoke test CLI launcher status json
         if: ${{ !cancelled() && (steps.dist_build.outcome == 'success' || steps.dist_build_cache.outputs.cache-hit == 'true') }}
-        run: node openclaw.mjs status --json --timeout 1
+        run: node paleoclaw.mjs status --json --timeout 1
 
       - name: Smoke test built CLI with Bun
         if: ${{ !cancelled() && (steps.dist_build.outcome == 'success' || steps.dist_build_cache.outputs.cache-hit == 'true') && needs.preflight.outputs.frozen_target != 'true' }}
         run: |
           source .ci-harness/scripts/ci-collect-checks.sh
-          run_check bun-help bun openclaw.mjs --help
-          run_check bun-status bun openclaw.mjs status --json --timeout 1
+          run_check bun-help bun paleoclaw.mjs --help
+          run_check bun-status bun paleoclaw.mjs status --json --timeout 1
           finish_checks
 
       - name: Verify built browser native host
@@ -3244,7 +3244,7 @@ jobs:
             for scenario_id in "${scenario_ids[@]}"; do
               scenario_args+=(--scenario "$scenario_id")
             done
-            timeout --signal=TERM --kill-after=15s 10m node openclaw.mjs qa run \
+            timeout --signal=TERM --kill-after=15s 10m node paleoclaw.mjs qa run \
               --repo-root . \
               --qa-profile smoke-ci \
               --concurrency 10 \
@@ -3379,8 +3379,8 @@ jobs:
         run: |
           pnpm build
           pnpm ui:build
-          node openclaw.mjs --help
-          node openclaw.mjs status --json --timeout 1
+          node paleoclaw.mjs --help
+          node paleoclaw.mjs status --json --timeout 1
           pnpm test:build:singleton
           pnpm test src/config/sessions/session-accessor.test.ts src/config/sessions/store-writer.test.ts src/config/sessions/sessions.test.ts
 

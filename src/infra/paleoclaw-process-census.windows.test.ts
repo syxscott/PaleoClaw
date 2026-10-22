@@ -49,8 +49,8 @@ afterEach(() => vi.restoreAllMocks());
 it.each([
   ...[
     "paleoclaw update repair --run-id=update-run-123",
-    String.raw`node --title "" "C:\app\openclaw.mjs" update repair --run-id=update-run-123`,
-    String.raw`"C:\Program Files\node.exe" --title "C:\Team Notes\\" "C:\app\openclaw.mjs" update repair --run-id=update-run-123`,
+    String.raw`node --title "" "C:\app\paleoclaw.mjs" update repair --run-id=update-run-123`,
+    String.raw`"C:\Program Files\node.exe" --title "C:\Team Notes\\" "C:\app\paleoclaw.mjs" update repair --run-id=update-run-123`,
   ].map((commandLine) => ({ parentStart: 100, commandLine })),
   { parentStart: 200, commandLine: "paleoclaw update repair --run-id=update-run-123" },
 ])(

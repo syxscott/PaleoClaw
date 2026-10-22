@@ -644,7 +644,9 @@ async fn node_protocol_fallback_uses_fresh_legacy_connect_material_and_recovers_
                         .device_family("Mac")
                         .command("example.status")
                         .activate()
-                        .identity(paleoclaw_node_host::NodeIdentity::from_secret_bytes([7; 32])),
+                        .identity(paleoclaw_node_host::NodeIdentity::from_secret_bytes(
+                            [7; 32],
+                        )),
                 )
             },
         )

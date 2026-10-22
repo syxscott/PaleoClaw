@@ -32,7 +32,7 @@ function terminalOpenResult(sessionId: string) {
 describe("terminal panel readiness", () => {
   beforeAll(async () => {
     // Load the real responder before fake time drives readiness deadlines.
-    await import("@paleoclaw/libterminal/browser");
+    await import("@openclaw/libterminal/browser");
   });
 
   beforeEach(async () => {

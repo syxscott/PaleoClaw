@@ -71,17 +71,17 @@ function mockLauncherFiles(files: Map<string, string | Buffer>, fallback?: strin
 }
 const backupArguments = [
   "C:\\Node\\node.exe",
-  "C:\\OtherInstall\\openclaw.mjs",
+  "C:\\OtherInstall\\paleoclaw.mjs",
   "gateway",
   "--port",
   "19789",
 ];
-const backupCommand = '"C:\\Node\\node.exe" "C:\\OtherInstall\\openclaw.mjs" gateway --port 19789';
+const backupCommand = '"C:\\Node\\node.exe" "C:\\OtherInstall\\paleoclaw.mjs" gateway --port 19789';
 
 describe("readScheduledTaskCommand", () => {
   it("reads a direct registered executable without inventing a launcher", async () => {
     const action = {
-      path: "C:\\paleoclaw\\openclaw.exe",
+      path: "C:\\paleoclaw\\paleoclaw.exe",
       arguments: 'gateway run --label "literal ^! label"',
     };
     const taskName = "\\Custom\\Gateway";
@@ -105,8 +105,8 @@ describe("readScheduledTaskCommand", () => {
       const action = taskAction(
         "C:\\Node\\node.exe",
         kind === "environment expansion"
-          ? '"%OPENCLAW_HOME%\\openclaw.mjs" gateway'
-          : '"C:\\paleoclaw\\openclaw.mjs gateway',
+          ? '"%OPENCLAW_HOME%\\paleoclaw.mjs" gateway'
+          : '"C:\\paleoclaw\\paleoclaw.mjs gateway',
       );
       mockRegisteredTask([action], "\\Custom\\Gateway");
       await expect(
@@ -177,7 +177,7 @@ describe("readScheduledTaskCommand", () => {
       }
       const readFile = mockLauncherFiles(
         files,
-        '@echo off\r\n"C:\\Node\\node.exe" "C:\\DefaultInstall\\openclaw.mjs" gateway --port 18789\r\n',
+        '@echo off\r\n"C:\\Node\\node.exe" "C:\\DefaultInstall\\paleoclaw.mjs" gateway --port 18789\r\n',
       );
       const captured: string[] = [];
       await expect(
@@ -225,7 +225,7 @@ describe("readScheduledTaskCommand", () => {
       const script = [
         "@echo off",
         ...(scriptCwd ? [`cd /d "${scriptCwd}"`] : []),
-        '"C:\\Node\\node.exe" "C:\\paleoclaw\\openclaw.mjs" gateway --port 18789 < NUL',
+        '"C:\\Node\\node.exe" "C:\\paleoclaw\\paleoclaw.mjs" gateway --port 18789 < NUL',
       ].join("\r\n");
       const files = new Map([[scriptPath, script]]);
       mockLauncherFiles(files);

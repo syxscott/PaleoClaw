@@ -91,7 +91,7 @@ process.exit(failed ? 17 : 0);
   writeFileSync(join(binDir, "paleoclaw"), `#!/usr/bin/env node\nrequire("./paleoclaw-log.js");\n`);
   chmodSync(join(binDir, "paleoclaw"), 0o755);
   writeFileSync(
-    join(binDir, "openclaw.cmd"),
+    join(binDir, "paleoclaw.cmd"),
     `@echo off\r\n"${process.execPath}" "%~dp0openclaw-log.js" %*\r\n`,
   );
   const args = [
@@ -245,7 +245,7 @@ esac
         "/d",
         "/s",
         "/c",
-        'openclaw.cmd config set models.providers.openai "{""apiKey"":""sk test""}" --strict-json',
+        'paleoclaw.cmd config set models.providers.openai "{""apiKey"":""sk test""}" --strict-json',
       ],
       command: String.raw`C:\Windows\System32\cmd.exe`,
       commandLabel:

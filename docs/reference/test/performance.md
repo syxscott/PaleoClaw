@@ -288,7 +288,7 @@ pnpm test:startup:bench:update
 pnpm test:startup:bench:check
 pnpm tsx scripts/bench-cli-startup.ts --runs 12
 pnpm tsx scripts/bench-cli-startup.ts --preset real --case status --case gatewayStatus --runs 3
-pnpm tsx scripts/bench-cli-startup.ts --entry openclaw.mjs --entry-secondary dist/entry.js --preset all
+pnpm tsx scripts/bench-cli-startup.ts --entry paleoclaw.mjs --entry-secondary dist/entry.js --preset all
 pnpm tsx scripts/bench-cli-startup.ts --runtime-rss --case status --runs 3
 ```
 

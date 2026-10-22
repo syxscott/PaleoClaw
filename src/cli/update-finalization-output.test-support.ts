@@ -26,7 +26,7 @@ process.stdin.on('end', () => process.exit(0));
 `;
 if (scenario === "completion-hang") {
   await fs.writeFile(
-    path.join(root, "openclaw.mjs"),
+    path.join(root, "paleoclaw.mjs"),
     `import { writeFileSync } from 'node:fs';
 writeFileSync(${JSON.stringify(path.join(root, "completion.pid"))}, String(process.pid));
 process.on('SIGTERM', () => {}); setTimeout(() => process.exit(0), 10_000);`,
@@ -393,7 +393,7 @@ const { isCommandJsonOutputMode } = await import("./program/json-mode.js");
 if (scenario === "human-recovery-plugin-error" || scenario === "borrowed-output") {
   mock.timers.enable({ apis: ["setTimeout"] });
 }
-process.argv = [process.execPath, path.join(root, "openclaw.mjs"), ...args];
+process.argv = [process.execPath, path.join(root, "paleoclaw.mjs"), ...args];
 enableConsoleCapture();
 const run = () =>
   withConsoleLogsRoutedToStderrForJson(

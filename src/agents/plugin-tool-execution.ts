@@ -92,7 +92,7 @@ export function preparePluginToolExecutionCapabilities(params: {
     ...(authority && hostRoot
       ? {
           modelExecution: {
-            cliEntryPath: path.join(hostRoot, "openclaw.mjs"),
+            cliEntryPath: path.join(hostRoot, "paleoclaw.mjs"),
             async run(selection, action, signal) {
               const callerSignal = AbortSignal.any(
                 [params.signal, pluginSignal, signal, authority.signal].filter(

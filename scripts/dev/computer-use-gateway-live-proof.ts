@@ -328,7 +328,7 @@ try {
   }
   phase("starting isolated Gateway with managed desktop and no node");
   child = runtime
-    ? spawn(runtime, ["openclaw.mjs", "gateway", "run"], {
+    ? spawn(runtime, ["paleoclaw.mjs", "gateway", "run"], {
         cwd: repoRoot,
         env,
         stdio: ["ignore", "pipe", "pipe"],

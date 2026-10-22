@@ -24,7 +24,7 @@ enum ManagedNodeGatewayMigration {
     private nonisolated static func packageRoot(of cli: GatewayLaunchAgentManager.InstalledServiceCLI) -> URL? {
         guard let entry = cli.prefix.last else { return nil }
         let url = URL(fileURLWithPath: entry).standardizedFileURL
-        if url.lastPathComponent == "openclaw.mjs" { return url.deletingLastPathComponent() }
+        if url.lastPathComponent == "paleoclaw.mjs" { return url.deletingLastPathComponent() }
         guard url.deletingLastPathComponent().lastPathComponent == "dist",
               ["entry.js", "entry.mjs", "index.js", "index.mjs"].contains(url.lastPathComponent)
         else { return nil }

@@ -806,7 +806,7 @@ function writeMockRuntime(root: string, sourceCommit: string): void {
   mkdirSync(path.join(dist, "control-ui"), { recursive: true });
   writeExecutable(path.join(root, "bin", "bun"), "fixture-bun");
   writeFileSync(path.join(root, "lib/libsqlite3.dylib"), "fixture-sqlite");
-  writeFileSync(path.join(packageRoot, "openclaw.mjs"), "fixture-cli");
+  writeFileSync(path.join(packageRoot, "paleoclaw.mjs"), "fixture-cli");
   writeFileSync(path.join(dist, "mac-node-worker.js"), "fixture-entry");
   writeFileSync(path.join(dist, "extensions/browser/setup-entry.js"), "fixture-browser");
   writeFileSync(path.join(dist, "control-ui/index.html"), "fixture-ui");

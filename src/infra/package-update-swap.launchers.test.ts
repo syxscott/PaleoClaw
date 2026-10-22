@@ -30,17 +30,17 @@ describe("native launcher publication", () => {
         }
         const candidate = path.join(native.projectRoot, path.relative(project, packageRoot));
         await writePackageRoot(candidate, "2.0.0");
-        const entry = path.join(candidate, "openclaw.mjs");
+        const entry = path.join(candidate, "paleoclaw.mjs");
         await fs.writeFile(entry, 'console.log("candidate");\n');
         const target = path.relative(
           native.binDir,
-          missing ? path.join(base, ".openclaw-update-native-removed", "openclaw.mjs") : entry,
+          missing ? path.join(base, ".openclaw-update-native-removed", "paleoclaw.mjs") : entry,
         );
         // All published formats must inspect the executable path, even with correct metadata.
         for (const [name, content] of [
           ["paleoclaw", `exec node "$basedir_abs/${target}" "$@"`],
-          ["openclaw.cmd", `"node" "%~dp0\\${target.replaceAll("/", "\\")}" %*`],
-          ["openclaw.ps1", `& "node" "$basedir/${target}" $args`],
+          ["paleoclaw.cmd", `"node" "%~dp0\\${target.replaceAll("/", "\\")}" %*`],
+          ["paleoclaw.ps1", `& "node" "$basedir/${target}" $args`],
         ]) {
           await fs.writeFile(
             path.join(native.binDir, name!),
@@ -65,7 +65,7 @@ describe("native launcher publication", () => {
         expect(result).toMatchObject({ status: "committed", step: { exitCode: 0 } });
         if (missing) {
           expect(result.step.warnings).toHaveLength(3);
-          for (const name of ["paleoclaw", "openclaw.cmd", "openclaw.ps1"]) {
+          for (const name of ["paleoclaw", "paleoclaw.cmd", "paleoclaw.ps1"]) {
             expect(result.step.warnings).toContainEqual(
               expect.stringContaining(path.join(binDir, name)),
             );
@@ -77,7 +77,7 @@ describe("native launcher publication", () => {
         } else {
           expect(result.step.warnings).toBeUndefined();
         }
-        expect(await fs.readFile(path.join(packageRoot, "openclaw.mjs"), "utf8")).toContain(
+        expect(await fs.readFile(path.join(packageRoot, "paleoclaw.mjs"), "utf8")).toContain(
           "candidate",
         );
       });

@@ -1,5 +1,5 @@
 // @vitest-environment node
-import type { RouteLocation, RouterHistory } from "@paleoclaw/uirouter";
+import type { RouteLocation, RouterHistory } from "@openclaw/uirouter";
 import { afterEach, describe, expect, it, onTestFinished, vi } from "vitest";
 import { createDeferredCore } from "../../../src/shared/deferred.js";
 import { createApplicationRouter, startApplicationRouter } from "../app-routes.ts";

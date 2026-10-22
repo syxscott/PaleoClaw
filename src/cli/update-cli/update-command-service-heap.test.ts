@@ -46,7 +46,7 @@ it.each([
     const state = await readGatewayServiceStateForUpdate(
       createMockGatewayService({
         readCommand: async () => ({
-          programArguments: [process.execPath, ...argv, path.join(home, "openclaw.mjs"), "gateway"],
+          programArguments: [process.execPath, ...argv, path.join(home, "paleoclaw.mjs"), "gateway"],
           environment: { NODE_OPTIONS: service },
         }),
       }),

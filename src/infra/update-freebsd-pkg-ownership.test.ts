@@ -90,8 +90,8 @@ it.each(["directory", "file", "root"] as const)(
       await fs.symlink(prefix, alias, "dir");
       registered = path.join(alias, "lib", "node_modules", "paleoclaw", "package.json");
     } else if (kind === "file") {
-      await fs.writeFile(path.join(root, "openclaw.mjs"), "fixture");
-      await fs.symlink(path.join(root, "openclaw.mjs"), alias);
+      await fs.writeFile(path.join(root, "paleoclaw.mjs"), "fixture");
+      await fs.symlink(path.join(root, "paleoclaw.mjs"), alias);
       registered = alias;
     } else {
       await fs.mkdir(prefix);

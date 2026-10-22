@@ -396,7 +396,7 @@ it("validates forward resolution against retained generations without writing", 
       artifact: {
         rootIdentity: "1:2",
         module: "doctor.js",
-        entry: "openclaw.mjs",
+        entry: "paleoclaw.mjs",
         inventorySha256: "b".repeat(64),
         executableIdentity: "1:3",
         executableSha256: "c".repeat(64),

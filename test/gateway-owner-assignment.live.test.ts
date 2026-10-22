@@ -18,7 +18,7 @@ it.skipIf(!isLiveTestEnabled() || process.env.OPENCLAW_LIVE_OWNER_ASSIGNMENT !==
     const profile = "owner-proof-" + randomUUID();
     const instance = await createOpenClawTestInstance({
       name: profile,
-      entrypoint: ["openclaw.mjs", "--profile", profile],
+      entrypoint: ["paleoclaw.mjs", "--profile", profile],
       state: { layout: "split" },
       config: {
         plugins: { allow: ["openai"], slots: { memory: "none" } },

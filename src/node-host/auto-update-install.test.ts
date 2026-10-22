@@ -141,7 +141,7 @@ describe("Bun private node runtime installation", () => {
           expect(await fs.readFile(archiveSpec!.slice("paleoclaw@file:".length))).toEqual(archive);
           const root = path.join(project, "node_modules", "paleoclaw");
           await writeCandidate(root);
-          await fs.symlink(path.join(root, "openclaw.mjs"), path.join(bin, "paleoclaw"));
+          await fs.symlink(path.join(root, "paleoclaw.mjs"), path.join(bin, "paleoclaw"));
           return { code: 0, stdout: "installed", stderr: "" };
         }
         throw new Error(`Unexpected external command: ${argv.join(" ")}`);
@@ -176,7 +176,7 @@ describe("Bun private node runtime installation", () => {
       expect(options.env.npm_config_min_release_age).toBeUndefined();
     }
     expect(await fs.realpath(path.join(candidate.runtimeRoot, "bin", "paleoclaw"))).toBe(
-      path.join(candidate.packageRoot, "openclaw.mjs"),
+      path.join(candidate.packageRoot, "paleoclaw.mjs"),
     );
     expect(fetchMock.mock.calls.map(([url]) => url)).toEqual([
       `${registryUrl}paleoclaw/${VERSION}`,

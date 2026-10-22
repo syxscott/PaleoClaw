@@ -6,7 +6,7 @@
   "cpuProfDir": null,
   "heapProfDir": null,
   "primary": {
-    "entry": "openclaw.mjs",
+    "entry": "paleoclaw.mjs",
     "cases": [
       {
         "id": "version",

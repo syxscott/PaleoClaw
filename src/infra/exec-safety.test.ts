@@ -7,7 +7,7 @@ describe("isSafeExecutableValue", () => {
     ["node", true],
     ["/usr/bin/node", true],
     ["./bin/paleoclaw", true],
-    ["C:\\Tools\\openclaw.exe", true],
+    ["C:\\Tools\\paleoclaw.exe", true],
     [" tool ", true],
     [undefined, false],
     ["   ", false],

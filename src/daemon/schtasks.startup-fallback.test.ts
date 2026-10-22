@@ -157,7 +157,7 @@ const INSTALLED_GATEWAY_COMMAND =
   '"C:\\Program Files\\nodejs\\node.exe" "C:\\Users\\steipete\\AppData\\Roaming\\npm\\node_modules\\paleoclaw\\dist\\index.js" gateway --port 18789';
 const OTHER_GATEWAY_COMMAND =
   '"C:\\Program Files\\nodejs\\node.exe" "C:\\other\\dist\\index.js" gateway --port 19433';
-const NODE_HOST_COMMAND = "C:\\bin\\openclaw.cmd node run --host 127.0.0.1 --port 18789";
+const NODE_HOST_COMMAND = "C:\\bin\\paleoclaw.cmd node run --host 127.0.0.1 --port 18789";
 const POWERSHELL_PROCESS = { ProcessId: 9999, CommandLine: "powershell.exe" };
 
 function processEntry(ProcessId: number, CommandLine = INSTALLED_GATEWAY_COMMAND) {
@@ -648,7 +648,7 @@ describe("Windows startup fallback", () => {
     const startupEntryPath = await writeGatewayFallback(env);
     const commandLine = await writeGatewayPackageCommand(path.join(tmpDir, "other-install"));
     mockProcesses(() => [
-      processEntry(3131, "C:\\manual\\openclaw.cmd gateway --port 18789"),
+      processEntry(3131, "C:\\manual\\paleoclaw.cmd gateway --port 18789"),
       processEntry(4242, commandLine),
       POWERSHELL_PROCESS,
     ]);

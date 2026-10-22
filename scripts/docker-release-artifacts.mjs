@@ -258,7 +258,7 @@ export OPENCLAW_DISABLE_BUNDLED_ENTRY_SOURCE_FALLBACK=1 AWS_EC2_METADATA_DISABLE
 export AWS_CONFIG_FILE="$smoke_home/aws-config" AWS_SHARED_CREDENTIALS_FILE="$smoke_home/aws-credentials"
 cd "$smoke_cwd"
 set +e
-smoke_output="$(node /app/openclaw.mjs agent --message "workspace bootstrap smoke" --session-id workspace-bootstrap-smoke --local --timeout 1 --json 2>&1)"
+smoke_output="$(node /app/paleoclaw.mjs agent --message "workspace bootstrap smoke" --session-id workspace-bootstrap-smoke --local --timeout 1 --json 2>&1)"
 smoke_status=$?
 set -e
 printf '%s\\n' "$smoke_output"

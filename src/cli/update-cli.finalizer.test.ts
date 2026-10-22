@@ -77,7 +77,7 @@ describe("update-cli", () => {
         return;
       }
       mocks.pathExists.mockImplementation(async (candidate: string) =>
-        candidate.endsWith("openclaw.mjs"),
+        candidate.endsWith("paleoclaw.mjs"),
       );
       mocks.syncPluginsForUpdateChannel.mockImplementation(syncChanged);
       const readiness = await import("./update-cli/update-command-post-plugin-readiness.js");

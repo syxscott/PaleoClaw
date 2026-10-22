@@ -431,7 +431,7 @@ describe("push APNs send semantics", () => {
       aps: {
         alert: { title: "Exec approval required", body: "Open paleoclaw to review this request." },
         sound: "default",
-        category: "openclaw.exec-approval",
+        category: "paleoclaw.exec-approval",
         "content-available": 1,
       },
       forbidden: ["host", "nodeId", "agentId", "commandText", "allowedDecisions", "expiresAtMs"],

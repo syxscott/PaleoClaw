@@ -92,14 +92,14 @@ describe("prepareCliBundleMcpConfig", () => {
       workspaceDir,
       config: { plugins: { enabled: false } },
       exclusiveConfig: {
-        mcpServers: { paleoclaw: nodeServer("openclaw.mjs") },
+        mcpServers: { paleoclaw: nodeServer("paleoclaw.mjs") },
       },
     });
 
     expect(prepared.backend.args).toContain("--strict-mcp-config");
     const raw = await readConfig(prepared);
     expect(Object.keys(raw.mcpServers ?? {})).toEqual(["paleoclaw"]);
-    expect(raw.mcpServers?.openclaw?.args).toEqual(["openclaw.mjs"]);
+    expect(raw.mcpServers?.openclaw?.args).toEqual(["paleoclaw.mjs"]);
     expect(prepared.mcpConfigHash).toMatch(/^[0-9a-f]{64}$/);
   });
 

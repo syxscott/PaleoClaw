@@ -34,7 +34,7 @@ const warningPrefix = ["--import", CLI_PARENT_BOUND_PRELOAD, warningFlag];
 const systemCa = "/etc/ssl/certs/ca-certificates.crt";
 const windowsNode = "C:\\Program Files\\nodejs\\node.exe";
 const windowsScript =
-  "C:\\Users\\alice\\AppData\\Roaming\\npm\\node_modules\\paleoclaw\\openclaw.mjs";
+  "C:\\Users\\alice\\AppData\\Roaming\\npm\\node_modules\\paleoclaw\\paleoclaw.mjs";
 const windowsTail = [windowsScript, "node.exe", "status"];
 const voltaShim = "/home/alice/.volta/bin/volta-shim";
 
@@ -51,7 +51,7 @@ it.each([undefined, "--max-old-space-size=4096"])(
   (nodeOptions) => {
     vi.stubGlobal("__openclawStandaloneRootUrl", "file:///app/runtime/");
     const args = ["--profile", "work", "config", "get", "gateway.mode"];
-    const argv = ["bun", "/app/runtime/openclaw.mjs", ...args];
+    const argv = ["bun", "/app/runtime/paleoclaw.mjs", ...args];
     const respawnPlan = requirePlan({
       argv,
       env: { NODE_OPTIONS: nodeOptions },
@@ -192,7 +192,7 @@ function mockChild() {
 it("spawns the standalone plan without adding runtime flags", async () => {
   vi.stubGlobal("__openclawStandaloneRootUrl", "file:///app/runtime/");
   const plan = requirePlan({
-    argv: [process.execPath, "/app/runtime/openclaw.mjs", "doctor"],
+    argv: [process.execPath, "/app/runtime/paleoclaw.mjs", "doctor"],
     platform: "darwin",
   });
   const { child, spawn } = mockChild();

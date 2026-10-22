@@ -52,13 +52,13 @@ paleoclaw Bun fork and supports JIT and bytecode modes.
     To run onboarding under Bun and install the managed Gateway under Bun:
 
     ```sh
-    bun --no-install openclaw.mjs onboard --install-daemon --daemon-runtime bun
+    bun --no-install paleoclaw.mjs onboard --install-daemon --daemon-runtime bun
     ```
 
     For a managed node host, select Bun separately:
 
     ```sh
-    bun --no-install openclaw.mjs node install --runtime bun
+    bun --no-install paleoclaw.mjs node install --runtime bun
     ```
 
   </Step>
@@ -117,7 +117,7 @@ supported Node runtime; an alias to Bun does not satisfy that check.
 
 On macOS and Linux without Node, the trusted package lifecycle installs a launcher
 that uses that exact Bun executable. Updates preserve it. To repair an older or
-missing launcher, run `/absolute/path/to/bun <package-root>/openclaw.mjs doctor --fix`.
+missing launcher, run `/absolute/path/to/bun <package-root>/paleoclaw.mjs doctor --fix`.
 Paths with spaces, quotes, dollar signs, backticks, backslashes, and globs remain
 literal. Paths containing newlines or carriage returns require explicit Bun
 invocation instead of a generated launcher.
@@ -168,9 +168,9 @@ node=/path/to/node-24/bin/node
 bun=/path/to/paleoclaw-bun
 package=/path/to/lib/node_modules/paleoclaw
 
-"$node" "$package/openclaw.mjs" gateway install --runtime node --runtime-path "$node" --force --json
-"$node" "$package/openclaw.mjs" update --yes
-"$bun" --no-install "$package/openclaw.mjs" gateway install --runtime bun --runtime-path "$bun" --force --json
+"$node" "$package/paleoclaw.mjs" gateway install --runtime node --runtime-path "$node" --force --json
+"$node" "$package/paleoclaw.mjs" update --yes
+"$bun" --no-install "$package/paleoclaw.mjs" gateway install --runtime bun --runtime-path "$bun" --force --json
 ```
 
 Wait for each Gateway restart to report ready before the next command. On macOS,
@@ -199,7 +199,7 @@ bun=/path/to/bun
 package=/path/to/lib/node_modules/paleoclaw
 export PATH="/path/to/node-24/bin:$PATH"
 
-"$runtime" "$package/openclaw.mjs" gateway install --runtime node --runtime-path "$runtime" --force --json
+"$runtime" "$package/paleoclaw.mjs" gateway install --runtime node --runtime-path "$runtime" --force --json
 ```
 
 Use your actual absolute paths and the same installation prefix, profile, and
@@ -207,7 +207,7 @@ state/configuration as your Gateway. Wait for the Node Gateway to be ready, then
 run the normal update:
 
 ```sh
-"$runtime" "$package/openclaw.mjs" update --yes
+"$runtime" "$package/paleoclaw.mjs" update --yes
 ```
 
 To target a specific version or a local package, add `--tag <version>` or `--tag ./openclaw.tgz` (see [Update](/cli/update)).
@@ -215,13 +215,13 @@ To target a specific version or a local package, add `--tag <version>` or `--tag
 Only after the update succeeds, restore Bun:
 
 ```sh
-"$bun" "$package/openclaw.mjs" gateway install --runtime bun --runtime-path "$bun" --force --json
+"$bun" "$package/paleoclaw.mjs" gateway install --runtime bun --runtime-path "$bun" --force --json
 ```
 
 Wait for the Bun Gateway to be ready, then verify its status:
 
 ```sh
-"$bun" "$package/openclaw.mjs" gateway status --json
+"$bun" "$package/paleoclaw.mjs" gateway status --json
 ```
 
 ### Rollback finalization on 2026.9.7

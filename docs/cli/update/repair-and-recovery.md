@@ -386,7 +386,7 @@ executes the old helper; changed or missing helper bytes and replaced retained
 directories are not required proof of the live candidate. The root `package.json` must parse with name `paleoclaw`, the
 candidate version, and type `module`; every `main`, `exports`, and `bin` target must
 resolve to a file in the package. Targets within `dist/` must be inventoried;
-top-level targets such as `openclaw.mjs` are checked for resolution without content
+top-level targets such as `paleoclaw.mjs` are checked for resolution without content
 verification. Extra `package.json` files under `dist/` refuse settlement because
 they can change how inventoried code loads. Dependency manifests under
 `node_modules/` are expected and ignored. Other extra dist files remain warnings.

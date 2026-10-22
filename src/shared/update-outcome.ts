@@ -68,7 +68,7 @@ export function createRuntimeUpdateRecoverySteps(params: {
       : {
           kind: "continue-update",
           instruction:
-            "Run this installation's absolute openclaw.mjs launcher with the selected Node and the update command to recheck package and service ownership before installation.",
+            "Run this installation's absolute paleoclaw.mjs launcher with the selected Node and the update command to recheck package and service ownership before installation.",
         },
   ];
 }

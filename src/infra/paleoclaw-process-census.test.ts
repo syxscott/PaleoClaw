@@ -389,7 +389,7 @@ it.each([
       (kind === "extensionless" &&
         ["/unrelated-app/bridge", "/unrelated-app/run", "/unrelated-app/watch"].includes(file))
     ) {
-      return "/app/openclaw.mjs";
+      return "/app/paleoclaw.mjs";
     }
     return kind === "artifact" && file === "/unrelated-app/alias.js"
       ? "/tmp/paleoclaw-update-runtime-Ab1234/tree/plugin/worker.js"
@@ -448,7 +448,7 @@ afterEach(() => {
 });
 
 it("exempts self and its verified Doctor launcher, but not a same-group peer or child", () => {
-  rows.set(launcher, { ppid: 1, argv: ["node", "/app/openclaw.mjs", "doctor", "--fix"] });
+  rows.set(launcher, { ppid: 1, argv: ["node", "/app/paleoclaw.mjs", "doctor", "--fix"] });
   rows.set(peer, { ppid: 1, argv: ["paleoclaw", "doctor"] });
   rows.set(peer + 1, { ppid: self, argv: ["paleoclaw-models"] });
   rows.set(peer + 2, { ppid: 1, argv: ["python", "worker.py"] });
@@ -458,7 +458,7 @@ it("exempts self and its verified Doctor launcher, but not a same-group peer or 
 it.each([
   { argv: ["paleoclaw-doctor"], verified: false },
   { argv: ["paleoclaw", "agent", "--message", "paleoclaw", "doctor"], verified: false },
-  { argv: ["node", "/app/openclaw.mjs", "--profile", "work", "doctor", "--fix"], verified: true },
+  { argv: ["node", "/app/paleoclaw.mjs", "--profile", "work", "doctor", "--fix"], verified: true },
 ])("exempts only a verified Doctor ancestor: $argv", ({ argv, verified }) => {
   rows.set(launcher, { ppid: 1, argv });
   expect(inspectOtherOpenClawProcesses()).toEqual({ pids: verified ? [] : [launcher] });
@@ -535,7 +535,7 @@ it("uses native Darwin arguments and explicit foreign system-service facts", () 
   mockProcessPlatform("darwin");
   const foreignUid = (process.getuid?.() ?? 501) + 1;
   rows.get(1)!.uid = foreignUid;
-  rows.set(peer, { ppid: 1, argv: ["node", "/app with spaces/openclaw.mjs", "status"] });
+  rows.set(peer, { ppid: 1, argv: ["node", "/app with spaces/paleoclaw.mjs", "status"] });
   census.mockImplementation((command: string) => ({
     status: 0,
     stdout: command.endsWith("lsof")
@@ -588,7 +588,7 @@ it("keeps Rosetta custody uncertain and names native arm64 Node.js for update re
 });
 
 function mockDarwinBatch(lsof: { status: number | null; stdout: string; error?: Error }) {
-  rows.set(launcher, { ppid: 1, argv: ["node", "/app/openclaw.mjs", "doctor", "--fix"] });
+  rows.set(launcher, { ppid: 1, argv: ["node", "/app/paleoclaw.mjs", "doctor", "--fix"] });
   mockProcessPlatform("darwin");
   census.mockImplementation((command: string) =>
     command.endsWith("lsof")
@@ -730,7 +730,7 @@ it.each([
 it("finds orphaned handoff references while excluding only its verified updater launcher", () => {
   rows.set(launcher, {
     ppid: 1,
-    argv: ["node", "/app/openclaw.mjs", "update", "repair", references.runId],
+    argv: ["node", "/app/paleoclaw.mjs", "update", "repair", references.runId],
   });
   rows.set(peer, { ppid: 1, argv: ["node", "--run-id=update-run-123"] });
   rows.set(peer + 1, { ppid: 1, argv: ["node", "worker.js"], cwd: "/tmp/retained runtime/tree" });

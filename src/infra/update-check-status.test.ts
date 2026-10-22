@@ -89,14 +89,14 @@ async function createNpmInstallRoot(base: string): Promise<string> {
   const root = path.join(prefix, modules, "paleoclaw");
   await fs.mkdir(root, { recursive: true });
   await fs.mkdir(binDir, { recursive: true });
-  await fs.writeFile(path.join(root, "openclaw.mjs"), "#!/usr/bin/env node\n");
+  await fs.writeFile(path.join(root, "paleoclaw.mjs"), "#!/usr/bin/env node\n");
   if (process.platform === "win32") {
     await fs.writeFile(
-      path.join(binDir, "openclaw.cmd"),
-      '@node "%~dp0\\node_modules\\paleoclaw\\openclaw.mjs" %*\r\n',
+      path.join(binDir, "paleoclaw.cmd"),
+      '@node "%~dp0\\node_modules\\paleoclaw\\paleoclaw.mjs" %*\r\n',
     );
   } else {
-    await fs.symlink("../lib/node_modules/paleoclaw/openclaw.mjs", path.join(binDir, "paleoclaw"));
+    await fs.symlink("../lib/node_modules/paleoclaw/paleoclaw.mjs", path.join(binDir, "paleoclaw"));
   }
   return root;
 }

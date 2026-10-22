@@ -59,7 +59,7 @@ async function fixture(options: LauncherVersionFixtureOptions = {}): Promise<str
 }
 
 function runLauncherVersion(fixtureRoot: string) {
-  return spawnSync(process.execPath, [path.join(fixtureRoot, "openclaw.mjs"), "--version"], {
+  return spawnSync(process.execPath, [path.join(fixtureRoot, "paleoclaw.mjs"), "--version"], {
     cwd: fixtureRoot,
     env: {
       ...process.env,

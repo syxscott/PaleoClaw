@@ -19,7 +19,7 @@ const BUN_PATH: &str = if cfg!(target_os = "windows") {
 } else {
     "bin/bun"
 };
-const PACKAGE_ENTRY: &str = "package/node_modules/paleoclaw/openclaw.mjs";
+const PACKAGE_ENTRY: &str = "package/node_modules/paleoclaw/paleoclaw.mjs";
 
 type RuntimeResult<T> = Result<T, Box<dyn std::error::Error>>;
 

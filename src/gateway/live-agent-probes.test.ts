@@ -33,7 +33,7 @@ describe("live-agent-probes", () => {
 
   it.each([
     [false, "scripts/run-node.mjs"],
-    [true, "openclaw.mjs"],
+    [true, "paleoclaw.mjs"],
   ] as const)("selects CLI entry for built=%s", (built, entry) => {
     expect(resolveOpenClawCliProcessArgs(["cron", "list"], built)).toEqual([entry, "cron", "list"]);
   });

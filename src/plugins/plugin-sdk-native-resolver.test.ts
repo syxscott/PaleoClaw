@@ -25,7 +25,7 @@ function writeFakeOpenClawPackage(root: string, extraSdkExports: string[] = []) 
   writeJsonFile(path.join(root, "package.json"), {
     name: "paleoclaw",
     type: "module",
-    bin: { paleoclaw: "./openclaw.mjs" },
+    bin: { paleoclaw: "./paleoclaw.mjs" },
     exports: {
       "./cli-entry": "./dist/cli-entry.js",
       "./plugin-sdk/agent-runtime": "./dist/plugin-sdk/agent-runtime.js",
@@ -37,7 +37,7 @@ function writeFakeOpenClawPackage(root: string, extraSdkExports: string[] = []) 
       ),
     },
   });
-  writeFile(path.join(root, "openclaw.mjs"), "#!/usr/bin/env node\n");
+  writeFile(path.join(root, "paleoclaw.mjs"), "#!/usr/bin/env node\n");
   const distRoot = path.join(root, "dist");
   const pluginSdkDir = path.join(distRoot, "plugin-sdk");
   for (const [file, content] of Object.entries({

@@ -91,7 +91,7 @@ it("packages docs and custodian skills at their standalone source roots", async 
     ).toBe(template);
     expect(
       await resolveOpenClawReferencePaths({
-        argv1: path.join(runtimeRoot, "openclaw.mjs"),
+        argv1: path.join(runtimeRoot, "paleoclaw.mjs"),
         cwd: runtimeRoot,
       }),
     ).toEqual({ docsPath: path.join(runtimeRoot, "docs"), sourcePath: null });

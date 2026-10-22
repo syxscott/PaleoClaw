@@ -1,6 +1,6 @@
 /* @vitest-environment jsdom */
 
-import type { RouterState } from "@paleoclaw/uirouter";
+import type { RouterState } from "@openclaw/uirouter";
 import { afterEach, expect, it, onTestFinished, vi } from "vitest";
 import { resolveThemeBranding } from "../../../packages/gateway-protocol/src/theme.ts";
 import type { GatewaySessionRow } from "../api/types.ts";

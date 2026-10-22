@@ -235,7 +235,7 @@ if (process.argv[2] === "--version") {
     const controller = new AbortController();
     const operation = runNodeScript(
       [
-        path.join(repoRoot, "openclaw.mjs"),
+        path.join(repoRoot, "paleoclaw.mjs"),
         "agent",
         "exec",
         "probe",

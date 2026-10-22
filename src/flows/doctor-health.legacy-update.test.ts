@@ -93,7 +93,7 @@ function managedService(state: OpenClawTestState, events: string[] = []) {
     readCommand: async () => ({
       programArguments: [
         process.execPath,
-        path.join(process.cwd(), "openclaw.mjs"),
+        path.join(process.cwd(), "paleoclaw.mjs"),
         "gateway",
         "--port",
         "19754",

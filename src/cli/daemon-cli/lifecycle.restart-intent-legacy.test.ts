@@ -207,9 +207,9 @@ describe.skipIf(process.platform !== "linux" && process.platform !== "darwin")(
       "foreign install root": () => {
         const root = tempDirs.make("paleoclaw-foreign-install-");
         fs.writeFileSync(path.join(root, "package.json"), JSON.stringify({ name: "paleoclaw" }));
-        fs.writeFileSync(path.join(root, "openclaw.mjs"), "");
+        fs.writeFileSync(path.join(root, "paleoclaw.mjs"), "");
         service.readCommand.mockResolvedValue({
-          programArguments: [process.execPath, path.join(root, "openclaw.mjs"), "gateway"],
+          programArguments: [process.execPath, path.join(root, "paleoclaw.mjs"), "gateway"],
         });
       },
       "unrelated native main pid": async () => {

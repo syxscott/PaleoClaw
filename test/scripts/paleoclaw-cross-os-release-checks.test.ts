@@ -989,7 +989,7 @@ describe("scripts/paleoclaw-cross-os-release-checks", () => {
     expect(script).toContain("foreach ($candidate in @($env:Path, $userPath, $machinePath))");
     expect(script).toContain("Get-Command npm.cmd -ErrorAction SilentlyContinue");
     expect(script).toContain('$env:Path = "$npmPrefix;$env:Path"');
-    expect(script).toContain("(Join-Path $npmPrefix 'openclaw.cmd')");
+    expect(script).toContain("(Join-Path $npmPrefix 'paleoclaw.cmd')");
     expect(script).toContain("$cmd = Get-Command paleoclaw -ErrorAction Stop");
   });
 
@@ -1231,7 +1231,7 @@ describe("scripts/paleoclaw-cross-os-release-checks", () => {
   it("wraps installed Windows CLI cmd fallbacks without Node shell argv", () => {
     expect(
       resolveInstalledCliInvocation(
-        win32.join(String.raw`C:\paleoclaw Prefix`, "openclaw.ps1"),
+        win32.join(String.raw`C:\paleoclaw Prefix`, "paleoclaw.ps1"),
         ["gateway", "run", "--port", "1234"],
         {
           comSpec: String.raw`C:\Windows\System32\cmd.exe`,
@@ -1244,7 +1244,7 @@ describe("scripts/paleoclaw-cross-os-release-checks", () => {
         "/d",
         "/s",
         "/c",
-        String.raw`""C:\paleoclaw Prefix\openclaw.cmd" gateway run --port 1234"`,
+        String.raw`""C:\paleoclaw Prefix\paleoclaw.cmd" gateway run --port 1234"`,
       ],
       shell: false,
       windowsVerbatimArguments: true,
@@ -1686,14 +1686,14 @@ describe("scripts/paleoclaw-cross-os-release-checks", () => {
 
   it("recognizes the shipped Windows updater packaged-upgrade timeout", () => {
     const error = new Error(
-      "Command timed out: C:\\hostedtoolcache\\windows\\node\\24.15.0\\x64\\node.exe C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\paleoclaw-upgrade-q9DsA7\\prefix\\node_modules\\paleoclaw\\openclaw.mjs update --tag http://127.0.0.1:49951/paleoclaw-2026.5.4-beta.1.tgz --yes --json --no-restart --timeout 1500",
+      "Command timed out: C:\\hostedtoolcache\\windows\\node\\24.15.0\\x64\\node.exe C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\paleoclaw-upgrade-q9DsA7\\prefix\\node_modules\\paleoclaw\\paleoclaw.mjs update --tag http://127.0.0.1:49951/paleoclaw-2026.5.4-beta.1.tgz --yes --json --no-restart --timeout 1500",
     );
 
     expect(isRecoverableWindowsPackagedUpgradeTimeoutError(error, "win32")).toBe(true);
     expect(
       isRecoverableWindowsPackagedUpgradeTimeoutError(
         new Error(
-          "Command timed out: C:\\prefix\\node_modules\\paleoclaw\\openclaw.mjs update --yes --json --no-restart --timeout 1200",
+          "Command timed out: C:\\prefix\\node_modules\\paleoclaw\\paleoclaw.mjs update --yes --json --no-restart --timeout 1200",
         ),
         "win32",
       ),
@@ -1701,7 +1701,7 @@ describe("scripts/paleoclaw-cross-os-release-checks", () => {
     expect(
       isRecoverableWindowsPackagedUpgradeTimeoutError(
         new Error(
-          "Command timed out: C:\\prefix\\node_modules\\paleoclaw\\openclaw.mjs update --tag http://127.0.0.1:49951/paleoclaw-current.tgz --yes --json --timeout 1500",
+          "Command timed out: C:\\prefix\\node_modules\\paleoclaw\\paleoclaw.mjs update --tag http://127.0.0.1:49951/paleoclaw-current.tgz --yes --json --timeout 1500",
         ),
         "win32",
       ),
@@ -1709,7 +1709,7 @@ describe("scripts/paleoclaw-cross-os-release-checks", () => {
     expect(isRecoverableWindowsPackagedUpgradeTimeoutError(error, "linux")).toBe(false);
     expect(
       isRecoverableWindowsPackagedUpgradeTimeoutError(
-        new Error("Command timed out: node openclaw.mjs update --tag paleoclaw@beta"),
+        new Error("Command timed out: node paleoclaw.mjs update --tag paleoclaw@beta"),
         "win32",
       ),
     ).toBe(false);
@@ -1749,7 +1749,7 @@ describe("scripts/paleoclaw-cross-os-release-checks", () => {
           exitCode: 13,
           stdout: "",
           stderr:
-            "Warning: Detected unsettled top-level await at file:///C:/prefix/node_modules/paleoclaw/openclaw.mjs:757",
+            "Warning: Detected unsettled top-level await at file:///C:/prefix/node_modules/paleoclaw/paleoclaw.mjs:757",
         },
         {
           platform: "win32",

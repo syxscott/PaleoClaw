@@ -128,7 +128,7 @@ function resolveNativeHookRelayExecutable(): { executable: string; kind: "worker
       return { executable: relayEntry, kind: "worker" };
     }
     for (const candidate of [
-      path.join(packageRoot, "openclaw.mjs"),
+      path.join(packageRoot, "paleoclaw.mjs"),
       path.join(packageRoot, "dist", "entry.js"),
       path.join(packageRoot, "scripts", "run-node.mjs"),
     ]) {

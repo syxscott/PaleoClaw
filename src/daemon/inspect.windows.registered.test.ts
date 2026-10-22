@@ -46,7 +46,7 @@ const registeredScript = (taskName: string) =>
     'set "OPENCLAW_PROFILE=rescue"',
     'set "OPENCLAW_SERVICE_MARKER=paleoclaw"',
     'set "OPENCLAW_SERVICE_KIND=gateway"',
-    '"C:\\Node\\node.exe" "C:\\OtherInstall\\openclaw.mjs" gateway run < NUL',
+    '"C:\\Node\\node.exe" "C:\\OtherInstall\\paleoclaw.mjs" gateway run < NUL',
   ].join("\r\n");
 
 it.each(["foreign launcher", "wrapped gateway", "runtime version"])(
@@ -71,7 +71,7 @@ it.each(["foreign launcher", "wrapped gateway", "runtime version"])(
     vi.spyOn(fs, "readFile").mockImplementation(async (pathname) => {
       if (pathname === gateway && wrapped) {
         return Buffer.from(
-          '@echo off\r\n"C:\\Node\\node.exe" "C:\\paleoclaw\\openclaw.mjs" --profile rescue gateway run\r\n',
+          '@echo off\r\n"C:\\Node\\node.exe" "C:\\paleoclaw\\paleoclaw.mjs" --profile rescue gateway run\r\n',
         );
       }
       if (pathname !== first) {
@@ -107,7 +107,7 @@ it.each(["runtime argv", "launcher metadata"])(
     const taskName = "\\Services\\Recovery";
     const scriptPath = "C:\\Services\\Recovery\\gateway.cmd";
     const argv =
-      "C:\\Node\\node.exe --import bootstrap.mjs C:\\paleoclaw\\openclaw.mjs --profile=rescue gateway".split(
+      "C:\\Node\\node.exe --import bootstrap.mjs C:\\paleoclaw\\paleoclaw.mjs --profile=rescue gateway".split(
         " ",
       );
     const launcher = source === "launcher metadata";

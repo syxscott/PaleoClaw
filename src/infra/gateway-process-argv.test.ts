@@ -46,13 +46,13 @@ it("classifies executable identities and the requested command, excluding argume
     ]),
     [["node", built.script, "doctor"], "doctor", "paleoclaw"],
     [["python", "doctor", "worker.py"], "doctor", "other"],
-    [["C:\\bin\\openclaw.cmd", "gateway"], "gateway", "paleoclaw"],
+    [["C:\\bin\\paleoclaw.cmd", "gateway"], "gateway", "paleoclaw"],
     [["/usr/local/bin/paleoclaw-gateway"], "gateway", "paleoclaw"],
     [["C:\\bin\\paleoclaw-gateway.EXE"], "gateway", "paleoclaw"],
     [["paleoclaw-doctor"], "gateway", "other"],
     [["paleoclaw", "agent", "--message", "gateway"], "gateway", "other"],
     [["paleoclaw", "--profile", "gateway", "status"], "gateway", "other"],
-    [["node", "/srv/paleoclaw/openclaw.mjs", "tui", "--local"], undefined, "paleoclaw"],
+    [["node", "/srv/paleoclaw/paleoclaw.mjs", "tui", "--local"], undefined, "paleoclaw"],
     [["paleoclaw"], undefined, "paleoclaw"],
     [["python", "worker.py"], undefined, "other"],
   ];
@@ -77,7 +77,7 @@ it("classifies the runtime script after flags and subcommands without adopting a
     ]),
     [["node", "--import", owned.script, other.script, owned.script], undefined],
     [["node", "--eval", "0", owned.script], undefined],
-    [["node", other.script, "/opt/paleoclaw/openclaw.mjs"], undefined],
+    [["node", other.script, "/opt/paleoclaw/paleoclaw.mjs"], undefined],
     [["node", "--import", "loader.js", "--no-warnings", owned.script], 4],
     [["node", "--trace-uncaught", owned.script], 2],
     [["node", "--cpu-prof-name", owned.script, other.script], undefined],
@@ -124,7 +124,7 @@ it("uses the resolved entrypoint for relative spellings and launcher targets", (
   ] as const) {
     expectKind(["node", script], "paleoclaw", { cwd });
   }
-  const launcher = scriptFixture("openclaw.mjs");
+  const launcher = scriptFixture("paleoclaw.mjs");
   const resolved = vi.spyOn(fs, "realpathSync").mockReturnValue(launcher.script);
   try {
     expectKind(["node", path.join(launcher.root, "dist/index.js")], "paleoclaw");

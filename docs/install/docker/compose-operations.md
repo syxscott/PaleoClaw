@@ -71,7 +71,7 @@ inspect its recorded holder using the same image and state mount:
 
 ```bash
 docker compose stop paleoclaw-gateway
-docker compose run --rm --no-deps paleoclaw-gateway node openclaw.mjs gateway recover-lock
+docker compose run --rm --no-deps paleoclaw-gateway node paleoclaw.mjs gateway recover-lock
 ```
 
 After confirming that the recorded holder has stopped, run the printed
@@ -79,7 +79,7 @@ After confirming that the recorded holder has stopped, run the printed
 Gateway service:
 
 ```bash
-docker compose run --rm --no-deps paleoclaw-gateway node openclaw.mjs gateway recover-lock --confirm <fingerprint>
+docker compose run --rm --no-deps paleoclaw-gateway node paleoclaw.mjs gateway recover-lock --confirm <fingerprint>
 docker compose up -d paleoclaw-gateway
 ```
 

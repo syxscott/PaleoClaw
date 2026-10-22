@@ -51,7 +51,7 @@ import {
 import { resolveNodeBootstrapRuntimeChunks } from "./node-bootstrap-runtime-chunks.js";
 
 const BOOTSTRAP_LAUNCHER_FILES = [
-  "openclaw.mjs",
+  "paleoclaw.mjs",
   "node-version.mjs",
   "node-sqlite.mjs",
   "node-runtime-update.mjs",

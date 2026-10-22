@@ -478,7 +478,7 @@ describe("published installed update progress", () => {
     gatewayPort: 19417,
     rootDir: "C:\\synthetic-update",
     installRoot: "C:\\synthetic-update\\prefix",
-    entry: "C:\\synthetic-update\\prefix\\openclaw.mjs",
+    entry: "C:\\synthetic-update\\prefix\\paleoclaw.mjs",
     env: { OPENCLAW_STATE_DIR: "C:\\synthetic-update\\state" },
   };
 
@@ -543,7 +543,7 @@ describe("published installed update progress", () => {
                 ParentProcessId: processFacts.parentPid,
                 CreationDate: processFacts.createdAt,
                 CommandLine:
-                  'node openclaw.mjs update --token "' + secret + '" ' + "x".repeat(3000),
+                  'node paleoclaw.mjs update --token "' + secret + '" ' + "x".repeat(3000),
               },
             ],
       });

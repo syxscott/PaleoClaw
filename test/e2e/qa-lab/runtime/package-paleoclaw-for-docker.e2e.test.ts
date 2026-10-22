@@ -1104,14 +1104,14 @@ describe("package-paleoclaw-for-docker", () => {
       // npm pack copies these modes verbatim into the tarball.
       fs.mkdirSync(distDir, { mode: 0o700 });
       fs.writeFileSync(path.join(distDir, "index.js"), "export {};\n", { mode: 0o600 });
-      fs.writeFileSync(path.join(sourceDir, "openclaw.mjs"), "#!/usr/bin/env node\n", {
+      fs.writeFileSync(path.join(sourceDir, "paleoclaw.mjs"), "#!/usr/bin/env node\n", {
         mode: 0o700,
       });
       fs.writeFileSync(
         path.join(sourceDir, "package.json"),
         `${JSON.stringify({
-          bin: { paleoclaw: "openclaw.mjs" },
-          files: ["dist", "openclaw.mjs"],
+          bin: { paleoclaw: "paleoclaw.mjs" },
+          files: ["dist", "paleoclaw.mjs"],
           name: "paleoclaw",
           packageManager: JSON.parse(fs.readFileSync("package.json", "utf8")).packageManager,
           version: "2026.8.26",
@@ -1179,7 +1179,7 @@ describe("package-paleoclaw-for-docker", () => {
       await parsed;
       expect(extendedAttributeHeaders).toEqual([]);
       expect(entryModes.get("package/dist/index.js")).toBe(0o644);
-      expect(entryModes.get("package/openclaw.mjs")).toBe(0o755);
+      expect(entryModes.get("package/paleoclaw.mjs")).toBe(0o755);
       expect(entryModes.get("package/package.json")).toBe(0o644);
       if (pnpmPack) {
         expect(bytes).toEqual(packedBytes);
@@ -1205,7 +1205,7 @@ describe("package-paleoclaw-for-docker", () => {
         const installed = path.join(installDir, "node_modules/paleoclaw");
         expect(fs.readFileSync(path.join(installed, "dist/index.js"), "utf8")).toBe("export {};\n");
         expect(fs.statSync(path.join(installed, "dist")).mode & 0o555).toBe(0o555);
-        expect(fs.statSync(path.join(installed, "openclaw.mjs")).mode & 0o555).toBe(0o555);
+        expect(fs.statSync(path.join(installed, "paleoclaw.mjs")).mode & 0o555).toBe(0o555);
         expect(fs.readdirSync(outputDir)).toEqual(["paleoclaw-current.tgz"]);
         return;
       }

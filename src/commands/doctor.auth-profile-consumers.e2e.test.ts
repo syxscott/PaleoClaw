@@ -67,7 +67,7 @@ async function runDoctor(env: NodeJS.ProcessEnv) {
   await closeOpenClawStateDatabaseAsync();
   const result = spawnSync(
     process.execPath,
-    ["openclaw.mjs", "doctor", "--fix", "--non-interactive", "--no-workspace-suggestions"],
+    ["paleoclaw.mjs", "doctor", "--fix", "--non-interactive", "--no-workspace-suggestions"],
     {
       cwd: fileURLToPath(new URL("../../", import.meta.url)),
       env: { ...env, VITEST: undefined },
@@ -98,7 +98,7 @@ async function runInteractiveDoctor(env: NodeJS.ProcessEnv, expectImport: boolea
   const deadline = performance.now() + 60_000;
   const child = await spawnTerminalPty({
     file: process.execPath,
-    args: ["openclaw.mjs", "doctor"],
+    args: ["paleoclaw.mjs", "doctor"],
     cwd: fileURLToPath(new URL("../../", import.meta.url)),
     cols: 240,
     rows: 40,

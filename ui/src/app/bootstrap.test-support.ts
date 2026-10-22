@@ -1,4 +1,4 @@
-import type { RouteLocation } from "@paleoclaw/uirouter";
+import type { RouteLocation } from "@openclaw/uirouter";
 import { vi } from "vitest";
 import type { AgentsListResult } from "../api/types.ts";
 import type { BootRecord } from "./boot-record.ts";

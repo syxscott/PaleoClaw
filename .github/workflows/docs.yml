@@ -43,8 +43,12 @@ jobs:
 
       - name: Checkout PaleoHub docs source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        # The marketplace repository is not published yet; the docs checks below
+        # only validate this repository, so a missing marketplace must not fail
+        # the job.
+        continue-on-error: true
         with:
-          repository: paleoclaw/PaleoHub
+          repository: syxscott/PaleoHub
           ref: main
           path: PaleoHub-source
           fetch-depth: 1

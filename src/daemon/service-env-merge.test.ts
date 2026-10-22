@@ -8,7 +8,7 @@ import {
 import type { GatewayServiceCommandConfig } from "./service-types.js";
 
 const saved = { OPENCLAW_PROFILE: "saved" };
-const executable = "openclaw.exe|gateway";
+const executable = "paleoclaw.exe|gateway";
 const profileCases: Array<
   [
     name: string,
@@ -20,22 +20,22 @@ const profileCases: Array<
 > = [
   [
     "Node runtime options",
-    "node.exe|--import|bootstrap.mjs|openclaw.mjs|--profile=ops|gateway",
+    "node.exe|--import|bootstrap.mjs|paleoclaw.mjs|--profile=ops|gateway",
     saved,
     "ops",
     "argv",
   ],
-  ["root dev", "openclaw.exe|--dev|gateway", saved, "dev", "argv"],
+  ["root dev", "paleoclaw.exe|--dev|gateway", saved, "dev", "argv"],
   [
     "gateway-local dev",
-    "openclaw.exe|gateway|--dev",
+    "paleoclaw.exe|gateway|--dev",
     { openclaw_profile: "saved" },
     "saved",
     "environment",
   ],
   [
     "profile after terminator",
-    "node.exe|openclaw.mjs|gateway|--|--profile|other",
+    "node.exe|paleoclaw.mjs|gateway|--|--profile|other",
     saved,
     "saved",
     "environment",
@@ -45,12 +45,12 @@ const profileCases: Array<
   ["saved default", executable, { OPENCLAW_PROFILE: "Default" }, "default", "environment"],
   ["missing executable", ""],
   ["missing entrypoint", "node.exe|"],
-  ["unknown runtime flag", "node.exe|--unknown-runtime-flag|openclaw.mjs|gateway"],
+  ["unknown runtime flag", "node.exe|--unknown-runtime-flag|paleoclaw.mjs|gateway"],
   ["eval runtime", "node.exe|--eval|code"],
-  ["invalid argv profile", "openclaw.exe|--profile|bad profile|gateway"],
+  ["invalid argv profile", "paleoclaw.exe|--profile|bad profile|gateway"],
   [
     "invalid saved profile",
-    "openclaw.exe|--profile=rescue|gateway",
+    "paleoclaw.exe|--profile=rescue|gateway",
     { OPENCLAW_PROFILE: "bad profile" },
   ],
 ];
@@ -93,10 +93,10 @@ it.each([
         ...identity,
       };
       const command: GatewayServiceCommandConfig = direct
-        ? { programArguments: ["openclaw.exe", "--profile=rescue", "gateway"] }
+        ? { programArguments: ["paleoclaw.exe", "--profile=rescue", "gateway"] }
         : {
             programArguments:
-              "node.exe|--import|bootstrap.mjs|openclaw.mjs|--profile|rescue|gateway".split("|"),
+              "node.exe|--import|bootstrap.mjs|paleoclaw.mjs|--profile|rescue|gateway".split("|"),
             environment: {
               OPENCLAW_PROFILE: "saved",
               OPENCLAW_STATE_DIR: path.join(home, ".openclaw-saved"),

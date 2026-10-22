@@ -414,7 +414,7 @@ describe("write-cli-startup-metadata", () => {
             if (!taskContext) {
               throw new Error("missing render task context");
             }
-            return spawnHelp(["openclaw.mjs", "browser", "--help"], {
+            return spawnHelp(["paleoclaw.mjs", "browser", "--help"], {
               cwd: tempRoot,
               failureMessage: "browser render failed",
               killGraceMs: 10,

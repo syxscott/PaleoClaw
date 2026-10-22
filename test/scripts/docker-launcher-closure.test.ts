@@ -27,7 +27,7 @@ it.each(["dependency-inputs", "runtime"])(
     await fs.writeFile(path.join(root, "package.json"), JSON.stringify({ version: "2026.10.3" }));
     const { stdout } = await promisify(execFile)(
       resolveTestNodeExecPath(),
-      [path.join(root, "openclaw.mjs"), "--version"],
+      [path.join(root, "paleoclaw.mjs"), "--version"],
       {
         cwd: root,
         env: { HOME: root, CFFIXED_USER_HOME: root, TMPDIR: root },

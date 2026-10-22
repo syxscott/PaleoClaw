@@ -38,7 +38,7 @@ extension BundledRuntime {
               FileManager.default.isExecutableFile(atPath: runtime.bun.path),
               FileManager.default.isReadableFile(atPath: runtime.sqliteLibrary.path),
               FileManager.default
-                  .isReadableFile(atPath: runtime.packageRoot.appendingPathComponent("openclaw.mjs").path)
+                  .isReadableFile(atPath: runtime.packageRoot.appendingPathComponent("paleoclaw.mjs").path)
         else { throw SeedError.invalidCurrent }
         // A newly updated app must still recognize the old seed so PostUpdate can reseed it.
         return runtime

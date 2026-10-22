@@ -98,7 +98,7 @@ if (Object.hasOwn(outputs, command)) {
   const dist = path.join(root, "prefix", "node_modules", "paleoclaw", "dist");
   fs.mkdirSync(dist, { recursive: true });
   fs.writeFileSync(path.join(dist, "entry.js"), "// installed package\n");
-  if (process.env.OPENCLAW_TEST_USABLE_COMMAND !== "1") fs.unlinkSync(path.join(root, "bin", "openclaw.cmd"));
+  if (process.env.OPENCLAW_TEST_USABLE_COMMAND !== "1") fs.unlinkSync(path.join(root, "bin", "paleoclaw.cmd"));
 } else if (!["paleoclaw gateway install --force", "paleoclaw gateway restart", "paleoclaw gateway status --json", "paleoclaw doctor --fix --non-interactive"].includes(command)) {
   throw new Error("Unexpected fixture command: " + command);
 }
@@ -522,12 +522,12 @@ foreach ($script:nodeCapabilityCase in $cases) {
     ),
     "same-prefix-shim-transaction": installerFixture(
       '$root = Join-Path ([System.IO.Path]::GetTempPath()) ("paleoclaw-shim-transaction-" + [guid]::NewGuid().ToString("N"))',
-      '$target = Join-Path $root "openclaw.cmd"',
+      '$target = Join-Path $root "paleoclaw.cmd"',
       "try {",
       "  New-Item -ItemType Directory -Force -Path $root | Out-Null",
       '  $old = "@echo off`r`nnode `"C:\\old\\dist\\entry.js`" %*`r`n"',
-      '  $launcher = Join-Path $root "node_modules\\paleoclaw\\openclaw.mjs"',
-      '  $candidate = "@ECHO off`r`nGOTO start`r`n:find_dp0`r`nSET dp0=%~dp0`r`nEXIT /b`r`n:start`r`nSETLOCAL`r`nCALL :find_dp0`r`nnode `"%dp0%\\node_modules\\paleoclaw\\openclaw.mjs`" %*`r`n"',
+      '  $launcher = Join-Path $root "node_modules\\paleoclaw\\paleoclaw.mjs"',
+      '  $candidate = "@ECHO off`r`nGOTO start`r`n:find_dp0`r`nSET dp0=%~dp0`r`nEXIT /b`r`n:start`r`nSETLOCAL`r`nCALL :find_dp0`r`nnode `"%dp0%\\node_modules\\paleoclaw\\paleoclaw.mjs`" %*`r`n"',
       "  [System.IO.File]::WriteAllText($target, $old)",
       "  $backup = Start-NpmShimBackup -Path $target -ExpectedLauncher $launcher",
       "  [System.IO.File]::WriteAllText($target, $candidate)",
@@ -945,7 +945,7 @@ function Refresh-GatewayServiceIfLoaded { throw 'unexpected gateway refresh' }
 function Invoke-OpenClawCommand { throw 'unexpected live CLI' }
 function Publish-TextFileAtomically {
     param([string]$Path, [string]$Contents)
-    $expectedPath = Join-Path $env:USERPROFILE '.local\bin\openclaw.cmd'
+    $expectedPath = Join-Path $env:USERPROFILE '.local\bin\paleoclaw.cmd'
     # Duplicate separators can name the same Windows wrapper; require the exact normalized path.
     if ([IO.Path]::GetFullPath($Path) -ne [IO.Path]::GetFullPath($expectedPath)) { throw 'publication escaped fixture' }
     $script:Published += 1

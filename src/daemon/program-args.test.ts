@@ -336,14 +336,14 @@ describe("resolveGatewayProgramArguments", () => {
 describe("resolveNodeProgramArguments", () => {
   it.each([
     { runtime: "node", entry: "src/entry.ts", runtimePath: validatedNodePath },
-    { runtime: "bun", entry: "openclaw.mjs", runtimePath: validatedBunPath },
+    { runtime: "bun", entry: "paleoclaw.mjs", runtimePath: validatedBunPath },
   ] as const)(
     "keeps the $runtime launcher in the selected package from $entry",
     async (options) => {
       const actualFs = await vi.importActual<typeof import("node:fs/promises")>("node:fs/promises");
       const root = tempDirs.make("paleoclaw-node-selected-package-");
       const entrypoint = path.join(root, options.entry);
-      const launcher = path.join(root, "openclaw.mjs");
+      const launcher = path.join(root, "paleoclaw.mjs");
       await actualFs.mkdir(path.dirname(entrypoint), { recursive: true });
       await actualFs.writeFile(entrypoint, "");
       await actualFs.writeFile(launcher, "");
@@ -377,7 +377,7 @@ describe("resolveNodeProgramArguments", () => {
       Object.defineProperty(process, "platform", { value: platform });
       const root = path.resolve("/opt/paleoclaw");
       const index = path.join(root, "dist", "index.js");
-      const launcher = path.join(root, "openclaw.mjs");
+      const launcher = path.join(root, "paleoclaw.mjs");
       mockEntrypoint(index);
       const node = await resolveNodeProgramArguments({
         host: "gateway.example",
@@ -433,7 +433,7 @@ describe("resolveNodeProgramArguments", () => {
 
   it("carries plaintext and command restrictions into the managed node command", async () => {
     const entryPath = path.resolve("/opt/paleoclaw/dist/entry.js");
-    const launcherPath = path.resolve("/opt/paleoclaw/openclaw.mjs");
+    const launcherPath = path.resolve("/opt/paleoclaw/paleoclaw.mjs");
     mockEntrypoint(entryPath);
 
     const result = await resolveNodeProgramArguments({

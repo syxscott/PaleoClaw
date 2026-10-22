@@ -4403,7 +4403,7 @@ ${buildScript}`,
         path.join(root, ".ci-harness/scripts/macos-native-runtime-artifact.mjs"),
       );
       writeFileSync(
-        path.join(root, "openclaw.mjs"),
+        path.join(root, "paleoclaw.mjs"),
         "process.stdout.write(JSON.stringify(process.argv.slice(2)));",
       );
       const built = path.join(root, "built");
@@ -7829,7 +7829,7 @@ describe("frozen CI compatibility contracts", () => {
   it("skips current-only launcher and QA contracts for frozen targets", () => {
     const source = readFileSync(".github/workflows/ci.yml", "utf8");
     const launcher = readCiWorkflow().jobs["build-artifacts"].steps.find((step: WorkflowStep) =>
-      step.run?.includes("bun openclaw.mjs --help"),
+      step.run?.includes("bun paleoclaw.mjs --help"),
     );
     for (const frozenTarget of [false, true]) {
       expect(

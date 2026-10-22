@@ -50,7 +50,7 @@ it.each(
       kind === "gateway",
     ]);
     let current = true;
-    let command: GatewayServiceCommandConfig = { programArguments: ["/node", "/A/openclaw.mjs"] };
+    let command: GatewayServiceCommandConfig = { programArguments: ["/node", "/A/paleoclaw.mjs"] };
     leaves.read.mockImplementation(async () => command);
     leaves.config.mockImplementation(async () => {
       current = scenario !== "config-revoked";
@@ -66,7 +66,7 @@ it.each(
       const work = service.install({
         env,
         stdout: new PassThrough(),
-        programArguments: ["/node", "/B/openclaw.mjs"],
+        programArguments: ["/node", "/B/paleoclaw.mjs"],
         assertCurrent: () => {
           if (!current) {
             throw new Error("revoked");

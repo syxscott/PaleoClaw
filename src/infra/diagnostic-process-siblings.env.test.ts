@@ -199,7 +199,7 @@ it.each([
             throw Object.assign(new Error("missing"), { code: "ENOENT" });
           }
           if (command === "ps") {
-            return "node openclaw.mjs gateway";
+            return "node paleoclaw.mjs gateway";
           }
           if (command === "fuser") {
             fuserArgs.push(args);

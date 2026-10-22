@@ -19,7 +19,7 @@ import type { windowsNativePlatform } from "./extension-windows-platform.js";
 export function windowsFixture() {
   const context: NativeWindowsContext = {
     nodePath: "C:\\Program Files\\nodejs\\node.exe",
-    cliPath: "C:\\paleoclaw\\openclaw.mjs",
+    cliPath: "C:\\paleoclaw\\paleoclaw.mjs",
     stateDir: "C:\\Users\\Fixture\\.openclaw",
     configPath: "C:\\Users\\Fixture\\.openclaw\\openclaw.json",
     browserProfile: "chrome",

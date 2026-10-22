@@ -75,7 +75,7 @@ export async function admitSystemdUpdate(
   } catch (cause) {
     const { uid } = await fs.stat(installRoot);
     const invocation = resolveOpenClawCliInvocation({
-      entryPath: path.join(installRoot, "openclaw.mjs"),
+      entryPath: path.join(installRoot, "paleoclaw.mjs"),
       execArgv: [],
       args: ["update", "--yes", "--no-restart"],
     });

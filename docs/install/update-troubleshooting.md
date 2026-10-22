@@ -157,7 +157,7 @@ version satisfying both the candidate's full engine range and the updater's
 supported Node range. The suggested version is the lowest supported release in
 that intersection. Follow the recovery steps for the detected runtime manager
 (nvm, fnm, Volta, or system Node). The next step runs `update` through the
-original installation's absolute `openclaw.mjs` launcher using the selected Node.
+original installation's absolute `paleoclaw.mjs` launcher using the selected Node.
 It does not rely on `paleoclaw` remaining on PATH after a version-manager switch,
 or recommend a global install into an uninspected prefix. Extended-stable recovery
 uses `--channel extended-stable` so the resolver selects the supported monthly

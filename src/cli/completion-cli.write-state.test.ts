@@ -318,7 +318,7 @@ describe("completion-cli write-state", () => {
     expect((await fs.readdir(cacheDir)).toSorted()).toEqual([
       "openclaw.bash",
       "openclaw.fish",
-      "openclaw.ps1",
+      "paleoclaw.ps1",
       "openclaw.zsh",
     ]);
     for (const shell of COMPLETION_SHELLS) {

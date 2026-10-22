@@ -58,11 +58,11 @@ describe("worker bundle archive", () => {
   });
 
   it("extracts only a manifest-identical regular-file bundle", async () => {
-    await artifact("openclaw.mjs", "#!/usr/bin/env node\n", 0o700);
+    await artifact("paleoclaw.mjs", "#!/usr/bin/env node\n", 0o700);
     await artifact("dist/worker.js", "export const worker = true;\n", 0o600);
     await artifact("dist/Upper.js", "export const upper = true;\n", 0o600);
     const bundleHash = await directoryHash();
-    await pack(["openclaw.mjs", "dist/worker.js", "dist/Upper.js"]);
+    await pack(["paleoclaw.mjs", "dist/worker.js", "dist/Upper.js"]);
 
     await extract(bundleHash);
 
@@ -71,8 +71,8 @@ describe("worker bundle archive", () => {
 
   it("rejects archive links before extraction", async () => {
     await artifact("target", "target");
-    await fs.symlink("target", path.join(source, "openclaw.mjs"));
-    await pack(["openclaw.mjs"]);
+    await fs.symlink("target", path.join(source, "paleoclaw.mjs"));
+    await pack(["paleoclaw.mjs"]);
 
     await expect(archiveManifest()).rejects.toThrow("Invalid worker bundle tar entry");
   });
@@ -207,8 +207,8 @@ describe("worker bundle archive", () => {
   });
 
   it("rejects a valid archive under the wrong logical hash", async () => {
-    await artifact("openclaw.mjs", "worker");
-    await pack(["openclaw.mjs"]);
+    await artifact("paleoclaw.mjs", "worker");
+    await pack(["paleoclaw.mjs"]);
 
     await expect(extract("f".repeat(64))).rejects.toThrow("archive manifest does not match");
   });

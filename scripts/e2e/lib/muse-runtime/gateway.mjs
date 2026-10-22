@@ -70,7 +70,7 @@ export async function createHarness() {
   async function start() {
     await stop();
     const output = fs.openSync(path.join(root, "gateway.log"), "a");
-    child = spawn(process.execPath, [path.join(packageDir, "openclaw.mjs"), "gateway", "run"], {
+    child = spawn(process.execPath, [path.join(packageDir, "paleoclaw.mjs"), "gateway", "run"], {
       env: { ...process.env, OPENCLAW_DISABLE_BONJOUR: "1", OPENCLAW_NO_AUTO_UPDATE: "1" },
       detached: true,
       stdio: ["ignore", output, output],

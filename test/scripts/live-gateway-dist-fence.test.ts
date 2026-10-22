@@ -293,8 +293,8 @@ function redirectReads(redirect: (file: string) => string) {
 
 it.each([
   { entry: "src/entry.ts", distPresent: true, refuse: false },
-  { entry: "openclaw.mjs", distPresent: true, refuse: true },
-  { entry: "openclaw.mjs", distPresent: false, refuse: false },
+  { entry: "paleoclaw.mjs", distPresent: true, refuse: true },
+  { entry: "paleoclaw.mjs", distPresent: false, refuse: false },
   { entry: "dist/index.js", distPresent: false, refuse: false },
 ])(
   "distinguishes dist use by a live $entry command (dist present: $distPresent)",

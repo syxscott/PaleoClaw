@@ -178,7 +178,7 @@ it.each([
         ...(platform === "linux" ? { systemd: { unit: "paleoclaw-gateway.service" } } : {}),
       });
       service.readCommand.mockResolvedValue({
-        programArguments: ["node", "openclaw.mjs", "gateway", "run"],
+        programArguments: ["node", "paleoclaw.mjs", "gateway", "run"],
         environment: { OPENCLAW_STATE_DIR: stateDir },
       });
       let consumed: GatewayRestartIntent | null = null;

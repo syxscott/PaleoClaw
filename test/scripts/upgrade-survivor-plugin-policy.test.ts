@@ -79,7 +79,7 @@ it("authors the isolated baseline with the existing explicit survivor model rout
   writeJson(join(packageRoot, "package.json"), { name: "paleoclaw", version: "2026.9.2" });
   writeJson(configPath, {});
   writeExecutable(
-    join(packageRoot, "openclaw.mjs"),
+    join(packageRoot, "paleoclaw.mjs"),
     `#!${process.execPath}
 import fs from "node:fs";
 const args = process.argv.slice(2);
@@ -94,7 +94,7 @@ if (args[0] === "config" && args[1] === "set") {
 }
 `,
   );
-  symlinkSync("../lib/node_modules/paleoclaw/openclaw.mjs", join(prefix, "bin/paleoclaw"));
+  symlinkSync("../lib/node_modules/paleoclaw/paleoclaw.mjs", join(prefix, "bin/paleoclaw"));
   const result = run(process.execPath, [policyScript, "seed", source, "2026.9.2"], {
     PATH: `${join(prefix, "bin")}${delimiter}${process.env.PATH ?? ""}`,
     npm_config_prefix: prefix,

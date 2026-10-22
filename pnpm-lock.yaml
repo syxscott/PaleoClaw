@@ -61,7 +61,7 @@ patchedDependencies:
     hash: c3c4601486630c689ffd1a0e7a34f4b8cf8e7231e41c312ad33afdf4487d8ded
     path: patches/baileys@7.0.0-rc14.patch
   chrome-devtools-mcp@1.10.1:
-    hash: 545aa1f85677ed10471fc053b56fff071f31c8b60400478cb45280e43f7760b2
+    hash: d31d6e7e187ea9fd4dad87ed3ad08073c77ffcfddd52bc4761b39a2dfce0ac1e
     path: patches/chrome-devtools-mcp@1.10.1.patch
   ghostty-web@0.4.0:
     hash: d4c6598b6840564dac4a469f3aa9b8df24fe6eab48a6744302707017e095a524
@@ -232,7 +232,7 @@ importers:
         version: 5.0.0
       chrome-devtools-mcp:
         specifier: 1.10.1
-        version: 1.10.1(patch_hash=545aa1f85677ed10471fc053b56fff071f31c8b60400478cb45280e43f7760b2)
+        version: 1.10.1(patch_hash=d31d6e7e187ea9fd4dad87ed3ad08073c77ffcfddd52bc4761b39a2dfce0ac1e)
       clawpdf:
         specifier: 0.3.2
         version: 0.3.2
@@ -471,9 +471,45 @@ importers:
       '@opentelemetry/sdk-node':
         specifier: 0.223.0
         version: 0.223.0(@opentelemetry/api@1.9.1)
+      '@paleoclaw/acp-core':
+        specifier: workspace:*
+        version: link:packages/acp-core
+      '@paleoclaw/agent-core':
+        specifier: workspace:*
+        version: link:packages/agent-core
+      '@paleoclaw/gateway-client':
+        specifier: workspace:*
+        version: link:packages/gateway-client
+      '@paleoclaw/gateway-protocol':
+        specifier: workspace:*
+        version: link:packages/gateway-protocol
+      '@paleoclaw/llm-core':
+        specifier: workspace:*
+        version: link:packages/llm-core
+      '@paleoclaw/media-core':
+        specifier: workspace:*
+        version: link:packages/media-core
+      '@paleoclaw/model-catalog-core':
+        specifier: workspace:*
+        version: link:packages/model-catalog-core
+      '@paleoclaw/net-policy':
+        specifier: workspace:*
+        version: link:packages/net-policy
+      '@paleoclaw/normalization-core':
+        specifier: workspace:*
+        version: link:packages/normalization-core
+      '@paleoclaw/retry':
+        specifier: workspace:*
+        version: link:packages/retry
       '@paleoclaw/session-url-contract':
         specifier: workspace:*
         version: link:packages/session-url-contract
+      '@paleoclaw/workboard-contract':
+        specifier: workspace:*
+        version: link:packages/workboard-contract
+      '@paleoclaw/worker-runtime':
+        specifier: workspace:*
+        version: link:packages/worker-runtime
       '@pnpm/parse-overrides':
         specifier: 1001.0.4
         version: 1001.0.4
@@ -843,7 +879,7 @@ importers:
         version: 2.3.1
       chrome-devtools-mcp:
         specifier: 1.10.1
-        version: 1.10.1(patch_hash=545aa1f85677ed10471fc053b56fff071f31c8b60400478cb45280e43f7760b2)
+        version: 1.10.1(patch_hash=d31d6e7e187ea9fd4dad87ed3ad08073c77ffcfddd52bc4761b39a2dfce0ac1e)
       express:
         specifier: 5.3.0
         version: 5.3.0
@@ -18772,7 +18808,7 @@ snapshots:
 
   chownr@3.0.0: {}
 
-  chrome-devtools-mcp@1.10.1(patch_hash=545aa1f85677ed10471fc053b56fff071f31c8b60400478cb45280e43f7760b2): {}
+  chrome-devtools-mcp@1.10.1(patch_hash=d31d6e7e187ea9fd4dad87ed3ad08073c77ffcfddd52bc4761b39a2dfce0ac1e): {}
 
   ci-info@4.4.0: {}
 

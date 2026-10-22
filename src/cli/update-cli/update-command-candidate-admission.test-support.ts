@@ -677,7 +677,7 @@ export function registerCandidateAdmissionTests(f: CandidateAdmissionFixture) {
       [
         `${refusal}Required: paleoclaw@2026.3.23-2 Node >=22.19.0; detected: Node ${process.versions.node} at ${process.execPath}`,
         `${refusal}Update install root: ${fsSync.realpathSync(root)}`,
-        `${refusal}Update binary: ${path.join(root, "openclaw.mjs")}`,
+        `${refusal}Update binary: ${path.join(root, "paleoclaw.mjs")}`,
         `${refusal}Gateway install root: unresolved`,
         `${refusal}${runtimeRecovery.expectedPlainRecovery("2026.3.23-2", "24.16.0", "absent", undefined, root)}`,
       ].join("\n"),

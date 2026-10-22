@@ -307,7 +307,7 @@ try {
       },
     );
     assert.equal(result.exitCode, 0, result.output.slice(-6000));
-    entry = path.join(install, "install/global/node_modules/paleoclaw/openclaw.mjs");
+    entry = path.join(install, "install/global/node_modules/paleoclaw/paleoclaw.mjs");
     const launcher = path.join(install, "bin/paleoclaw");
     assert(!fs.lstatSync(launcher).isSymbolicLink(), "Bun-only install must publish a launcher");
     assert(read(launcher).startsWith("#!/bin/sh\n# paleoclaw Bun launcher\n"));

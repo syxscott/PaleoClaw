@@ -13,7 +13,7 @@ import { useAutoCleanupTempDirTracker } from "../helpers/temp-dir.js";
 const tempDirs = useAutoCleanupTempDirTracker(afterEach);
 afterEach(() => vi.unstubAllGlobals());
 const execPath = "/synthetic/node";
-const entryPath = "/synthetic/openclaw.mjs";
+const entryPath = "/synthetic/paleoclaw.mjs";
 const execArgv = ["--import", "synthetic-loader"];
 
 function expectInvocation(
@@ -30,7 +30,7 @@ function expectInvocation(
 it.each([
   ["loose", execPath, entryPath],
   ["explicit", "/synthetic/paleoclaw-wrapper", null],
-  ["embedded", process.execPath, "/synthetic/runtime/openclaw.mjs"],
+  ["embedded", process.execPath, "/synthetic/runtime/paleoclaw.mjs"],
 ] as const)("preserves arguments and chooses the %s CLI prefix", (mode, command, entry) => {
   if (mode === "embedded") {
     vi.stubGlobal("__openclawStandaloneRootUrl", "file:///synthetic/runtime/");
@@ -65,14 +65,14 @@ it("uses a renamed standalone artifact's manifest for service invocation and run
   expectInvocation({ execPath: executable, args: ["gateway"] });
   expectInvocation({
     execPath: executable,
-    entryPath: path.join(runtime, "openclaw.mjs"),
+    entryPath: path.join(runtime, "paleoclaw.mjs"),
     execArgv: ["--max-old-space-size=4096"],
     args: ["--profile", "fixture", "gateway", "--port", "18790"],
   });
   expect(() =>
     resolveOpenClawCliInvocation({
       execPath: executable,
-      entryPath: path.join(root, "other-install", "openclaw.mjs"),
+      entryPath: path.join(root, "other-install", "paleoclaw.mjs"),
       args: ["doctor"],
     }),
   ).toThrow("cannot run another installation");

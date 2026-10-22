@@ -1,4 +1,4 @@
-import { normalizeRouteBasePath } from "@paleoclaw/uirouter";
+import { normalizeRouteBasePath } from "@openclaw/uirouter";
 
 export type AssistantMediaContext = {
   sessionKey?: string;

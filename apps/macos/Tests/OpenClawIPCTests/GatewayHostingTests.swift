@@ -22,7 +22,7 @@ struct GatewayHostingTests {
         ]) {
             let manager = GatewayProcessManager()
             manager.retainedServiceCLI = .init(
-                prefix: ["/profile/runtime/build/bin/bun", "/profile/runtime/build/lib/openclaw.mjs"],
+                prefix: ["/profile/runtime/build/bin/bun", "/profile/runtime/build/lib/paleoclaw.mjs"],
                 sqliteLibrary: nil)
             manager.storeHosting(.app)
             #expect(manager.retainedServiceCLI == nil)
@@ -34,11 +34,11 @@ struct GatewayHostingTests {
     @Test func `paused owned Bun permits hosting changes while retained external and Node runtimes do not`() {
         let state = URL(fileURLWithPath: "/profile")
         for (runtime, entrypoint, available) in [
-            ("/profile/runtime/build/bin/bun", "/profile/runtime/build/lib/openclaw.mjs", true),
-            ("/profile/runtime/build/bin/bun", "/profile/lib/node_modules/paleoclaw/openclaw.mjs", false),
-            ("/operator/bun", "/profile/runtime/build/lib/openclaw.mjs", false),
-            ("/operator/node", "/profile/lib/node_modules/paleoclaw/openclaw.mjs", false),
-            ("/profile/tools/node/bin/node", "/profile/lib/node_modules/paleoclaw/openclaw.mjs", false),
+            ("/profile/runtime/build/bin/bun", "/profile/runtime/build/lib/paleoclaw.mjs", true),
+            ("/profile/runtime/build/bin/bun", "/profile/lib/node_modules/paleoclaw/paleoclaw.mjs", false),
+            ("/operator/bun", "/profile/runtime/build/lib/paleoclaw.mjs", false),
+            ("/operator/node", "/profile/lib/node_modules/paleoclaw/paleoclaw.mjs", false),
+            ("/profile/tools/node/bin/node", "/profile/lib/node_modules/paleoclaw/paleoclaw.mjs", false),
         ] {
             let cli = GatewayLaunchAgentManager.InstalledServiceCLI(
                 prefix: [runtime, entrypoint], sqliteLibrary: nil)

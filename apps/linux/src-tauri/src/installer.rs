@@ -245,7 +245,7 @@ fn install_at(
             .env("OPENCLAW_PACKAGE_BUN_LAUNCHER", &runtime.bun);
         use std::os::windows::process::CommandExt;
         command.creation_flags(0x08000000);
-        let entry = package_root.join("node_modules/paleoclaw/openclaw.mjs");
+        let entry = package_root.join("node_modules/paleoclaw/paleoclaw.mjs");
         (command, runtime, entry)
     };
     command

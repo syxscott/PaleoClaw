@@ -46,10 +46,10 @@ export async function buildBundleFixture(
   const archiveEntries = ["github-exec-launcher.mjs", "worker.mjs", "workspace-rsync-receiver.mjs"];
   if (options.packageShell) {
     await fs.mkdir(path.join(source, "dist"));
-    await write("openclaw.mjs", "#!/usr/bin/env node\n", 0o700);
+    await write("paleoclaw.mjs", "#!/usr/bin/env node\n", 0o700);
     await write("package.json", '{"name":"paleoclaw"}\n');
     await write("dist/worker.js", "export {};\n");
-    archiveEntries.push("dist/worker.js", "openclaw.mjs", "package.json");
+    archiveEntries.push("dist/worker.js", "paleoclaw.mjs", "package.json");
   }
   const manifest = await readWorkerBundleDirectoryManifest({
     root: source,

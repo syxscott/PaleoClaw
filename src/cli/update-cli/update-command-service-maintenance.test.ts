@@ -54,7 +54,7 @@ it("preserves the shared service inspection deadline phase in recovery guidance"
         readCommand: async () => {
           now = 101;
           return {
-            programArguments: [process.execPath, "openclaw.mjs", "gateway"],
+            programArguments: [process.execPath, "paleoclaw.mjs", "gateway"],
             environment: { HOME: home },
           };
         },
@@ -82,7 +82,7 @@ it("reports observed service facts without inferring a manual launch when inspec
         installed: true,
         running: false,
         command: {
-          programArguments: [process.execPath, "openclaw.mjs", "gateway"],
+          programArguments: [process.execPath, "paleoclaw.mjs", "gateway"],
           sourcePath: path.join(home, ".config/systemd/user/paleoclaw-gateway.service"),
         },
         loadState: { status: "unknown", detail: "manager timeout" },
@@ -127,7 +127,7 @@ it.each(["authority-lost", "ordinary"] as const)(
       });
       const service = createMockGatewayService({
         readCommand: async () => ({
-          programArguments: [process.execPath, path.join(process.cwd(), "openclaw.mjs"), "gateway"],
+          programArguments: [process.execPath, path.join(process.cwd(), "paleoclaw.mjs"), "gateway"],
           environment: { HOME: home },
         }),
         readRuntime: async () => ({
@@ -187,7 +187,7 @@ it.each(maintenanceOperations)(
       mockProcessPlatform("linux");
       let timeout = 30;
       const command = {
-        programArguments: [process.execPath, path.join(process.cwd(), "openclaw.mjs"), "gateway"],
+        programArguments: [process.execPath, path.join(process.cwd(), "paleoclaw.mjs"), "gateway"],
         environment: { HOME: home, OPENCLAW_SERVICE_VERSION: "2026.7.1-2" },
       };
       const service = createMockGatewayService({
@@ -316,7 +316,7 @@ it.each([{ state: "failed", tasksCurrent: 2, residual: true }])(
       mockProcessPlatform("linux");
       const service = createMockGatewayService({
         readCommand: async () => ({
-          programArguments: [process.execPath, path.join(process.cwd(), "openclaw.mjs"), "gateway"],
+          programArguments: [process.execPath, path.join(process.cwd(), "paleoclaw.mjs"), "gateway"],
           environment: { HOME: home },
         }),
         readRuntime: async () => ({
@@ -357,7 +357,7 @@ it.each(["systemd-user-bus-unavailable", "native-exception", undefined] as const
           return {
             programArguments: [
               process.execPath,
-              path.join(process.cwd(), "openclaw.mjs"),
+              path.join(process.cwd(), "paleoclaw.mjs"),
               "gateway",
             ],
             environment: { HOME: home },
@@ -416,7 +416,7 @@ it.each(["systemd-user-bus-unavailable", "native-exception", undefined] as const
       expect(failure.message).toContain(`Update install root: ${process.cwd()}`);
       expect(failure.message).toContain(`Gateway install root: ${process.cwd()}`);
       expect(failure.message).toContain(
-        `Update binary: ${path.join(process.cwd(), "openclaw.mjs")}`,
+        `Update binary: ${path.join(process.cwd(), "paleoclaw.mjs")}`,
       );
       expect(failure.message).toContain(
         "Required: admitted service ownership owned; manager UID 2001; detected: unavailable; runtime unknown; manager UID unavailable",
@@ -607,7 +607,7 @@ it("preserves a silent Scheduled Task probe failure through update and Doctor wa
     });
     const service = createMockGatewayService({
       readCommand: async () => ({
-        programArguments: [process.execPath, path.join(process.cwd(), "openclaw.mjs"), "gateway"],
+        programArguments: [process.execPath, path.join(process.cwd(), "paleoclaw.mjs"), "gateway"],
         environment: { HOME: home },
       }),
       readRuntime: readScheduledTaskRuntime,
@@ -653,7 +653,7 @@ it("refuses owned Linux admission without a native manager UID", () =>
     mocks.service.mockReturnValue(
       createMockGatewayService({
         readCommand: async () => ({
-          programArguments: [process.execPath, path.join(process.cwd(), "openclaw.mjs"), "gateway"],
+          programArguments: [process.execPath, path.join(process.cwd(), "paleoclaw.mjs"), "gateway"],
           environment: { HOME: home },
         }),
         readRuntime: async () => ({ status: "running" }),
@@ -703,7 +703,7 @@ it.each(["before stop", "after stop"] as const)(
       mocks.service.mockReturnValue(
         createMockGatewayService({
           readCommand: async () => ({
-            programArguments: [process.execPath, path.join(root, "openclaw.mjs"), "gateway"],
+            programArguments: [process.execPath, path.join(root, "paleoclaw.mjs"), "gateway"],
             environment: { HOME: home },
           }),
           readRuntime: async () => {

@@ -141,7 +141,7 @@ async function createGitFixtureSeed(directory: string, manifest: Record<string, 
   await writeGitFixtureManifest(remote, manifest);
   await fs.mkdir(path.join(remote, "packages", "runtime"), { recursive: true });
   await writeFixtureFiles(remote, {
-    "openclaw.mjs": "export {};\n",
+    "paleoclaw.mjs": "export {};\n",
     "packages/runtime/index.js": "module.exports = require('./node_modules/nested.cjs');",
     ".gitignore": "node_modules/\ndist/\ndist-runtime/\n.artifacts\n.pnpm\ncache/\n",
   });

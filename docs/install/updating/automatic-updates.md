@@ -79,7 +79,7 @@ from a CLI connected to its Gateway and inspect `nodes[].version`.
 `paleoclaw --version` reports that CLI's installed version, which can differ
 after a node update.
 
-Installed node services must launch through `openclaw.mjs` (or `dist/entry.js`),
+Installed node services must launch through `paleoclaw.mjs` (or `dist/entry.js`),
 which starts the update supervisor. If an older service points directly at
 `dist/index.js`, run `paleoclaw doctor --fix` on that node machine to repair its
 entrypoint while preserving the installed connection options. A node started

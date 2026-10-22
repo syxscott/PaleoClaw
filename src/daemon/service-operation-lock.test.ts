@@ -141,7 +141,7 @@ it.each([false, true])("retains nested reads: installed=%s", async (installed) =
   }
   const inspectionEnv = installed
     ? mergeGatewayServiceEnv(env, {
-        programArguments: [process.execPath, "/opt/paleoclaw/openclaw.mjs", "gateway"],
+        programArguments: [process.execPath, "/opt/paleoclaw/paleoclaw.mjs", "gateway"],
         environment: filterStringRecord(
           buildServiceEnvironment({ env, port: 18789, platform: "linux" }),
         ),

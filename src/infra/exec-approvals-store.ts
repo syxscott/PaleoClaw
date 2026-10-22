@@ -77,14 +77,14 @@ class ExecApprovalsStoreUnavailableError extends Error {
 const preparedSnapshots = resolveGlobalMap<
   string,
   { identity: string; path: string; snapshot: Promise<ExecApprovalsSnapshot> }
->(Symbol.for("openclaw.execApprovalsPreparedSnapshots"), "close-and-restart");
+>(Symbol.for("paleoclaw.execApprovalsPreparedSnapshots"), "close-and-restart");
 
 type CurrentExecPolicy = {
   file?: ExecApprovalsFile;
   pending: Set<string>;
 };
 const currentPolicies = resolveGlobalMap<string, CurrentExecPolicy>(
-  Symbol.for("openclaw.execApprovalsCurrentPolicies"),
+  Symbol.for("paleoclaw.execApprovalsCurrentPolicies"),
   "close-and-restart",
 );
 

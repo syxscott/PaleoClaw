@@ -376,7 +376,7 @@ export function packageRoot(installRoot: string) {
   return path.join(installRoot, "node_modules", "paleoclaw");
 }
 export function entry(installRoot: string) {
-  return path.join(packageRoot(installRoot), "openclaw.mjs");
+  return path.join(packageRoot(installRoot), "paleoclaw.mjs");
 }
 export function samePath(actual: string, expected: string) {
   assert.equal(path.resolve(actual).toLowerCase(), path.resolve(expected).toLowerCase());

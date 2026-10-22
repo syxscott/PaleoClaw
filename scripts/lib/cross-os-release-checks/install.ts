@@ -720,7 +720,7 @@ function installedPackageRoot(prefixDir: string, platform = process.platform) {
 }
 
 export function installedEntryPath(prefixDir: string) {
-  return join(installedPackageRoot(prefixDir), "openclaw.mjs");
+  return join(installedPackageRoot(prefixDir), "paleoclaw.mjs");
 }
 
 function npmShimPath(prefixDir: string) {

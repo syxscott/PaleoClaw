@@ -32,7 +32,7 @@ function runCandidateFlow(scenario: Scenario, change: Change) {
   mkdirSync(artifacts);
   mkdirSync(path.join(root, "runtime"));
   writeJson(path.join(candidate, "package.json"), { name: "paleoclaw", version });
-  writeFileSync(path.join(candidate, "openclaw.mjs"), "export {};\n");
+  writeFileSync(path.join(candidate, "paleoclaw.mjs"), "export {};\n");
   writeJson(path.join(candidate, "dist/build-info.json"), { version, commit: selectedSha });
   writeFileSync(path.join(candidate, "dist/entry.mjs"), "export const payload = 'candidate';\n");
   cpSync(candidate, installed, { recursive: true });
@@ -95,7 +95,7 @@ update_candidate_for_install_mode() {
   case "$UNIT_CHANGE" in
     tarball-changed) printf '\\n' >> "$CANDIDATE_SPEC" ;;
     tarball-missing) rm "$CANDIDATE_SPEC" ;;
-    entrypoint-missing) rm "$UNIT_ROOT/installed/openclaw.mjs" ;;
+    entrypoint-missing) rm "$UNIT_ROOT/installed/paleoclaw.mjs" ;;
   esac
 }
 phase() {

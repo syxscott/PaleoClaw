@@ -71,7 +71,7 @@ function helperSource(runtime: string, copy: string, root: string): string {
   // the independent journal and obtains fresh native authority on every run.
   return `import fs from "node:fs";
 const runtime = ${JSON.stringify(runtime)};
-const entry = ${JSON.stringify(path.join(copy, "openclaw.mjs"))};
+const entry = ${JSON.stringify(path.join(copy, "paleoclaw.mjs"))};
 const root = ${JSON.stringify(root)};
 try {
   if (fs.realpathSync(process.execPath) !== runtime || typeof process.execve !== "function") {

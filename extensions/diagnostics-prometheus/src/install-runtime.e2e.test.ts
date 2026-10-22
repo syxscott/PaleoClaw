@@ -69,7 +69,7 @@ function isolatedEnv(root: string, registry?: string) {
 
 async function runCli(args: string[], env: NodeJS.ProcessEnv): Promise<string> {
   // E2E setup owns shared dist; a child rebuild can delete running siblings' chunks.
-  const result = await execFileAsync(process.execPath, ["openclaw.mjs", ...args], {
+  const result = await execFileAsync(process.execPath, ["paleoclaw.mjs", ...args], {
     cwd: repoRoot,
     env,
     maxBuffer: 4 * 1024 * 1024,
@@ -264,7 +264,7 @@ it("installs trusted Prometheus metrics with scoped HTTP access", async ({ signa
   expect(["config", "global"]).toContain(inspect.plugin?.origin);
 
   const { child: gateway, closeLog } = await spawnLogged(
-    ["openclaw.mjs", "gateway", "run", "--bind", "loopback", "--port", String(gatewayPort)],
+    ["paleoclaw.mjs", "gateway", "run", "--bind", "loopback", "--port", String(gatewayPort)],
     gatewayLog,
     env,
   );

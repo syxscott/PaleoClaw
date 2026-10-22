@@ -112,7 +112,7 @@ it.skipIf(process.platform === "win32").each([false, true])(
         operationId: f.operationId,
       });
     if (modified) {
-      fs.appendFileSync(path.join(f.packageRoot, "openclaw.mjs"), "changed");
+      fs.appendFileSync(path.join(f.packageRoot, "paleoclaw.mjs"), "changed");
       const before = fs.readFileSync(f.journalPath);
       await expect(settle()).rejects.toThrow("full candidate fingerprint changed");
       expect(fs.readFileSync(f.journalPath)).toEqual(before);

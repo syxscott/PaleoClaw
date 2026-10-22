@@ -86,7 +86,7 @@ export async function writeNodeScript(env: Record<string, string>, port = "18789
   return writeScript(resolveTaskScriptPath(env), [
     `set "OPENCLAW_SERVICE_KIND=node"`,
     `set "OPENCLAW_GATEWAY_PORT=${port}"`,
-    `"C:\\bin\\openclaw.cmd" node run --host 127.0.0.1 --port ${port}`,
+    `"C:\\bin\\paleoclaw.cmd" node run --host 127.0.0.1 --port ${port}`,
   ]);
 }
 

@@ -79,7 +79,7 @@ beforeEach(() => {
     if (
       value === "/usr/bin/node" ||
       value === process.argv[1] ||
-      value === "/opt/paleoclaw/openclaw.mjs" ||
+      value === "/opt/paleoclaw/paleoclaw.mjs" ||
       value === "/opt/paleoclaw-wrapper"
     ) {
       return;
@@ -130,7 +130,7 @@ describe.skipIf(process.platform === "win32")("node-host runtime install boundar
     const plan = await install();
     expect(plan.programArguments).toEqual([
       "/usr/bin/node",
-      "/opt/paleoclaw/openclaw.mjs",
+      "/opt/paleoclaw/paleoclaw.mjs",
       "node",
       "run",
       "--host",

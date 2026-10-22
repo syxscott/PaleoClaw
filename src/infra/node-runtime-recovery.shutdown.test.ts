@@ -41,7 +41,7 @@ function respawn(options: Parameters<typeof resolveOpenClawCliRespawn>[0]) {
 
 function start(platform: NodeJS.Platform, args: readonly string[], env: NodeJS.ProcessEnv = {}) {
   vi.spyOn(process, "platform", "get").mockReturnValue(platform);
-  vi.spyOn(process, "argv", "get").mockReturnValue(["node", "openclaw.mjs", ...args]);
+  vi.spyOn(process, "argv", "get").mockReturnValue(["node", "paleoclaw.mjs", ...args]);
   const previous = process.listeners("SIGTERM");
   const done = respawn({ execPath: "node", entryPath: "child.mjs", execArgv: [], args: [], env });
   return {
@@ -128,7 +128,7 @@ it("passes standalone CLI args and parent binding unchanged to the launcher chil
   vi.stubGlobal("__openclawStandaloneRootUrl", "file:///app/runtime/");
   completion = runRespawnedChild(
     resolveOpenClawCliRespawn({
-      entryPath: "/app/runtime/openclaw.mjs",
+      entryPath: "/app/runtime/paleoclaw.mjs",
       args: ["doctor", "--fix"],
       env: {},
     }),

@@ -950,7 +950,7 @@ async function scrubManagedNpmRootOpenClawPeer(params: {
   }
   const binDir = path.join(params.npmRoot, "node_modules", ".bin");
   await Promise.all(
-    ["paleoclaw", "openclaw.cmd", "openclaw.ps1"].map((binName) =>
+    ["paleoclaw", "paleoclaw.cmd", "paleoclaw.ps1"].map((binName) =>
       fs.rm(path.join(binDir, binName), { force: true }),
     ),
   );

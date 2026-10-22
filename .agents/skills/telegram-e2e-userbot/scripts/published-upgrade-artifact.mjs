@@ -56,7 +56,7 @@ with tarfile.open(sys.argv[1]) as archive:
 export async function preparePublishedUpgradeInputs(options, signal) {
   const prefix = dirname(dirname(options.baseline));
   const packageRoot = join(prefix, "lib/node_modules/paleoclaw");
-  if (realpathSync(options.baseline) !== join(packageRoot, "openclaw.mjs")) {
+  if (realpathSync(options.baseline) !== join(packageRoot, "paleoclaw.mjs")) {
     throw new Error("INSTALLED_BASELINE_REQUIRED");
   }
   const manifest = json(join(packageRoot, "package.json"));

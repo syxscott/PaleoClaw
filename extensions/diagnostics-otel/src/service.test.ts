@@ -3051,7 +3051,7 @@ describe("diagnostics-otel service", () => {
     emitDiagnosticEvent(execEvent);
     await flushDiagnosticEvents();
 
-    const execParents = startedSpanParentContexts("openclaw.exec");
+    const execParents = startedSpanParentContexts("paleoclaw.exec");
     expect(execParents[0]?.traceId).toBe(TRACE_ID);
     expect(execParents[0]?.spanId).toBe(runSpanContext.spanId);
     // A plain untrusted emitter must not be able to inject a parent link.
@@ -3072,40 +3072,40 @@ describe("diagnostics-otel service", () => {
       failureKind: "runtime-error",
     });
 
-    const execDuration = lastHistogramRecord("openclaw.exec.duration_ms");
+    const execDuration = lastHistogramRecord("paleoclaw.exec.duration_ms");
     expect(execDuration?.[0]).toBe(30);
     expect(execDuration?.[1]).toMatchObject({
-      "openclaw.exec.target": "host",
-      "openclaw.exec.mode": "child",
+      "paleoclaw.exec.target": "host",
+      "paleoclaw.exec.mode": "child",
       "openclaw.outcome": "failed",
       "openclaw.failureKind": "runtime-error",
     });
 
-    const execCall = startedSpanCall("openclaw.exec");
+    const execCall = startedSpanCall("paleoclaw.exec");
     const execOptions = execCall?.[1];
     expect(execOptions?.attributes).toMatchObject({
-      "openclaw.exec.target": "host",
-      "openclaw.exec.mode": "child",
+      "paleoclaw.exec.target": "host",
+      "paleoclaw.exec.mode": "child",
       "openclaw.outcome": "failed",
-      "openclaw.exec.command_length": 42,
-      "openclaw.exec.exit_code": 1,
-      "openclaw.exec.timed_out": false,
+      "paleoclaw.exec.command_length": 42,
+      "paleoclaw.exec.exit_code": 1,
+      "paleoclaw.exec.timed_out": false,
       "openclaw.failureKind": "runtime-error",
     });
     expectAbsent(
       execOptions?.attributes,
-      "openclaw.exec.command",
-      "openclaw.exec.workdir",
+      "paleoclaw.exec.command",
+      "paleoclaw.exec.workdir",
       "openclaw.sessionKey",
     );
     expect(execOptions?.startTime).toBeTypeOf("number");
 
-    const execSpan = spanByName("openclaw.exec");
+    const execSpan = spanByName("paleoclaw.exec");
     expect(execSpan?.setStatus).toHaveBeenCalledWith({
       code: 2,
       message: "runtime-error",
     });
-    expect(firstSpanEndTime("openclaw.exec")).toBeTypeOf("number");
+    expect(firstSpanEndTime("paleoclaw.exec")).toBeTypeOf("number");
   });
 
   test("exports message delivery spans and metrics with low-cardinality attributes", async () => {

@@ -68,11 +68,11 @@ it("launches managed bridges from the host package when acpx is an external pack
   const hostRoot = path.join(tmp, "lib", "node_modules", "paleoclaw");
   fs.mkdirSync(path.join(hostRoot, "dist", "mcp"), { recursive: true });
   fs.writeFileSync(path.join(hostRoot, "package.json"), JSON.stringify({ name: "paleoclaw" }));
-  fs.writeFileSync(path.join(hostRoot, "openclaw.mjs"), "");
+  fs.writeFileSync(path.join(hostRoot, "paleoclaw.mjs"), "");
   fs.writeFileSync(path.join(hostRoot, "dist", "mcp", "plugin-tools-serve.js"), "");
   fs.writeFileSync(path.join(hostRoot, "dist", "mcp", "paleoclaw-tools-serve.js"), "");
   fs.mkdirSync(path.join(tmp, "bin"));
-  fs.symlinkSync(path.join(hostRoot, "openclaw.mjs"), path.join(tmp, "bin", "paleoclaw"));
+  fs.symlinkSync(path.join(hostRoot, "paleoclaw.mjs"), path.join(tmp, "bin", "paleoclaw"));
   const pluginRoot = path.join(tmp, "captures", "package-0", "node_modules", "@paleoclaw", "acpx");
   fs.mkdirSync(path.join(pluginRoot, "dist"), { recursive: true });
   fs.writeFileSync(

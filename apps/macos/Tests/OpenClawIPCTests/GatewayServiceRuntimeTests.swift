@@ -19,7 +19,7 @@ struct GatewayServiceRuntimeTests {
         let state = profile.stateDirectoryURL(homeDirectory: home)
         let node = state.appendingPathComponent("tools/node-v26.1.0/bin/node")
         let package = state.appendingPathComponent("tools/node-v26.1.0/lib/node_modules/paleoclaw")
-        let entry = package.appendingPathComponent("openclaw.mjs")
+        let entry = package.appendingPathComponent("paleoclaw.mjs")
         let wrapper = state.appendingPathComponent("bin/paleoclaw")
         let artifacts = GatewayLaunchAgentManager.generatedEnvironmentArtifacts(
             directory: state.appendingPathComponent("service-env"), profile: profile)
@@ -72,7 +72,7 @@ struct GatewayServiceRuntimeTests {
                 GatewayLaunchAgentManager.clearTestingDaemonCommandCalls()
             }
             let captured = GatewayLaunchAgentManager.InstalledServiceCLI(
-                prefix: ["/operator/node", "/operator/openclaw.mjs"], sqliteLibrary: nil, hadRuntimePin: true)
+                prefix: ["/operator/node", "/operator/paleoclaw.mjs"], sqliteLibrary: nil, hadRuntimePin: true)
             try Data().write(to: marker)
             #expect(await GatewayLaunchAgentManager.runDaemonCommand(["install", "--force"], installedCLI: captured) ==
                 "Gateway service changes are disabled")
@@ -155,7 +155,7 @@ struct GatewayServiceRuntimeTests {
     @Test func `installed service ownership outranks a retained resume command`() {
         let state = URL(fileURLWithPath: "/profile")
         let service = GatewayLaunchAgentManager.InstalledServiceCLI(
-            prefix: ["/operator/bun", "/profile/runtime/build-one/lib/node_modules/paleoclaw/openclaw.mjs"],
+            prefix: ["/operator/bun", "/profile/runtime/build-one/lib/node_modules/paleoclaw/paleoclaw.mjs"],
             sqliteLibrary: nil)
         #expect(GatewayHosting.usesSeededGateway(
             hasService: true,
@@ -164,9 +164,9 @@ struct GatewayServiceRuntimeTests {
             stateDirectory: state,
             hasRetainedService: true))
         for (prefix, expected) in [
-            (["/profile/runtime/build/bin/bun", "/profile/runtime/build/lib/openclaw.mjs"], true),
-            (["/profile/tools/node/bin/node", "/profile/lib/node_modules/paleoclaw/openclaw.mjs"], false),
-            (["/profile/runtime/build/bin/bun", "/profile/lib/node_modules/paleoclaw/openclaw.mjs"], false),
+            (["/profile/runtime/build/bin/bun", "/profile/runtime/build/lib/paleoclaw.mjs"], true),
+            (["/profile/tools/node/bin/node", "/profile/lib/node_modules/paleoclaw/paleoclaw.mjs"], false),
+            (["/profile/runtime/build/bin/bun", "/profile/lib/node_modules/paleoclaw/paleoclaw.mjs"], false),
             (service.prefix, true),
         ] {
             let retained = GatewayLaunchAgentManager.InstalledServiceCLI(prefix: prefix, sqliteLibrary: nil)
@@ -194,7 +194,7 @@ struct GatewayServiceRuntimeTests {
         let runtime = BundledRuntime(root: URL(fileURLWithPath: "/old"))
         let fixtures: [([String], String?, Bool, String)] = [
             (
-                ["/old/bin/bun", "/old/lib/node_modules/paleoclaw/openclaw.mjs"],
+                ["/old/bin/bun", "/old/lib/node_modules/paleoclaw/paleoclaw.mjs"],
                 "/old/lib/libsqlite3.dylib",
                 true,
                 "/old/bin:/usr/bin"),
@@ -202,7 +202,7 @@ struct GatewayServiceRuntimeTests {
                 ["/old/bin/bun", "--no-install", "/old/lib/node_modules/paleoclaw/dist/index.js"],
                 "/old/lib/libsqlite3.dylib", true, "/old/bin:/usr/bin"),
             (
-                ["/old/bin/bun", "--max-heap-size=8192", "--no-install", "/old/lib/node_modules/paleoclaw/openclaw.mjs"],
+                ["/old/bin/bun", "--max-heap-size=8192", "--no-install", "/old/lib/node_modules/paleoclaw/paleoclaw.mjs"],
                 nil, false, "/old/bin:/usr/bin"),
             (
                 ["/old/bin/node", "--max-old-space-size=8192", "/old/lib/node_modules/paleoclaw/dist/index.js"],
@@ -218,17 +218,17 @@ struct GatewayServiceRuntimeTests {
                 ],
                 "/old/lib/libsqlite3.dylib", true, "/old/bin:/usr/bin"),
             (
-                ["/other/bin/bun", "/old/lib/node_modules/paleoclaw/openclaw.mjs"],
+                ["/other/bin/bun", "/old/lib/node_modules/paleoclaw/paleoclaw.mjs"],
                 "/old/lib/libsqlite3.dylib",
                 false,
                 "/other/bin:/usr/bin"),
             (
-                ["/old/bin/bun", "/other/lib/node_modules/paleoclaw/openclaw.mjs"],
+                ["/old/bin/bun", "/other/lib/node_modules/paleoclaw/paleoclaw.mjs"],
                 "/old/lib/libsqlite3.dylib",
                 false,
                 "/old/bin:/usr/bin"),
             (
-                ["/old/bin/bun", "/old/lib/node_modules/paleoclaw/openclaw.mjs"],
+                ["/old/bin/bun", "/old/lib/node_modules/paleoclaw/paleoclaw.mjs"],
                 "/other/lib/libsqlite3.dylib",
                 false,
                 "/old/bin:/usr/bin"),
@@ -258,7 +258,7 @@ struct GatewayServiceRuntimeTests {
         let prefix = [
             "/profile/runtime/build-one/bin/bun",
             "--no-install",
-            "/profile/runtime/build-one/lib/openclaw.mjs",
+            "/profile/runtime/build-one/lib/paleoclaw.mjs",
         ]
         let command = prefix + ["gateway"]
         for arguments in [
@@ -274,12 +274,12 @@ struct GatewayServiceRuntimeTests {
         for arguments in [
             ["/bin/sh", "/operator/other-env-wrapper.sh", environment.path] + command,
             [wrapper.path, "/operator/other.env"] + command,
-            ["/bin/sh", "-c", "exec bun openclaw.mjs gateway"],
-            ["/operator/custom-wrapper", "/operator/openclaw.mjs", "gateway"],
-            ["/operator/node", "--require", "/operator/custom.js", "/operator/openclaw.mjs", "gateway"],
-            ["/operator/node", "--no-install", "/operator/openclaw.mjs", "gateway"],
-            ["/operator/bun", "--no-install=true", "/operator/openclaw.mjs", "gateway"],
-            ["/operator/bun", "--no-install", "--unknown", "/operator/openclaw.mjs", "gateway"],
+            ["/bin/sh", "-c", "exec bun paleoclaw.mjs gateway"],
+            ["/operator/custom-wrapper", "/operator/paleoclaw.mjs", "gateway"],
+            ["/operator/node", "--require", "/operator/custom.js", "/operator/paleoclaw.mjs", "gateway"],
+            ["/operator/node", "--no-install", "/operator/paleoclaw.mjs", "gateway"],
+            ["/operator/bun", "--no-install=true", "/operator/paleoclaw.mjs", "gateway"],
+            ["/operator/bun", "--no-install", "--unknown", "/operator/paleoclaw.mjs", "gateway"],
         ] {
             #expect(GatewayLaunchAgentManager.installedServiceCLI(
                 snapshot: self.snapshot(arguments),

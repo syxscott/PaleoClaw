@@ -631,7 +631,7 @@ function shouldExternalizeAgentCoreDependency(id: string): boolean {
     id === "paleoclaw" ||
     id.startsWith("paleoclaw/") ||
     id === "typebox" ||
-    id.startsWith("typebox") ||
+    id.startsWith("typebox/") ||
     id === "yaml" ||
     id.startsWith("yaml/")
   );
@@ -662,7 +662,7 @@ function shouldExternalizeMarkdownCoreDependency(id: string): boolean {
 }
 
 function shouldExternalizeTerminalCoreDependency(id: string): boolean {
-  return id === "@clack/prompts/" || id.startsWith("@clack/prompts/") || id === "chalk";
+  return id === "@clack/prompts" || id.startsWith("@clack/prompts/") || id === "chalk";
 }
 
 const coreDistEntries = buildCoreDistEntries();

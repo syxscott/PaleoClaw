@@ -136,10 +136,10 @@ function Resolve-OpenClawCommand {
   if ($script:OpenClawResolvedCommand) { return $script:OpenClawResolvedCommand }
   $shimCandidates = @()
   if ($env:APPDATA) {
-    $shimCandidates += Join-Path $env:APPDATA 'npm\openclaw.cmd'
-    $shimCandidates += Join-Path $env:APPDATA 'npm\openclaw.ps1'
+    $shimCandidates += Join-Path $env:APPDATA 'npm\paleoclaw.cmd'
+    $shimCandidates += Join-Path $env:APPDATA 'npm\paleoclaw.ps1'
   }
-  foreach ($name in @('openclaw.cmd', 'openclaw.ps1', 'paleoclaw')) {
+  foreach ($name in @('paleoclaw.cmd', 'paleoclaw.ps1', 'paleoclaw')) {
     $command = Get-Command $name -ErrorAction SilentlyContinue | Select-Object -First 1
     if ($command -and $command.Source) { $shimCandidates += $command.Source }
   }
@@ -148,8 +148,8 @@ function Resolve-OpenClawCommand {
     $npmPrefix = (& npm.cmd prefix -g 2>$null | Select-Object -First 1)
   } catch {}
   if ($npmPrefix) {
-    $shimCandidates += Join-Path $npmPrefix 'openclaw.cmd'
-    $shimCandidates += Join-Path $npmPrefix 'openclaw.ps1'
+    $shimCandidates += Join-Path $npmPrefix 'paleoclaw.cmd'
+    $shimCandidates += Join-Path $npmPrefix 'paleoclaw.ps1'
   }
   foreach ($candidate in $shimCandidates) {
     if ($candidate -and (Test-Path $candidate)) {
@@ -159,10 +159,10 @@ function Resolve-OpenClawCommand {
   }
   $entryCandidates = @()
   if ($env:APPDATA) {
-    $entryCandidates += Join-Path $env:APPDATA 'npm\node_modules\paleoclaw\openclaw.mjs'
+    $entryCandidates += Join-Path $env:APPDATA 'npm\node_modules\paleoclaw\paleoclaw.mjs'
   }
   if ($npmPrefix) {
-    $entryCandidates += Join-Path $npmPrefix 'node_modules\paleoclaw\openclaw.mjs'
+    $entryCandidates += Join-Path $npmPrefix 'node_modules\paleoclaw\paleoclaw.mjs'
   }
   foreach ($candidate in $entryCandidates) {
     if ($candidate -and (Test-Path $candidate)) {

@@ -47,7 +47,7 @@ it.each([
         path.join(root, "package.json"),
         JSON.stringify({ name: "paleoclaw", version: "2026.9.1" }),
       );
-      await fs.writeFile(path.join(root, "openclaw.mjs"), "export {};\n");
+      await fs.writeFile(path.join(root, "paleoclaw.mjs"), "export {};\n");
       await fs.writeFile(path.join(root, ".gitignore"), "dist/\nnode_modules/\n.artifacts/\n");
       await git(root, "init", "--initial-branch=main");
       await git(root, "config", "user.name", "paleoclaw Test");
@@ -94,7 +94,7 @@ it.each([
       vi.spyOn(defaultRuntime, "error").mockImplementation(() => {});
       const capacityStep = { name: "snapshot-space-preflight", exitCode: 1 };
       const originalArgv = process.argv;
-      process.argv = [process.execPath, path.join(root, "openclaw.mjs")];
+      process.argv = [process.execPath, path.join(root, "paleoclaw.mjs")];
       try {
         const update = updateGitInstall({
           root,

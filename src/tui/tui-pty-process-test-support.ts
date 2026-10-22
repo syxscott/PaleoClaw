@@ -18,7 +18,7 @@ function buildTuiCliScript(args: string[], tuiCliModuleUrl: string) {
 
 export function buildTuiProcessArgs(args: string[]) {
   if (process.env.OPENCLAW_TUI_PTY_USE_BUILT_CLI === "1") {
-    return [path.join(process.cwd(), "openclaw.mjs"), ...args];
+    return [path.join(process.cwd(), "paleoclaw.mjs"), ...args];
   }
   const tuiUrl = resolveRuntimeWorkerUrl(tuiPtyRuntimeEntrypoints.cli);
   return [

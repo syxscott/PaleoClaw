@@ -77,7 +77,7 @@ export async function artifactFixture(mac: MacScriptFixture) {
   await write(path.join(runtime, "bin/bun"), binaries.universal, 0o755);
   for (const [name, bytes] of [
     ["lib/libsqlite3.dylib", binaries.universalLibrary],
-    ["lib/node_modules/paleoclaw/openclaw.mjs", "// inert CLI entry\n"],
+    ["lib/node_modules/paleoclaw/paleoclaw.mjs", "// inert CLI entry\n"],
     [`${runtimeDist}/mac-node-worker.js`, "// inert worker entry\n"],
     [`${runtimeDist}/extensions/browser/setup-entry.js`, "// inert browser entry\n"],
     [`${runtimeDist}/control-ui/index.html`, "<!doctype html>\n"],

@@ -22,7 +22,7 @@ run it on an isolated Linux host as the synthetic `fixture` user, with
 ```sh
 pnpm install
 node --import ./scripts/tsx.mjs scripts/build-all.mts qaRuntime
-node openclaw.mjs setup --baseline --workspace /home/fixture/workspace --json
+node paleoclaw.mjs setup --baseline --workspace /home/fixture/workspace --json
 node --import ./scripts/tsx.mjs /path/to/generate.mjs "$PWD" <fixture-name> <output-dir>
 ```
 

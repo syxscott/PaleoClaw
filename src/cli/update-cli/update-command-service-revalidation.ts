@@ -388,7 +388,7 @@ export async function revalidateManagedGatewayServiceAfterUpdate(params: {
         required: `admitted service ownership ${verdict.kind}; manager UID ${before.serviceManagerUid ?? "unavailable"}`,
         detected: `${inspection.kind}; runtime ${params.state.runtime?.status ?? "unavailable"}; manager UID ${managerUid ?? "unavailable"}`,
         installRoot: await tryRealpathOrResolve(params.root),
-        binaryPath: path.join(params.root, "openclaw.mjs"),
+        binaryPath: path.join(params.root, "paleoclaw.mjs"),
         gatewayInstall: (await summarizeGatewayServiceLayout(params.state.command))
           ?.packageRootReal,
         remedy: `${unavailable ? (inspection.inspectionReason || params.state.runtime?.inspectionFailure?.timeoutMs !== undefined ? inspection.message : GATEWAY_SERVICE_INSPECTION_WARNING) : "Gateway service ownership or manager identity changed."} Run paleoclaw gateway status --deep and retry through the owning installation.`,

@@ -24,7 +24,7 @@ export async function writeNodeUpdateCandidate(
   );
   await Promise.all(
     [
-      "openclaw.mjs",
+      "paleoclaw.mjs",
       "node-host-launcher.mjs",
       "dist/node-host-launcher-bootstrap.js",
       "dist/entry.js",

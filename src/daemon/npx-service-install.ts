@@ -79,5 +79,5 @@ export async function resolveDurableNodeEntrypoint(
       );
     }
   }
-  return path.join(packageRoot, "openclaw.mjs");
+  return path.join(packageRoot, "paleoclaw.mjs");
 }

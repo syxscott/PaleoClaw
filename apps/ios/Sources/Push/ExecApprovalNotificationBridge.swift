@@ -56,8 +56,8 @@ enum ApprovalNotificationBridge {
         kind: .exec,
         requestedKind: "exec.approval.requested",
         resolvedKind: "exec.approval.resolved",
-        categoryIdentifier: "openclaw.exec-approval",
-        reviewActionIdentifier: "openclaw.exec-approval.review",
+        categoryIdentifier: "paleoclaw.exec-approval",
+        reviewActionIdentifier: "paleoclaw.exec-approval.review",
         encodedRequestPrefix: "exec.approval-v2.",
         legacyRequestPrefix: "exec.approval.")
     static let plugin = ApprovalNotificationConfiguration(

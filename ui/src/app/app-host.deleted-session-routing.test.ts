@@ -1,5 +1,5 @@
 /* @vitest-environment jsdom */
-import { createRouter, type RouterHistory } from "@paleoclaw/uirouter";
+import { createRouter, type RouterHistory } from "@openclaw/uirouter";
 import { expect, it, vi } from "vitest";
 import type { ApplicationRouter } from "../app-routes.ts";
 import { pages as chatPages } from "../pages/chat/route.ts";

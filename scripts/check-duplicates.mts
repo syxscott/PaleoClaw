@@ -37,7 +37,7 @@ const targets = [
   "node-runtime-env.mjs",
   "node-sqlite.mjs",
   "node-version.mjs",
-  "openclaw.mjs",
+  "paleoclaw.mjs",
   "tsdown.ai.config.ts",
   "tsdown.config.ts",
   "vitest.config.ts",

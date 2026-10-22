@@ -372,7 +372,7 @@ if (isMainThread) Bun.plugin({ name: "paleoclaw-embedded-modules", setup(build) 
     let target;
     try {
       resolving = true;
-      target = globalThis.__openclawStandaloneNativeResolve(importer || path.join(root, "openclaw.mjs"), specifier)
+      target = globalThis.__openclawStandaloneNativeResolve(importer || path.join(root, "paleoclaw.mjs"), specifier)
         ?? (specifier.startsWith("file:") ? fileURLToPath(specifier)
         : path.isAbsolute(specifier) ? specifier
         : (() => {
@@ -476,7 +476,7 @@ const result = await Bun.build({
             );
           }
           // The launcher loops over legacy suffixes. Expose existing candidates to Bun's graph.
-          if (relative === "openclaw.mjs") {
+          if (relative === "paleoclaw.mjs") {
             const candidates = [
               ...new Set(
                 [...contents.matchAll(/["'](\.\/dist\/[^"']+\.[cm]?js)["']/g)].map(

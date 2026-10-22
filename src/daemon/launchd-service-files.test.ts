@@ -43,7 +43,7 @@ function fixture(name: string, environment: Record<string, string>, stateDir = f
     envFile: serviceFiles.resolveLaunchAgentEnvFilePath(env, label),
   };
 }
-const programArguments = ["/usr/bin/node", "/opt/paleoclaw/openclaw.mjs", "gateway"];
+const programArguments = ["/usr/bin/node", "/opt/paleoclaw/paleoclaw.mjs", "gateway"];
 async function writeFile(file: string, contents: string | Buffer, mode: number) {
   await fs.mkdir(path.dirname(file), { recursive: true });
   await fs.writeFile(file, contents);

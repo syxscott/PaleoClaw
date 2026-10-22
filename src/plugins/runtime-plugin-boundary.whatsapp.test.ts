@@ -31,10 +31,10 @@ function createBundledWhatsAppRuntimeFixture() {
     "package.json": JSON.stringify({
       name: "paleoclaw",
       type: "module",
-      bin: { paleoclaw: "openclaw.mjs" },
+      bin: { paleoclaw: "paleoclaw.mjs" },
       exports: { "./plugin-sdk/core": { default: "./dist/plugin-sdk/core.js" } },
     }),
-    "openclaw.mjs": "export {};\n",
+    "paleoclaw.mjs": "export {};\n",
     "dist/plugin-sdk/core.js": "export {};\n",
     [bundledDistPluginFile("whatsapp", "index.js")]: "export default {};\n",
     [bundledDistPluginFile("whatsapp", "light-runtime-api.js")]:

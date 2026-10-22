@@ -1567,7 +1567,7 @@ const policyTestWatches: readonly PolicyTestWatch[] = [
   {
     testFile: "src/agents/agent-command-local.test.ts",
     watchGlobs: [
-      "openclaw.mjs",
+      "paleoclaw.mjs",
       "src/cli/program/register.agent-turn.ts",
       "src/commands/agent-via-gateway.ts",
       "extensions/litellm/index.ts",

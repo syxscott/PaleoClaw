@@ -264,7 +264,7 @@ describe("runNodeDaemonInstall", () => {
       }
       mocks.service.isLoaded.mockResolvedValue(true);
       mocks.service.readCommand.mockResolvedValue({
-        programArguments: [recordedPath, "/fixture/openclaw.mjs", "node", "run"],
+        programArguments: [recordedPath, "/fixture/paleoclaw.mjs", "node", "run"],
       });
       await runNodeDaemonInstall({ force: true, runtime });
       const retained = runtime === undefined && probe === "supported";
@@ -289,7 +289,7 @@ describe("runNodeDaemonInstall", () => {
       const pin = NODE_RUNTIME_PATH;
       mocks.service.isLoaded.mockResolvedValueOnce(false).mockResolvedValue(true);
       mocks.service.readCommand.mockResolvedValue({
-        programArguments: [pin, "/fixture/openclaw.mjs", "node", "run"],
+        programArguments: [pin, "/fixture/paleoclaw.mjs", "node", "run"],
       });
       pinSnapshotMock.mockReturnValue({
         revision: "prior",

@@ -231,7 +231,7 @@ fs.existsSync = (file) => file === "/sys/fs/cgroup/paleoclaw-gateway.service/cgr
     expect(systemctl("is-enabled", "paleoclaw-gateway.service").status).not.toBe(0);
     const environmentFile = join(home, "gateway.systemd.env");
     writeFileSync(environmentFile, 'FIXTURE_VALUE="from file"\n');
-    const programArguments = gatewayArgs(join(home, "package root/openclaw.mjs"), "18817");
+    const programArguments = gatewayArgs(join(home, "package root/paleoclaw.mjs"), "18817");
     const environment = {
       OPENCLAW_STATE_DIR: join(home, "state"),
       OPENCLAW_GATEWAY_PORT: "18817",

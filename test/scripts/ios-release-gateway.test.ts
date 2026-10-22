@@ -155,13 +155,13 @@ function fixture(options: { annotatedTag?: boolean } = {}) {
         writeJson(path.join(packageRoot, "package.json"), {
           name: "paleoclaw",
           version: state.installedVersion,
-          bin: { paleoclaw: "openclaw.mjs" },
+          bin: { paleoclaw: "paleoclaw.mjs" },
         });
         writeJson(path.join(packageRoot, "dist", "build-info.json"), {
           version: state.installedVersion,
           commit: state.installedCommit,
         });
-        writeFileSync(path.join(packageRoot, "openclaw.mjs"), "// synthetic package entrypoint\n");
+        writeFileSync(path.join(packageRoot, "paleoclaw.mjs"), "// synthetic package entrypoint\n");
         return 0;
       }
       throw new Error(`Unexpected npm command: ${args.join(" ")}`);
@@ -196,7 +196,7 @@ describe("iOS stable Gateway package qualification", () => {
     const prepared = await f.prepare();
     expect(prepared.identity).toEqual(selected);
     expect(prepared.cwd).toBe(path.join(f.installDir, "node_modules", "paleoclaw"));
-    expect(prepared.entrypoint).toEqual([path.join(prepared.cwd, "openclaw.mjs")]);
+    expect(prepared.entrypoint).toEqual([path.join(prepared.cwd, "paleoclaw.mjs")]);
     expect(f.installs).toEqual([{ packageBytes, lockBytes }]);
     expect(f.fetch).toHaveBeenCalledTimes(annotatedTag ? 3 : 2);
     expect(

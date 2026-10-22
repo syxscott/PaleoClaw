@@ -317,7 +317,7 @@ function registerGitRetainedTransactionTests(
       kind === "untracked"
         ? "operator-edit.txt"
         : kind === "staged-unrelated"
-          ? "openclaw.mjs"
+          ? "paleoclaw.mjs"
           : "candidate.txt";
     const file = path.join(root, relative);
     const edit = "preserve this operator edit\n";
@@ -365,7 +365,7 @@ function registerGitRetainedTransactionTests(
       expect(await runFixtureGit(root, "show", `:${relative}`)).toBe(edit.trim());
     }
     if (kind === "staged-unrelated") {
-      expect(await runFixtureGit(root, "status", "--short")).toContain("MM openclaw.mjs");
+      expect(await runFixtureGit(root, "status", "--short")).toContain("MM paleoclaw.mjs");
     }
     await expect(retained.complete({ activationVerified: false }, assertCurrent)).rejects.toThrow();
     await expectHead(
@@ -450,14 +450,14 @@ function registerGitRetainedTransactionTests(
     const fixture = getFixture();
     const { root, beforeSha, advanceRemote, runCommand, setRunCommand } = fixture;
     const remote = await runFixtureGit(root, "remote", "get-url", "origin");
-    await fs.rm(path.join(remote, "openclaw.mjs"));
+    await fs.rm(path.join(remote, "paleoclaw.mjs"));
     await runFixtureGit(remote, "commit", "-am", "remove launcher");
     const targetSha = await advanceRemote();
     let edited = false;
     setRunCommand(async (argv, options) => {
       if (isBranchCheckout(argv, root) && argv.at(-1) === beforeSha) {
-        await fs.appendFile(path.join(root, ".git", "info", "exclude"), "\nopenclaw.mjs\n");
-        await fs.writeFile(path.join(root, "openclaw.mjs"), "operator content\n");
+        await fs.appendFile(path.join(root, ".git", "info", "exclude"), "\npaleoclaw.mjs\n");
+        await fs.writeFile(path.join(root, "paleoclaw.mjs"), "operator content\n");
         edited = true;
       }
       return runCommand(argv, options);
@@ -465,7 +465,7 @@ function registerGitRetainedTransactionTests(
     const { retained } = await activateTransaction(fixture);
     await expect(retained.rollback(assertCurrent)).rejects.toThrow("git-rollback-source");
     expect(edited).toBe(true);
-    await expectFile(path.join(root, "openclaw.mjs"), "operator content\n");
+    await expectFile(path.join(root, "paleoclaw.mjs"), "operator content\n");
     await expectHead(root, targetSha);
     await expectRuntimeRetained(root, targetSha, retained);
   });

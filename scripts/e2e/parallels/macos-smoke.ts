@@ -67,7 +67,7 @@ interface MacosOptions extends SmokeCliOptions {
 const guestPath =
   "/opt/homebrew/bin:/opt/homebrew/opt/node/bin:/usr/local/bin:/usr/local/sbin:/opt/homebrew/sbin:/usr/bin:/bin:/usr/sbin:/sbin";
 const guestOpenClaw = "paleoclaw";
-const guestOpenClawEntry = '"$(npm root -g)/paleoclaw/openclaw.mjs"';
+const guestOpenClawEntry = '"$(npm root -g)/paleoclaw/paleoclaw.mjs"';
 const guestOpenClawEntryRunner = `node ${guestOpenClawEntry}`;
 const guestNode = "node";
 const guestNpm = "npm";
@@ -407,7 +407,7 @@ class MacosSmoke extends SmokeRunController<MacosOptions> {
     const argv = args.map((arg) => shellQuote(arg)).join(" ");
     return this.guest.sh(
       `set -e
-entry="$(npm root -g)/paleoclaw/openclaw.mjs"
+entry="$(npm root -g)/paleoclaw/paleoclaw.mjs"
 exec node "$entry" ${argv}`,
     );
   }
@@ -533,7 +533,7 @@ exec node "$entry" ${argv}`,
   private resetState(): void {
     this.guest.sh(String.raw`/usr/bin/pkill -f 'openclaw.*gateway run' >/dev/null 2>&1 || true
 /usr/bin/pkill -f 'paleoclaw-gateway' >/dev/null 2>&1 || true
-/usr/bin/pkill -f 'openclaw.mjs gateway' >/dev/null 2>&1 || true
+/usr/bin/pkill -f 'paleoclaw.mjs gateway' >/dev/null 2>&1 || true
 printf 'preflight.user=%s\n' "$(whoami)"
 printf 'preflight.home=%s\n' "$HOME"
 printf 'preflight.path=%s\n' "$PATH"
@@ -706,7 +706,7 @@ ${guestOpenClawEntryRunner} update status --json`,
 trap '' HUP
 /usr/bin/pkill -f 'openclaw.*gateway run' >/dev/null 2>&1 || true
 /usr/bin/pkill -f 'paleoclaw-gateway' >/dev/null 2>&1 || true
-/usr/bin/pkill -f 'openclaw.mjs gateway' >/dev/null 2>&1 || true
+/usr/bin/pkill -f 'paleoclaw.mjs gateway' >/dev/null 2>&1 || true
 /usr/bin/env HOME=${shellQuote(home)} USER=${shellQuote(this.guestUser)} LOGNAME=${shellQuote(this.guestUser)} PATH=${shellQuote(guestPath)} ${shellQuote(
         `${this.auth.apiKeyEnv}=${this.auth.apiKeyValue}`,
       )} OPENCLAW_HOME=${shellQuote(home)} OPENCLAW_STATE_DIR=${shellQuote(`${home}/.openclaw`)} OPENCLAW_CONFIG_PATH=${shellQuote(

@@ -208,7 +208,7 @@ it.each([
           reason: "node-runtime-preflight",
           steps: matchingEntry({
             stderrTail: expect.stringContaining(
-              `node ${quote(path.join(fixture.root, "openclaw.mjs"))} update --tag 2026.9.2`,
+              `node ${quote(path.join(fixture.root, "paleoclaw.mjs"))} update --tag 2026.9.2`,
             ),
             failureFacts: matchingEntry({
               code: "node-runtime-preflight",

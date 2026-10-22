@@ -79,7 +79,7 @@ function inspectNative(
 async function packageFixture() {
   const home = await fs.realpath(dirs.make("paleoclaw-service-"));
   const root = path.join(home, "package");
-  const entrypoint = path.join(root, "openclaw.mjs");
+  const entrypoint = path.join(root, "paleoclaw.mjs");
   await fs.mkdir(root);
   await fs.writeFile(
     path.join(root, "package.json"),

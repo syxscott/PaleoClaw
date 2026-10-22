@@ -131,7 +131,7 @@ export async function gatewayServiceCommandOverlapsPhysicalCheckout(
   // The packaged launcher imports generated outputs from its package root.
   if (
     !servingOutputs.some((output) => runtime.isPathInside(output, servingEntryReal)) &&
-    servingEntryReal !== path.join(servingRoot, "openclaw.mjs")
+    servingEntryReal !== path.join(servingRoot, "paleoclaw.mjs")
   ) {
     return false;
   }

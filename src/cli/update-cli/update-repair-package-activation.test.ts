@@ -67,7 +67,7 @@ async function preparedOwnershipMismatch() {
   const f = await fixtures.prepare((anchor) => {
     const launcher = path.resolve(path.dirname(anchor), "../../bin/paleoclaw");
     fs.unlinkSync(launcher);
-    fs.symlinkSync("../lib/node_modules/paleoclaw/openclaw.mjs", launcher);
+    fs.symlinkSync("../lib/node_modules/paleoclaw/paleoclaw.mjs", launcher);
   });
   const record = openPackageActivationJournal(f.anchor).read();
   const observed = fs.lstatSync(f.launcher);
@@ -213,10 +213,10 @@ describe.skipIf(process.platform === "win32")("public package repair of obsolete
             name: "paleoclaw",
             version: "2026.10.1",
             type: "module",
-            bin: { paleoclaw: "./openclaw.mjs" },
+            bin: { paleoclaw: "./paleoclaw.mjs" },
           }),
         );
-        fs.writeFileSync(path.join(f.packageRoot, "openclaw.mjs"), "// newer installed launcher\n");
+        fs.writeFileSync(path.join(f.packageRoot, "paleoclaw.mjs"), "// newer installed launcher\n");
         fs.mkdirSync(path.join(f.packageRoot, "dist"));
         fs.writeFileSync(
           path.join(f.packageRoot, "dist/build-info.json"),
@@ -306,7 +306,7 @@ describe.skipIf(process.platform === "win32")("public package repair of obsolete
     );
     expect(fs.readFileSync(path.join(f.packageRoot, "package.json"), "utf8")).toContain("2.0.0");
     expect(fs.readFileSync(path.join(f.packageRoot, "dist/index.js"), "utf8")).toBe("export {};\n");
-    expect(fs.readlinkSync(f.launcher)).toBe("../lib/node_modules/paleoclaw/openclaw.mjs");
+    expect(fs.readlinkSync(f.launcher)).toBe("../lib/node_modules/paleoclaw/paleoclaw.mjs");
     expect(fs.readFileSync(f.launcher, "utf8")).toBe('import "./dist/index.js";\n');
     for (const detail of [
       "publication-settled-external-change",

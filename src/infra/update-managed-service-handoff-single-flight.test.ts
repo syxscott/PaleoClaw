@@ -141,7 +141,7 @@ const baseParams = {
   restartDrainTimeoutMs: 300_000,
   parentPid: process.pid,
   execPath: "/usr/local/bin/node",
-  argv1: "/opt/paleoclaw/openclaw.mjs",
+  argv1: "/opt/paleoclaw/paleoclaw.mjs",
 };
 
 const mockedChild = (index = 0) =>

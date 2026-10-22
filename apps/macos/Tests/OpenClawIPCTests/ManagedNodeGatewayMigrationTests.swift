@@ -109,7 +109,7 @@ struct ManagedNodeGatewayMigrationTests {
         defer { try? FileManager.default.removeItem(at: nodeRoot) }
         let node = nodeRoot.appendingPathComponent("bin/node")
         let package = nodeRoot.appendingPathComponent("lib/node_modules/paleoclaw")
-        let entry = package.appendingPathComponent("openclaw.mjs")
+        let entry = package.appendingPathComponent("paleoclaw.mjs")
         let sentinel = home.appendingPathComponent("installed-command")
         let config = home.appendingPathComponent("existing-config.json")
         let configBytes = Data("""
@@ -206,7 +206,7 @@ struct ManagedNodeGatewayMigrationTests {
                             try PropertyListSerialization.data(
                                 fromPropertyList: ["ProgramArguments": [
                                     "/operator/node",
-                                    "/operator/openclaw.mjs",
+                                    "/operator/paleoclaw.mjs",
                                     "gateway",
                                 ]],
                                 format: .xml, options: 0).write(to: plist)
@@ -447,7 +447,7 @@ struct ManagedNodeGatewayMigrationTests {
         let oldRoot = state.appendingPathComponent("tools/node-before-\(id)")
         let newRoot = state.appendingPathComponent("tools/node-after-\(id)")
         let alias = state.appendingPathComponent("tools/node")
-        let oldEntry = oldRoot.appendingPathComponent("lib/node_modules/paleoclaw/openclaw.mjs")
+        let oldEntry = oldRoot.appendingPathComponent("lib/node_modules/paleoclaw/paleoclaw.mjs")
         let newEntry = newRoot.appendingPathComponent("lib/node_modules/paleoclaw/dist/entry.js")
         let config = home.appendingPathComponent("openclaw.json")
         try Data(#"{"gateway":{"mode":"local"}}"#.utf8).write(to: config)
@@ -780,7 +780,7 @@ struct ManagedNodeGatewayMigrationTests {
         for other in try [
             GatewayLaunchAgentManager.InstalledServiceCLI(
                 prefix: ["/operator/node", #require(retained.prefix.last)], sqliteLibrary: nil),
-            .init(prefix: [#require(retained.prefix.first), "/operator/openclaw.mjs"], sqliteLibrary: nil),
+            .init(prefix: [#require(retained.prefix.first), "/operator/paleoclaw.mjs"], sqliteLibrary: nil),
             .init(prefix: retained.prefix, sqliteLibrary: nil, hadRuntimePin: true),
         ] {
             #expect(!candidate.matchesRetainedCLI(other))
@@ -902,7 +902,7 @@ struct ManagedNodeGatewayMigrationTests {
         }
         try Data().write(to: node)
         try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: node.path)
-        try Data().write(to: package.appendingPathComponent("openclaw.mjs"))
+        try Data().write(to: package.appendingPathComponent("paleoclaw.mjs"))
         try Data(#"{"name":"paleoclaw","version":"2026.9.6"}"#.utf8)
             .write(to: package.appendingPathComponent("package.json"))
         let config = state.appendingPathComponent("openclaw.json")
@@ -1008,7 +1008,7 @@ struct ManagedNodeGatewayMigrationTests {
         let encoded = try #require(String(bytes: data, encoding: .utf8))
         #expect(!encoded.contains("CHANNEL_FIXTURE"))
         let external = try JSONSerialization.data(withJSONObject: [
-            "prefix": ["/operator/node", "/operator/openclaw.mjs"],
+            "prefix": ["/operator/node", "/operator/paleoclaw.mjs"],
         ])
         #expect(throws: GatewayHostingError.self) {
             try GatewayLaunchAgentManager.retainedServiceIntent(

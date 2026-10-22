@@ -1087,7 +1087,7 @@ function Test-GitFilterSupport {
 }
 
 function Get-OpenClawCommandPath {
-    $openclawCmd = Get-Command openclaw.cmd -ErrorAction SilentlyContinue
+    $openclawCmd = Get-Command paleoclaw.cmd -ErrorAction SilentlyContinue
     if ($openclawCmd -and $openclawCmd.Source) {
         return $openclawCmd.Source
     }
@@ -1244,7 +1244,7 @@ function Ensure-OpenClawOnPath {
 
     $npmBins = Get-NpmGlobalBinCandidates -NpmPrefix $npmPrefix
     foreach ($npmBin in $npmBins) {
-        if (-not (Test-Path (Join-Path $npmBin "openclaw.cmd"))) {
+        if (-not (Test-Path (Join-Path $npmBin "paleoclaw.cmd"))) {
             continue
         }
 
@@ -2085,7 +2085,7 @@ function Install-OpenClawFromGit {
         Write-Host "[!] Git replacement failed CLI verification" -ForegroundColor Red
         return $false
     }
-    $cmdPath = Join-Path $binDir "openclaw.cmd"
+    $cmdPath = Join-Path $binDir "paleoclaw.cmd"
     $cmdContents = Format-OpenClawGitWrapper -EntryPath $entryPath
     Publish-TextFileAtomically -Path $cmdPath -Contents $cmdContents
 
@@ -2153,14 +2153,14 @@ function Refresh-GatewayServiceIfLoaded {
 }
 
 function Test-PreviousGitWrapper {
-    $wrapper = Join-Path (Join-Path $env:USERPROFILE ".local\bin") "openclaw.cmd"
+    $wrapper = Join-Path (Join-Path $env:USERPROFILE ".local\bin") "paleoclaw.cmd"
     if (-not (Test-Path -LiteralPath $wrapper -PathType Leaf)) { return $false }
     return ([System.IO.File]::ReadAllText($wrapper) -match '^@echo off\r?\nnode ".+[\\/]dist[\\/]entry\.js" %\*\r?\n?$')
 }
 
 function Remove-PreviousGitWrapper {
     if (Test-PreviousGitWrapper) {
-        $wrapper = Join-Path (Join-Path $env:USERPROFILE ".local\bin") "openclaw.cmd"
+        $wrapper = Join-Path (Join-Path $env:USERPROFILE ".local\bin") "paleoclaw.cmd"
         Remove-Item -LiteralPath $wrapper -Force
         Write-Host "[OK] Previous git wrapper retired" -ForegroundColor Green
     }
@@ -2177,7 +2177,7 @@ function Remove-PreviousNpmOwner {
     $package = Get-Content -LiteralPath $packageJson -Raw | ConvertFrom-Json
     if ($package.name -ne "openclaw") { throw "Refusing to retire a package whose identity is not openclaw." }
     $prefixOutput = @(Invoke-NpmCommand -CommandPath $npmCommand -Arguments @("config", "get", "prefix") 2>$null)
-    $npmShim = if ($prefixOutput.Count -gt 0) { Join-Path $prefixOutput[-1].ToString().Trim() "openclaw.cmd" } else { $null }
+    $npmShim = if ($prefixOutput.Count -gt 0) { Join-Path $prefixOutput[-1].ToString().Trim() "paleoclaw.cmd" } else { $null }
     if ($npmShim -and [System.IO.Path]::GetFullPath($npmShim) -eq [System.IO.Path]::GetFullPath($GitWrapper)) {
         Remove-Item -LiteralPath $packageRoot -Recurse -Force
     } else {
@@ -2326,7 +2326,7 @@ function Main {
             return
         }
         if ($hadNpmOwner) {
-            Remove-PreviousNpmOwner -GitWrapper (Join-Path (Join-Path $env:USERPROFILE ".local\bin") "openclaw.cmd")
+            Remove-PreviousNpmOwner -GitWrapper (Join-Path (Join-Path $env:USERPROFILE ".local\bin") "paleoclaw.cmd")
         }
     } else {
         $hadGitWrapper = Test-PreviousGitWrapper
@@ -2336,17 +2336,17 @@ function Main {
             $npmCwd = Get-WindowsCommandSafeDirectory
             $prefixOutput = @(Invoke-NpmCommand -CommandPath $npmCommand -WorkingDirectory $npmCwd -Arguments @("config", "get", "prefix") 2>$null)
             $npmPrefix = if ($prefixOutput.Count -gt 0) { $prefixOutput[-1].ToString().Trim() } else { $null }
-            $previousGitWrapper = Join-Path (Join-Path $env:USERPROFILE ".local\bin") "openclaw.cmd"
+            $previousGitWrapper = Join-Path (Join-Path $env:USERPROFILE ".local\bin") "paleoclaw.cmd"
             if ($hadGitWrapper) {
                 foreach ($npmBin in (Get-NpmGlobalBinCandidates -NpmPrefix $npmPrefix)) {
-                    $candidate = Join-Path $npmBin "openclaw.cmd"
+                    $candidate = Join-Path $npmBin "paleoclaw.cmd"
                     if ([string]::Equals([System.IO.Path]::GetFullPath($candidate), [System.IO.Path]::GetFullPath($previousGitWrapper), [System.StringComparison]::OrdinalIgnoreCase)) {
                         $rootOutput = @(Invoke-NpmCommand -CommandPath $npmCommand -WorkingDirectory $npmCwd -Arguments @("root", "-g") 2>$null)
                         if ($LASTEXITCODE -ne 0 -or $rootOutput.Count -eq 0) {
                             Fail-Install
                             return
                         }
-                        $expectedNpmLauncher = Join-Path $rootOutput[-1].ToString().Trim() "openclaw\openclaw.mjs"
+                        $expectedNpmLauncher = Join-Path $rootOutput[-1].ToString().Trim() "openclaw\paleoclaw.mjs"
                         $npmShimBackup = Start-NpmShimBackup -Path $previousGitWrapper -ExpectedLauncher $expectedNpmLauncher
                         break
                     }
@@ -2362,7 +2362,7 @@ function Main {
                 $npmCandidate = if ($npmShimBackup) { $npmShimBackup.Path } else {
                     $candidatePath = $null
                     foreach ($npmBin in (Get-NpmGlobalBinCandidates -NpmPrefix $npmPrefix)) {
-                        $candidate = Join-Path $npmBin "openclaw.cmd"
+                        $candidate = Join-Path $npmBin "paleoclaw.cmd"
                         if (Test-Path -LiteralPath $candidate -PathType Leaf) { $candidatePath = $candidate; break }
                     }
                     $candidatePath
@@ -2473,7 +2473,7 @@ function Main {
 
     if ($InstallMethod -eq "git") {
         Write-Host "Source checkout: $finalGitDir" -ForegroundColor Cyan
-        Write-Host "Wrapper: $env:USERPROFILE\\.local\\bin\\openclaw.cmd" -ForegroundColor Cyan
+        Write-Host "Wrapper: $env:USERPROFILE\\.local\\bin\\paleoclaw.cmd" -ForegroundColor Cyan
         Write-Host ""
     }
 

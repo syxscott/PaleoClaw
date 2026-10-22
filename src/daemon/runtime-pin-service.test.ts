@@ -94,7 +94,7 @@ function pinFixture(env: NodeJS.ProcessEnv, kind: "gateway" | "node") {
     args: {
       env,
       stdout: process.stdout,
-      programArguments: [pin.path, "/app/openclaw.mjs", kind],
+      programArguments: [pin.path, "/app/paleoclaw.mjs", kind],
       runtimePinUpdate: { expected: readDaemonRuntimePin(scope, null), pin },
     },
   };
@@ -109,7 +109,7 @@ function bundledArgs(
 ): Service.GatewayServiceInstallArgs {
   return {
     ...args,
-    programArguments: [bundledPin.path, "/app/openclaw.mjs", "gateway"],
+    programArguments: [bundledPin.path, "/app/paleoclaw.mjs", "gateway"],
     runtimePinUpdate: { expected, pin: bundledPin, ...overrides },
   };
 }
@@ -184,7 +184,7 @@ it("keeps pin-unaware writes read-only", async ({ state }) => {
   const args = {
     env: state.env,
     stdout: process.stdout,
-    programArguments: ["/runtime/node", "/app/openclaw.mjs", "gateway"],
+    programArguments: ["/runtime/node", "/app/paleoclaw.mjs", "gateway"],
   };
   await service.stage(args);
   await service.install(args);
@@ -202,7 +202,7 @@ it.for(["gateway", "node"] as const)(
     const { service, pin, args, readPin } = pinFixture(state.env, kind);
     await service.stage(args);
     const { runtimePinUpdate, ...replacement } = args;
-    replacement.programArguments = [pin.path, "/updated/openclaw.mjs", kind];
+    replacement.programArguments = [pin.path, "/updated/paleoclaw.mjs", kind];
     await withoutSnapshots(async () => {
       await expect(service.install(replacement)).rejects.toThrow(/explicit runtime intent/);
       await expect(service.stage(replacement)).rejects.toThrow(/explicit runtime intent/);
@@ -242,7 +242,7 @@ it("rejects custody loss during readback", async ({ pins: { service, pin, args, 
       current = false;
       return native.command;
     });
-  const programArguments = [pin.path, "/updated/openclaw.mjs", "gateway"];
+  const programArguments = [pin.path, "/updated/paleoclaw.mjs", "gateway"];
   await expect(
     service.install({
       ...args,
@@ -269,7 +269,7 @@ it("serializes competing pin writes", async ({ pins: { service, pin, args, readP
 it.for([false, true])(
   "preserves a stop before the guarded runtime writer acquires its lock (disable=%s)",
   async (disable, { pins: { service, args, readPin } }) => {
-    native.command = { programArguments: ["/original/node", "/app/openclaw.mjs", "gateway"] };
+    native.command = { programArguments: ["/original/node", "/app/paleoclaw.mjs", "gateway"] };
     const original = native.command;
     const observed = await readGatewayServiceState(service, args);
     expect(observed.running).toBe(true);
@@ -306,14 +306,14 @@ it.for([
 ] as const)(
   "guards a %s runtime %s under the native lock",
   async ([mode, action], { pins: { service, args, readPin } }) => {
-    native.command = { programArguments: ["/original/node", "/app/openclaw.mjs", "gateway"] };
+    native.command = { programArguments: ["/original/node", "/app/paleoclaw.mjs", "gateway"] };
     const fresh = mode === "fresh-drift";
     const drift = mode === "drift" || fresh;
     const expected = readPin(fresh ? null : native.command);
     const requiresRunning = mode !== "unpinned" && !drift;
     const pinned = mode === "running" || fresh;
     if (drift) {
-      native.command = { programArguments: ["/operator/node", "/app/openclaw.mjs", "gateway"] };
+      native.command = { programArguments: ["/operator/node", "/app/paleoclaw.mjs", "gateway"] };
     } else if (mode === "inspection-failed") {
       native.runtime.mockRejectedValue(new Error("native inspection failed"));
     } else if (mode === "disabled") {
@@ -323,7 +323,7 @@ it.for([
     }
     const previous = native.command;
     const runtime = requiresRunning ? bundledPin.path : "/retained/node";
-    const programArguments = [runtime, "/app/openclaw.mjs", "gateway"];
+    const programArguments = [runtime, "/app/paleoclaw.mjs", "gateway"];
     const runtimePinUpdate: DaemonRuntimePinUpdate = {
       expected,
       ...(pinned

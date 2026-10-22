@@ -105,7 +105,7 @@ it.each([
     }
     const command = continuation.command;
     const quote = process.platform === "win32" ? quotePowerShellArg : quoteCliArg;
-    const launcher = `node ${quote(path.join(fixture.root, "openclaw.mjs"))} `;
+    const launcher = `node ${quote(path.join(fixture.root, "paleoclaw.mjs"))} `;
     expect(command.slice(0, launcher.length)).toBe(launcher);
     runtime.mockResolvedValue(runtimeFixture("26.1.0", "3.53.0"));
     const program = new Command();

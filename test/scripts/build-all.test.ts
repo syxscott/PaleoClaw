@@ -709,7 +709,7 @@ describe("resolveBuildAllSteps", () => {
           expect.stringMatching(/\/scripts\/build-all\.mts$/),
           "qaRuntime",
         ],
-        ["openclaw.mjs", "status"],
+        ["paleoclaw.mjs", "status"],
       ]);
       const env = spawn.mock.calls[0]![2].env!;
       const runner = buildRunner();

@@ -22,7 +22,7 @@ const PROOF_MATRIX_FILENAME = "proof-matrix.json";
 const REPORT_FRESHNESS_TOLERANCE_MS = 2_000;
 const MAX_PATTERN_LENGTH = 1_024;
 const BUILT_CLI_REQUIREMENT =
-  "cliMode=built requires readable openclaw.mjs and at least one readable dist/entry.js or dist/entry.mjs";
+  "cliMode=built requires readable paleoclaw.mjs and at least one readable dist/entry.js or dist/entry.mjs";
 
 export const TUI_PTY_TEST_FILE_ALLOWLIST = [
   "src/tui/tui-pty-harness-assertion-test-support.test.ts",
@@ -412,7 +412,7 @@ async function requireBuiltCliArtifacts(repoRoot: string, cliMode: TuiPtyCliMode
     return;
   }
   const [launcher, ...entries] = await Promise.allSettled(
-    ["openclaw.mjs", "dist/entry.js", "dist/entry.mjs"].map((file) =>
+    ["paleoclaw.mjs", "dist/entry.js", "dist/entry.mjs"].map((file) =>
       fs.access(path.join(repoRoot, file), fsConstants.R_OK),
     ),
   );

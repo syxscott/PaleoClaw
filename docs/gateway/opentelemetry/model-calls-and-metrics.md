@@ -383,7 +383,7 @@ every observed length.
 
 ### Exec
 
-- `openclaw.exec.duration_ms` (histogram, attrs: `openclaw.exec.target`, `openclaw.exec.mode`, `openclaw.outcome`, `openclaw.failureKind`)
+- `paleoclaw.exec.duration_ms` (histogram, attrs: `paleoclaw.exec.target`, `paleoclaw.exec.mode`, `openclaw.outcome`, `openclaw.failureKind`)
 
 ### Diagnostics internals (memory, payloads, exporter health)
 

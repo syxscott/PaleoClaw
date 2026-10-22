@@ -17,7 +17,7 @@ struct CloudWorkerHostConfiguration: Sendable {
     let enrollmentMode: EnrollmentMode
 
     var cliURL: URL {
-        self.runtimeDirectory.appendingPathComponent("node_modules/paleoclaw/openclaw.mjs")
+        self.runtimeDirectory.appendingPathComponent("node_modules/paleoclaw/paleoclaw.mjs")
     }
 
     var nodeArguments: [String] {

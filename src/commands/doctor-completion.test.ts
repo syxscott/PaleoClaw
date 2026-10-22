@@ -164,7 +164,7 @@ describe("doctorShellCompletion", () => {
         expect.any(Object),
       );
       const args = spawnSyncMock.mock.lastCall?.[1] ?? [];
-      const entryIndex = args.findIndex((arg) => arg.endsWith("openclaw.mjs"));
+      const entryIndex = args.findIndex((arg) => arg.endsWith("paleoclaw.mjs"));
       expect(args.slice(0, entryIndex)).toEqual(runtime === "bun" ? ["--no-install"] : []);
       const spawnOptions = spawnSyncMock.mock.lastCall?.[2];
       expect(spawnOptions?.env?.[COMPLETION_SKIP_PLUGIN_COMMANDS_ENV]).toBe(expectedSkipValue);

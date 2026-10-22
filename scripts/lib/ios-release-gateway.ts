@@ -296,7 +296,7 @@ export async function prepareIOSReleaseGateway(options: SelectionOptions & { ins
     .object({
       name: z.literal("paleoclaw"),
       version: z.string(),
-      bin: z.object({ paleoclaw: z.literal("openclaw.mjs") }),
+      bin: z.object({ paleoclaw: z.literal("paleoclaw.mjs") }),
     })
     .parse(JSON.parse(packageBytes));
   const build = z.object({ commit: z.string().regex(SHA) }).parse(JSON.parse(buildBytes));
@@ -308,5 +308,5 @@ export async function prepareIOSReleaseGateway(options: SelectionOptions & { ins
     throw new Error("Installed Gateway identity differs from the selected stable release.");
   }
   options.signal.throwIfAborted();
-  return { cwd, entrypoint: [path.join(cwd, "openclaw.mjs")], identity: selection };
+  return { cwd, entrypoint: [path.join(cwd, "paleoclaw.mjs")], identity: selection };
 }

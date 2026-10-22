@@ -797,7 +797,7 @@ async function renderSourceCommandHelpText(
   renderContext: RootHelpRenderContext,
   taskContext?: RenderTaskContext,
 ): Promise<string> {
-  return await spawnText(["openclaw.mjs", command, "--help"], {
+  return await spawnText(["paleoclaw.mjs", command, "--help"], {
     cwd: rootDir,
     env: {
       ...renderContext.env,

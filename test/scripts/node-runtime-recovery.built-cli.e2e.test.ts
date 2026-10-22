@@ -140,7 +140,7 @@ it.each([
       [
         "--import",
         pathToFileURL(preload).href,
-        path.resolve(source === "launcher" ? "openclaw.mjs" : "dist/entry.js"),
+        path.resolve(source === "launcher" ? "paleoclaw.mjs" : "dist/entry.js"),
         ...(startupRespawn ? ["update", "status"] : ["doctor", "--non-interactive", "--fix"]),
       ],
       {

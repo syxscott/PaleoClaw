@@ -202,7 +202,7 @@ artifact metadata, resolves it through the package-candidate owner, and installs
 and rebuilds with normal npm lifecycle scripts.
 
 After the benchmark's lifecycle fixtures pass on Windows, the installed
-`openclaw.mjs` runs once with new synthetic state, then eight more times with that
+`paleoclaw.mjs` runs once with new synthetic state, then eight more times with that
 same state. Each sample records HTTP readiness, first status and health RPC
 responses, and acknowledged graceful shutdown. An outer managed Windows Job
 contains the controller and all descendants; final success requires both clean

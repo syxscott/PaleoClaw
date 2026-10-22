@@ -101,7 +101,7 @@ export async function probeNpmGlobalPrefix(
 export async function inspectNpmLauncher(layout: NpmGlobalPrefixLayout) {
   const launcher = path.join(
     layout.binDir,
-    process.platform === "win32" ? "openclaw.cmd" : "paleoclaw",
+    process.platform === "win32" ? "paleoclaw.cmd" : "paleoclaw",
   );
   let launcherTarget = await fs.realpath(launcher).catch(() => null);
   if (process.platform === "win32" && launcherTarget) {

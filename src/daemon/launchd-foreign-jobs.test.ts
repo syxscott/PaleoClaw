@@ -22,7 +22,7 @@ const uid = process.getuid?.() ?? 0;
 const domain = `gui/${uid}`;
 const target = `${domain}/${label}`;
 const cli = "/opt/bin/paleoclaw";
-const entry = "/opt/openclaw.mjs";
+const entry = "/opt/paleoclaw.mjs";
 const restartCommand = "/usr/local/bin/paleoclaw gateway restart";
 const shellScript = (...lines: string[]) => `#!/bin/sh\n${lines.join("\n")}\n`;
 const restartScript = shellScript(
@@ -128,7 +128,7 @@ describe("foreign launchd command classification", () => {
     ["inline-absolute", ["/bin/sh", "-c", restartCommand], ["restart"]],
     ["shell-syntax-check", ["/bin/sh", "-nc", "paleoclaw gateway restart"], []],
     ["node-bare-runtime", ["node", entry, "gateway", "restart"], []],
-    ["bun-relative-entry", ["/opt/bin/bun", "./openclaw.mjs", "gateway", "restart"], []],
+    ["bun-relative-entry", ["/opt/bin/bun", "./paleoclaw.mjs", "gateway", "restart"], []],
     ["env-bare-node", ["/usr/bin/env", "node", entry, "gateway", "restart"], []],
     ["help-short", [cli, "gateway", "restart", "-h"], []],
   ])("classifies %s lifecycle arguments", async (suffix, args, actions) => {

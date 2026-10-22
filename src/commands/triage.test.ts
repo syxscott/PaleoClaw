@@ -459,7 +459,7 @@ describe("triageCommand", () => {
       vi.stubEnv("PATHEXT", ".EXE;.CMD;.BAT");
       vi.spyOn(process, "platform", "get").mockReturnValue("win32");
       vi.spyOn(process, "execPath", "get").mockReturnValue(
-        nodeSource === "current" ? currentNode : path.join(binDir, "openclaw.exe"),
+        nodeSource === "current" ? currentNode : path.join(binDir, "paleoclaw.exe"),
       );
       const runtime = createTriageRuntime();
 

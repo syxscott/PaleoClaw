@@ -33,7 +33,7 @@ function runBuiltCli(stateDir: string, homeDir: string, args: string[]) {
   ]) {
     delete env[key];
   }
-  return spawnSync(process.execPath, [path.resolve("openclaw.mjs"), ...args], {
+  return spawnSync(process.execPath, [path.resolve("paleoclaw.mjs"), ...args], {
     cwd: path.resolve("."),
     encoding: "utf8",
     env,

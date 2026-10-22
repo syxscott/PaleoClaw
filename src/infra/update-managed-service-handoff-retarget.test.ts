@@ -567,7 +567,7 @@ unix("reclaims a dead legacy process at managed admission and cleans up on cance
         restartDrainTimeoutMs: 300_000,
         parentPid: process.pid,
         execPath: process.execPath,
-        argv1: "/unused/openclaw.mjs",
+        argv1: "/unused/paleoclaw.mjs",
         env: { OPENCLAW_STATE_DIR: to },
         handoffId: identity.handoffId,
         meta: {},

@@ -166,7 +166,7 @@ import { registerSourceRunnerServiceFixture } from ${JSON.stringify(sourceRunner
 registerSourceRunnerServiceFixture(${JSON.stringify(sourceRoot)});
 const { runNodeMain } = await import(${JSON.stringify(implementationUrl)});
 childProcess.spawn = (_command, args) => {
-  if (!args.includes("openclaw.mjs")) throw new Error("prebuilt fixture unexpectedly requested a build");
+  if (!args.includes("paleoclaw.mjs")) throw new Error("prebuilt fixture unexpectedly requested a build");
   const child = new EventEmitter();
   queueMicrotask(() => {
     process.stdout.write("fixture child completed successfully\\n");
@@ -275,7 +275,7 @@ it.runIf(process.platform !== "win32")(
       const invocationsPath = path.join(fixtureRoot, "invocations.jsonl");
       const releasePath = path.join(fixtureRoot, "release");
       for (const filename of [
-        "openclaw.mjs",
+        "paleoclaw.mjs",
         "cli-invocation.mjs",
         "node-host-launcher.mjs",
         "node-compile-cache.mjs",
@@ -325,7 +325,7 @@ fs.appendFileSync(${JSON.stringify(invocationsPath)}, JSON.stringify(process.arg
 // Let a regressed watcher finish after recording its doctor or restart invocation.
 if (fs.existsSync(${JSON.stringify(childPidPath)})) process.exit(0);
 childProcess.spawn = (command, args, options) => {
-    if (!args.includes("openclaw.mjs")) throw new Error("prebuilt fixture unexpectedly requested a build");
+    if (!args.includes("paleoclaw.mjs")) throw new Error("prebuilt fixture unexpectedly requested a build");
     const child = spawn(command, [...${JSON.stringify(nodeArgs)}, ...args], options);
     fs.writeFileSync(${JSON.stringify(launcherPidPath)}, String(child.pid));
     sendReceipt(${JSON.stringify(launcherPidPath)}, "ready");

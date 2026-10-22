@@ -43,7 +43,7 @@ it.each([
   ["packages/example/src/cli.ts", true],
   ["packages/example/index.ts", true],
   ["ui/src/app.ts", true],
-  ["openclaw.mjs", true],
+  ["paleoclaw.mjs", true],
   ["node-host-launcher.mjs", true],
   ["docker-entrypoint.mjs", true],
   ["scripts/paleoclaw-immutable-launcher.mjs", true],

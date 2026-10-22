@@ -118,7 +118,7 @@ export function useNodeBootstrapArtifactFixtures() {
     };
     await write(packageRoot, "package.json", sourcePackage);
     await fs.writeFile(
-      path.join(packageRoot, "openclaw.mjs"),
+      path.join(packageRoot, "paleoclaw.mjs"),
       'import "./cli-invocation.mjs"; import "./dist/entry.js";',
       { mode: 0o755 },
     );

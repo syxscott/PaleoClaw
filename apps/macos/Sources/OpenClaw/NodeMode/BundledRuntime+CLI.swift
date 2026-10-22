@@ -133,7 +133,7 @@ extension BundledRuntime {
         let current = Self(root: profile.stateDirectoryURL(homeDirectory: homeDirectory)
             .appendingPathComponent("runtime/current"))
         let profileLine = profile.name.map { "export OPENCLAW_PROFILE=\(Self.shellQuote($0))\n" } ?? ""
-        let cli = current.packageRoot.appendingPathComponent("openclaw.mjs")
+        let cli = current.packageRoot.appendingPathComponent("paleoclaw.mjs")
         return """
         #!/bin/sh
         \(Self.shimSignature)

@@ -281,7 +281,7 @@ export function snapshotFromExecApprovalsDatabase(
 
 if (process.env.VITEST || process.env.NODE_ENV === "test") {
   Object.assign(globalThis, {
-    [Symbol.for("openclaw.execApprovalsStoreTestApi")]: {
+    [Symbol.for("paleoclaw.execApprovalsStoreTestApi")]: {
       reset(): void {
         resetExecApprovalsMigrationGateForTest();
         lastWarnAt = undefined;

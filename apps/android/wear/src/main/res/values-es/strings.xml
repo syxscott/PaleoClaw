@@ -40,7 +40,7 @@
     <string name="agent" tools:ignore="Typos,TypographyDashes,TypographyEllipsis">"Agente"</string>
     <string name="system" tools:ignore="Typos,TypographyDashes,TypographyEllipsis">"Sistema"</string>
     <string name="start_conversation" tools:ignore="Typos,TypographyDashes,TypographyEllipsis">"Iniciar una conversación"</string>
-    <string name="start_conversation_detail" tools:ignore="Typos,TypographyDashes,TypographyEllipsis">"Habla o escribe en tu reloj. El teléfono vinculado envía el mensaje mediante su sesión autenticada de OpenClaw."</string>
+    <string name="start_conversation_detail" tools:ignore="Typos,TypographyDashes,TypographyEllipsis">"Habla o escribe en tu reloj. El teléfono vinculado envía el mensaje mediante su sesión autenticada de paleoclaw."</string>
     <string name="current_session" tools:ignore="Typos,TypographyDashes,TypographyEllipsis">"Sesión actual"</string>
     <string name="context_label_value" tools:ignore="MissingTranslation,Typos,TypographyDashes,TypographyEllipsis">"%1$s: %2$s"</string>
     <string name="close" tools:ignore="MissingTranslation,Typos,TypographyDashes,TypographyEllipsis">"Cerrar"</string>

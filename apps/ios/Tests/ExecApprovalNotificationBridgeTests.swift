@@ -68,7 +68,7 @@ private final class MockNotificationCenter: NotificationCentering, @unchecked Se
 
     @Test func `parse prompt ignores unexpected action identifiers`() {
         let prompt = ApprovalNotificationBridge.parsePrompt(
-            actionIdentifier: "openclaw.exec-approval.allow-once",
+            actionIdentifier: "paleoclaw.exec-approval.allow-once",
             userInfo: [
                 "paleoclaw": [
                     "kind": ApprovalNotificationBridge.exec.requestedKind,

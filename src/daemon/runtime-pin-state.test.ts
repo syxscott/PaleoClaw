@@ -13,7 +13,7 @@ import {
 import { resolveDaemonRuntimePinStorePath } from "./runtime-pin-store.js";
 
 const runtimePath = "/runtime tools/node";
-const command = { programArguments: [runtimePath, "/app/openclaw.mjs", "gateway"] };
+const command = { programArguments: [runtimePath, "/app/paleoclaw.mjs", "gateway"] };
 const pin = { runtime: "node" as const, path: runtimePath };
 beforeEach(() => {
   vi.stubEnv("OPENCLAW_PROFILE", `runtime-pin-test-${process.pid}`);
@@ -186,7 +186,7 @@ describe("transactional runtime pin state", () => {
         wrapped,
       );
       expect(readDaemonRuntimePin(scope, wrapped).pin).toEqual(bun);
-      const updated = { programArguments: [bun.path, "/new/openclaw.mjs", "gateway"] };
+      const updated = { programArguments: [bun.path, "/new/paleoclaw.mjs", "gateway"] };
       commitDaemonRuntimePin(
         scope,
         { expected: readDaemonRuntimePin(scope, wrapped), pin: bun },

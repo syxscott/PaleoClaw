@@ -128,7 +128,7 @@ async function runOpenClawCli(args: string[], env: NodeJS.ProcessEnv) {
   const sourceRunnerAvailable = !hasBuiltEntry;
   const commandArgs = sourceRunnerAvailable
     ? ["scripts/run-node.mjs", ...args]
-    : ["openclaw.mjs", ...args];
+    : ["paleoclaw.mjs", ...args];
   const outputRoot = fsSync.mkdtempSync(path.join(os.tmpdir(), "paleoclaw-ollama-cli-output-"));
   const stdoutPath = path.join(outputRoot, "stdout.txt");
   const stderrPath = path.join(outputRoot, "stderr.txt");

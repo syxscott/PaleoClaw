@@ -251,7 +251,7 @@ function rpc(method, params) {
   const result = spawnSync(
     process.execPath,
     [
-      "/app/openclaw.mjs",
+      "/app/paleoclaw.mjs",
       "gateway",
       "call",
       method,

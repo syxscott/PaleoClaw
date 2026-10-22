@@ -114,7 +114,7 @@ describe("update CLI shared helpers", () => {
     "does not hide uncertain completion cleanup (uncertain=%s)",
     async (uncertain) => {
       await withTestDir({ prefix: "completion-cleanup-" }, async (root) => {
-        await fs.writeFile(path.join(root, "openclaw.mjs"), "");
+        await fs.writeFile(path.join(root, "paleoclaw.mjs"), "");
         const error = uncertain
           ? new CommandProcessCleanupError()
           : new Error("cache write failed");
@@ -201,7 +201,7 @@ describe("update CLI shared helpers", () => {
         await fs.symlink(storeRoot, packageRoot, "dir");
 
         const previousArgv = [...process.argv];
-        process.argv[1] = path.join(packageRoot, "openclaw.mjs");
+        process.argv[1] = path.join(packageRoot, "paleoclaw.mjs");
         try {
           await expect(resolveUpdateRoot()).resolves.toBe(packageRoot);
         } finally {

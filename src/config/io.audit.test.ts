@@ -71,7 +71,7 @@ const historicalRecord = {
   ts: "2026-05-02T00:03:48.471Z",
   suspicious: [],
   argv: [
-    ..."/usr/bin/node /usr/local/bin/openclaw.mjs config set channels.slack.botToken".split(" "),
+    ..."/usr/bin/node /usr/local/bin/paleoclaw.mjs config set channels.slack.botToken".split(" "),
     "xoxb-real-bot-token-1234567890abcdef0123456789abcdef",
   ],
   execArgv: ["--disable-warning=ExperimentalWarning"],

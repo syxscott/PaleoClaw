@@ -17,7 +17,7 @@ final class GatewayChildSupervisor {
 
         var arguments: [String] {
             [
-                self.packageRoot.appendingPathComponent("openclaw.mjs").path,
+                self.packageRoot.appendingPathComponent("paleoclaw.mjs").path,
                 "gateway",
                 "run",
                 "--port",

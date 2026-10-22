@@ -125,7 +125,7 @@ export function resolveDaemonServicePathDirs(params: {
     path.isAbsolute(argv1) &&
     (commandName === "paleoclaw" ||
       (platform === "win32" &&
-        ["openclaw.cmd", "openclaw.ps1", "openclaw.exe"].includes(commandName)))
+        ["paleoclaw.cmd", "paleoclaw.ps1", "paleoclaw.exe"].includes(commandName)))
   ) {
     dirs.add(path.dirname(argv1));
   }
@@ -136,13 +136,13 @@ export function resolveDaemonServicePathDirs(params: {
     if (!path.isAbsolute(segment)) {
       continue;
     }
-    const candidate = path.join(segment, platform === "win32" ? "openclaw.cmd" : "paleoclaw");
+    const candidate = path.join(segment, platform === "win32" ? "paleoclaw.cmd" : "paleoclaw");
     if (!fs.existsSync(candidate)) {
       continue;
     }
     const candidateRealpath = safeRealpathSync(candidate);
     if (argvRealpath && candidateRealpath && candidateRealpath !== argvRealpath) {
-      // Update invokes dist/index.js; the same installation's shim targets openclaw.mjs.
+      // Update invokes dist/index.js; the same installation's shim targets paleoclaw.mjs.
       const activeRoot = resolveOpenClawPackageRootSync({ argv1: argvRealpath });
       if (
         !activeRoot ||

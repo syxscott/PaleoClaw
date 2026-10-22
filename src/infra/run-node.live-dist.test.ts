@@ -88,7 +88,7 @@ describe("run-node live Gateway dist fence", () => {
         gitStatus: ` M ${ROOT_SRC}\0`,
       });
       expect(await runStatusCommand({ tmp, args, spawn, spawnSync, runRuntimePostBuild })).toBe(0);
-      expect(spawnCalls).toEqual([[process.execPath, "openclaw.mjs", ...args]]);
+      expect(spawnCalls).toEqual([[process.execPath, "paleoclaw.mjs", ...args]]);
       expect(fence).not.toHaveBeenCalled();
       expect(runRuntimePostBuild).not.toHaveBeenCalled();
     },

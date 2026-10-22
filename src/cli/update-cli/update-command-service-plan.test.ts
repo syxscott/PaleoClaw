@@ -318,7 +318,7 @@ describe("package runtime compatibility guidance", () => {
         },
       });
       const prefix = command === "volta install node@24.16.0" ? "volta run --node 24.16.0 " : "";
-      const sourceEntry = path.join(sourceRoot ?? "/fixture", "openclaw.mjs");
+      const sourceEntry = path.join(sourceRoot ?? "/fixture", "paleoclaw.mjs");
       const cli = sourceEntry
         ? `node ${process.platform === "win32" ? quotePowerShellArg(sourceEntry) : quoteCliArg(sourceEntry)}`
         : "paleoclaw";
@@ -395,7 +395,7 @@ describe("package runtime compatibility guidance", () => {
       expect(result.recoverySteps?.at(-1)).toEqual({
         kind: "continue-update",
         instruction:
-          "Run this installation's absolute openclaw.mjs launcher with the selected Node and the update command to recheck package and service ownership before installation.",
+          "Run this installation's absolute paleoclaw.mjs launcher with the selected Node and the update command to recheck package and service ownership before installation.",
       });
       expect(JSON.stringify(result)).not.toContain("fixture-sensitive-value");
     },
@@ -592,7 +592,7 @@ describe("package runtime compatibility guidance", () => {
     }
     expect(result.error).toContain(`Node ${node} at ${process.execPath}`);
     expect(result.error).toContain(`Update install root: ${path.resolve("/fixture/cli")}`);
-    expect(result.error).toContain(path.resolve("/fixture/cli/openclaw.mjs"));
+    expect(result.error).toContain(path.resolve("/fixture/cli/paleoclaw.mjs"));
     expect(result.error).toContain(`Gateway install root: ${path.resolve("/fixture")}`);
     expect(result.error).toContain("differs from");
     expect(result.error).toContain("Failing check node-runtime");

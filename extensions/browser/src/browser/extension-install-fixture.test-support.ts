@@ -156,7 +156,7 @@ function selectFixture(fixture: InstallFixture = {}) {
     const cli = vi
       .spyOn(fs, "realpath")
       .mockImplementation(async (...args) =>
-        String(args[0]).endsWith("openclaw.mjs") ? context.cliPath : await realpath(...args),
+        String(args[0]).endsWith("paleoclaw.mjs") ? context.cliPath : await realpath(...args),
       );
     restores.push(() => cli.mockRestore());
   }

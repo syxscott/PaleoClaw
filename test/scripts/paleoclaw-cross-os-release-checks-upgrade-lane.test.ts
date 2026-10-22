@@ -172,7 +172,7 @@ function expectUpdateEnv(env: NodeJS.ProcessEnv) {
 
 const updateTimeout = () =>
   new Error(
-    "Command timed out: C:\\prefix\\node_modules\\paleoclaw\\openclaw.mjs update --tag http://127.0.0.1:49951/paleoclaw-candidate.tgz --yes --json --no-restart --timeout 600",
+    "Command timed out: C:\\prefix\\node_modules\\paleoclaw\\paleoclaw.mjs update --tag http://127.0.0.1:49951/paleoclaw-candidate.tgz --yes --json --no-restart --timeout 600",
   );
 
 function expectPhases(
@@ -731,7 +731,7 @@ describe("cross-OS manual gateway lane evidence", () => {
         exitCode: 13,
         stdout: "",
         stderr:
-          "Warning: Detected unsettled top-level await at file:///C:/prefix/node_modules/paleoclaw/openclaw.mjs:757",
+          "Warning: Detected unsettled top-level await at file:///C:/prefix/node_modules/paleoclaw/paleoclaw.mjs:757",
       };
       mocks.readInstalledVersion
         .mockReset()

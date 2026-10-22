@@ -85,7 +85,7 @@ function startGateway(
     repoRoot,
     command: {
       executablePath: process.execPath,
-      argsPrefix: [path.join(repoRoot, "openclaw.mjs")],
+      argsPrefix: [path.join(repoRoot, "paleoclaw.mjs")],
       cwd: repoRoot,
       // Repository fixtures stage auth directly; packaged bootstrap has dedicated coverage.
       usePackagedPlugins: false,

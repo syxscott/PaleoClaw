@@ -9,7 +9,7 @@ assert.deepEqual(image.Config.Entrypoint, [
   "node",
   "/app/docker-entrypoint.mjs",
 ]);
-assert.deepEqual(image.Config.Cmd, ["node", "openclaw.mjs", "gateway"]);
+assert.deepEqual(image.Config.Cmd, ["node", "paleoclaw.mjs", "gateway"]);
 assert.equal(image.Config.User, "node");
 assert.equal(image.Config.WorkingDir, "/app");
 if (containerPath) {
@@ -18,7 +18,7 @@ if (containerPath) {
   assert.equal(container.State.OOMKilled, false);
   if (mode === "old-shape") {
     assert.deepEqual(container.Config.Entrypoint, ["tini"]);
-    assert.deepEqual(container.Config.Cmd, ["-s", "--", "node", "openclaw.mjs", "gateway"]);
+    assert.deepEqual(container.Config.Cmd, ["-s", "--", "node", "paleoclaw.mjs", "gateway"]);
   } else {
     assert.deepEqual(container.Config.Entrypoint, image.Config.Entrypoint);
     assert.deepEqual(

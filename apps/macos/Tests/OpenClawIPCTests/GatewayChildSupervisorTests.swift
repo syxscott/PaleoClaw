@@ -54,7 +54,7 @@ struct GatewayChildSupervisorTests {
         printf 'stderr\\n' >&2
         printf R > "$OPENCLAW_TEST_READY_FIFO"
         IFS= read -r value
-        """.write(to: directory.appendingPathComponent("openclaw.mjs"), atomically: true, encoding: .utf8)
+        """.write(to: directory.appendingPathComponent("paleoclaw.mjs"), atomically: true, encoding: .utf8)
         let logURL = directory.appendingPathComponent("gateway.log")
         try "previous\n".write(to: logURL, atomically: true, encoding: .utf8)
         let supervisor = GatewayChildSupervisor()
@@ -118,7 +118,7 @@ struct GatewayChildSupervisorTests {
             allowUnconfigured: true)
 
         #expect(configuration.arguments == [
-            "/fixture/runtime/current/lib/node_modules/paleoclaw/openclaw.mjs",
+            "/fixture/runtime/current/lib/node_modules/paleoclaw/paleoclaw.mjs",
             "gateway", "run", "--port", "19487", "--allow-unconfigured",
         ])
         #expect(configuration.childEnvironment == [

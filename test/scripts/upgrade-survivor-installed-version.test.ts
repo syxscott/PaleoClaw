@@ -123,7 +123,7 @@ describe.skipIf(process.platform === "win32")(
 export const { redactSensitiveText } = await tsImport(${JSON.stringify(resolve("src/logging/redact.ts"))}, import.meta.url);
 `,
         );
-        const entrypoint = join(paths.packageRoot, "openclaw.mjs");
+        const entrypoint = join(paths.packageRoot, "paleoclaw.mjs");
         const targetVersion = target ?? candidateVersion;
         const beforeUpdate = packageState === "not-started";
         const failurePhase = beforeUpdate ? "install-baseline" : "update-candidate";

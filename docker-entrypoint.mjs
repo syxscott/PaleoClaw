@@ -45,14 +45,14 @@ function gatewayInvocation(program) {
       return undefined;
     }
     if (
-      !["openclaw.mjs", "dist/index.js", "dist/entry.js", "dist/entry.mjs"].some(
+      !["paleoclaw.mjs", "dist/index.js", "dist/entry.js", "dist/entry.mjs"].some(
         (file) => entry === path.join(root, file),
       )
     ) {
       return undefined;
     }
     argv = [process.execPath, entry, ...command.slice(2)];
-  } else if (program === path.join(root, "openclaw.mjs")) {
+  } else if (program === path.join(root, "paleoclaw.mjs")) {
     argv = [process.execPath, program, ...command.slice(1)];
   } else {
     return undefined;
@@ -113,7 +113,7 @@ async function activate() {
       child = spawn(
         process.execPath,
         [
-          path.join(root, "openclaw.mjs"),
+          path.join(root, "paleoclaw.mjs"),
           ...invocation.rootOptions,
           "doctor",
           "--fix",

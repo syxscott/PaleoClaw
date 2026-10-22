@@ -28,17 +28,17 @@ export async function prepareRemountedPublication(
         name: "paleoclaw",
         version: "2026.9.9",
         type: "module",
-        bin: { paleoclaw: "./openclaw.mjs" },
+        bin: { paleoclaw: "./paleoclaw.mjs" },
       }),
     );
     fs.mkdirSync(path.join(stage, "dist"), { recursive: true });
     fs.writeFileSync(path.join(stage, "dist/build-info.json"), '{"version":"2026.9.9"}');
-    fs.writeFileSync(path.join(stage, "openclaw.mjs"), "// candidate launcher target\n");
+    fs.writeFileSync(path.join(stage, "paleoclaw.mjs"), "// candidate launcher target\n");
     await writePackageDistInventory(stage);
     for (const prefix of launchers === "equal-symlinks" ? ["live", "stage"] : []) {
       const launcher = path.join(root, prefix, "bin/paleoclaw");
       fs.unlinkSync(launcher);
-      fs.symlinkSync("../lib/node_modules/paleoclaw/openclaw.mjs", launcher);
+      fs.symlinkSync("../lib/node_modules/paleoclaw/paleoclaw.mjs", launcher);
     }
   };
   const prepared = await fixture.prepare(

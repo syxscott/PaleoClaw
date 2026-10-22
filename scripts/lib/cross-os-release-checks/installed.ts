@@ -212,8 +212,8 @@ if ($null -ne $npmCommand) {
   if (-not [string]::IsNullOrWhiteSpace($npmPrefix)) {
     $env:Path = "$npmPrefix;$env:Path"
     foreach ($candidate in @(
-      (Join-Path $npmPrefix 'openclaw.cmd'),
-      (Join-Path $npmPrefix 'openclaw.ps1')
+      (Join-Path $npmPrefix 'paleoclaw.cmd'),
+      (Join-Path $npmPrefix 'paleoclaw.ps1')
     )) {
       if (Test-Path -LiteralPath $candidate) {
         $commandPath = $candidate

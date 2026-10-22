@@ -71,7 +71,7 @@ it("routes a deep memory status probe through the OpenAI-compatible environment 
 
   const result = await execFileAsync(
     process.execPath,
-    [path.resolve("openclaw.mjs"), "memory", "status", "--deep", "--agent", "main"],
+    [path.resolve("paleoclaw.mjs"), "memory", "status", "--deep", "--agent", "main"],
     {
       encoding: "utf8",
       env: {

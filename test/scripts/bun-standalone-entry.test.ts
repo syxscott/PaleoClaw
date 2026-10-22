@@ -28,7 +28,7 @@ it("preserves the runtime argv prefix through primary and child lazy profile dis
       `process.argv[0] = "bun"; Object.defineProperty(process, "execPath", { value: ${JSON.stringify(path.join(directory, "paleoclaw"))} });`,
     );
     fs.writeFileSync(
-      path.join(runtimeRoot, "openclaw.mjs"),
+      path.join(runtimeRoot, "paleoclaw.mjs"),
       `import { Command } from ${JSON.stringify(sourceUrl("node_modules/commander/index.js"))};
 import { parseCliProfileArgs } from ${JSON.stringify(sourceUrl("src/cli/profile.ts"))};
 import { registerCommandGroups } from ${JSON.stringify(sourceUrl("src/cli/program/register-command-groups.ts"))};
@@ -53,13 +53,13 @@ await program.parseAsync(process.argv);
       options: {
         runtimeBootstrap,
         runtimeRoot,
-        moduleEntries: ["openclaw.mjs"],
-        workerEntries: kind === "worker" ? ["openclaw.mjs"] : [],
+        moduleEntries: ["paleoclaw.mjs"],
+        workerEntries: kind === "worker" ? ["paleoclaw.mjs"] : [],
       },
       argv: [
         "bun",
         launcher,
-        ...(kind === "primary" ? [] : [path.join(runtimeRoot, "openclaw.mjs")]),
+        ...(kind === "primary" ? [] : [path.join(runtimeRoot, "paleoclaw.mjs")]),
         "--profile",
         "work",
         "doctor",

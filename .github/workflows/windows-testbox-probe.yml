@@ -1161,7 +1161,7 @@ jobs:
               $prefixName = if ($record.role -ceq "peer") { "$($record.cell)-peer" } else { $record.cell }
               $expectedInstall = Join-Path (Join-Path $env:RUNNER_TEMP "native-package-installed") $prefixName
               if ($record.taskInitiallyAbsent -ne $true -or $record.profile -cne $expectedProfile -or $record.taskName -cne $expectedTask -or $seen.ContainsKey($expectedTask)) { throw "No unique admitted installed task authority." }
-              foreach ($pair in @(@($record.stateDir, $expectedState), @($record.rootDir, $expectedRoot), @($record.installRoot, $expectedInstall), @($record.entry, (Join-Path $expectedInstall "node_modules/paleoclaw/openclaw.mjs")))) {
+              foreach ($pair in @(@($record.stateDir, $expectedState), @($record.rootDir, $expectedRoot), @($record.installRoot, $expectedInstall), @($record.entry, (Join-Path $expectedInstall "node_modules/paleoclaw/paleoclaw.mjs")))) {
                 if ([IO.Path]::GetFullPath($pair[0]) -ine [IO.Path]::GetFullPath($pair[1])) { throw "Installed cleanup path differs from its exact run." }
               }
               if ($discovery -and [IO.Path]::GetFullPath($record.scriptPath) -ine [IO.Path]::GetFullPath((Join-Path $expectedRoot "$($record.role).cmd"))) { throw "Discovery launcher path differs from its fixture." }

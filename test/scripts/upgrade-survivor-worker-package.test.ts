@@ -13,7 +13,7 @@ function packageFixture() {
   const root = tempDirs.make("worker-package-identity-");
   fs.mkdirSync(path.join(root, "dist"));
   fs.writeFileSync(path.join(root, "package.json"), '{"name":"paleoclaw","version":"2026.9.4"}');
-  fs.writeFileSync(path.join(root, "openclaw.mjs"), "export {};\n");
+  fs.writeFileSync(path.join(root, "paleoclaw.mjs"), "export {};\n");
   fs.writeFileSync(
     path.join(root, "dist/build-info.json"),
     JSON.stringify({ version: "2026.9.4", commit: "a".repeat(40) }),

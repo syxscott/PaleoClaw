@@ -70,7 +70,7 @@ async function exerciseDoctor(
   const systemPath = `/etc/systemd/system/${systemName}`;
   const systemFile = path.join(home, "system-unit.service");
   const packageRoot = path.join(home, "package");
-  const entrypoint = path.join(packageRoot, "openclaw.mjs");
+  const entrypoint = path.join(packageRoot, "paleoclaw.mjs");
   const stateDir = path.join(
     home,
     explicit ? "operator-state" : `.openclaw${profile ? "-lisa" : ""}`,

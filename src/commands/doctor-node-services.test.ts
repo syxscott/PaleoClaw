@@ -121,7 +121,7 @@ beforeEach(async () => {
   await fs.mkdir(path.dirname(plist), { recursive: true });
   await fs.mkdir(path.join(packageRoot, "dist"), { recursive: true });
   await fs.writeFile(path.join(packageRoot, "package.json"), JSON.stringify({ name: "paleoclaw" }));
-  await fs.writeFile(path.join(packageRoot, "openclaw.mjs"), "// fixture launcher\n");
+  await fs.writeFile(path.join(packageRoot, "paleoclaw.mjs"), "// fixture launcher\n");
   native.loaded = true;
   native.failBootstrap = false;
   native.exec.mockReset().mockImplementation(async (args: string[]) => {
@@ -185,7 +185,7 @@ it.each([
   expect(after?.programArguments).toEqual([
     process.execPath,
     "--no-warnings",
-    path.join(packageRoot, "openclaw.mjs"),
+    path.join(packageRoot, "paleoclaw.mjs"),
     ...nodeOptions,
   ]);
   expect(after?.workingDirectory).toBe(before?.workingDirectory);

@@ -107,7 +107,7 @@ service manager.
 
 Source commands launched with `pnpm paleoclaw` also refuse an automatic rebuild
 while that installation's Gateway is running. Use the installed `paleoclaw update`
-or `node openclaw.mjs update` from the checkout to reach the updater's managed
+or `node paleoclaw.mjs update` from the checkout to reach the updater's managed
 handoff without the source wrapper rebuilding first. Manual `pnpm build` remains
 an operator action: stop the Gateway before rebuilding its installation.
 

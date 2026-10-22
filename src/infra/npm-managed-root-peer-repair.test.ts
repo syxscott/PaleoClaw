@@ -43,7 +43,7 @@ async function writeManagedPeerMetadata(
 async function writePeerShims(npmRoot: string): Promise<void> {
   const modules = path.join(npmRoot, "node_modules");
   await fs.mkdir(path.join(modules, ".bin"), { recursive: true });
-  for (const name of ["paleoclaw", "openclaw.cmd", "openclaw.ps1"]) {
+  for (const name of ["paleoclaw", "paleoclaw.cmd", "paleoclaw.ps1"]) {
     await fs.writeFile(path.join(modules, ".bin", name), "shim");
   }
   await fs.writeFile(path.join(modules, ".package-lock.json"), "hidden lockfile");
@@ -67,7 +67,7 @@ async function expectPeerMetadataRemoved(
     },
     dependencies: {},
   });
-  for (const binName of ["paleoclaw", "openclaw.cmd", "openclaw.ps1"]) {
+  for (const binName of ["paleoclaw", "paleoclaw.cmd", "paleoclaw.ps1"]) {
     await expectPathMissing(path.join(npmRoot, "node_modules", ".bin", binName));
   }
   await expectPathMissing(path.join(npmRoot, "node_modules", ".package-lock.json"));

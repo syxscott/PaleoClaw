@@ -89,7 +89,7 @@ Package-update recovery retains the library selected during Bun admission. On ma
 Set `OPENCLAW_SQLITE_LIBRARY` in the process environment before starting paleoclaw to override discovery:
 
 ```sh
-OPENCLAW_SQLITE_LIBRARY=/path/to/libsqlite3.dylib bun openclaw.mjs gateway
+OPENCLAW_SQLITE_LIBRARY=/path/to/libsqlite3.dylib bun paleoclaw.mjs gateway
 ```
 
 On macOS, `paleoclaw gateway install --runtime bun`, `paleoclaw node install --runtime bun`, and wrapper-based installs persist `OPENCLAW_SQLITE_LIBRARY` and `HOMEBREW_PREFIX` from the installing shell into the managed service definition, so the service selects the same library. To change these values for an already-installed service, reinstall with `paleoclaw gateway install --runtime bun --force` (or `paleoclaw node install --runtime bun --force` for a managed node host) from a shell with the desired values; a bare reinstall of an already-loaded service is a no-op. Direct Node-runtime services never persist them.
@@ -155,8 +155,8 @@ The existing service install/restart path retains the recorded Bun pin. Node spl
 Doctor and `paleoclaw update repair` from another installation leave this Bun
 Gateway at its own root. Explicit repair reports the installation drift and
 refuses maintenance before stopping the service. Use
-`<bun> <service-root>/openclaw.mjs update repair` or
-`<bun> <service-root>/openclaw.mjs doctor --fix` for repair from the service's
+`<bun> <service-root>/paleoclaw.mjs update repair` or
+`<bun> <service-root>/paleoclaw.mjs doctor --fix` for repair from the service's
 installation.
 
 First installs and updater staging without a persistent Node require `OPENCLAW_PACKAGE_BUN_LAUNCHER` set to the absolute Bun executable that launches the CLI. The updater sets it automatically when running under Bun; an app must set it for its first `bun add -g --trust paleoclaw@<version>`. Preinstall validates that launcher as Bun 1.4.3+ without spawning absent or nonexecutable Node candidates. Without the marker, preinstall still requires a persistent Node; a Node found on PATH must satisfy the package's Node requirements even when the marker is set.
@@ -177,14 +177,14 @@ subprocess, or temporary file.
 The renderer requires absolute paths without NUL, newline, or carriage return.
 For unsupported paths, installation leaves Bun's original symlink unchanged and
 Doctor reports the reason without offering launcher repair. Invoke
-`<bun> <package-root>/openclaw.mjs` directly, with shell quoting as needed, or use
+`<bun> <package-root>/paleoclaw.mjs` directly, with shell quoting as needed, or use
 single-line paths. If a released updater introduces a newline into a final path,
 the split data is never executed: the launcher exits 127 with a target-not-found
 message. Carriage-return paths remain unsupported even if a released updater
 inserts one; the strict launcher parser does not adopt that modified launcher.
 
 If the launcher is missing, relinked, or still names a moved Bun executable, run
-`<bun> <package-root>/openclaw.mjs doctor --fix` from that installation. Doctor
+`<bun> <package-root>/paleoclaw.mjs doctor --fix` from that installation. Doctor
 reports the problem and uses its existing repair consent rules. It preserves
 commands belonging to another installation. Custom Bun global-bin settings must
 be available to the installing process and Doctor; a one-off `bun --config`

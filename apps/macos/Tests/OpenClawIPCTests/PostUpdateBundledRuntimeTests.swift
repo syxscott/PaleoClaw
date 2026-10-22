@@ -571,14 +571,14 @@ struct PostUpdateBundledRuntimeTests {
         let cases: [([String]?, Bool, Bool, PostUpdateGatewayAction)] = [
             (nil, false, false, seedExists ? .prepareBundledRuntime : .none),
             (
-                ["/fixture/state/runtime/build/bin/bun", "/fixture/state/runtime/build/lib/openclaw.mjs"],
+                ["/fixture/state/runtime/build/bin/bun", "/fixture/state/runtime/build/lib/paleoclaw.mjs"],
                 true,
                 true,
                 .prepareBundledRuntime),
             // Seeded packages with an operator runtime still use the bundled update owner,
             // whose reinstall guard reports the operator pin without replacing it.
             (
-                ["/operator/bun", "/fixture/state/runtime/build/lib/openclaw.mjs"],
+                ["/operator/bun", "/fixture/state/runtime/build/lib/paleoclaw.mjs"],
                 true,
                 true,
                 .prepareBundledRuntime),

@@ -91,7 +91,7 @@ it.runIf(process.platform !== "win32").each([
   vi.spyOn(await import("./tmp-paleoclaw-dir.js"), "resolvePreferredOpenClawTmpDir").mockReturnValue(
     coordinator,
   );
-  const fixturePath = path.join(root, "openclaw.mjs");
+  const fixturePath = path.join(root, "paleoclaw.mjs");
   const configPath = path.join(root, "openclaw.json");
   await fs.writeFile(
     path.join(root, "package.json"),

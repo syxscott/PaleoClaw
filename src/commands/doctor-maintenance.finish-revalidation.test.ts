@@ -337,7 +337,7 @@ async function runDoctorFinishForStoppedUnit(
       const command = {
         programArguments: [
           process.execPath,
-          path.join(process.cwd(), "openclaw.mjs"),
+          path.join(process.cwd(), "paleoclaw.mjs"),
           "gateway",
           "--port",
           String(gatewayPort.port),

@@ -14,7 +14,7 @@ use std::time::{Duration, Instant};
 pub(crate) type SpawnCommand<'a> = dyn Fn(&mut Command) -> Result<Child, String> + 'a;
 
 const DEFAULT_EXECUTABLE: &str = if cfg!(target_os = "windows") {
-    "openclaw.cmd"
+    "paleoclaw.cmd"
 } else {
     "paleoclaw"
 };
@@ -271,7 +271,7 @@ impl OpenClawCli {
 /// Keep discovery, installation, and runtime binding on the same launcher path.
 pub(crate) fn managed_launcher(prefix: &Path) -> PathBuf {
     prefix.join(if cfg!(target_os = "windows") {
-        "bin/openclaw.cmd"
+        "bin/paleoclaw.cmd"
     } else {
         "bin/paleoclaw"
     })

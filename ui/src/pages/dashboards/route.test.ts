@@ -1,6 +1,6 @@
 // @vitest-environment node
 
-import type { RouteLoaderOptions } from "@paleoclaw/uirouter";
+import type { RouteLoaderOptions } from "@openclaw/uirouter";
 import { assert, describe, expect, it, vi } from "vitest";
 import { SIDEBAR_SESSION_ROSTER_LIMIT } from "../../../../src/shared/session-list-limits.ts";
 import type { ApplicationContext } from "../../app/context.ts";

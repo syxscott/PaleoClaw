@@ -29,7 +29,7 @@
 | `paleoclaw`                     | `PaleoClaw`                      |
 | `paleoclaw`                     | `paleoclaw`                      |
 | `OPENCLAW`                     | `PALEOCLAW`                      |
-| `openclaw.mjs`                 | `paleoclaw.mjs`                  |
+| `paleoclaw.mjs`                 | `paleoclaw.mjs`                  |
 | `github.com/paleoclaw/paleoclaw` | `github.com/paleoclaw/paleoclaw` |
 | `ai.openclaw.`                 | `ai.paleoclaw.`                  |
 | `@paleoclaw/`                   | `@paleoclaw/`                    |

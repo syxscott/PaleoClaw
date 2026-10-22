@@ -210,8 +210,8 @@ export function createToolAndSystemRecorders(runtime: DiagnosticsRecorderRuntime
       metadata: DiagnosticEventMetadata,
     ) {
       const attrs: Record<string, string | number> = {
-        "openclaw.exec.target": evt.target,
-        "openclaw.exec.mode": evt.mode,
+        "paleoclaw.exec.target": evt.target,
+        "paleoclaw.exec.mode": evt.mode,
         "openclaw.outcome": evt.outcome,
       };
       if (evt.failureKind) {
@@ -224,16 +224,16 @@ export function createToolAndSystemRecorders(runtime: DiagnosticsRecorderRuntime
 
       const spanAttrs: Record<string, string | number | boolean> = {
         ...attrs,
-        "openclaw.exec.command_length": evt.commandLength,
+        "paleoclaw.exec.command_length": evt.commandLength,
       };
       if (typeof evt.exitCode === "number") {
-        spanAttrs["openclaw.exec.exit_code"] = evt.exitCode;
+        spanAttrs["paleoclaw.exec.exit_code"] = evt.exitCode;
       }
       if (evt.exitSignal) {
-        spanAttrs["openclaw.exec.exit_signal"] = normalizeDiagnosticValue(evt.exitSignal, "other");
+        spanAttrs["paleoclaw.exec.exit_signal"] = normalizeDiagnosticValue(evt.exitSignal, "other");
       }
       if (evt.timedOut !== undefined) {
-        spanAttrs["openclaw.exec.timed_out"] = evt.timedOut;
+        spanAttrs["paleoclaw.exec.timed_out"] = evt.timedOut;
       }
 
       // Exec events carry the innermost ambient scope rather than a child context, so
@@ -241,7 +241,7 @@ export function createToolAndSystemRecorders(runtime: DiagnosticsRecorderRuntime
       // harness that scope is the harness run (no run scope is opened -
       // shouldEmitAgentRunDiagnostics is false there), so the parent is
       // openclaw.harness.run; other harnesses open a run scope and parent to openclaw.run.
-      const span = runtime.spanWithDuration("openclaw.exec", spanAttrs, evt.durationMs, {
+      const span = runtime.spanWithDuration("paleoclaw.exec", spanAttrs, evt.durationMs, {
         parentContext: runtime.exportedInternalOrTrustedContext(evt, metadata),
         endTimeMs: evt.ts,
       });

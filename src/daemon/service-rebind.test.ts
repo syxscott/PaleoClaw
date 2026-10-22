@@ -16,7 +16,7 @@ it.each<[string, boolean, string?]>([
   ["pre-write", true],
   ["compensated", true],
 ])("records admitted rebind evidence: %s (pinned=%s)", async (scenario, pinned, refusal) => {
-  const original = { programArguments: ["/nodeA", "/A/openclaw.mjs"] };
+  const original = { programArguments: ["/nodeA", "/A/paleoclaw.mjs"] };
   let command = original;
   const before = await fingerprintGatewayServiceDefinition(original);
   const originalPin = "a".repeat(64);
@@ -32,7 +32,7 @@ it.each<[string, boolean, string?]>([
   };
   const mutate = vi.fn(async () => {
     if (scenario !== "pre-write") {
-      command = { programArguments: ["/nodeB", "/B/openclaw.mjs"] };
+      command = { programArguments: ["/nodeB", "/B/paleoclaw.mjs"] };
       pin = "b".repeat(64);
     }
     if (scenario !== "success") {

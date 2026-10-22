@@ -45,7 +45,7 @@ export function resolveOpenClawCliProcessArgs(
   args: readonly string[],
   hasBuildOutput: boolean,
 ): string[] {
-  return [hasBuildOutput ? "openclaw.mjs" : "scripts/run-node.mjs", ...args];
+  return [hasBuildOutput ? "paleoclaw.mjs" : "scripts/run-node.mjs", ...args];
 }
 
 /** Return true for live agents that expose Claude-style MCP tool names. */

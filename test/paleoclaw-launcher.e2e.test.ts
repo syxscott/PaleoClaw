@@ -57,7 +57,7 @@ async function makeLauncherFixture(
 ): Promise<string> {
   const fixtureRoot = fixtures.createTempDir("paleoclaw-launcher-");
   for (const name of [
-    "openclaw.mjs",
+    "paleoclaw.mjs",
     "cli-invocation.mjs",
     "node-host-launcher.mjs",
     "node-compile-cache.mjs",
@@ -214,7 +214,7 @@ describe("paleoclaw launcher", () => {
     options: Partial<SpawnSyncOptionsWithStringEncoding> = {},
     execPath = process.execPath,
   ) {
-    return runNode([path.join(root, "openclaw.mjs"), ...args], options, execPath);
+    return runNode([path.join(root, "paleoclaw.mjs"), ...args], options, execPath);
   }
 
   function runNode(
@@ -294,7 +294,7 @@ describe("paleoclaw launcher", () => {
       await writeEntry(options.entry(ready));
       const launcher = spawn(
         process.execPath,
-        [path.join(root, "openclaw.mjs"), ...(options.args ?? [])],
+        [path.join(root, "paleoclaw.mjs"), ...(options.args ?? [])],
         {
           detached: true,
           cwd: root,
@@ -361,7 +361,7 @@ describe("paleoclaw launcher", () => {
         );
         const child = spawnSync(
           process.execPath,
-          [...execArgv, path.join(root, "openclaw.mjs"), "browser", "extension", "native-host"],
+          [...execArgv, path.join(root, "paleoclaw.mjs"), "browser", "extension", "native-host"],
           { encoding: "utf8", timeout: 20_000, env: launcherEnv({ HOME: root }) },
         );
         expect(child.status).toBe(1);
@@ -465,7 +465,7 @@ describe("paleoclaw launcher", () => {
       const run = (input: string, args = ["status"], env: NodeJS.ProcessEnv = {}, cwd = root) =>
         spawnSync(
           testNodeExecPath,
-          ["--import", pathToFileURL(preload).href, path.join(root, "openclaw.mjs"), ...args],
+          ["--import", pathToFileURL(preload).href, path.join(root, "paleoclaw.mjs"), ...args],
           {
             cwd,
             env: {
@@ -749,7 +749,7 @@ describe("paleoclaw launcher", () => {
       'Object.defineProperty(process.versions, "node", { value: "22.23.2" });',
     );
     const result = runNode(
-      ["--import", pathToFileURL(preload).href, path.join(root, "openclaw.mjs"), ...args],
+      ["--import", pathToFileURL(preload).href, path.join(root, "paleoclaw.mjs"), ...args],
       { env: { HOME: root, OPENCLAW_HOME: root, NODE_DISABLE_COMPILE_CACHE: "1" } },
       testNodeExecPath,
     );
@@ -776,7 +776,7 @@ describe("paleoclaw launcher", () => {
         [
           "--import",
           pathToFileURL(mockNodeVersionPath).href,
-          path.join(root, "openclaw.mjs"),
+          path.join(root, "paleoclaw.mjs"),
           "gateway",
           "start",
         ],
@@ -808,7 +808,7 @@ describe("paleoclaw launcher", () => {
     );
 
     const result = runNode(
-      ["--import", pathToFileURL(legacyRuntimePath).href, path.join(root, "openclaw.mjs")],
+      ["--import", pathToFileURL(legacyRuntimePath).href, path.join(root, "paleoclaw.mjs")],
       {},
       testNodeExecPath,
     );
@@ -840,7 +840,7 @@ describe("paleoclaw launcher", () => {
     const result = runNode([
       "--import",
       pathToFileURL(mockRuntime).href,
-      path.join(root, "openclaw.mjs"),
+      path.join(root, "paleoclaw.mjs"),
     ]);
 
     expect(result.status).toBe(1);
@@ -879,7 +879,7 @@ describe("paleoclaw launcher", () => {
 
     const result = spawnSync(
       process.execPath,
-      ["--import", import.meta.resolve("tsx"), path.join(root, "openclaw.mjs"), "--profile"],
+      ["--import", import.meta.resolve("tsx"), path.join(root, "paleoclaw.mjs"), "--profile"],
       {
         cwd: process.cwd(),
         env: launcherEnv({ OPENCLAW_NO_RESPAWN: "1" }),
@@ -1319,7 +1319,7 @@ console.log(JSON.stringify({ parent: process.pid, bun: process.versions.bun, mar
         await fs.mkdir(path.join(linkRoot, "bin"));
         await fs.symlink(root, path.join(linkRoot, "lib", "node_modules", "paleoclaw"), "dir");
         await fs.symlink(
-          "../lib/node_modules/paleoclaw/openclaw.mjs",
+          "../lib/node_modules/paleoclaw/paleoclaw.mjs",
           path.join(linkRoot, "bin", "paleoclaw"),
         );
       }
@@ -1353,7 +1353,7 @@ console.log(JSON.stringify({ parent: process.pid, bun: process.versions.bun, mar
         name: "paleoclaw",
         type: "module",
         version: "2026.8.1",
-        exports: { "./cli-entry": "./openclaw.mjs" },
+        exports: { "./cli-entry": "./paleoclaw.mjs" },
       }),
     );
     if (kind === "source") {
@@ -1400,7 +1400,7 @@ console.log(JSON.stringify({ parent: process.pid, bun: process.versions.bun, mar
     expect(result.status, result.stderr).toBe(0);
     expect(result.stderr).toBe("");
     expect(JSON.parse(result.stdout)).toEqual({
-      launcher: path.join(root, "openclaw.mjs"),
+      launcher: path.join(root, "paleoclaw.mjs"),
       args: invocation === "preload-without-entry" ? [] : ["proof-argument"],
       cache: kind === "source" ? "disabled" : "enabled",
       sourceRespawn: kind === "source" ? "1" : "0",
@@ -1420,7 +1420,7 @@ console.log(JSON.stringify({ parent: process.pid, bun: process.versions.bun, mar
       const packageRoot = path.join(globalRoot, "v11", "active", "node_modules", "paleoclaw");
       await fs.mkdir(path.dirname(packageRoot), { recursive: true });
       await fs.symlink(root, packageRoot, "dir");
-      const launcher = path.join(packageRoot, "openclaw.mjs");
+      const launcher = path.join(packageRoot, "paleoclaw.mjs");
 
       const result = spawnSync(process.execPath, [launcher], {
         cwd: globalRoot,
@@ -1491,7 +1491,7 @@ console.log(JSON.stringify({ parent: process.pid, bun: process.versions.bun, mar
           ...permissionArgs,
           "--import",
           pathToFileURL(preload).href,
-          path.join(root, "openclaw.mjs"),
+          path.join(root, "paleoclaw.mjs"),
         ],
         {
           env: {
@@ -1527,7 +1527,7 @@ console.log(JSON.stringify({ parent: process.pid, bun: process.versions.bun, mar
           name: "paleoclaw",
           type: "module",
           version: "2026.9.1",
-          exports: { "./cli-entry": "./openclaw.mjs" },
+          exports: { "./cli-entry": "./paleoclaw.mjs" },
         }),
       );
       const log = path.join(root, "preload-events.jsonl");
@@ -1634,7 +1634,7 @@ console.log(JSON.stringify({ parent: process.pid, bun: process.versions.bun, mar
     );
     try {
       const result = runNode(
-        ["--import", pathToFileURL(preload).href, path.join(root, "openclaw.mjs")],
+        ["--import", pathToFileURL(preload).href, path.join(root, "paleoclaw.mjs")],
         {
           env: {
             NODE_OPTIONS: undefined,
@@ -1791,7 +1791,7 @@ console.log(JSON.stringify({ parent: process.pid, bun: process.versions.bun, mar
          process.stdout.write("cache-base:verified");`,
     );
     const args = [
-      path.join(root, mode === "direct" ? "dist/entry.js" : "openclaw.mjs"),
+      path.join(root, mode === "direct" ? "dist/entry.js" : "paleoclaw.mjs"),
       ...(mode === "foreign" ? ["status"] : ["gateway", "run"]),
     ];
     if (mode === "foreign") {

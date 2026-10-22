@@ -50,7 +50,7 @@ export const writeOpenClawPackageFixture = async (
       await fs.mkdir(path.join(root, dir), { recursive: true });
     }
     for (const [file, contents] of Object.entries({
-      "openclaw.mjs": "export {};\n",
+      "paleoclaw.mjs": "export {};\n",
       "dist/entry.js": "export {};\n",
       "dist/build-info.json": JSON.stringify({
         commit: options.builtSha,

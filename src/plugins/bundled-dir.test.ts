@@ -57,7 +57,7 @@ function seedBundledPluginTree(rootDir: string, relativeDir: string, pluginId = 
   writeJson(path.join(pluginDir, "openclaw.plugin.json"), { id: pluginId });
 }
 
-function setRuntime(cwd: string, argv1 = path.join(cwd, "openclaw.mjs")) {
+function setRuntime(cwd: string, argv1 = path.join(cwd, "paleoclaw.mjs")) {
   vi.spyOn(process, "cwd").mockReturnValue(cwd);
   process.argv[1] = argv1;
   process.execArgv.length = 0;
@@ -317,7 +317,7 @@ describe("resolveBundledPluginsDir", () => {
     }
     setRuntime(
       cwd,
-      mode === "missing override" ? "/usr/bin/env" : path.join(installedRoot, "openclaw.mjs"),
+      mode === "missing override" ? "/usr/bin/env" : path.join(installedRoot, "paleoclaw.mjs"),
     );
     if (override) {
       process.env.OPENCLAW_BUNDLED_PLUGINS_DIR = override;
@@ -439,7 +439,7 @@ describe("relocated compiled bundle precedence", () => {
       if (mode === "configSelected") {
         selected.configSelected = true;
       }
-      process.argv[1] = path.join(current, "openclaw.mjs");
+      process.argv[1] = path.join(current, "paleoclaw.mjs");
       const registry = withPluginCache(createPluginCache(), () =>
         loadPluginManifestRegistryCore({
           env: mode === "dev-source" ? { OPENCLAW_DEV_SOURCE_ROOT: previous } : {},
@@ -480,7 +480,7 @@ describe("relocated compiled bundle precedence", () => {
       const configBefore = JSON.stringify(config);
       const staleCandidate = candidate(previous.pluginDir, "global", id, id);
       const candidates = [staleCandidate, candidate(current.pluginDir, "bundled", id)];
-      process.argv[1] = path.join(current.packageRoot, "openclaw.mjs");
+      process.argv[1] = path.join(current.packageRoot, "paleoclaw.mjs");
       const registry = withPluginCache(createPluginCache(), () =>
         loadPluginManifestRegistryCore({
           env: {},

@@ -29,11 +29,11 @@ type ExecRequestTurn = {
   owners: readonly ExecRequestOwner[];
 };
 
-const state = resolveGlobalSingleton(Symbol.for("openclaw.execRequestContext"), () => ({
+const state = resolveGlobalSingleton(Symbol.for("paleoclaw.execRequestContext"), () => ({
   context: new AsyncLocalStorage<ExecRequestTurn>(),
   turns: new Set<ExecRequestTurn>(),
 }));
-const EVENT_OWNERS = Symbol.for("openclaw.execRequestEventOwners");
+const EVENT_OWNERS = Symbol.for("paleoclaw.execRequestEventOwners");
 type OwnedEvent = { [EVENT_OWNERS]?: readonly ExecRequestOwner[] };
 
 /** Opaque request ancestry retained by work admitted through a host capability. */

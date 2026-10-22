@@ -94,11 +94,11 @@ export function expectedRuntimeRecoverySteps(
     root
       ? {
           kind: "continue-update",
-          command: `node ${quote(path.join(root, "openclaw.mjs"))} update${version !== undefined ? ` --tag ${version}` : ""}`,
+          command: `node ${quote(path.join(root, "paleoclaw.mjs"))} update${version !== undefined ? ` --tag ${version}` : ""}`,
         }
       : instruction(
           "continue-update",
-          "Run this installation's absolute openclaw.mjs launcher with the selected Node and the update command to recheck package and service ownership before installation.",
+          "Run this installation's absolute paleoclaw.mjs launcher with the selected Node and the update command to recheck package and service ownership before installation.",
         ),
   ];
   return steps.filter((step): step is UpdateRecoveryStep => step !== undefined);

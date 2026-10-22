@@ -343,7 +343,7 @@ it(
         const providerUrl = await listenLoopback(provider);
         instance = await createOpenClawTestInstance({
           name: "memory-query-plan",
-          entrypoint: [path.resolve("openclaw.mjs")],
+          entrypoint: [path.resolve("paleoclaw.mjs")],
           signal,
           verifyCleanup,
           config: memoryConfig(workspace, `${providerUrl}/v1`),
