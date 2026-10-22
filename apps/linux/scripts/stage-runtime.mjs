@@ -53,7 +53,7 @@ export async function stageWindowsRuntime(work, target, pin) {
   const manifestBytes = await download("manifest.json");
   assert.equal(digest(manifestBytes), checksum("manifest.json"), "Bun manifest sha256 mismatch");
   const manifest = JSON.parse(manifestBytes);
-  assert.equal(manifest.repository, "paleoclaw/bun", "Bun release repository mismatch");
+  assert.equal(manifest.repository, "openclaw/bun", "Bun release repository mismatch");
   assert.equal(manifest.tag, pin.tag, "Bun release tag mismatch");
   assert.equal(manifest.bun.commit, pin.commit, "Bun release commit mismatch");
   assert.equal(manifest.bun.revision, pin.revision, "Bun release revision mismatch");

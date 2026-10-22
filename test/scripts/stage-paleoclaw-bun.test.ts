@@ -131,7 +131,7 @@ describe.runIf(["darwin", "linux"].includes(process.platform))(
           await write("scripts/lib/paleoclaw-bun.json", JSON.stringify(pin));
           await copyFile(stageScript, file(stageScript));
           const release = {
-            repository: "paleoclaw/bun",
+            repository: "openclaw/bun",
             tag: scenario === "release-identity" ? "different-release" : tag,
             bun: { commit: pin.commit, revision: pin.revision },
             assets: Object.entries(artifacts).map(([target, artifact]) => ({

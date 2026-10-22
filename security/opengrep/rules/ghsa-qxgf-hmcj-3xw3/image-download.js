@@ -15,7 +15,7 @@ async function downloadProviderImage(payload) {
 const downloadArtifact = async (pin, name) => {
   // ok: raw-image-download-fetch-without-ssrf-guard
   const response = await fetch(
-    `https://github.com/paleoclaw/bun/releases/download/${encodeURIComponent(pin.tag)}/${encodeURIComponent(name)}`,
+    `https://github.com/openclaw/bun/releases/download/${encodeURIComponent(pin.tag)}/${encodeURIComponent(name)}`,
     { signal: AbortSignal.timeout(300_000) },
   );
   return response.arrayBuffer();

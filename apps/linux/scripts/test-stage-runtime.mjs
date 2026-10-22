@@ -99,7 +99,7 @@ function releaseFixture(t) {
     } },
   };
   const manifest = {
-    repository: "paleoclaw/bun", tag: pin.tag, bun: { commit: pin.commit, revision: pin.revision },
+    repository: "openclaw/bun", tag: pin.tag, bun: { commit: pin.commit, revision: pin.revision },
     assets: [{ target: "windows-x64", os: "windows", arch: "x64", name: pin.artifacts["windows-x64"].asset,
       sha256: hash(archive), executable: { path: pin.artifacts["windows-x64"].executable,
         sha256: hash(executable), authenticodeSigned: true, testOnly: false, signerSubject } }],
