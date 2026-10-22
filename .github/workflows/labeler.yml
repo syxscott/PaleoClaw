@@ -46,6 +46,9 @@ jobs:
           persist-credentials: false
       - uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3
         id: app-token
+        # A fork without the GitHub App installed has no private key; skip the
+        # step so the labeler can fall back to the job token.
+        if: ${{ secrets.GH_APP_PRIVATE_KEY != '' }}
         continue-on-error: true
         with:
           app-id: "2729701"
@@ -57,7 +60,7 @@ jobs:
           permission-pull-requests: write
       - uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3
         id: app-token-fallback
-        if: steps.app-token.outcome == 'failure'
+        if: ${{ steps.app-token.outcome == 'failure' && secrets.GH_APP_PRIVATE_KEY_FALLBACK != '' }}
         # The fork has no GitHub App installed; fall back to the job token.
         continue-on-error: true
         with:
