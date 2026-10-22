@@ -1,10 +1,10 @@
 name: Labeler
 
 on:
-  pull_request_target:
-    types: [opened, synchronize, reopened]
+  pull_request_target: # zizmor: ignore[dangerous-triggers] maintainer-owned triage workflow; trusted base checkout only, no untrusted PR code execution
+    types: [opened, synchronize, reopened, edited]
   issues:
-    types: [opened]
+    types: [opened, edited]
   workflow_dispatch:
     inputs:
       max_prs:
@@ -16,41 +16,56 @@ on:
         required: false
         default: "50"
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 permissions: {}
 
 jobs:
   label:
+    if: >-
+      ${{ (
+        github.event_name == 'pull_request_target' &&
+        (
+          github.event.action != 'edited' ||
+          github.event.changes.title ||
+          github.event.changes.base
+        )
+      ) }}
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
     permissions:
       contents: read
+      issues: write
       pull-requests: write
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547 # v1
-        id: app-token
-        continue-on-error: true
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          app-id: "2729701"
-          private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
-      - uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547 # v1
-        id: app-token-fallback
-        if: steps.app-token.outcome == 'failure'
-        with:
-          app-id: "2971289"
-          private-key: ${{ secrets.GH_APP_PRIVATE_KEY_FALLBACK }}
-      - uses: actions/labeler@8558fd74291d67161a8a78ce36a881fa63b766a9 # v5
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/labeler@bf12e9b00b37c5c0ca2b87b79b2daf7891dbda13 # v7.0.0
+        if: ${{ github.event.action != 'edited' || github.event.changes.base }}
         with:
           configuration-path: .github/labeler.yml
-          repo-token: ${{ steps.app-token.outputs.token || steps.app-token-fallback.outputs.token }}
+          repo-token: ${{ github.token }}
           sync-labels: true
       - name: Apply PR size label
-        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+        if: ${{ github.event.action != 'edited' || github.event.changes.base }}
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         with:
-          github-token: ${{ steps.app-token.outputs.token || steps.app-token-fallback.outputs.token }}
+          github-token: ${{ github.token }}
           script: |
             const pullRequest = context.payload.pull_request;
             if (!pullRequest) {
               return;
             }
+
+            const { pathToFileURL } = require("node:url");
+            const { addLabelsWithinCap } = await import(
+              pathToFileURL(`${process.env.GITHUB_WORKSPACE}/scripts/github/labeler-label-cap.mjs`).href
+            );
 
             const sizeLabels = ["size: XS", "size: S", "size: M", "size: L", "size: XL"];
             const labelColor = "b76e79";
@@ -82,10 +97,10 @@ jobs:
               per_page: 100,
             });
 
-            const excludedLockfiles = new Set(["pnpm-lock.yaml", "package-lock.json", "yarn.lock", "bun.lockb"]);
+            const excludedLockfiles = new Set(["pnpm-lock.yaml", "yarn.lock", "bun.lockb"]);
             const totalChangedLines = files.reduce((total, file) => {
               const path = file.filename ?? "";
-              if (path === "docs.acp.md" || path.startsWith("docs/") || excludedLockfiles.has(path)) {
+              if (path.startsWith("docs/") || excludedLockfiles.has(path)) {
                 return total;
               }
               return total + (file.additions ?? 0) + (file.deletions ?? 0);
@@ -125,16 +140,19 @@ jobs:
               });
             }
 
-            await github.rest.issues.addLabels({
+            await addLabelsWithinCap({
+              github,
+              core,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              issue_number: pullRequest.number,
+              issueNumber: pullRequest.number,
               labels: [targetSizeLabel],
             });
       - name: Apply maintainer or trusted-contributor label
-        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+        if: ${{ github.event.action != 'edited' }}
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         with:
-          github-token: ${{ steps.app-token.outputs.token || steps.app-token-fallback.outputs.token }}
+          github-token: ${{ github.token }}
           script: |
             const login = context.payload.pull_request?.user?.login;
             if (!login) {
@@ -162,9 +180,16 @@ jobs:
             }
 
             if (isMaintainer) {
-              await github.rest.issues.addLabels({
-                ...context.repo,
-                issue_number: context.payload.pull_request.number,
+              const { pathToFileURL } = require("node:url");
+              const { addLabelsWithinCap } = await import(
+                pathToFileURL(`${process.env.GITHUB_WORKSPACE}/scripts/github/labeler-label-cap.mjs`).href
+              );
+              await addLabelsWithinCap({
+                github,
+                core,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issueNumber: context.payload.pull_request.number,
                 labels: ["maintainer"],
               });
               return;
@@ -202,10 +227,71 @@ jobs:
             //     labels: [trustedLabel],
             //   });
             // }
-      - name: Apply too-many-prs label
-        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+      - name: Apply beta-blocker title label
+        if: ${{ github.event.action != 'edited' || github.event.changes.title }}
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         with:
-          github-token: ${{ steps.app-token.outputs.token || steps.app-token-fallback.outputs.token }}
+          github-token: ${{ github.token }}
+          script: |
+            const pullRequest = context.payload.pull_request;
+            if (!pullRequest) {
+              return;
+            }
+
+            const labelName = "beta-blocker";
+            const matchesBetaBlocker = /\bbeta blocker\b/i.test(pullRequest.title ?? "");
+
+            try {
+              await github.rest.issues.getLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                name: labelName,
+              });
+            } catch (error) {
+              if (error?.status !== 404) {
+                throw error;
+              }
+              core.info(`Skipping ${labelName} labeling because the label does not exist in the repository.`);
+              return;
+            }
+
+            const currentLabels = await github.paginate(github.rest.issues.listLabelsOnIssue, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pullRequest.number,
+              per_page: 100,
+            });
+            const hasLabel = currentLabels.some((label) => label.name === labelName);
+
+            if (matchesBetaBlocker && !hasLabel) {
+              const { pathToFileURL } = require("node:url");
+              const { addLabelsWithinCap } = await import(
+                pathToFileURL(`${process.env.GITHUB_WORKSPACE}/scripts/github/labeler-label-cap.mjs`).href
+              );
+              await addLabelsWithinCap({
+                github,
+                core,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issueNumber: pullRequest.number,
+                labels: [labelName],
+              });
+              return;
+            }
+
+            if (!matchesBetaBlocker && hasLabel) {
+              await github.rest.issues.removeLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pullRequest.number,
+                name: labelName,
+              });
+            }
+      - name: Apply too-many-prs label
+        if: ${{ github.event.action != 'edited' }}
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
+        with:
+          github-token: ${{ github.token }}
           script: |
             const pullRequest = context.payload.pull_request;
             if (!pullRequest) {
@@ -213,19 +299,65 @@ jobs:
             }
 
             const activePrLimitLabel = "r: too-many-prs";
-            const activePrLimit = 10;
+            const activePrLimitOverrideLabel = "r: too-many-prs-override";
+            const activePrLimit = 20;
             const labelColor = "B60205";
             const labelDescription = `Author has more than ${activePrLimit} active PRs in this repo`;
             const authorLogin = pullRequest.user?.login;
+            const headRefName = pullRequest.head?.ref ?? "";
             if (!authorLogin) {
               return;
             }
 
+            const currentLabels = await github.paginate(github.rest.issues.listLabelsOnIssue, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pullRequest.number,
+              per_page: 100,
+            });
+
             const labelNames = new Set(
-              (pullRequest.labels ?? [])
+              currentLabels
                 .map((label) => (typeof label === "string" ? label : label?.name))
                 .filter((name) => typeof name === "string"),
             );
+
+            if (pullRequest.user?.type === "Bot" || /\[bot\]$/i.test(authorLogin) || authorLogin.startsWith("app/")) {
+              if (labelNames.has(activePrLimitLabel)) {
+                try {
+                  await github.rest.issues.removeLabel({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: pullRequest.number,
+                    name: activePrLimitLabel,
+                  });
+                } catch (error) {
+                  if (error?.status !== 404) {
+                    throw error;
+                  }
+                }
+              }
+              core.info(`Skipping active PR limit for GitHub App author ${authorLogin}.`);
+              return;
+            }
+
+            if (labelNames.has(activePrLimitOverrideLabel)) {
+              if (labelNames.has(activePrLimitLabel)) {
+                try {
+                  await github.rest.issues.removeLabel({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: pullRequest.number,
+                    name: activePrLimitLabel,
+                  });
+                } catch (error) {
+                  if (error?.status !== 404) {
+                    throw error;
+                  }
+                }
+              }
+              return;
+            }
 
             const ensureLabelExists = async () => {
               try {
@@ -288,7 +420,12 @@ jobs:
               return false;
             };
 
-            if (await isPrivilegedAuthor()) {
+            const automationPrHeadPrefixes = ["clawsweeper/", "clownfish/"];
+            const isAutomationPullRequest =
+              typeof headRefName === "string" &&
+              automationPrHeadPrefixes.some((prefix) => headRefName.startsWith(prefix));
+
+            if ((await isPrivilegedAuthor()) || isAutomationPullRequest) {
               if (labelNames.has(activePrLimitLabel)) {
                 try {
                   await github.rest.issues.removeLabel({
@@ -323,10 +460,16 @@ jobs:
             if (openPrCount > activePrLimit) {
               await ensureLabelExists();
               if (!labelNames.has(activePrLimitLabel)) {
-                await github.rest.issues.addLabels({
+                const { pathToFileURL } = require("node:url");
+                const { addLabelsWithinCap } = await import(
+                  pathToFileURL(`${process.env.GITHUB_WORKSPACE}/scripts/github/labeler-label-cap.mjs`).href
+                );
+                await addLabelsWithinCap({
+                  github,
+                  core,
                   owner: context.repo.owner,
                   repo: context.repo.repo,
-                  issue_number: pullRequest.number,
+                  issueNumber: pullRequest.number,
                   labels: [activePrLimitLabel],
                 });
               }
@@ -350,27 +493,22 @@ jobs:
 
   backfill-pr-labels:
     if: github.event_name == 'workflow_dispatch'
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref || github.run_id }}
+      cancel-in-progress: false
     permissions:
       contents: read
       pull-requests: write
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547 # v1
-        id: app-token
-        continue-on-error: true
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          app-id: "2729701"
-          private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
-      - uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547 # v1
-        id: app-token-fallback
-        if: steps.app-token.outcome == 'failure'
-        with:
-          app-id: "2971289"
-          private-key: ${{ secrets.GH_APP_PRIVATE_KEY_FALLBACK }}
+          ref: ${{ github.sha }}
+          persist-credentials: false
       - name: Backfill PR labels
-        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         with:
-          github-token: ${{ steps.app-token.outputs.token || steps.app-token-fallback.outputs.token }}
+          github-token: ${{ github.token }}
           script: |
             const owner = context.repo.owner;
             const repo = context.repo.repo;
@@ -385,7 +523,13 @@ jobs:
             const processAll = maxPrs <= 0;
             const maxCount = processAll ? Number.POSITIVE_INFINITY : Math.max(1, maxPrs);
 
+            const { pathToFileURL } = require("node:url");
+            const { addLabelsWithinCap } = await import(
+              pathToFileURL(`${process.env.GITHUB_WORKSPACE}/scripts/github/labeler-label-cap.mjs`).href
+            );
+
             const sizeLabels = ["size: XS", "size: S", "size: M", "size: L", "size: XL"];
+            const betaBlockerLabel = "beta-blocker";
             const labelColor = "b76e79";
             // const trustedLabel = "trusted-contributor";
             // const experiencedLabel = "experienced-contributor";
@@ -413,6 +557,22 @@ jobs:
                     color: labelColor,
                   });
                 }
+              }
+            }
+
+            async function hasBetaBlockerLabel() {
+              try {
+                await github.rest.issues.getLabel({
+                  owner,
+                  repo,
+                  name: betaBlockerLabel,
+                });
+                return true;
+              } catch (error) {
+                if (error?.status !== 404) {
+                  throw error;
+                }
+                return false;
               }
             }
 
@@ -475,10 +635,10 @@ jobs:
                 per_page: 100,
               });
 
-              const excludedLockfiles = new Set(["pnpm-lock.yaml", "package-lock.json", "yarn.lock", "bun.lockb"]);
+              const excludedLockfiles = new Set(["pnpm-lock.yaml", "yarn.lock", "bun.lockb"]);
               const totalChangedLines = files.reduce((total, file) => {
                 const path = file.filename ?? "";
-                if (path === "docs.acp.md" || path.startsWith("docs/") || excludedLockfiles.has(path)) {
+                if (path.startsWith("docs/") || excludedLockfiles.has(path)) {
                   return total;
                 }
                 return total + (file.additions ?? 0) + (file.deletions ?? 0);
@@ -513,13 +673,17 @@ jobs:
               }
 
               if (!labelNames.has(targetSizeLabel)) {
-                await github.rest.issues.addLabels({
+                const added = await addLabelsWithinCap({
+                  github,
+                  core,
                   owner,
                   repo,
-                  issue_number: pullRequest.number,
+                  issueNumber: pullRequest.number,
                   labels: [targetSizeLabel],
                 });
-                labelNames.add(targetSizeLabel);
+                if (added) {
+                  labelNames.add(targetSizeLabel);
+                }
               }
             }
 
@@ -538,16 +702,54 @@ jobs:
                 return;
               }
 
-              await github.rest.issues.addLabels({
+              const added = await addLabelsWithinCap({
+                github,
+                core,
+                owner,
+                repo,
+                issueNumber: pullRequest.number,
+                labels: [label],
+              });
+              if (added) {
+                labelNames.add(label);
+              }
+            }
+
+            async function applyBetaBlockerTitleLabel(pullRequest, labelNames) {
+              const matchesBetaBlocker = /\bbeta blocker\b/i.test(pullRequest.title ?? "");
+
+              if (matchesBetaBlocker) {
+                if (!labelNames.has(betaBlockerLabel)) {
+                  const added = await addLabelsWithinCap({
+                    github,
+                    core,
+                    owner,
+                    repo,
+                    issueNumber: pullRequest.number,
+                    labels: [betaBlockerLabel],
+                  });
+                  if (added) {
+                    labelNames.add(betaBlockerLabel);
+                  }
+                }
+                return;
+              }
+
+              if (!labelNames.has(betaBlockerLabel)) {
+                return;
+              }
+
+              await github.rest.issues.removeLabel({
                 owner,
                 repo,
                 issue_number: pullRequest.number,
-                labels: [label],
+                name: betaBlockerLabel,
               });
-              labelNames.add(label);
+              labelNames.delete(betaBlockerLabel);
             }
 
             await ensureSizeLabels();
+            const betaBlockerLabelExists = await hasBetaBlockerLabel();
 
             let page = 1;
             let processed = 0;
@@ -585,6 +787,9 @@ jobs:
 
                 await applySizeLabel(pullRequest, currentLabels, labelNames);
                 await applyContributorLabel(pullRequest, labelNames);
+                if (betaBlockerLabelExists) {
+                  await applyBetaBlockerTitleLabel(pullRequest, labelNames);
+                }
 
                 processed += 1;
               }
@@ -599,26 +804,25 @@ jobs:
             core.info(`Processed ${processed} pull requests.`);
 
   label-issues:
+    if: >-
+      ${{ (github.event_name == 'issues' &&
+        (github.event.action != 'edited' || !github.event.changes || github.event.changes.title)) }}
+    concurrency:
+      group: ${{ github.workflow }}-issue-${{ github.event.issue.number }}
+      cancel-in-progress: true
     permissions:
+      contents: read
       issues: write
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547 # v1
-        id: app-token
-        continue-on-error: true
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          app-id: "2729701"
-          private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
-      - uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547 # v1
-        id: app-token-fallback
-        if: steps.app-token.outcome == 'failure'
-        with:
-          app-id: "2971289"
-          private-key: ${{ secrets.GH_APP_PRIVATE_KEY_FALLBACK }}
+          ref: ${{ github.sha }}
+          persist-credentials: false
       - name: Apply maintainer or trusted-contributor label
-        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         with:
-          github-token: ${{ steps.app-token.outputs.token || steps.app-token-fallback.outputs.token }}
+          github-token: ${{ github.token }}
           script: |
             const login = context.payload.issue?.user?.login;
             if (!login) {
@@ -646,9 +850,16 @@ jobs:
             }
 
             if (isMaintainer) {
-              await github.rest.issues.addLabels({
-                ...context.repo,
-                issue_number: context.payload.issue.number,
+              const { pathToFileURL } = require("node:url");
+              const { addLabelsWithinCap } = await import(
+                pathToFileURL(`${process.env.GITHUB_WORKSPACE}/scripts/github/labeler-label-cap.mjs`).href
+              );
+              await addLabelsWithinCap({
+                github,
+                core,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issueNumber: context.payload.issue.number,
                 labels: ["maintainer"],
               });
               return;
@@ -686,3 +897,62 @@ jobs:
             //     labels: [trustedLabel],
             //   });
             // }
+      - name: Apply beta-blocker title label
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const issue = context.payload.issue;
+            if (!issue || issue.pull_request) {
+              return;
+            }
+
+            const labelName = "beta-blocker";
+            const matchesBetaBlocker = /^beta blocker:/i.test(issue.title ?? "");
+
+            try {
+              await github.rest.issues.getLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                name: labelName,
+              });
+            } catch (error) {
+              if (error?.status !== 404) {
+                throw error;
+              }
+              core.info(`Skipping ${labelName} labeling because the label does not exist in the repository.`);
+              return;
+            }
+
+            const currentLabels = await github.paginate(github.rest.issues.listLabelsOnIssue, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              per_page: 100,
+            });
+            const hasLabel = currentLabels.some((label) => label.name === labelName);
+
+            if (matchesBetaBlocker && !hasLabel) {
+              const { pathToFileURL } = require("node:url");
+              const { addLabelsWithinCap } = await import(
+                pathToFileURL(`${process.env.GITHUB_WORKSPACE}/scripts/github/labeler-label-cap.mjs`).href
+              );
+              await addLabelsWithinCap({
+                github,
+                core,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issueNumber: issue.number,
+                labels: [labelName],
+              });
+              return;
+            }
+
+            if (!matchesBetaBlocker && hasLabel) {
+              await github.rest.issues.removeLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                name: labelName,
+              });
+            }
