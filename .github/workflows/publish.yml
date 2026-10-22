@@ -60,6 +60,25 @@ jobs:
         with:
           version: 12.12.1
 
+      - name: Verify the publish credentials
+        # The registry answers an invalid or unauthorised publish with
+        # PUT /<package> -> 404, which looks identical to a missing package and
+        # only surfaces after the whole build. Fail here instead, with the
+        # registry's own reason.
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          set -uo pipefail
+          if [[ -z "${NODE_AUTH_TOKEN:-}" ]]; then
+            echo "No NPM_TOKEN secret is set; the publish will rely on npm trusted publishing."
+            exit 0
+          fi
+          if ! npm whoami; then
+            echo "::error::the NPM_TOKEN secret is not a valid npm token; publishing needs a token with write access to the paleoclaw package"
+            exit 1
+          fi
+          echo "npm identity: $(npm whoami)"
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
