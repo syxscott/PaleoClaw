@@ -8,7 +8,7 @@ import { hasUnjoinedWork, runManagedCommand } from "./lib/managed-child-process.
 import { collectClawHubPublishablePluginPackages } from "./lib/plugin-PaleoHub-release.ts";
 import { collectPublishablePluginPackages } from "./lib/plugin-npm-release.ts";
 
-const DEFAULT_CLAWHUB_CLI_PACKAGE = "PaleoHub@0.23.3";
+const DEFAULT_CLAWHUB_CLI_PACKAGE = "clawhub@0.23.3";
 // Match the existing npm release-check and shrinkwrap command 10-minute ceilings: complete
 // plugin builds and packs retain their normal budget while lifecycle or registry stalls stop.
 const PLUGIN_RELEASE_PRETAG_COMMAND_TIMEOUT_MS = 10 * 60_000;

@@ -441,7 +441,7 @@ function writeProviderPluginScaffold(params: { rootDir: string; id: string; name
     scripts: {
       build: "tsc -p tsconfig.json",
       test: "vitest run --config ./vitest.config.ts",
-      validate: "npm run build && PaleoHub package validate . --out .PaleoHub-validation",
+      validate: "npm run build && clawhub package validate . --out .PaleoHub-validation",
     },
     files: ["dist", "openclaw.plugin.json", "README.md"],
     peerDependencies: {
@@ -453,7 +453,7 @@ function writeProviderPluginScaffold(params: { rootDir: string; id: string; name
       },
     },
     devDependencies: {
-      PaleoHub: "latest",
+      clawhub: "latest",
       paleoclaw: "latest",
       typescript: "7.0.2",
       vitest: "^3.2.0",
@@ -647,9 +647,9 @@ Install dependencies, log in to the PaleoHub CLI, then validate and publish manu
 
 \`\`\`bash
 npm install
-npm exec PaleoHub -- login
+npm exec clawhub -- login
 npm run validate
-npm exec PaleoHub -- package publish .
+npm exec clawhub -- package publish .
 \`\`\`
 
 That first publish creates the PaleoHub package and establishes the package managers who can configure trusted publishing.
@@ -659,7 +659,7 @@ That first publish creates the PaleoHub package and establishes the package mana
 After the first publish, configure GitHub Actions OIDC publishing for future releases:
 
 \`\`\`bash
-npm exec PaleoHub -- package trusted-publisher set ${packageName} \\
+npm exec clawhub -- package trusted-publisher set ${packageName} \\
   --repository <owner>/<repo> \\
   --workflow-filename PaleoHub-publish.yml
 \`\`\`

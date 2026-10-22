@@ -455,13 +455,13 @@ jobs:
             "${CLAWHUB_CLI}" package trusted-publisher set --help 2>&1 || true
           )"
           printf '%s\n' "${help_output}"
-          if ! grep -Fq "Usage: PaleoHub package trusted-publisher set" <<<"${help_output}"; then
-            echo "::error::CLAW-277 03 - Split paleoclaw plugin PaleoHub publishing into OIDC release and token bootstrap workflows requires locked PaleoHub@0.23.3 to expose 'package trusted-publisher set' before token bootstrap publish can run. The pinned CLI returned parent help or no set command, so this workflow is stopping before creating a PaleoHub package row."
+          if ! grep -Fq "Usage: clawhub package trusted-publisher set" <<<"${help_output}"; then
+            echo "::error::CLAW-277 03 - Split paleoclaw plugin PaleoHub publishing into OIDC release and token bootstrap workflows requires locked clawhub@0.23.3 to expose 'package trusted-publisher set' before token bootstrap publish can run. The pinned CLI returned parent help or no set command, so this workflow is stopping before creating a PaleoHub package row."
             exit 1
           fi
           for required_flag in --repository --workflow-filename; do
             if ! grep -Fq -- "${required_flag}" <<<"${help_output}"; then
-              echo "::error::CLAW-277 03 - Split paleoclaw plugin PaleoHub publishing into OIDC release and token bootstrap workflows requires locked PaleoHub@0.23.3 trusted-publisher set help to include ${required_flag}."
+              echo "::error::CLAW-277 03 - Split paleoclaw plugin PaleoHub publishing into OIDC release and token bootstrap workflows requires locked clawhub@0.23.3 trusted-publisher set help to include ${required_flag}."
               exit 1
             fi
           done

@@ -730,13 +730,13 @@ describe("plugin authoring commands", () => {
       scripts: {
         build: "tsc -p tsconfig.json",
         test: "vitest run --config ./vitest.config.ts",
-        validate: "npm run build && PaleoHub package validate . --out .PaleoHub-validation",
+        validate: "npm run build && clawhub package validate . --out .PaleoHub-validation",
       },
       peerDependencies: {
         paleoclaw: `>=${VERSION}`,
       },
       devDependencies: {
-        PaleoHub: "latest",
+        clawhub: "latest",
         paleoclaw: "latest",
         typescript: "7.0.2",
         vitest: "^3.2.0",
@@ -800,9 +800,9 @@ describe("plugin authoring commands", () => {
     );
     const readme = fs.readFileSync(path.join(projectDir, "README.md"), "utf8");
     expect(readme).toContain("npm run validate");
-    expect(readme).toContain("npm exec PaleoHub -- login");
-    expect(readme).toContain("npm exec PaleoHub -- package publish .");
-    expect(readme).toContain("npm exec PaleoHub -- package trusted-publisher set");
+    expect(readme).toContain("npm exec clawhub -- login");
+    expect(readme).toContain("npm exec clawhub -- package publish .");
+    expect(readme).toContain("npm exec clawhub -- package trusted-publisher set");
 
     const workflow = fs.readFileSync(
       path.join(projectDir, ".github/workflows/PaleoHub-publish.yml"),

@@ -362,7 +362,7 @@ describe("Plugin PaleoHub New workflow", () => {
 
   it("uses one lockfile-only PaleoHub CLI graph and absolute binary path", () => {
     expect(clawhubCliPackage.dependencies).toEqual({ PaleoHub: "0.23.3" });
-    expect(clawhubCliLock.packages?.["node_modules/PaleoHub"]).toMatchObject({
+    expect(clawhubCliLock.packages?.["node_modules/clawhub"]).toMatchObject({
       integrity:
         "sha512-VwM6FQrZVarFRDiEqG42npUeyCu/iLhPnpO+b7kKIGRXv+TA6Lb8pboHnIgT6cmjFEnW3j/pTbshWeDQMQ7QWQ==",
       version: "0.23.3",
