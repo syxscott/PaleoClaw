@@ -497,7 +497,6 @@
     "!dist/plugin-sdk/provider-auth-markers.d.ts",
     "!dist/plugin-sdk/terminal-safe-text.d.ts",
     "paleoclaw.mjs",
-    "README-header.png",
     "assets/",
     "extensions/"
   ],
