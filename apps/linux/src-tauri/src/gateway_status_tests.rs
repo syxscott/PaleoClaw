@@ -234,9 +234,10 @@ fn cli_service_status_lifecycle_contract() {
     ];
     let mut failures = Vec::new();
     for (name, initial_status, expected) in cases {
-        let directory = TestDirectory(
-            std::env::temp_dir().join(format!("paleoclaw-status-contract-{}", uuid::Uuid::new_v4())),
-        );
+        let directory = TestDirectory(std::env::temp_dir().join(format!(
+            "paleoclaw-status-contract-{}",
+            uuid::Uuid::new_v4()
+        )));
         let root = &directory.0;
         fs::create_dir(root).unwrap();
         fs::set_permissions(root, fs::Permissions::from_mode(0o700)).unwrap();

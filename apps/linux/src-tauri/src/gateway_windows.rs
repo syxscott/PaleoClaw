@@ -3095,7 +3095,9 @@ pub(crate) async fn gateway_profile_request(
 
 fn notice_script(message: &str) -> String {
     let detail = json!({ "message": message });
-    format!("window.dispatchEvent(new CustomEvent('paleoclaw:gateway-notice',{{detail:{detail}}}));")
+    format!(
+        "window.dispatchEvent(new CustomEvent('paleoclaw:gateway-notice',{{detail:{detail}}}));"
+    )
 }
 
 fn show_error(app: &AppHandle, label: &str, error: &str) {

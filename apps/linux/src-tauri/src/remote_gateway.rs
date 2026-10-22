@@ -371,7 +371,11 @@ fn read_config(path: &Path) -> Result<Option<Value>, String> {
     let metadata = match fs::symlink_metadata(path) {
         Ok(metadata) => metadata,
         Err(error) if error.kind() == ErrorKind::NotFound => return Ok(None),
-        Err(error) => return Err(format!("Could not inspect paleoclaw configuration: {error}")),
+        Err(error) => {
+            return Err(format!(
+                "Could not inspect paleoclaw configuration: {error}"
+            ))
+        }
     };
     if metadata.file_type().is_symlink() || !metadata.is_file() {
         return Err("paleoclaw configuration must be a regular file, not a symlink.".to_string());
