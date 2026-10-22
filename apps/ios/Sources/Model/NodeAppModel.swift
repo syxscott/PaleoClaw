@@ -1796,8 +1796,9 @@ private extension NodeAppModel {
                 do {
                     try await self.operatorGateway.connect(
                         url: url,
-                        token: token,
-                        password: password,
+                        credentials: GatewayNodeSessionCredentials(
+                            token: token,
+                            password: password),
                         connectOptions: operatorOptions,
                         sessionBox: sessionBox,
                         onConnected: { [weak self] in
@@ -1901,8 +1902,9 @@ private extension NodeAppModel {
                     GatewayDiagnostics.log("connect attempt epochMs=\(epochMs) url=\(url.absoluteString)")
                     try await self.nodeGateway.connect(
                         url: url,
-                        token: token,
-                        password: password,
+                        credentials: GatewayNodeSessionCredentials(
+                            token: token,
+                            password: password),
                         connectOptions: currentOptions,
                         sessionBox: sessionBox,
                         onConnected: { [weak self] in

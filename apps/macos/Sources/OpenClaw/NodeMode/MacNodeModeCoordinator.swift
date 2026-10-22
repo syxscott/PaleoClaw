@@ -67,8 +67,9 @@ final class MacNodeModeCoordinator {
 
                 try await self.session.connect(
                     url: config.url,
-                    token: config.token,
-                    password: config.password,
+                    credentials: GatewayNodeSessionCredentials(
+                        token: config.token,
+                        password: config.password),
                     connectOptions: connectOptions,
                     sessionBox: sessionBox,
                     onConnected: { [weak self] in
