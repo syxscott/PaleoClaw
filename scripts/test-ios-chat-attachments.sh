@@ -54,7 +54,7 @@ run_test() {
     tests+=(-only-testing:OpenClawTests/IOSMediaArtifactLoaderTests -only-testing:OpenClawTests/OpenClawTypographyTests)
   fi
   # Keep Actions log backpressure outside the simulator, retaining complete logs and xcresults.
-  xcodebuild -project "$tree/apps/ios/OpenClaw.xcodeproj" -scheme "$scheme" \
+  xcodebuild -project "$tree/apps/ios/paleoclaw.xcodeproj" -scheme "$scheme" \
     -configuration Debug -destination "platform=iOS Simulator,id=$simulator" \
     -testLanguage en -testRegion US -parallel-testing-enabled NO \
     -resultBundlePath "$result" "${tests[@]}" test > "$log" 2>&1 || status=$?

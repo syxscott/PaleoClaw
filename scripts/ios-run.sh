@@ -115,7 +115,7 @@ node "${ROOT_DIR}/scripts/ios-write-swift-filelist.mjs"
 cd "${IOS_DIR}"
 "${XCODEGEN_BIN}" generate
 "${XCODEBUILD_BIN}" \
-  -project OpenClaw.xcodeproj \
+  -project paleoclaw.xcodeproj \
   -scheme paleoclaw \
   -destination "${IOS_DESTINATION}" \
   -configuration "${CONFIGURATION}" \

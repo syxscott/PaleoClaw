@@ -336,7 +336,7 @@ export async function createNativeDependencies(options: {
     const nativeStarted = performance.now();
     const buildArgs = [
       "-project",
-      "apps/ios/OpenClaw.xcodeproj",
+      "apps/ios/paleoclaw.xcodeproj",
       "-scheme",
       "OpenClawUITests",
       "-configuration",

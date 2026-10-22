@@ -593,7 +593,7 @@ def build_watch_screenshot_app
     xcodebuild_shell_join([
       "xcodebuild",
       "-project",
-      File.join(ios_root, "OpenClaw.xcodeproj"),
+      File.join(ios_root, "paleoclaw.xcodeproj"),
       "-scheme",
       "OpenClawWatchApp",
       "-configuration",
@@ -1933,7 +1933,7 @@ end
 def build_app_store_release(context)
   mark_ios_resource_phase("release-archive")
   version = context[:version]
-  project_path = File.join(ios_root, "OpenClaw.xcodeproj")
+  project_path = File.join(ios_root, "paleoclaw.xcodeproj")
   output_directory = File.join(ios_root, "build", "app-store")
   archive_path = File.join(output_directory, "OpenClaw-#{version}.xcarchive")
   export_options_path = File.join(output_directory, "ExportOptions.plist")
@@ -2414,7 +2414,7 @@ platform :ios do
     )
     FileUtils.rm_rf(derived_data_path)
     devices = snapshot_devices
-    project = File.join(ios_root, "OpenClaw.xcodeproj")
+    project = File.join(ios_root, "paleoclaw.xcodeproj")
     simulator_devices = available_simulator_devices
     selected_devices = devices.map do |name|
       simulator_devices.select { |device| device.fetch("name") == name }.max_by do |device|

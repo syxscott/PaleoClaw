@@ -166,7 +166,7 @@ def main(simulator):
     require(len(source) == 40 and all(c in "0123456789abcdef" for c in source), "Missing source identity")
     nonce = str(uuid.uuid4())
     destination = f"platform=iOS Simulator,id={simulator}"
-    build = ["xcodebuild", "-project", "apps/ios/OpenClaw.xcodeproj", "-scheme", "paleoclaw",
+    build = ["xcodebuild", "-project", "apps/ios/paleoclaw.xcodeproj", "-scheme", "paleoclaw",
              "-configuration", "Debug", "-destination", destination]
     # CI carries this fact only after its build-for-testing succeeds. Standalone proof still builds.
     if os.environ.get("IOS_TEST_BUILD_PREPARED") != "true":

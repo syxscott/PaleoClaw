@@ -11,7 +11,7 @@ Prepares local App Store release inputs without touching local signing overrides
 - writes apps/ios/build/AppStoreRelease.xcconfig with canonical bundle IDs
 - configures the release build for relay-backed APNs registration
 - configures manual App Store distribution signing with pinned provisioning profiles
-- regenerates apps/ios/OpenClaw.xcodeproj via xcodegen
+- regenerates apps/ios/paleoclaw.xcodeproj via xcodegen
 EOF
 }
 

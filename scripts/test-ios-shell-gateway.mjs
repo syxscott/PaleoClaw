@@ -5,7 +5,7 @@
 // TEST_RUNNER_OPENCLAW_IOS_LIVE_GATEWAY=1 \
 // TEST_RUNNER_OPENCLAW_IOS_LIVE_SETUP_CODE='{"url":"ws://127.0.0.1:19876","token":"synthetic-navigation-token"}' \
 // TEST_RUNNER_OPENCLAW_IOS_APPROVAL_FIXTURE_URL=http://127.0.0.1:19876 \
-// xcodebuild test -project apps/ios/OpenClaw.xcodeproj -scheme OpenClawUITests \
+// xcodebuild test -project apps/ios/paleoclaw.xcodeproj -scheme OpenClawUITests \
 //   -destination 'platform=iOS Simulator,id=<owned-simulator-udid>' \
 //   -derivedDataPath /tmp/paleoclaw-ios-navigation-proof -jobs 4 -parallel-testing-enabled NO \
 //   -only-testing:OpenClawUITests/OpenClawSnapshotUITests/testLiveGatewayApprovalNotificationsFromOverview \

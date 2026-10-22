@@ -449,7 +449,7 @@ jobs:
           cd apps/ios
           # Match Periphery's build-for-testing contract, with a fresh run-owned index.
           /usr/bin/time -p xcodebuild \
-            -project OpenClaw.xcodeproj -scheme paleoclaw -parallelizeTargets \
+            -project paleoclaw.xcodeproj -scheme paleoclaw -parallelizeTargets \
             -derivedDataPath "$RUNNER_TEMP/shared-periphery-ios-derived" \
             -destination 'generic/platform=iOS Simulator' \
             build-for-testing CODE_SIGNING_ALLOWED=NO ENABLE_BITCODE=NO \

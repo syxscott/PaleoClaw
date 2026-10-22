@@ -1,4 +1,4 @@
-project: OpenClaw.xcodeproj
+project: paleoclaw.xcodeproj
 schemes:
   - paleoclaw
 retain_codable_properties: true
