@@ -13,7 +13,6 @@
   },
   "devDependencies": {
     "@paleoclaw/plugin-sdk": "workspace:*",
-    "paleoclaw": "workspace:*",
     "ws": "8.22.0"
   },
   "peerDependencies": {

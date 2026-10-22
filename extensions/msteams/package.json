@@ -18,8 +18,7 @@
   "devDependencies": {
     "@microsoft/teams.common": "2.1.0",
     "@paleoclaw/plugin-sdk": "workspace:*",
-    "jose": "6.2.12",
-    "paleoclaw": "workspace:*"
+    "jose": "6.2.12"
   },
   "peerDependencies": {
     "paleoclaw": ">=2026.10.5"

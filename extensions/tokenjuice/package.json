@@ -19,8 +19,7 @@
     }
   },
   "devDependencies": {
-    "@paleoclaw/plugin-sdk": "workspace:*",
-    "paleoclaw": "workspace:*"
+    "@paleoclaw/plugin-sdk": "workspace:*"
   },
   "paleoclaw": {
     "extensions": [

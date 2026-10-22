@@ -8,8 +8,7 @@
   },
   "type": "module",
   "devDependencies": {
-    "@paleoclaw/plugin-sdk": "workspace:*",
-    "paleoclaw": "workspace:*"
+    "@paleoclaw/plugin-sdk": "workspace:*"
   },
   "peerDependencies": {
     "paleoclaw": ">=2026.10.5"

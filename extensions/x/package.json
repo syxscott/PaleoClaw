@@ -13,8 +13,7 @@
   "devDependencies": {
     "@paleoclaw/plugin-sdk": "workspace:*",
     "@solidjs/compiler": "2.0.0-rc.14",
-    "esbuild": "0.28.2",
-    "paleoclaw": "workspace:*"
+    "esbuild": "0.28.2"
   },
   "peerDependencies": {
     "paleoclaw": ">=2026.10.5"

@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026.10.5
+
+### Changes
+- Version alignment with core paleoclaw release numbers.
+
 ## 1.8.0
 
 ### Changes
