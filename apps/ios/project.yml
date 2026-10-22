@@ -1,5 +1,8 @@
 name: paleoclaw
 options:
+  # The chat UI copies a generated mermaid bundle, so the assets have to exist
+  # before XcodeGen writes the project.
+  preGenCommand: bash ../../scripts/ios-generate-test-tls-identity.sh && node ../../scripts/prepare-apple-mermaid.mjs
   bundleIdPrefix: ai.paleoclaw
   deploymentTarget:
     iOS: "18.0"
