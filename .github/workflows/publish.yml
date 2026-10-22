@@ -60,17 +60,54 @@ jobs:
           ls -la .release-tarball/
 
       - name: Publish to npm
+        # This fork publishes from its own v* tags with an npm token. The upstream
+        # publisher additionally requires the preflight/full-release lineage that
+        # only the upstream release pipeline produces, so the fork asserts the
+        # contract it can actually guarantee instead: the tarball is the
+        # self-contained package built from this commit, it carries the manifest
+        # version, and that version belongs to the channel the dist-tag allows.
         if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_DIST_TAG: latest
         run: |
           set -euo pipefail
           VERSION=$(node -p "require('./package.json').version")
-          if npm view paleoclaw@$VERSION version 2>/dev/null; then
+          TARBALL=".release-tarball/paleoclaw-${VERSION}.tgz"
+          if npm view paleoclaw@$VERSION version >/dev/null 2>&1; then
             echo "Version $VERSION already published, skipping..."
             exit 0
           fi
-          bash scripts/paleoclaw-npm-publish.sh --publish ".release-tarball/paleoclaw-${VERSION}.tgz"
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          if [[ ! -f "${TARBALL}" ]]; then
+            echo "error: publishable tarball not found: ${TARBALL}" >&2
+            exit 1
+          fi
+          TARBALL_VERSION=$(tar -xOf "${TARBALL}" package/package.json | node -e '
+            let input = "";
+            process.stdin.on("data", (chunk) => { input += chunk; });
+            process.stdin.on("end", () => {
+              const pkg = JSON.parse(input);
+              if (!pkg || typeof pkg.version !== "string" || pkg.version.trim() === "") {
+                throw new Error("package/package.json must contain a nonempty string version");
+              }
+              process.stdout.write(pkg.version.trim());
+            });
+          ')
+          if [[ "${TARBALL_VERSION}" != "${VERSION}" ]]; then
+            echo "error: publishable tarball version mismatch: expected ${VERSION}, got ${TARBALL_VERSION}" >&2
+            exit 1
+          fi
+          # Upstream owns the version-to-channel contract; reuse it so a release
+          # can never land on a dist-tag its channel forbids.
+          PUBLISH_PLAN=$(
+            PACKAGE_VERSION="${VERSION}" REQUESTED_PUBLISH_TAG="${NPM_DIST_TAG}" \
+            BYPASS_EXTENDED_STABLE_GUARD="" \
+            node scripts/paleoclaw-npm-extended-stable-release.mjs publish-plan
+          )
+          RESOLVED_TAG="$(printf '%s\n' "${PUBLISH_PLAN}" | tail -n 1)"
+          echo "Resolved release channel: $(printf '%s\n' "${PUBLISH_PLAN}" | head -n 1)"
+          echo "Resolved publish tag: ${RESOLVED_TAG}"
+          npm publish "${TARBALL}" --access public --tag "${RESOLVED_TAG}" --provenance
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
