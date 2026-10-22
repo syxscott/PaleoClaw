@@ -55,11 +55,11 @@ let package = Package(
                 .product(name: "PeekabooBridge", package: "Peekaboo"),
                 .product(name: "PeekabooAutomationKit", package: "Peekaboo"),
             ],
+            path: "Sources/OpenClaw",
             exclude: [
                 "Resources/Info.plist",
                 "Resources/Localizable.xcstrings",
             ],
-            path: "Sources/OpenClaw",
             resources: [
                 .copy("Resources/paleoclaw.icns"),
                 .copy("Resources/NativeSessionCatalogs.json"),
