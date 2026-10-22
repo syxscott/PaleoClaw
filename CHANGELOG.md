@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **macOS app**: the package manifest declares the dependencies the sources import and points at the repositories those dependencies actually live in, so the app resolves and compiles again instead of failing on a missing module.
 - **iOS app**: the share extension and the node app model hand the gateway their credentials the way the node session now takes them, so the iOS targets compile again.
 - **iOS minimum version**: the app now requires iOS 26.2. The bundled design layer already calls iOS 26 APIs, so the previous minimum could not build the shipped code.
+- **iOS watch app**: the watch target now finds the voice bridge archive its build script produces, and compiles the shared waveform and mascot it draws, so the watch app builds again.
 
 ## [1.8.0] - 2026-09-08
 
