@@ -11,8 +11,8 @@ use crate::quickchat::QUICKCHAT_LABEL;
 #[cfg(test)]
 use futures_util::{SinkExt, StreamExt};
 #[cfg(test)]
-use openclaw_gateway_client::AUTH_DEVICE_TOKEN_MISMATCH_DETAIL_CODE;
-use openclaw_gateway_client::{
+use paleoclaw_gateway_client::AUTH_DEVICE_TOKEN_MISMATCH_DETAIL_CODE;
+use paleoclaw_gateway_client::{
     reconnect_backoff as shared_reconnect_backoff, tls_trust, ClientError as SharedClientError,
     ConnectErrorDetails, DispatchContext as SharedDispatchContext, DispatchRejection,
     Event as GatewayEvent, GatewayClient as SharedGatewayClient,
