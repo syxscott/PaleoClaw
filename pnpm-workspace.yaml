@@ -113,6 +113,7 @@ overrides:
 allowBuilds:
   "@napi-rs/canvas": true
   "node-llama-cpp": true
+  sharp: true
   onnxruntime-node: false
   "@google/genai": true
   "@lydell/node-pty": true
