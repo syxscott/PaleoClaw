@@ -17,7 +17,7 @@ jobs:
   warm-release-npm:
     # New release-ci refs cannot read a sibling ref's cache. Scheduled main runs
     # publish portable npm downloads without executing package lifecycle hooks.
-    if: ${{ github.repository == 'paleoclaw/paleoclaw' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') }}
+    if: ${{ github.repository == 'syxscott/PaleoClaw' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') }}
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:

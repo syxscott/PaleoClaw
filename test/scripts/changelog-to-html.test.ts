@@ -8,7 +8,7 @@ import { writeFixtureFiles } from "./z0632-fixtures.test-support.js";
 const tempDirs = useAutoCleanupTempDirTracker(afterEach);
 const version = "2026.8.2";
 const footer =
-  '<p><a href="https://github.com/paleoclaw/paleoclaw/blob/main/CHANGELOG.md">View full changelog</a></p>';
+  '<p><a href="https://github.com/syxscott/PaleoClaw/blob/main/CHANGELOG.md">View full changelog</a></p>';
 
 function render(section: string, split = false) {
   const root = tempDirs.make("paleoclaw-changelog-html-");

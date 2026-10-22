@@ -4,7 +4,7 @@
   "description": "paleoclaw Matrix channel plugin for rooms and direct messages.",
   "repository": {
     "type": "git",
-    "url": "https://github.com/paleoclaw/paleoclaw"
+    "url": "https://github.com/syxscott/PaleoClaw"
   },
   "type": "module",
   "dependencies": {

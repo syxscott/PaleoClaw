@@ -20,7 +20,7 @@ const rollout = {
   merged: true,
   merged_at: mergedAt,
   merge_commit_sha: mergeCommit,
-  base: { ref: "main", repo: { full_name: "paleoclaw/paleoclaw" } },
+  base: { ref: "main", repo: { full_name: "syxscott/PaleoClaw" } },
 };
 const pullRequest = { created_at: "2026-09-01T00:00:00Z", head: { sha: head } };
 const comparison = {
@@ -127,7 +127,7 @@ it.each<Options>([
   ...[
     null,
     { ...rollout, number: 1 },
-    { ...rollout, base: { ref: "stable", repo: { full_name: "paleoclaw/paleoclaw" } } },
+    { ...rollout, base: { ref: "stable", repo: { full_name: "syxscott/PaleoClaw" } } },
     { ...rollout, base: { ref: "main", repo: { full_name: "contributor/fork" } } },
     { ...rollout, merged: false },
     { ...rollout, state: "open" },

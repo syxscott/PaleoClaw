@@ -207,11 +207,11 @@ release-envelope estimates. Measured runtime-placement observations never fall
 back across policies.
 
 Five paired main trials established the switch: runs
-[38870726251](https://github.com/paleoclaw/paleoclaw/actions/runs/38870726251),
-[38902779924](https://github.com/paleoclaw/paleoclaw/actions/runs/38902779924),
-[38989076752](https://github.com/paleoclaw/paleoclaw/actions/runs/38989076752),
-[39034539771](https://github.com/paleoclaw/paleoclaw/actions/runs/39034539771), and
-[39042099307](https://github.com/paleoclaw/paleoclaw/actions/runs/39042099307).
+[38870726251](https://github.com/syxscott/PaleoClaw/actions/runs/38870726251),
+[38902779924](https://github.com/syxscott/PaleoClaw/actions/runs/38902779924),
+[38989076752](https://github.com/syxscott/PaleoClaw/actions/runs/38989076752),
+[39034539771](https://github.com/syxscott/PaleoClaw/actions/runs/39034539771), and
+[39042099307](https://github.com/syxscott/PaleoClaw/actions/runs/39042099307).
 Bun/Node aggregate wall-time ratios ranged from 0.727 to 0.752 across roughly
 400 paired Linux shards; the fifth trial had no incomplete shards. Individual
 families can still be slower on Bun, so comparisons retain per-shard results.

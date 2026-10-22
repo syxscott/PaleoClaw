@@ -7,7 +7,7 @@ read_when:
 ---
 
 `autoreview` is an optional bundled plugin tool for the canonical
-[Auto Review skill](https://github.com/paleoclaw/agent-skills/tree/main/skills/autoreview).
+[Auto Review skill](https://github.com/openclaw/agent-skills/tree/main/skills/autoreview).
 The installed helper captures and rechecks repository changes inside the calling
 session's sandbox. The Gateway runs the selected reviewer through restricted
 `paleoclaw agent exec`, then returns the complete output to the same helper for

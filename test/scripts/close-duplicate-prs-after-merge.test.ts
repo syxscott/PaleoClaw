@@ -9,7 +9,7 @@ import {
   runDuplicateCloseWorkflow,
 } from "../../scripts/close-duplicate-prs-after-merge.mjs";
 
-const repo = "paleoclaw/paleoclaw";
+const repo = "syxscott/PaleoClaw";
 const sourceFile = "ui/src/ui/chat/grouped-render.ts";
 const diff = (hunk: string, file = sourceFile) => `diff --git a/${file} b/${file}\n${hunk}`;
 function pr(number: number, body = "") {
@@ -63,7 +63,7 @@ diff --git a/b.ts b/b.ts
       {
         action: "close",
         candidate,
-        comment: `Thanks for the fix. This is now covered by the landed #70532 / commit https://github.com/paleoclaw/paleoclaw/commit/6415e35.
+        comment: `Thanks for the fix. This is now covered by the landed #70532 / commit https://github.com/syxscott/PaleoClaw/commit/6415e35.
 
 Evidence: overlapping changed hunks; shared file(s): ui/src/ui/chat/grouped-render.ts.
 

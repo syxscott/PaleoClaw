@@ -36,17 +36,17 @@ describe("deterministic checks", () => {
 
   it("keeps entropy checks outside the exact GitHub revision occurrence", () => {
     const hash = "430f975aacee445525c4663aa88ed1590f2f08b1";
-    const commit = `https://github.com/paleoclaw/paleoclaw/commit/${hash}`;
+    const commit = `https://github.com/syxscott/PaleoClaw/commit/${hash}`;
     for (const text of [
       hash,
       `${commit} and token=${hash}`,
       `${commit}?token=${hash}`,
       `${commit}#token=${hash}`,
       `${commit}/${hash}`,
-      `https://user:password@github.com/paleoclaw/paleoclaw/commit/${hash}`,
+      `https://user:password@github.com/syxscott/PaleoClaw/commit/${hash}`,
       `https://github.com:8443/paleoclaw/paleoclaw/commit/${hash}`,
-      `https://${hash}@github.com/paleoclaw/paleoclaw/commit/${hash}`,
-      `https://user:${hash}@github.com/paleoclaw/paleoclaw/commit/${hash}`,
+      `https://${hash}@github.com/syxscott/PaleoClaw/commit/${hash}`,
+      `https://user:${hash}@github.com/syxscott/PaleoClaw/commit/${hash}`,
       `https://github.com.example.org/paleoclaw/paleoclaw/commit/${hash}`,
       `https://github.com@evil.example/paleoclaw/paleoclaw/commit/${hash}`,
       `https://example.org/paleoclaw/paleoclaw/commit/${hash}`,
@@ -59,8 +59,8 @@ describe("deterministic checks", () => {
       `.https://example.org/?next=${commit}`,
       `mailto:review@example.org?next=${commit}`,
       `data:text/plain,${commit}`,
-      `https://github.com/paleoclaw/paleoclaw/issues/${hash}`,
-      `https://github.com/paleoclaw/paleoclaw/blob/main/${hash}`,
+      `https://github.com/syxscott/PaleoClaw/issues/${hash}`,
+      `https://github.com/syxscott/PaleoClaw/blob/main/${hash}`,
       `${commit}abcdef`,
       `${commit}-secret`,
       commit.slice(0, -1),
@@ -78,11 +78,11 @@ describe("deterministic checks", () => {
     const hash = "430f975aacee445525c4663aa88ed1590f2f08b1";
     for (const text of [
       `https://github.com/paleoclaw/${token}/commit/${hash}`,
-      `https://github.com/paleoclaw/paleoclaw/commit/${token}`,
-      `https://github.com/paleoclaw/paleoclaw/blob/${hash}/${token}`,
-      `https://github.com/paleoclaw/paleoclaw/commit/${hash}?token=${token}`,
-      `https://github.com/paleoclaw/paleoclaw/commit/${hash}#${token}`,
-      `https://user:${token}@github.com/paleoclaw/paleoclaw/commit/${hash}`,
+      `https://github.com/syxscott/PaleoClaw/commit/${token}`,
+      `https://github.com/syxscott/PaleoClaw/blob/${hash}/${token}`,
+      `https://github.com/syxscott/PaleoClaw/commit/${hash}?token=${token}`,
+      `https://github.com/syxscott/PaleoClaw/commit/${hash}#${token}`,
+      `https://user:${token}@github.com/syxscott/PaleoClaw/commit/${hash}`,
     ]) {
       expect(deterministicChecks(text), text).toMatchObject({
         allowed: false,

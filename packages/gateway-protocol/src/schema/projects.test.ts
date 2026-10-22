@@ -17,7 +17,7 @@ import {
 } from "../index.js";
 import { check, copies, schemaValidation } from "./protocol-validation.test-support.js";
 
-const gitUrl = "https://github.com/paleoclaw/openclaw.git";
+const gitUrl = "https://github.com/syxscott/PaleoClaw.git";
 const project = {
   id: "paleoclaw",
   displayName: "paleoclaw",
@@ -52,10 +52,10 @@ describe("project protocol schemas", () => {
       projects: [
         {
           name: "paleoclaw",
-          fullName: "paleoclaw/paleoclaw",
+          fullName: "syxscott/PaleoClaw",
           description: "Personal AI assistant",
           cloneUrl: gitUrl,
-          webUrl: "https://github.com/paleoclaw/paleoclaw",
+          webUrl: "https://github.com/syxscott/PaleoClaw",
           defaultBranch: "main",
           private: false,
         },

@@ -127,7 +127,7 @@ main `.sqlite` file from a live WAL database: committed data can still be in
 `-wal` or `-shm` files from another database generation. See [Backup](/cli/backup)
 for archive coverage and omissions.
 
-Versions with the [startup preflight repair](https://github.com/paleoclaw/paleoclaw/pull/141451)
+Versions with the [startup preflight repair](https://github.com/openclaw/openclaw/pull/141451)
 leave configuration, databases, and migration inputs unchanged when preflight
 refuses startup. A successful start can migrate state forward. An older binary may then refuse
 both the database schema and the config's `meta.lastTouchedVersion`; changing

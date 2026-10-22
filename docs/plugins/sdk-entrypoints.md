@@ -211,7 +211,7 @@ remote write. Refusal closes the prepared channel and waits for accepted cleanup
 
 Task-time Skill preparation uses remote discovery. Channel-native menus use
 Gateway-owned Skills without waiting for the Harness; remote menu support is
-tracked in [Enterprise #241](https://github.com/paleoclaw/paleoclaw-enterprise/issues/241).
+tracked in [Enterprise #241](https://github.com/openclaw/openclaw-enterprise/issues/241).
 
 The optional `skillResources` provider handles Skill reads separately from Agent
 document access. Its `readInstructions` reads the selected instruction file for
@@ -260,7 +260,7 @@ paleoclaw version on Gateway and node.
 
 This adapter does not implement remote Skill source install/update/remove or
 PaleoHub lifecycle operations; those remain tracked in
-[Enterprise #242](https://github.com/paleoclaw/paleoclaw-enterprise/issues/242).
+[Enterprise #242](https://github.com/openclaw/openclaw-enterprise/issues/242).
 
 ## Agent workspace context
 

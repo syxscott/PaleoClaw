@@ -211,7 +211,7 @@ export function createLocaleFinalizerHarness() {
       };
       const context: Context = {
         eventName: "workflow_dispatch",
-        repository: scenario.repository ?? "paleoclaw/paleoclaw",
+        repository: scenario.repository ?? "syxscott/PaleoClaw",
         ref: scenario.ref ?? "refs/heads/main",
         runAttempt: 1,
         runId: 123,

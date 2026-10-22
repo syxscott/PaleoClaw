@@ -1,7 +1,7 @@
 # Cron reaper runtime proof
 
 This standalone harness supplies runtime evidence for
-[paleoclaw/paleoclaw#142591](https://github.com/paleoclaw/paleoclaw/pull/142591), without
+[syxscott/PaleoClaw#142591](https://github.com/openclaw/openclaw/pull/142591), without
 changing the reaper or using production state.
 
 ## Run

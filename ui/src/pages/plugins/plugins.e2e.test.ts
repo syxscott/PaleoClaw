@@ -278,9 +278,9 @@ describeControlUiE2e("Control UI Plugins mocked Gateway E2E", () => {
       expect(await page.getByText("code-plugin", { exact: true }).count()).toBe(0);
       expect(
         await detailSidebar
-          .getByRole("link", { name: "paleoclaw/paleoclaw", exact: true })
+          .getByRole("link", { name: "syxscott/PaleoClaw", exact: true })
           .getAttribute("href"),
-      ).toBe("https://github.com/paleoclaw/paleoclaw");
+      ).toBe("https://github.com/syxscott/PaleoClaw");
       expect(
         await page.getByRole("link", { name: "@paleoclaw", exact: true }).getAttribute("href"),
       ).toBe("https://clawhub.ai/paleoclaw");

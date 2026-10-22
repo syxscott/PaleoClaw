@@ -207,7 +207,7 @@ it("retires a repository-only target without falling back to its local workspace
     const repository = await repositories.create({
       agentId: "main",
       sessionKey,
-      url: "https://github.com/paleoclaw/paleoclaw",
+      url: "https://github.com/syxscott/PaleoClaw",
       branch: "repository-only",
       assertCurrent: () => {},
     });

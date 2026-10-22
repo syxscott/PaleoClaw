@@ -22,7 +22,7 @@ Run one paleoclaw installation behind a Cloudflare Worker and a named Durable Ob
 - Node.js and npm
 - Provider and channel credentials for your paleoclaw setup
 
-The template lives in [`scripts/cloudflare`](https://github.com/paleoclaw/paleoclaw/tree/main/scripts/cloudflare). It deploys a `standard-2` Container with `max_instances: 1`.
+The template lives in [`scripts/cloudflare`](https://github.com/syxscott/PaleoClaw/tree/main/scripts/cloudflare). It deploys a `standard-2` Container with `max_instances: 1`.
 
 ## How it works
 
@@ -61,7 +61,7 @@ Measured on this template against a real R2 bucket: about 2.4 seconds from write
     Clone paleoclaw and enter the template directory:
 
     ```bash
-    git clone https://github.com/paleoclaw/openclaw.git
+    git clone https://github.com/syxscott/PaleoClaw.git
     cd paleoclaw/scripts/cloudflare
     npm install
     npx wrangler login
@@ -88,7 +88,7 @@ Measured on this template against a real R2 bucket: about 2.4 seconds from write
   </Step>
 
   <Step title="Publish the Container image">
-    Replace `<official-paleoclaw-image-digest>` in `Dockerfile` with an immutable digest from the official [`paleoclaw/paleoclaw`](https://hub.docker.com/r/paleoclaw/paleoclaw) Docker Hub repository.
+    Replace `<official-paleoclaw-image-digest>` in `Dockerfile` with an immutable digest from the official [`syxscott/PaleoClaw`](https://hub.docker.com/r/paleoclaw/paleoclaw) Docker Hub repository.
 
     Build the derived image for Cloudflare's required architecture and push it to a public Docker Hub repository:
 

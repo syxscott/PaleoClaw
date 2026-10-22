@@ -15,7 +15,7 @@ Sessions can run in three places, and every one of them uses the same session, t
 | ----------------- | --------------------------------------------------------------------------------- | ----------------------------------------------------------- | ----------------- |
 | Gateway (default) | The host running `paleoclaw gateway`                                               | Everyday sessions                                           | —                 |
 | Paired device     | Your own hardware, connected once with `paleoclaw connect`                         | Spare Macs, build boxes, servers you already own            | `operator.write`  |
-| Cloud worker      | A throwaway machine leased through [Crabbox](https://github.com/paleoclaw/crabbox) | Burst capacity, long jobs, isolation from your own machines | `operator.admin`  |
+| Cloud worker      | A throwaway machine leased through [Crabbox](https://github.com/openclaw/crabbox) | Burst capacity, long jobs, isolation from your own machines | `operator.admin`  |
 
 In all remote placements, model inference stays proxied through the Gateway — provider credentials never reach the remote machine — and completed work is retained with the Gateway as accepted repository checkpoints or changes in a Gateway-source managed worktree. Both the paleoclaw runtime (`worker-turn`) and Codex (`remote-exec`) can use the same destinations.
 

@@ -48,7 +48,7 @@ const recovery = {
   recoveryScope: "principal-a",
 };
 const createParams = { key: recovery.sessionKey, agentId: "main", message: "" } as const;
-const repository = { url: "https://github.com/paleoclaw/openclaw.git", ref: "release/next" };
+const repository = { url: "https://github.com/syxscott/PaleoClaw.git", ref: "release/next" };
 
 it.each([
   {

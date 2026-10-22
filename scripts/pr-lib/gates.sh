@@ -238,7 +238,7 @@ read_remote_testbox_gate_run_url() {
   local expected_repo="${pr_url#https://github.com/}"
   expected_repo="${expected_repo%%/pull/*}"
   if [ -z "$expected_repo" ] || [ "$expected_repo" = "$pr_url" ]; then
-    expected_repo="paleoclaw/paleoclaw"
+    expected_repo="syxscott/PaleoClaw"
   fi
   local url_prefix="https://github.com/$expected_repo/actions/runs/"
   local marker="GitHub Actions run: $url_prefix"
@@ -343,7 +343,7 @@ finalize_remote_crabbox_aws_gate() {
           and .headSha == $headSha
           and ((.runId // "") | startswith("run_"))
           and ((.leaseId // "") | startswith("cbx_"))
-          and ((.actionsRunUrl // "") | startswith("https://github.com/paleoclaw/paleoclaw/actions/runs/"))
+          and ((.actionsRunUrl // "") | startswith("https://github.com/syxscott/PaleoClaw/actions/runs/"))
         )
     ' "$log_file" | tail -n 1)
   if [ -z "$stamp" ]; then
@@ -465,7 +465,7 @@ require_correction_publication_gates() (
       [ "$FULL_GATES_HEAD_SHA" = "$qualified_head" ] &&
         [ "$REMOTE_GATES_PROVIDER" = aws ] &&
         [[ "$REMOTE_GATES_RUN_ID" == run_* ]] && [[ "$REMOTE_GATES_LEASE_ID" == cbx_* ]] &&
-        [[ "$REMOTE_GATES_RUN_URL" == https://github.com/paleoclaw/paleoclaw/actions/runs/* ]] || return 1
+        [[ "$REMOTE_GATES_RUN_URL" == https://github.com/syxscott/PaleoClaw/actions/runs/* ]] || return 1
       ;;
     remote_crabbox_aws_pending)
       [ "$allow_crabbox_pending" = true ] && [ "$REMOTE_GATES_PROVIDER" = aws ] || return 1

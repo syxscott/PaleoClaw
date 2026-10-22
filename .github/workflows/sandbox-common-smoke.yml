@@ -35,8 +35,8 @@ env:
 
 jobs:
   sandbox-common-smoke:
-    if: (github.event_name != 'schedule' || github.repository == 'paleoclaw/paleoclaw') && (github.event_name != 'push' || github.ref != 'refs/heads/main' || vars.OPENCLAW_CI_ON_PUSH == 'true') && (github.event_name != 'pull_request' || !github.event.pull_request.draft)
-    runs-on: ${{ vars.OPENCLAW_CI_RUNNER_BACKEND == 'github' && 'ubuntu-24.04' || (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == 'paleoclaw/paleoclaw') && 'blacksmith-16vcpu-ubuntu-2404' || 'ubuntu-24.04' }}
+    if: (github.event_name != 'schedule' || github.repository == 'syxscott/PaleoClaw') && (github.event_name != 'push' || github.ref != 'refs/heads/main' || vars.OPENCLAW_CI_ON_PUSH == 'true') && (github.event_name != 'pull_request' || !github.event.pull_request.draft)
+    runs-on: ${{ vars.OPENCLAW_CI_RUNNER_BACKEND == 'github' && 'ubuntu-24.04' || (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == 'syxscott/PaleoClaw') && 'blacksmith-16vcpu-ubuntu-2404' || 'ubuntu-24.04' }}
     timeout-minutes: 45
     steps:
       - name: Checkout

@@ -260,7 +260,7 @@ function runMaturityInvocationScenario(options: {
     CALLER_WORKFLOW_REF: options.callerWorkflowRef,
     JOB_WORKFLOW_FILE_PATH: MATURITY_SCORECARD_WORKFLOW,
     JOB_WORKFLOW_REF: options.jobWorkflowRef ?? MATURITY_SCORECARD_WORKFLOW_REF,
-    JOB_WORKFLOW_REPOSITORY: "paleoclaw/paleoclaw",
+    JOB_WORKFLOW_REPOSITORY: "syxscott/PaleoClaw",
     PUBLISH_PULL_REQUEST: String(options.publishPullRequest),
   });
   return {
@@ -822,7 +822,7 @@ describe("ci workflow guards", () => {
         "getCollaboratorPermissionLevel",
         'new Set(["admin", "maintain", "write"])',
         "callerWorkflowRef !== calledWorkflowRef",
-        'job.workflow_repository === "paleoclaw/paleoclaw"',
+        'job.workflow_repository === "syxscott/PaleoClaw"',
         "job.workflow_ref === calledWorkflowRef",
       ]);
     }
@@ -895,7 +895,7 @@ describe("ci workflow guards", () => {
       expect(checkouts).toHaveLength(1);
       expect(checkouts[0]).toMatchObject({
         uses: CHECKOUT_V6,
-        with: { repository: "paleoclaw/paleoclaw", ref: "main", "persist-credentials": false },
+        with: { repository: "syxscott/PaleoClaw", ref: "main", "persist-credentials": false },
       });
       const restore = step(job, "Restore trusted QA harness revision");
       expect(restore.env).toMatchObject({
@@ -979,7 +979,7 @@ describe("ci workflow guards", () => {
       `github.workflow_ref == '${MATURITY_SCORECARD_WORKFLOW_REF}' &&`,
       `needs.validate_selected_ref.outputs.workflow_file_path == '${MATURITY_SCORECARD_WORKFLOW}' &&`,
       `needs.validate_selected_ref.outputs.workflow_ref == '${MATURITY_SCORECARD_WORKFLOW_REF}' &&`,
-      "needs.validate_selected_ref.outputs.workflow_repository == 'paleoclaw/paleoclaw' }}",
+      "needs.validate_selected_ref.outputs.workflow_repository == 'syxscott/PaleoClaw' }}",
     ].join(" ");
     for (const [job, name] of [
       [maturity.jobs.publisher_preflight, "Create generated PR tokens"],

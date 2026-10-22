@@ -57,13 +57,13 @@ const pullRequest: ControlUiSessionPullRequest = {
   ...prTarget,
   branch: "feature/ci-details",
   title: "Show CI jobs and steps in the chat popover",
-  url: "https://github.com/paleoclaw/paleoclaw/pull/123456",
+  url: "https://github.com/openclaw/openclaw/pull/123456",
   state: "open",
   headSha,
   additions: 210,
   deletions: 30,
   checks: { state: "pending", passed: 6, failed: 0, running: 1, skipped: 17 },
-  checksUrl: "https://github.com/paleoclaw/paleoclaw/pull/123456/checks",
+  checksUrl: "https://github.com/openclaw/openclaw/pull/123456/checks",
 };
 
 function detailFixture(
@@ -100,7 +100,7 @@ function detailFixture(
     conclusion: completed ? "failure" : undefined,
     completedAt: completed ? stamp(142) : undefined,
     startedAt: stamp(0),
-    detailsUrl: "https://github.com/paleoclaw/paleoclaw/actions/runs/100/job/11",
+    detailsUrl: "https://github.com/syxscott/PaleoClaw/actions/runs/100/job/11",
     steps: steps.map(({ name, start, end }, index) => ({
       number: index + 1,
       name,
@@ -127,7 +127,7 @@ function detailFixture(
       source: index === 5 ? "check" : "actions",
       startedAt: stamp(0),
       completedAt: stamp(42 + index * 10),
-      detailsUrl: "https://github.com/paleoclaw/paleoclaw/actions/runs/100/job/" + (20 + index),
+      detailsUrl: "https://github.com/syxscott/PaleoClaw/actions/runs/100/job/" + (20 + index),
       steps:
         index === 5
           ? undefined
@@ -325,7 +325,7 @@ suite.define(() => {
     const other = {
       ...pullRequest,
       number: 123457,
-      url: "https://github.com/paleoclaw/paleoclaw/pull/123457",
+      url: "https://github.com/openclaw/openclaw/pull/123457",
     };
     await gateway.emitGatewayEvent(CONTROL_UI_SESSION_PULL_REQUESTS_CHANGED_EVENT, {
       sessions: {

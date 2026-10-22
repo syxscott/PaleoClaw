@@ -17,14 +17,14 @@ describe("X GitHub verification configuration", () => {
     const cfg: OpenClawConfig = {
       channels: {
         x: {
-          verifiedFromGitHub: { repo: "paleoclaw/paleoclaw", refreshMinutes: 60, token },
+          verifiedFromGitHub: { repo: "syxscott/PaleoClaw", refreshMinutes: 60, token },
           accounts: { team: { verifiedFromGitHub: { minPermission: "maintain" } } },
         },
       },
     };
     expect(XConfigSchema.safeParse(cfg.channels?.x).success).toBe(true);
     expect(resolveXAccount(cfg, "team").config.verifiedFromGitHub).toEqual({
-      repo: "paleoclaw/paleoclaw",
+      repo: "syxscott/PaleoClaw",
       minPermission: "maintain",
       refreshMinutes: 60,
       token,
@@ -32,7 +32,7 @@ describe("X GitHub verification configuration", () => {
   });
 
   it.each([
-    { repo: "https://github.com/paleoclaw/paleoclaw" },
+    { repo: "https://github.com/syxscott/PaleoClaw" },
     { repo: "paleoclaw" },
     { repo: "paleoclaw/../other" },
     { repo: "paleoclaw/.." },
@@ -51,7 +51,7 @@ describe("X GitHub verification configuration", () => {
     const config = xConfig({
       verifiedFromGitHub: { token },
       accounts: {
-        team: { verifiedFromGitHub: { repo: "paleoclaw/paleoclaw" } },
+        team: { verifiedFromGitHub: { repo: "syxscott/PaleoClaw" } },
         own: {
           verifiedFromGitHub: {
             repo: "example/repo",

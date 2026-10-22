@@ -18,7 +18,7 @@ permissions:
 
 jobs:
   check-mirror-freshness:
-    if: github.repository == 'paleoclaw/paleoclaw'
+    if: github.repository == 'syxscott/PaleoClaw'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout source repo

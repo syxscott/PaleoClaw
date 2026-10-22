@@ -52,7 +52,7 @@ suite.define(() => {
                 owner: "paleoclaw",
                 repo: "paleoclaw",
                 title: "Synthetic subscription recovery",
-                url: "https://github.com/paleoclaw/paleoclaw/pull/123",
+                url: "https://github.com/openclaw/openclaw/pull/123",
                 state: "open",
               },
             ],

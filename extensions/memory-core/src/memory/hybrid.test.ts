@@ -229,13 +229,13 @@ describe("memory hybrid helpers", () => {
       ...disabledRanking,
       vectorWeight: 1,
       textWeight: 0,
-      activeProjectKeys: ["github.com/paleoclaw/paleoclaw"],
+      activeProjectKeys: ["github.com/syxscott/PaleoClaw"],
       keyword: [],
       vector: [
         vectorHit("same", 0.8, {
           path: "MEMORY.md",
           endLine: 1,
-          projectKey: "github.com/paleoclaw/paleoclaw",
+          projectKey: "github.com/syxscott/PaleoClaw",
         }),
         vectorHit("global", 0.8, { path: "MEMORY.md", startLine: 2 }),
         vectorHit("foreign", 0.8, {

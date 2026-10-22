@@ -104,7 +104,7 @@ export async function startIMessageGatewayAccount(
   );
   const ownerAccountId = resolveIMessageDuplicateSourceOwner({ cfg: ctx.cfg, account });
   if (ownerAccountId) {
-    // paleoclaw/paleoclaw#65141: this account shares a local Messages source with
+    // syxscott/PaleoClaw#65141: this account shares a local Messages source with
     // an already-owning account, so spawning a second `imsg rpc` would deliver
     // every inbound twice. Keep the account enabled for outbound sends, status,
     // and capability surfaces; just park the watcher slot until shutdown. Lifecycle stays silent:

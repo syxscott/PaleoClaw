@@ -16,7 +16,7 @@ const CONTROL_JOBS = new Set([
 export async function reportPrFailures(options) {
   const { repository, headRepository, runId, runAttempt, headSha, token } = options;
   if (
-    repository !== "paleoclaw/paleoclaw" ||
+    repository !== "syxscott/PaleoClaw" ||
     !/^[\w.-]+\/[\w.-]+$/u.test(headRepository) ||
     !/^[a-f0-9]{40}$/u.test(headSha) ||
     ![runId, runAttempt, options.pullRequestNumber].every(

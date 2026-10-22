@@ -349,7 +349,7 @@ function frozenWorkflowFixture(
     LANG: "C.UTF-8",
     RUNNER_TEMP: root,
     GITHUB_OUTPUT: join(root, "outputs"),
-    GITHUB_REPOSITORY: "paleoclaw/paleoclaw",
+    GITHUB_REPOSITORY: "syxscott/PaleoClaw",
     GITHUB_RUN_ID: "123",
     GITHUB_RUN_ATTEMPT: "2",
     ADMISSION_WORKFLOW: plan.env?.ADMISSION_WORKFLOW ?? "",
@@ -766,7 +766,7 @@ function packageToolingCheckoutFixture() {
     } = {},
   ) {
     const context = {
-      workflow_repository: "paleoclaw/paleoclaw",
+      workflow_repository: "syxscott/PaleoClaw",
       workflow_ref: `paleoclaw/paleoclaw/.github/workflows/package-acceptance.yml@${options.capturedRef ?? "refs/heads/main"}`,
       workflow_sha: capturedSha,
       ...options.context,
@@ -778,7 +778,7 @@ function packageToolingCheckoutFixture() {
     const env = {
       PATH: process.env.PATH,
       JOB_CONTEXT: JSON.stringify(context),
-      GITHUB_REPOSITORY: options.githubRepository ?? "paleoclaw/paleoclaw",
+      GITHUB_REPOSITORY: options.githubRepository ?? "syxscott/PaleoClaw",
       GITHUB_SHA: advancedSha,
       GITHUB_REF: "refs/heads/other-caller",
       GITHUB_WORKFLOW_REF:
@@ -2631,7 +2631,7 @@ describe("frozen admission workflow barriers", () => {
     f.provisionParser();
     const request = {
       version: 1,
-      repository: "paleoclaw/paleoclaw",
+      repository: "syxscott/PaleoClaw",
       selected: { root: f.target, sha: f.sha },
       tooling: { root: f.tooling, sha: f.toolingSha },
       allowFrozenTargetScenarioOmissions: true,
@@ -2880,7 +2880,7 @@ ${functions}
           TSX_TSCONFIG_PATH: resolve("tsconfig.json"),
           GITHUB_OUTPUT: outputPath,
           GITHUB_STEP_SUMMARY: join(root, "summary"),
-          GITHUB_REPOSITORY: "paleoclaw/paleoclaw",
+          GITHUB_REPOSITORY: "syxscott/PaleoClaw",
           GITHUB_RUN_ID: "44",
           GITHUB_RUN_ATTEMPT: "2",
           GITHUB_REF: githubRef,
@@ -2949,7 +2949,7 @@ function evaluatedJobTimeouts(path: string, jobName: string, job: WorkflowJob): 
     return resolveRunnerMatrix({ mode: "both", ref: "main" }).include.map((matrix) => {
       const minutes: unknown = evaluateWorkflowExpression(timeout, {
         eventName: "workflow_dispatch",
-        repository: "paleoclaw/paleoclaw",
+        repository: "syxscott/PaleoClaw",
         runAttempt: 1,
         matrix,
       });
@@ -3043,7 +3043,7 @@ function runFullReleaseInputValidation(
     env: {
       PATH: process.env.PATH,
       GITHUB_OUTPUT: resolve(workdir, "output"),
-      GITHUB_REPOSITORY: "paleoclaw/paleoclaw",
+      GITHUB_REPOSITORY: "syxscott/PaleoClaw",
       RELEASE_PROFILE: releaseProfile,
       SKIP_PACKAGE_TELEGRAM_E2E: skipTelegram,
       TELEGRAM_WAIVER: options.telegramWaiver ?? "",
@@ -3152,7 +3152,7 @@ printf '%s\\n' "$value"
       FAKE_BASE_SHA: params.baseTagSha ?? params.remoteSha ?? targetSha,
       FAKE_PACKAGE_VERSION: params.version,
       GH_TOKEN: step.env?.GH_TOKEN === "${{ github.token }}" ? "test-token" : "",
-      GITHUB_REPOSITORY: "paleoclaw/paleoclaw",
+      GITHUB_REPOSITORY: "syxscott/PaleoClaw",
       GITHUB_OUTPUT: outputPath,
       PATH: `${fakeBin}:${process.env.PATH}`,
       RELEASE_PROFILE: params.releaseProfile ?? "beta",
@@ -3345,7 +3345,7 @@ function runFullReleaseCandidateRequest(packagePublished: boolean) {
       RELEASE_SOAK: "false",
       RUNNER_TEMP: workdir,
       SHARED_IMAGE_POLICY: "no-push-artifact",
-      TARGET_REPOSITORY: "paleoclaw/paleoclaw",
+      TARGET_REPOSITORY: "syxscott/PaleoClaw",
       TARGET_SHA: "a".repeat(40),
       TOOLING_SHA: "b".repeat(40),
       UPGRADE_SURVIVOR_BASELINE: "paleoclaw@latest",
@@ -3539,7 +3539,7 @@ function runFullReleaseChildDispatch(
       readWorkflow(FULL_RELEASE_VALIDATION_WORKFLOW).env?.GH_TRANSIENT_SERVER_OR_NETWORK_PATTERN ??
       "HTTP 5[0-9][0-9]",
     GITHUB_OUTPUT: resolve(workdir, "github-output"),
-    GITHUB_REPOSITORY: "paleoclaw/paleoclaw",
+    GITHUB_REPOSITORY: "syxscott/PaleoClaw",
     GITHUB_RUN_ATTEMPT: "2",
     GITHUB_RUN_ID: "77",
     GITHUB_STEP_SUMMARY: resolve(workdir, "github-summary"),
@@ -3579,7 +3579,7 @@ function runFullReleaseChildDispatch(
         event: env.MOCK_GH_RUN_EVENT,
         head_branch: env.MOCK_GH_RUN_HEAD_BRANCH,
         head_sha: env.MOCK_GH_CHILD_SHA,
-        html_url: "https://github.com/paleoclaw/paleoclaw/actions/runs/101",
+        html_url: "https://github.com/syxscott/PaleoClaw/actions/runs/101",
         id: Number(env.MOCK_GH_RUN_ID),
         path: env.MOCK_GH_RUN_PATH,
         run_attempt: Number(env.MOCK_GH_RUN_ATTEMPT),
@@ -3856,7 +3856,7 @@ fi
       FALLBACK_BASELINE: params.fallbackBaseline ?? "paleoclaw@latest",
       GH_TOKEN: "",
       GITHUB_OUTPUT: outputPath,
-      GITHUB_REPOSITORY: "paleoclaw/paleoclaw",
+      GITHUB_REPOSITORY: "syxscott/PaleoClaw",
       NPM_LOG: npmLog,
       PATH: `${binDir}:${process.env.PATH}`,
       REQUESTED_BASELINES: "",
@@ -3914,7 +3914,7 @@ if (tool === "gh") {
     env: {
       PATH: `${bin}:${process.env.PATH}`,
       GITHUB_OUTPUT: output,
-      GITHUB_REPOSITORY: "paleoclaw/paleoclaw",
+      GITHUB_REPOSITORY: "syxscott/PaleoClaw",
       CANDIDATE_PUBLISHED: String(params.published ?? false),
       CANDIDATE_SOURCE_SHA: "a".repeat(40),
       CANDIDATE_VERSION: params.candidateVersion ?? "2026.9.3",
@@ -4031,7 +4031,7 @@ esac
       ARTIFACT_NAME: artifactName,
       ARTIFACT_RUN_ATTEMPT: attempt,
       ARTIFACT_RUN_ID: params.producerRunId,
-      GITHUB_REPOSITORY: "paleoclaw/paleoclaw",
+      GITHUB_REPOSITORY: "syxscott/PaleoClaw",
       GITHUB_RUN_ATTEMPT: params.currentRunAttempt ?? attempt,
       GITHUB_RUN_ID: params.currentRunId,
       MOCK_ARTIFACT_JSON: JSON.stringify({
@@ -4084,7 +4084,7 @@ function runReleasePublishInputValidation(overrides: Record<string, string>) {
       FULL_RELEASE_VALIDATION_RUN_ID: "222",
       GITHUB_OUTPUT: githubOutput,
       OPENCLAW_NPM_RESUME_RUN_ID: "",
-      GITHUB_REPOSITORY: "paleoclaw/paleoclaw",
+      GITHUB_REPOSITORY: "syxscott/PaleoClaw",
       PATH: `${binDir}:${process.env.PATH}`,
       PLUGINS: "",
       PLUGIN_PUBLISH_SCOPE: "all-publishable",
@@ -4126,7 +4126,7 @@ esac
   const result = runBash(script, {
     env: {
       GITHUB_OUTPUT: githubOutput,
-      GITHUB_REPOSITORY: "paleoclaw/paleoclaw",
+      GITHUB_REPOSITORY: "syxscott/PaleoClaw",
       MOCK_TAG_OBJECT: JSON.stringify(params.tagObject ?? {}),
       MOCK_TAG_REF: JSON.stringify(params.tagRef),
       PATH: `${binDir}:${process.env.PATH}`,
@@ -4201,7 +4201,7 @@ function runOpenClawNpmTrustedRefGuard(overrides: Record<string, string>) {
   chmodSync(timeoutPath, 0o755);
   return runBash(script, {
     env: {
-      GITHUB_REPOSITORY: "paleoclaw/paleoclaw",
+      GITHUB_REPOSITORY: "syxscott/PaleoClaw",
       MOCK_REMOTE_TAG_SHA: "a".repeat(40),
       MOCK_WORKFLOW_ANCESTOR: "true",
       PATH: `${binDir}:${process.env.PATH}`,
@@ -4260,7 +4260,7 @@ esac
   return runBash(script, {
     cwd: workdir,
     env: {
-      GITHUB_REPOSITORY: "paleoclaw/paleoclaw",
+      GITHUB_REPOSITORY: "syxscott/PaleoClaw",
       MOCK_COMPARE_STATUS: "identical",
       MOCK_TAG_FULL_REF: "",
       MOCK_TAG_MISSING: "false",
@@ -4397,7 +4397,7 @@ async function qualifiedPreflightConsumerFixture(
     : FULL_RELEASE_VALIDATION_WORKFLOW;
   const fullRef = `refs/${params.preflightHeadBranch.startsWith("release-publish/") ? "tags" : "heads"}/${params.preflightHeadBranch}`;
   const producer = {
-    repository: "paleoclaw/paleoclaw",
+    repository: "syxscott/PaleoClaw",
     workflowRef: `paleoclaw/paleoclaw/${workflowPath}@${fullRef}`,
     workflowSha: params.preflightHeadSha,
     runId,
@@ -4415,8 +4415,8 @@ async function qualifiedPreflightConsumerFixture(
     event: "workflow_dispatch",
     status: "completed",
     conclusion: "success",
-    repository: { full_name: "paleoclaw/paleoclaw" },
-    head_repository: { full_name: "paleoclaw/paleoclaw" },
+    repository: { full_name: "syxscott/PaleoClaw" },
+    head_repository: { full_name: "syxscott/PaleoClaw" },
   };
   const manifest = Buffer.from(
     JSON.stringify({ version: 3, releaseSha: "d".repeat(40), producer }),
@@ -4634,7 +4634,7 @@ exit 64
     NODE_OPTIONS: `--import=${pathToFileURL(fetchMock).href}`,
     GITHUB_OUTPUT: resolve(workdir, "github-output"),
     GITHUB_REF: params.currentRef,
-    GITHUB_REPOSITORY: "paleoclaw/paleoclaw",
+    GITHUB_REPOSITORY: "syxscott/PaleoClaw",
     GITHUB_WORKSPACE: workdir,
     FULL_RELEASE_VALIDATION_RUN_ID:
       params.fullReleaseRunId ?? (params.fullReleasePreflight ? "111" : "222"),
@@ -4642,8 +4642,8 @@ exit 64
       params.fullReleaseRunAttempt ?? (params.independentProducer ? "3" : "1"),
     MOCK_PREFLIGHT_RUN: JSON.stringify({
       id: 111,
-      repository: { full_name: "paleoclaw/paleoclaw" },
-      head_repository: { full_name: "paleoclaw/paleoclaw" },
+      repository: { full_name: "syxscott/PaleoClaw" },
+      head_repository: { full_name: "syxscott/PaleoClaw" },
       status: "completed",
       conclusion: "success",
       event: "workflow_dispatch",
@@ -4730,7 +4730,7 @@ exit 64
       FULL_RELEASE_VALIDATION_RUN_ATTEMPT:
         params.fullReleaseRunAttempt ?? (params.independentProducer ? "3" : "1"),
       GITHUB_OUTPUT: resolve(workdir, "github-output"),
-      GITHUB_REPOSITORY: "paleoclaw/paleoclaw",
+      GITHUB_REPOSITORY: "syxscott/PaleoClaw",
       MOCK_PREFLIGHT_RUN: JSON.stringify({
         databaseId: 111,
         attempt: 1,
@@ -4739,7 +4739,7 @@ exit 64
         event: "workflow_dispatch",
         headBranch: params.preflightHeadBranch,
         headSha: params.preflightHeadSha,
-        url: "https://github.com/paleoclaw/paleoclaw/actions/runs/111",
+        url: "https://github.com/syxscott/PaleoClaw/actions/runs/111",
         workflowName: params.fullReleasePreflight
           ? "Full Release Validation"
           : "paleoclaw NPM Release",
@@ -4823,7 +4823,7 @@ function runReleaseCheckArtifactResolve(params: {
     resolve(REPO_ROOT, RELEASE_CHECK_ARTIFACT_RESOLVER),
     "resolve",
     "--repository",
-    "paleoclaw/paleoclaw",
+    "syxscott/PaleoClaw",
     "--run-id",
     runId,
     "--consumer-attempt",
@@ -5024,7 +5024,7 @@ describe("package acceptance workflow", () => {
         PATH: `${root}:${process.env.PATH}`,
         EXPECTED_SIGNED_TAG_SHA: "a".repeat(40),
         EXPECTED_SIGNED_TAG_OBJECT_SHA: "c".repeat(40),
-        GITHUB_REPOSITORY: "paleoclaw/paleoclaw",
+        GITHUB_REPOSITORY: "syxscott/PaleoClaw",
         RELEASE_TAG: tag,
         RELEASE_NPM_DIST_TAG: tag.includes("-beta.") ? "beta" : "latest",
         PUBLISH_OPENCLAW_NPM: "true",
@@ -5365,7 +5365,7 @@ describe("package acceptance workflow", () => {
     writeFileSync(ghPath, `#!/bin/sh\nprintf '%s\\n' "\${MOCK_REMOTE_TAG_SHA}"\n`);
     chmodSync(ghPath, 0o755);
     const pinnedEnv = {
-      GITHUB_REPOSITORY: "paleoclaw/paleoclaw",
+      GITHUB_REPOSITORY: "syxscott/PaleoClaw",
       PATH: `${binDir}:${process.env.PATH}`,
       WORKFLOW_REF: `refs/tags/release-publish/${workflowSha.slice(0, 12)}-123`,
       WORKFLOW_SHA: workflowSha,
@@ -5447,7 +5447,7 @@ describe("package acceptance workflow", () => {
       const dispatchPath = join(root, "dispatch.json");
       const workflowRef = "release-publish/aaaaaaaaaaaa-123";
       const workflowSha = "a".repeat(40);
-      const runUrl = "https://github.com/paleoclaw/paleoclaw/actions/runs/91";
+      const runUrl = "https://github.com/syxscott/PaleoClaw/actions/runs/91";
       writeExecutable(
         join(root, "gh"),
         `#!${process.execPath}
@@ -5458,12 +5458,12 @@ if (args[0] === 'run' && args[1] === 'list') {
   const matches = args[args.indexOf('--status') + 1] === ${JSON.stringify(state)};
   console.log(JSON.stringify(matches ? [{ databaseId: 91, headBranch: ${JSON.stringify(otherRef ? "release-publish/bbbbbbbbbbbb-456" : workflowRef)}, status: ${JSON.stringify(state)}, url: ${JSON.stringify(runUrl)} }] : []));
 } else if (args[0] === 'run' && args[1] === 'view') {
-  console.log(JSON.stringify({ headSha: ${JSON.stringify(workflowSha)}, url: 'https://github.com/paleoclaw/paleoclaw/actions/runs/92' }));
+  console.log(JSON.stringify({ headSha: ${JSON.stringify(workflowSha)}, url: 'https://github.com/syxscott/PaleoClaw/actions/runs/92' }));
 } else if (args[0] === 'api' && args.some(arg => arg.includes('/commits/'))) {
   console.log(${JSON.stringify(workflowSha)});
 } else if (args[0] === 'api' && args.some(arg => arg.endsWith('/dispatches'))) {
   writeFileSync(${JSON.stringify(dispatchPath)}, readFileSync(0, 'utf8'));
-  console.log(JSON.stringify({ workflow_run_id: 92, html_url: 'https://github.com/paleoclaw/paleoclaw/actions/runs/92' }));
+  console.log(JSON.stringify({ workflow_run_id: 92, html_url: 'https://github.com/syxscott/PaleoClaw/actions/runs/92' }));
 } else throw new Error('Unexpected GitHub operation: ' + JSON.stringify(args));
 `,
       );
@@ -5485,7 +5485,7 @@ require_clawhub_dispatch_available "$WORKFLOW_REF" plugin-PaleoHub-release.yml &
             PATH: `${root}:${process.env.PATH}`,
             HELPER_SCRIPT: resolve("scripts/lib/release-publish-children.sh"),
             GITHUB_REF: `refs/tags/${workflowRef}`,
-            GITHUB_REPOSITORY: "paleoclaw/paleoclaw",
+            GITHUB_REPOSITORY: "syxscott/PaleoClaw",
             GITHUB_STEP_SUMMARY: join(root, "summary"),
             WORKFLOW_REF: workflowRef,
             PARENT_WORKFLOW_SHA: workflowSha,
@@ -6310,10 +6310,10 @@ render_github_release_notes() { cp "$2" "$1"; printf '%s\\n' '{"verificationIncl
     expect
       .soft(proofText)
       .toContain(
-        `- npm preflight: https://github.com/paleoclaw/paleoclaw/actions/runs/${producerRunId}`,
+        `- npm preflight: https://github.com/syxscott/PaleoClaw/actions/runs/${producerRunId}`,
       );
     expect(proofText).toContain(
-      `- full release validation: https://github.com/paleoclaw/paleoclaw/actions/runs/${fullReleaseRunId}`,
+      `- full release validation: https://github.com/syxscott/PaleoClaw/actions/runs/${fullReleaseRunId}`,
     );
   });
 
@@ -6620,7 +6620,7 @@ render_github_release_notes() { cp "$2" "$1"; printf '%s\\n' '{"verificationIncl
           CLAWHUB_RECEIPT_OUTCOME: "skipped",
         });
         expect(completed.status, completed.stderr).toBe(1);
-        expect(fixture.events()).toContain("cancel:run cancel --repo paleoclaw/paleoclaw 404");
+        expect(fixture.events()).toContain("cancel:run cancel --repo syxscott/PaleoClaw 404");
         expect(fixture.events()).toContain("wait:paleoclaw-npm-release.yml:terminal:false");
         expect(fixture.events().some((event) => event.startsWith("verify:"))).toBe(false);
       }
@@ -6903,7 +6903,7 @@ print_failed_run_summary 404
         encoding: "utf8",
         env: {
           PATH: process.env.PATH,
-          GITHUB_REPOSITORY: "paleoclaw/paleoclaw",
+          GITHUB_REPOSITORY: "syxscott/PaleoClaw",
           JOBS_FILE: jobsPath,
           LOG_REQUESTS: callsPath,
         },
@@ -6989,7 +6989,7 @@ wait_for_run "$WORKFLOW" 404 "$EXPECTED_SHA" "$STARTED_JOB" "$APPROVE_ENVIRONMEN
           PATH: process.env.PATH,
           MODE: mode,
           EXPECTED_SHA: "a".repeat(40),
-          GITHUB_REPOSITORY: "paleoclaw/paleoclaw",
+          GITHUB_REPOSITORY: "syxscott/PaleoClaw",
           GITHUB_STEP_SUMMARY: join(root, "summary"),
           APPROVED: join(root, "approved"),
           CALLS: calls,
@@ -7205,7 +7205,7 @@ printf 'native_failed=%s\\n' "$native_failed"
             PATH: process.env.PATH,
             RUNNER_TEMP: root,
             GITHUB_STEP_SUMMARY: summaryPath,
-            GITHUB_REPOSITORY: "paleoclaw/paleoclaw",
+            GITHUB_REPOSITORY: "syxscott/PaleoClaw",
             GITHUB_RUN_ID: "123",
             GITHUB_RUN_ATTEMPT: "2",
             RELEASE_TAG: "v2026.8.1",
@@ -7230,7 +7230,7 @@ printf 'native_failed=%s\\n' "$native_failed"
         expect(summary).not.toContain("actions/runs/456");
       } else {
         expect(summary).toContain("completion not awaited");
-        expect(summary).toContain("https://github.com/paleoclaw/paleoclaw/actions/runs/456");
+        expect(summary).toContain("https://github.com/syxscott/PaleoClaw/actions/runs/456");
       }
     },
   );
@@ -7276,7 +7276,7 @@ printf 'native_failed=%s\\n' "$native_failed"
           head_branch: mode === "other-ref" ? "main" : workflowRef,
           head_sha: mode === "other-tooling" ? "c".repeat(40) : workflowSha,
           repository: {
-            full_name: mode === "other-repository" ? "example/other" : "paleoclaw/paleoclaw",
+            full_name: mode === "other-repository" ? "example/other" : "syxscott/PaleoClaw",
           },
           actor: { login: "github-actions[bot]" },
           triggering_actor: { login: "github-actions[bot]" },
@@ -7295,10 +7295,10 @@ import { readFileSync, writeFileSync } from 'node:fs';
 const args = process.argv.slice(2);
 if (args[0] === 'api' && args.some(arg => arg.endsWith('/workflows/ci.yml/dispatches'))) {
   writeFileSync(${JSON.stringify(dispatchPath)}, readFileSync(0, 'utf8'));
-  console.log(JSON.stringify({ workflow_run_id: 91, html_url: 'https://github.com/paleoclaw/paleoclaw/actions/runs/91' }));
+  console.log(JSON.stringify({ workflow_run_id: 91, html_url: 'https://github.com/syxscott/PaleoClaw/actions/runs/91' }));
 } else if (args[0] === 'api' && args.some(arg => arg.endsWith('/workflows/android-release.yml/dispatches'))) {
   writeFileSync(${JSON.stringify(androidDispatchPath)}, readFileSync(0, 'utf8'));
-  console.log(JSON.stringify({ workflow_run_id: 92, html_url: 'https://github.com/paleoclaw/paleoclaw/actions/runs/92' }));
+  console.log(JSON.stringify({ workflow_run_id: 92, html_url: 'https://github.com/syxscott/PaleoClaw/actions/runs/92' }));
 } else if (args[0] === 'api' && args.some(arg => arg.includes('/commits/'))) {
   const endpoint = args.find(arg => arg.includes('/commits/'));
   if (endpoint.endsWith('/v2026.8.1')) {
@@ -7319,7 +7319,7 @@ if (args[0] === 'api' && args.some(arg => arg.endsWith('/workflows/ci.yml/dispat
     headSha: args.includes('92') ? ${JSON.stringify(targetSha)} : run.head_sha,
     status: run.status, conclusion: run.conclusion,
     createdAt: '2026-08-30T10:00:00Z', updatedAt: '2026-08-30T10:01:00Z',
-    url: 'https://github.com/paleoclaw/paleoclaw/actions/runs/91',
+    url: 'https://github.com/syxscott/PaleoClaw/actions/runs/91',
   }));
 } else throw new Error('Unexpected GitHub operation: ' + JSON.stringify(args));
 `,
@@ -7381,7 +7381,7 @@ NODE
                 RUNNER_TEMP: root,
                 GITHUB_OUTPUT: outputPath,
                 GITHUB_STEP_SUMMARY: join(root, "summary"),
-                GITHUB_REPOSITORY: "paleoclaw/paleoclaw",
+                GITHUB_REPOSITORY: "syxscott/PaleoClaw",
                 GITHUB_RUN_ID: "123",
                 GITHUB_RUN_ATTEMPT: "2",
                 GITHUB_REF: `refs/tags/${workflowRef}`,
@@ -7454,7 +7454,7 @@ NODE
         if (approved) {
           expect(readJson(approvalPath)).toEqual({
             version: 3,
-            repository: "paleoclaw/paleoclaw",
+            repository: "syxscott/PaleoClaw",
             workflow: "paleoclaw Release Publish",
             parentRunId: "123",
             parentRunAttempt: 2,
@@ -8819,7 +8819,7 @@ test "$package_manager" = "pnpm@12.1.0"
     ),
   )("adopts and validates the exact $jobName run without waiting for terminal status", (child) => {
     const { calls, result } = runFullReleaseChildDispatch(child, {
-      MOCK_GH_DISPATCH_OUTPUT: "https://github.com/paleoclaw/paleoclaw/actions/runs/101",
+      MOCK_GH_DISPATCH_OUTPUT: "https://github.com/syxscott/PaleoClaw/actions/runs/101",
       MOCK_GH_STATUSES: '["in_progress"]',
     });
 
@@ -8840,7 +8840,7 @@ test "$package_manager" = "pnpm@12.1.0"
     );
 
     const { calls, result } = runFullReleaseChildDispatch(child, {
-      MOCK_GH_DISPATCH_OUTPUT: "https://github.com/paleoclaw/paleoclaw/actions/runs/101",
+      MOCK_GH_DISPATCH_OUTPUT: "https://github.com/syxscott/PaleoClaw/actions/runs/101",
       MOCK_GH_RUN_TITLES: JSON.stringify(titles),
     });
 
@@ -8858,7 +8858,7 @@ test "$package_manager" = "pnpm@12.1.0"
   ] as const)("rejects child %s without reposting", (mode, kind, error, reads) => {
     const child = fullReleaseChild(kind);
     const overrides: Record<string, string> = {
-      MOCK_GH_DISPATCH_OUTPUT: "https://github.com/paleoclaw/paleoclaw/actions/runs/101",
+      MOCK_GH_DISPATCH_OUTPUT: "https://github.com/syxscott/PaleoClaw/actions/runs/101",
     };
     if (mode === "immutable mismatch") {
       overrides.MOCK_GH_RUN_EVENT = "push";
@@ -8941,7 +8941,7 @@ test "$package_manager" = "pnpm@12.1.0"
 
     const mismatched = runFullReleaseChildDispatch(FULL_RELEASE_CHILD_DISPATCHES[0], {
       MOCK_GH_CHILD_SHA: "c".repeat(40),
-      MOCK_GH_DISPATCH_OUTPUT: "https://github.com/paleoclaw/paleoclaw/actions/runs/101",
+      MOCK_GH_DISPATCH_OUTPUT: "https://github.com/syxscott/PaleoClaw/actions/runs/101",
     });
     expect(mismatched.result.status).toBe(1);
     expect(mismatched.result.stderr).toContain("expected parent workflow SHA");
@@ -9905,7 +9905,7 @@ describe("package artifact reuse", () => {
     expect(binderCheckouts.map(({ uses, with: inputs }) => ({ inputs, uses }))).toEqual([
       {
         inputs: {
-          repository: "paleoclaw/paleoclaw",
+          repository: "syxscott/PaleoClaw",
           ref: "${{ github.sha }}",
           "fetch-depth": 1,
           path: ".release-harness",
@@ -9925,7 +9925,7 @@ describe("package artifact reuse", () => {
       RUN_ATTEMPT: "${{ github.run_attempt }}",
       RUN_ID: "${{ github.run_id }}",
     });
-    expect(workflowRevision.run).toContain('repository !== "paleoclaw/paleoclaw"');
+    expect(workflowRevision.run).toContain('repository !== "syxscott/PaleoClaw"');
     expect(workflowRevision.run).toContain("job.workflow_repository !== repository");
     expect(workflowRevision.run).toContain("job.workflow_sha");
     expect(workflowRevision.run).not.toContain('"fetch"');
@@ -10068,14 +10068,14 @@ describe("package artifact reuse", () => {
 
     expect(workflow.on?.schedule).toEqual([{ cron: "23 4 * * *" }, { cron: "41 6 * * 1" }]);
     expect(daily.if).toBe(
-      "github.repository == 'paleoclaw/paleoclaw' && (github.event_name == 'workflow_dispatch' || github.event.schedule == '23 4 * * *')",
+      "github.repository == 'syxscott/PaleoClaw' && (github.event_name == 'workflow_dispatch' || github.event.schedule == '23 4 * * *')",
     );
     expect(daily.with).toMatchObject({
       enable_prepublish_plugin_registry: true,
       ref: "${{ github.sha }}",
     });
     expect(weekly.if).toBe(
-      "github.repository == 'paleoclaw/paleoclaw' && github.event_name == 'schedule' && github.event.schedule == '41 6 * * 1'",
+      "github.repository == 'syxscott/PaleoClaw' && github.event_name == 'schedule' && github.event.schedule == '41 6 * * 1'",
     );
     expect(weekly.permissions).toEqual({
       actions: "read",
@@ -10997,7 +10997,7 @@ printf '%s\\n' "$DEEPSEEK_API_KEY" "$DEEPINFRA_API_KEY"`,
       expect(
         evaluateWorkflowExpression(checkTestboxJob["timeout-minutes"], {
           eventName: "workflow_dispatch",
-          repository: "paleoclaw/paleoclaw",
+          repository: "syxscott/PaleoClaw",
           runAttempt: 1,
           additionalNeeds: { admission: { outputs: { minutes }, result: "success" } },
         }),
@@ -11023,7 +11023,7 @@ printf '%s\\n' "$DEEPSEEK_API_KEY" "$DEEPINFRA_API_KEY"`,
         expect(
           evaluateWorkflowExpression(`\${{ ${step.if} }}`, {
             eventName,
-            repository: "paleoclaw/paleoclaw",
+            repository: "syxscott/PaleoClaw",
             runAttempt: 1,
             failed: true,
             cancelled: true,
@@ -14582,7 +14582,7 @@ promote_windows_release_assets
             PATH: process.env.PATH,
             DISPATCH_ARGS: dispatchPath,
             GITHUB_STEP_SUMMARY: summaryPath,
-            GITHUB_REPOSITORY: "paleoclaw/paleoclaw",
+            GITHUB_REPOSITORY: "syxscott/PaleoClaw",
             RELEASE_TAG: "v2026.9.1",
             RELEASE_NPM_DIST_TAG: scenario === "extended-stable" ? "extended-stable" : "latest",
             CHILD_WORKFLOW_REF: workflowRef,
@@ -14728,7 +14728,7 @@ promote_windows_release_assets
 
     expect(releaseWorkflow).toContain("finalize_github_release:");
 
-    expect(androidDocs).toContain("github.com/paleoclaw/paleoclaw/releases");
+    expect(androidDocs).toContain("github.com/syxscott/PaleoClaw/releases");
     expect(androidDocs).not.toContain("releases/latest/download/paleoclaw-Android.apk");
     expect(androidDocs).toContain("gh attestation verify paleoclaw-Android.apk");
     expect(androidDocs).toContain('--source-ref "refs/tags/${release_tag}"');
@@ -15118,7 +15118,7 @@ promote_windows_release_assets
         "-c",
         `
 set -uo pipefail
-GITHUB_REPOSITORY=paleoclaw/paleoclaw
+GITHUB_REPOSITORY=syxscott/PaleoClaw
 gh() {
   if [[ "$1" == "run" && "$2" == "view" ]]; then
     printf '%s\\n' '{"headSha":"${expectedSha}","url":"https://example.invalid/run/123"}'
@@ -15153,7 +15153,7 @@ approve_pending_deployments plugin-PaleoHub-new.yml 123 "${expectedSha}" || stat
         "-c",
         `
 set -uo pipefail
-GITHUB_REPOSITORY=paleoclaw/paleoclaw
+GITHUB_REPOSITORY=syxscott/PaleoClaw
 GITHUB_STEP_SUMMARY=/dev/null
 gh() {
   if [[ "$1" == "run" && "$2" == "view" ]]; then
@@ -15186,7 +15186,7 @@ approve_pending_deployments plugin-PaleoHub-new.yml 123 "${expectedSha}" || stat
         "-c",
         `
 set -uo pipefail
-GITHUB_REPOSITORY=paleoclaw/paleoclaw
+GITHUB_REPOSITORY=syxscott/PaleoClaw
 gh() {
   if [[ "$1" == "run" && "$2" == "view" ]]; then
     printf '%s\\n' '{"headSha":"${"b".repeat(40)}","url":"https://example.invalid/run/123"}'
@@ -15676,7 +15676,7 @@ esac
     const validationEnv = {
       ...process.env,
       GH_TOKEN: "test-token",
-      GITHUB_REPOSITORY: "paleoclaw/paleoclaw",
+      GITHUB_REPOSITORY: "syxscott/PaleoClaw",
       PATH: `${binDir}:${process.env.PATH ?? ""}`,
       SELECTED_SHA: selectedSha,
     };

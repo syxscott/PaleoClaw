@@ -19,7 +19,7 @@ import { candidatePublicationFixture } from "./candidate-publication.test-suppor
 
 const sourceSha = "a".repeat(40);
 const toolingSha = "b".repeat(40);
-const repository = "paleoclaw/paleoclaw";
+const repository = "syxscott/PaleoClaw";
 const runId = "100";
 const runAttempt = "2";
 const tempDirs = useAutoCleanupTempDirTracker(afterEach);

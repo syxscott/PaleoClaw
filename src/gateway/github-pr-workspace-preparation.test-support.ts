@@ -120,7 +120,7 @@ export async function fixture(
   const git = (...args: string[]) => local.git("-C", cwd, ...args);
   const baseRepo = {
     id: 10,
-    full_name: "paleoclaw/paleoclaw",
+    full_name: "syxscott/PaleoClaw",
     private: false,
     archived: false,
     owner: { type: "Organization" },
@@ -137,7 +137,7 @@ export async function fixture(
     : baseRepo;
   const pr = {
     number: 7,
-    html_url: "https://github.com/paleoclaw/paleoclaw/pull/7",
+    html_url: "https://github.com/syxscott/PaleoClaw/pull/7",
     user: { id: 101, login: "contributor" },
     state: "open",
     draft: false,

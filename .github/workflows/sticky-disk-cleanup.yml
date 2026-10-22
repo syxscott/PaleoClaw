@@ -33,7 +33,7 @@ concurrency:
 
 jobs:
   delete:
-    if: github.repository == 'paleoclaw/paleoclaw' && github.ref == 'refs/heads/main' && inputs.confirm
+    if: github.repository == 'syxscott/PaleoClaw' && github.ref == 'refs/heads/main' && inputs.confirm
     runs-on: ${{ inputs.architecture == 'arm64' && 'blacksmith-16vcpu-ubuntu-2404-arm' || 'blacksmith-4vcpu-ubuntu-2404' }}
     timeout-minutes: 10
     steps:

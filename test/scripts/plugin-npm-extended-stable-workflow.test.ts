@@ -107,7 +107,7 @@ function runStableBootstrapAdmission(
   const targetSha = "a".repeat(40);
   const branch = `release-publish/${toolingSha.slice(0, 12)}-123`;
   const approval = createStablePluginNpmBootstrapApproval({
-    repository: "paleoclaw/paleoclaw",
+    repository: "syxscott/PaleoClaw",
     parentRunId: "123",
     parentRunAttempt: 2,
     workflowBranch: branch,
@@ -136,7 +136,7 @@ function runStableBootstrapAdmission(
     status: "in_progress",
     conclusion: null,
     runAttempt: 2,
-    repository: "paleoclaw/paleoclaw",
+    repository: "syxscott/PaleoClaw",
     path: `.github/workflows/paleoclaw-release-publish.yml@refs/tags/${branch}`,
     ...overrides.run,
   };
@@ -167,7 +167,7 @@ function runStableBootstrapAdmission(
       env: {
         PATH: `${bin}:${dirname(testNodeExecPath)}:/usr/bin:/bin`,
         RUNNER_TEMP: root,
-        GITHUB_REPOSITORY: "paleoclaw/paleoclaw",
+        GITHUB_REPOSITORY: "syxscott/PaleoClaw",
         GITHUB_ACTOR: "github-actions[bot]",
         PACKAGE_NAME: "@paleoclaw/team-reports",
         PACKAGE_VERSION: "2026.9.3",
@@ -462,11 +462,11 @@ fs.appendFileSync(process.env.EVENTS, JSON.stringify({ command: "npm", args, byt
           TARBALL_PATH: tarball,
           PUBLISH_TAG: publishTag,
           PACKAGE_VERSION: "2026.7.33",
-          GITHUB_REPOSITORY: "paleoclaw/paleoclaw",
+          GITHUB_REPOSITORY: "syxscott/PaleoClaw",
           // No environment bypass may override the live pre-mutation guard.
           BYPASS_EXTENDED_STABLE_GUARD: "true",
           RELEASE_TARGET_SHA: targetSha,
-          OPENCLAW_RELEASE_TOOLING_REPOSITORY: "paleoclaw/paleoclaw",
+          OPENCLAW_RELEASE_TOOLING_REPOSITORY: "syxscott/PaleoClaw",
           OPENCLAW_RELEASE_TOOLING_FULL_REF: "refs/heads/main",
           OPENCLAW_RELEASE_TOOLING_REF: "main",
           OPENCLAW_RELEASE_TOOLING_SHA: toolingSha,

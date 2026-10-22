@@ -1606,7 +1606,7 @@ posixIt(
     expect(report.publication?.generatedA).toBe("desired-a");
     expectReport(report, { authHeaderPresent: false }, { fetches: 1 });
     expect(report.githubSummary).toBe(
-      "Generated pull request: https://github.com/paleoclaw/paleoclaw/pull/1\n",
+      "Generated pull request: https://github.com/syxscott/PaleoClaw/pull/1\n",
     );
     expect(report.output).toContain("retrying once under the same lease");
   },

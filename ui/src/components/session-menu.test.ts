@@ -753,7 +753,7 @@ describe("session menu", () => {
       "PR",
       {
         loading: false,
-        pullRequestUrl: "https://github.com/paleoclaw/paleoclaw/pull/12345",
+        pullRequestUrl: "https://github.com/openclaw/openclaw/pull/12345",
         worktreePath: null,
       },
     ],

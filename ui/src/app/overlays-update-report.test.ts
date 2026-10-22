@@ -96,7 +96,7 @@ describe("update failure report continuity", () => {
     const duplicate = overlays.reportUpdateFailure(attemptId);
     expect(overlays.snapshot.updateFailureReportBusy).toBe(true);
     await vi.waitFor(() => expect(reportUpdateFailure).toHaveBeenCalledOnce());
-    pending.resolve({ status: "created", url: "https://github.com/paleoclaw/paleoclaw/issues/123" });
+    pending.resolve({ status: "created", url: "https://github.com/openclaw/openclaw/issues/123" });
     await Promise.all([first, duplicate]);
 
     expect(reportUpdateFailure).toHaveBeenCalledOnce();
@@ -155,7 +155,7 @@ it("keeps a reported legacy sentinel across reconnect without reporting again", 
   const hello = harness.gateway.snapshot.hello;
   reportUpdateFailure.mockResolvedValue({
     status: "created",
-    url: "https://github.com/paleoclaw/paleoclaw/issues/123",
+    url: "https://github.com/openclaw/openclaw/issues/123",
   });
   await flushMicrotasks();
   await overlays.reportUpdateFailure(attemptId);

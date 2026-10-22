@@ -66,9 +66,9 @@ it.each([`DROP TABLE ${lifecycleTable}`, `DELETE FROM ${lifecycleTable}`])(
     createGitHubPublicationExecutionStoreFixture("legacy-instance").complete(claimed, {
       requestId: legacy.request_id,
       status: "published",
-      repository: "paleoclaw/paleoclaw",
+      repository: "syxscott/PaleoClaw",
       branch: legacy.branch,
-      url: "https://github.com/paleoclaw/paleoclaw/pull/12",
+      url: "https://github.com/syxscott/PaleoClaw/pull/12",
       headCommit: NEW_HEAD,
     });
     const db = openOpenClawStateDatabase().db;

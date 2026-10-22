@@ -70,7 +70,7 @@ separate facts. A retained task can return a result while its owner still holds
 the worker and input charge. Native operations, database resources, and cleanup
 receipts make that distinction necessary; a general-purpose task queue alone
 does not replace those owners. The
-[package contributor guide](https://github.com/paleoclaw/paleoclaw/blob/main/packages/worker-runtime/README.md)
+[package contributor guide](https://github.com/syxscott/PaleoClaw/blob/main/packages/worker-runtime/README.md)
 explains the host boundary, async context lifetime, and reproducible benchmarks.
 
 These compute pools share a CPU admission limit of `max(1, availableParallelism() - 1)`

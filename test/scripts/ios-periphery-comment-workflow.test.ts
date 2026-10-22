@@ -140,7 +140,7 @@ async function runCommenter(
     head_sha: "head-sha",
     id: 12345,
     pull_requests: [{ number: 123 }],
-    repository: { full_name: "paleoclaw/paleoclaw" },
+    repository: { full_name: "syxscott/PaleoClaw" },
     run_attempt: 2,
     run_number: 8,
     workflow_id: 999,
@@ -289,8 +289,8 @@ async function runCommenter(
               base: {
                 repo: {
                   full_name: after
-                    ? (options.liveRepositoryAfter ?? "paleoclaw/paleoclaw")
-                    : "paleoclaw/paleoclaw",
+                    ? (options.liveRepositoryAfter ?? "syxscott/PaleoClaw")
+                    : "syxscott/PaleoClaw",
                 },
               },
               draft: after ? (options.liveDraftAfter ?? draft) : draft,

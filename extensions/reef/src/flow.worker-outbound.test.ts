@@ -124,7 +124,7 @@ describe("Reef worker outbound composition", () => {
     await expect(
       flow.send(
         "alice",
-        "mailto:review@example.org?next=https://github.com/paleoclaw/paleoclaw/blob/430f975aacee445525c4663aa88ed1590f2f08b1/README.md",
+        "mailto:review@example.org?next=https://github.com/syxscott/PaleoClaw/blob/430f975aacee445525c4663aa88ed1590f2f08b1/README.md",
         {
           messageId: id,
         },

@@ -165,7 +165,7 @@ describe("update failure report", () => {
     await expect(fs.stat(prepared.savedReportPath)).rejects.toMatchObject({ code: "ENOENT" });
     const result = await submitUpdateFailureReport(prepared, prepared.previewDigest, {
       createIssue: mockFallbackIssue(
-        "https://github.com/paleoclaw/paleoclaw/issues/new?title=update",
+        "https://github.com/syxscott/PaleoClaw/issues/new?title=update",
       ),
       env: { HOME: home, OPENCLAW_STATE_DIR: stateDir },
       stateDir,
@@ -234,7 +234,7 @@ describe("update failure report", () => {
 
   it("submits once and rejects a duplicate click for the same attempt", async () => {
     const { submit } = await prepareFailedReport("attempt-once");
-    const createIssue = mockCreatedIssue("https://github.com/paleoclaw/paleoclaw/issues/123");
+    const createIssue = mockCreatedIssue("https://github.com/openclaw/openclaw/issues/123");
 
     const [first, second] = await Promise.all([submit({ createIssue }), submit({ createIssue })]);
     const third = await submit({
@@ -246,7 +246,7 @@ describe("update failure report", () => {
     expect([first.status, second.status].toSorted()).toEqual(["created", "retryable"]);
     expect(third).toMatchObject({
       status: "duplicate",
-      url: "https://github.com/paleoclaw/paleoclaw/issues/123",
+      url: "https://github.com/openclaw/openclaw/issues/123",
     });
     await expect(fs.stat(first.savedReportPath)).rejects.toMatchObject({ code: "ENOENT" });
   });
@@ -290,7 +290,7 @@ describe("update failure report", () => {
           issueCreateCalls += 1;
           return {
             status: "created" as const,
-            url: "https://github.com/paleoclaw/paleoclaw/issues/123",
+            url: "https://github.com/openclaw/openclaw/issues/123",
           };
         },
       );
@@ -312,7 +312,7 @@ describe("update failure report", () => {
           issueCreateCalls += 1;
           return {
             status: "created" as const,
-            url: "https://github.com/paleoclaw/paleoclaw/issues/124",
+            url: "https://github.com/openclaw/openclaw/issues/124",
           };
         },
       );
@@ -340,7 +340,7 @@ describe("update failure report", () => {
         issueCreateCalls += 1;
         return {
           status: "created" as const,
-          url: "https://github.com/paleoclaw/paleoclaw/issues/123",
+          url: "https://github.com/openclaw/openclaw/issues/123",
         };
       },
     );
@@ -361,7 +361,7 @@ describe("update failure report", () => {
         issueCreateCalls += 1;
         return {
           status: "created" as const,
-          url: "https://github.com/paleoclaw/paleoclaw/issues/124",
+          url: "https://github.com/openclaw/openclaw/issues/124",
         };
       },
     );
@@ -621,7 +621,7 @@ describe("update failure report", () => {
       }
       return writeFile(...args);
     });
-    const oldCreateIssue = mockCreatedIssue("https://github.com/paleoclaw/paleoclaw/issues/122");
+    const oldCreateIssue = mockCreatedIssue("https://github.com/openclaw/openclaw/issues/122");
 
     const oldSubmission = submit({ createIssue: oldCreateIssue });
     try {
@@ -632,7 +632,7 @@ describe("update failure report", () => {
 
       expireUpdateFailureReportReceipt(prepared.attemptId, stateDir);
       const replacement = await submit({
-        createIssue: mockCreatedIssue("https://github.com/paleoclaw/paleoclaw/issues/123"),
+        createIssue: mockCreatedIssue("https://github.com/openclaw/openclaw/issues/123"),
       });
       await fs.mkdir(path.dirname(oldReportPath), { mode: 0o700, recursive: true });
       const rm = fs.rm;
@@ -650,11 +650,11 @@ describe("update failure report", () => {
 
       expect(replacement).toMatchObject({
         status: "created",
-        url: "https://github.com/paleoclaw/paleoclaw/issues/123",
+        url: "https://github.com/openclaw/openclaw/issues/123",
       });
       expect(oldResult).toMatchObject({
         status: "duplicate",
-        url: "https://github.com/paleoclaw/paleoclaw/issues/123",
+        url: "https://github.com/openclaw/openclaw/issues/123",
       });
       expect(oldCreateIssue).not.toHaveBeenCalled();
       expect(await receipt()).toMatchObject({
@@ -665,13 +665,13 @@ describe("update failure report", () => {
       await expect(fs.readFile(oldStagedReportPath, "utf8")).resolves.toBe(prepared.body);
 
       const reconnectCreateIssue = mockCreatedIssue(
-        "https://github.com/paleoclaw/paleoclaw/issues/124",
+        "https://github.com/openclaw/openclaw/issues/124",
       );
       const reconnected = await submit({ createIssue: reconnectCreateIssue });
 
       expect(reconnected).toMatchObject({
         status: "duplicate",
-        url: "https://github.com/paleoclaw/paleoclaw/issues/123",
+        url: "https://github.com/openclaw/openclaw/issues/123",
       });
       expect(reconnectCreateIssue).not.toHaveBeenCalled();
       await expect(fs.stat(oldReportPath)).rejects.toMatchObject({ code: "ENOENT" });
@@ -860,7 +860,7 @@ describe("update failure report", () => {
       expect(oldFallback).toHaveBeenCalledOnce();
       expireUpdateFailureReportReceipt(prepared.attemptId, stateDir);
       const replacementSubmission = submit({
-        createIssue: mockCreatedIssue("https://github.com/paleoclaw/paleoclaw/issues/123"),
+        createIssue: mockCreatedIssue("https://github.com/openclaw/openclaw/issues/123"),
       });
       submissions.push(replacementSubmission);
       const replacement = await withinTest(replacementSubmission, signal);
@@ -869,11 +869,11 @@ describe("update failure report", () => {
 
       expect(replacement).toMatchObject({
         status: "created",
-        url: "https://github.com/paleoclaw/paleoclaw/issues/123",
+        url: "https://github.com/openclaw/openclaw/issues/123",
       });
       expect(oldResult).toMatchObject({
         status: "duplicate",
-        url: "https://github.com/paleoclaw/paleoclaw/issues/123",
+        url: "https://github.com/openclaw/openclaw/issues/123",
       });
       expect(oldResult).not.toHaveProperty("fallbackUrl");
       await expect(fs.stat(`${prepared.savedReportPath}.result.json`)).rejects.toMatchObject({
@@ -897,7 +897,7 @@ describe("update failure report", () => {
     "returns a created URL without retrying refused or unknown finalization when it %s",
     async (_failure, fail) => {
       const { submit } = await prepareFailedReport("attempt-created-finalize-failure");
-      const issueUrl = "https://github.com/paleoclaw/paleoclaw/issues/123";
+      const issueUrl = "https://github.com/openclaw/openclaw/issues/123";
       const createIssue = mockCreatedIssue(issueUrl);
       const finalizeReceipt = vi
         .fn((...args: Parameters<typeof finalizeUpdateFailureReportReceipt>) =>
@@ -921,7 +921,7 @@ describe("update failure report", () => {
 
   it("does not hide a created result when saved-report cleanup fails", async () => {
     const { prepared, submit } = await prepareFailedReport("attempt-created-cleanup-failure");
-    const issueUrl = "https://github.com/paleoclaw/paleoclaw/issues/123";
+    const issueUrl = "https://github.com/openclaw/openclaw/issues/123";
     const createIssue = mockCreatedIssue(issueUrl);
     const realRm = fs.rm.bind(fs);
     const rm = vi.spyOn(fs, "rm").mockImplementation(async (target, options) => {

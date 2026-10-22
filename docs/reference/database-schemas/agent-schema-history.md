@@ -19,26 +19,26 @@ backup and its matching build, not just reinstalling the older package.
 
 | Version | Change                                                                                                                                                                                                                                                 | Published in |
 | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------ |
-| 1       | Initial per-agent store ([#88349](https://github.com/paleoclaw/paleoclaw/pull/88349))                                                                                                                                                                    | `v2026.6.1`  |
-| 2       | Memory index identity ([#104449](https://github.com/paleoclaw/paleoclaw/pull/104449))                                                                                                                                                                    | `v2026.8.1`  |
-| 4       | Sessions and transcripts moved into SQLite ([#98236](https://github.com/paleoclaw/paleoclaw/pull/98236))                                                                                                                                                 | `v2026.8.1`  |
-| 5-6     | Terminal freshness and state lifecycle ([#104859](https://github.com/paleoclaw/paleoclaw/pull/104859))                                                                                                                                                   | `v2026.8.1`  |
-| 7       | Per-entry lifecycle status projection ([#106151](https://github.com/paleoclaw/paleoclaw/pull/106151))                                                                                                                                                    | `v2026.8.1`  |
-| 8       | Per-transcript session provenance ([#106766](https://github.com/paleoclaw/paleoclaw/pull/106766))                                                                                                                                                        | `v2026.8.1`  |
-| 9       | `STRICT` tables ([#108663](https://github.com/paleoclaw/paleoclaw/pull/108663))                                                                                                                                                                          | `v2026.8.1`  |
-| 10      | Materialized active transcript paths ([#108851](https://github.com/paleoclaw/paleoclaw/pull/108851))                                                                                                                                                     | `v2026.8.1`  |
-| 11      | Durable delivery, conversation addresses, and heartbeat outcomes ([#109636](https://github.com/paleoclaw/paleoclaw/pull/109636), [#95838](https://github.com/paleoclaw/paleoclaw/pull/95838), [#109999](https://github.com/paleoclaw/paleoclaw/pull/109999)) | `v2026.8.1`  |
+| 1       | Initial per-agent store ([#88349](https://github.com/openclaw/openclaw/pull/88349))                                                                                                                                                                    | `v2026.6.1`  |
+| 2       | Memory index identity ([#104449](https://github.com/openclaw/openclaw/pull/104449))                                                                                                                                                                    | `v2026.8.1`  |
+| 4       | Sessions and transcripts moved into SQLite ([#98236](https://github.com/openclaw/openclaw/pull/98236))                                                                                                                                                 | `v2026.8.1`  |
+| 5-6     | Terminal freshness and state lifecycle ([#104859](https://github.com/openclaw/openclaw/pull/104859))                                                                                                                                                   | `v2026.8.1`  |
+| 7       | Per-entry lifecycle status projection ([#106151](https://github.com/openclaw/openclaw/pull/106151))                                                                                                                                                    | `v2026.8.1`  |
+| 8       | Per-transcript session provenance ([#106766](https://github.com/openclaw/openclaw/pull/106766))                                                                                                                                                        | `v2026.8.1`  |
+| 9       | `STRICT` tables ([#108663](https://github.com/openclaw/openclaw/pull/108663))                                                                                                                                                                          | `v2026.8.1`  |
+| 10      | Materialized active transcript paths ([#108851](https://github.com/openclaw/openclaw/pull/108851))                                                                                                                                                     | `v2026.8.1`  |
+| 11      | Durable delivery, conversation addresses, and heartbeat outcomes ([#109636](https://github.com/openclaw/openclaw/pull/109636), [#95838](https://github.com/openclaw/openclaw/pull/95838), [#109999](https://github.com/openclaw/openclaw/pull/109999)) | `v2026.8.1`  |
 | 12      | Session-owned ACP parent-stream events                                                                                                                                                                                                                 | `v2026.8.1`  |
 | 13      | Durable transcript rewrite watermarks                                                                                                                                                                                                                  | `v2026.8.1`  |
 | 14      | Logical session nodes, generation windows, and node-owned artifact foreign keys                                                                                                                                                                        | `v2026.8.1`  |
 | 15      | Board and session-sharing tables                                                                                                                                                                                                                       | `v2026.8.1`  |
 | 16      | Legacy top-level transcript media fields retired                                                                                                                                                                                                       | `v2026.8.1`  |
-| 17      | Tenant-free per-agent lease table retired after the last writer and routing arm were removed ([#121113](https://github.com/paleoclaw/paleoclaw/pull/121113), [#121615](https://github.com/paleoclaw/paleoclaw/pull/121615))                                | `v2026.8.1`  |
-| 18      | Normalized participant identity namespaces and explicit unknown historical input times in the existing session-owned aggregate ([#130661](https://github.com/paleoclaw/paleoclaw/issues/130661))                                                         | `v2026.8.1`  |
+| 17      | Tenant-free per-agent lease table retired after the last writer and routing arm were removed ([#121113](https://github.com/openclaw/openclaw/pull/121113), [#121615](https://github.com/openclaw/openclaw/pull/121615))                                | `v2026.8.1`  |
+| 18      | Normalized participant identity namespaces and explicit unknown historical input times in the existing session-owned aggregate ([#130661](https://github.com/openclaw/openclaw/issues/130661))                                                         | `v2026.8.1`  |
 | 19      | Source-qualified immutable session creators; historical ambiguity remains unknown                                                                                                                                                                      | `v2026.8.1`  |
 | 20      | Authoritative cold transcript archives with exact restoration metadata and self-contained backup payloads                                                                                                                                              | `v2026.9.5`  |
 | 21      | Incremental stored-session validation with transactional node, window, and main-key invalidation                                                                                                                                                       | `v2026.9.5`  |
-| 22      | Exact transcript FTS row ownership for session-local deletion and reconciliation ([#153834](https://github.com/paleoclaw/paleoclaw/pull/153834))                                                                                                         | `v2026.9.6`  |
+| 22      | Exact transcript FTS row ownership for session-local deletion and reconciliation ([#153834](https://github.com/openclaw/openclaw/pull/153834))                                                                                                         | `v2026.9.6`  |
 | 23      | Selective transcript compression, binary memory embeddings, and stable memory full-text index identities                                                                                                                                               | `v2026.9.6`  |
 | 24      | Stored session hot facts separated from keyed diff, skills, and system-prompt snapshots                                                                                                                                                                | `v2026.9.7`  |
 | 25      | Session writers validate their own rows; offline import and repair explicitly queue admission work instead of per-write invalidation triggers                                                                                                          | `Unreleased` |
@@ -204,7 +204,7 @@ do not materialize older rows, and no background backfill is scheduled. Existing
 beta databases with materialized predicates remain valid. This lazy classification
 changes no schema version.
 
-The [accepted design](https://github.com/paleoclaw/paleoclaw/issues/169254) keeps
+The [accepted design](https://github.com/openclaw/openclaw/issues/169254) keeps
 predicate types portable and uses shared derivations for engine adapters.
 SQLite-to-PostgreSQL ports normalize unclassified transcript predicates from the
 payloads already being transferred; PostgreSQL reads the stored columns.
@@ -291,7 +291,7 @@ selected entry's snapshots.
 This is a versioned representation change under the
 [material-change checkpoint](/reference/database-schemas/storage-changes#review-checkpoint-for-material-changes).
 The accepted storage split and migration are recorded in
-[#160358](https://github.com/paleoclaw/paleoclaw/pull/160358).
+[#160358](https://github.com/openclaw/openclaw/pull/160358).
 Use the existing verified backup and candidate Doctor update flow, including the
 [published updater migration rules](/reference/database-schemas/versioning#schema-bumps-and-older-updaters).
 Interrupted extraction rolls back. Older builds refuse schema 24; rollback
@@ -301,7 +301,7 @@ markers. Freed SQLite pages remain available for reuse under existing maintenanc
 ### Compact agent payload storage
 
 Agent schema **23** changes the transcript and memory storage representations.
-The [storage design](https://github.com/paleoclaw/paleoclaw/issues/153618) records
+The [storage design](https://github.com/openclaw/openclaw/issues/153618) records
 the migration scope and required proof. Shared-state schema remains 17.
 
 Each transcript event retains its original JSON in exactly one representation:
@@ -403,7 +403,7 @@ applies, including private rehearsal and verified backup coverage for supported
 
 ### Incremental stored-session validation
 
-The [accepted storage design](https://github.com/paleoclaw/paleoclaw/issues/149323)
+The [accepted storage design](https://github.com/openclaw/openclaw/issues/149323)
 owns this projection's invalidation, certification, migration and rollback contract.
 
 Agent schema **21** adds `session_canonical_validation_pending`, a derived set

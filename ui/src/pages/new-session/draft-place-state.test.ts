@@ -13,8 +13,8 @@ import { waitForModelControl } from "./model-control.test-support.ts";
 import type { NewSessionPreference } from "./preferences.ts";
 
 const REMOTE_PROJECT = {
-  identity: "paleoclaw/paleoclaw",
-  cloneUrl: "https://github.com/paleoclaw/openclaw.git",
+  identity: "syxscott/PaleoClaw",
+  cloneUrl: "https://github.com/syxscott/PaleoClaw.git",
   defaultBranch: "main",
 };
 const GIT: WorktreesBranchesResult = {

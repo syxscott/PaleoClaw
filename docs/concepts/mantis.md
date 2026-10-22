@@ -362,8 +362,8 @@ dispatch command. ClawSweeper's current command parser routes an unrecognized
 mention to general assistance, not a typed Mantis dispatch.
 
 The separate request-bound integration in
-[ClawSweeper #1425](https://github.com/paleoclaw/clawsweeper/pull/1425) and
-[paleoclaw #138953](https://github.com/paleoclaw/paleoclaw/pull/138953) lets the
+[ClawSweeper #1425](https://github.com/openclaw/clawsweeper/pull/1425) and
+[paleoclaw #138953](https://github.com/openclaw/openclaw/pull/138953) lets the
 reviewer select relevant proof before completing its original review. It does
 not restore automatic post-review recording or require every check on every PR.
 Hosted execution requires the trusted producer workflows on `main` and the

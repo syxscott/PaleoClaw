@@ -8,7 +8,7 @@ import { useAutoCleanupTempDirTracker } from "../helpers/temp-dir.js";
 const tempDirs = useAutoCleanupTempDirTracker(afterEach);
 const sha = "a".repeat(40);
 const target = "b".repeat(40);
-const repo = "paleoclaw/paleoclaw";
+const repo = "syxscott/PaleoClaw";
 const tag = "v2026.9.6";
 const PaleoHub = "plugin-PaleoHub-release.yml";
 const bootstrap = "plugin-PaleoHub-new.yml";

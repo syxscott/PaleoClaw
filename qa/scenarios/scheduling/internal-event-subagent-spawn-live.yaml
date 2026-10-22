@@ -13,7 +13,7 @@ scenario:
       - automation.background-process-status
       - agent-runtime.tool-fs-read
   regressionRefs:
-    - paleoclaw/paleoclaw#132890
+    - syxscott/PaleoClaw#132890
   gatewayConfigPatch:
     agents:
       defaults:

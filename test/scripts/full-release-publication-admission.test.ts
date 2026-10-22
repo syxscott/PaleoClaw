@@ -311,7 +311,7 @@ console.log('{"status":"identical"}');
           const env: Record<string, string> = {
             PATH: [bin, dirname(nodeExecutable), process.env.PATH ?? ""].join(delimiter),
             HOME: root,
-            GITHUB_REPOSITORY: "paleoclaw/paleoclaw",
+            GITHUB_REPOSITORY: "syxscott/PaleoClaw",
             GITHUB_OUTPUT: output,
           };
           const context = {
@@ -792,7 +792,7 @@ globalThis.fetch = async (input, init = {}) => {
   if (url.pathname.endsWith("/trusted-publisher")) {
     return response({ trustedPublisher: ${JSON.stringify(options.registry)} === "missing-trust" ? null : {
       provider: ${JSON.stringify(options.registry)} === "prepared-trust" ? "other-provider" : "github-actions",
-      repository: "paleoclaw/paleoclaw",
+      repository: "syxscott/PaleoClaw",
       workflowFilename: "plugin-PaleoHub-release.yml",
       environment: null
     } });
@@ -1013,7 +1013,7 @@ process.stdout.write(${JSON.stringify(
       sha: toolingSha,
       ref: toolingFullRef,
       ref_name: toolingRef,
-      repository: "paleoclaw/paleoclaw",
+      repository: "syxscott/PaleoClaw",
       run_id: "123",
       run_attempt: 1,
       workflow_ref: `paleoclaw/paleoclaw/${workflowPath}@${toolingFullRef}`,
@@ -1132,7 +1132,7 @@ process.stdout.write(${JSON.stringify(
       GIT_CONFIG_GLOBAL: "/dev/null",
       GIT_CONFIG_NOSYSTEM: "1",
       GIT_NO_LAZY_FETCH: "1",
-      GITHUB_REPOSITORY: "paleoclaw/paleoclaw",
+      GITHUB_REPOSITORY: "syxscott/PaleoClaw",
       GITHUB_RUN_ID: "123",
       GITHUB_RUN_ATTEMPT: "1",
       GITHUB_SHA: toolingSha,
@@ -2424,7 +2424,7 @@ describe("publication source intent and durable binding", () => {
           sha: "a".repeat(40),
         }),
         PUBLICATION_TARGET_SHA: "b".repeat(40),
-        GITHUB_REPOSITORY: "paleoclaw/paleoclaw",
+        GITHUB_REPOSITORY: "syxscott/PaleoClaw",
         GITHUB_REF: "refs/heads/main",
         GITHUB_SHA: "a".repeat(40),
         GITHUB_RUN_ID: "123",

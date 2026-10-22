@@ -724,7 +724,7 @@ Core finalization remains independent of Linux readiness. After finalization,
 a detached mirror-only request catches up the legacy endpoint. A dispatch is
 not a successful mirror: cancellation, queue overflow, timeout, or readback
 failure leaves a visible degraded result for reconciliation. See the
-[Linux publication contract](https://github.com/paleoclaw/paleoclaw/blob/main/.agents/skills/release-paleoclaw-maintainer/references/platform-publication.md#linux).
+[Linux publication contract](https://github.com/syxscott/PaleoClaw/blob/main/.agents/skills/release-paleoclaw-maintainer/references/platform-publication.md#linux).
 
 The website selects desktop assets at build time. After publication, rebuild
 `openclaw.ai` through its existing deployment owner and verify the deployed Apps

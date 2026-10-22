@@ -37,7 +37,7 @@ function expectParams(input: Partial<Draft>, output: object) {
 }
 
 describe("buildDraftSessionCreateParams", () => {
-  const repository = { url: "https://github.com/paleoclaw/openclaw.git", ref: "release" };
+  const repository = { url: "https://github.com/syxscott/PaleoClaw.git", ref: "release" };
   const checkout = {
     projectId: "old-clone",
     projectGitUrl: repository.url,

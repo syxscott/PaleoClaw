@@ -467,7 +467,7 @@ describe("session hovercard", () => {
               repo: "paleoclaw",
               branch: "feature",
               title: "First",
-              url: "https://github.com/paleoclaw/paleoclaw/pull/101",
+              url: "https://github.com/openclaw/openclaw/pull/101",
               state: "open",
               changedFiles: 2,
               additions: 7,
@@ -480,7 +480,7 @@ describe("session hovercard", () => {
               repo: "paleoclaw",
               branch: "feature",
               title: "Second",
-              url: "https://github.com/paleoclaw/paleoclaw/pull/102",
+              url: "https://github.com/openclaw/openclaw/pull/102",
               state: "draft",
             },
             {
@@ -489,7 +489,7 @@ describe("session hovercard", () => {
               repo: "paleoclaw",
               branch: "feature",
               title: "Third",
-              url: "https://github.com/paleoclaw/paleoclaw/pull/103",
+              url: "https://github.com/openclaw/openclaw/pull/103",
               state: "merged",
             },
           ] satisfies ControlUiSessionPullRequest[]
@@ -499,7 +499,7 @@ describe("session hovercard", () => {
 
     const links = [...container.querySelectorAll<HTMLAnchorElement>(".session-hovercard__pr-row")];
     expect(links).toHaveLength(3);
-    expect(links[0]?.href).toBe("https://github.com/paleoclaw/paleoclaw/pull/101");
+    expect(links[0]?.href).toBe("https://github.com/openclaw/openclaw/pull/101");
     expect(links[0]?.target).toBe("_blank");
     expect(links[0]?.rel).toContain("noopener");
     expect(links[0]?.querySelector(".session-hovercard__pr-title")?.textContent).toBe("First");
@@ -507,7 +507,7 @@ describe("session hovercard", () => {
       links[0]?.querySelector(".session-hovercard__pr-title")?.getAttribute("title"),
     ).toBeNull();
     expect(links[0]?.querySelector(".session-hovercard__pr-number")?.textContent).toBe(
-      "paleoclaw/paleoclaw#101",
+      "syxscott/PaleoClaw#101",
     );
     expect(links[0]?.querySelector(".session-hovercard__pr-author")).toBeNull();
     expect(
@@ -537,7 +537,7 @@ describe("session hovercard", () => {
         ...branch,
         number: 101,
         title: "Retained pull request",
-        url: "https://github.com/paleoclaw/paleoclaw/pull/101",
+        url: "https://github.com/openclaw/openclaw/pull/101",
         state: "open" as const,
       };
       for (const work of [{}, { branch }, { pullRequests: [pullRequest] }]) {
@@ -609,13 +609,13 @@ describe("session hovercard", () => {
       changedFiles: 3,
       additions: 12,
       deletions: 4,
-      createUrl: "https://github.com/paleoclaw/paleoclaw/pull/new/feature",
+      createUrl: "https://github.com/syxscott/PaleoClaw/pull/new/feature",
     },
     { branch: "local-only", changedFiles: 2, additions: 18, deletions: 1, createUrl: undefined },
   ])("keeps branch identity separate from available actions: $branch", (branch) => {
     const container = renderCard({
       row: branch.createUrl
-        ? row({ workSession: true, subtitle: "paleoclaw/paleoclaw · feature" })
+        ? row({ workSession: true, subtitle: "syxscott/PaleoClaw · feature" })
         : undefined,
       pullRequests: snapshot({ branch: { owner: "paleoclaw", repo: "paleoclaw", ...branch } }),
     });

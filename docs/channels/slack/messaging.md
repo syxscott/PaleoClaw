@@ -64,7 +64,7 @@ reply retains the settings it started with. The same behavior applies to account
 `channels.slack.streaming` controls live preview behavior:
 
 - `off`: disable live preview streaming.
-- `partial`: replace preview text with the latest partial output. Set this to restore the pre-2026.8.1 default, before `progress` became the default ([#122552](https://github.com/paleoclaw/paleoclaw/pull/122552)).
+- `partial`: replace preview text with the latest partial output. Set this to restore the pre-2026.8.1 default, before `progress` became the default ([#122552](https://github.com/openclaw/openclaw/pull/122552)).
 - `block`: append chunked preview updates.
 - `progress` (default): show structured progress in a reply thread using a native task card when Slack supports it, with a Block Kit session-card fallback. Outside reply threads, leave only the final answer by default.
 - `streaming.progress.toolProgress`: `progress` mode is quiet by default (`false`). Set `true` to add one task row per tool call on the native card, or tool activity, the plan checklist, and tool/file/time totals on the Block Kit card. Finished Block Kit cards retain only file diff totals. `streaming.preview.toolProgress` controls tool previews in `partial` and `block` modes (default: `true`).

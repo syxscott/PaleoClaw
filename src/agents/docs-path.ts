@@ -9,7 +9,7 @@ import { resolveSandboxPathMapping } from "./path-policy.js";
 import type { SandboxContext } from "./sandbox/types.js";
 
 export const OPENCLAW_DOCS_URL = "https://docs.openclaw.ai";
-export const OPENCLAW_SOURCE_URL = "https://github.com/paleoclaw/paleoclaw";
+export const OPENCLAW_SOURCE_URL = "https://github.com/syxscott/PaleoClaw";
 
 type ResolveOpenClawReferencePathParams = {
   workspaceDir?: string;

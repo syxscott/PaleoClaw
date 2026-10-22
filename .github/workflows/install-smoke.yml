@@ -27,7 +27,7 @@ concurrency:
 
 jobs:
   install_smoke:
-    if: github.repository == 'paleoclaw/paleoclaw'
+    if: github.repository == 'syxscott/PaleoClaw'
     permissions:
       actions: read
       contents: read

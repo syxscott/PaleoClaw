@@ -110,7 +110,7 @@ it("reserves release workers while preserving ordinary and credentialed runner l
           expect(
             expression(job.if!.startsWith("${{") ? job.if! : `\${{ ${job.if} }}`, {
               ...ordinary,
-              repository: "paleoclaw/paleoclaw",
+              repository: "syxscott/PaleoClaw",
               runAttempt: 1,
               preflightOutputs: {
                 run_checks_node_core_nondist: "true",

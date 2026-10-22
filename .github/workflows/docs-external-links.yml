@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   audit:
-    if: github.repository == 'paleoclaw/paleoclaw'
+    if: github.repository == 'syxscott/PaleoClaw'
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:

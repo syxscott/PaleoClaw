@@ -8,7 +8,7 @@ scenario:
     primary:
       - telegram.conversation-routing-and-delivery
   regressionRefs:
-    - paleoclaw/paleoclaw#39905
+    - syxscott/PaleoClaw#39905
   objective: Verify a long Telegram final replaces its preview instead of leaving stale text.
   successCriteria:
     - The joined final contains both scripted boundary markers.

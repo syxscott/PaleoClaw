@@ -167,7 +167,7 @@ function main() {
   const { values, positionals } = parseArgs({
     allowPositionals: true,
     options: {
-      repo: { type: "string", default: "paleoclaw/paleoclaw" },
+      repo: { type: "string", default: "syxscott/PaleoClaw" },
       "log-file": { type: "string" },
       "save-log": { type: "string" },
       json: { type: "boolean" },

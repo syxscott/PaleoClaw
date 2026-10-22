@@ -395,17 +395,17 @@ function verifyMatrixCancellation(context, cancellation, members) {
   // Historical runs retain the cancellation policy from their tested workflow.
   const historicalAttemptAware =
     failFast ===
-    "${{ github.event_name == 'pull_request' && (github.run_attempt != 1 || github.repository != 'paleoclaw/paleoclaw') }}";
+    "${{ github.event_name == 'pull_request' && (github.run_attempt != 1 || github.repository != 'syxscott/PaleoClaw') }}";
   const scopedFailFast =
     (historicalAttemptAware ||
       failFast ===
-        "${{ github.event_name == 'pull_request' && github.repository != 'paleoclaw/paleoclaw' }}") &&
+        "${{ github.event_name == 'pull_request' && github.repository != 'syxscott/PaleoClaw' }}") &&
     positiveInteger(run.run_attempt) &&
     typeof repository === "string" &&
     /^[A-Za-z0-9-]+\/[A-Za-z0-9_.-]+$/u.test(repository) &&
     // Actions compares strings without case; github.repository is the workflow owner, not the fork.
     ((historicalAttemptAware && run.run_attempt > 1) ||
-      repository.toLowerCase() !== "paleoclaw/paleoclaw");
+      repository.toLowerCase() !== "syxscott/PaleoClaw");
   requireEvidence(
     owner?.name === "${{ matrix.check_name || 'checks-node-core-test-nondist-shard' }}" &&
       Array.isArray(owner.needs) &&

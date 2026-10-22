@@ -317,7 +317,7 @@ normally.
 
 Stable releases built from `main` or their matching `release/YYYY.M.PATCH` branch
 ship `.deb` and AppImage bundles as assets on the
-[GitHub release](https://github.com/paleoclaw/paleoclaw/releases) for the tag,
+[GitHub release](https://github.com/syxscott/PaleoClaw/releases) for the tag,
 named `paleoclaw-<version>-amd64.deb` and `paleoclaw-<version>-amd64.AppImage`,
 with a `SHA256SUMS.linux-app.txt` checksum file next to them. Download the
 `.deb` and install it with `sudo apt install ./paleoclaw-<version>-amd64.deb`,
@@ -335,7 +335,7 @@ file; a new Gateway release alone does not prove a new Linux app is available.
 The shipped updater still uses `releases/latest/download/latest.json`.
 Independent `linux-stable` publication tooling is not a client endpoint or
 download-link migration. That activation requires separate release approval and
-signed installed-client proof; see [Linux companion publication](https://github.com/paleoclaw/paleoclaw/blob/main/.agents/skills/release-paleoclaw-maintainer/references/platform-publication.md#linux).
+signed installed-client proof; see [Linux companion publication](https://github.com/syxscott/PaleoClaw/blob/main/.agents/skills/release-paleoclaw-maintainer/references/platform-publication.md#linux).
 
 ### Media codecs
 

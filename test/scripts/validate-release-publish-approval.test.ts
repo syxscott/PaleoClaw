@@ -20,7 +20,7 @@ const approvalEnv = {
   EXPECTED_WORKFLOW_SHA: "",
   EXPECTED_RUN_ATTEMPT: "",
   APPROVAL_PATH: "",
-  GITHUB_REPOSITORY: "paleoclaw/paleoclaw",
+  GITHUB_REPOSITORY: "syxscott/PaleoClaw",
   RELEASE_APPROVAL_KIND: "android",
   RELEASE_PACKAGES: "",
   RELEASE_TAG: "v2026.6.21",
@@ -134,13 +134,13 @@ function runAndroidApproval({
     NATIVE_CI_RUN_ID: nativeCi ? "91" : "",
     NATIVE_CI_WORKFLOW_REF: nativeCi ? ANDROID_PROTECTED_REF : "",
     GITHUB_REF: "refs/tags/v2026.8.1",
-    GITHUB_REPOSITORY: "paleoclaw/paleoclaw",
+    GITHUB_REPOSITORY: "syxscott/PaleoClaw",
     RUNNER_TEMP: tempRoot,
     GITHUB_OUTPUT: path.join(tempRoot, "output"),
   };
   const parent = {
     id: 123,
-    repository: { full_name: "paleoclaw/paleoclaw" },
+    repository: { full_name: "syxscott/PaleoClaw" },
     event: "workflow_dispatch",
     head_branch: ref,
     head_sha: ANDROID_TOOLING_SHA,
@@ -148,7 +148,7 @@ function runAndroidApproval({
     path: `.github/workflows/paleoclaw-release-publish.yml@${fullRef}`,
     status: "in_progress",
     conclusion: null,
-    html_url: "https://github.com/paleoclaw/paleoclaw/actions/runs/123",
+    html_url: "https://github.com/syxscott/PaleoClaw/actions/runs/123",
     ...run,
   };
   const tooling =
@@ -176,7 +176,7 @@ function runAndroidApproval({
     display_title: `CI release-native-android-123-2-${"a".repeat(40)}`,
     head_branch: ANDROID_PROTECTED_REF,
     head_sha: ANDROID_TOOLING_SHA,
-    repository: { full_name: "paleoclaw/paleoclaw" },
+    repository: { full_name: "syxscott/PaleoClaw" },
     actor: { login: "github-actions[bot]" },
     triggering_actor: { login: "github-actions[bot]" },
     status: "completed",
@@ -355,9 +355,9 @@ function approvalRun(overrides: Record<string, unknown> = {}) {
     conclusion: null,
     event: "workflow_dispatch",
     headBranch: "release/2026.6.21",
-    repository: "paleoclaw/paleoclaw",
+    repository: "syxscott/PaleoClaw",
     status: "in_progress",
-    url: "https://github.com/paleoclaw/paleoclaw/actions/runs/123",
+    url: "https://github.com/syxscott/PaleoClaw/actions/runs/123",
     workflowName: "paleoclaw Release Publish",
     ...overrides,
   };
@@ -369,7 +369,7 @@ function writeClawHubApproval(overrides: Record<string, unknown> = {}) {
   writeJson(approvalPath, {
     version: 2,
     kind: "PaleoHub-bootstrap",
-    repository: "paleoclaw/paleoclaw",
+    repository: "syxscott/PaleoClaw",
     workflow: "paleoclaw Release Publish",
     parentRunId: "123",
     parentRunAttempt: 2,
@@ -437,7 +437,7 @@ describe("scripts/validate-release-publish-approval.mjs", () => {
       status: 0,
       stderr: "",
       stdout: expect.stringContaining(
-        "Using successful completed release publish run 123: https://github.com/paleoclaw/paleoclaw/actions/runs/123",
+        "Using successful completed release publish run 123: https://github.com/syxscott/PaleoClaw/actions/runs/123",
       ),
     });
   });

@@ -20,7 +20,7 @@ import {
 } from "../../scripts/pr-lib/crabbox-gate-contract.mjs";
 import { buildCrabboxGateTransport } from "../../scripts/pr-lib/crabbox-gate-transport.mts";
 
-const repository = "paleoclaw/paleoclaw";
+const repository = "syxscott/PaleoClaw";
 const workflowSha = "a".repeat(40);
 const baseSha = "c".repeat(40);
 const headSha = "b".repeat(40);

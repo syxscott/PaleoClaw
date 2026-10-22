@@ -525,7 +525,7 @@ it.each([
 for (const [mode, message] of [
   [
     "OPENCLAW_NIX_MODE",
-    "Agent-first Nix setup: https://github.com/paleoclaw/nix-paleoclaw#quick-start",
+    "Agent-first Nix setup: https://github.com/openclaw/nix-openclaw#quick-start",
   ],
   ["OPENCLAW_CONFIG_READONLY", "Config is externally managed (`OPENCLAW_CONFIG_READONLY=1`)"],
 ] as const) {

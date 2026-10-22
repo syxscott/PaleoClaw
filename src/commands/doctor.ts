@@ -225,7 +225,7 @@ async function maybeCreateSessionSqliteGithubIssue(
   if (canPrompt) {
     const { promptYesNo } = await import("../cli/prompt.js");
     approved = await promptYesNo(
-      "Create a GitHub issue in paleoclaw/paleoclaw with the sanitized recovery report?",
+      "Create a GitHub issue in syxscott/PaleoClaw with the sanitized recovery report?",
       false,
     );
   }

@@ -9,10 +9,10 @@ import { LinkReaderHovercardProvider } from "./link-reader-hovercard.ts";
 
 const TAG = `test-github-seeded-hovercard-${crypto.randomUUID()}`;
 customElements.define(TAG, class extends LinkReaderHovercardProvider {});
-const PR_HREF = "https://github.com/paleoclaw/paleoclaw/pull/99815";
+const PR_HREF = "https://github.com/openclaw/openclaw/pull/99815";
 const seed: ControlUiLinkReaderPreview = {
   url: PR_HREF,
-  subtitle: "paleoclaw/paleoclaw #99815",
+  subtitle: "syxscott/PaleoClaw #99815",
   title: "Make Activity easier to scan",
   badge: { label: "Merged", tone: "accent" },
   metadata: [
@@ -255,7 +255,7 @@ describe("GitHub hovercards with authorized session details", () => {
     expect(hovercard()?.querySelectorAll(".link-reader-hovercard__metric")).toHaveLength(0);
     leave(anchor);
     await vi.advanceTimersByTimeAsync(120);
-    anchor.href = "https://github.com/paleoclaw/paleoclaw/pull/99816";
+    anchor.href = "https://github.com/openclaw/openclaw/pull/99816";
     await hover(anchor);
     expect(client.request).toHaveBeenCalledTimes(2);
     expect(hovercard()).toBeNull();

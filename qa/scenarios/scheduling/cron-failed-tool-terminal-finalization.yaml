@@ -9,7 +9,7 @@ scenario:
       - agent-runtime.failure-recovery-retry-policy
       - channels.qa-channel-final-reply
   regressionRefs:
-    - paleoclaw/paleoclaw#118274
+    - syxscott/PaleoClaw#118274
   gatewayConfigPatch:
     tools:
       codeMode:

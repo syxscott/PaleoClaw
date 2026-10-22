@@ -149,7 +149,7 @@ function fixture(
   }
   const request = {
     version: 1,
-    repository: "paleoclaw/paleoclaw",
+    repository: "syxscott/PaleoClaw",
     selected: { root: selected.root, sha: selected.sha },
     tooling: { root: tooling.root, sha: tooling.sha },
     allowFrozenTargetScenarioOmissions: true,

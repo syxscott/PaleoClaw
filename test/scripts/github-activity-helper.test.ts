@@ -113,7 +113,7 @@ describe("paleoclaw-pr-maintainer github activity helper", () => {
       expect(args).toEqual(["api", expect.any(String), "--cache", "1h"]);
       const url = new URL(args[1] ?? "", "https://api.github.test/");
       expect(url.searchParams.get("per_page")).toBe("1");
-      expect(url.searchParams.get("q")).toContain("repo:paleoclaw/paleoclaw author:Canonical");
+      expect(url.searchParams.get("q")).toContain("repo:syxscott/PaleoClaw author:Canonical");
       return url;
     });
     expect(searches.map((url) => url.pathname)).toEqual([

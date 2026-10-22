@@ -7,7 +7,7 @@ scenario:
     primary: [channels.qa-channel-final-reply]
     secondary: [agent-runtime.failure-recovery-retry-policy]
   regressionRefs:
-    - paleoclaw/paleoclaw#118274
+    - syxscott/PaleoClaw#118274
   gatewayConfigPatch:
     tools:
       codeMode:

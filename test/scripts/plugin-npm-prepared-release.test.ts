@@ -22,7 +22,7 @@ import {
 } from "./plugin-npm-publication-readback.test-support.js";
 
 const producer = {
-  repository: "paleoclaw/paleoclaw",
+  repository: "syxscott/PaleoClaw",
   runId: 101,
   runAttempt: 2,
   workflowPath: ".github/workflows/plugin-npm-release.yml",

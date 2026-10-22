@@ -136,7 +136,7 @@ canonical_release_body_matches "$NOTES_FILE"
 `,
       extended
         ? {
-            GITHUB_REPOSITORY: "paleoclaw/paleoclaw",
+            GITHUB_REPOSITORY: "syxscott/PaleoClaw",
             RELEASE_NPM_DIST_TAG: "extended-stable",
           }
         : {
@@ -156,7 +156,7 @@ canonical_release_body_matches "$NOTES_FILE"
             "This release is paleoclaw from the end of August 2026, plus critical security updates, " +
             "reliability and performance fixes, and features like new model support. " +
             "The latest version of paleoclaw at the time of this release is " +
-            "[2026.9.5](https://github.com/paleoclaw/paleoclaw/releases#release-v2026.9.5)\n\n",
+            "[2026.9.5](https://github.com/syxscott/PaleoClaw/releases#release-v2026.9.5)\n\n",
         ),
       ).toBe(true);
     } else {

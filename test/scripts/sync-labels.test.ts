@@ -18,7 +18,7 @@ describe("sync-labels", () => {
     execFileSyncMock.mockReset();
     execFileSyncMock.mockImplementation((command: string, args?: readonly string[]) => {
       if (command === "git") {
-        return "https://github.com/paleoclaw/openclaw.git\n";
+        return "https://github.com/syxscott/PaleoClaw.git\n";
       }
       if (command === "gh" && args?.some((arg) => arg.includes("/labels?"))) {
         return "[]";

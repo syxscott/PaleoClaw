@@ -344,7 +344,7 @@ export function seedLocalPublication(
       "Recovered after Gateway restart.",
       params.status,
       params.headCommit === null ? null : "previous-gateway-instance",
-      params.headCommit === null ? null : "paleoclaw/paleoclaw",
+      params.headCommit === null ? null : "syxscott/PaleoClaw",
       BRANCH,
       params.headCommit === null ? null : "main",
       OLD_HEAD,
@@ -688,7 +688,7 @@ export function installGitHubPublicationTestHarness(
         command ===
         "gh api --hostname github.com --method POST repos/paleoclaw/paleoclaw/pulls --input -"
       ) {
-        return commandResult('{"html_url":"https://github.com/paleoclaw/paleoclaw/pull/125200"}\n');
+        return commandResult('{"html_url":"https://github.com/openclaw/openclaw/pull/125200"}\n');
       }
       return commandResult();
     });

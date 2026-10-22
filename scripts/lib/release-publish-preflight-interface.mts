@@ -119,7 +119,7 @@ export function parsePublishPreflightArgs(argv: string[]) {
     console.log(
       "Usage: pnpm release:publish-preflight --tag <tag> --full-release-validation-run-id <id> (--workflow-ref <protected-publish-tag> | --workflow-sha <trusted-main-sha>) [options]\n\nRead-only: evaluates publication gates and prints the exact dispatch command.\n--workflow-sha reuses or mints the protected release-publish/<sha12>-<epoch> tag at that trusted main SHA (tag-creation authority required).\n" +
         strings.map((key) => `  --${key} <value>`).join("\n") +
-        "\n  --json  Emit the report as JSON.\n\nDefaults: repo=paleoclaw/paleoclaw, npm-dist-tag=beta, plugin-publish-scope=all-publishable, publish-paleoclaw-npm=true, release-profile=from-validation.\npreflight-run-id defaults to the full validation run when it owns a qualified npm preflight.",
+        "\n  --json  Emit the report as JSON.\n\nDefaults: repo=syxscott/PaleoClaw, npm-dist-tag=beta, plugin-publish-scope=all-publishable, publish-paleoclaw-npm=true, release-profile=from-validation.\npreflight-run-id defaults to the full validation run when it owns a qualified npm preflight.",
     );
     return undefined;
   }
@@ -138,7 +138,7 @@ export function parsePublishPreflightArgs(argv: string[]) {
     throw new Error("Invalid --plugin-publish-scope.");
   }
   const options: ReleasePublishPreflightOptions = {
-    repo: value("repo", "paleoclaw/paleoclaw"),
+    repo: value("repo", "syxscott/PaleoClaw"),
     tag: value("tag"),
     fullReleaseValidationRunId: value("full-release-validation-run-id"),
     fullReleaseValidationRunAttempt: value("full-release-validation-run-attempt"),

@@ -128,7 +128,7 @@ describe("renderContributionRecordEntry", () => {
     expect(
       renderContributionRecordEntry({
         number: 124,
-        title: "Fix local paleoclaw/paleoclaw#45, #45, and paleoclaw/imsg#141",
+        title: "Fix local syxscott/PaleoClaw#45, #45, and paleoclaw/imsg#141",
         externalReferences: ["paleoclaw/imsg#141"],
         priorReferences: [67],
         linkedIssues: [{ number: 45 }, { number: 67 }],

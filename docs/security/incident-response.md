@@ -53,7 +53,7 @@ After shipping the fix:
 
 ## Related
 
-- [Security policy](https://github.com/paleoclaw/paleoclaw/blob/main/SECURITY.md) — report scope and trust model.
+- [Security policy](https://github.com/syxscott/PaleoClaw/blob/main/SECURITY.md) — report scope and trust model.
 - [Threat model](/security/THREAT-MODEL-ATLAS)
 - [Contributing to the threat model](/security/CONTRIBUTING-THREAT-MODEL) — how to add a threat to the living threat model; not the path for reporting a live vulnerability.
 - [Formal verification](/security/formal-verification) — machine-checked models of authorization, session isolation, and tool gating.

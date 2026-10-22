@@ -28,7 +28,7 @@ scenario:
     - The senderless run retains write despite the global sender wildcard denying filesystem tools.
     - The run writes the requested workspace proof file and completes successfully.
   regressionRefs:
-    - paleoclaw/paleoclaw#111809
+    - syxscott/PaleoClaw#111809
   docsRefs:
     - docs/automation/cron-jobs.md
     - docs/gateway/config-tools.md

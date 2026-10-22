@@ -286,7 +286,7 @@ suite.define(() => {
       const status = (sha: string, behind: number) =>
         gitStatus(sha, behind, {
           upstreamRef: "origin/main",
-          repositoryUrl: "https://github.com/paleoclaw/paleoclaw",
+          repositoryUrl: "https://github.com/syxscott/PaleoClaw",
         });
       const stale = status("b", 7);
       const gateway = await installMockGateway(page, {
@@ -304,7 +304,7 @@ suite.define(() => {
       await card.locator(".update-git-revisions code", { hasText: "cccccccc" }).waitFor();
       expect(await gateway.getRequests("update.status", { refreshCheckout: true })).toHaveLength(1);
       expect(await card.locator(".update-git-revisions a").getAttribute("href")).toBe(
-        `https://github.com/paleoclaw/paleoclaw/compare/${"a".repeat(40)}...${"c".repeat(40)}`,
+        `https://github.com/syxscott/PaleoClaw/compare/${"a".repeat(40)}...${"c".repeat(40)}`,
       );
       await gateway.setMethodResponse("update.status", status("d", 10));
       await card.locator(".sidebar-update-card__action").click();

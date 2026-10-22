@@ -14,7 +14,7 @@ function pullRequest(overrides: Partial<ControlUiSessionPullRequest>): ControlUi
     repo: "paleoclaw",
     branch: "feature/demo",
     title: "Demo",
-    url: "https://github.com/paleoclaw/paleoclaw/pull/1",
+    url: "https://github.com/syxscott/PaleoClaw/pull/1",
     state: "open",
     ...overrides,
   };

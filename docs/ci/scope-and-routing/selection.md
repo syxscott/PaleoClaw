@@ -42,11 +42,11 @@ expected absence. Import-cycle and Kysely guardrail checks remain blocking in th
 | Android screenshots                 | Deferred                              | Already excluded             | Existing capture proof        |
 
 Import-cycle checks are blocking correctness guards. Four cycles reached main after
-the architecture deferral ([#165174](https://github.com/paleoclaw/paleoclaw/pull/165174),
-[#165274](https://github.com/paleoclaw/paleoclaw/pull/165274),
-[#165304](https://github.com/paleoclaw/paleoclaw/pull/165304), and
-[#165346](https://github.com/paleoclaw/paleoclaw/pull/165346)).
-[Hourly job 111622440413](https://github.com/paleoclaw/paleoclaw/actions/runs/37265802634/job/111622440413)
+the architecture deferral ([#165174](https://github.com/openclaw/openclaw/pull/165174),
+[#165274](https://github.com/openclaw/openclaw/pull/165274),
+[#165304](https://github.com/openclaw/openclaw/pull/165304), and
+[#165346](https://github.com/openclaw/openclaw/pull/165346)).
+[Hourly job 111622440413](https://github.com/syxscott/PaleoClaw/actions/runs/37265802634/job/111622440413)
 spent about 14 seconds on runtime cycles and 57 seconds on Madge. The runtime
 checker already ran in the PR guard; restoring Madge also restores type-cycle
 coverage without the larger architecture bundle. On ordinary PRs selecting Madge
@@ -59,10 +59,10 @@ retain their existing execution owners.
 Kysely guardrails run in the parallel source-check row when TypeScript under `src/`,
 `extensions/`, or `packages/` changes. Two raw-SQL boundary violations reached
 main after the deferral: `495c243be11a`
-([#165546](https://github.com/paleoclaw/paleoclaw/pull/165546), repaired by
-[#165637](https://github.com/paleoclaw/paleoclaw/pull/165637)) and `fe43e10f4952`
-([#165678](https://github.com/paleoclaw/paleoclaw/pull/165678)).
-[Hourly job 111895593533](https://github.com/paleoclaw/paleoclaw/actions/runs/37349110851/job/111895593533)
+([#165546](https://github.com/openclaw/openclaw/pull/165546), repaired by
+[#165637](https://github.com/openclaw/openclaw/pull/165637)) and `fe43e10f4952`
+([#165678](https://github.com/openclaw/openclaw/pull/165678)).
+[Hourly job 111895593533](https://github.com/syxscott/PaleoClaw/actions/runs/37349110851/job/111895593533)
 spent about 35 seconds on the guardrail. This restores `lint:kysely` only;
 generated database type verification (`db:kysely:check`), deprecated-API,
 wrapper-shadowing, JSDoc, and database-first checks remain in their existing

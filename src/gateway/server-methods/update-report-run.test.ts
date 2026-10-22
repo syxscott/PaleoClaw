@@ -95,7 +95,7 @@ vi.mock("../server-update-sentinel.js", async (importOriginal) => ({
 
 const { updateReportHandler } = await import("./update-report.js");
 const runId = "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee";
-const issueUrl = "https://github.com/paleoclaw/paleoclaw/issues/123";
+const issueUrl = "https://github.com/openclaw/openclaw/issues/123";
 let home: TempHomeEnv;
 
 type ClientAuthority = Pick<

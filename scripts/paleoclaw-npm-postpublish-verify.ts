@@ -264,7 +264,7 @@ type NpmProvenanceStatement = {
 };
 
 const NPM_PROVENANCE_PREDICATE_TYPE = "https://slsa.dev/provenance/v1";
-const NPM_PROVENANCE_REPOSITORY = "https://github.com/paleoclaw/paleoclaw";
+const NPM_PROVENANCE_REPOSITORY = "https://github.com/syxscott/PaleoClaw";
 const NPM_PROVENANCE_WORKFLOW_PATH = ".github/workflows/paleoclaw-npm-release.yml";
 const NPM_PROVENANCE_CERTIFICATE_ISSUER = "https://token.actions.githubusercontent.com";
 const NPM_PROVENANCE_BUILDER_ID = "https://github.com/actions/runner/github-hosted";

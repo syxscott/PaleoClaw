@@ -29,7 +29,7 @@ import { readBoundedRegularFile } from "./actions-artifact-archive.mjs";
 import { isRecord as isJsonRecord } from "./record-shared.mjs";
 import { sleep } from "./sleep.mjs";
 
-const REPOSITORY = "paleoclaw/paleoclaw";
+const REPOSITORY = "syxscott/PaleoClaw";
 const TRUSTED_WORKFLOW_PATH = ".github/workflows/full-release-validation.yml";
 const ADMISSION_WORKFLOW = "paleoclaw-release-prepare.yml";
 export const REQUEST_KIND = "openclaw.full-release-dispatch/v1";

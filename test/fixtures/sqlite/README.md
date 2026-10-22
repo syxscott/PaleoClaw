@@ -8,7 +8,7 @@ contract. `paleoclaw-agent-schema-v21.sql` freezes commit
 `fb380bd4879be34aa160675d653560bb79690db9`, the last schema-19 commit before the
 schema-20 cold-storage migration, for container image replacement startup tests.
 `paleoclaw-agent-schema-v22.sql` freezes the deployed FTS ownership DDL from
-commit `00caa84ce72c0b4edd584cfa225bd262cd10ba49` ([#153834](https://github.com/paleoclaw/paleoclaw/pull/153834)).
+commit `00caa84ce72c0b4edd584cfa225bd262cd10ba49` ([#153834](https://github.com/openclaw/openclaw/pull/153834)).
 It contains `(session_id, fts_rowid)` ownership and nullable `fts_row_count`,
 not the unpublished compressed schema-22 draft.
 

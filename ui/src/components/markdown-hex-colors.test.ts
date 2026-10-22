@@ -49,7 +49,7 @@ describe("Markdown hex colors", () => {
       }),
     );
     expect(fragment.querySelector("a")?.getAttribute("href")).toBe(
-      "https://github.com/paleoclaw/paleoclaw/pull/178969",
+      "https://github.com/openclaw/openclaw/pull/178969",
     );
     expect(swatches(fragment).map((image) => image.parentElement?.textContent)).toEqual([
       "#aabbcc",

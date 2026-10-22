@@ -15,7 +15,7 @@ one entry covers every provider that serves that model. A provider may also
 publish its own featured list, which leads that provider's recommendations.
 
 Maintainers curate the list by hand in
-[`scripts/lib/recommended-models.json`](https://github.com/paleoclaw/paleoclaw/blob/main/scripts/lib/recommended-models.json)
+[`scripts/lib/recommended-models.json`](https://github.com/syxscott/PaleoClaw/blob/main/scripts/lib/recommended-models.json)
 and change it through reviewed pull requests. Automated suggestions are a
 starting point; the reviewer's edit is the source of truth.
 

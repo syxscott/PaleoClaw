@@ -127,7 +127,7 @@ export function createFakeSession(): ChromeMcpSession {
       const pageLines = [
         "## Pages",
         `1: ${currentUrl} [selected]`,
-        "2: https://github.com/paleoclaw/paleoclaw/pull/45318",
+        "2: https://github.com/openclaw/openclaw/pull/45318",
       ];
       return textResult(pageLines.join("\n"));
     }

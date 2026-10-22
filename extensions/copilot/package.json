@@ -4,7 +4,7 @@
   "description": "paleoclaw GitHub Copilot agent runtime plugin (registers a `github-copilot` AgentHarness backed by @github/copilot-sdk over JSON-RPC to the GitHub Copilot CLI)",
   "repository": {
     "type": "git",
-    "url": "https://github.com/paleoclaw/paleoclaw"
+    "url": "https://github.com/syxscott/PaleoClaw"
   },
   "type": "module",
   "dependencies": {

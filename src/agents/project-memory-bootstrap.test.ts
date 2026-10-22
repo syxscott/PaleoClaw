@@ -15,7 +15,7 @@ const runtimeMocks = vi.hoisted(() => ({
   providerRuntime: undefined as unknown,
 }));
 
-const projectKeys = ["github.com/paleoclaw/paleoclaw"];
+const projectKeys = ["github.com/syxscott/PaleoClaw"];
 const bootstrap = (overrides: Partial<Parameters<typeof prepareProjectMemoryBootstrap>[0]> = {}) =>
   prepareProjectMemoryBootstrap({
     cfg: {},
@@ -51,7 +51,7 @@ const entry = {
   endLine: 2,
   score: 0.8,
   snippet:
-    "Use the release helper. <!-- trigger: release helper --> <!-- importance: 8 --> <!-- project: github.com/paleoclaw/paleoclaw -->",
+    "Use the release helper. <!-- trigger: release helper --> <!-- importance: 8 --> <!-- project: github.com/syxscott/PaleoClaw -->",
   source: "memory",
   projectKey: projectKeys[0],
   importance: 8,
@@ -161,7 +161,7 @@ describe("project memory bootstrap", () => {
 
   it("includes entries from every project retained in the session active set", async () => {
     const rendered = (
-      await prepareLegacy(entries, ["github.com/example/other", "github.com/paleoclaw/paleoclaw"])
+      await prepareLegacy(entries, ["github.com/example/other", "github.com/syxscott/PaleoClaw"])
     ).join("\n");
     expect(rendered).toContain("Use the release helper.");
     expect(rendered).toContain("Foreign fact.");
@@ -260,13 +260,13 @@ describe("project memory bootstrap", () => {
       await prepareProjectMemoryBootstrap({
         cfg: {},
         agentId: "main",
-        activeProjectKeys: ["github.com/paleoclaw/paleoclaw"],
+        activeProjectKeys: ["github.com/syxscott/PaleoClaw"],
       })
     ).join("\n");
     expect(rendered).toContain("Use the release helper.");
     expect(runtimeMocks.search).not.toHaveBeenCalled();
     expect(runtimeMocks.listCurated).toHaveBeenCalledWith({
-      activeProjectKeys: ["github.com/paleoclaw/paleoclaw"],
+      activeProjectKeys: ["github.com/syxscott/PaleoClaw"],
       limit: 48,
     });
   });
@@ -301,7 +301,7 @@ describe("native project memory bootstrap", () => {
     const rendered = (
       await prepareNative(nativeEntries, [
         "github.com/example/other",
-        "github.com/paleoclaw/paleoclaw",
+        "github.com/syxscott/PaleoClaw",
       ])
     ).join("\n");
     expect(rendered).toContain("Use the release helper.");
@@ -340,7 +340,7 @@ describe("native project memory bootstrap", () => {
     expect(runtimeMocks.search).not.toHaveBeenCalled();
     expect(runtimeMocks.listCurated).toHaveBeenCalledWith({
       kind: "project",
-      activeProjectKeys: ["github.com/paleoclaw/paleoclaw"],
+      activeProjectKeys: ["github.com/syxscott/PaleoClaw"],
       limit: 48,
     });
   });

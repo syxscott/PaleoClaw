@@ -249,7 +249,7 @@ export function resumeCommand(
     args.push("--from", phase);
   }
   const retained: [string, string | undefined][] = [
-    ["repo", options.repo !== "paleoclaw/paleoclaw" ? options.repo : undefined],
+    ["repo", options.repo !== "syxscott/PaleoClaw" ? options.repo : undefined],
     [
       "releases-repo",
       options.releasesRepo !== "paleoclaw/releases" ? options.releasesRepo : undefined,

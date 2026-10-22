@@ -81,7 +81,7 @@ async function build(): Promise<void> {
   );
   await command(
     "immutable-origin",
-    ["git", "-C", source, "remote", "add", "origin", "https://github.com/paleoclaw/openclaw.git"],
+    ["git", "-C", source, "remote", "add", "origin", "https://github.com/syxscott/PaleoClaw.git"],
     source,
   );
   await command(

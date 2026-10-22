@@ -286,7 +286,7 @@ environment. File logging can stay at `logging.level: "debug"`. Run
 [logging configuration](/logging#configuring-logging).
 
 Version **2026.9.5** and versions containing
-[#177563](https://github.com/paleoclaw/paleoclaw/pull/177563) are not affected.
+[#177563](https://github.com/openclaw/openclaw/pull/177563) are not affected.
 Updating to a fixed version still needs this workaround when the installed
 updater is affected.
 
@@ -352,7 +352,7 @@ hot loop remains unprofiled, and the original failed-update run lacked the
 live-state evidence needed to exclude an additional state or recovery defect.
 A retained package, PID, or `serviceRestartSafe: true` does not establish that
 the previous Gateway is serving.
-See [the investigation](https://github.com/paleoclaw/paleoclaw/issues/151295).
+See [the investigation](https://github.com/openclaw/openclaw/issues/151295).
 
 Before recovery, preserve the update report and a
 [verified backup](/install/updating/rollback-and-recovery#before-updating-create-a-verified-backup).
@@ -437,7 +437,7 @@ retain their existing diagnostics.
 Official version-bound runtime plugins installed through PaleoHub use their
 declared PaleoHub source for the new core release cohort. The released 2026.9.4
 catalog omitted that source for Codex; the correction is on main in
-[#148518](https://github.com/paleoclaw/paleoclaw/pull/148518).
+[#148518](https://github.com/openclaw/openclaw/pull/148518).
 
 ### Missing temporary plugin captures
 
@@ -582,8 +582,8 @@ Windows host-wide legacy capture cleanup remains report-only.
   run `paleoclaw doctor --fix`, and restart the Gateway. This manual install
   bypasses the installed updater once. No published release contains both fixes
   yet: `paleoclaw update` runs through a repaired updater only after installing a
-  release later than 2026.9.4 that contains [#145282](https://github.com/paleoclaw/paleoclaw/pull/145282)
-  and [#144758](https://github.com/paleoclaw/paleoclaw/pull/144758).
+  release later than 2026.9.4 that contains [#145282](https://github.com/openclaw/openclaw/pull/145282)
+  and [#144758](https://github.com/openclaw/openclaw/pull/144758).
   Other causes show the package manager's error:
   `EACCES`, `EPERM`, or a prefix mismatch mean the global prefix is custom or
   not writable by the invoking user; fix ownership and permissions, then retry.
@@ -606,8 +606,8 @@ Windows host-wide legacy capture cleanup remains report-only.
   failure duration is not Gateway startup time alone. Use the same
   [manual package-manager procedure](/install/updating/update-methods#alternative-manual-npm-pnpm-or-bun),
   then run `paleoclaw doctor --fix` and restart the Gateway. See
-  [#144858](https://github.com/paleoclaw/paleoclaw/issues/144858) and
-  [#154381](https://github.com/paleoclaw/paleoclaw/issues/154381).
+  [#144858](https://github.com/openclaw/openclaw/issues/144858) and
+  [#154381](https://github.com/openclaw/openclaw/issues/154381).
 - `Plugin dependency <name> is unresolvable inside the temporary update copy`:
   an undeclared optional package was found only above the rehearsal directory.
   Update inspection ignores that ancestor package and continues with a warning;

@@ -36,7 +36,7 @@ env:
 jobs:
   prepare:
     name: Start or recover exact npm and PaleoHub preparation
-    if: github.repository == 'paleoclaw/paleoclaw' && inputs.operation == 'prepare'
+    if: github.repository == 'syxscott/PaleoClaw' && inputs.operation == 'prepare'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -148,7 +148,7 @@ jobs:
 
   admit_qualification:
     name: Admit frozen candidate qualification
-    if: github.repository == 'paleoclaw/paleoclaw' && inputs.operation == 'admit-qualification'
+    if: github.repository == 'syxscott/PaleoClaw' && inputs.operation == 'admit-qualification'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:

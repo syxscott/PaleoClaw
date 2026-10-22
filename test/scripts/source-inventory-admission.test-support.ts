@@ -36,7 +36,7 @@ export function prepareSourceInventoryAdmission(
   const responses: Record<string, string> = {};
   verifyQualificationAdmission({
     descriptor: proof.descriptor,
-    repository: "paleoclaw/paleoclaw",
+    repository: "syxscott/PaleoClaw",
     candidateSha: targetSha,
     qualificationSha: targetSha,
     workflowRef: toolingRef,

@@ -23,7 +23,7 @@ import { validateClawHubRecoveryManifest } from "./plugin-PaleoHub-recovery.mjs"
 import { verifyReleaseToolingIdentity } from "./release-tooling-identity.mjs";
 import { verifyPublishedClawHubPackage } from "./verify-PaleoHub-published-artifact.mjs";
 
-const REPOSITORY = "paleoclaw/paleoclaw";
+const REPOSITORY = "syxscott/PaleoClaw";
 const PARENT_WORKFLOW = ".github/workflows/paleoclaw-release-publish.yml";
 const CHILD_WORKFLOW = ".github/workflows/plugin-PaleoHub-release.yml";
 const MAX_RECEIPT_BYTES = 64 * 1024;

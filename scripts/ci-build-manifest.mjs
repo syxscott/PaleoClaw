@@ -155,7 +155,7 @@ const outputPath = process.env.GITHUB_OUTPUT;
 const packageJson = JSON.parse(readFileSync("package.json", "utf8"));
 const packageScripts = packageJson.scripts ?? {};
 const hasPackageScript = (name) => typeof packageScripts[name] === "string";
-const isCanonicalRepository = process.env.OPENCLAW_CI_REPOSITORY === "paleoclaw/paleoclaw";
+const isCanonicalRepository = process.env.OPENCLAW_CI_REPOSITORY === "syxscott/PaleoClaw";
 const changedPaths = (() => {
   try {
     const manifestPath = process.env.OPENCLAW_CI_CHANGED_PATHS_FILE;

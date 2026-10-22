@@ -1134,13 +1134,13 @@ process.exitCode = errors.length ? 1 : 0;
     },
     {
       name: "qualified references beside CSS values",
-      source: "paleoclaw/paleoclaw#123 --bg #262624; paleoclaw/paleoclaw#456 and Other/Repo#123456.",
+      source: "syxscott/PaleoClaw#123 --bg #262624; syxscott/PaleoClaw#456 and Other/Repo#123456.",
       expected: [123, 456],
     },
     {
       name: "ordinary Markdown and code references",
       source:
-        "**PR #123**; `#456`; [#789](https://github.com/paleoclaw/paleoclaw/issues/789)\n```text\n#123456\n```\n`--bg: #262624` (#1234)",
+        "**PR #123**; `#456`; [#789](https://github.com/openclaw/openclaw/issues/789)\n```text\n#123456\n```\n`--bg: #262624` (#1234)",
       expected: [123, 456, 789, 123456, 1234],
     },
     {
@@ -1321,7 +1321,7 @@ console.log(JSON.stringify({ data }));
     { message: "Related #41.", accepted: false },
     { message: "CI #41 passed.", reverted: true, other: "Related #41.", accepted: false },
     { message: "CI #41 passed. Fixes #41.", accepted: false },
-    { message: "CI paleoclaw/paleoclaw#41 passed.", accepted: false },
+    { message: "CI syxscott/PaleoClaw#41 passed.", accepted: false },
     { message: "CI #41 passed.", other: "Related #41.", accepted: false },
     { message: "CI #41 passed.", note: "Related #41.", accepted: false },
     { message: "CI #41 passed.", identity: "missing", accepted: false },
@@ -1365,7 +1365,7 @@ if (process.argv[3] === "repos/paleoclaw/paleoclaw/actions/runs/" + referenceNum
   require("node:fs").appendFileSync("run-requests", referenceNumber + "\\n");
   console.log(JSON.stringify(scenario.identity === "missing" ? { message: "Not Found" } : {
     id: scenario.identity === "wrong-id" ? referenceNumber + 1 : referenceNumber,
-    repository: { full_name: scenario.identity === "wrong-repo" ? "other/repository" : "paleoclaw/paleoclaw" },
+    repository: { full_name: scenario.identity === "wrong-repo" ? "other/repository" : "syxscott/PaleoClaw" },
     pull_requests: [],
   }));
   process.exit(0);
@@ -1416,7 +1416,7 @@ console.log(JSON.stringify({ data }));
     if (!scenario.node) {
       expect(manifest.directCommits[0].references).toEqual([]);
       expect(manifest.workflowRuns).toEqual([
-        { id: referenceNumber, repository: "paleoclaw/paleoclaw" },
+        { id: referenceNumber, repository: "syxscott/PaleoClaw" },
       ]);
     } else {
       expect(() => readFileSync(join(cwd, "run-requests"))).toThrow();

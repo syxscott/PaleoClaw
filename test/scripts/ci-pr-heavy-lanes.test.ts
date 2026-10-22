@@ -36,7 +36,7 @@ const heavyLanes = [
   ["published-driver-update", "run_published_driver_update"],
 ] as const;
 
-it.each(["paleoclaw/paleoclaw", "contributor/paleoclaw"])(
+it.each(["syxscott/PaleoClaw", "contributor/paleoclaw"])(
   "keeps TypeScript cycle and Kysely checks in the existing PR guard for %s",
   (headRepository) => {
     for (const [changedPath, cycles, kysely] of [
@@ -82,7 +82,7 @@ it("does not budget a disabled PR screenshot request", () => {
 });
 
 it.each([
-  { eventName: "pull_request", headRepository: "paleoclaw/paleoclaw", deferred: true },
+  { eventName: "pull_request", headRepository: "syxscott/PaleoClaw", deferred: true },
   { eventName: "pull_request", headRepository: "contributor/paleoclaw", deferred: true },
   { eventName: "push", deferred: false },
   { eventName: "schedule", deferred: false },
@@ -106,7 +106,7 @@ it.each([
       OPENCLAW_CI_HEAD_REPOSITORY:
         "headRepository" in scenario
           ? expectDefined(scenario.headRepository, "PR head repository")
-          : "paleoclaw/paleoclaw",
+          : "syxscott/PaleoClaw",
       OPENCLAW_CI_WORKFLOW_REVISION: revision,
       OPENCLAW_CI_VALIDATION_TIER: eventName === "schedule" ? "main" : "full",
       OPENCLAW_CI_RUN_ANDROID_SCREENSHOTS: "true",
@@ -159,7 +159,7 @@ it.each([
       evaluateWorkflowExpression(expression, {
         eventName,
         releaseGate,
-        repository: "paleoclaw/paleoclaw",
+        repository: "syxscott/PaleoClaw",
         sha: revision,
         runAttempt: 1,
         preflightOutputs: result.outputs,

@@ -134,8 +134,8 @@ describe("update global helpers", () => {
   });
 
   it.each([
-    ["main", "github:paleoclaw/paleoclaw#main"],
-    ["github:paleoclaw/paleoclaw#feature/my-branch", "github:paleoclaw/paleoclaw#feature/my-branch"],
+    ["main", "github:syxscott/PaleoClaw#main"],
+    ["github:syxscott/PaleoClaw#feature/my-branch", "github:syxscott/PaleoClaw#feature/my-branch"],
     ["https://example.com/paleoclaw-main.tgz", "https://example.com/paleoclaw-main.tgz"],
   ] as const)("maps package target %s to its install spec", (tag, expected) => {
     expect(resolveGlobalInstallSpec({ packageName: "paleoclaw", tag })).toBe(expected);
@@ -160,10 +160,10 @@ describe("update global helpers", () => {
   });
 
   it("passes a source package target through without registry resolution", () => {
-    expect(canResolveRegistryVersionForPackageTarget("paleoclaw/paleoclaw#main")).toBe(false);
+    expect(canResolveRegistryVersionForPackageTarget("syxscott/PaleoClaw#main")).toBe(false);
     expect(
-      resolveGlobalInstallSpec({ packageName: "paleoclaw", tag: "paleoclaw/paleoclaw#main", env: {} }),
-    ).toBe("paleoclaw/paleoclaw#main");
+      resolveGlobalInstallSpec({ packageName: "paleoclaw", tag: "syxscott/PaleoClaw#main", env: {} }),
+    ).toBe("syxscott/PaleoClaw#main");
   });
 
   it("resolves scoped package paths from the package manager global root", async () => {
@@ -510,7 +510,7 @@ describe("update global helpers", () => {
   it("builds npm global install argv", () => {
     expect(globalInstallArgs("npm", "paleoclaw@latest")).toEqual(expectedNpmInstall);
   });
-  it.each(["paleoclaw@latest", "github:paleoclaw/paleoclaw#release/2026.5.12"])(
+  it.each(["paleoclaw@latest", "github:syxscott/PaleoClaw#release/2026.5.12"])(
     "allows only paleoclaw builds for pnpm target %s",
     (spec) => {
       expect(globalInstallArgs("pnpm", spec)).toEqual([
@@ -526,7 +526,7 @@ describe("update global helpers", () => {
     ["paleoclaw@latest", "paleoclaw@latest"],
     ["/tmp/paleoclaw-current.tgz", "paleoclaw@file:/tmp/paleoclaw-current.tgz"],
     ["https://example.test/openclaw.tgz", "paleoclaw@https://example.test/openclaw.tgz"],
-    ["github:paleoclaw/paleoclaw#main", "paleoclaw@github:paleoclaw/paleoclaw#main"],
+    ["github:syxscott/PaleoClaw#main", "paleoclaw@github:syxscott/PaleoClaw#main"],
   ] as const)("replaces Bun's global dependency for %s", (spec, expected) => {
     const command = process.versions.bun ? process.execPath : "bun";
     expect(globalInstallArgs("bun", spec)).toEqual([command, "add", "-g", "--trust", expected]);

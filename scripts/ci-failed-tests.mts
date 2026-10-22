@@ -44,7 +44,7 @@ const usage =
 export function parseArgs(argv: string[]) {
   const options = {
     target: "",
-    repo: "paleoclaw/paleoclaw",
+    repo: "syxscott/PaleoClaw",
     includePreExisting: false,
     run: false,
     json: false,

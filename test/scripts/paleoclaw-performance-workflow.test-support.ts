@@ -104,7 +104,7 @@ export function preparePerformanceFixture(root: string, options: PerformanceFixt
     mkdirSync(reports);
     if (publish) {
       run(reports, "init", "--initial-branch=main");
-      run(reports, "remote", "add", "origin", "https://github.com/paleoclaw/clawgrit-reports.git");
+      run(reports, "remote", "add", "origin", "https://github.com/openclaw/clawgrit-reports.git");
       // Keep FETCH_HEAD's source description valid when the snapshot is copied.
       run(reports, "fetch", "--depth=1", relative(reports, remote), "main");
       run(reports, "checkout", "-B", "main", "FETCH_HEAD");
@@ -171,7 +171,7 @@ export function preparePerformanceFixture(root: string, options: PerformanceFixt
     REPORTS_ROOT: reports,
     REPORT_COMMIT: reportCommit,
     DEST_REL: dest,
-    REPORT_URL: `https://github.com/paleoclaw/clawgrit-reports/tree/main/${dest}`,
+    REPORT_URL: `https://github.com/openclaw/clawgrit-reports/tree/main/${dest}`,
     REPORT_PUBLISH_REQUIRED: "true",
     PERFORMANCE_REPORT_SELECTOR: resolve("scripts/lib/kova-report-selector.mjs"),
     PERFORMANCE_PUBLISHER_HELPER: resolve("scripts/lib/kova-report-publish-files.mjs"),

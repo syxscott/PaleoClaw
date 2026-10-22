@@ -21,7 +21,7 @@ runs the lint pipeline. The [local development tool selector](/reference/test/lo
 reference explains the pinned paleoclaw Bun fork, installation cache, supported
 platforms, overrides, fallbacks, and CI parity. Use
 `OPENCLAW_FORMAT_TOOL=oxfmt pnpm format` to force oxfmt. The
-[formatter caller inventory](https://github.com/paleoclaw/paleoclaw/blob/main/scripts/README.md#formatting-and-lint-selection)
+[formatter caller inventory](https://github.com/syxscott/PaleoClaw/blob/main/scripts/README.md#formatting-and-lint-selection)
 lists dedicated formatters that retain oxfmt.
 
 ## Auth monitoring scripts
@@ -59,7 +59,7 @@ Repo resolution order:
 Examples:
 
 - `scripts/gh-read pr view 123`
-- `scripts/gh-read run list -R paleoclaw/paleoclaw`
+- `scripts/gh-read run list -R syxscott/PaleoClaw`
 - `scripts/gh-read api repos/paleoclaw/paleoclaw/pulls/123`
 
 ## When adding scripts

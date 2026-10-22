@@ -614,7 +614,7 @@ extension SettingsProTab {
                     title: "GitHub",
                     icon: "chevron.left.slash.chevron.right",
                     color: .gray,
-                    url: URL(string: "https://github.com/paleoclaw/paleoclaw")!)
+                    url: URL(string: "https://github.com/syxscott/PaleoClaw")!)
                 self.aboutLinkRow(
                     title: "Discord",
                     icon: "bubble.left.and.bubble.right.fill",

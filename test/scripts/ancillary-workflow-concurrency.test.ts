@@ -158,7 +158,7 @@ function refEvent(
   const event: GithubEvent = {};
   return {
     workflow: workflow.name,
-    repository: "paleoclaw/paleoclaw",
+    repository: "syxscott/PaleoClaw",
     event_name: eventName,
     run_id: runId,
     sha: sha.repeat(40),

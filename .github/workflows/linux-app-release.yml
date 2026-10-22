@@ -38,8 +38,8 @@ jobs:
     name: Validate release tag
     if: >-
       github.event_name == 'workflow_run' &&
-      github.repository == 'paleoclaw/paleoclaw' &&
-      github.event.workflow_run.repository.full_name == 'paleoclaw/paleoclaw' &&
+      github.repository == 'syxscott/PaleoClaw' &&
+      github.event.workflow_run.repository.full_name == 'syxscott/PaleoClaw' &&
       github.event.workflow_run.event == 'workflow_dispatch' &&
       github.event.workflow_run.path == '.github/workflows/linux-app-release-request.yml' &&
       github.event.workflow_run.head_branch == 'main' &&

@@ -64,7 +64,7 @@ export function pullListItem(overrides: Record<string, unknown> = {}): Record<st
   return {
     number: 103469,
     title: "fix(macos): tighten the link-browser tab header",
-    html_url: "https://github.com/paleoclaw/paleoclaw/pull/103469",
+    html_url: "https://github.com/openclaw/openclaw/pull/103469",
     state: "open",
     draft: false,
     merged_at: null,

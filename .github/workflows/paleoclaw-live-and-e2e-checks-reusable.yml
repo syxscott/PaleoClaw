@@ -634,9 +634,9 @@ jobs:
     runs-on: &linux_runner_small >-
       ${{ inputs.runner_group != '' && fromJSON(format('{{"group":{0},"labels":{1}}}',
       toJSON(inputs.runner_group), toJSON(!inputs.use_github_hosted_runners && github.repository ==
-      'paleoclaw/paleoclaw' && vars.OPENCLAW_CI_RUNNER_BACKEND == 'hybrid' && 'blacksmith-4vcpu-ubuntu-2404'
+      'syxscott/PaleoClaw' && vars.OPENCLAW_CI_RUNNER_BACKEND == 'hybrid' && 'blacksmith-4vcpu-ubuntu-2404'
       || 'ubuntu-24.04'))) || (!inputs.use_github_hosted_runners && github.repository ==
-      'paleoclaw/paleoclaw' && vars.OPENCLAW_CI_RUNNER_BACKEND == 'hybrid' && 'blacksmith-4vcpu-ubuntu-2404'
+      'syxscott/PaleoClaw' && vars.OPENCLAW_CI_RUNNER_BACKEND == 'hybrid' && 'blacksmith-4vcpu-ubuntu-2404'
       || 'ubuntu-24.04') }}
     timeout-minutes: 30
     outputs:
@@ -3470,7 +3470,7 @@ jobs:
           if (!/^[1-9][0-9]*$/u.test(jobId)) {
             throw new Error("job.check_run_id must be a positive decimal");
           }
-          if (repository !== "paleoclaw/paleoclaw" || job.workflow_repository !== repository) {
+          if (repository !== "syxscott/PaleoClaw" || job.workflow_repository !== repository) {
             throw new Error("job.workflow_repository must exactly match github.repository");
           }
           if (
@@ -3531,7 +3531,7 @@ jobs:
       - name: Checkout trusted release harness
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          repository: paleoclaw/paleoclaw
+          repository: syxscott/PaleoClaw
           ref: ${{ github.sha }}
           fetch-depth: 1
           path: .release-harness
@@ -3553,7 +3553,7 @@ jobs:
           const repository = process.env.WORKFLOW_REPOSITORY ?? "";
           const workflowSha = process.env.WORKFLOW_SHA ?? "";
           const harnessPath = process.env.HARNESS_PATH ?? "";
-          if (repository !== "paleoclaw/paleoclaw" || !/^[0-9a-f]{40}$/u.test(workflowSha)) {
+          if (repository !== "syxscott/PaleoClaw" || !/^[0-9a-f]{40}$/u.test(workflowSha)) {
             throw new Error("authenticated workflow repository and full SHA are required");
           }
           if (harnessPath !== ".release-harness") {

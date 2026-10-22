@@ -187,9 +187,9 @@ export function validateCrabboxMergeBypass({
     pull.draft !== false ||
     record(pull.head, "pull request head").sha !== headSha ||
     record(record(pull.head, "pull request head").repo, "pull request head repo").full_name !==
-      "paleoclaw/paleoclaw" ||
+      "syxscott/PaleoClaw" ||
     record(record(pull.base, "pull request base").repo, "pull request base repo").full_name !==
-      "paleoclaw/paleoclaw" ||
+      "syxscott/PaleoClaw" ||
     record(pull.base, "pull request base").ref !== "main"
   ) {
     throw new Error("paleoclaw/crabbox-gate does not bind the expected broker proof");

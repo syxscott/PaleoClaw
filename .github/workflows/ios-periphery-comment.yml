@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-24.04
     if: >
       (
-      github.repository == 'paleoclaw/paleoclaw' &&
+      github.repository == 'syxscott/PaleoClaw' &&
       github.event.workflow_run.event == 'pull_request' &&
       (github.event.workflow_run.name == 'iOS Periphery Dead Code' ||
       github.event.workflow_run.name == 'macOS Periphery Dead Code')

@@ -44,16 +44,16 @@ import { registerClonedProjectRegistry } from "./project-registry.test-support.j
 const execFileAsync = promisify(execFile);
 const tempDirs = createTempDirTracker();
 it.each([
-  ["https://github.com/paleoclaw/openclaw.git", "ghe.example.test"],
+  ["https://github.com/syxscott/PaleoClaw.git", "ghe.example.test"],
   ["file:///tmp/openclaw.git"],
   ["ssh://git@github.com:2222/paleoclaw/openclaw.git"],
   ["/tmp/paleoclaw"],
   ["--upload-pack=touch-pwned"],
-  ["https://token@github.com/paleoclaw/openclaw.git"],
-  ["https://github.com/paleoclaw/openclaw.git?config=evil"],
-  ["https://github.com/paleoclaw/paleoclaw/extra"],
+  ["https://token@github.com/syxscott/PaleoClaw.git"],
+  ["https://github.com/syxscott/PaleoClaw.git?config=evil"],
+  ["https://github.com/syxscott/PaleoClaw/extra"],
   ["git@github.com:../../tmp/openclaw.git"],
-  ["https://github.com/paleoclaw/openclaw.git --config=evil"],
+  ["https://github.com/syxscott/PaleoClaw.git --config=evil"],
 ])("rejects unsafe project clone URL %s", (input, host?: string) => {
   expect(parseProjectGitUrl(input, host)).toBeNull();
 });

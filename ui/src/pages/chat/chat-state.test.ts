@@ -2756,26 +2756,26 @@ describe("chat state render lifecycle", () => {
     expect(refreshSessionPullRequests).not.toHaveBeenCalled();
 
     // Issue links never carry chips.
-    delta("see https://github.com/paleoclaw/paleoclaw/issues/42 ");
+    delta("see https://github.com/openclaw/openclaw/issues/42 ");
     expect(refreshSessionPullRequests).not.toHaveBeenCalled();
 
-    delta("opened https://github.com/paleoclaw/paleoclaw/pull/113840 for review ");
+    delta("opened https://github.com/openclaw/openclaw/pull/113840 for review ");
     expect(refreshSessionPullRequests).toHaveBeenCalledTimes(1);
     expect(refreshSessionPullRequests).toHaveBeenCalledWith({ refresh: true, automatic: true });
 
     // One refresh reloads all of the branch's PRs; further links in the same
     // run must not spend more GitHub quota.
-    delta("also https://github.com/paleoclaw/paleoclaw/pull/113900 ");
+    delta("also https://github.com/openclaw/openclaw/pull/113900 ");
     expect(refreshSessionPullRequests).toHaveBeenCalledTimes(1);
 
     // Streaming may split a URL across chunks; the rolling tail rejoins it.
-    delta("continuing https://github.com/paleoclaw/paleoclaw/pu", "run-2");
+    delta("continuing https://github.com/syxscott/PaleoClaw/pu", "run-2");
     expect(refreshSessionPullRequests).toHaveBeenCalledTimes(1);
     delta("ll/113901 done", "run-2");
     expect(refreshSessionPullRequests).toHaveBeenCalledTimes(2);
 
     // A later run announcing the same PR (e.g. its merge) refreshes again.
-    delta("merged https://github.com/paleoclaw/paleoclaw/pull/113840 at last", "run-3");
+    delta("merged https://github.com/openclaw/openclaw/pull/113840 at last", "run-3");
     expect(refreshSessionPullRequests).toHaveBeenCalledTimes(3);
   });
 
@@ -3057,12 +3057,12 @@ describe("session pull request refresh", () => {
   it.each([
     {
       name: "requests an authoritative refresh after a final assistant PR link",
-      text: "Opened `https://github.com/paleoclaw/paleoclaw/pull/111532`.",
+      text: "Opened `https://github.com/openclaw/openclaw/pull/111532`.",
       refresh: true,
     },
     {
       name: "refreshes for a visible same-session final from another run",
-      text: "Opened https://github.com/paleoclaw/paleoclaw/pull/111532",
+      text: "Opened https://github.com/openclaw/openclaw/pull/111532",
       activeRunId: "active-run",
       runId: "announcement-run",
       refresh: true,
@@ -3072,17 +3072,17 @@ describe("session pull request refresh", () => {
       text: "Finished the background task.",
       activeRunId: "active-run",
       runId: "announcement-run",
-      stream: "Opened https://github.com/paleoclaw/paleoclaw/pull/111532",
+      stream: "Opened https://github.com/openclaw/openclaw/pull/111532",
       refresh: false,
     },
     {
       name: "does not refresh for an issue link",
-      text: "Tracked in https://github.com/paleoclaw/paleoclaw/issues/111532.",
+      text: "Tracked in https://github.com/openclaw/openclaw/issues/111532.",
       refresh: false,
     },
     {
       name: "does not refresh for another session's PR announcement",
-      text: "Opened https://github.com/paleoclaw/paleoclaw/pull/111532",
+      text: "Opened https://github.com/openclaw/openclaw/pull/111532",
       sessionKey: "agent:main:other",
       refresh: false,
     },

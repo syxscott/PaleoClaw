@@ -444,7 +444,7 @@ Oxlint is not type-aware, so it cannot enforce these annotations.
 
 ## Test against beta releases
 
-1. Watch [paleoclaw/paleoclaw](https://github.com/paleoclaw/paleoclaw/releases) releases (`Watch` > `Releases`). Beta tags look like `v2026.3.N-beta.1`. You can also follow [@paleoclaw](https://x.com/paleoclaw) on X for release announcements.
+1. Watch [syxscott/PaleoClaw](https://github.com/syxscott/PaleoClaw/releases) releases (`Watch` > `Releases`). Beta tags look like `v2026.3.N-beta.1`. You can also follow [@paleoclaw](https://x.com/paleoclaw) on X for release announcements.
 2. Test your plugin against the beta tag as soon as it appears. The window before stable is typically only a few hours.
 3. Post in your plugin's thread in the `plugin-forum` Discord channel ([discord.gg/clawd](https://discord.gg/clawd)) after testing, with either `all good` or what broke. Create a thread if you do not have one yet.
 4. If something breaks, open or update an issue titled `Beta blocker: <plugin-name> - <summary>` and apply the `beta-blocker` label. Link the issue in your thread.

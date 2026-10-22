@@ -108,7 +108,7 @@ async function openPullPreviewPage(
       "forge.preview": {
         cases: [
           {
-            match: { url: "https://github.com/paleoclaw/paleoclaw/pull/99816" },
+            match: { url: "https://github.com/openclaw/openclaw/pull/99816" },
             response: previewResponse,
           },
         ],
@@ -335,15 +335,15 @@ suite.define(() => {
       await followUp.focus();
       const card = page.locator(".link-reader-hovercard");
       await card.waitFor({ state: "visible" });
-      const href = "https://github.com/paleoclaw/clawsweeper/pull/1576";
+      const href = "https://github.com/openclaw/clawsweeper/pull/1576";
       await expectAttr(followUp, "href", href);
       await expectAttr(part(card, "title"), "href", href);
       await expectText(card, "Synthetic ClawSweeper pull request");
       expect(
-        await page.locator('a[href="https://github.com/paleoclaw/clawsweeper/pull/1558"]').count(),
+        await page.locator('a[href="https://github.com/openclaw/clawsweeper/pull/1558"]').count(),
       ).toBe(1);
       expect(
-        await page.locator('a[href="https://github.com/paleoclaw/paleoclaw/pull/1576"]').count(),
+        await page.locator('a[href="https://github.com/openclaw/openclaw/pull/1576"]').count(),
       ).toBe(1);
       for (const [repo, number] of [
         [namedRepository, 1558],
@@ -605,16 +605,16 @@ suite.define(() => {
         "forge.preview": {
           cases: [
             {
-              match: { url: "https://github.com/paleoclaw/paleoclaw/pull/99816" },
+              match: { url: "https://github.com/openclaw/openclaw/pull/99816" },
               response: pullPreviewResponse,
             },
             {
-              match: { url: "https://github.com/paleoclaw/paleoclaw/issues/99815" },
+              match: { url: "https://github.com/openclaw/openclaw/issues/99815" },
               response: {
                 imageUrl:
                   "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9WlY9Z8AAAAASUVORK5CYII=",
-                url: "https://github.com/paleoclaw/paleoclaw/issues/99815",
-                subtitle: "paleoclaw/paleoclaw #99815",
+                url: "https://github.com/openclaw/openclaw/issues/99815",
+                subtitle: "syxscott/PaleoClaw #99815",
                 author: "octocat",
                 badge: { label: "Open", tone: "positive" },
                 metadata: [{ label: "Comments", value: "4" }],
@@ -624,7 +624,7 @@ suite.define(() => {
               },
             },
             {
-              match: { url: "https://github.com/paleoclaw/paleoclaw/issues/999999" },
+              match: { url: "https://github.com/openclaw/openclaw/issues/999999" },
               response: {},
             },
           ],
@@ -633,10 +633,10 @@ suite.define(() => {
       historyMessages: [
         assistantMessage(
           [
-            "Review https://github.com/paleoclaw/paleoclaw/pull/99816,",
-            "then https://github.com/paleoclaw/paleoclaw/issues/99815.",
-            "A [missing item](https://github.com/paleoclaw/paleoclaw/issues/999999) stays usable.",
-            "The [repository](https://github.com/paleoclaw/paleoclaw) has no item preview.",
+            "Review https://github.com/openclaw/openclaw/pull/99816,",
+            "then https://github.com/openclaw/openclaw/issues/99815.",
+            "A [missing item](https://github.com/openclaw/openclaw/issues/999999) stays usable.",
+            "The [repository](https://github.com/syxscott/PaleoClaw) has no item preview.",
             "The skill lives at https://github.com/blader/humanizer/blob/main/SKILL.md.",
             "Styling notes live in [the docs](https://docs.openclaw.ai/web/control-ui).",
           ].join(" "),
@@ -675,7 +675,7 @@ suite.define(() => {
 
     const pullLink = page.locator('a.markdown-github-link[href$="/pull/99816"]');
 
-    await expectText(pullLink, "paleoclaw/paleoclaw#99816");
+    await expectText(pullLink, "syxscott/PaleoClaw#99816");
 
     const decorationLine = (link: Locator) =>
       link.evaluate((element) => getComputedStyle(element).textDecorationLine);
@@ -684,7 +684,7 @@ suite.define(() => {
 
     await pullLink.hover();
     const card = page.locator(".link-reader-hovercard");
-    await expectText(card, "Merged", "paleoclaw/paleoclaw #99816", "+101", "−12");
+    await expectText(card, "Merged", "syxscott/PaleoClaw #99816", "+101", "−12");
     await page.clock.runFor(300);
     await page.evaluate(() => document.fonts.ready.then(() => undefined));
     await expect.poll(() => tooltip(page).count()).toBe(0);
@@ -727,9 +727,9 @@ suite.define(() => {
     await expectAttr(
       card.getByRole("link", { name: "Open on Forge" }),
       "href",
-      "https://github.com/paleoclaw/paleoclaw/issues/999999",
+      "https://github.com/openclaw/openclaw/issues/999999",
     );
-    await expectAttr(missingLink, "href", "https://github.com/paleoclaw/paleoclaw/issues/999999");
+    await expectAttr(missingLink, "href", "https://github.com/openclaw/openclaw/issues/999999");
     await page.mouse.move(1, 1);
 
     await page.emulateMedia({ colorScheme: "dark" });
@@ -754,7 +754,7 @@ suite.define(() => {
     const { card, page, pullLink } = await openPullPreviewPage();
 
     await pullLink.hover();
-    await expectText(card, "paleoclaw/paleoclaw #99816");
+    await expectText(card, "syxscott/PaleoClaw #99816");
     // Let preview response timers finish before freezing the pointer's grace.
     await pauseVirtualClock(page);
     const linkBox = await pullLink.boundingBox();
@@ -782,7 +782,7 @@ suite.define(() => {
     // Remaining on the card must survive ten dismissal windows.
     await page.clock.runFor(1_200);
     expect(await card.count()).toBe(1);
-    await expectText(card, "paleoclaw/paleoclaw #99816");
+    await expectText(card, "syxscott/PaleoClaw #99816");
 
     // Leaving both surfaces still dismisses after the traversal grace period.
     await page.mouse.move(1, 1);
@@ -796,7 +796,7 @@ suite.define(() => {
     const { card, page, pullLink } = await openPullPreviewPage();
 
     await pullLink.focus();
-    await expectText(card, "paleoclaw/paleoclaw #99816");
+    await expectText(card, "syxscott/PaleoClaw #99816");
     // Interactive card links require dialog, not tooltip, semantics.
     await expect.poll(() => page.getByRole("dialog").count()).toBe(1);
     await expect.poll(() => tooltip(page).count()).toBe(0);
@@ -824,7 +824,7 @@ suite.define(() => {
     const { card, commentLink, gateway, page, pullLink } = await openPullPreviewPage();
 
     await pullLink.hover();
-    await expectText(card, "paleoclaw/paleoclaw #99816");
+    await expectText(card, "syxscott/PaleoClaw #99816");
     const titleLink = part(card, "title");
     await expectText(titleLink, pullPreviewResponse.title);
 

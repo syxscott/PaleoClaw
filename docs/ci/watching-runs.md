@@ -190,7 +190,7 @@ failed jobs with scheduled `main` CI. After a run fails:
 
 Do not run the full local suite or use `gh run rerun` to chase green. Pre-existing
 failures follow the
-[failure-table landing rule](https://github.com/paleoclaw/paleoclaw/blob/main/.agents/skills/paleoclaw-pr-maintainer/references/landing.md#red-main-and-inherited-failures):
+[failure-table landing rule](https://github.com/syxscott/PaleoClaw/blob/main/.agents/skills/paleoclaw-pr-maintainer/references/landing.md#red-main-and-inherited-failures):
 matching signatures provide attribution; a job-name-only match still requires
 comparing the failed tests with the main run. The table does not waive a gate.
 See [failed CI test selection](/reference/scripts/pr-tooling#rerun-failed-ci-tests)
@@ -204,7 +204,7 @@ over a new full-CI dispatch. This is infrastructure recovery after identifying
 the cause, not a retry of failed tests to obtain green:
 
 ```bash
-gh run rerun <original-run-id> --failed --repo paleoclaw/paleoclaw
+gh run rerun <original-run-id> --failed --repo syxscott/PaleoClaw
 ```
 
 Before cancelling a run stuck solely on unassigned jobs, verify that it is the

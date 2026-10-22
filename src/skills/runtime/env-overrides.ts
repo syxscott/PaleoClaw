@@ -23,7 +23,7 @@ type ActiveSkillEnvEntry = {
  * Tracks env var keys that are currently injected by skill overrides.
  * Used by ACP harness spawn to strip skill-injected keys so they don't
  * leak to child processes (e.g., OPENAI_API_KEY leaking to Codex CLI).
- * @see https://github.com/paleoclaw/paleoclaw/issues/36280
+ * @see https://github.com/openclaw/openclaw/issues/36280
  */
 const activeSkillEnvEntries = new Map<string, ActiveSkillEnvEntry>();
 

@@ -190,7 +190,7 @@ beforeEach(() => {
       profile: null,
     },
     runtime: { path: runtime, identity: "1:5" },
-    source: "https://github.com/paleoclaw/openclaw.git",
+    source: "https://github.com/syxscott/PaleoClaw.git",
   };
   const command: GatewayServiceCommandConfig = {
     programArguments: [launcher],

@@ -935,7 +935,7 @@ syncBuiltinESMExports();`,
         id: 44,
         run_attempt: 1,
         workflow_id: 2,
-        repository: { full_name: "paleoclaw/paleoclaw" },
+        repository: { full_name: "syxscott/PaleoClaw" },
         head_sha: "a".repeat(40),
         head_branch: "main",
         path: ".github/workflows/paleoclaw-release-publish.yml",
@@ -943,7 +943,7 @@ syncBuiltinESMExports();`,
         status: "completed",
         conclusion: "failure",
       },
-      "paleoclaw/paleoclaw",
+      "syxscott/PaleoClaw",
       "44",
     );
     // The existing v1 reader validates the shape before rejecting this unbound fixture.
@@ -988,7 +988,7 @@ describe("parseReleaseVerifyBetaArgs", () => {
       version: "2026.5.10-beta.3",
       tag: "v2026.5.10-beta.3",
       distTag: "beta",
-      repo: "paleoclaw/paleoclaw",
+      repo: "syxscott/PaleoClaw",
       registry: "https://clawhub.ai",
       releaseSha: undefined,
       workflowRef: undefined,
@@ -1044,7 +1044,7 @@ describe("parseReleaseVerifyBetaArgs", () => {
       version: "2026.5.10-beta.3",
       tag: "v2026.5.10-beta.3",
       distTag: "beta",
-      repo: "paleoclaw/paleoclaw",
+      repo: "syxscott/PaleoClaw",
       registry: "https://clawhub.ai",
       releaseSha: "a".repeat(40),
       workflowRef: "release/2026.5.10",
@@ -1133,7 +1133,7 @@ describe("validateClawHubBootstrapEvidence", () => {
     run_attempt: 2,
     status: "completed",
     conclusion: "success",
-    html_url: "https://github.com/paleoclaw/paleoclaw/actions/runs/34",
+    html_url: "https://github.com/syxscott/PaleoClaw/actions/runs/34",
     created_at: "2026-07-10T00:00:00Z",
     updated_at: "2026-07-10T00:02:00Z",
   };
@@ -1159,7 +1159,7 @@ describe("validateClawHubBootstrapEvidence", () => {
   };
   const evidence = {
     schemaVersion: 2,
-    repository: "paleoclaw/paleoclaw",
+    repository: "syxscott/PaleoClaw",
     targetSha: releaseSha,
     workflowSha,
     runId: "34",
@@ -1206,7 +1206,7 @@ describe("validateClawHubBootstrapEvidence", () => {
     } = {},
   ) {
     return validateClawHubBootstrapEvidence({
-      repo: "paleoclaw/paleoclaw",
+      repo: "syxscott/PaleoClaw",
       runId: "34",
       releaseSha,
       expectedVersion: "2026.7.1-beta.3",
@@ -1334,8 +1334,8 @@ describe("downloadClawHubBootstrapReadback", () => {
     path: ".github/workflows/plugin-PaleoHub-new.yml",
     status: "completed",
     conclusion: "success",
-    repository: { full_name: "paleoclaw/paleoclaw" },
-    head_repository: { full_name: "paleoclaw/paleoclaw" },
+    repository: { full_name: "syxscott/PaleoClaw" },
+    head_repository: { full_name: "syxscott/PaleoClaw" },
   };
 
   function createFixture(
@@ -1392,7 +1392,7 @@ describe("downloadClawHubBootstrapReadback", () => {
   }> {
     const fixture = createFixture(archive, overrides);
     const result = await downloadClawHubBootstrapReadback({
-      repo: "paleoclaw/paleoclaw",
+      repo: "syxscott/PaleoClaw",
       runId: "34",
       run,
       readbackArtifact: fixture.readbackArtifact,

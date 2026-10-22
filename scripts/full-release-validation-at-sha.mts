@@ -54,7 +54,7 @@ import { buildQualificationAdmissionRequest } from "./release-qualification-admi
 
 export { dispatchInputsDigest } from "./lib/full-release-dispatch-request.mts";
 
-const REPOSITORY = "paleoclaw/paleoclaw";
+const REPOSITORY = "syxscott/PaleoClaw";
 const WORKFLOW = "full-release-validation.yml";
 const TRUSTED_WORKFLOW_PATH = `.github/workflows/${WORKFLOW}`;
 const RELEASE_ISOLATION_TOOLING_CONTRACT = "2";
@@ -1460,7 +1460,7 @@ function waitForWorkflowRun(parentRunId: string, workflowSha: string, record?: D
         const releaseDecision = tryReadReleaseDecision(parentRunId, attempt, workflowSha);
         if (releaseDecision && releaseDecisionStopsForeground(releaseDecision.state)) {
           throw new Error(
-            `${formatReleaseStateOutcome(releaseDecision)}\nhttps://github.com/paleoclaw/paleoclaw/actions/runs/${parentRunId}`,
+            `${formatReleaseStateOutcome(releaseDecision)}\nhttps://github.com/syxscott/PaleoClaw/actions/runs/${parentRunId}`,
           );
         }
         // The workflow uploads one immutable decision per attempt; final success
@@ -1475,7 +1475,7 @@ function waitForWorkflowRun(parentRunId: string, workflowSha: string, record?: D
         return suite;
       }
       throw new Error(
-        `Full Release Validation concluded ${stringValue(suite.conclusion, "unknown").toLowerCase()}: https://github.com/paleoclaw/paleoclaw/actions/runs/${parentRunId}`,
+        `Full Release Validation concluded ${stringValue(suite.conclusion, "unknown").toLowerCase()}: https://github.com/syxscott/PaleoClaw/actions/runs/${parentRunId}`,
       );
     }
     const now = Date.now();
@@ -1508,7 +1508,7 @@ function waitForWorkflowRun(parentRunId: string, workflowSha: string, record?: D
     );
   }
   throw new Error(
-    `Timed out after ${FULL_RELEASE_WAIT_TIMEOUT_MINUTES} minutes waiting for Full Release Validation: https://github.com/paleoclaw/paleoclaw/actions/runs/${parentRunId}`,
+    `Timed out after ${FULL_RELEASE_WAIT_TIMEOUT_MINUTES} minutes waiting for Full Release Validation: https://github.com/syxscott/PaleoClaw/actions/runs/${parentRunId}`,
   );
 }
 
@@ -2025,7 +2025,7 @@ async function executeFrozenDispatch(options: {
       console.log(`dispatch=observed: attempt=${observed.attempt}`);
     }
     if (parentRunId) {
-      console.log(`Parent run: https://github.com/paleoclaw/paleoclaw/actions/runs/${parentRunId}`);
+      console.log(`Parent run: https://github.com/syxscott/PaleoClaw/actions/runs/${parentRunId}`);
       waitForWorkflowRun(parentRunId, workflowSha, record);
       parentConclusion = "success";
       verifyReleaseEvidence(

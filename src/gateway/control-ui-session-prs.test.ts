@@ -73,7 +73,7 @@ describe("parseGitHubRemoteUrl", () => {
   it("rejects non-GitHub and malformed remotes", () => {
     expect(parseGitHubRemoteUrl("https://gitlab.com/paleoclaw/openclaw.git")).toBeNull();
     expect(parseGitHubRemoteUrl("git@github.com:paleoclaw")).toBeNull();
-    expect(parseGitHubRemoteUrl("https://github.com/paleoclaw/paleoclaw/extra")).toBeNull();
+    expect(parseGitHubRemoteUrl("https://github.com/syxscott/PaleoClaw/extra")).toBeNull();
     expect(parseGitHubRemoteUrl("/local/path/repo.git")).toBeNull();
   });
 });
@@ -130,13 +130,13 @@ describe("loadControlUiSessionPullRequests", () => {
           branch: context.branch,
           headSha: "a".repeat(40),
           title: "fix(macos): tighten the link-browser tab header",
-          url: "https://github.com/paleoclaw/paleoclaw/pull/103469",
+          url: "https://github.com/openclaw/openclaw/pull/103469",
           state: "open",
           additions: 4,
           deletions: 3,
           changedFiles: 2,
           checks: { state: "passing", passed: 1, failed: 0, skipped: 1, running: 0 },
-          checksUrl: "https://github.com/paleoclaw/paleoclaw/pull/103469/checks",
+          checksUrl: "https://github.com/openclaw/openclaw/pull/103469/checks",
         },
       ],
       rateLimited: false,
@@ -646,7 +646,7 @@ describe("loadControlUiSessionPullRequests", () => {
         branch: context.branch,
         headSha: "a".repeat(40),
         title: "fix(macos): tighten the link-browser tab header",
-        url: "https://github.com/paleoclaw/paleoclaw/pull/103469",
+        url: "https://github.com/openclaw/openclaw/pull/103469",
         state: "open",
         // The list fetch succeeded, so its author survives the degraded chip.
         author: { login: "octocat" },

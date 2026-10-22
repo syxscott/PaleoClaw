@@ -21,7 +21,7 @@ const runSchema = z.object({
   conclusion: z.string(),
   display_title: z.string().regex(/^CI full-release-validation-[1-9]\d*-[1-9]\d*-ci$/u),
   head_sha: z.string().regex(/^[a-f0-9]{40}$/u),
-  repository: z.object({ full_name: z.literal("paleoclaw/paleoclaw") }),
+  repository: z.object({ full_name: z.literal("syxscott/PaleoClaw") }),
 });
 const jobSchema = z.object({
   id: positiveId,

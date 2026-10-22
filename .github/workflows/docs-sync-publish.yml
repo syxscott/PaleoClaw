@@ -95,7 +95,7 @@ jobs:
               subprocess.run(["rm", "-rf", publish], check=True)
               try:
                   run_git(workspace, "clone",
-                          f"https://x-access-token:{os.environ['OPENCLAW_DOCS_SYNC_TOKEN']}@github.com/paleoclaw/docs.git",
+                          f"https://x-access-token:{os.environ['OPENCLAW_DOCS_SYNC_TOKEN']}@github.com/openclaw/docs.git",
                           publish, timeout=120)
                   raise SystemExit(0)
               except (GitFailure, FetchTimeout):
@@ -121,7 +121,7 @@ jobs:
       # This is a disposable compiler artifact, not a dependency/runtime cache.
       # The combined action saves only after a successful trusted-main job.
       - name: Cache successful docs validation
-        if: env.OPENCLAW_DOCS_SYNC_TOKEN != '' && github.repository == 'paleoclaw/paleoclaw' && github.ref == 'refs/heads/main'
+        if: env.OPENCLAW_DOCS_SYNC_TOKEN != '' && github.repository == 'syxscott/PaleoClaw' && github.ref == 'refs/heads/main'
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .artifacts/docs-mdx-cache.json

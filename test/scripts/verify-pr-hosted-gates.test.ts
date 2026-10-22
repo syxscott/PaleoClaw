@@ -39,7 +39,7 @@ const queuedArtifactCoverage = [
 ];
 const requiredCliArgs = [
   "--repo",
-  "paleoclaw/paleoclaw",
+  "syxscott/PaleoClaw",
   "--sha",
   sha,
   "--pr",
@@ -84,7 +84,7 @@ function makeRun(
     conclusion: "success",
     head_sha: sha,
     head_branch: "codex/clean-expanded-tool-calls",
-    head_repository: { full_name: "paleoclaw/paleoclaw" },
+    head_repository: { full_name: "syxscott/PaleoClaw" },
     pull_requests: [{ number: pr }],
     path: ".github/workflows/ci.yml",
     created_at: "2026-06-17T10:46:24Z",
@@ -92,7 +92,7 @@ function makeRun(
       typeof updatedAt === "number"
         ? `2026-06-17T10:${String(updatedAt).padStart(2, "0")}:00Z`
         : updatedAt,
-    html_url: `https://github.com/paleoclaw/paleoclaw/actions/runs/${id}`,
+    html_url: `https://github.com/syxscott/PaleoClaw/actions/runs/${id}`,
     ...overrides,
   };
 }
@@ -1083,7 +1083,7 @@ describe("verify-pr-hosted-gates", () => {
 
   it("parses required CLI arguments", () => {
     expect(parseArgs(requiredCliArgs)).toEqual({
-      repo: "paleoclaw/paleoclaw",
+      repo: "syxscott/PaleoClaw",
       sha,
       mainSha,
       pr,
@@ -1091,7 +1091,7 @@ describe("verify-pr-hosted-gates", () => {
       output: ".local/gates-hosted-checks.json",
       changelogOnly: false,
     });
-    expect(() => parseArgs(["--repo", "paleoclaw/paleoclaw"])).toThrow("Usage:");
+    expect(() => parseArgs(["--repo", "syxscott/PaleoClaw"])).toThrow("Usage:");
     expect(() => parseArgs(requiredCliArgs.with(1, "-h"))).toThrow("Expected --repo <value>.");
     expect(() => parseArgs(requiredCliArgs.with(3, "-h"))).toThrow("Expected --sha <value>.");
     expect(() => parseArgs(requiredCliArgs.with(5, "-h"))).toThrow("Expected --pr <value>.");
@@ -1149,10 +1149,10 @@ describe("verify-pr-hosted-gates", () => {
   });
 
   it.each([
-    { number: pr + 1, repo: "paleoclaw/paleoclaw", head: sha, error: "does not identify" },
+    { number: pr + 1, repo: "syxscott/PaleoClaw", head: sha, error: "does not identify" },
     { number: pr, repo: "replacement/paleoclaw", head: sha, error: "does not identify" },
-    { number: pr, repo: "paleoclaw/paleoclaw", head: previousSha, error: "head changed" },
-    { number: pr, repo: "paleoclaw/paleoclaw", head: "", error: "missing head metadata" },
+    { number: pr, repo: "syxscott/PaleoClaw", head: previousSha, error: "head changed" },
+    { number: pr, repo: "syxscott/PaleoClaw", head: "", error: "missing head metadata" },
   ])("rejects carried observation drift before hosted discovery: $number/$repo/$head", (value) => {
     expect(() =>
       main(requiredCliArgs, {
@@ -1160,7 +1160,7 @@ describe("verify-pr-hosted-gates", () => {
         baseRepository: { nameWithOwner: value.repo },
         headRefName: "topic",
         headRefOid: value.head,
-        headRepository: { nameWithOwner: "paleoclaw/paleoclaw" },
+        headRepository: { nameWithOwner: "syxscott/PaleoClaw" },
       }),
     ).toThrow(value.error);
   });
@@ -1188,7 +1188,7 @@ describe("verify-pr-hosted-gates", () => {
         "repos/paleoclaw/paleoclaw/actions/runs?branch=codex%2Frelax%20hosted%20gates&event=pull_request&per_page=30&page=1",
     },
   ])("queries the target and $name", ({ recentSha, headBranch, extra }) => {
-    expect(workflowRunQueryPaths("paleoclaw/paleoclaw", { sha, recentSha, headBranch })).toEqual([
+    expect(workflowRunQueryPaths("syxscott/PaleoClaw", { sha, recentSha, headBranch })).toEqual([
       `repos/paleoclaw/paleoclaw/actions/runs?head_sha=${sha}&per_page=30&page=1`,
       extra,
     ]);
@@ -1199,7 +1199,7 @@ describe("verify-pr-hosted-gates", () => {
     expect(workflowRunPageCount(0)).toBe(0);
     expect(workflowRunPageCount(101)).toBe(4);
     expect(workflowRunPageCount(10_000)).toBe(34);
-    expect(workflowRunQueryPaths("paleoclaw/paleoclaw", { sha, recentSha: "" }, 34)).toEqual([
+    expect(workflowRunQueryPaths("syxscott/PaleoClaw", { sha, recentSha: "" }, 34)).toEqual([
       `repos/paleoclaw/paleoclaw/actions/runs?head_sha=${sha}&per_page=30&page=34`,
     ]);
   });

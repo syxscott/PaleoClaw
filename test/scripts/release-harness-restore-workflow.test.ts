@@ -14,7 +14,7 @@ import { parse } from "yaml";
 import { useAutoCleanupTempDirTracker } from "../helpers/temp-dir.js";
 
 const temporary = useAutoCleanupTempDirTracker(afterEach);
-const repository = "paleoclaw/paleoclaw";
+const repository = "syxscott/PaleoClaw";
 const restoreName = "Restore exact trusted workflow revision";
 type Workflow = {
   jobs: Record<string, { steps: { name?: string; run?: string; env?: Record<string, string> }[] }>;
@@ -90,7 +90,7 @@ function fixture(file: string, jobName: string, fault: Fault) {
     "origin",
     fault === "foreign-remote"
       ? "https://github.com/foreign/openclaw.git"
-      : "https://github.com/paleoclaw/openclaw.git",
+      : "https://github.com/syxscott/PaleoClaw.git",
   );
   if (fault === "symlink") {
     const other = join(root, "other-harness");

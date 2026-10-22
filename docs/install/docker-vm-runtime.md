@@ -27,7 +27,7 @@ You need:
 From the VM:
 
 ```bash
-git clone https://github.com/paleoclaw/openclaw.git
+git clone https://github.com/syxscott/PaleoClaw.git
 cd paleoclaw
 docker --version
 docker compose version

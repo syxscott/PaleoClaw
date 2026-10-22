@@ -63,9 +63,9 @@ jobs:
     name: Find trusted release candidate
     runs-on: &linux_runner_hybrid_small >-
       ${{ vars.OPENCLAW_RELEASE_RUNNER_GROUP != '' && fromJSON(format('{{"group":{0},"labels":{1}}}',
-      toJSON(vars.OPENCLAW_RELEASE_RUNNER_GROUP), toJSON(github.repository == 'paleoclaw/paleoclaw' &&
+      toJSON(vars.OPENCLAW_RELEASE_RUNNER_GROUP), toJSON(github.repository == 'syxscott/PaleoClaw' &&
       vars.OPENCLAW_CI_RUNNER_BACKEND == 'hybrid' && 'blacksmith-4vcpu-ubuntu-2404' || 'ubuntu-24.04')))
-      || (github.repository == 'paleoclaw/paleoclaw' && vars.OPENCLAW_CI_RUNNER_BACKEND == 'hybrid' &&
+      || (github.repository == 'syxscott/PaleoClaw' && vars.OPENCLAW_CI_RUNNER_BACKEND == 'hybrid' &&
       'blacksmith-4vcpu-ubuntu-2404' || 'ubuntu-24.04') }}
     timeout-minutes: 10
     outputs:

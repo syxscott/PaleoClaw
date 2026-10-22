@@ -109,7 +109,7 @@ export type AuthorizedBetaFocusedEvidence = {
 
 const SCRIPT_ROOT = dirname(fileURLToPath(import.meta.url));
 const POLICY_PATH = resolve(SCRIPT_ROOT, "authorized-beta-focused-policy.json");
-const REPOSITORY = "paleoclaw/paleoclaw";
+const REPOSITORY = "syxscott/PaleoClaw";
 const PRODUCER_WORKFLOW = ".github/workflows/authorized-beta-focused-validation.yml";
 const SHA_PATTERN = /^[a-f0-9]{40}$/u;
 const POSITIVE_INTEGER_PATTERN = /^[1-9][0-9]*$/u;

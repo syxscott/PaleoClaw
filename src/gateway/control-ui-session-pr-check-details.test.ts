@@ -21,7 +21,7 @@ const chip: ControlUiSessionPullRequest = {
   ...target,
   branch: "feature",
   title: "CI details",
-  url: "https://github.com/paleoclaw/paleoclaw/pull/103469",
+  url: "https://github.com/openclaw/openclaw/pull/103469",
   state: "open",
 };
 let scope = 0;

@@ -288,7 +288,7 @@ and incompatible column definitions remain refusals. Stored
 session JSON, label uniqueness checks, and retention remain unchanged. Older
 same-version readers can ignore the extra index, so binary rollback leaves it
 intact. The accepted design is recorded in the
-[session label index decision](https://github.com/paleoclaw/paleoclaw/pull/147837#issuecomment-5658783288).
+[session label index decision](https://github.com/openclaw/openclaw/pull/147837#issuecomment-5658783288).
 
 ACP resume lookups use two nonunique expression indexes on the existing
 `acp_sessions.identity_json` agent and ACPX session IDs. The shared-state worker
@@ -311,7 +311,7 @@ accepts missing indexes; the shared writable schema owner installs or repairs th
 uses time and temporary disk proportional to the affected tables, and subsequent
 writes maintain the added indexes. Older same-version readers can ignore them,
 so binary rollback preserves both rows and indexes. See the
-[accepted index design](https://github.com/paleoclaw/paleoclaw/issues/153533).
+[accepted index design](https://github.com/openclaw/openclaw/issues/153533).
 
 Failed-delivery health counts use the shared-state delivery queue's existing
 `idx_delivery_queue_failed` index with columns `(status, queue_name, failed_at, id)`.
@@ -405,7 +405,7 @@ recorded process group has disappeared before releasing capacity. A missing or
 ambiguous lineage result remains unknown; an empty anchor group alone cannot
 prove that descendants in other groups have stopped.
 
-The [node recovery repair](https://github.com/paleoclaw/paleoclaw/pull/149158)
+The [node recovery repair](https://github.com/openclaw/openclaw/pull/149158)
 keeps the journal as the sole durable owner. Cleanup records contain no launch
 descriptor or credentials, do not enter public receipts, and share the launch's
 existing 24-hour terminal receipt retention through a cascading foreign key.
@@ -511,7 +511,7 @@ projection stale, so a current reader rejects it after re-upgrade. While the
 older build is running it cannot enforce generation binding, and changes that
 preserve every observable job value and timestamp cannot be reconstructed later.
 No backfill or schema-version bump is required. The accepted design and rollback
-contract are recorded in [#142153](https://github.com/paleoclaw/paleoclaw/pull/142153).
+contract are recorded in [#142153](https://github.com/openclaw/openclaw/pull/142153).
 
 Retained ACP imports use the same-version additive-column exception for the bare
 nullable `session_nodes.legacy_acp_migration_json TEXT` column. Legacy session
@@ -565,7 +565,7 @@ for conversion, runtime requirements, and recovery.
 Agent schema 19 records collected input consumption in the nullable
 `session_pending_inputs.consumed_event_id TEXT` column. Doctor and the feature's
 first-use initialization add it when needed; the schema version stays 19. The column
-shipped in 2026.8.2 ([#133457](https://github.com/paleoclaw/paleoclaw/pull/133457)),
+shipped in 2026.8.2 ([#133457](https://github.com/openclaw/openclaw/pull/133457)),
 so the supported beta upgrade runs Doctor from 2026.8.2 or newer. Intermediate builds that
 already validate the optional pending-input table may reject the added column
 despite sharing version 19. Consumed source receipts remain until their session
@@ -830,7 +830,7 @@ Complete skill bundles are product artifacts under `<state-dir>/skill-library/<s
 
 Removing a skill excludes it from future selections; existing sessions retain their selected revisions. Published history and complete orphan revisions are retained conservatively. Expired upload records are pruned when another upload begins; clearly abandoned staging directories are cleaned during later publication. Back up both the state databases and the skill-library directory, not just the current revision pointers.
 
-Older same-schema readers ignore the new tables but cannot provide managed-library selection or authoring. Keep the tables and bundle directory intact when changing builds; do not lower schema markers or delete revisions to disable the feature. The accepted storage and ownership decision is recorded in [the profile-owned skills design issue](https://github.com/paleoclaw/paleoclaw/issues/133602).
+Older same-schema readers ignore the new tables but cannot provide managed-library selection or authoring. Keep the tables and bundle directory intact when changing builds; do not lower schema markers or delete revisions to disable the feature. The accepted storage and ownership decision is recorded in [the profile-owned skills design issue](https://github.com/openclaw/openclaw/issues/133602).
 
 ## Declared migration backup scopes
 

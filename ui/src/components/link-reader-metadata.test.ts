@@ -12,7 +12,7 @@ import "./link-reader-panel.tsx";
 
 const tag = "test-reader-metadata-" + crypto.randomUUID();
 customElements.define(tag, class extends LinkReaderHovercardProvider {});
-const url = "https://github.com/paleoclaw/paleoclaw/pull/99816";
+const url = "https://github.com/openclaw/openclaw/pull/99816";
 const reader = {
   pluginId: "github",
   id: "items",

@@ -142,10 +142,10 @@ export function trustedMainPackageFixture({
     event: "workflow_dispatch",
     head_branch: workflowRef,
     head_sha: workflowSha,
-    html_url: `https://github.com/paleoclaw/paleoclaw/actions/runs/${runId}`,
+    html_url: `https://github.com/syxscott/PaleoClaw/actions/runs/${runId}`,
     id: Number(runId),
     path: parentPath,
-    repository: { full_name: "paleoclaw/paleoclaw" },
+    repository: { full_name: "syxscott/PaleoClaw" },
     run_attempt: 1,
     status: "completed",
   };
@@ -181,10 +181,10 @@ export function trustedMainPackageFixture({
     event: "workflow_dispatch",
     head_branch: workflowRef,
     head_sha: workflowSha,
-    html_url: `https://github.com/paleoclaw/paleoclaw/actions/runs/${childRunId}`,
+    html_url: `https://github.com/syxscott/PaleoClaw/actions/runs/${childRunId}`,
     id: Number(childRunId),
     path: ".github/workflows/paleoclaw-release-checks.yml",
-    repository: { full_name: "paleoclaw/paleoclaw" },
+    repository: { full_name: "syxscott/PaleoClaw" },
     run_attempt: 1,
     status: "completed",
     triggering_actor: { login: "github-actions[bot]" },
@@ -307,7 +307,7 @@ export function trustedMainFullFixture() {
       const index = jobs.findIndex((job) => job.id === jobId);
       const child = expectDefined(children[index], "dispatch child");
       const run = expectDefined(runs[index], "child run");
-      return `TARGET_SHA: ${fixture.targetSha}\n-f publish_reports=false\nDispatched ${child.workflow}: https://github.com/paleoclaw/paleoclaw/actions/runs/${run.id} (attempt 1)`;
+      return `TARGET_SHA: ${fixture.targetSha}\n-f publish_reports=false\nDispatched ${child.workflow}: https://github.com/syxscott/PaleoClaw/actions/runs/${run.id} (attempt 1)`;
     }),
     getParentJobs: vi.fn((runId: string) =>
       runId === fixture.runId
@@ -372,7 +372,7 @@ export function trustedMainNpmFixture(releaseProfile: "beta" | "stable" = "beta"
     evidenceReuse: { requested: false },
     expected: {
       candidateRequest: buildFullReleaseCandidateRequest({
-        repository: "paleoclaw/paleoclaw",
+        repository: "syxscott/PaleoClaw",
         targetSha: fixture.targetSha,
         toolingSha: fixture.workflowSha,
         releaseProfile,
@@ -387,7 +387,7 @@ export function trustedMainNpmFixture(releaseProfile: "beta" | "stable" = "beta"
       }),
       parentRunAttempt: 1,
       parentRunId: fixture.runId,
-      repository: "paleoclaw/paleoclaw",
+      repository: "syxscott/PaleoClaw",
       targetSha: fixture.targetSha,
       workflowRef: "main",
       workflowSha: fixture.workflowSha,
@@ -419,7 +419,7 @@ export function trustedMainNpmFixture(releaseProfile: "beta" | "stable" = "beta"
               jobs: composite.jobs,
               observedRunAttempts: [1],
               plannedRunAttempt: 1,
-              repository: "paleoclaw/paleoclaw",
+              repository: "syxscott/PaleoClaw",
               runId: child.runId,
               triggeringActor: "github-actions[bot]",
             },

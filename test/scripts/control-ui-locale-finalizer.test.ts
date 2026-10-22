@@ -92,7 +92,7 @@ it("keeps a canonical correction through catch-up", async () => {
 
 it.each([
   { repository: "fork/paleoclaw", ref: "refs/heads/main" },
-  { repository: "paleoclaw/paleoclaw", ref: "refs/heads/topic" },
+  { repository: "syxscott/PaleoClaw", ref: "refs/heads/topic" },
 ])("rejects provenance before effects: $repository $ref", async (provenance) => {
   const r = await harness.run({ ...provenance, publish: true });
   expect(r.states["resolve-base"]?.result).toBe("skipped");

@@ -29,7 +29,7 @@ it.each([
   const ghPath = path.join(tempDir, "gh");
   const fixturePath = path.join(tempDir, "content.json");
   const body = "synthetic private content\n";
-  const htmlUrl = "https://github.com/paleoclaw/paleoclaw/pull/123";
+  const htmlUrl = "https://github.com/openclaw/openclaw/pull/123";
   fs.writeFileSync(
     fixturePath,
     JSON.stringify({

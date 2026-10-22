@@ -41,10 +41,10 @@ const remoteSearchResult = {
   projects: [
     {
       name: "paleoclaw",
-      fullName: "paleoclaw/paleoclaw",
+      fullName: "syxscott/PaleoClaw",
       description: "Personal AI assistant",
-      cloneUrl: "https://github.com/paleoclaw/openclaw.git",
-      webUrl: "https://github.com/paleoclaw/paleoclaw",
+      cloneUrl: "https://github.com/syxscott/PaleoClaw.git",
+      webUrl: "https://github.com/syxscott/PaleoClaw",
       defaultBranch: "main",
       private: false,
     },
@@ -387,7 +387,7 @@ suite.define(() => {
 
       expect(await gateway.getRequests("projects.add")).toHaveLength(0);
       await pollLocatorText(trigger.locator(".new-session-page__trigger-label")).toBe(
-        "paleoclaw/paleoclaw",
+        "syxscott/PaleoClaw",
       );
       expect(await trigger.getAttribute("data-project-id")).toBeNull();
 
@@ -433,7 +433,7 @@ suite.define(() => {
         message,
         attachments: [{ type: "image", mimeType: "image/png", content: ONE_PIXEL_PNG_B64 }],
         permissionMode: "read-only",
-        projectGitUrl: "https://github.com/paleoclaw/openclaw.git",
+        projectGitUrl: "https://github.com/syxscott/PaleoClaw.git",
         ...(worktree ? { worktree: true } : {}),
       });
       if (missingCheckout) {

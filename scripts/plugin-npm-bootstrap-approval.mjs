@@ -9,7 +9,7 @@ export function createStablePluginNpmBootstrapApproval(input) {
     throw new Error(eligibility.message);
   }
   if (
-    input.repository !== "paleoclaw/paleoclaw" ||
+    input.repository !== "syxscott/PaleoClaw" ||
     !SHA.test(input.targetSha ?? "") ||
     !SHA.test(input.parentWorkflowSha ?? "") ||
     !new RegExp(`^release-publish/${input.parentWorkflowSha.slice(0, 12)}-[1-9][0-9]*$`, "u").test(

@@ -2,10 +2,10 @@ import { expect, it } from "vitest";
 import { verifyPriorCiCancellation } from "../../scripts/pr-lib/merge-prior-ci-cancellation.mjs";
 
 const attemptAwareFailFast =
-  "${{ github.event_name == 'pull_request' && (github.run_attempt != 1 || github.repository != 'paleoclaw/paleoclaw') }}";
+  "${{ github.event_name == 'pull_request' && (github.run_attempt != 1 || github.repository != 'syxscott/PaleoClaw') }}";
 
 const repositoryScopedFailFast =
-  "${{ github.event_name == 'pull_request' && github.repository != 'paleoclaw/paleoclaw' }}";
+  "${{ github.event_name == 'pull_request' && github.repository != 'syxscott/PaleoClaw' }}";
 
 function qualify(run: Record<string, unknown>, failFast: string | boolean = attemptAwareFailFast) {
   const failed = { id: 1, name: "failed", conclusion: "failure", steps: [] };
@@ -51,16 +51,16 @@ function qualify(run: Record<string, unknown>, failFast: string | boolean = atte
 }
 
 it.each([
-  ["historical canonical rerun", attemptAwareFailFast, 2, "paleoclaw/paleoclaw", true],
-  ["scoped canonical rerun", repositoryScopedFailFast, 2, "paleoclaw/paleoclaw", false],
-  ["historical canonical first attempt", attemptAwareFailFast, 1, "paleoclaw/paleoclaw", false],
+  ["historical canonical rerun", attemptAwareFailFast, 2, "syxscott/PaleoClaw", true],
+  ["scoped canonical rerun", repositoryScopedFailFast, 2, "syxscott/PaleoClaw", false],
+  ["historical canonical first attempt", attemptAwareFailFast, 1, "syxscott/PaleoClaw", false],
   ["historical fork first attempt", attemptAwareFailFast, 1, "example/paleoclaw", true],
   ["scoped fork first attempt", repositoryScopedFailFast, 1, "example/paleoclaw", true],
   ["missing attempt", attemptAwareFailFast, undefined, "example/paleoclaw", false],
   ["zero attempt", attemptAwareFailFast, 0, "example/paleoclaw", false],
   ["missing repository", attemptAwareFailFast, 2, undefined, false],
   ["malformed repository", attemptAwareFailFast, 2, "paleoclaw", false],
-  ["arbitrary expression", "${{ github.run_attempt > 1 }}", 2, "paleoclaw/paleoclaw", false],
+  ["arbitrary expression", "${{ github.run_attempt > 1 }}", 2, "syxscott/PaleoClaw", false],
 ] as const)("qualifies %s", (_name, expression, attempt, repository, accepted) => {
   const invoke = () =>
     qualify(

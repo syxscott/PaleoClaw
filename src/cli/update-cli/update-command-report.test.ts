@@ -22,8 +22,8 @@ vi.mock("../../infra/update-failure-report.js", () => ({
 vi.mock("../../infra/update-run-ledger.js", () => ({ getUpdateRun: mocks.getUpdateRun }));
 
 const tempDirs = useAutoCleanupTempDirTracker(afterEach);
-const issueUrl = "https://github.com/paleoclaw/paleoclaw/issues/123";
-const reportUrl = "https://github.com/paleoclaw/paleoclaw/issues/new";
+const issueUrl = "https://github.com/openclaw/openclaw/issues/123";
+const reportUrl = "https://github.com/syxscott/PaleoClaw/issues/new";
 type Action = "triage" | "report" | "dismiss";
 
 function setup(actions: Action[] = ["report"], confirmed = true) {

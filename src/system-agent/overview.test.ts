@@ -62,7 +62,7 @@ it("summarizes config, agents, model, tools, and gateway", async () => {
   expect(overview.agents.map((agent) => agent.id)).toEqual(["main", "work"]);
   expect(overview.tools.apiKeys).toEqual({ openai: false, anthropic: false });
   expect(overview.references.docsPath).toMatch(/docs$/);
-  expect(overview.references.sourceUrl).toBe("https://github.com/paleoclaw/paleoclaw");
+  expect(overview.references.sourceUrl).toBe("https://github.com/syxscott/PaleoClaw");
   expect(formatOverview(overview)).toContain('Next: run "gateway status" or "restart gateway"');
   const startup = formatSystemAgentStartupMessage(overview);
   expect(startup).toContain("Hi, I'm paleoclaw — caretaker");
@@ -147,7 +147,7 @@ it("fails closed in startup copy when inference is unavailable", () => {
     config: { path: "/tmp/openclaw.json", exists: true, valid: true, issues: [], hash: null },
     references: {
       docsUrl: "https://docs.openclaw.ai",
-      sourceUrl: "https://github.com/paleoclaw/paleoclaw",
+      sourceUrl: "https://github.com/syxscott/PaleoClaw",
     },
     agents: [{ id: "main", isDefault: true }],
     defaultAgentId: "main",

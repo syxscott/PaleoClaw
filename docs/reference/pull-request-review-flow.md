@@ -222,10 +222,10 @@ the last bot comment.
 
 Projects that want similar review automation can study or fork ClawSweeper:
 
-- [paleoclaw/clawsweeper](https://github.com/paleoclaw/clawsweeper)
+- [paleoclaw/clawsweeper](https://github.com/openclaw/clawsweeper)
 - [ClawSweeper docs](https://clawsweeper.bot/)
 
 ## Related
 
-- [Contributing](https://github.com/paleoclaw/paleoclaw/blob/main/CONTRIBUTING.md)
+- [Contributing](https://github.com/syxscott/PaleoClaw/blob/main/CONTRIBUTING.md)
 - [CI pipeline](/ci)

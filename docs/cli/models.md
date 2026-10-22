@@ -255,7 +255,7 @@ is disabled.
 
 See [Hosted catalog updates](/concepts/models#hosted-catalog-updates) for the
 update lifecycle. The public change history is in
-[`paleoclaw/catalog`](https://github.com/paleoclaw/catalog).
+[`paleoclaw/catalog`](https://github.com/openclaw/catalog).
 
 ### Set default / image model
 

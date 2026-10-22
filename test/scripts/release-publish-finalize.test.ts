@@ -67,7 +67,7 @@ for (const line of route[1]) console.log(line);
     PATH: `${bin}:${process.env.PATH}`,
     RUNNER_TEMP: root,
     GITHUB_STEP_SUMMARY: join(root, "summary"),
-    GITHUB_REPOSITORY: "paleoclaw/paleoclaw",
+    GITHUB_REPOSITORY: "syxscott/PaleoClaw",
     GITHUB_REF_NAME: "main",
     GITHUB_REF: "refs/heads/main",
     GITHUB_WORKFLOW_SHA: "a".repeat(40),

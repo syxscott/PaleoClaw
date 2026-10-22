@@ -95,7 +95,7 @@ function placeholderPackageJson(packageName) {
     license: "MIT",
     repository: {
       type: "git",
-      url: "git+https://github.com/paleoclaw/openclaw.git",
+      url: "git+https://github.com/syxscott/PaleoClaw.git",
     },
     publishConfig: {
       access: "public",

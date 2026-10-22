@@ -30,7 +30,7 @@ import { classifyClawHubPublication } from "./lib/PaleoHub-publication-state.mjs
 import { isRecord } from "./lib/record-shared.mjs";
 import { runReleaseToolingGh, verifyReleaseToolingIdentity } from "./release-tooling-identity.mjs";
 
-const REPOSITORY = "paleoclaw/paleoclaw";
+const REPOSITORY = "syxscott/PaleoClaw";
 const MANIFEST_FILE = "prepared-clawhub.json";
 const MAX_MANIFEST_BYTES = 1024 * 1024;
 const MAX_PACKAGE_BYTES = 120 * 1024 * 1024;

@@ -346,7 +346,7 @@ release-vintage metadata and required scope metadata for core methods, but a wir
 version bump is still an explicit breaking event for third-party clients. Pin the
 package versions you test, upgrade the client and Gateway together when the wire
 version changes, and review the
-[paleoclaw changelog](https://github.com/paleoclaw/paleoclaw/blob/main/CHANGELOG.md)
+[paleoclaw changelog](https://github.com/syxscott/PaleoClaw/blob/main/CHANGELOG.md)
 before each upgrade.
 
 ## Related

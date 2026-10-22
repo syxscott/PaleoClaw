@@ -9,7 +9,7 @@ sidebarTitle: "Build and develop"
 
 Contributor notes for building the Control UI and running it against a Gateway you choose.
 
-Every command on this page runs from a checkout of the `paleoclaw/paleoclaw`
+Every command on this page runs from a checkout of the `syxscott/PaleoClaw`
 repository with `pnpm install` already done. A packaged CLI install has no
 `pnpm` scripts.
 

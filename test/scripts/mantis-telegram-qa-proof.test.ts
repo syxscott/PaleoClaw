@@ -50,7 +50,7 @@ it("skips only an uncreated network and preserves genuine removal failures", asy
 
 const identity = requestIdentitySchema.parse({
   request_id: "a".repeat(64),
-  repository: { id: "123", full_name: "paleoclaw/paleoclaw" },
+  repository: { id: "123", full_name: "syxscott/PaleoClaw" },
   pull_request: 42,
   candidate_sha: "b".repeat(40),
   scenario: telegramQaScenario,
@@ -185,7 +185,7 @@ it.each([
     return Response.json(response());
   };
   const admission = assertRequestWorkflowRef({
-    repository: "paleoclaw/paleoclaw",
+    repository: "syxscott/PaleoClaw",
     ref: ["main", "advanced-main", "wrong-main-base"].includes(fault)
       ? "refs/heads/main"
       : "refs/heads/qa-proof",

@@ -23,7 +23,7 @@ jobs:
   dependencies:
     # Shared CI cache publication is isolated from pull-request execution.
     # Trusted release/proof workflows may save only through the same authority contract.
-    if: ${{ github.repository == 'paleoclaw/paleoclaw' && github.ref == 'refs/heads/main' && (github.event_name != 'push' || vars.OPENCLAW_CI_ON_PUSH == 'true') }}
+    if: ${{ github.repository == 'syxscott/PaleoClaw' && github.ref == 'refs/heads/main' && (github.event_name != 'push' || vars.OPENCLAW_CI_ON_PUSH == 'true') }}
     runs-on: ${{ matrix.platform == 'macos' && 'xcode-27' || ((matrix.platform == 'linux-hosted' || vars.OPENCLAW_CI_RUNNER_BACKEND == 'github') && 'ubuntu-24.04' || 'blacksmith-8vcpu-ubuntu-2404') }}
     timeout-minutes: 20
     concurrency:
@@ -87,7 +87,7 @@ jobs:
           cache-mode: read-write
 
   warm:
-    if: ${{ github.repository == 'paleoclaw/paleoclaw' && github.ref == 'refs/heads/main' && (github.event_name != 'push' || vars.OPENCLAW_CI_ON_PUSH == 'true') }}
+    if: ${{ github.repository == 'syxscott/PaleoClaw' && github.ref == 'refs/heads/main' && (github.event_name != 'push' || vars.OPENCLAW_CI_ON_PUSH == 'true') }}
     runs-on: ${{ (matrix.platform == 'linux-hosted' || vars.OPENCLAW_CI_RUNNER_BACKEND == 'github') && 'ubuntu-24.04' || 'blacksmith-8vcpu-ubuntu-2404' }}
     timeout-minutes: 60
     concurrency:

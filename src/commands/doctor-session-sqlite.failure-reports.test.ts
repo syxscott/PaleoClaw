@@ -392,7 +392,7 @@ describe("runDoctorSessionSqlite", () => {
       ).toMatchObject({ issue: { ...issue, status: "attempted" }, status: "existing" });
       const receiptJson = fs.readFileSync(manifestPath, "utf8");
       expect(receiptJson).not.toContain(`stable sanitized report v${manifestVersion}`);
-      expect(receiptJson).not.toContain("github.com/paleoclaw/paleoclaw/issues/");
+      expect(receiptJson).not.toContain("github.com/syxscott/PaleoClaw/issues/");
       expect(receiptJson).not.toContain("paleoclaw doctor");
       expect(receiptJson).not.toContain('"body"');
       expect(receiptJson).not.toContain("?body=");

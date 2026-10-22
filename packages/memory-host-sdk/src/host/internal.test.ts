@@ -707,7 +707,7 @@ describe("memory host SDK package internals", () => {
   it("strips recall annotation carriers while preserving source line positions", () => {
     const text = [
       "- Keep the gateway local. <!-- trigger: gateway setup --> <!-- importance: 9 -->",
-      "  <!-- project: github.com/paleoclaw/paleoclaw -->",
+      "  <!-- project: github.com/syxscott/PaleoClaw -->",
       "  Keep this ordinary <!-- note: visible --> comment.",
     ].join("\n");
 

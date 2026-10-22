@@ -130,7 +130,7 @@ describe("update protocol schemas", () => {
       Value.Check(UpdateReportResultSchema, {
         status: "created",
         message: "Local receipt persistence failed; do not submit again.",
-        url: "https://github.com/paleoclaw/paleoclaw/issues/123",
+        url: "https://github.com/openclaw/openclaw/issues/123",
       }),
     ).toBe(true);
     expect(

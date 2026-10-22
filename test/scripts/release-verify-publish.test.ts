@@ -148,7 +148,7 @@ verify_published_release
     PARENT_WORKFLOW_SHA: workflowSha,
     RELEASE_TAG: `v${version}`,
     POSTPUBLISH_EVIDENCE_DIR: join(root, "evidence"),
-    GITHUB_REPOSITORY: "paleoclaw/paleoclaw",
+    GITHUB_REPOSITORY: "syxscott/PaleoClaw",
     TARGET_SHA: sourceSha,
     CHILD_WORKFLOW_REF: "main",
     RELEASE_NPM_DIST_TAG: "beta",

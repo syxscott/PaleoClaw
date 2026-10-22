@@ -74,7 +74,7 @@ test("sessions.dispatch admits the runtime offered after a repository child's pa
     {
       key: childKey,
       parentSessionKey: parentKey,
-      repository: { url: "https://github.com/paleoclaw/paleoclaw" },
+      repository: { url: "https://github.com/syxscott/PaleoClaw" },
     },
     { client },
   );

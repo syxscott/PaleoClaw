@@ -16,7 +16,7 @@ import { createApplicationOverlays } from "./overlays.ts";
 import { updateRunHarness } from "./update-run.test-support.ts";
 
 const NATIVE_UPDATE_DECLINED_EVENT = "paleoclaw:native-update-declined";
-const githubUrl = "https://github.com/paleoclaw/paleoclaw/issues/102691";
+const githubUrl = "https://github.com/openclaw/openclaw/issues/102691";
 const reportUrl = "https://example.com/report";
 const previewTitle = "Open links in a sidebar browser";
 const menuTag = "paleoclaw-native-link-menu";

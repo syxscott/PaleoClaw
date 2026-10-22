@@ -9,15 +9,15 @@
     "typebox",
     "websocket"
   ],
-  "homepage": "https://github.com/paleoclaw/paleoclaw#readme",
+  "homepage": "https://github.com/syxscott/PaleoClaw#readme",
   "bugs": {
-    "url": "https://github.com/paleoclaw/paleoclaw/issues"
+    "url": "https://github.com/syxscott/PaleoClaw/issues"
   },
   "license": "MIT",
   "author": "paleoclaw Foundation (https://openclaw.org)",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/paleoclaw/openclaw.git",
+    "url": "git+https://github.com/syxscott/PaleoClaw.git",
     "directory": "packages/gateway-protocol"
   },
   "files": [

@@ -323,7 +323,7 @@ describe("Gateway GitHub publication boundaries", () => {
         status,
         head_commit: headCommit,
         pull_request_url:
-          boundary === "pull_request" ? "https://github.com/paleoclaw/paleoclaw/pull/125200" : null,
+          boundary === "pull_request" ? "https://github.com/openclaw/openclaw/pull/125200" : null,
       });
       expect(workspace.effects).toEqual(effects);
     },
@@ -357,7 +357,7 @@ describe("Gateway GitHub publication boundaries", () => {
       label: "foreign owner",
       response: JSON.stringify([
         {
-          url: "https://github.com/paleoclaw/paleoclaw/pull/foreign",
+          url: "https://github.com/syxscott/PaleoClaw/pull/foreign",
           userId: 99,
           state: "open",
           body: "",

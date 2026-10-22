@@ -12,7 +12,7 @@ import {
 } from "../state-contract.js";
 
 // Legacy opt-in catchup replays missed chat.db rows through the live inbound
-// evaluation and dispatch path (paleoclaw/paleoclaw#78649).
+// evaluation and dispatch path (syxscott/PaleoClaw#78649).
 
 const DEFAULT_MAX_AGE_MINUTES = 120;
 const MAX_MAX_AGE_MINUTES = 12 * 60;

@@ -367,7 +367,7 @@ jobs:
                 echo "- \`${package_name}\`"
               done <<< "$created"
               echo
-              echo "Configure each package's trusted publisher for repository \`paleoclaw/paleoclaw\`, workflow \`plugin-npm-release.yml\`, and environment \`npm-publish\`."
+              echo "Configure each package's trusted publisher for repository \`syxscott/PaleoClaw\`, workflow \`plugin-npm-release.yml\`, and environment \`npm-publish\`."
             else
               echo "- None."
             fi

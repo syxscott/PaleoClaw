@@ -17,7 +17,7 @@ import { useAutoCleanupTempDirTracker } from "../helpers/temp-dir.js";
 const tempDirs = useAutoCleanupTempDirTracker(afterEach);
 const sha = "a".repeat(40);
 const targetSha = "b".repeat(40);
-const repository = "paleoclaw/paleoclaw";
+const repository = "syxscott/PaleoClaw";
 const workflow = ".github/workflows/paleoclaw-release-publish.yml";
 const artifactName = "paleoclaw-release-approval-v1-10-2";
 const approvalJob = "Publish plugins, then paleoclaw";

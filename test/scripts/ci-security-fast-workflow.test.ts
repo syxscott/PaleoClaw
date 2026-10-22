@@ -182,7 +182,7 @@ it.each([false, true])(
       expect(
         evaluateWorkflowCondition(expectDefined(securityStep(name).if, "scanner condition"), {
           eventName: "pull_request",
-          repository: "paleoclaw/paleoclaw",
+          repository: "syxscott/PaleoClaw",
           runAttempt: 1,
           failed: true,
           steps: {
@@ -217,7 +217,7 @@ it.each(["pull_request", "push", "schedule", "workflow_dispatch"] as const)(
           eventName,
           dispatchId,
           steps: { node_setup: { outputs: {}, outcome: "success" } },
-          repository: "paleoclaw/paleoclaw",
+          repository: "syxscott/PaleoClaw",
           runAttempt: 1,
         }),
         `${eventName}: ${dispatchId}`,

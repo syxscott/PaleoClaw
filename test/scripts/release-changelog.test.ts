@@ -176,7 +176,7 @@ describe("release docs mirrors", () => {
 
   it("retains prose, credits, tables, images and code while flattening wrappers and links", () => {
     const preserved = [
-      "- Exact credit [#42](https://github.com/paleoclaw/paleoclaw/pull/42). Thanks @alice, @steipete.",
+      "- Exact credit [#42](https://github.com/openclaw/openclaw/pull/42). Thanks @alice, @steipete.",
       "| A | B |\n| --- | --- |\n| exact | cells |",
       '```md\n<Accordion title="example">\n[local](/do-not-change)\n```',
       "`<Widget> [inline](/unchanged)` and `<Note>\n[split](/unchanged) </Note>`.",
@@ -223,7 +223,7 @@ describe("release docs mirrors", () => {
       '  <details class="release-source-inline release-source-toggle" id="first">',
       "  <summary>More details</summary>",
       "",
-      "  [#42](https://github.com/paleoclaw/paleoclaw/pull/42). Thanks to [@alice](https://github.com/alice).",
+      "  [#42](https://github.com/openclaw/openclaw/pull/42). Thanks to [@alice](https://github.com/alice).",
       "",
       "  </details>",
       "",
@@ -253,7 +253,7 @@ describe("release docs mirrors", () => {
         "#### Messaging",
         "",
         "- First reader-facing fix.",
-        "  [#42](https://github.com/paleoclaw/paleoclaw/pull/42). Thanks to [@alice](https://github.com/alice).",
+        "  [#42](https://github.com/openclaw/openclaw/pull/42). Thanks to [@alice](https://github.com/alice).",
         "- Second reader-facing fix.",
         "  [Guide](https://docs.openclaw.ai/channels/example) and `literal` remain in order.",
         "",

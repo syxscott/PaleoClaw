@@ -108,11 +108,11 @@ not a compatibility window that was offered to plugin authors.
 | `provider-auth.resolveCopilotApiToken`                         | 2026-10-02   | 2026-10-01    | Provider-local GitHub Copilot auth APIs; none in the public SDK.                                      |
 
 The first six exports were removed in
-[`2fec39f57319be5b6e0b20b5305665ed1ff5e685`](https://github.com/paleoclaw/paleoclaw/commit/2fec39f57319be5b6e0b20b5305665ed1ff5e685).
+[`2fec39f57319be5b6e0b20b5305665ed1ff5e685`](https://github.com/syxscott/PaleoClaw/commit/2fec39f57319be5b6e0b20b5305665ed1ff5e685).
 The four legacy JSON migration exports were removed in
-[`bd64d93ff1ae704d13813f6580c4809ba0e76606`](https://github.com/paleoclaw/paleoclaw/commit/bd64d93ff1ae704d13813f6580c4809ba0e76606).
+[`bd64d93ff1ae704d13813f6580c4809ba0e76606`](https://github.com/syxscott/PaleoClaw/commit/bd64d93ff1ae704d13813f6580c4809ba0e76606).
 The four Copilot exports and their earlier deprecation entries were removed in
-[`f2de06b38de710854aacd19218327358445816c8`](https://github.com/paleoclaw/paleoclaw/commit/f2de06b38de710854aacd19218327358445816c8);
+[`f2de06b38de710854aacd19218327358445816c8`](https://github.com/syxscott/PaleoClaw/commit/f2de06b38de710854aacd19218327358445816c8);
 third-party plugins must own their provider-specific token exchange and caching.
 
 ### Reply silence parsing

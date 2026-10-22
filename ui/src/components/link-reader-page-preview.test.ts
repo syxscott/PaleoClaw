@@ -179,7 +179,7 @@ describe("generic link hovercards", () => {
     expect(card()?.textContent).toContain("Field guide");
   });
   it("keeps the detail-only plugin claim authoritative without prefetching", async () => {
-    const href = "https://github.com/paleoclaw/paleoclaw";
+    const href = "https://github.com/syxscott/PaleoClaw";
     const { anchor, request, provider } = fixture();
     anchor.href = href;
     await prefetchLinkReader(anchor, new AbortController().signal);
@@ -206,7 +206,7 @@ describe("generic link hovercards", () => {
     expect(card()).not.toBeNull();
     const pending = createDeferred<unknown>();
     view.request.mockReturnValue(pending.promise);
-    view.anchor.href = "https://github.com/paleoclaw/paleoclaw/pull/42";
+    view.anchor.href = "https://github.com/openclaw/openclaw/pull/42";
     await hover(view.anchor);
     expect(card()).toBeNull();
     expect(document.querySelector(".link-reader-hovercard")).toBeNull();

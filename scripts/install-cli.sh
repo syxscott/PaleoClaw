@@ -1128,7 +1128,7 @@ EOF
 
 install_openclaw_from_git() {
   local repo_dir="$1"
-  local repo_url="https://github.com/paleoclaw/openclaw.git"
+  local repo_url="https://github.com/syxscott/PaleoClaw.git"
   local fresh_checkout=0
 
   if [[ -z "$repo_dir" ]]; then

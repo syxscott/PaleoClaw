@@ -270,12 +270,12 @@ async function prepareAndUpload(root, platform, recovery, releaseArgs, destinati
       process.env.GITHUB_EVENT_NAME === "schedule";
     if (
       !eventAllowed ||
-      process.env.GITHUB_REPOSITORY !== "paleoclaw/paleoclaw" ||
+      process.env.GITHUB_REPOSITORY !== "syxscott/PaleoClaw" ||
       process.env.GITHUB_REF !== "refs/heads/main" ||
       sourceSha !== process.env.GITHUB_SHA
     ) {
       throw new Error(
-        "CI releases require the exact workflow_dispatch or schedule commit on paleoclaw/paleoclaw main.",
+        "CI releases require the exact workflow_dispatch or schedule commit on syxscott/PaleoClaw main.",
       );
     }
   } else if (git(root, "branch", "--show-current") !== "main") {

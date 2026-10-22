@@ -186,8 +186,8 @@ describe("buildPromptSection", () => {
         projectKey,
       }).join("\n");
 
-    expect(prompt("github.com/paleoclaw/paleoclaw")).toContain(
-      "<!-- project: github.com/paleoclaw/paleoclaw -->",
+    expect(prompt("github.com/syxscott/PaleoClaw")).toContain(
+      "<!-- project: github.com/syxscott/PaleoClaw -->",
     );
     for (const projectKey of [undefined, "path:/tmp/unsafe-->note", "path:/tmp/a\nb"]) {
       expect(prompt(projectKey)).not.toContain("<!-- project:");
@@ -206,10 +206,10 @@ describe("buildPromptSection", () => {
     }).promptBuilder({
       availableTools: new Set(["memory_search", "memory_get"]),
       agentId: "main",
-      projectKey: "github.com/paleoclaw/paleoclaw",
+      projectKey: "github.com/syxscott/PaleoClaw",
     });
 
-    expect(prompt.join("\n")).toContain("<!-- project: github.com/paleoclaw/paleoclaw -->");
+    expect(prompt.join("\n")).toContain("<!-- project: github.com/syxscott/PaleoClaw -->");
   });
 
   it("describes the two-step flow when both memory tools are available", () => {

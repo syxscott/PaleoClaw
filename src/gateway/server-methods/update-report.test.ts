@@ -93,7 +93,7 @@ describe("update.report", () => {
       previewDigest: "a".repeat(64),
       savedReportPath: "/tmp/report.md",
       title: "Update failure",
-      url: "https://github.com/paleoclaw/paleoclaw/issues/new",
+      url: "https://github.com/syxscott/PaleoClaw/issues/new",
     });
     mocks.submit.mockImplementation(async (...args: unknown[]) => {
       const options = args[2] as {
@@ -113,7 +113,7 @@ describe("update.report", () => {
       return {
         savedReportPath: "/tmp/report.md",
         status: "created",
-        url: "https://github.com/paleoclaw/paleoclaw/issues/123",
+        url: "https://github.com/openclaw/openclaw/issues/123",
       };
     });
   });
@@ -243,7 +243,7 @@ describe("update.report", () => {
         previewDigest: "a".repeat(64),
         savedReportPath: "/tmp/report.md",
         title: "Update failure",
-        url: "https://github.com/paleoclaw/paleoclaw/issues/new",
+        url: "https://github.com/syxscott/PaleoClaw/issues/new",
       };
     });
 

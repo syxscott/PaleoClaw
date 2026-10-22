@@ -365,7 +365,7 @@ suite.define(() => {
         const body =
           "# paleoclaw update failure report\n\nFailed phase: build\nNo private logs are included.";
         const title = "Update failure: build-failed";
-        const fallbackUrl = `https://github.com/paleoclaw/paleoclaw/issues/new?${new URLSearchParams({ body, title })}`;
+        const fallbackUrl = `https://github.com/syxscott/PaleoClaw/issues/new?${new URLSearchParams({ body, title })}`;
         const config = { update: { auto: { enabled: false }, channel: "stable" } };
         const gateway = await installMockGateway(page, {
           authMethod: "trusted-proxy",

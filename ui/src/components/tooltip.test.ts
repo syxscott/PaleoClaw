@@ -776,7 +776,7 @@ describe("title tooltips", () => {
       );
       const wrapper = document.createElement("div");
       const link = document.createElement("a");
-      link.href = "https://github.com/paleoclaw/paleoclaw/pull/99816";
+      link.href = "https://github.com/openclaw/openclaw/pull/99816";
       link.title = "Pull request details";
       link.textContent = "#99816";
       wrapper.append(link);
@@ -807,7 +807,7 @@ describe("title tooltips", () => {
       await commitTooltip(document.querySelector<TooltipElement>("paleoclaw-tooltip")!);
       await vi.advanceTimersByTimeAsync(200);
       await expectOpenCount(1);
-      expect(link.href).toBe("https://github.com/paleoclaw/paleoclaw/pull/99816");
+      expect(link.href).toBe("https://github.com/openclaw/openclaw/pull/99816");
     },
   );
 
@@ -818,7 +818,7 @@ describe("title tooltips", () => {
       document.createElement("paleoclaw-link-reader-hovercard-provider"),
     );
     const link = document.createElement("a");
-    link.href = "https://github.com/paleoclaw/paleoclaw/pull/99816";
+    link.href = "https://github.com/openclaw/openclaw/pull/99816";
     link.textContent = "#99816";
     const control = document.createElement("button");
     control.textContent = "Ordinary control";
@@ -860,13 +860,13 @@ describe("title tooltips", () => {
     dispatchMousePointer(label, "pointerover");
     await vi.advanceTimersByTimeAsync(200);
     await expectOpenCount(1);
-    link.href = "https://github.com/paleoclaw/paleoclaw/pull/99816?plain=1#issuecomment-7";
+    link.href = "https://github.com/openclaw/openclaw/pull/99816?plain=1#issuecomment-7";
     await vi.advanceTimersByTimeAsync(200);
     await expectOpenCount(0);
     expect(label.title).toBe("");
     expect(link.hasAttribute("aria-expanded")).toBe(false);
     expect(link.href).toBe(
-      "https://github.com/paleoclaw/paleoclaw/pull/99816?plain=1#issuecomment-7",
+      "https://github.com/openclaw/openclaw/pull/99816?plain=1#issuecomment-7",
     );
     link.href = "https://example.com/item";
     dispatchMousePointer(label, "pointerleave");

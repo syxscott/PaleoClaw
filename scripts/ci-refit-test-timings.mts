@@ -61,7 +61,7 @@ async function main() {
     options: {
       runs: { type: "string", default: "5" },
       "tooling-run": { type: "string", multiple: true },
-      repo: { type: "string", default: "paleoclaw/paleoclaw" },
+      repo: { type: "string", default: "syxscott/PaleoClaw" },
       "dry-run": { type: "boolean", default: false },
       out: {
         type: "string",

@@ -21,7 +21,7 @@ import {
 } from "./pipeline.js";
 
 const githubCommit = "430f975aacee445525c4663aa88ed1590f2f08b1";
-const githubBlob = `https://github.com/paleoclaw/paleoclaw/blob/${githubCommit}/.agents/skills/paleoclaw-pr-maintainer/SKILL.md#review-and-publish`;
+const githubBlob = `https://github.com/syxscott/PaleoClaw/blob/${githubCommit}/.agents/skills/paleoclaw-pr-maintainer/SKILL.md#review-and-publish`;
 
 const now = 1_752_300_000;
 const auditKey = Uint8Array.from({ length: 32 }, (_, index) => index + 1);
@@ -199,7 +199,7 @@ describe("pipeline", () => {
     },
   );
 
-  it.each([`Tree: https://github.com/paleoclaw/paleoclaw/tree/${githubCommit}/.agents`])(
+  it.each([`Tree: https://github.com/syxscott/PaleoClaw/tree/${githubCommit}/.agents`])(
     "accepts and deduplicates an authenticated inbound envelope: %s",
     async (text) => {
       const { inbound: receiveOptions } = identities();

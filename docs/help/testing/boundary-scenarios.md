@@ -10,8 +10,8 @@ read_when:
 
 Use focused integration tests through production owners with fixed external I/O
 fixtures. Keep independent unit contracts. Apply the
-[test value gate](https://github.com/paleoclaw/paleoclaw/blob/main/.agents/skills/test-audit/SKILL.md)
-and [proof policy](https://github.com/paleoclaw/paleoclaw/blob/main/.agents/skills/paleoclaw-testing/SKILL.md#proof-policy).
+[test value gate](https://github.com/syxscott/PaleoClaw/blob/main/.agents/skills/test-audit/SKILL.md)
+and [proof policy](https://github.com/syxscott/PaleoClaw/blob/main/.agents/skills/paleoclaw-testing/SKILL.md#proof-policy).
 
 - Name the caller-visible contract, credible regression, and proof limits. Use
   independent expected values and the caller's interface. Exact bytes, storage,

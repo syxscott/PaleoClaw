@@ -58,7 +58,7 @@ describe("pull request renderer loading", () => {
     ready.resolve();
     await waitForSolid(() =>
       expect(view.container.querySelector(".chat-pr__number")?.textContent).toBe(
-        "paleoclaw/paleoclaw#42",
+        "syxscott/PaleoClaw#42",
       ),
     );
     const row = view.container.querySelector(".chat-pr");
@@ -88,7 +88,7 @@ describe("pull request renderer loading", () => {
     view.getByRole("button", { name: "Retry" }).click();
     await waitForSolid(() =>
       expect(view.container.querySelector(".chat-pr__number")?.textContent).toBe(
-        "paleoclaw/paleoclaw#103469",
+        "syxscott/PaleoClaw#103469",
       ),
     );
   });

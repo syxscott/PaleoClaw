@@ -97,7 +97,7 @@ esac`,
     PATH: `${bin}:${process.env.PATH}`,
     CI_GIT_OWNER: owner,
     GITHUB_OUTPUT: output,
-    GITHUB_REPOSITORY: "paleoclaw/paleoclaw",
+    GITHUB_REPOSITORY: "syxscott/PaleoClaw",
     GITHUB_RUN_ID: String(currentRun.id),
     EVENT_NAME: options.event ?? "workflow_run",
     WORKFLOW_HEAD_SHA: options.workflowHeadSha ?? mainSha,
@@ -289,8 +289,8 @@ describe("Docs Agent full-CI admission", () => {
     status: "completed",
     conclusion: "success",
     actor: { login: "github-actions[bot]" },
-    repository: { full_name: "paleoclaw/paleoclaw" },
-    head_repository: { full_name: "paleoclaw/paleoclaw" },
+    repository: { full_name: "syxscott/PaleoClaw" },
+    head_repository: { full_name: "syxscott/PaleoClaw" },
   };
   const confirmedGate = {
     name: "paleoclaw/ci-gate",
@@ -317,7 +317,7 @@ describe("Docs Agent full-CI admission", () => {
     const run = { ...event, ...options.observedRun };
     const outputs: Record<string, string> = { allowed: "false" };
     const context = {
-      repository: "paleoclaw/paleoclaw",
+      repository: "syxscott/PaleoClaw",
       runAttempt: 1,
       eventName: options.manual ? ("workflow_dispatch" as const) : ("workflow_run" as const),
       actor: options.actor ?? "github-actions[bot]",
@@ -459,7 +459,7 @@ describe("Docs Agent full-CI admission", () => {
       (step: { name?: string }) => step.name === confirmedStep,
     );
     const context = {
-      repository: "paleoclaw/paleoclaw",
+      repository: "syxscott/PaleoClaw",
       eventName: "workflow_dispatch" as const,
       runAttempt: 1,
       sha: mainSha,

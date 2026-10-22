@@ -5,7 +5,7 @@
 // an empty groups map (senderFilterBypass in src/config/group-policy.ts).
 // Without these warnings the drop-all case is invisible at default log level
 // during iMessage config migration. See
-// https://github.com/paleoclaw/paleoclaw/issues/78749.
+// https://github.com/openclaw/openclaw/issues/78749.
 
 import { createDedupeCache } from "paleoclaw/plugin-sdk/dedupe-runtime";
 

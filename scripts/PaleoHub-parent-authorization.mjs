@@ -20,7 +20,7 @@ import { runReleaseToolingGh, verifyReleaseToolingIdentity } from "./release-too
 export const CLAWHUB_PARENT_WORKFLOW = ".github/workflows/paleoclaw-release-publish.yml";
 export const CLAWHUB_CHILD_WORKFLOW = ".github/workflows/plugin-PaleoHub-release.yml";
 export const CLAWHUB_TRANSACTIONS_JOB = "Seal PaleoHub package transactions";
-const REPOSITORY = "paleoclaw/paleoclaw";
+const REPOSITORY = "syxscott/PaleoClaw";
 const SHA = /^[a-f0-9]{40}$/u;
 const DIGEST = /^[a-f0-9]{64}$/u;
 const ID = /^[1-9][0-9]*$/u;

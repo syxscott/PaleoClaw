@@ -40,6 +40,6 @@ these docs contain the same notes in flat Markdown. Earlier releases retain
 their original changelogs. Complete contribution records remain available
 separately where recorded.
 
-- [GitHub releases](https://github.com/paleoclaw/paleoclaw/releases)
-- [Changelog index](https://github.com/paleoclaw/paleoclaw/blob/main/CHANGELOG.md)
-- [Contribution records](https://github.com/paleoclaw/paleoclaw/tree/main/CHANGELOG/records)
+- [GitHub releases](https://github.com/syxscott/PaleoClaw/releases)
+- [Changelog index](https://github.com/syxscott/PaleoClaw/blob/main/CHANGELOG.md)
+- [Contribution records](https://github.com/syxscott/PaleoClaw/tree/main/CHANGELOG/records)

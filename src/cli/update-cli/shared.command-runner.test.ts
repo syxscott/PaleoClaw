@@ -333,7 +333,7 @@ describe("update CLI shared helpers", () => {
             "git",
             "clone",
             "--filter=blob:none",
-            "https://github.com/paleoclaw/openclaw.git",
+            "https://github.com/syxscott/PaleoClaw.git",
             expect.stringMatching(/[/\\]\.openclaw-clone-[^/\\]+[/\\]repository$/u),
           ],
           expect.objectContaining({ env: process.env, timeoutMs: 1_000 }),

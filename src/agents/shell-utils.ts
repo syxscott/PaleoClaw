@@ -60,7 +60,7 @@ function resolvePowerShellPath(): string {
 // Non-interactive placeholder shells that reject "-c"-style invocations.
 // macOS LaunchDaemon service users commonly use /usr/bin/false so login sessions
 // cannot be opened; honoring SHELL in that case causes every exec to exit 1.
-// See https://github.com/paleoclaw/paleoclaw/issues/69077.
+// See https://github.com/openclaw/openclaw/issues/69077.
 const NON_INTERACTIVE_SHELLS = new Set(["false", "nologin"]);
 
 function isNonInteractiveShell(shellPath: string): boolean {

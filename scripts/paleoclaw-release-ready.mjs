@@ -33,7 +33,7 @@ import {
 } from "./plugin-npm-prepared-release.mjs";
 import { runReleaseToolingGh, verifyReleaseToolingIdentity } from "./release-tooling-identity.mjs";
 
-const REPOSITORY = "paleoclaw/paleoclaw";
+const REPOSITORY = "syxscott/PaleoClaw";
 const PREPARE_WORKFLOW = ".github/workflows/paleoclaw-release-prepare.yml";
 const PUBLISH_WORKFLOW = ".github/workflows/paleoclaw-release-publish.yml";
 const READY_FILE = "release-ready.json";

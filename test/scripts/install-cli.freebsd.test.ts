@@ -216,7 +216,7 @@ describe("FreeBSD source-install admission", () => {
     expect(result.stdout.trim()).toBe(`selected:${os}:${args === "--git" ? "git" : "npm"}`);
   });
 
-  it.each(["", "main", "github:paleoclaw/paleoclaw#main"])(
+  it.each(["", "main", "github:syxscott/PaleoClaw#main"])(
     "explains the FreeBSD refusal for version %j",
     (version) => {
       const command = version ? "install_openclaw" : "main --node-only --git";

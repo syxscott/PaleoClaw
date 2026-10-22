@@ -96,7 +96,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          expected_repository="paleoclaw/paleoclaw"
+          expected_repository="syxscott/PaleoClaw"
           workflow_path=".github/workflows/paleoclaw-release-telegram-qa.yml"
           caller_path=".github/workflows/paleoclaw-release-checks.yml"
           if [[ "$GITHUB_REPOSITORY" != "$expected_repository" ||

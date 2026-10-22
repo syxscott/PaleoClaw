@@ -106,7 +106,7 @@ docker compose version
 ## 3) 克隆 paleoclaw 仓库
 
 ```bash
-git clone https://github.com/paleoclaw/paleoclaw.git
+git clone https://github.com/syxscott/PaleoClaw.git
 cd paleoclaw
 ```
 

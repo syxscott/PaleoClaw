@@ -11,9 +11,9 @@ import { useAutoCleanupTempDirTracker } from "../helpers/temp-dir.js";
 
 const tempDirs = useAutoCleanupTempDirTracker(afterEach);
 const IDENTITY = {
-  harnessRepository: "paleoclaw/paleoclaw",
+  harnessRepository: "syxscott/PaleoClaw",
   harnessSha: "1".repeat(40),
-  repository: "paleoclaw/paleoclaw",
+  repository: "syxscott/PaleoClaw",
   runAttempt: "2",
   runId: "12345",
   targetSha: "2".repeat(40),

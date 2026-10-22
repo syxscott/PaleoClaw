@@ -543,7 +543,7 @@ it.each([false, true])(
         kind: BUZZ_DIFF_MESSAGE_KIND,
         text: diffText,
         diff: {
-          repoUrl: "https://github.com/paleoclaw/paleoclaw",
+          repoUrl: "https://github.com/syxscott/PaleoClaw",
           commitSha: "abcdef1",
           description: `line one\n${"x".repeat(1_100)}`,
           truncated: true,
@@ -566,7 +566,7 @@ it.each([false, true])(
     });
     const bodyForAgent = context.BodyForAgent ?? "";
     expect(bodyForAgent).toContain("[Buzz structured diff]");
-    expect(bodyForAgent).toContain("Repository: https://github.com/paleoclaw/paleoclaw");
+    expect(bodyForAgent).toContain("Repository: https://github.com/syxscott/PaleoClaw");
     expect(bodyForAgent).toContain("Description: line one ");
     expect(bodyForAgent).toContain("Truncated: yes");
     expect(bodyForAgent).toContain("Unified diff:\n/status\n@@ -1 +1 @@\n-old\n+new");

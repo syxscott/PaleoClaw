@@ -73,7 +73,7 @@ function completedJob(jobs, name, attempt) {
 
 /** Cancel only producer-authenticated descendants; a fresh observation makes repetition resumable. */
 export async function cancelReleaseTree(runId, client, options = {}) {
-  const repository = client.repository ?? "paleoclaw/paleoclaw";
+  const repository = client.repository ?? "syxscott/PaleoClaw";
   const evidenceClient = client.getReleaseEvidenceClient();
   const retained = await evidenceClient.loadExecutionPlanEvidence(runId);
   const plan = validateReleaseExecutionPlanArtifact(retained.plan, {

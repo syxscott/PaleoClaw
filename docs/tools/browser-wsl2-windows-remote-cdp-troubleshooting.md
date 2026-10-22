@@ -10,7 +10,7 @@ title: "WSL2 + Windows + remote Chrome CDP troubleshooting"
 In the common split-host setup, paleoclaw Gateway runs inside WSL2, Chrome runs
 on Windows, and browser control must cross the WSL2/Windows boundary. Several
 independent problems can surface at once (see
-[issue #39369](https://github.com/paleoclaw/paleoclaw/issues/39369)): CDP
+[issue #39369](https://github.com/openclaw/openclaw/issues/39369)): CDP
 transport, Control UI origin security, and token/pairing can each fail on
 their own while producing similar-looking errors. Work through the layers
 below in order instead of guessing which one is broken.

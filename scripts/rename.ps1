@@ -29,7 +29,7 @@ foreach ($file in $files) {
             -replace '\bopenclaw\b', 'paleoclaw' `
             -replace '\bOpenClaw\b', 'PaleoClaw' `
             -replace '\bOPENCLAW\b', 'PALEOCLAW' `
-            -replace 'github\.com/paleoclaw/paleoclaw', 'github.com/paleoclaw/paleoclaw' `
+            -replace 'github\.com/paleoclaw/paleoclaw', 'github.com/syxscott/PaleoClaw' `
             -replace 'ai\.openclaw\.', 'ai.paleoclaw.' `
             -replace '@paleoclaw/', '@paleoclaw/' `
             -replace 'docs\.openclaw\.ai', 'docs.paleoclaw.ai' `

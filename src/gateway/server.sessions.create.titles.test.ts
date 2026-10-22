@@ -63,7 +63,7 @@ test.for(["keep", "delete"] as const)(
         "sessions.create",
         {
           agentId: "main",
-          repository: { url: "https://github.com/paleoclaw/openclaw.git" },
+          repository: { url: "https://github.com/syxscott/PaleoClaw.git" },
           titleSource: "Explain how the updater safely rolls back a failed release",
         },
         { ...controlUiClient, context },

@@ -26,7 +26,7 @@ is a separate owner contract: a data receipt alone never grants permission.
 
 [Agent schema 26](/reference/database-schemas/agent-schema-history#json-predicate-columns)
 implements the agent-store portion of the
-[accepted column-promotion design](https://github.com/paleoclaw/paleoclaw/issues/169254).
+[accepted column-promotion design](https://github.com/openclaw/openclaw/issues/169254).
 The JSON remains canonical. Each writer derives its query columns in TypeScript
 and commits them with the JSON in one statement; the session actor reuses that
 derivation. Session-node and outbox predicates use stored columns. SQLite
@@ -163,7 +163,7 @@ Both engines use the same shared-state schema version (currently 25). Every
 future version change must supply both engines' forward migration and catalog
 equivalence proof together. JSON stays canonical: a query/index projection is
 derived once in TypeScript and committed in the same statement as its JSON.
-See the [accepted design](https://github.com/paleoclaw/paleoclaw/issues/169254).
+See the [accepted design](https://github.com/openclaw/openclaw/issues/169254).
 
 Schema 24 includes `state-v23-v24.postgres.sql`, generated from the migration
 owner's retired index names and the canonical replacement index definitions.
@@ -1675,7 +1675,7 @@ session ownership changes and receives its own summary objects. Incognito
 branches use the memory actor. Stored rows, schemas, and
 update behavior are unchanged.
 
-The [accepted Tasks and TaskFlow removal](https://github.com/paleoclaw/paleoclaw/pull/156532#issuecomment-5798987497)
+The [accepted Tasks and TaskFlow removal](https://github.com/openclaw/openclaw/pull/156532#issuecomment-5798987497)
 removes the runtime APIs without changing the shared-state or agent database schema.
 The existing `task_runs`, `task_delivery_state`, and `flow_runs` definitions,
 columns, and indexes remain unchanged. Non-Cron Task and TaskFlow rows remain
@@ -2254,7 +2254,7 @@ Crash cleanup can release only the exact admitted lease receipt, after native ex
 uncertain cleanup remains an error and never causes mutation replay. The parent
 adopts newly established integrity verification only after operation cleanup and
 while its database claim remains current. These connection lifetimes are documented in the
-[accepted reclamation design](https://github.com/paleoclaw/paleoclaw/pull/140897#issuecomment-5647899202).
+[accepted reclamation design](https://github.com/openclaw/openclaw/pull/140897#issuecomment-5647899202).
 
 Pressure sweeps and explicit deletion reuse one archive worker across successful operation
 scopes. The shared archive queue admits each materialization or publication separately;

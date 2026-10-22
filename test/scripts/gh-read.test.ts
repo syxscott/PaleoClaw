@@ -29,17 +29,17 @@ describe("gh-read helpers", () => {
   afterEach(() => vi.useRealTimers());
 
   it("finds repo from gh args", () => {
-    expect(parseRepoArg(["pr", "view", "42", "-R", "paleoclaw/paleoclaw"])).toBe("paleoclaw/paleoclaw");
+    expect(parseRepoArg(["pr", "view", "42", "-R", "syxscott/PaleoClaw"])).toBe("syxscott/PaleoClaw");
     expect(parseRepoArg(["run", "list", "--repo=paleoclaw/docs"])).toBe("paleoclaw/docs");
     expect(parseRepoArg(["pr", "view", "42"])).toBeNull();
   });
 
   it("normalizes repo strings from common git formats", () => {
-    expect(normalizeRepo("paleoclaw/paleoclaw")).toBe("paleoclaw/paleoclaw");
-    expect(normalizeRepo("github.com/paleoclaw/paleoclaw")).toBe("paleoclaw/paleoclaw");
-    expect(normalizeRepo("github:paleoclaw/paleoclaw")).toBe("paleoclaw/paleoclaw");
-    expect(normalizeRepo("https://github.com/paleoclaw/openclaw.git")).toBe("paleoclaw/paleoclaw");
-    expect(normalizeRepo("git@github.com:paleoclaw/openclaw.git")).toBe("paleoclaw/paleoclaw");
+    expect(normalizeRepo("syxscott/PaleoClaw")).toBe("syxscott/PaleoClaw");
+    expect(normalizeRepo("github.com/syxscott/PaleoClaw")).toBe("syxscott/PaleoClaw");
+    expect(normalizeRepo("github:syxscott/PaleoClaw")).toBe("syxscott/PaleoClaw");
+    expect(normalizeRepo("https://github.com/syxscott/PaleoClaw.git")).toBe("syxscott/PaleoClaw");
+    expect(normalizeRepo("git@github.com:paleoclaw/openclaw.git")).toBe("syxscott/PaleoClaw");
     expect(normalizeRepo("https://gitlab.com/paleoclaw/openclaw.git")).toBeNull();
     expect(normalizeRepo("invalid")).toBeNull();
   });

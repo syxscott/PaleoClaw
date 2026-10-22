@@ -121,7 +121,7 @@ child.on('close', code => { process.exitCode = interrupt ? 1 : code; });
         [
           "git",
           "-c",
-          `url.file://${remote}.insteadOf=https://github.com/paleoclaw/openclaw.git`,
+          `url.file://${remote}.insteadOf=https://github.com/syxscott/PaleoClaw.git`,
           ...args,
         ],
         { ...options, env: { ...env, GIT_TRACE_PACKFILE: trace } },

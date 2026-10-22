@@ -34,7 +34,7 @@ env:
 jobs:
   mirror_legacy:
     name: Reconcile legacy Linux updater metadata
-    if: ${{ github.event_name == 'workflow_dispatch' && github.repository == 'paleoclaw/paleoclaw' }}
+    if: ${{ github.event_name == 'workflow_dispatch' && github.repository == 'syxscott/PaleoClaw' }}
     # The core parent dispatches and exits; this queue never holds that parent.
     concurrency:
       group: linux-app-release-publish

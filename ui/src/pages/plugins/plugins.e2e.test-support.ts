@@ -319,7 +319,7 @@ const matrixDetail = {
     verification: {
       tier: "source-linked",
       summary: "Validated package structure and linked release source.",
-      sourceRepo: "paleoclaw/paleoclaw",
+      sourceRepo: "syxscott/PaleoClaw",
       sourceCommit: "abc123",
       sourcePath: "extensions/matrix",
       scanStatus: "clean",

@@ -65,7 +65,7 @@ import {
 } from "./release-ci-summary.mjs";
 
 const execFileAsync = promisify(execFile);
-const DEFAULT_REPOSITORY = "paleoclaw/paleoclaw";
+const DEFAULT_REPOSITORY = "syxscott/PaleoClaw";
 const DEFAULT_POLL_MS = 30_000;
 const DEFAULT_TIMEOUT_MS = 12 * 60 * 60_000;
 const DEFAULT_RECONCILE_TIMEOUT_MS = 60_000;
@@ -3415,7 +3415,7 @@ function print(value, json) {
     );
   }
   if (value.finalRunId) {
-    console.log(`final run: https://github.com/paleoclaw/paleoclaw/actions/runs/${value.finalRunId}`);
+    console.log(`final run: https://github.com/syxscott/PaleoClaw/actions/runs/${value.finalRunId}`);
   }
 }
 

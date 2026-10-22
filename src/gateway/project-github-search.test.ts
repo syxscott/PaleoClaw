@@ -210,8 +210,8 @@ describe("project GitHub search", () => {
         incomplete_results: false,
         items: [
           {
-            ...repository("paleoclaw/paleoclaw", "2026-08-10T00:00:00Z", "  public project  "),
-            html_url: "  https://github.com/paleoclaw/paleoclaw  ",
+            ...repository("syxscott/PaleoClaw", "2026-08-10T00:00:00Z", "  public project  "),
+            html_url: "  https://github.com/syxscott/PaleoClaw  ",
           },
         ],
       }),
@@ -226,8 +226,8 @@ describe("project GitHub search", () => {
       credential: "missing",
       projects: [
         {
-          fullName: "paleoclaw/paleoclaw",
-          webUrl: "https://github.com/paleoclaw/paleoclaw",
+          fullName: "syxscott/PaleoClaw",
+          webUrl: "https://github.com/syxscott/PaleoClaw",
           description: "public project",
         },
       ],
@@ -368,23 +368,23 @@ describe("project GitHub search", () => {
   it("resolves exact owner/name queries directly and ranks the repository first", async () => {
     const fetchImpl = vi.fn<typeof fetch>().mockImplementation(async (input) => {
       if (requestUrl(input).includes("/repos/paleoclaw/paleoclaw")) {
-        return json(repository("paleoclaw/paleoclaw", "2026-08-20T00:00:00Z"));
+        return json(repository("syxscott/PaleoClaw", "2026-08-20T00:00:00Z"));
       }
       return json({
         items: [
           repository("someone/paleoclaw-tutorial", "2026-08-25T00:00:00Z"),
-          repository("paleoclaw/paleoclaw", "2026-08-20T00:00:00Z"),
+          repository("syxscott/PaleoClaw", "2026-08-20T00:00:00Z"),
         ],
       });
     });
 
-    const result = await searchRemoteProjects("paleoclaw/paleoclaw", {
+    const result = await searchRemoteProjects("syxscott/PaleoClaw", {
       env: {},
       fetchImpl,
     });
 
     expect(result.projects.map((project) => project.fullName)).toEqual([
-      "paleoclaw/paleoclaw",
+      "syxscott/PaleoClaw",
       "someone/paleoclaw-tutorial",
     ]);
     expect(fetchImpl.mock.calls.map((call) => requestUrl(call[0]))).toEqual([

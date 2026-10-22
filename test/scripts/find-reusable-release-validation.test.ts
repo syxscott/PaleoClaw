@@ -14,7 +14,7 @@ const BASH_PATH = process.platform === "darwin" ? "/bin/bash" : "bash";
 const tempDirs = createTempDirTracker();
 const sharedTempDirs = createTempDirTracker();
 
-const REPOSITORY = "paleoclaw/paleoclaw";
+const REPOSITORY = "syxscott/PaleoClaw";
 const PRODUCER_SHA = "0".repeat(40);
 const VERIFIER_SHA = "c".repeat(40);
 const DEFAULT_INPUTS = {
@@ -464,7 +464,7 @@ if (
   (process.env.FAKE_QUALIFICATION_REUSE
     ? qualificationIndex < 0 || !isDeepStrictEqual(JSON.parse(process.argv[qualificationIndex + 1]), JSON.parse(process.env.FAKE_QUALIFICATION_REUSE))
     : qualificationIndex >= 0) ||
-  process.argv[repoIndex + 1] !== "paleoclaw/paleoclaw" ||
+  process.argv[repoIndex + 1] !== "syxscott/PaleoClaw" ||
   process.argv[trustedRefIndex + 1] !== process.env.FAKE_TRUSTED_WORKFLOW_REF ||
   process.argv[trustedFullRefIndex + 1] !== process.env.FAKE_TRUSTED_WORKFLOW_FULL_REF ||
   process.argv[trustedShaIndex + 1] !== process.env.FAKE_TRUSTED_WORKFLOW_SHA ||

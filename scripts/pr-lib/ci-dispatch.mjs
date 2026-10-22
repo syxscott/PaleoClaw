@@ -19,7 +19,7 @@ import {
 } from "./crabbox-gate-contract.mjs";
 import { execPrGh, execPrGhJson } from "./github.mjs";
 
-const REPOSITORY = "paleoclaw/paleoclaw";
+const REPOSITORY = "syxscott/PaleoClaw";
 const CRABBOX_WORKFLOW = ".github/workflows/pr-crabbox-gate-publisher.yml";
 const CRABBOX_CHECK = "paleoclaw/crabbox-gate";
 const CRABBOX_CHECK_APP_ID = 15368;

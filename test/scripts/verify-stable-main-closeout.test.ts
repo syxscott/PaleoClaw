@@ -128,7 +128,7 @@ function publishedFeeds(dir: string, version: string, thin: boolean) {
     const suffix = arch && `-${arch}`;
     writeFileSync(
       file,
-      `https://github.com/paleoclaw/paleoclaw/releases/download/v${version}/paleoclaw-${version}${suffix}.zip`,
+      `https://github.com/syxscott/PaleoClaw/releases/download/v${version}/paleoclaw-${version}${suffix}.zip`,
     );
     return [`--published-appcast${arch && `-${arch.replace("_", "-")}`}`, file];
   });
@@ -193,7 +193,7 @@ type LinuxAsset = {
   bytes?: string;
   id?: number;
 };
-const linuxRepository = "paleoclaw/paleoclaw";
+const linuxRepository = "syxscott/PaleoClaw";
 
 function linuxAsset(name: string, bytes: string): LinuxAsset {
   return {
@@ -758,8 +758,8 @@ const run = {
   event: "workflow_dispatch",
   status: "completed",
   conclusion: "success",
-  repository: { full_name: "paleoclaw/paleoclaw" },
-  head_repository: { full_name: "paleoclaw/paleoclaw" },
+  repository: { full_name: "syxscott/PaleoClaw" },
+  head_repository: { full_name: "syxscott/PaleoClaw" },
 };
 const expected = { id: "101", attempt: "2", sha, workflow, conclusion: "success" };
 const job = {
@@ -883,12 +883,12 @@ const npmExpected = {
 };
 function verified() {
   const producer = {
-    repository: "https://github.com/paleoclaw/paleoclaw",
+    repository: "https://github.com/syxscott/PaleoClaw",
     path: workflow,
     ref: fullRef,
   };
   const metadata = {
-    invocationId: "https://github.com/paleoclaw/paleoclaw/actions/runs/101/attempts/2",
+    invocationId: "https://github.com/syxscott/PaleoClaw/actions/runs/101/attempts/2",
   };
   const statement = {
     predicateType: "https://slsa.dev/provenance/v1",

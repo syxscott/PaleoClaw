@@ -101,7 +101,7 @@ function runIdentityVerification(
     workflowBranch?: string;
   } = {},
 ) {
-  const repository = "paleoclaw/paleoclaw";
+  const repository = "syxscott/PaleoClaw";
   const workflowBranch = params.workflowBranch ?? "main";
   const workflowRefName = `refs/heads/${workflowBranch}`;
   const trustedWorkflowRef = `${repository}/.github/workflows/paleoclaw-release-telegram-qa.yml@${workflowRefName}`;
@@ -240,7 +240,7 @@ function mergedPullRequest(value: PullRequestFixture = {}) {
   return {
     state: value.state ?? "MERGED",
     baseRefName: value.baseRefName ?? "release/2026.7.1",
-    baseRepository: { nameWithOwner: value.baseRepository ?? "paleoclaw/paleoclaw" },
+    baseRepository: { nameWithOwner: value.baseRepository ?? "syxscott/PaleoClaw" },
     mergeCommit: { oid: value.mergeCommitOid ?? SOURCE_SHA },
     mergedBy: { login: value.mergedBy ?? "release-maintainer" },
   };
@@ -306,14 +306,14 @@ function runCandidateProvenance(
                     {
                       state: "OPEN",
                       headRefOid: candidateSha,
-                      headRepository: { nameWithOwner: "paleoclaw/paleoclaw" },
+                      headRepository: { nameWithOwner: "syxscott/PaleoClaw" },
                     },
                   ]
                 : []),
               ...Array.from({ length: params.unrelatedOpenPullRequests ?? 0 }, (_, index) => ({
                 state: "OPEN",
                 headRefOid: `${index + 1}`.repeat(40),
-                headRepository: { nameWithOwner: "paleoclaw/paleoclaw" },
+                headRepository: { nameWithOwner: "syxscott/PaleoClaw" },
               })),
               ...(params.mergedPullRequests ?? []).map(mergedPullRequest),
             ],
@@ -382,7 +382,7 @@ exit 64
       CANDIDATE_ROOT: join(workdir, ".candidate"),
       GH_TRANSIENT_SERVER_OR_NETWORK_PATTERN: "HTTP 5[0-9][0-9]",
       GITHUB_WORKSPACE: process.cwd(),
-      GITHUB_REPOSITORY: "paleoclaw/paleoclaw",
+      GITHUB_REPOSITORY: "syxscott/PaleoClaw",
       PATH: `${fakeBin}:${process.env.PATH}`,
       TARGET_CONTEXT_REF: targetContextRef,
       TARGET_REF:

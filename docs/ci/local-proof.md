@@ -404,7 +404,7 @@ Local changed-test routing lives in `scripts/test-projects.test-support.mts` and
 ## Testbox validation
 
 Follow the canonical
-[proof policy](https://github.com/paleoclaw/paleoclaw/blob/main/.agents/skills/paleoclaw-testing/SKILL.md#proof-policy).
+[proof policy](https://github.com/syxscott/PaleoClaw/blob/main/.agents/skills/paleoclaw-testing/SKILL.md#proof-policy).
 For its remote exceptions, `.crabbox.yaml` defaults to `blacksmith-testbox`.
 That workflow hydrates credentials: untrusted contributor/fork code requires
 secretless fork CI or sanitized direct AWS, never local execution or Testbox.
@@ -691,7 +691,7 @@ Crabbox path before treating a direct Blacksmith run as maintainer proof.
 
 For admission/queue handling, follow the canonical proof policy above.
 For explicitly selected AWS capacity, use the
-[direct-provider commands](https://github.com/paleoclaw/paleoclaw/blob/main/.agents/skills/crabbox/references/operations.md#direct-aws).
+[direct-provider commands](https://github.com/syxscott/PaleoClaw/blob/main/.agents/skills/crabbox/references/operations.md#direct-aws).
 
 Under AWS pressure, avoid `class=beast` unless the task really needs 48xlarge-class CPU. A `beast` request starts at 192 vCPUs and is the easiest way to trip regional EC2 Spot or On-Demand Standard quota. The repo-owned `.crabbox.yaml` defaults to `class: standard`, on-demand market, and `capacity.hints: true` so brokered AWS leases print selected region/market, quota pressure, Spot fallback, and high-pressure class warnings. Use `fast` for heavier broad checks, `large` only after standard/fast are not enough, and `beast` only for exceptional CPU-bound lanes such as full-suite or all-plugin Docker matrices, explicit release/blocker validation, or high-core performance profiling. Do not use `beast` for `pnpm check:changed`, focused tests, docs-only work, ordinary lint/typecheck, small E2E repros, or Blacksmith outage triage. Use `--market on-demand` for capacity diagnosis so Spot market churn is not mixed into the signal.
 

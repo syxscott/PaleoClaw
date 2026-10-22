@@ -34,7 +34,7 @@ function compare(gh: string, merged = false) {
       env: {
         ...process.env,
         GITHUB_OUTPUT: output,
-        GITHUB_REPOSITORY: "paleoclaw/paleoclaw",
+        GITHUB_REPOSITORY: "syxscott/PaleoClaw",
         BASE_SHA: expectedBase,
         CHECKOUT_SHA: merged ? merge : expectedCandidate,
         DIFF_HEAD_SHA: merge,

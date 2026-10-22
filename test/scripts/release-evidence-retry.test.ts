@@ -39,7 +39,7 @@ function readPluginArtifactMetadata() {
     process: {
       env: {
         ARTIFACT_NAME: "plugin-npm-package-source-fixture-demo+encoded",
-        GITHUB_REPOSITORY: "paleoclaw/paleoclaw",
+        GITHUB_REPOSITORY: "syxscott/PaleoClaw",
         RUN_ID: "42",
       },
       stdout: {
@@ -124,7 +124,7 @@ describe("release evidence API reads", () => {
       transport.read.mockReturnValue(
         mode === "sync" ? '{"id":42}' : '{"total_count":1,"jobs":[{"id":7}]}',
       );
-      const client = createReleaseEvidenceClient("paleoclaw/paleoclaw");
+      const client = createReleaseEvidenceClient("syxscott/PaleoClaw");
       const result = Promise.resolve().then(() =>
         mode === "sync" ? client.getRunAttempt("42", 1) : client.getRunAttemptJobs("42", 1),
       );
@@ -159,7 +159,7 @@ describe("release evidence API reads", () => {
       const jobs = fixtureJobs(match[1]!);
       return JSON.stringify({ total_count: jobs.length, jobs });
     });
-    const evidenceClient = createReleaseEvidenceClient("paleoclaw/paleoclaw");
+    const evidenceClient = createReleaseEvidenceClient("syxscott/PaleoClaw");
     const evidence = await validateReleaseRunEvidence(
       {
         runId: fixture.runId,
@@ -198,7 +198,7 @@ describe("release evidence API reads", () => {
         const start = (Number(query.get("page")) - 1) * perPage;
         return JSON.stringify({ total_count: total, jobs: jobs.slice(start, start + perPage) });
       });
-      const read = createReleaseEvidenceClient("paleoclaw/paleoclaw").getRunAttemptJobs("42", 2, {
+      const read = createReleaseEvidenceClient("syxscott/PaleoClaw").getRunAttemptJobs("42", 2, {
         requireComplete,
       });
       if (typeof result === "number") {
@@ -235,7 +235,7 @@ describe("release evidence API reads", () => {
 
   it("does not retry a malformed successful response", () => {
     transport.read.mockReturnValue("invalid JSON");
-    expect(() => createReleaseEvidenceClient("paleoclaw/paleoclaw").getRunAttempt("42", 1)).toThrow();
+    expect(() => createReleaseEvidenceClient("syxscott/PaleoClaw").getRunAttempt("42", 1)).toThrow();
     expect(transport.read).toHaveBeenCalledOnce();
   });
 });

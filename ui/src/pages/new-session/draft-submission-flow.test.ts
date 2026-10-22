@@ -31,8 +31,8 @@ afterEach(() => {
 });
 
 const REMOTE_PROJECT = {
-  identity: "paleoclaw/paleoclaw",
-  cloneUrl: "https://github.com/paleoclaw/openclaw.git",
+  identity: "syxscott/PaleoClaw",
+  cloneUrl: "https://github.com/syxscott/PaleoClaw.git",
 };
 
 async function readyChatRoute() {
@@ -405,7 +405,7 @@ describe("DraftSubmissionFlow", () => {
     expect(created).toMatchObject({
       agentId: "main",
       message: "",
-      repository: { url: "https://github.com/paleoclaw/openclaw.git", ref: "release/next" },
+      repository: { url: "https://github.com/syxscott/PaleoClaw.git", ref: "release/next" },
     });
     for (const field of [
       "projectId",
@@ -721,7 +721,7 @@ describe("DraftSubmissionFlow", () => {
     await vi.waitFor(() =>
       expect(request).toHaveBeenCalledWith(
         "projects.add",
-        { gitUrl: "https://github.com/paleoclaw/openclaw.git" },
+        { gitUrl: "https://github.com/syxscott/PaleoClaw.git" },
         { timeoutMs: null },
       ),
     );
@@ -735,7 +735,7 @@ describe("DraftSubmissionFlow", () => {
 
     if (error) {
       expect(flow.error).toBe(error);
-      expect(place.browser.remoteProject?.identity).toBe("paleoclaw/paleoclaw");
+      expect(place.browser.remoteProject?.identity).toBe("syxscott/PaleoClaw");
       expect(context.sessions.createResult).not.toHaveBeenCalled();
       return;
     }
@@ -781,7 +781,7 @@ describe("DraftSubmissionFlow", () => {
       expect.objectContaining({
         agentId: "main",
         message,
-        projectGitUrl: "https://github.com/paleoclaw/openclaw.git",
+        projectGitUrl: "https://github.com/syxscott/PaleoClaw.git",
         attachments: [expect.objectContaining({ fileName: "note.txt", mimeType: "text/plain" })],
       }),
       {

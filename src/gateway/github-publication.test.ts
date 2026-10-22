@@ -44,7 +44,7 @@ import { createWorkerSessionPlacementStore } from "./worker-environments/placeme
 import { seedAttachedPlacementEnvironment } from "./worker-environments/placement-test-fixtures.js";
 
 const mocks = githubPublicationTestMocks();
-const PULL_URL = "https://github.com/paleoclaw/paleoclaw/pull/125200";
+const PULL_URL = "https://github.com/openclaw/openclaw/pull/125200";
 const POST_PULL =
   "gh api --hostname github.com --method POST repos/paleoclaw/paleoclaw/pulls --input -";
 const SHOW_HEAD = "git show -s --no-show-signature --format=%H%n%T%n%P%n%B HEAD";
@@ -120,7 +120,7 @@ const publishedResult = (requestId: string) => ({
   requestId,
   status: "published",
   url: PULL_URL,
-  repository: "paleoclaw/paleoclaw",
+  repository: "syxscott/PaleoClaw",
   branch: BRANCH,
   headCommit: NEW_HEAD,
 });
@@ -188,7 +188,7 @@ describe("Gateway GitHub publication", () => {
 
     const first = await coordinator.requestForSessionV2({ ...request, requester });
     expect(first).toEqual(publishedResult(expect.any(String)));
-    expect(commands.some((argv) => argv.includes("https://github.com/paleoclaw/openclaw.git"))).toBe(
+    expect(commands.some((argv) => argv.includes("https://github.com/syxscott/PaleoClaw.git"))).toBe(
       true,
     );
     expect(commands.some((argv) => argv.some((arg) => arg.includes("roboclaw-token")))).toBe(false);
@@ -267,15 +267,15 @@ describe("Gateway GitHub publication", () => {
         return commandResult(`${NEW_HEAD}\trefs/heads/${BRANCH}\n`);
       }
       if (pullLookup(command)) {
-        return pullResponse({ url: "https://github.com/paleoclaw/paleoclaw/pull/125201" });
+        return pullResponse({ url: "https://github.com/openclaw/openclaw/pull/125201" });
       }
       return undefined;
     });
     const result = await publish("fork-existing-pr");
     expect(result).toMatchObject({
       status: "published",
-      repository: "paleoclaw/paleoclaw",
-      url: "https://github.com/paleoclaw/paleoclaw/pull/125201",
+      repository: "syxscott/PaleoClaw",
+      url: "https://github.com/openclaw/openclaw/pull/125201",
     });
     expect(
       mocks.runCommand.mock.calls.some(([argv]) =>
@@ -299,7 +299,7 @@ describe("Gateway GitHub publication", () => {
           return pullLookups < 3
             ? commandResult("[]\n")
             : pullResponse({
-                url: "https://github.com/paleoclaw/paleoclaw/pull/125203",
+                url: "https://github.com/openclaw/openclaw/pull/125203",
                 state,
                 body: createdBody,
               });
@@ -313,7 +313,7 @@ describe("Gateway GitHub publication", () => {
       const result = await publish("lost-post-response");
       expect(result).toMatchObject(
         expectedStatus === "published"
-          ? { status: "published", url: "https://github.com/paleoclaw/paleoclaw/pull/125203" }
+          ? { status: "published", url: "https://github.com/openclaw/openclaw/pull/125203" }
           : {
               status: "failed",
               code: "github_rejected",
@@ -330,13 +330,13 @@ describe("Gateway GitHub publication", () => {
     overrideCommands((command) => {
       if (pullLookup(command)) {
         return pullResponse({
-          url: "https://github.com/paleoclaw/paleoclaw/pull/old-base",
+          url: "https://github.com/syxscott/PaleoClaw/pull/old-base",
           baseRef: "release",
         });
       }
       if (command === POST_PULL) {
         return commandResult(
-          '{"html_url":"https://github.com/paleoclaw/paleoclaw/pull/right-base"}\n',
+          '{"html_url":"https://github.com/syxscott/PaleoClaw/pull/right-base"}\n',
         );
       }
       return undefined;
@@ -344,7 +344,7 @@ describe("Gateway GitHub publication", () => {
     const result = await publish("wrong-base-pr");
     expect(result).toMatchObject({
       status: "published",
-      url: "https://github.com/paleoclaw/paleoclaw/pull/right-base",
+      url: "https://github.com/syxscott/PaleoClaw/pull/right-base",
     });
     const lookup = mocks.runCommand.mock.calls.find(
       ([argv]) => argv.includes("state=all") && argv.includes("head=paleoclaw:paleoclaw/publication"),

@@ -97,7 +97,7 @@ describe("release plan contract", () => {
       "exactly one trailing LF",
     );
     expect(() =>
-      parseReleasePlanLockJson(lockText.replace("paleoclaw/paleoclaw", "opénclaw")),
+      parseReleasePlanLockJson(lockText.replace("syxscott/PaleoClaw", "opénclaw")),
     ).toThrow("printable ASCII");
   });
 

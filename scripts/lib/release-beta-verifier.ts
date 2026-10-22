@@ -79,7 +79,7 @@ type ReleaseVerifyBetaArgs = {
 type WorkflowRunSummary = ReturnType<typeof verifyWorkflowRun> &
   Partial<Pick<ReturnType<typeof validateClawHubBootstrapEvidence>, "bootstrapEvidence">>;
 
-const DEFAULT_REPO = "paleoclaw/paleoclaw";
+const DEFAULT_REPO = "syxscott/PaleoClaw";
 const DEFAULT_CLAWHUB_REGISTRY = "https://clawhub.ai";
 const CLAWHUB_BOOTSTRAP_WORKFLOW_PATH = ".github/workflows/plugin-PaleoHub-new.yml";
 const CLAWHUB_BOOTSTRAP_READBACK_FILE = "PaleoHub-bootstrap-readback.json";

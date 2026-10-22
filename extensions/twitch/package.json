@@ -4,7 +4,7 @@
   "description": "paleoclaw Twitch channel plugin for chat and moderation workflows.",
   "repository": {
     "type": "git",
-    "url": "https://github.com/paleoclaw/paleoclaw"
+    "url": "https://github.com/syxscott/PaleoClaw"
   },
   "type": "module",
   "dependencies": {

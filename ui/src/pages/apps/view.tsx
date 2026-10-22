@@ -148,7 +148,7 @@ const APP_SECTIONS: readonly AppSection[] = [
         icon: appsBrandIcons.apple,
         copyKey: "appsPage.cards.macos",
         ctas: [
-          externalCta("https://github.com/paleoclaw/paleoclaw/releases", "appsPage.ctaDownload"),
+          externalCta("https://github.com/syxscott/PaleoClaw/releases", "appsPage.ctaDownload"),
           docsCta("/platforms/macos"),
         ],
       },
@@ -159,7 +159,7 @@ const APP_SECTIONS: readonly AppSection[] = [
         copyKey: "appsPage.cards.windows",
         ctas: [
           externalCta(
-            "https://github.com/paleoclaw/paleoclaw-windows-node/releases/latest",
+            "https://github.com/openclaw/openclaw-windows-node/releases/latest",
             "appsPage.ctaDownload",
           ),
           docsCta("/platforms/windows"),
@@ -171,7 +171,7 @@ const APP_SECTIONS: readonly AppSection[] = [
         icon: appsBrandIcons.linux,
         copyKey: "appsPage.cards.linux",
         ctas: [
-          externalCta("https://github.com/paleoclaw/paleoclaw/releases", "appsPage.ctaDownload"),
+          externalCta("https://github.com/syxscott/PaleoClaw/releases", "appsPage.ctaDownload"),
           docsCta("/platforms/linux"),
         ],
       },

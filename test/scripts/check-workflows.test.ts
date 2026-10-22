@@ -372,7 +372,7 @@ describe("check-workflows", () => {
         expect(
           evaluateWorkflowExpression(condition, {
             eventName: "workflow_dispatch",
-            repository: "paleoclaw/paleoclaw",
+            repository: "syxscott/PaleoClaw",
             runAttempt: 1,
             skipDefenderExclusions,
             runWindowsCi,

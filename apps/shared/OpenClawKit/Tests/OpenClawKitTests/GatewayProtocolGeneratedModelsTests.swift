@@ -357,7 +357,7 @@ struct GatewayProtocolGeneratedModelsTests {
         (#"{"requestId":"request-1","status":"requested","message":"Accepted."}"#, "requested"),
         (#"{"requestId":"request-1","status":"publishing","message":"Publishing."}"#, "publishing"),
         (
-            #"{"requestId":"request-1","status":"published","url":"https://github.com/paleoclaw/paleoclaw/pull/1","repository":"paleoclaw/paleoclaw","branch":"paleoclaw/task","headCommit":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}"#,
+            #"{"requestId":"request-1","status":"published","url":"https://github.com/syxscott/PaleoClaw/pull/1","repository":"syxscott/PaleoClaw","branch":"paleoclaw/task","headCommit":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}"#,
             "published"),
         (
             #"{"requestId":"request-1","status":"failed","code":"push_rejected","message":"Failed.","nextAction":"Check access."}"#,

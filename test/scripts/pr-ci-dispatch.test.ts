@@ -11,7 +11,7 @@ const headSha = "0123456789abcdef0123456789abcdef01234567";
 const baseSha = "1111111111111111111111111111111111111111";
 const workflowSha = "2222222222222222222222222222222222222222";
 const changedSha = "fedcba9876543210fedcba9876543210fedcba98";
-const runUrl = "https://github.com/paleoclaw/paleoclaw/actions/runs/99";
+const runUrl = "https://github.com/syxscott/PaleoClaw/actions/runs/99";
 const summary = (proofBase = baseSha) =>
   formatCrabboxGateCheckSummary({
     baseSha: proofBase,

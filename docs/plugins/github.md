@@ -122,7 +122,7 @@ a bounded result does not establish that the full discussion or diff was read.
 
 ## Ask the agent to find issues or pull requests
 
-Use `github_search` with a chosen public `repository` such as `paleoclaw/paleoclaw`.
+Use `github_search` with a chosen public `repository` such as `syxscott/PaleoClaw`.
 Choose `kind: "issue"` or `kind: "pull"` for each call. Search each kind separately
 when you need both; GitHub App user tokens require a single kind per query.
 Optional `query` keywords match text, and `state` selects `all`, `open`, or `closed`.

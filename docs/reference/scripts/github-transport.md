@@ -66,7 +66,7 @@ the raw GitHub CLI to get a landing through. `review-init` resolves the reposito
 with the local `gh browse` command and a child-only URL-printing launcher. Older
 Octopool versions reject this singleton command before their guarded best-effort
 path. Upgrade to Octopool 0.7.1 or later; setting an explicit
-host-qualified `GH_REPO=github.com/paleoclaw/paleoclaw` also avoids discovery while
+host-qualified `GH_REPO=github.com/syxscott/PaleoClaw` also avoids discovery while
 preserving the subsequent authoritative API checks.
 
 Ordinary immediate REST squash uses `gh api --method PUT repos/OWNER/REPO/pulls/NUMBER/merge-async
@@ -81,7 +81,7 @@ Existing auto/queue/admin and GraphQL-quota routes keep their own contracts; the
 explicit [prior-CI admin route](/reference/scripts/prior-ci) still uses the synchronous `/merge` endpoint.
 Async PUT and status GET prepend `-H 'X-Octopool-Require: merge-async-v1'` as the first
 API option, before `--hostname`. This requires the structural async merge guard in
-[Octopool PR #231](https://github.com/paleoclaw/octopool/pull/231): older protected wrappers reject the marker before rewriting or native
+[Octopool PR #231](https://github.com/openclaw/octopool/pull/231): older protected wrappers reject the marker before rewriting or native
 GitHub I/O. Upgrade Octopool if refused; never remove the marker or replay an
 uncertain intent. Native `gh` and empty rewrite policies pass the harmless header
 through without rewriting authority. No Worker deployment or credential change

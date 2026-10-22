@@ -34,7 +34,7 @@ describe("publication dispatch frozen lane inputs", () => {
         ADMISSION_TOOLING_SHA: "a".repeat(40),
         ADMISSION_WORKFLOW_REF:
           "paleoclaw/paleoclaw/.github/workflows/full-release-validation.yml@refs/heads/main",
-        GITHUB_REPOSITORY: "paleoclaw/paleoclaw",
+        GITHUB_REPOSITORY: "syxscott/PaleoClaw",
         GITHUB_RUN_ID: "123",
         GITHUB_RUN_ATTEMPT: "1",
       });

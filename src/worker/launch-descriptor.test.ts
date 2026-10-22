@@ -150,7 +150,7 @@ describe("worker launch descriptor", () => {
       identity,
       {
         ...identity,
-        remoteUrl: "https://github.com/paleoclaw/openclaw.git",
+        remoteUrl: "https://github.com/syxscott/PaleoClaw.git",
         gitAuthor: { name: "Worker Bot", email: "worker@example.test" },
       },
     ]) {
@@ -202,11 +202,11 @@ describe("worker launch descriptor", () => {
         ...["..", "~", "^", ":", "?", "*", "[", "\\", "@{"].map((part) => `branch${part}name`),
       ].map((branch) => withBinding({ branch })),
       ...[
-        "http://github.com/paleoclaw/openclaw.git",
+        "http://github.com/syxscott/PaleoClaw.git",
         "https://example.com/paleoclaw/openclaw.git",
         "git@github.com:paleoclaw/openclaw.git",
-        "https://github.com/paleoclaw/openclaw.git?token=x",
-        "https://github.com/paleoclaw/openclaw.git\n",
+        "https://github.com/syxscott/PaleoClaw.git?token=x",
+        "https://github.com/syxscott/PaleoClaw.git\n",
       ].map((remoteUrl) => withBinding({ remoteUrl })),
       withBinding({ gitAuthor: { unexpected: true } }),
       withBinding({ remoteUrl: undefined }),

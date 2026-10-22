@@ -8,7 +8,7 @@ scenario:
     primary:
       - telegram.conversation-routing-and-delivery
   regressionRefs:
-    - paleoclaw/paleoclaw#39905
+    - syxscott/PaleoClaw#39905
   objective: Verify Telegram quiet streaming finalizes one preview without a duplicate reply.
   successCriteria:
     - The scripted streaming reply contains the exact marker.

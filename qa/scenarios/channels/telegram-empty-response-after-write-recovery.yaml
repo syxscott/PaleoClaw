@@ -8,7 +8,7 @@ scenario:
     primary: [agent-runtime.failure-recovery-empty-response-recovery]
     secondary: [agent-runtime.failure-recovery-retry-policy]
   regressionRefs:
-    - paleoclaw/paleoclaw#108738
+    - syxscott/PaleoClaw#108738
   objective: Verify a settled side-effecting tool followed by an empty stop gets one fresh continuation and one visible Telegram final reply.
   successCriteria:
     - The model plans the side-effecting write exactly once.

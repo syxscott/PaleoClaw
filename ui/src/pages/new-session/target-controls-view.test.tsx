@@ -15,7 +15,7 @@ it.each([
   { name: "read-only Enter", writable: false, advertised: true, enter: true },
   { name: "unadvertised create", writable: true, advertised: false, enter: true },
 ])("gates pasted Git URL selection for $name", ({ writable, advertised, enter }) => {
-  const cloneUrl = "https://github.com/paleoclaw/openclaw.git";
+  const cloneUrl = "https://github.com/syxscott/PaleoClaw.git";
   const f = createDraftFixture({
     scopes: ["operator.sessions.read", ...(writable ? ["operator.sessions.write"] : [])],
     methods: ["projects.add", ...(advertised ? ["sessions.create"] : [])],

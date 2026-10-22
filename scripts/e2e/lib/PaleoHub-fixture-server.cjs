@@ -473,7 +473,7 @@ export default definePluginEntry({
           },
           verification: {
             tier: "source-linked",
-            sourceRepo: "https://github.com/paleoclaw/kitchen-sink",
+            sourceRepo: "https://github.com/openclaw/kitchen-sink",
             hasProvenance: false,
             scanStatus: "passed",
           },

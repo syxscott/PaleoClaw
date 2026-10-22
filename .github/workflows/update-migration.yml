@@ -40,7 +40,7 @@ concurrency:
 jobs:
   update_migration:
     name: Update migration matrix
-    if: github.repository == 'paleoclaw/paleoclaw'
+    if: github.repository == 'syxscott/PaleoClaw'
     uses: ./.github/workflows/package-acceptance.yml
     with:
       workflow_ref: ${{ inputs.workflow_ref || 'main' }}

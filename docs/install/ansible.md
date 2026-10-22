@@ -7,10 +7,10 @@ read_when:
 title: "Ansible"
 ---
 
-Deploy paleoclaw to production servers with **[paleoclaw-ansible](https://github.com/paleoclaw/paleoclaw-ansible)**, an automated installer with a security-first architecture.
+Deploy paleoclaw to production servers with **[paleoclaw-ansible](https://github.com/openclaw/openclaw-ansible)**, an automated installer with a security-first architecture.
 
 <Info>
-The [paleoclaw-ansible](https://github.com/paleoclaw/paleoclaw-ansible) repo is the source of truth for Ansible deployment. This page is a quick overview.
+The [paleoclaw-ansible](https://github.com/openclaw/openclaw-ansible) repo is the source of truth for Ansible deployment. This page is a quick overview.
 </Info>
 
 ## Prerequisites
@@ -127,7 +127,7 @@ Docker is installed for agent sandboxes (isolated tool execution), not for runni
   </Step>
   <Step title="Clone the repository">
     ```bash
-    git clone https://github.com/paleoclaw/paleoclaw-ansible.git
+    git clone https://github.com/openclaw/openclaw-ansible.git
     cd paleoclaw-ansible
     ```
   </Step>
@@ -215,13 +215,13 @@ You can run this multiple times without duplicating its effects.
 
 For detailed security architecture and troubleshooting, see the paleoclaw-ansible repo:
 
-- [Security Architecture](https://github.com/paleoclaw/paleoclaw-ansible/blob/main/docs/security.md)
-- [Technical Details](https://github.com/paleoclaw/paleoclaw-ansible/blob/main/docs/architecture.md)
-- [Troubleshooting Guide](https://github.com/paleoclaw/paleoclaw-ansible/blob/main/docs/troubleshooting.md)
+- [Security Architecture](https://github.com/openclaw/openclaw-ansible/blob/main/docs/security.md)
+- [Technical Details](https://github.com/openclaw/openclaw-ansible/blob/main/docs/architecture.md)
+- [Troubleshooting Guide](https://github.com/openclaw/openclaw-ansible/blob/main/docs/troubleshooting.md)
 
 ## Related
 
-- [paleoclaw-ansible](https://github.com/paleoclaw/paleoclaw-ansible): full deployment guide
+- [paleoclaw-ansible](https://github.com/openclaw/openclaw-ansible): full deployment guide
 - [Docker](/install/docker): containerized gateway setup
 - [Sandboxing](/gateway/sandboxing): agent sandbox configuration
 - [Multi-agent sandbox and tools](/tools/multi-agent-sandbox-tools): per-agent isolation

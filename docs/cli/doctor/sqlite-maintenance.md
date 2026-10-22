@@ -496,7 +496,7 @@ failure rolls already-moved files back before reporting failure, so a
 recoverable file set is not silently split. Stop the Gateway before recovery;
 copying or renaming an actively changing SQLite file set is unsafe and behaves
 differently across operating systems. With `--github-issue --yes`, doctor uses
-the GitHub CLI to create the issue in `paleoclaw/paleoclaw`. If the CLI is
+the GitHub CLI to create the issue in `syxscott/PaleoClaw`. If the CLI is
 unavailable or GitHub definitively rejects the request, doctor can open the
 exact sanitized report in a browser when its encoded URL stays within the safe
 request-size bound. Without confirmation, doctor writes the local support

@@ -85,7 +85,7 @@ env:
 jobs:
   resolve_target:
     name: Resolve target ref
-    if: github.event_name != 'schedule' || (github.repository == 'paleoclaw/paleoclaw' && github.ref == 'refs/heads/main')
+    if: github.event_name != 'schedule' || (github.repository == 'syxscott/PaleoClaw' && github.ref == 'refs/heads/main')
     runs-on: &linux_runner_ubuntu >-
       ${{ vars.OPENCLAW_RELEASE_RUNNER_GROUP != '' && fromJSON(format('{{"group":{0},"labels":{1}}}',
       toJSON(vars.OPENCLAW_RELEASE_RUNNER_GROUP), toJSON('ubuntu-24.04'))) || ('ubuntu-24.04') }}

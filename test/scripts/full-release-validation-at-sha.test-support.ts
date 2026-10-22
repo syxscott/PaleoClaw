@@ -268,7 +268,7 @@ module.exports = async () => {
   const witness = {
     kind: "openclaw.full-release-dispatch-inputs/v1",
     serverUrl: "https://github.com",
-    repository: "paleoclaw/paleoclaw",
+    repository: "syxscott/PaleoClaw",
     workflowRef: "paleoclaw/paleoclaw/.github/workflows/full-release-validation.yml@refs/heads/" + accepted.ref,
     event: "workflow_dispatch",
     ref: "refs/heads/" + accepted.ref,
@@ -303,7 +303,7 @@ const fs = require("node:fs");
 const { spawnSync } = require("node:child_process");
 const args = process.argv.slice(2);
 fs.appendFileSync(process.env.MOCK_GIT_CALLS, JSON.stringify(args) + "\\n");
-if (args.includes("https://github.com/paleoclaw/openclaw.git")) {
+if (args.includes("https://github.com/syxscott/PaleoClaw.git")) {
   if (${JSON.stringify(options.bareShaFetchFailure ?? false)}) {
     console.error("fatal: remote error: upload-pack: not our ref " + args.at(-1));
     process.exit(1);
@@ -375,10 +375,10 @@ const runMetadata = (id, state = parentRunStates[0]) => {
     path: ".github/workflows/full-release-validation.yml" + (
       ${JSON.stringify(options.runPathStyle ?? "bare")} === "full-ref" ? "@refs/heads/" + accepted.ref : ""
     ),
-    repository: { full_name: "paleoclaw/paleoclaw" },
-    head_repository: { full_name: "paleoclaw/paleoclaw" },
+    repository: { full_name: "syxscott/PaleoClaw" },
+    head_repository: { full_name: "syxscott/PaleoClaw" },
     display_title: "Full Release Validation",
-    html_url: "https://github.com/paleoclaw/paleoclaw/actions/runs/" + id,
+    html_url: "https://github.com/syxscott/PaleoClaw/actions/runs/" + id,
     ...${JSON.stringify(options.runIdentityOverrides ?? {})},
   };
 };
@@ -478,7 +478,7 @@ if (${JSON.stringify(options.candidateOwned ?? false)} && args[0] === "api" && a
   if (args[0] === "api") {
     console.log("HTTP/2.0 204 No Content\\r\\nContent-Length: 0\\r\\n\\r\\n");
   } else if (${JSON.stringify(options.dispatchReturnsRunUrl ?? true)}) {
-    console.log("https://github.com/paleoclaw/paleoclaw/actions/runs/123");
+    console.log("https://github.com/syxscott/PaleoClaw/actions/runs/123");
   }
 } else if (args[0] === "api" && endpoint.endsWith("/actions/workflows/full-release-validation.yml")) {
   console.log(JSON.stringify({ id: 17, path: ".github/workflows/full-release-validation.yml" }));

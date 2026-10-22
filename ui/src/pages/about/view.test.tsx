@@ -73,7 +73,7 @@ it("renders the hero, links, license, and Clawd's active wave", () => {
   expect(links.map((link) => link.getAttribute("href"))).toEqual([
     "https://openclaw.ai",
     "https://docs.openclaw.ai",
-    "https://github.com/paleoclaw/paleoclaw",
+    "https://github.com/syxscott/PaleoClaw",
     "https://discord.gg/clawd",
     "https://x.com/paleoclaw",
     "https://docs.openclaw.ai/releases",

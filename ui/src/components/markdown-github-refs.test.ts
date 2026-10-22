@@ -31,10 +31,10 @@ describe("github item references", () => {
   function expectItem(fragment: HTMLElement, number: string, kind: string) {
     const anchor = fragment.querySelector<HTMLAnchorElement>("a.markdown-github-item");
     expect(anchor?.getAttribute("href")).toBe(
-      `https://github.com/paleoclaw/paleoclaw/${kind === "pull" ? "pull" : "issues"}/${number}`,
+      `https://github.com/syxscott/PaleoClaw/${kind === "pull" ? "pull" : "issues"}/${number}`,
     );
     expect(anchor?.dataset.githubKind).toBe(kind);
-    expect(anchor?.textContent).toBe(`paleoclaw/paleoclaw#${number}`);
+    expect(anchor?.textContent).toBe(`syxscott/PaleoClaw#${number}`);
     return anchor;
   }
 
@@ -134,14 +134,14 @@ describe("github item references", () => {
     const input = "ClawSweeper PR #1576; Release.Tools PR #1576; PR #1576.";
     const fragment = render(input, { githubRepo, githubRepositories });
     expect([...fragment.querySelectorAll("a")].map((a) => a.getAttribute("href"))).toEqual([
-      "https://github.com/paleoclaw/clawsweeper/pull/1576",
+      "https://github.com/openclaw/clawsweeper/pull/1576",
       "https://github.com/other/release-tools/pull/1576",
-      "https://github.com/paleoclaw/paleoclaw/pull/1576",
+      "https://github.com/openclaw/openclaw/pull/1576",
     ]);
     expect([...fragment.querySelectorAll("a")].map((a) => a.textContent)).toEqual([
       "paleoclaw/clawsweeper#1576",
       "other/release-tools#1576",
-      "paleoclaw/paleoclaw#1576",
+      "syxscott/PaleoClaw#1576",
     ]);
   });
 
@@ -207,7 +207,7 @@ describe("github item references", () => {
   ])("resolves explicit owner/repo without a checkout: %s", (source, kind, display) => {
     const fragment = render(source, {});
     expect(fragment.querySelector("a")?.getAttribute("href")).toBe(
-      "https://github.com/paleoclaw/clawsweeper/" +
+      "https://github.com/openclaw/clawsweeper/" +
         kind +
         (source.includes("1576") ? "/1576" : "/42"),
     );
@@ -249,7 +249,7 @@ describe("github item references", () => {
     expect(anchor?.classList.contains("markdown-github-link")).toBe(true);
     expect(anchor?.hasAttribute("title")).toBe(false);
     expect(anchor?.previousSibling?.textContent ?? "").toBe(prefix);
-    expect(fragment.textContent).toBe(`${prefix}paleoclaw/paleoclaw#${number}\n`);
+    expect(fragment.textContent).toBe(`${prefix}syxscott/PaleoClaw#${number}\n`);
   });
 
   it.each([
@@ -282,7 +282,7 @@ describe("github item references", () => {
     const fragment = render(input);
     expectItem(fragment, number, kind);
     expect(fragment.textContent?.trim()).toBe(
-      label.replace(`#${number}`, `paleoclaw/paleoclaw#${number}`),
+      label.replace(`#${number}`, `syxscott/PaleoClaw#${number}`),
     );
     expect(fragment.querySelector("strong, em")).not.toBeNull();
   });
@@ -307,12 +307,12 @@ describe("github item references", () => {
     const fragment = render(input);
     const anchors = fragment.querySelectorAll("a.markdown-github-item");
     expect([...anchors].map((anchor) => anchor.textContent)).toEqual([
-      "paleoclaw/paleoclaw#141270",
-      "paleoclaw/paleoclaw#123",
-      "paleoclaw/paleoclaw#141271",
+      "syxscott/PaleoClaw#141270",
+      "syxscott/PaleoClaw#123",
+      "syxscott/PaleoClaw#141271",
     ]);
     expect(fragment.querySelector("p")?.textContent).toBe(
-      "(PR paleoclaw/paleoclaw#141270), issue paleoclaw/paleoclaw#123; #141270 and paleoclaw/paleoclaw#141271!",
+      "(PR syxscott/PaleoClaw#141270), issue syxscott/PaleoClaw#123; #141270 and syxscott/PaleoClaw#141271!",
     );
     expect(fragment.querySelector("h1 a")).toBeNull();
   });
@@ -323,10 +323,10 @@ describe("github item references", () => {
   ])("links a reference that ends a sentence in %j", (input, kind, label) => {
     const fragment = render(input);
     const anchor = fragment.querySelector("a.markdown-github-item");
-    expect(anchor?.textContent).toBe("paleoclaw/paleoclaw" + label);
+    expect(anchor?.textContent).toBe("syxscott/PaleoClaw" + label);
     expect(anchor?.getAttribute("data-github-kind")).toBe(kind);
     expect(fragment.querySelector("p")?.textContent).toBe(
-      input.replace(label, "paleoclaw/paleoclaw" + label),
+      input.replace(label, "syxscott/PaleoClaw" + label),
     );
   });
 

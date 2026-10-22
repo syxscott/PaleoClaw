@@ -18,8 +18,8 @@ Regressions must fail on the original defect, not fixture setup; report unavaila
 baseline proof. Refactor under green tests and preserve distinct contracts when
 consolidating coverage. Use synthetic content and keep credentials out of captures.
 
-Apply the [test value gate](https://github.com/paleoclaw/paleoclaw/blob/main/.agents/skills/test-audit/SKILL.md)
-and [proof policy](https://github.com/paleoclaw/paleoclaw/blob/main/.agents/skills/paleoclaw-testing/SKILL.md#proof-policy).
+Apply the [test value gate](https://github.com/syxscott/PaleoClaw/blob/main/.agents/skills/test-audit/SKILL.md)
+and [proof policy](https://github.com/syxscott/PaleoClaw/blob/main/.agents/skills/paleoclaw-testing/SKILL.md#proof-policy).
 For requests, paid calls, recovery, defaults, or performance claims, read the
 [scenario contracts](/help/testing/boundary-scenarios#scenario-contracts) before
 changing code or proof. Too many private controls suggest fragmented ownership,
@@ -79,7 +79,7 @@ Close the background worker and isolate passive refresh as described in
 ## Flake triage
 
 Follow the canonical
-[test failure policy](https://github.com/paleoclaw/paleoclaw/blob/main/.agents/skills/paleoclaw-testing/SKILL.md#test-failure-policy).
+[test failure policy](https://github.com/syxscott/PaleoClaw/blob/main/.agents/skills/paleoclaw-testing/SKILL.md#test-failure-policy).
 Reproduce the original shard order before running alone; order-only failures
 usually mean earlier-file shared-state leaks. Classify fixture state, missing
 completion signals, and product races. Repair the producer. If a removal caused

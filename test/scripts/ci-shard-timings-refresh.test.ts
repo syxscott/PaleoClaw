@@ -16,7 +16,7 @@ const run = {
   conclusion: "failure",
   display_title: "CI full-release-validation-123-1-ci",
   head_sha: "a".repeat(40),
-  repository: { full_name: "paleoclaw/paleoclaw" },
+  repository: { full_name: "syxscott/PaleoClaw" },
 };
 const baseline = {
   version: 1,

@@ -265,7 +265,7 @@ describe("workspace .env blocklist completeness", () => {
       {},
       {
         MY_APP_KEY: "user-value",
-        APP_GITHUB_REPO: "paleoclaw/paleoclaw",
+        APP_GITHUB_REPO: "syxscott/PaleoClaw",
         APP_URL: "https://project.example.com",
         APP_ALLOWED_USERS: "alice,bob",
         DATABASE_URL_CUSTOM: "pg://localhost",

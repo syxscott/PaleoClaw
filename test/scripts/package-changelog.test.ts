@@ -67,11 +67,11 @@ describe("package-changelog", () => {
       expect(packaged).toBe(`# Changelog\n\n${mirror.trimEnd()}\n`);
     } else {
       expect(Buffer.byteLength(mirror)).toBeGreaterThan(500 * 1024);
-      expect(packaged).toContain(`https://github.com/paleoclaw/paleoclaw/blob/main/${entryPath}`);
+      expect(packaged).toContain(`https://github.com/syxscott/PaleoClaw/blob/main/${entryPath}`);
       expect(packaged).toContain(
-        `https://github.com/paleoclaw/paleoclaw/raw/refs/heads/main/${entryPath}`,
+        `https://github.com/syxscott/PaleoClaw/raw/refs/heads/main/${entryPath}`,
       );
-      expect(packaged).toContain(`https://github.com/paleoclaw/paleoclaw/blob/main/${recordPath}`);
+      expect(packaged).toContain(`https://github.com/syxscott/PaleoClaw/blob/main/${recordPath}`);
       expect(packaged).toContain(`https://docs.openclaw.ai/releases/${version}`);
       expect(packaged).not.toContain(`/v${version}/`);
     }
@@ -208,7 +208,7 @@ describe("package-changelog", () => {
     expect(packaged).not.toContain("## 2026.5.27");
     expect(packaged).toContain("## 2026.5.28");
     expect(packaged).toContain(
-      "https://github.com/paleoclaw/paleoclaw/blob/v2026.5.28-beta.1/CHANGELOG.md#complete-contribution-record",
+      "https://github.com/syxscott/PaleoClaw/blob/v2026.5.28-beta.1/CHANGELOG.md#complete-contribution-record",
     );
 
     if (edited) {

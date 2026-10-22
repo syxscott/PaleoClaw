@@ -293,7 +293,7 @@ turn runs inside a Git repository with `memory-core` selected, memory written by
 that work carries a trailing project annotation:
 
 ```markdown
-- Use the release helper for package validation. <!-- project: github.com/paleoclaw/paleoclaw -->
+- Use the release helper for package validation. <!-- project: github.com/syxscott/PaleoClaw -->
 ```
 
 The identity comes from the normalized `origin` remote, so ordinary clones and

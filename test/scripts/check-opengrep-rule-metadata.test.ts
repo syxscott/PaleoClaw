@@ -6,7 +6,7 @@ const validRule = {
   id: "ghsa-1234-abcd-5678.source-rule",
   metadata: {
     ghsa: "GHSA-1234-ABCD-5678",
-    "advisory-url": "https://github.com/paleoclaw/paleoclaw/security/advisories/GHSA-1234-ABCD-5678",
+    "advisory-url": "https://github.com/syxscott/PaleoClaw/security/advisories/GHSA-1234-ABCD-5678",
     "detector-bucket": "precise",
     "source-rule-id": "source-rule",
   },
@@ -59,13 +59,13 @@ describe("check-opengrep-rule-metadata", () => {
             ...validRule.metadata,
             ghsa: "GHSA-9999-ABCD-5678",
             "advisory-url":
-              "https://github.com/paleoclaw/paleoclaw/security/advisories/GHSA-1234-ABCD-5678",
+              "https://github.com/syxscott/PaleoClaw/security/advisories/GHSA-1234-ABCD-5678",
           },
         },
       ]),
     ).toEqual([
       "ghsa-1234-abcd-5678.source-rule: source id in metadata (GHSA-9999-ABCD-5678) must match source id in rule id (ghsa-1234-abcd-5678)",
-      "ghsa-1234-abcd-5678.source-rule: metadata.advisory-url must be https://github.com/paleoclaw/paleoclaw/security/advisories/GHSA-9999-ABCD-5678",
+      "ghsa-1234-abcd-5678.source-rule: metadata.advisory-url must be https://github.com/syxscott/PaleoClaw/security/advisories/GHSA-9999-ABCD-5678",
     ]);
   });
 });

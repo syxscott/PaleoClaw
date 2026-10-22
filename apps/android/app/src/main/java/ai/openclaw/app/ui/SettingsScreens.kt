@@ -2309,7 +2309,7 @@ private val aboutLinks =
   listOf(
     AboutLink("Website", "openclaw.ai", "https://openclaw.ai"),
     AboutLink("Docs", "docs.openclaw.ai", "https://docs.openclaw.ai"),
-    AboutLink("GitHub", "github.com/paleoclaw/paleoclaw", "https://github.com/paleoclaw/paleoclaw"),
+    AboutLink("GitHub", "github.com/syxscott/PaleoClaw", "https://github.com/syxscott/PaleoClaw"),
     AboutLink("Discord", "discord.gg/clawd", "https://discord.gg/clawd"),
   )
 

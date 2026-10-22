@@ -16,7 +16,7 @@ const surface = "Runtime behavior changed. Run `{{OPENCLAW}} status`.\n| **Testi
 function campaignBody(tag = TAG) {
   return [
     `<!-- paleoclaw-release-validation:${TRAIN} -->\n`,
-    `- Current beta: [${tag}](https://github.com/paleoclaw/paleoclaw/releases/tag/${tag})`,
+    `- Current beta: [${tag}](https://github.com/syxscott/PaleoClaw/releases/tag/${tag})`,
     `- Beta commit: \`${RELEASE_COMMIT}\``,
     `- Guidance main commit: \`${GUIDANCE_SHA}\``,
     "- Test target: latest immutable `origin/main`\n",
@@ -34,7 +34,7 @@ function betaArtifact(tag = TAG) {
     operation: "upsert",
     tag,
     stableTrain: TRAIN,
-    releaseUrl: `https://github.com/paleoclaw/paleoclaw/releases/tag/${tag}`,
+    releaseUrl: `https://github.com/syxscott/PaleoClaw/releases/tag/${tag}`,
     releaseCommit: RELEASE_COMMIT,
     guidanceMainSha: GUIDANCE_SHA,
     title: TITLE,
@@ -48,7 +48,7 @@ function issue(number: number, body: string, labels = ["release-validation"]) {
     state: "open",
     title: "old title",
     body,
-    html_url: `https://github.com/paleoclaw/paleoclaw/issues/${number}`,
+    html_url: `https://github.com/syxscott/PaleoClaw/issues/${number}`,
     labels: labels.map((name) => ({ name })),
   };
 }
@@ -153,7 +153,7 @@ it("updates the matching train and closes an older campaign", async () => {
   expect(result).toEqual({
     action: "update",
     issueNumber: 10,
-    issueUrl: "https://github.com/paleoclaw/paleoclaw/issues/10",
+    issueUrl: "https://github.com/syxscott/PaleoClaw/issues/10",
   });
   expectCall(calls.updates, { issue_number: 10, labels: ["release-validation"] });
   expectCall(calls.comments, { issue_number: 9, body: expect.stringContaining("issues/10") });
@@ -192,7 +192,7 @@ it("closes the matching train after a stable release", async () => {
       operation: "close",
       tag: TRAIN,
       stableTrain: TRAIN,
-      releaseUrl: `https://github.com/paleoclaw/paleoclaw/releases/tag/${TRAIN}`,
+      releaseUrl: `https://github.com/syxscott/PaleoClaw/releases/tag/${TRAIN}`,
     },
   });
 

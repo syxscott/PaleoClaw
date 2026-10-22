@@ -9,7 +9,7 @@ title: "Tests"
 - Update and plugin package validation: [Testing updates and plugins](/help/testing-updates-plugins)
 
 For proof selection, follow the canonical
-[proof policy](https://github.com/paleoclaw/paleoclaw/blob/main/.agents/skills/paleoclaw-testing/SKILL.md#proof-policy).
+[proof policy](https://github.com/syxscott/PaleoClaw/blob/main/.agents/skills/paleoclaw-testing/SKILL.md#proof-policy).
 
 This page is an index. The testing reference is documented on six pages, one
 per reader job. Open the page that matches your task.

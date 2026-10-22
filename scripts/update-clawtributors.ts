@@ -7,7 +7,7 @@ import { readBoundedResponseBytes } from "./lib/bounded-response.mjs";
 import { execPlainGh } from "./lib/plain-gh.mjs";
 import type { ApiContributor, Entry, MapConfig, User } from "./update-clawtributors.types.js";
 
-const REPO = "paleoclaw/paleoclaw";
+const REPO = "syxscott/PaleoClaw";
 const PER_LINE = 10;
 const AVATAR_PROBE_SIZE = 40;
 const AVATAR_PROBE_MAX_BYTES = 256 * 1024;

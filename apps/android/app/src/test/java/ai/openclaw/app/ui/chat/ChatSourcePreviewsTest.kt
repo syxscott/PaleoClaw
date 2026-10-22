@@ -356,10 +356,10 @@ class ChatSourcePreviewsTest {
   @Test
   fun dedicatedLinksAndUnsafeUrlsDoNotConsumeTheEightSourceSlots() =
     runTest {
-      val issue = "https://github.com/paleoclaw/paleoclaw/issues/123"
+      val issue = "https://github.com/openclaw/openclaw/issues/123"
       val session = "https://gateway.example/app/chat/main/session"
       val redirect = "https://example.net/redirect"
-      val ordinary = listOf("https://github.com/paleoclaw/paleoclaw", "https://outside.example/chat/main") + (1..8).map { "https://example.com/source-$it" }
+      val ordinary = listOf("https://github.com/syxscott/PaleoClaw", "https://outside.example/chat/main") + (1..8).map { "https://example.com/source-$it" }
       val urls = listOf(issue, session, redirect, "https://user:password@example.com/guide", "javascript:alert(1)") + ordinary
       val result =
         previews(

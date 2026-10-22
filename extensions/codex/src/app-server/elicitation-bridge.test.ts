@@ -133,7 +133,7 @@ function buildCurrentCodexApprovalElicitation() {
       tool_title: "Create pull request",
       tool_description: "Creates a pull request in the selected repository.",
       tool_params_display: [
-        { name: "repo", display_name: "Repository", value: "paleoclaw/paleoclaw" },
+        { name: "repo", display_name: "Repository", value: "syxscott/PaleoClaw" },
       ],
     },
     requestedSchema: {
@@ -363,7 +363,7 @@ describe("Codex app-server elicitation bridge", () => {
   it.each([
     {
       name: "raw tool identity",
-      display: [{ name: "repo", value: "paleoclaw/paleoclaw" }],
+      display: [{ name: "repo", value: "syxscott/PaleoClaw" }],
       grant: true,
     },
     { name: "absent display metadata", display: undefined, grant: true },
@@ -394,7 +394,7 @@ describe("Codex app-server elicitation bridge", () => {
       id: "raw-call",
       server,
       tool: "_create.issue-v2",
-      arguments: { repo: "paleoclaw/paleoclaw", limit: 3 },
+      arguments: { repo: "syxscott/PaleoClaw", limit: 3 },
     };
     let activeItem: typeof item | undefined = testCase.missingItem ? undefined : item;
     const result = await handleCodexAppServerElicitationRequest({
@@ -601,7 +601,7 @@ describe("Codex app-server elicitation bridge", () => {
               {
                 name: "repo",
                 display_name: "Repository\u202e",
-                value: "\u001b]8;;https://evil.example\u001b\\paleoclaw/paleoclaw\u001b]8;;\u001b\\",
+                value: "\u001b]8;;https://evil.example\u001b\\syxscott/PaleoClaw\u001b]8;;\u001b\\",
               },
             ],
           },
@@ -622,7 +622,7 @@ describe("Codex app-server elicitation bridge", () => {
       contains: [
         "GitHub Injected: approve",
         "Tool: Visible tool",
-        "Repository: paleoclaw/paleoclaw",
+        "Repository: syxscott/PaleoClaw",
         "- Approve this tool call: Confirm access",
       ],
       excludes: ["https://evil.example", "\u001b", "\u009b", "\u202e"],
@@ -683,7 +683,7 @@ describe("Codex app-server elicitation bridge", () => {
               {
                 name: "repo",
                 display_name: "\u202e",
-                value: "paleoclaw/paleoclaw",
+                value: "syxscott/PaleoClaw",
               },
             ],
           },
@@ -701,7 +701,7 @@ describe("Codex app-server elicitation bridge", () => {
         },
       },
       title: undefined,
-      contains: ["- repo: paleoclaw/paleoclaw", "- approve: Confirm access"],
+      contains: ["- repo: syxscott/PaleoClaw", "- approve: Confirm access"],
       excludes: ["- field: Confirm access"],
     },
     {

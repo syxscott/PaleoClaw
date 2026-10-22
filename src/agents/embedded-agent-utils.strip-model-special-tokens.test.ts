@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 import { stripModelSpecialTokens } from "../shared/text/model-special-tokens.js";
 
 /**
- * @see https://github.com/paleoclaw/paleoclaw/issues/40020
+ * @see https://github.com/openclaw/openclaw/issues/40020
  */
 describe("stripModelSpecialTokens", () => {
   it("strips tokens and inserts space between adjacent words", () => {

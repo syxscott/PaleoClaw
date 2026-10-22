@@ -5,7 +5,7 @@ import { existsSync, readFileSync, writeFileSync, readdirSync, statSync } from "
 import { join } from "node:path";
 import { produceQualificationAdmission } from "../../scripts/release-qualification-admission.mjs";
 
-const repository = "paleoclaw/paleoclaw";
+const repository = "syxscott/PaleoClaw";
 const path = ".github/workflows/paleoclaw-release-prepare.yml";
 const upload = "Upload immutable qualification admission";
 const jobName = "Admit frozen candidate qualification";

@@ -74,7 +74,7 @@ you only need an issued ClawRouter key.
 Native Decisions requires both ClawRouter service support and an eligible router
 key. **Hosted availability:** as of October 20, 2026, native Decisions is not
 generally available on the hosted ClawRouter service.
-[Service support](https://github.com/paleoclaw/clawrouter/pull/277) is still pending;
+[Service support](https://github.com/openclaw/clawrouter/pull/277) is still pending;
 the bundled paleoclaw adapter does not enable it by itself.
 
 The following example is conditional: use it only after your ClawRouter

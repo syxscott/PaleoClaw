@@ -68,7 +68,7 @@ it.each(["success", "failure", "cancelled", "skipped"])(
       github: {
         event_name: "workflow_dispatch",
         ref: "refs/heads/main",
-        repository: "paleoclaw/paleoclaw",
+        repository: "syxscott/PaleoClaw",
       },
       inputs: { operation: "release" },
       needs: { qualify: { result } },

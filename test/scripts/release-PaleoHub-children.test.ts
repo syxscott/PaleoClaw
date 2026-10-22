@@ -8,7 +8,7 @@ const tempDirs = useAutoCleanupTempDirTracker(afterEach);
 const workflowRef = "release-publish/aaaaaaaaaaaa-123";
 const workflowSha = "a".repeat(40);
 const releaseTag = "v2026.9.5";
-const repository = "paleoclaw/paleoclaw";
+const repository = "syxscott/PaleoClaw";
 
 const dispatchCommand =
   'require_clawhub_dispatch_available "$WORKFLOW_REF" "$WORKFLOW"\ndispatch_workflow_at_ref "$WORKFLOW_REF" "$PARENT_WORKFLOW_SHA" "$WORKFLOW" -f release_tag="$RELEASE_TAG"';
@@ -84,9 +84,9 @@ if (args[0] === 'run' && args[1] === 'list') {
 } else if (args[0] === 'api' && endpoint.includes('/commits/')) {
   console.log(${JSON.stringify(workflowSha)});
 } else if (args[0] === 'api' && endpoint.endsWith('/dispatches')) {
-  console.log(JSON.stringify({workflow_run_id: 92, html_url: 'https://github.com/paleoclaw/paleoclaw/actions/runs/92'}));
+  console.log(JSON.stringify({workflow_run_id: 92, html_url: 'https://github.com/syxscott/PaleoClaw/actions/runs/92'}));
 } else if (args[0] === 'run' && args[1] === 'view') {
-  console.log(JSON.stringify(args.includes('jobs') ? {jobs: [{status: ${JSON.stringify(publisherRunning ? "in_progress" : "waiting")}}]} : {headSha: ${JSON.stringify(workflowSha)}, url: 'https://github.com/paleoclaw/paleoclaw/actions/runs/92'}));
+  console.log(JSON.stringify(args.includes('jobs') ? {jobs: [{status: ${JSON.stringify(publisherRunning ? "in_progress" : "waiting")}}]} : {headSha: ${JSON.stringify(workflowSha)}, url: 'https://github.com/syxscott/PaleoClaw/actions/runs/92'}));
 } else if (args[0] === 'run' && args[1] === 'cancel') {
   if (${cancellationFails}) process.exit(1);
   child.status = 'completed'; child.conclusion = 'cancelled';

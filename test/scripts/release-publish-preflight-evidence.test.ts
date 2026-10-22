@@ -20,7 +20,7 @@ import { fixtureGit } from "./release-publish.test-support.js";
 
 const tempDirs = useAutoCleanupTempDirTracker(afterEach);
 const version = "2026.9.5";
-const repo = "paleoclaw/paleoclaw";
+const repo = "syxscott/PaleoClaw";
 const api = (endpoint: string) => ["api", `repos/${repo}/${endpoint}`, "--method", "GET"];
 const sha256 = (bytes: string | Uint8Array) => createHash("sha256").update(bytes).digest("hex");
 
@@ -162,7 +162,7 @@ describe("publish preflight release inventory", () => {
       draft,
       prerelease: false,
       tag_name: `v${version}`,
-      html_url: `https://github.com/paleoclaw/paleoclaw/releases/tag/v${version}`,
+      html_url: `https://github.com/syxscott/PaleoClaw/releases/tag/v${version}`,
       target_commitish: "a".repeat(40),
       body: "Published release notes",
       assets: [{ name: "dependency-evidence.zip" }],
@@ -324,7 +324,7 @@ function coreEvidenceFixture() {
     verify: () =>
       validatePublishPreflightNpm(
         {
-          repo: "paleoclaw/paleoclaw",
+          repo: "syxscott/PaleoClaw",
           tag: `v${version}`,
           targetSha,
           toolingSha: targetSha,
@@ -476,7 +476,7 @@ else {
       );
       vi.stubEnv("PATH", `${bin}${delimiter}${process.env.PATH ?? ""}`);
       vi.stubEnv("OPENCLAW_GH_BIN", "");
-      const client = createPublishPreflightEvidenceClient("paleoclaw/paleoclaw");
+      const client = createPublishPreflightEvidenceClient("syxscott/PaleoClaw");
       expect(client.loadManifest("123", 1)?.manifest).toEqual(manifests[0]);
       writeFileSync(join(directory, "90.zip"), "changed after the authenticated read");
       expect(client.loadManifest("123", 1)?.manifest).toEqual(manifests[0]);

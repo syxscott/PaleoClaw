@@ -86,7 +86,7 @@ test("sessions.create retains a cloud repository across replay without creating 
   expect(listed.payload?.sessions.find((row) => row.key === key)).toMatchObject({
     repositoryWorkspaceId: entry.repositoryWorkspaceId,
     repository: {
-      url: "https://github.com/paleoclaw/openclaw.git",
+      url: "https://github.com/syxscott/PaleoClaw.git",
       ref: "release/next",
       branch: expect.stringMatching(/^paleoclaw\//u),
     },
@@ -174,7 +174,7 @@ test("sessions.create retains a cloud repository across replay without creating 
 test.each([
   { repository: { url: "file:///tmp/repository" } },
   {
-    repository: { url: "https://github.com/paleoclaw/openclaw.git", ref: "--upload-pack=anything" },
+    repository: { url: "https://github.com/syxscott/PaleoClaw.git", ref: "--upload-pack=anything" },
   },
   { worktree: true },
   { message: "Start before dispatch" },
@@ -186,7 +186,7 @@ test.each([
       "sessions.create",
       {
         agentId: "main",
-        repository: { url: "https://github.com/paleoclaw/openclaw.git" },
+        repository: { url: "https://github.com/syxscott/PaleoClaw.git" },
         ...options,
       },
       controlUiClient,

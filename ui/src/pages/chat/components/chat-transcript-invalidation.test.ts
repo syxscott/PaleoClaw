@@ -337,7 +337,7 @@ describe("chat transcript invalidation", () => {
       { owner: "paleoclaw", repo: "clawsweeper", aliases: ["ClawSweeper"] },
     ];
     rerender();
-    expect(chip()?.href).toBe("https://github.com/paleoclaw/clawsweeper/pull/1576");
+    expect(chip()?.href).toBe("https://github.com/openclaw/clawsweeper/pull/1576");
     props.githubRepositories = [{ aliases: ["ClawSweeper"] }];
     rerender();
     expect(chip()).toBeNull();
@@ -358,7 +358,7 @@ describe("chat transcript invalidation", () => {
 
     props.githubRepo = { owner: "paleoclaw", repo: "paleoclaw" };
     rerender();
-    expect(chip()?.href).toBe("https://github.com/paleoclaw/paleoclaw/pull/141270");
+    expect(chip()?.href).toBe("https://github.com/openclaw/openclaw/pull/141270");
     props.githubRepo = { owner: "other", repo: "checkout" };
     rerender();
     expect(chip()?.href).toBe("https://github.com/other/checkout/pull/141270");

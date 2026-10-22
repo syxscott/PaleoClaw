@@ -127,7 +127,7 @@ it.each(["node", "bun-all", "dual-all"])(
     const workflow = readCiWorkflow();
     const context = {
       eventName: "workflow_dispatch" as const,
-      repository: "paleoclaw/paleoclaw",
+      repository: "syxscott/PaleoClaw",
       runAttempt: 1,
       testRuntimePolicy: policy,
       preflightOutputs: outputs,

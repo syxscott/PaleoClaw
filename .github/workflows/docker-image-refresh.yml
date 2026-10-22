@@ -28,7 +28,7 @@ env:
 
 jobs:
   plan:
-    if: github.repository == 'paleoclaw/paleoclaw'
+    if: github.repository == 'syxscott/PaleoClaw'
     runs-on: ubuntu-24.04
     permissions:
       contents: read

@@ -109,7 +109,7 @@ provider and `/api/tags` is unreachable, paleoclaw records that run as
 launch failing requests.
 
 Live verification. These are contributor commands: run them from a checkout of
-the `paleoclaw/paleoclaw` repository with `pnpm install` already done, not from a
+the `syxscott/PaleoClaw` repository with `pnpm install` already done, not from a
 packaged CLI install.
 
 ```bash

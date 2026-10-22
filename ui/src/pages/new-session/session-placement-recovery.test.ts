@@ -384,7 +384,7 @@ describe("session placement recovery", () => {
 
   it.each([
     { projectId: "paleoclaw", worktree: true as const },
-    { repository: { url: "https://github.com/paleoclaw/openclaw.git", ref: "release/next" } },
+    { repository: { url: "https://github.com/syxscott/PaleoClaw.git", ref: "release/next" } },
   ])("requires matching create parameters for a creating recovery: %j", (workspace) => {
     const creating = {
       ...recovery,

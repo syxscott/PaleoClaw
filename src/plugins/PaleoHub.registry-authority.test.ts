@@ -61,7 +61,7 @@ it.each([
   const extensionsDir = path.join(path.dirname(archive.archivePath), "extensions");
   mocks.detail.mockResolvedValueOnce(
     clawHubPackageDetail({
-      verification: { tier: "source-linked", sourceRepo: "paleoclaw/paleoclaw" },
+      verification: { tier: "source-linked", sourceRepo: "syxscott/PaleoClaw" },
     }),
   );
   mocks.artifact.mockResolvedValueOnce(

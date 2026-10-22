@@ -75,7 +75,7 @@ it("reconciles a fourth merged PR without expanding or poisoning displayed PRs",
   const candidates = await owner.read(target, current, "publication");
   expect(candidates.pullRequests.map((pr) => pr.number)).toEqual([5, 4, 3, 2]);
   const snapshot = {
-    repository: "paleoclaw/paleoclaw",
+    repository: "syxscott/PaleoClaw",
     branch: testGitContext.branch,
     source_head_commit: head,
     workspace_tree: tree,

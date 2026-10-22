@@ -137,7 +137,7 @@ describe("ChatPullRequests", () => {
     expect(warning?.getAttribute("aria-label")).toContain("could not be refreshed");
     expect(warning?.getAttribute("aria-label")).not.toContain("rate limit");
     expect(container.querySelector(".chat-pr__number")?.textContent).toBe(
-      "paleoclaw/paleoclaw#103469",
+      "syxscott/PaleoClaw#103469",
     );
   });
 
@@ -163,7 +163,7 @@ describe("ChatPullRequests", () => {
             requestId: "publication-merged",
             status: "published",
             url: pullRequest().url,
-            repository: "paleoclaw/paleoclaw",
+            repository: "syxscott/PaleoClaw",
             branch: pullRequest().branch,
             headCommit: "a".repeat(40),
             publisher: { source: "agent-override", accountId: 3, login: "agent-bot" },
@@ -308,8 +308,8 @@ describe("ChatPullRequests", () => {
           result: {
             requestId: "old-publication",
             status: "published",
-            url: "https://github.com/paleoclaw/paleoclaw/pull/1",
-            repository: "paleoclaw/paleoclaw",
+            url: "https://github.com/syxscott/PaleoClaw/pull/1",
+            repository: "syxscott/PaleoClaw",
             branch: pullRequest().branch,
             headCommit: "a".repeat(40),
           },
@@ -320,7 +320,7 @@ describe("ChatPullRequests", () => {
     );
     expect(container.querySelectorAll(".chat-pr")).toHaveLength(1);
     expect(container.querySelector(".chat-pr__number")?.textContent).toBe(
-      "paleoclaw/paleoclaw#103469",
+      "syxscott/PaleoClaw#103469",
     );
     expect(container.querySelector(".chat-pr__checks")).not.toBeNull();
     container.querySelector<HTMLButtonElement>(".chat-pr__dismiss")?.click();
@@ -343,7 +343,7 @@ describe("ChatPullRequests", () => {
             requestId: "published-with-refresh-error",
             status: "published",
             url: pullRequest().url,
-            repository: "paleoclaw/paleoclaw",
+            repository: "syxscott/PaleoClaw",
             branch: pullRequest().branch,
             headCommit: "a".repeat(40),
           },
@@ -425,8 +425,8 @@ describe("ChatPullRequests", () => {
         result: {
           requestId: "publication-1",
           status: "published",
-          url: "https://github.com/paleoclaw/paleoclaw/pull/125200",
-          repository: "paleoclaw/paleoclaw",
+          url: "https://github.com/openclaw/openclaw/pull/125200",
+          repository: "syxscott/PaleoClaw",
           branch: "paleoclaw/ui-fix",
           headCommit: "a".repeat(40),
           publisher: { source: "personal", accountId: 2, login: "alice-tools" },
@@ -434,7 +434,7 @@ describe("ChatPullRequests", () => {
       }),
     });
     expect(container.querySelector<HTMLAnchorElement>(".chat-pr__create")?.href).toBe(
-      "https://github.com/paleoclaw/paleoclaw/pull/125200",
+      "https://github.com/openclaw/openclaw/pull/125200",
     );
     expect(container.querySelector(".chat-pr__branch")?.textContent).toBe(props.branch?.branch);
     expect(container.querySelector(".chat-pr__diff")).not.toBeNull();
@@ -594,7 +594,7 @@ describe("CI job details", () => {
         source: "actions",
         startedAt: "2026-09-14T00:00:00Z",
         completedAt: "2026-09-14T00:01:12Z",
-        detailsUrl: "https://github.com/paleoclaw/paleoclaw/actions/runs/10/job/30",
+        detailsUrl: "https://github.com/syxscott/PaleoClaw/actions/runs/10/job/30",
         steps: [
           { number: 3, name: "Lint sources", status: "completed", conclusion: "failure" },
           { number: 1, name: "Set up job", status: "completed", conclusion: "success" },

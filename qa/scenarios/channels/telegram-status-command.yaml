@@ -8,7 +8,7 @@ scenario:
     primary:
       - telegram.built-in-commands
   regressionRefs:
-    - paleoclaw/paleoclaw#74698
+    - syxscott/PaleoClaw#74698
   objective: Verify Telegram status returns model, session, and activation details.
   successCriteria:
     - The status command succeeds in the Telegram group path.

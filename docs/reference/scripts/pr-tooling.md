@@ -161,7 +161,7 @@ snapshot under `TMPDIR`; no automatic sweep of another operation's files occurs.
 
 `pnpm test:ci-failed <pr-number|run-id|run-or-pr-url>` reads failed CI jobs using
 the authenticated `gh` CLI and prints focused local proof. `--repo` defaults to
-`paleoclaw/paleoclaw`. A PR target selects the latest completed or in-progress
+`syxscott/PaleoClaw`. A PR target selects the latest completed or in-progress
 `ci.yml` run for its current head SHA; a run target selects that exact run.
 
 The command fetches each failed or timed-out job's log once, with at most four
@@ -188,5 +188,5 @@ unknown ones, then run `pnpm test:ci-failed <pr> --run` until those pass locally
 and push once. PR CI supplies broad proof for the repaired head. Never run the
 full local suite or use `gh run rerun` to chase green. Pre-existing failures
 follow the
-[failure-table landing rule](https://github.com/paleoclaw/paleoclaw/blob/main/.agents/skills/paleoclaw-pr-maintainer/references/landing.md#red-main-and-inherited-failures);
+[failure-table landing rule](https://github.com/syxscott/PaleoClaw/blob/main/.agents/skills/paleoclaw-pr-maintainer/references/landing.md#red-main-and-inherited-failures);
 the table supplies evidence, not an automatic gate waiver.

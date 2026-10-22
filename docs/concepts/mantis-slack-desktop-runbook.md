@@ -65,7 +65,7 @@ gh workflow run mantis-slack-desktop-smoke.yml \
 
 `candidate_ref` is restricted because the workflow uses live credentials: it
 must resolve to current `main` ancestry, a release tag, or an open PR head in
-`paleoclaw/paleoclaw`.
+`syxscott/PaleoClaw`.
 
 The workflow produces:
 

@@ -52,7 +52,7 @@ async function emitPullRequestSnapshot(
             repo: "paleoclaw",
             state: "open",
             title: "Restore the session hovercard with compact interactive attribution details",
-            url: "https://github.com/paleoclaw/paleoclaw/pull/417",
+            url: "https://github.com/openclaw/openclaw/pull/417",
             author: { login: "steipete" },
           },
           {
@@ -66,7 +66,7 @@ async function emitPullRequestSnapshot(
             repo: "paleoclaw",
             state: "draft",
             title: "Follow-up polish",
-            url: "https://github.com/paleoclaw/paleoclaw/pull/418",
+            url: "https://github.com/openclaw/openclaw/pull/418",
           },
           {
             additions: 14,
@@ -79,7 +79,7 @@ async function emitPullRequestSnapshot(
             repo: "paleoclaw",
             state: "closed",
             title: "Accessibility follow-up",
-            url: "https://github.com/paleoclaw/paleoclaw/pull/419",
+            url: "https://github.com/openclaw/openclaw/pull/419",
           },
         ],
         rateLimited: false,
@@ -384,7 +384,7 @@ suite.define(() => {
           await pullRequest.locator(".session-hovercard__pr-state-icon").getAttribute("title"),
         ).toBe("Open · CI checks passing");
         expect(await pullRequest.locator(".session-hovercard__pr-number").textContent()).toBe(
-          "paleoclaw/paleoclaw#417",
+          "syxscott/PaleoClaw#417",
         );
         expect(await pullRequest.locator(".session-hovercard__pr-author").count()).toBe(0);
         expect(await pullRequest.locator(".session-hovercard__files").count()).toBe(0);

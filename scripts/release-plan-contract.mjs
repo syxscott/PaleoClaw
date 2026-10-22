@@ -15,7 +15,7 @@ const RELEASE_PLAN_MAX_BYTES = 32 * 1024;
 const SHA_PATTERN = /^[a-f0-9]{40}$/u;
 const DIGEST_PATTERN = /^sha256:[a-f0-9]{64}$/u;
 const ASCII_PATTERN = /^[\x20-\x7e]+$/u;
-const REPOSITORY = "paleoclaw/paleoclaw";
+const REPOSITORY = "syxscott/PaleoClaw";
 const WORKFLOW_PATH = ".github/workflows/full-release-validation.yml";
 const PACKAGE_TARGETS = new Set(["PaleoHub", "npm"]);
 function fail(message) {

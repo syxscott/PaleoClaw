@@ -153,7 +153,7 @@ describe("full release execution plan", () => {
       },
     );
     const selection = {
-      repository: "paleoclaw/paleoclaw",
+      repository: "syxscott/PaleoClaw",
       targetSha: TARGET_SHA,
       role: "normalCi",
       runId: "999",
@@ -163,7 +163,7 @@ describe("full release execution plan", () => {
       displayTitle: "CI full-release-validation-88-1-ci",
       sourceParentRunId: "88",
       sourceParentAttempt: 1,
-      url: "https://github.com/paleoclaw/paleoclaw/actions/runs/999",
+      url: "https://github.com/syxscott/PaleoClaw/actions/runs/999",
       receiptSha256: "d".repeat(64),
       inputs: { target_ref: TARGET_SHA },
       artifact: { id: "701" },
@@ -624,10 +624,10 @@ describe("full release execution plan", () => {
         validateReleaseChildDispatchBinding({
           child: { key: "normalCi", runId: "101" },
           plannedRunAttempt: 1,
-          repository: "paleoclaw/paleoclaw",
+          repository: "syxscott/PaleoClaw",
           targetSha: TARGET_SHA,
           coveragePolicy,
-          log: `TARGET_SHA: ${TARGET_SHA}\n${scope ? `CI_RELEASE_SCOPE: ${scope}\n` : ""}Dispatched ci.yml: https://github.com/paleoclaw/paleoclaw/actions/runs/101 (attempt 1)`,
+          log: `TARGET_SHA: ${TARGET_SHA}\n${scope ? `CI_RELEASE_SCOPE: ${scope}\n` : ""}Dispatched ci.yml: https://github.com/syxscott/PaleoClaw/actions/runs/101 (attempt 1)`,
         });
       if (accepted) {
         expect(verify).not.toThrow();
@@ -1128,14 +1128,14 @@ describe("release decision policy", () => {
 
   // In-process readChild calls compose child provenance expectations from the ambient
   // process.env.GITHUB_REPOSITORY, while every GitHub run fixture in this suite describes
-  // the canonical paleoclaw/paleoclaw repository. Fork checkouts run these tests with their
+  // the canonical syxscott/PaleoClaw repository. Fork checkouts run these tests with their
   // own GITHUB_REPOSITORY and would fail provenance validation, so pin the ambient
   // repository to the fixture identity for this suite and restore it afterwards. The
   // collector subprocess tests already pin the same identity via collectorEnv().
   let ambientRepository: string | undefined;
   beforeEach(() => {
     ambientRepository = process.env.GITHUB_REPOSITORY;
-    process.env.GITHUB_REPOSITORY = "paleoclaw/paleoclaw";
+    process.env.GITHUB_REPOSITORY = "syxscott/PaleoClaw";
   });
   afterEach(() => {
     if (ambientRepository === undefined) {
@@ -1566,7 +1566,7 @@ describe("release state artifacts", () => {
       jobs: composite.jobs,
       observedRunAttempts: attempts.map((attempt) => attempt.runAttempt),
       plannedRunAttempt: 1,
-      repository: "paleoclaw/paleoclaw",
+      repository: "syxscott/PaleoClaw",
       runAttempt,
       triggeringActor: "release-operator",
     });
@@ -1605,7 +1605,7 @@ describe("release state artifacts", () => {
       jobs: composite.jobs,
       observedRunAttempts: [1],
       plannedRunAttempt: 1,
-      repository: "paleoclaw/paleoclaw",
+      repository: "syxscott/PaleoClaw",
       runAttempt: 1,
       status,
       triggeringActor: "github-actions[bot]",
@@ -2286,7 +2286,7 @@ cp.execFile = Object.assign(() => { throw new Error("unexpected callback executi
       head_sha: ${JSON.stringify(SHA)}, run_attempt: 1, status: "in_progress", conclusion: null,
       created_at: "2026-08-21T00:00:00Z", updated_at: "2026-08-21T00:01:00Z",
       html_url: "https://example.invalid/runs/101", actor: { login: "github-actions[bot]" },
-      triggering_actor: { login: "github-actions[bot]" }, repository: { full_name: "paleoclaw/paleoclaw" },
+      triggering_actor: { login: "github-actions[bot]" }, repository: { full_name: "syxscott/PaleoClaw" },
     }) };
   },
 });
@@ -2521,7 +2521,7 @@ case "$*" in
     exit 0
     ;;
 esac
-printf '%s\\n' '{"id":101,"event":"workflow_dispatch","path":".github/workflows/ci.yml@refs/heads/release-ci/tooling","display_title":"CI full-release-validation-77-1-ci","head_branch":"release-ci/tooling","head_sha":"${SHA}","run_attempt":1,"status":"completed","conclusion":"success","created_at":"2026-08-21T00:00:00Z","updated_at":"2026-08-21T00:01:00Z","html_url":"https://example.invalid/runs/101","actor":{"login":"github-actions[bot]"},"triggering_actor":{"login":"github-actions[bot]"},"repository":{"full_name":"paleoclaw/paleoclaw"}}'
+printf '%s\\n' '{"id":101,"event":"workflow_dispatch","path":".github/workflows/ci.yml@refs/heads/release-ci/tooling","display_title":"CI full-release-validation-77-1-ci","head_branch":"release-ci/tooling","head_sha":"${SHA}","run_attempt":1,"status":"completed","conclusion":"success","created_at":"2026-08-21T00:00:00Z","updated_at":"2026-08-21T00:01:00Z","html_url":"https://example.invalid/runs/101","actor":{"login":"github-actions[bot]"},"triggering_actor":{"login":"github-actions[bot]"},"repository":{"full_name":"syxscott/PaleoClaw"}}'
 `,
     );
     chmodSync(gh, 0o755);
@@ -2601,7 +2601,7 @@ printf '%s\\n' '{"id":101,"event":"workflow_dispatch","path":".github/workflows/
         jobs: composite.jobs,
         observedRunAttempts: [1],
         plannedRunAttempt: 1,
-        repository: "paleoclaw/paleoclaw",
+        repository: "syxscott/PaleoClaw",
         runId: plannedChild.runId,
         triggeringActor: "github-actions[bot]",
       };
@@ -2988,7 +2988,7 @@ ${fixtureReceiptClientSource(receipts.endpoint)}
 writeFileSync(process.env.FRV_GH_READY, "ready");
 sendReceipt(process.env.FRV_GH_READY, "ready");
 if (process.argv.slice(2).join(" ") !== "api --paginate repos/paleoclaw/paleoclaw/actions/runs/101/attempts/1/jobs?per_page=100 --jq .jobs[] | @json") {
-  console.log('{"id":101,"event":"workflow_dispatch","path":".github/workflows/ci.yml@refs/heads/release-ci/tooling","display_title":"CI full-release-validation-77-1-ci","head_branch":"release-ci/tooling","head_sha":"${SHA}","run_attempt":1,"status":"in_progress","conclusion":null,"created_at":"2026-08-21T00:00:00Z","updated_at":"2026-08-21T00:01:00Z","html_url":"https://example.invalid/runs/101","actor":{"login":"github-actions[bot]"},"triggering_actor":{"login":"github-actions[bot]"},"repository":{"full_name":"paleoclaw/paleoclaw"}}');
+  console.log('{"id":101,"event":"workflow_dispatch","path":".github/workflows/ci.yml@refs/heads/release-ci/tooling","display_title":"CI full-release-validation-77-1-ci","head_branch":"release-ci/tooling","head_sha":"${SHA}","run_attempt":1,"status":"in_progress","conclusion":null,"created_at":"2026-08-21T00:00:00Z","updated_at":"2026-08-21T00:01:00Z","html_url":"https://example.invalid/runs/101","actor":{"login":"github-actions[bot]"},"triggering_actor":{"login":"github-actions[bot]"},"repository":{"full_name":"syxscott/PaleoClaw"}}');
 }
 `,
     );
@@ -3056,7 +3056,7 @@ case "$run_id" in
 esac
 status="completed"
 [ "$run_id" = 101 ] && status="$FRV_FAILED_RUN_STATUS"
-printf '{"id":%s,"event":"workflow_dispatch","path":".github/workflows/%s@refs/heads/release-ci/tooling","display_title":"%s","head_branch":"release-ci/tooling","head_sha":"${SHA}","run_attempt":1,"status":"%s","conclusion":"%s","created_at":"2026-08-21T00:00:00Z","updated_at":"2026-08-21T00:01:00Z","html_url":"https://example.invalid/runs/%s","actor":{"login":"github-actions[bot]"},"triggering_actor":{"login":"github-actions[bot]"},"repository":{"full_name":"paleoclaw/paleoclaw"}}\\n' "$run_id" "$workflow" "$title" "$status" "$([ "$run_id" = 101 ] && echo failure || echo success)" "$run_id"
+printf '{"id":%s,"event":"workflow_dispatch","path":".github/workflows/%s@refs/heads/release-ci/tooling","display_title":"%s","head_branch":"release-ci/tooling","head_sha":"${SHA}","run_attempt":1,"status":"%s","conclusion":"%s","created_at":"2026-08-21T00:00:00Z","updated_at":"2026-08-21T00:01:00Z","html_url":"https://example.invalid/runs/%s","actor":{"login":"github-actions[bot]"},"triggering_actor":{"login":"github-actions[bot]"},"repository":{"full_name":"syxscott/PaleoClaw"}}\\n' "$run_id" "$workflow" "$title" "$status" "$([ "$run_id" = 101 ] && echo failure || echo success)" "$run_id"
 `,
     );
     chmodSync(gh, 0o755);

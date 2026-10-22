@@ -79,7 +79,7 @@ async function scheduledScope(
     event: "schedule",
     head_sha: options.identical ? head : before,
     run_attempt: 1,
-    head_repository: { full_name: "paleoclaw/paleoclaw" },
+    head_repository: { full_name: "syxscott/PaleoClaw" },
   };
   const jobs = [
     {
@@ -201,7 +201,7 @@ describe("bounded scheduled proof reuse", () => {
           runInNewContext(job.if.slice(3, -2), {
             github: {
               event_name: event,
-              repository: "paleoclaw/paleoclaw",
+              repository: "syxscott/PaleoClaw",
               ref: "refs/heads/main",
               event: { pull_request: { draft: false } },
             },

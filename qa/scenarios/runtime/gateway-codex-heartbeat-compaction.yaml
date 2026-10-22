@@ -17,7 +17,7 @@ scenario:
     - Writer substitution and an authorized sessions.reset held behind session:compact:before cause zero summary-provider, native compaction, or stale Codex turn/start requests through terminal and no compaction events, count changes, or byte-latch changes; each adds exactly one successor turn/start, while reset appends exactly one boundary and advances the lifecycle.
     - Every case records before, held, terminal, and after SQLite snapshots plus provider counts, Codex requests, Gateway logs, and QA Channel transcript.
   regressionRefs:
-    - https://github.com/paleoclaw/paleoclaw/pull/136533
+    - https://github.com/openclaw/openclaw/pull/136533
   codeRefs:
     - test/e2e/qa-lab/runtime/gateway-codex-heartbeat-compaction.ts
     - test/e2e/qa-lab/runtime/codex-heartbeat-compaction-app-server.fixture.mjs

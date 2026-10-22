@@ -19,7 +19,7 @@ const run = {
   path: ".github/workflows/ci.yml",
   status: "completed",
   run_number: 10,
-  html_url: "https://github.com/paleoclaw/paleoclaw/actions/runs/100",
+  html_url: "https://github.com/syxscott/PaleoClaw/actions/runs/100",
 };
 const failure = (file: string, tests: string[] = [], classification = "new") => ({
   job: "checks-node",
@@ -30,7 +30,7 @@ const failure = (file: string, tests: string[] = [], classification = "new") => 
   reason: "Matching main job passed",
 });
 const file = "src/gateway/server.sessions.abort-authorization.test.ts";
-const repo = "paleoclaw/paleoclaw";
+const repo = "syxscott/PaleoClaw";
 const job = (id: number, name: string, conclusion = "failure") => ({
   id,
   name,

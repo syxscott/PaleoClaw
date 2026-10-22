@@ -93,12 +93,12 @@ const buildProvenancePayload = (
   workflowSha?: string,
 ) => {
   const workflow = {
-    repository: "https://github.com/paleoclaw/paleoclaw",
+    repository: "https://github.com/syxscott/PaleoClaw",
     path: ".github/workflows/paleoclaw-npm-release.yml",
     ref: workflowRef,
   };
   const dependency = {
-    uri: `git+https://github.com/paleoclaw/paleoclaw@${workflowRef}`,
+    uri: `git+https://github.com/syxscott/PaleoClaw@${workflowRef}`,
     digest: { gitCommit: workflowSha },
   };
   const digest = {
@@ -129,7 +129,7 @@ const attestationsFor = (payload: unknown) => [
 
 const releaseIdentity = (ref: string) => ({
   certificateIssuer: "https://token.actions.githubusercontent.com",
-  certificateIdentityURI: `https://github.com/paleoclaw/paleoclaw/.github/workflows/paleoclaw-npm-release.yml@${ref}`,
+  certificateIdentityURI: `https://github.com/syxscott/PaleoClaw/.github/workflows/paleoclaw-npm-release.yml@${ref}`,
 });
 const makeBundleVerifier = () =>
   vi.fn<NonNullable<Parameters<typeof verifyNpmProvenanceAttestation>[0]["verifyBundle"]>>(

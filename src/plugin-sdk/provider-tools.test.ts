@@ -303,7 +303,7 @@ it("leaves non-openai providers untouched by OpenAI strict compat", () => {
 });
 
 it("preserves string-const unions as a flat enum for the deepseek family", () => {
-  // Regression for https://github.com/paleoclaw/paleoclaw/issues/86468.
+  // Regression for https://github.com/openclaw/openclaw/issues/86468.
   const normalized = normalizeDeepSeek(
     objectSchema(
       {
@@ -339,7 +339,7 @@ it("preserves string-const unions as a flat enum for the deepseek family", () =>
 });
 
 it("keeps every object variant of a union expressible for the deepseek family", () => {
-  // Regression for https://github.com/paleoclaw/paleoclaw/issues/143790.
+  // Regression for https://github.com/openclaw/openclaw/issues/143790.
   const normalized = normalizeDeepSeek(
     objectSchema(
       {

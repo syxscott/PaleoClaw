@@ -163,7 +163,7 @@ describe("sessions.github.publish", () => {
   it.each([
     { agentId: "research" },
     { sessionKey: "agent:research:main" },
-    { repository: "paleoclaw/paleoclaw", branch: "main", token: "secret" },
+    { repository: "syxscott/PaleoClaw", branch: "main", token: "secret" },
   ])("rejects caller-supplied authority %j", async (target) => {
     const respond = await invoke({ idempotencyKey: "conflicting-owner", ...target });
 

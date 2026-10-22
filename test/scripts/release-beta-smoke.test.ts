@@ -10,14 +10,14 @@ import {
 } from "../../scripts/release-beta-smoke.ts";
 
 const telegramProof =
-  "- npm Telegram beta E2E: https://github.com/paleoclaw/paleoclaw/actions/runs/123";
+  "- npm Telegram beta E2E: https://github.com/syxscott/PaleoClaw/actions/runs/123";
 const releaseBody = (proof = "") =>
   `## Changes\n\n### Release verification\n\n` +
   `- npm package: https://www.npmjs.com/package/paleoclaw/v/2026.5.20-beta.1\n` +
   `${proof}\n\n### Assets\n\n- artifact\n`;
 const workflowRun = (completed = false) => ({
   conclusion: completed ? "success" : null,
-  html_url: "https://github.com/paleoclaw/paleoclaw/actions/runs/123",
+  html_url: "https://github.com/syxscott/PaleoClaw/actions/runs/123",
   status: completed ? "completed" : "queued",
   updated_at: "2026-05-28T12:00:00Z",
 });
@@ -56,7 +56,7 @@ it("rejects malformed positive integer environment limits", () => {
 it("parses workflow run urls when gh includes them in dispatch output", () => {
   expect(
     parseWorkflowRunIdFromOutput(
-      "Dispatched: https://github.com/paleoclaw/paleoclaw/actions/runs/1234567890",
+      "Dispatched: https://github.com/syxscott/PaleoClaw/actions/runs/1234567890",
     ),
   ).toBe("1234567890");
 });
@@ -96,7 +96,7 @@ it.each([false, true])("polls until timeout or completion (completed=%s)", async
   let now = 0;
   const sleeps: number[] = [];
 
-  const polling = pollRun("paleoclaw/paleoclaw", "123", {
+  const polling = pollRun("syxscott/PaleoClaw", "123", {
     now: () => now,
     pollIntervalMs: 400,
     readRun: () => workflowRun(completed),

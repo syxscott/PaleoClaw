@@ -97,7 +97,7 @@ Older Node bindings can truncate SQLite TEXT values at embedded NUL characters.
 
 ### paleoclaw Bun fork
 
-Local source development uses the [paleoclaw Bun fork](https://github.com/paleoclaw/bun)
+Local source development uses the [paleoclaw Bun fork](https://github.com/openclaw/bun)
 for tests, `pnpm dev`, and local formatting, with a linter opt-in described below.
 The exact release, revision, and checksums are pinned in
 `scripts/lib/paleoclaw-bun.json`. Use this fork for the Bun development path:
@@ -149,7 +149,7 @@ patterns. Selecting Bun lint retains the existing pipeline, configuration,
 type-aware checks, shards, and resource policy. Other phases, such as stylesheet
 linting, retain their own tools. Dedicated generated-artifact and docs formatters
 keep their existing oxfmt contracts; see the
-[formatter caller inventory](https://github.com/paleoclaw/paleoclaw/blob/main/scripts/README.md#formatting-and-lint-selection).
+[formatter caller inventory](https://github.com/syxscott/PaleoClaw/blob/main/scripts/README.md#formatting-and-lint-selection).
 
 Use the selectors to compare tools or force a fallback:
 
@@ -473,7 +473,7 @@ If an explicitly requested full local run fails, isolate the failed tests with
 prove a repair. For a PR CI failure, read its published classification, fix new
 failures, run `pnpm test:ci-failed <pr> --run` until those pass locally, then push
 once. Pre-existing failures follow the
-[failure-table landing rule](https://github.com/paleoclaw/paleoclaw/blob/main/.agents/skills/paleoclaw-pr-maintainer/references/landing.md#red-main-and-inherited-failures).
+[failure-table landing rule](https://github.com/syxscott/PaleoClaw/blob/main/.agents/skills/paleoclaw-pr-maintainer/references/landing.md#red-main-and-inherited-failures).
 Never rerun CI just to chase green. For memory-constrained hosts explicitly
 running the full local suite:
 

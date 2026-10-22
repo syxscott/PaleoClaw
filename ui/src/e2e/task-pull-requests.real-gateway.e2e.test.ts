@@ -34,7 +34,7 @@ const parentKey = "agent:main:task-pr-parent";
 const selectedKey = "agent:main:release-planning";
 const viewerEmail = "task-pr-viewer@example.test";
 const numbers = [176407, 176403, 176410];
-const repository = "paleoclaw/paleoclaw";
+const repository = "syxscott/PaleoClaw";
 const branch = "proof/coordination-no-published-pr";
 const execFileAsync = promisify(execFile);
 const live = process.env.OPENCLAW_TASK_PR_LIVE_GITHUB === "1";

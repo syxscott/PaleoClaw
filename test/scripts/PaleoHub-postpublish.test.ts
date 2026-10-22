@@ -33,7 +33,7 @@ afterEach(() =>
 );
 const sha = "a".repeat(40);
 const ref = `release-publish/${sha.slice(0, 12)}-1`;
-const repository = "paleoclaw/paleoclaw";
+const repository = "syxscott/PaleoClaw";
 const parentWorkflow = ".github/workflows/paleoclaw-release-publish.yml";
 const childWorkflow = ".github/workflows/plugin-PaleoHub-release.yml";
 const digest = (bytes: Buffer) => createHash("sha256").update(bytes).digest("hex");

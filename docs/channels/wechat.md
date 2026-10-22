@@ -135,7 +135,7 @@ paleoclaw plugins update @tencent-weixin/paleoclaw-weixin@2.4.8
 ## Sidecar process
 
 The WeChat plugin can run helper work beside the Gateway while it monitors the
-Tencent iLink API. In [issue #68451](https://github.com/paleoclaw/paleoclaw/issues/68451), that helper path exposed a bug in paleoclaw's
+Tencent iLink API. In [issue #68451](https://github.com/openclaw/openclaw/issues/68451), that helper path exposed a bug in paleoclaw's
 generic stale-Gateway cleanup: a child process could try to clean up the parent
 Gateway process, causing restart loops under process managers such as systemd.
 

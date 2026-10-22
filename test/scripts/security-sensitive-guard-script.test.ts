@@ -24,7 +24,7 @@ const rollout = {
   merged: true,
   merged_at: "2025-12-01T00:00:00Z",
   merge_commit_sha: rolloutSha,
-  base: { ref: "main", repo: { full_name: "paleoclaw/paleoclaw" } },
+  base: { ref: "main", repo: { full_name: "syxscott/PaleoClaw" } },
 };
 const marker = "<!-- paleoclaw:security-sensitive-guard -->";
 const requestedAt = "2026-01-01T00:00:00Z";
@@ -42,7 +42,7 @@ const requestNotice = (record: object) => ({
 const approval = {
   id: 11,
   user: approver,
-  html_url: "https://github.com/paleoclaw/paleoclaw/pull/7#issuecomment-11",
+  html_url: "https://github.com/syxscott/PaleoClaw/pull/7#issuecomment-11",
   body: "/allow-security-sensitive-change",
   created_at: "2026-01-01T00:01:00Z",
   updated_at: "2026-01-01T00:01:00Z",
@@ -158,7 +158,7 @@ function runGuard(options: Options = {}) {
         PATH: process.env.PATH,
         GITHUB_TOKEN: "fixture-token",
         GITHUB_EVENT_PATH: eventPath,
-        GITHUB_REPOSITORY: "paleoclaw/paleoclaw",
+        GITHUB_REPOSITORY: "syxscott/PaleoClaw",
         GITHUB_RUN_ID: "123",
         OPENCLAW_GUARD_TEST_FIXTURE: fixturePath,
       },

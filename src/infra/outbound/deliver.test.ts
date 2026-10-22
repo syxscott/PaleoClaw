@@ -2549,7 +2549,7 @@ describe("deliverOutboundPayloads", () => {
   );
 
   it("bails out without sending when a concurrent drain already claimed the queue entry", async () => {
-    // Regression for paleoclaw/paleoclaw#70386: if a reconnect or startup drain
+    // Regression for syxscott/PaleoClaw#70386: if a reconnect or startup drain
     // observes the newly enqueued entry and claims it before the live send
     // path claims it, the live path must not send. The drain already owns
     // ack/fail for that id; sending here would duplicate the outbound and

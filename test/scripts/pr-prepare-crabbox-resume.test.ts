@@ -45,7 +45,7 @@ function publishedPreparation(alias = false) {
     '  printf "%s\\n" "$*" >> .local/observer-args',
     '  test "$1" = "$script_parent_dir/pr-lib/ci-dispatch.mjs" || return 91',
     `  test "$2:$3:$4:$5:$6:$7:$8:$9:\${10}:\${11}" = '4242:topic:${head}:${f.base}:false:--backend:crabbox:--pending-gates:--resume-crabbox-run:99' || return 92`,
-    `  printf '%s\\n' '${JSON.stringify({ backend: "crabbox", provider: "aws", target: "linux", baseSha: f.base, headSha: head, workflowSha: f.advance, actionsRunAttempt: 1, runId: "run_fixture", leaseId: "cbx_fixture", actionsRunUrl: "https://github.com/paleoclaw/paleoclaw/actions/runs/99" })}'`,
+    `  printf '%s\\n' '${JSON.stringify({ backend: "crabbox", provider: "aws", target: "linux", baseSha: f.base, headSha: head, workflowSha: f.advance, actionsRunAttempt: 1, runId: "run_fixture", leaseId: "cbx_fixture", actionsRunUrl: "https://github.com/syxscott/PaleoClaw/actions/runs/99" })}'`,
     "}",
   ];
   return {
@@ -73,7 +73,7 @@ describePosix("prepare-push retained Crabbox finalization", () => {
       } else if (mode === "legacy gate") {
         // The old writer took eleven arguments, without controller provenance.
         const written = runGatesBash(
-          `write_gates_env_stamp 4242 false false remote_crabbox_aws '${f.head}' '${f.head}' '' aws run_fixture cbx_fixture https://github.com/paleoclaw/paleoclaw/actions/runs/99`,
+          `write_gates_env_stamp 4242 false false remote_crabbox_aws '${f.head}' '${f.head}' '' aws run_fixture cbx_fixture https://github.com/syxscott/PaleoClaw/actions/runs/99`,
           { cwd: f.repoDir },
         );
         expect(written.status, written.stderr).toBe(0);

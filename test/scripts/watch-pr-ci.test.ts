@@ -121,7 +121,7 @@ const runPath = "repos/paleoclaw/paleoclaw/actions/runs/33155056361";
 const scanned = calls.some((call) => call[1]?.startsWith("repos/paleoclaw/paleoclaw/actions/jobs/"));
 const currentGraphql = scanned && fixture.afterAliasScan !== undefined ? fixture.afterAliasScan : fixture.graphql;
 if (args[0] === "browse") {
-  console.log("https://github.com/paleoclaw/paleoclaw");
+  console.log("https://github.com/syxscott/PaleoClaw");
   process.exit(0);
 }
 else if (args.includes("repos/paleoclaw/paleoclaw/pulls/42")) {
@@ -237,7 +237,7 @@ const pr = {
   ...(runReads >= 2 ? ${JSON.stringify(afterRun)} : {}),
 };
 if (args[0] === "browse") {
-  console.log("https://github.com/paleoclaw/paleoclaw");
+  console.log("https://github.com/syxscott/PaleoClaw");
   process.exit(0);
 } else if (args.includes("repos/paleoclaw/paleoclaw/pulls/42")) {
   value = { state: "open", mergeable: true, head: { sha: "${sha}" } };
@@ -371,7 +371,7 @@ const checkPages = fixture.checkPages ?? [{ total_count: 1, check_runs: [${JSON.
 const page = Number(new URLSearchParams(args[1]?.split("?")[1]).get("page") ?? 1);
 const collected = calls.some((call) => call[1]?.includes("/check-suites?"));
 if (args[0] === "browse") {
-  console.log("https://github.com/paleoclaw/paleoclaw");
+  console.log("https://github.com/syxscott/PaleoClaw");
   process.exit(0);
 } else if (args.includes("repos/paleoclaw/paleoclaw/pulls/42")) {
   value = { state: "open", merged_at: null, mergeable: true, head: { sha: "${sha}" },
@@ -420,7 +420,7 @@ describe("watch-pr-ci", () => {
     expect(parseArgs(["42", sha])).toEqual({
       pr: 42,
       headSha: sha,
-      repo: "paleoclaw/paleoclaw",
+      repo: "syxscott/PaleoClaw",
       attachTimeout: 900,
       timeout: 3600,
       interval: 120,
@@ -472,7 +472,7 @@ describe("watch-pr-ci", () => {
   });
 
   it("builds a pull-request-only run attachment query", () => {
-    expect(buildFindRunArgs("paleoclaw/paleoclaw", sha)).toEqual([
+    expect(buildFindRunArgs("syxscott/PaleoClaw", sha)).toEqual([
       "api",
       "--method",
       "GET",
@@ -506,7 +506,7 @@ describe("watch-pr-ci", () => {
       const result = await runWatcher(
         `#!/usr/bin/env bash
 case "$1 $2" in
-  "browse "*) printf 'https://github.com/paleoclaw/paleoclaw\\n' ;;
+  "browse "*) printf 'https://github.com/syxscott/PaleoClaw\\n' ;;
   "api --hostname")
     if [ "$4" != "repos/paleoclaw/paleoclaw/pulls/42" ]; then exit 2; fi
     printf '{"state":"open","mergeable":true,"head":{"sha":"${sha}"}}\\n'
@@ -562,7 +562,7 @@ esac
           callsPath,
           `
 if (args[0] === "browse") {
-  console.log("https://github.com/paleoclaw/paleoclaw");
+  console.log("https://github.com/syxscott/PaleoClaw");
   process.exit(0);
 } else if (args.includes("repos/paleoclaw/paleoclaw/pulls/42")) {
   value = { state: "open", mergeable: true, head: { sha: ${JSON.stringify(sha)} } };
@@ -1186,7 +1186,7 @@ if (phase === ${JSON.stringify(phase)}) {
 const args = process.argv.slice(2);
 let value;
 if (args[0] === "browse") {
-  console.log("https://github.com/paleoclaw/paleoclaw");
+  console.log("https://github.com/syxscott/PaleoClaw");
   process.exit(0);
 }
 else if (args.includes("repos/paleoclaw/paleoclaw/pulls/42")) value = { state: "open", mergeable: true, head: { sha: "${sha}" } };
@@ -1614,7 +1614,7 @@ if (metadataRead && ${Boolean(afterMetadataState)}) pr.statusCheckRollup.state =
 const runs = ${JSON.stringify(listedRuns)};
 const previousRuns = ${JSON.stringify(previousRuns)};
 if (args[0] === "browse") {
-  console.log("https://github.com/paleoclaw/paleoclaw");
+  console.log("https://github.com/syxscott/PaleoClaw");
   process.exit(0);
 }
 else if (args.includes("repos/paleoclaw/paleoclaw/pulls/42")) {

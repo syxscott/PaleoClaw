@@ -34,7 +34,7 @@ function checkFixture(prefix: string, scripts: string[]) {
 }
 const failedContext = {
   eventName: "pull_request" as const,
-  repository: "paleoclaw/paleoclaw",
+  repository: "syxscott/PaleoClaw",
   runAttempt: 2,
   failed: true,
 };
@@ -583,7 +583,7 @@ ${ciStep("ios-build", "Run focused iOS lifecycle simulator tests").run!}`,
     );
     const nativeContext = {
       eventName: "pull_request" as const,
-      repository: "paleoclaw/paleoclaw",
+      repository: "syxscott/PaleoClaw",
       runAttempt: 1,
       failed: true,
       matrix: { phase },
@@ -659,7 +659,7 @@ describe("PR failure reporting", () => {
     const gate = readCiWorkflow().jobs["ci-gate"];
     const context = {
       eventName: "pull_request" as const,
-      repository: "paleoclaw/paleoclaw",
+      repository: "syxscott/PaleoClaw",
       runAttempt: 1,
       runnerProfile: "blacksmith" as const,
       failureReportOutputs: { failure_job_id: "42" },
@@ -714,7 +714,7 @@ describe("PR failure reporting", () => {
     for (const nodeRunnerBackend of ["hybrid", "runson"]) {
       const context = {
         eventName: "workflow_dispatch" as const,
-        repository: "paleoclaw/paleoclaw",
+        repository: "syxscott/PaleoClaw",
         runAttempt: 1,
         runnerBackend: "hybrid" as const,
         preflightOutputs: {
@@ -762,12 +762,12 @@ describe("PR failure reporting", () => {
         .map(([name]) => name),
     ).toEqual([]);
     for (const [eventName, headRepository, runAttempt, preflightResult, admitted] of [
-      ["pull_request", "paleoclaw/paleoclaw", 1, "success", true],
+      ["pull_request", "syxscott/PaleoClaw", 1, "success", true],
       ["pull_request", "contributor/paleoclaw", 1, "success", true],
-      ["pull_request", "paleoclaw/paleoclaw", 2, "success", true],
-      ["pull_request", "paleoclaw/paleoclaw", 1, "failure", true],
-      ["push", "paleoclaw/paleoclaw", 1, "success", false],
-      ["workflow_dispatch", "paleoclaw/paleoclaw", 1, "success", false],
+      ["pull_request", "syxscott/PaleoClaw", 2, "success", true],
+      ["pull_request", "syxscott/PaleoClaw", 1, "failure", true],
+      ["push", "syxscott/PaleoClaw", 1, "success", false],
+      ["workflow_dispatch", "syxscott/PaleoClaw", 1, "success", false],
     ] as const) {
       expect(
         evaluateWorkflowExpression(report.if, {
@@ -984,7 +984,7 @@ describe("PR failure reporting", () => {
       );
       const context: Parameters<typeof evaluateWorkflowExpression>[1] = {
         eventName: "pull_request",
-        repository: "paleoclaw/paleoclaw",
+        repository: "syxscott/PaleoClaw",
         runAttempt: 2,
       };
       expect(evaluateWorkflowExpression(`\${{ ${step.if} }}`, context)).toBe(false);

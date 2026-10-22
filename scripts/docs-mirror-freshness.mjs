@@ -9,7 +9,7 @@ import fs from "node:fs";
 import process from "node:process";
 
 const TOOL = "docs-mirror-freshness";
-const SOURCE_REPO = process.env.GITHUB_REPOSITORY || "paleoclaw/paleoclaw";
+const SOURCE_REPO = process.env.GITHUB_REPOSITORY || "syxscott/PaleoClaw";
 // Publish-repo contract: docs mirror to paleoclaw/docs (root AGENTS.md, Docs section).
 const MIRROR_REPO = "paleoclaw/docs";
 const SYNC_WORKFLOW = "docs-sync-publish.yml";

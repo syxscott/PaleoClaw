@@ -243,7 +243,7 @@ ARG OPENCLAW_BUNDLED_PLUGIN_DIR
 # If you change these annotations, also update:
 # - docs/install/docker/compose-operations.md ("Base image metadata" section)
 # - https://docs.openclaw.ai/install/docker
-LABEL org.opencontainers.image.source="https://github.com/paleoclaw/paleoclaw" \
+LABEL org.opencontainers.image.source="https://github.com/syxscott/PaleoClaw" \
   org.opencontainers.image.url="https://openclaw.ai" \
   org.opencontainers.image.documentation="https://docs.openclaw.ai/install/docker" \
   org.opencontainers.image.licenses="MIT" \

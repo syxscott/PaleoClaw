@@ -15,7 +15,7 @@ import {
 import { createWorkerSessionPlacementStore } from "./worker-environments/placement-store.js";
 
 const mocks = githubPublicationTestMocks();
-const url = "https://github.com/paleoclaw/paleoclaw/pull/125200";
+const url = "https://github.com/openclaw/openclaw/pull/125200";
 const human = "Co-authored-by: alice <7+alice@users.noreply.github.com>";
 const marker = "paleoclaw-Publication: previous-writer";
 let f: Awaited<ReturnType<typeof historyFixture>>;

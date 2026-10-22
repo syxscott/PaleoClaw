@@ -137,7 +137,7 @@ export function parseUpdateTimeoutMs(
   return milliseconds;
 }
 
-const UPSTREAM_REPOSITORY_URL = "https://github.com/paleoclaw/openclaw.git";
+const UPSTREAM_REPOSITORY_URL = "https://github.com/syxscott/PaleoClaw.git";
 // Keep the full commit graph for dev ref switching while deferring historical blobs.
 // A shallow clone would make older or non-default dev targets unreachable.
 const GIT_CLONE_BLOB_FILTER = "--filter=blob:none";

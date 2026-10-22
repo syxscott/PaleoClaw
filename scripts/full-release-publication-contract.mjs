@@ -167,7 +167,7 @@ function validatePublicationSourceFact(value, expected = {}) {
   if (
     value.kind !== "openclaw.full-release-source-admission/v1" ||
     value.contract !== FULL_RELEASE_SOURCE_ADMISSION_CONTRACT ||
-    value.repository !== "paleoclaw/paleoclaw" ||
+    value.repository !== "syxscott/PaleoClaw" ||
     !sha.test(value.candidateSha) ||
     !/^[1-9][0-9]*$/u.test(value.runId) ||
     !Number.isSafeInteger(value.runAttempt) ||

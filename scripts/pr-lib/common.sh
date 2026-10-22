@@ -115,7 +115,7 @@ if (release.layout === "split") {
   checkChangelogLayout({ rootDir: process.cwd(), ref: "HEAD" });
   if (changed.some((file) => !isReleaseChangelogPath(file, { version }))) process.exit(1);
   const entry = changelogEntryPath(version);
-  const indexLine = `- [${version}](${entry}) · [Raw](https://github.com/paleoclaw/paleoclaw/raw/refs/heads/main/${entry})\n`;
+  const indexLine = `- [${version}](${entry}) · [Raw](https://github.com/syxscott/PaleoClaw/raw/refs/heads/main/${entry})\n`;
   const outside = (text) => text.replace(indexLine, "");
   if (outside(read(base)) !== outside(read("HEAD"))) process.exit(1);
   process.exit(0);

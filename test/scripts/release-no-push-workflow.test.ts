@@ -496,11 +496,11 @@ describe("release validation no-push transport", () => {
   );
 
   it.each([
-    ["paleoclaw/paleoclaw", "hybrid", false, "blacksmith-4vcpu-ubuntu-2404"],
-    ["paleoclaw/paleoclaw", "github", false, "ubuntu-24.04"],
-    ["paleoclaw/paleoclaw", "", false, "ubuntu-24.04"],
+    ["syxscott/PaleoClaw", "hybrid", false, "blacksmith-4vcpu-ubuntu-2404"],
+    ["syxscott/PaleoClaw", "github", false, "ubuntu-24.04"],
+    ["syxscott/PaleoClaw", "", false, "ubuntu-24.04"],
     ["fork/paleoclaw", "hybrid", false, "ubuntu-24.04"],
-    ["paleoclaw/paleoclaw", "hybrid", true, "ubuntu-24.04"],
+    ["syxscott/PaleoClaw", "hybrid", true, "ubuntu-24.04"],
   ])(
     "routes serial candidate jobs for %s/%s (hosted=%s)",
     (repository, backend, hosted, runner) => {
@@ -1428,7 +1428,7 @@ describe("release validation no-push transport", () => {
       ({ jobName }) => jobName === "bind_full_release_candidate_evidence",
     );
     expect(binderCheckout?.candidate.with).toMatchObject({
-      repository: "paleoclaw/paleoclaw",
+      repository: "syxscott/PaleoClaw",
       ref: "${{ github.sha }}",
       "persist-credentials": false,
     });
@@ -2083,7 +2083,7 @@ describe("release validation no-push transport", () => {
               CALLS: calls,
               FINALIZER_EXIT: String(finalizerExit),
               RUNNER_TEMP: root,
-              GITHUB_REPOSITORY: "paleoclaw/paleoclaw",
+              GITHUB_REPOSITORY: "syxscott/PaleoClaw",
               RELEASE_TAG: tag,
               RELEASE_NPM_DIST_TAG: distTag,
               PARENT_WORKFLOW_SHA: "b".repeat(40),

@@ -9,7 +9,7 @@ read_when:
 ---
 
 CI continues during Full Release Validation; the legacy release-priority variable
-does not pause workflow admission. See [deferred CI recovery](https://github.com/paleoclaw/paleoclaw/blob/main/.agents/skills/release-paleoclaw-ci/SKILL.md#deferred-ci-recovery)
+does not pause workflow admission. See [deferred CI recovery](https://github.com/syxscott/PaleoClaw/blob/main/.agents/skills/release-paleoclaw-ci/SKILL.md#deferred-ci-recovery)
 for runs already deferred by older workflow revisions.
 
 Gateway server tests use the same 16-file process bound in local full-suite runs
@@ -150,7 +150,7 @@ and Play services package/signature enforcement remain separate physical-device
 smoke coverage. Built debug APK hash, signature, package, version, and listener
 declaration checks remain in the gate; Release/R8, store signing, and upload
 remain owned by the existing release lane. See the
-[Android release validation contract](https://github.com/paleoclaw/paleoclaw/blob/main/apps/android/README.md#release-validation)
+[Android release validation contract](https://github.com/syxscott/PaleoClaw/blob/main/apps/android/README.md#release-validation)
 for evidence, rerun, and coverage details. Standard SDK images and build
 dependencies are downloaded during setup; no Google account, companion APK, or
 paired-device image is provisioned.
@@ -365,7 +365,7 @@ The runner count, matrix caps, and default labels do not change.
 To reserve capacity outside ordinary PR/main pools:
 
 1. Create an org runner group with Linux runners labelled `ubuntu-latest`/`ubuntu-24.04`, plus the Windows/macOS labels used by validation.
-2. Grant `paleoclaw/paleoclaw` access to the group.
+2. Grant `syxscott/PaleoClaw` access to the group.
 3. Set `OPENCLAW_RELEASE_RUNNER_GROUP` to the group name; unset it to release the reservation and restore ordinary routing.
 
 Linux runners for jobs that set `semantic-checks: true` also require:
@@ -385,7 +385,7 @@ qualifies the backend; it does not itself limit later lint or compiler commands.
 Full Release Validation starts source-only children alongside artifact producers
 after admission and reuse selection. Candidate consumers start as soon as the
 candidate is verified, while npm qualification and independent validation can
-continue; see the [release procedure](https://github.com/paleoclaw/paleoclaw/blob/main/.agents/skills/release-paleoclaw-maintainer/references/regular-release.md).
+continue; see the [release procedure](https://github.com/syxscott/PaleoClaw/blob/main/.agents/skills/release-paleoclaw-maintainer/references/regular-release.md).
 
 Release-dispatched validation children add one best-effort hosted receipt job
 each, up to seven per full campaign and none for ordinary PR/main CI. It retains

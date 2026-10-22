@@ -29,7 +29,7 @@ export function createUpdateConfigMock() {
           [
             "Config is managed by Nix (`OPENCLAW_NIX_MODE=1`), so paleoclaw treats openclaw.json as immutable.",
             "Do not run setup, onboarding, paleoclaw update, plugin install/update/uninstall/enable, doctor repair/token-generation, or config set against this file.",
-            "Agent-first Nix setup: https://github.com/paleoclaw/nix-paleoclaw#quick-start",
+            "Agent-first Nix setup: https://github.com/openclaw/nix-openclaw#quick-start",
             "paleoclaw Nix overview: https://docs.openclaw.ai/install/nix",
           ].join("\n"),
         );

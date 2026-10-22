@@ -79,7 +79,7 @@ async function openVerifiedLocalFile(
   },
 ): Promise<SafeOpenResult> {
   // Reject directories before opening so we never surface EISDIR to callers (e.g. tool
-  // results that get sent to messaging channels). See paleoclaw/paleoclaw#31186.
+  // results that get sent to messaging channels). See syxscott/PaleoClaw#31186.
   try {
     const preStat = await fs.lstat(filePath);
     if (preStat.isDirectory()) {

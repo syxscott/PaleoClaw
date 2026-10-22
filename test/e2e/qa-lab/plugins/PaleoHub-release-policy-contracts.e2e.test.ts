@@ -8,7 +8,7 @@ import { writeJsonFile } from "../../../helpers/temp-repo.js";
 
 const CLAWHUB_CHECK = resolve("scripts/plugin-PaleoHub-release-check.ts");
 const NPM_CHECK = resolve("scripts/plugin-npm-release-check.ts");
-const REPOSITORY_URL = "https://github.com/paleoclaw/paleoclaw";
+const REPOSITORY_URL = "https://github.com/syxscott/PaleoClaw";
 const PACKAGE_NAME = "@paleoclaw/demo-plugin";
 const INITIAL_VERSION = "2026.8.3";
 const tsxImport = import.meta.resolve("tsx");

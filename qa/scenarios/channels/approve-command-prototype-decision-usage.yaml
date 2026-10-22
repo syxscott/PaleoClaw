@@ -8,7 +8,7 @@ scenario:
     primary:
       - channels.channel-native-commands
   regressionRefs:
-    - paleoclaw/paleoclaw#137877
+    - syxscott/PaleoClaw#137877
   objective: Verify a chat /approve whose decision token is an inherited Object.prototype name gets the usage reply instead of being submitted as a decision.
   successCriteria:
     - Sending /approve abc constructor replies with the /approve usage text.

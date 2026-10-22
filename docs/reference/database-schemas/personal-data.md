@@ -22,7 +22,7 @@ Disconnect removes usable local credentials and retains a secret-free disconnect
 
 Personal publication receipts remain for the logical session's lifetime. Archive/reset preserves receipts and invalidates incompatible unfinished work. An already-dispatched GitHub operation can still record its observed result, without gaining authority for another operation. Permanent session deletion fences execution and removes its personal receipts and lifecycle bindings. There is no time-based expiry for duplicate prevention, and deleting local state does not undo an already-created GitHub commit or pull request.
 
-See the accepted [personal GitHub ownership and publication design](https://github.com/paleoclaw/paleoclaw/issues/133590) and the operator-facing [GitHub connections guide](/concepts/user-model#github-connections).
+See the accepted [personal GitHub ownership and publication design](https://github.com/openclaw/openclaw/issues/133590) and the operator-facing [GitHub connections guide](/concepts/user-model#github-connections).
 
 ## Personal model accounts
 
@@ -104,5 +104,5 @@ offer the new receipt protocol. Do not remove migration markers or reset
 `client-state.sqlite` to downgrade: that file also contains other user-owned
 client state.
 
-The [accepted design](https://github.com/paleoclaw/paleoclaw/issues/136617) records
+The [accepted design](https://github.com/openclaw/openclaw/issues/136617) records
 the schema, migration, ownership, retention and validation boundaries.

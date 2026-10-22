@@ -148,7 +148,7 @@ until that continuation succeeds. If they no longer match, the plugin retains
 the binding and explains how to restore them or explicitly reset with a key
 that can settle the original native session. A failed upgrade never silently
 creates a replacement conversation. See the [saved-session upgrade
-notes](https://github.com/paleoclaw/paleoclaw/blob/main/extensions/agentsapi/README.md#upgrading-saved-sessions)
+notes](https://github.com/syxscott/PaleoClaw/blob/main/extensions/agentsapi/README.md#upgrading-saved-sessions)
 for key rotation and rollback.
 
 New sessions receive your paleoclaw instructions and persona, including
@@ -264,7 +264,7 @@ refers to the hosted environment.
 
 Start a new conversation with `/new` or `/reset` after changing MCP configuration
 or credentials. The
-[plugin reference](https://github.com/paleoclaw/paleoclaw/blob/main/extensions/agentsapi/README.md)
+[plugin reference](https://github.com/syxscott/PaleoClaw/blob/main/extensions/agentsapi/README.md)
 has connection settings, header references, and tool filters.
 
 ### Self-hosted execution
@@ -399,7 +399,7 @@ provider with attachment staging. External executor management does not add auto
 self-hosted output transfer. Configure the appropriate workspace/file integration
 for your deployment, or use the hosted environment for its built-in transfers.
 Gateway memory and tools retain their own storage and permissions. See the
-[package reference](https://github.com/paleoclaw/paleoclaw/blob/main/extensions/agentsapi/README.md)
+[package reference](https://github.com/syxscott/PaleoClaw/blob/main/extensions/agentsapi/README.md)
 for these boundaries and upgrade notes.
 
 ### Session settings and diagnostics

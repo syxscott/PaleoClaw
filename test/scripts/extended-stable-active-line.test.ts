@@ -83,7 +83,7 @@ process.stdout.write(${JSON.stringify(Buffer.from(JSON.stringify({ version: main
           PATH: `${bin}:/usr/bin:/bin`,
           EVENTS: events,
           GITHUB_WORKSPACE: root,
-          GITHUB_REPOSITORY: "paleoclaw/paleoclaw",
+          GITHUB_REPOSITORY: "syxscott/PaleoClaw",
           GITHUB_REF: "refs/tags/release-publish/bbbbbbbbbbbb-123",
           GITHUB_STEP_SUMMARY: join(root, "summary"),
           PARENT_WORKFLOW_SHA: "b".repeat(40),

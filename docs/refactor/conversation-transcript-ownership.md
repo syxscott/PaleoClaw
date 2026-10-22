@@ -12,7 +12,7 @@ title: "Conversation transcript ownership"
 **Proposal, partly implemented.** A chat's model-visible transcript is the log of
 what that chat showed. One owner writes that log for every outbound message.
 Scheduled jobs either run inside a chat or run in the background; they never do
-both. Step 1 shipped in [#168996](https://github.com/paleoclaw/paleoclaw/pull/168996).
+both. Step 1 shipped in [#168996](https://github.com/openclaw/openclaw/pull/168996).
 
 ## Problem
 
@@ -25,9 +25,9 @@ were never shown:
   the creating chat used a separate canonical writer.
 - Messages that a job sends with the `message` tool are stored in the receiving
   chat as transcript-only mirrors. Provider replay skips them
-  ([#168683](https://github.com/paleoclaw/paleoclaw/issues/168683)).
+  ([#168683](https://github.com/openclaw/openclaw/issues/168683)).
 - Failure alerts are sent but not written to any transcript
-  ([#168684](https://github.com/paleoclaw/paleoclaw/issues/168684)).
+  ([#168684](https://github.com/openclaw/openclaw/issues/168684)).
 - A job with `sessionTarget: "session:<key>"` that delivers to a different chat
   adds its whole run to the `<key>` conversation, which showed nothing.
 
@@ -69,7 +69,7 @@ send: automation results, failure alerts, `message`-tool sends, and subagent
 announcements. It skips the write only when the send is the reply of a turn that
 runs in the same conversation, because that turn already wrote it. That skip is
 the reason delivery mirrors became transcript-only in
-[#99470](https://github.com/paleoclaw/paleoclaw/issues/99470): without it, replay
+[#99470](https://github.com/openclaw/openclaw/issues/99470): without it, replay
 showed every answer twice. Cron keeps no transcript code of its own.
 
 ## Considered options
@@ -88,7 +88,7 @@ showed every answer twice. Cron keeps no transcript code of its own.
 
 ## Status and order
 
-1. **Done ([#168996](https://github.com/paleoclaw/paleoclaw/pull/168996)).** Cron
+1. **Done ([#168996](https://github.com/openclaw/openclaw/pull/168996)).** Cron
    results go to the destination chat once, through the canonical writer
    (`src/sessions/background-session-result.ts`), after confirmed delivery.
    Mirrors and awareness notes are removed.
@@ -99,7 +99,7 @@ showed every answer twice. Cron keeps no transcript code of its own.
    delivers elsewhere becomes a background job with its own session. That job
    loses the `<key>` conversation as context, so Doctor reports each migrated job.
 4. **Show the posting job to the model**
-   ([#168685](https://github.com/paleoclaw/paleoclaw/issues/168685)), so "stop this"
+   ([#168685](https://github.com/openclaw/openclaw/issues/168685)), so "stop this"
    on a delivered message needs no lookup.
 
 ## Risks to check before step 2
@@ -111,9 +111,9 @@ showed every answer twice. Cron keeps no transcript code of its own.
   Add a provider replay test for each supported provider family.
 - **Session key parity.** The write must land in the exact session that an
   inbound reply uses. X has a known mismatch
-  ([#168686](https://github.com/paleoclaw/paleoclaw/issues/168686)).
+  ([#168686](https://github.com/openclaw/openclaw/issues/168686)).
 - **Reset of the creating chat.** Implicitly routed results still fail closed
-  after a reset ([#169258](https://github.com/paleoclaw/paleoclaw/issues/169258)).
+  after a reset ([#169258](https://github.com/openclaw/openclaw/issues/169258)).
   Under Rule 1 a reset chat is the same chat; this needs a product decision.
 - **Prompt cache.** Entries are appended at the end and never rewrite earlier
   history, so the cached prefix stays valid.

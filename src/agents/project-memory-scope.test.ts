@@ -32,8 +32,8 @@ async function makeRepo(remote?: string): Promise<string> {
 
 describe("project memory scope", () => {
   it.each([
-    ["https://GitHub.COM/paleoclaw/OpenClaw.git", "github.com/paleoclaw/paleoclaw"],
-    ["git@GITHUB.com:paleoclaw/OpenClaw.git", "github.com/paleoclaw/paleoclaw"],
+    ["https://GitHub.COM/paleoclaw/OpenClaw.git", "github.com/syxscott/PaleoClaw"],
+    ["git@GITHUB.com:paleoclaw/OpenClaw.git", "github.com/syxscott/PaleoClaw"],
   ])("normalizes origin %s", async (remote, expected) => {
     await expect(resolveProjectKey(await makeRepo(remote))).resolves.toBe(expected);
   });
@@ -79,7 +79,7 @@ describe("project memory scope", () => {
       const repo = path.join(parent, "repo");
       await fs.mkdir(repo);
       await git(repo, "init");
-      await git(repo, "remote", "add", "origin", "https://github.com/paleoclaw/OpenClaw.git");
+      await git(repo, "remote", "add", "origin", "https://github.com/openclaw/openclaw.git");
 
       const started = Date.now();
       const key = await withEnvAsync(

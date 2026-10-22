@@ -82,7 +82,7 @@ it("iOS cache reads main-tier products and publishes only after successful sched
   const save = step("Save iOS test build products");
   const context: Parameters<typeof evaluateWorkflowExpression>[1] = {
     eventName: "schedule",
-    repository: "paleoclaw/paleoclaw",
+    repository: "syxscott/PaleoClaw",
     runAttempt: 1,
     ref: "refs/heads/main",
     matrix: { phase: "tests" },
@@ -613,7 +613,7 @@ function admittedSimulatorSteps(selection: ReturnType<typeof resolveIosSimulator
     }
     const expression = step.if.startsWith("${{") ? step.if : `\${{ ${step.if} }}`;
     const selected = evaluateWorkflowExpression(expression, {
-      repository: "paleoclaw/paleoclaw",
+      repository: "syxscott/PaleoClaw",
       eventName: "pull_request",
       runAttempt: 1,
       matrix: { phase: "smoke" },
@@ -1015,7 +1015,7 @@ it("publishes full iOS manifest decisions for a dispatched release gate", () => 
   expect(result.summary).toContain("| voice | yes |");
   expect(result.summary).toContain("| lifecycle | yes |");
   const phases = evaluateWorkflowExpression(workflow.jobs["ios-build"]?.strategy?.matrix?.phase, {
-    repository: "paleoclaw/paleoclaw",
+    repository: "syxscott/PaleoClaw",
     eventName: "workflow_dispatch",
     runAttempt: 1,
     releaseGate: true,

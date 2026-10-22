@@ -885,7 +885,7 @@ export function formatPublicationObservation(value: PublicationObservation) {
       (stableVersion && /^\d{4}\.\d{1,2}\.\d+$/u.test(stableVersion)
         ? ` Retained orchestration facts: pnpm release:stable ${stableVersion} --status (use the original --state-dir if customized).`
         : ""),
-    "Website deployment is not observed here; read-only production checks: https://github.com/paleoclaw/openclaw.ai#companion-downloads",
+    "Website deployment is not observed here; read-only production checks: https://github.com/openclaw/openclaw.ai#companion-downloads",
     "Missing observations remain unknown; consult the existing owner evidence. No recovery action was performed.",
   );
   return lines.join("\n");

@@ -277,7 +277,7 @@ function initializeFixture(root: string) {
   git(seed, "remote", "add", "origin", "../origin.git");
   git(seed, "push", "-u", "origin", "main");
   git(root, "clone", `--template=${gitTemplate}`, origin, mirror);
-  const canonicalOrigin = "https://github.com/paleoclaw/openclaw.git";
+  const canonicalOrigin = "https://github.com/syxscott/PaleoClaw.git";
   git(mirror, "remote", "set-url", "origin", canonicalOrigin);
   return { root, mirror, origin, seed };
 }
@@ -931,7 +931,7 @@ console.log(JSON.stringify({ ok: true, channels: {} }));
           mirror,
           "config",
           `url.${origin}.insteadOf`,
-          "https://github.com/paleoclaw/openclaw.git",
+          "https://github.com/syxscott/PaleoClaw.git",
         ),
     ],
     [
@@ -975,7 +975,7 @@ console.log(JSON.stringify({ ok: true, channels: {} }));
     const snapshot = path.join(runtimeRoot, `gateway-${head.slice(0, 7)}`);
     mkdirSync(runtimeRoot, { recursive: true });
     git(runtimeRoot, "clone", origin, snapshot);
-    git(snapshot, "remote", "set-url", "origin", "https://github.com/paleoclaw/openclaw.git");
+    git(snapshot, "remote", "set-url", "origin", "https://github.com/syxscott/PaleoClaw.git");
     git(snapshot, "checkout", "--detach", head);
     chmodSync(path.join(snapshot, ".git/HEAD"), 0o600);
     chmodSync(path.join(snapshot, ".git/config"), 0o600);

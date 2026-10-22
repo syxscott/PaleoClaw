@@ -68,7 +68,7 @@ const email = "publication-guest@example.test";
 const backends = ["local", "repository"] as const;
 const publicationUrl = (backend: (typeof backends)[number]) =>
   backend === "local"
-    ? "https://github.com/paleoclaw/paleoclaw/pull/125200"
+    ? "https://github.com/openclaw/openclaw/pull/125200"
     : "https://github.com/owner/repository/pull/1";
 const pullRequest = (
   overrides: Partial<{

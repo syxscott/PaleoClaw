@@ -194,7 +194,7 @@ function runFocusedValidatorLogProbe(
   const producerSha = "a".repeat(40);
   const producerRef = "release-publish/aaaaaaaaaaaa-1";
   const producer: AuthorizedBetaFocusedProducerIdentity = {
-    repository: "paleoclaw/paleoclaw",
+    repository: "syxscott/PaleoClaw",
     runId: "123",
     runAttempt: 1,
     workflowPath: ".github/workflows/authorized-beta-focused-validation.yml",
@@ -571,7 +571,7 @@ function resolveFocusedProducer(
         FOCUSED_RELEASE_EVIDENCE_RUN_ATTEMPT: "2",
         FOCUSED_RELEASE_EVIDENCE_RUN_ID: "123",
         GITHUB_OUTPUT: outputPath,
-        GITHUB_REPOSITORY: "paleoclaw/paleoclaw",
+        GITHUB_REPOSITORY: "syxscott/PaleoClaw",
         MOCK_RUN_JSON: JSON.stringify(run),
         MOCK_TAG_JSON: JSON.stringify(tag),
         MOCK_TAG_MISSING: String(options.missingTag ?? false),
@@ -958,7 +958,7 @@ describe("authorized beta focused evidence", () => {
   it("accepts the exact artifact shape and rejects inventory drift", () => {
     const policy = readAuthorizedBetaFocusedPolicy();
     const producer: AuthorizedBetaFocusedProducerIdentity = {
-      repository: "paleoclaw/paleoclaw",
+      repository: "syxscott/PaleoClaw",
       runId: "123",
       runAttempt: 1,
       workflowPath: ".github/workflows/authorized-beta-focused-validation.yml",

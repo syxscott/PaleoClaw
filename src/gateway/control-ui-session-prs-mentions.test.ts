@@ -18,7 +18,7 @@ import {
 function mergedPull(number: number, ref: string, sha: string) {
   return pullListItem({
     number,
-    html_url: `https://github.com/paleoclaw/paleoclaw/pull/${number}`,
+    html_url: `https://github.com/syxscott/PaleoClaw/pull/${number}`,
     state: "closed",
     merged_at: "2026-09-01T00:00:00Z",
     head: { ref, sha: sha.repeat(40) },
@@ -81,7 +81,7 @@ describe("session PR mention isolation", () => {
           content: [
             {
               type: "text",
-              text: "For comparison only: https://github.com/paleoclaw/paleoclaw/pull/42",
+              text: "For comparison only: https://github.com/openclaw/openclaw/pull/42",
             },
           ],
         },

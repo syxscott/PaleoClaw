@@ -3,7 +3,7 @@ export type BrokerContext = {
   correlation: string;
   landedSha: string;
   prNumber: number;
-  repository: "paleoclaw/paleoclaw";
+  repository: "syxscott/PaleoClaw";
   runId: number;
   workflowSha: string;
 };
@@ -21,7 +21,7 @@ export type ProofReceipt = {
   landedSha: string;
   operation: "noop";
   prNumber: number;
-  repository: "paleoclaw/paleoclaw";
+  repository: "syxscott/PaleoClaw";
   sourceRef: "refs/heads/main";
   workflowSha: string;
 };

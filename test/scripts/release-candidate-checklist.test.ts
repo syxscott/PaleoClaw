@@ -78,7 +78,7 @@ const windowsAssets = [
   { name: "OpenClawCompanion-Setup-x64.exe", digest: `sha256:${"a".repeat(64)}` },
   { name: "OpenClawCompanion-Setup-arm64.exe", digest: `sha256:${"b".repeat(64)}` },
 ];
-const windowsReleaseUrl = "https://github.com/paleoclaw/paleoclaw-windows-node/releases/tag/v0.6.3";
+const windowsReleaseUrl = "https://github.com/openclaw/openclaw-windows-node/releases/tag/v0.6.3";
 
 function windowsReleaseResponse(override: Record<string, unknown> = {}) {
   return jsonResponse({
@@ -628,7 +628,7 @@ describe("release candidate checklist", () => {
             execPath: process.execPath,
           },
           TextDecoder,
-          DEFAULT_REPO: "paleoclaw/paleoclaw",
+          DEFAULT_REPO: "syxscott/PaleoClaw",
           resolvePath: (...paths: string[]) => join(...paths),
           console: { log, warn: log },
           TOOLING_ROOT: "/trusted/tooling",
@@ -966,7 +966,7 @@ describe("release candidate checklist", () => {
         } else {
           expect(ensureToolingTag).toHaveBeenCalledExactlyOnceWith({
             runGh: runReleaseToolingGh,
-            repo: "paleoclaw/paleoclaw",
+            repo: "syxscott/PaleoClaw",
             toolingSha,
           });
         }
@@ -1635,13 +1635,13 @@ describe("release candidate checklist", () => {
         "",
         `- **PR #123** ${"record ".repeat(20_000)}`,
       ].join("\n"),
-      repository: "paleoclaw/paleoclaw",
+      repository: "syxscott/PaleoClaw",
       tag: "v2026.7.1-beta.3",
     });
     expect(() =>
       validateCandidateReleaseNotes({
         changelog: "## 2026.7.1\n\n- Cumulative stale notes.",
-        repository: "paleoclaw/paleoclaw",
+        repository: "syxscott/PaleoClaw",
         tag: "v2026.7.1-beta.3",
       }),
     ).toThrow("does not contain ## 2026.7.1-beta.3");
@@ -2107,7 +2107,7 @@ describe("release candidate checklist", () => {
   });
 
   describe("npm preflight source", () => {
-    const repo = "paleoclaw/paleoclaw";
+    const repo = "syxscott/PaleoClaw";
     const headSha = "a".repeat(40);
     const protectedRef = `release-publish/${headSha.slice(0, 12)}-123`;
     const workflowRun = {
@@ -2431,7 +2431,7 @@ describe("release candidate checklist", () => {
     const waitForSuccessfulRun = vi.fn(async () => ({
       run: {
         headSha: scenario.returnedSha ?? targetSha,
-        url: "https://github.com/paleoclaw/paleoclaw/actions/runs/333",
+        url: "https://github.com/syxscott/PaleoClaw/actions/runs/333",
       },
     }));
     // Execute the private owner and its real caller without exporting a test-only API.
@@ -2566,7 +2566,7 @@ describe("release candidate checklist", () => {
       "run",
       "paleoclaw-release-prepare.yml",
       "--repo",
-      "paleoclaw/paleoclaw",
+      "syxscott/PaleoClaw",
       "--ref",
       preparedWorkflowRef,
     ]);

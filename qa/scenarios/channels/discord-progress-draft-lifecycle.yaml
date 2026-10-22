@@ -15,7 +15,7 @@ scenario:
           model:
             fallbacks: []
   regressionRefs:
-    - paleoclaw/paleoclaw#124972
+    - syxscott/PaleoClaw#124972
   objective: Verify Discord retires successful progress drafts without altering the final and retains failed-turn drafts as diagnostic context.
   successCriteria:
     - A tool-using turn creates a visible Discord progress draft while the tool is running.

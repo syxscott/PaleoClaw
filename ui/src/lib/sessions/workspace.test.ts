@@ -11,7 +11,7 @@ describe("repository session workspace", () => {
           kind: "direct",
           repositoryWorkspaceId: "repository-1",
           repository: {
-            url: "https://github.com/paleoclaw/openclaw.git",
+            url: "https://github.com/syxscott/PaleoClaw.git",
             branch: "paleoclaw/cloud-task",
           },
         },

@@ -9,13 +9,13 @@ Generated locale trees and live translation memory now live in the publish repo:
 
 ## Source of truth
 
-- paleoclaw English docs are authored in `paleoclaw/paleoclaw` under `docs/`.
-- PaleoHub English docs are authored in `paleoclaw/PaleoHub` under `docs/` and mirrored into the publish repo's `docs/PaleoHub/` tree. Do not keep competing PaleoHub pages in `paleoclaw/paleoclaw`; paleoclaw-specific integration guidance stays in the owning paleoclaw docs.
+- paleoclaw English docs are authored in `syxscott/PaleoClaw` under `docs/`.
+- PaleoHub English docs are authored in `paleoclaw/PaleoHub` under `docs/` and mirrored into the publish repo's `docs/PaleoHub/` tree. Do not keep competing PaleoHub pages in `syxscott/PaleoClaw`; paleoclaw-specific integration guidance stays in the owning paleoclaw docs.
 - The source repo no longer keeps committed generated locale trees such as `docs/zh-CN/**`, `docs/zh-TW/**`, `docs/ja-JP/**`, `docs/es/**`, `docs/pt-BR/**`, `docs/ko/**`, `docs/de/**`, `docs/fr/**`, `docs/hi/**`, `docs/ar/**`, `docs/it/**`, `docs/vi/**`, `docs/nl/**`, `docs/fa/**`, `docs/ru/**`, `docs/tr/**`, `docs/uk/**`, `docs/id/**`, `docs/pl/**`, or `docs/th/**`.
 
 ## End-to-end flow
 
-Edit English docs in `paleoclaw/paleoclaw` and push to `main`. The sync, translation, and publish sequence is documented in [translation-workflow.md](translation-workflow.md). Keep that file as the single description of the pipeline.
+Edit English docs in `syxscott/PaleoClaw` and push to `main`. The sync, translation, and publish sequence is documented in [translation-workflow.md](translation-workflow.md). Keep that file as the single description of the pipeline.
 
 ## Why the split exists
 

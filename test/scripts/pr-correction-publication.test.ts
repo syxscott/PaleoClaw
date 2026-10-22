@@ -113,7 +113,7 @@ function runCorrection(
     '  [ "$3" = node ] && [ "$4" = "$script_parent_dir/pr-lib/ci-dispatch.mjs" ] || return 97',
     "  echo proof >> .local/events",
     options.duringProof ?? ":",
-    '  jq -nc --arg head "$7" --arg base "$8" \'{backend:"crabbox",provider:"aws",target:"linux",headSha:$head,baseSha:$base,workflowSha:$base,runId:"run_fixture",leaseId:"cbx_fixture",actionsRunUrl:"https://github.com/paleoclaw/paleoclaw/actions/runs/1",actionsRunAttempt:1}\' > "$2"',
+    '  jq -nc --arg head "$7" --arg base "$8" \'{backend:"crabbox",provider:"aws",target:"linux",headSha:$head,baseSha:$base,workflowSha:$base,runId:"run_fixture",leaseId:"cbx_fixture",actionsRunUrl:"https://github.com/syxscott/PaleoClaw/actions/runs/1",actionsRunAttempt:1}\' > "$2"',
     "}",
     ...(options.setup ?? []),
   ]);

@@ -15,7 +15,7 @@ export type ReleasePlan = {
   target_context_ref: string;
   purpose: ReleasePlanPurpose;
   tooling: {
-    repository: "paleoclaw/paleoclaw";
+    repository: "syxscott/PaleoClaw";
     workflow_path: ".github/workflows/full-release-validation.yml";
     ref: string;
     sha: string;

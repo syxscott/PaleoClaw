@@ -11,7 +11,7 @@ read_when:
 ## Remote proof policy for agents
 
 Use the canonical
-[proof policy](https://github.com/paleoclaw/paleoclaw/blob/main/.agents/skills/paleoclaw-testing/SKILL.md#proof-policy)
+[proof policy](https://github.com/syxscott/PaleoClaw/blob/main/.agents/skills/paleoclaw-testing/SKILL.md#proof-policy)
 to select a qualified proof route. Prefer bounded local proof on an available
 host; expensive checks and busy or unqualified local hosts can use remote proof.
 Never execute untrusted repository tooling locally; use
@@ -203,7 +203,7 @@ See [runner limits](/ci/runners#testbox-spending-limits) for queue behavior.
 
 ## Crabbox repository setup
 
-The [Crabbox skill](https://github.com/paleoclaw/paleoclaw/blob/main/.agents/skills/crabbox/SKILL.md)
+The [Crabbox skill](https://github.com/syxscott/PaleoClaw/blob/main/.agents/skills/crabbox/SKILL.md)
 owns portable lease, trust, sync, and cleanup procedures. This section owns the
 paleoclaw wrapper and workflow inputs. Routine task-needed Crabbox/Testbox use
 and task-owned worktrees do not require another confirmation; preserve unrelated
@@ -242,7 +242,7 @@ The wrapper checks an executable sibling `../crabbox/bin/crabbox`, then `PATH`,
 then the sibling of the Git common checkout. Verify the selected binary and
 its source rather than trusting a directory name. The plugin installs a verified
 managed copy when the selected executable is missing or outdated. For an explicit
-[Crabbox](https://github.com/paleoclaw/crabbox) source repair, build `./cmd/crabbox`
+[Crabbox](https://github.com/openclaw/crabbox) source repair, build `./cmd/crabbox`
 in a clean task-owned checkout and leave the operator's installation untouched. The existing
 `OPENCLAW_CRABBOX_WRAPPER_IGNORE_REPO_BINARY=1` setting skips the first sibling
 candidate; a task binary on `PATH` then takes precedence over the common-checkout

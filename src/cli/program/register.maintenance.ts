@@ -93,7 +93,7 @@ export function registerMaintenanceCommands(
     )
     .option(
       "--github-issue",
-      "With --session-sqlite recover: prepare and optionally create an paleoclaw/paleoclaw issue",
+      "With --session-sqlite recover: prepare and optionally create an syxscott/PaleoClaw issue",
       false,
     )
     .option("--json", "Emit JSON; bare --json runs advisory read-only health checks", false)

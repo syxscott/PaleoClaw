@@ -265,7 +265,7 @@ $lanes.fetch(:release_upload).call(destination: ARGV.fetch(0).delete_prefix("des
     OPENAI_API_KEY: "synthetic-key",
     GITHUB_ACTIONS: "false",
     GITHUB_EVENT_NAME: "workflow_dispatch",
-    GITHUB_REPOSITORY: "paleoclaw/paleoclaw",
+    GITHUB_REPOSITORY: "syxscott/PaleoClaw",
     GITHUB_REF: "",
     GITHUB_SHA: "",
     GITHUB_RUN_ATTEMPT: "",
@@ -445,7 +445,7 @@ describe("mobile release CLI", () => {
         expectResult(
           rejected,
           1,
-          "exact workflow_dispatch or schedule commit on paleoclaw/paleoclaw main",
+          "exact workflow_dispatch or schedule commit on syxscott/PaleoClaw main",
         );
         expect(f.audit()).toHaveLength(1);
         expect(exists(f.recovery, "source")).toBe(false);

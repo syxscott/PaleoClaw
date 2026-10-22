@@ -82,7 +82,7 @@ export {
 } from "./lib/release-evidence-identity.mjs";
 
 const sortReleaseJsonValueKeys = /** @type {<T>(value: T) => T} */ (sortJsonValueKeys); // Validated release JSON preserves its structural type.
-const DEFAULT_REPO = process.env.OPENCLAW_RELEASE_REPO || "paleoclaw/paleoclaw";
+const DEFAULT_REPO = process.env.OPENCLAW_RELEASE_REPO || "syxscott/PaleoClaw";
 const RELEASE_EVIDENCE_SCHEMA = "openclaw.release-validation-evidence/v3";
 const PHASED_RELEASE_EVIDENCE_SCHEMA = "openclaw.release-validation-evidence/v4";
 const SHA_PINNED_BRANCH_PATTERN = /^release-ci\/[a-f0-9]{12}-[1-9][0-9]*$/u;
@@ -498,7 +498,7 @@ export async function restoreOriginalPublicationAdmission({ request, client, cac
   const original = await evidenceClient.getRunAttempt(request.runId, 1);
   const branch = request.workflow.ref.replace(/^refs\/(?:heads|tags)\//u, "");
   if (
-    request.repository !== "paleoclaw/paleoclaw" ||
+    request.repository !== "syxscott/PaleoClaw" ||
     original.repository?.full_name !== request.repository ||
     original.head_repository?.full_name !== request.repository ||
     String(original.id) !== request.runId ||

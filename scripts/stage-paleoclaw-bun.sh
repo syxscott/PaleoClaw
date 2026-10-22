@@ -24,7 +24,7 @@ mkdir -p "$CACHE_DIR"
 download() {
   curl --fail --location --proto '=https' --proto-redir '=https' --no-progress-meter --show-error \
     --connect-timeout 15 --max-time 300 --retry 3 --retry-delay 2 \
-    --output "$WORK/$1" "https://github.com/paleoclaw/bun/releases/download/$TAG/$1"
+    --output "$WORK/$1" "https://github.com/openclaw/bun/releases/download/$TAG/$1"
 }
 download SHA256SUMS
 download manifest.json
@@ -44,7 +44,7 @@ function checksum(name) {
 const bytes = fs.readFileSync(`${work}/manifest.json`);
 assert.equal(crypto.createHash('sha256').update(bytes).digest('hex'), checksum('manifest.json'), 'Bun manifest sha256 mismatch');
 const manifest = JSON.parse(bytes);
-assert.equal(manifest.repository, 'paleoclaw/bun', 'Bun release repository mismatch');
+assert.equal(manifest.repository, 'openclaw/bun', 'Bun release repository mismatch');
 assert.equal(manifest.tag, pin.tag, 'Bun release tag mismatch');
 assert.equal(manifest.bun.commit, pin.commit, 'Bun release commit mismatch');
 assert.equal(manifest.bun.revision, pin.revision, 'Bun release revision mismatch');

@@ -250,7 +250,7 @@ describe("immutable activation service", () => {
       },
       service,
       runtime: { path: node, identity: "synthetic" },
-      source: "https://github.com/paleoclaw/openclaw.git",
+      source: "https://github.com/syxscott/PaleoClaw.git",
     };
   });
 

@@ -41,7 +41,7 @@ afterEach(() => {
   pnpmPack.observer = undefined;
   pnpmPack.calls.length = 0;
 });
-const repository = "paleoclaw/paleoclaw";
+const repository = "syxscott/PaleoClaw";
 const sourceSha = "a".repeat(40);
 const toolingSha = "b".repeat(40);
 const workflowPath = ".github/workflows/full-release-validation.yml";

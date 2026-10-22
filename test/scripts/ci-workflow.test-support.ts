@@ -26,7 +26,7 @@ export const testNodeExecPath = resolveTestNodeExecPath();
 export const TSX_IMPORT = import.meta.resolve("tsx");
 const defaultContext = {
   eventName: "pull_request" as const,
-  repository: "paleoclaw/paleoclaw",
+  repository: "syxscott/PaleoClaw",
   runAttempt: 1,
 };
 

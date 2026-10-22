@@ -29,7 +29,7 @@ scenario:
     - Same-thread, direct-message, and group-chat turns deliver the marker exactly once.
     - Different-thread and different-conversation tool sends retain the automatic final on the source route.
   regressionRefs:
-    - https://github.com/paleoclaw/paleoclaw/issues/116397
+    - https://github.com/openclaw/openclaw/issues/116397
   docsRefs:
     - docs/channels/msteams.md
     - docs/concepts/qa-e2e-automation.md

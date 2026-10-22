@@ -23,7 +23,7 @@ vi.mock(import("./link-reader-hovercard.ts"), async (original) => {
 });
 
 const tag = "paleoclaw-link-reader-hovercard-provider";
-const href = "https://github.com/paleoclaw/paleoclaw/issues/99815";
+const href = "https://github.com/openclaw/openclaw/issues/99815";
 const response = {
   url: href,
   comments: 2,
@@ -148,7 +148,7 @@ it("reserves supported GitHub titles through cold loading, failures, recovery an
 
     for (const [url, inside] of [
       ["https://example.com/item", true],
-      ["https://github.com/paleoclaw/paleoclaw", true],
+      ["https://github.com/syxscott/PaleoClaw", true],
       [href, false],
     ] as const) {
       const control = document.createElement("a");
@@ -260,7 +260,7 @@ it("keeps rendered GitHub links free of native titles across preview closure and
   await vi.advanceTimersByTimeAsync(300);
   expect(document.querySelector(".link-reader-hovercard")).not.toBeNull();
   noNativeTitles();
-  expect(links[0]?.textContent).toBe("paleoclaw/paleoclaw#99815");
+  expect(links[0]?.textContent).toBe("syxscott/PaleoClaw#99815");
   expect(anchor.textContent).toBe("the related issue");
   expect(links[2]?.querySelector("img")?.alt).toBe("Issue icon");
   expect(links[3]?.getAttribute("aria-label")).toBe("Issue details");

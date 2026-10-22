@@ -132,7 +132,7 @@ Numbered compact bins change when membership changes. A matching suffix does not
 
 ## Hosted assignment on the critical path
 
-Ordinary push and scheduled runs in `paleoclaw/paleoclaw`, and its same-repository
+Ordinary push and scheduled runs in `syxscott/PaleoClaw`, and its same-repository
 PRs, now route `preflight`, the selected `pr-failure-report`, and
 `paleoclaw/ci-gate` to hosted `ubuntu-24.04` in hybrid mode. Fork first attempts
 retain Blacksmith preflight and gate, with their reporter already hosted. All
@@ -322,13 +322,13 @@ hosted ratchets and check planning, including qualification dispatches.
 
 ## RunsOn remains unqualified
 
-The [on-demand pilot](https://github.com/paleoclaw/paleoclaw/actions/runs/35549787290) measured the two critical compact jobs at 561/816 seconds on Blacksmith versus 755/1259 seconds on `c8i.4xlarge`: 35%/54% slower. Full Gateway-core failed on AWS at every tested worker count. Cron scaled from 156 to 138 seconds on `c8i.8xlarge` and 126 to 110 seconds on `c8a.8xlarge` at 8 versus 16 workers, but lacks a matching Blacksmith control. Checks, artifact builds, extensions, and UI have no pilot comparison.
+The [on-demand pilot](https://github.com/syxscott/PaleoClaw/actions/runs/35549787290) measured the two critical compact jobs at 561/816 seconds on Blacksmith versus 755/1259 seconds on `c8i.4xlarge`: 35%/54% slower. Full Gateway-core failed on AWS at every tested worker count. Cron scaled from 156 to 138 seconds on `c8i.8xlarge` and 126 to 110 seconds on `c8a.8xlarge` at 8 versus 16 workers, but lacks a matching Blacksmith control. Checks, artifact builds, extensions, and UI have no pilot comparison.
 
 The opt-in `runson` profile derives from hybrid and extracts the three `core-runtime-cron-parallel-*` children into one serial job on `c8i.8xlarge`: 32 vCPUs, 64 GiB RAM, `ubuntu24-full-x64`, and an 80 GB gp3 root. On the retained cron comparison inventory, all 258 files kept their two-worker job and group ceilings, and the source Blacksmith jobs retained their other children. RunsOn inherits hybrid's current splitting and packing before adding its cron row. Current inventory counts and pricing are recorded in [measured compact packing](/ci/routing-costs#measured-compact-packing); the earlier fixed nine-to-four projection is not a universal result. The pilot's eight-worker, 156-second cron wall remains historical context, while the complete two-worker comparison below owns the available provider evidence.
 
 The compatible CLI observations retain **558 and 703-second forecasts including one 60-second setup allowance**. Separating their serial pair does not establish a 600-second maximum for each indivisible child. Eligible serial tooling pairs now split above a 600-second complete-wall estimate; packing separate short jobs uses a 720-second admission limit. These are placement estimates, not raised test deadlines or guarantees about the fifteen-minute workflow wall.
 
-[Qualification run 35702772380](https://github.com/paleoclaw/paleoclaw/actions/runs/35702772380), attempt 1 at `84733d1a17a9a7321ac74099e421889099e411b4`, ran the same cron descriptors on all three providers. All three cron jobs passed with two workers and one serial child plan. The RunsOn allocation reported `instance-life-cycle=spot`; no interruption occurred. Wait below is job creation to start, including matrix admission, not pure provider boot time.
+[Qualification run 35702772380](https://github.com/syxscott/PaleoClaw/actions/runs/35702772380), attempt 1 at `84733d1a17a9a7321ac74099e421889099e411b4`, ran the same cron descriptors on all three providers. All three cron jobs passed with two workers and one serial child plan. The RunsOn allocation reported `instance-life-cycle=spot`; no interruption occurred. Wait below is job creation to start, including matrix admission, not pure provider boot time.
 
 | Cron provider             | Observed CPUs | Workers | Job wall | Sum of child walls | Wait | Result |
 | ------------------------- | ------------: | ------: | -------: | -----------------: | ---: | ------ |
@@ -338,7 +338,7 @@ The compatible CLI observations retain **558 and 703-second forecasts including 
 
 RunsOn's job duration was 36 seconds shorter than the Blacksmith control's, an 8.3% reduction in this single same-run comparison. It does not establish a repeated distribution or qualify the complete workflow. The fresh Blacksmith child measurement is 393.71 seconds, or 6.56 minutes of candidate serial work removed from the existing source jobs, approximately $0.4200 at the historical $0.064/minute list rate. The control's complete 7.2-minute job is an added qualification job, not the amount removed from production. The source jobs retain other children and setup. Each additional Blacksmith 8-class split adds an estimated 45–60 seconds of setup; the current inventory accounting appears below. Runtime interactions, those added steps, and AWS allocation cost must be included before claiming net whole-run savings.
 
-The earlier [baseline run 35688659765](https://github.com/paleoclaw/paleoclaw/actions/runs/35688659765) measured the same cron descriptors at 252.63 combined child seconds. The newer 393.71-second control replaces that 4.21-minute costing assumption; the variation is another reason not to equate a child-duration forecast with realized savings.
+The earlier [baseline run 35688659765](https://github.com/syxscott/PaleoClaw/actions/runs/35688659765) measured the same cron descriptors at 252.63 combined child seconds. The newer 393.71-second control replaces that 4.21-minute costing assumption; the variation is another reason not to equate a child-duration forecast with realized savings.
 
 Selection uses the `runson` backend on an upstream same-repository PR's first attempt, or the [maintainer qualification dispatch](/ci/runners#runson-qualification) with an exact current PR head. The repository variable remains unchanged. The existing RunsOn GitHub App supplies runners from workflow labels; no interactive AWS login is part of dispatch. The latest operator identity check failed because the AWS SSO session was expired, so administrative state, teardown, and selected-AZ prices remain unverified. The public regional price feed is available without those credentials.
 
@@ -372,7 +372,7 @@ Predictions can be wrong. The old 982-second extension job included database-wor
 
 ## Measured compact packing
 
-Hybrid placement reuses the shared tooling estimator from the [capacity-pricing work](https://github.com/paleoclaw/paleoclaw/pull/155277). It reads committed Blacksmith file measurements through `readToolingFileTimings` and passes them through the existing estimator's optional file-map argument. Only this hybrid placement pass consumes that additional map; RunsOn inherits the hybrid plan. The broader timing payload and global pricing coefficients are unchanged, so this route does not create a competing file-price table.
+Hybrid placement reuses the shared tooling estimator from the [capacity-pricing work](https://github.com/openclaw/openclaw/pull/155277). It reads committed Blacksmith file measurements through `readToolingFileTimings` and passes them through the existing estimator's optional file-map argument. Only this hybrid placement pass consumes that additional map; RunsOn inherits the hybrid plan. The broader timing payload and global pricing coefficients are unchanged, so this route does not create a competing file-price table.
 
 The shared collector accepts a complete singleton invocation duration when one declared tooling file, one passing file summary, one duration, matching reporter identity and successful exit agree. Native file summaries retain precedence. Six singleton file prices were refitted from successful jobs and children in three failed workflows; a seventh stayed within the owner's 15% threshold. Seven scoped native Testbox file updates fill missing eligible prices and correct the provision estimate. Failed workflows and cancelled lease cleanup never supply complete-inventory or pruning evidence.
 
@@ -386,7 +386,7 @@ Eligible serial tooling jobs with multiple children split above a **600-second c
 
 ### Native calibration
 
-[Linux Testbox run 35722202780](https://github.com/paleoclaw/paleoclaw/actions/runs/35722202780) used source `2fd7485b450e12ef5574645d7b648d61ee5ce8a2` on the Blacksmith 8-class, with two observed CPUs, two workers and one child at a time. All eight selected children and the runtime preparation completed successfully. The enclosing workflow was **cancelled during lifecycle cleanup**, so it is not a green workflow or fifteen-minute qualification. Source correspondence retains the recorded runner-label fixture difference.
+[Linux Testbox run 35722202780](https://github.com/syxscott/PaleoClaw/actions/runs/35722202780) used source `2fd7485b450e12ef5574645d7b648d61ee5ce8a2` on the Blacksmith 8-class, with two observed CPUs, two workers and one child at a time. All eight selected children and the runtime preparation completed successfully. The enclosing workflow was **cancelled during lifecycle cleanup**, so it is not a green workflow or fifteen-minute qualification. Source correspondence retains the recorded runner-label fixture difference.
 
 | Original parent    | Complete `core-tooling-*` children and successful walls | Parent test envelope | Separate runtime preparation |
 | ------------------ | ------------------------------------------------------- | -------------------: | ---------------------------: |
@@ -399,7 +399,7 @@ Rounded native components plus one 60-second setup yield **235/466-second floors
 
 ### Current inventory
 
-Main now includes the separately owned [runtime release tier](https://github.com/paleoclaw/paleoclaw/pull/155606); its coverage movement is not an R3 saving. On the candidate rebased onto `0a5b5381a26b`, hybrid's broad-PR plan separates two critical pairs and packs **seven eligible jobs into three**. Four removed setups save 3–4 minutes; the two splits add 1.5–2 minutes, leaving a conditional **1.5–2 Blacksmith 8-class minutes /$0.024–$0.032** before runtime interactions. Main adds one split and its setup. Extension packing retains its separate controlled 47→40-job comparison.
+Main now includes the separately owned [runtime release tier](https://github.com/openclaw/openclaw/pull/155606); its coverage movement is not an R3 saving. On the candidate rebased onto `0a5b5381a26b`, hybrid's broad-PR plan separates two critical pairs and packs **seven eligible jobs into three**. Four removed setups save 3–4 minutes; the two splits add 1.5–2 minutes, leaving a conditional **1.5–2 Blacksmith 8-class minutes /$0.024–$0.032** before runtime interactions. Main adds one split and its setup. Extension packing retains its separate controlled 47→40-job comparison.
 
 The immutable nine-job calibration cohort fits four jobs with standard forecasts of **629, 539, 662 and 672 seconds**. That cohort checks the policy; it does not define the current inventory's job count. Current packed `compact-small-20` forecasts 617 seconds, and tooling `compact-small-32` forecasts 576.5 seconds. The longest known forecast remains the 703-second CLI child.
 
@@ -414,13 +414,13 @@ The immutable nine-job calibration cohort fits four jobs with standard forecasts
 | GitHub main                      |               58 /59 |              58 /59 | Hosted: 58                |             70 /90 |
 | GitHub broad PR                  |              111 /73 |             111 /73 | Hosted: 111               |            130 /90 |
 
-Compact counts include dist descriptors; broad-PR Node counts include 40 extension rows. RunsOn adds one cron job to the hybrid plan. All counts stay inside the unchanged 70/130/90 caps. Together, current Node and extension packing remove a net nine setups from a broad PR: an estimated 6.75–9 Blacksmith 8-class minutes, or $0.108–$0.144 before runtime interactions. Main adds one setup, approximately 0.75–1 minute or $0.012–$0.016. These counts and costs are planner arithmetic, not native performance acceptance. Final measurements are recorded in [PR #155403](https://github.com/paleoclaw/paleoclaw/pull/155403).
+Compact counts include dist descriptors; broad-PR Node counts include 40 extension rows. RunsOn adds one cron job to the hybrid plan. All counts stay inside the unchanged 70/130/90 caps. Together, current Node and extension packing remove a net nine setups from a broad PR: an estimated 6.75–9 Blacksmith 8-class minutes, or $0.108–$0.144 before runtime interactions. Main adds one setup, approximately 0.75–1 minute or $0.012–$0.016. These counts and costs are planner arithmetic, not native performance acceptance. Final measurements are recorded in [PR #155403](https://github.com/openclaw/openclaw/pull/155403).
 
 Ordinary main still does not select AWS. The admitted main-shaped qualification can select RunsOn and excludes comparison controls. Its initial preflight stays hosted until authorization. Qualifications retain their coverage shape on reruns while using hosted routing, resource policies and deadlines; raw GitHub context continues to own authentication, concurrency and cache publication.
 
 ## Whole-run acceptance
 
-[Baseline run 35679872894](https://github.com/paleoclaw/paleoclaw/actions/runs/35679872894) took 21m18s: 5m20s before preflight creation and 15m58s from preflight creation through the gate. Blacksmith class median assignment was 8/8/3 seconds for 32/16/8-class. Workflow admission and runner assignment are different waits; include both in whole-run latency.
+[Baseline run 35679872894](https://github.com/syxscott/PaleoClaw/actions/runs/35679872894) took 21m18s: 5m20s before preflight creation and 15m58s from preflight creation through the gate. Blacksmith class median assignment was 8/8/3 seconds for 32/16/8-class. Workflow admission and runner assignment are different waits; include both in whole-run latency.
 
 The baseline allocated 29/2/10 active Blacksmith 32/16/8-class jobs and 25 hosted Ubuntu jobs. Skipped placeholders consumed no runners. That is 258.15 Blacksmith machine-minutes; historical label rates imply $13.84, while the campaign's supplied estimate was $18–20. These are pricing assumptions, not an invoice. Moving artifact builds back adds one Blacksmith job and approximately 4.67 Blacksmith minutes using the older build median; extension compaction applies to PRs only.
 
@@ -430,7 +430,7 @@ The two native runs at `84733d1a17a9a7321ac74099e421889099e411b4` both failed an
 
 | Native run                                                                             | Complete wall | Active jobs | Blacksmith minutes | Hosted Ubuntu minutes | Estimated Blacksmith compute |
 | -------------------------------------------------------------------------------------- | ------------: | ----------: | -----------------: | --------------------: | ---------------------------: |
-| [Hybrid PR 35702479645](https://github.com/paleoclaw/paleoclaw/actions/runs/35702479645) |        17m57s |         151 |             906.50 |                111.32 |                     $33.5011 |
+| [Hybrid PR 35702479645](https://github.com/syxscott/PaleoClaw/actions/runs/35702479645) |        17m57s |         151 |             906.50 |                111.32 |                     $33.5011 |
 | RunsOn qualification 35702772380                                                       |        17m33s |         155 |             946.62 |                122.35 |                     $34.6651 |
 
-Qualification additionally used 6.6 job minutes on Spot, with the $0.076286 launch-to-completion estimate above. It includes the two extra cron controls and different dispatch admission, so subtracting these total costs would not isolate the production routing change. Blacksmith Linux class median waits were 12 seconds in the PR and 9–10 seconds in qualification. Windows medians were 48 and **61 seconds**, respectively; qualification therefore also missed the under-60-second class wait target. The successful job tails were 950 seconds in the PR and 907 seconds in qualification. Passing cron controls do not turn either failed workflow into a green or fifteen-minute result. These runs predate the current calibrated packing candidate and do not qualify it. Current main-shaped and broad-PR receipts are recorded in [PR #155403](https://github.com/paleoclaw/paleoclaw/pull/155403).
+Qualification additionally used 6.6 job minutes on Spot, with the $0.076286 launch-to-completion estimate above. It includes the two extra cron controls and different dispatch admission, so subtracting these total costs would not isolate the production routing change. Blacksmith Linux class median waits were 12 seconds in the PR and 9–10 seconds in qualification. Windows medians were 48 and **61 seconds**, respectively; qualification therefore also missed the under-60-second class wait target. The successful job tails were 950 seconds in the PR and 907 seconds in qualification. Passing cron controls do not turn either failed workflow into a green or fifteen-minute result. These runs predate the current calibrated packing candidate and do not qualify it. Current main-shaped and broad-PR receipts are recorded in [PR #155403](https://github.com/openclaw/openclaw/pull/155403).

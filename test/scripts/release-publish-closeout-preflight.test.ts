@@ -15,7 +15,7 @@ function evaluate({ dir, sha }: { dir: string; sha: string }, expression: string
 import { inspectPublishReleasePage, inspectStableCloseoutPreflight } from ${JSON.stringify(moduleUrl("release-publish-closeout-preflight"))};
 import { createPublishPreflightGh } from ${JSON.stringify(moduleUrl("release-publish-preflight-evidence"))};
 import { observeReleaseGitHubState } from ${JSON.stringify(moduleUrl("release-publish-state"))};
-const input = {repo: 'paleoclaw/paleoclaw', tag: 'v2026.9.5', sourceSha: ${JSON.stringify(sha)}, runGh: createPublishPreflightGh()};
+const input = {repo: 'syxscott/PaleoClaw', tag: 'v2026.9.5', sourceSha: ${JSON.stringify(sha)}, runGh: createPublishPreflightGh()};
 const closeoutInput = {...input, attempt: '1', runId: '123'};
 const admit = (changes = {}) => {
   try { return {admitted: true, release: inspectPublishReleasePage({...input, ...changes})}; }
@@ -86,7 +86,7 @@ if (args[0] === 'api') {
     if (${JSON.stringify(state)} === 'unavailable') fail('HTTP 404: repository not found');
     const page = Number(new URL('https://api.github.com/' + endpoint).searchParams.get('page'));
     const release = {id: 7, draft: true, prerelease: false,
-      tag_name: 'v2026.9.5', html_url: 'https://github.com/paleoclaw/paleoclaw/releases/tag/v2026.9.5',
+      tag_name: 'v2026.9.5', html_url: 'https://github.com/syxscott/PaleoClaw/releases/tag/v2026.9.5',
       target_commitish: ${JSON.stringify(sha)}, body: ${JSON.stringify(body)}, assets: []};
     console.log(JSON.stringify(${JSON.stringify(state)} !== 'draft' ? [] : page === 1
       ? Array.from({length: 100}, (_, index) => ({tag_name: 'other-' + index})) : [release]));

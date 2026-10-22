@@ -9,7 +9,7 @@ import { isDirectRunUrl } from "./lib/direct-run.mjs";
 import { parsePositiveInt } from "./lib/numeric-options.mjs";
 import { execPlainGh } from "./lib/plain-gh.mjs";
 
-const DEFAULT_GITHUB_REPOSITORY = "paleoclaw/paleoclaw";
+const DEFAULT_GITHUB_REPOSITORY = "syxscott/PaleoClaw";
 const RUN_JOBS_PAGE_SIZE = 100;
 const RUN_JOBS_MAX_PAGES = 25;
 const TREND_RUNS_MAX_PAGES = 100;

@@ -53,7 +53,7 @@ The R2 binding is present for Worker-side completeness. Litestream runs inside t
 
 ## 2. Build and publish the image
 
-Choose an immutable, architecture-compatible digest from the official [`paleoclaw/paleoclaw`](https://hub.docker.com/r/paleoclaw/paleoclaw) Docker Hub repository. Replace `<official-paleoclaw-image-digest>` in `Dockerfile`, then build and push the derived image:
+Choose an immutable, architecture-compatible digest from the official [`syxscott/PaleoClaw`](https://hub.docker.com/r/paleoclaw/paleoclaw) Docker Hub repository. Replace `<official-paleoclaw-image-digest>` in `Dockerfile`, then build and push the derived image:
 
 ```bash
 docker buildx build \

@@ -96,7 +96,7 @@ if (isMainModule({ currentFile: fileURLToPath(import.meta.url) })) {
         "--no-tags",
         "--no-write-fetch-head",
         "--depth=1",
-        "https://github.com/paleoclaw/openclaw.git",
+        "https://github.com/syxscott/PaleoClaw.git",
         input.sourceSha,
       ],
       { env: { ...process.env, GIT_TERMINAL_PROMPT: "0" }, stdio: "pipe" },

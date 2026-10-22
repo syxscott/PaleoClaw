@@ -250,7 +250,7 @@ maintainer sessions, tools, and reply behavior.
   channels: {
     x: {
       verifiedFromGitHub: {
-        repo: "paleoclaw/paleoclaw",
+        repo: "syxscott/PaleoClaw",
         minPermission: "push",
         refreshMinutes: 60,
         token: { source: "env", provider: "default", id: "X_GITHUB_TOKEN" },

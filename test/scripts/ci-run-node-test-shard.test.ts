@@ -1390,8 +1390,8 @@ describe("scripts/ci-run-node-test-shard.mts", () => {
   });
 
   it.each([
-    { name: "first upstream attempt", attempt: "1", repository: "paleoclaw/paleoclaw" },
-    { name: "failed-jobs retry", attempt: "2", repository: "paleoclaw/paleoclaw" },
+    { name: "first upstream attempt", attempt: "1", repository: "syxscott/PaleoClaw" },
+    { name: "failed-jobs retry", attempt: "2", repository: "syxscott/PaleoClaw" },
     { name: "fork", attempt: "1", repository: "example/paleoclaw" },
   ])("drains every planned CI group after failure on $name", async ({ attempt, repository }) => {
     const started: string[] = [];

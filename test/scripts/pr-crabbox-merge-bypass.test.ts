@@ -51,7 +51,7 @@ function input(testedBaseSha = baseSha) {
         {
           app: { id: 15368 },
           conclusion: "skipped",
-          details_url: `https://github.com/paleoclaw/paleoclaw/actions/runs/${ciRunId}/job/${ciGateJobId}`,
+          details_url: `https://github.com/syxscott/PaleoClaw/actions/runs/${ciRunId}/job/${ciGateJobId}`,
           head_sha: headSha,
           id: 20,
           name: "paleoclaw/ci-gate",
@@ -60,7 +60,7 @@ function input(testedBaseSha = baseSha) {
         {
           app: { id: 15368 },
           conclusion: "success",
-          details_url: "https://github.com/paleoclaw/paleoclaw/actions/runs/8001",
+          details_url: "https://github.com/syxscott/PaleoClaw/actions/runs/8001",
           head_sha: headSha,
           id: 21,
           name: "paleoclaw/crabbox-gate",
@@ -117,9 +117,9 @@ function input(testedBaseSha = baseSha) {
     },
     mainRef: { object: { sha: mainSha }, ref: "refs/heads/main" },
     pullRequest: {
-      base: { ref: "main", repo: { full_name: "paleoclaw/paleoclaw" }, sha: mainSha },
+      base: { ref: "main", repo: { full_name: "syxscott/PaleoClaw" }, sha: mainSha },
       draft: false,
-      head: { repo: { full_name: "paleoclaw/paleoclaw" }, sha: headSha },
+      head: { repo: { full_name: "syxscott/PaleoClaw" }, sha: headSha },
       number: 131091,
       state: "open",
     },
@@ -455,7 +455,7 @@ if (args[0] === "fixture-sleep") {
 const apiOut = (data) => out(args.includes("--jq")
   ? cp.execFileSync("jq", ["-r", args[args.indexOf("--jq") + 1]], {input:JSON.stringify(data),encoding:"utf8"}).trim()
   : data);
-const repo = {id:123,nameWithOwner:"paleoclaw/paleoclaw",url:"https://github.com/paleoclaw/paleoclaw"};
+const repo = {id:123,nameWithOwner:"syxscott/PaleoClaw",url:"https://github.com/syxscott/PaleoClaw"};
 const repoNodeId = "fixture-repo";
 const pr = {id:"fixture-pr",number:131091,url:repo.url+"/pull/131091",state:"OPEN",isDraft:false,
   headRefOid:value.headSha,headRefName:"topic",baseRefName:"main",baseRefOid:value.currentMainSha,
@@ -568,7 +568,7 @@ else if (endpoint === "graphql" && args.some(arg => arg.includes("repository(own
       esac;;
       merge-base) exit 0;;
       config) [ "$*" = 'config --bool remote.origin.promisor' ] && exit 1; exit 19;;
-      remote) [ "$2 $3" = 'get-url origin' ] || exit 19; echo 'https://github.com/paleoclaw/openclaw.git';;
+      remote) [ "$2 $3" = 'get-url origin' ] || exit 19; echo 'https://github.com/syxscott/PaleoClaw.git';;
       merge-tree) echo candidate-tree;;
       diff) case "$*" in
         'diff --name-only --no-renames ${headSha}..${headSha}') ;;
@@ -836,7 +836,7 @@ finalize_remote_crabbox_aws_gate 131091 ${headSha}`,
           "merge",
           "131091",
           "--repo",
-          "https://github.com/paleoclaw/paleoclaw",
+          "https://github.com/syxscott/PaleoClaw",
           "--squash",
           "--admin",
           "--match-head-commit",

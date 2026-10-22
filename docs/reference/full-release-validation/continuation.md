@@ -35,7 +35,7 @@ pnpm frv prioritize --restore <record> [--dry-run]
 ```
 
 `prioritize --restore` recovers runs deferred by the former release-priority gate
-(see [Release priority](https://github.com/paleoclaw/paleoclaw/blob/main/.agents/skills/release-paleoclaw-ci/SKILL.md#deferred-ci-recovery)). Active validation
+(see [Release priority](https://github.com/syxscott/PaleoClaw/blob/main/.agents/skills/release-paleoclaw-ci/SKILL.md#deferred-ci-recovery)). Active validation
 no longer pauses CI or supporting workflows.
 
 `rerun --job` selects an exact executed, terminal job name inside a child key shown by
@@ -280,7 +280,7 @@ outputs. These diagnostics cannot enter signing or publication; there is no
 shortcut that converts a retained failed bundle into a qualified release. The normal PaleoHub dispatch record is not
 a complete child inventory. Mac assets/feeds and website deployment are not
 collected by this reader. Use the native publication and website deployment
-owners for their current readbacks. The [website owner's download checks](https://github.com/paleoclaw/openclaw.ai#companion-downloads)
+owners for their current readbacks. The [website owner's download checks](https://github.com/openclaw/openclaw.ai#companion-downloads)
 can inspect production without deploying. For a stable release,
 `pnpm release:stable <version> --status` shows retained Mac run and appcast facts
 from the original orchestration state directory, not a new live verification.

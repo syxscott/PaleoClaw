@@ -165,7 +165,7 @@ function buildFixtureRepo(root: string, version: string, options: FixtureOptions
         version,
         type: "commonjs",
         private: true,
-        repository: { type: "git", url: "https://github.com/paleoclaw/paleoclaw" },
+        repository: { type: "git", url: "https://github.com/syxscott/PaleoClaw" },
         paleoclaw: {
           extensions: ["./index.ts"],
           compat: { pluginApi: `>=${version}` },

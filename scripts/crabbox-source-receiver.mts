@@ -96,7 +96,7 @@ try {
     return result.stdout.toString("utf8");
   }
   git(["init", "-q"]);
-  git(["remote", "add", "origin", "https://github.com/paleoclaw/openclaw.git"]);
+  git(["remote", "add", "origin", "https://github.com/syxscott/PaleoClaw.git"]);
   const preparedGit = path.join(cwd, ".git");
   const reuseBase = stat(preparedGit)?.isDirectory() &&
     git(["for-each-ref", "--format=%(objectname)", "refs/remotes/origin/main"], {

@@ -204,7 +204,7 @@ describe("memory index", () => {
   });
 
   it("round-trips mixed-case project keys through indexed recall consumers", async () => {
-    const projectKey = "github.com/paleoclaw/paleoclaw";
+    const projectKey = "github.com/syxscott/PaleoClaw";
     await writeWorkspace(
       "MEMORY.md",
       `- Follow the kraken deploy ritual. <!-- trigger: kraken deploy ritual --> <!-- importance: 8 --> <!-- project: ${projectKey} -->\n`,
@@ -254,7 +254,7 @@ describe("memory index", () => {
   });
 
   it("keeps quarantined curated memory searchable but out of automatic candidates", async () => {
-    const projectKey = "github.com/paleoclaw/paleoclaw";
+    const projectKey = "github.com/syxscott/PaleoClaw";
     await writeWorkspace(
       "MEMORY.md",
       `- Quarantined release instruction. <!-- trigger: release instruction --> <!-- project: ${projectKey} -->\n`,

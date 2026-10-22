@@ -80,7 +80,7 @@ observations and reconciliation; the [protected REST PUT](/reference/scripts/git
 dispatch. The existing retained outcome owns `priorCiAdmin` evidence and retains
 its baseline/prior head and tested merge objects. Exact PR/policy facts and the
 landing-parent audit still apply; active prior-CI admission may accept verified
-forward-main movement under the [merge admission contract](/reference/scripts/merge-admission). See the [landing workflow](https://github.com/paleoclaw/paleoclaw/blob/main/.agents/skills/paleoclaw-pr-maintainer/references/landing.md#explicit-prior-ci-admin-landing)
+forward-main movement under the [merge admission contract](/reference/scripts/merge-admission). See the [landing workflow](https://github.com/syxscott/PaleoClaw/blob/main/.agents/skills/paleoclaw-pr-maintainer/references/landing.md#explicit-prior-ci-admin-landing)
 for the evidence fields and supported policy limits.
 
 ## Requalification on a busy main

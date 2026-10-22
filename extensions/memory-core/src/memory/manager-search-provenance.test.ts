@@ -55,7 +55,7 @@ describe("memory search provenance enrichment", () => {
       DELETE FROM memory_index_chunk_provenance
       WHERE chunk_id IN (SELECT id FROM memory_index_chunks WHERE path = 'memory/orchid-4.md');
       INSERT OR REPLACE INTO memory_index_chunk_recall_metadata (chunk_id, importance, triggers, project_key)
-      SELECT id, 9, ' when flying ', ' github.com/paleoclaw/paleoclaw '
+      SELECT id, 9, ' when flying ', ' github.com/syxscott/PaleoClaw '
       FROM memory_index_chunks WHERE path = 'memory/orchid-0.md';
     `);
 
@@ -72,7 +72,7 @@ describe("memory search provenance enrichment", () => {
       path: paths[0],
       importance: 9,
       triggers: "when flying",
-      projectKey: "github.com/paleoclaw/paleoclaw",
+      projectKey: "github.com/syxscott/PaleoClaw",
     });
     for (const result of results) {
       expect(result.snippet).toContain("Alpha violet record");

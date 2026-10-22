@@ -381,7 +381,7 @@ ${expectDefined(step.run, "prompt-prefix command")}`,
     );
     const env = {
       PATH: process.env.PATH,
-      GITHUB_REPOSITORY: "paleoclaw/paleoclaw",
+      GITHUB_REPOSITORY: "syxscott/PaleoClaw",
       GITHUB_OUTPUT: outputPath,
       GITHUB_STEP_SUMMARY: path.join(outputDir, "summary"),
       SELECTED_SHA: "a".repeat(40),

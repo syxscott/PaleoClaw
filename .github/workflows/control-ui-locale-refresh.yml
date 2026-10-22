@@ -71,7 +71,7 @@ concurrency:
 jobs:
   resolve-base:
     if: >-
-      github.repository == 'paleoclaw/paleoclaw' &&
+      github.repository == 'syxscott/PaleoClaw' &&
       (github.event_name != 'workflow_dispatch' || github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
     outputs:

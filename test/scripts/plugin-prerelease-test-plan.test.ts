@@ -402,7 +402,7 @@ describe("scripts/lib/plugin-prerelease-test-plan.mts", () => {
           workflow.jobs["plugin-prerelease-extension-shard"]["timeout-minutes"],
           {
             eventName: "workflow_dispatch",
-            repository: "paleoclaw/paleoclaw",
+            repository: "syxscott/PaleoClaw",
             runAttempt: 1,
             matrix: { test_runtime_policy: runtimePolicy },
           },
@@ -489,7 +489,7 @@ export const createExtensionTestShards = () => [{
     const workflow = readPluginPrereleaseWorkflow();
     const context = {
       eventName: "schedule" as const,
-      repository: "paleoclaw/paleoclaw",
+      repository: "syxscott/PaleoClaw",
       ref: "refs/heads/main",
       sha: "a".repeat(40),
       runAttempt: 1,

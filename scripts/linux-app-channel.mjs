@@ -29,7 +29,7 @@ import {
   verifyReleaseWorkflowRun,
 } from "./release-tooling-identity.mjs";
 
-const REPOSITORY = "paleoclaw/paleoclaw";
+const REPOSITORY = "syxscott/PaleoClaw";
 const CHANNEL = "linux-stable";
 const INITIAL_BODY = "paleoclaw Linux update channel. Publication is not complete.";
 const METADATA_LIMIT = 1024 * 1024;

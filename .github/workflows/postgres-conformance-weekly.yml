@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   postgres-conformance:
-    if: ${{ github.repository == 'paleoclaw/paleoclaw' && github.ref == 'refs/heads/main' }}
+    if: ${{ github.repository == 'syxscott/PaleoClaw' && github.ref == 'refs/heads/main' }}
     name: PostgreSQL conformance (${{ matrix.version }}, ${{ matrix.shard }})
     runs-on: ubuntu-24.04
     # Allow 2× the measured 24m25s maximum in run 39393830074.

@@ -43,7 +43,7 @@ describe("Control UI update failure report consent", () => {
   it("submits the reviewed digest after explicit confirmation", async () => {
     const created = {
       status: "created" as const,
-      url: "https://github.com/paleoclaw/paleoclaw/issues/123",
+      url: "https://github.com/openclaw/openclaw/issues/123",
     };
     const request = vi.fn(async (_method: string, params: { action: string }) =>
       params.action === "preview" ? ready : created,

@@ -23,7 +23,7 @@ function searchClient(runs: Run[]) {
       }),
     };
   };
-  return createClient("paleoclaw/paleoclaw", {
+  return createClient("syxscott/PaleoClaw", {
     apiText: async (resource: string) =>
       select(resource)
         .matches.slice(0, 1_000)

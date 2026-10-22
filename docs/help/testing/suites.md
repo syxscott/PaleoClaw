@@ -9,7 +9,7 @@ read_when:
 ## Quick start
 
 Select proof using the canonical
-[proof policy](https://github.com/paleoclaw/paleoclaw/blob/main/.agents/skills/paleoclaw-testing/SKILL.md#proof-policy).
+[proof policy](https://github.com/syxscott/PaleoClaw/blob/main/.agents/skills/paleoclaw-testing/SKILL.md#proof-policy).
 Use the commands below for the suite you need:
 
 - Focused test: `pnpm test <file> --maxWorkers=1`
@@ -29,7 +29,7 @@ the pre-existing/new/unknown classification. Fix new failures and investigate
 unknown ones, then use `pnpm test:ci-failed <pr> --run` until the selected tests
 pass locally and push once. Do not run the full local suite or use
 `gh run rerun` to chase green. Pre-existing failures follow the
-[failure-table landing rule](https://github.com/paleoclaw/paleoclaw/blob/main/.agents/skills/paleoclaw-pr-maintainer/references/landing.md#red-main-and-inherited-failures).
+[failure-table landing rule](https://github.com/syxscott/PaleoClaw/blob/main/.agents/skills/paleoclaw-pr-maintainer/references/landing.md#red-main-and-inherited-failures).
 See [failed CI test selection](/reference/scripts/pr-tooling#rerun-failed-ci-tests)
 for targets, classification, and command options.
 
@@ -274,7 +274,7 @@ Native dependency policy:
     - `pnpm changed:lanes` shows which architectural lanes a diff triggers.
     - The pre-commit hook formats and restages files. When private rules are
       configured, it also scans staged content before and after formatting.
-      See [Local commit hook setup](https://github.com/paleoclaw/paleoclaw/blob/main/CONTRIBUTING.md#local-commit-hook).
+      See [Local commit hook setup](https://github.com/syxscott/PaleoClaw/blob/main/CONTRIBUTING.md#local-commit-hook).
       It does not run lint, typecheck, or tests.
     - Use `pnpm check:changed` when an optional smart local check helps select
       focused proof. PR CI runs broad checks after publication.
@@ -624,7 +624,7 @@ frozen release targets may not support this advisory selector.
 
 ## Which suite should I run?
 
-Follow the [proof policy](https://github.com/paleoclaw/paleoclaw/blob/main/.agents/skills/paleoclaw-testing/SKILL.md#proof-policy).
+Follow the [proof policy](https://github.com/syxscott/PaleoClaw/blob/main/.agents/skills/paleoclaw-testing/SKILL.md#proof-policy).
 Target the touched owner first. Gateway networking, WebSocket, and pairing
 contracts have E2E lanes; provider/tool-calling diagnosis may require a narrowed
 live lane. Suite descriptions above identify their scope and prerequisites.

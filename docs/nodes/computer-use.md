@@ -301,7 +301,7 @@ ask-mode exec with unrestricted computer use for a model you do not trust.
 - The macOS fulfiller posts text one grapheme at a time, so cancellation, disconnect, pause, disable, or endpoint replacement stops it before the next grapheme. The experimental CUA Driver fulfiller passes node cancellation to the SDK for each call.
 - On macOS, capture and input require a verified unlocked desktop. Temporary keep-awake covers an active Computer execution, including background actions, for at most one hour. Manual lock, logout, or unknown state releases assertions and retires the execution; a later unlock requires a new execution. Optional [Keep computer awake](/platforms/mac/permissions#desktop-availability-and-keeping-awake) keeps a connected host awake between jobs without changing persistent macOS power or lock settings.
 - CUA recording, replay, browser upload, and browser download paths belong to the selected computer host. The model receives only opaque execution-scoped resource handles; traversal, absolute paths, symlink escapes, and helper selection are rejected before driver dispatch.
-- Screenshots are model-only and never auto-sent to chat (issue [#44759](https://github.com/paleoclaw/paleoclaw/issues/44759)).
+- Screenshots are model-only and never auto-sent to chat (issue [#44759](https://github.com/openclaw/openclaw/issues/44759)).
 - Treat screen content as untrusted; it can carry prompt injection.
 
 ## Troubleshooting

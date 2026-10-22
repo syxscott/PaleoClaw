@@ -9,7 +9,7 @@ import {
   parseNodeFailureReport,
 } from "../../scripts/lib/ci-node-test-evidence.mjs";
 
-const repository = "paleoclaw/paleoclaw";
+const repository = "syxscott/PaleoClaw";
 const headSha = "a".repeat(40);
 const mainSha = "b".repeat(40);
 const baseSha = "c".repeat(40);

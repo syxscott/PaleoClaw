@@ -94,9 +94,9 @@ const cancelled = reuseCompletedSetup((confirmed = true) => {
     "config",
     "--add",
     `url.file://${f.remote}.insteadOf`,
-    "https://github.com/paleoclaw/paleoclaw",
+    "https://github.com/syxscott/PaleoClaw",
   ]);
-  f.git(["remote", "set-url", "origin", "https://github.com/paleoclaw/paleoclaw"]);
+  f.git(["remote", "set-url", "origin", "https://github.com/syxscott/PaleoClaw"]);
   return { f, outcome, binding, replacement, original, source, directory };
 });
 

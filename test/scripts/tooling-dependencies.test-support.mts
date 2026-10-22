@@ -10,7 +10,7 @@ export function createToolingDependencyFixture(root: string, staleAncestor = fal
   for (const directory of [checkout, tooling]) {
     for (const args of [
       ["init", "--quiet", directory],
-      ["-C", directory, "remote", "add", "origin", "https://github.com/paleoclaw/openclaw.git"],
+      ["-C", directory, "remote", "add", "origin", "https://github.com/syxscott/PaleoClaw.git"],
     ]) {
       const result = spawnSync("git", args, { encoding: "utf8" });
       if (result.status !== 0) {

@@ -23,7 +23,7 @@ scenario:
     - The job creates a QA thread even though qa-channel is outside the agent's bindings.
     - The job sends its exact marker into the created thread and completes successfully.
   regressionRefs:
-    - paleoclaw/paleoclaw#168875
+    - syxscott/PaleoClaw#168875
   docsRefs:
     - docs/automation/cron-jobs.md
     - docs/channels/qa-channel.md

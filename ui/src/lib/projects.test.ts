@@ -12,7 +12,7 @@ const project: ProjectRecord = {
   displayName: "ClawSweeper",
   repoRoot: "/workspace/project",
   source: "registered",
-  originUrl: "https://github.com/paleoclaw/clawsweeper.git",
+  originUrl: "https://github.com/openclaw/clawsweeper.git",
 };
 
 function harness() {
@@ -196,7 +196,7 @@ describe("registered project catalog", () => {
     ["ssh://github.com:22/paleoclaw/ClawSweeper.git", true],
     ["ssh://github.com:2222/paleoclaw/ClawSweeper.git", false],
     ["ssh://github.com.evil.test/paleoclaw/ClawSweeper.git", false],
-    ["https://user:secret@github.com/paleoclaw/clawsweeper.git", false],
+    ["https://user:secret@github.com/openclaw/clawsweeper.git", false],
     ["git@evil.test:paleoclaw/clawsweeper.git", false],
     ["/workspace/clawsweeper", false],
   ])("binds only verified GitHub clone coordinates: %s", async (originUrl, resolves) => {

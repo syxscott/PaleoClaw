@@ -43,7 +43,7 @@ const PUBLIC_ACTIVATION_FAILURES = new Set([
   "rollback-verification-pending",
   "verification-pending",
 ]);
-const SOURCE = "https://github.com/paleoclaw/openclaw.git";
+const SOURCE = "https://github.com/syxscott/PaleoClaw.git";
 
 function inspectEntry(file: string, allowNotDirectory = false) {
   return fs.lstat(file).catch((error: unknown) => {

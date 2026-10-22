@@ -46,7 +46,7 @@ const ABOUT_LINKS: readonly AboutLink[] = [
   { href: "https://openclaw.ai", kind: "icon", name: "globe", labelKey: "aboutPage.linkWebsite" },
   { href: "https://docs.openclaw.ai", kind: "icon", name: "book", labelKey: "aboutPage.linkDocs" },
   {
-    href: "https://github.com/paleoclaw/paleoclaw",
+    href: "https://github.com/syxscott/PaleoClaw",
     kind: "brand",
     name: "github",
     labelKey: "aboutPage.linkGitHub",

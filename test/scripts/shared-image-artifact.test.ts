@@ -196,7 +196,7 @@ if (tool === "docker") {
     FAKE_GH_STATE: ghState,
     FAKE_SLEEP_LOG: sleepLog,
     GH_TOKEN: "test-token",
-    GITHUB_REPOSITORY: "paleoclaw/paleoclaw",
+    GITHUB_REPOSITORY: "syxscott/PaleoClaw",
     GITHUB_RUN_ATTEMPT: "2",
     GITHUB_RUN_ID: "123456",
     PATH: `${bin}:${process.env.PATH ?? ""}`,

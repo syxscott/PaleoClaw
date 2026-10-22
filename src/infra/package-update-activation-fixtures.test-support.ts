@@ -43,7 +43,7 @@ export function immutableDescriptor(
     current: { sha, path: current, identity: fileIdentity(current), pointerIdentity, buildDigest },
     service,
     runtime: { path: runtime, identity: packageActivationRuntimeIdentity(runtime) },
-    source: "https://github.com/paleoclaw/openclaw.git",
+    source: "https://github.com/syxscott/PaleoClaw.git",
   };
 }
 

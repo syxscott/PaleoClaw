@@ -173,7 +173,7 @@ function createRemoteSession(
   return createSession(
     {
       message: "Inspect the remote project",
-      projectGitUrl: "https://github.com/paleoclaw/openclaw.git",
+      projectGitUrl: "https://github.com/syxscott/PaleoClaw.git",
       ...params,
     },
     { ...controlUiClient, context },
@@ -251,12 +251,12 @@ test.each([
         expect(created?.entry).not.toHaveProperty("pendingWorktree");
         expect(readEntry(storePath, key)).toMatchObject({
           sessionId,
-          pendingProjectGitUrl: "https://github.com/paleoclaw/openclaw.git",
+          pendingProjectGitUrl: "https://github.com/syxscott/PaleoClaw.git",
           ...(worktree ? { pendingWorktree: { baseRef } } : {}),
         });
         await vi.waitFor(() => expect(projectCloneMocks.materialize).toHaveBeenCalledOnce());
         expect(projectCloneMocks.materialize).toHaveBeenCalledWith(
-          expect.objectContaining({ gitUrl: "https://github.com/paleoclaw/openclaw.git" }),
+          expect.objectContaining({ gitUrl: "https://github.com/syxscott/PaleoClaw.git" }),
           expect.objectContaining({
             signal: expect.any(AbortSignal),
             token: "protected-native-token",
@@ -369,7 +369,7 @@ test.each([
         expect(dispatchInboundMessageMock).not.toHaveBeenCalled();
         expect(readEntry(storePath, key)).toMatchObject({
           sessionId,
-          pendingProjectGitUrl: "https://github.com/paleoclaw/openclaw.git",
+          pendingProjectGitUrl: "https://github.com/syxscott/PaleoClaw.git",
         });
         expect(readEntry(storePath, key)?.projectId).toBe(undefined);
         expect(chatRunState!.runs.get(runId)?.abortMarker).toBeDefined();
@@ -438,15 +438,15 @@ test.each([
           expect(dispatchInboundMessageMock).not.toHaveBeenCalled();
           expect(entryAfterCreation).toMatchObject({
             sessionId,
-            pendingProjectGitUrl: "https://github.com/paleoclaw/openclaw.git",
+            pendingProjectGitUrl: "https://github.com/syxscott/PaleoClaw.git",
           });
           expect(entryAfterFailure).toMatchObject({
             sessionId,
-            pendingProjectGitUrl: "https://github.com/paleoclaw/openclaw.git",
+            pendingProjectGitUrl: "https://github.com/syxscott/PaleoClaw.git",
           });
           expect(readEntry(storePath, key)).toMatchObject({
             sessionId,
-            pendingProjectGitUrl: "https://github.com/paleoclaw/openclaw.git",
+            pendingProjectGitUrl: "https://github.com/syxscott/PaleoClaw.git",
           });
 
           retriedMaterialization.resolve(project);
@@ -601,7 +601,7 @@ test("sessions.create rejects conflicting, unsupported, and invalid remote proje
   const workspace = await initializeRepository(root, "workspace");
   testState.agentConfig = { workspace };
   await createSessionStoreDir();
-  const validRemote = "https://github.com/paleoclaw/openclaw.git";
+  const validRemote = "https://github.com/syxscott/PaleoClaw.git";
   const existing = await createSession({ key: "agent:main:existing-project-session" });
 
   for (const params of [
@@ -610,7 +610,7 @@ test("sessions.create rejects conflicting, unsupported, and invalid remote proje
     { projectGitUrl: validRemote },
     { message: "Start", projectGitUrl: "   " },
     { message: "Start", projectGitUrl: "file:///tmp/untrusted-project" },
-    { message: "Start", projectGitUrl: "https://token@github.com/paleoclaw/openclaw.git" },
+    { message: "Start", projectGitUrl: "https://token@github.com/syxscott/PaleoClaw.git" },
     { key: existing?.key, message: "Start", projectGitUrl: validRemote },
   ]) {
     const created = await directSessionReq(
@@ -638,7 +638,7 @@ test("chat.send visibly rejects corrupt persisted project intent without default
   expect(entry).toBeDefined();
   await replaceSessionEntry(
     { agentId: "main", sessionKey, storePath },
-    { ...entry!, pendingProjectGitUrl: "https://token@github.com/paleoclaw/openclaw.git" },
+    { ...entry!, pendingProjectGitUrl: "https://token@github.com/syxscott/PaleoClaw.git" },
   );
   const broadcast = vi.fn();
   const context = { broadcast };

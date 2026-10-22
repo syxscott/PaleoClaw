@@ -81,7 +81,7 @@ function pullRequest(
     repo: "paleoclaw",
     branch: "fix/example",
     title: `Example ${number}`,
-    url: `https://github.com/paleoclaw/paleoclaw/pull/${number}`,
+    url: `https://github.com/syxscott/PaleoClaw/pull/${number}`,
     state: "merged",
     ...fields,
   };
@@ -171,7 +171,7 @@ suite.define(() => {
           additions: 4,
           deletions: 3,
           checks: { state: "passing", passed: 65, failed: 0, skipped: 31, running: 0 },
-          checksUrl: "https://github.com/paleoclaw/paleoclaw/pull/103469/checks",
+          checksUrl: "https://github.com/openclaw/openclaw/pull/103469/checks",
         }),
         pullRequest(103438, {
           branch: "claude/browser-tabs-web-ui-756a64",
@@ -198,12 +198,12 @@ suite.define(() => {
       "fix(macos): tighten the link-browser tab header",
     );
     await pollAttr(openChip.locator(".chat-pr__link"), "href").toBe(
-      "https://github.com/paleoclaw/paleoclaw/pull/103469",
+      "https://github.com/openclaw/openclaw/pull/103469",
     );
     const actions = openChip.locator(".chat-pr__actions-trigger");
     await actions.click();
     const menu = page.locator(".chat-pr-menu").filter({ visible: true });
-    await pollText(menu.locator(".chat-pr-menu__repository")).toContain("paleoclaw/paleoclaw");
+    await pollText(menu.locator(".chat-pr-menu__repository")).toContain("syxscott/PaleoClaw");
     await pollText(menu.locator(".chat-pr-menu__repository")).toContain("#103469");
     await pollText(menu.locator(".chat-pr__additions")).toBe("+4");
     await pollCount(menu.locator(".chat-pr__stale")).toBe(1);
@@ -211,7 +211,7 @@ suite.define(() => {
     await pollText(menu.locator(".chat-pr__checks-row--passed")).toContain("65");
     await pollText(menu.locator(".chat-pr__checks-row--skipped")).toContain("31");
     await pollAttr(menu.getByRole("menuitem", { name: "Open checks on GitHub" }), "href").toBe(
-      "https://github.com/paleoclaw/paleoclaw/pull/103469/checks",
+      "https://github.com/openclaw/openclaw/pull/103469/checks",
     );
     if (captureUiProof) {
       await page.screenshot({ path: path.join(stackingProofDir, "ci-open.png") });
@@ -250,7 +250,7 @@ suite.define(() => {
 
     await mergedChip
       .getByRole("button", {
-        name: "Actions for pull request paleoclaw/paleoclaw#103438",
+        name: "Actions for pull request syxscott/PaleoClaw#103438",
         exact: true,
       })
       .click();
@@ -336,7 +336,7 @@ suite.define(() => {
         }
         for (let index = 0; index < count; index++) {
           const chip = chips.nth(index);
-          const expectedUrl = `https://github.com/paleoclaw/paleoclaw/pull/${index + 1}`;
+          const expectedUrl = `https://github.com/syxscott/PaleoClaw/pull/${index + 1}`;
           if (mobile) {
             await chip.click();
             const detail = page.locator(
@@ -354,7 +354,7 @@ suite.define(() => {
             await chip.locator(".chat-pr__link").click({ trial: true });
             await chip
               .getByRole("button", {
-                name: `Actions for pull request paleoclaw/paleoclaw#${index + 1}`,
+                name: `Actions for pull request syxscott/PaleoClaw#${index + 1}`,
                 exact: true,
               })
               .click();
@@ -405,7 +405,7 @@ suite.define(() => {
           additions: 2819,
           deletions: 205,
           createUrl:
-            "https://github.com/paleoclaw/paleoclaw/pull/new/claude/cloud-workers-live-events",
+            "https://github.com/syxscott/PaleoClaw/pull/new/claude/cloud-workers-live-events",
         },
         rateLimited: true,
         status: "rate-limited",
@@ -525,14 +525,14 @@ suite.define(() => {
       requestId: "publication-1",
       publisher: sharedPublisher,
       status: "published",
-      url: "https://github.com/paleoclaw/paleoclaw/pull/125200",
-      repository: "paleoclaw/paleoclaw",
+      url: "https://github.com/openclaw/openclaw/pull/125200",
+      repository: "syxscott/PaleoClaw",
       branch: "paleoclaw/reconciled-publication",
       headCommit: "a".repeat(40),
     });
     const open = page.getByRole("link", { name: "Open PR" });
     await open.waitFor();
-    await pollAttr(open, "href").toBe("https://github.com/paleoclaw/paleoclaw/pull/125200");
+    await pollAttr(open, "href").toBe("https://github.com/openclaw/openclaw/pull/125200");
     if (captureUiProof) {
       await writeFile(
         path.join(publicationProofDir, "02-publication-published.png"),
@@ -552,7 +552,7 @@ suite.define(() => {
         branch: "paleoclaw/reconciled-publication",
         additions: 3,
         deletions: 0,
-        createUrl: "https://github.com/paleoclaw/paleoclaw/pull/new/paleoclaw/reconciled-publication",
+        createUrl: "https://github.com/syxscott/PaleoClaw/pull/new/paleoclaw/reconciled-publication",
       },
       rateLimited: false,
       status: "ok",
@@ -617,14 +617,14 @@ suite.define(() => {
     await gateway.resolveDeferred("sessions.github.publish", {
       requestId: "publication-a",
       status: "published",
-      url: "https://github.com/paleoclaw/paleoclaw/pull/125301",
-      repository: "paleoclaw/paleoclaw",
+      url: "https://github.com/openclaw/openclaw/pull/125301",
+      repository: "syxscott/PaleoClaw",
       branch: "paleoclaw/publication-a",
       headCommit: "a".repeat(40),
     });
     await expect.poll(() => publishingB.isDisabled()).toBe(true);
     expect(
-      await page.locator('a[href="https://github.com/paleoclaw/paleoclaw/pull/125301"]').count(),
+      await page.locator('a[href="https://github.com/openclaw/openclaw/pull/125301"]').count(),
     ).toBe(0);
     expect(await page.locator('.chat-pr__publication-outcome[data-state="failed"]').count()).toBe(
       0,
@@ -633,13 +633,13 @@ suite.define(() => {
     await gateway.resolveDeferred("sessions.github.publish", {
       requestId: "publication-b",
       status: "published",
-      url: "https://github.com/paleoclaw/paleoclaw/pull/125302",
-      repository: "paleoclaw/paleoclaw",
+      url: "https://github.com/openclaw/openclaw/pull/125302",
+      repository: "syxscott/PaleoClaw",
       branch: "paleoclaw/publication-b",
       headCommit: "b".repeat(40),
     });
     await pollAttr(page.getByRole("link", { name: "Open PR" }), "href").toBe(
-      "https://github.com/paleoclaw/paleoclaw/pull/125302",
+      "https://github.com/openclaw/openclaw/pull/125302",
     );
   });
 
@@ -651,7 +651,7 @@ suite.define(() => {
       gateway,
       watchedKey,
       publicationState("paleoclaw/rejected-publication", {
-        createUrl: "https://github.com/paleoclaw/paleoclaw/pull/new/paleoclaw/rejected-publication",
+        createUrl: "https://github.com/syxscott/PaleoClaw/pull/new/paleoclaw/rejected-publication",
       }),
     );
 

@@ -6,7 +6,7 @@ import { isRecord } from "./lib/record-shared.mjs";
 import { sleep as defaultSleep } from "./lib/sleep.mjs";
 import { validateForwardAncestry } from "./pr-lib/crabbox-gate-contract.mjs";
 
-const REPOSITORY = "paleoclaw/paleoclaw";
+const REPOSITORY = "syxscott/PaleoClaw";
 const BROKER_WORKFLOW = ".github/workflows/frv-proof-broker.yml";
 const FIXTURE_WORKFLOW = ".github/workflows/frv-proof-fixture.yml";
 const FIXTURE_WORKFLOW_ID = "frv-proof-fixture.yml";

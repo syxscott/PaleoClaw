@@ -109,7 +109,7 @@ class ChatMessageViewsTest {
             messageId = "unrepresented-first",
             role = "assistant",
             excludedUrls = represented,
-            content = listOf(ChatMessageContent(text = "[issue](https://github.com/paleoclaw/paleoclaw/issues/123) [source](https://example.com/guide)")),
+            content = listOf(ChatMessageContent(text = "[issue](https://github.com/openclaw/openclaw/issues/123) [source](https://example.com/guide)")),
           )
           ChatMessageLinkPreview(
             messageId = "user-link",
@@ -137,7 +137,7 @@ class ChatMessageViewsTest {
         ChatMessageLinkPreview(
           messageId = "expandable-link",
           role = "assistant",
-          content = listOf(ChatMessageContent(text = "[issue](https://github.com/paleoclaw/paleoclaw/issues/123)")),
+          content = listOf(ChatMessageContent(text = "[issue](https://github.com/openclaw/openclaw/issues/123)")),
         )
       }
     }
@@ -166,7 +166,7 @@ class ChatMessageViewsTest {
     val launchedIntent = shadowApp.nextStartedActivity
     org.junit.Assert.assertNotNull("Card body click must launch browser activity", launchedIntent)
     assertEquals(android.content.Intent.ACTION_VIEW, launchedIntent.action)
-    assertEquals("https://github.com/paleoclaw/paleoclaw/issues/123", launchedIntent.dataString)
+    assertEquals("https://github.com/openclaw/openclaw/issues/123", launchedIntent.dataString)
   }
 
   @Test

@@ -28,7 +28,7 @@ const actionStep = (action: string) =>
   );
 const baseContext = {
   eventName: "workflow_dispatch",
-  repository: "paleoclaw/paleoclaw",
+  repository: "syxscott/PaleoClaw",
   runAttempt: 1,
 } as const;
 const candidatePackage = "synthetic candidate package\n";

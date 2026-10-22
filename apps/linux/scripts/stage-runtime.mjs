@@ -36,7 +36,7 @@ export async function stageWindowsRuntime(work, target, pin) {
     return false;
   }
   const download = async (name) => {
-    const response = await fetch(`https://github.com/paleoclaw/bun/releases/download/${encodeURIComponent(pin.tag)}/${encodeURIComponent(name)}`, {
+    const response = await fetch(`https://github.com/openclaw/bun/releases/download/${encodeURIComponent(pin.tag)}/${encodeURIComponent(name)}`, {
       signal: AbortSignal.timeout(300_000),
     });
     if (!response.ok) {

@@ -71,7 +71,7 @@ const createPlan = (overrides: Partial<CiCheckPlanInput>) =>
 type WorkflowContext = Parameters<typeof evaluateWorkflowExpression>[1];
 const prContext = (overrides: Partial<WorkflowContext>): WorkflowContext => ({
   eventName: "pull_request",
-  repository: "paleoclaw/paleoclaw",
+  repository: "syxscott/PaleoClaw",
   runAttempt: 1,
   ...overrides,
 });

@@ -4,7 +4,7 @@ import { pathToFileURL } from "node:url";
 // admission still verifies that exact SHA against main ancestry below.
 export async function assertRequestWorkflowRef({ repository, ref, sha, token, fetchImpl = fetch }) {
   if (
-    repository !== "paleoclaw/paleoclaw" ||
+    repository !== "syxscott/PaleoClaw" ||
     !ref?.startsWith("refs/heads/") ||
     !/^[a-f0-9]{40}$/.test(sha ?? "") ||
     !token

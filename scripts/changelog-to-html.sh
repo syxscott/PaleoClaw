@@ -75,7 +75,7 @@ version_content=$(extract_version_section "$VERSION" "$CHANGELOG_FILE")
 if [[ -z "$version_content" ]]; then
   echo "<h2>paleoclaw $VERSION</h2>"
   echo "<p>Latest paleoclaw update.</p>"
-  echo "<p><a href=\"https://github.com/paleoclaw/paleoclaw/blob/main/CHANGELOG.md\">View full changelog</a></p>"
+  echo "<p><a href=\"https://github.com/syxscott/PaleoClaw/blob/main/CHANGELOG.md\">View full changelog</a></p>"
   exit 0
 fi
 
@@ -106,4 +106,4 @@ echo "<h2>paleoclaw $VERSION</h2>"
   fi
 } | markdown_to_html
 
-echo "<p><a href=\"https://github.com/paleoclaw/paleoclaw/blob/main/CHANGELOG.md\">View full changelog</a></p>"
+echo "<p><a href=\"https://github.com/syxscott/PaleoClaw/blob/main/CHANGELOG.md\">View full changelog</a></p>"

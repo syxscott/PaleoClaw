@@ -229,7 +229,7 @@ function publicationSourceFixture(
       PUBLICATION_COVERAGE_POLICY: "npm-beta-v1",
       PUBLICATION_TARGET_CONTEXT: "release/2026.8.28",
       PUBLICATION_TARGET_SHA: fixture.targetSha,
-      GITHUB_REPOSITORY: "paleoclaw/paleoclaw",
+      GITHUB_REPOSITORY: "syxscott/PaleoClaw",
       GITHUB_REF: "refs/heads/main",
       GITHUB_SHA: fixture.workflowSha,
       GITHUB_RUN_ID: fixture.runId,
@@ -314,8 +314,8 @@ describe("original publication admission reader", () => {
         ...fixture.parentRun,
         name: "Full Release Validation",
         display_title: "Full Release Validation",
-        repository: { full_name: "paleoclaw/paleoclaw" },
-        head_repository: { full_name: "paleoclaw/paleoclaw" },
+        repository: { full_name: "syxscott/PaleoClaw" },
+        head_repository: { full_name: "syxscott/PaleoClaw" },
       };
       const resolveJob = {
         id: 901,
@@ -451,8 +451,8 @@ describe("original publication admission reader", () => {
       ...fixture.parentRun,
       name: "Full Release Validation",
       display_title: "Full Release Validation",
-      repository: { full_name: "paleoclaw/paleoclaw" },
-      head_repository: { full_name: "paleoclaw/paleoclaw" },
+      repository: { full_name: "syxscott/PaleoClaw" },
+      head_repository: { full_name: "syxscott/PaleoClaw" },
     };
     const originalJobs = [
       {
@@ -587,7 +587,7 @@ describe("original publication admission reader", () => {
       ? authenticateFullReleaseValidationEvidence(
           {
             run: parent,
-            expectedRepository: "paleoclaw/paleoclaw",
+            expectedRepository: "syxscott/PaleoClaw",
             expectedRunId: fixture.runId,
             expectedRunAttempt: fault === "wrong-attempt" ? 2 : 1,
             expectedTargetSha: fault === "wrong-target" ? "d".repeat(40) : fixture.targetSha,
@@ -826,7 +826,7 @@ try {
           PUBLICATION_ADMISSION_PATH: admissionPath,
           FULL_RELEASE_PLAN_INPUTS_JSON: JSON.stringify(inputs),
           GITHUB_OUTPUT: outputsPath,
-          GITHUB_REPOSITORY: "paleoclaw/paleoclaw",
+          GITHUB_REPOSITORY: "syxscott/PaleoClaw",
           GITHUB_RUN_ID: fixture.runId,
           GITHUB_RUN_ATTEMPT: "1",
           GITHUB_REF_NAME: "main",
@@ -910,9 +910,9 @@ try {
       parent: {
         id: Number(fixture.runId),
         repository: {
-          full_name: fault === "wrong-repository" ? "other/repo" : "paleoclaw/paleoclaw",
+          full_name: fault === "wrong-repository" ? "other/repo" : "syxscott/PaleoClaw",
         },
-        head_repository: { full_name: "paleoclaw/paleoclaw" },
+        head_repository: { full_name: "syxscott/PaleoClaw" },
         path: fault === "wrong-workflow" ? ".github/workflows/ci.yml" : workflowPath,
         event: "workflow_dispatch",
         run_attempt: fault === "wrong-attempt" ? 2 : 1,
@@ -1091,7 +1091,7 @@ process.stdout.write(JSON.stringify(restored));
                 FULL_RELEASE_PLAN_INPUTS_JSON: "must-not-be-read",
                 SOURCE_ADMISSION_JSON: JSON.stringify(fixture.source),
                 CANDIDATE_REQUEST_JSON: JSON.stringify(fixture.plan.candidateRequest),
-                GITHUB_REPOSITORY: "paleoclaw/paleoclaw",
+                GITHUB_REPOSITORY: "syxscott/PaleoClaw",
                 GITHUB_RUN_ID: fixture.runId,
                 GITHUB_SHA: fixture.workflowSha,
                 GITHUB_REF_NAME: "main",
@@ -1277,7 +1277,7 @@ describe("GitHub API commands", () => {
           jobs: composite.jobs,
           observedRunAttempts: [1],
           plannedRunAttempt: 1,
-          repository: "paleoclaw/paleoclaw",
+          repository: "syxscott/PaleoClaw",
           runId: childRunId,
           triggeringActor: "github-actions[bot]",
         },
@@ -1314,7 +1314,7 @@ describe("GitHub API commands", () => {
           artifact: fixture.artifact,
           artifactList: { artifacts: [fixture.artifact] },
           child: fixture.childRun,
-          jobLog: `TARGET_SHA: ${targetSha}\nDispatched: https://github.com/paleoclaw/paleoclaw/actions/runs/${childRunId} (attempt 1)`,
+          jobLog: `TARGET_SHA: ${targetSha}\nDispatched: https://github.com/syxscott/PaleoClaw/actions/runs/${childRunId} (attempt 1)`,
           jobs: { jobs: [fixture.parentJob] },
           lineage: { merge_base_commit: { sha: workflowSha }, status: "ahead" },
           parent: fixture.parentRun,
@@ -1398,7 +1398,7 @@ process.stdout.write(readFileSync(process.env.ARCHIVE));
             "--input-type=module",
             "--eval",
             `import { createReleaseEvidenceClient } from ${JSON.stringify(pathToFileURL(resolve(SCRIPT)).href)};
-           process.stdout.write(JSON.stringify(createReleaseEvidenceClient("paleoclaw/paleoclaw").compareCommitLineage("${workflowSha}", "${verifierSha}")));`,
+           process.stdout.write(JSON.stringify(createReleaseEvidenceClient("syxscott/PaleoClaw").compareCommitLineage("${workflowSha}", "${verifierSha}")));`,
           ],
           { encoding: "utf8", env },
         );
@@ -1570,7 +1570,7 @@ process.exit(1);
     const previousPath = process.env.PATH;
     process.env.PATH = `${root}:${previousPath ?? ""}`;
     try {
-      expect(createReleaseEvidenceClient("paleoclaw/paleoclaw").loadExecutionPlan("123")).toBe(
+      expect(createReleaseEvidenceClient("syxscott/PaleoClaw").loadExecutionPlan("123")).toBe(
         undefined,
       );
     } finally {
@@ -1592,7 +1592,7 @@ describe("Release Decision artifact polling", () => {
       const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
       try {
         expect(
-          tryReadReleaseDecisionArtifact(parent, "123", "paleoclaw/paleoclaw", () => {
+          tryReadReleaseDecisionArtifact(parent, "123", "syxscott/PaleoClaw", () => {
             throw Object.assign(new Error(message), { stderr: message });
           }),
         ).toBeUndefined();
@@ -1611,7 +1611,7 @@ describe("Release Decision artifact polling", () => {
       "unknown flag: --name\nUsage: gh run download",
     ]) {
       expect(() =>
-        tryReadReleaseDecisionArtifact(parent, "123", "paleoclaw/paleoclaw", () => {
+        tryReadReleaseDecisionArtifact(parent, "123", "syxscott/PaleoClaw", () => {
           throw Object.assign(new Error(message), { stderr: message });
         }),
       ).toThrow("release decision artifact read failed");
@@ -1658,13 +1658,13 @@ function trustedMainChildReuseFixture() {
     fixture.runs.find((entry) => String(entry.id) === child.runId),
     "CI run",
   );
-  const repository = { id: 1, full_name: "paleoclaw/paleoclaw" };
+  const repository = { id: 1, full_name: "syxscott/PaleoClaw" };
   Object.assign(run, {
     display_title: "CI full-release-validation-77-1-ci",
     head_sha: fixture.manifest.workflowSha,
     repository,
     head_repository: repository,
-    html_url: `https://github.com/paleoclaw/paleoclaw/actions/runs/${run.id}`,
+    html_url: `https://github.com/syxscott/PaleoClaw/actions/runs/${run.id}`,
   });
   Object.assign(child, {
     source: "reused",
@@ -2065,7 +2065,7 @@ describe("release CI summary child correlation", () => {
 
   it("continues a failed npm producer through the real release evidence verifier", async () => {
     const fixture = trustedMainNpmFixture();
-    const repository = "paleoclaw/paleoclaw";
+    const repository = "syxscott/PaleoClaw";
     const producer = {
       ...fixture.parentRun,
       id: 81,
@@ -2425,7 +2425,7 @@ describe("release CI summary child correlation", () => {
     } else if (drift === "full-ci") {
       fixture.client.getJobLog.mockImplementation(
         (jobId: number) =>
-          `TARGET_SHA: ${fixture.targetSha}\nCI_RELEASE_SCOPE: full\nDispatched ci.yml: https://github.com/paleoclaw/paleoclaw/actions/runs/${jobId - 100} (attempt 1)`,
+          `TARGET_SHA: ${fixture.targetSha}\nCI_RELEASE_SCOPE: full\nDispatched ci.yml: https://github.com/syxscott/PaleoClaw/actions/runs/${jobId - 100} (attempt 1)`,
       );
     } else if (drift === "package-telegram") {
       fixture.manifest.validationInputs.skipPackageTelegramE2e = "false";
@@ -2606,7 +2606,7 @@ describe("release CI summary child correlation", () => {
       evidenceReuse: { requested: false },
       expected: {
         candidateRequest: buildFullReleaseCandidateRequest({
-          repository: "paleoclaw/paleoclaw",
+          repository: "syxscott/PaleoClaw",
           targetSha: fixture.targetSha,
           toolingSha: fixture.workflowSha,
           releaseProfile: "full",
@@ -2621,7 +2621,7 @@ describe("release CI summary child correlation", () => {
         }),
         parentRunAttempt: 1,
         parentRunId: fixture.runId,
-        repository: "paleoclaw/paleoclaw",
+        repository: "syxscott/PaleoClaw",
         targetSha: fixture.targetSha,
         workflowRef: fixture.parentRun.head_branch,
         workflowSha: fixture.workflowSha,
@@ -2669,7 +2669,7 @@ describe("release CI summary child correlation", () => {
       jobs: compositeJobs,
       observedRunAttempts: [1, 2],
       plannedRunAttempt: 1,
-      repository: "paleoclaw/paleoclaw",
+      repository: "syxscott/PaleoClaw",
       runId: String(fixture.childRun.id),
       triggeringActor: "release-operator",
     };
@@ -2716,7 +2716,7 @@ describe("release CI summary child correlation", () => {
       validateReleaseRunEvidence(
         {
           expectedRunAttempts,
-          repository: "paleoclaw/paleoclaw",
+          repository: "syxscott/PaleoClaw",
           ...verifierOptions(fixture.runId),
         },
         fixture.client,
@@ -2769,7 +2769,7 @@ describe("release CI summary child correlation", () => {
       jobs: staleJobs,
       observedRunAttempts: [1],
       plannedRunAttempt: 1,
-      repository: "paleoclaw/paleoclaw",
+      repository: "syxscott/PaleoClaw",
       runId: String(fixture.childRun.id),
       triggeringActor: "github-actions[bot]",
     };
@@ -2903,7 +2903,7 @@ describe("release CI summary child correlation", () => {
       ...fixture.parentJob,
       name: "checks-windows-node-test-2",
       conclusion: "failure",
-      html_url: `https://github.com/paleoclaw/paleoclaw/actions/runs/${selected.runId}/job/501`,
+      html_url: `https://github.com/syxscott/PaleoClaw/actions/runs/${selected.runId}/job/501`,
     };
     const jobs = [windowsJob, { ...fixture.parentJob, name: "paleoclaw/ci-gate" }];
     const composite = composeReleaseAttemptJobs([{ jobs, runAttempt: 1 }], {
@@ -2945,7 +2945,7 @@ describe("release CI summary child correlation", () => {
           ...gate,
           id: 1599,
           name: "CI preflight",
-          html_url: `https://github.com/paleoclaw/paleoclaw/actions/runs/${selected.runId}/job/1599`,
+          html_url: `https://github.com/syxscott/PaleoClaw/actions/runs/${selected.runId}/job/1599`,
         },
       ].flatMap((job) => {
         if (job.name !== gate.name) {
@@ -3122,7 +3122,7 @@ describe("release CI summary child correlation", () => {
     await expect(
       validateReleaseRunEvidence(
         {
-          repository: "paleoclaw/paleoclaw",
+          repository: "syxscott/PaleoClaw",
           runId: fixture.runId,
           trustedWorkflowRef: "main",
           verifierSourceContent: readFileSync(SCRIPT),
@@ -3169,7 +3169,7 @@ describe("release CI summary child correlation", () => {
     expect(
       await validateReleaseRunEvidence(
         {
-          repository: "paleoclaw/paleoclaw",
+          repository: "syxscott/PaleoClaw",
           runId: fixture.runId,
           trustedWorkflowFullRef: `refs/tags/${trustedWorkflowRef}`,
           trustedWorkflowRef,
@@ -3220,7 +3220,7 @@ describe("release CI summary child correlation", () => {
     expect(
       await validateReleaseRunEvidence(
         {
-          repository: "paleoclaw/paleoclaw",
+          repository: "syxscott/PaleoClaw",
           runId: olderFixture.runId,
           trustedWorkflowFullRef: `refs/tags/${trustedWorkflowRef}`,
           trustedWorkflowRef,
@@ -3250,7 +3250,7 @@ describe("release CI summary child correlation", () => {
     await expect(
       validateReleaseRunEvidence(
         {
-          repository: "paleoclaw/paleoclaw",
+          repository: "syxscott/PaleoClaw",
           runId: validFixture.runId,
           trustedWorkflowFullRef: `refs/heads/${trustedWorkflowRef}`,
           trustedWorkflowRef,
@@ -3283,7 +3283,7 @@ describe("release CI summary child correlation", () => {
     await expect(
       validateReleaseRunEvidence(
         {
-          repository: "paleoclaw/paleoclaw",
+          repository: "syxscott/PaleoClaw",
           runId: unrelatedFixture.runId,
           trustedWorkflowFullRef: `refs/tags/${trustedWorkflowRef}`,
           trustedWorkflowRef,
@@ -3304,7 +3304,7 @@ describe("release CI summary child correlation", () => {
     await expect(
       validateReleaseRunEvidence(
         {
-          repository: "paleoclaw/paleoclaw",
+          repository: "syxscott/PaleoClaw",
           runId: sameNameFixture.runId,
           trustedWorkflowFullRef: `refs/tags/${trustedWorkflowRef}`,
           trustedWorkflowRef,
@@ -3330,7 +3330,7 @@ describe("release CI summary child correlation", () => {
     });
     fixture.manifest.targetRef = fixture.targetSha;
     const options = {
-      repository: "paleoclaw/paleoclaw",
+      repository: "syxscott/PaleoClaw",
       runId: fixture.runId,
       trustedWorkflowFullRef: `refs/tags/${trustedWorkflowRef}`,
       trustedWorkflowRef,
@@ -3390,7 +3390,7 @@ describe("release CI summary child correlation", () => {
     await expect(
       validateReleaseRunEvidence(
         {
-          repository: "paleoclaw/paleoclaw",
+          repository: "syxscott/PaleoClaw",
           runId: fixture.runId,
           verifierSourceContent: "different verifier bytes",
           verifierSourceSha: "c".repeat(40),
@@ -3401,7 +3401,7 @@ describe("release CI summary child correlation", () => {
     await expect(
       validateReleaseRunEvidence(
         {
-          repository: "paleoclaw/paleoclaw",
+          repository: "syxscott/PaleoClaw",
           runId: fixture.runId,
           verifierSourceSha: "f".repeat(40),
         },
@@ -3590,7 +3590,7 @@ describe("release CI summary child correlation", () => {
       jobs: composite.jobs,
       observedRunAttempts: [1],
       plannedRunAttempt: composite.plannedRunAttempt,
-      repository: "paleoclaw/paleoclaw",
+      repository: "syxscott/PaleoClaw",
       runId: "404",
       triggeringActor: "github-actions[bot]",
     };
@@ -3747,7 +3747,7 @@ describe("release CI summary child correlation", () => {
       rawManifest({ candidateBinding, version: 3, workflowSha }),
       {
         candidateBinding,
-        repository: "paleoclaw/paleoclaw",
+        repository: "syxscott/PaleoClaw",
         runAttempt: 2,
         runId: "29090000000",
         workflowSha,
@@ -3757,7 +3757,7 @@ describe("release CI summary child correlation", () => {
     expect(() =>
       validateParentManifest(rawManifest({ candidateBinding: null, version: 3, workflowSha }), {
         candidateBinding,
-        repository: "paleoclaw/paleoclaw",
+        repository: "syxscott/PaleoClaw",
         runAttempt: 2,
         runId: "29090000000",
         workflowSha,
@@ -4044,7 +4044,7 @@ describe("release CI summary child correlation", () => {
     ];
     const parentLog = [
       `TARGET_SHA: ${parentManifest.targetSha}`,
-      "Dispatched ci.yml: https://github.com/paleoclaw/paleoclaw/actions/runs/101 (attempt 1)",
+      "Dispatched ci.yml: https://github.com/syxscott/PaleoClaw/actions/runs/101 (attempt 1)",
     ].join("\n");
     const run = {
       actor: { login: "github-actions[bot]" },
@@ -4148,7 +4148,7 @@ describe("release CI summary child correlation", () => {
       const parentLog = [
         `TARGET_SHA: ${parentManifest.targetSha}`,
         ...(child.manifestKey === "productPerformance" ? ["-f publish_reports=false"] : []),
-        `Dispatched ${child.workflow}: https://github.com/paleoclaw/paleoclaw/actions/runs/${runId} (attempt ${run.run_attempt})`,
+        `Dispatched ${child.workflow}: https://github.com/syxscott/PaleoClaw/actions/runs/${runId} (attempt ${run.run_attempt})`,
       ].join("\n");
       const validate = (log = parentLog) =>
         validateManifestChildRun(run, child, String(runId), parentManifest, parentJobs, log);
@@ -4185,7 +4185,7 @@ describe("release CI summary child correlation", () => {
     ];
     const ciLog = [
       `TARGET_SHA: ${parentManifest.targetSha}`,
-      "Dispatched ci.yml: https://github.com/paleoclaw/paleoclaw/actions/runs/101 (attempt 1)",
+      "Dispatched ci.yml: https://github.com/syxscott/PaleoClaw/actions/runs/101 (attempt 1)",
     ].join("\n");
     const validate = (candidate: typeof wrongParent) =>
       validateManifestChildRun(candidate, ci, "101", parentManifest, ciJobs, ciLog);

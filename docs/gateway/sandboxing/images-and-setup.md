@@ -18,7 +18,7 @@ images, then [recreate the affected sandboxes](/cli/sandbox#paleoclaw-sandbox-re
 <Note>
 **Source checkout vs npm install**
 
-The `scripts/sandbox-setup.sh`, `scripts/sandbox-common-setup.sh`, and `scripts/sandbox-browser-setup.sh` helper scripts are only available when running from a [source checkout](https://github.com/paleoclaw/paleoclaw). They are not included in the npm package.
+The `scripts/sandbox-setup.sh`, `scripts/sandbox-common-setup.sh`, and `scripts/sandbox-browser-setup.sh` helper scripts are only available when running from a [source checkout](https://github.com/syxscott/PaleoClaw). They are not included in the npm package.
 
 If you installed the global paleoclaw npm package, use the inline `docker build`
 commands shown below instead.
@@ -62,7 +62,7 @@ commands shown below instead.
     scripts/sandbox-common-setup.sh
     ```
 
-    From an npm install, build the default image first (see above). Download [`scripts/docker/sandbox/Dockerfile.common`](https://github.com/paleoclaw/paleoclaw/blob/main/scripts/docker/sandbox/Dockerfile.common) and the root [`package.json`](https://github.com/paleoclaw/paleoclaw/blob/main/package.json) from the same paleoclaw commit or tag into an empty directory. Keep their filenames, then run from that directory:
+    From an npm install, build the default image first (see above). Download [`scripts/docker/sandbox/Dockerfile.common`](https://github.com/syxscott/PaleoClaw/blob/main/scripts/docker/sandbox/Dockerfile.common) and the root [`package.json`](https://github.com/syxscott/PaleoClaw/blob/main/package.json) from the same paleoclaw commit or tag into an empty directory. Keep their filenames, then run from that directory:
 
     ```bash
     docker build -t paleoclaw-sandbox-common:trixie-slim -f Dockerfile.common .

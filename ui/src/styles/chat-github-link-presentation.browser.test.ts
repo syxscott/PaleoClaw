@@ -9,7 +9,7 @@ const LINK_FORMS = (
   [
     ["issue", "issue", "#123309", "then follow-up tracked in ", true],
     ["pull", "pull", "#3434", "then the fix is in ", true],
-    ["repository-ref", "pull", "paleoclaw/paleoclaw#3434", "then see ", false],
+    ["repository-ref", "pull", "syxscott/PaleoClaw#3434", "then see ", false],
     ["bare-url", "", "text.css", "then the owning rule lives at ", true],
     ["authored", "", "the sibling chip rule", "then see ", false],
   ] as const
@@ -29,7 +29,7 @@ function fixtureDocument(themeMode: "dark" | "light"): string {
   const columns = LINK_FORMS.map(
     ({ className, kind, id, label, lead }) => `
       <div class="chat-text" id="column-${id}">Reproduce the failing run and read the notes
-        first, ${lead}<a id="${id}" class="${className}" ${kind ? `data-github-kind="${kind}"` : ""} href="https://github.com/paleoclaw/paleoclaw"
+        first, ${lead}<a id="${id}" class="${className}" ${kind ? `data-github-kind="${kind}"` : ""} href="https://github.com/syxscott/PaleoClaw"
         >${label}</a> before landing the fix.</div>`,
   ).join("");
   return styleDocument(

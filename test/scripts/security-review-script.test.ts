@@ -36,7 +36,7 @@ const rollout = {
   merged: true,
   merged_at: "2025-12-01T00:00:00Z",
   merge_commit_sha: landed,
-  base: { ref: "main", repo: { full_name: "paleoclaw/paleoclaw" } },
+  base: { ref: "main", repo: { full_name: "syxscott/PaleoClaw" } },
 };
 const run = {
   id: 10,
@@ -71,7 +71,7 @@ const otherReview = {
 const lockfilePr = {
   ...pr,
   changed_files: 1,
-  head: { ...pr.head, repo: { id: 1, full_name: "paleoclaw/paleoclaw" } },
+  head: { ...pr.head, repo: { id: 1, full_name: "syxscott/PaleoClaw" } },
 };
 const lockfileContents = {
   type: "file",
@@ -141,7 +141,7 @@ function evaluate(routes: Record<string, unknown> = {}, mode = "enforce", deadli
         GITHUB_EVENT_PATH: eventPath,
         GITHUB_ENV: environmentPath,
         GITHUB_OUTPUT: outputPath,
-        GITHUB_REPOSITORY: "paleoclaw/paleoclaw",
+        GITHUB_REPOSITORY: "syxscott/PaleoClaw",
         GITHUB_RUN_ID: "123",
         OPENCLAW_SECURITY_REVIEW_PR_NUMBER: "7",
         OPENCLAW_SECURITY_REVIEW_HEAD_SHA: head,
@@ -1666,7 +1666,7 @@ describe("combined security review entry point", () => {
           body: "/allow-dependencies-change\n/allow-security-sensitive-change",
           created_at: "2026-01-01T00:01:00Z",
           updated_at: "2026-01-01T00:01:00Z",
-          html_url: "https://github.com/paleoclaw/paleoclaw/pull/7#issuecomment-3",
+          html_url: "https://github.com/syxscott/PaleoClaw/pull/7#issuecomment-3",
         },
       ],
     });

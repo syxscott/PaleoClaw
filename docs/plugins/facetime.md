@@ -51,7 +51,7 @@ brew install paleoclaw/tap/paleoclaw-facetime
 ```
 
 The native companion is maintained in
-[paleoclaw/paleoclaw-facetime](https://github.com/paleoclaw/paleoclaw-facetime).
+[paleoclaw/paleoclaw-facetime](https://github.com/openclaw/openclaw-facetime).
 Use its matching signed release. If the package or formula is not available,
 installation cannot continue until it is published.
 

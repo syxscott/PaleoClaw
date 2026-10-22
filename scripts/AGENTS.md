@@ -69,11 +69,11 @@ Own local tooling, script wrappers, generated-artifact helper rules.
 ## GitHub Search (`gh`)
 
 - Prefer targeted keyword search before proposing new work or duplicating fixes.
-- Use `--repo paleoclaw/paleoclaw` + `--match title,body` first; add `--match comments` when triaging follow-up threads.
-- PRs: `gh search prs --repo paleoclaw/paleoclaw --match title,body --limit 50 -- "auto-update"`
-- Issues: `gh search issues --repo paleoclaw/paleoclaw --match title,body --limit 50 -- "auto-update"`
+- Use `--repo syxscott/PaleoClaw` + `--match title,body` first; add `--match comments` when triaging follow-up threads.
+- PRs: `gh search prs --repo syxscott/PaleoClaw --match title,body --limit 50 -- "auto-update"`
+- Issues: `gh search issues --repo syxscott/PaleoClaw --match title,body --limit 50 -- "auto-update"`
 - Structured output example:
-  `gh search issues --repo paleoclaw/paleoclaw --match title,body --limit 50 --json number,title,state,url,updatedAt -- "auto update" --jq '.[] | "\(.number) | \(.state) | \(.title) | \(.url)"'`
+  `gh search issues --repo syxscott/PaleoClaw --match title,body --limit 50 --json number,title,state,url,updatedAt -- "auto update" --jq '.[] | "\(.number) | \(.state) | \(.title) | \(.url)"'`
 
 ## GHSA (Repo Advisory) Patch/Publish
 

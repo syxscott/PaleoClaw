@@ -8,7 +8,7 @@ scenario:
     primary:
       - telegram.conversation-routing-and-delivery
   regressionRefs:
-    - paleoclaw/paleoclaw#39905
+    - syxscott/PaleoClaw#39905
   objective: Verify a three-chunk Telegram final removes previews and keeps only final chunks.
   successCriteria:
     - The joined final contains both scripted three-chunk boundary markers.

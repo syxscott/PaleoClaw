@@ -7,7 +7,7 @@ scenario:
     primary: [agent-runtime.failure-recovery-empty-response-recovery]
     secondary: [automation.isolated-cron-execution, channels.qa-channel-final-reply]
   regressionRefs:
-    - paleoclaw/paleoclaw#108738
+    - syxscott/PaleoClaw#108738
   objective: Verify resolved announce delivery gets one safe finalization after a settled write.
   successCriteria:
     - The cron run completes successfully.

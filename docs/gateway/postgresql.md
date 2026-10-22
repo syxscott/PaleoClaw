@@ -313,8 +313,8 @@ Alternatively, retain `jsonOnly: true` and return the documented protocol-v1
 response. Keep the DSN out of command arguments and provider configuration;
 retrieve it from the secret manager inside the executable.
 
-The PostgreSQL conformance suite exercises [CLI onboarding and Doctor](https://github.com/paleoclaw/paleoclaw/blob/main/src/infra/database-engine/cli-oneshot.postgres.test.ts)
-with an exec connection and [Gateway bootstrap, workers, and restart](https://github.com/paleoclaw/paleoclaw/blob/main/src/gateway/server-database-engine.postgres.test.ts)
+The PostgreSQL conformance suite exercises [CLI onboarding and Doctor](https://github.com/syxscott/PaleoClaw/blob/main/src/infra/database-engine/cli-oneshot.postgres.test.ts)
+with an exec connection and [Gateway bootstrap, workers, and restart](https://github.com/syxscott/PaleoClaw/blob/main/src/gateway/server-database-engine.postgres.test.ts)
 with the same provider contract. Run it against a TLS-only PostgreSQL server to
 exercise those paths with certificate verification:
 
@@ -325,7 +325,7 @@ node scripts/test-database-conformance.mjs --engine postgres --connection "$OPEN
   src/infra/database-engine/postgres-search-admission.postgres.test.ts
 ```
 
-The [PostgreSQL 17 TLS acceptance matrix](https://github.com/paleoclaw/paleoclaw/pull/177928)
+The [PostgreSQL 17 TLS acceptance matrix](https://github.com/openclaw/openclaw/pull/177928)
 records the live CLI and Gateway runs, certificate rejection cases, and
 secret-redaction checks behind these support claims.
 

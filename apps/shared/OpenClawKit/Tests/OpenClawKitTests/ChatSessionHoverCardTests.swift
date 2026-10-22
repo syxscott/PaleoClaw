@@ -248,10 +248,10 @@ struct ChatSessionHoverCardTests {
         let owner = facts.watch(sessionKey: "work", agentID: "main")
         self.pulls(facts, #"""
         {"pullRequests":[{"number":42,"owner":"paleoclaw","repo":"paleoclaw","branch":"work",
-          "title":"Sidebar","url":"https://github.com/paleoclaw/paleoclaw/pull/42","state":"merged",
+          "title":"Sidebar","url":"https://github.com/openclaw/openclaw/pull/42","state":"merged",
           "additions":8,"deletions":3,"checks":{"state":"passing","passed":2,"failed":0,"skipped":0,"running":0}},
           {"number":43,"owner":"paleoclaw","repo":"paleoclaw","branch":"work","title":"Active",
-           "url":"https://github.com/paleoclaw/paleoclaw/pull/43","state":"open"}],
+           "url":"https://github.com/openclaw/openclaw/pull/43","state":"open"}],
          "rateLimited":false,"status":"ready"}
         """#)
         self.pulls(facts, #"{"pullRequests":[],"rateLimited":true,"status":"rate-limited"}"#)
@@ -277,7 +277,7 @@ struct ChatSessionHoverCardTests {
         let inFlight = await wire.next()
         self.pulls(facts, #"""
         {"pullRequests":[{"number":42,"owner":"paleoclaw","repo":"paleoclaw","branch":"work",
-         "title":"Sidebar","url":"https://github.com/paleoclaw/paleoclaw/pull/42","state":"open"}],
+         "title":"Sidebar","url":"https://github.com/openclaw/openclaw/pull/42","state":"open"}],
          "rateLimited":false,"status":"ready"}
         """#)
         #expect(facts.pullRequests(sessionKey: "agent:main:work", agentID: nil)?.pullRequests.count == 1)

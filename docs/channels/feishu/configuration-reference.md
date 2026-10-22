@@ -121,7 +121,7 @@ The one-shot pin preserves an existing install that omitted both old settings;
 it requires evidence of prior operation and is not applied to a fresh install.
 
 When updating from a 2026.9.6 host with these old keys, first update paleoclaw core
-to 2026.9.8 or newer, which includes the [plugin-update migration repair](https://github.com/paleoclaw/paleoclaw/pull/160682).
+to 2026.9.8 or newer, which includes the [plugin-update migration repair](https://github.com/openclaw/openclaw/pull/160682).
 Then explicitly update any pinned Feishu package to your chosen release. The core
 updater preserves explicit plugin version pins. The updated installer applies
 Feishu's migration before activating the replacement package; the published

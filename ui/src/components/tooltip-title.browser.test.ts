@@ -3,7 +3,7 @@ import { installTestLinkReader } from "../test-helpers/link-reader.ts";
 import { installTitleTooltips } from "./tooltip-title.ts";
 
 const title = "Edit configuration as text";
-const href = "https://github.com/paleoclaw/paleoclaw/pull/99816";
+const href = "https://github.com/openclaw/openclaw/pull/99816";
 const providerTag = "paleoclaw-link-reader-hovercard-provider";
 function fixture(content = "", hint = title, preview = false) {
   const container = document.createElement(preview ? providerTag : "div");

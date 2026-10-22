@@ -48,7 +48,7 @@ describe("tool mutation helpers", () => {
       "find . -maxdepth 1 -type f | wc -l && find . -maxdepth 1 -type f ! -name '.*' | wc -l",
     ],
     ["exec", 'rg -n "foo|bar" notes.md'],
-    ["exec", "gh search prs --repo paleoclaw/paleoclaw tool-mutation --json number,title,state"],
+    ["exec", "gh search prs --repo syxscott/PaleoClaw tool-mutation --json number,title,state"],
   ])("treats read-only shell command as non-mutating: %s %s", (toolName, command) => {
     expect(isMutatingToolCall(toolName, { command })).toBe(false);
     expect(buildToolMutationState(toolName, { command }).mutatingAction).toBe(false);

@@ -38,7 +38,7 @@ class VisibilityObserver {
   }
 }
 
-const href = (number: number) => `https://github.com/paleoclaw/paleoclaw/issues/${number}`;
+const href = (number: number) => `https://github.com/syxscott/PaleoClaw/issues/${number}`;
 let container: HTMLDivElement;
 let provider: HTMLElement;
 let idleCallbacks: Map<number, IdleRequestCallback>;
@@ -336,7 +336,7 @@ describe("GitHub preview warming", () => {
       href(1),
       `${href(1)}#issuecomment-2`,
       href(2),
-      "https://github.com/paleoclaw/paleoclaw",
+      "https://github.com/syxscott/PaleoClaw",
     ]);
     expect(observer().targets.size).toBe(3);
     await vi.advanceTimersByTimeAsync(1_000);

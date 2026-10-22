@@ -14,10 +14,10 @@ import {
 
 const filename = fileURLToPath(import.meta.url);
 const helper = path.resolve(path.dirname(filename), "../../../lib/paleoclaw-e2e-instance.sh");
-const syntheticUrl = "https://github.com/paleoclaw/paleoclaw/issues/999999999";
+const syntheticUrl = "https://github.com/openclaw/openclaw/issues/999999999";
 const menu = "Choose the next action for this failed update";
-const submit = "Submit this sanitized report to paleoclaw/paleoclaw now?";
-const status = "Check whether this report was submitted to paleoclaw/paleoclaw?";
+const submit = "Submit this sanitized report to syxscott/PaleoClaw now?";
+const status = "Check whether this report was submitted to syxscott/PaleoClaw?";
 const hash = (bytes) => createHash("sha256").update(bytes).digest("hex");
 const readJson = (file) => JSON.parse(fs.readFileSync(file, "utf8"));
 const quote = (value) => `'${String(value).replaceAll("'", "'\\''")}'`;
@@ -153,7 +153,7 @@ async function fakeGh(cell, callsFile, args) {
       "issue",
       "list",
       "--repo",
-      "github.com/paleoclaw/paleoclaw",
+      "github.com/syxscott/PaleoClaw",
       "--state",
       "all",
       "--search",

@@ -808,7 +808,7 @@ posixIt.for(["directory", "file", "symlink"] as const)(
     expect(gitArgs(report)).toEqual(
       [1, 2].map(() => [
         "clone",
-        "https://x-access-token:fixture-docs-token@github.com/paleoclaw/docs.git",
+        "https://x-access-token:fixture-docs-token@github.com/openclaw/docs.git",
         path.join(report.workspace, "publish"),
       ]),
     );

@@ -61,7 +61,7 @@ const overview: SystemAgentOverview = {
   },
   references: {
     docsUrl: "https://docs.openclaw.ai",
-    sourceUrl: "https://github.com/paleoclaw/paleoclaw",
+    sourceUrl: "https://github.com/syxscott/PaleoClaw",
   },
 };
 

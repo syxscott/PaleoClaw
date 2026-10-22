@@ -602,7 +602,7 @@ describe("gateway agent handler", () => {
     },
     {
       state: "project preparation",
-      entry: { pendingProjectGitUrl: "https://github.com/paleoclaw/openclaw.git" },
+      entry: { pendingProjectGitUrl: "https://github.com/syxscott/PaleoClaw.git" },
       reason: "workspace is not ready. Wait for setup to finish or retry in chat.",
     },
   ])(

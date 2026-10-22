@@ -147,7 +147,7 @@ describe("mantis Slack desktop smoke runtime", () => {
     const result = await runSmoke({
       commandRunner: runner,
       env: runtimeEnv,
-      freshPr: "paleoclaw/paleoclaw#85141",
+      freshPr: "syxscott/PaleoClaw#85141",
       now: () => new Date("2026-05-04T13:00:00.000Z"),
       outputDir: ".artifacts/qa-e2e/mantis/slack-desktop-test",
       primaryModel: "openai/gpt-5.4",
@@ -173,7 +173,7 @@ describe("mantis Slack desktop smoke runtime", () => {
     )?.args;
     expect(runArgs).toContain("--no-hydrate");
     expect(runArgs).toContain("--fresh-pr");
-    expect(runArgs).toContain("paleoclaw/paleoclaw#85141");
+    expect(runArgs).toContain("syxscott/PaleoClaw#85141");
     expect(runArgs).not.toContain("--no-sync");
     const remoteScript = runArgs?.at(-1);
     if (typeof remoteScript !== "string") {

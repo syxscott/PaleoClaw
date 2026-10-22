@@ -12,7 +12,7 @@ const mergedAuthorsArgs = [
   "pr",
   "list",
   "-R",
-  "paleoclaw/paleoclaw",
+  "syxscott/PaleoClaw",
   "--state",
   "merged",
   "--limit",

@@ -70,8 +70,8 @@ it.each<{ source: string; reason?: string }>([
       "config --bool --get core.sparseCheckout": source === "sparse" ? "true\n" : "",
       "remote get-url origin":
         cwd === checkout
-          ? "https://github.com/paleoclaw/OpenClaw.git\n"
-          : `git@github.com:${source === "different" ? "example/other" : "paleoclaw/paleoclaw"}.git\n`,
+          ? "https://github.com/openclaw/openclaw.git\n"
+          : `git@github.com:${source === "different" ? "example/other" : "syxscott/PaleoClaw"}.git\n`,
     };
     if (!Object.hasOwn(responses, command)) {
       throw new Error(`Unexpected Git command: ${command}`);
@@ -123,7 +123,7 @@ it("checks fallback versions before loading through the watcher child and preser
   };
   for (const directory of [checkout, tooling]) {
     git("init", "--quiet", directory);
-    git("-C", directory, "remote", "add", "origin", "https://github.com/paleoclaw/openclaw.git");
+    git("-C", directory, "remote", "add", "origin", "https://github.com/syxscott/PaleoClaw.git");
   }
   const manifest = {
     dependencies: { "fixture-pkg": "1.0.0" },

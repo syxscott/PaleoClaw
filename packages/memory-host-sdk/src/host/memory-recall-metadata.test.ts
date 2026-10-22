@@ -184,7 +184,7 @@ it("stores recall metadata in a rollback-safe additive table", () => {
     ),
   );
   const { add, insertChunk, insertMetadata, insertProvenance } = recallWriter(db);
-  const project = "github.com/paleoclaw/paleoclaw";
+  const project = "github.com/syxscott/PaleoClaw";
   const projectCandidates = (limit: number) =>
     readCuratedProjectMemoryCandidates(db, limit, [project]);
 

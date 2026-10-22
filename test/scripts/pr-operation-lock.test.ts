@@ -1945,7 +1945,7 @@ exec ${shellQuote(mktemp)} "$@"
       await withinTest(holderReadiness.get(holder)!, signal);
       expect(existsSync(held)).toBe(true);
       const result = runLockShell(repoDir, [
-        "pr_gh() { if [ \"$1 $2\" = 'repo view' ]; then printf 'paleoclaw/paleoclaw\\n'; else printf 'MERGED\\n'; fi; }",
+        "pr_gh() { if [ \"$1 $2\" = 'repo view' ]; then printf 'syxscott/PaleoClaw\\n'; else printf 'MERGED\\n'; fi; }",
         "gc_pr_worktrees false",
       ]);
       expect(result.status).toBe(0);

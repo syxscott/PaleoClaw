@@ -4,7 +4,7 @@
   "description": "paleoclaw Microsoft Teams channel plugin for bot conversations.",
   "repository": {
     "type": "git",
-    "url": "https://github.com/paleoclaw/paleoclaw"
+    "url": "https://github.com/syxscott/PaleoClaw"
   },
   "type": "module",
   "dependencies": {

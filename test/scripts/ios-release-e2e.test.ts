@@ -529,7 +529,7 @@ describe("release qualification workflow authority", () => {
     const output = path.join(root, "outputs");
     const sha = "a".repeat(40);
     const target = "target" in options ? options.target : sha;
-    const repository = "paleoclaw/paleoclaw";
+    const repository = "syxscott/PaleoClaw";
     const ref = "refs/heads/main";
     const first = workflow.jobs.qualify.steps[0];
     expect(first.id).toBe("start");

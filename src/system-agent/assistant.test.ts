@@ -42,7 +42,7 @@ function overview(configured = false): SystemAgentOverview {
     gateway: { url: "ws://127.0.0.1:14567", source: "local loopback", reachable: false },
     references: {
       docsUrl: "https://docs.openclaw.ai",
-      sourceUrl: "https://github.com/paleoclaw/paleoclaw",
+      sourceUrl: "https://github.com/syxscott/PaleoClaw",
       ...(configured ? { docsPath: "/tmp/paleoclaw/docs", sourcePath: "/tmp/paleoclaw" } : {}),
     },
   };

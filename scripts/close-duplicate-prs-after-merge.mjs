@@ -38,7 +38,7 @@ export function parseArgs(argv, env = process.env) {
     duplicates: [],
     labels: DEFAULT_LABELS,
     landedPr: undefined,
-    repo: env.GITHUB_REPOSITORY || "paleoclaw/paleoclaw",
+    repo: env.GITHUB_REPOSITORY || "syxscott/PaleoClaw",
   };
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];

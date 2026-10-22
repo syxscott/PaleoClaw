@@ -32,7 +32,7 @@ Invoke-NpmCommand -Arguments @("list", "-g", "--depth", "0", "--json")`,
   },
   "rejects paleoclaw GitHub source targets for npm installs": {
     "Test-OpenClawSourcePackageInstallSpec": `$normalizedTag -eq "main"
-^github:paleoclaw/paleoclaw`,
+^github:syxscott/PaleoClaw`,
     "Install-paleoclaw": `Test-OpenClawSourcePackageInstallSpec -RequestedTag $Tag
 npm installs do not support paleoclaw GitHub source targets
 -InstallMethod git -Tag main`,

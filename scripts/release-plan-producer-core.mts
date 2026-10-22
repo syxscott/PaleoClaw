@@ -61,7 +61,7 @@ type ReleasePlanProducerRequest =
   | { operation: "produce-inventory" | "verify-inventory-identity"; params: ReleaseInventorySource }
   | { operation: "verify-lock"; lockJson: string; params: ReleasePlanSource };
 
-const REPOSITORY = "paleoclaw/paleoclaw";
+const REPOSITORY = "syxscott/PaleoClaw";
 const VALIDATION_WORKFLOW_PATH = ".github/workflows/full-release-validation.yml";
 const PUBLICATION_WORKFLOW_PATH = ".github/workflows/paleoclaw-release-publish.yml";
 const NPM_CORE_PACKAGE_POLICY_PATH = "scripts/lib/npm-core-release-packages.json";

@@ -9,7 +9,7 @@ scenario:
       - automation.wake-and-cooldown-handling
       - channels.qa-channel-final-reply
   regressionRefs:
-    - paleoclaw/paleoclaw#140279
+    - syxscott/PaleoClaw#140279
   gatewayConfigPatch:
     tools:
       # Keep MCP tools directly visible in the provider request instead of behind

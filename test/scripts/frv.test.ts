@@ -1263,12 +1263,12 @@ describe("FRV same-parent recovery", () => {
         expect.arrayContaining([
           expect.stringContaining("normalCi run 101 attempt 1 completed failure"),
           expect.stringContaining(
-            "normalCi run 101 attempt 2 started https://github.com/paleoclaw/paleoclaw/actions/runs/101/attempts/2",
+            "normalCi run 101 attempt 2 started https://github.com/syxscott/PaleoClaw/actions/runs/101/attempts/2",
           ),
           expect.stringContaining("waiting for normalCi run 101 attempt 2 in_progress"),
           expect.stringContaining("waiting for parent 77 attempt 1 in_progress"),
           expect.stringContaining(
-            "parent 77 attempt 2 started https://github.com/paleoclaw/paleoclaw/actions/runs/77/attempts/2",
+            "parent 77 attempt 2 started https://github.com/syxscott/PaleoClaw/actions/runs/77/attempts/2",
           ),
           expect.stringContaining("parent 77 attempt 2 completed success"),
         ]),

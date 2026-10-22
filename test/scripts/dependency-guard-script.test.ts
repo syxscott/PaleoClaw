@@ -100,15 +100,15 @@ const pullRequest = {
   created_at: "2026-01-01T00:00:00Z",
   changed_files: 1,
   user: { id: 1, login: "contributor", type: "User" },
-  base: { ref: "main", sha: staleSha, repo: { id: 1, full_name: "paleoclaw/paleoclaw" } },
-  head: { ref: "change", sha: headSha, repo: { id: 1, full_name: "paleoclaw/paleoclaw" } },
+  base: { ref: "main", sha: staleSha, repo: { id: 1, full_name: "syxscott/PaleoClaw" } },
+  head: { ref: "change", sha: headSha, repo: { id: 1, full_name: "syxscott/PaleoClaw" } },
 };
 const approval = {
   id: 11,
   body: "/allow-dependencies-change",
   created_at: "2026-01-01T00:00:01Z",
   updated_at: "2026-01-01T00:00:01Z",
-  html_url: "https://github.com/paleoclaw/paleoclaw/pull/7#issuecomment-11",
+  html_url: "https://github.com/syxscott/PaleoClaw/pull/7#issuecomment-11",
   user: { id: 2, login: "maintainer", type: "User" },
 };
 const approvalNotice = {
@@ -148,7 +148,7 @@ function runDependencyGuard(
           merged: true,
           merged_at: "2025-12-01T00:00:00Z",
           merge_commit_sha: rolloutSha,
-          base: { ref: "main", repo: { full_name: "paleoclaw/paleoclaw" } },
+          base: { ref: "main", repo: { full_name: "syxscott/PaleoClaw" } },
         },
         [`GET ${pullPath}/files`]: [{ filename: "pnpm-workspace.yaml" }],
         [`GET ${comparisonPath}`]: comparison(),
@@ -172,7 +172,7 @@ function runDependencyGuard(
       env: {
         GITHUB_TOKEN: "fixture-token",
         GITHUB_EVENT_PATH: eventPath,
-        GITHUB_REPOSITORY: "paleoclaw/paleoclaw",
+        GITHUB_REPOSITORY: "syxscott/PaleoClaw",
         GITHUB_RUN_ID: "1",
         GITHUB_OUTPUT: outputPath,
         OPENCLAW_GUARD_TEST_FIXTURE: fixturePath,
@@ -446,7 +446,7 @@ describe("dependency guard script", () => {
     const { writes } = result;
     expect(writes).toHaveLength(1);
     expect(writes[0]?.body?.variables?.input).toEqual({
-      branch: { repositoryNameWithOwner: "paleoclaw/paleoclaw", branchName: "change" },
+      branch: { repositoryNameWithOwner: "syxscott/PaleoClaw", branchName: "change" },
       expectedHeadOid: headSha,
       fileChanges: {
         additions: [
@@ -616,7 +616,7 @@ describe("dependency guard script", () => {
           "- `tools/nested/pnpm-lock.yaml`\n",
           "- `package.json`\n",
           "git restore --source=\"$(git merge-base HEAD FETCH_HEAD)\" --staged --worktree -- 'pnpm-lock.yaml' 'tools/nested/pnpm-lock.yaml'",
-          "git fetch 'https://github.com/paleoclaw/openclaw.git' 'main'",
+          "git fetch 'https://github.com/syxscott/PaleoClaw.git' 'main'",
           "```text\n/allow-dependencies-change\n```",
           `Current SHA: \`${headSha}\``,
           "A later push requires a fresh approval comment.",
@@ -667,7 +667,7 @@ describe("dependency guard script", () => {
     ];
     for (const [options, expected] of cases) {
       const body = renderBlockedDependencyComment({
-        baseRepository: "paleoclaw/paleoclaw",
+        baseRepository: "syxscott/PaleoClaw",
         baseBranch: "main",
         headSha,
         lockfileChanges: ["pnpm-lock.yaml"],
@@ -706,7 +706,7 @@ describe("dependency guard script", () => {
 
   it("attempts autoscrub on PR branches maintainers can modify", () => {
     const cases: Array<[string, boolean | undefined, boolean]> = [
-      ["paleoclaw/paleoclaw", undefined, true],
+      ["syxscott/PaleoClaw", undefined, true],
       ["external/paleoclaw", undefined, false],
       ["external/paleoclaw", true, true],
     ];

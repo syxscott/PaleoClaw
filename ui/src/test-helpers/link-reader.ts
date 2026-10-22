@@ -29,9 +29,9 @@ export function testLinkPreview(
   overrides: Partial<ControlUiLinkReaderPreview> = {},
 ): ControlUiLinkReaderPreview {
   return {
-    url: "https://github.com/paleoclaw/paleoclaw/issues/99815",
+    url: "https://github.com/openclaw/openclaw/issues/99815",
     title: "Keep hover previews reachable",
-    subtitle: "paleoclaw/paleoclaw #99815",
+    subtitle: "syxscott/PaleoClaw #99815",
     author: "octocat",
     updatedAt: "2026-07-05T09:55:00Z",
     badge: { label: "Open", tone: "positive" },

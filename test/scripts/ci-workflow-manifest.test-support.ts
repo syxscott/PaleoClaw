@@ -623,7 +623,7 @@ export function runCiManifestFixture(options: {
         env: {
           PATH: `${fixtureBin}${path.delimiter}${process.env.PATH ?? ""}`,
           GH_TOKEN: correctionStep.env?.GH_TOKEN === "${{ github.token }}" ? "test-token" : "",
-          GITHUB_REPOSITORY: "paleoclaw/paleoclaw",
+          GITHUB_REPOSITORY: "syxscott/PaleoClaw",
           GITHUB_OUTPUT: correctionOutput,
           TARGET_CONTEXT_REF:
             options.scopeEnv?.OPENCLAW_CI_TARGET_CONTEXT_TARGET === "true"
@@ -685,7 +685,7 @@ export function runCiManifestFixture(options: {
           options.releaseCandidateCompatibility === true ? "true" : "false",
         OPENCLAW_CI_TARGET_CONTEXT_TARGET:
           options.targetContextCompatibility === true ? "true" : "false",
-        OPENCLAW_CI_REPOSITORY: options.repository ?? "paleoclaw/paleoclaw",
+        OPENCLAW_CI_REPOSITORY: options.repository ?? "syxscott/PaleoClaw",
         OPENCLAW_CI_RUN_ANDROID: "true",
         OPENCLAW_CI_RUN_CONTROL_UI_I18N: "true",
         OPENCLAW_CI_RUN_IOS_BUILD: "true",
@@ -699,7 +699,7 @@ export function runCiManifestFixture(options: {
         ),
         GITHUB_REF: "refs/heads/main",
         OPENCLAW_CI_HOSTED_HEALTHY: "",
-        OPENCLAW_CI_HEAD_REPOSITORY: options.repository ?? "paleoclaw/paleoclaw",
+        OPENCLAW_CI_HEAD_REPOSITORY: options.repository ?? "syxscott/PaleoClaw",
         OPENCLAW_CI_RUNNER_BACKEND: options.runnerBackend ?? options.runnerProfile ?? "",
         OPENCLAW_CI_RUNNER_PROFILE: options.runnerProfile ?? options.runnerBackend ?? "blacksmith",
         OPENCLAW_CI_NODE_RUNNER_BACKEND: options.nodeRunnerBackend ?? "",
@@ -722,7 +722,7 @@ export function runCiManifestFixture(options: {
       writeFileSync(checkPlanOutputPath, "");
       const context: Parameters<typeof evaluateWorkflowExpression>[1] = {
         eventName: options.eventName ?? "workflow_dispatch",
-        repository: options.repository ?? "paleoclaw/paleoclaw",
+        repository: options.repository ?? "syxscott/PaleoClaw",
         runAttempt: 1,
         preflightOutputs: outputs,
       };

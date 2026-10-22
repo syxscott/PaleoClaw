@@ -57,13 +57,13 @@ describe("existing PR preparation through the registered agent action", () => {
             host: "github.com",
             number: 7,
             base: {
-              repository: "paleoclaw/paleoclaw",
+              repository: "syxscott/PaleoClaw",
               repositoryId: 10,
               branch: "main",
               commit: f.pr.base.sha,
             },
             head: {
-              repository: fork ? "contributor/paleoclaw" : "paleoclaw/paleoclaw",
+              repository: fork ? "contributor/paleoclaw" : "syxscott/PaleoClaw",
               repositoryId: fork ? 20 : 10,
               branch: "topic/existing",
               commit: f.headCommit,
@@ -168,7 +168,7 @@ describe("existing PR preparation through the registered agent action", () => {
         }),
       ).rejects.toThrow("without a publication requestId");
       f.pr.number = 8;
-      f.pr.html_url = "https://github.com/paleoclaw/paleoclaw/pull/8";
+      f.pr.html_url = "https://github.com/syxscott/PaleoClaw/pull/8";
       await expect(f.invoke()).rejects.toThrow("already continues another PR");
       expect(f.readSession().worktree?.githubPullRequest).toEqual(refreshedAssociation);
       expect(await fs.readFile(path.join(f.projection, "untracked.txt"), "utf8")).toBe(

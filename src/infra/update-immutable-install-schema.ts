@@ -66,7 +66,7 @@ export const ImmutableInstallDescriptorSchema = z
       path: absolutePath,
       identity: z.string().min(1).max(256),
     }),
-    source: z.literal("https://github.com/paleoclaw/openclaw.git"),
+    source: z.literal("https://github.com/syxscott/PaleoClaw.git"),
     build: buildIdentity.optional(),
   })
   .refine((value) => (value.version !== 1) === (value.activationEnabled === true), {

@@ -3,8 +3,8 @@ import type { MarkdownRenderOptions } from "./markdown-render-options.ts";
 import { htmlFragment } from "./markdown.test-support.ts";
 import { toSanitizedMarkdownHtml, toStreamingMarkdownParts } from "./markdown.ts";
 
-const repoUrl = "https://github.com/paleoclaw/paleoclaw";
-const itemLabel = "paleoclaw/paleoclaw#3434";
+const repoUrl = "https://github.com/syxscott/PaleoClaw";
+const itemLabel = "syxscott/PaleoClaw#3434";
 const render = (input: string, options?: MarkdownRenderOptions) =>
   htmlFragment(toSanitizedMarkdownHtml(input, options));
 
@@ -198,7 +198,7 @@ describe("toSanitizedMarkdownHtml links", () => {
 
     it("keeps the bundled GitHub mark and skips image-only links", () => {
       const fragment = render(
-        "[paleoclaw](https://github.com/paleoclaw/paleoclaw) [![badge](data:image/png;base64,iVBORw0KGgo=)](https://example.com)",
+        "[paleoclaw](https://github.com/syxscott/PaleoClaw) [![badge](data:image/png;base64,iVBORw0KGgo=)](https://example.com)",
         { linkFavicons: true },
       );
 
@@ -357,20 +357,20 @@ describe("toSanitizedMarkdownHtml links", () => {
   describe("github link marks", () => {
     it.each([
       ["bare pull request", `${repoUrl}/pull/3434`, itemLabel, "pull"],
-      ["bare issue", `${repoUrl}/issues/3435`, "paleoclaw/paleoclaw#3435", "issue"],
+      ["bare issue", `${repoUrl}/issues/3435`, "syxscott/PaleoClaw#3435", "issue"],
       ["autolink", `<${repoUrl}/pull/3434>`, itemLabel, "pull"],
       [
         "bare www item",
-        "https://www.github.com/paleoclaw/paleoclaw/issues/3435",
-        "paleoclaw/paleoclaw#3435",
+        "https://www.github.com/openclaw/openclaw/issues/3435",
+        "syxscott/PaleoClaw#3435",
         "issue",
         true,
       ],
-      ["repository", repoUrl, "paleoclaw/paleoclaw", undefined],
+      ["repository", repoUrl, "syxscott/PaleoClaw", undefined],
       [
         "other path",
         `${repoUrl}/actions/runs/123`,
-        "github.com/paleoclaw/paleoclaw/actions/runs/123",
+        "github.com/syxscott/PaleoClaw/actions/runs/123",
         undefined,
       ],
       [
@@ -379,7 +379,7 @@ describe("toSanitizedMarkdownHtml links", () => {
         "paleoclaw/paleoclaw/…/test-audit",
         undefined,
       ],
-      ["branch root", `${repoUrl}/tree/main`, "github.com/paleoclaw/paleoclaw/tree/main", undefined],
+      ["branch root", `${repoUrl}/tree/main`, "github.com/syxscott/PaleoClaw/tree/main", undefined],
       [
         "slash-containing branch root",
         "https://github.com/acme/project/tree/feature/link-labels",
@@ -402,43 +402,43 @@ describe("toSanitizedMarkdownHtml links", () => {
       ],
       [
         "labelled link",
-        "[the fix](https://github.com/paleoclaw/paleoclaw/pull/3434)",
+        "[the fix](https://github.com/openclaw/openclaw/pull/3434)",
         "the fix",
         undefined,
       ],
       [
         "www host",
-        "[the fix](https://www.github.com/paleoclaw/paleoclaw/pull/3434)",
+        "[the fix](https://www.github.com/openclaw/openclaw/pull/3434)",
         "the fix",
         undefined,
       ],
       [
         "http scheme",
-        "[the fix](http://github.com/paleoclaw/paleoclaw/pull/3434)",
+        "[the fix](http://github.com/openclaw/openclaw/pull/3434)",
         "the fix",
         undefined,
       ],
       [
         "wrong number",
-        "[#3435](https://github.com/paleoclaw/paleoclaw/pull/3434)",
+        "[#3435](https://github.com/openclaw/openclaw/pull/3434)",
         "#3435",
         undefined,
       ],
       [
         "wrong repository",
-        "[other/project#3434](https://github.com/paleoclaw/paleoclaw/pull/3434)",
+        "[other/project#3434](https://github.com/openclaw/openclaw/pull/3434)",
         "other/project#3434",
         undefined,
       ],
       [
         "padded label",
-        "[ #3434 ](https://github.com/paleoclaw/paleoclaw/pull/3434)",
+        "[ #3434 ](https://github.com/openclaw/openclaw/pull/3434)",
         " #3434 ",
         undefined,
       ],
       [
         "code-span label",
-        "[`#3434`](https://github.com/paleoclaw/paleoclaw/pull/3434)",
+        "[`#3434`](https://github.com/openclaw/openclaw/pull/3434)",
         "#3434",
         undefined,
       ],
@@ -471,11 +471,11 @@ describe("toSanitizedMarkdownHtml links", () => {
     it.each([
       ["https://github.com/blader/humanizer/blob/main/SKILL.md", "SKILL.md"],
       [
-        "https://github.com/paleoclaw/paleoclaw/tree/main/.agents/skills/test-audit",
+        "https://github.com/syxscott/PaleoClaw/tree/main/.agents/skills/test-audit",
         "paleoclaw/paleoclaw/…/test-audit",
       ],
       [
-        "https://github.com/paleoclaw/paleoclaw/tree/main/skills/test%20audit/?tab=readme#examples",
+        "https://github.com/syxscott/PaleoClaw/tree/main/skills/test%20audit/?tab=readme#examples",
         "paleoclaw/paleoclaw/…/test audit",
       ],
     ])("preserves the destination when shortening %s", (href, label) => {
@@ -507,7 +507,7 @@ describe("toSanitizedMarkdownHtml links", () => {
         const link = fragment.querySelector<HTMLAnchorElement>("a");
         expect(link?.classList.contains("markdown-github-link")).toBe(true);
         expect(link?.classList.contains("markdown-github-item")).toBe(true);
-        expect(link?.textContent).toBe("paleoclaw/paleoclaw#3434");
+        expect(link?.textContent).toBe("syxscott/PaleoClaw#3434");
         expect(link?.getAttribute("href")).toBe(input);
         expect(link?.hasAttribute("title")).toBe(false);
       },
@@ -531,7 +531,7 @@ describe("toSanitizedMarkdownHtml links", () => {
     it("leaves github urls inside fences untouched", () => {
       const fragment = htmlFragment(
         toSanitizedMarkdownHtml(
-          "```\nhttps://github.com/paleoclaw/paleoclaw\n```\n\n```\nhttps://github.com/o/r/pull/3434\n```",
+          "```\nhttps://github.com/syxscott/PaleoClaw\n```\n\n```\nhttps://github.com/o/r/pull/3434\n```",
         ),
       );
       expect(fragment.querySelector("a")).toBeNull();
@@ -539,9 +539,9 @@ describe("toSanitizedMarkdownHtml links", () => {
     });
 
     it.each([
-      ["pull request", `\`${repoUrl}/pull/141131\``, "paleoclaw/paleoclaw#141131", "pull"],
+      ["pull request", `\`${repoUrl}/pull/141131\``, "syxscott/PaleoClaw#141131", "pull"],
       ["issue", "` https://github.com/o/r/issues/3434 `", "o/r#3434", "issue"],
-      ["repository", `\`${repoUrl}\``, "paleoclaw/paleoclaw", undefined],
+      ["repository", `\`${repoUrl}\``, "syxscott/PaleoClaw", undefined],
     ])("promotes a code span holding only a github %s url", (_kind, input, label, kind) => {
       const href = input.replaceAll("`", "").trim();
       const fragment = render(`See ${input} today`);
@@ -572,10 +572,10 @@ describe("toSanitizedMarkdownHtml links", () => {
 
     it("keeps the hover preview target intact on marked links", () => {
       const fragment = htmlFragment(
-        toSanitizedMarkdownHtml("[#3434](https://github.com/paleoclaw/paleoclaw/pull/3434)"),
+        toSanitizedMarkdownHtml("[#3434](https://github.com/openclaw/openclaw/pull/3434)"),
       );
       const link = fragment.querySelector<HTMLAnchorElement>("a.markdown-github-link");
-      expect(link?.getAttribute("href")).toBe("https://github.com/paleoclaw/paleoclaw/pull/3434");
+      expect(link?.getAttribute("href")).toBe("https://github.com/openclaw/openclaw/pull/3434");
       expect(link?.getAttribute("target")).toBe("_blank");
     });
   });

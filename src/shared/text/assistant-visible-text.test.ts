@@ -239,8 +239,8 @@ describe("sanitizeAssistantVisibleText", () => {
     const input = [
       "Visible intro.",
       "⚠️ 🛠️ `run paleoclaw definitely-not-a-real-subcommand (agent)` failed",
-      "⚠️ 🛠️ gh search issues --repo paleoclaw/paleoclaw --state open --no-search-pages.jsonl /tmp/openclaw_open_unlabeled_current.json (agent) failed",
-      "⚠️ 🛠️ gh search issues --repo paleoclaw/paleoclaw --state open (agent) failed: command timed out",
+      "⚠️ 🛠️ gh search issues --repo syxscott/PaleoClaw --state open --no-search-pages.jsonl /tmp/openclaw_open_unlabeled_current.json (agent) failed",
+      "⚠️ 🛠️ gh search issues --repo syxscott/PaleoClaw --state open (agent) failed: command timed out",
       "⚠️ 🛠️ Exec failed: `python3 /path/to/daily-cost-audit.py` (exit 1)",
       "⚠️ 🛠️ Bash failed: `git status` (workspace) (exit 1)",
       "⚠️ 🛠️ Exec failed (exit 1)",

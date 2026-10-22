@@ -25,7 +25,7 @@ const planDigest = createHash("sha256").update(canonicalPlan).digest("hex");
 const identity = telegramProofIdentitySchema.parse({
   request_id: "a".repeat(64),
   plan_sha256: planDigest,
-  repository: { id: "1", full_name: "paleoclaw/paleoclaw" },
+  repository: { id: "1", full_name: "syxscott/PaleoClaw" },
   pull_request: 1,
   candidate_sha: "b".repeat(40),
   scenario: "telegram-bot-e2e-proof",

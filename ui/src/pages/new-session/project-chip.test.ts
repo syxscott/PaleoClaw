@@ -69,11 +69,11 @@ describe("What chip state", () => {
   });
 
   it.each([
-    ["https://github.com/paleoclaw/openclaw.git", true],
+    ["https://github.com/syxscott/PaleoClaw.git", true],
     ["git@github.com:paleoclaw/openclaw.git", true],
     ["file:///tmp/openclaw.git", false],
     ["--upload-pack=touch-pwned", false],
-    ["https://github.com/paleoclaw/openclaw.git --config=evil", false],
+    ["https://github.com/syxscott/PaleoClaw.git --config=evil", false],
   ])("recognizes safe clone input %s", (value, expected) => {
     expect(projectCloneInput(value) !== null).toBe(expected);
   });

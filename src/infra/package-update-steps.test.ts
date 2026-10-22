@@ -130,8 +130,8 @@ describe("runGlobalPackageUpdateSteps", () => {
   });
 
   it.each([
-    { sourceSpec: "paleoclaw@github:paleoclaw/paleoclaw#main", overflow: true },
-    { sourceSpec: "paleoclaw@https://github.com/paleoclaw/paleoclaw#main", overflow: false },
+    { sourceSpec: "paleoclaw@github:syxscott/PaleoClaw#main", overflow: true },
+    { sourceSpec: "paleoclaw@https://github.com/syxscott/PaleoClaw#main", overflow: false },
   ])(
     "packs $sourceSpec without an implicit deadline (overflow=$overflow)",
     async ({ sourceSpec, overflow }) => {

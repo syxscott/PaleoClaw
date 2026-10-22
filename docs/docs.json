@@ -36,12 +36,12 @@
     "links": [
       {
         "label": "GitHub",
-        "href": "https://github.com/paleoclaw/paleoclaw",
+        "href": "https://github.com/syxscott/PaleoClaw",
         "icon": "github"
       },
       {
         "label": "Releases",
-        "href": "https://github.com/paleoclaw/paleoclaw/releases",
+        "href": "https://github.com/syxscott/PaleoClaw/releases",
         "icon": "package"
       }
     ]

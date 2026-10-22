@@ -75,7 +75,7 @@ const failure: RestartSentinelPayload = {
   },
 };
 
-const issueUrl = "https://github.com/paleoclaw/paleoclaw/issues/999999";
+const issueUrl = "https://github.com/openclaw/openclaw/issues/999999";
 const originalWriteFile = fs.writeFile.bind(fs);
 let stateDir = "";
 
@@ -341,7 +341,7 @@ describe("update report live authority boundary", () => {
           started: true,
           status: 0,
           stdout: Buffer.from(
-            "HTTP/2.0 201 Created\nhttps://github.com/paleoclaw/paleoclaw/issues/999999\n",
+            "HTTP/2.0 201 Created\nhttps://github.com/openclaw/openclaw/issues/999999\n",
           ),
         };
       });
@@ -485,7 +485,7 @@ describe("update report live authority boundary", () => {
           throw new Error("Missing browser handoff");
         }
         const url = new URL(submitted.payload.fallbackUrl);
-        expect(url.origin + url.pathname).toBe("https://github.com/paleoclaw/paleoclaw/issues/new");
+        expect(url.origin + url.pathname).toBe("https://github.com/syxscott/PaleoClaw/issues/new");
         expect(url.searchParams.get("body")).toBe(preview.body);
         expect(url.searchParams.get("title")).toBe(preview.title);
         await dispatchSubmit(harness, client, "browser-repeat", preview.previewDigest);

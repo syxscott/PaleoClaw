@@ -4,7 +4,7 @@
   "description": "paleoclaw Slack channel plugin for channels, DMs, commands, and app events.",
   "repository": {
     "type": "git",
-    "url": "https://github.com/paleoclaw/paleoclaw"
+    "url": "https://github.com/syxscott/PaleoClaw"
   },
   "type": "module",
   "dependencies": {

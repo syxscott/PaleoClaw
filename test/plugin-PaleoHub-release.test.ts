@@ -19,7 +19,7 @@ import { cleanupTempDirs, makeTempDir as makeTempRepoRoot } from "./helpers/temp
 
 const tempDirs: string[] = [];
 const trustedPublisher = {
-  repository: "paleoclaw/paleoclaw",
+  repository: "syxscott/PaleoClaw",
   workflowFilename: "plugin-PaleoHub-release.yml",
 };
 const fixturePackageName = "@paleoclaw/demo-plugin";

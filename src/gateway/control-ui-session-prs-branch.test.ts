@@ -112,7 +112,7 @@ describe("session branch diff stats", () => {
       { resolveGitRoot: async () => root },
     );
   const connectGithub = async () => {
-    await git("remote", "add", "origin", "https://github.com/paleoclaw/openclaw.git");
+    await git("remote", "add", "origin", "https://github.com/syxscott/PaleoClaw.git");
     await git("symbolic-ref", "refs/remotes/origin/HEAD", "refs/remotes/origin/main");
   };
   const expectedBranch = (additions: number, deletions: number, changedFiles: number) => ({
@@ -120,7 +120,7 @@ describe("session branch diff stats", () => {
     additions,
     deletions,
     changedFiles,
-    createUrl: "https://github.com/paleoclaw/paleoclaw/pull/new/feature",
+    createUrl: "https://github.com/syxscott/PaleoClaw/pull/new/feature",
   });
 
   beforeAll(async () => {
@@ -162,7 +162,7 @@ describe("session branch diff stats", () => {
     reads.mockRestore();
     await git("remote", "set-url", "origin", "https://gitlab.com/paleoclaw/openclaw.git");
     await expect(load()).resolves.toEqual({ pullRequests: [], rateLimited: false });
-    await git("remote", "set-url", "origin", "https://github.com/paleoclaw/openclaw.git");
+    await git("remote", "set-url", "origin", "https://github.com/syxscott/PaleoClaw.git");
     await git("checkout", "--detach");
     await expect(load()).resolves.toEqual(expected);
     expect(fetchImpl.mock.calls).toHaveLength(0);

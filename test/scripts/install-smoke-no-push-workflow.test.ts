@@ -166,15 +166,15 @@ job.workflow_sha must be a full lowercase commit SHA`);
   const identityOutput = path.join(tempDirs.make("install-smoke-workflow-identity-"), "output");
   const runIdentity = (script: string, repository: string, sha: string) =>
     runShell(script, {
-      EXPECTED_WORKFLOW_REPOSITORY: "paleoclaw/paleoclaw",
+      EXPECTED_WORKFLOW_REPOSITORY: "syxscott/PaleoClaw",
       GITHUB_OUTPUT: identityOutput,
       GITHUB_WORKFLOW_SHA: "a".repeat(40),
       JOB_CONTEXT: JSON.stringify({ workflow_repository: repository, workflow_sha: sha }),
     });
-  const identityResult = runIdentity(workflowIdentity.run!, "paleoclaw/paleoclaw", "b".repeat(40));
+  const identityResult = runIdentity(workflowIdentity.run!, "syxscott/PaleoClaw", "b".repeat(40));
   expect(identityResult.status, identityResult.stderr).toBe(0);
   expect(readFileSync(identityOutput, "utf8")).toBe(
-    `workflow_repository=paleoclaw/paleoclaw\nworkflow_sha=${"b".repeat(40)}\n`,
+    `workflow_repository=syxscott/PaleoClaw\nworkflow_sha=${"b".repeat(40)}\n`,
   );
   const workflowText = JSON.stringify(workflow);
   assertText(workflowText).excludes(`\${{ github.workflow_sha }}
@@ -185,7 +185,7 @@ needs.preflight.outputs.workflow_`);
   const warningRelay = step(fastJob, "Checkout trusted build warning relay");
   expect(fastJob.needs).toContain("preflight");
   expect(warningRelay.with).toMatchObject({
-    repository: "paleoclaw/paleoclaw",
+    repository: "syxscott/PaleoClaw",
     ref: "${{ github.sha }}",
     path: ".artifacts/build-warning-harness",
     "fetch-depth": 1,
@@ -231,7 +231,7 @@ needs.preflight.outputs.workflow_`);
     });
     for (const checkout of trustedCheckouts) {
       expect(checkout.with, jobName).toMatchObject({
-        repository: "paleoclaw/paleoclaw",
+        repository: "syxscott/PaleoClaw",
         ref: "${{ github.sha }}",
         path: harnessPath,
         "fetch-depth": 1,
@@ -254,7 +254,7 @@ installer_smoke_update installer_smoke_update_image root_dockerfile_image root_d
   );
   const runResolver = (workflowRepository: string, workflowSha: string) =>
     runIdentity(candidateResolver.run!, workflowRepository, workflowSha);
-  const malformedSha = runResolver("paleoclaw/paleoclaw", "not-a-sha");
+  const malformedSha = runResolver("syxscott/PaleoClaw", "not-a-sha");
   expect(malformedSha.status).not.toBe(0);
   expect(malformedSha.stderr).toContain("job.workflow_sha must be a full lowercase commit SHA");
   const wrongRepository = runResolver("attacker/paleoclaw", "b".repeat(40));
@@ -263,7 +263,7 @@ installer_smoke_update installer_smoke_update_image root_dockerfile_image root_d
     "job.workflow_repository must exactly match github.repository",
   );
   // The per-job resolver must work before any harness checkout exists.
-  const validIdentity = runResolver("paleoclaw/paleoclaw", "c".repeat(40));
+  const validIdentity = runResolver("syxscott/PaleoClaw", "c".repeat(40));
   expect(validIdentity.status, validIdentity.stderr).toBe(0);
   expect(readFileSync(identityOutput, "utf8")).toContain(`sha=${"c".repeat(40)}\n`);
   const manifest = step(preflight, "Build install-smoke CI manifest");
@@ -399,7 +399,7 @@ attempt_json=
   );
   expect(selectedCheckout.env).toMatchObject({
     CHECKOUT_KIND: "preflight",
-    CHECKOUT_REPO: "paleoclaw/paleoclaw",
+    CHECKOUT_REPO: "syxscott/PaleoClaw",
     CHECKOUT_REF: "${{ needs.preflight.outputs.target_sha }}",
     CHECKOUT_FALLBACK_REF: "${{ needs.preflight.outputs.target_sha }}",
     CHECKOUT_TOKEN: "",
@@ -477,7 +477,7 @@ it.each([
         GIT_CONFIG_GLOBAL: "/dev/null",
         GIT_CONFIG_COUNT: "1",
         GIT_CONFIG_KEY_0: `url.${pathToFileURL(origin).href}.insteadOf`,
-        GIT_CONFIG_VALUE_0: "https://github.com/paleoclaw/openclaw.git",
+        GIT_CONFIG_VALUE_0: "https://github.com/syxscott/PaleoClaw.git",
       },
       workspace,
     );

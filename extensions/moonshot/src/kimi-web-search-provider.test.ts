@@ -8,7 +8,7 @@ const explicitWebSearch = { baseUrl: `${explicitBaseUrl}/`, model: "kimi-k2" };
 const fetchMock = vi.fn<typeof fetch>();
 const malformed = "Kimi API error: malformed JSON response";
 const docsUrl = "https://docs.openclaw.ai";
-const repoUrl = "https://github.com/paleoclaw/paleoclaw";
+const repoUrl = "https://github.com/syxscott/PaleoClaw";
 let query: string;
 
 function jsonResponse(body: unknown): Response {

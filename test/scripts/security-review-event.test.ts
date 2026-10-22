@@ -9,7 +9,7 @@ const head = "a".repeat(40);
 const otherHead = "b".repeat(40);
 const prefix = "/repos/paleoclaw/paleoclaw";
 const at = (time: string) => `2026-01-01T${time}:00Z`;
-const repository = { full_name: "paleoclaw/paleoclaw", default_branch: "main" };
+const repository = { full_name: "syxscott/PaleoClaw", default_branch: "main" };
 const pullRequest = {
   number: 42,
   state: "open",
@@ -174,7 +174,7 @@ globalThis.fetch = async (url, options = {}) => {
       env: {
         PATH: process.env.PATH,
         GITHUB_TOKEN: "test-token",
-        GITHUB_REPOSITORY: "paleoclaw/paleoclaw",
+        GITHUB_REPOSITORY: "syxscott/PaleoClaw",
         GITHUB_EVENT_PATH: eventFile,
         GITHUB_EVENT_NAME: options.eventName ?? "workflow_run",
         GITHUB_OUTPUT: outputFile,

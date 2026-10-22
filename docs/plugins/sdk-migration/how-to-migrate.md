@@ -1282,7 +1282,7 @@ is a retired format that current Doctor refuses;
 
 Plugins built against stable SDK releases through 2026.9.x may still read the
 deprecated, non-enumerable runtime `agents.list` projection introduced in
-[#113146](https://github.com/paleoclaw/paleoclaw/pull/113146). It is no longer typed
+[#113146](https://github.com/openclaw/openclaw/pull/113146). It is no longer typed
 or read internally, is not serialized or copied by `structuredClone`, and is
 scheduled for removal after January 2, 2027. Config mutation drafts must read and
 write `agents.entries`. This compatibility window adds no runtime warnings.

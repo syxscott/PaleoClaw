@@ -17,7 +17,7 @@ import {
 } from "../../scripts/render-github-release-notes.mts";
 import { useAutoCleanupTempDirTracker } from "../helpers/temp-dir.js";
 
-const repository = "paleoclaw/paleoclaw";
+const repository = "syxscott/PaleoClaw";
 const tag = "v2026.7.1-beta.3";
 const version = "2026.7.1";
 const tempDirs = useAutoCleanupTempDirTracker(afterEach);
@@ -260,7 +260,7 @@ describe("GitHub release-note rendering", () => {
           "This release is paleoclaw from the end of August 2026, plus critical security updates, " +
           "reliability and performance fixes, and features like new model support. " +
           "The latest version of paleoclaw at the time of this release is " +
-          "[2026.9.5](https://github.com/paleoclaw/paleoclaw/releases#release-v2026.9.5)\n\n" +
+          "[2026.9.5](https://github.com/syxscott/PaleoClaw/releases#release-v2026.9.5)\n\n" +
           "## 2026.8.35",
       ),
     ).toBe(true);

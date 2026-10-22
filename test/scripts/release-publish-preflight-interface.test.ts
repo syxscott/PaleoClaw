@@ -11,7 +11,7 @@ import * as fixtureIO from "./upgrade-survivor-shard.test-support.js";
 
 const tempDirs = useAutoCleanupTempDirTracker(afterEach);
 const dispatchOptions = {
-  repo: "paleoclaw/paleoclaw",
+  repo: "syxscott/PaleoClaw",
   workflowRef: "main",
   fullReleaseValidationRunId: "123",
   pluginPublishScope: "all-publishable" as const,

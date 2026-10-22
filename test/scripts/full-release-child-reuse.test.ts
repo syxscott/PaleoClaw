@@ -12,7 +12,7 @@ import {
 } from "../../scripts/lib/full-release-child-reuse.mjs";
 import { useAutoCleanupTempDirTracker } from "../helpers/temp-dir.js";
 
-const REPOSITORY = "paleoclaw/paleoclaw";
+const REPOSITORY = "syxscott/PaleoClaw";
 const TOOLING = "a".repeat(40);
 const TARGET = "b".repeat(40);
 const PUBLISHER = "Seal full release child evidence / Seal child receipt";

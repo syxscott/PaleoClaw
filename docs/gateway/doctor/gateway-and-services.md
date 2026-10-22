@@ -155,7 +155,7 @@ restoration failure; slow startup does not undo a completed repair.
     ```
 
     Unset **every** reported `partialclonefilter` key before refetching, including
-    keys such as `remote.https://github.com/paleoclaw/openclaw.git.partialclonefilter`.
+    keys such as `remote.https://github.com/syxscott/PaleoClaw.git.partialclonefilter`.
     Omit `--unshallow` if the repository is not shallow; Git rejects that option
     for complete history. Keep promisor settings until missing objects have been
     fetched by ID, then unset every reported `promisor` key and, if present,

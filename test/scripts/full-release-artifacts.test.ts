@@ -9,7 +9,7 @@ import { useAutoCleanupTempDirTracker } from "../helpers/temp-dir.js";
 import { makeStoredZip } from "./actions-artifact-zip.test-support.js";
 
 const SCRIPT = resolve("scripts/full-release-artifacts.mjs");
-const REPOSITORY = "paleoclaw/paleoclaw";
+const REPOSITORY = "syxscott/PaleoClaw";
 const WORKFLOW = ".github/workflows/full-release-artifacts.yml";
 const SOURCE_SHA = "a".repeat(40);
 const TOOLING_SHA = "b".repeat(40);

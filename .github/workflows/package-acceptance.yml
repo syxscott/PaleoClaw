@@ -494,8 +494,8 @@ jobs:
           const validNamedRef = namedRef && namedRef[0] === ref && !ref.includes('..') && !ref.includes('@{') &&
             !ref.endsWith('.') && ref.split('/').every(part => part && !part.startsWith('.') && !part.endsWith('.lock'));
           const sha = job?.workflow_sha;
-          if (job?.workflow_repository !== 'paleoclaw/paleoclaw' ||
-              process.env.GITHUB_REPOSITORY !== 'paleoclaw/paleoclaw' ||
+          if (job?.workflow_repository !== 'syxscott/PaleoClaw' ||
+              process.env.GITHUB_REPOSITORY !== 'syxscott/PaleoClaw' ||
               typeof sha !== 'string' || sha.length !== 40 || !/^[0-9a-f]{40}$/.test(sha) ||
               (!validNamedRef && ref !== sha)) {
             throw new Error(message);

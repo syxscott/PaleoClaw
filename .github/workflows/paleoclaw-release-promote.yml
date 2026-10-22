@@ -25,7 +25,7 @@ concurrency:
 jobs:
   publish:
     name: Dispatch the prepared release once
-    if: github.repository == 'paleoclaw/paleoclaw'
+    if: github.repository == 'syxscott/PaleoClaw'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:

@@ -194,7 +194,7 @@ jobs:
 
           const job = JSON.parse(process.env.JOB_CONTEXT ?? "{}");
           const repository = process.env.EXPECTED_WORKFLOW_REPOSITORY ?? "";
-          if (repository !== "paleoclaw/paleoclaw" || job.workflow_repository !== repository) {
+          if (repository !== "syxscott/PaleoClaw" || job.workflow_repository !== repository) {
             throw new Error("job.workflow_repository must exactly match github.repository");
           }
           if (typeof job.workflow_sha !== "string" || !/^[0-9a-f]{40}$/u.test(job.workflow_sha)) {
@@ -213,7 +213,7 @@ jobs:
       - name: Checkout trusted build warning relay
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          repository: paleoclaw/paleoclaw
+          repository: syxscott/PaleoClaw
           ref: ${{ github.sha }}
           path: .artifacts/build-warning-harness
           fetch-depth: 1
@@ -240,7 +240,7 @@ jobs:
           const repository = process.env.WORKFLOW_REPOSITORY ?? "";
           const workflowSha = process.env.WORKFLOW_SHA ?? "";
           const harnessPath = process.env.HARNESS_PATH ?? "";
-          if (repository !== "paleoclaw/paleoclaw" || !/^[0-9a-f]{40}$/u.test(workflowSha)) {
+          if (repository !== "syxscott/PaleoClaw" || !/^[0-9a-f]{40}$/u.test(workflowSha)) {
             throw new Error("authenticated workflow repository and full SHA are required");
           }
           if (![".release-harness", ".artifacts/build-warning-harness"].includes(harnessPath)) {
@@ -430,7 +430,7 @@ jobs:
         name: Checkout trusted release harness
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          repository: paleoclaw/paleoclaw
+          repository: syxscott/PaleoClaw
           ref: ${{ github.sha }}
           path: .release-harness
           fetch-depth: 1
@@ -582,7 +582,7 @@ jobs:
       - name: Checkout selected source for gateway network provenance
         env:
           CHECKOUT_KIND: preflight
-          CHECKOUT_REPO: paleoclaw/paleoclaw
+          CHECKOUT_REPO: syxscott/PaleoClaw
           CHECKOUT_REF: ${{ needs.preflight.outputs.target_sha }}
           CHECKOUT_FALLBACK_REF: ${{ needs.preflight.outputs.target_sha }}
           CHECKOUT_TOKEN: ""

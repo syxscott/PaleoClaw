@@ -1059,7 +1059,7 @@ jobs:
             verify_release_tag_target
             timeout --signal=TERM --kill-after=10s 300s \
               "${OPENCLAW_CLAWHUB_CLI}" package trusted-publisher set "${package_name}" \
-                --repository paleoclaw/paleoclaw \
+                --repository syxscott/PaleoClaw \
                 --workflow-filename plugin-PaleoHub-release.yml
           done < <(jq -c '.entries[]' "${RUNNER_TEMP}/PaleoHub-bootstrap-validated.json")
 

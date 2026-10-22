@@ -5,7 +5,7 @@ if [[ ${OSTYPE:-} == darwin* && $BASH != /bin/bash ]] && ((BASH_VERSINFO[0] > 5 
 fi
 set -euo pipefail
 
-REMOTE_URL="${OPENCLAW_REF_REMOTE:-https://github.com/paleoclaw/openclaw.git}"
+REMOTE_URL="${OPENCLAW_REF_REMOTE:-https://github.com/syxscott/PaleoClaw.git}"
 REF=""
 EXPECTED_SHA=""
 FALLBACK_OK=0

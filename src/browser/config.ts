@@ -192,7 +192,7 @@ function ensureDefaultChromeExtensionProfile(
     return result;
   }
   // Avoid adding the built-in profile if the derived relay port is already used by another profile
-  // (legacy single-profile configs may use controlPort+1 for paleoclaw/paleoclaw CDP).
+  // (legacy single-profile configs may use controlPort+1 for syxscott/PaleoClaw CDP).
   if (getUsedPorts(result).has(relayPort)) {
     return result;
   }

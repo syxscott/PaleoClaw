@@ -14,7 +14,7 @@ import {
 
 const identity = requestIdentitySchema.parse({
   request_id: "a".repeat(64),
-  repository: { id: "123", full_name: "paleoclaw/paleoclaw" },
+  repository: { id: "123", full_name: "syxscott/PaleoClaw" },
   pull_request: 42,
   candidate_sha: "b".repeat(40),
   scenario: "web-ui-chat-proof",
@@ -378,7 +378,7 @@ describe("trusted finalizer CLI", () => {
             REQUEST_ID: identity.request_id,
             TARGET_PR: "42",
             CANDIDATE_SHA: identity.candidate_sha,
-            GITHUB_REPOSITORY: "paleoclaw/paleoclaw",
+            GITHUB_REPOSITORY: "syxscott/PaleoClaw",
             GITHUB_REPOSITORY_ID: "123",
             GITHUB_WORKFLOW_SHA: identity.workflow.sha,
             GITHUB_REF: "refs/heads/mantis-proof-v1",

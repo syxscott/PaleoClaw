@@ -108,7 +108,7 @@ function scenarioEvaluator(scenario: Scenario, variables: Record<string, string>
       event_name: scenario.event ?? "schedule",
       event: { schedule: scenario.schedule ?? "0 7 * * *" },
       ref: scenario.ref ?? "refs/heads/main",
-      repository: scenario.repository ?? "paleoclaw/paleoclaw",
+      repository: scenario.repository ?? "syxscott/PaleoClaw",
     },
     inputs: { operation: scenario.operation ?? "" },
     vars: variables,

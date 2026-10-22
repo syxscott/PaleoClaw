@@ -72,7 +72,7 @@ describe("Control UI WebKit selection", () => {
         expect(
           evaluateWorkflowExpression(step.if, {
             eventName: "pull_request",
-            repository: "paleoclaw/paleoclaw",
+            repository: "syxscott/PaleoClaw",
             runAttempt: 1,
             matrix: { shard },
             failed: true,

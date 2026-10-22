@@ -196,10 +196,10 @@ This admits the configured senders in any group. Add `groups` entries to scope a
 | --------------------------------------------------- | ------------------ | ----------------------------------------------------------------------------- |
 | Send text / SMS fallback                            | ✅                 | ✅                                                                            |
 | Send media (photo, video, file, voice)              | ✅                 | ✅                                                                            |
-| Threaded reply (`reply_to_guid`)                    | ✅                 | ✅ (closes [#51892](https://github.com/paleoclaw/paleoclaw/issues/51892))       |
+| Threaded reply (`reply_to_guid`)                    | ✅                 | ✅ (closes [#51892](https://github.com/openclaw/openclaw/issues/51892))       |
 | Tapback (`react`)                                   | ✅                 | ✅                                                                            |
 | Edit / unsend (macOS 13+ recipients)                | ✅                 | ✅                                                                            |
-| Send with screen effect                             | ✅                 | ✅ (closes part of [#9394](https://github.com/paleoclaw/paleoclaw/issues/9394)) |
+| Send with screen effect                             | ✅                 | ✅ (closes part of [#9394](https://github.com/openclaw/openclaw/issues/9394)) |
 | Rich text bold / italic / underline / strikethrough | ✅                 | ✅ (typed-run formatting via attributedBody)                                  |
 | Native Messages polls (create and vote)             | ❌                 | ✅ (`actions.polls`; recipients need iOS/macOS 26+ for native rendering)      |
 | Rename group / set group icon                       | ✅                 | ✅                                                                            |

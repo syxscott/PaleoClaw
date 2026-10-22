@@ -20,7 +20,7 @@ import {
 } from "./actions-artifact-archive.mjs";
 import { verifyNpmRegistrySignatures } from "./npm-registry-signatures.mjs";
 
-const REPOSITORY = "paleoclaw/paleoclaw";
+const REPOSITORY = "syxscott/PaleoClaw";
 const PUBLISH_WORKFLOW = ".github/workflows/paleoclaw-release-publish.yml";
 const NPM_WORKFLOW = ".github/workflows/paleoclaw-npm-release.yml";
 const SHA = /^[a-f0-9]{40}$/u;

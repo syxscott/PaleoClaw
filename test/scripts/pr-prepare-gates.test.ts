@@ -142,7 +142,7 @@ it("keeps pending evidence when the protected publisher fails in a conditional c
       `read_crabbox_gate_pr_binding() { printf '%s\\n' '${"a".repeat(40)}'; }`,
       `PR_HEAD=topic; LAST_VERIFIED_HEAD_SHA=${"b".repeat(40)}`,
       `node() { printf '%s\\n' '${JSON.stringify({
-        actionsRunUrl: "https://github.com/paleoclaw/paleoclaw/actions/runs/99",
+        actionsRunUrl: "https://github.com/syxscott/PaleoClaw/actions/runs/99",
         backend: "crabbox",
         baseSha: "a".repeat(40),
         headSha: "b".repeat(40),
@@ -512,7 +512,7 @@ it("does not derive recent-parent evidence for a runtime commit", () => {
   writeLocal(repoDir, "gates-hosted-checks.json", JSON.stringify({ headSha: currentHead }));
   const result = runGatesBash(
     [
-      `pr_gh() { test "$1" = pr || return 99; printf '{"headRefName":"topic","headRefOid":"${currentHead}","isCrossRepository":false,"baseRepository":{"nameWithOwner":"paleoclaw/paleoclaw"}}\\n'; }`,
+      `pr_gh() { test "$1" = pr || return 99; printf '{"headRefName":"topic","headRefOid":"${currentHead}","isCrossRepository":false,"baseRepository":{"nameWithOwner":"syxscott/PaleoClaw"}}\\n'; }`,
       "run_quiet_logged() { cat >/dev/null; printf 'ARG:%s\\n' \"$@\"; }",
       "PR_MAIN_SHA=$(git rev-parse HEAD)",
       `run_hosted_prepare_gates 100606 ${currentHead} false`,

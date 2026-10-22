@@ -60,7 +60,7 @@ function evaluate(options: Options = {}) {
   writeFileSync(
     eventFile,
     JSON.stringify({
-      repository: { full_name: "paleoclaw/paleoclaw" },
+      repository: { full_name: "syxscott/PaleoClaw" },
       action: "completed",
       workflow_run: {
         id: 123,
@@ -70,7 +70,7 @@ function evaluate(options: Options = {}) {
         display_title: `${platform} Store release (weekly)`,
         event: "schedule",
         head_branch: "main",
-        head_repository: { full_name: "paleoclaw/paleoclaw" },
+        head_repository: { full_name: "syxscott/PaleoClaw" },
         status: "completed",
         conclusion: "success",
         ...options.run,
@@ -162,11 +162,11 @@ describe("scheduled mobile store release notifications", () => {
     expect(notify.permissions).toEqual({ contents: "read", actions: "read" });
     const github = {
       sha: "a".repeat(40),
-      repository: "paleoclaw/paleoclaw",
+      repository: "syxscott/PaleoClaw",
       event: {
         workflow_run: {
           head_sha: "b".repeat(40),
-          head_repository: { full_name: "paleoclaw/paleoclaw" },
+          head_repository: { full_name: "syxscott/PaleoClaw" },
           event: "schedule",
           display_title: "iOS Store release (weekly)",
         },
@@ -212,7 +212,7 @@ describe("scheduled mobile store release notifications", () => {
       redirect: "error",
       abortable: true,
       body: {
-        content: `✅ **${platform} release uploaded successfully**\n${detail}\n[**View run ↗**](https://github.com/paleoclaw/paleoclaw/actions/runs/123/attempts/1)`,
+        content: `✅ **${platform} release uploaded successfully**\n${detail}\n[**View run ↗**](https://github.com/syxscott/PaleoClaw/actions/runs/123/attempts/1)`,
         flags: 4,
         allowed_mentions: { parse: [] },
       },

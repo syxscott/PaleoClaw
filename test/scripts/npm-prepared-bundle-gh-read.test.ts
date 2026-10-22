@@ -112,7 +112,7 @@ function runProof(failures: readonly Failure[], job: Record<string, unknown> = {
         GH_TOKEN: "",
         GITHUB_TOKEN: "",
         GITHUB_OUTPUT: output,
-        GITHUB_REPOSITORY: "paleoclaw/paleoclaw",
+        GITHUB_REPOSITORY: "syxscott/PaleoClaw",
         GITHUB_RUN_ID: "12",
         GITHUB_RUN_ATTEMPT: "2",
         PREFLIGHT_WORKFLOW_SHA: sha,
@@ -120,7 +120,7 @@ function runProof(failures: readonly Failure[], job: Record<string, unknown> = {
           "paleoclaw/paleoclaw/.github/workflows/full-release-artifacts.yml@refs/heads/main",
         JOB_CONTEXT: JSON.stringify({
           workflow_file_path: ".github/workflows/paleoclaw-npm-preflight.yml",
-          workflow_repository: "paleoclaw/paleoclaw",
+          workflow_repository: "syxscott/PaleoClaw",
           workflow_sha: sha,
           check_run_id: 45,
         }),

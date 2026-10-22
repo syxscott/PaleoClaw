@@ -138,7 +138,7 @@ Desktop app limitations, including Wayland global shortcuts, are documented
 in the [Linux guide](/platforms/linux#quick-chat).
 
 For setup help, use [paleoclaw support](/help). For a reproducible plugin or
-handoff defect, file an [paleoclaw bug report](https://github.com/paleoclaw/paleoclaw/issues/new?template=bug_report.yml)
+handoff defect, file an [paleoclaw bug report](https://github.com/syxscott/PaleoClaw/issues/new?template=bug_report.yml)
 with Omarchy, plugin/source, desktop app, and Gateway versions; whether the
 Gateway is local or remote; and the steps to reproduce. Remove credentials
 and private session content from logs or screenshots before sharing them.

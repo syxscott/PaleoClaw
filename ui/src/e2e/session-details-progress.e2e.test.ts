@@ -190,7 +190,7 @@ suite.define(() => {
                   repo: "paleoclaw",
                   branch: "paleoclaw/session-details",
                   title: "Session details and task progress",
-                  url: "https://github.com/paleoclaw/paleoclaw/pull/161674",
+                  url: "https://github.com/openclaw/openclaw/pull/161674",
                   state: "open",
                   isDraft: true,
                   additions: 84,

@@ -54,7 +54,7 @@ const sendRun = (
   idempotencyKey: string,
   options: Parameters<typeof directSessionReq>[2],
 ) => requestOk("chat.send", { agentId: "main", sessionKey, message, idempotencyKey }, options);
-const gitUrl = "https://github.com/paleoclaw/openclaw.git";
+const gitUrl = "https://github.com/syxscott/PaleoClaw.git";
 const projectCloneMocks = vi.hoisted(() => ({ materialize: vi.fn() }));
 
 async function workspaceFixture(name: string) {

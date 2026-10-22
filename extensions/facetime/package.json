@@ -6,7 +6,7 @@
   "author": "paleoclaw contributors",
   "homepage": "https://docs.openclaw.ai/plugins/facetime",
   "bugs": {
-    "url": "https://github.com/paleoclaw/paleoclaw/issues"
+    "url": "https://github.com/syxscott/PaleoClaw/issues"
   },
   "keywords": [
     "facetime",
@@ -16,7 +16,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/paleoclaw/paleoclaw",
+    "url": "https://github.com/syxscott/PaleoClaw",
     "directory": "extensions/facetime"
   },
   "files": [

@@ -125,7 +125,7 @@ function normalizeIMessageDbPath(value: string | undefined | null): string {
 
 // Stable signature for the local Messages backend an iMessage account targets.
 // Two enabled accounts that share a signature watch the same source, which
-// caused duplicate inbound handling in paleoclaw/paleoclaw#65141.
+// caused duplicate inbound handling in syxscott/PaleoClaw#65141.
 function resolveIMessageAccountSourceSignature(account: ResolvedIMessageAccount): string {
   const cliPath = normalizeIMessageCliPath(account.config.cliPath);
   const dbPath = normalizeIMessageDbPath(account.config.dbPath);
@@ -180,7 +180,7 @@ function resolveIMessageDatabaseFileIdentity(dbPath: string): string | undefined
  * Returns the owner account id when `account` is an enabled duplicate of
  * another enabled account that targets the same local Messages source. Used
  * by the iMessage gateway lifecycle to skip starting redundant `imsg rpc`
- * watchers (paleoclaw/paleoclaw#65141) without otherwise marking the duplicate
+ * watchers (syxscott/PaleoClaw#65141) without otherwise marking the duplicate
  * disabled — outbound selection, status surfaces, and capability listings
  * keep treating both accounts normally.
  */

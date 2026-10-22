@@ -210,7 +210,7 @@ describe("resolveTelegramToken", () => {
     );
   });
 
-  // Regression: https://github.com/paleoclaw/paleoclaw/issues/53876
+  // Regression: https://github.com/openclaw/openclaw/issues/53876
   it("falls through to channel-level token for binding-created accountId without accounts section", () => {
     const cfg = config({ botToken: "channel-level-token", enabled: true });
 

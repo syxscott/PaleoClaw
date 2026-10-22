@@ -9,7 +9,7 @@ scenario:
       - automation.wake-and-cooldown-handling
       - channels.qa-channel-final-reply
   regressionRefs:
-    - paleoclaw/paleoclaw#97067
+    - syxscott/PaleoClaw#97067
   gatewayConfigPatch:
     agents:
       defaults:

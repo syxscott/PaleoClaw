@@ -159,7 +159,7 @@ function replayBurst(events: BurstEvent[]) {
   const runs = events.map((event, index) => {
     const context = {
       eventName: event.name,
-      repository: "paleoclaw/paleoclaw",
+      repository: "syxscott/PaleoClaw",
       runAttempt: 1,
       runId: 38349881260 + index,
       githubEvent: {

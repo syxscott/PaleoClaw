@@ -17,7 +17,7 @@ vi.mock("node:child_process", async () => {
 
 const authSuccess = cliResult({ started: true, status: 0 });
 const unknownOutcome = { reason: "creation-outcome-unknown", status: "outcome-unknown" };
-const issueUrl = (id: number) => `https://github.com/paleoclaw/paleoclaw/issues/${id}`;
+const issueUrl = (id: number) => `https://github.com/syxscott/PaleoClaw/issues/${id}`;
 const created = (id: number) => ({ status: "created", url: issueUrl(id) });
 
 type CliResult = Awaited<ReturnType<RunGithubCli>>;
@@ -149,7 +149,7 @@ it.each([false, true])("reconciles exact content (persisted attempt=%s)", async 
 it.each([
   "javascript:alert(1)",
   "https://github.com.evil.example/paleoclaw/paleoclaw/issues/123",
-  "https://github.com/paleoclaw/paleoclaw/issues/123?token=secret",
+  "https://github.com/openclaw/openclaw/issues/123?token=secret",
 ])("does not expose or fall back after malformed created URL %s", async (url) => {
   const issue = prepare(url);
   const runGh = cli(

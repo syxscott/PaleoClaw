@@ -29,7 +29,7 @@ read_when:
 
 ```bash
 # Clone the repo
-git clone https://github.com/paleoclaw/paleoclaw.git
+git clone https://github.com/syxscott/PaleoClaw.git
 cd paleoclaw
 
 # Create a new Fly app (pick your own name)

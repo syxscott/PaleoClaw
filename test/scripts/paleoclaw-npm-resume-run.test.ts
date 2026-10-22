@@ -15,9 +15,9 @@ const { createTempDir } = createScriptTestHarness();
 const SHA = "a".repeat(40);
 const TAG_OBJECT_SHA = "b".repeat(40);
 const BRANCH = `release-publish/${SHA.slice(0, 12)}-123`;
-const URL = "https://github.com/paleoclaw/paleoclaw/actions/runs/456";
+const URL = "https://github.com/syxscott/PaleoClaw/actions/runs/456";
 const WORKFLOW = ".github/workflows/paleoclaw-npm-release.yml";
-const REPOSITORY = "paleoclaw/paleoclaw";
+const REPOSITORY = "syxscott/PaleoClaw";
 const RUN_API = `repos/${REPOSITORY}/actions/runs/456`;
 const object = (sha = SHA, type = "commit") => ({ object: { sha, type } });
 const identityError = "untrusted workflow identity";
@@ -85,7 +85,7 @@ describe("paleoclaw npm resume run identity", () => {
       }),
     );
     responses.set(
-      "run view 456 --repo paleoclaw/paleoclaw --attempt 1 --json jobs --jq .jobs",
+      "run view 456 --repo syxscott/PaleoClaw --attempt 1 --json jobs --jq .jobs",
       jobs ?? publishJobs,
     );
     return vi.fn((args: string[]) => {

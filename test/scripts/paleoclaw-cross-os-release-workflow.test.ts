@@ -280,7 +280,7 @@ describe("cross-OS release checks workflow", () => {
     expect(restore.with?.["restore-keys"]).toContain("paleoclaw-cross-os-npm-v1-seed-\n");
     expect(save.with?.key).toBe("${{ steps.npm_downloads.outputs.cache-primary-key }}");
     expect(save.if).toBe(
-      "github.repository == 'paleoclaw/paleoclaw' && github.event_name == 'workflow_dispatch' && steps.npm_downloads.outputs.cache-hit != 'true'",
+      "github.repository == 'syxscott/PaleoClaw' && github.event_name == 'workflow_dispatch' && steps.npm_downloads.outputs.cache-hit != 'true'",
     );
     expect(step(consumer, "Setup Node.js").id).toBe("node");
     expect(restore.with?.key).toBe(

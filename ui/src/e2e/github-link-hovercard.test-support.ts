@@ -3,8 +3,8 @@ import { expect } from "vitest";
 import type { ControlUiLinkReaderPreview } from "../../../src/shared/control-ui-link-reader.js";
 
 export const pullPreviewResponse = {
-  url: "https://github.com/paleoclaw/paleoclaw/pull/99816",
-  subtitle: "paleoclaw/paleoclaw #99816",
+  url: "https://github.com/openclaw/openclaw/pull/99816",
+  subtitle: "syxscott/PaleoClaw #99816",
   author: "steipete",
   authorUrl: "https://github.com/steipete",
   coAuthors: ["ada", "mira", "lin"].map((name) => ({
@@ -25,7 +25,7 @@ export const pullPreviewResponse = {
   updatedAt: "2026-07-04T09:53:55Z",
 } satisfies ControlUiLinkReaderPreview;
 
-export const PULL_HREF = "https://github.com/paleoclaw/paleoclaw/pull/99816";
+export const PULL_HREF = "https://github.com/openclaw/openclaw/pull/99816";
 export const PULL_COMMENT_HREF = `${PULL_HREF}#issuecomment-123`;
 
 // Headless Chromium suppresses modifier-opened windows even for plain anchors.

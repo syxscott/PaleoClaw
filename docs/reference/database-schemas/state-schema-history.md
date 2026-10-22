@@ -23,11 +23,11 @@ Doctor completes recognized schema-1 databases that predate the audit ledger bef
 | Version | Change                                                                                                                                                                                                                                                                                                                                         | Published in        |
 | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------- |
 | 1       | Initial shared state database                                                                                                                                                                                                                                                                                                                  | `v2026.6.1`         |
-| 2       | Metadata-only message audit events ([#103903](https://github.com/paleoclaw/paleoclaw/pull/103903))                                                                                                                                                                                                                                               | `v2026.8.1`         |
-| 3       | `STRICT` tables and schema-drift hardening ([#108663](https://github.com/paleoclaw/paleoclaw/pull/108663))                                                                                                                                                                                                                                       | `v2026.8.1`         |
+| 2       | Metadata-only message audit events ([#103903](https://github.com/openclaw/openclaw/pull/103903))                                                                                                                                                                                                                                               | `v2026.8.1`         |
+| 3       | `STRICT` tables and schema-drift hardening ([#108663](https://github.com/openclaw/openclaw/pull/108663))                                                                                                                                                                                                                                       | `v2026.8.1`         |
 | 4       | Session watch provenance replaces encoded sentinel rows                                                                                                                                                                                                                                                                                        | `v2026.8.1`         |
-| 5       | Durable cloud-worker result references on pending workspace fences ([`7a7d6bb`](https://github.com/paleoclaw/paleoclaw/commit/7a7d6bb51f42bd896de2b8a4df2ee66f3dce0a21), [#110952](https://github.com/paleoclaw/paleoclaw/pull/110952))                                                                                                            | `v2026.8.1`         |
-| 6       | Every committed shared-state table becomes part of the current runtime schema ([`509a5f0`](https://github.com/paleoclaw/paleoclaw/commit/509a5f03737642fec4a940e6d605887f7957ddc8), [#113473](https://github.com/paleoclaw/paleoclaw/pull/113473))                                                                                                 | `v2026.8.1`         |
+| 5       | Durable cloud-worker result references on pending workspace fences ([`7a7d6bb`](https://github.com/syxscott/PaleoClaw/commit/7a7d6bb51f42bd896de2b8a4df2ee66f3dce0a21), [#110952](https://github.com/openclaw/openclaw/pull/110952))                                                                                                            | `v2026.8.1`         |
+| 6       | Every committed shared-state table becomes part of the current runtime schema ([`509a5f0`](https://github.com/syxscott/PaleoClaw/commit/509a5f03737642fec4a940e6d605887f7957ddc8), [#113473](https://github.com/openclaw/openclaw/pull/113473))                                                                                                 | `v2026.8.1`         |
 | 7       | Retired inferred-commitment storage removed                                                                                                                                                                                                                                                                                                    | `v2026.8.1`         |
 | 8       | Cloud-worker placement execution modes and mode-aware turn claims                                                                                                                                                                                                                                                                              | `v2026.8.1`         |
 | 9       | In-root agent database registry paths stored relative to the state directory                                                                                                                                                                                                                                                                   | `v2026.8.1`         |
@@ -202,8 +202,8 @@ columns and indexes; no shared-state indexes remain pending promotion.
 
 Older builds refuse schema 22. Rollback restores the verified pre-upgrade backup
 with its matching build; never lower schema markers. See the
-[accepted addendum](https://github.com/paleoclaw/paleoclaw/issues/169254#issuecomment-6129843452)
-and its [combined-v22 sequencing](https://github.com/paleoclaw/paleoclaw/issues/169254#issuecomment-6131216265).
+[accepted addendum](https://github.com/openclaw/openclaw/issues/169254#issuecomment-6129843452)
+and its [combined-v22 sequencing](https://github.com/openclaw/openclaw/issues/169254#issuecomment-6131216265).
 
 ### State schema 21
 
@@ -213,7 +213,7 @@ Schema 21 adds seven nullable text columns to `meeting_transcript_sessions`,
 to `delivery_queue_entries`. JSON remains canonical. Every writer derives the
 columns in the same statement as its JSON; runtime filters and retention deletes
 use the columns without a JSON fallback. The
-[accepted design](https://github.com/paleoclaw/paleoclaw/issues/169254) covers this
+[accepted design](https://github.com/openclaw/openclaw/issues/169254) covers this
 shared-state migration; the agent database is unchanged.
 
 The forward migration scans existing rows once inside the shared-state schema

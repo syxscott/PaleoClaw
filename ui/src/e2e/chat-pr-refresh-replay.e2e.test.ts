@@ -42,7 +42,7 @@ suite.define(() => {
       repo: "paleoclaw",
       branch: "fixture/review-refresh",
       title: "Synthetic review refresh proof",
-      url: "https://github.com/paleoclaw/paleoclaw/pull/111532",
+      url: "https://github.com/openclaw/openclaw/pull/111532",
       state: "open",
     };
     const snapshot = async (state: string) => {

@@ -416,8 +416,8 @@ describe("personal publication authority and recovery", () => {
       source_head_commit: OLD_HEAD,
       source_index_tree: WORKSPACE_TREE,
       workspace_tree: WORKSPACE_TREE,
-      push_repository: "paleoclaw/paleoclaw",
-      repository: "paleoclaw/paleoclaw",
+      push_repository: "syxscott/PaleoClaw",
+      repository: "syxscott/PaleoClaw",
       branch: BRANCH,
     });
     expect(JSON.stringify(receipt)).not.toMatch(/synthetic|GH_CONFIG_DIR|claim_id|run_id/);
@@ -698,7 +698,7 @@ describe("personal publication authority and recovery", () => {
         return commandResult(
           JSON.stringify([
             {
-              url: "https://github.com/paleoclaw/paleoclaw/pull/125200",
+              url: "https://github.com/openclaw/openclaw/pull/125200",
               userId: account.accountId,
               state: "open",
               body,
@@ -735,7 +735,7 @@ describe("personal publication authority and recovery", () => {
       confirmation: {
         account,
         generation,
-        repository: "paleoclaw/paleoclaw",
+        repository: "syxscott/PaleoClaw",
         workspaceTree: WORKSPACE_TREE,
       },
     });

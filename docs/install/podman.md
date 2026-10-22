@@ -7,7 +7,7 @@ title: "Podman"
 
 # Podman
 
-Run the paleoclaw gateway in a **rootless** Podman container. Uses the same image as Docker (build from the repo [Dockerfile](https://github.com/paleoclaw/paleoclaw/blob/main/Dockerfile)).
+Run the paleoclaw gateway in a **rootless** Podman container. Uses the same image as Docker (build from the repo [Dockerfile](https://github.com/syxscott/PaleoClaw/blob/main/Dockerfile)).
 
 ## Requirements
 

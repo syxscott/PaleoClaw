@@ -12,7 +12,7 @@ const ciProjections: [string, string][] = [
   ["pending", "Waiting for CI; review updates automatically"],
 ];
 const publisher = {
-  url: "https://github.com/paleoclaw/paleoclaw/actions/runs/100",
+  url: "https://github.com/syxscott/PaleoClaw/actions/runs/100",
   startedAt: "2026-09-27T12:00:00Z",
   completedAt: "2026-09-27T12:01:00Z",
 };
@@ -45,7 +45,7 @@ function fixture(needsApproval = false, projectionState = "failure", projection 
     body: "/allow-dependencies-change\n/allow-security-sensitive-change",
     created_at: "2026-09-27T11:30:00Z",
     updated_at: "2026-09-27T11:30:00Z",
-    html_url: "https://github.com/paleoclaw/paleoclaw/pull/7#issuecomment-11",
+    html_url: "https://github.com/syxscott/PaleoClaw/pull/7#issuecomment-11",
   };
   const comments = needsApproval
     ? [
@@ -89,7 +89,7 @@ function fixture(needsApproval = false, projectionState = "failure", projection 
       merged: state.rollout !== "inactive",
       merged_at: state.rollout === "inactive" ? null : "2026-09-19T00:00:00Z",
       merge_commit_sha: rolloutCommit,
-      base: { ref: "main", repo: { full_name: "paleoclaw/paleoclaw" } },
+      base: { ref: "main", repo: { full_name: "syxscott/PaleoClaw" } },
     }),
     [`${prefix}/compare/${rolloutCommit}...${head}?per_page=1&page=2`]: () => ({
       base_commit: { sha: rolloutCommit },

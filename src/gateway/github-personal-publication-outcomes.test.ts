@@ -52,7 +52,7 @@ describe("personal publication definitive outcomes", () => {
     headSha: string,
     overrides: { url?: string; userId?: number; state?: string; body?: string } = {},
   ) => ({
-    url: "https://github.com/paleoclaw/paleoclaw/pull/125200",
+    url: "https://github.com/openclaw/openclaw/pull/125200",
     userId: account.accountId,
     state: "open",
     body: "",
@@ -101,11 +101,11 @@ describe("personal publication definitive outcomes", () => {
 
       expect(published).toMatchObject({
         status: "published",
-        url: "https://github.com/paleoclaw/paleoclaw/pull/125200",
+        url: "https://github.com/openclaw/openclaw/pull/125200",
       });
       expect(read(published.requestId)).toMatchObject({
         status: "published",
-        pull_request_url: "https://github.com/paleoclaw/paleoclaw/pull/125200",
+        pull_request_url: "https://github.com/openclaw/openclaw/pull/125200",
       });
       await fixture.coordinator.resumeSessionRequests();
       expect(workspace.effects).toEqual(["push", "pull_request"]);
@@ -176,7 +176,7 @@ describe("personal publication definitive outcomes", () => {
       };
       const headSha = await workspace.git("rev-parse", "HEAD");
       const marker = `<!-- paleoclaw-publication:${initial.requestId} -->`;
-      const url = "https://github.com/paleoclaw/paleoclaw/pull/125203";
+      const url = "https://github.com/openclaw/openclaw/pull/125203";
       const dispatched = { kind: "pull_request", status: "dispatched", headCommit: headSha };
       const remote = mocks.runCommand.getMockImplementation()!;
       let created = false;

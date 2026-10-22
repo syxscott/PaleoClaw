@@ -40,7 +40,7 @@ export function writePublishablePluginFixture(
     type: "module",
     repository: {
       type: "git",
-      url: "https://github.com/paleoclaw/paleoclaw",
+      url: "https://github.com/syxscott/PaleoClaw",
     },
     ...(options.dependency
       ? { dependencies: { [options.dependency.packageName]: options.dependency.version } }

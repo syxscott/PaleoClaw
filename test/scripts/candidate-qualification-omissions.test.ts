@@ -14,7 +14,7 @@ const contextRef = "release/2026.9.7";
 function workflowEnv() {
   return {
     ...process.env,
-    GITHUB_REPOSITORY: "paleoclaw/paleoclaw",
+    GITHUB_REPOSITORY: "syxscott/PaleoClaw",
     GITHUB_RUN_ID: "77",
     GITHUB_RUN_ATTEMPT: "1",
     TARGET_SHA: targetSha,
@@ -126,12 +126,12 @@ it.each([
 const fs = require('node:fs');
 const args = process.argv.slice(2);
 fs.appendFileSync(process.env.CALLS, JSON.stringify(args) + '\\n');
-if (args[0] === 'workflow') console.log('https://github.com/paleoclaw/paleoclaw/actions/runs/202');
+if (args[0] === 'workflow') console.log('https://github.com/syxscott/PaleoClaw/actions/runs/202');
 else if (args[1].includes('/commits/')) console.log(process.env.PARENT_WORKFLOW_SHA);
 else if (args[1].includes('/actions/workflows/')) console.log('88');
 else console.log(JSON.stringify({id:202,workflow_id:88,head_branch:process.env.CHILD_WORKFLOW_REF,
   event:'workflow_dispatch',display_title:process.env.TEST_TITLE,head_sha:process.env.PARENT_WORKFLOW_SHA,
-  run_attempt:1,html_url:'https://github.com/paleoclaw/paleoclaw/actions/runs/202'}));
+  run_attempt:1,html_url:'https://github.com/syxscott/PaleoClaw/actions/runs/202'}));
 `,
     );
     chmodSync(gh, 0o755);

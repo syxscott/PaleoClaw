@@ -7,7 +7,7 @@ import { parse } from "yaml";
 
 const roots: string[] = [];
 const workflowSha = "a".repeat(40);
-const repository = "paleoclaw/paleoclaw";
+const repository = "syxscott/PaleoClaw";
 const dispatchArgs = ["-f", "publish_scope=all-publishable", "-f", `ref=${"b".repeat(40)}`];
 const workflow = parse(readFileSync(".github/workflows/paleoclaw-release-publish.yml", "utf8")) as {
   jobs: { publish: { steps: { name?: string; run?: string }[] } };

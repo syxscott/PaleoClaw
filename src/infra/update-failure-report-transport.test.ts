@@ -21,7 +21,7 @@ import {
 } from "./update-failure-report.test-support.js";
 
 const tempDirs = useStateDatabaseTempDirs();
-const issueUrl = "https://github.com/paleoclaw/paleoclaw/issues/123";
+const issueUrl = "https://github.com/openclaw/openclaw/issues/123";
 const authSuccess = { started: true, status: 0, stdout: Buffer.alloc(0) };
 
 function wrapWorkerExecute(wrap: (execute: DomainScope["execute"]) => DomainScope["execute"]) {

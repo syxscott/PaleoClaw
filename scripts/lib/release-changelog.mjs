@@ -376,7 +376,7 @@ function renderIndex(releases, hasDuplicates = false) {
     "",
     ...releases.map(
       (version) =>
-        `- [${version}](${changelogEntryPath(version)}) · [Raw](https://github.com/paleoclaw/paleoclaw/raw/refs/heads/main/${changelogEntryPath(version)})`,
+        `- [${version}](${changelogEntryPath(version)}) · [Raw](https://github.com/syxscott/PaleoClaw/raw/refs/heads/main/${changelogEntryPath(version)})`,
     ),
     ...(hasDuplicates
       ? [

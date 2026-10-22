@@ -67,7 +67,7 @@ function setup() {
   mocks.submit.mockResolvedValue({
     savedReportPath: prepared.savedReportPath,
     status: "created",
-    url: "https://github.com/paleoclaw/paleoclaw/issues/123",
+    url: "https://github.com/openclaw/openclaw/issues/123",
   });
   const opts = { run: { runId, env } };
   const target = { env };

@@ -8,7 +8,7 @@ type EmptyAssistantTurnLike = {
 };
 
 // Upstream agent runtimes should normalize Anthropic zero-token empty `stop`
-// turns before paleoclaw sees them. Downstream: paleoclaw/paleoclaw#71880.
+// turns before paleoclaw sees them. Downstream: syxscott/PaleoClaw#71880.
 function hasZeroTokenUsageSnapshot(usage: unknown): boolean {
   const fields = asOptionalObjectRecord(usage);
   if (!fields) {

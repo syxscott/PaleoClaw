@@ -130,7 +130,7 @@ env:
 jobs:
   preview_plugins_npm:
     # Scheduled preview is nonpublishing and considers all unpublished packages.
-    if: (github.event_name != 'schedule' || github.repository == 'paleoclaw/paleoclaw') && (github.event_name != 'push' || github.ref != 'refs/heads/main' || vars.OPENCLAW_CI_ON_PUSH == 'true')
+    if: (github.event_name != 'schedule' || github.repository == 'syxscott/PaleoClaw') && (github.event_name != 'push' || github.ref != 'refs/heads/main' || vars.OPENCLAW_CI_ON_PUSH == 'true')
     runs-on: &linux_runner_release_ubuntu_latest >-
       ${{ (github.event_name == 'workflow_dispatch' && inputs.release_publish_run_id != '' &&
       vars.OPENCLAW_RELEASE_RUNNER_GROUP || '') != '' && fromJSON(format('{{"group":{0},"labels":{1}}}',
@@ -839,7 +839,7 @@ jobs:
           if (packageJson.openclaw?.install?.npmSpec !== process.env.INSTALL_NPM_SPEC) {
             fail(`Packed npm install route mismatch: expected ${process.env.INSTALL_NPM_SPEC}.`);
           }
-          if (repositoryUrl !== "https://github.com/paleoclaw/paleoclaw") {
+          if (repositoryUrl !== "https://github.com/syxscott/PaleoClaw") {
             fail(`Packed repository route mismatch: ${JSON.stringify(repositoryUrl)}.`);
           }
           if (typeof pluginManifest.id !== "string" || pluginManifest.id.length === 0) {
@@ -1241,7 +1241,7 @@ jobs:
             packageJson.openclaw?.install?.npmSpec !== process.env.INSTALL_NPM_SPEC ||
             manifest.package.installNpmSpec !== process.env.INSTALL_NPM_SPEC ||
             manifest.package.publishTag !== process.env.PUBLISH_TAG ||
-            repositoryUrl !== "https://github.com/paleoclaw/paleoclaw" ||
+            repositoryUrl !== "https://github.com/syxscott/PaleoClaw" ||
             typeof pluginManifest.id !== "string" ||
             pluginManifest.id.length === 0 ||
             manifest.package.pluginId !== pluginManifest.id ||

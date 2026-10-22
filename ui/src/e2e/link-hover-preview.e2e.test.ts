@@ -13,7 +13,7 @@ import { createControlUiE2eSuite } from "./control-ui-e2e-suite.test-support.ts"
 
 const suite = createControlUiE2eSuite({ name: "Link hover previews" });
 const url = "https://example.com/field-guide";
-const repositoryUrl = "https://github.com/paleoclaw/paleoclaw";
+const repositoryUrl = "https://github.com/syxscott/PaleoClaw";
 const pullUrl = `${repositoryUrl}/pull/42`;
 const readerMethods = [...defaultControlUiFeatureMethods, "forge.preview", "forge.detail"];
 const historyMessages = [
@@ -21,7 +21,7 @@ const historyMessages = [
   {
     role: "assistant",
     content:
-      "Start with the [Field guide](https://example.com/field-guide) for a practical introduction.\n\nExplore the [paleoclaw repository](https://github.com/paleoclaw/paleoclaw). The [project update](https://github.com/paleoclaw/paleoclaw/pull/42) has the implementation details.\n\nYou can also read the [reference notes](https://example.org/notes).",
+      "Start with the [Field guide](https://example.com/field-guide) for a practical introduction.\n\nExplore the [paleoclaw repository](https://github.com/syxscott/PaleoClaw). The [project update](https://github.com/openclaw/openclaw/pull/42) has the implementation details.\n\nYou can also read the [reference notes](https://example.org/notes).",
     timestamp: 2000,
   },
 ];
@@ -260,7 +260,7 @@ suite.define(() => {
 
   it("preserves detail-only, internal, session, file and explicit external-panel links", () =>
     suite.withPage({}, async ({ page }) => {
-      const commitUrl = "https://github.com/paleoclaw/paleoclaw/commit/" + "a".repeat(40);
+      const commitUrl = "https://github.com/syxscott/PaleoClaw/commit/" + "a".repeat(40);
       const gateway = await openPreviewPage(page, {
         historyMessages: [
           {

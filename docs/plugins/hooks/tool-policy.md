@@ -301,7 +301,7 @@ evidence that the tool succeeded. A handler that infers success from the
 absence of `error` can record a failed call as a successful one; treat an
 unreadable outcome as unknown rather than as either result. What `result`
 carries for exec and bash-family tools is tracked separately in
-[#102961](https://github.com/paleoclaw/paleoclaw/issues/102961).
+[#102961](https://github.com/openclaw/openclaw/issues/102961).
 
 Do not use this hook to enforce policy. As the
 [hook reference](/plugins/hooks/reference) puts it, use a gate that blocks the operation on error

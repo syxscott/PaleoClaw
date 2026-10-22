@@ -909,7 +909,7 @@ describe("full-release-validation-at-sha", () => {
     expect(result.stdout).not.toContain("validation/target-");
     const fetch = fixture
       .gitCalls()
-      .find((args) => args.includes("https://github.com/paleoclaw/openclaw.git"));
+      .find((args) => args.includes("https://github.com/syxscott/PaleoClaw.git"));
     expect(fetch).toEqual([
       "-C",
       expect.any(String),
@@ -917,7 +917,7 @@ describe("full-release-validation-at-sha", () => {
       "--no-tags",
       "--depth=1",
       "--filter=blob:none",
-      "https://github.com/paleoclaw/openclaw.git",
+      "https://github.com/syxscott/PaleoClaw.git",
       fixture.targetSha,
     ]);
     expect(fetch![1]).not.toBe(fixture.checkout);
@@ -1174,7 +1174,7 @@ describe("full-release-validation-at-sha", () => {
       const gitCalls = fixture.gitCalls();
       expect(gitCalls.filter((args) => args[0] === "push")).toEqual([]);
       const fetch = gitCalls.find((args) =>
-        args.includes("https://github.com/paleoclaw/openclaw.git"),
+        args.includes("https://github.com/syxscott/PaleoClaw.git"),
       );
       expect(fetch).toBeDefined();
       expect(existsSync(fetch![1]!)).toBe(false);

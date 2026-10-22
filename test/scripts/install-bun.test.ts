@@ -217,7 +217,7 @@ describe("install.sh Bun runtime", () => {
     [["--runtime", "bun"], { FIXTURE_MUSL: "1" }, "glibc Linux"],
     [["--runtime", "bun"], { OSTYPE: "msys" }, "Unsupported operating system"],
     [["--runtime", "bun", "--version", "./local.tgz"], {}, "published npm version"],
-    [["--runtime", "bun", "--version", "github:paleoclaw/paleoclaw"], {}, "published npm version"],
+    [["--runtime", "bun", "--version", "github:syxscott/PaleoClaw"], {}, "published npm version"],
     [["--runtime", "bun", "--bun-path", "relative/bun"], {}, "absolute, executable"],
   ] as const)("refuses invalid requests: %j", (args, env, message) => {
     const f = fixture();

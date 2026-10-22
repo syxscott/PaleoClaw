@@ -119,7 +119,7 @@ function sourceSha(value: string) {
 }
 
 function downloadUrl(releaseTag: string, name: string) {
-  return `https://github.com/paleoclaw/paleoclaw/releases/download/${releaseTag}/${name}`;
+  return `https://github.com/syxscott/PaleoClaw/releases/download/${releaseTag}/${name}`;
 }
 
 const bundleSuffix = {
@@ -229,7 +229,7 @@ const releaseResponse = (owner) => {
 };
 const workflowRun = (id, prefix, fields) => ({
   id, run_attempt: state.authority[prefix + "Attempt"],
-  repository: { full_name: "paleoclaw/paleoclaw" }, head_sha: "b".repeat(40),
+  repository: { full_name: "syxscott/PaleoClaw" }, head_sha: "b".repeat(40),
   status: state.authority[prefix + "Status"], conclusion: state.authority[prefix + "Conclusion"],
   ...fields,
 });
@@ -363,7 +363,7 @@ try {
       answer(owner.assets.slice(start, start + 100).map(publicAsset));
     }
   } else if (tool === "gh" && args[0] === "release") {
-    assert.equal(flag("--repo"), "paleoclaw/paleoclaw");
+    assert.equal(flag("--repo"), "syxscott/PaleoClaw");
     const action = args[1];
     const tag = args[2];
     if (action === "view") {
@@ -847,7 +847,7 @@ it("publishes Windows with regular Linux bundles and reuses its immutable bytes"
   const metadata = JSON.parse(f.bytes("windows-stable", "latest-windows.json").toString());
   expect(Object.keys(metadata.platforms)).toEqual(["windows-x86_64"]);
   expect(metadata.platforms["windows-x86_64"].url).toBe(
-    `https://github.com/paleoclaw/paleoclaw/releases/download/${tag}/paleoclaw-${tag.slice(1)}-windows-x86_64.exe`,
+    `https://github.com/syxscott/PaleoClaw/releases/download/${tag}/paleoclaw-${tag.slice(1)}-windows-x86_64.exe`,
   );
   expect(f.state().releases.some((release) => release.tag_name === "desktop-test")).toBe(false);
   const writes = f.mutations().length;
@@ -957,7 +957,7 @@ it("publishes opt-in desktop metadata only after successful Linux and legacy rea
   const create = calls.findIndex((call) => call.action === "create" && call.tag === "desktop-test");
   const legacy = calls.findIndex(
     (call) =>
-      call.url === "https://github.com/paleoclaw/paleoclaw/releases/latest/download/latest.json",
+      call.url === "https://github.com/syxscott/PaleoClaw/releases/latest/download/latest.json",
   );
   expect(legacy).toBeGreaterThanOrEqual(0);
   expect(create).toBeGreaterThan(legacy);

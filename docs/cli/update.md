@@ -1030,7 +1030,7 @@ changes before modifying the checkout. Use `paleoclaw update status` to inspect
 the current branch, version, and update availability.
 
 <Note>
-In Nix mode (`OPENCLAW_NIX_MODE=1`), mutating `paleoclaw update` runs are disabled. Update the Nix source or flake input for this install instead; for nix-paleoclaw, use the agent-first [Quick Start](https://github.com/paleoclaw/nix-paleoclaw#quick-start). `paleoclaw update status` remains read-only. `paleoclaw update --dry-run` previews the flow without changing the installation. It records a skipped run only when the profile already has a runtime database.
+In Nix mode (`OPENCLAW_NIX_MODE=1`), mutating `paleoclaw update` runs are disabled. Update the Nix source or flake input for this install instead; for nix-paleoclaw, use the agent-first [Quick Start](https://github.com/openclaw/nix-openclaw#quick-start). `paleoclaw update status` remains read-only. `paleoclaw update --dry-run` previews the flow without changing the installation. It records a skipped run only when the profile already has a runtime database.
 </Note>
 
 <Warning>

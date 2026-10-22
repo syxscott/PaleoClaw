@@ -67,7 +67,7 @@ fi
   const result = runStep(step, root, {
     PATH: `${bin}${path.delimiter}${process.env.PATH}`,
     PR_NUMBER: "123",
-    REPOSITORY: "paleoclaw/paleoclaw",
+    REPOSITORY: "syxscott/PaleoClaw",
     GITHUB_OUTPUT: output,
     FAIL_CALL: String(failCall),
     EVENT_NAME: "pull_request",

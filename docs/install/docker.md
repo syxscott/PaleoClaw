@@ -150,7 +150,7 @@ Running on a VPS? See [Hetzner (Docker VPS)](/install/hetzner).
 
 Official pre-built images are published at:
 
-- [GitHub Container Registry package](https://github.com/paleoclaw/paleoclaw/pkgs/container/paleoclaw)
+- [GitHub Container Registry package](https://github.com/syxscott/PaleoClaw/pkgs/container/paleoclaw)
 
 Use image name `ghcr.io/paleoclaw/paleoclaw` (not similarly named Docker Hub
 images).
@@ -172,7 +172,7 @@ and points at the pinned multi-arch manifest list for that tag):
 
 - `org.opencontainers.image.base.name=docker.io/library/node:22-bookworm`
 - `org.opencontainers.image.base.digest=sha256:b501c082306a4f528bc4038cbf2fbb58095d583d0419a259b2114b5ac53d12e9`
-- `org.opencontainers.image.source=https://github.com/paleoclaw/paleoclaw`
+- `org.opencontainers.image.source=https://github.com/syxscott/PaleoClaw`
 - `org.opencontainers.image.url=https://paleoclaw.ai`
 - `org.opencontainers.image.documentation=https://docs.paleoclaw.ai/install/docker`
 - `org.opencontainers.image.licenses=MIT`
@@ -219,7 +219,7 @@ echo 'source ~/.clawdock/clawdock-helpers.sh' >> ~/.zshrc && source ~/.zshrc
 
 Then use `clawdock-start`, `clawdock-stop`, `clawdock-dashboard`, etc. Run `clawdock-help` for all commands.
 
-See [`ClawDock` Helper README](https://github.com/paleoclaw/paleoclaw/blob/main/scripts/shell-helpers/README.md) for details.
+See [`ClawDock` Helper README](https://github.com/syxscott/PaleoClaw/blob/main/scripts/shell-helpers/README.md) for details.
 
 ### Manual flow (compose)
 
@@ -833,7 +833,7 @@ Example:
 
 ## Troubleshooting
 
-- Image missing: build with [`scripts/sandbox-setup.sh`](https://github.com/paleoclaw/paleoclaw/blob/main/scripts/sandbox-setup.sh) or set `agents.defaults.sandbox.docker.image`.
+- Image missing: build with [`scripts/sandbox-setup.sh`](https://github.com/syxscott/PaleoClaw/blob/main/scripts/sandbox-setup.sh) or set `agents.defaults.sandbox.docker.image`.
 - Container not running: it will auto-create per session on demand.
 - Permission errors in sandbox: set `docker.user` to a UID:GID that matches your
   mounted workspace ownership (or chown the workspace folder).

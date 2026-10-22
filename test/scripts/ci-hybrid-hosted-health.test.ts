@@ -9,7 +9,7 @@ const run = (overrides: Record<string, unknown> = {}) => ({
   id: 10,
   event: "push",
   head_branch: "main",
-  head_repository: { full_name: "paleoclaw/paleoclaw" },
+  head_repository: { full_name: "syxscott/PaleoClaw" },
   updated_at: at(10),
   ...overrides,
 });
@@ -30,7 +30,7 @@ const hostedJobs = (
 ];
 
 const inspect = () =>
-  inspectHybridHostedHealth({ repository: "paleoclaw/paleoclaw", runId: "99", token: "test-token" });
+  inspectHybridHostedHealth({ repository: "syxscott/PaleoClaw", runId: "99", token: "test-token" });
 type ExpectedHealth = Partial<Awaited<ReturnType<typeof inspect>>>;
 
 afterEach(() => vi.restoreAllMocks());

@@ -33,12 +33,12 @@ const forge: ControlUiLinkReaderDescriptor = {
     previewMethod: "forge.preview",
   },
 };
-const href = "https://github.com/paleoclaw/paleoclaw/pull/99816";
+const href = "https://github.com/openclaw/openclaw/pull/99816";
 function preview(url = href): ControlUiLinkReaderPreview {
   return {
     url,
     title: "Keep previews compact",
-    subtitle: "paleoclaw/paleoclaw #99816",
+    subtitle: "syxscott/PaleoClaw #99816",
     badge: { label: "Merged", tone: "accent" },
     author: "reviewer",
     updatedAt: "2026-07-05T09:55:00Z",
@@ -101,7 +101,7 @@ describe("paleoclaw-link-reader-hovercard-provider", () => {
     const request = connect(provider);
     await hover(anchor);
     expect(card()?.textContent).toContain("Merged");
-    expect(card()?.textContent).toContain("paleoclaw/paleoclaw #99816");
+    expect(card()?.textContent).toContain("syxscott/PaleoClaw #99816");
     expect(card()?.textContent).toContain("Keep previews compact");
     expect(card()?.textContent).toContain("reviewer");
     expect(card()?.textContent).toContain("+101");
@@ -221,9 +221,9 @@ describe("paleoclaw-link-reader-hovercard-provider", () => {
   });
 
   it.each([
-    "https://github.com/paleoclaw/paleoclaw",
-    "http://github.com/paleoclaw/paleoclaw/issues/99815",
-    "https://user:secret@github.com/paleoclaw/paleoclaw/issues/99815",
+    "https://github.com/syxscott/PaleoClaw",
+    "http://github.com/openclaw/openclaw/issues/99815",
+    "https://user:secret@github.com/openclaw/openclaw/issues/99815",
     "https://example.com/paleoclaw/paleoclaw/issues/99815",
     "javascript:alert(1)",
   ])("does not preview an unsupported or unsafe URL: %s", async (url) => {
@@ -237,13 +237,13 @@ describe("paleoclaw-link-reader-hovercard-provider", () => {
   it.each([
     {
       url: href + "#issuecomment-123",
-      label: "PR paleoclaw/paleoclaw#99816",
+      label: "PR syxscott/PaleoClaw#99816",
       reader: github,
       branded: true,
     },
     {
-      url: "https://github.com/paleoclaw/paleoclaw/issues/99815",
-      label: "Issue paleoclaw/paleoclaw#99815",
+      url: "https://github.com/openclaw/openclaw/issues/99815",
+      label: "Issue syxscott/PaleoClaw#99815",
       reader: github,
       branded: true,
     },
@@ -381,7 +381,7 @@ describe("paleoclaw-link-reader-hovercard-provider", () => {
     // Fill the same cache without creating 100 disposable hovercard portals.
     for (let index = 1; index <= 100; index++) {
       await provider.prefetch(
-        { href: "https://github.com/paleoclaw/paleoclaw/issues/" + index, reader: github },
+        { href: "https://github.com/syxscott/PaleoClaw/issues/" + index, reader: github },
         signal,
       );
     }

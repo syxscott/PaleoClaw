@@ -59,7 +59,7 @@ const descriptor: ImmutableInstallDescriptor = {
     profile: null,
   },
   runtime: { path: "/synthetic/bin/node", identity: "node-fixture" },
-  source: "https://github.com/paleoclaw/openclaw.git",
+  source: "https://github.com/syxscott/PaleoClaw.git",
 };
 function serviceObservation(): ImmutableServiceObservation {
   return {

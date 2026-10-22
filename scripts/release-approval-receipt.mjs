@@ -14,7 +14,7 @@ import {
   validateReleasePublishParentRun,
 } from "./release-tooling-identity.mjs";
 
-const REPOSITORY = "paleoclaw/paleoclaw";
+const REPOSITORY = "syxscott/PaleoClaw";
 const PARENT_WORKFLOW = ".github/workflows/paleoclaw-release-publish.yml";
 const PARENT_APPROVAL_JOB = "Publish plugins, then paleoclaw";
 const PARENT_RECEIPT_STEP = "Write release approval receipt";

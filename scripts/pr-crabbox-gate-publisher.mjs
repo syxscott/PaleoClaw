@@ -18,7 +18,7 @@ import { buildCrabboxGateTransport, executeCrabbox } from "./pr-lib/crabbox-gate
 
 export { appendCrabboxOutputTail } from "./pr-lib/crabbox-gate-transport.mts";
 
-const REPOSITORY = "paleoclaw/paleoclaw";
+const REPOSITORY = "syxscott/PaleoClaw";
 const ORGANIZATION = "paleoclaw";
 const WORKFLOW = ".github/workflows/pr-crabbox-gate-publisher.yml";
 const BOOTSTRAP_PATH = "scripts/crabbox-untrusted-bootstrap.sh";
@@ -131,7 +131,7 @@ function validatePullRequest(value, context) {
     throw new Error("pull request exact base, head, or head repository does not match");
   }
   if (base.ref !== "main" || record(base.repo, "pull request.base.repo").full_name !== REPOSITORY) {
-    throw new Error("pull request base must be paleoclaw/paleoclaw main");
+    throw new Error("pull request base must be syxscott/PaleoClaw main");
   }
 }
 

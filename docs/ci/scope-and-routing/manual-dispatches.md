@@ -53,7 +53,7 @@ advance; PaleoHub, native-app, website, regular npm `latest`, and private
 dist-tag surfaces are excluded. Core-resume recovery verifies existing registry
 bytes before resuming evidence and finalization; Docker-only recovery leaves
 GitHub finalization untouched. See [Monthly Gateway extended-stable
-publication](https://github.com/paleoclaw/paleoclaw/blob/main/.agents/skills/release-paleoclaw-maintainer/references/extended-stable-publish.md)
+publication](https://github.com/syxscott/PaleoClaw/blob/main/.agents/skills/release-paleoclaw-maintainer/references/extended-stable-publish.md)
 for commands and recovery.
 
 <a id="windows-testbox-probe" />

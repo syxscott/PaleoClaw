@@ -11,7 +11,7 @@ const quote = source.match(/^function shellQuote\([\s\S]*?^\}/mu)![0];
 const candidate = "a".repeat(40);
 const publisher = "b".repeat(40);
 const options = {
-  repo: "paleoclaw/paleoclaw",
+  repo: "syxscott/PaleoClaw",
   tag: "v2026.9.1",
   outputDir: "/private/request with spaces",
   provider: "openai",
@@ -41,7 +41,7 @@ describe("candidate checklist retained dispatch recovery", () => {
       const dispatch = runInNewContext(
         stripNodeTypeScriptTypes(adapter + "\n" + quote + "\ndispatchFullReleaseUsingHelper;"),
         {
-          DEFAULT_REPO: "paleoclaw/paleoclaw",
+          DEFAULT_REPO: "syxscott/PaleoClaw",
           TOOLING_ROOT: "/trusted/publisher",
           process: { execPath: "/runtime/node" },
           existsSync: () => true,

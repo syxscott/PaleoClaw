@@ -36,7 +36,7 @@ function checkEvidence(
       workflowSha: sha,
       ...manifestOverrides,
     }),
-    expectedRepository: "paleoclaw/paleoclaw",
+    expectedRepository: "syxscott/PaleoClaw",
     expectedRunId: "123",
     expectedTargetSha: targetSha,
     isTrustedMainAncestor: () => true,
@@ -100,13 +100,13 @@ function releaseRun(overrides: Record<string, unknown> = {}) {
     run_attempt: 2,
     name: "Full Release Validation",
     path: ".github/workflows/full-release-validation.yml",
-    repository: { full_name: "paleoclaw/paleoclaw" },
+    repository: { full_name: "syxscott/PaleoClaw" },
     head_branch: pinnedBranch,
     head_sha: workflowSha,
     event: "workflow_dispatch",
     status: "completed",
     conclusion: "success",
-    html_url: "https://github.com/paleoclaw/paleoclaw/actions/runs/123",
+    html_url: "https://github.com/syxscott/PaleoClaw/actions/runs/123",
     ...overrides,
   };
 }
@@ -235,7 +235,7 @@ describe("full release validation evidence", () => {
       PUBLICATION_TARGET_CONTEXT: "release/2026.9.9",
       PUBLICATION_TOOLING_JSON: JSON.stringify({ fullRef: "refs/heads/main", sha: workflowSha }),
       PUBLICATION_TARGET_SHA: targetSha,
-      GITHUB_REPOSITORY: "paleoclaw/paleoclaw",
+      GITHUB_REPOSITORY: "syxscott/PaleoClaw",
       GITHUB_REF: `refs/heads/${pinnedBranch}`,
       GITHUB_SHA: workflowSha,
       GITHUB_RUN_ID: "123",
@@ -357,7 +357,7 @@ describe("full release validation evidence", () => {
       runAttempt: 2,
       workflowName: "Full Release Validation",
       workflowPath: ".github/workflows/full-release-validation.yml",
-      repository: "paleoclaw/paleoclaw",
+      repository: "syxscott/PaleoClaw",
       headBranch: pinnedBranch,
       headSha: workflowSha,
     });
@@ -400,7 +400,7 @@ describe("full release validation evidence", () => {
     if (historical) {
       expect(isTrustedMainAncestor).toHaveBeenCalledWith(workflowSha);
       expect(validateEvidenceReuseStrictly).toHaveBeenCalledWith({
-        repository: "paleoclaw/paleoclaw",
+        repository: "syxscott/PaleoClaw",
         runId: "123",
         targetSha,
       });

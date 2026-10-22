@@ -89,9 +89,9 @@ describe("update-cli", () => {
   it.each([
     {
       name: "explicit git package spec",
-      options: { yes: true, tag: "github:paleoclaw/paleoclaw#main" },
+      options: { yes: true, tag: "github:syxscott/PaleoClaw#main" },
       packageSpec: undefined,
-      expectedSpec: "github:paleoclaw/paleoclaw#main",
+      expectedSpec: "github:syxscott/PaleoClaw#main",
     },
     {
       name: "OPENCLAW_UPDATE_PACKAGE_SPEC override",

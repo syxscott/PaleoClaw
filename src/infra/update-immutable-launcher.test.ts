@@ -143,7 +143,7 @@ describe.runIf(process.platform === "linux" && process.getuid?.() === 0)(
           configPath: path.join(parent, "state", "config.json"),
           profile: null,
         },
-        source: "https://github.com/paleoclaw/openclaw.git",
+        source: "https://github.com/syxscott/PaleoClaw.git",
       };
       const write = (activation: unknown, legacy = false) => {
         fs.mkdirSync(control, { mode: 0o755, recursive: true });

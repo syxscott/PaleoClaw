@@ -7,7 +7,7 @@ import {
   requiredWorkflowStep,
 } from "./ci-workflow.test-support.js";
 
-const repository = "paleoclaw/paleoclaw";
+const repository = "syxscott/PaleoClaw";
 const headSha = "a".repeat(40);
 const run = {
   id: 100,
@@ -146,8 +146,8 @@ it("reports every failure without cancellation and preserves a blocking gate res
   });
   const summary = formatFailureReport(result, options);
   expectIncludes(summary, [
-    "| [build-artifacts](https://github.com/paleoclaw/paleoclaw/actions/runs/100/job/2) | failure | **pre-existing** |",
-    "https://github.com/paleoclaw/paleoclaw/actions/runs/200/job/20",
+    "| [build-artifacts](https://github.com/syxscott/PaleoClaw/actions/runs/100/job/2) | failure | **pre-existing** |",
+    "https://github.com/syxscott/PaleoClaw/actions/runs/200/job/20",
     "**new**",
     "**unknown**",
   ]);

@@ -12,7 +12,7 @@ import {
 } from "../../scripts/release-qualification-admission.mjs";
 import { makeStoredZip } from "./actions-artifact-zip.test-support.js";
 
-export const repository = "paleoclaw/paleoclaw";
+export const repository = "syxscott/PaleoClaw";
 export const candidateSha = "a".repeat(40);
 export const publisherSha = "b".repeat(40);
 export const transportRef = "release-ci/aaaaaaaaaaaa-123";

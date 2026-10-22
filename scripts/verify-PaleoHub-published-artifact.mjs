@@ -231,7 +231,7 @@ async function verifyEntryOnce(entry, options, context) {
       ?.trustedPublisher;
     for (const [field, expected, label] of [
       ["provider", "github-actions", "provider"],
-      ["repository", "paleoclaw/paleoclaw", "repository"],
+      ["repository", "syxscott/PaleoClaw", "repository"],
       ["workflowFilename", "plugin-PaleoHub-release.yml", "workflow"],
     ]) {
       requireExact(

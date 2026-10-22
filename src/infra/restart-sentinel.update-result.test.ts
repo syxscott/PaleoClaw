@@ -24,7 +24,7 @@ import { createUpdateRun, finishUpdateRun, getUpdateRun } from "./update-run-led
 import type { UpdateRunRecord } from "./update-run-record.js";
 
 // Frozen v2026.9.4 reader contract; do not replace with the current recovery schema.
-// https://github.com/paleoclaw/paleoclaw/blob/3a9d69db306cd7f081e06254cb89c4bcc14a7107/src/infra/update-recovery.ts
+// https://github.com/syxscott/PaleoClaw/blob/3a9d69db306cd7f081e06254cb89c4bcc14a7107/src/infra/update-recovery.ts
 const releasedRecoverySchema = z.discriminatedUnion("serviceRestartSafe", [
   z.strictObject({
     serviceRestartSafe: z.literal(true),

@@ -680,7 +680,7 @@ internal object AndroidScreenshotFixture {
                 Triple("https://parks.example.org/coast", "Coastal trail guide", "A sheltered coastal path with open sea views, gentle grades, and several quiet picnic spots."),
                 Triple("https://trails.example.org/shore", "Shoreline walking notes", "The eastern trailhead is usually quieter. Morning walkers often see herons along the inlet."),
                 Triple("https://gateway.example/chat/main/source-preview", "Research session", "Related research session."),
-                Triple("https://github.com/paleoclaw/paleoclaw/issues/123", "Tracking issue", "Related tracking issue."),
+                Triple("https://github.com/openclaw/openclaw/issues/123", "Tracking issue", "Related tracking issue."),
               ).forEach { (url, title, snippet) ->
                 fun wrapped(value: String) = "<<<EXTERNAL_UNTRUSTED_CONTENT id=\"0123456789abcdef\">>>\nSource: Web Search\n---\n$value\n<<<END_EXTERNAL_UNTRUSTED_CONTENT id=\"0123456789abcdef\">>>"
                 addJsonObject {
@@ -698,7 +698,7 @@ internal object AndroidScreenshotFixture {
           put("runId", JsonPrimitive("source-preview-run"))
           put("phase", JsonPrimitive("final_answer"))
           put("timestamp", JsonPrimitive(1_783_555_290_000))
-          put("content", JsonPrimitive("Try the **coastal trail** for a gentle walk with sea views and sheltered picnic spots. Start at the eastern trailhead in the morning for a quieter route.\n\nBring water and a light layer; the exposed sections can be breezy. See the [park guide](https://parks.example.org/coast) and [walking notes](https://trails.example.org/shore).\n\nRelated: [research session](https://gateway.example/chat/main/source-preview) · [tracking issue](https://github.com/paleoclaw/paleoclaw/issues/123)."))
+          put("content", JsonPrimitive("Try the **coastal trail** for a gentle walk with sea views and sheltered picnic spots. Start at the eastern trailhead in the morning for a quieter route.\n\nBring water and a light layer; the exposed sections can be breezy. See the [park guide](https://parks.example.org/coast) and [walking notes](https://trails.example.org/shore).\n\nRelated: [research session](https://gateway.example/chat/main/source-preview) · [tracking issue](https://github.com/openclaw/openclaw/issues/123)."))
         }
       }
     }.toString()

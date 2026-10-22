@@ -56,11 +56,11 @@ and current-row checks. Scheduled media maintenance waits until after the first
 two minutes of startup, then keeps its hourly maintenance cadence; explicit media
 cleanup and retention rules are unchanged.
 The shared implementations are
-[`sqlite-readonly-worker.ts`](https://github.com/paleoclaw/paleoclaw/blob/main/src/infra/sqlite-readonly-worker.ts),
-[`paleoclaw-state-read-worker.ts`](https://github.com/paleoclaw/paleoclaw/blob/main/src/state/paleoclaw-state-read-worker.ts),
-[`paleoclaw-state-worker-owner.ts`](https://github.com/paleoclaw/paleoclaw/blob/main/src/state/paleoclaw-state-worker-owner.ts),
+[`sqlite-readonly-worker.ts`](https://github.com/syxscott/PaleoClaw/blob/main/src/infra/sqlite-readonly-worker.ts),
+[`paleoclaw-state-read-worker.ts`](https://github.com/syxscott/PaleoClaw/blob/main/src/state/paleoclaw-state-read-worker.ts),
+[`paleoclaw-state-worker-owner.ts`](https://github.com/syxscott/PaleoClaw/blob/main/src/state/paleoclaw-state-worker-owner.ts),
 and the agent's
-[`paleoclaw-agent-execution.worker.ts`](https://github.com/paleoclaw/paleoclaw/blob/main/src/state/paleoclaw-agent-execution.worker.ts).
+[`paleoclaw-agent-execution.worker.ts`](https://github.com/syxscott/PaleoClaw/blob/main/src/state/paleoclaw-agent-execution.worker.ts).
 The lifecycle owner closes its read scope and drains accepted writes before
 retiring the store.
 
@@ -208,8 +208,8 @@ entry requires that role and refuses a process already classified as a one-shot.
 Each `openEngineStore` caller supplies `inspectSqlite()` with explicit
 `hasExistingData` and `hasEngineAnchor` facts; table-name prefixes cannot decide
 whether an engine switch is safe. See
-[`admission-scope.ts`](https://github.com/paleoclaw/paleoclaw/blob/main/src/infra/database-engine/admission-scope.ts),
-[`open.ts`](https://github.com/paleoclaw/paleoclaw/blob/main/src/infra/database-engine/open.ts),
+[`admission-scope.ts`](https://github.com/syxscott/PaleoClaw/blob/main/src/infra/database-engine/admission-scope.ts),
+[`open.ts`](https://github.com/syxscott/PaleoClaw/blob/main/src/infra/database-engine/open.ts),
 and [Database engines](/reference/database-engines#anchors-and-backups).
 
 The [generated inventory](/reference/database-schemas/worker-access-inventory)
@@ -225,7 +225,7 @@ classifies static call sites, not observed query counts:
 
 `pnpm check:database-worker-ratchet` prevents new main-thread debt. Mark a
 worker-only module `*.worker.ts`, or record it in `workerModules` in
-[`database-worker-inventory.mjs`](https://github.com/paleoclaw/paleoclaw/blob/main/scripts/database-worker-inventory.mjs)
+[`database-worker-inventory.mjs`](https://github.com/syxscott/PaleoClaw/blob/main/scripts/database-worker-inventory.mjs)
 with evidence for every caller. A filename or an async function alone does not
 prove worker execution. Update the generator's evidence, not its generated page.
 
@@ -357,7 +357,7 @@ Scope receipts to the data actually changed. Memory-index DML, for example,
 declares no session-row or transcript changes and preserves unrelated session
 actor replicas. Transcript mutations still update or invalidate their session
 facts; unknown write coverage invalidates conservatively. The shared mechanism is
-[`sqlite-database-write-receipts.ts`](https://github.com/paleoclaw/paleoclaw/blob/main/src/infra/sqlite-database-write-receipts.ts).
+[`sqlite-database-write-receipts.ts`](https://github.com/syxscott/PaleoClaw/blob/main/src/infra/sqlite-database-write-receipts.ts).
 
 Memory publication retains index facts under its own write scope, so session
 activity and embedding-cache writes do not trigger another facts query. The
@@ -380,7 +380,7 @@ owner-held authority at the effect boundary, after awaited preparation. With
 complete writer coverage, this final guard is a synchronous memory read: no SQL
 and no worker round trip.
 
-[`state-domain-publication.ts`](https://github.com/paleoclaw/paleoclaw/blob/main/src/state/state-domain-publication.ts)
+[`state-domain-publication.ts`](https://github.com/syxscott/PaleoClaw/blob/main/src/state/state-domain-publication.ts)
 provides the publication lifecycle; each domain owns its facts and denial policy:
 
 | Publication | Authority-owner response                                                                             |
@@ -393,7 +393,7 @@ provides the publication lifecycle; each domain owns its facts and denial policy
 Confirmed rollback preserves the previous committed facts. A lost reply is not
 proof of rollback and must not trigger blind replay. Facts install before public
 observers, through
-[`sqlite-post-commit.ts`](https://github.com/paleoclaw/paleoclaw/blob/main/src/infra/sqlite-post-commit.ts).
+[`sqlite-post-commit.ts`](https://github.com/syxscott/PaleoClaw/blob/main/src/infra/sqlite-post-commit.ts).
 Exec allowlist usage writes retain receipt and supersession tracking without
 publishing a pending denial: recording last-used metadata cannot revoke another
 command's authorization. Policy edits and durable allow-always grants still
@@ -404,17 +404,17 @@ Deletion still denies use before dispatch; unknown outcomes and replaced binding
 remain fenced until owner recovery.
 
 Personal credential and GitHub publication owners are concrete examples:
-[`user-model-account-authority.ts`](https://github.com/paleoclaw/paleoclaw/blob/main/src/state/user-model-account-authority.ts)
-and [`github-publication-receipts.ts`](https://github.com/paleoclaw/paleoclaw/blob/main/src/state/github-publication-receipts.ts).
+[`user-model-account-authority.ts`](https://github.com/syxscott/PaleoClaw/blob/main/src/state/user-model-account-authority.ts)
+and [`github-publication-receipts.ts`](https://github.com/syxscott/PaleoClaw/blob/main/src/state/github-publication-receipts.ts).
 The credential writer-custody guard checks reviewed writer edges and table DML
 sinks through the database worker ratchet. It catches unregistered writers that
 would bypass receipt publication; it does not certify every database writer.
-See [`personal-credential-writer-guard.mts`](https://github.com/paleoclaw/paleoclaw/blob/main/scripts/lib/personal-credential-writer-guard.mts).
+See [`personal-credential-writer-guard.mts`](https://github.com/syxscott/PaleoClaw/blob/main/scripts/lib/personal-credential-writer-guard.mts).
 
 Board uses admission-time authority for an accepted write: a write admitted
 before revocation may finish; new writes are denied. Target lifecycle and
 private-content disclosure still require current authority. See
-[`sqlite-board-store.ts`](https://github.com/paleoclaw/paleoclaw/blob/main/src/boards/sqlite-board-store.ts).
+[`sqlite-board-store.ts`](https://github.com/syxscott/PaleoClaw/blob/main/src/boards/sqlite-board-store.ts).
 Do not add a second
 cross-thread revocation handshake to internal bookkeeping. Owners whose native
 writers do not yet publish complete authority facts retain their documented
@@ -431,8 +431,8 @@ Warm readers use the replica. Complete committed postimages install before the
 command acknowledgement; eviction, replacement, incomplete coverage, and unknown
 outcomes return reads to the canonical worker. Bounded transcript payload reads
 remain with the history owner. See
-[`session-actor.worker.ts`](https://github.com/paleoclaw/paleoclaw/blob/main/src/config/sessions/session-actor.worker.ts)
-and [`session-actor-replica.ts`](https://github.com/paleoclaw/paleoclaw/blob/main/src/config/sessions/session-actor-replica.ts).
+[`session-actor.worker.ts`](https://github.com/syxscott/PaleoClaw/blob/main/src/config/sessions/session-actor.worker.ts)
+and [`session-actor-replica.ts`](https://github.com/syxscott/PaleoClaw/blob/main/src/config/sessions/session-actor-replica.ts).
 
 Replica lookups resolve configured path spellings through the existing admission
 registry: SQLite uses the admitted physical identity and birthtime; PostgreSQL
@@ -477,7 +477,7 @@ between bounded source batches. Search reads the last indexed state; it does not
 flush pending transcript indexing. The active turn already has its conversation
 context. See [built-in memory freshness](/concepts/memory-builtin) for timing,
 shutdown, and restart catch-up, and
-[`manager-session-sync-ops.ts`](https://github.com/paleoclaw/paleoclaw/blob/main/extensions/memory-core/src/memory/manager-session-sync-ops.ts)
+[`manager-session-sync-ops.ts`](https://github.com/syxscott/PaleoClaw/blob/main/extensions/memory-core/src/memory/manager-session-sync-ops.ts)
 for scheduling ownership.
 
 Memory publication workers advance the index revision once per committed batch,
@@ -506,7 +506,7 @@ Use a conditional update or upsert when one statement expresses the mutation.
 `runSqliteSingleStatementSync` uses SQLite autocommit with committed-fact
 publication; PostgreSQL writes still use `runTransaction` for writer custody.
 Keep an explicit snapshot for related reads that must agree. The shared helpers
-live in [`sqlite-transaction.ts`](https://github.com/paleoclaw/paleoclaw/blob/main/src/infra/sqlite-transaction.ts).
+live in [`sqlite-transaction.ts`](https://github.com/syxscott/PaleoClaw/blob/main/src/infra/sqlite-transaction.ts).
 
 Unsigned external plugin catalogs use one upsert without rereading the current
 snapshot. Signed catalogs keep their rollback and
@@ -2072,7 +2072,7 @@ never creates missing state; explicit creation uses the same memory owner.
 Closing an owner invalidates its captured targets and cannot revive old run
 authority. The native incognito owner and its SQLite kernels are removed, so no
 acquisition can select a second writer. See
-[`session-actor-memory.ts`](https://github.com/paleoclaw/paleoclaw/blob/main/src/config/sessions/session-actor-memory.ts).
+[`session-actor-memory.ts`](https://github.com/syxscott/PaleoClaw/blob/main/src/config/sessions/session-actor-memory.ts).
 
 Agent attempts retain this actor for SessionManager transcript and tool-result
 appends. Each append captures its exact committed snapshot before fallible

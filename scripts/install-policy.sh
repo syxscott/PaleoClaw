@@ -581,13 +581,13 @@ is_openclaw_source_package_install_spec() {
     normalized_value="${normalized_value#paleoclaw@}"
 
     [[ "$normalized_value" == "main" ]] && return 0
-    [[ "$normalized_value" =~ ^github:paleoclaw/paleoclaw($|[#/]) ]] && return 0
+    [[ "$normalized_value" =~ ^github:syxscott/PaleoClaw($|[#/]) ]] && return 0
 
     normalized_value="${normalized_value#git+}"
     [[ "$normalized_value" =~ ^https?://github\.com/paleoclaw/paleoclaw(\.git)?($|[?#]) ]] && return 0
-    [[ "$normalized_value" =~ ^ssh://git@github\.com[:/]paleoclaw/paleoclaw(\.git)?($|[?#]) ]] && return 0
+    [[ "$normalized_value" =~ ^ssh://git@github\.com[:/]syxscott/PaleoClaw(\.git)?($|[?#]) ]] && return 0
     [[ "$normalized_value" =~ ^git://github\.com/paleoclaw/paleoclaw(\.git)?($|[?#]) ]] && return 0
-    [[ "$normalized_value" =~ ^git@github\.com:paleoclaw/paleoclaw(\.git)?($|[?#]) ]] && return 0
+    [[ "$normalized_value" =~ ^git@github\.com:syxscott/PaleoClaw(\.git)?($|[?#]) ]] && return 0
     return 1
 }
 

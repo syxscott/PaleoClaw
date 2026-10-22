@@ -28,7 +28,7 @@ export function canonicalTestSha256(value: unknown): string {
 
 export function fullReleaseCandidateRequestInput(overrides: Record<string, unknown> = {}) {
   return {
-    repository: "paleoclaw/paleoclaw",
+    repository: "syxscott/PaleoClaw",
     targetSha: TARGET_SHA,
     toolingSha: TOOLING_SHA,
     releaseProfile: "stable",

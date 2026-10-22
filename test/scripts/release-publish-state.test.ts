@@ -25,7 +25,7 @@ function registry(name: string, versions = [version], tags = distTags(version)) 
   });
 }
 const githubOptions = {
-  repository: "paleoclaw/paleoclaw",
+  repository: "syxscott/PaleoClaw",
   releaseTag: `v${version}`,
   sourceSha,
   npmDistTag: "latest",
@@ -43,7 +43,7 @@ function workflowRun(id: number, status: string, display_title: string, run_atte
     display_title,
     run_attempt,
     event: "workflow_dispatch",
-    html_url: `https://github.com/paleoclaw/paleoclaw/actions/runs/${id}`,
+    html_url: `https://github.com/syxscott/PaleoClaw/actions/runs/${id}`,
   };
 }
 const runInventory = (
@@ -316,7 +316,7 @@ describe("release concurrency observations", () => {
       draft: false,
       prerelease: false,
       tag_name: `v${version}`,
-      html_url: `https://github.com/paleoclaw/paleoclaw/releases/tag/v${version}`,
+      html_url: `https://github.com/syxscott/PaleoClaw/releases/tag/v${version}`,
       target_commitish: sourceSha,
     };
     const runGh = vi.fn((args: string[]) =>

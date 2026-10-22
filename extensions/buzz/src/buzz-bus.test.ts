@@ -37,7 +37,7 @@ const {
 const BUZZ_RICH_MESSAGE_KIND = 40_002;
 const SECRET_KEY = Uint8Array.from(Buffer.from(PRIVATE_KEY, "hex"));
 const ROOM_TAG = ["h", CHANNEL_ID];
-const REPO_TAG = ["repo", "https://github.com/paleoclaw/paleoclaw"];
+const REPO_TAG = ["repo", "https://github.com/syxscott/PaleoClaw"];
 
 beforeEach(() => {
   relayMocks.auth.mockResolvedValue("ok");
@@ -52,7 +52,7 @@ describe("Buzz message events", () => {
         content: "@@ -1 +1 @@\n-old\n+new",
         tags: [
           ["h", "7c4a6d2a-2ed9-4b4e-a5e2-4d705ee9b34c"],
-          ["repo", "https://github.com/paleoclaw/paleoclaw"],
+          ["repo", "https://github.com/syxscott/PaleoClaw"],
           ["commit", "abcdef1234567890"],
           ["file", "extensions/buzz/src/message-event.ts"],
           ["parent-commit", "1234567890abcdef"],
@@ -75,7 +75,7 @@ describe("Buzz message events", () => {
       threadId: "root-id",
       replyToId: "reply-id",
       diff: {
-        repoUrl: "https://github.com/paleoclaw/paleoclaw",
+        repoUrl: "https://github.com/syxscott/PaleoClaw",
         commitSha: "abcdef1234567890",
         filePath: "extensions/buzz/src/message-event.ts",
         parentCommitSha: "1234567890abcdef",
@@ -91,7 +91,7 @@ describe("Buzz message events", () => {
     expect(message && formatBuzzMessageForAgent(message)).toBe(
       [
         "[Buzz structured diff]",
-        "Repository: https://github.com/paleoclaw/paleoclaw",
+        "Repository: https://github.com/syxscott/PaleoClaw",
         "Commit: abcdef1234567890",
         "Parent commit: 1234567890abcdef",
         "File: extensions/buzz/src/message-event.ts",

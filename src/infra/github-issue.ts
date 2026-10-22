@@ -56,7 +56,7 @@ export type GithubIssueSubmitHooks = GithubIssueReconcileHooks & {
   beforeIssueCreate?: () => Promise<() => undefined> | (() => undefined);
 };
 
-const GITHUB_REPOSITORY = "github.com/paleoclaw/paleoclaw";
+const GITHUB_REPOSITORY = "github.com/syxscott/PaleoClaw";
 const GITHUB_REPOSITORY_ISSUES_API = "repos/paleoclaw/paleoclaw/issues";
 const GITHUB_ISSUE_CREATE_TIMEOUT_MS = 30_000;
 const GITHUB_OUTPUT_MAX_BYTES = 1024 * 1024;
@@ -82,7 +82,7 @@ function prepareGithubIssueBrowserFallback(
   body: string,
 ): GithubIssueBrowserFallback {
   const query = new URLSearchParams({ body, title });
-  const url = `https://github.com/paleoclaw/paleoclaw/issues/new?${query.toString()}`;
+  const url = `https://github.com/syxscott/PaleoClaw/issues/new?${query.toString()}`;
   if (Buffer.byteLength(url, "utf8") > GITHUB_PREFILL_URL_MAX_BYTES) {
     return { reason: "url-too-long", status: "unavailable" };
   }

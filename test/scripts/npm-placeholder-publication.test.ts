@@ -400,7 +400,7 @@ describe("npm placeholder publication", () => {
         consumerRunAttempt: 1,
         outputDir: "/tmp/unused",
         producerRunAttempt: 1,
-        repository: "paleoclaw/paleoclaw",
+        repository: "syxscott/PaleoClaw",
         runId: 123,
         targetRoot: "/tmp/unused",
         targetSha: SHA,

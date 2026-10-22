@@ -10,7 +10,7 @@ import {
 
 const workflowSha = "a".repeat(40);
 const landedSha = "b".repeat(40);
-const repository = "paleoclaw/paleoclaw";
+const repository = "syxscott/PaleoClaw";
 const foreignSha = "c".repeat(40);
 const fixturePath = ".github/workflows/frv-proof-fixture.yml";
 const fixtureEndpoint = "/actions/workflows/frv-proof-fixture.yml";

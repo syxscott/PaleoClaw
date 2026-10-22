@@ -8,7 +8,7 @@ import { resolveLinkReaderTarget } from "./link-reader-target.ts";
 
 const TAG = `test-github-prefetch-${crypto.randomUUID()}`;
 customElements.define(TAG, class extends LinkReaderHovercardProvider {});
-const ISSUE_HREF = "https://github.com/paleoclaw/paleoclaw/issues/99815";
+const ISSUE_HREF = "https://github.com/openclaw/openclaw/issues/99815";
 const GITHUB_HOVERCARD_CLOSE_DELAY_MS = 120;
 
 function issuePreviewResponse(overrides: Record<string, unknown> = {}) {
@@ -54,7 +54,7 @@ describe("GitHub hovercard prefetch subscriptions", () => {
       const { provider, anchor, request } = createIssueLink();
       anchor.className = "markdown-github-item";
       if (change === "agent") {
-        anchor.href = "https://github.com/paleoclaw/paleoclaw/pull/142276";
+        anchor.href = "https://github.com/openclaw/openclaw/pull/142276";
         anchor.classList.add("markdown-github-link");
       }
       const other = anchor.cloneNode(true) as HTMLAnchorElement;

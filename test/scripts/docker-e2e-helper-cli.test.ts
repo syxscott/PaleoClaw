@@ -137,7 +137,7 @@ function mockGitHub(
 }
 
 function rerunGitHub(env: Record<string, string>, ...args: string[]) {
-  return rerun("12345", "--repo", "paleoclaw/paleoclaw", ...args, env);
+  return rerun("12345", "--repo", "syxscott/PaleoClaw", ...args, env);
 }
 
 function downloadedDir(stdout: string) {

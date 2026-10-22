@@ -111,7 +111,7 @@ describe("PostgreSQL conformance selection", () => {
     expect(
       evaluateWorkflowExpression(job["runs-on"], {
         eventName: "pull_request",
-        repository: "paleoclaw/paleoclaw",
+        repository: "syxscott/PaleoClaw",
         runAttempt: 1,
       }),
     ).toBe("ubuntu-24.04");
@@ -147,8 +147,8 @@ describe("PostgreSQL conformance selection", () => {
       "pgvector/pgvector:pg18@sha256:2358fcba361ed2233a5ed81b5fe4ca779ccb304120ce531a3bf51c0ed7e2bc11",
     ]);
     for (const [repository, ref, admitted] of [
-      ["paleoclaw/paleoclaw", "refs/heads/main", true],
-      ["paleoclaw/paleoclaw", "refs/heads/topic", false],
+      ["syxscott/PaleoClaw", "refs/heads/main", true],
+      ["syxscott/PaleoClaw", "refs/heads/topic", false],
       ["fork/paleoclaw", "refs/heads/main", false],
     ] as const) {
       expect(
@@ -274,7 +274,7 @@ function renderCiGateEnvironment(
     return String(
       evaluateWorkflowExpression(expression, {
         eventName: "workflow_dispatch",
-        repository: "paleoclaw/paleoclaw",
+        repository: "syxscott/PaleoClaw",
         runAttempt: 1,
         failureReportResult: results["pr-failure-report"] ?? "success",
         ...context,
@@ -449,8 +449,8 @@ function runRunnerProfileFixture(options: {
         CONFIGURED_RUNNER_PROFILE: options.configuredProfile ?? "",
         GITHUB_EVENT_NAME: options.eventName,
         GITHUB_OUTPUT: outputPath,
-        GITHUB_REPOSITORY: options.repository ?? "paleoclaw/paleoclaw",
-        HEAD_REPOSITORY: options.headRepository ?? options.repository ?? "paleoclaw/paleoclaw",
+        GITHUB_REPOSITORY: options.repository ?? "syxscott/PaleoClaw",
+        HEAD_REPOSITORY: options.headRepository ?? options.repository ?? "syxscott/PaleoClaw",
         GITHUB_RUN_ATTEMPT: String(options.runAttempt ?? 1),
         REQUESTED_RUNNER_PROFILE: options.requestedProfile ?? "default",
         QUALIFICATION_DISPATCH: String(options.qualificationDispatch ?? false),
@@ -591,7 +591,7 @@ function runDiffBaseFixture(options: {
     fixtureEnv.PATH = `${bin}${path.delimiter}${process.env.PATH ?? ""}`;
     fixtureEnv.GH_TOKEN = evaluateWorkflowExpression(diffBaseStep.env.GH_TOKEN, {
       eventName: "workflow_dispatch",
-      repository: "paleoclaw/paleoclaw",
+      repository: "syxscott/PaleoClaw",
       runAttempt: 1,
       workflowToken: "test-token",
     });
@@ -610,7 +610,7 @@ function runDiffBaseFixture(options: {
           ? "workflow_dispatch"
           : "push",
       GITHUB_OUTPUT: outputPath,
-      GITHUB_REPOSITORY: "paleoclaw/paleoclaw",
+      GITHUB_REPOSITORY: "syxscott/PaleoClaw",
       PULL_REQUEST_NUMBER: "",
       RELEASE_GATE: "false",
       ...fixtureEnv,
@@ -767,7 +767,7 @@ appendFileSync(process.env.TYPE_CALLS, [process.env.TYPE_ROW, process.env.OPENCL
   const context: Parameters<typeof evaluateWorkflowExpression>[1] = {
     eventName:
       options.types?.eventName ?? (options.frozenTarget ? "workflow_dispatch" : "pull_request"),
-    repository: "paleoclaw/paleoclaw",
+    repository: "syxscott/PaleoClaw",
     runAttempt: 1,
     frozenTarget: options.frozenTarget,
     hostedRunnerProfileContract: options.types?.hostedContract ?? true,
@@ -1080,7 +1080,7 @@ describe("changed-path transport", () => {
           String(
             evaluateWorkflowExpression(value, {
               eventName: "pull_request",
-              repository: "paleoclaw/paleoclaw",
+              repository: "syxscott/PaleoClaw",
               runAttempt: 1,
               steps: { changed_scope: { outputs } },
             }),
@@ -1419,7 +1419,7 @@ describe("ci workflow guards", () => {
           expect(
             evaluateWorkflowExpression(condition, {
               eventName: "pull_request",
-              repository: "paleoclaw/paleoclaw",
+              repository: "syxscott/PaleoClaw",
               runAttempt: 1,
               preflightOutputs: { run_check_plan: String(selected) },
             }),
@@ -1601,7 +1601,7 @@ describe("ci workflow guards", () => {
         const workflow = readCiWorkflow();
         const context: Parameters<typeof evaluateWorkflowExpression>[1] = {
           eventName: "pull_request" as const,
-          repository: "paleoclaw/paleoclaw",
+          repository: "syxscott/PaleoClaw",
           runAttempt: 1,
           runnerProfile: "hybrid",
           preflightOutputs: manifest.outputs,
@@ -1779,7 +1779,7 @@ describe("ci workflow guards", () => {
         const plannerResult = manifest.status === 0 ? "success" : "failure";
         const context: Parameters<typeof evaluateWorkflowExpression>[1] = {
           eventName: "pull_request",
-          repository: "paleoclaw/paleoclaw",
+          repository: "syxscott/PaleoClaw",
           runAttempt: 1,
           runnerProfile: "hybrid",
           preflightOutputs: manifest.outputs,
@@ -1849,7 +1849,7 @@ describe("ci workflow guards", () => {
         );
         const context: Parameters<typeof evaluateWorkflowExpression>[1] = {
           eventName: "pull_request",
-          repository: "paleoclaw/paleoclaw",
+          repository: "syxscott/PaleoClaw",
           runAttempt: 1,
           runnerProfile: "hybrid",
           preflightOutputs: manifest.outputs,
@@ -1880,7 +1880,7 @@ describe("ci workflow guards", () => {
         const workflow = readCiWorkflow();
         const context: Parameters<typeof evaluateWorkflowExpression>[1] = {
           eventName,
-          repository: "paleoclaw/paleoclaw",
+          repository: "syxscott/PaleoClaw",
           runAttempt: 1,
           preflightOutputs: manifest.outputs,
           runnerProfile: "hybrid",
@@ -1946,7 +1946,7 @@ describe("ci workflow guards", () => {
       for (const result of ["success", "failure", "cancelled", "skipped"] as const) {
         const context: Parameters<typeof evaluateWorkflowExpression>[1] = {
           eventName: "pull_request",
-          repository: "paleoclaw/paleoclaw",
+          repository: "syxscott/PaleoClaw",
           runAttempt: 1,
           runnerProfile: "hybrid",
           preflightOutputs: manifest.outputs,
@@ -1992,7 +1992,7 @@ describe("ci workflow guards", () => {
         for (const cancelled of [false, true]) {
           const context: Parameters<typeof evaluateWorkflowExpression>[1] = {
             eventName: "push",
-            repository: "paleoclaw/paleoclaw",
+            repository: "syxscott/PaleoClaw",
             runAttempt: 1,
             failed: true,
             cancelled,
@@ -2057,7 +2057,7 @@ describe("ci workflow guards", () => {
       const workflow = readCiWorkflow();
       const context: Parameters<typeof evaluateWorkflowExpression>[1] = {
         eventName: options.eventName ?? "workflow_dispatch",
-        repository: "paleoclaw/paleoclaw",
+        repository: "syxscott/PaleoClaw",
         runAttempt: 1,
         preflightOutputs: manifest.outputs,
         additionalNeeds: {
@@ -2169,7 +2169,7 @@ describe("ci workflow guards", () => {
         const workflow = readCiWorkflow();
         const context: Parameters<typeof evaluateWorkflowExpression>[1] = {
           eventName: "pull_request" as const,
-          repository: "paleoclaw/paleoclaw",
+          repository: "syxscott/PaleoClaw",
           runAttempt: 1,
           runnerProfile: profile,
           preflightOutputs: manifest.outputs,
@@ -2323,7 +2323,7 @@ describe("ci workflow guards", () => {
     const workflow = readCiWorkflow();
     const context = {
       eventName: "pull_request" as const,
-      repository: "paleoclaw/paleoclaw",
+      repository: "syxscott/PaleoClaw",
       runAttempt: 1,
       preflightOutputs: manifest.outputs,
     };
@@ -2411,7 +2411,7 @@ describe("ci workflow guards", () => {
       const workflow = readCiWorkflow();
       const context = {
         eventName: scenario.eventName,
-        repository: "paleoclaw/paleoclaw",
+        repository: "syxscott/PaleoClaw",
         runAttempt: 1,
         preflightOutputs: manifest.outputs,
         steps: { manifest: { outputs: manifest.outputs } },
@@ -2660,7 +2660,7 @@ describe("ci workflow guards", () => {
       const workflow = readCiWorkflow();
       const context = {
         eventName,
-        repository: "paleoclaw/paleoclaw",
+        repository: "syxscott/PaleoClaw",
         runAttempt: 1,
         preflightOutputs: manifest.outputs,
       };
@@ -2812,7 +2812,7 @@ describe("ci workflow guards", () => {
       const context = {
         eventName,
         releaseGate,
-        repository: "paleoclaw/paleoclaw",
+        repository: "syxscott/PaleoClaw",
         runAttempt: 1,
         env: { HISTORICAL_TARGET: String(historical), MACOS_PRIMARY_PHASE: "release" },
         steps: successfulNativeSetup(),
@@ -2946,7 +2946,7 @@ describe("ci workflow guards", () => {
         eventName,
         releaseGate,
         releaseScope: "",
-        repository: "paleoclaw/paleoclaw",
+        repository: "syxscott/PaleoClaw",
         runAttempt: 1,
         preflightOutputs: {
           ...manifest.outputs,
@@ -3099,7 +3099,7 @@ describe("ci workflow guards", () => {
         // Count full-manifest rows after admission, not a default security-only push.
         ciOnPush: "true",
         eventName: "push" as const,
-        repository: "paleoclaw/paleoclaw",
+        repository: "syxscott/PaleoClaw",
         runAttempt: 1,
         runnerBackend: "hybrid" as const,
         additionalNeeds: {
@@ -3362,7 +3362,7 @@ describe("ci workflow guards", () => {
         env: {
           GITHUB_OUTPUT: output,
           GITHUB_STEP_SUMMARY: summary,
-          GITHUB_REPOSITORY: "paleoclaw/paleoclaw",
+          GITHUB_REPOSITORY: "syxscott/PaleoClaw",
           GITHUB_RUN_ID: "1",
           // Missing credentials exercise the real fail-closed entry point without network.
           GH_TOKEN: "",
@@ -3375,7 +3375,7 @@ describe("ci workflow guards", () => {
         expect(
           evaluateWorkflowCondition(step.if, {
             eventName,
-            repository: "paleoclaw/paleoclaw",
+            repository: "syxscott/PaleoClaw",
             runAttempt: 1,
             runnerBackend: "hybrid",
             ref: "refs/heads/main",
@@ -3475,7 +3475,7 @@ describe("ci workflow guards", () => {
             evaluateWorkflowExpression(checkRunner, {
               eventName,
               ref,
-              repository: "paleoclaw/paleoclaw",
+              repository: "syxscott/PaleoClaw",
               runAttempt: 1,
               runnerBackend: "hybrid",
               preflightOutputs: manifest.outputs,
@@ -3489,7 +3489,7 @@ describe("ci workflow guards", () => {
           evaluateWorkflowExpression(readCiWorkflow().jobs["build-artifacts"]["runs-on"], {
             eventName,
             ref,
-            repository: "paleoclaw/paleoclaw",
+            repository: "syxscott/PaleoClaw",
             runAttempt: 1,
             runnerBackend: "hybrid",
             preflightOutputs: manifest.outputs,
@@ -3502,7 +3502,7 @@ describe("ci workflow guards", () => {
           evaluateWorkflowCondition(step.if, {
             eventName,
             ref,
-            repository: "paleoclaw/paleoclaw",
+            repository: "syxscott/PaleoClaw",
             runAttempt: 1,
             runnerBackend: "hybrid",
             steps: {
@@ -3572,7 +3572,7 @@ describe("ci workflow guards", () => {
           expect(
             evaluateWorkflowExpression(boundaryRoute, {
               eventName: "pull_request",
-              repository: "paleoclaw/paleoclaw",
+              repository: "syxscott/PaleoClaw",
               runnerBackend,
               runAttempt,
               preflightOutputs: { hybrid_hosted_checks: "true" },
@@ -3641,7 +3641,7 @@ describe("ci workflow guards", () => {
         label: "same-repo PR",
         eventName: "pull_request" as const,
         runnerProfile: "hybrid" as const,
-        headRepository: "paleoclaw/paleoclaw",
+        headRepository: "syxscott/PaleoClaw",
       },
       {
         label: "trusted fork PR",
@@ -3653,7 +3653,7 @@ describe("ci workflow guards", () => {
         label: "main",
         eventName: "push" as const,
         runnerProfile: "hybrid" as const,
-        headRepository: "paleoclaw/paleoclaw",
+        headRepository: "syxscott/PaleoClaw",
       },
     ])("counts all selected rows for $label", ({ eventName, runnerProfile, headRepository }) => {
       const manifest = manifestWithHostedNodeRows(0, {
@@ -3689,7 +3689,7 @@ describe("ci workflow guards", () => {
       );
       for (const job of ["preflight", "ci-gate"]) {
         expect(base.filter((name) => name === job)).toHaveLength(
-          headRepository === "paleoclaw/paleoclaw" ? 1 : 0,
+          headRepository === "syxscott/PaleoClaw" ? 1 : 0,
         );
       }
       expect(base.filter((name) => name === "pr-failure-report")).toHaveLength(
@@ -3728,7 +3728,7 @@ describe("ci workflow guards", () => {
       expect(job.needs).toEqual(["preflight"]);
       const context = {
         eventName: "push" as const,
-        repository: "paleoclaw/paleoclaw",
+        repository: "syxscott/PaleoClaw",
         runAttempt: 1,
         runnerBackend: "hybrid" as const,
         failed: true,
@@ -3808,8 +3808,8 @@ describe("ci workflow guards", () => {
   );
 
   it.each([
-    { repository: "paleoclaw/paleoclaw", ref: "refs/heads/main", expected: true },
-    { repository: "paleoclaw/paleoclaw", ref: "refs/heads/feature", expected: false },
+    { repository: "syxscott/PaleoClaw", ref: "refs/heads/main", expected: true },
+    { repository: "syxscott/PaleoClaw", ref: "refs/heads/feature", expected: false },
     { repository: "fork/paleoclaw", ref: "refs/heads/main", expected: false },
   ])(
     "gates only canonical main pushes admitted by CI ($repository $ref)",
@@ -3962,7 +3962,7 @@ describe("ci workflow guards", () => {
     const workflow = readCiWorkflow();
     const context = {
       ...fixture,
-      repository: "paleoclaw/paleoclaw",
+      repository: "syxscott/PaleoClaw",
       runAttempt: 1,
       preflightOutputs: manifest.outputs,
       steps: {
@@ -4101,7 +4101,7 @@ describe("ci workflow guards", () => {
       const workflow = readCiWorkflow();
       const context = {
         eventName,
-        repository: "paleoclaw/paleoclaw",
+        repository: "syxscott/PaleoClaw",
         runAttempt: 1,
         preflightOutputs: manifest.outputs,
         steps: {
@@ -4282,7 +4282,7 @@ describe("ci workflow guards", () => {
     for (const matrix of [...plannedRows, ...manifestRows]) {
       const jobName = evaluateWorkflowExpression(workflow.jobs["checks-windows"].name, {
         eventName: "workflow_dispatch",
-        repository: "paleoclaw/paleoclaw",
+        repository: "syxscott/PaleoClaw",
         runAttempt: 1,
         matrix,
       });
@@ -4466,7 +4466,7 @@ describe("ci workflow guards", () => {
       ({ calls, ...row }) => {
         const result = runAndroidTask(row, {
           eventName: "pull_request",
-          repository: "paleoclaw/paleoclaw",
+          repository: "syxscott/PaleoClaw",
           runAttempt: 1,
         });
         expect(result.status, `${result.stdout}${result.stderr}`).toBe(0);
@@ -4515,7 +4515,7 @@ describe("ci workflow guards", () => {
         const context = {
           eventName,
           releaseGate,
-          repository: "paleoclaw/paleoclaw",
+          repository: "syxscott/PaleoClaw",
           runAttempt: 1,
           preflightOutputs: manifest.outputs,
         };
@@ -4623,7 +4623,7 @@ describe("ci workflow guards", () => {
         ),
         {
           eventName: "pull_request",
-          repository: "paleoclaw/paleoclaw",
+          repository: "syxscott/PaleoClaw",
           runAttempt: 1,
         },
       );
@@ -4678,7 +4678,7 @@ describe("ci workflow guards", () => {
     ])("propagates $task failure from $failTask", ({ failTask, calls, ...row }) => {
       const result = runAndroidTask(
         row,
-        { eventName: "pull_request", repository: "paleoclaw/paleoclaw", runAttempt: 1 },
+        { eventName: "pull_request", repository: "syxscott/PaleoClaw", runAttempt: 1 },
         failTask,
       );
       expect(result.status).toBe(1);
@@ -4705,7 +4705,7 @@ describe("ci workflow guards", () => {
       headSha: "a".repeat(40),
       sha: "b".repeat(40),
       ref: "refs/pull/7/merge",
-      repository: "paleoclaw/paleoclaw",
+      repository: "syxscott/PaleoClaw",
       workflow: "CI",
       runAttempt: 1,
       runId,
@@ -4950,7 +4950,7 @@ describe("ci workflow guards", () => {
     });
 
     it.each([
-      ["paleoclaw/paleoclaw", "refs/heads/topic", "CI-v7-refs/heads/topic"],
+      ["syxscott/PaleoClaw", "refs/heads/topic", "CI-v7-refs/heads/topic"],
       ["contributor/fork", "refs/heads/main", `CI-v7-refs/heads/main-${"b".repeat(40)}`],
       ["contributor/fork", "refs/heads/topic", `CI-v7-refs/heads/topic-${"b".repeat(40)}`],
     ])("preserves push grouping for %s on %s", (repository, ref, group) => {
@@ -5058,7 +5058,7 @@ describe("ci workflow guards", () => {
       const workflow = readCiWorkflow();
       const typeContext = {
         eventName: "pull_request",
-        repository: "paleoclaw/paleoclaw",
+        repository: "syxscott/PaleoClaw",
         runAttempt: 1,
         runnerProfile,
         preflightOutputs: manifest.outputs,
@@ -5099,7 +5099,7 @@ describe("ci workflow guards", () => {
         expect(
           evaluateWorkflowCondition(readCiWorkflow().jobs[job].if, {
             eventName: "pull_request",
-            repository: "paleoclaw/paleoclaw",
+            repository: "syxscott/PaleoClaw",
             runAttempt: 1,
             preflightOutputs: manifest.outputs,
           }),
@@ -5483,7 +5483,7 @@ describe("ci workflow guards", () => {
           HISTORICAL_TARGET_TAG: scenario.historicalTag ?? "",
           RELEASE_CANDIDATE_REF: "",
           TARGET_CONTEXT_REF: "",
-          GITHUB_REPOSITORY: scenario.repository ?? "paleoclaw/paleoclaw",
+          GITHUB_REPOSITORY: scenario.repository ?? "syxscott/PaleoClaw",
           GITHUB_OUTPUT: output,
           RUNNER_TEMP: root,
           RELEASE_GATE: String(scenario.releaseGate ?? true),
@@ -5495,10 +5495,10 @@ describe("ci workflow guards", () => {
           MOCK_PR: JSON.stringify({
             state: scenario.prState ?? "open",
             head: scenario.prHead ?? sha,
-            repository: scenario.prRepository ?? "paleoclaw/paleoclaw",
+            repository: scenario.prRepository ?? "syxscott/PaleoClaw",
             branch: scenario.prBranch ?? "qualification-branch",
             base: scenario.prBase ?? "main",
-            baseRepository: scenario.baseRepository ?? "paleoclaw/paleoclaw",
+            baseRepository: scenario.baseRepository ?? "syxscott/PaleoClaw",
           }),
         },
       });
@@ -5565,7 +5565,7 @@ describe("ci workflow guards", () => {
       const workflow = readCiWorkflow();
       const context = {
         eventName: "workflow_dispatch" as const,
-        repository: "paleoclaw/paleoclaw",
+        repository: "syxscott/PaleoClaw",
         runnerBackend: configuredProfile,
         runAttempt: 1,
         releaseGate: true,
@@ -5721,7 +5721,7 @@ describe("ci workflow guards", () => {
     expect(profile.status, profile.output).toBe(0);
     const context = {
       eventName: "workflow_dispatch" as const,
-      repository: "paleoclaw/paleoclaw",
+      repository: "syxscott/PaleoClaw",
       runAttempt: 1,
       releaseGate: true,
       steps: { runner_profile: { outputs: profile.outputs } },
@@ -5971,7 +5971,7 @@ describe("ci workflow guards", () => {
     const plannerRunner = workflow.jobs["check-plan"]["runs-on"];
     const plannerContext = {
       eventName: "pull_request" as const,
-      repository: "paleoclaw/paleoclaw",
+      repository: "syxscott/PaleoClaw",
       runAttempt: 1,
       runnerBackend: "hybrid" as const,
       runnerProfile: "hybrid" as const,
@@ -6062,7 +6062,7 @@ describe("ci workflow guards", () => {
     ] as const) {
       const context = {
         eventName: "push",
-        repository: "paleoclaw/paleoclaw",
+        repository: "syxscott/PaleoClaw",
         runAttempt: 1,
         preflightOutputs: { frozen_target: frozenTarget },
       } as const;
@@ -6107,7 +6107,7 @@ describe("ci workflow guards", () => {
       expect(
         evaluateWorkflowExpression(buildArtifactsTestbox.jobs["build-artifacts"]["runs-on"], {
           eventName,
-          repository: "paleoclaw/paleoclaw",
+          repository: "syxscott/PaleoClaw",
           runAttempt: 1,
           additionalNeeds: {
             admission: { outputs: { runner: "blacksmith-16vcpu-ubuntu-2404" }, result: "success" },
@@ -6136,7 +6136,7 @@ describe("ci workflow guards", () => {
       expect(
         evaluateWorkflowExpression(workflow.jobs["check-shard"].strategy.matrix, {
           eventName: "workflow_dispatch",
-          repository: "paleoclaw/paleoclaw",
+          repository: "syxscott/PaleoClaw",
           runAttempt: 1,
           preflightOutputs: readFullCheckOutputs(),
         }).include,
@@ -6210,7 +6210,7 @@ describe("ci workflow guards", () => {
       expect(
         evaluateWorkflowExpression(producer.name, {
           eventName: "pull_request",
-          repository: "paleoclaw/paleoclaw",
+          repository: "syxscott/PaleoClaw",
           runAttempt: 1,
           preflightOutputs: { shared_sdk_declarations: sharing },
         }),
@@ -6241,8 +6241,8 @@ describe("ci workflow guards", () => {
         expect(
           evaluateWorkflowExpression(producer["runs-on"], {
             eventName: "pull_request",
-            repository: "paleoclaw/paleoclaw",
-            headRepository: "paleoclaw/paleoclaw",
+            repository: "syxscott/PaleoClaw",
+            headRepository: "syxscott/PaleoClaw",
             authorAssociation,
             runnerBackend: "hybrid",
             runAttempt,
@@ -6280,7 +6280,7 @@ describe("ci workflow guards", () => {
       const selected = restoreSteps.filter((step: WorkflowStep) =>
         evaluateWorkflowCondition(expectDefined(step.if, "SDK restore condition"), {
           eventName: "pull_request",
-          repository: "paleoclaw/paleoclaw",
+          repository: "syxscott/PaleoClaw",
           runAttempt: 1,
           preflightOutputs: { shared_sdk_declarations: enabled },
         }),
@@ -6474,7 +6474,7 @@ describe("ci workflow guards", () => {
     }
     const sdkContext: Parameters<typeof evaluateWorkflowExpression>[1] = {
       eventName: "schedule",
-      repository: "paleoclaw/paleoclaw",
+      repository: "syxscott/PaleoClaw",
       ref: "refs/heads/main",
       runAttempt: 1,
       runnerEnvironment: "github-hosted",
@@ -6537,7 +6537,7 @@ describe("ci workflow guards", () => {
     );
     const writer: Parameters<typeof evaluateWorkflowExpression>[1] = {
       eventName: "schedule",
-      repository: "paleoclaw/paleoclaw",
+      repository: "syxscott/PaleoClaw",
       ref: "refs/heads/main",
       runAttempt: 1,
       matrix: { group: "extension-package-boundary" },
@@ -6771,7 +6771,7 @@ describe("ci workflow guards", () => {
           evaluateWorkflowCondition(ensureRevisionStep.if, {
             eventName,
             matrix: { group },
-            repository: "paleoclaw/paleoclaw",
+            repository: "syxscott/PaleoClaw",
             runAttempt: 1,
           }),
           `${revision} preparation for ${eventName}/${group}`,
@@ -6844,7 +6844,7 @@ describe("ci workflow guards", () => {
       const context = {
         eventName,
         releaseGate,
-        repository: "paleoclaw/paleoclaw",
+        repository: "syxscott/PaleoClaw",
         runAttempt: 1,
         steps: { checkout_ref: { outputs: { sha: checkoutRevision } } },
         preflightOutputs: { checkout_revision: checkoutRevision },
@@ -7021,7 +7021,7 @@ describe("ci workflow guards", () => {
       const context: Parameters<typeof evaluateWorkflowExpression>[1] = {
         eventName: testCase.options.eventName,
         releaseGate: "releaseGate" in testCase.options && testCase.options.releaseGate,
-        repository: "paleoclaw/paleoclaw",
+        repository: "syxscott/PaleoClaw",
         ref,
         runAttempt: 1,
         matrix: { group: "extension-package-boundary" },
@@ -7387,7 +7387,7 @@ describe("ci workflow guards", () => {
     expect(
       evaluateWorkflowExpression(workflow.jobs["check-test-types-hosted-core-shard"].if, {
         eventName: "pull_request",
-        repository: "paleoclaw/paleoclaw",
+        repository: "syxscott/PaleoClaw",
         runAttempt: 1,
         runnerProfile: profile,
         preflightOutputs: manifest.outputs,
@@ -7441,7 +7441,7 @@ describe("ci workflow guards", () => {
       expect(
         evaluateWorkflowExpression(readCiWorkflow().jobs["check-test-types-hosted-core-shard"].if, {
           eventName: options.eventName ?? "pull_request",
-          repository: "paleoclaw/paleoclaw",
+          repository: "syxscott/PaleoClaw",
           runAttempt: 1,
           runnerProfile: "hybrid",
           preflightOutputs: manifest.outputs,
@@ -7474,7 +7474,7 @@ describe("ci workflow guards", () => {
             expect(
               evaluateWorkflowCondition(run.if ?? "true", {
                 eventName: "pull_request",
-                repository: "paleoclaw/paleoclaw",
+                repository: "syxscott/PaleoClaw",
                 runAttempt: 1,
                 frozenTarget: frozen,
                 matrix: { task, stripe: 1 },
@@ -7596,7 +7596,7 @@ describe("ci workflow guards", () => {
     const ci = readCiWorkflow();
     const context = {
       eventName: "schedule" as const,
-      repository: "paleoclaw/paleoclaw",
+      repository: "syxscott/PaleoClaw",
       runAttempt: 1,
       matrix: { task: "bundled-protocol" },
       preflightOutputs: {
@@ -7844,7 +7844,7 @@ describe("ci workflow guards", () => {
       const job = readCiWorkflow().jobs["checks-node-core-test-nondist-shard"];
       const context = {
         eventName,
-        repository: "paleoclaw/paleoclaw",
+        repository: "syxscott/PaleoClaw",
         matrix: rows[0],
         runAttempt: 1,
       };
@@ -7910,7 +7910,7 @@ describe("ci workflow guards", () => {
     expect(
       evaluateWorkflowCondition(step.if, {
         eventName: "pull_request",
-        repository: "paleoclaw/paleoclaw",
+        repository: "syxscott/PaleoClaw",
         matrix: { task: "startup-corpus" },
         runAttempt: 1,
         preflightOutputs: { ...manifest.outputs, checkout_revision: revision },
@@ -8014,7 +8014,7 @@ describe("ci workflow guards", () => {
       expect(
         evaluateWorkflowCondition(step.if, {
           eventName: "pull_request",
-          repository: "paleoclaw/paleoclaw",
+          repository: "syxscott/PaleoClaw",
           matrix: { task: "startup-corpus" },
           runAttempt: 1,
           preflightOutputs: {
@@ -8052,7 +8052,7 @@ describe("ci workflow guards", () => {
           (!step.if ||
             evaluateWorkflowCondition(step.if, {
               eventName: "push",
-              repository: "paleoclaw/paleoclaw",
+              repository: "syxscott/PaleoClaw",
               ref: "refs/heads/main",
               matrix: { task: "startup-corpus" },
               runCheck: true,
@@ -8144,7 +8144,7 @@ describe("ci workflow guards", () => {
       expectedFiles: startupCorpusTestFiles,
     },
   ])("executes the manifest-selected startup fallback: $label", (scenario) => {
-    const repository = scenario.repository ?? "paleoclaw/paleoclaw";
+    const repository = scenario.repository ?? "syxscott/PaleoClaw";
     const frozenTarget = scenario.frozenTarget ?? false;
     const releaseGate = scenario.releaseGate ?? false;
     const selectionCapability = scenario.selectionCapability ?? true;
@@ -8290,7 +8290,7 @@ describe("ci workflow guards", () => {
         String(
           evaluateWorkflowExpression(expression, {
             eventName: "workflow_dispatch",
-            repository: "paleoclaw/paleoclaw",
+            repository: "syxscott/PaleoClaw",
             releaseGate: true,
             frozenTarget: true,
             runAttempt: 1,
@@ -8321,7 +8321,7 @@ describe("ci workflow guards", () => {
           for (const cancelled of [true, false]) {
             const admitted = evaluateWorkflowExpression(nodeJob.if, {
               eventName: "pull_request",
-              repository: "paleoclaw/paleoclaw",
+              repository: "syxscott/PaleoClaw",
               runAttempt: 1,
               cancelled,
               preflightOutputs: {
@@ -8338,7 +8338,7 @@ describe("ci workflow guards", () => {
     expect(
       evaluateWorkflowExpression(nodeJob.if, {
         eventName: "pull_request",
-        repository: "paleoclaw/paleoclaw",
+        repository: "syxscott/PaleoClaw",
         runAttempt: 1,
         preflightOutputs: { run_baseline_ratchets: "true", run_checks_node_core_nondist: "true" },
         jobResults: { preflight: "failure" },
@@ -8706,7 +8706,7 @@ describe("ci workflow guards", () => {
         workflow.jobs.preflight.outputs.run_android_screenshots,
         {
           eventName: "workflow_dispatch",
-          repository: "paleoclaw/paleoclaw",
+          repository: "syxscott/PaleoClaw",
           runAttempt: 1,
           steps: { manifest: { outputs: scopeOutputs } },
         },
@@ -8716,7 +8716,7 @@ describe("ci workflow guards", () => {
         evaluateWorkflowExpression(workflow.jobs["android-screenshots"].if, {
           eventName: "workflow_dispatch",
           releaseGate: true,
-          repository: "paleoclaw/paleoclaw",
+          repository: "syxscott/PaleoClaw",
           runAttempt: 1,
           preflightOutputs: {
             validation_tier: "pr",
@@ -8863,7 +8863,7 @@ describe("ci workflow guards", () => {
       const context = {
         eventName,
         releaseGate,
-        repository: "paleoclaw/paleoclaw",
+        repository: "syxscott/PaleoClaw",
         runAttempt: 1,
         steps: { changed_scope: { outputs: scopeOutputs } },
       };
@@ -9045,7 +9045,7 @@ describe("ci workflow guards", () => {
         expect(
           evaluateWorkflowExpression(readCiWorkflow().jobs[jobName].if, {
             eventName: "workflow_dispatch",
-            repository: "paleoclaw/paleoclaw",
+            repository: "syxscott/PaleoClaw",
             runAttempt: 1,
             preflightOutputs: {
               ...qualification.outputs,
@@ -9213,7 +9213,7 @@ describe("ci workflow guards", () => {
       const scopeOutputs = runCiChangedScopeFixture(changedPaths);
       const context = {
         eventName,
-        repository: "paleoclaw/paleoclaw",
+        repository: "syxscott/PaleoClaw",
         runAttempt: 1,
         steps: { changed_scope: { outputs: scopeOutputs } },
       };
@@ -9247,12 +9247,12 @@ describe("ci workflow guards", () => {
   );
 
   it.each([
-    ["pull_request", "paleoclaw/paleoclaw", true, false],
+    ["pull_request", "syxscott/PaleoClaw", true, false],
     ["pull_request", "example/paleoclaw", false, false],
-    ["push", "paleoclaw/paleoclaw", false, false],
+    ["push", "syxscott/PaleoClaw", false, false],
     ["push", "example/paleoclaw", false, false],
-    ["workflow_dispatch", "paleoclaw/paleoclaw", false, false],
-    ["workflow_dispatch", "paleoclaw/paleoclaw", true, true],
+    ["workflow_dispatch", "syxscott/PaleoClaw", false, false],
+    ["workflow_dispatch", "syxscott/PaleoClaw", true, true],
   ] as const)(
     "forwards release tiers and canonical PR changed paths (%s, %s, changed paths=%s, release gate=%s)",
     (eventName, repository, forwardsChangedPaths, releaseGate) => {
@@ -9299,12 +9299,12 @@ describe("ci workflow guards", () => {
         ...(!forwardsChangedPaths ? { includeReleaseOnlyPluginShards: false } : {}),
         includeReleaseOnlyToolingShards:
           (eventName === "workflow_dispatch" && !releaseGate) ||
-          repository !== "paleoclaw/paleoclaw",
+          repository !== "syxscott/PaleoClaw",
         includeReleaseOnlyRuntimeTests:
           (eventName === "workflow_dispatch" && !releaseGate) ||
-          repository !== "paleoclaw/paleoclaw",
+          repository !== "syxscott/PaleoClaw",
         includePrExemptRuntimeTests:
-          (eventName !== "pull_request" && !releaseGate) || repository !== "paleoclaw/paleoclaw",
+          (eventName !== "pull_request" && !releaseGate) || repository !== "syxscott/PaleoClaw",
       });
       const rows = JSON.parse(
         expectDefined(manifest.outputs.checks_node_core_nondist_matrix, "selected matrix"),
@@ -10118,7 +10118,7 @@ describe("ci workflow guards", () => {
       expect(manifest.outputs.frozen_target).toBe(String(frozen));
       const context = {
         eventName: options.eventName ?? ("workflow_dispatch" as const),
-        repository: options.repository ?? "paleoclaw/paleoclaw",
+        repository: options.repository ?? "syxscott/PaleoClaw",
         runAttempt: 1,
         preflightOutputs: manifest.outputs,
       };
@@ -10288,7 +10288,7 @@ describe("ci workflow guards", () => {
       evaluateWorkflowCondition(uiE2E.if, {
         eventName: "workflow_dispatch",
         preflightOutputs: { compatibility_target: "true", run_ui_tests: "true" },
-        repository: "paleoclaw/paleoclaw",
+        repository: "syxscott/PaleoClaw",
         runAttempt: 1,
       }),
     ).toBe(false);
@@ -10451,7 +10451,7 @@ describe("ci workflow guards", () => {
       expect(groups.every((files) => files.length > 0)).toBe(true);
       const context = {
         eventName: scenario.eventName,
-        repository: "paleoclaw/paleoclaw",
+        repository: "syxscott/PaleoClaw",
         runAttempt: 1,
         matrix: row,
         steps: {
@@ -10541,7 +10541,7 @@ describe("ci workflow guards", () => {
         expect(
           evaluateWorkflowCondition(readCiWorkflow().jobs[name].if, {
             eventName,
-            repository: "paleoclaw/paleoclaw",
+            repository: "syxscott/PaleoClaw",
             runAttempt: 1,
             preflightOutputs: manifest.outputs,
           }),
@@ -10563,7 +10563,7 @@ describe("ci workflow guards", () => {
       const context: Parameters<typeof evaluateWorkflowExpression>[1] = {
         eventName: "workflow_dispatch",
         releaseGate: true,
-        repository: "paleoclaw/paleoclaw",
+        repository: "syxscott/PaleoClaw",
         runAttempt: 1,
         steps: {
           changed_scope: {
@@ -10620,7 +10620,7 @@ describe("ci workflow guards", () => {
       );
       const runUiTests = evaluateWorkflowExpression(step.env.OPENCLAW_CI_RUN_UI_TESTS, {
         eventName: "pull_request",
-        repository: "paleoclaw/paleoclaw",
+        repository: "syxscott/PaleoClaw",
         runAttempt: 1,
         steps: {
           changed_scope: {
@@ -10656,7 +10656,7 @@ describe("ci workflow guards", () => {
       const ui = workflow.jobs["checks-ui"];
       const context: Parameters<typeof evaluateWorkflowExpression>[1] = {
         eventName: "pull_request",
-        repository: "paleoclaw/paleoclaw",
+        repository: "syxscott/PaleoClaw",
         runAttempt: 1,
         preflightOutputs: manifest.outputs,
         steps: { node_setup: { outputs: {}, outcome: "success" } },
@@ -10802,8 +10802,8 @@ describe("ci workflow guards", () => {
         name: "same-repo pull request first attempt",
         context: {
           eventName: "pull_request",
-          headRepository: "paleoclaw/paleoclaw",
-          repository: "paleoclaw/paleoclaw",
+          headRepository: "syxscott/PaleoClaw",
+          repository: "syxscott/PaleoClaw",
           runAttempt: 1,
         },
         expected: { blacksmith: true, dependencyCache: "true" },
@@ -10812,8 +10812,8 @@ describe("ci workflow guards", () => {
         name: "same-repo pull request with GitHub backend",
         context: {
           eventName: "pull_request",
-          headRepository: "paleoclaw/paleoclaw",
-          repository: "paleoclaw/paleoclaw",
+          headRepository: "syxscott/PaleoClaw",
+          repository: "syxscott/PaleoClaw",
           runnerBackend: "github",
           runAttempt: 1,
         },
@@ -10823,8 +10823,8 @@ describe("ci workflow guards", () => {
         name: "same-repo pull request with hybrid backend",
         context: {
           eventName: "pull_request",
-          headRepository: "paleoclaw/paleoclaw",
-          repository: "paleoclaw/paleoclaw",
+          headRepository: "syxscott/PaleoClaw",
+          repository: "syxscott/PaleoClaw",
           runnerBackend: "hybrid",
           runAttempt: 1,
         },
@@ -10834,8 +10834,8 @@ describe("ci workflow guards", () => {
         name: "same-repo pull request retry",
         context: {
           eventName: "pull_request",
-          headRepository: "paleoclaw/paleoclaw",
-          repository: "paleoclaw/paleoclaw",
+          headRepository: "syxscott/PaleoClaw",
+          repository: "syxscott/PaleoClaw",
           runAttempt: 2,
         },
         expected: { blacksmith: false, dependencyCache: "false" },
@@ -10844,8 +10844,8 @@ describe("ci workflow guards", () => {
         name: "same-repo pull request with hybrid backend retry",
         context: {
           eventName: "pull_request",
-          headRepository: "paleoclaw/paleoclaw",
-          repository: "paleoclaw/paleoclaw",
+          headRepository: "syxscott/PaleoClaw",
+          repository: "syxscott/PaleoClaw",
           runnerBackend: "hybrid",
           runAttempt: 2,
         },
@@ -10855,7 +10855,7 @@ describe("ci workflow guards", () => {
         name: "canonical hybrid push retry",
         context: {
           eventName: "push",
-          repository: "paleoclaw/paleoclaw",
+          repository: "syxscott/PaleoClaw",
           runnerBackend: "hybrid",
           runAttempt: 2,
         },
@@ -10869,7 +10869,7 @@ describe("ci workflow guards", () => {
           authorAssociation: "CONTRIBUTOR",
           eventName: "pull_request",
           headRepository: "contributor/paleoclaw",
-          repository: "paleoclaw/paleoclaw",
+          repository: "syxscott/PaleoClaw",
           runAttempt: 1,
         },
         expected: { blacksmith: true, dependencyCache: "false" },
@@ -10880,7 +10880,7 @@ describe("ci workflow guards", () => {
           authorAssociation: "NONE",
           eventName: "pull_request",
           headRepository: "contributor/paleoclaw",
-          repository: "paleoclaw/paleoclaw",
+          repository: "syxscott/PaleoClaw",
           runAttempt: 1,
         },
         expected: { blacksmith: true, dependencyCache: "false" },
@@ -10889,7 +10889,7 @@ describe("ci workflow guards", () => {
         name: "workflow dispatch",
         context: {
           eventName: "workflow_dispatch",
-          repository: "paleoclaw/paleoclaw",
+          repository: "syxscott/PaleoClaw",
           runAttempt: 1,
         },
         expected: { blacksmith: false, dependencyCache: "false" },
@@ -10898,7 +10898,7 @@ describe("ci workflow guards", () => {
         name: "canonical push retry",
         context: {
           eventName: "push",
-          repository: "paleoclaw/paleoclaw",
+          repository: "syxscott/PaleoClaw",
           runAttempt: 2,
         },
         expected: { blacksmith: true, dependencyCache: "true" },
@@ -11128,7 +11128,7 @@ describe("ci workflow guards", () => {
         realGatewayRows.filter(({ matrix }) =>
           evaluateWorkflowCondition(step.if, {
             eventName: "push",
-            repository: "paleoclaw/paleoclaw",
+            repository: "syxscott/PaleoClaw",
             runAttempt: 1,
             matrix,
             steps: { real_gateway_build: { outputs: {}, outcome: "success" } },
@@ -11145,7 +11145,7 @@ describe("ci workflow guards", () => {
           String(
             evaluateWorkflowExpression(expression, {
               eventName: "push",
-              repository: "paleoclaw/paleoclaw",
+              repository: "syxscott/PaleoClaw",
               runAttempt: 1,
               runId: 2,
               matrix,
@@ -11195,7 +11195,7 @@ describe("ci workflow guards", () => {
         {
           eventName: "workflow_dispatch",
           releaseGate: false,
-          repository: "paleoclaw/paleoclaw",
+          repository: "syxscott/PaleoClaw",
           runAttempt: 1,
         },
       ),
@@ -11206,7 +11206,7 @@ describe("ci workflow guards", () => {
         {
           eventName: "workflow_dispatch",
           releaseGate: true,
-          repository: "paleoclaw/paleoclaw",
+          repository: "syxscott/PaleoClaw",
           runAttempt: 1,
         },
       ),
@@ -11612,7 +11612,7 @@ describe("ci workflow guards", () => {
       const context = {
         eventName,
         matrix: row,
-        repository: "paleoclaw/paleoclaw",
+        repository: "syxscott/PaleoClaw",
         runAttempt: 1,
       };
       const packedEnv = evaluateWorkflowExpression(
@@ -11777,7 +11777,7 @@ describe("ci workflow guards", () => {
       eventName: "workflow_dispatch" as const,
       matrix: { groups_pool: "pool-1", groups_index: index },
       preflightOutputs: { node_test_group_pools_json: JSON.stringify({ "pool-1": pool }) },
-      repository: "paleoclaw/paleoclaw",
+      repository: "syxscott/PaleoClaw",
       runAttempt: 1,
     };
     const result = runWorkflowShellScript(poolStep.run, {
@@ -11934,7 +11934,7 @@ describe("ci workflow guards", () => {
     const context = {
       eventName: "workflow_dispatch" as const,
       matrix: row,
-      repository: "paleoclaw/paleoclaw",
+      repository: "syxscott/PaleoClaw",
       runAttempt: 1,
     };
     const packedEnv = evaluateWorkflowExpression(
@@ -12284,7 +12284,7 @@ describe("ci workflow guards", () => {
       if (job === "pr-failure-report") {
         // Reporting covers every PR; gate eligibility preserves the original allowance.
         expect(selection).toBe(
-          "github.event_name == 'pull_request' && github.run_attempt == 1 && github.repository == 'paleoclaw/paleoclaw' && needs.preflight.outputs.run_checks_node_core_nondist == 'true'",
+          "github.event_name == 'pull_request' && github.run_attempt == 1 && github.repository == 'syxscott/PaleoClaw' && needs.preflight.outputs.run_checks_node_core_nondist == 'true'",
         );
         continue;
       }
@@ -12704,7 +12704,7 @@ describe("ci workflow guards", () => {
       expect(
         evaluateWorkflowCondition(compatibilityJob.if, {
           eventName,
-          repository: "paleoclaw/paleoclaw",
+          repository: "syxscott/PaleoClaw",
           runAttempt: 1,
           preflightOutputs: { run_build_artifacts: "true" },
         }),
@@ -12740,7 +12740,7 @@ describe("ci workflow guards", () => {
       );
       const context = {
         eventName,
-        repository: "paleoclaw/paleoclaw",
+        repository: "syxscott/PaleoClaw",
         ref: "refs/heads/main",
         runAttempt: 1,
       };
@@ -12781,7 +12781,7 @@ describe("ci workflow guards", () => {
       evaluateWorkflowCondition(receipt.if, {
         eventName: "workflow_dispatch",
         dispatchId,
-        repository: "paleoclaw/paleoclaw",
+        repository: "syxscott/PaleoClaw",
         runAttempt: 1,
         sha,
         includeAndroid: true,
@@ -13018,7 +13018,7 @@ describe("ci workflow guards", () => {
       expect(
         evaluateWorkflowExpression(smokeProfileJob.strategy["max-parallel"], {
           eventName: "push",
-          repository: "paleoclaw/paleoclaw",
+          repository: "syxscott/PaleoClaw",
           runnerBackend,
           runAttempt: 1,
         }),
@@ -13026,7 +13026,7 @@ describe("ci workflow guards", () => {
     }
     const smokeRunnerContext = {
       eventName: "schedule" as const,
-      repository: "paleoclaw/paleoclaw",
+      repository: "syxscott/PaleoClaw",
       ref: "refs/heads/main",
       runnerBackend: "hybrid" as const,
       runAttempt: 1,
@@ -13303,7 +13303,7 @@ describe("extension lint PR admission", () => {
       const context: Parameters<typeof evaluateWorkflowExpression>[1] = {
         eventName,
         runAttempt: 1,
-        repository: "paleoclaw/paleoclaw",
+        repository: "syxscott/PaleoClaw",
         githubEvent: { pull_request: { base: { ref: "main" } } },
         preflightOutputs: {
           ...manifest.outputs,

@@ -10,7 +10,7 @@ scenario:
     secondary:
       - telegram.built-in-commands
   regressionRefs:
-    - paleoclaw/paleoclaw#87392
+    - syxscott/PaleoClaw#87392
   objective: Verify Telegram usage mode decorates a message-tool-only visible reply.
   successCriteria:
     - The usage command enables token footer mode.

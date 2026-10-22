@@ -180,12 +180,12 @@ it("extracts the last successful blacksmith-testbox timing stamp", () => {
   writeFileSync(
     log,
     `provider=blacksmith-testbox id=tbx_first sync=delegated auth=blacksmith
-GitHub Actions run: https://github.com/paleoclaw/paleoclaw/actions/runs/1234
+GitHub Actions run: https://github.com/syxscott/PaleoClaw/actions/runs/1234
 {"not":"a stamp"}
 not json at all
 {"provider":"blacksmith-testbox","leaseId":"tbx_first","exitCode":1,"runStatus":"failed"}
 {"provider":"blacksmith-testbox","leaseId":"tbx_final","exitCode":0,"runStatus":"passed"}
-GitHub Actions run: https://github.com/paleoclaw/paleoclaw/actions/runs/9999
+GitHub Actions run: https://github.com/syxscott/PaleoClaw/actions/runs/9999
 GitHub Actions run: https://github.com/example/other/actions/runs/8888
 `,
   );
@@ -195,6 +195,6 @@ GitHub Actions run: https://github.com/example/other/actions/runs/8888
   );
   expect(result.status).toBe(0);
   expect(result.stdout.trim()).toBe(
-    "tbx_final\thttps://github.com/paleoclaw/paleoclaw/actions/runs/1234",
+    "tbx_final\thttps://github.com/syxscott/PaleoClaw/actions/runs/1234",
   );
 });

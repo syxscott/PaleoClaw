@@ -22,7 +22,7 @@ export type {
   VerifiedReleaseInventory,
 } from "./release-plan-producer.types.mts";
 
-const REPOSITORY = "paleoclaw/paleoclaw";
+const REPOSITORY = "syxscott/PaleoClaw";
 const EXECUTION_ROOT = fileURLToPath(new URL("..", import.meta.url));
 const BOOTSTRAP_PATH = "scripts/release-plan-producer.mts",
   CORE_PATH = "scripts/release-plan-producer-core.mts";

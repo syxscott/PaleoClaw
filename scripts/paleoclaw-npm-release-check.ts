@@ -32,7 +32,7 @@ type PackageJson = {
   peerDependenciesMeta?: Record<string, { optional?: boolean }>;
 };
 
-const EXPECTED_REPOSITORY_URL = "https://github.com/paleoclaw/paleoclaw";
+const EXPECTED_REPOSITORY_URL = "https://github.com/syxscott/PaleoClaw";
 const FS_SAFE_PACKAGE = "@openclaw/fs-safe";
 const REQUIRED_PACKED_PATHS = [
   PACKAGE_DIST_INVENTORY_RELATIVE_PATH,

@@ -34,7 +34,7 @@ printf '%s' "$MOCK_JOB_JSON"
     [
       SCRIPT,
       "--repository",
-      "paleoclaw/paleoclaw",
+      "syxscott/PaleoClaw",
       "--job-id",
       "123",
       "--job-name",

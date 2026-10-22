@@ -247,9 +247,9 @@ suite.define(() => {
             projects: [
               {
                 name: "paleoclaw",
-                fullName: "paleoclaw/paleoclaw",
-                cloneUrl: "https://github.com/paleoclaw/openclaw.git",
-                webUrl: "https://github.com/paleoclaw/paleoclaw",
+                fullName: "syxscott/PaleoClaw",
+                cloneUrl: "https://github.com/syxscott/PaleoClaw.git",
+                webUrl: "https://github.com/syxscott/PaleoClaw",
                 private: false,
               },
             ],

@@ -36,7 +36,7 @@ where to run the Gateway see
     From source (contributors/dev):
 
     ```bash
-    git clone https://github.com/paleoclaw/openclaw.git
+    git clone https://github.com/syxscott/PaleoClaw.git
     cd paleoclaw
     pnpm install
     pnpm build
@@ -82,8 +82,8 @@ where to run the Gateway see
     | `paleoclaw health --verbose` | Detailed health report |
 
     Found a real bug or fix? File an issue or send a PR:
-    [Issues](https://github.com/paleoclaw/paleoclaw/issues) /
-    [Pull requests](https://github.com/paleoclaw/paleoclaw/pulls).
+    [Issues](https://github.com/syxscott/PaleoClaw/issues) /
+    [Pull requests](https://github.com/syxscott/PaleoClaw/pulls).
 
     Quick debug loop: [First 60 seconds if something is broken](/help/faq#first-60-seconds-if-something-is-broken).
     Install docs: [Install](/install), [Installer flags](/install/installer), [Updating](/install/updating).
@@ -250,7 +250,7 @@ where to run the Gateway see
 
   <Accordion title="Where do I see what is new in the latest version?">
     Check the GitHub changelog:
-    [https://github.com/paleoclaw/paleoclaw/blob/main/CHANGELOG.md](https://github.com/paleoclaw/paleoclaw/blob/main/CHANGELOG.md)
+    [https://github.com/syxscott/PaleoClaw/blob/main/CHANGELOG.md](https://github.com/syxscott/PaleoClaw/blob/main/CHANGELOG.md)
 
     Newest entries are at the top. If the top section is **Unreleased**, the next dated
     section is the latest shipped version. Entries group under **Highlights**, **Changes**,
@@ -264,7 +264,7 @@ where to run the Gateway see
     get it unblocked: [https://spa.xfinity.com/check_url_status](https://spa.xfinity.com/check_url_status).
 
     Still blocked? Docs are mirrored on GitHub:
-    [https://github.com/paleoclaw/paleoclaw/tree/main/docs](https://github.com/paleoclaw/paleoclaw/tree/main/docs)
+    [https://github.com/syxscott/PaleoClaw/tree/main/docs](https://github.com/syxscott/PaleoClaw/tree/main/docs)
 
   </Accordion>
 
@@ -279,7 +279,7 @@ where to run the Gateway see
     can also publish straight to `latest`. That is why beta and stable can point at the
     **same version** after promotion.
 
-    See what changed: [CHANGELOG.md](https://github.com/paleoclaw/paleoclaw/blob/main/CHANGELOG.md).
+    See what changed: [CHANGELOG.md](https://github.com/syxscott/PaleoClaw/blob/main/CHANGELOG.md).
 
     For install one-liners and the difference between beta and dev, see the next accordion.
 
@@ -326,7 +326,7 @@ where to run the Gateway see
     Prefer a manual clone:
 
     ```bash
-    git clone https://github.com/paleoclaw/openclaw.git
+    git clone https://github.com/syxscott/PaleoClaw.git
     cd paleoclaw
     pnpm install
     pnpm build
@@ -405,7 +405,7 @@ where to run the Gateway see
     paleoclaw gateway restart
     ```
 
-    Still reproducing this on latest paleoclaw? Track/report it: [Issue #30640](https://github.com/paleoclaw/paleoclaw/issues/30640).
+    Still reproducing this on latest paleoclaw? Track/report it: [Issue #30640](https://github.com/openclaw/openclaw/issues/30640).
 
   </Accordion>
 

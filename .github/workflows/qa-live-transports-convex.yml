@@ -153,7 +153,7 @@ env:
 
 jobs:
   authorize_actor:
-    if: github.repository == 'paleoclaw/paleoclaw'
+    if: github.repository == 'syxscott/PaleoClaw'
     name: Authorize workflow actor
     runs-on: &linux_runner_medium >-
       ${{ inputs.runner_group != '' && fromJSON(format('{{"group":{0},"labels":{1}}}',

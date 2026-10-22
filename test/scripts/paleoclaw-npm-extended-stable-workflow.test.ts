@@ -80,7 +80,7 @@ function runPluginCompatibilityGate(options: { hasScript: boolean; relationship:
     encoding: "utf8",
     env: {
       ...process.env,
-      GITHUB_REPOSITORY: "paleoclaw/paleoclaw",
+      GITHUB_REPOSITORY: "syxscott/PaleoClaw",
       PATH: `${binDir}:${process.env.PATH ?? ""}`,
       RELATIONSHIP: options.relationship,
     },
@@ -364,7 +364,7 @@ it.each<[string, string, AdmissionOptions, number]>([
         encoding: "utf8",
         env: {
           PATH: process.env.PATH,
-          GITHUB_REPOSITORY: "paleoclaw/paleoclaw",
+          GITHUB_REPOSITORY: "syxscott/PaleoClaw",
           RELEASE_TAG: tag ?? "v2026.8.34",
           RELEASE_NPM_DIST_TAG: npmDistTag ?? "extended-stable",
           RELEASE_CANDIDATE_BRANCH: candidate ?? "extended-stable/2026.8.33",

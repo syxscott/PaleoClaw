@@ -678,8 +678,8 @@ Close remains available to settle resources. The store owner supplies
 `openEngineStore` with `inspectSqlite(): { hasExistingData, hasEngineAnchor }`,
 so partially initialized stores are also protected from an accidental engine
 switch. See the canonical
-[`admission scope`](https://github.com/paleoclaw/paleoclaw/blob/main/src/infra/database-engine/admission-scope.ts)
-and [`engine opener`](https://github.com/paleoclaw/paleoclaw/blob/main/src/infra/database-engine/open.ts).
+[`admission scope`](https://github.com/syxscott/PaleoClaw/blob/main/src/infra/database-engine/admission-scope.ts)
+and [`engine opener`](https://github.com/syxscott/PaleoClaw/blob/main/src/infra/database-engine/open.ts).
 
 Use `paleoclaw backup create` to capture PostgreSQL stores together with the
 SQLite stores that still hold the rest of the installation. PostgreSQL backup

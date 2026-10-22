@@ -8,7 +8,7 @@ scenario:
     primary:
       - channels.streaming-final-reply
   regressionRefs:
-    - paleoclaw/paleoclaw#120626
+    - syxscott/PaleoClaw#120626
   objective: Verify Telegram recovers provider failures in one logical message whether or not a streaming preview became visible.
   successCriteria:
     - A visible partial is retained and the terminal recovery edits the same Telegram message.

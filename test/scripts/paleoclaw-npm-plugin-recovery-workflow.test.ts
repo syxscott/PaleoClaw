@@ -116,7 +116,7 @@ fi
       PLUGIN_RUN_FIXTURE: runFile,
       PLUGIN_WORKFLOW_FIXTURE: workflowFile,
       PLUGIN_NPM_RUN_ID: "123",
-      GITHUB_REPOSITORY: "paleoclaw/paleoclaw",
+      GITHUB_REPOSITORY: "syxscott/PaleoClaw",
       RELEASE_NPM_DIST_TAG: "extended-stable",
       EXPECTED_EXTENDED_STABLE_BRANCH: releaseBranch,
       RUN_KIND: "plugin",

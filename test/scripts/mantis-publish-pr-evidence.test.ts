@@ -103,12 +103,12 @@ describe("scripts/mantis/publish-pr-evidence", () => {
   it("renders a manifest-driven PR comment with inline screenshots and video links", () => {
     const manifest = loadEvidenceManifest(writeFixtureManifest());
     const body = renderEvidenceComment({
-      artifactUrl: "https://github.com/paleoclaw/paleoclaw/actions/runs/1/artifacts/2",
+      artifactUrl: "https://github.com/syxscott/PaleoClaw/actions/runs/1/artifacts/2",
       manifest,
       marker: "<!-- mantis-discord-status-reactions -->",
       rawBase: "https://qa.openclaw.ai/mantis/discord/pr-1/run-1",
       requestSource: "workflow_dispatch",
-      runUrl: "https://github.com/paleoclaw/paleoclaw/actions/runs/1",
+      runUrl: "https://github.com/syxscott/PaleoClaw/actions/runs/1",
       treeUrl: "https://qa.openclaw.ai/mantis/discord/pr-1/run-1",
     });
 
@@ -333,12 +333,12 @@ describe("scripts/mantis/publish-pr-evidence", () => {
       "mantis-evidence.json",
     ]);
     const body = renderEvidenceComment({
-      artifactUrl: "https://github.com/paleoclaw/paleoclaw/actions/runs/1/artifacts/2",
+      artifactUrl: "https://github.com/syxscott/PaleoClaw/actions/runs/1/artifacts/2",
       manifest,
       marker: "<!-- mantis-slack-desktop-smoke -->",
       rawBase: "https://qa.openclaw.ai/mantis/slack/pr-1/run-1",
       requestSource: "workflow_dispatch",
-      runUrl: "https://github.com/paleoclaw/paleoclaw/actions/runs/1",
+      runUrl: "https://github.com/syxscott/PaleoClaw/actions/runs/1",
       treeUrl: "https://qa.openclaw.ai/mantis/slack/pr-1/run-1",
     });
 

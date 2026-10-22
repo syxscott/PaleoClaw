@@ -710,7 +710,7 @@ remote_main() {
   done
   prepare_sut
   prepare_runner
-  clone_exact paleoclaw/paleoclaw "$openclaw_sha" "$root/paleoclaw" "$SUT_USER"
+  clone_exact syxscott/PaleoClaw "$openclaw_sha" "$root/paleoclaw" "$SUT_USER"
   local admitted=false kova="$root/kova" executor=as_sut
   local results="/home/${RUNNER_USER}/results" workload_results="$root/paleoclaw"
   if [[ "$kova_sha" == "$admitted_kova_sha" ]]; then

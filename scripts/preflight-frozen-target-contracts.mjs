@@ -198,7 +198,7 @@ async function planWorkflowAdmission(input) {
   );
   if (
     input.version !== 2 ||
-    input.repository !== "paleoclaw/paleoclaw" ||
+    input.repository !== "syxscott/PaleoClaw" ||
     !["parent", "release-checks", "reusable", "package"].includes(input.workflow)
   ) {
     throw new Error("invalid workflow admission identity");
@@ -837,7 +837,7 @@ async function preflightFrozenTargetContracts(input, workflow = false, verifiedT
     ],
     "admission request",
   );
-  if (input.version !== 1 || input.repository !== "paleoclaw/paleoclaw") {
+  if (input.version !== 1 || input.repository !== "syxscott/PaleoClaw") {
     throw new Error("invalid admission identity");
   }
   const allow = boolean(input.allowFrozenTargetScenarioOmissions);

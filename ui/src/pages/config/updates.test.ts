@@ -755,7 +755,7 @@ describe("renderUpdates", () => {
           attemptId: run.runId,
           result: {
             status: "fallback",
-            fallbackUrl: "https://github.com/paleoclaw/paleoclaw/issues/new?title=update",
+            fallbackUrl: "https://github.com/syxscott/PaleoClaw/issues/new?title=update",
             message: "gh is not authenticated",
           },
         },

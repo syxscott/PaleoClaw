@@ -76,7 +76,7 @@ checks do not count as successful daily checks.
 
 For testing or self-hosting, set `OPENCLAW_TELEMETRY_ENDPOINT` to your complete
 replacement endpoint URL. The public server source is available at
-[paleoclaw/telemetry](https://github.com/paleoclaw/telemetry).
+[paleoclaw/telemetry](https://github.com/openclaw/telemetry).
 
 <a id="cloudflare-derived-request-geography" />
 

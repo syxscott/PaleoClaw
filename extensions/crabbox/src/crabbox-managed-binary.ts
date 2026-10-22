@@ -10,7 +10,7 @@ import { crabboxExecutionError, type CrabboxCommandRunner } from "./crabbox-work
 
 export const CRABBOX_MIN_VERSION = "0.77.0";
 export const CRABBOX_NONBLOCKING_CAPTURE_VERSION = "0.79.0";
-const RELEASE_URL = `https://github.com/paleoclaw/crabbox/releases/download/v${CRABBOX_MIN_VERSION}`;
+const RELEASE_URL = `https://github.com/openclaw/crabbox/releases/download/v${CRABBOX_MIN_VERSION}`;
 const MAX_ARCHIVE_BYTES = 128 * 1024 * 1024;
 // Gateway startup contention can delay an otherwise healthy executable probe.
 const VERSION_TIMEOUT_MS = 30_000;

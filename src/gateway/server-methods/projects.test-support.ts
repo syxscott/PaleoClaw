@@ -46,7 +46,7 @@ export const projectsHandlers: typeof registeredProjectsHandlers = {
 export async function initializeRepository(
   root: string,
   name = "registered",
-  originUrl = "https://github.com/paleoclaw/openclaw.git",
+  originUrl = "https://github.com/syxscott/PaleoClaw.git",
 ): Promise<string> {
   const repo = path.join(root, name);
   await fs.mkdir(repo, { recursive: true });

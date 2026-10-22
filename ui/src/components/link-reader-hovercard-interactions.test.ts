@@ -7,7 +7,7 @@ import { LazyHovercardBootstrap } from "./lazy-hovercard-registration.ts";
 import { LinkReaderHovercardProvider } from "./link-reader-hovercard.ts";
 const ELEMENT_NAME = "test-link-reader-interaction-" + crypto.randomUUID();
 customElements.define(ELEMENT_NAME, class extends LinkReaderHovercardProvider {});
-const ISSUE_HREF = "https://github.com/paleoclaw/paleoclaw/issues/99815";
+const ISSUE_HREF = "https://github.com/openclaw/openclaw/issues/99815";
 function createLink(href: string) {
   const provider = document.createElement(ELEMENT_NAME) as LinkReaderHovercardProvider;
   provider.readers = [TEST_LINK_READER];
@@ -22,7 +22,7 @@ function issuePreviewResponse(overrides: Record<string, unknown> = {}) {
   return {
     ...testLinkPreview(),
     ...(typeof overrides.number === "number"
-      ? { url: "https://github.com/paleoclaw/paleoclaw/issues/" + overrides.number }
+      ? { url: "https://github.com/syxscott/PaleoClaw/issues/" + overrides.number }
       : {}),
     ...overrides,
   };
@@ -461,18 +461,18 @@ describe("generic preview portal lifecycle", () => {
       await hover(one.anchor);
       leave(one.anchor);
       await vi.advanceTimersByTimeAsync(120);
-      const two = createLink("https://github.com/paleoclaw/paleoclaw/issues/99816");
+      const two = createLink("https://github.com/openclaw/openclaw/issues/99816");
       two.provider.client = client;
       two.provider.agentId = peerAgentId;
       await hover(two.anchor);
       leave(two.anchor);
       await vi.advanceTimersByTimeAsync(120);
       const failed = document.createElement("a");
-      failed.href = "https://github.com/paleoclaw/paleoclaw/issues/99818";
+      failed.href = "https://github.com/openclaw/openclaw/issues/99818";
       one.provider.append(failed);
       await hover(failed);
       expect(hovercard()?.textContent).toContain("Not Found");
-      one.anchor.href = "https://github.com/paleoclaw/paleoclaw/issues/99817";
+      one.anchor.href = "https://github.com/openclaw/openclaw/issues/99817";
       await hover(one.anchor);
       expect(hovercard()?.dataset.loading).toBe("true");
       if (change === "agent") {
@@ -488,7 +488,7 @@ describe("generic preview portal lifecycle", () => {
       await hover(failed);
       expect(hovercard()?.textContent).toContain("Not Found");
       expect(request).toHaveBeenCalledTimes(4);
-      one.anchor.href = "https://github.com/paleoclaw/paleoclaw/issues/99819";
+      one.anchor.href = "https://github.com/openclaw/openclaw/issues/99819";
       await hover(one.anchor);
       expect(hovercard()?.dataset.loading).toBe("true");
       leave(one.anchor);

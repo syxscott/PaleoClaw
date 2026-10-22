@@ -146,7 +146,7 @@ function sourceRequest(inputs: Record<string, string> = {}, env: NodeJS.ProcessE
     PUBLICATION_TOOLING_JSON: JSON.stringify({ fullRef: "refs/heads/main", sha: SHA }),
     PUBLICATION_TARGET_CONTEXT: "release/2026.9.9",
     PUBLICATION_TARGET_SHA: "b".repeat(40),
-    GITHUB_REPOSITORY: "paleoclaw/paleoclaw",
+    GITHUB_REPOSITORY: "syxscott/PaleoClaw",
     GITHUB_REF: "refs/heads/release-ci/test",
     GITHUB_SHA: SHA,
     GITHUB_RUN_ID: "123",
@@ -215,7 +215,7 @@ async function publicationWriterFixture(
   identity: { sourceSha: string; workflowSha: string; workflowFullRef: string },
 ) {
   const hash = digest;
-  const repository = "paleoclaw/paleoclaw";
+  const repository = "syxscott/PaleoClaw";
   const workflow = ".github/workflows/full-release-artifacts.yml";
   const producer = {
     repository,
@@ -708,7 +708,7 @@ it.each([
     trusted || fault === "prepared-missing-normal-trust"
       ? {
           provider: fault === "prepared-wrong-provider" ? "other" : "github-actions",
-          repository: fault === "prepared-wrong-repository" ? "other/repo" : "paleoclaw/paleoclaw",
+          repository: fault === "prepared-wrong-repository" ? "other/repo" : "syxscott/PaleoClaw",
           workflowFilename:
             fault === "prepared-wrong-workflow" ? "other.yml" : "plugin-PaleoHub-release.yml",
           environment: fault === "prepared-environment" ? "other" : null,
@@ -909,7 +909,7 @@ it.each([false, true])(
       reuse: "true",
       evidence_run_id: "99",
       evidence_root_run_id: "99",
-      evidence_run_url: "https://github.com/paleoclaw/paleoclaw/actions/runs/99",
+      evidence_run_url: "https://github.com/syxscott/PaleoClaw/actions/runs/99",
       evidence_sha: source.candidateSha,
       evidence_policy: "exact-target-full-validation-v1",
       changed_paths: "[]",
@@ -940,7 +940,7 @@ it.each([false, true])(
           RUNNER_TEMP: directory,
           GITHUB_OUTPUT: output,
           ...githubContext(context),
-          GITHUB_REPOSITORY: "paleoclaw/paleoclaw",
+          GITHUB_REPOSITORY: "syxscott/PaleoClaw",
           CANDIDATE_REQUEST_JSON: JSON.stringify(candidateRequest),
         },
       },
@@ -1013,7 +1013,7 @@ function fullMatrixChildren() {
             conclusion: "success",
             started_at: "2026-08-29T03:25:00Z",
             completed_at: "2026-08-29T03:26:00Z",
-            html_url: `https://github.com/paleoclaw/paleoclaw/actions/runs/${runId}/job/${index + 1}`,
+            html_url: `https://github.com/syxscott/PaleoClaw/actions/runs/${runId}/job/${index + 1}`,
           })),
         },
       ],
@@ -1033,12 +1033,12 @@ function fullMatrixChildren() {
       dispatchActor: "github-actions[bot]",
       triggeringActor: "github-actions[bot]",
       displayTitle: key,
-      repository: "paleoclaw/paleoclaw",
+      repository: "syxscott/PaleoClaw",
       errors: [],
       workflow: `${key}.yml`,
       workflowRef: "main",
       workflowSha: SHA,
-      url: `https://github.com/paleoclaw/paleoclaw/actions/runs/${runId}`,
+      url: `https://github.com/syxscott/PaleoClaw/actions/runs/${runId}`,
       createdAt: "2026-08-29T03:25:00Z",
       updatedAt: "2026-08-29T03:26:00Z",
     };
@@ -1075,7 +1075,7 @@ function readDecision(reader: string, bytes: string) {
     : tryReadReleaseDecisionArtifact(
         { attempt: 1, headSha: SHA },
         "123",
-        "paleoclaw/paleoclaw",
+        "syxscott/PaleoClaw",
         (args) => {
           download(args);
           return "";
@@ -1092,7 +1092,7 @@ function runDispatchWitness(event: unknown, rawEvent?: string) {
   writeFileSync(eventPath, rawEvent ?? JSON.stringify(event));
   const context = {
     serverUrl: "https://github.com",
-    repository: "paleoclaw/paleoclaw",
+    repository: "syxscott/PaleoClaw",
     workflowRef:
       "paleoclaw/paleoclaw/.github/workflows/full-release-validation.yml@refs/heads/release-ci/test",
     event: "workflow_dispatch",

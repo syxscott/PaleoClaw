@@ -18,7 +18,7 @@ import {
 const sha = "a".repeat(40);
 const ref = `release-publish/${sha.slice(0, 12)}-1`;
 const recoveryEnv = {
-  GITHUB_REPOSITORY: "paleoclaw/paleoclaw",
+  GITHUB_REPOSITORY: "syxscott/PaleoClaw",
   GITHUB_RUN_ID: "30",
   GITHUB_RUN_ATTEMPT: "1",
   GITHUB_ACTOR: "octocat",
@@ -73,19 +73,19 @@ function transactions(count = 1) {
     schemaVersion: 1,
     identity: {
       version: 2,
-      repository: "paleoclaw/paleoclaw",
+      repository: "syxscott/PaleoClaw",
       workflow: ".github/workflows/plugin-PaleoHub-release.yml",
       runId: "20",
       runAttempt: "1",
       ref,
       fullRef: `refs/tags/${ref}`,
       sha,
-      candidateRepository: "paleoclaw/paleoclaw",
+      candidateRepository: "syxscott/PaleoClaw",
       candidateSha: "b".repeat(40),
       toolingRef: "main",
       toolingFullRef: "refs/heads/main",
       toolingSha: sha,
-      parentRepository: "paleoclaw/paleoclaw",
+      parentRepository: "syxscott/PaleoClaw",
       parentWorkflow: ".github/workflows/paleoclaw-release-publish.yml",
       parentRunId: "10",
       parentRunAttempt: "1",
@@ -133,7 +133,7 @@ describe("PaleoHub parent publication authorization", () => {
     expect(receipt).toStrictEqual({
       version: 2,
       kind: "paleoclaw-PaleoHub-recovery-approval",
-      repository: "paleoclaw/paleoclaw",
+      repository: "syxscott/PaleoClaw",
       workflow: ".github/workflows/plugin-PaleoHub-release.yml",
       runId: "30",
       runAttempt: "1",

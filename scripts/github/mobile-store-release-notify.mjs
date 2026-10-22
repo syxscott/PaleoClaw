@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import { setTimeout as delay } from "node:timers/promises";
 
 const SUPPRESS_EMBEDS = 1 << 2;
-const repository = "paleoclaw/paleoclaw";
+const repository = "syxscott/PaleoClaw";
 const releases = [
   { platform: "iOS", path: ".github/workflows/ios-store-release.yml" },
   { platform: "Android", path: ".github/workflows/android-store-release.yml" },

@@ -147,7 +147,7 @@ describe("resolveSessionWorkSubtitle", () => {
     expect(
       resolveSessionWorkSubtitle({
         repository: {
-          url: "https://github.com/paleoclaw/openclaw.git",
+          url: "https://github.com/syxscott/PaleoClaw.git",
           branch: "paleoclaw/cloud-task",
         },
       }),

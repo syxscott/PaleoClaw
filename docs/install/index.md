@@ -109,10 +109,10 @@ For VPS/cloud hosts, avoid third-party "1-click" marketplace images when possibl
 
     <Steps>
       <Step title="Clone and build">
-        Clone the [paleoclaw repo](https://github.com/paleoclaw/paleoclaw) and build:
+        Clone the [paleoclaw repo](https://github.com/syxscott/PaleoClaw) and build:
 
         ```bash
-        git clone https://github.com/paleoclaw/paleoclaw.git
+        git clone https://github.com/syxscott/PaleoClaw.git
         cd paleoclaw
         pnpm install
         pnpm ui:build

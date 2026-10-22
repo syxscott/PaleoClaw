@@ -13,11 +13,11 @@ const EXPECTED_EXTERNAL_HREFS = [
   "https://docs.openclaw.ai/platforms/android",
   "https://docs.openclaw.ai/platforms/ios",
   "https://docs.openclaw.ai/platforms/android",
-  "https://github.com/paleoclaw/paleoclaw/releases",
+  "https://github.com/syxscott/PaleoClaw/releases",
   "https://docs.openclaw.ai/platforms/macos",
-  "https://github.com/paleoclaw/paleoclaw-windows-node/releases/latest",
+  "https://github.com/openclaw/openclaw-windows-node/releases/latest",
   "https://docs.openclaw.ai/platforms/windows",
-  "https://github.com/paleoclaw/paleoclaw/releases",
+  "https://github.com/syxscott/PaleoClaw/releases",
   "https://docs.openclaw.ai/platforms/linux",
   "https://chromewebstore.google.com/detail/paleoclaw/kcdjddhmeafeomebliikmbpblkmkfoig",
   "https://docs.openclaw.ai/tools/chrome-extension",
@@ -83,7 +83,7 @@ describe("Apps", () => {
     expect(card?.querySelector("h3")?.textContent).toBe("macOS");
     expect(
       card
-        ?.querySelector("a[href='https://github.com/paleoclaw/paleoclaw/releases']")
+        ?.querySelector("a[href='https://github.com/syxscott/PaleoClaw/releases']")
         ?.textContent?.trim(),
     ).toBe("Download");
   });

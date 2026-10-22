@@ -2401,7 +2401,7 @@ describe("scripts/crabbox-wrapper", () => {
 
   it.each([
     {
-      flags: ["--fresh-pr=paleoclaw/paleoclaw#1", "--apply-local-patch"],
+      flags: ["--fresh-pr=syxscott/PaleoClaw#1", "--apply-local-patch"],
       command: ["node", "scripts/check-changed.mjs"],
     },
     { flags: ["--no-sync"], command: ["node", "scripts/source-fixture.mjs"] },
@@ -4805,7 +4805,7 @@ require('node:module').syncBuiltinESMExports();`,
             ...env,
             GIT_CONFIG_COUNT: "2",
             GIT_CONFIG_KEY_0: `url.file://${source}.insteadOf`,
-            GIT_CONFIG_VALUE_0: "https://github.com/paleoclaw/openclaw.git",
+            GIT_CONFIG_VALUE_0: "https://github.com/syxscott/PaleoClaw.git",
             GIT_CONFIG_KEY_1: "protocol.file.allow",
             GIT_CONFIG_VALUE_1: "always",
             ...extraEnv,

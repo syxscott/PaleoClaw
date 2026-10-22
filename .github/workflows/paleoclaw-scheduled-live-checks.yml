@@ -21,7 +21,7 @@ env:
 
 jobs:
   live_and_openwebui_checks:
-    if: github.repository == 'paleoclaw/paleoclaw' && (github.event_name == 'workflow_dispatch' || github.event.schedule == '23 4 * * *')
+    if: github.repository == 'syxscott/PaleoClaw' && (github.event_name == 'workflow_dispatch' || github.event.schedule == '23 4 * * *')
     permissions:
       actions: read
       contents: read
@@ -110,7 +110,7 @@ jobs:
       FIREWORKS_API_KEY: ${{ secrets.FIREWORKS_API_KEY }}
 
   weekly_upgrade_survivors:
-    if: github.repository == 'paleoclaw/paleoclaw' && github.event_name == 'schedule' && github.event.schedule == '41 6 * * 1'
+    if: github.repository == 'syxscott/PaleoClaw' && github.event_name == 'schedule' && github.event.schedule == '41 6 * * 1'
     permissions:
       actions: read
       contents: read

@@ -120,7 +120,7 @@ function main() {
           : {}),
       }
     : {};
-  const repository = process.env.GITHUB_REPOSITORY ?? "paleoclaw/paleoclaw";
+  const repository = process.env.GITHUB_REPOSITORY ?? "syxscott/PaleoClaw";
   const mainSha = gitSha(mainDir);
   const linuxUpdaterObservation = requiresLinuxUpdaterObservation({ release, existingManifest })
     ? inspectLinuxUpdaterManifest({ repository, carrierTag: args.tag })

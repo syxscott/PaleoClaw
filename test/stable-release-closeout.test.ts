@@ -37,7 +37,7 @@ const validCloseoutParams = {
   mainChangelog: changelog,
   tagChangelog: changelog,
   mainAppcast:
-    "https://github.com/paleoclaw/paleoclaw/releases/download/v2026.6.8/paleoclaw-2026.6.8.zip\n",
+    "https://github.com/syxscott/PaleoClaw/releases/download/v2026.6.8/paleoclaw-2026.6.8.zip\n",
   release,
   releaseTagSha: "tag-sha",
   mainSha: "main-sha",
@@ -100,7 +100,7 @@ type CloseoutOverrides = Partial<typeof validCloseoutParams> & {
 const thinVersion = "2026.9.6";
 const thinTag = `v${thinVersion}`;
 const thinFeed = (suffix = "") =>
-  `https://github.com/paleoclaw/paleoclaw/releases/download/${thinTag}/paleoclaw-${thinVersion}${suffix}.zip`;
+  `https://github.com/syxscott/PaleoClaw/releases/download/${thinTag}/paleoclaw-${thinVersion}${suffix}.zip`;
 const thinChangelog = `# Changelog\n\n## ${thinVersion}\n\n- Shipped thin macOS releases.\n`;
 const thinCloseoutParams = {
   ...validCloseoutParams,
@@ -130,7 +130,7 @@ function shippedReplayFixture(version: string, mainVersion: string, complete: bo
   const tag = `v${version}`;
   const changelogSection = `## ${version}\n\n- Shipped release.`;
   const replayChangelog = `# Changelog\n\n${changelogSection}`;
-  const mainAppcast = `https://github.com/paleoclaw/paleoclaw/releases/download/${tag}/paleoclaw-${version}.zip\n`;
+  const mainAppcast = `https://github.com/syxscott/PaleoClaw/releases/download/${tag}/paleoclaw-${version}.zip\n`;
   const githubReleaseAssets = [
     `paleoclaw-${version}.zip`,
     `paleoclaw-${version}.dmg`,
@@ -212,7 +212,7 @@ describe("stable release closeout", () => {
             name: asset.name.replaceAll("2026.6.8", version),
           })),
         },
-        mainAppcast: `https://github.com/paleoclaw/paleoclaw/releases/download/${tag}/paleoclaw-${version}.zip\n`,
+        mainAppcast: `https://github.com/syxscott/PaleoClaw/releases/download/${tag}/paleoclaw-${version}.zip\n`,
       }),
     ).toMatchObject({
       errors: [],
@@ -240,7 +240,7 @@ describe("stable release closeout", () => {
       {
         mainAppcast: "<rss>stale main feed</rss>",
         publishedAppcast:
-          "https://github.com/paleoclaw/paleoclaw/releases/download/v2026.6.8/paleoclaw-2026.6.8.zip",
+          "https://github.com/syxscott/PaleoClaw/releases/download/v2026.6.8/paleoclaw-2026.6.8.zip",
       },
       errors.appcast,
     ],

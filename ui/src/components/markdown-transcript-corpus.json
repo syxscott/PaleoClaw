@@ -26,8 +26,8 @@
   },
   {
     "name": "links and citations",
-    "source": "See [docs](/start), https://example.com/path?q=1&x=2 and [unsafe](javascript:alert(1)).\n\n[paleoclaw](https://github.com/paleoclaw/paleoclaw) and `https://github.com/paleoclaw/paleoclaw`.",
-    "html": "<p>See <a href=\"https://docs.openclaw.ai/start\" rel=\"noreferrer noopener\" target=\"_blank\">docs</a>, <a href=\"https://example.com/path?q=1&amp;x=2\" class=\"markdown-bare-url\" rel=\"noreferrer noopener\" target=\"_blank\">https://example.com/path?q=1&amp;x=2</a> and unsafe.</p>\n<p><a href=\"https://github.com/paleoclaw/paleoclaw\" class=\"markdown-github-link\" rel=\"noreferrer noopener\" target=\"_blank\">paleoclaw</a> and <a href=\"https://github.com/paleoclaw/paleoclaw\" class=\"markdown-bare-url markdown-github-link\" title=\"https://github.com/paleoclaw/paleoclaw\" rel=\"noreferrer noopener\" target=\"_blank\">paleoclaw/paleoclaw</a>.</p>\n"
+    "source": "See [docs](/start), https://example.com/path?q=1&x=2 and [unsafe](javascript:alert(1)).\n\n[paleoclaw](https://github.com/syxscott/PaleoClaw) and `https://github.com/syxscott/PaleoClaw`.",
+    "html": "<p>See <a href=\"https://docs.openclaw.ai/start\" rel=\"noreferrer noopener\" target=\"_blank\">docs</a>, <a href=\"https://example.com/path?q=1&amp;x=2\" class=\"markdown-bare-url\" rel=\"noreferrer noopener\" target=\"_blank\">https://example.com/path?q=1&amp;x=2</a> and unsafe.</p>\n<p><a href=\"https://github.com/syxscott/PaleoClaw\" class=\"markdown-github-link\" rel=\"noreferrer noopener\" target=\"_blank\">paleoclaw</a> and <a href=\"https://github.com/syxscott/PaleoClaw\" class=\"markdown-bare-url markdown-github-link\" title=\"https://github.com/syxscott/PaleoClaw\" rel=\"noreferrer noopener\" target=\"_blank\">syxscott/PaleoClaw</a>.</p>\n"
   },
   {
     "name": "HTML sanitization",

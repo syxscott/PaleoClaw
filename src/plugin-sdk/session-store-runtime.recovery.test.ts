@@ -58,7 +58,7 @@ describe("session-store-runtime recovery boundary", () => {
   });
 
   it("keeps pending remote-project recovery private across public session mutations", async () => {
-    const pendingProjectGitUrl = "https://github.com/paleoclaw/openclaw.git";
+    const pendingProjectGitUrl = "https://github.com/syxscott/PaleoClaw.git";
     await replaceInternalSessionEntry(scope, {
       pendingProjectGitUrl,
       sessionId: "project-session",

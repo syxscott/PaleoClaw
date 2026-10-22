@@ -50,7 +50,7 @@ const executing = (ref = "main") => ({
 const parentRun = (overrides = {}) => ({
   id: Number(PARENT_RUN_ID),
   run_attempt: Number(PARENT_RUN_ATTEMPT),
-  repository: { full_name: "paleoclaw/paleoclaw" },
+  repository: { full_name: "syxscott/PaleoClaw" },
   path: ".github/workflows/paleoclaw-release-publish.yml@refs/heads/main",
   event: "workflow_dispatch",
   head_branch: "main",
@@ -65,14 +65,14 @@ const parentIdentity = () => ({
   releasePublishRef: "main",
   releasePublishRunAttempt: PARENT_RUN_ATTEMPT,
   releasePublishRunId: PARENT_RUN_ID,
-  repository: "paleoclaw/paleoclaw",
+  repository: "syxscott/PaleoClaw",
 });
 
 function protectedIdentity(
   overrides: Partial<Parameters<typeof verifyReleaseToolingIdentity>[0]> = {},
 ) {
   return {
-    repository: "paleoclaw/paleoclaw",
+    repository: "syxscott/PaleoClaw",
     workflowFullRef: FULL_REF,
     workflowRef: REF,
     workflowSha: SHA,
@@ -150,7 +150,7 @@ describe("release tooling identity", () => {
           "qualification-admission-json": "{}",
           "qualification-inputs-json": "{}",
           "candidate-sha": SHA,
-          repository: "paleoclaw/paleoclaw",
+          repository: "syxscott/PaleoClaw",
           "workflow-contract": "2",
           "workflow-ref": releaseCiRef,
           "workflow-full-ref": `refs/heads/${releaseCiRef}`,
@@ -320,7 +320,7 @@ describe("release tooling identity", () => {
 
 describe("historical npm preflight tooling", () => {
   const producer = {
-    repository: "paleoclaw/paleoclaw",
+    repository: "syxscott/PaleoClaw",
     workflowRef: `paleoclaw/paleoclaw/.github/workflows/paleoclaw-npm-release.yml@${FULL_REF}`,
     workflowSha: SHA,
     runId: RUN_ID,
@@ -446,7 +446,7 @@ function qualificationFixture({
     qualificationAdmission: { artifactId: "100" },
   };
   const producer = {
-    repository: "paleoclaw/paleoclaw",
+    repository: "syxscott/PaleoClaw",
     workflowRef: `paleoclaw/paleoclaw/${workflowPath}@${fullRef}`,
     workflowSha: SHA,
     runId: RUN_ID,

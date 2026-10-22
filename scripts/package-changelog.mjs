@@ -74,7 +74,7 @@ export function extractCurrentPackageChangelog(content, packageVersion, options 
     // Keep every editorial note; only the audited record moves behind its immutable source link.
     const compacted = compactReleaseNotes(
       releaseSection,
-      "paleoclaw/paleoclaw",
+      "syxscott/PaleoClaw",
       `v${packageVersion}`,
       options.recordPath,
     );
@@ -114,8 +114,8 @@ export function readCurrentPackageChangelog(rootDir, packageVersion, options = {
         source.preamble,
         `## ${source.version}`,
         "The complete release documentation exceeds the package's 500 KiB changelog limit.",
-        `Read the [full release notes](https://github.com/paleoclaw/paleoclaw/blob/main/${source.sourcePath}) ([Raw](https://github.com/paleoclaw/paleoclaw/raw/refs/heads/main/${source.sourcePath})) or the [release documentation](https://docs.openclaw.ai/releases/${source.version}).`,
-        `The [complete contribution record](https://github.com/paleoclaw/paleoclaw/blob/main/${source.recordPath}#complete-contribution-record) remains available separately.`,
+        `Read the [full release notes](https://github.com/syxscott/PaleoClaw/blob/main/${source.sourcePath}) ([Raw](https://github.com/syxscott/PaleoClaw/raw/refs/heads/main/${source.sourcePath})) or the [release documentation](https://docs.openclaw.ai/releases/${source.version}).`,
+        `The [complete contribution record](https://github.com/syxscott/PaleoClaw/blob/main/${source.recordPath}#complete-contribution-record) remains available separately.`,
         "The changelog and contribution-record links follow the maintained files on main.",
       ].join("\n\n");
     }

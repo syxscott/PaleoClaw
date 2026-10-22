@@ -9,7 +9,7 @@ import {
 export const SHA = "a".repeat(40);
 export const TARGET_SHA = "b".repeat(40);
 export const SOURCE_REF = `release-ci/${SHA.slice(0, 12)}-77`;
-export const REPOSITORY = "paleoclaw/paleoclaw";
+export const REPOSITORY = "syxscott/PaleoClaw";
 
 export function job(name: string, conclusion = "success") {
   return {

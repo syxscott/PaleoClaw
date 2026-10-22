@@ -97,7 +97,7 @@ hold the next hourly core checks. Only scheduled `ios-build` jobs share a
 non-canceling slot: the active proof finishes while GitHub replaces a pending
 iOS job when another arrives. Arrival order need not match revision order.
 At the aggregate owner, `paleoclaw/ci-gate` accepts a selected `ios-build` result
-of `cancelled` only for scheduled `paleoclaw/paleoclaw` runs on `main`, and emits
+of `cancelled` only for scheduled `syxscott/PaleoClaw` runs on `main`, and emits
 an “Hourly iOS proof coalesced” notice. A real iOS failure or unexpected skip
 still fails the gate, as does cancellation of another selected lane. Manual
 and PR iOS cancellations retain their existing failure policy. A passing gate
@@ -605,14 +605,14 @@ duration, timestamp, and bounded failure reason in the job summary. A completed
 npm check covers npm bulk advisories only, not every upstream advisory source.
 
 The triage owner is **@steipete**, set on 2026-09-03 in
-[#137960](https://github.com/paleoclaw/paleoclaw/pull/137960). No `.github/CODEOWNERS`
+[#137960](https://github.com/openclaw/openclaw/pull/137960). No `.github/CODEOWNERS`
 rule covers `.github/workflows/dependency-audit.yml`, so this line is the only
 record of that ownership.
 Investigate failed scheduled runs and rerun the strict workflow to confirm
 recovery:
 
 ```bash
-gh workflow run dependency-audit.yml --repo paleoclaw/paleoclaw --ref main
+gh workflow run dependency-audit.yml --repo syxscott/PaleoClaw --ref main
 ```
 
 GitHub sends scheduled-run notifications to the workflow creator or the latest

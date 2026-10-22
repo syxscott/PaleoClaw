@@ -1439,7 +1439,7 @@ const section = [
   `- registry tarball: ${process.env.RELEASE_TARBALL}`,
   `- integrity: \`${process.env.RELEASE_INTEGRITY}\``,
   `- release SHA: \`${process.env.RELEASE_SHA}\``,
-  `- full release CI report: https://github.com/paleoclaw/releases/blob/main/evidence/${process.env.RELEASE_VERSION}/release-evidence.md`,
+  `- full release CI report: https://github.com/syxscott/PaleoClaw/releases/blob/main/evidence/${process.env.RELEASE_VERSION}/release-evidence.md`,
   `- release publish: https://github.com/${process.env.RELEASE_REPO}/actions/runs/${process.env.RELEASE_PUBLISH_RUN_ID}`,
   `- npm preflight: https://github.com/${process.env.RELEASE_REPO}/actions/runs/${process.env.PREFLIGHT_ARTIFACT_RUN_ID}`,
   `- ${process.env.RELEASE_VALIDATION_LABEL}: https://github.com/${process.env.RELEASE_REPO}/actions/runs/${process.env.RELEASE_VALIDATION_RUN_ID}`,

@@ -105,7 +105,7 @@ runs:
       id: main-pack
       if: >-
         success() && inputs.mode == 'save-main' && steps.identity.outputs.enabled == 'true' &&
-        github.repository == 'paleoclaw/paleoclaw' && github.ref == 'refs/heads/main' &&
+        github.repository == 'syxscott/PaleoClaw' && github.ref == 'refs/heads/main' &&
         contains(fromJSON('["push","schedule","workflow_dispatch","repository_dispatch"]'), github.event_name) &&
         inputs.candidate-trust == 'main' && inputs.cache-write-allowed == 'true' &&
         inputs.cache-mode != 'off' && inputs.cache-hit != 'true' &&
@@ -116,7 +116,7 @@ runs:
     - name: Save main SDK declarations
       if: >-
         success() && inputs.mode == 'save-main' && steps.identity.outputs.enabled == 'true' &&
-        github.repository == 'paleoclaw/paleoclaw' && github.ref == 'refs/heads/main' &&
+        github.repository == 'syxscott/PaleoClaw' && github.ref == 'refs/heads/main' &&
         contains(fromJSON('["push","schedule","workflow_dispatch","repository_dispatch"]'), github.event_name) &&
         inputs.candidate-trust == 'main' && inputs.cache-write-allowed == 'true' &&
         inputs.cache-mode != 'off' && inputs.cache-hit != 'true' &&

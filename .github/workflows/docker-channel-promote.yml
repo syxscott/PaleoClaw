@@ -13,7 +13,7 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
   DOCKERHUB_REGISTRY: docker.io
-  DOCKERHUB_IMAGE_NAME: paleoclaw/paleoclaw
+  DOCKERHUB_IMAGE_NAME: syxscott/PaleoClaw
 
 jobs:
   resolve:

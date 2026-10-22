@@ -70,7 +70,7 @@ verify_crabbox_admin_merge_bypass() {
       | .details_url // empty
     ' "$proof_dir/check-runs.json"
   )
-  if [[ "$crabbox_details_url" =~ ^https://github.com/paleoclaw/paleoclaw/actions/runs/([0-9]+)$ ]]; then
+  if [[ "$crabbox_details_url" =~ ^https://github.com/syxscott/PaleoClaw/actions/runs/([0-9]+)$ ]]; then
     local crabbox_publisher_run_id="${BASH_REMATCH[1]}"
   else
     echo "Crabbox merge bypass failed: trusted gate has no exact Actions run URL." >&2
@@ -88,7 +88,7 @@ verify_crabbox_admin_merge_bypass() {
       | .details_url // empty
     ' "$proof_dir/check-runs.json"
   )
-  if [[ "$ci_details_url" =~ ^https://github.com/paleoclaw/paleoclaw/actions/runs/([0-9]+)/job/([0-9]+)$ ]]; then
+  if [[ "$ci_details_url" =~ ^https://github.com/syxscott/PaleoClaw/actions/runs/([0-9]+)/job/([0-9]+)$ ]]; then
     local ci_run_id="${BASH_REMATCH[1]}"
     local ci_gate_job_id="${BASH_REMATCH[2]}"
   else

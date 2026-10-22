@@ -155,7 +155,7 @@ it("recovers one guest integration, retains saved data and publishes the resolve
       return commandResult(JSON.stringify({ ref: "refs/heads/main", sha: baseCommit }));
     }
     if (argv.includes("fetch") && (argv.includes(partialBase) || argv.includes("--stdin"))) {
-      expect(argv).toContain("https://github.com/paleoclaw/openclaw.git");
+      expect(argv).toContain("https://github.com/syxscott/PaleoClaw.git");
       expect(argv).toContain("credential.helper=!gh auth git-credential");
       if (argv.includes("--stdin")) {
         contentFetches++;
@@ -166,7 +166,7 @@ it("recovers one guest integration, retains saved data and publishes the resolve
         commitFetches++;
       }
       return await runCommandBuffered(
-        argv.map((arg) => (arg === "https://github.com/paleoclaw/openclaw.git" ? upstreamUrl : arg)),
+        argv.map((arg) => (arg === "https://github.com/syxscott/PaleoClaw.git" ? upstreamUrl : arg)),
         { ...options, cwd, timeoutMs: 10_000 },
       );
     }

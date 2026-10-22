@@ -8,7 +8,7 @@ import { resolveTestNodeExecPath } from "../../src/test-utils/node-process.js";
 export const RELEASE = "2026.9.6";
 export const CUT_SHA = "a".repeat(40);
 export const TOOLING_SHA = "b".repeat(40);
-export const REPOSITORY = "paleoclaw/paleoclaw";
+export const REPOSITORY = "syxscott/PaleoClaw";
 export const PHASES = [
   "cut",
   "validate",
@@ -190,7 +190,7 @@ export const closeoutMain = (version = RELEASE, notes = `## ${RELEASE}\n`): Fake
 ];
 
 export const CANDIDATE_COMMAND =
-  String.raw`gh workflow run paleoclaw-release-publish.yml --repo paleoclaw/paleoclaw --ref release-publish/bbbbbbbbbbbb-123 \
+  String.raw`gh workflow run paleoclaw-release-publish.yml --repo syxscott/PaleoClaw --ref release-publish/bbbbbbbbbbbb-123 \
   -f tag=v2026.9.6 \
   -f full_release_validation_run_id=101 \
   -f full_release_validation_run_attempt=3 \

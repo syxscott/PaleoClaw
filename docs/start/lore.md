@@ -116,7 +116,7 @@ Moltbot never quite rolled off the tongue. And so, at 4am GMT, the team gathered
 
 In just 3 hours:
 
-- GitHub renamed: `github.com/paleoclaw/paleoclaw` ✅
+- GitHub renamed: `github.com/syxscott/PaleoClaw` ✅
 - X handle `@paleoclaw` secured with GOLD CHECKMARK 💰
 - npm packages released under new name
 - Docs migrated to `docs.paleoclaw.ai`

@@ -67,7 +67,7 @@ function writeManifest(mode: "publish" | "configure-only", artifact: Uint8Array,
     path,
     JSON.stringify({
       schemaVersion: 1,
-      repository: "paleoclaw/paleoclaw",
+      repository: "syxscott/PaleoClaw",
       targetSha: "a".repeat(40),
       workflowSha: "b".repeat(40),
       runId: "123",
@@ -163,7 +163,7 @@ function registryFetch(artifact: Uint8Array) {
       return Response.json({
         trustedPublisher: {
           provider: "github-actions",
-          repository: "paleoclaw/paleoclaw",
+          repository: "syxscott/PaleoClaw",
           workflowFilename: "plugin-PaleoHub-release.yml",
           environment: null,
         },

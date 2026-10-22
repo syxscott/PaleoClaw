@@ -145,7 +145,7 @@ export class SessionParticipationTracker {
     // During an in-flight refresh, hold the last known block so a restricted
     // session does not flicker enabled; a completed absence never blocks. The
     // redaction case (a session hidden from a non-owner) is handled once the
-    // explicit revocation signal lands (paleoclaw/paleoclaw#112760).
+    // explicit revocation signal lands (syxscott/PaleoClaw#112760).
     return params.listLoading && this.lastBlocked.get(params.sessionKey) === true;
   }
 }

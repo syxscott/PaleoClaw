@@ -20,7 +20,7 @@ jobs:
     # Cheap admission keeps default security-only push completions out of cadence
     # history. Job evidence below, not the mutable opt-in variable, grants writes.
     if: >-
-      github.repository == 'paleoclaw/paleoclaw' &&
+      github.repository == 'syxscott/PaleoClaw' &&
       ((github.event_name == 'workflow_dispatch' && github.actor != 'github-actions[bot]') ||
        (github.event_name == 'workflow_run' &&
         github.event.workflow_run.conclusion == 'success' &&

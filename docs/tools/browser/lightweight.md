@@ -54,7 +54,7 @@ including license notices, Corresponding Source, and third-party obligations.
 Modifying a network-served engine also requires reviewing AGPL section 13.
 A separate process is not a blanket legal exemption, and checksum verification
 does not establish license compliance. See the
-[artifact and dependency review](https://github.com/paleoclaw/paleoclaw/blob/main/deploy/lightpanda/README.md)
+[artifact and dependency review](https://github.com/syxscott/PaleoClaw/blob/main/deploy/lightpanda/README.md)
 for the verified pins and remaining limits.
 
 ## Alternatives reviewed

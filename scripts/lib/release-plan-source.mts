@@ -19,7 +19,7 @@ export type ReleaseInventorySource = {
   runGh?: (args: string[]) => string;
   downloadArchive?: (args: string[]) => Uint8Array;
 };
-const REPOSITORY = "paleoclaw/paleoclaw";
+const REPOSITORY = "syxscott/PaleoClaw";
 const git = (repoRoot: string, args: string[]) =>
   execFileSync("git", args, {
     cwd: repoRoot,

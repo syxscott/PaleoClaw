@@ -40,7 +40,7 @@ import { preparedNpmArtifactName } from "../../scripts/plugin-npm-prepared-relea
 import { expectedChildDispatches } from "../../scripts/release-ci-summary.mjs";
 import { useAutoCleanupTempDirTracker } from "../helpers/temp-dir.js";
 
-const REPOSITORY = "paleoclaw/paleoclaw";
+const REPOSITORY = "syxscott/PaleoClaw";
 const SOURCE_SHA = "a".repeat(40);
 const TOOLING_SHA = "b".repeat(40);
 const TOOLING = {

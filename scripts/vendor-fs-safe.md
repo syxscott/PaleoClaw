@@ -16,7 +16,7 @@ node -p "require('./package.json').dependencies['@openclaw/fs-safe']"
 pnpm -r why @openclaw/fs-safe
 ```
 
-Obtain a reviewed [upstream checkout](https://github.com/paleoclaw/fs-safe) or known-good local package for each affected
+Obtain a reviewed [upstream checkout](https://github.com/openclaw/fs-safe) or known-good local package for each affected
 version. Follow that revision's build instructions, then copy its built package
 directories into `vendor/fs-safe/<version>/`. Preserve `package.json`, exports,
 JavaScript/WASM assets, licenses, and matching native packages. Inspect the

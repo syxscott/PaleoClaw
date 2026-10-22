@@ -12,7 +12,7 @@ import {
 import { writePublishablePluginFixture } from "../helpers/publishable-plugin-fixture.js";
 export const sourceSha = "b".repeat(40);
 export const workflowSha = "a".repeat(40);
-const repository = "paleoclaw/paleoclaw";
+const repository = "syxscott/PaleoClaw";
 const workflowPath = ".github/workflows/plugin-npm-release.yml";
 export const packageName = "@paleoclaw/demo";
 export const version = "2026.9.2-beta.1";

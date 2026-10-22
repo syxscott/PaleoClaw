@@ -15,7 +15,7 @@ import { createControlUiE2eSuite } from "./control-ui-e2e-suite.test-support.ts"
 const imageUrl = "https://user-images.githubusercontent.com/1/github-sidebar-proof.png";
 const fallbackImageUrl = "https://images.example/existing-reader-image.png";
 const sha = "abcdef1234567890abcdef1234567890abcdef12";
-const repoUrl = "https://github.com/paleoclaw/paleoclaw";
+const repoUrl = "https://github.com/syxscott/PaleoClaw";
 const timestamp = "2026-09-13T11:00:00Z";
 const issueUrl = `${repoUrl}/issues/42`;
 const pullUrl = `${repoUrl}/pull/43`;
@@ -45,7 +45,7 @@ const readers: ControlUiLinkReaderDescriptor[] = [
 const issue = {
   url: issueUrl,
   title: "Read GitHub without leaving the conversation",
-  subtitle: "paleoclaw/paleoclaw · #42",
+  subtitle: "syxscott/PaleoClaw · #42",
   author: "octocat",
   badge: { label: "Open", tone: "positive" },
   createdAt: "2026-09-13T10:00:00Z",
@@ -72,7 +72,7 @@ const pull = {
   ...issue,
   url: pullUrl,
   title: "feat(ui): open GitHub links in a side panel",
-  subtitle: "paleoclaw/paleoclaw · #43",
+  subtitle: "syxscott/PaleoClaw · #43",
   body: "A native reader with **browser-style navigation**, discussion, and file diffs.",
   badge: { label: "Merged", tone: "accent" },
   comments: [
@@ -88,7 +88,7 @@ const pull = {
 const commit = {
   url: commitUrl,
   title: "Render GitHub documents beside chat",
-  subtitle: "paleoclaw/paleoclaw · " + sha.slice(0, 12),
+  subtitle: "syxscott/PaleoClaw · " + sha.slice(0, 12),
   author: "octocat",
   createdAt: timestamp,
   badge: { label: "Commit", tone: "neutral" },

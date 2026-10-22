@@ -51,7 +51,7 @@ function pullRequest(
     repo: "paleoclaw",
     branch: "feature/demo",
     title: `Pull request ${number}`,
-    url: `https://github.com/paleoclaw/paleoclaw/pull/${number}`,
+    url: `https://github.com/syxscott/PaleoClaw/pull/${number}`,
     state,
   };
 }
@@ -484,7 +484,7 @@ it.each(["session switch", "disconnect", "branch switch"] as const)(
         owner: "paleoclaw",
         repo: "paleoclaw",
         branch: "feature/demo",
-        createUrl: "https://github.com/paleoclaw/paleoclaw/pull/new/feature/demo",
+        createUrl: "https://github.com/syxscott/PaleoClaw/pull/new/feature/demo",
       },
       pullRequests: [pullRequest(111532, "open")],
     });
@@ -665,7 +665,7 @@ it.each([
   request.mockClear();
   const message = (text: string) => ({
     role: "assistant",
-    content: [{ type: "text", text: `${text} https://github.com/paleoclaw/paleoclaw/pull/111532` }],
+    content: [{ type: "text", text: `${text} https://github.com/openclaw/openclaw/pull/111532` }],
   });
   const deliver = (payload: Record<string, unknown>) =>
     handlePageGatewayEvent(state, {
@@ -687,7 +687,7 @@ it.each([
   if (mode === "stream") {
     deliver({
       state: "delta",
-      deltaText: "Opened https://github.com/paleoclaw/paleoclaw/pull/111532 ",
+      deltaText: "Opened https://github.com/openclaw/openclaw/pull/111532 ",
     });
     await nextFrame();
   }

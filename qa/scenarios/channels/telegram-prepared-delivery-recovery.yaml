@@ -8,7 +8,7 @@ scenario:
       - channels.streaming-final-reply
       - telegram.conversation-routing-and-delivery
   regressionRefs:
-    - paleoclaw/paleoclaw#146361
+    - syxscott/PaleoClaw#146361
   objective: Preserve code during streaming and recover a shortened final from normal assistant persistence without losing its reply target or duplicating media.
   successCriteria:
     - A hook-free streamed answer edits the same Telegram message and preserves literal directives in native code entities without attaching their example paths.

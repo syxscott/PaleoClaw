@@ -131,7 +131,7 @@ function runCiReleaseRefValidation(options: {
 set -euo pipefail
 if [[ "$1" == "-C" ]]; then shift 2; fi
 if [[ "$*" == "remote get-url origin" ]]; then
-  printf '%s\\n' 'https://github.com/paleoclaw/openclaw.git'
+  printf '%s\\n' 'https://github.com/syxscott/PaleoClaw.git'
 else
   echo 'fatal: could not read Username for https://github.com: terminal prompts disabled' >&2
   exit 128
@@ -179,7 +179,7 @@ fi
       env: {
         ...process.env,
         GH_TOKEN: step.env?.GH_TOKEN === "${{ github.token }}" ? "test-token" : "",
-        GITHUB_REPOSITORY: "paleoclaw/paleoclaw",
+        GITHUB_REPOSITORY: "syxscott/PaleoClaw",
         GITHUB_OUTPUT: outputPath,
         MOCK_REF_ENDPOINT: `repos/paleoclaw/paleoclaw/commits/${encodeURIComponent(ref)}`,
         MOCK_REF_SHA: resolvedSha,
@@ -695,7 +695,7 @@ AFTER_CD
         issue: { number: 123, ...(issue ? {} : { pull_request: {} }) },
       };
       const context = {
-        repository: "paleoclaw/paleoclaw",
+        repository: "syxscott/PaleoClaw",
         runAttempt: 1,
         eventName: "issue_comment" as const,
         actor: "event-actor",
@@ -1037,7 +1037,7 @@ AFTER_CD
       options: { autoMerge: true },
       expected: { branchExists: true },
       contains: [
-        ["mergeCalls", "pr merge https://github.com/paleoclaw/paleoclaw/pull/1"],
+        ["mergeCalls", "pr merge https://github.com/syxscott/PaleoClaw/pull/1"],
         ["mergeCalls", "--auto --squash --match-head-commit"],
         ["summary", "Enabled squash auto-merge for exact generated head"],
       ],
@@ -1481,7 +1481,7 @@ AFTER_CD
         expect(
           evaluateWorkflowCondition(step.if, {
             eventName: "pull_request",
-            repository: "paleoclaw/paleoclaw",
+            repository: "syxscott/PaleoClaw",
             runAttempt: 1,
             preflightOutputs: { run_docs_content: enabled },
             steps: {
@@ -1498,7 +1498,7 @@ AFTER_CD
     expect(
       evaluateWorkflowCondition(format.if, {
         eventName: "pull_request",
-        repository: "paleoclaw/paleoclaw",
+        repository: "syxscott/PaleoClaw",
         runAttempt: 1,
         preflightOutputs: { run_docs_content: "false", run_format_check: "true" },
         steps: { node_setup: { outcome: "success", outputs: {} } },
@@ -1526,8 +1526,8 @@ AFTER_CD
       workflow.jobs["checks-node-core-test-nondist-shard"].strategy["max-parallel"];
     const canonicalNodePr = {
       eventName: "pull_request" as const,
-      repository: "paleoclaw/paleoclaw",
-      headRepository: "paleoclaw/paleoclaw",
+      repository: "syxscott/PaleoClaw",
+      headRepository: "syxscott/PaleoClaw",
       runAttempt: 1,
       runnerProfile: "hybrid" as const,
     };
@@ -1642,7 +1642,7 @@ AFTER_CD
       for (const runAttempt of [1, 2]) {
         const context = {
           eventName: "pull_request" as const,
-          repository: "paleoclaw/paleoclaw",
+          repository: "syxscott/PaleoClaw",
           headRepository: "contributor/paleoclaw",
           authorAssociation: "FIRST_TIME_CONTRIBUTOR",
           runnerBackend,
@@ -1717,7 +1717,7 @@ AFTER_CD
     }
     const releaseChild = {
       eventName: "workflow_dispatch",
-      repository: "paleoclaw/paleoclaw",
+      repository: "syxscott/PaleoClaw",
       runAttempt: 1,
       dispatchId: "full-release-validation-1-1-ci",
     } as const;
@@ -2230,7 +2230,7 @@ require("node:fs").writeFileSync("scheduler-restart", process.env.OPENCLAW_UPGRA
       eventName: "workflow_dispatch" as const,
       releaseGate: true,
       releaseScope: "npm-stable",
-      repository: "paleoclaw/paleoclaw",
+      repository: "syxscott/PaleoClaw",
       runAttempt: 1,
       targetContextRef: "release/2026.9.1-1",
       workflowToken: "test-token",
@@ -2294,7 +2294,7 @@ require("node:fs").writeFileSync("scheduler-restart", process.env.OPENCLAW_UPGRA
   it("keeps tiny hybrid controls hosted without moving security or fork first attempts", () => {
     const context = {
       eventName: "pull_request",
-      repository: "paleoclaw/paleoclaw",
+      repository: "syxscott/PaleoClaw",
       runAttempt: 1,
       runnerBackend: "hybrid",
     } as const;
@@ -2357,7 +2357,7 @@ require("node:fs").writeFileSync("scheduler-restart", process.env.OPENCLAW_UPGRA
       ).toBe("blacksmith-32vcpu-ubuntu-2404");
     }
     for (const authorAssociation of ["OWNER", "MEMBER", "COLLABORATOR", "CONTRIBUTOR"]) {
-      for (const headRepository of ["paleoclaw/paleoclaw", "contributor/paleoclaw"]) {
+      for (const headRepository of ["syxscott/PaleoClaw", "contributor/paleoclaw"]) {
         for (const runnerBackend of ["hybrid", "runson"] as const) {
           expect(
             ciValue("preflight", "runs-on", {
@@ -2368,7 +2368,7 @@ require("node:fs").writeFileSync("scheduler-restart", process.env.OPENCLAW_UPGRA
             }),
             `${runnerBackend}: ${authorAssociation}: ${headRepository}`,
           ).toBe(
-            runnerBackend === "hybrid" && headRepository === "paleoclaw/paleoclaw"
+            runnerBackend === "hybrid" && headRepository === "syxscott/PaleoClaw"
               ? "ubuntu-24.04"
               : "blacksmith-4vcpu-ubuntu-2404",
           );
@@ -2463,7 +2463,7 @@ require("node:fs").writeFileSync("scheduler-restart", process.env.OPENCLAW_UPGRA
       expect(
         evaluateWorkflowExpression(runsOn, {
           authorAssociation: "NONE",
-          headRepository: "paleoclaw/paleoclaw",
+          headRepository: "syxscott/PaleoClaw",
           matrix: lintMatrix,
           runnerBackend: "blacksmith",
         }),
@@ -2498,9 +2498,9 @@ require("node:fs").writeFileSync("scheduler-restart", process.env.OPENCLAW_UPGRA
   it("gives breaker-routed hosted jobs their hosted timeout budgets", () => {
     const context = {
       eventName: "pull_request",
-      headRepository: "paleoclaw/paleoclaw",
+      headRepository: "syxscott/PaleoClaw",
       matrix: { task: "build-play" },
-      repository: "paleoclaw/paleoclaw",
+      repository: "syxscott/PaleoClaw",
       runAttempt: 1,
     } as const;
     for (const [jobName, hostedTimeout, blacksmithTimeout] of [
@@ -2540,9 +2540,9 @@ require("node:fs").writeFileSync("scheduler-restart", process.env.OPENCLAW_UPGRA
       for (const offload of [false, true]) {
         const context = {
           eventName: "pull_request",
-          headRepository: "paleoclaw/paleoclaw",
+          headRepository: "syxscott/PaleoClaw",
           matrix: { task: "build-play" },
-          repository: "paleoclaw/paleoclaw",
+          repository: "syxscott/PaleoClaw",
           runAttempt: 1,
           runnerBackend,
           preflightOutputs: { hybrid_hosted_offload: String(offload) },
@@ -2833,7 +2833,7 @@ require("node:fs").writeFileSync("scheduler-restart", process.env.OPENCLAW_UPGRA
             ".github/workflows/release-npm-cache-warm.yml",
           ]).toContain(file);
           const authority = `${jobCondition ?? ""} ${step.if ?? ""}`;
-          expect(authority).toContain("github.repository == 'paleoclaw/paleoclaw'");
+          expect(authority).toContain("github.repository == 'syxscott/PaleoClaw'");
           expect(authority).toContain("github.event_name == 'workflow_dispatch'");
           continue;
         }
@@ -2848,7 +2848,7 @@ require("node:fs").writeFileSync("scheduler-restart", process.env.OPENCLAW_UPGRA
             "success()",
             "inputs.mode == 'save-main'",
             "steps.identity.outputs.enabled == 'true'",
-            "github.repository == 'paleoclaw/paleoclaw'",
+            "github.repository == 'syxscott/PaleoClaw'",
             "github.ref == 'refs/heads/main'",
             "inputs.candidate-trust == 'main'",
             "inputs.cache-write-allowed == 'true'",
@@ -3376,7 +3376,7 @@ server.listen(0, "127.0.0.1", () => {
       template.replace(/\$\{\{([\s\S]*?)\}\}/gu, (_, expression: string) =>
         String(
           runInNewContext(expression.replace(/\.([A-Za-z_][\w-]*)/gu, '["$1"]'), {
-            github: { repository: "paleoclaw/paleoclaw", run_id: runId, run_attempt: runAttempt },
+            github: { repository: "syxscott/PaleoClaw", run_id: runId, run_attempt: runAttempt },
             inputs: { "build-all-cache-scope": "full", "node-version": requestedNode },
             runner: { os: "Linux", arch: "X64" },
             steps: { "setup-node": { outputs: { "resolved-version": resolvedNode } } },
@@ -3488,7 +3488,7 @@ server.listen(0, "127.0.0.1", () => {
       },
     });
     expect(uploadStep).toMatchObject({
-      if: "success() && github.repository == 'paleoclaw/paleoclaw' && github.ref == 'refs/heads/main'",
+      if: "success() && github.repository == 'syxscott/PaleoClaw' && github.ref == 'refs/heads/main'",
       uses: UPLOAD_ARTIFACT_V7,
       with: {
         "if-no-files-found": "error",
@@ -3591,7 +3591,7 @@ server.listen(0, "127.0.0.1", () => {
 
     expect(warmer.jobs.warm.concurrency["cancel-in-progress"]).toBe(false);
     expect(warmer.on.push.branches).toEqual(["main"]);
-    expect(warmer.jobs.warm.if).toContain("github.repository == 'paleoclaw/paleoclaw'");
+    expect(warmer.jobs.warm.if).toContain("github.repository == 'syxscott/PaleoClaw'");
     expect(warmer.on).not.toHaveProperty("pull_request");
     expect(warmer.on).not.toHaveProperty("pull_request_target");
     expect(warmer.on).not.toHaveProperty("workflow_run");
@@ -4055,7 +4055,7 @@ ${step.run}`,
             DISPATCH_ID: "full-release-validation-123",
             EVENT_BASE_SHA: "",
             GITHUB_EVENT_NAME: "workflow_dispatch",
-            GITHUB_REPOSITORY: "paleoclaw/paleoclaw",
+            GITHUB_REPOSITORY: "syxscott/PaleoClaw",
             GITHUB_OUTPUT: output,
             RELEASE_GATE: "false",
             TARGET_CONTEXT_REF: "release/2026.9.6",
@@ -4107,7 +4107,7 @@ ${step.run}`,
     expect(harnessIndex).toBeLessThan(consumerIndex);
     const workflowSha = "a".repeat(40);
     for (const eventName of ["push", "pull_request", "workflow_dispatch"] as const) {
-      for (const headRepository of ["paleoclaw/paleoclaw", "contributor/paleoclaw"]) {
+      for (const headRepository of ["syxscott/PaleoClaw", "contributor/paleoclaw"]) {
         for (const selectedSha of [workflowSha, "b".repeat(40)]) {
           expect(
             evaluateWorkflowExpression(harnessStep.if, {
@@ -4237,7 +4237,7 @@ ${step.run}`,
       for (const phase of ["smoke", "tests", "release"]) {
         const context: Parameters<typeof evaluateWorkflowCondition>[1] = {
           eventName: "workflow_dispatch",
-          repository: "paleoclaw/paleoclaw",
+          repository: "syxscott/PaleoClaw",
           runAttempt: 1,
           env: { HISTORICAL_TARGET: String(historical) },
           matrix: { phase },
@@ -4435,7 +4435,7 @@ ${buildScript}`,
       ]);
       const preparesCli = evaluateWorkflowCondition(prepare.if, {
         eventName: "schedule",
-        repository: "paleoclaw/paleoclaw",
+        repository: "syxscott/PaleoClaw",
         runAttempt: 1,
         matrix: { phase },
         steps: {
@@ -5047,7 +5047,7 @@ printf '%s\n' "\${CURL_SUCCESS_IP:-203.0.113.7}"
         frozenTarget,
         matrix: { stripe, stripe_count: stripeCount },
         releaseGate,
-        repository: "paleoclaw/paleoclaw",
+        repository: "syxscott/PaleoClaw",
         runnerProfile: profile,
         runAttempt,
         preflightOutputs: { node_runner_backend: nodeRunnerBackend ?? "" },
@@ -5379,7 +5379,7 @@ printf '%s\n' "\${CURL_SUCCESS_IP:-203.0.113.7}"
         ui_test_shard_count: String(scenario.shards.length),
         ui_test_groups_gzip_base64: encodeNodeTestGroups(uiGroups),
       },
-      repository: "paleoclaw/paleoclaw",
+      repository: "syxscott/PaleoClaw",
       runAttempt: 1,
       runnerBackend: "hybrid",
       steps: {
@@ -5557,7 +5557,7 @@ printf '%s\n' "\${CURL_SUCCESS_IP:-203.0.113.7}"
         const includePath = path.join(rowDirectory, "include-path");
         const context = {
           eventName: "push" as const,
-          repository: "paleoclaw/paleoclaw",
+          repository: "syxscott/PaleoClaw",
           runAttempt: 1,
           matrix: {
             ...row,
@@ -6491,7 +6491,7 @@ fi
           PATH: `${bin}${path.delimiter}${process.env.PATH ?? ""}`,
           FIXTURE_CALLS: calls,
           FIXTURE_STATUS: JSON.stringify(status),
-          GITHUB_REPOSITORY: "paleoclaw/paleoclaw",
+          GITHUB_REPOSITORY: "syxscott/PaleoClaw",
           GITHUB_STEP_SUMMARY: devNull,
           RUNNER_TEMP: root,
           RELEASE_TAG: "v2026.10.3",
@@ -6562,7 +6562,7 @@ it("assembles a Linux-only release without Windows companion inputs", () => {
     encoding: "utf8",
     env: {
       PATH: `${bin}${path.delimiter}${process.env.PATH ?? ""}`,
-      GITHUB_REPOSITORY: "paleoclaw/paleoclaw",
+      GITHUB_REPOSITORY: "syxscott/PaleoClaw",
       RUNNER_TEMP: root,
       RELEASE_TAG: "v2026.10.5",
       DESKTOP_TEST_BUNDLES: "false",
@@ -6587,7 +6587,7 @@ it("detaches Linux mirror-only writers from both completed core finalizers", () 
   for (const event_name of ["push", "pull_request", "workflow_run", "workflow_dispatch"]) {
     expect(
       runInNewContext(mirror.jobs.mirror_legacy.if.slice(3, -2), {
-        github: { repository: "paleoclaw/paleoclaw", event_name },
+        github: { repository: "syxscott/PaleoClaw", event_name },
       }),
     ).toBe(event_name === "workflow_dispatch");
   }
@@ -6646,7 +6646,7 @@ it("detaches Linux mirror-only writers from both completed core finalizers", () 
         GITHUB_REF_NAME: toolingRef,
         GITHUB_REF: `refs/tags/${toolingRef}`,
         PARENT_WORKFLOW_SHA: toolingSha,
-        GITHUB_REPOSITORY: "paleoclaw/paleoclaw",
+        GITHUB_REPOSITORY: "syxscott/PaleoClaw",
         GITHUB_STEP_SUMMARY: path.join(directory, "summary"),
         RUNNER_TEMP: directory,
         RELEASE_TAG: "v2026.8.2",
@@ -6687,7 +6687,7 @@ it("reports stale Linux release requests before selected code runs", () => {
   const requestStep = expectDefined((job.steps as WorkflowStep[])[0], "first request validation");
   const requestSha = "a".repeat(40);
   const requestRun = {
-    repository: { full_name: "paleoclaw/paleoclaw" },
+    repository: { full_name: "syxscott/PaleoClaw" },
     event: "workflow_dispatch",
     name: "Linux App Release Request [v2026.8.2] desktop=false",
     path: ".github/workflows/linux-app-release-request.yml",
@@ -6696,7 +6696,7 @@ it("reports stale Linux release requests before selected code runs", () => {
     conclusion: "success",
   };
   const github = {
-    repository: "paleoclaw/paleoclaw",
+    repository: "syxscott/PaleoClaw",
     event_name: "workflow_run",
     workflow_sha: requestSha,
     event: { workflow_run: requestRun },
@@ -6757,7 +6757,7 @@ it.each(["success", "failure"])(
         PATH: process.env.PATH,
         RUNNER_TEMP: directory,
         GITHUB_STEP_SUMMARY: summary,
-        GITHUB_REPOSITORY: "paleoclaw/paleoclaw",
+        GITHUB_REPOSITORY: "syxscott/PaleoClaw",
         GITHUB_RUN_ID: "456",
         GITHUB_RUN_ATTEMPT: "2",
         REQUEST_RUN_ID: "123",
@@ -6774,7 +6774,7 @@ it.each(["success", "failure"])(
       JSON.parse(readFileSync(path.join(directory, "linux-release-admission.json"), "utf8")),
     ).toEqual({
       schemaVersion: 1,
-      repository: "paleoclaw/paleoclaw",
+      repository: "syxscott/PaleoClaw",
       request: { runId: "123", runAttempt: "1", headSha: "a".repeat(40) },
       builder: { runId: "456", runAttempt: "2", toolingSha: "a".repeat(40) },
       tag: status === "success" ? "v2026.8.2" : null,
@@ -6810,7 +6810,7 @@ it("retains exact completed Linux bundle bytes after packaging fails without adm
       PATH: process.env.PATH,
       RUNNER_TEMP: runner,
       GITHUB_STEP_SUMMARY: path.join(runner, "summary"),
-      GITHUB_REPOSITORY: "paleoclaw/paleoclaw",
+      GITHUB_REPOSITORY: "syxscott/PaleoClaw",
       GITHUB_RUN_ID: "456",
       GITHUB_RUN_ATTEMPT: "1",
       RELEASE_TAG: "v2026.8.2",
@@ -6846,7 +6846,7 @@ it("retains exact completed Linux bundle bytes after packaging fails without adm
   // blocks the signing dependency. Diagnostic retention has no promoted outputs.
   const context = {
     eventName: "workflow_run" as const,
-    repository: "paleoclaw/paleoclaw",
+    repository: "syxscott/PaleoClaw",
     runAttempt: 1,
     failed: true,
     steps: { "bundle-build": { outcome: "success" as const, outputs: {} } },
@@ -7835,7 +7835,7 @@ describe("frozen CI compatibility contracts", () => {
       expect(
         evaluateWorkflowCondition(launcher.if, {
           eventName: "workflow_dispatch",
-          repository: "paleoclaw/paleoclaw",
+          repository: "syxscott/PaleoClaw",
           runAttempt: 1,
           frozenTarget,
           steps: {

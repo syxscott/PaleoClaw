@@ -12,7 +12,7 @@ scenario:
       ownerAllowFrom:
         - telegram:100001
   regressionRefs:
-    - paleoclaw/paleoclaw#20837
+    - syxscott/PaleoClaw#20837
   objective: Verify a Telegram topic export reconstructs the session prompt with Telegram runtime context.
   successCriteria:
     - The real Telegram plugin receives a native export command in topic 928.

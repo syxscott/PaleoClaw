@@ -121,7 +121,7 @@ jobs:
               /^paleoclaw\/paleoclaw\/.github\/workflows\/[A-Za-z0-9_.-]+\.yml@refs\/heads\/main$/u.test(
                 callerWorkflowRef,
               ) &&
-              job.workflow_repository === "paleoclaw/paleoclaw" &&
+              job.workflow_repository === "syxscott/PaleoClaw" &&
               job.workflow_ref === calledWorkflowRef;
             if (context.actor === "github-actions[bot]") {
               if (!trustedMainCaller) {
@@ -200,7 +200,7 @@ jobs:
           set -euo pipefail
 
           expected_file_path=".github/workflows/maturity-scorecard.yml"
-          expected_repository="paleoclaw/paleoclaw"
+          expected_repository="syxscott/PaleoClaw"
           expected_workflow_ref="paleoclaw/paleoclaw/.github/workflows/maturity-scorecard.yml@refs/heads/main"
           canonical_direct=false
           if [[ "$CALLER_EVENT_NAME" == "workflow_dispatch" &&
@@ -359,7 +359,7 @@ jobs:
             github.workflow_ref == 'paleoclaw/paleoclaw/.github/workflows/maturity-scorecard.yml@refs/heads/main' &&
             needs.validate_selected_ref.outputs.workflow_file_path == '.github/workflows/maturity-scorecard.yml' &&
             needs.validate_selected_ref.outputs.workflow_ref == 'paleoclaw/paleoclaw/.github/workflows/maturity-scorecard.yml@refs/heads/main' &&
-            needs.validate_selected_ref.outputs.workflow_repository == 'paleoclaw/paleoclaw' }}
+            needs.validate_selected_ref.outputs.workflow_repository == 'syxscott/PaleoClaw' }}
         uses: ./.github/actions/create-generated-pr-tokens
         with:
           contents-client-id: Iv23liOECG0slfuhz093
@@ -745,7 +745,7 @@ jobs:
         github.workflow_ref == 'paleoclaw/paleoclaw/.github/workflows/maturity-scorecard.yml@refs/heads/main' &&
         needs.validate_selected_ref.outputs.workflow_file_path == '.github/workflows/maturity-scorecard.yml' &&
         needs.validate_selected_ref.outputs.workflow_ref == 'paleoclaw/paleoclaw/.github/workflows/maturity-scorecard.yml@refs/heads/main' &&
-        needs.validate_selected_ref.outputs.workflow_repository == 'paleoclaw/paleoclaw' }}
+        needs.validate_selected_ref.outputs.workflow_repository == 'syxscott/PaleoClaw' }}
     runs-on: *linux_runner_ubuntu
     permissions:
       actions: read
@@ -844,7 +844,7 @@ jobs:
             github.workflow_ref == 'paleoclaw/paleoclaw/.github/workflows/maturity-scorecard.yml@refs/heads/main' &&
             needs.validate_selected_ref.outputs.workflow_file_path == '.github/workflows/maturity-scorecard.yml' &&
             needs.validate_selected_ref.outputs.workflow_ref == 'paleoclaw/paleoclaw/.github/workflows/maturity-scorecard.yml@refs/heads/main' &&
-            needs.validate_selected_ref.outputs.workflow_repository == 'paleoclaw/paleoclaw' }}
+            needs.validate_selected_ref.outputs.workflow_repository == 'syxscott/PaleoClaw' }}
         uses: ./.github/actions/publish-generated-pr
         with:
           contents-client-id: Iv23liOECG0slfuhz093

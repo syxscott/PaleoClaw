@@ -102,14 +102,14 @@ async function publishPr(gateway: Gateway, key: string, withChecks = false) {
             repo: "paleoclaw",
             branch: "fix/PaleoHub-publish-metadata-2026-9-4",
             title: "fix: publish PaleoHub metadata",
-            url: "https://github.com/paleoclaw/paleoclaw/pull/144615",
+            url: "https://github.com/openclaw/openclaw/pull/144615",
             state: "open",
             additions: 295,
             deletions: 57,
             ...(withChecks
               ? {
                   checks: { state: "failing", passed: 60, failed: 1, skipped: 0, running: 0 },
-                  checksUrl: "https://github.com/paleoclaw/paleoclaw/pull/144615/checks",
+                  checksUrl: "https://github.com/openclaw/openclaw/pull/144615/checks",
                 }
               : {}),
           },

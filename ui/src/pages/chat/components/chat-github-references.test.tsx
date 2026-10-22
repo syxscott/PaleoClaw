@@ -67,9 +67,9 @@ describe("GitHub reference presentation parity", () => {
           (a) => a.href,
         ),
       ).toEqual([
-        "https://github.com/paleoclaw/clawsweeper/pull/1558",
-        "https://github.com/paleoclaw/clawsweeper/pull/1576",
-        "https://github.com/paleoclaw/paleoclaw/pull/1576",
+        "https://github.com/openclaw/clawsweeper/pull/1558",
+        "https://github.com/openclaw/clawsweeper/pull/1576",
+        "https://github.com/openclaw/openclaw/pull/1576",
       ]);
     },
   );

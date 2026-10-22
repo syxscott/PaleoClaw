@@ -194,7 +194,7 @@ if (process.env.FAIL_API === "true") process.exit(75);
             REQUESTED_BASELINES: "all-since-2026.6.1",
             CANDIDATE_VERSION: "2026.10.1",
             CANDIDATE_PUBLISHED: "false",
-            GITHUB_REPOSITORY: "paleoclaw/paleoclaw",
+            GITHUB_REPOSITORY: "syxscott/PaleoClaw",
             RUNNER_TEMP: root,
           },
           root,
@@ -304,7 +304,7 @@ console.log(JSON.stringify(process.argv[4] === "dist-tags"
         PACKAGE_ACCEPTANCE_PACKAGE_SPEC: "",
         RUN_RELEASE_SOAK: "false",
         GITHUB_OUTPUT: profileOutput,
-        GITHUB_REPOSITORY: "paleoclaw/paleoclaw",
+        GITHUB_REPOSITORY: "syxscott/PaleoClaw",
         FIXTURE_NPM_CALLS: calls,
       });
       const selected = readOutputs(profileOutput);

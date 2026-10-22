@@ -416,7 +416,7 @@ export async function syncTelegramMenuCommands(params: {
     // Skip sync if the command list hasn't changed since the last successful
     // sync. This prevents hitting Telegram's 429 rate limit when the gateway
     // is restarted several times in quick succession.
-    // See: paleoclaw/paleoclaw#32017
+    // See: syxscott/PaleoClaw#32017
     const currentHash = hashCommandList(commandsToRegister);
     const cachedHash = syncedCommandHashes.get(owner.hashKey);
     if (cachedHash === currentHash) {

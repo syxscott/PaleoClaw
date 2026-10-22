@@ -1,7 +1,7 @@
 import { resolveIsConfigReadOnly, resolveIsNixMode } from "./paths.js";
 
 /** Agent-first Nix install docs shown when runtime config writes are blocked. */
-const NIX_OPENCLAW_AGENT_FIRST_URL = "https://github.com/paleoclaw/nix-paleoclaw#quick-start";
+const NIX_OPENCLAW_AGENT_FIRST_URL = "https://github.com/openclaw/nix-openclaw#quick-start";
 /** Public paleoclaw Nix overview shown with immutable-config errors. */
 const NIX_OVERVIEW_URL = "https://docs.openclaw.ai/install/nix";
 

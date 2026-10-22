@@ -39,7 +39,7 @@ function client({ repository, token, api }) {
   if (api) {
     return api;
   }
-  if (repository !== "paleoclaw/paleoclaw" || !token) {
+  if (repository !== "syxscott/PaleoClaw" || !token) {
     throw new Error("Invalid main CI evidence context");
   }
   const logs = new Map();

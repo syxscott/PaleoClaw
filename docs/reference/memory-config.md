@@ -286,7 +286,7 @@ authentication.
     `gemini-embedding-2` can trigger the same pause even when you do not edit the
     configuration. Before 2026.8.1, the stable model's dimension was
     omitted from index identity whether `outputDimensionality` was absent or
-    explicitly set. From 2026.8.1 ([#128716](https://github.com/paleoclaw/paleoclaw/pull/128716)),
+    explicitly set. From 2026.8.1 ([#128716](https://github.com/openclaw/openclaw/pull/128716)),
     an absent setting resolves to 3072, while an
     explicit setting between 128 and 3072 becomes part of the identity. The
     default `gemini-embedding-001` keeps its existing identity when this setting

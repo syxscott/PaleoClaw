@@ -102,13 +102,13 @@ function runCloseout(options: {
 import { appendFileSync, readFileSync } from 'node:fs';
 const args = process.argv.slice(2);
 if (args[0] === 'browse') {
-  console.log('https://github.com/paleoclaw/paleoclaw');
+  console.log('https://github.com/syxscott/PaleoClaw');
   process.exit(0);
 }
 const endpoint = args.find(arg => arg.startsWith('repos/'));
 if (args[0] !== 'api') throw new Error('Unexpected GitHub command: ' + args.join(' '));
 const metadata = JSON.parse(readFileSync('metadata.json', 'utf8'));
-const repository = { id: 1, node_id: 'fixture-repo', full_name: 'paleoclaw/paleoclaw', html_url: 'https://github.com/paleoclaw/paleoclaw' };
+const repository = { id: 1, node_id: 'fixture-repo', full_name: 'syxscott/PaleoClaw', html_url: 'https://github.com/syxscott/PaleoClaw' };
 let value;
 if (endpoint === 'repos/paleoclaw/paleoclaw') value = repository;
 else if (endpoint === 'repos/paleoclaw/paleoclaw/pulls/42') {
@@ -161,7 +161,7 @@ prepare_gates 42
         PATH: `${bin}:${process.env.PATH}`,
         SCRIPTS: join(repoRoot, "scripts"),
         MAIN_SHA: mainSha,
-        GH_REPO: "paleoclaw/paleoclaw",
+        GH_REPO: "syxscott/PaleoClaw",
         OPENCLAW_GH_BIN: join(bin, "gh"),
         OPENCLAW_TESTBOX: "1",
         OPENCLAW_PR_GATES_REMOTE: "",

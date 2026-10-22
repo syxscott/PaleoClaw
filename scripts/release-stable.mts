@@ -50,7 +50,7 @@ export function parseReleaseStableArgs(argv: string[]): ReleaseOptions | undefin
   --from <${RELEASE_PHASES.join("|")}>  Resume from this phase
   --dry-run                          Print commands without executing or saving state
   --status                           Print retained phase state
-  --repo <owner/repo>                 Default: paleoclaw/paleoclaw
+  --repo <owner/repo>                 Default: syxscott/PaleoClaw
   --releases-repo <owner/repo>         Default: paleoclaw/releases
   --state-dir <directory>             Default: .artifacts/release-<version>
   --operator <name>                   Name recorded for approvals
@@ -104,7 +104,7 @@ export function parseReleaseStableArgs(argv: string[]): ReleaseOptions | undefin
     dryRun: values["dry-run"] ?? false,
     status: values.status ?? false,
     approvePublication: values["approve-publication"] ?? false,
-    repo: values.repo ?? "paleoclaw/paleoclaw",
+    repo: values.repo ?? "syxscott/PaleoClaw",
     releasesRepo: values["releases-repo"] ?? "paleoclaw/releases",
     stateDir: values["state-dir"] ?? `.artifacts/release-${release}`,
     operator: values.operator ?? process.env.USER ?? "operator",

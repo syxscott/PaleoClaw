@@ -345,7 +345,7 @@ export async function executePreparedReplyRun(
           // LLM-boundary stamping site (normalizeMessagesForLlmBoundary) can
           // derive a stable per-message `[DOW YYYY-MM-DD HH:MM TZ]` prefix that
           // is identical whether this turn is sent as the current turn or
-          // replayed as history. See: https://github.com/paleoclaw/paleoclaw/issues/3658
+          // replayed as history. See: https://github.com/openclaw/openclaw/issues/3658
           ...(userTurnTimestamp ? { timestamp: userTurnTimestamp } : {}),
           sender: persistChannelSender ? buildChannelUserTurnSender(sessionCtx) : undefined,
         }

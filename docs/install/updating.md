@@ -161,7 +161,7 @@ paleoclaw health
 
 Notes:
 
-- `pnpm build` matters when you run the packaged `paleoclaw` binary ([`paleoclaw.mjs`](https://github.com/paleoclaw/paleoclaw/blob/main/paleoclaw.mjs)) or use Node to run `dist/`.
+- `pnpm build` matters when you run the packaged `paleoclaw` binary ([`paleoclaw.mjs`](https://github.com/syxscott/PaleoClaw/blob/main/paleoclaw.mjs)) or use Node to run `dist/`.
 - If you run from a repo checkout without a global install, use `pnpm paleoclaw ...` for CLI commands.
 - If you run directly from TypeScript (`pnpm paleoclaw ...`), a rebuild is usually unnecessary, but **config migrations still apply** → run doctor.
 - Switching between global and git installs is easy: install the other flavor, then run `paleoclaw doctor` so the gateway service entrypoint is rewritten to the current install.

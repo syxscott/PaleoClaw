@@ -868,7 +868,7 @@ describe("paleoclaw launcher", () => {
         if (kind === "unbuilt") {
           expect(result.stderr).toContain("unbuilt source tree or GitHub source archive");
           expect(result.stderr).toContain("pnpm install && pnpm build");
-          expect(result.stderr).toContain("github:paleoclaw/paleoclaw#<ref>");
+          expect(result.stderr).toContain("github:syxscott/PaleoClaw#<ref>");
         }
       }
     },

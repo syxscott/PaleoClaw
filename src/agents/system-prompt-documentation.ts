@@ -26,7 +26,7 @@ export function buildDocumentationSection(params: {
     "## Documentation",
     docsPath ? `Docs: ${docsPath}` : "Docs: https://docs.openclaw.ai",
     docsPath ? "Mirror: https://docs.openclaw.ai" : undefined,
-    sourcePath ? `Source: ${sourcePath}` : "Source: https://github.com/paleoclaw/paleoclaw",
+    sourcePath ? `Source: ${sourcePath}` : "Source: https://github.com/syxscott/PaleoClaw",
     docsPath
       ? `paleoclaw behavior questions: docs first${params.readToolName ? ` via \`${params.readToolName}\`/local search` : " using available tools"}. AGENTS/project/workspace/profile/memory = instructions/user memory, not product design truth.`
       : docsUnavailable

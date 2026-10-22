@@ -19,7 +19,7 @@ function createHost() {
   return { state, refresh };
 }
 
-const text = "Opened https://github.com/paleoclaw/paleoclaw/pull/111532";
+const text = "Opened https://github.com/openclaw/openclaw/pull/111532";
 const message = { role: "assistant", content: [{ type: "text", text }] };
 
 describe("PR refresh emission receipts", () => {

@@ -52,8 +52,8 @@ describe("toSanitizedMarkdownHtml", () => {
     ],
     [
       "escaped authored checkboxes and safe link classes",
-      '- [x] <input class="task-list-item-checkbox" type="checkbox" checked> [PR](https://github.com/paleoclaw/paleoclaw/pull/123) [unsafe](javascript:alert(1))',
-      '<ul class="contains-task-list">\n<li class="task-list-item"><input class="task-list-item-checkbox" checked="" disabled="" type="checkbox"> &lt;input class="task-list-item-checkbox" type="checkbox" checked&gt; <a href="https://github.com/paleoclaw/paleoclaw/pull/123" class="markdown-github-link" rel="noreferrer noopener" target="_blank">PR</a> unsafe</li>\n</ul>\n',
+      '- [x] <input class="task-list-item-checkbox" type="checkbox" checked> [PR](https://github.com/openclaw/openclaw/pull/123) [unsafe](javascript:alert(1))',
+      '<ul class="contains-task-list">\n<li class="task-list-item"><input class="task-list-item-checkbox" checked="" disabled="" type="checkbox"> &lt;input class="task-list-item-checkbox" type="checkbox" checked&gt; <a href="https://github.com/openclaw/openclaw/pull/123" class="markdown-github-link" rel="noreferrer noopener" target="_blank">PR</a> unsafe</li>\n</ul>\n',
       false,
     ],
     [
@@ -251,7 +251,7 @@ describe("toSanitizedMarkdownHtml", () => {
     const known = { owner: "paleoclaw", repo: "clawsweeper", aliases: ["ClawSweeper"] };
     for (const [githubRepositories, expected] of [
       [[], null],
-      [[known], "https://github.com/paleoclaw/clawsweeper/pull/1576"],
+      [[known], "https://github.com/openclaw/clawsweeper/pull/1576"],
       [[known, { aliases: ["ClawSweeper"] }], null],
       [[], null],
     ] as const) {

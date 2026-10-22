@@ -55,7 +55,7 @@ function executedJob(id: number, name: string, runnerId: number): CapturedJob {
 
 export default {
   provenance: {
-    source: "https://github.com/paleoclaw/paleoclaw/pull/131617",
+    source: "https://github.com/openclaw/openclaw/pull/131617",
     captured: "2026-08-28",
     head: "baa73943fbcd7b47f5432d36d4d242f8170dc141",
     endpoints: [

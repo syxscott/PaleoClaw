@@ -5,7 +5,7 @@ read_when:
 title: "Secure file operations"
 ---
 
-paleoclaw uses [`@openclaw/fs-safe`](https://github.com/paleoclaw/fs-safe) for security-sensitive local file operations: root-bounded reads/writes, atomic replacement, archive extraction, temp workspaces, JSON state, and secret-file handling.
+paleoclaw uses [`@openclaw/fs-safe`](https://github.com/openclaw/fs-safe) for security-sensitive local file operations: root-bounded reads/writes, atomic replacement, archive extraction, temp workspaces, JSON state, and secret-file handling.
 
 It is a **library guardrail** for trusted paleoclaw code that receives untrusted path names, not a sandbox. Host filesystem permissions, OS users, containers, and the agent/tool policy still define the potential damage.
 
@@ -46,7 +46,7 @@ Python interpreter paths are not used. Remove `FS_SAFE_PYTHON`, `OPENCLAW_FS_SAF
 
 Use `require` when all native-capable operations must fail if the platform binding is unavailable. `auto` allows documented fallbacks; no-clobber Root moves and Windows secure credential reads still require an installed native helper.
 
-In fs-safe 0.21.2, `require` also refuses removal, recursive removal, directory creation, writable-open creation, and overwrite moves when the platform lacks the required confining primitive. An installed helper alone is not enough: recursive Root removal reports `helper-unavailable` on Linux without `openat2` and on Windows. These strict-mode mutations perform additional identity checks and can be slower. See the upstream [operation/platform matrix](https://github.com/paleoclaw/fs-safe/blob/v0.21.2/docs/security-model.md#native-root-mutation-capabilities).
+In fs-safe 0.21.2, `require` also refuses removal, recursive removal, directory creation, writable-open creation, and overwrite moves when the platform lacks the required confining primitive. An installed helper alone is not enough: recursive Root removal reports `helper-unavailable` on Linux without `openat2` and on Windows. These strict-mode mutations perform additional identity checks and can be slower. See the upstream [operation/platform matrix](https://github.com/openclaw/fs-safe/blob/v0.21.2/docs/security-model.md#native-root-mutation-capabilities).
 
 Keep `require` if those native guarantees are part of your deployment's security policy, and use a platform that supports the operations you need. Otherwise, the default `auto` mode retains the documented best-effort fallbacks and their existing performance.
 

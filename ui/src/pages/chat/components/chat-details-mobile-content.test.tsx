@@ -280,7 +280,7 @@ it("routes current mobile PRs to Checks and rejects hidden or superseded navigat
     const destination = navigate.mock.calls[0]![0];
     expect(destination.page?.details).toEqual({
       kind: "pull-request",
-      id: "paleoclaw/paleoclaw#103469",
+      id: "syxscott/PaleoClaw#103469",
     });
     expect(destination.backTo).toEqual({ area: "details" });
     await show(destination);
@@ -292,7 +292,7 @@ it("routes current mobile PRs to Checks and rejects hidden or superseded navigat
     const checks = navigate.mock.calls[1]![0];
     expect(checks.page?.details).toEqual({
       kind: "pull-request-checks",
-      id: "paleoclaw/paleoclaw#103469",
+      id: "syxscott/PaleoClaw#103469",
     });
     expect(checks.backTo).toBe(destination);
     await show(checks);

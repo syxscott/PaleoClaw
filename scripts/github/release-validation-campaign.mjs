@@ -106,7 +106,7 @@ export function validateReleaseValidationCampaignArtifact(
     throw new Error(`Campaign artifact stable train ${stableTrain} does not match ${tag}`);
   }
   const releaseUrl = requireString(artifact.releaseUrl, "releaseUrl");
-  const expectedReleaseUrl = `https://github.com/paleoclaw/paleoclaw/releases/tag/${tag}`;
+  const expectedReleaseUrl = `https://github.com/syxscott/PaleoClaw/releases/tag/${tag}`;
   if (releaseUrl !== expectedReleaseUrl) {
     throw new Error(`Campaign artifact release URL must be ${expectedReleaseUrl}`);
   }

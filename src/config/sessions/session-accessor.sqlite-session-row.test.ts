@@ -241,7 +241,7 @@ it("persists private source and workspace facts but excludes runtime-only resolv
   const entry: InternalSessionEntry = {
     sessionId: "runtime-skills-session",
     updatedAt: 42,
-    pendingProjectGitUrl: "https://github.com/paleoclaw/openclaw.git",
+    pendingProjectGitUrl: "https://github.com/syxscott/PaleoClaw.git",
     pendingWorktree: { name: "session-startup", titleSource: "Start work" },
     restartRecoveryRequesterSource: {
       agentId: "main",

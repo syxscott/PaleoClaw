@@ -329,7 +329,7 @@ export async function resolveModelAsync(
 }
 
 // Providers registered by setup/auth can explain an otherwise opaque model miss.
-// See https://github.com/paleoclaw/paleoclaw/issues/17328.
+// See https://github.com/openclaw/openclaw/issues/17328.
 function buildUnknownModelError(params: {
   provider: string;
   modelId: string;

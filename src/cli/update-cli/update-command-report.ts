@@ -110,8 +110,8 @@ export async function runInteractiveUpdateFailureAction(params: {
           action === "browser"
             ? "Prepare a browser link to review and submit this report yourself?"
             : action === "status"
-              ? "Check whether this report was submitted to paleoclaw/paleoclaw?"
-              : "Submit this sanitized report to paleoclaw/paleoclaw now?",
+              ? "Check whether this report was submitted to syxscott/PaleoClaw?"
+              : "Submit this sanitized report to syxscott/PaleoClaw now?",
         initialValue: false,
       });
       if (isCancel(confirmed) || !confirmed) {

@@ -749,7 +749,7 @@ describe("paleoclaw performance workflow", () => {
       "OCM_LINUX_X64_SHA256: d0bdb49d69fa8bf3c3487ff04f4be82126828876f81690afdc002c427e22c1ac",
     );
     expect(installRun).toContain(
-      '"https://github.com/paleoclaw/ocm/releases/download/${OCM_VERSION}/ocm-x86_64-unknown-linux-gnu.tar.gz"',
+      '"https://github.com/openclaw/ocm/releases/download/${OCM_VERSION}/ocm-x86_64-unknown-linux-gnu.tar.gz"',
     );
     expect(installRun).toContain("--max-time 180");
     expect(installRun).toContain(
@@ -822,7 +822,7 @@ describe("paleoclaw performance workflow", () => {
     expect(run.indexOf('os.environ.get("QUALIFICATION_DISPATCH")')).toBeLessThan(
       run.indexOf('fetch(reports, "main"'),
     );
-    expect(run).toContain('remote = "https://github.com/paleoclaw/clawgrit-reports.git"');
+    expect(run).toContain('remote = "https://github.com/openclaw/clawgrit-reports.git"');
     expect(run).toContain(
       'fetch(reports, "main", blobless=True, max_attempts=3, retry_failures=True)',
     );
@@ -1102,7 +1102,7 @@ describe("paleoclaw performance workflow", () => {
     expect(prepare.run).toContain("contains a symlink or special file");
     expect(prepare.run).toContain("config core.hooksPath /dev/null");
     expect(prepare.run).toContain(
-      'remote add origin "https://github.com/paleoclaw/clawgrit-reports.git"',
+      'remote add origin "https://github.com/openclaw/clawgrit-reports.git"',
     );
     expect(publish.env?.CLAWGRIT_REPORTS_APP_TOKEN).toBe(
       "${{ steps.clawgrit_app_token.outputs.token }}",
@@ -1112,7 +1112,7 @@ describe("paleoclaw performance workflow", () => {
     expect(publish.run).toContain('os.environ.pop("CLAWGRIT_REPORTS_APP_TOKEN", "")');
     expect(publish.run).toContain('local = ("-c", "core.hooksPath=/dev/null")');
     expect(publish.run).toContain(
-      'git_auth_environment("https://github.com/paleoclaw/clawgrit-reports.git", token)',
+      'git_auth_environment("https://github.com/openclaw/clawgrit-reports.git", token)',
     );
     expect(publish.run).not.toContain("export GIT_CONFIG_");
     expect(readFileSync(WORKFLOW, "utf8")).not.toContain("https://x-access-token:");
@@ -1180,7 +1180,7 @@ printf '%s\\n' \
           ...process.env,
           PATH: `${bin}:${process.env.PATH ?? ""}`,
           GITHUB_OUTPUT: output,
-          GITHUB_REPOSITORY: "paleoclaw/paleoclaw",
+          GITHUB_REPOSITORY: "syxscott/PaleoClaw",
           GITHUB_RUN_ATTEMPT: "2",
           GITHUB_RUN_ID: "9001",
           LANE_ID: "mock-provider",

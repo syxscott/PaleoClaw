@@ -974,7 +974,7 @@ function buildOpenrouterProvider(): ProviderConfig {
         // applyExtraParamsToAgent skips the reasoning effort injection for
         // model id "auto" because it dynamically routes to any OpenRouter model
         // (including ones where reasoning is mandatory and cannot be disabled).
-        // See: paleoclaw/paleoclaw#24851
+        // See: syxscott/PaleoClaw#24851
         reasoning: false,
         input: ["text", "image"],
         cost: OPENROUTER_DEFAULT_COST,

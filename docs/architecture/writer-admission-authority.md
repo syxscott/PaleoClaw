@@ -16,7 +16,7 @@ Restart reconstructs process-local authority through the existing owners.
 The bottleneck is host scheduling, not the cost of a Boolean check. A traced
 `chat.send` ACK spent 673 of 765 ms waiting for admission; the preceding change
 measured ACK p50/p99 of 1,209/1,693 ms with 20 senders
-([prior measurement](https://github.com/paleoclaw/paleoclaw/pull/170376)). A feasibility
+([prior measurement](https://github.com/openclaw/openclaw/pull/170376)). A feasibility
 probe answered from shared state in 0.064 ms but incorrectly granted after policy
 revocation. Forwarding the live callback instead waited through a 200 ms host
 stall. Those diagnostic observations justify transferring authority ownership
@@ -137,7 +137,7 @@ not yet available; stalled publication may delay work but cannot grant stale
 work. Test the actual publisher, not a synthetic revocation helper alone.
 
 Retain physical generations using the open-time reconciliation in
-[the retention repair](https://github.com/paleoclaw/paleoclaw/pull/170423): keep the
+[the retention repair](https://github.com/openclaw/openclaw/pull/170423): keep the
 original physical identity, acquire/reconcile the reference before exposing the
 handle, balance abandoned references, retry metadata closure only, and reject
 explicit retirement or replacement. Integrate that repair before service
@@ -215,7 +215,7 @@ Run the retained host path and migrated path against identical contract fixtures
 For every executable slice, use a synthetic isolated Team sandbox and four
 preselected A-B-B-A blocks, identical instrumentation/builds, fresh state per run
 and no discarded failures. Reuse the writer workload from
-[the writer-count measurement](https://github.com/paleoclaw/paleoclaw/pull/169800):
+[the writer-count measurement](https://github.com/openclaw/openclaw/pull/169800):
 20 sessions × five turns, one excluded warmup each, 20 history messages/session,
 400 history reads, 100 metadata updates/probe rounds, four subscribers, visible
 observer, tool events and control plane. Also repeat the 20-sender `chat.send`

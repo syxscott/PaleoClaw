@@ -17,12 +17,12 @@ export function pullRequest(
     repo: "paleoclaw",
     branch: "claude/browser-tabs-tighter-header",
     title: "fix(macos): tighten the link-browser tab header",
-    url: "https://github.com/paleoclaw/paleoclaw/pull/103469",
+    url: "https://github.com/openclaw/openclaw/pull/103469",
     state: "open",
     additions: 4,
     deletions: 3,
     checks: { state: "passing", passed: 5, failed: 0, skipped: 1, running: 0 },
-    checksUrl: "https://github.com/paleoclaw/paleoclaw/pull/103469/checks",
+    checksUrl: "https://github.com/openclaw/openclaw/pull/103469/checks",
     ...overrides,
   };
 }
@@ -58,7 +58,7 @@ export function sessionBranch(
     branch: "claude/cloud-workers-live-events",
     additions: 2819,
     deletions: 205,
-    createUrl: "https://github.com/paleoclaw/paleoclaw/pull/new/claude/cloud-workers-live-events",
+    createUrl: "https://github.com/syxscott/PaleoClaw/pull/new/claude/cloud-workers-live-events",
     ...overrides,
   };
 }

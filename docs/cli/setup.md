@@ -91,7 +91,7 @@ Use `setup --team` for the same small-team onboarding as `onboard --team`.
 `--agent-name <name>` names the first agent or, with `--team`, the coordinator.
 
 <Note>
-`paleoclaw setup` is for mutable config installs. In Nix mode (`OPENCLAW_NIX_MODE=1`) paleoclaw refuses setup writes because the config file is managed by Nix. Use the first-party [nix-paleoclaw Quick Start](https://github.com/paleoclaw/nix-paleoclaw#quick-start) or the equivalent source config for another Nix package.
+`paleoclaw setup` is for mutable config installs. In Nix mode (`OPENCLAW_NIX_MODE=1`) paleoclaw refuses setup writes because the config file is managed by Nix. Use the first-party [nix-paleoclaw Quick Start](https://github.com/openclaw/nix-openclaw#quick-start) or the equivalent source config for another Nix package.
 </Note>
 
 ## Options

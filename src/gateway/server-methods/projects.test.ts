@@ -494,7 +494,7 @@ test("projects.list exposes checkout details only at write scope", async () => {
             {
               id: "registered",
               repoRoot: repo,
-              originUrl: "https://github.com/paleoclaw/openclaw.git",
+              originUrl: "https://github.com/syxscott/PaleoClaw.git",
             },
           ],
         },
@@ -778,7 +778,7 @@ test("projects.add returns an existing project for the same canonical remote", a
 
     expect(
       await invoke("projects.add", {
-        gitUrl: "https://github.com/paleoclaw/openclaw.git",
+        gitUrl: "https://github.com/syxscott/PaleoClaw.git",
       }),
     ).toEqual({ ok: true, payload: existing, error: undefined });
   });
