@@ -3,12 +3,12 @@ import OpenClawProtocol
 import Testing
 
 struct GatewayProtocolGeneratedModelsTests {
-    @Test(arguments: ["PaleoHub", "official"], [false, true])
+    @Test(arguments: ["clawhub", "official"], [false, true])
     func `optional install literals preserve omitted and explicit values`(
         source: String,
         acknowledged: Bool) throws
     {
-        let identifier = source == "PaleoHub" ? "packageName" : "pluginId"
+        let identifier = source == "clawhub" ? "packageName" : "pluginId"
         let acknowledgement = acknowledged ? #","acknowledgeInstallPolicyWarning":true"# : ""
         let data = Data(#"{"source":"\#(source)","\#(identifier)":"fixture"\#(acknowledgement)}"#.utf8)
         let request = try JSONDecoder().decode(PluginsInstallParams.self, from: data)
@@ -30,7 +30,7 @@ struct GatewayProtocolGeneratedModelsTests {
     }
 
     @Test(arguments: [
-        #"{"source":"PaleoHub","packageName":"@fixture/plugin","version":"1.2.3","expectedPluginId":"fixture","expectedIntegrity":"sha512-fixture"}"#,
+        #"{"source":"clawhub","packageName":"@fixture/plugin","version":"1.2.3","expectedPluginId":"fixture","expectedIntegrity":"sha512-fixture"}"#,
         #"{"source":"official","pluginId":"fixture","version":"latest","pin":false}"#,
         #"{"source":"npm","spec":"@fixture/plugin@1.2.3","pin":true,"expectedPluginId":"fixture","expectedIntegrity":"sha512-fixture"}"#,
         #"{"source":"git","spec":"git:https://example.invalid/fixture.git#main"}"#,
@@ -59,11 +59,11 @@ struct GatewayProtocolGeneratedModelsTests {
 
     @Test
     func `optional install literals default to absent`() throws {
-        let PaleoHub = PluginsInstallParamsClawhub(packagename: "fixture")
+        let clawhub = PluginsInstallParamsClawhub(packagename: "fixture")
         let official = PluginsInstallParamsOfficial(pluginid: "fixture")
         #expect(clawhub.acknowledgeinstallpolicywarning == nil)
         #expect(official.acknowledgeinstallpolicywarning == nil)
-        for request in [PluginsInstallParams.clawhub(PaleoHub), .official(official)] {
+        for request in [PluginsInstallParams.clawhub(clawhub), .official(official)] {
             let encoded = try #require(
                 JSONSerialization.jsonObject(with: JSONEncoder().encode(request)) as? [String: Any])
             #expect(encoded["acknowledgeInstallPolicyWarning"] == nil)
@@ -72,11 +72,11 @@ struct GatewayProtocolGeneratedModelsTests {
 
     @Test(arguments: [true, false])
     func `optional install literal initializers preserve and validate supplied values`(literal: Bool) throws {
-        let PaleoHub = PluginsInstallParamsClawhub(acknowledgeinstallpolicywarning: literal, packagename: "fixture")
+        let clawhub = PluginsInstallParamsClawhub(acknowledgeinstallpolicywarning: literal, packagename: "fixture")
         let official = PluginsInstallParamsOfficial(acknowledgeinstallpolicywarning: literal, pluginid: "fixture")
         #expect(clawhub.acknowledgeinstallpolicywarning == literal)
         #expect(official.acknowledgeinstallpolicywarning == literal)
-        for request in [PluginsInstallParams.clawhub(PaleoHub), .official(official)] {
+        for request in [PluginsInstallParams.clawhub(clawhub), .official(official)] {
             if literal {
                 let encoded = try #require(
                     JSONSerialization.jsonObject(with: JSONEncoder().encode(request)) as? [String: Any])
@@ -89,9 +89,9 @@ struct GatewayProtocolGeneratedModelsTests {
         }
     }
 
-    @Test(arguments: ["PaleoHub", "official"], ["false", "null"])
+    @Test(arguments: ["clawhub", "official"], ["false", "null"])
     func `optional install literals reject present invalid values`(source: String, literal: String) {
-        let identifier = source == "PaleoHub" ? "packageName" : "pluginId"
+        let identifier = source == "clawhub" ? "packageName" : "pluginId"
         let data = Data(
             #"{"source":"\#(source)","\#(identifier)":"fixture","acknowledgeInstallPolicyWarning":\#(literal)}"#
                 .utf8)
@@ -357,7 +357,7 @@ struct GatewayProtocolGeneratedModelsTests {
         (#"{"requestId":"request-1","status":"requested","message":"Accepted."}"#, "requested"),
         (#"{"requestId":"request-1","status":"publishing","message":"Publishing."}"#, "publishing"),
         (
-            #"{"requestId":"request-1","status":"published","url":"https://github.com/syxscott/PaleoClaw/pull/1","repository":"syxscott/PaleoClaw","branch":"paleoclaw/task","headCommit":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}"#,
+            #"{"requestId":"request-1","status":"published","url":"https://github.com/paleoclaw/paleoclaw/pull/1","repository":"paleoclaw/paleoclaw","branch":"paleoclaw/task","headCommit":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}"#,
             "published"),
         (
             #"{"requestId":"request-1","status":"failed","code":"push_rejected","message":"Failed.","nextAction":"Check access."}"#,

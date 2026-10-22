@@ -1,9 +1,10 @@
+import OpenClawKit
 import OpenClawProtocol
 import Testing
 @testable import paleoclaw
 
-@Suite struct TalkModeConfigParsingTests {
-    @Test func prefersNormalizedTalkProviderPayload() {
+struct TalkModeConfigParsingTests {
+    @Test func `rejects normalized talk provider payload without resolved`() {
         let talk: [String: AnyCodable] = [
             "provider": AnyCodable("elevenlabs"),
             "providers": AnyCodable([
@@ -14,22 +15,46 @@ import Testing
             "voiceId": AnyCodable("voice-legacy"),
         ]
 
-        let selection = TalkModeRuntime.selectTalkProviderConfig(talk)
-        #expect(selection?.provider == "elevenlabs")
-        #expect(selection?.normalizedPayload == true)
-        #expect(selection?.config["voiceId"]?.stringValue == "voice-normalized")
+        let selection = TalkConfigParsing.selectProviderConfig(
+            talk,
+            defaultProvider: TalkModeRuntime.defaultTalkProvider)
+        #expect(selection == nil)
     }
 
-    @Test func fallsBackToLegacyTalkFieldsWhenNormalizedPayloadMissing() {
+    @Test func `falls back to legacy talk fields when normalized payload missing`() {
         let talk: [String: AnyCodable] = [
             "voiceId": AnyCodable("voice-legacy"),
             "apiKey": AnyCodable("legacy-key"),
         ]
 
-        let selection = TalkModeRuntime.selectTalkProviderConfig(talk)
+        let selection = TalkConfigParsing.selectProviderConfig(
+            talk,
+            defaultProvider: TalkModeRuntime.defaultTalkProvider)
         #expect(selection?.provider == "elevenlabs")
         #expect(selection?.normalizedPayload == false)
         #expect(selection?.config["voiceId"]?.stringValue == "voice-legacy")
         #expect(selection?.config["apiKey"]?.stringValue == "legacy-key")
+    }
+
+    @Test func `reads configured silence timeout ms`() {
+        let talk: [String: AnyCodable] = [
+            "silenceTimeoutMs": AnyCodable(1500),
+        ]
+
+        #expect(TalkConfigParsing.resolvedSilenceTimeoutMs(talk, fallback: TalkDefaults.silenceTimeoutMs) == 1500)
+    }
+
+    @Test func `defaults silence timeout ms when missing`() {
+        #expect(TalkConfigParsing.resolvedSilenceTimeoutMs(nil, fallback: TalkDefaults.silenceTimeoutMs) == TalkDefaults
+            .silenceTimeoutMs)
+    }
+
+    @Test func `defaults silence timeout ms when invalid`() {
+        let talk: [String: AnyCodable] = [
+            "silenceTimeoutMs": AnyCodable(0),
+        ]
+
+        #expect(TalkConfigParsing
+            .resolvedSilenceTimeoutMs(talk, fallback: TalkDefaults.silenceTimeoutMs) == TalkDefaults.silenceTimeoutMs)
     }
 }

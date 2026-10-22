@@ -1,92 +1,66 @@
 import Foundation
+import OpenClawKit
+import OpenClawNativeState
 import Testing
 @testable import paleoclaw
 
-@Suite(.serialized)
 struct ExecApprovalsStoreRefactorTests {
-    private func withTempStateDir(
-        _ body: @escaping @Sendable (URL) async throws -> Void) async throws
-    {
-        let stateDir = FileManager().temporaryDirectory
-            .appendingPathComponent("paleoclaw-state-\(UUID().uuidString)", isDirectory: true)
-        defer { try? FileManager().removeItem(at: stateDir) }
-
-        try await TestIsolation.withEnvValues(["OPENCLAW_STATE_DIR": stateDir.path]) {
-            try await body(stateDir)
-        }
+    @Test func `policy resolution applies agent then wildcard then defaults`() {
+        let file = ExecApprovalsFile(
+            version: 1,
+            defaults: ExecApprovalsDefaults(security: .allowlist, ask: .off, askFallback: .deny),
+            agents: [
+                "*": ExecApprovalsAgent(ask: .onMiss, autoAllowSkills: true, allowlist: [
+                    ExecAllowlistEntry(id: "wildcard", pattern: "/usr/bin/printf"),
+                ]),
+                "main": ExecApprovalsAgent(security: .deny, allowlist: [
+                    ExecAllowlistEntry(id: "main", pattern: "/bin/echo", argPattern: " ^safe$ "),
+                ]),
+            ])
+        let resolved = ExecApprovalsStore.resolveFromFile(
+            file, agentId: "main", socket: ("/tmp/exec-approvals-unused.sock", ""))
+        #expect(resolved.agent.security == .deny)
+        #expect(resolved.agent.ask == .onMiss)
+        #expect(resolved.agent.askFallback == .deny)
+        #expect(resolved.agent.autoAllowSkills)
+        #expect(resolved.allowlist.map(\.id) == ["wildcard", "main"])
+        #expect(resolved.allowlist.last?.argPattern == " ^safe$ ")
+        #expect(resolved.file == file)
     }
 
-    @Test
-    func ensureFileSkipsRewriteWhenUnchanged() async throws {
-        try await self.withTempStateDir { stateDir in
-            _ = ExecApprovalsStore.ensureFile()
-            let url = ExecApprovalsStore.fileURL()
-            let firstWriteDate = try Self.modificationDate(at: url)
-
-            try await Task.sleep(nanoseconds: 1_100_000_000)
-            _ = ExecApprovalsStore.ensureFile()
-            let secondWriteDate = try Self.modificationDate(at: url)
-
-            #expect(firstWriteDate == secondWriteDate)
-        }
+    @Test func `omitted policy fields match TypeScript defaults`() {
+        let resolved = ExecApprovalsStore.resolveDefaults(from: ExecApprovalsFile(version: 1))
+        #expect(resolved.security == .full)
+        #expect(resolved.ask == .off)
+        #expect(resolved.askFallback == .deny)
+        #expect(!resolved.autoAllowSkills)
     }
 
-    @Test
-    func updateAllowlistReportsRejectedBasenamePattern() async throws {
-        try await self.withTempStateDir { _ in
-            let rejected = ExecApprovalsStore.updateAllowlist(
-                agentId: "main",
-                allowlist: [
-                    ExecAllowlistEntry(pattern: "echo"),
-                    ExecAllowlistEntry(pattern: "/bin/echo"),
-                ])
-            #expect(rejected.count == 1)
-            #expect(rejected.first?.reason == .missingPathComponent)
-            #expect(rejected.first?.pattern == "echo")
-
-            let resolved = ExecApprovalsStore.resolve(agentId: "main")
-            #expect(resolved.allowlist.map(\.pattern) == ["/bin/echo"])
-        }
+    @Test func `allowlist match key separates embedded nul boundaries`() {
+        let nulInPattern = ExecAllowlistEntry(pattern: "/usr/bin/rg\0safe", argPattern: "value")
+        let nulInArgPattern = ExecAllowlistEntry(pattern: "/usr/bin/rg", argPattern: "safe\0value")
+        #expect(
+            ExecApprovalsStore.allowlistEntryMatchKey(nulInPattern) !=
+                ExecApprovalsStore.allowlistEntryMatchKey(nulInArgPattern))
     }
 
-    @Test
-    func updateAllowlistMigratesLegacyPatternFromResolvedPath() async throws {
-        try await self.withTempStateDir { _ in
-            let rejected = ExecApprovalsStore.updateAllowlist(
-                agentId: "main",
-                allowlist: [
-                    ExecAllowlistEntry(
-                        pattern: "echo",
-                        lastUsedAt: nil,
-                        lastUsedCommand: nil,
-                        lastResolvedPath: " /usr/bin/echo "),
-                ])
-            #expect(rejected.isEmpty)
-
-            let resolved = ExecApprovalsStore.resolve(agentId: "main")
-            #expect(resolved.allowlist.map(\.pattern) == ["/usr/bin/echo"])
+    @Test func `local socket credentials expand tilde without changing stored material`() async throws {
+        let root = try makeTempDirForTests()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let owner = try OpenClawClientCredentialStore(rootURL: root)
+        _ = try owner.createSocketCredentials(.init(
+            path: "~/custom/exec-approvals.sock", token: "test-token", updatedAtMs: 1))
+        owner.close()
+        try await ExecApprovalsStore.withStateDirectory(root) {
+            let credentials = try ExecApprovalsStore.localSocketCredentials()
+            #expect(!credentials.socketPath.hasPrefix("~"))
+            #expect(credentials.socketPath.hasSuffix("/custom/exec-approvals.sock"))
+            #expect(credentials.token == "test-token")
+            let stored = try DeviceCredentialAccess.execute(
+                root: root,
+                operation: ClientCredentialOperation(kind: .socketRead)).socket
+            #expect(stored?.path == "~/custom/exec-approvals.sock")
+            #expect(stored?.token == credentials.token)
         }
-    }
-
-    @Test
-    func ensureFileHardensStateDirectoryPermissions() async throws {
-        try await self.withTempStateDir { stateDir in
-            try FileManager().createDirectory(at: stateDir, withIntermediateDirectories: true)
-            try FileManager().setAttributes([.posixPermissions: 0o755], ofItemAtPath: stateDir.path)
-
-            _ = ExecApprovalsStore.ensureFile()
-            let attrs = try FileManager().attributesOfItem(atPath: stateDir.path)
-            let permissions = (attrs[.posixPermissions] as? NSNumber)?.intValue ?? -1
-            #expect(permissions & 0o777 == 0o700)
-        }
-    }
-
-    private static func modificationDate(at url: URL) throws -> Date {
-        let attributes = try FileManager().attributesOfItem(atPath: url.path)
-        guard let date = attributes[.modificationDate] as? Date else {
-            struct MissingDateError: Error {}
-            throw MissingDateError()
-        }
-        return date
     }
 }
