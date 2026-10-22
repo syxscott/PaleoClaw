@@ -301,7 +301,29 @@ targets:
       Debug: Signing.xcconfig
       Release: Signing.xcconfig
     sources:
+      # The fork compiles the logic tests into this target, so the upstream
+      # exclusion of the Logic directory does not apply here.
       - path: Tests
+      - path: ../macos/Tests/OpenClawIPCTests/AsyncTestGate.swift
+        group: Tests
+      - path: ../macos/Tests/OpenClawIPCTests/DashboardHTTPFixture.swift
+        group: Tests
+      - path: ../macos/Tests/OpenClawIPCTests/TestWait.swift
+        group: Tests
+      - path: build/TestTLS/GatewayIngressIdentity.p12
+        buildPhase: resources
+      - path: ../macos/Tests/OpenClawIPCTests/GatewayWebSocketTestSupport.swift
+        group: Tests
+      - path: ../shared/OpenClawKit/Tests/OpenClawKitTests/NativeGatewayWebSocketFixture.swift
+        group: Tests
+      - path: ../shared/OpenClawKit/Tests/OpenClawKitTests/ChatMermaidRenderModelTests.swift
+        group: Tests
+      - path: ../shared/OpenClawKit/Tests/OpenClawKitTests/ChatSelectableTextViewTests.swift
+        group: Tests
+      - path: ../shared/OpenClawKit/Tests/OpenClawKitTests/ChatPasteboardTests.swift
+        group: Tests
+      - path: WatchApp/Sources/WatchDeferredPayloadOrdering.swift
+        group: WatchApp/Sources
     dependencies:
       - target: paleoclaw
       - package: Swabble
