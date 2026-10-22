@@ -1,15 +1,12 @@
 import Foundation
+import OpenClawChatUI
 import OSLog
 
 enum VoiceWakeForwarder {
     private static let logger = Logger(subsystem: "ai.paleoclaw", category: "voicewake.forward")
 
     static func prefixedTranscript(_ transcript: String, machineName: String? = nil) -> String {
-        let resolvedMachine = machineName
-            .flatMap { name -> String? in
-                let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
-                return trimmed.isEmpty ? nil : trimmed
-            }
+        let resolvedMachine = machineName?.nonEmpty
             ?? Host.current().localizedName
             ?? ProcessInfo.processInfo.hostName
 
@@ -32,31 +29,87 @@ enum VoiceWakeForwarder {
         }
     }
 
-    struct ForwardOptions: Sendable {
-        var sessionKey: String = "main"
-        var thinking: String = "low"
-        var deliver: Bool = true
-        var to: String?
-        var channel: GatewayAgentChannel = .webchat
+    private struct SessionListResponse: Decodable {
+        let sessions: [SessionRouteEntry]
+    }
+
+    struct SessionRouteEntry: Decodable, Equatable {
+        let key: String
+        let channel: String?
+        let lastChannel: String?
+        let lastTo: String?
+        let deliveryContext: DeliveryContext?
+    }
+
+    struct DeliveryContext: Decodable, Equatable {
+        let channel: String?
+        let to: String?
+    }
+
+    @discardableResult
+    static func forwardToSelectedSession(
+        transcript: String,
+        voiceWakeTrigger: String? = nil) async -> Result<Void, VoiceWakeForwardError>
+    {
+        let activeSessionKey = await MainActor.run { WebChatManager.shared.activeSessionKey }
+        let sessionKey: String = if let activeSessionKey = activeSessionKey?.nonEmpty {
+            activeSessionKey
+        } else {
+            await GatewayConnection.shared.mainSessionKey()
+        }
+
+        let routeEntries = await self.loadSessionRouteEntries()
+        return await self.forward(invocation: self.makeInvocation(
+            transcript: transcript,
+            sessionKey: sessionKey,
+            routeEntries: routeEntries,
+            voiceWakeTrigger: voiceWakeTrigger))
+    }
+
+    static func makeInvocation(
+        transcript: String,
+        sessionKey: String = "main",
+        routeEntries: [SessionRouteEntry] = [],
+        voiceWakeTrigger: String? = nil) -> GatewayAgentInvocation
+    {
+        let comparisonKey = OpenClawChatSessionKey.comparisonKey(sessionKey)
+        let routeEntry = routeEntries.first {
+            OpenClawChatSessionKey.comparisonKey($0.key) == comparisonKey
+        }
+        let parsedRoute = self.parseSessionKeyRoute(sessionKey)
+        let channelRaw = self.firstNonEmpty(
+            routeEntry?.deliveryContext?.channel,
+            routeEntry?.lastChannel,
+            routeEntry?.channel,
+            parsedRoute?.channel)
+        let channel = channelRaw
+            .flatMap { GatewayAgentChannel(rawValue: $0.lowercased()) }
+            ?? .webchat
+        let to = self.firstNonEmpty(
+            routeEntry?.deliveryContext?.to,
+            routeEntry?.lastTo,
+            parsedRoute?.to)
+
+        return GatewayAgentInvocation(
+            message: self.prefixedTranscript(transcript),
+            sessionKey: sessionKey,
+            deliver: channel.isDeliverable,
+            to: to,
+            channel: channel,
+            voiceWakeTrigger: voiceWakeTrigger)
     }
 
     @discardableResult
     static func forward(
-        transcript: String,
-        options: ForwardOptions = ForwardOptions()) async -> Result<Void, VoiceWakeForwardError>
+        transcript: String) async -> Result<Void, VoiceWakeForwardError>
     {
-        let payload = Self.prefixedTranscript(transcript)
-        let deliver = options.channel.shouldDeliver(options.deliver)
-        let result = await GatewayConnection.shared.sendAgent(GatewayAgentInvocation(
-            message: payload,
-            sessionKey: options.sessionKey,
-            thinking: options.thinking,
-            deliver: deliver,
-            to: options.to,
-            channel: options.channel))
+        await self.forward(invocation: self.makeInvocation(transcript: transcript))
+    }
+
+    private static func forward(invocation: GatewayAgentInvocation) async -> Result<Void, VoiceWakeForwardError> {
+        let result = await GatewayConnection.shared.sendAgent(invocation)
 
         if result.ok {
-            self.logger.info("voice wake forward ok")
             return .success(())
         }
 
@@ -65,9 +118,44 @@ enum VoiceWakeForwarder {
         return .failure(.rpcFailed(message))
     }
 
-    static func checkConnection() async -> Result<Void, VoiceWakeForwardError> {
-        let status = await GatewayConnection.shared.status()
-        if status.ok { return .success(()) }
-        return .failure(.rpcFailed(status.error ?? "agent rpc unreachable"))
+    private static func loadSessionRouteEntries() async -> [SessionRouteEntry] {
+        do {
+            let request = OpenClawChatGatewayRequests.sessionsList(
+                limit: 500,
+                search: nil,
+                archived: false,
+                includeGlobal: false,
+                timeoutMs: 10000)
+            let data = try await GatewayConnection.shared.request(request)
+            return try JSONDecoder().decode(SessionListResponse.self, from: data).sessions
+        } catch {
+            self.logger.debug(
+                "voice wake selected route lookup failed: \(error.localizedDescription, privacy: .public)")
+            return []
+        }
+    }
+
+    private static func parseSessionKeyRoute(_ sessionKey: String) -> (channel: String, to: String?)? {
+        let trimmed = sessionKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        let rawParts = trimmed.split(separator: ":", omittingEmptySubsequences: true).map(String.init)
+        let body: [String] = if rawParts.count >= 3, rawParts[0].caseInsensitiveCompare("agent") == .orderedSame {
+            Array(rawParts.dropFirst(2))
+        } else {
+            rawParts
+        }
+        guard body.count >= 3 else { return nil }
+        let kind = body[1].trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        guard kind == "direct" || kind == "group" || kind == "channel" else { return nil }
+        let channel = body[0].trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !channel.isEmpty else { return nil }
+        let to = body.dropFirst(2)
+            .joined(separator: ":")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        return (channel: channel, to: to.isEmpty ? nil : to)
+    }
+
+    private static func firstNonEmpty(_ values: String?...) -> String? {
+        values.lazy.compactMap { $0?.nonEmpty }.first
     }
 }
