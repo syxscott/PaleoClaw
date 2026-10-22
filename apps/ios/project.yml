@@ -62,12 +62,10 @@ targets:
           - $(SRCROOT)/SwiftSources.input.xcfilelist
         script: |
           set -euo pipefail
-          export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
-          if ! command -v swiftformat >/dev/null 2>&1; then
-            echo "error: swiftformat not found (brew install swiftformat)" >&2
-            exit 1
-          fi
+          export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+          "$SRCROOT/../../scripts/check-swift-tools.sh" swiftformat
           swiftformat --lint --config "$SRCROOT/../../config/swiftformat" \
+            --unexclude "$SRCROOT/Sources,$SRCROOT/ShareExtension,$SRCROOT/ActivityWidget,$SRCROOT/WatchApp,$SRCROOT/../shared/OpenClawKit/Sources/OpenClawChatUI,$SRCROOT/../shared/OpenClawKit/Sources/OpenClawKit,$SRCROOT/../shared/OpenClawKit/Sources/OpenClawNativeState,$SRCROOT/../shared/OpenClawKit/Sources/OpenClawProtocol,$SRCROOT/../swabble/Sources/SwabbleKit" \
             --filelist "$SRCROOT/SwiftSources.input.xcfilelist"
       - name: SwiftLint
         basedOnDependencyAnalysis: false
@@ -75,12 +73,9 @@ targets:
           - $(SRCROOT)/SwiftSources.input.xcfilelist
         script: |
           set -euo pipefail
-          export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
-          if ! command -v swiftlint >/dev/null 2>&1; then
-            echo "error: swiftlint not found (brew install swiftlint)" >&2
-            exit 1
-          fi
-          swiftlint lint --config "$SRCROOT/.swiftlint.yml" --use-script-input-file-lists
+          export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+          "$SRCROOT/../../scripts/check-swift-tools.sh" swiftlint
+          node "$SRCROOT/../../scripts/run-swiftlint.mts" --strict --config "$SRCROOT/.swiftlint.yml" --use-script-input-file-lists
     settings:
       base:
         CODE_SIGN_IDENTITY: "Apple Development"
