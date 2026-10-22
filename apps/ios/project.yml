@@ -5,8 +5,11 @@ options:
   preGenCommand: bash ../../scripts/ios-generate-test-tls-identity.sh && node ../../scripts/prepare-apple-mermaid.mjs
   bundleIdPrefix: ai.paleoclaw
   deploymentTarget:
-    iOS: "18.0"
-  xcodeVersion: "16.0"
+    # The app already ships upstream's design layer, which calls iOS 26 APIs
+    # such as UIButton.Configuration.prominentGlass(). A lower target cannot
+    # compile that code.
+    iOS: "26.2"
+  xcodeVersion: "26.0"
 
 settings:
   base:

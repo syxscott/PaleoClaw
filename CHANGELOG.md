@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Desktop companion**: the Linux, Windows and macOS companion apps build again. The companion was staged from a Bun release repository that does not exist, and the Windows runtime was checked against a signing identity that the published release does not carry.
 - **macOS app**: the package manifest declares the dependencies the sources import and points at the repositories those dependencies actually live in, so the app resolves and compiles again instead of failing on a missing module.
 - **iOS app**: the share extension and the node app model hand the gateway their credentials the way the node session now takes them, so the iOS targets compile again.
+- **iOS minimum version**: the app now requires iOS 26.2. The bundled design layer already calls iOS 26 APIs, so the previous minimum could not build the shipped code.
 
 ## [1.8.0] - 2026-09-08
 
