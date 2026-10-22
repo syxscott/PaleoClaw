@@ -157,7 +157,7 @@ jobs:
       - name: Verify Authenticode signatures
         shell: pwsh
         run: |
-          $expectedSignerSubject = "CN=paleoclaw Foundation, O=paleoclaw Foundation, L=Mill Valley, S=California, C=US"
+          $expectedSignerSubject = "CN=OpenClaw Foundation, O=OpenClaw Foundation, L=Mill Valley, S=California, C=US"
           Get-ChildItem -LiteralPath dist -File | ForEach-Object {
             $signature = Get-AuthenticodeSignature -LiteralPath $_.FullName
             if ($signature.Status -ne "Valid") {

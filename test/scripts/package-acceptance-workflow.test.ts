@@ -14628,7 +14628,7 @@ promote_windows_release_assets
       "--repo paleoclaw/paleoclaw-windows-node --json tagName,isDraft,isPrerelease,assets,url",
       "Windows source release must contain exactly one required asset",
       "Windows source release asset digest does not match the pinned digest",
-      "CN=paleoclaw Foundation, O=paleoclaw Foundation, L=Mill Valley, S=California, C=US",
+      "CN=OpenClaw Foundation, O=OpenClaw Foundation, L=Mill Valley, S=California, C=US",
       "has unexpected signer subject",
       "OpenClawCompanion-SHA256SUMS.txt",
       "Verify promoted release asset contract",

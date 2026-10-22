@@ -64,7 +64,7 @@ export async function stageWindowsRuntime(work, target, pin) {
   assert.equal(published.arch, target.arch, "Bun release architecture mismatch");
   assert.equal(published.executable.authenticodeSigned, true, "Windows Bun must be Authenticode signed");
   assert.equal(published.executable.testOnly, false, "Test-only Windows Bun cannot be bundled");
-  assert.equal(published.executable.signerSubject, "CN=paleoclaw Foundation, O=paleoclaw Foundation, L=Mill Valley, S=California, C=US", "Windows Bun signer mismatch");
+  assert.equal(published.executable.signerSubject, "CN=OpenClaw Foundation, O=OpenClaw Foundation, L=Mill Valley, S=California, C=US", "Windows Bun signer mismatch");
   const expected = {
     asset: published.name, sha256: published.sha256, executable: published.executable.path,
     executableSha256: published.executable.sha256,

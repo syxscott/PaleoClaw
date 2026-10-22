@@ -854,8 +854,8 @@ jobs:
           $ErrorActionPreference = "Stop"
           $version = $env:RELEASE_TAG.Substring(1)
           $signature = Get-AuthenticodeSignature -LiteralPath "dist/windows/paleoclaw-$version-windows-x86_64.exe"
-          if ($signature.Status -ne 'Valid' -or $signature.SignerCertificate.Subject -cne 'CN=paleoclaw Foundation, O=paleoclaw Foundation, L=Mill Valley, S=California, C=US' -or -not $signature.TimeStamperCertificate) {
-            throw "Expected a valid paleoclaw Foundation Authenticode signature"
+          if ($signature.Status -ne 'Valid' -or $signature.SignerCertificate.Subject -cne 'CN=OpenClaw Foundation, O=OpenClaw Foundation, L=Mill Valley, S=California, C=US' -or -not $signature.TimeStamperCertificate) {
+            throw "Expected a valid OpenClaw Foundation Authenticode signature"
           }
 
       - name: Upload Authenticode-signed installer

@@ -82,7 +82,7 @@ test("runtime-only fixture staging preserves Bun without building the disposable
   assert.deepEqual(fs.readdirSync(path.dirname(destination)), ["desktop-runtime"]);
 });
 
-const signerSubject = "CN=paleoclaw Foundation, O=paleoclaw Foundation, L=Mill Valley, S=California, C=US";
+const signerSubject = "CN=OpenClaw Foundation, O=OpenClaw Foundation, L=Mill Valley, S=California, C=US";
 // Synthetic PE header in a stored ZIP; no executable code or real runtime is included.
 const archive = Buffer.from("UEsDBBQAAAAAALiRS12hAcWLYAAAAGAAAAAXAAAAYnVuLXdpbmRvd3MteDY0L2J1bi5leGVNWgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAUEUAAGSGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABQSwECFAMUAAAAAAC4kUtdoQHFi2AAAABgAAAAFwAAAAAAAAAAAAAAgAEAAAAAYnVuLXdpbmRvd3MteDY0L2J1bi5leGVQSwUGAAAAAAEAAQBFAAAAlQAAAAAA", "base64");
 const executable = archive.subarray(53, 149);
