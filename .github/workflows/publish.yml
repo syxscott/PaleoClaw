@@ -9,33 +9,40 @@ on:
 
 jobs:
   npm-access-check:
-    # Reports which npm identity the publish token carries and what it may write.
-    # The registry answers an unauthorised publish with PUT /<package> -> 404,
-    # which is indistinguishable from a missing package without this report.
+    # Reports whether npm accepts this workflow as a trusted publisher for the
+    # package. It runs in seconds, so a misconfigured publisher is found
+    # without waiting for the build.
     runs-on: ubuntu-latest
     permissions:
       contents: read
       id-token: write
     steps:
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "24.21.0"
-          registry-url: "https://registry.npmjs.org"
-
-      - name: Report the token identity and its write access
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Check the trusted publisher
         run: |
-          set -uo pipefail
-          echo "### token identity (npm whoami)"
-          npm whoami 2>&1 || echo "whoami failed"
-          echo
-          echo "### write access to paleoclaw"
-          npm access list packages paleoclaw 2>&1 || echo "access list failed"
-          echo
-          echo "### every package this token may write"
-          npm access list packages 2>&1 || echo "access list failed"
+          set -euo pipefail
+          OIDC_TOKEN=$(curl -sSf \
+            -H "Authorization: bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=npm:registry.npmjs.org" \
+            | node -e '
+              let input = "";
+              process.stdin.on("data", (chunk) => { input += chunk; });
+              process.stdin.on("end", () => {
+                const parsed = JSON.parse(input);
+                if (!parsed.value) throw new Error("the id token response carried no value");
+                process.stdout.write(parsed.value);
+              });
+            ')
+          RESPONSE=$(curl -sS -w "\n%{http_code}" -X POST \
+            -H "Authorization: Bearer ${OIDC_TOKEN}" \
+            "https://registry.npmjs.org/-/npm/v1/oidc/token/exchange/package/paleoclaw")
+          STATUS=$(printf '%s' "${RESPONSE}" | tail -n 1)
+          BODY=$(printf '%s' "${RESPONSE}" | sed '$d')
+          echo "registry response (${STATUS}): ${BODY}"
+          if [[ "${STATUS}" != "200" ]]; then
+            echo "::error::npm does not accept this workflow as a trusted publisher for the paleoclaw package"
+            exit 1
+          fi
+          echo "npm trusted publishing is configured for this workflow."
 
   build-and-publish:
     runs-on: ubuntu-latest
@@ -61,23 +68,39 @@ jobs:
           version: 12.12.1
 
       - name: Verify the publish credentials
-        # The registry answers an invalid or unauthorised publish with
-        # PUT /<package> -> 404, which looks identical to a missing package and
-        # only surfaces after the whole build. Fail here instead, with the
-        # registry's own reason.
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        # The registry answers an unauthorised publish with PUT /<package> -> 404,
+        # which looks identical to a missing package and only surfaces after the
+        # whole build. The publish authenticates with npm trusted publishing, so
+        # check the workflow's OIDC identity up front instead.
         run: |
-          set -uo pipefail
-          if [[ -z "${NODE_AUTH_TOKEN:-}" ]]; then
-            echo "No NPM_TOKEN secret is set; the publish will rely on npm trusted publishing."
-            exit 0
-          fi
-          if ! npm whoami; then
-            echo "::error::the NPM_TOKEN secret is not a valid npm token; publishing needs a token with write access to the paleoclaw package"
+          set -euo pipefail
+          if [[ -z "${ACTIONS_ID_TOKEN_REQUEST_URL:-}" ]]; then
+            echo "::error::the workflow has no id-token permission, so npm trusted publishing cannot authenticate"
             exit 1
           fi
-          echo "npm identity: $(npm whoami)"
+          OIDC_TOKEN=$(curl -sSf \
+            -H "Authorization: bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=npm:registry.npmjs.org" \
+            | node -e '
+              let input = "";
+              process.stdin.on("data", (chunk) => { input += chunk; });
+              process.stdin.on("end", () => {
+                const parsed = JSON.parse(input);
+                if (!parsed.value) throw new Error("the id token response carried no value");
+                process.stdout.write(parsed.value);
+              });
+            ')
+          RESPONSE=$(curl -sS -w "\n%{http_code}" -X POST \
+            -H "Authorization: Bearer ${OIDC_TOKEN}" \
+            "https://registry.npmjs.org/-/npm/v1/oidc/token/exchange/package/paleoclaw")
+          STATUS=$(printf '%s' "${RESPONSE}" | tail -n 1)
+          BODY=$(printf '%s' "${RESPONSE}" | sed '$d')
+          echo "registry response (${STATUS}): ${BODY}"
+          if [[ "${STATUS}" != "200" ]]; then
+            echo "::error::npm does not accept this workflow as a trusted publisher for the paleoclaw package"
+            exit 1
+          fi
+          echo "npm trusted publishing is configured for this workflow."
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -108,15 +131,16 @@ jobs:
           ls -la .release-tarball/
 
       - name: Publish to npm
-        # This fork publishes from its own v* tags with an npm token. The upstream
-        # publisher additionally requires the preflight/full-release lineage that
-        # only the upstream release pipeline produces, so the fork asserts the
-        # contract it can actually guarantee instead: the tarball is the
-        # self-contained package built from this commit, it carries the manifest
-        # version, and that version belongs to the channel the dist-tag allows.
+        # This fork publishes from its own v* tags. The upstream publisher
+        # additionally requires the preflight/full-release lineage that only the
+        # upstream release pipeline produces, so the fork asserts the contract
+        # it can actually guarantee instead: the tarball is the self-contained
+        # package built from this commit, it carries the manifest version, and
+        # that version belongs to the channel the dist-tag allows.
+        # Authentication comes from npm trusted publishing, so no long-lived
+        # token is needed.
         if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_DIST_TAG: latest
         run: |
           set -euo pipefail
