@@ -55,6 +55,8 @@
     "test": "test"
   },
   "files": [
+    "!extensions/node_modules/**",
+    "!extensions/*/node_modules/**",
     "CHANGELOG.md",
     "LICENSE",
     "cli-invocation.mjs",
