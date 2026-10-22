@@ -45,7 +45,7 @@ it("checks generated drift and removes retired local declarations without changi
     expect(run().status).toBe(0);
     expect(run("--check").status).toBe(0);
     const beforeRemoval = await fs.readFile(feedPath, "utf8");
-    expect(JSON.parse(beforeRemoval).entries[0].openclaw.setup.nativeSessionCatalog).toEqual(
+    expect(JSON.parse(beforeRemoval).entries[0].paleoclaw.setup.nativeSessionCatalog).toEqual(
       catalog,
     );
     await fs.writeFile(manifestPath, JSON.stringify({ id: "owned" }));
@@ -53,7 +53,7 @@ it("checks generated drift and removes retired local declarations without changi
     expect(await fs.readFile(feedPath, "utf8")).toBe(beforeRemoval);
     expect(run().status).toBe(0);
     const feed = JSON.parse(await fs.readFile(feedPath, "utf8"));
-    expect(feed.entries[0].openclaw.setup).toEqual({ requiresRuntime: false });
+    expect(feed.entries[0].paleoclaw.setup).toEqual({ requiresRuntime: false });
     expect(feed.entries[1].openclaw).toEqual(unknown);
     expect(
       JSON.parse(

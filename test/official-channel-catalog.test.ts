@@ -64,7 +64,7 @@ describe("buildOfficialChannelCatalog", () => {
     });
 
     expect(twitch?.name).toBe("@paleoclaw/twitch");
-    expect(twitch?.openclaw.install).toEqual({
+    expect(twitch?.paleoclaw.install).toEqual({
       npmSpec: "@paleoclaw/twitch",
       defaultChoice: "npm",
       minHostVersion: ">=2026.4.10",

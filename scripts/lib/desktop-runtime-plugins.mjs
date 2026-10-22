@@ -215,7 +215,7 @@ export function stampDesktopRuntimePlugins(packageRoot, plan) {
   }
   for (const id of plan.pluginIds) {
     const plugin = readJson(path.join(packageRoot, "dist/extensions", id, "package.json"));
-    for (const entry of plugin.openclaw.extensions) {
+    for (const entry of plugin.paleoclaw.extensions) {
       if (!fs.statSync(path.join(packageRoot, "dist/extensions", id, entry)).isFile()) {
         throw new Error(`Staged official plugin ${id} is missing ${entry}.`);
       }

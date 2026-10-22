@@ -172,7 +172,7 @@ import fs from "node:fs";
 
 const packageJsonPath = process.argv[2];
 const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
-packageJson.openclaw.extensions = ["./index.js", " "];
+packageJson.paleoclaw.extensions = ["./index.js", " "];
 fs.writeFileSync(packageJsonPath, `${JSON.stringify(packageJson, null, 2)}\n`, "utf8");
 NODE
   tar -czf "$output_tgz" -C "$pack_dir" package
