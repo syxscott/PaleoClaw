@@ -604,17 +604,17 @@ extension SettingsProTab {
                     title: "Website",
                     icon: "globe",
                     color: .blue,
-                    url: URL(string: "https://openclaw.ai")!)
+                    url: URL(string: "https://paleoclaw.ai")!)
                 self.aboutLinkRow(
                     title: "Docs",
                     icon: "book.fill",
                     color: .orange,
-                    url: URL(string: "https://docs.openclaw.ai")!)
+                    url: URL(string: "https://docs.paleoclaw.ai")!)
                 self.aboutLinkRow(
                     title: "GitHub",
                     icon: "chevron.left.slash.chevron.right",
                     color: .gray,
-                    url: URL(string: "https://github.com/syxscott/PaleoClaw")!)
+                    url: URL(string: "https://github.com/paleoclaw/paleoclaw")!)
                 self.aboutLinkRow(
                     title: "Discord",
                     icon: "bubble.left.and.bubble.right.fill",
