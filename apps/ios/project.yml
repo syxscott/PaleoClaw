@@ -207,6 +207,25 @@ targets:
       - path: WatchApp
         excludes:
           - Info.plist
+    dependencies:
+      - package: OpenClawKit
+        product: OpenClawKit
+      - package: OpenClawKit
+        product: OpenClawProtocol
+      - sdk: AppIntents.framework
+      - sdk: AVFAudio.framework
+      - sdk: Network.framework
+      - sdk: Security.framework
+      - sdk: WatchConnectivity.framework
+      - sdk: UserNotifications.framework
+    preBuildScripts:
+      - name: Build Watch WebRTC
+        basedOnDependencyAnalysis: false
+        script: |
+          set -euo pipefail
+          export PATH="$PATH:$HOME/.cargo/bin:/opt/homebrew/bin:/usr/local/bin"
+          "$SRCROOT/../shared/OpenClawWatchRTC/build.sh" \
+            "$PLATFORM_NAME" "$DERIVED_FILE_DIR/WatchRTC" $ARCHS
     configFiles:
       Debug: Config/Signing.xcconfig
       Release: Config/Signing.xcconfig
