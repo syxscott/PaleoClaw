@@ -180,6 +180,9 @@ targets:
     sources:
       - path: ActivityWidget
       - path: Sources/LiveActivity/OpenClawActivityAttributes.swift
+      # Shared continuous avatar waveform; dependency-free for widget isolation.
+      - path: ../shared/OpenClawKit/Sources/OpenClawChatUI/TalkWaveformView.swift
+        group: Shared
     dependencies:
       - sdk: WidgetKit.framework
       - sdk: ActivityKit.framework
