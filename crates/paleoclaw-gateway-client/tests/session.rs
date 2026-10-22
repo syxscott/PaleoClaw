@@ -1,5 +1,5 @@
 use futures_util::{SinkExt, StreamExt};
-use openclaw_gateway_client::{
+use paleoclaw_gateway_client::{
     ClientError, ConnectAttempt, DispatchRejection, Event, GatewayClient, GatewayClientConfig,
 };
 use serde_json::{json, Value};
@@ -1244,7 +1244,7 @@ async fn connect_rejection_preserves_recovery_details() {
     else {
         panic!("expected structured Gateway rejection");
     };
-    let details = openclaw_gateway_client::ConnectErrorDetails::from_value(details.as_ref());
+    let details = paleoclaw_gateway_client::ConnectErrorDetails::from_value(details.as_ref());
     assert_eq!(details.device_id(), Some("device-1"));
     assert!(details.should_pause_reconnect());
     assert_eq!(retryable, Some(false));
@@ -1281,7 +1281,7 @@ fn plaintext_policy_accepts_trusted_private_targets_only() {
 async fn pinned_trust_rejects_plaintext_before_connecting() {
     let config = GatewayClientConfig::new("ws://127.0.0.1:9")
         .unwrap()
-        .tls_trust(openclaw_gateway_client::TlsTrust::Pinned([7; 32]));
+        .tls_trust(paleoclaw_gateway_client::TlsTrust::Pinned([7; 32]));
     let result = GatewayClient::connect(config, |_| async { Ok::<_, io::Error>(json!({})) }).await;
     assert!(matches!(result, Err(ClientError::Tls(_))));
 }

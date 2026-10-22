@@ -4,7 +4,7 @@ use std::{
     time::Duration,
 };
 
-use openclaw_node_host::{
+use paleoclaw_node_host::{
     read_sidecar_frame, write_sidecar_frame, AuthenticatedSidecarChannel, SidecarAdmissionDecision,
     SidecarCommandRegistration, SidecarConfigurationExchange, SidecarHandshake,
     SidecarHandshakeState, SidecarInvocation, SidecarInvocationResult, SidecarLimits,

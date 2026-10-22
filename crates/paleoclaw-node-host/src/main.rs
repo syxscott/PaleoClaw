@@ -1,4 +1,4 @@
-use openclaw_node_host::{run_host, HostConfig, HostCredentials};
+use paleoclaw_node_host::{run_host, HostConfig, HostCredentials};
 use serde_json::json;
 use std::{env, future::Future, path::PathBuf, process::ExitCode};
 

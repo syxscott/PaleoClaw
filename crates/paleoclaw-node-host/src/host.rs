@@ -525,7 +525,7 @@ fn invalidates_adopted_device_token(error: &ClientError) -> bool {
         return false;
     };
     method == "connect"
-        && openclaw_gateway_client::ConnectErrorDetails::from_value(details.as_ref())
+        && paleoclaw_gateway_client::ConnectErrorDetails::from_value(details.as_ref())
             .invalidates_device_token()
 }
 

@@ -1,5 +1,5 @@
 use futures_util::{SinkExt, StreamExt};
-use openclaw_gateway_client::{
+use paleoclaw_gateway_client::{
     ClientError, GatewayClient, GatewayClientConfig, TlsCertificatePolicy, TlsPeerCertificate,
     TlsTrust,
 };
@@ -291,6 +291,6 @@ async fn builtin_pin_mismatch_still_rejects_before_http_upgrade() {
     let Err(ClientError::Tls(reason)) = result else {
         panic!("pin mismatch was accepted")
     };
-    assert!(reason.contains(openclaw_gateway_client::TLS_PIN_MISMATCH_ERROR));
+    assert!(reason.contains(paleoclaw_gateway_client::TLS_PIN_MISMATCH_ERROR));
     server.await.unwrap();
 }

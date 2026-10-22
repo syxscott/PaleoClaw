@@ -1,4 +1,4 @@
-use openclaw_gateway_client::{ConnectErrorDetails, TLS_PIN_MISMATCH_ERROR};
+use paleoclaw_gateway_client::{ConnectErrorDetails, TLS_PIN_MISMATCH_ERROR};
 use serde_json::Value;
 use std::time::Duration;
 

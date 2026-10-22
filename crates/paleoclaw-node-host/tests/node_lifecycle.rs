@@ -1,6 +1,6 @@
 use ed25519_dalek::{Signer, SigningKey};
 use futures_util::{SinkExt, StreamExt};
-use openclaw_node_host::{
+use paleoclaw_node_host::{
     ClientError, ClientErrorClass, CommandRuntime, ConnectAuth, IdentityError,
     LifecycleDisconnectReason, LifecycleEvent, NodeClient, NodeClientConfig, NodeConnectOptions,
     NodeLifecycle, ReconnectPolicy,

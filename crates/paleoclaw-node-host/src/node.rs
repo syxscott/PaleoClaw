@@ -1,8 +1,8 @@
-use openclaw_gateway_client::{
+use paleoclaw_gateway_client::{
     ClientError as GatewayClientError, ConnectAttempt as GatewayConnectAttempt, GatewayClient,
     GatewayClientConfig, GatewaySession, TlsTrust,
 };
-pub use openclaw_gateway_client::{Event, EventSubscription};
+pub use paleoclaw_gateway_client::{Event, EventSubscription};
 use serde::{Deserialize, Deserializer, Serialize};
 use serde_json::{json, Value};
 use std::{
@@ -639,7 +639,7 @@ impl NodeClient {
         make_params: F,
     ) -> Result<NodeSession, ClientError>
     where
-        F: FnOnce(openclaw_gateway_client::ConnectChallenge) -> Fut,
+        F: FnOnce(paleoclaw_gateway_client::ConnectChallenge) -> Fut,
         Fut: Future<Output = Result<Value, E>>,
         E: std::fmt::Display + Send + Sync + 'static,
     {

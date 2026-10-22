@@ -1,6 +1,6 @@
 use ed25519_dalek::{Signer, SigningKey};
 use futures_util::{SinkExt, StreamExt};
-use openclaw_node_host::{
+use paleoclaw_node_host::{
     AuthenticatedSidecarChannel, CancellationToken, CommandRuntime, ConnectAuth, HandlerError,
     NodeClient, NodeClientConfig, NodeConnectOptions, NodeIdentity, NodeProtocolVersion,
     NodeSession, SidecarAdapterError, SidecarAdapterFuture, SidecarAdmissionDecision,
@@ -74,7 +74,7 @@ async fn public_runtime_completes_allowed_work_and_suppresses_wire_cancelled_eff
                     .auth(ConnectAuth::token("test-token"));
                 let request = options.external_signing_request(public_key, &challenge)?;
                 let signature = signing_key.sign(request.payload().as_bytes());
-                Ok::<_, openclaw_node_host::IdentityError>(
+                Ok::<_, paleoclaw_node_host::IdentityError>(
                     options.device(request.finish(signature.to_bytes())?),
                 )
             }
@@ -644,7 +644,7 @@ async fn node_protocol_fallback_uses_fresh_legacy_connect_material_and_recovers_
                         .device_family("Mac")
                         .command("example.status")
                         .activate()
-                        .identity(openclaw_node_host::NodeIdentity::from_secret_bytes([7; 32])),
+                        .identity(paleoclaw_node_host::NodeIdentity::from_secret_bytes([7; 32])),
                 )
             },
         )
@@ -697,7 +697,7 @@ async fn duplex_runtime_routes_ordered_input_and_progress() {
                 );
                 let request = options.external_signing_request(public_key, &challenge)?;
                 let signature = signing_key.sign(request.payload().as_bytes());
-                Ok::<_, openclaw_node_host::IdentityError>(
+                Ok::<_, paleoclaw_node_host::IdentityError>(
                     options.device(request.finish(signature.to_bytes())?),
                 )
             }
@@ -820,7 +820,7 @@ async fn direct_dispatch_rejects_duplex_without_running_an_event_loop() {
                 );
                 let request = options.external_signing_request(public_key, &challenge)?;
                 let signature = signing_key.sign(request.payload().as_bytes());
-                Ok::<_, openclaw_node_host::IdentityError>(
+                Ok::<_, paleoclaw_node_host::IdentityError>(
                     options.device(request.finish(signature.to_bytes())?),
                 )
             }
@@ -943,7 +943,7 @@ async fn connect_with_command(
             let request = options
                 .external_signing_request(signing_key.verifying_key().to_bytes(), &challenge)?;
             let signature = signing_key.sign(request.payload().as_bytes());
-            Ok::<_, openclaw_node_host::IdentityError>(
+            Ok::<_, paleoclaw_node_host::IdentityError>(
                 options.device(request.finish(signature.to_bytes())?),
             )
         },
@@ -1157,7 +1157,7 @@ async fn native_signed_connect_preserves_product_fields_and_rejects_invalid_node
             }
         });
         let connected = NodeClient::connect_signed(
-            openclaw_gateway_client::GatewayClientConfig::new(format!("ws://{address}")).unwrap(),
+            paleoclaw_gateway_client::GatewayClientConfig::new(format!("ws://{address}")).unwrap(),
             move |challenge| async move {
                 assert_eq!(challenge.nonce, "native-nonce");
                 Ok::<_, io::Error>(params)
