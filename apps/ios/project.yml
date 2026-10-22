@@ -47,6 +47,13 @@ targets:
       Release: Signing.xcconfig
     sources:
       - path: Sources
+      - path: Resources/Licenses
+        type: folder
+        buildPhase: resources
+      - path: Sources/Fonts
+        buildPhase: resources
+      - path: Resources/Localizable.xcstrings
+        buildPhase: resources
     dependencies:
       - target: OpenClawShareExtension
         embed: true
@@ -148,6 +155,8 @@ targets:
       Release: Signing.xcconfig
     sources:
       - path: ShareExtension
+      - path: Resources/Localizable.xcstrings
+        buildPhase: resources
     dependencies:
       - package: OpenClawKit
       - sdk: AppIntents.framework
@@ -190,6 +199,10 @@ targets:
       # Shared continuous avatar waveform; dependency-free for widget isolation.
       - path: ../shared/OpenClawKit/Sources/OpenClawChatUI/TalkWaveformView.swift
         group: Shared
+      - path: Sources/Fonts
+        buildPhase: resources
+      - path: Resources/Localizable.xcstrings
+        buildPhase: resources
     dependencies:
       - sdk: WidgetKit.framework
       - sdk: ActivityKit.framework
@@ -220,6 +233,8 @@ targets:
       - path: WatchApp
         excludes:
           - Info.plist
+      - path: Resources/Licenses/str0m.txt
+        buildPhase: resources
       # The watch app does not import the chat UI package, so the waveform and
       # the mascot are compiled straight into the target, the way upstream does.
       - path: ../shared/OpenClawKit/Sources/OpenClawChatUI/TalkWaveformView.swift
