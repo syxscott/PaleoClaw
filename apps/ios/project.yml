@@ -228,6 +228,20 @@ targets:
         group: Shared
       - path: ../shared/OpenClawKit/Sources/OpenClawChatUI/ChatTypography.swift
         group: Shared
+      # The watch app drives the gateway through services the main app target
+      # owns, so the watch target compiles them in directly.
+      - path: Sources/Services/WatchSessionActivationGate.swift
+        group: Sources/Services
+      - path: Sources/Services/ExactOpaqueIdentifier.swift
+        group: Sources/Services
+      - path: Sources/Permissions/PermissionRequestBridge.swift
+        group: Sources/Permissions
+      - path: Sources/Voice/TalkRealtimeClientSession.swift
+        group: Sources/Voice
+      - path: Sources/Fonts
+        buildPhase: resources
+      - path: Resources/Localizable.xcstrings
+        buildPhase: resources
     dependencies:
       - package: OpenClawKit
         product: OpenClawKit
