@@ -94,8 +94,7 @@ async function resolveLocalUpload(
 
 function resolveImageLocalPath(image: string): string | undefined {
   const candidate = image.startsWith("~") ? `${homedir()}${image.slice(1)}` : image;
-  const unambiguousPath =
-    image.startsWith("~") || image.startsWith("./") || image.startsWith("../");
+  const unambiguousPath = image.startsWith("~") || image.startsWith("./") || image.startsWith("../");
   const absolutePath = isAbsolute(image);
 
   if (unambiguousPath || (absolutePath && existsSync(candidate))) {

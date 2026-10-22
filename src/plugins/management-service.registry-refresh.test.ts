@@ -47,7 +47,7 @@ vi.mock("./install-config-mutation.js", async (importOriginal) => ({
 }));
 
 // mock-isolation: Refresh fixtures supply installation results without downloading packages.
-vi.mock("./clawhub.js", () => ({
+vi.mock("./PaleoHub.js", () => ({
   installPluginFromClawHub: mocks.clawhubInstall,
 }));
 

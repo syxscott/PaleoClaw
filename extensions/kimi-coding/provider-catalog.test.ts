@@ -1,7 +1,7 @@
 import { clampThinkingLevel, type Model } from "paleoclaw/plugin-sdk/llm";
 import { parseModelRef } from "paleoclaw/plugin-sdk/provider-model-shared";
 import { describe, expect, it } from "vitest";
-import manifest from "./paleoclaw.plugin.json" with { type: "json" };
+import manifest from "./openclaw.plugin.json" with { type: "json" };
 import { buildKimiCodingProvider, normalizeKimiCodingModelId } from "./provider-catalog.js";
 import { KIMI_K3_MODEL_IDS } from "./provider-policy-api.js";
 

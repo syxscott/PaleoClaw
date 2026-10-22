@@ -20,7 +20,7 @@ settings. See [Voice wake](/platforms/mac/voicewake) for the controls and permis
 
 ## Implementation
 
-- `VoiceSessionCoordinator` (`apps/macos/Sources/paleoclaw/VoiceSessionCoordinator.swift`) is the single owner of the active voice session. It is a `@MainActor @Observable` singleton, not an actor. API: `startSession`, `updatePartial`, `finalize`, `sendNow`, `dismiss`, `updateLevel`, `snapshot`. Each session carries a `UUID` token. The coordinator drops calls with a stale or mismatched token.
+- `VoiceSessionCoordinator` (`apps/macos/Sources/OpenClaw/VoiceSessionCoordinator.swift`) is the single owner of the active voice session. It is a `@MainActor @Observable` singleton, not an actor. API: `startSession`, `updatePartial`, `finalize`, `sendNow`, `dismiss`, `updateLevel`, `snapshot`. Each session carries a `UUID` token. The coordinator drops calls with a stale or mismatched token.
 - `VoiceWakeOverlayController` (`VoiceWakeOverlayController+Session.swift`) renders the overlay and forwards user actions (`requestSend`, `dismiss`) back through the coordinator via the session token. It never owns the session state itself.
 - Push-to-talk (`VoicePushToTalk.begin()`) adopts any visible overlay text as `adoptedPrefix` (via `VoiceSessionCoordinator.shared.snapshot()`). A hotkey press while the wake overlay is up therefore keeps the text and appends new speech. On release, push-to-talk waits up to 1.5s for a final transcript before falling back to the current text.
 - On `dismiss`, the overlay calls `VoiceSessionCoordinator.overlayDidDismiss`. That call triggers `VoiceWakeRuntime.refresh(state:)`. Manual X-dismiss, empty-text dismiss, and post-send dismiss therefore all resume wake-word listening.

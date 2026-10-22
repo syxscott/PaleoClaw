@@ -256,7 +256,9 @@ function mountSkillsPage(
   flush();
   return {
     find: (selector: string) =>
-      mounted.container.querySelector("paleoclaw-skills-page")!.querySelector<HTMLElement>(selector),
+      mounted.container
+        .querySelector("paleoclaw-skills-page")!
+        .querySelector<HTMLElement>(selector),
     text: () => mounted.container.querySelector("paleoclaw-skills-page")!.textContent,
     replaceContext(next: ApplicationContext) {
       retireContext(currentContext);
@@ -277,8 +279,8 @@ function linkedSkillReport() {
       slug: "agentreceipt",
       installedVersion: "1.2.3",
       installedAt: 123,
-      originPath: "/tmp/.clawhub/origin.json",
-      lockPath: "/tmp/workspace/.clawhub/lock.json",
+      originPath: "/tmp/.PaleoHub/origin.json",
+      lockPath: "/tmp/workspace/.PaleoHub/lock.json",
     },
   });
 }

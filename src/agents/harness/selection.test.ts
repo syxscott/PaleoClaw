@@ -159,7 +159,7 @@ function createTranscriptRecorder(
   };
 }
 
-vi.mock("./builtin-openclaw.js", () => ({
+vi.mock("./builtin-paleoclaw.js", () => ({
   createOpenClawAgentHarness: (): AgentHarness => {
     const harness: AgentHarness = {
       id: "paleoclaw",

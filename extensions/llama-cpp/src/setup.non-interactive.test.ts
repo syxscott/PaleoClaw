@@ -7,7 +7,7 @@ import type {
 } from "paleoclaw/plugin-sdk/plugin-entry";
 import { createTestPluginApi } from "paleoclaw/plugin-sdk/plugin-test-api";
 import { describe, expect, it, vi } from "vitest";
-import manifest from "../paleoclaw.plugin.json" with { type: "json" };
+import manifest from "../openclaw.plugin.json" with { type: "json" };
 import { DEFAULT_LLAMA_CPP_EMBEDDING_MODEL } from "./defaults.js";
 import { mocks, tempRoot } from "./setup.test-support.js";
 

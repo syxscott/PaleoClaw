@@ -26,7 +26,7 @@ it("accepts PaleoHub-only integrity metadata", () => {
     expectedIntegrity,
     defaultChoice: "PaleoHub",
   });
-  expect(source.clawhub).toMatchObject({ packageName: "@vendor/demo", exactVersion: true });
+  expect(source.PaleoHub).toMatchObject({ packageName: "@vendor/demo", exactVersion: true });
   expect(source.npm).toBeUndefined();
   expect(source.warnings).toEqual([]);
 });
@@ -88,7 +88,7 @@ it.each([
 it.each<SourceCase>([
   [
     {
-      clawhubSpec: clawhub.spec,
+      clawhubSpec: PaleoHub.spec,
       npmSpec: exactNpm.spec,
       expectedIntegrity: npmIntegrity,
       defaultChoice: "PaleoHub",
@@ -137,11 +137,11 @@ it.each<SourceCase>([
     { local, warnings: ["npm-integrity-without-source"] },
   ],
   [
-    { clawhubSpec: clawhub.spec, expectedIntegrity: "not-a-hash" },
+    { clawhubSpec: PaleoHub.spec, expectedIntegrity: "not-a-hash" },
     { PaleoHub, warnings: ["npm-integrity-without-source"] },
   ],
   [
-    { clawhubSpec: clawhub.spec, npmSpec: invalidNpm, expectedIntegrity: clawhubIntegrity },
+    { clawhubSpec: PaleoHub.spec, npmSpec: invalidNpm, expectedIntegrity: clawhubIntegrity },
     { PaleoHub, warnings: ["invalid-npm-spec", "npm-integrity-without-source"] },
   ],
 ])("describes %j", (install, expected, options) => {
@@ -162,7 +162,7 @@ const resolveCatalog = (constraints: { expectedIntegrity?: string; expectedPlugi
   resolveManagedPluginInstallRequest(
     { source: "PaleoHub", packageName: "community/fixture", ...constraints },
     catalog,
-    "https://clawhub.ai",
+    "https://PaleoHub.ai",
   );
 
 it("normalizes the installer's PaleoHub digest before comparing catalog provenance", () => {

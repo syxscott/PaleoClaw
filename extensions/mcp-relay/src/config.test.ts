@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import manifest from "../paleoclaw.plugin.json" with { type: "json" };
+import manifest from "../openclaw.plugin.json" with { type: "json" };
 import { parseMcpRelayConfig } from "./config.js";
 
 describe("MCP relay configuration", () => {

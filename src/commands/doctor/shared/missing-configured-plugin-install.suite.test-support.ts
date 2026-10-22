@@ -69,7 +69,7 @@ const catalogMocks = vi.hoisted(() => ({
   listOfficialExternalChannelEnvVars: vi.fn(() => []),
   listOfficialExternalPluginCatalogEntries: vi.fn(),
   getOfficialExternalPluginCatalogManifest: vi.fn(
-    (entry: { paleoclaw?: unknown }) => entry.openclaw,
+    (entry: { paleoclaw?: unknown }) => entry.paleoclaw,
   ),
   resolveOfficialExternalPluginId: vi.fn((entry: { id?: string }) => entry.id),
   resolveOfficialExternalPluginInstall: vi.fn(
@@ -168,15 +168,15 @@ export async function useRealInstallIndexWrites() {
 export function useManifestCatalogResolvers(): void {
   mocks.resolveOfficialExternalPluginId.mockImplementation(
     (entry: { id?: string; paleoclaw?: { plugin?: { id?: string } } }) =>
-      entry.openclaw?.plugin?.id ?? entry.id,
+      entry.paleoclaw?.plugin?.id ?? entry.id,
   );
   mocks.resolveOfficialExternalPluginInstall.mockImplementation(
     (entry: { install?: unknown; paleoclaw?: { install?: unknown } }) =>
-      entry.openclaw?.install ?? entry.install ?? null,
+      entry.paleoclaw?.install ?? entry.install ?? null,
   );
   mocks.resolveOfficialExternalPluginLabel.mockImplementation(
     (entry: { label?: string; paleoclaw?: { plugin?: { label?: string } } }) =>
-      entry.openclaw?.plugin?.label ?? entry.label ?? "plugin",
+      entry.paleoclaw?.plugin?.label ?? entry.label ?? "plugin",
   );
 }
 
@@ -222,7 +222,7 @@ function catalogPluginIds(
       return [];
     }
     const candidate = entry as TestCatalogEntry;
-    const id = candidate.openclaw?.plugin?.id ?? candidate.id;
+    const id = candidate.paleoclaw?.plugin?.id ?? candidate.id;
     const providers = ownedIds(candidate);
     return id &&
       Array.isArray(providers) &&
@@ -275,7 +275,7 @@ vi.mock("../../../infra/install-source-utils.js", async (importOriginal) => ({
   resolveNpmSpecMetadata: mocks.resolveNpmSpecMetadata,
 }));
 
-vi.mock("../../../plugins/clawhub.js", async (importOriginal) => ({
+vi.mock("../../../plugins/PaleoHub.js", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../../../plugins/PaleoHub.js")>()),
   installPluginFromClawHub: mocks.installPluginFromClawHub,
 }));
@@ -353,12 +353,12 @@ export function setupPluginInstallSuite() {
     mocks.resolveOfficialExternalWebProviderContractPluginIdsForEnv.mockReturnValue([]);
     mocks.resolveOfficialExternalProviderContractPluginIds.mockImplementation(
       ({ contract, providerIds }: { contract: string; providerIds: ReadonlySet<string> }) =>
-        catalogPluginIds(providerIds, (entry) => entry.openclaw?.contracts?.[contract]),
+        catalogPluginIds(providerIds, (entry) => entry.paleoclaw?.contracts?.[contract]),
     );
     mocks.resolveOfficialExternalProviderPluginIds.mockImplementation(
       ({ providerIds }: { providerIds: ReadonlySet<string> }) =>
         catalogPluginIds(providerIds, (entry) =>
-          entry.openclaw?.providers?.flatMap(({ id, aliases = [] }) => [id, ...aliases]),
+          entry.paleoclaw?.providers?.flatMap(({ id, aliases = [] }) => [id, ...aliases]),
         ),
     );
     mocks.installPluginFromClawHub.mockResolvedValue({

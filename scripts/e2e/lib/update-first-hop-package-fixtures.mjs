@@ -383,10 +383,10 @@ export function packUnsupportedAdmissionFixture(candidateTarball, outputTarball,
     ...packTransformedFixture(candidateTarball, outputTarball, (root, sourceVersion) => {
       const manifestPath = path.join(root, "package.json");
       const manifest = readJson(manifestPath);
-      if (manifest.openclaw?.updateAdmissionProtocol !== 1) {
+      if (manifest.paleoclaw?.updateAdmissionProtocol !== 1) {
         throw new Error("unsupported-admission fixture requires admission protocol 1 input");
       }
-      delete manifest.openclaw.updateAdmissionProtocol;
+      delete manifest.paleoclaw.updateAdmissionProtocol;
       writeJson(manifestPath, manifest);
       stampFixtureVersion(root, futureFixtureVersion(sourceVersion, sequence));
     }),
@@ -403,19 +403,21 @@ function packFuturePluginFixture(candidateTarball, outputTarball, sequence = 0, 
       !manifest.name.startsWith("@paleoclaw/") ||
       (expectedName && manifest.name !== expectedName)
     ) {
-      throw new Error("future plugin fixture requires " + (expectedName || "an @paleoclaw package"));
+      throw new Error(
+        "future plugin fixture requires " + (expectedName || "an @paleoclaw package"),
+      );
     }
     if (
       typeof manifest.version !== "string" ||
       !/^\d{4}\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)(?:-[a-z0-9]+(?:[.-][a-z0-9]+)*)?$/iu.test(
         manifest.version,
       ) ||
-      manifest.openclaw?.build?.openclawVersion !== sourceVersion
+      manifest.paleoclaw?.build?.openclawVersion !== sourceVersion
     ) {
       throw new Error("plugin package version and paleoclaw build cohort must match");
     }
     manifest.version = version;
-    manifest.openclaw.build.openclawVersion = version;
+    manifest.paleoclaw.build.openclawVersion = version;
     writeJson(manifestPath, manifest);
     return { name: manifest.name };
   });

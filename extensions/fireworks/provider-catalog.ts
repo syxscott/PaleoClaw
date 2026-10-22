@@ -6,7 +6,7 @@ import type {
   ModelDefinitionConfig,
   ModelProviderConfig,
 } from "paleoclaw/plugin-sdk/provider-model-shared";
-import manifest from "./paleoclaw.plugin.json" with { type: "json" };
+import manifest from "./openclaw.plugin.json" with { type: "json" };
 
 const FIREWORKS_MANIFEST_PROVIDER = buildManifestModelProviderConfig({
   providerId: "fireworks",

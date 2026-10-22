@@ -4,7 +4,7 @@ import type {
   ModelDefinitionConfig,
   ModelProviderConfig,
 } from "paleoclaw/plugin-sdk/provider-model-shared";
-import manifest from "./paleoclaw.plugin.json" with { type: "json" };
+import manifest from "./openclaw.plugin.json" with { type: "json" };
 
 export function buildFeatherlessProvider(): ModelProviderConfig {
   return buildManifestModelProviderConfig({

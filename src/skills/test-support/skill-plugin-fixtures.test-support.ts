@@ -11,7 +11,7 @@ export async function writePluginWithSkill(params: {
 }) {
   await fs.mkdir(path.join(params.pluginRoot, "skills", params.skillId), { recursive: true });
   await fs.writeFile(
-    path.join(params.pluginRoot, "paleoclaw.plugin.json"),
+    path.join(params.pluginRoot, "openclaw.plugin.json"),
     JSON.stringify(
       {
         id: params.pluginId,

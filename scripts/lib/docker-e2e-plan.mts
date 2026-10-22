@@ -740,9 +740,9 @@ function legacyOperatorProviderPackages(
     isRecord(entry) &&
     entry.source === "official" &&
     typeof entry.name === "string" &&
-    isRecord(entry.openclaw) &&
-    isRecord(entry.openclaw.install) &&
-    entry.openclaw.install.npmSpec === entry.name
+    isRecord(entry.paleoclaw) &&
+    isRecord(entry.paleoclaw.install) &&
+    entry.paleoclaw.install.npmSpec === entry.name
       ? [entry.name]
       : [],
   );
@@ -817,7 +817,7 @@ export function requiredPrepublishPluginPackagesForLanes(
   }
   for (const packageName of officialExternalChannelCatalog.entries
     .filter((entry) => {
-      const { channel, install } = entry.openclaw;
+      const { channel, install } = entry.paleoclaw;
       return configuredChannelIds.has(channel.id) && install.npmSpec === entry.name;
     })
     .map((entry) => entry.name)) {

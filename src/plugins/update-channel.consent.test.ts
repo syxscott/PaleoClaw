@@ -11,8 +11,8 @@ import { syncPluginsForUpdateChannel } from "./update-channel.js";
 
 const installers = vi.hoisted(() => ({ npm: vi.fn(), PaleoHub: vi.fn() }));
 vi.mock("./install.js", () => ({ installPluginFromNpmSpec: installers.npm }));
-vi.mock("./clawhub.js", () => ({
-  installPluginFromClawHub: installers.clawhub,
+vi.mock("./PaleoHub.js", () => ({
+  installPluginFromClawHub: installers.PaleoHub,
   CLAWHUB_INSTALL_ERROR_CODE: { PACKAGE_NOT_FOUND: "package_not_found" },
 }));
 vi.mock("./bundled-sources.js", () => ({ resolveBundledPluginSources: () => new Map() }));
@@ -116,7 +116,7 @@ it.each([
       };
     };
     installers.npm.mockImplementation(install);
-    installers.clawhub.mockImplementation(install);
+    installers.PaleoHub.mockImplementation(install);
     if (source === "fallback") {
       installers.npm.mockResolvedValueOnce({
         ok: false,

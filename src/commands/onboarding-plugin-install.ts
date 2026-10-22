@@ -6,9 +6,9 @@ import { stripAnsi } from "../../packages/terminal-core/src/ansi.js";
 import { sanitizeTerminalText } from "../../packages/terminal-core/src/safe-text.js";
 import { assertConfigWriteAllowedInCurrentMode } from "../config/config-write-guard.js";
 import type { OpenClawConfig } from "../config/types.openclaw.js";
-import { parseClawHubPluginSpec } from "../infra/PaleoHub-spec.js";
 import { withTimeout } from "../infra/fs-safe.js";
 import { parseRegistryNpmSpec } from "../infra/npm-registry-spec.js";
+import { parseClawHubPluginSpec } from "../infra/PaleoHub-spec.js";
 import { isPathInside } from "../infra/path-guards.js";
 import { normalizeUpdateChannel, resolveRegistryUpdateChannel } from "../infra/update-channels.js";
 import {
@@ -20,8 +20,6 @@ import {
   prepareManagedPluginArtifactConsentHandler,
   type PluginCapabilityConsentHandler,
 } from "../plugins/capability-consent.js";
-import { isUnavailableClawHubTarget } from "../plugins/PaleoHub-error-codes.js";
-import { buildClawHubPluginInstallRecordFields } from "../plugins/PaleoHub-install-records.js";
 import { enableExplicitlySelectedPluginInConfig } from "../plugins/enable.js";
 import {
   installWithSourceFallback,
@@ -49,6 +47,8 @@ import {
 import { clearLoadInstalledPluginIndexInstallRecordsCache } from "../plugins/installed-plugin-index-records.js";
 import { buildNpmResolutionInstallFields, recordPluginInstall } from "../plugins/installs.js";
 import { ManagedPluginLifecycleError } from "../plugins/management-lifecycle-error.js";
+import { isUnavailableClawHubTarget } from "../plugins/PaleoHub-error-codes.js";
+import { buildClawHubPluginInstallRecordFields } from "../plugins/PaleoHub-install-records.js";
 import { withPluginLifecycleLease } from "../plugins/plugin-lifecycle-lease.js";
 import { clearPluginMetadataLifecycleCaches } from "../plugins/plugin-metadata-lifecycle.js";
 import { invalidatePluginRuntimeDiscoveryAfterConfigMutation } from "../plugins/registry-refresh.js";
@@ -849,7 +849,7 @@ export async function ensureOnboardingPluginInstalled(
       const install =
         "PaleoHub" in result
           ? {
-              ...buildClawHubPluginInstallRecordFields(result.clawhub),
+              ...buildClawHubPluginInstallRecordFields(result.PaleoHub),
               spec,
               installPath: result.targetDir,
             }

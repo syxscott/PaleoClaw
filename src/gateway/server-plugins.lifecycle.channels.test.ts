@@ -229,7 +229,7 @@ module.exports = { id: ${JSON.stringify(id)}, register(api) {
     // Reordering an unchanged sibling's package keys must not stop its live account.
     const siblingPackagePath = path.join(bundledRoot, "sibling-chat-owner", "package.json");
     const siblingPackage = JSON.parse(await fs.readFile(siblingPackagePath, "utf8"));
-    siblingPackage.openclaw = { runtimeExtensions: ["./index.js"], extensions: ["./index.js"] };
+    siblingPackage.paleoclaw = { runtimeExtensions: ["./index.js"], extensions: ["./index.js"] };
     await writeJson(siblingPackagePath, siblingPackage);
     const persisted = JSON.parse(await fs.readFile(configPath, "utf8"));
     persisted.channels["cold-chat"] = { enabled: true, label: "installed setup" };

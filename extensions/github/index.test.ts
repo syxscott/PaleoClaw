@@ -8,7 +8,7 @@ import { clearRuntimeConfigSnapshot } from "paleoclaw/plugin-sdk/runtime-config-
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import type { ControlUiGitHubPreview } from "./api.js";
 import plugin from "./index.js";
-import manifest from "./paleoclaw.plugin.json" with { type: "json" };
+import manifest from "./openclaw.plugin.json" with { type: "json" };
 
 vi.mock("paleoclaw/plugin-sdk/gateway-method-runtime", () => ({
   dispatchGatewayMethod: vi.fn(),

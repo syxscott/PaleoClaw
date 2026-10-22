@@ -74,7 +74,7 @@ function readBundledPluginPackageJson(packageJsonPath, options = {}) {
 }
 
 function isManifestlessBundledRuntimeSupportPackage(params) {
-  if (params.packageJson?.openclaw?.release?.publishToNpm === true) {
+  if (params.packageJson?.paleoclaw?.release?.publishToNpm === true) {
     return false;
   }
   const packageName = typeof params.packageJson?.name === "string" ? params.packageJson.name : "";
@@ -85,7 +85,7 @@ function isManifestlessBundledRuntimeSupportPackage(params) {
 }
 
 function shouldBuildBundledDistEntry(packageJson) {
-  return packageJson?.openclaw?.build?.bundledDist !== false;
+  return packageJson?.paleoclaw?.build?.bundledDist !== false;
 }
 
 /**
@@ -93,7 +93,7 @@ function shouldBuildBundledDistEntry(packageJson) {
  * @returns {"cjs" | "esm"}
  */
 export function resolvePluginRuntimeFormat(packageJson) {
-  return packageJson?.openclaw?.build?.runtimeFormat === "cjs" ? "cjs" : "esm";
+  return packageJson?.paleoclaw?.build?.runtimeFormat === "cjs" ? "cjs" : "esm";
 }
 
 export function pluginRuntimeExtension(runtimeFormat) {
@@ -141,15 +141,15 @@ export function mapPluginCatalogEntries(manifest, mapEntry) {
 /** Collect plugin source entry files declared by package and manifest metadata. */
 export function collectPluginSourceEntries(packageJson, manifest = {}) {
   const packageEntries = [
-    ...(Array.isArray(packageJson?.openclaw?.extensions) ? packageJson.openclaw.extensions : []),
-    packageJson?.openclaw?.setupEntry,
+    ...(Array.isArray(packageJson?.paleoclaw?.extensions) ? packageJson.paleoclaw.extensions : []),
+    packageJson?.paleoclaw?.setupEntry,
   ].filter((entry) => typeof entry === "string" && entry.trim().length > 0);
   return [
     ...new Set([
       ...(packageEntries.length > 0 ? packageEntries : ["./index.ts"]),
       ...collectPluginCatalogSourceEntries(manifest),
-      ...(Array.isArray(packageJson?.openclaw?.build?.workerEntries)
-        ? packageJson.openclaw.build.workerEntries.filter(
+      ...(Array.isArray(packageJson?.paleoclaw?.build?.workerEntries)
+        ? packageJson.paleoclaw.build.workerEntries.filter(
             (entry) => typeof entry === "string" && entry.trim().length > 0,
           )
         : []),
@@ -308,8 +308,8 @@ export function collectBundledPluginBuildEntries(params = {}) {
     }
     const externalSourceEntry =
       params.includeExternalSourceEntries === true &&
-      (packageJson?.openclaw?.release?.publishToNpm === true ||
-        packageJson?.openclaw?.release?.publishToClawHub === true);
+      (packageJson?.paleoclaw?.release?.publishToNpm === true ||
+        packageJson?.paleoclaw?.release?.publishToClawHub === true);
     if (
       !shouldBuildBundledDistEntry(packageJson) &&
       !dockerSelectedBuildIds?.has(dirName) &&

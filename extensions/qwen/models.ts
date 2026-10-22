@@ -3,7 +3,7 @@ import {
   supportsNativeStreamingUsageCompat,
 } from "paleoclaw/plugin-sdk/provider-catalog-shared";
 import type { ModelDefinitionConfig } from "paleoclaw/plugin-sdk/provider-model-shared";
-import manifest from "./paleoclaw.plugin.json" with { type: "json" };
+import manifest from "./openclaw.plugin.json" with { type: "json" };
 
 export const QWEN_BASE_URL = manifest.modelCatalog.providers.qwen.baseUrl;
 export const QWEN_GLOBAL_BASE_URL = QWEN_BASE_URL;

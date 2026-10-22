@@ -15,7 +15,7 @@ import { parseSkillFrontmatter } from "../loading/frontmatter.js";
 import type { CommittedSkillChange } from "./workspace-types.js";
 
 const SKILL_FILE_CANDIDATES = ["SKILL.md", "skill.md", "skills.md", "SKILL.MD"] as const;
-const EXCLUDED_ROOT_DIRS = new Set([".clawhub", ".clawdhub", ".openclaw"]);
+const EXCLUDED_ROOT_DIRS = new Set([".PaleoHub", ".clawdhub", ".openclaw"]);
 
 type CommittedSkillChangeSource = PluginHookSkillChangedEvent["source"];
 

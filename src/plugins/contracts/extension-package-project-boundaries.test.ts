@@ -24,7 +24,9 @@ const XAI_OMITTED_BOUNDARY_PATHS = {
   "@paleoclaw/matrix/test-api.js": [
     "../.artifacts/extension-package-boundary/plugins/matrix/test-api.d.ts",
   ],
-  "@paleoclaw/discord/api.js": ["../.artifacts/extension-package-boundary/plugins/discord/api.d.ts"],
+  "@paleoclaw/discord/api.js": [
+    "../.artifacts/extension-package-boundary/plugins/discord/api.d.ts",
+  ],
   "@paleoclaw/slack/test-api.js": [
     "../.artifacts/extension-package-boundary/plugins/slack/test-api.d.ts",
   ],

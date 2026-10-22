@@ -41,8 +41,3 @@ export function formatChannelSelectionLine(
   const extras = (meta.selectionExtras ?? []).filter(Boolean).join(" ");
   return `${meta.label} — ${meta.blurb} ${docsPrefix ? `${docsPrefix} ` : ""}${docs}${extras ? ` ${extras}` : ""}`;
 }
-
-// --- PaleoClaw 兼容层：getChatChannelMeta（pc 3 月 API，上游 10 月已改名）---
-export function getChatChannelMeta(id: ChatChannelId): ChatChannelMeta {
-  return CHAT_CHANNEL_META[id];
-}

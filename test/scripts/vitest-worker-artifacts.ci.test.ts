@@ -118,7 +118,7 @@ function createCiProbe(
           try {
             if (${Boolean(generationClaim)}) {
               const owner = findVitestResourceOwner(fileURLToPath(new URL('.', generation)));
-              expect(owner?.root).toBe(fs.realpathSync(new URL('../../', generation)));
+              expect(owner?.root).toBe(fs.realpathSync(new URL('../..', generation)));
               const releaseClaim = owner.claim();
               if (${generationClaim === "released"}) releaseClaim();
             } else {

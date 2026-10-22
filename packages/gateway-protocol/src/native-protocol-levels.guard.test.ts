@@ -193,7 +193,7 @@ describe("native Gateway protocol levels", () => {
       "the wizard must connect through the shared protocol handshake.",
     );
 
-    const androidPath = "apps/android/app/src/main/java/ai/paleoclaw/app/gateway/GatewaySession.kt";
+    const androidPath = "apps/android/app/src/main/java/ai/openclaw/app/gateway/GatewaySession.kt";
     const android = await readRepoFile(androidPath);
     assertPattern(
       android,

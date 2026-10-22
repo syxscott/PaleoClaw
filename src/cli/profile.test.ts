@@ -62,7 +62,7 @@ describe("applyCliProfileEnv", () => {
     const expectedStateDir = path.join(path.resolve("/home/peter"), ".paleoclaw-dev");
     expect(env.OPENCLAW_PROFILE).toBe("dev");
     expect(env.OPENCLAW_STATE_DIR).toBe(expectedStateDir);
-    expect(env.OPENCLAW_CONFIG_PATH).toBe(path.join(expectedStateDir, "paleoclaw.json"));
+    expect(env.OPENCLAW_CONFIG_PATH).toBe(path.join(expectedStateDir, "openclaw.json"));
     expect(env.OPENCLAW_GATEWAY_PORT).toBe("19001");
   });
 
@@ -78,7 +78,7 @@ describe("applyCliProfileEnv", () => {
     });
     expect(env.OPENCLAW_STATE_DIR).toBe("/custom");
     expect(env.OPENCLAW_GATEWAY_PORT).toBe("19099");
-    expect(env.OPENCLAW_CONFIG_PATH).toBe(path.join("/custom", "paleoclaw.json"));
+    expect(env.OPENCLAW_CONFIG_PATH).toBe(path.join("/custom", "openclaw.json"));
   });
 
   it("uses OPENCLAW_HOME when deriving profile state dir", () => {
@@ -95,7 +95,7 @@ describe("applyCliProfileEnv", () => {
     const resolvedHome = path.resolve("/srv/paleoclaw-home");
     expect(env.OPENCLAW_STATE_DIR).toBe(path.join(resolvedHome, ".paleoclaw-work"));
     expect(env.OPENCLAW_CONFIG_PATH).toBe(
-      path.join(resolvedHome, ".paleoclaw-work", "paleoclaw.json"),
+      path.join(resolvedHome, ".paleoclaw-work", "openclaw.json"),
     );
   });
 });

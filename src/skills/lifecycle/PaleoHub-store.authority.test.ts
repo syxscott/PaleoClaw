@@ -34,9 +34,9 @@ it.each(["origin", "lockfile"] as const)(
   async (target) => {
     const workspaceDir = tempDirs.make("clawhub-store-authority-");
     const skillDir = path.join(workspaceDir, "skills", "canary");
-    const originPath = path.join(skillDir, ".clawhub/origin.json");
+    const originPath = path.join(skillDir, ".PaleoHub/origin.json");
     const publicationPath =
-      target === "origin" ? originPath : path.join(workspaceDir, ".clawhub/lock.json");
+      target === "origin" ? originPath : path.join(workspaceDir, ".PaleoHub/lock.json");
     let current = true;
     let retirementQueued = false;
     const currentAtPublication = observePublication(publicationPath, () => current);

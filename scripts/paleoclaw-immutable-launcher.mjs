@@ -90,7 +90,7 @@ function admitActivation(root, generation) {
         throw new Error("immutable bridge manifest exceeds its admission budget");
       }
       const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
-      if (manifest?.openclaw?.immutableInstallDescriptorVersion !== 3) {
+      if (manifest?.paleoclaw?.immutableInstallDescriptorVersion !== 3) {
         throw new Error("immutable generation cannot read version-3 control");
       }
     }

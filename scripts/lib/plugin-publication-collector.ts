@@ -85,7 +85,7 @@ function collectRequiredLatestDependencies(packageJson: PluginPackageJson): {
   dependencies: RequiredLatestDependency[];
   errors: string[];
 } {
-  const configured = packageJson.openclaw?.release?.requireLatestDependencies;
+  const configured = packageJson.paleoclaw?.release?.requireLatestDependencies;
   if (configured === undefined) {
     return { dependencies: [], errors: [] };
   }
@@ -159,12 +159,12 @@ export function collectPublishablePluginPackageErrors(
   const errors: string[] = [];
   const packageName = packageJson.name?.trim() ?? "";
   const packageVersion = packageJson.version?.trim() ?? "";
-  const installNpmSpec = normalizeOptionalString(packageJson.openclaw?.install?.npmSpec);
+  const installNpmSpec = normalizeOptionalString(packageJson.paleoclaw?.install?.npmSpec);
   const repositoryUrl =
     typeof packageJson.repository === "string"
       ? packageJson.repository.trim()
       : (packageJson.repository?.url?.trim() ?? "");
-  const extensions = packageJson.openclaw?.extensions ?? [];
+  const extensions = packageJson.paleoclaw?.extensions ?? [];
   const requiredLatestDependencies = collectRequiredLatestDependencies(packageJson);
 
   if (!packageName.startsWith("@paleoclaw/")) {
@@ -333,7 +333,7 @@ export function collectPublishablePluginPackagesFromCandidates(
       channel: parsedVersion.channel === "beta" ? "beta" : "stable",
       publishTag,
       ...(target === "npm"
-        ? { installNpmSpec: normalizeOptionalString(packageJson.openclaw?.install?.npmSpec) }
+        ? { installNpmSpec: normalizeOptionalString(packageJson.paleoclaw?.install?.npmSpec) }
         : {}),
       ...(requiredLatestDependencies.length > 0 ? { requiredLatestDependencies } : {}),
     });

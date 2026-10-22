@@ -11,7 +11,7 @@ export async function withTempConfig(params: {
   const prevDisableCache = process.env.OPENCLAW_DISABLE_CONFIG_CACHE;
 
   const dir = await mkdtemp(path.join(os.tmpdir(), params.prefix ?? "paleoclaw-test-config-"));
-  const configPath = path.join(dir, "paleoclaw.json");
+  const configPath = path.join(dir, "openclaw.json");
 
   process.env.OPENCLAW_CONFIG_PATH = configPath;
   process.env.OPENCLAW_DISABLE_CONFIG_CACHE = "1";

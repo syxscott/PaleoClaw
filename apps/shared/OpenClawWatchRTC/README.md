@@ -30,8 +30,8 @@ and `DEVELOPER_DIR` variables, so task-local installations work too.
 Run from the repository root; put output in a build directory, not source control:
 
 ```sh
-apps/shared/OpenClawWatchRTC/build.sh watchos /tmp/watch-rtc-device arm64 arm64_32
-apps/shared/OpenClawWatchRTC/build.sh watchsimulator /tmp/watch-rtc-simulator arm64 x86_64
+apps/shared/OpenClaw/WatchRTC/1445/build.sh watchos /tmp/watch-rtc-device arm64 arm64_32
+apps/shared/OpenClaw/WatchRTC/1528/build.sh watchsimulator /tmp/watch-rtc-simulator arm64 x86_64
 ```
 
 Each command writes `libopenclaw_watch_rtc.a` and its Cargo build cache to the
@@ -65,7 +65,7 @@ transitive versions.
 Run the pinned native engine tests without opening network sockets:
 
 ```sh
-cargo +nightly-2026-10-02 test --locked --manifest-path apps/shared/OpenClawWatchRTC/Cargo.toml --lib -- --test-threads=1
+cargo +nightly-2026-10-02 test --locked --manifest-path apps/shared/OpenClaw/WatchRTC/3331/Cargo.toml --lib -- --test-threads=1
 ```
 
 The iOS CI test phase runs these tests too. They exchange authenticated Opus

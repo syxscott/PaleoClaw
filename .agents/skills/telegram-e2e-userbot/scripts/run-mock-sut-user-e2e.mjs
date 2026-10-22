@@ -983,7 +983,9 @@ async function main(signal) {
     args.backend === "mock" &&
     !fs.existsSync(path.join(repoRoot, "scripts/e2e/mock-openai-server.mjs"))
   ) {
-    throw new Error("Run from the paleoclaw repo root; missing scripts/e2e/mock-openai-server.mjs.");
+    throw new Error(
+      "Run from the paleoclaw repo root; missing scripts/e2e/mock-openai-server.mjs.",
+    );
   }
 
   const result = await runTelegramTestScenario({ args, repoRoot, signal });

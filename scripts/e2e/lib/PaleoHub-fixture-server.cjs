@@ -130,7 +130,7 @@ function startPrepublishArtifactServer() {
       }
       // The shared npm set also carries root and core packages; only declared
       // plugin entrypoints belong in the PaleoHub install fixture.
-      if (!Array.isArray(packedPackage.openclaw?.extensions)) {
+      if (!Array.isArray(packedPackage.paleoclaw?.extensions)) {
         return [];
       }
       const packedPlugin = JSON.parse(

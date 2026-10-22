@@ -267,11 +267,11 @@ describe("plugin manifest", () => {
     const pluginSdkRootImport = ["paleoclaw", "plugin-sdk"].join("/");
     expect(resolverSource).not.toContain(pluginSdkRootImport);
     expect(resolverSource).toContain("@openclaw/fs-safe/secret");
-    expect(packageJson.openclaw?.build?.staticAssets).toContainEqual({
+    expect(packageJson.paleoclaw?.build?.staticAssets).toContainEqual({
       source: "./vault-secret-ref-resolver.js",
       output: "vault-secret-ref-resolver.js",
     });
-    expect(packageJson.openclaw?.build?.staticAssets).toContainEqual({
+    expect(packageJson.paleoclaw?.build?.staticAssets).toContainEqual({
       source: "./vault-secret-id.js",
       output: "vault-secret-id.js",
     });

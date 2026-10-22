@@ -192,7 +192,7 @@ function WorkspaceContents(props: { workspace: SessionWorkspaceProps }) {
       !search &&
       workspace.browserPath !== "";
     const parentPath = unavailableFolder
-      ? workspace.browserPath.slice(0, Math.max(0, workspace.browserPath.lastIndexOf("/")))
+      ? workspace.browserPath.slice(0, Math.max(0, workspace.browserPath.lastIndexOf("")))
       : !browser?.search
         ? browser?.parentPath
         : null;

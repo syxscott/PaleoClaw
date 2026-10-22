@@ -118,11 +118,11 @@ function scopedIngressChannelMatches(
   entry: PolicyIngressEvidence,
   policyChannelId: string,
 ): boolean {
-  return normalizePolicyChannelId(entry.channel ?? "") === policyChannelId;
+  return normalizePolicyChannelId(entry.channel ?? "/") === policyChannelId;
 }
 
 function ingressLabel(entry: PolicyIngressEvidence): string {
   const account = entry.accountId === undefined ? "" : ` account '${entry.accountId}'`;
-  const group = entry.groupId === undefined ? "" : ` group '${entry.groupId}'`;
+  const group = entry.groupId === undefined ? "/" : ` group '${entry.groupId}'`;
   return `channel '${entry.channel ?? "unknown"}'${account}${group}`;
 }

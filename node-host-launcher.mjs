@@ -144,7 +144,7 @@ function resolveCurrentRuntime(runtimeDirectory) {
 
 function assertCompatibleSchemas(previous, candidate) {
   const before = previous.openclaw?.schemaVersions;
-  const after = candidate.openclaw?.schemaVersions;
+  const after = candidate.paleoclaw?.schemaVersions;
   if (
     !before ||
     !after ||

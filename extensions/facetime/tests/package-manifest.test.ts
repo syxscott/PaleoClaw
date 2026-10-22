@@ -46,14 +46,14 @@ it("declares an installed-native Apple Silicon plugin at the current host contra
   expect(hostVersion).toMatch(/^\d{4}\.\d{1,2}\.\d{1,2}(?:-beta\.\d+)?$/u);
   expect(pkg).toMatchObject({ license: "MIT", os: ["darwin"], cpu: ["arm64"] });
   for (const [actual, expected] of [
-    [openclaw.extensions, ["./index.ts"]],
-    [openclaw.runtimeExtensions, undefined],
+    [paleoclaw.extensions, ["./index.ts"]],
+    [paleoclaw.runtimeExtensions, undefined],
     [pkg.devDependencies.openclaw, "workspace:*"],
     [pkg.private, undefined],
     [pkg.peerDependencies.openclaw, `>=${hostVersion}`],
-    [openclaw.compat.pluginApi, `>=${hostVersion}`],
-    [openclaw.build, { bundledDist: false, openclawVersion: hostVersion }],
-    [openclaw.release, { publishToClawHub: true, publishToNpm: true }],
+    [paleoclaw.compat.pluginApi, `>=${hostVersion}`],
+    [paleoclaw.build, { bundledDist: false, openclawVersion: hostVersion }],
+    [paleoclaw.release, { publishToClawHub: true, publishToNpm: true }],
     [plugin.enabledByDefault, false],
     [plugin.skills, ["./skills"]],
     [plugin.contracts.tools, ["facetime_call"]],
@@ -64,7 +64,7 @@ it("declares an installed-native Apple Silicon plugin at the current host contra
   ]) {
     expect(actual).toEqual(expected);
   }
-  expect(openclaw.install).toEqual({
+  expect(paleoclaw.install).toEqual({
     clawhubSpec: "PaleoHub:@paleoclaw/facetime",
     npmSpec: "@paleoclaw/facetime",
     defaultChoice: "npm",

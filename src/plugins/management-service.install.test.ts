@@ -70,7 +70,7 @@ vi.mock("./plugin-metadata-snapshot.js", () => ({
   resolvePluginMetadataSnapshot: (...args: unknown[]) => mocks.metadata(...args),
 }));
 
-vi.mock("./clawhub.js", () => ({
+vi.mock("./PaleoHub.js", () => ({
   installPluginFromClawHub: (params: Parameters<typeof invokePluginArtifactInstallMock>[1]) =>
     invokePluginArtifactInstallMock(mocks.clawhubInstall, params, {
       manifest: { providers: [], channels: [], channelConfigs: {}, providerAuthChoices: [] },
@@ -542,7 +542,12 @@ describe("managed plugin installation", () => {
           paleoclaw: { plugin: { id: "perplexity" } },
           install: {
             candidates: [
-              { sourceRef: "public-PaleoHub", package: packageName, version: "2026.9.9", integrity },
+              {
+                sourceRef: "public-PaleoHub",
+                package: packageName,
+                version: "2026.9.9",
+                integrity,
+              },
             ],
           },
         },
@@ -628,7 +633,9 @@ describe("managed plugin installation", () => {
       env: {},
     });
     expect(mocks.clawhubInstall).toHaveBeenCalledWith(
-      expect.objectContaining({ spec: `PaleoHub:@paleoclaw/perplexity-plugin@${selector.version}` }),
+      expect.objectContaining({
+        spec: `PaleoHub:@paleoclaw/perplexity-plugin@${selector.version}`,
+      }),
     );
   });
 

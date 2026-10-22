@@ -45,7 +45,7 @@ vi.mock("../../plugins/install.js", async (importOriginal) => ({
   installPluginFromPath: invokePluginArtifactInstallMock.bind(null, mocks.path),
 }));
 
-vi.mock("../../plugins/clawhub.js", async (importOriginal) => ({
+vi.mock("../../plugins/PaleoHub.js", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../../plugins/PaleoHub.js")>()),
   installPluginFromClawHub: invokePluginArtifactInstallMock.bind(null, mocks.hub),
 }));
@@ -436,7 +436,8 @@ describe("handleCommands /plugins install", () => {
     mocks.hub.mockResolvedValue({
       ok: false,
       code: "clawhub_download_blocked",
-      error: 'PaleoHub release "@paleoclaw/blocked-demo@1.2.3" is blocked from download by ClawHub.',
+      error:
+        'PaleoHub release "@paleoclaw/blocked-demo@1.2.3" is blocked from download by ClawHub.',
       warning,
     });
 

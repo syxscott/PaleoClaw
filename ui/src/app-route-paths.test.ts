@@ -358,7 +358,7 @@ describe("Dynamic route startup bridge", () => {
         startApplicationRouter(router, history, "", createStartupContext()),
       ).resolves.toBeUndefined();
 
-      expect(location.pathname).toBe("/chat");
+      expect(location.pathname).toBe("/chat/");
       expect(router.getState().status).toBe("notFound");
       expect(router.getState().matches[0]).toMatchObject({
         routeId: "chat",

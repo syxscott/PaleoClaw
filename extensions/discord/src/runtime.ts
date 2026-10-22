@@ -1,14 +1,11 @@
-import type { PluginRuntime } from "paleoclaw/plugin-sdk/discord";
+import type { PluginRuntime } from "paleoclaw/plugin-sdk/channel-core";
+import { createPluginRuntimeStore } from "paleoclaw/plugin-sdk/runtime-store";
 
-let runtime: PluginRuntime | null = null;
-
-export function setDiscordRuntime(next: PluginRuntime) {
-  runtime = next;
-}
-
-export function getDiscordRuntime(): PluginRuntime {
-  if (!runtime) {
-    throw new Error("Discord runtime not initialized");
-  }
-  return runtime;
-}
+export const {
+  setRuntime: setDiscordRuntime,
+  tryGetRuntime: getOptionalDiscordRuntime,
+  getRuntime: getDiscordRuntime,
+} = createPluginRuntimeStore<PluginRuntime>({
+  pluginId: "discord",
+  errorMessage: "Discord runtime not initialized",
+});

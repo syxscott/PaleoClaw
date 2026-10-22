@@ -293,11 +293,11 @@ function generatedControlUiManifest(deps: RunNodeInputDeps, file: string) {
     return false;
   }
   const pkg: unknown = JSON.parse(deps.fs.readFileSync(packagePath, "utf8"));
-  const paleoclaw = isRecord(pkg) && isRecord(pkg.openclaw) ? pkg.openclaw : {};
-  const assets = isRecord(openclaw.assetScripts) ? openclaw.assetScripts : {};
+  const paleoclaw = isRecord(pkg) && isRecord(pkg.paleoclaw) ? pkg.paleoclaw : {};
+  const assets = isRecord(paleoclaw.assetScripts) ? paleoclaw.assetScripts : {};
   return (
-    typeof openclaw.controlUi === "string" &&
-    openclaw.controlUi.trim().length > 0 &&
+    typeof paleoclaw.controlUi === "string" &&
+    paleoclaw.controlUi.trim().length > 0 &&
     Array.isArray(assets.buildOutputs) &&
     assets.buildOutputs.includes("openclaw.plugin.json")
   );

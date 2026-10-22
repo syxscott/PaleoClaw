@@ -31,7 +31,7 @@ describe("shouldRunIosScreenshots", () => {
     }
 
     for (const changedPath of [
-      "apps/android/app/src/main/java/ai/paleoclaw/app/MainActivity.kt",
+      "apps/android/app/src/main/java/ai/openclaw/app/MainActivity.kt",
       "docs/ci.md",
       "ui/src/pages/activity/activity-page.ts",
     ]) {

@@ -25,7 +25,9 @@ const NATIVE_HOOK_RELAY_FORBIDDEN_STATIC_MARKERS = [
   "runBeforeToolCallHook",
 ];
 // fs-safe must retain its package scope for optional native-platform loading.
-const NATIVE_HOOK_RELAY_ALLOWED_EXTERNAL_IMPORTS = ["kysely", "@openclaw/fs-safe"];
+// The relay resolves json5 lazily from the host installation when it parses an
+// authored config, so the parser stays a runtime import by design.
+const NATIVE_HOOK_RELAY_ALLOWED_EXTERNAL_IMPORTS = ["kysely", "@openclaw/fs-safe", "json5"];
 // These import-safe subpaths retain proc-safe's package-scoped, lazy native loader.
 const NATIVE_HOOK_RELAY_ALLOWED_EXTERNAL_SUBPATHS = new Set([
   "@openclaw/proc-safe/errors",

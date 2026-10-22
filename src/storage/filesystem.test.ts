@@ -87,7 +87,7 @@ describe("filesystem storage provider", () => {
         "backups/day-2/b.bin",
       ]);
       expect(await listKeys(backend, "backups/day-1/")).toEqual(["backups/day-1/a.bin"]);
-      expect(await listKeys(backend, "missing/")).toEqual([]);
+      expect(await listKeys(backend, "missing")).toEqual([]);
       expect(await listKeys(backend, "")).toEqual([
         "backups/day-1/a.bin",
         "backups/day-2/b.bin",
@@ -126,7 +126,7 @@ describe("filesystem storage provider", () => {
   it("requires an existing absolute directory and never creates a missing root", async () => {
     const directory = tempDirs.make("paleoclaw-storage-filesystem-");
     await expect(openBackend("relative-storage")).rejects.toThrow(/absolute/u);
-    await expect(openBackend(path.join(directory, "missing"))).rejects.toThrow();
+    await expect(openBackend(path.join(directory, "missing/"))).rejects.toThrow();
     await fs.writeFile(path.join(directory, "file"), "not a directory");
     await expect(openBackend(path.join(directory, "file"))).rejects.toThrow();
     await expect(fs.readdir(directory)).resolves.toEqual(["file"]);

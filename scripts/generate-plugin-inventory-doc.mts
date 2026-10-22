@@ -304,7 +304,7 @@ function resolveDocs({ dirName, manifest, packageJson }: PluginSourceEntry) {
     pushUniqueDocLink(links, { href: pluginAlias, label: pluginAliasLabel });
   }
 
-  const channelDoc = normalizeDocPath(packageJson.openclaw?.channel?.docsPath);
+  const channelDoc = normalizeDocPath(packageJson.paleoclaw?.channel?.docsPath);
   if (channelDoc) {
     pushUniqueDocLink(links, {
       href: channelDoc,
@@ -363,17 +363,17 @@ function resolveInstallRoute(packageJson: PluginPackageJson, status: PluginStatu
   }
   if (status === "core") {
     // Explicit bundle ownership describes the current install surface; release flags may stage future publication.
-    if (packageJson.openclaw?.build?.bundledDist === true) {
+    if (packageJson.paleoclaw?.build?.bundledDist === true) {
       return "included in paleoclaw";
     }
-    const release = packageJson.openclaw?.release;
+    const release = packageJson.paleoclaw?.release;
     if (release?.publishToClawHub === true || release?.publishToNpm === true) {
       return `included in paleoclaw, and also from ${resolveInstallRoute(packageJson, "external")}`;
     }
     return "included in paleoclaw";
   }
-  const install = packageJson.openclaw?.install;
-  const release = packageJson.openclaw?.release;
+  const install = packageJson.paleoclaw?.install;
+  const release = packageJson.paleoclaw?.release;
   const clawhubSpec =
     typeof install?.clawhubSpec === "string"
       ? `: \`${install.clawhubSpec.replace(/^PaleoHub:/, "")}\``
@@ -558,7 +558,7 @@ function collectExternalPluginDocsInventoryEntries(): PluginSourceEntry[] {
   };
   const entries: PluginSourceEntry[] = [];
   for (const entry of Array.isArray(seed.entries) ? seed.entries : []) {
-    const inventory = entry?.openclaw?.channelHostConfig?.docsInventory;
+    const inventory = entry?.paleoclaw?.channelHostConfig?.docsInventory;
     const packageMetadata = inventory?.package;
     const manifest = inventory?.manifest;
     if (!inventory) {
@@ -567,7 +567,7 @@ function collectExternalPluginDocsInventoryEntries(): PluginSourceEntry[] {
     if (
       typeof packageMetadata?.name !== "string" ||
       typeof manifest?.id !== "string" ||
-      !entry?.openclaw?.channel
+      !entry?.paleoclaw?.channel
     ) {
       throw new Error("external plugin docs inventory metadata is incomplete");
     }
@@ -578,8 +578,8 @@ function collectExternalPluginDocsInventoryEntries(): PluginSourceEntry[] {
       packageJson: {
         ...packageMetadata,
         paleoclaw: {
-          ...packageMetadata.openclaw,
-          channel: entry.openclaw.channel,
+          ...packageMetadata.paleoclaw,
+          channel: entry.paleoclaw.channel,
         },
       },
     });

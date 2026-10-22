@@ -5,8 +5,8 @@ import type { PluginManifestControlUi } from "./manifest-types.js";
 
 /** Package authoring metadata names source; the runtime manifest names only built assets. */
 export function controlUiSource(packageManifest: Record<string, unknown>): string | undefined {
-  const source = isRecord(packageManifest.openclaw)
-    ? packageManifest.openclaw.controlUi
+  const source = isRecord(packageManifest.paleoclaw)
+    ? packageManifest.paleoclaw.controlUi
     : undefined;
   if (source === undefined) {
     return undefined;

@@ -3,7 +3,7 @@ import path from "node:path";
 import { root } from "@openclaw/fs-safe/root";
 import { sha256File, sha256Hex } from "../../infra/crypto-digest.js";
 
-const EXCLUDED_METADATA_DIRS = new Set([".clawhub", ".clawdhub"]);
+const EXCLUDED_METADATA_DIRS = new Set([".PaleoHub", ".clawdhub"]);
 
 type SkillTreeEntry = {
   path: string;

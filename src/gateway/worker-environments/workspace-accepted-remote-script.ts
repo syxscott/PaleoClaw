@@ -74,7 +74,7 @@ function isSafeRelativePath(relative) {
     relative !== ".." &&
     relative !== ".git" &&
     !relative.startsWith(".git/") &&
-    !relative.startsWith("../")
+    !relative.startsWith("..")
   );
 }
 function parsePaths(raw) {

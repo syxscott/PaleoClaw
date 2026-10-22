@@ -14,8 +14,8 @@ import type { NpmSpecResolution } from "./install-source-utils.js";
 import { JsonFileReadError, readJson, readJsonIfExists, writeJson } from "./json-files.js";
 import { resolveNpmCommand } from "./npm-command.js";
 import type { ParsedRegistryNpmSpec } from "./npm-registry-spec.js";
-import { resolveOpenClawPackageRootSync } from "./paleoclaw-root.js";
 import { isPackageDependencyName } from "./package-json.js";
+import { resolveOpenClawPackageRootSync } from "./paleoclaw-root.js";
 import { createSafeNpmInstallArgs, createSafeNpmInstallEnv } from "./safe-package-install.js";
 import { UPDATE_NETWORK_TIMEOUT_MS } from "./update-network-budget.js";
 
@@ -88,7 +88,7 @@ function buildManagedNpmRootManifest(params: {
 }): ManagedNpmRootManifest {
   const { overrides, managedOverrideKeys } = applyManagedNpmRootOverrides(params);
   const managedPeerDependencyKeys = [...params.managedDependencyNames].toSorted();
-  const metadata = isRecord(params.manifest.openclaw) ? { ...params.manifest.openclaw } : {};
+  const metadata = isRecord(params.manifest.paleoclaw) ? { ...params.manifest.paleoclaw } : {};
   if (managedOverrideKeys.length > 0) {
     metadata.managedOverrides = managedOverrideKeys;
   } else {
@@ -110,9 +110,9 @@ function buildManagedNpmRootManifest(params: {
     delete next.overrides;
   }
   if (Object.keys(metadata).length > 0) {
-    next.openclaw = metadata;
+    next.paleoclaw = metadata;
   } else {
-    delete next.openclaw;
+    delete next.paleoclaw;
   }
   return next;
 }
@@ -235,7 +235,7 @@ function applyManagedNpmRootOverrides(params: {
   managedDependencyNames: ReadonlySet<string>;
 }): { overrides: Record<string, unknown>; managedOverrideKeys: string[] } {
   const overrides = readOverrideRecord(params.manifest.overrides);
-  for (const key of readManagedKeys(params.manifest.openclaw, "managedOverrides")) {
+  for (const key of readManagedKeys(params.manifest.paleoclaw, "managedOverrides")) {
     delete overrides[key];
   }
   Object.assign(overrides, params.managedOverrides);
@@ -314,7 +314,7 @@ export async function upsertManagedNpmRootDependency(params: {
   // Explicit install transfers ownership: the package stops being a managed peer pin,
   // so the installer's spec wins now and later syncs may not re-pin or delete it.
   const managedDependencyNames = new Set(
-    readManagedKeys(manifest.openclaw, "managedPeerDependencies"),
+    readManagedKeys(manifest.paleoclaw, "managedPeerDependencies"),
   );
   managedDependencyNames.delete(params.packageName);
   const next = buildManagedNpmRootManifest({
@@ -444,7 +444,7 @@ async function isRequiredPlatformPackageComplete(params: {
       readLockPackageLocationName(location) === packageName &&
       isRecord(entry) &&
       (typeof entry.bin === "string" ||
-        (isRecord(entry.bin) && typeof entry.bin[executableName ?? ""] === "string")),
+        (isRecord(entry.bin) && typeof entry.bin[executableName ?? "/"] === "string")),
   );
   if (!executableName || !ownsNativeExecutable) {
     return true;
@@ -579,7 +579,7 @@ function scrubHostPeerFromLockPackage(value: unknown): boolean {
     const peers = value[key];
     if (isRecord(peers) && "paleoclaw" in peers) {
       const remaining = { ...peers };
-      delete remaining.openclaw;
+      delete remaining.paleoclaw;
       if (Object.keys(remaining).length > 0) {
         value[key] = remaining;
       } else {
@@ -620,7 +620,7 @@ async function collectNpmResolvedManagedNpmRootPeerDependencyPins(params: {
   const manifest = params.manifest;
   const dependencies = readDependencyRecord(manifest.dependencies);
   const previousManagedPeerDependencies = readManagedKeys(
-    manifest.openclaw,
+    manifest.paleoclaw,
     "managedPeerDependencies",
   );
   const fallbackPeerPins: Record<string, string> = {};
@@ -716,7 +716,7 @@ export async function syncManagedNpmRootPeerDependencies(params: {
   const manifest = await readManagedNpmRootManifest(manifestPath);
   const dependencies = readDependencyRecord(manifest.dependencies);
   const previousManagedPeerDependencies = readManagedKeys(
-    manifest.openclaw,
+    manifest.paleoclaw,
     "managedPeerDependencies",
   );
   const previousManagedPeerDependencySet = new Set(previousManagedPeerDependencies);

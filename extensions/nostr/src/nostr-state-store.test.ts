@@ -1,133 +1,113 @@
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import type { PluginRuntime } from "paleoclaw/plugin-sdk/nostr";
-import { describe, expect, it } from "vitest";
+import type { OpenKeyedStoreOptions } from "paleoclaw/plugin-sdk/plugin-state-runtime";
+import {
+  createPluginStateKeyedStoreForTests,
+  resetPluginStateStoreForTests,
+} from "paleoclaw/plugin-sdk/plugin-state-test-runtime";
+import { closeOpenClawStateDatabaseAsync } from "paleoclaw/plugin-sdk/sqlite-runtime-testing";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import type { PluginRuntime } from "../runtime-api.js";
 import {
   readNostrBusState,
+  readNostrProfileState,
   writeNostrBusState,
+  writeNostrProfileState,
   computeSinceTimestamp,
 } from "./nostr-state-store.js";
 import { setNostrRuntime } from "./runtime.js";
 
-async function withTempStateDir<T>(fn: (dir: string) => Promise<T>) {
-  const previous = process.env.OPENCLAW_STATE_DIR;
-  const dir = await fs.mkdtemp(path.join(os.tmpdir(), "paleoclaw-nostr-"));
-  process.env.OPENCLAW_STATE_DIR = dir;
-  setNostrRuntime({
-    state: {
-      resolveStateDir: (env, homedir) => {
-        const stateEnv = env ?? process.env;
-        const override = stateEnv.OPENCLAW_STATE_DIR?.trim() || stateEnv.CLAWDBOT_STATE_DIR?.trim();
-        if (override) {
-          return override;
-        }
-        const resolveHome = homedir ?? os.homedir;
-        return path.join(resolveHome(), ".paleoclaw");
+describe("nostr state store", () => {
+  let previous: string | undefined;
+  let dir: string;
+  beforeEach(async () => {
+    previous = process.env.OPENCLAW_STATE_DIR;
+    dir = await fs.mkdtemp(path.join(os.tmpdir(), "paleoclaw-nostr-"));
+    process.env.OPENCLAW_STATE_DIR = dir;
+    resetPluginStateStoreForTests();
+    setNostrRuntime({
+      state: {
+        openKeyedStore: (options: OpenKeyedStoreOptions) =>
+          createPluginStateKeyedStoreForTests("nostr", {
+            ...options,
+            env: { ...process.env, OPENCLAW_STATE_DIR: dir },
+          }),
       },
-    },
-  } as PluginRuntime);
-  try {
-    return await fn(dir);
-  } finally {
+    } as PluginRuntime);
+  });
+  afterEach(async () => {
     if (previous === undefined) {
       delete process.env.OPENCLAW_STATE_DIR;
     } else {
       process.env.OPENCLAW_STATE_DIR = previous;
     }
+    // The keyed store keeps the state database open under the temporary dir, so Windows
+    // fails the removal with EBUSY unless the cached handle is released first.
+    await closeOpenClawStateDatabaseAsync();
+    resetPluginStateStoreForTests();
     await fs.rm(dir, { recursive: true, force: true });
-  }
-}
-
-describe("nostr bus state store", () => {
-  it("persists and reloads state across restarts", async () => {
-    await withTempStateDir(async () => {
-      // Fresh start - no state
-      expect(await readNostrBusState({ accountId: "test-bot" })).toBeNull();
-
-      // Write state
-      await writeNostrBusState({
-        accountId: "test-bot",
-        lastProcessedAt: 1700000000,
-        gatewayStartedAt: 1700000100,
-      });
-
-      // Read it back
-      const state = await readNostrBusState({ accountId: "test-bot" });
-      expect(state).toEqual({
-        version: 2,
-        lastProcessedAt: 1700000000,
-        gatewayStartedAt: 1700000100,
-        recentEventIds: [],
-      });
-    });
   });
 
+  const writeBus = (
+    accountId: string,
+    lastProcessedAt: number,
+    gatewayStartedAt = lastProcessedAt,
+  ) => writeNostrBusState({ accountId, lastProcessedAt, gatewayStartedAt });
+
   it("isolates state by accountId", async () => {
-    await withTempStateDir(async () => {
-      await writeNostrBusState({
-        accountId: "bot-a",
-        lastProcessedAt: 1000,
-        gatewayStartedAt: 1000,
-      });
-      await writeNostrBusState({
-        accountId: "bot-b",
-        lastProcessedAt: 2000,
-        gatewayStartedAt: 2000,
-      });
+    await writeBus("bot-a", 1000);
+    await writeBus("bot-b", 2000);
 
-      const stateA = await readNostrBusState({ accountId: "bot-a" });
-      const stateB = await readNostrBusState({ accountId: "bot-b" });
+    const stateA = await readNostrBusState({ accountId: "bot-a" });
+    const stateB = await readNostrBusState({ accountId: "bot-b" });
 
-      expect(stateA?.lastProcessedAt).toBe(1000);
-      expect(stateB?.lastProcessedAt).toBe(2000);
+    expect(stateA?.lastProcessedAt).toBe(1000);
+    expect(stateB?.lastProcessedAt).toBe(2000);
+  });
+
+  it("preserves legacy account key bytes for state lookup", async () => {
+    await writeBus(" Team.A ", 1234, 1200);
+
+    await expect(readNostrBusState({ accountId: "Team.A" })).resolves.toMatchObject({
+      lastProcessedAt: 1234,
     });
+    await expect(readNostrBusState({ accountId: "team-a" })).resolves.toBeNull();
+  });
+
+  it("persists and reloads profile publish state", async () => {
+    const profile = {
+      lastPublishedAt: 1700000000,
+      lastPublishedEventId: "evt-1",
+      lastPublishResults: { "wss://relay.example": "ok" as const },
+    };
+    await writeNostrProfileState({ accountId: "test-bot", ...profile });
+
+    const state = await readNostrProfileState({ accountId: "test-bot" });
+    expect(state).toEqual({ version: 1, ...profile });
   });
 });
 
 describe("computeSinceTimestamp", () => {
+  const state = (
+    lastProcessedAt: number | null,
+    gatewayStartedAt: number | null,
+  ): NonNullable<Parameters<typeof computeSinceTimestamp>[0]> => ({
+    version: 2,
+    lastProcessedAt,
+    gatewayStartedAt,
+    recentEventIds: [],
+  });
   it("returns now for null state (fresh start)", () => {
     const now = 1700000000;
     expect(computeSinceTimestamp(null, now)).toBe(now);
   });
 
-  it("uses lastProcessedAt when available", () => {
-    const state: Parameters<typeof computeSinceTimestamp>[0] = {
-      version: 2,
-      lastProcessedAt: 1699999000,
-      gatewayStartedAt: null,
-      recentEventIds: [],
-    };
-    expect(computeSinceTimestamp(state, 1700000000)).toBe(1699999000);
-  });
-
-  it("uses gatewayStartedAt when lastProcessedAt is null", () => {
-    const state: Parameters<typeof computeSinceTimestamp>[0] = {
-      version: 2,
-      lastProcessedAt: null,
-      gatewayStartedAt: 1699998000,
-      recentEventIds: [],
-    };
-    expect(computeSinceTimestamp(state, 1700000000)).toBe(1699998000);
-  });
-
   it("uses the max of both timestamps", () => {
-    const state: Parameters<typeof computeSinceTimestamp>[0] = {
-      version: 2,
-      lastProcessedAt: 1699999000,
-      gatewayStartedAt: 1699998000,
-      recentEventIds: [],
-    };
-    expect(computeSinceTimestamp(state, 1700000000)).toBe(1699999000);
+    expect(computeSinceTimestamp(state(1699999000, 1699998000), 1700000000)).toBe(1699999000);
   });
 
   it("falls back to now if both are null", () => {
-    const state: Parameters<typeof computeSinceTimestamp>[0] = {
-      version: 2,
-      lastProcessedAt: null,
-      gatewayStartedAt: null,
-      recentEventIds: [],
-    };
-    expect(computeSinceTimestamp(state, 1700000000)).toBe(1700000000);
+    expect(computeSinceTimestamp(state(null, null), 1700000000)).toBe(1700000000);
   });
 });

@@ -18,7 +18,7 @@ export function collectBundledExtensionManifestErrors(extensions: BundledExtensi
   const errors: string[] = [];
 
   for (const extension of extensions) {
-    const install = extension.packageJson.openclaw?.install;
+    const install = extension.packageJson.paleoclaw?.install;
     if (install !== undefined && !isRecord(install)) {
       errors.push(
         `bundled extension '${extension.id}' manifest invalid | openclaw.install must be an object`,

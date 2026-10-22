@@ -11,7 +11,7 @@ import { resolveProviderRequestHeaders } from "paleoclaw/plugin-sdk/provider-htt
 import { buildOpenAICompletionsParams } from "paleoclaw/plugin-sdk/provider-transport-runtime";
 import { beforeEach, describe, expect, it, vi, type MockInstance } from "vitest";
 import plugin from "./index.js";
-import manifest from "./paleoclaw.plugin.json" with { type: "json" };
+import manifest from "./openclaw.plugin.json" with { type: "json" };
 import {
   buildOpencodeGoLiveProviderConfig,
   buildStaticOpencodeGoProviderConfig,

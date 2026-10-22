@@ -4,7 +4,7 @@ import { defineSingleProviderPluginEntry } from "paleoclaw/plugin-sdk/provider-e
 import { buildOpenAICompatibleReplayPolicy } from "paleoclaw/plugin-sdk/provider-model-shared";
 import { wrapMoonshotStream } from "./native-video.js";
 import { applyMoonshotConfig, applyMoonshotConfigCn } from "./onboard.js";
-import manifest from "./paleoclaw.plugin.json" with { type: "json" };
+import manifest from "./openclaw.plugin.json" with { type: "json" };
 import {
   buildMoonshotProvider,
   MOONSHOT_BASE_URL,

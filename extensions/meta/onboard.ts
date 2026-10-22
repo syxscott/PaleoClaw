@@ -3,7 +3,7 @@ import {
   createModelCatalogPresetAppliers,
   createProviderConnectionPresetAppliers,
 } from "paleoclaw/plugin-sdk/provider-onboard";
-import manifest from "./paleoclaw.plugin.json" with { type: "json" };
+import manifest from "./openclaw.plugin.json" with { type: "json" };
 import { buildMetaCatalogModels, META_BASE_URL } from "./provider-catalog.js";
 
 export const META_DEFAULT_MODEL_REF = readManifestProviderDefaultModelRef(manifest, "meta")!;

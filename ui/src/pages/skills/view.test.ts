@@ -62,8 +62,8 @@ function createLinkedSkill(ownerHandle?: string) {
       ownerHandle,
       installedVersion: "1.2.3",
       installedAt: 123,
-      originPath: "/tmp/.clawhub/origin.json",
-      lockPath: "/tmp/workspace/.clawhub/lock.json",
+      originPath: "/tmp/.PaleoHub/origin.json",
+      lockPath: "/tmp/workspace/.PaleoHub/lock.json",
     },
   });
 }
@@ -502,10 +502,10 @@ describe("renderSkills", () => {
     expect(normalizeText(container.querySelector(".skill-reader-dialog__body")!)).toBe(
       "GitHub integration for paleoclaw By paleoclaw (@paleoclaw) · Latest: v1.2.3 Added search support Platforms: macos, linux",
     );
-    expect(container.querySelector<HTMLImageElement>(".clawhub-skill-icon--detail")?.src).toBe(
+    expect(container.querySelector<HTMLImageElement>(".PaleoHub-skill-icon--detail")?.src).toBe(
       "blob:PaleoHub-detail-icon",
     );
-    expect(container.querySelector(".clawhub-skill-icon--profile")).toBeNull();
+    expect(container.querySelector(".PaleoHub-skill-icon--profile")).toBeNull();
 
     const detailInstallButton = container.querySelector<HTMLButtonElement>(
       ".skill-reader-dialog__actions .btn.primary",
@@ -618,8 +618,8 @@ describe("renderSkills", () => {
             requestedReference: "skills-sh:openai/skills/pdf",
             installedVersion: "0.0.0",
             installedAt: 1,
-            originPath: "/tmp/.clawhub/origin.json",
-            lockPath: "/tmp/workspace/.clawhub/lock.json",
+            originPath: "/tmp/.PaleoHub/origin.json",
+            lockPath: "/tmp/workspace/.PaleoHub/lock.json",
           },
         }),
       ]),

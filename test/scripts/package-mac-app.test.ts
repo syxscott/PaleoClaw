@@ -112,7 +112,7 @@ describe.skipIf(process.platform === "win32")("cloud-worker app packaging identi
     (cloud) => {
       const app = tempDirs.make("paleoclaw-cloud-bundle-");
       writeFiles(app, {
-        "Contents/Info.plist": readFileSync("apps/macos/Sources/paleoclaw/Resources/Info.plist"),
+        "Contents/Info.plist": readFileSync("apps/macos/Sources/OpenClaw/Resources/Info.plist"),
       });
       const stamp = script.slice(
         script.indexOf(
@@ -1914,9 +1914,9 @@ try {
         writeFileSync(path.join(appRoot, "Package.swift"), "// fixture\n");
         writeFileSync(path.join(appRoot, "Package.resolved"), committed);
       }
-      const plist = path.join(root, "apps/macos/Sources/paleoclaw/Resources/Info.plist");
+      const plist = path.join(root, "apps/macos/Sources/OpenClaw/Resources/Info.plist");
       mkdirSync(path.dirname(plist), { recursive: true });
-      writeFileSync(plist, readFileSync("apps/macos/Sources/paleoclaw/Resources/Info.plist"));
+      writeFileSync(plist, readFileSync("apps/macos/Sources/OpenClaw/Resources/Info.plist"));
       const result = runHelper(`
         set -euo pipefail
         source ${JSON.stringify(swiftScriptPath)}
@@ -2459,9 +2459,9 @@ printf '/dev/disk99 on /unrelated (apfs, read-only)\\n'
           `https://github.com/trycua/cua/releases/download/${tag}/${asset}`,
         );
       }
-      expect(readdirSync(root).filter((entry) => entry.startsWith("paleoclaw-cua-driver."))).toEqual(
-        [],
-      );
+      expect(
+        readdirSync(root).filter((entry) => entry.startsWith("paleoclaw-cua-driver.")),
+      ).toEqual([]);
     },
   );
 

@@ -68,7 +68,7 @@ it("does not budget a disabled PR screenshot request", () => {
     const result = manifest({
       runnerProfile: "hybrid",
       eventName: "pull_request",
-      changedPaths: ["apps/android/app/src/main/java/ai/paleoclaw/app/MainActivity.kt"],
+      changedPaths: ["apps/android/app/src/main/java/ai/openclaw/app/MainActivity.kt"],
       scopeEnv: { OPENCLAW_CI_RUN_ANDROID_SCREENSHOTS: hint },
     });
     expect(result.outputs.run_android_screenshots).toBe("false");

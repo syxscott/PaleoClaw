@@ -166,7 +166,7 @@ describe("resolveNpmSpecMetadata", () => {
         resolvedSpec: "@paleoclaw/codex@2026.6.11",
         integrity: "placeholder",
         shasum: "placeholder",
-        packageOpenClaw: npmViewMetadata.openclaw,
+        packageOpenClaw: npmViewMetadata.paleoclaw,
       },
     });
   });
@@ -281,7 +281,8 @@ describe("packNpmSpecToArchive", () => {
     const cwd = await createFixtureDir();
     mockPackCommandResult({
       stdout: "",
-      stderr: "npm error code E404\nnpm error 404  '@paleoclaw/whatsapp@*' is not in this registry.",
+      stderr:
+        "npm error code E404\nnpm error 404  '@paleoclaw/whatsapp@*' is not in this registry.",
       code: 1,
     });
 

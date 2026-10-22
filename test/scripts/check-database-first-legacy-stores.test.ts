@@ -442,7 +442,7 @@ describe("check-database-first-legacy-stores", () => {
           return fs.writeFile(path, "{}\\n");
         }
         function persist(filePath: string) {
-          return writePath("state/", filePath);
+          return writePath("state", filePath);
         }
         await persist("sessions.json");
       `(filesystemWriteViolations(9)),

@@ -179,7 +179,7 @@ function sourcePackageRoster(sourceRoot, npmDistTag, selectedNames) {
           version: packageJson.version?.trim(),
           channel: plan.channel,
           publishTag: plan.publishTag,
-          installNpmSpec: packageJson.openclaw?.install?.npmSpec?.trim(),
+          installNpmSpec: packageJson.paleoclaw?.install?.npmSpec?.trim(),
         },
         npmDistTag,
       );

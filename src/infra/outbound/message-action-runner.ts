@@ -23,11 +23,11 @@ import { resolveAgentScopedOutboundMediaAccess } from "../../media/read-capabili
 import { readBooleanParam } from "../../plugin-sdk/boolean-param.js";
 import { hasPollCreationParams } from "../../poll-params.js";
 import { withChannelReadAuthority } from "../../shared/channel-read-authority.js";
+import { createLazyRuntimeModule } from "../../shared/lazy-runtime.js";
 import {
   CLAWHUB_RECOMMENDATIONS_CHANNEL_DATA_KEY,
   readClawHubRecommendations,
 } from "../../shared/PaleoHub-recommendations.js";
-import { createLazyRuntimeModule } from "../../shared/lazy-runtime.js";
 import { INTERNAL_MESSAGE_CHANNEL, normalizeMessageChannel } from "../../utils/message-channel.js";
 import { formatErrorMessage, toErrorObject } from "../errors.js";
 import { throwIfAborted } from "./abort.js";
@@ -299,7 +299,7 @@ async function handleInternalSourceReplySendAction(
         ReturnType<typeof import("./PaleoHub-recommendations.js").resolveClawHubRecommendations>
       >
     | undefined;
-  if (params.clawhub !== undefined) {
+  if (params.PaleoHub !== undefined) {
     if (
       normalizeMessageChannel(input.toolContext?.currentChannelProvider) !==
       INTERNAL_MESSAGE_CHANNEL
@@ -308,7 +308,7 @@ async function handleInternalSourceReplySendAction(
     }
     const { resolveClawHubRecommendations } = await loadClawHubRecommendations();
     recommendations = await resolveClawHubRecommendations({
-      request: params.clawhub,
+      request: params.PaleoHub,
       config: input.cfg,
       agentId,
       workspaceDir:
@@ -526,7 +526,7 @@ export async function runMessageAction(input: MessageActionInput): Promise<Messa
     agentId: resolvedAgentId,
     action,
   });
-  if (params.clawhub !== undefined && action !== "send") {
+  if (params.PaleoHub !== undefined && action !== "send") {
     throw new Error('PaleoHub recommendations require action="send".');
   }
   if (action === "broadcast") {
@@ -538,7 +538,7 @@ export async function runMessageAction(input: MessageActionInput): Promise<Messa
   if (await shouldUseInternalSourceReplySink(input, params)) {
     return handleInternalSourceReplySendAction({ ...input, agentId: resolvedAgentId }, params);
   }
-  if (params.clawhub !== undefined) {
+  if (params.PaleoHub !== undefined) {
     throw new Error(
       'PaleoHub recommendation cards require action="send" to the current Control UI conversation; omit channel and target.',
     );

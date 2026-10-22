@@ -144,8 +144,8 @@ function readFreshUpdateArtifactMetadata(manifest: unknown) {
   ) {
     return { failure: createUpdatePreflightFailure("target-version-resolution") };
   }
-  const schemas = isRecord(manifest.openclaw)
-    ? parseOpenClawSchemaVersions(manifest.openclaw.schemaVersions)
+  const schemas = isRecord(manifest.paleoclaw)
+    ? parseOpenClawSchemaVersions(manifest.paleoclaw.schemaVersions)
     : undefined;
   if (!schemas) {
     return { failure: createUpdatePreflightFailure("target-schema-metadata") };

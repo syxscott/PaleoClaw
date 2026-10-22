@@ -53,7 +53,7 @@ it("keeps artifact cleanup inside the repository-owned evidence directory", () =
 it("keeps fixture readiness and device restoration aligned", () => {
   const script = readFileSync(SCRIPT, "utf8");
   const fixture = readFileSync(
-    "apps/android/app/src/main/java/ai/paleoclaw/app/AndroidScreenshotFixture.kt",
+    "apps/android/app/src/main/java/ai/openclaw/app/AndroidScreenshotFixture.kt",
     "utf8",
   );
   const chatReady = "The Android release is close.";

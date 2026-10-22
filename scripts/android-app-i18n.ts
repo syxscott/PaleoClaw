@@ -486,36 +486,36 @@ const ALLOWED_UI_LITERALS = new Map<string, ReadonlySet<string>>([
       "WhatsApp",
     ]),
   ],
-  ["apps/android/app/src/main/java/ai/paleoclaw/app/chat/ChatController.kt", new Set(["Off"])],
+  ["apps/android/app/src/main/java/ai/openclaw/app/chat/ChatController.kt", new Set(["Off"])],
   [
-    "apps/android/app/src/main/java/ai/paleoclaw/app/ui/GatewayDiagnostics.kt",
+    "apps/android/app/src/main/java/ai/openclaw/app/ui/GatewayDiagnostics.kt",
     new Set(["$versionName-dev"]),
   ],
   [
-    "apps/android/app/src/main/java/ai/paleoclaw/app/ui/chat/ChatScreen.kt",
+    "apps/android/app/src/main/java/ai/openclaw/app/ui/chat/ChatScreen.kt",
     // Plan checklist chrome: numeric done-counter and checkmark glyph.
     new Set(["$completedCount/${steps.size}", "✓"]),
   ],
   [
-    "apps/android/app/src/main/java/ai/paleoclaw/app/ui/SettingsScreens.kt",
+    "apps/android/app/src/main/java/ai/openclaw/app/ui/SettingsScreens.kt",
     // Discovered-gateway subtitles are host:port endpoints, not translatable copy.
     new Set(["${endpoint.host}:${endpoint.port}"]),
   ],
   [
-    "apps/android/app/src/main/java/ai/paleoclaw/app/ui/SidebarShell.kt",
+    "apps/android/app/src/main/java/ai/openclaw/app/ui/SidebarShell.kt",
     // Compose animation labels are tooling identifiers, not rendered copy.
     new Set(["sidebar-content-translation"]),
   ],
   [
-    "apps/android/app/src/main/java/ai/paleoclaw/app/ui/chat/ChatCommandControls.kt",
+    "apps/android/app/src/main/java/ai/openclaw/app/ui/chat/ChatCommandControls.kt",
     new Set(["/$name", "help"]),
   ],
   [
-    "apps/android/app/src/main/java/ai/paleoclaw/app/ui/chat/ChatMessageActions.kt",
+    "apps/android/app/src/main/java/ai/openclaw/app/ui/chat/ChatMessageActions.kt",
     new Set([">", "> $line"]),
   ],
   [
-    "apps/android/wear/src/main/java/ai/paleoclaw/wear/WearScreens.kt",
+    "apps/android/wear/src/main/java/ai/openclaw/wear/WearScreens.kt",
     // Compose animation labels are tooling identifiers, not rendered copy.
     new Set(["voice-swipe-hint", "voice-swipe-hint-offset"]),
   ],
@@ -545,7 +545,7 @@ function shouldScanUiLiterals(repoPath: string): boolean {
   return (
     repoPath.includes("/ui/") ||
     repoPath.endsWith("/accessibility/AccessibilityDevActivity.kt") ||
-    repoPath.includes("/wear/src/main/java/ai/paleoclaw/wear/") ||
+    repoPath.includes("/wear/src/main/java/ai/openclaw/wear/") ||
     repoPath.endsWith("/MainActivity.kt") ||
     repoPath.endsWith("/NodeRuntime.kt") ||
     repoPath.endsWith("/PermissionRequester.kt") ||

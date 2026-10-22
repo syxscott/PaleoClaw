@@ -105,7 +105,9 @@ function verifyPreflightCorePackages(
     const packagePath = `${policy.path}/package.json`;
     const pkg = sourcePaths.has(packagePath) ? readPackage(packagePath) : undefined;
     const release =
-      isRecord(pkg?.openclaw) && isRecord(pkg.openclaw.release) ? pkg.openclaw.release : undefined;
+      isRecord(pkg?.paleoclaw) && isRecord(pkg.paleoclaw.release)
+        ? pkg.paleoclaw.release
+        : undefined;
     const required = policy.dependency
       ? Boolean(dependencies[policy.dependency])
       : release?.publishToNpm === true;

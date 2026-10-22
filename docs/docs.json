@@ -72,7 +72,7 @@
       "destination": "/providers/xiaomi"
     },
     {
-      "source": "/openai",
+      "source": "/openai/",
       "destination": "/providers/openai"
     },
     {
@@ -80,7 +80,7 @@
       "destination": "/providers/openai"
     },
     {
-      "source": "/anthropic",
+      "source": "/anthropic/",
       "destination": "/providers/anthropic"
     },
     {
@@ -268,7 +268,7 @@
       "destination": "/start/paleoclaw"
     },
     {
-      "source": "/start/clawd",
+      "source": "/start/clawd/",
       "destination": "/start/paleoclaw"
     },
     {
@@ -504,7 +504,7 @@
       "destination": "/concepts/model-failover"
     },
     {
-      "source": "/model",
+      "source": "/model/",
       "destination": "/models"
     },
     {

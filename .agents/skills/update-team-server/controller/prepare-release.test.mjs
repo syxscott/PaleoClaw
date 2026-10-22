@@ -106,7 +106,7 @@ test("publishes standalone exact-commit releases with an inode-independent reusa
     const fs = require('node:fs');
     const head = require('node:child_process').execFileSync('git', ['rev-parse', 'HEAD'], {encoding:'utf8'}).trim();
     fs.mkdirSync('dist/control-ui/assets', {recursive:true});
-    for (const name of ['.buildstamp', '.runtime-postbuildstamp']) fs.writeFileSync('dist/'+name, JSON.stringify({head}));
+    for (const name of ['.buildstamp', '.runtime-postbuildstamp']) fs.writeFileSync('dist'+name, JSON.stringify({head}));
     fs.writeFileSync('dist/build-info.json', JSON.stringify({commit:head, buildId:head}));
     fs.writeFileSync('dist/build-cache-inputs.json', JSON.stringify({version:1, steps:{'fixture-runtime':'a'.repeat(64)}}));
     fs.writeFileSync('dist/index.js', 'fixture();');

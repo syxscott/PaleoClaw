@@ -17,7 +17,7 @@ function fixture(t) {
     const file = join(release, "package.json");
     chmodSync(file, 0o644);
     const pkg = JSON.parse(readFileSync(file));
-    pkg.openclaw.schemaVersions = { state: 20, agent };
+    pkg.paleoclaw.schemaVersions = { state: 20, agent };
     writeFileSync(file, JSON.stringify(pkg));
     chmodSync(file, 0o444);
   }

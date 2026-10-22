@@ -8,16 +8,16 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { pipeline } from "node:stream/promises";
-import { logWarn } from "../logger.js";
-import { sameFileIdentity } from "./file-identity.js";
-import { expandHomePrefix } from "./home-dir.js";
-import { assertNoPathAliasEscape } from "./path-alias-guards.js";
+import { assertNoPathAliasEscape } from "@openclaw/fs-safe/advanced";
 import {
   hasNodeErrorCode,
   isNotFoundPathError,
   isPathInside,
   isSymlinkOpenError,
-} from "./path-guards.js";
+} from "@openclaw/fs-safe/path";
+import { logWarn } from "../logger.js";
+import { sameFileIdentity } from "./file-identity.js";
+import { expandHomePrefix } from "./home-dir.js";
 
 export type SafeOpenErrorCode =
   | "invalid-path"

@@ -1032,7 +1032,7 @@ describe("native runtime artifact CI selection", () => {
         eventName: "schedule",
         runNode: false,
         publishedDriverUpdateCapability: false,
-        targetFiles: owner ? ["apps/macos/Sources/paleoclaw/NativeExecPolicyOwner.swift"] : [],
+        targetFiles: owner ? ["apps/macos/Sources/OpenClaw/NativeExecPolicyOwner.swift"] : [],
       });
       expect(manifest.status, manifest.output).toBe(0);
       expect(manifest.outputs.run_macos_swift).toBe("true");
@@ -2191,7 +2191,11 @@ describe("ci workflow guards", () => {
         );
         expect(production.runner).toBe("blacksmith-4vcpu-ubuntu-2404");
         expect(central.runner).toBe("blacksmith-16vcpu-ubuntu-2404");
-        expect(JSON.parse(production.type_graph_names_json)).toEqual(["core", "ui", "extensions"]);
+        expect(JSON.parse(production.type_graph_names_json)).toEqual([
+          "core",
+          "ui",
+          "extensions",
+        ]);
         expect(JSON.parse(central.type_graph_names_json)).toEqual(
           profile === "blacksmith" && !centralCorePaths
             ? ["extensions-test", "test-root-tooling", "scripts"]
@@ -2418,7 +2422,13 @@ describe("ci workflow guards", () => {
         changedPaths: scenario.changedPaths,
       });
       for (const [name, config, output, job, stepName] of [
-        ["ui", "ui/vitest.config.ts", "ui_test_groups_gzip_base64", "checks-ui", "Test Control UI"],
+        [
+          "ui",
+          "ui/vitest.config.ts",
+          "ui_test_groups_gzip_base64",
+          "checks-ui",
+          "Test Control UI",
+        ],
         [
           "e2e",
           "test/vitest/vitest.ui-e2e.config.ts",
@@ -3014,7 +3024,7 @@ describe("ci workflow guards", () => {
       ).toEqual([]);
       expect(
         selectedPhases("Swift test", {
-          fileHashes: { "apps/macos/Sources/paleoclaw/NativeExecPolicyOwner.swift": "present" },
+          fileHashes: { "apps/macos/Sources/OpenClaw/NativeExecPolicyOwner.swift": "present" },
           steps: {
             ...successfulNativeSetup(),
             "native-test-cli": { outcome: "failure", outputs: {} },
@@ -8657,10 +8667,10 @@ describe("ci workflow guards", () => {
   );
 
   it.each([
-    ["apps/android/app/src/main/java/ai/paleoclaw/app/MainActivity.kt", true],
+    ["apps/android/app/src/main/java/ai/openclaw/app/MainActivity.kt", true],
     ["apps/android/app/src/play/java/ai/paleoclaw/app/Play.kt", true],
     ["apps/android/app/src/debug/java/ai/paleoclaw/app/ScreenshotFixtures.kt", true],
-    ["apps/android/wear/src/main/java/ai/paleoclaw/wear/MainActivity.kt", true],
+    ["apps/android/wear/src/main/java/ai/openclaw/wear/MainActivity.kt", true],
     ["apps/android/wear-shared/src/main/java/ai/paleoclaw/wear/State.kt", true],
     ["apps/android/gradle/libs.versions.toml", true],
     ["apps/android/app/build.gradle.kts", true],
@@ -9288,9 +9298,11 @@ describe("ci workflow guards", () => {
       expect(plannerOptions).toMatchObject({
         ...(!forwardsChangedPaths ? { includeReleaseOnlyPluginShards: false } : {}),
         includeReleaseOnlyToolingShards:
-          (eventName === "workflow_dispatch" && !releaseGate) || repository !== "paleoclaw/paleoclaw",
+          (eventName === "workflow_dispatch" && !releaseGate) ||
+          repository !== "paleoclaw/paleoclaw",
         includeReleaseOnlyRuntimeTests:
-          (eventName === "workflow_dispatch" && !releaseGate) || repository !== "paleoclaw/paleoclaw",
+          (eventName === "workflow_dispatch" && !releaseGate) ||
+          repository !== "paleoclaw/paleoclaw",
         includePrExemptRuntimeTests:
           (eventName !== "pull_request" && !releaseGate) || repository !== "paleoclaw/paleoclaw",
       });

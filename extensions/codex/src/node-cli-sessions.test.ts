@@ -12,7 +12,7 @@ import {
   withinTest,
 } from "paleoclaw/plugin-sdk/test-fixtures";
 import { afterAll, afterEach, beforeAll, beforeEach, expect, it, vi } from "vitest";
-import manifest from "../paleoclaw.plugin.json" with { type: "json" };
+import manifest from "../openclaw.plugin.json" with { type: "json" };
 import {
   createCodexCliSessionNodeHostCommands,
   createCodexCliSessionNodeInvokePolicies,

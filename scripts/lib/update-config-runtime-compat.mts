@@ -114,7 +114,7 @@ function send(result) {
 import { spawn, spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 const target = new URL(${target}, import.meta.url).href;
-const root = fileURLToPath(new URL("../", import.meta.url));
+const root = fileURLToPath(new URL("..", import.meta.url));
 const worker = ${JSON.stringify(worker)};
 const updating = process.env.OPENCLAW_UPDATE_IN_PROGRESS === "1" && process.env.OPENCLAW_CONFIG_READ_CHILD !== "1";
 const runtime = updating ? undefined : await import(target);

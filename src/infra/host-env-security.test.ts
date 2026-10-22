@@ -433,11 +433,11 @@ it("keeps generated macOS host env policy in sync with shared JSON policy", () =
   const policy = loadHostEnvSecurityPolicy(rawPolicy);
   const generatedSource = readRepoFile(
     repoRoot,
-    "apps/macos/Sources/paleoclaw/HostEnvSecurityPolicy.generated.swift",
+    "apps/macos/Sources/OpenClaw/HostEnvSecurityPolicy.generated.swift",
   );
   const sanitizerSource = readRepoFile(
     repoRoot,
-    "apps/macos/Sources/paleoclaw/HostEnvSanitizer.swift",
+    "apps/macos/Sources/OpenClaw/HostEnvSanitizer.swift",
   );
 
   const fields = [

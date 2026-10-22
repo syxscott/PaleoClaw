@@ -196,8 +196,8 @@ function readJsonFile(filePath: string) {
 /** Return whether a plugin package publishes through an artifact release workflow. */
 function isPublishablePluginPackage(packageJson: PluginPackageJson) {
   return (
-    packageJson.openclaw?.release?.publishToNpm === true ||
-    packageJson.openclaw?.release?.publishToClawHub === true
+    packageJson.paleoclaw?.release?.publishToNpm === true ||
+    packageJson.paleoclaw?.release?.publishToClawHub === true
   );
 }
 
@@ -421,9 +421,9 @@ function resolveOpenClawPeerRange(
   rootPackageJson: PluginPackageJson | undefined,
 ) {
   return (
-    normalizeOpenClawPeerRange(packageJson.openclaw?.compat?.pluginApi) ||
+    normalizeOpenClawPeerRange(packageJson.paleoclaw?.compat?.pluginApi) ||
     normalizeOpenClawPeerRange(packageJson.peerDependencies?.openclaw) ||
-    normalizeOpenClawPeerRange(packageJson.openclaw?.build?.openclawVersion) ||
+    normalizeOpenClawPeerRange(packageJson.paleoclaw?.build?.openclawVersion) ||
     normalizeOpenClawPeerRange(rootPackageJson?.version) ||
     normalizeOpenClawPeerRange(packageJson.version)
   );
@@ -493,7 +493,7 @@ function projectQaGatewayFixture(
     runtimeSetupEntry: _runtimeSetupEntry,
     setupEntry: _setupEntry,
     ...openclaw
-  } = packageJson.openclaw ?? {};
+  } = packageJson.paleoclaw ?? {};
   const entry = id === "qa-lab" ? "./gateway-entry.ts" : "./index.ts";
   const setupEntry = id === "qa-channel" ? "./setup-entry.ts" : undefined;
   const dependencies: JsonRecord = {};
@@ -541,7 +541,7 @@ export function resolvePluginNpmRuntimeBuildPlan(params: PluginNpmRuntimeBuildPa
     : undefined;
   // Compilation also serves private source-checkout plugins. Publication selection
   // belongs to listPublishablePluginPackageDirs, not the runtime graph builder.
-  if (!Array.isArray(sourcePackageJson.openclaw?.extensions)) {
+  if (!Array.isArray(sourcePackageJson.paleoclaw?.extensions)) {
     return null;
   }
 
@@ -577,7 +577,7 @@ export function resolvePluginNpmRuntimeBuildPlan(params: PluginNpmRuntimeBuildPa
       path.join(packageDir, sourceEntry.replace(/^\.\//u, "")),
     ]),
   );
-  const setupEntry = normalizePackageEntry(packageJson.openclaw?.setupEntry);
+  const setupEntry = normalizePackageEntry(packageJson.paleoclaw?.setupEntry);
   // The selected source root owns compatibility bindings, including ones that
   // are currently absent and may become available in a later checkout.
   const bundleTelegramLifecycle = packageJson.name === "@paleoclaw/telegram";
@@ -622,8 +622,8 @@ export function resolvePluginNpmRuntimeBuildPlan(params: PluginNpmRuntimeBuildPa
         Object.keys(sources).map((source) => path.join(repoRoot, source)),
       ),
     ],
-    runtimeExtensions: (Array.isArray(packageJson.openclaw?.extensions)
-      ? packageJson.openclaw.extensions
+    runtimeExtensions: (Array.isArray(packageJson.paleoclaw?.extensions)
+      ? packageJson.paleoclaw.extensions
       : []
     )
       .map(normalizePackageEntry)

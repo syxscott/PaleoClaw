@@ -86,7 +86,7 @@ export async function preparePackageBundledPlugins(
         `Built plugin ${id} does not match source metadata; rebuild before packaging`,
       );
     }
-    const extension = path.extname(builtPackage.openclaw?.extensions?.[0] ?? "index.js");
+    const extension = path.extname(builtPackage.paleoclaw?.extensions?.[0] ?? "index.js");
     for (const entry of sourceEntries) {
       await fs.access(path.join(pluginRoot, entry.replace(/\.[^.]+$/u, extension)));
     }
@@ -142,9 +142,9 @@ export async function preparePackageBundledPlugins(
     // Explicit composition transfers ownership to this distribution. Without
     // this fact, Doctor retains an older managed npm copy with the same version.
     for (const [relativePath, pluginPackage] of pluginPackages) {
-      pluginPackage.openclaw = {
-        ...pluginPackage.openclaw,
-        build: { ...pluginPackage.openclaw?.build, bundledDist: true },
+      pluginPackage.paleoclaw = {
+        ...pluginPackage.paleoclaw,
+        build: { ...pluginPackage.paleoclaw?.build, bundledDist: true },
       };
       await fs.writeFile(
         path.join(sourceDir, relativePath),

@@ -181,7 +181,7 @@ describe("startGatewayTailscaleExposure", () => {
     const cleanup = await startGatewayTailscaleExposure();
 
     expect(getTailscalePublishedOrigin()).toMatchObject({
-      origin: "https://node.tailnet.ts.net",
+      origin: "https://node.tailnet.ts.net/",
       mode: "serve",
     });
     expect(resolveControlUiIdentity({}, { mode: "token", allowTailscale: true })?.url).toBe(

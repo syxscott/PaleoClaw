@@ -134,7 +134,7 @@ it.skipIf(!isLiveTestEnabled() || process.platform === "win32")(
           acquireGatewayTestClient(
             {
               url: instance.url,
-              origin: controlUi ? `http://127.0.0.1:${instance.port}` : undefined,
+              origin: controlUi ? `http://127.0.0.1:${instance.port}/` : undefined,
               token: instance.gatewayToken,
               // A different auth class must not reissue the interrupted UI's device token.
               deviceIdentity: controlUi ? deviceIdentity : observerDeviceIdentity,

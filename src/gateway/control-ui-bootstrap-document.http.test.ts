@@ -42,7 +42,7 @@ it.each([false, true])(
       gateway: { terminal: { enabled: false } },
     };
     const options = {
-      basePath: "/control",
+      basePath: "/control/",
       root: { kind: "resolved" as const, path: root },
       config,
       getRuntimeConfig: () => config,

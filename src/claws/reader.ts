@@ -365,10 +365,10 @@ async function resolvePackageSource(
       "package.json must declare non-empty name, version, and openclaw.claw fields.",
     );
   }
-  if (isAbsolute(packageJson.openclaw.claw)) {
+  if (isAbsolute(packageJson.paleoclaw.claw)) {
     return fileFailure("manifest_escapes_package", "openclaw.claw must be package-relative.");
   }
-  const declaredManifestPath = resolve(packageRootReal, packageJson.openclaw.claw);
+  const declaredManifestPath = resolve(packageRootReal, packageJson.paleoclaw.claw);
   const manifestPath = await realpath(declaredManifestPath).catch(() => undefined);
   if (!manifestPath || !isContained(packageRootReal, manifestPath)) {
     return fileFailure(

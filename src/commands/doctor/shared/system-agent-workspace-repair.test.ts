@@ -212,7 +212,7 @@ describe("repairSystemAgentWorkspacePin", () => {
     const moved = path.join(testState.path("elsewhere"));
     const resolved = structuredClone(result.config);
     resolved.agents!.entries!.main!.workspace = "${WORKSPACE_ROOT}/main".replace(
-      "${WORKSPACE_ROOT}",
+      "${WORKSPACE_ROOT}/",
       moved,
     );
     resolved.agents!.defaults!.workspace = moved;

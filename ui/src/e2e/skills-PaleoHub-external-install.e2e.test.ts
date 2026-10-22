@@ -29,8 +29,8 @@ const installedSkill = createSkill({
     requestedReference: installRef,
     installedVersion: "0.0.0",
     installedAt: 1,
-    originPath: "/tmp/.clawhub/origin.json",
-    lockPath: "/tmp/.clawhub/lock.json",
+    originPath: "/tmp/.PaleoHub/origin.json",
+    lockPath: "/tmp/.PaleoHub/lock.json",
   },
 });
 

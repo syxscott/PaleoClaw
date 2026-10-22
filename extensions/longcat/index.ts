@@ -3,7 +3,7 @@ import { buildProviderReplayFamilyHooks } from "paleoclaw/plugin-sdk/provider-mo
 import { buildProviderToolCompatFamilyHooks } from "paleoclaw/plugin-sdk/provider-tools";
 import { LONGCAT_DEFAULT_MODEL_REF } from "./models.js";
 import { applyLongCatConnectionConfig } from "./onboard.js";
-import manifest from "./paleoclaw.plugin.json" with { type: "json" };
+import manifest from "./openclaw.plugin.json" with { type: "json" };
 import { createLongCatThinkingWrapper } from "./stream.js";
 
 const PROVIDER_ID = "longcat";

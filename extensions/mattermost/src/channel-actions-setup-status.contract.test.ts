@@ -20,7 +20,7 @@ describe("mattermost actions contract", () => {
             mattermost: {
               enabled: true,
               botToken: "test-token",
-              baseUrl: "https://chat.example.com",
+              baseUrl: "https://chat.example.com/",
             },
           },
         } as OpenClawConfig,

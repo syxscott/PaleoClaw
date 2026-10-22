@@ -324,11 +324,11 @@ export async function writeTrackedSkill(
   };
   const writeJson = (file: string, value: unknown) =>
     fs.writeFile(file, `${JSON.stringify(value, null, 2)}\n`, "utf8");
-  await fs.mkdir(path.join(skillDir, ".clawhub"), { recursive: true });
+  await fs.mkdir(path.join(skillDir, ".PaleoHub"), { recursive: true });
   if (params.skillMd !== undefined) {
     await fs.writeFile(path.join(skillDir, "SKILL.md"), params.skillMd, "utf8");
   }
-  await writeJson(path.join(skillDir, ".clawhub", "origin.json"), {
+  await writeJson(path.join(skillDir, ".PaleoHub", "origin.json"), {
     version: 1,
     slug: params.originSlug ?? slug,
     installedVersion,
@@ -336,8 +336,8 @@ export async function writeTrackedSkill(
     ...params.originFields,
   });
   if (params.writeLock !== false) {
-    await fs.mkdir(path.join(workspaceDir, ".clawhub"), { recursive: true });
-    await writeJson(path.join(workspaceDir, ".clawhub", "lock.json"), {
+    await fs.mkdir(path.join(workspaceDir, ".PaleoHub"), { recursive: true });
+    await writeJson(path.join(workspaceDir, ".PaleoHub", "lock.json"), {
       version: 1,
       skills: { [slug]: { version: installedVersion, ...shared, ...params.lockFields } },
     });

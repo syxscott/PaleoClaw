@@ -217,7 +217,7 @@ it("bounds optional SDK relative imports and manifest probes to the checkout", a
       "export type Options =",
       ...Array.from({ length: 7 }, (_, index) => [
         "// @ts-ignore Optional fetch types may be absent at this depth.",
-        `  ${index ? "| " : ""}NotAny<import("${"../".repeat(index + 1)}node_modules/synthetic-fetch/index.d.ts").RequestInit>`,
+        `  ${index ? "| " : ""}NotAny<import("${"..".repeat(index + 1)}node_modules/synthetic-fetch/index.d.ts").RequestInit>`,
       ]).flat(),
       ";",
       'export type Fallback = typeof import("synthetic-js");',

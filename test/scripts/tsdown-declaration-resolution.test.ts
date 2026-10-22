@@ -332,7 +332,7 @@ try {
   assert.ok(inputs.includes("src/shared.ts"));
   assert.ok(inputs.some(file => file.endsWith("/lib.es2023.d.ts")));
   assert.ok(inputs.some(file => file.endsWith("synthetic-core/package.json")));
-  assert.ok(inputs.every(file => !file.startsWith("../")), "receipt admitted an outside input");
+  assert.ok(inputs.every(file => !file.startsWith("..")), "receipt admitted an outside input");
 } finally {
   await dispose(bundles);
   fs.rmSync(stage, { recursive: true, force: true });

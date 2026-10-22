@@ -14,7 +14,7 @@ import { createTestPluginApi } from "paleoclaw/plugin-sdk/plugin-test-api";
 import type { PluginHookRegistration } from "paleoclaw/plugin-sdk/plugin-test-runtime";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import plugin from "./index.js";
-import manifest from "./paleoclaw.plugin.json" with { type: "json" };
+import manifest from "./openclaw.plugin.json" with { type: "json" };
 
 type BeforePromptBuildHook = PluginHookRegistration<"before_prompt_build">["handler"];
 const promptEvent: Parameters<BeforePromptBuildHook>[0] = {

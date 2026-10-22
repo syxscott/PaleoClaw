@@ -301,12 +301,12 @@ it.each([
       finally { db.close(); }
     };
     if (process.argv[2] === '--check') {
-      process.stdout.write(JSON.stringify({...manifest.openclaw.schemaVersions,doctorConfigWrites:'pid-start-v1'}));
+      process.stdout.write(JSON.stringify({...manifest.paleoclaw.schemaVersions,doctorConfigWrites:'pid-start-v1'}));
     } else if (process.argv[2] === '--doctor') {
       assert.equal(process.env.OPENCLAW_UPDATE_PARENT_ALLOWS_GATEWAY_ACTIVATION,'0');
       const input=JSON.parse(fs.readFileSync(0,'utf8'));
       assert(input.executor && input.runId && input.root);
-      assert.equal(fs.realpathSync(input.root),fs.realpathSync(new URL('../',import.meta.url)));
+      assert.equal(fs.realpathSync(input.root),fs.realpathSync(new URL('..',import.meta.url)));
       ${sourceLoader}
       const {readUpdatePhysicalDatabaseGenerations}=await import(${JSON.stringify(databaseGenerationsUrl.href)});
       const custody=await acquireCustody('sqlite-maintenance');

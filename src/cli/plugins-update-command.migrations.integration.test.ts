@@ -178,7 +178,7 @@ it.each([
         );
         const packagePath = path.join(root, "package.json");
         const manifest = readJson(packagePath);
-        manifest.openclaw.setupEntry = "./setup-entry.mjs";
+        manifest.paleoclaw.setupEntry = "./setup-entry.mjs";
         writeJson(packagePath, manifest);
         fs.writeFileSync(
           path.join(root, "setup-entry.mjs"),

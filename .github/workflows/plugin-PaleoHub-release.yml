@@ -893,7 +893,12 @@ jobs:
         approve_plugins_clawhub_release,
       ]
     if: always() && github.event_name == 'workflow_dispatch' && needs.preview_plugins_clawhub.outputs.has_publish_candidates == 'true' && needs.pack_plugins_clawhub_artifacts.result == 'success' && (inputs.dry_run == true || needs.approve_plugins_clawhub_release.result == 'success')
-    uses: paleoclaw/PaleoHub/.github/workflows/package-publish.yml@ef56b2cb287f0db5462b92dea8e4b63325d0341c # reviewed sealed receipt and final-effect proof contract
+    # The publish contract lives in the registry repository, not in this fork: the
+    # workflow checks out that repo's .github/scripts to verify trusted-tooling
+    # identity, so it cannot be vendored here. Keep the SHA pinned. When a
+    # paleoclaw-owned PaleoHub registry repository exists, repoint this at it with
+    # its own pinned SHA instead of dropping the pin.
+    uses: openclaw/clawhub/.github/workflows/package-publish.yml@ef56b2cb287f0db5462b92dea8e4b63325d0341c # reviewed sealed receipt and final-effect proof contract
     permissions:
       actions: read
       contents: read

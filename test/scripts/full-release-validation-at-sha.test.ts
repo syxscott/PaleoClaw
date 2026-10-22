@@ -1128,7 +1128,7 @@ describe("full-release-validation-at-sha", () => {
     });
     expect(fixture.gitCalls().filter((args) => args[0] === "push")).toEqual([]);
     expect(fixture.calls("DELETE").map(ghApiEndpoint)).toEqual([
-      `repos/paleoclaw/paleoclaw/git/refs/${branch.slice("refs/".length)}`,
+      `repos/paleoclaw/paleoclaw/git/refs/${branch.slice("refs".length)}`,
     ]);
     expect(runGit(fixture.origin, ["for-each-ref", "--format=%(refname)", "refs/heads"])).toBe(
       ["refs/heads/main", `refs/heads/${fixture.releaseRef}`, `refs/heads/${releaseRef}`].join(

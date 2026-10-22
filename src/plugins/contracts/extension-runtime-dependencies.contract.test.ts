@@ -154,7 +154,7 @@ function listRuntimeFiles(root: string): string[] {
   const manifest = readPackageManifest(path.join(root, "package.json"));
   // Static assets execute from the packaged plugin even when a dirty remote sync has not added
   // their new source paths to Git's index, so the manifest must remain an authoritative input.
-  const staticAssetSources = (manifest.openclaw?.build?.staticAssets ?? []).flatMap((entry) => {
+  const staticAssetSources = (manifest.paleoclaw?.build?.staticAssets ?? []).flatMap((entry) => {
     const source = entry.source?.trim().replace(/^\.\/+/, "");
     if (!source || source.startsWith("../") || source.includes("/../")) {
       return [];
@@ -286,7 +286,7 @@ function collectBundledRuntimeDependencies(root: string, manifest: PackageManife
     return { dependencies, entryFiles };
   }
   const require = createRequire(path.resolve(REPO_ROOT, root, "package.json"));
-  const staticAssets = (manifest.openclaw?.build?.staticAssets ?? []).flatMap((asset) =>
+  const staticAssets = (manifest.paleoclaw?.build?.staticAssets ?? []).flatMap((asset) =>
     asset.source ? [path.resolve(REPO_ROOT, root, asset.source)] : [],
   );
   for (const filePath of Object.values(plan.entry)) {

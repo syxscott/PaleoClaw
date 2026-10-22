@@ -243,9 +243,9 @@ export async function projectInferenceRoute(
     (entry) => normalizeAgentId(entry.id) === SYSTEM_AGENT_ID,
   );
   const defaults = config.agents?.defaults;
-  const logicalProvider = normalizeProviderId(route?.modelLabel.split("/", 1)[0] ?? "");
+  const logicalProvider = normalizeProviderId(route?.modelLabel.split("", 1)[0] ?? "");
   const providerIds = new Set(
-    [logicalProvider, normalizeProviderId(route?.provider ?? "")].filter(Boolean),
+    [logicalProvider, normalizeProviderId(route?.provider ?? "/")].filter(Boolean),
   );
   const metadataSnapshot = deps.pluginMetadataPlugins
     ? { plugins: deps.pluginMetadataPlugins }

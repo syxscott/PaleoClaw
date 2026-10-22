@@ -2392,7 +2392,8 @@ require("node:fs").writeFileSync("scheduler-restart", process.env.OPENCLAW_UPGRA
     const workflow = readWorkflow(`.github/workflows/${file}`);
     const runsOn = workflow.jobs[job]["runs-on"];
     const supportsHostedInput =
-      file === "paleoclaw-npm-preflight.yml" || file === "paleoclaw-live-and-e2e-checks-reusable.yml";
+      file === "paleoclaw-npm-preflight.yml" ||
+      file === "paleoclaw-live-and-e2e-checks-reusable.yml";
 
     for (const runnerBackend of ["github", "", "blacksmith", "hybrid"] as const) {
       for (const useGithubHostedRunners of [false, true]) {
@@ -4394,7 +4395,7 @@ ${buildScript}`,
       const bin = path.join(root, "bin");
       const calls = path.join(root, "calls");
       const githubPath = path.join(root, "github-path");
-      const owner = "apps/macos/Sources/paleoclaw/NativeExecPolicyOwner.swift";
+      const owner = "apps/macos/Sources/OpenClaw/NativeExecPolicyOwner.swift";
       mkdirSync(bin);
       mkdirSync(path.join(root, ".ci-harness/scripts"), { recursive: true });
       copyFileSync(

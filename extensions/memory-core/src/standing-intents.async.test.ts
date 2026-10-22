@@ -38,7 +38,7 @@ import {
 import { useAutoCleanupTempDirTracker } from "paleoclaw/plugin-sdk/test-env";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import plugin from "../index.js";
-import manifest from "../paleoclaw.plugin.json" with { type: "json" };
+import manifest from "../openclaw.plugin.json" with { type: "json" };
 import { memoryCpuProcessEntrypoints } from "./memory/manager-cpu-entrypoints.js";
 import { createStandingIntentExecutor } from "./standing-intents-tool.js";
 import {

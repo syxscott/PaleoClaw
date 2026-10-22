@@ -13,10 +13,10 @@
 ## Licenses Screen
 
 - Maintain the Settings-tab Licenses screen when Android app dependencies change.
-- Bundled license files live in `apps/android/THIRD_PARTY_LICENSES/paleoclaw/licenses/`.
+- Bundled license files live in `apps/android/THIRD_PARTY_LICENSES/openclaw/licenses/`.
 - License files: UTF-8 `.txt`, each named after the dependency (`Manrope.txt`).
 - Do not add paleoclaw, paleoclaw Foundation, or other first-party/self-owned license entries. The screen is for third-party/open-source dependency acknowledgements.
-- When adding, removing, or upgrading Android dependencies, audit whether `apps/android/THIRD_PARTY_LICENSES/paleoclaw/licenses/` needs updates.
+- When adding, removing, or upgrading Android dependencies, audit whether `apps/android/THIRD_PARTY_LICENSES/openclaw/licenses/` needs updates.
 - Keep license detail bodies rendered as verbatim monospace text.
 - Keep the Settings `Licenses` section at the bottom of Settings, after `Account`, with a single `Licenses` row and no row subtitle unless product direction changes.
-- When changing license loading or presentation, update `apps/android/app/src/test/java/ai/paleoclaw/app/AndroidLicenseNoticesTest.kt`, then run focused Android validation.
+- When changing license loading or presentation, update `apps/android/app/src/test/java/ai/openclaw/app/AndroidLicenseNoticesTest.kt`, then run focused Android validation.

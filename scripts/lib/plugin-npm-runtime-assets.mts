@@ -14,7 +14,7 @@ type PluginRuntimeAssetPlan = {
 };
 
 function resolvePackageAssetBuildCommand(packageJson: PluginRuntimeAssetPlan["packageJson"]) {
-  const command = packageJson?.openclaw?.assetScripts?.build;
+  const command = packageJson?.paleoclaw?.assetScripts?.build;
   return typeof command === "string" && command.trim() ? command.trim() : null;
 }
 

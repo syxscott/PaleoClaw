@@ -104,8 +104,8 @@ function readBundledPluginRecords(): BundledPluginRecord[] {
         dirName,
         packageName,
         manifestId,
-        installNpmSpec: normalizeOptionalString(pkg.openclaw?.install?.npmSpec),
-        channelId: normalizeOptionalString(pkg.openclaw?.channel?.id),
+        installNpmSpec: normalizeOptionalString(pkg.paleoclaw?.install?.npmSpec),
+        channelId: normalizeOptionalString(pkg.paleoclaw?.channel?.id),
       },
     ];
   });

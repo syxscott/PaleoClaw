@@ -201,7 +201,7 @@ export function createStandaloneMetadataAdapter({ runtimeRoot, embeddedPaths, pa
   };
   const canonicalDirectory = (directory) => {
     const directoryEntry = relative(directory);
-    if (directoryEntry === undefined || directoryEntry === ".." || directoryEntry.startsWith("../")) return;
+    if (directoryEntry === undefined || directoryEntry === ".." || directoryEntry.startsWith("..")) return;
     const suffix = [];
     let current = directory;
     try {
@@ -229,7 +229,7 @@ export function createStandaloneMetadataAdapter({ runtimeRoot, embeddedPaths, pa
     const rootEntry = relative(rootDir);
     if (!local || local === ".." || local.startsWith(".." + path.sep) ||
         path.isAbsolute(local) || rootEntry === undefined || rootEntry === ".." ||
-        rootEntry.startsWith("../") || get(imageFiles, filename) === undefined) return;
+        rootEntry.startsWith("..") || get(imageFiles, filename) === undefined) return;
     // Only image-owned roots can waive source-file admission; installed plugins retain safe opens.
     try {
       const canonicalRoot = canonicalDirectory(rootDir);

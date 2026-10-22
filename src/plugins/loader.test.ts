@@ -58,7 +58,7 @@ function writePlugin(params: {
   const file = path.join(dir, filename);
   fs.writeFileSync(file, params.body, "utf-8");
   fs.writeFileSync(
-    path.join(dir, "paleoclaw.plugin.json"),
+    path.join(dir, "openclaw.plugin.json"),
     JSON.stringify(
       {
         id: params.id,
@@ -209,7 +209,7 @@ function createEscapingEntryFixture(params: { id: string; sourceBody: string }) 
   const linkedEntry = path.join(pluginDir, "entry.cjs");
   fs.writeFileSync(outsideEntry, params.sourceBody, "utf-8");
   fs.writeFileSync(
-    path.join(pluginDir, "paleoclaw.plugin.json"),
+    path.join(pluginDir, "openclaw.plugin.json"),
     JSON.stringify(
       {
         id: params.id,
@@ -971,7 +971,7 @@ describe("loadOpenClawPlugins", () => {
       body: `module.exports = { id: "memory-b", kind: "memory", register() {} };`,
     });
     fs.writeFileSync(
-      path.join(memoryADir, "paleoclaw.plugin.json"),
+      path.join(memoryADir, "openclaw.plugin.json"),
       JSON.stringify(
         {
           id: "memory-a",
@@ -984,7 +984,7 @@ describe("loadOpenClawPlugins", () => {
       "utf-8",
     );
     fs.writeFileSync(
-      path.join(memoryBDir, "paleoclaw.plugin.json"),
+      path.join(memoryBDir, "openclaw.plugin.json"),
       JSON.stringify(
         {
           id: "memory-b",

@@ -110,7 +110,7 @@ describe("operator browser chat document navigation", () => {
   it.each([
     ["/chat/main/topic", false],
     ["/", true],
-    ["/chat", true],
+    ["/chat/", true],
     ["/chat/", true],
     ["/new", true],
     ["/chat/main/topic?offset=100", true],

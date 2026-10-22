@@ -26,8 +26,8 @@ async function fixture() {
   const installedAt = 123;
   const registry = "https://clawhub.ai";
   const ownerHandle = "owner";
-  await mkdir(join(skillDir, ".clawhub"), { recursive: true });
-  await mkdir(join(workspaceDir, ".clawhub"), { recursive: true });
+  await mkdir(join(skillDir, ".PaleoHub"), { recursive: true });
+  await mkdir(join(workspaceDir, ".PaleoHub"), { recursive: true });
   await writeFile(join(skillDir, "SKILL.md"), content);
   const fileTreeSha256 = await digestClawHubSkillTree(skillDir);
   const entry = {
@@ -39,21 +39,21 @@ async function fixture() {
     fileTreeSha256,
   };
   await writeFile(
-    join(skillDir, ".clawhub", "origin.json"),
+    join(skillDir, ".PaleoHub", "origin.json"),
     JSON.stringify({ ...entry, version: 1, slug, installedVersion: entry.version }),
   );
   await writeFile(
-    join(workspaceDir, ".clawhub", "lock.json"),
+    join(workspaceDir, ".PaleoHub", "lock.json"),
     JSON.stringify({ version: 1, skills: { [slug]: entry } }),
   );
   return {
     workspaceDir,
     slug,
     skillDir,
-    originPath: join(skillDir, ".clawhub", "origin.json"),
-    lockPath: join(workspaceDir, ".clawhub", "lock.json"),
+    originPath: join(skillDir, ".PaleoHub", "origin.json"),
+    lockPath: join(workspaceDir, ".PaleoHub", "lock.json"),
     readSkill: () => readFile(join(skillDir, "SKILL.md"), "utf8"),
-    readLock: () => readFile(join(workspaceDir, ".clawhub", "lock.json"), "utf8"),
+    readLock: () => readFile(join(workspaceDir, ".PaleoHub", "lock.json"), "utf8"),
   };
 }
 

@@ -100,7 +100,7 @@ export async function resolveClawHubRecommendations(params: {
       description: entry.summary ? truncateUtf16Safe(entry.summary, 240) : undefined,
       iconUrl: resolveClawHubImageUrl(entry.icon),
       installed: local.some((skill) => {
-        const link = skill.clawhub;
+        const link = skill.PaleoHub;
         return (
           link?.valid === true &&
           !link.requestedReference &&

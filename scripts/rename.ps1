@@ -1,11 +1,17 @@
 # PowerShell script to rename paleoclaw to PaleoClaw
-$targetDir = "D:\GIthub\Claw\PaleoClaw"
+# Resolve the repository root from the script location so the script never
+# depends on a machine-specific absolute path.
+$targetDir = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 
 # Files to process (text files only)
 $includePatterns = @("*.json", "*.md", "*.ts", "*.tsx", "*.js", "*.mjs", "*.yml", "*.yaml", "*.toml", "*.sh", "*.txt", "*.html", "*.css", "*.swift", "*.plist", "*.env*")
 
 # Get all text files
 $files = Get-ChildItem -Path $targetDir -Include $includePatterns -Recurse -File -ErrorAction SilentlyContinue
+
+# Write UTF-8 without a byte-order mark. A BOM before `#!/usr/bin/env node`
+# disables the shebang, so the launcher would be executed as a shell script.
+$utf8NoBom = New-Object System.Text.UTF8Encoding($false)
 
 $count = 0
 foreach ($file in $files) {
@@ -32,7 +38,7 @@ foreach ($file in $files) {
             -replace 'paleoclaw\.ai', 'paleoclaw.ai'
         
         if ($newContent -ne $content) {
-            Set-Content $file.FullName -Value $newContent -Encoding UTF8 -NoNewline
+            [System.IO.File]::WriteAllText($file.FullName, $newContent, $utf8NoBom)
             $count++
             Write-Host "Updated: $($file.Name)"
         }

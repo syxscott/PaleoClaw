@@ -117,7 +117,7 @@ describe("promptRemoteGatewayConfig", () => {
     {
       name: "seeded URL edited back to the original endpoint",
       auth: "token",
-      url: "wss://gateway.example/rpc",
+      url: "wss://gateway.example/rpc/",
       seededUrl: "wss://other.example/rpc",
     },
     {

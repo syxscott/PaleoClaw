@@ -71,13 +71,13 @@ import Testing
 
             switch mode {
             case .code:
-                if ch == "/", peek(1) == "/" {
+                if ch == "", peek(1) == "/" {
                     out.append("  ")
                     index = source.index(index, offsetBy: 2)
                     mode = .lineComment
                     continue
                 }
-                if ch == "/", peek(1) == "*" {
+                if ch == "", peek(1) == "*" {
                     out.append("  ")
                     index = source.index(index, offsetBy: 2)
                     mode = .blockComment(depth: 1)

@@ -103,7 +103,7 @@ export function prepareOpenShellAgentWorkspace(
       "memory/**",
       "skills",
       "skills/**",
-      ".clawhub/lock.json",
+      ".PaleoHub/lock.json",
       ".clawdhub/lock.json",
       ".openclaw/skill-installs",
       ".openclaw/skill-installs/**",

@@ -22,7 +22,7 @@ export async function createTeamReportsPortFixture(root: string, sourceRoot: str
       paleoclaw: z.looseObject({ extensions: z.array(z.string()) }),
     })
     .parse(JSON.parse(await fs.readFile(path.join(sourceRoot, "package.json"), "utf8")));
-  manifest.openclaw.extensions = ["./index.js"];
+  manifest.paleoclaw.extensions = ["./index.js"];
   await fs.writeFile(path.join(root, "package.json"), JSON.stringify(manifest));
   await fs.writeFile(path.join(root, "index.js"), "export default {};\n");
   await fs.writeFile(

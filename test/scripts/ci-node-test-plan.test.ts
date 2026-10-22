@@ -1193,7 +1193,7 @@ describe("scripts/lib/ci-node-test-plan.mts", () => {
       const readFileSync = fs.readFileSync;
       fs.readFileSync = function(file, ...args) {
         const relative = path.relative(process.cwd(), String(file)).replaceAll("\\\\", "/");
-        if (relative.startsWith("src/") && relative.endsWith(".test.ts")) sourceReads += 1;
+        if (relative.startsWith("src") && relative.endsWith(".test.ts")) sourceReads += 1;
         return readFileSync.call(this, file, ...args);
       };
       syncBuiltinESMExports();
@@ -1787,7 +1787,7 @@ describe("scripts/lib/ci-node-test-plan.mts", () => {
       "src/gateway/server.chat.fixture-b.test.ts",
     ];
     const timings: Record<string, number> = { [owner]: 230 };
-    mockProject("agentic", config, "src/gateway", files, timings);
+    mockProject("agentic", config, "src/gateway/", files, timings);
     const { createNodeTestShardBundles: createPlan } = await loadPlanModule();
 
     const options = { compactMode: "push" as const, runnerBackend: "blacksmith" };
@@ -1813,7 +1813,7 @@ describe("scripts/lib/ci-node-test-plan.mts", () => {
       "src/gateway/server-file-fixtures.test.ts",
     ];
     const timings: Record<string, number> = { [owner]: 200 };
-    mockProject("agentic", config, "src/gateway", files, timings);
+    mockProject("agentic", config, "src/gateway/", files, timings);
     const { createNodeTestShardBundles: createPlan } = await loadPlanModule();
 
     const options = { compactMode: "push" as const, runnerBackend: "blacksmith" };
@@ -2248,7 +2248,7 @@ describe("scripts/lib/ci-node-test-plan.mts", () => {
       fixtureShard("agentic", [config]),
       fixtureShard("core-runtime", [configPath("hooks")], config),
     ]);
-    mockTrackedFiles((root: string) => (root === "src/gateway" ? files : []));
+    mockTrackedFiles((root: string) => (root === "src/gateway/" ? files : []));
     mockPlanTimings(() => timings);
     const { createNodeTestShardBundles: createPlan } = await loadPlanModule();
 
@@ -2362,7 +2362,7 @@ describe("scripts/lib/ci-node-test-plan.mts", () => {
       vi.resetModules();
       mockPlanShards(() => [fixtureShard("core-runtime", [config])]);
       mockOriginal("database", { databaseWorkerCoreTestFiles: [longest] });
-      mockTrackedFiles((root: string) => (companion && root === "src/infra" ? [ordinary] : []));
+      mockTrackedFiles((root: string) => (companion && root === "src/infra/" ? [ordinary] : []));
       const measurements: Record<string, number> = { "core-runtime-infra-storage-state": 1 };
       mockPlanTimings(() => measurements);
       mockUnbuiltRuntime();
@@ -2410,7 +2410,7 @@ describe("scripts/lib/ci-node-test-plan.mts", () => {
       owner: "core-runtime-config",
       config: configPath("runtime-config"),
       suite: "core-runtime",
-      root: "src/config",
+      root: "src/config/",
       pinned: true,
       runnerBackend: "hybrid",
     },
@@ -3158,11 +3158,11 @@ describe("scripts/lib/ci-node-test-plan.mts", () => {
       fixtureShard("agentic", [config]),
     ]);
     mockTrackedFiles((root: string) =>
-      root === "src/gateway"
+      root === "src/gateway/"
         ? gatewayFiles
-        : root === "src/infra"
+        : root === "src/infra/"
           ? infraFiles
-          : root === "." || root === "src"
+          : root === "." || root === "src/"
             ? [...gatewayFiles, ...infraFiles]
             : [],
     );
@@ -3240,7 +3240,7 @@ describe("scripts/lib/ci-node-test-plan.mts", () => {
         databaseWorkerCoreTestFiles: [],
         isDatabaseWorkerCoreTestFile: () => false,
       });
-      mockTrackedFiles((root: string) => (root === "src/infra" ? files : []));
+      mockTrackedFiles((root: string) => (root === "src/infra/" ? files : []));
       mockPlanTimings(() =>
         Object.fromEntries(entries.map(([, owner, seconds]) => [owner, seconds])),
       );
@@ -3969,7 +3969,7 @@ describe("scripts/lib/ci-node-test-plan.mts", () => {
       prefix: "core-runtime-infra-",
       config: configPath("infra"),
       expectedFiles: () => [
-        ...new Set([...listTestFiles("src/infra"), ...databaseWorkerCoreTestFiles]),
+        ...new Set([...listTestFiles("src/infra/"), ...databaseWorkerCoreTestFiles]),
       ],
     },
     {

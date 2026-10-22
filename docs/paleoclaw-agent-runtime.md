@@ -6,7 +6,7 @@ read_when:
   - Running agent-runtime lint, typecheck, and live test flows
 ---
 
-Developer workflow for the agent runtime (`src/agents/`) in the paleoclaw repo.
+Developer workflow for the agent runtime (`src/agents`) in the paleoclaw repo.
 
 ## Type checking and linting
 

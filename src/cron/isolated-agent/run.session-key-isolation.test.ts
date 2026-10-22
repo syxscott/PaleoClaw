@@ -262,7 +262,7 @@ describe("runCronIsolatedAgentTurn — skill filter", () => {
     [
       "openai/",
       "invalid model: openai/",
-      "automation model override 'openai/' rejected: invalid model: openai/",
+      "automation model override 'openai' rejected: invalid model: openai/",
     ],
   ])("rejects payload model %s before execution", async (model, error, expected) => {
     h.resolveAllowedModelRefMock.mockReturnValueOnce({ error });

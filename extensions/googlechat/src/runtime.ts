@@ -1,14 +1,9 @@
-import type { PluginRuntime } from "paleoclaw/plugin-sdk/googlechat";
+import { createPluginRuntimeStore } from "paleoclaw/plugin-sdk/runtime-store";
+import type { PluginRuntime } from "paleoclaw/plugin-sdk/runtime-store";
 
-let runtime: PluginRuntime | null = null;
-
-export function setGoogleChatRuntime(next: PluginRuntime) {
-  runtime = next;
-}
-
-export function getGoogleChatRuntime(): PluginRuntime {
-  if (!runtime) {
-    throw new Error("Google Chat runtime not initialized");
-  }
-  return runtime;
-}
+const { setRuntime: setGoogleChatRuntime, getRuntime: getGoogleChatRuntime } =
+  createPluginRuntimeStore<PluginRuntime>({
+    pluginId: "googlechat",
+    errorMessage: "Google Chat runtime not initialized",
+  });
+export { getGoogleChatRuntime, setGoogleChatRuntime };

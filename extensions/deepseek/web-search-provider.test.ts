@@ -227,13 +227,13 @@ describe("DeepSeek search execution", () => {
           results: [
             {
               title: "First",
-              url: "https://one.example",
+              url: "https://one.example/",
               summary: " ",
               snippet: "UI fallback",
               date: null,
               site_name: null,
             },
-            { title: "Second", url: "https://two.example", summary: "Second summary" },
+            { title: "Second", url: "https://two.example/", summary: "Second summary" },
             { title: "Third", url: "https://three.example" },
           ],
         }),

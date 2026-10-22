@@ -7,12 +7,13 @@ import {
   DefaultResourceLoader,
   SessionManager,
 } from "@mariozechner/pi-coding-agent";
-import { resolveHeartbeatPrompt } from "../../../auto-reply/heartbeat.js";
+import { resolveHeartbeatPromptCore } from "../../../auto-reply/heartbeat.js";
 import { resolveChannelCapabilities } from "../../../config/channel-capabilities.js";
 import type { OpenClawConfig } from "../../../config/config.js";
 import { getMachineDisplayName } from "../../../infra/machine-name.js";
-import { ensureGlobalUndiciStreamTimeouts } from "../../../infra/net/undici-global-dispatcher.js";
+import { ensureGlobalUndiciDispatcherStreamTimeouts } from "../../../infra/net/undici-global-dispatcher.js";
 import { MAX_IMAGE_BYTES } from "../../../media/constants.js";
+import { buildTtsSystemPromptHint } from "../../../plugin-sdk/tts-runtime.js";
 import { getGlobalHookRunner } from "../../../plugins/hook-runner-global.js";
 import type {
   PluginHookAgentContext,
@@ -24,7 +25,6 @@ import { joinPresentTextSegments } from "../../../shared/text/join-segments.js";
 import { resolveSignalReactionLevel } from "../../../signal/reaction-level.js";
 import { resolveTelegramInlineButtonsScope } from "../../../telegram/inline-buttons.js";
 import { resolveTelegramReactionLevel } from "../../../telegram/reaction-level.js";
-import {  buildTtsSystemPromptHint  } from "../../../plugin-sdk/tts-runtime.js";
 import { resolveUserPath } from "../../../utils.js";
 import { normalizeMessageChannel } from "../../../utils/message-channel.js";
 import { isReasoningTagProvider } from "../../../utils/provider-utils.js";
@@ -33,19 +33,17 @@ import { resolveSessionAgentIds } from "../../agent-scope.js";
 import { createAnthropicPayloadLogger } from "../../anthropic-payload-log.js";
 import {
   analyzeBootstrapBudget,
-  buildBootstrapPromptWarning,
+  buildBootstrapPromptWarningNotice,
   buildBootstrapTruncationReportMeta,
   buildBootstrapInjectionStats,
 } from "../../bootstrap-budget.js";
 import { makeBootstrapWarn, resolveBootstrapContextForRun } from "../../bootstrap-files.js";
 import { createCacheTrace } from "../../cache-trace.js";
-import {
-  listChannelSupportedActions,
-  resolveChannelMessageToolHints,
-} from "../../channel-tools.js";
+import { resolveChannelMessageToolHints } from "../../channel-tools.js";
+import { listChannelSupportedActions } from "../../channel-tools.legacy.js";
 import { ensureCustomApiRegistered } from "../../custom-api-registry.js";
 import { DEFAULT_CONTEXT_TOKENS } from "../../defaults.js";
-import { resolveOpenClawDocsPath } from "../../docs-path.js";
+import { resolveOpenClawReferencePaths } from "../../docs-path.js";
 import { isTimeoutError } from "../../failover-error.js";
 import { resolveImageSanitizationLimits } from "../../image-sanitization.js";
 import { resolveModelAuthMode } from "../../model-auth.js";
@@ -797,7 +795,7 @@ export async function runEmbeddedAttempt(
   const resolvedWorkspace = resolveUserPath(params.workspaceDir);
   const prevCwd = process.cwd();
   const runAbortController = new AbortController();
-  ensureGlobalUndiciStreamTimeouts();
+  ensureGlobalUndiciDispatcherStreamTimeouts();
 
   log.debug(
     `embedded run start: runId=${params.runId} sessionId=${params.sessionId} provider=${params.provider} model=${params.modelId} thinking=${params.thinkLevel} messageChannel=${params.messageChannel ?? params.messageProvider ?? "unknown"}`,
@@ -865,7 +863,7 @@ export async function runEmbeddedAttempt(
       bootstrapTotalMaxChars,
     });
     const bootstrapPromptWarningMode = resolveBootstrapPromptTruncationWarningMode(params.config);
-    const bootstrapPromptWarning = buildBootstrapPromptWarning({
+    const bootstrapPromptWarning = buildBootstrapPromptWarningNotice({
       analysis: bootstrapAnalysis,
       mode: bootstrapPromptWarningMode,
       seenSignatures: params.bootstrapPromptWarningSignaturesSeen,
@@ -1034,7 +1032,7 @@ export async function runEmbeddedAttempt(
     });
     const isDefaultAgent = sessionAgentId === defaultAgentId;
     const promptMode = resolvePromptModeForSession(params.sessionKey);
-    const docsPath = await resolveOpenClawDocsPath({
+    const { docsPath } = await resolveOpenClawReferencePaths({
       workspaceDir: effectiveWorkspace,
       argv1: process.argv[1],
       cwd: process.cwd(),
@@ -1053,7 +1051,7 @@ export async function runEmbeddedAttempt(
       ownerDisplaySecret: ownerDisplay.ownerDisplaySecret,
       reasoningTagHint,
       heartbeatPrompt: isDefaultAgent
-        ? resolveHeartbeatPrompt(params.config?.agents?.defaults?.heartbeat?.prompt)
+        ? resolveHeartbeatPromptCore(params.config?.agents?.defaults?.heartbeat?.prompt)
         : undefined,
       skillsPrompt,
       docsPath: docsPath ?? undefined,

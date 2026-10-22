@@ -55,7 +55,7 @@ function parseNpmPackageTargetMetadata(
     version: rec.version,
     paleoclaw: Object.hasOwn(rec, "openclaw.schemaVersions")
       ? { schemaVersions: rec["openclaw.schemaVersions"] }
-      : rec.openclaw,
+      : rec.paleoclaw,
   });
   return {
     version: toOptionalTrimmedString(rec.version),

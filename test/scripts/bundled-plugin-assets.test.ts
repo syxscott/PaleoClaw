@@ -81,7 +81,7 @@ it("reuses both Canvas dialects across candidates and invalidates changed inputs
       "node_modules/rolldown/bin/cli.mjs",
       `
         import fs from "node:fs";
-        const output = "extensions/canvas/src/host/a2ui";
+        const output = "extensions/canvas/src/host/a2ui/";
         fs.mkdirSync(output, { recursive: true });
         fs.writeFileSync(output + "/a2ui.bundle.js", "dialect-0.8");
         fs.writeFileSync(output + "/a2ui-v0.9.bundle.js", "dialect-0.9");

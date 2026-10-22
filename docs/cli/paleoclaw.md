@@ -46,7 +46,7 @@ It does not dump secrets or load plugin CLI commands just to start.
 
 Use `status` for the detailed inventory: config path, docs/source paths, local CLI checks, key/token presence, agents, model, and Gateway details.
 
-paleoclaw uses the same reference discovery as regular agents: in a Git checkout it points at local `docs/` and the source tree; in an npm install it uses bundled docs and links to [https://github.com/paleoclaw/paleoclaw](https://github.com/paleoclaw/paleoclaw), with guidance to check source when docs are not enough.
+paleoclaw uses the same reference discovery as regular agents: in a Git checkout it points at local `docs` and the source tree; in an npm install it uses bundled docs and links to [https://github.com/paleoclaw/paleoclaw](https://github.com/paleoclaw/paleoclaw), with guidance to check source when docs are not enough.
 
 ## Examples
 

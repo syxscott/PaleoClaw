@@ -45,7 +45,7 @@ Mermaid's classic bundle includes dependencies with versions different from the
 workspace's installed packages. Native notices must cover the exact bundle,
 including its embedded DOMPurify, as well as the host's DOMPurify dependency.
 Android and iOS package the original license texts per dependency in
-`apps/android/THIRD_PARTY_LICENSES/paleoclaw/licenses/` and
+`apps/android/THIRD_PARTY_LICENSES/openclaw/licenses/` and
 `apps/ios/Resources/Licenses/`; the filename is the Licenses screen's dependency
 title. The generated assets also carry `native/NOTICE.txt` for the shared Apple
 resource bundle. Preserve the upstream copyright and license

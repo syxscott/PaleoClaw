@@ -4,7 +4,7 @@ import {
   normalizeOptionalLowercaseString,
 } from "paleoclaw/plugin-sdk/string-coerce-runtime";
 import { isXaiFrontierModelId, normalizeXaiModelId } from "./model-id.js";
-import manifest from "./paleoclaw.plugin.json" with { type: "json" };
+import manifest from "./openclaw.plugin.json" with { type: "json" };
 
 export const XAI_BASE_URL = manifest.modelCatalog.providers.xai.baseUrl;
 export const XAI_DEFAULT_IMAGE_MODEL = "grok-imagine-image";

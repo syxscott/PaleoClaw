@@ -1,6 +1,6 @@
 import { buildManifestModelProviderConfig } from "paleoclaw/plugin-sdk/provider-model-metadata";
 import type { ProviderPlugin } from "paleoclaw/plugin-sdk/provider-model-shared";
-import manifest from "./paleoclaw.plugin.json" with { type: "json" };
+import manifest from "./openclaw.plugin.json" with { type: "json" };
 
 const PROVIDER_ID = "groq";
 

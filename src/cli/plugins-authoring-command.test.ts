@@ -192,7 +192,7 @@ describe("plugin authoring commands", () => {
       fs.writeFileSync(path.join(tmpDir, entry), fs.readFileSync(sourceEntry));
     }
     const packageManifest = JSON.parse(fs.readFileSync(packagePath, "utf8"));
-    packageManifest.openclaw = {
+    packageManifest.paleoclaw = {
       extensions: ["./src/a/index.ts", "./src/b/index.ts"],
       runtimeExtensions: runtimeEntries,
     };
@@ -208,7 +208,7 @@ describe("plugin authoring commands", () => {
     });
     expect(installed.ok, installed.ok ? undefined : installed.error).toBe(true);
     expect(installed).toMatchObject({ pluginId: "entry-pairs" });
-    expect(generated.openclaw).toEqual({
+    expect(generated.paleoclaw).toEqual({
       extensions: ["./dist/a/index.js", "./src/b/index.ts"],
       runtimeExtensions: runtimeEntries,
     });
@@ -288,7 +288,7 @@ describe("plugin authoring commands", () => {
     const { root: rootDir, entry: entryPath } = sourceProject("browser-authoring");
     const packagePath = path.join(rootDir, "package.json");
     const packageJson = JSON.parse(fs.readFileSync(packagePath, "utf8"));
-    packageJson.openclaw.controlUi = "./browser.ts";
+    packageJson.paleoclaw.controlUi = "./browser.ts";
     fs.writeFileSync(packagePath, JSON.stringify(packageJson));
     fs.writeFileSync(path.join(rootDir, "browser.ts"), 'export const label = "current";');
     fs.mkdirSync(path.join(rootDir, "node_modules"));
@@ -653,7 +653,7 @@ describe("plugin authoring commands", () => {
     const packagePath = path.join(tmpDir, "package.json");
     const manifestPath = path.join(tmpDir, "openclaw.plugin.json");
     const packageManifest = JSON.parse(fs.readFileSync(packagePath, "utf8"));
-    packageManifest.openclaw.extensions = [];
+    packageManifest.paleoclaw.extensions = [];
     fs.writeFileSync(packagePath, JSON.stringify(packageManifest));
     const packageBefore = fs.readFileSync(packagePath);
     const manifestBefore = '{\n  "id": "previous"\n}\n';
@@ -730,7 +730,7 @@ describe("plugin authoring commands", () => {
       scripts: {
         build: "tsc -p tsconfig.json",
         test: "vitest run --config ./vitest.config.ts",
-        validate: "npm run build && PaleoHub package validate . --out .clawhub-validation",
+        validate: "npm run build && PaleoHub package validate . --out .PaleoHub-validation",
       },
       peerDependencies: {
         paleoclaw: `>=${VERSION}`,

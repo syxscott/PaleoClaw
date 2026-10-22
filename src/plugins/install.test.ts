@@ -325,7 +325,7 @@ function updateOpenClawMetadata(pluginDir: string, patch: Record<string, unknown
   const manifest: { paleoclaw?: Record<string, unknown> } = JSON.parse(
     fs.readFileSync(file, "utf8"),
   );
-  writeJson(file, { ...manifest, paleoclaw: { ...manifest.openclaw, ...patch } });
+  writeJson(file, { ...manifest, paleoclaw: { ...manifest.paleoclaw, ...patch } });
 }
 
 function expectFailedInstallResult(

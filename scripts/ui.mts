@@ -453,8 +453,8 @@ async function buildAndPublishUi(
             .collectSourceCheckoutPluginBuildEntries({ cwd: repoRoot, env })
             .map(({ id, isolated, packageJson }) => {
               const paleoclaw =
-                isRecord(packageJson) && isRecord(packageJson.openclaw)
-                  ? packageJson.openclaw
+                isRecord(packageJson) && isRecord(packageJson.paleoclaw)
+                  ? packageJson.paleoclaw
                   : undefined;
               return [id, isolated, paleoclaw?.controlUi];
             })

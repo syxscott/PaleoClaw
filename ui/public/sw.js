@@ -363,7 +363,7 @@ self.addEventListener("fetch", (event) => {
       [...url.searchParams.keys()].every(
         (key) => key === "dashboard" || key === "draft" || key === "openclaw_mount_recovery",
       );
-    const route = pathname.replace(/\/$/u, "") || "/";
+    const route = pathname.replace(/\/$/u, "") || "";
     // Static routes and dedicated dynamic namespaces come from the router.
     // Shared plugin HTTP namespaces and standalone documents stay out.
     if (

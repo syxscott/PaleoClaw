@@ -1795,7 +1795,7 @@ describe("uninstallPlugin", () => {
     };
     expect(rootManifest.dependencies?.["removed-plugin"]).toBeUndefined();
     expect(rootManifest.dependencies?.["runtime-peer"]).toBeUndefined();
-    expect(rootManifest.openclaw?.managedPeerDependencies ?? []).not.toContain("runtime-peer");
+    expect(rootManifest.paleoclaw?.managedPeerDependencies ?? []).not.toContain("runtime-peer");
     expect(runCommandWithTimeoutMock).toHaveBeenCalledTimes(3);
   });
 
@@ -1922,10 +1922,10 @@ describe("uninstallPlugin", () => {
         ...(!rejectAliases ? { "node-domexception": "npm:@nolyfill/domexception@1.0.28" } : {}),
       };
       expect(manifest.overrides).toEqual(expectedOverrides);
-      expect(manifest.openclaw?.managedOverrides).toEqual(
+      expect(manifest.paleoclaw?.managedOverrides).toEqual(
         Object.keys(expectedOverrides).toSorted(),
       );
-      expect(manifest.openclaw?.managedPeerDependencies).toBeUndefined();
+      expect(manifest.paleoclaw?.managedPeerDependencies).toBeUndefined();
     },
   );
 

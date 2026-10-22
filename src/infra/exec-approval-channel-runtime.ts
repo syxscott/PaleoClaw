@@ -74,7 +74,9 @@ type PendingApprovalValue<TPending, TRequest extends ApprovalRequestEvent> = {
 const APPROVAL_EVENT_PREFIXES = [
   ["exec", "exec"],
   ["plugin", "plugin"],
-  ["system-agent", "paleoclaw"],
+  // The system-agent namespace keeps the upstream `openclaw.*` Gateway method
+  // prefix; the rebrand only rewrote bare product identifiers, not method ids.
+  ["system-agent", "openclaw"],
 ] as const;
 
 function resolveApprovalReplayMethods(

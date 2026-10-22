@@ -117,7 +117,7 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
               return [];
             }
             const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
-            return packageJson.openclaw?.install?.requiredPlatformPackages ?? [];
+            return packageJson.paleoclaw?.install?.requiredPlatformPackages ?? [];
           }),
         ),
       ].toSorted((left, right) => left.localeCompare(right));

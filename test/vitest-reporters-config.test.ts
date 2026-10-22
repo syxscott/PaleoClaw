@@ -48,7 +48,7 @@ it.each(["false", "true"])(
           const resolve = (config, options = {}) => resolveConfig({ ...options, config: false }, config);
           const defaults = [];
           for (const config of ${JSON.stringify(reporterConfigs)}) {
-            const root = config.startsWith("ui/") ? path.resolve("ui") : process.cwd();
+            const root = config.startsWith("ui") ? path.resolve("ui/") : process.cwd();
             const imported = (await import(pathToFileURL(path.resolve(config)).href)).default;
             let reporterConfig = imported;
             if (config === "vitest.config.ts") {

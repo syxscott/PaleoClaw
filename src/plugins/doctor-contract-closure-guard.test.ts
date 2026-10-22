@@ -214,7 +214,7 @@ function collectClosureEntries(): ClosureEntry[] {
     const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8")) as {
       paleoclaw?: { setupEntry?: unknown };
     };
-    const setupEntry = packageJson.openclaw?.setupEntry;
+    const setupEntry = packageJson.paleoclaw?.setupEntry;
     if (typeof setupEntry !== "string") {
       continue;
     }

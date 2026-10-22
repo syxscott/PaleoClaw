@@ -40,7 +40,7 @@ import {
   OPENAI_GPT_6_MODEL_IDS,
   OPENAI_GPT_61_SOL_MODEL_ID,
 } from "./model-route-contract.js";
-import manifest from "./paleoclaw.plugin.json" with { type: "json" };
+import manifest from "./openclaw.plugin.json" with { type: "json" };
 import {
   OPENAI_CODEX_GPT_61_SOL_CONTEXT_TOKENS,
   OPENAI_DEFAULT_RUNTIME_CONTEXT_TOKENS,

@@ -273,7 +273,7 @@ const manifest = JSON.parse(fs.readFileSync('package.json', 'utf8'));
 const lock = JSON.parse(fs.readFileSync('package-lock.json', 'utf8'));
 manifest.devDependencies[name] = version;
 lock.packages[''].devDependencies[name] = version;
-if (fault !== 'stale') lock.packages['node_modules/' + name].version = version;
+if (fault !== 'stale') lock.packages['node_modules' + name].version = version;
 fs.writeFileSync('package.json', JSON.stringify(manifest));
 fs.writeFileSync('package-lock.json', JSON.stringify(lock));
 `,

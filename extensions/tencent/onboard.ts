@@ -8,7 +8,7 @@ import {
   TOKENPLAN_MODEL_CATALOG,
   TOKENPLAN_PROVIDER_ID,
 } from "./models.js";
-import manifest from "./paleoclaw.plugin.json" with { type: "json" };
+import manifest from "./openclaw.plugin.json" with { type: "json" };
 
 // Every model gets its own explicit ref constant. Do NOT reuse
 // TOKENHUB_DEFAULT_MODEL_REF as the carrier for a specific model's alias:

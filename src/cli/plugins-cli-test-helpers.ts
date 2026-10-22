@@ -867,7 +867,7 @@ vi.mock("../hooks/installs.js", async (importOriginal) => {
   };
 });
 
-vi.mock("../plugins/clawhub.js", () => ({
+vi.mock("../plugins/PaleoHub.js", () => ({
   CLAWHUB_INSTALL_ERROR_CODE: {
     PACKAGE_NOT_FOUND: "package_not_found",
     VERSION_NOT_FOUND: "version_not_found",
@@ -992,7 +992,8 @@ export function resetPluginsCliTestState() {
     params.writeOptions?.assertConfigPathForWrite?.();
     const nextConfig = params.sourceConfig ?? params.nextConfig;
     await configWriteMock(nextConfig);
-    const configPath = params.writeOptions?.ownedConfigPathForWrite ?? "/tmp/paleoclaw-config.json5";
+    const configPath =
+      params.writeOptions?.ownedConfigPathForWrite ?? "/tmp/paleoclaw-config.json5";
     setPersistedPluginConfig(configPath, nextConfig);
     return {
       path: configPath,

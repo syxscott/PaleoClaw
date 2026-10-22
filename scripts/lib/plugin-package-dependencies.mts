@@ -93,7 +93,7 @@ export function collectBundledPluginPackageDependencySpecs(
   for (const { pluginId, packageJson } of readPluginPackages(bundledPluginsDir, options)) {
     // External official plugins own isolated npm projects, so their dependency
     // specs do not need to match packages bundled into the root distribution.
-    if (packageJson.openclaw?.build?.bundledDist === false) {
+    if (packageJson.paleoclaw?.build?.bundledDist === false) {
       continue;
     }
     for (const [name, spec] of collectRuntimeDependencySpecs(packageJson)) {

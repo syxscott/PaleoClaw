@@ -5,7 +5,7 @@ import {
   type OpenClawConfig,
 } from "paleoclaw/plugin-sdk/provider-onboard";
 import { CHUTES_BASE_URL, CHUTES_MODEL_CATALOG } from "./models.js";
-import manifest from "./paleoclaw.plugin.json" with { type: "json" };
+import manifest from "./openclaw.plugin.json" with { type: "json" };
 
 export const CHUTES_DEFAULT_MODEL_ID = manifest.modelCatalog.providers.chutes.defaultModel;
 export const CHUTES_DEFAULT_MODEL_REF = readManifestProviderDefaultModelRef(manifest, "chutes")!;

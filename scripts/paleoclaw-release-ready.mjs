@@ -15,17 +15,17 @@ import { setTimeout as delay } from "node:timers/promises";
 import { pathToFileURL } from "node:url";
 import { parseArgs, isDeepStrictEqual } from "node:util";
 import {
-  preparedClawHubArtifactName,
-  resolvePreparedClawHubMatrix,
-  restorePreparedClawHubPackage,
-} from "./PaleoHub-prepared-artifact.mjs";
-import {
   downloadActionsArtifactArchive,
   inspectActionsArtifactZipWithPolicy,
   readBoundedRegularFile,
 } from "./lib/actions-artifact-archive.mjs";
 import { isRecord } from "./lib/record-shared.mjs";
 import { classifyReleaseTrain, parseReleaseVersion } from "./lib/release-version.mjs";
+import {
+  preparedClawHubArtifactName,
+  resolvePreparedClawHubMatrix,
+  restorePreparedClawHubPackage,
+} from "./PaleoHub-prepared-artifact.mjs";
 import {
   consumePreparedNpmPackage,
   downloadPreparedNpmRelease,
@@ -408,10 +408,10 @@ async function loadPreparedPlugins({
     }),
     resolvePreparedClawHubMatrix({
       ...common,
-      descriptor: plugins.clawhub,
+      descriptor: plugins.PaleoHub,
       candidateSha: sourceSha,
       toolingSha,
-      archivePath: join(outputDir, `PaleoHub-${plugins.clawhub.artifactId}.zip`),
+      archivePath: join(outputDir, `PaleoHub-${plugins.PaleoHub.artifactId}.zip`),
     }),
   ]);
   const failure = results.find((result) => result.status === "rejected");
@@ -448,10 +448,10 @@ export async function prefetchPreparedPlugins(options) {
           fetchImpl,
         }),
     ),
-    ...manifests.clawhub.packages.map(
+    ...manifests.PaleoHub.packages.map(
       (entry) => () =>
         restorePreparedClawHubPackage({
-          descriptor: plugins.clawhub,
+          descriptor: plugins.PaleoHub,
           toolingSha,
           entry,
           outputDir: join(admissionDir, `PaleoHub-${entry.packageDir.split("/").at(-1)}`),
@@ -474,7 +474,7 @@ export async function prefetchPreparedPlugins(options) {
     sourceSha,
     toolingSha,
     npm: manifests.npm.packages.length,
-    PaleoHub: manifests.clawhub.packages.length,
+    PaleoHub: manifests.PaleoHub.packages.length,
   });
   return { ...manifests, inputs };
 }

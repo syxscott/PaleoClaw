@@ -18,7 +18,7 @@ import type { fetchWithSsrFGuard } from "paleoclaw/plugin-sdk/ssrf-runtime";
 import { markdownToIR } from "paleoclaw/plugin-sdk/text-chunking";
 import { afterAll, afterEach, describe, expect, it, vi } from "vitest";
 import { runGitHubCopilotDeviceFlow } from "./login.js";
-import manifest from "./paleoclaw.plugin.json" with { type: "json" };
+import manifest from "./openclaw.plugin.json" with { type: "json" };
 import { CopilotRuntimeAuthError } from "./runtime-auth-error.js";
 
 const mocks = vi.hoisted(() => ({

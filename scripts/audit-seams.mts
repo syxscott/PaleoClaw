@@ -402,7 +402,7 @@ async function buildMissingPackages(staticLeakClusters: ReadonlySet<string>) {
       packageName:
         pkg.name ?? (relativePackagePath === "ui/package.json" ? "paleoclaw-control-ui" : null),
       packagePath: relativePackagePath,
-      npmSpec: redactNpmSpec(pkg.openclaw?.install?.npmSpec),
+      npmSpec: redactNpmSpec(pkg.paleoclaw?.install?.npmSpec),
       private: pkg.private === true,
       pluginSdkReachability:
         pluginSdkEntries.length > 0 ? { staticEntryPoints: pluginSdkEntries } : undefined,

@@ -539,7 +539,7 @@ describe("prepared model runtime Gateway catalog mode", () => {
               "registry-only/Shadow",
               "registry-only/shadow",
               "bare-alias",
-              "provider-only/",
+              "provider-only",
             ],
           },
         },
@@ -577,7 +577,7 @@ describe("prepared model runtime Gateway catalog mode", () => {
     ).toEqual({ off: null, max: "max" });
     expect(mocks.prepareStaticCatalog).toHaveBeenCalledWith(
       expect.objectContaining({
-        providerDiscoveryProviderIds: [provider, "openai", "provider-only", "registry-only"],
+        providerDiscoveryProviderIds: [provider, "openai", "provider-only/", "registry-only"],
         staticCatalogProviderIds: [provider, "openai", "registry-only"],
       }),
     );

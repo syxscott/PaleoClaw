@@ -5,7 +5,7 @@ import { coerceErrorMessage as formatError } from "./lib/error-format.mts";
 import { runManagedCommand } from "./lib/managed-child-process.mts";
 import { parseReleaseVersion } from "./lib/release-version.mjs";
 
-const macosInfoPlistPath = "apps/macos/Sources/paleoclaw/Resources/Info.plist";
+const macosInfoPlistPath = "apps/macos/Sources/OpenClaw/Resources/Info.plist";
 type Command = { args: string[]; bin: string };
 const SCOPES = ["all", "config", "dependencies", "plugin-sdk", "plugins", "version"] as const;
 type Scope = (typeof SCOPES)[number];

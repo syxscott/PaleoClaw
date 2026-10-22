@@ -60,7 +60,7 @@ const plugins = { test: { ...common, projects: [
   project("plugins", { exclude: [...common.exclude, "native-loader.test.ts"] }),
   project("plugins-native-loader", { include: ["native-loader.test.ts"] }),
 ] } };
-const extensions = { test: { root, dir: path.join(root, "extensions"), include: ["**/*.test.ts"], exclude: [] } };
+const extensions = { test: { root, dir: path.join(root, "extensions/"), include: ["**/*.test.ts"], exclude: [] } };
 const original = [
   '// Preserve candidate bytes, including CRLF.\\r\\nexport const nativeFiles = ' + JSON.stringify([excluded[1]]) + ';\\r\\nexport default ' + JSON.stringify(plugins) + ';\\r\\n',
   'import fs from "node:fs";\\nconst config = ' + JSON.stringify(extensions) + ';\\n' +
@@ -103,7 +103,7 @@ const pluginBaseline = [...excluded.slice(0, 2), sibling].sort();
 if (mode) {
   if (mode === "unaffected") {
     assertRestored();
-  } else if (mode === "extensions") {
+  } else if (mode === "extensions/") {
     assert.deepEqual(await discover(configs[0]), pluginBaseline);
     assert.deepEqual(await discover(configs[1]), [extensionOutsideSelection]);
   } else {
@@ -157,7 +157,7 @@ for (const [mode, scope, paths, selectedConfigs, expectedExit] of [
   ["single", "plugins", [excluded[0]], configs, 0],
   ["unaffected", "plugins", excluded.slice(0, 2), [configs[1]], 0],
   ["plugins", "plugins", excluded.slice(0, 2), configs, 0],
-  ["extensions", "extensions", [excluded[2]], configs, 0],
+  ["extensions/", "extensions/", [excluded[2]], configs, 0],
   ["failure", "plugins", excluded.slice(0, 2), configs, 23],
 ]) {
   const result = runAdapter([process.execPath, process.argv[1], mode], adapterEnv(scope, paths, selectedConfigs));

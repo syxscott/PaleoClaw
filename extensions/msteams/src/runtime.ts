@@ -1,14 +1,12 @@
-import type { PluginRuntime } from "paleoclaw/plugin-sdk/msteams";
+import { createPluginRuntimeStore } from "paleoclaw/plugin-sdk/runtime-store";
+import type { PluginRuntime } from "paleoclaw/plugin-sdk/runtime-store";
 
-let runtime: PluginRuntime | null = null;
-
-export function setMSTeamsRuntime(next: PluginRuntime) {
-  runtime = next;
-}
-
-export function getMSTeamsRuntime(): PluginRuntime {
-  if (!runtime) {
-    throw new Error("MSTeams runtime not initialized");
-  }
-  return runtime;
-}
+const {
+  setRuntime: setMSTeamsRuntime,
+  getRuntime: getMSTeamsRuntime,
+  tryGetRuntime: getOptionalMSTeamsRuntime,
+} = createPluginRuntimeStore<PluginRuntime>({
+  pluginId: "msteams",
+  errorMessage: "MSTeams runtime not initialized",
+});
+export { getMSTeamsRuntime, getOptionalMSTeamsRuntime, setMSTeamsRuntime };

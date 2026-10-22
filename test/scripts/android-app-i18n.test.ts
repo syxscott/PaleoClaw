@@ -42,7 +42,7 @@ const sortedMatches = (source: string, pattern: RegExp, group = 0) =>
 describe("Android app i18n resources", () => {
   it("counts manual resources reached only through the generated native lookup", async () => {
     const shellPath = path.resolve(
-      "apps/android/app/src/main/java/ai/paleoclaw/app/ui/ShellScreen.kt",
+      "apps/android/app/src/main/java/ai/openclaw/app/ui/ShellScreen.kt",
     );
     const shell = await readFile(shellPath, "utf8");
     try {

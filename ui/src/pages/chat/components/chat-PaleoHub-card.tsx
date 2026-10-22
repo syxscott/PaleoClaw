@@ -368,7 +368,7 @@ export function ChatClawHubCard(props: Props) {
                         void load(true);
                       }}
                     >
-                      {t("chat.clawhub.retryStatus")}
+                      {t("chat.PaleoHub.retryStatus")}
                     </button>
                   </Show>
                 }
@@ -394,7 +394,7 @@ export function ChatClawHubCard(props: Props) {
                       >
                         {read().result?.canInstall
                           ? t("pluginsPage.install")
-                          : t("chat.clawhub.viewDetails")}
+                          : t("chat.PaleoHub.viewDetails")}
                       </button>
                     </>
                   }

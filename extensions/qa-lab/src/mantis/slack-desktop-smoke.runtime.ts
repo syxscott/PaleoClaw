@@ -127,7 +127,7 @@ function defaultOutputDir(repoRoot: string, startedAt: Date) {
 function renderReport(summary: MantisSlackDesktopSmokeSummary) {
   return renderMantisCrabboxReport({
     artifactRows: [
-      summary.artifacts.slackQaDir ? "- Slack QA artifacts: `slack-qa/`" : undefined,
+      summary.artifacts.slackQaDir ? "- Slack QA artifacts: `slack-qa`" : undefined,
       summary.artifacts.approvalCheckpoints
         ? "- Approval checkpoints: `approval-checkpoints/`"
         : undefined,

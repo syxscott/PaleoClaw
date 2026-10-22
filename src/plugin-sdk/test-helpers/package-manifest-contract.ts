@@ -60,7 +60,7 @@ export function describePackageManifestContract(params: PackageManifestContractP
       it("declares a parseable minHostVersion floor at or above the baseline", () => {
         const manifest = readPackageManifest(packagePath);
         const requirement = parseMinHostVersionRequirement(
-          manifest.openclaw?.install?.minHostVersion ?? null,
+          manifest.paleoclaw?.install?.minHostVersion ?? null,
         );
 
         expect(

@@ -60,7 +60,7 @@ function fingerprintAuthCacheKey(prefix: string, domain: string, ...parts: strin
 
 function resolveCodexCliAuthFilePath(env: NodeJS.ProcessEnv): string {
   const codexHome = env.CODEX_HOME?.trim() || "~/.codex";
-  if (codexHome === "~" || codexHome.startsWith("~/") || codexHome.startsWith("~\\")) {
+  if (codexHome === "~/" || codexHome.startsWith("~/") || codexHome.startsWith("~\\")) {
     const home = env.HOME?.trim() || env.USERPROFILE?.trim() || os.homedir();
     return path.join(home, codexHome.slice(codexHome === "~" ? 1 : 2), CODEX_AUTH_JSON_FILENAME);
   }

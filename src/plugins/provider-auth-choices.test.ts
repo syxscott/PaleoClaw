@@ -28,7 +28,7 @@ vi.mock("./plugin-metadata-snapshot.js", () => ({
 }));
 
 vi.mock("./official-external-plugin-catalog.js", () => ({
-  getOfficialExternalPluginCatalogManifest: (entry: { paleoclaw?: unknown }) => entry.openclaw,
+  getOfficialExternalPluginCatalogManifest: (entry: { paleoclaw?: unknown }) => entry.paleoclaw,
   listOfficialExternalProviderCatalogEntries:
     officialCatalogMocks.listOfficialExternalProviderCatalogEntries,
 }));

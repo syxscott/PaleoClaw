@@ -134,7 +134,7 @@ function createSelectedPluginPackageFixture(runtimeExtension = ".js") {
     "extensions/demo/worker.ts": "export {};",
     "dist/extensions/demo/package.json": JSON.stringify({
       ...pluginPackage,
-      paleoclaw: { ...pluginPackage.openclaw, extensions: [`./index${runtimeExtension}`] },
+      paleoclaw: { ...pluginPackage.paleoclaw, extensions: [`./index${runtimeExtension}`] },
     }),
     "dist/extensions/demo/openclaw.plugin.json": '{"id":"demo","configSchema":{"type":"object"}}',
     [`dist/extensions/demo/index${runtimeExtension}`]:
@@ -346,7 +346,7 @@ describe("package-paleoclaw-for-docker", () => {
             origin: "bundled",
             packageName: packedPackage.name,
             packageVersion: packedPackage.version,
-            packageManifest: packedPackage.openclaw,
+            packageManifest: packedPackage.paleoclaw,
           },
         ],
         prompter: { shouldRepair: true },
@@ -1140,7 +1140,9 @@ describe("package-paleoclaw-for-docker", () => {
                     const umask = process.umask(0o077);
                     try {
                       const output = await runCaptureForTest(...args);
-                      packedBytes = fs.readFileSync(path.join(outputDir, "paleoclaw-2026.8.26.tgz"));
+                      packedBytes = fs.readFileSync(
+                        path.join(outputDir, "paleoclaw-2026.8.26.tgz"),
+                      );
                       return output;
                     } finally {
                       process.umask(umask);

@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 // `tsc` emits declarations under `dist/plugin-sdk/plugin-sdk/*` because the source lives
-// at `src/plugin-sdk/*` and `rootDir` is `src/`.
+// at `src/plugin-sdk/*` and `rootDir` is `src`.
 //
 // Our package export map points subpath `types` at `dist/plugin-sdk/<entry>.d.ts`, so we
 // generate stable entry d.ts files that re-export the real declarations.

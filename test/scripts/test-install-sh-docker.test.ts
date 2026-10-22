@@ -29,7 +29,7 @@ const INSTALL_E2E_RUNNER_PATH = "scripts/docker/install-sh-e2e/run.sh";
 const DOCKER_SETUP_PATH = "scripts/docker/setup.sh";
 const HOST_TIMEOUT_PATH = "scripts/lib/host-timeout.sh";
 const PODMAN_SETUP_PATH = "scripts/podman/setup.sh";
-const PODMAN_QUADLET_TEMPLATE_PATH = "scripts/podman/openclaw.container.in";
+const PODMAN_QUADLET_TEMPLATE_PATH = "scripts/podman/paleoclaw.container.in";
 const PODMAN_RUN_PATH = "scripts/run-paleoclaw-podman.sh";
 const SMOKE_RUNNER_PATH = "scripts/docker/install-sh-smoke/run.sh";
 const NONROOT_DOCKERFILE_PATH = "scripts/docker/install-sh-nonroot/Dockerfile";
@@ -1683,7 +1683,11 @@ fs.readFileSync = (file, ...args) => {
       undefined,
     ],
     ["missing", undefined, "missing paleoclaw doctor step"],
-    ["untyped advisory", { name: "paleoclaw doctor", exitCode: 86 }, "paleoclaw doctor step failed"],
+    [
+      "untyped advisory",
+      { name: "paleoclaw doctor", exitCode: 86 },
+      "paleoclaw doctor step failed",
+    ],
   ])("validates a %s package post-install doctor result", (_label, doctorStep, error) => {
     const result = validateInstallSmokeUpdateJson(doctorStep);
     if (error) {

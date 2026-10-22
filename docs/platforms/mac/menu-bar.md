@@ -42,7 +42,7 @@ Manual Cron refreshes and successful job changes supersede older reads. An in-fl
 
 ## State model
 
-- Source: `WorkActivityStore` (`apps/macos/Sources/paleoclaw/WorkActivityStore.swift`).
+- Source: `WorkActivityStore` (`apps/macos/Sources/OpenClaw/WorkActivityStore.swift`).
 - Events arrive as `ControlAgentEvent` with a `runId`. The handler (`ControlChannel.routeWorkActivity`) reads `sessionKey` from the event payload and defaults to `"main"` if absent.
 - Priority: the main session (`sessionKey == "main"` by default) always wins. If main is active, its state shows immediately. If main is idle, the most recently active non-main session shows instead. The store does not flip mid-activity. It only switches when the current session goes idle or main becomes active.
 - Activity kinds:

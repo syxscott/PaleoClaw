@@ -1,6 +1,6 @@
 import { buildManifestModelProviderConfig } from "paleoclaw/plugin-sdk/provider-catalog-shared";
 import type { ModelDefinitionConfig } from "paleoclaw/plugin-sdk/provider-model-shared";
-import manifest from "./paleoclaw.plugin.json" with { type: "json" };
+import manifest from "./openclaw.plugin.json" with { type: "json" };
 
 const DEEPSEEK_MANIFEST_CATALOG = manifest.modelCatalog.providers.deepseek;
 export const DEEPSEEK_BASE_URL = DEEPSEEK_MANIFEST_CATALOG.baseUrl;

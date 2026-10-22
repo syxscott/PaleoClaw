@@ -75,7 +75,7 @@ model.
 
 ## Other Featherless models
 
-Use the exact Featherless model id after the `featherless/` provider prefix:
+Use the exact Featherless model id after the `featherless` provider prefix:
 
 ```json5
 {

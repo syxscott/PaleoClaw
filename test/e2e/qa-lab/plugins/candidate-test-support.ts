@@ -25,8 +25,8 @@ export async function pluginIdentity(repoRoot: string, plugin: string) {
     paleoclaw: { extensions: string[] };
   };
   expect(pkg.name).toBe(`@paleoclaw/${plugin}`);
-  expect(pkg.openclaw.extensions).toEqual([expect.stringMatching(/^\.\/index\.(?:c|m)?js$/u)]);
-  const entry = await fs.realpath(path.resolve(root, pkg.openclaw.extensions[0]!));
+  expect(pkg.paleoclaw.extensions).toEqual([expect.stringMatching(/^\.\/index\.(?:c|m)?js$/u)]);
+  const entry = await fs.realpath(path.resolve(root, pkg.paleoclaw.extensions[0]!));
   expect(path.dirname(entry)).toBe(root);
   return {
     entry,

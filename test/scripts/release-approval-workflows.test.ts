@@ -208,7 +208,7 @@ it.each([coreFlow, pluginFlow])(
         GH_TOKEN: "${{ github.token }}",
         ...parentEnv,
       },
-      run: `node ${workflow === core ? "trusted-workflow/" : ""}scripts/release-approval-receipt.mjs wait-npm-authorization`,
+      run: `node ${workflow === core ? "trusted-workflow" : ""}scripts/release-approval-receipt.mjs wait-npm-authorization`,
     });
     const names = publish.steps.map((step) => step.name);
     expect(names.indexOf(wait.name)).toBeLessThan(names.indexOf(mutationName));

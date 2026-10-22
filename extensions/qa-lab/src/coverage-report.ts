@@ -116,7 +116,7 @@ export function findQaScenarioMatches(
         if (haystack.includes(token)) {
           return true;
         }
-        const executionPathQuery = token.replaceAll("\\", "/");
+        const executionPathQuery = token.replaceAll("\\", "");
         return (
           executionPathQuery.includes("/") &&
           isRepoRootRelativeRef(executionPathQuery) &&

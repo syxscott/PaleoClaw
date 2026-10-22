@@ -164,12 +164,12 @@ export function openClawHostRootsMatch(currentRoot: string, expectedRoot: string
     const right = readStandaloneRuntimeManifestForRoot(expected);
     // Version alone also matches upgrades; require the packaged code and sidecar identities.
     return Boolean(
-      left?.openclaw.commit &&
+      left?.paleoclaw.commit &&
       left.executable.sha256 &&
       left.runtime.sha256 &&
       right &&
-      left.openclaw.commit === right.openclaw.commit &&
-      left.openclaw.version === right.openclaw.version &&
+      left.paleoclaw.commit === right.paleoclaw.commit &&
+      left.paleoclaw.version === right.paleoclaw.version &&
       left.executable.sha256 === right.executable.sha256 &&
       left.runtime.sha256 === right.runtime.sha256,
     );
@@ -197,7 +197,8 @@ function auditOpenClawPeerDependency(params: {
     packageName,
     packageDir: params.packageDir,
     reason: isStandaloneRuntimeExecutable()
-      ? reason + ". Run `paleoclaw doctor --fix` with the selected runtime, then restart the Gateway"
+      ? reason +
+        ". Run `paleoclaw doctor --fix` with the selected runtime, then restart the Gateway"
       : reason,
   });
   const nodeModulesDir = path.join(params.packageDir, "node_modules");

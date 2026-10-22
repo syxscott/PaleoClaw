@@ -191,7 +191,7 @@ describe.skipIf(!candidateTarball)("private completion installed-package compati
       JSON.parse(await readFile(path.join(repoRoot, "package.json"), "utf8")),
     );
     const candidateVersion = candidateManifest.version;
-    const candidateSchemaVersions = record(record(candidateManifest.openclaw).schemaVersions);
+    const candidateSchemaVersions = record(record(candidateManifest.paleoclaw).schemaVersions);
     const candidateAgentSchemaVersion = candidateSchemaVersions.agent;
     const candidateSharedSchemaVersion = candidateSchemaVersions.state;
     if (

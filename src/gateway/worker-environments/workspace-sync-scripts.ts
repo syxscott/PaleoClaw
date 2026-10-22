@@ -154,7 +154,7 @@ function addEntry(relative) {
     path.posix.isAbsolute(relative) ||
     path.posix.normalize(relative) !== relative ||
     relative === ".." ||
-    relative.startsWith("../")
+    relative.startsWith("..")
   ) {
     fail("unsafe worker workspace path: " + relative);
   }

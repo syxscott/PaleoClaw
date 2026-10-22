@@ -33,7 +33,7 @@ describe("native i18n changed scope", () => {
       "apps/android/app/src/thirdParty/res/values-sv/accessibility_strings.xml",
       "apps/android/wear/src/main/res/values-sv/strings.xml",
       "apps/ios/Resources/Localizable.xcstrings",
-      "apps/macos/Sources/paleoclaw/Resources/Localizable.xcstrings",
+      "apps/macos/Sources/OpenClaw/Resources/Localizable.xcstrings",
       "apps/ios/WatchApp/sv.lproj/InfoPlist.strings",
     ];
 
@@ -67,7 +67,7 @@ describe("native i18n changed scope", () => {
       assertNativeGeneratedArtifactsIsolated([
         ...generatedPaths,
         ...generatedCompanionPaths,
-        "apps/android/app/src/main/java/ai/paleoclaw/app/MainActivity.kt",
+        "apps/android/app/src/main/java/ai/openclaw/app/MainActivity.kt",
       ]),
     ).toThrow("Native generated locale artifacts must be isolated from source changes");
   });
@@ -88,7 +88,7 @@ describe("native i18n changed scope", () => {
       "apps/android/app/src/main/res/values-sv/strings.xml",
       "apps/android/wear/src/main/res/values-sv/strings.xml",
       "apps/ios/Resources/Localizable.xcstrings",
-      "apps/macos/Sources/paleoclaw/Resources/Localizable.xcstrings",
+      "apps/macos/Sources/OpenClaw/Resources/Localizable.xcstrings",
     ];
     const migration = [...owners, "apps/.i18n/native-source.json", ...generated];
 
@@ -114,7 +114,7 @@ describe("native i18n changed scope", () => {
     ).toBe(true);
     expect(shouldStrictNativeI18n(["apps/ios/Resources/Localizable.xcstrings"])).toBe(true);
     expect(
-      shouldStrictNativeI18n(["apps/macos/Sources/paleoclaw/Resources/Localizable.xcstrings"]),
+      shouldStrictNativeI18n(["apps/macos/Sources/OpenClaw/Resources/Localizable.xcstrings"]),
     ).toBe(true);
     expect(
       shouldStrictNativeI18n(["apps/ios/Sources/RootTabs.swift", "apps/.i18n/native-source.json"]),
@@ -141,7 +141,7 @@ describe("native i18n changed scope", () => {
       migration.slice(1),
       migration.filter((filePath) => filePath !== "apps/android/app/build.gradle.kts"),
       [...migration, "apps/ios/Resources/Localizable.xcstrings"],
-      [...migration, "apps/android/app/src/main/java/ai/paleoclaw/app/MainActivity.kt"],
+      [...migration, "apps/android/app/src/main/java/ai/openclaw/app/MainActivity.kt"],
     ]) {
       expect(() => assertNativeGeneratedArtifactsIsolated(incomplete)).toThrow(
         "Native generated locale artifacts must be isolated from source changes",

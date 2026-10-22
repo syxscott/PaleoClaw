@@ -20,8 +20,8 @@ const INFLECTED_COUNT_SEGMENT_RE =
   /\^\[[^\]]*\\\([A-Za-z_][A-Za-z0-9_]*\)[^\]]*\]\(inflect: true\)/gu;
 const INFLECTED_COUNT_MARKER = "](inflect: true)";
 const IOS_CATALOG_PATH = "apps/ios/Resources/Localizable.xcstrings";
-const MACOS_CATALOG_PATH = "apps/macos/Sources/paleoclaw/Resources/Localizable.xcstrings";
-const MACOS_INFO_PLIST_PATH = "apps/macos/Sources/paleoclaw/Resources/Info.plist";
+const MACOS_CATALOG_PATH = "apps/macos/Sources/OpenClaw/Resources/Localizable.xcstrings";
+const MACOS_INFO_PLIST_PATH = "apps/macos/Sources/OpenClaw/Resources/Info.plist";
 const NATIVE_SOURCE_PATH = "apps/.i18n/native-source.json";
 const NATIVE_TRANSLATIONS_DIR = "apps/.i18n/native";
 const SHARED_CHAT_UI_SOURCE_PREFIX = "apps/shared/OpenClawKit/Sources/OpenClawChatUI/";
@@ -38,7 +38,7 @@ const IOS_CATALOG_EXCLUSIONS = new Set([
   "z",
 ]);
 const MACOS_SOURCE_PREFIXES = [
-  "apps/macos/Sources/paleoclaw/",
+  "apps/macos/Sources/OpenClaw/",
   SHARED_CHAT_UI_SOURCE_PREFIX,
   SHARED_GATEWAY_DISCOVERY_STATUS_SOURCE,
 ] as const;
@@ -130,12 +130,12 @@ const APPLE_LOCALE_DIRECTORIES: Record<string, string> = {
   "zh-TW": "zh-Hant",
 };
 const LOCALIZED_WRAPPER_CONTRACTS: Record<string, readonly string[]> = {
-  "apps/macos/Sources/paleoclaw/DeviceSettingsPanels.swift": [
+  "apps/macos/Sources/OpenClaw/DeviceSettingsPanels.swift": [
     'String(localized: "Quick Chat shortcut")',
     'String(localized: "Microphone Test")',
     'Button("Done")',
   ],
-  "apps/macos/Sources/paleoclaw/DeviceMicrophonePanel.swift": [
+  "apps/macos/Sources/OpenClaw/DeviceMicrophonePanel.swift": [
     'String(localized: "Stopped")',
     'String(localized: "Timeout: no trigger heard")',
     "Text(verbatim: meterError)",

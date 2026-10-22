@@ -16,8 +16,8 @@ import { resolveCronJobsStorePathFromConfig } from "../../cron/store/paths.js";
 import { readDeferredPluginMigrationsAsync } from "../../infra/deferred-plugin-migrations.js";
 import { tryReadJson } from "../../infra/json-files.js";
 import { parseRegistryNpmSpec } from "../../infra/npm-registry-spec.js";
-import { resolveOpenClawPackageRootSync } from "../../infra/paleoclaw-root.js";
 import { readPackageVersion } from "../../infra/package-json.js";
+import { resolveOpenClawPackageRootSync } from "../../infra/paleoclaw-root.js";
 import { nodeVersionSatisfiesEngine } from "../../infra/runtime-guard.js";
 import { listRetiredCronStateFiles } from "../../infra/state-migrations.retired-cron-files.js";
 import { listRetiredDeliveryQueueFiles } from "../../infra/state-migrations.retired-delivery-files.js";
@@ -250,7 +250,7 @@ async function inspectUpdateAdmission(
       if (databaseContext) {
         if (databaseContext.config.database?.families) {
           try {
-            const declaration = isRecord(manifest.openclaw) ? manifest.openclaw : {};
+            const declaration = isRecord(manifest.paleoclaw) ? manifest.paleoclaw : {};
             await assertUpdateDatabaseEngineContexts(
               [databaseContext],
               declaration.databaseEngines,

@@ -72,7 +72,7 @@ function readOfficialCatalogFileSync(): ChannelCatalogEntryLike[] {
 }
 
 function toBundledChannelEntry(entry: ChannelCatalogEntryLike): BundledChannelCatalogEntry | null {
-  const channel = entry.openclaw?.channel;
+  const channel = entry.paleoclaw?.channel;
   const id = normalizeOptionalLowercaseString(channel?.id);
   if (!id || !channel) {
     return null;

@@ -90,9 +90,9 @@ type BranchFsSafePropertyAssignment = {
 type BranchWrapperAssignment = { index: number; name: string; value: WrapperValue };
 
 const databaseFirstLegacyStoreSourceRoots = ["src", "extensions", "packages"];
-const databaseFirstNativeSourceRoots = ["apps/macos/Sources/paleoclaw"];
+const databaseFirstNativeSourceRoots = ["apps/macos/Sources/OpenClaw"];
 const nativeLegacyPortGuardianMigrationPath =
-  "apps/macos/Sources/paleoclaw/PortGuardianRecordStore.swift";
+  "apps/macos/Sources/OpenClaw/PortGuardianRecordStore.swift";
 const nativeLegacyPortGuardianFilenamePattern = /\bport-guard\.(?:json|lock)\b/u;
 const unknownComputedPropertyName = "\0";
 

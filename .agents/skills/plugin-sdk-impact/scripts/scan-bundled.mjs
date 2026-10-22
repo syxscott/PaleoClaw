@@ -112,8 +112,8 @@ export async function captureSource(checkoutRoot) {
         plugin.packageName = packageJson.name;
       }
       if (
-        !Array.isArray(packageJson?.openclaw?.extensions) ||
-        packageJson.openclaw.extensions.length === 0
+        !Array.isArray(packageJson?.paleoclaw?.extensions) ||
+        packageJson.paleoclaw.extensions.length === 0
       ) {
         plugin.error =
           "Plugin has no nonempty package.json openclaw.extensions declaration; Plugin Inspector cannot establish the implicit host entrypoint, so untyped SDK usage may be missing.";
@@ -171,7 +171,9 @@ async function loadInspector(location, root) {
   if (location) {
     entry = path.resolve(location);
     if ((await stat(entry)).isDirectory()) {
-      entry = createRequire(path.join(entry, "package.json")).resolve("@paleoclaw/plugin-inspector");
+      entry = createRequire(path.join(entry, "package.json")).resolve(
+        "@paleoclaw/plugin-inspector",
+      );
     }
   } else {
     try {

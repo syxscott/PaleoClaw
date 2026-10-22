@@ -697,8 +697,3 @@ function* resolvePluginToolsFromRegistry(
 
   return tools;
 }
-
-// --- PaleoClaw 兼容层：getPluginToolMeta（pc 3 月 API，上游 10 月已改名）---
-export function getPluginToolMeta(tool: AnyAgentTool): PluginToolMeta | undefined {
-  return pluginToolMeta.get(tool);
-}

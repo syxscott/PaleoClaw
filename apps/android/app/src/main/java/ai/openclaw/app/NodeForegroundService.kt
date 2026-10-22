@@ -29,7 +29,11 @@ class NodeForegroundService : Service() {
   override fun onCreate() {
     super.onCreate()
     ensureChannel()
-    val initial = buildNotification(title = "OpenClaw Node", text = "Starting…")
+    val initial =
+        buildNotification(
+          title = getString(R.string.app_name),
+          text = getString(R.string.node_service_starting),
+        )
     startForegroundWithTypes(notification = initial, requiresMic = false)
 
     val runtime = (application as NodeApp).runtime

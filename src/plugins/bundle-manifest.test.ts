@@ -386,7 +386,7 @@ describe("OpenAI packaged onboarding skill", () => {
       const rootDir = fixture({
         [CODEX_BUNDLE_MANIFEST_RELATIVE_PATH]: {
           name: "setup-demo",
-          skills: "./skills",
+          skills: "./skills/",
           extensions: { "com.openai": { onboardingSkill } },
         },
       });

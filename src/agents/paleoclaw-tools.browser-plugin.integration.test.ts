@@ -200,7 +200,7 @@ describe("createOpenClawTools browser plugin integration", () => {
     const outsideMediaUrl = `${workspaceDir}-outside.png`;
     await fs.copyFile(
       new URL(
-        "../../apps/ios/WatchApp/Assets.xcassets/OpenClawIcon.imageset/paleoclaw-icon.png",
+        "../../apps/ios/WatchApp/Assets.xcassets/OpenClaw/Icon.imageset/8015/paleoclaw-icon.png",
         import.meta.url,
       ),
       mediaUrl,

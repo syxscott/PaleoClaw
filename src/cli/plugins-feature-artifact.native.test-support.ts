@@ -137,7 +137,7 @@ void describe("plugin artifact authoring", () => {
     const metadata = JSON.parse(await fs.readFile(path.join(packageRoot, "package.json"), "utf8"));
     assert.equal(metadata.dependencies, undefined);
     assert.equal(metadata.scripts, undefined);
-    assert.equal(metadata.openclaw.controlUi, undefined);
+    assert.equal(metadata.paleoclaw.controlUi, undefined);
     const manifest = JSON.parse(
       await fs.readFile(path.join(packageRoot, "openclaw.plugin.json"), "utf8"),
     );
@@ -273,12 +273,12 @@ export default Object.assign(defineToolPlugin({ id: ${JSON.stringify(id)}, name:
         await fs.readFile(path.join(packageDir, "openclaw.plugin.json")),
         sourceManifest,
       );
-      assert.deepEqual(manifest.openclaw.compat, packageManifest.openclaw.compat);
+      assert.deepEqual(manifest.paleoclaw.compat, packageManifest.paleoclaw.compat);
       assert.deepEqual(
         await validatePackageExtensionEntriesForInstall({
           packageDir,
           manifest,
-          extensions: manifest.openclaw.extensions,
+          extensions: manifest.paleoclaw.extensions,
         }),
         { ok: true },
       );
@@ -291,7 +291,7 @@ export default Object.assign(defineToolPlugin({ id: ${JSON.stringify(id)}, name:
       };
       const [entryPath] = resolvePackageRuntimeExtensionSources({
         ...resolution,
-        extensions: manifest.openclaw.extensions,
+        extensions: manifest.paleoclaw.extensions,
       });
       const loaded = await loadToolPlugin({ rootDir: packageDir, entryPath: entryPath! });
       assert.partialDeepStrictEqual(loaded.entry, {
@@ -314,7 +314,7 @@ export default Object.assign(defineToolPlugin({ id: ${JSON.stringify(id)}, name:
         };
         const [sourceEntryPath] = resolvePackageRuntimeExtensionSources({
           ...sourceResolution,
-          extensions: manifest.openclaw.extensions,
+          extensions: manifest.paleoclaw.extensions,
         });
         const setupPath = resolvePackageSetupSource(sourceResolution);
         assert.ok(setupPath);
@@ -403,7 +403,7 @@ export default Object.assign(defineToolPlugin({ id: ${JSON.stringify(id)}, name:
   void it("packs standard-builder lazy chunks for use without source or dependencies", async () => {
     const { rootDir, parent } = await fixture();
     const metadata = JSON.parse(await fs.readFile(path.join(rootDir, "package.json"), "utf8"));
-    const source = path.resolve(rootDir, metadata.openclaw.controlUi);
+    const source = path.resolve(rootDir, metadata.paleoclaw.controlUi);
     await fs.writeFile(
       source,
       'export async function loadPage() { return (await import("./lazy-page.js")).page; }',
@@ -435,7 +435,7 @@ export default Object.assign(defineToolPlugin({ id: ${JSON.stringify(id)}, name:
     const { rootDir, parent } = await fixture();
     const packagePath = path.join(rootDir, "package.json");
     const metadata = JSON.parse(await fs.readFile(packagePath, "utf8"));
-    delete metadata.openclaw.controlUi;
+    delete metadata.paleoclaw.controlUi;
     await fs.writeFile(packagePath, JSON.stringify(metadata));
     const manifestPath = path.join(rootDir, "openclaw.plugin.json");
     const manifest = JSON.parse(await fs.readFile(manifestPath, "utf8"));

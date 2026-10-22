@@ -12,7 +12,7 @@ import { execPrGhAsync } from "./github.mjs";
 const oid = /^[a-f0-9]{40}$/u;
 const positiveInteger = (value) => Number.isSafeInteger(value) && value > 0;
 const workflowPath = ".github/workflows/security-review.yml";
-const root = new URL("../../", import.meta.url);
+const root = new URL("../..", import.meta.url);
 function requireEvidence(condition, message) {
   if (!condition) {
     throw new Error(`Prior-CI security admission: ${message}`);
@@ -204,7 +204,7 @@ export function verifyPriorCiSecurityMainSources(proof, main) {
   requireEvidence(
     Array.isArray(sources) &&
       sources.length > 0 &&
-      sources.every((source) => typeof source.path === "string" && oid.test(source.sha ?? "")),
+      sources.every((source) => typeof source.path === "string" && oid.test(source.sha ?? "/")),
     "protected publisher source identities are required",
   );
   const output = execFileSync(

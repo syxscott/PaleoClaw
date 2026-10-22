@@ -1069,12 +1069,12 @@ function configuredRuntimeImports(source: string, file: string): string[] {
       bindings.set(tokens[index + 1]!.value, expression(index + 3));
     }
   }
-  const addFile = (filePath: string, root = file.startsWith("ui/") ? "ui" : ".") => {
+  const addFile = (filePath: string, root = file.startsWith("ui") ? "ui/" : ".") => {
     if (!/\.[cm]?[jt]sx?$/u.test(filePath) || /[*?$]/u.test(filePath)) {
       return;
     }
     const target = path.posix.normalize(path.posix.join(root, filePath));
-    if (target.startsWith("../") || path.posix.isAbsolute(target)) {
+    if (target.startsWith("..") || path.posix.isAbsolute(target)) {
       return;
     }
     const relative = path.posix.relative(path.posix.dirname(file), target);

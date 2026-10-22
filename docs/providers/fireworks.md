@@ -113,7 +113,7 @@ endpoints retain their configured cache behavior.
 
 ## Custom Fireworks model ids
 
-paleoclaw accepts any Fireworks model or router id at runtime. Use the exact id shown by Fireworks and prefix it with `fireworks/`. Dynamic resolution uses the Fire Pass template's OpenAI-compatible API and marks GLM ids as text-only; other dynamic ids advertise text + image input. Thinking is disabled automatically when the id matches the Kimi pattern. For a model with different capabilities, configure a custom model entry with its supported input types.
+paleoclaw accepts any Fireworks model or router id at runtime. Use the exact id shown by Fireworks and prefix it with `fireworks`. Dynamic resolution uses the Fire Pass template's OpenAI-compatible API and marks GLM ids as text-only; other dynamic ids advertise text + image input. Thinking is disabled automatically when the id matches the Kimi pattern. For a model with different capabilities, configure a custom model entry with its supported input types.
 
 ```json5
 {

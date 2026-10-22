@@ -82,7 +82,7 @@ vi.mock("../agents/agent-scope.js", () => ({
   resolveAgentWorkspaceDir: mocks.workspace,
 }));
 // mock-isolation: Command fixtures own registry results and never download or install real skills.
-vi.mock("../skills/lifecycle/clawhub.js", () => ({
+vi.mock("../skills/lifecycle/PaleoHub.js", () => ({
   installSkillFromClawHub: mocks.install,
   updateSkillsFromClawHub: mocks.update,
   readTrackedClawHubSkillSlugs: mocks.tracked,

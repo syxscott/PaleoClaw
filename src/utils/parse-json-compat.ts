@@ -9,6 +9,11 @@ type Json5Parser = { parse: (value: string) => unknown };
 let json5Runtime: Json5Parser | undefined;
 declare const SEALED_RUNTIME_BUILD: boolean;
 
+// Resolved through the host installation at runtime, never as a static import:
+// sealed worker artifacts receive the parser through the sealed runtime
+// registry, so the artifact must not depend on a bundled json5 module.
+const JSON5_MODULE_ID = "json5";
+
 function isJson5Parser(value: unknown): value is Json5Parser {
   return (
     typeof value === "object" &&
@@ -42,7 +47,7 @@ function loadJson5Parser(): Json5Parser {
   if (typeof SEALED_RUNTIME_BUILD === "boolean" && SEALED_RUNTIME_BUILD) {
     throw new Error("sealed JSON5 runtime was not registered before use");
   }
-  return setJson5Runtime(createRequire(import.meta.url)("json5"));
+  return setJson5Runtime(createRequire(import.meta.url)(JSON5_MODULE_ID));
 }
 
 /** Parses strict JSON first, then accepts JSON5 syntax such as comments and trailing commas. */

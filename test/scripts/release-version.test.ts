@@ -39,7 +39,7 @@ function writeFixture(): string {
   return root;
 }
 
-const MACOS_INFO = "apps/macos/Sources/paleoclaw/Resources/Info.plist";
+const MACOS_INFO = "apps/macos/Sources/OpenClaw/Resources/Info.plist";
 const ANDROID_NOTES = "apps/android/fastlane/metadata/android/en-US/release_notes.txt";
 const read = (root: string, file: string) => fs.readFileSync(path.join(root, file), "utf8");
 

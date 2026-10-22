@@ -61,14 +61,14 @@ vi.mock("../plugins/install.js", () => ({
 }));
 
 // mock-isolation: package lookup and installation use fixtures instead of the live registry.
-vi.mock("../plugins/clawhub.js", () => ({
+vi.mock("../plugins/PaleoHub.js", () => ({
   CLAWHUB_INSTALL_ERROR_CODE: {
     PACKAGE_NOT_FOUND: "package_not_found",
     VERSION_NOT_FOUND: "version_not_found",
     ARTIFACT_UNAVAILABLE: "artifact_unavailable",
     ARTIFACT_DOWNLOAD_UNAVAILABLE: "artifact_download_unavailable",
   },
-  installPluginFromClawHub: installers.clawhub,
+  installPluginFromClawHub: installers.PaleoHub,
 }));
 
 const enablePluginInConfig = vi.hoisted(() =>
@@ -377,7 +377,7 @@ describe("ensureOnboardingPluginInstalled", () => {
           installOverrides(["demo-plugin", `npm-pack:${path.join(artifactDir, "plugin.tgz")}`]);
           installers.archive.mockImplementationOnce(install);
         } else if (source === "PaleoHub") {
-          installers.clawhub.mockImplementationOnce(install);
+          installers.PaleoHub.mockImplementationOnce(install);
         } else if (source === "npm") {
           installers.npm.mockImplementationOnce(install);
         }
@@ -601,7 +601,7 @@ describe("ensureOnboardingPluginInstalled", () => {
     ).rejects.toThrow("OPENCLAW_NIX_MODE=1");
 
     expect(installers.npm).not.toHaveBeenCalled();
-    expect(installers.clawhub).not.toHaveBeenCalled();
+    expect(installers.PaleoHub).not.toHaveBeenCalled();
     expect(enablePluginInConfig).not.toHaveBeenCalled();
   });
 
@@ -685,19 +685,17 @@ describe("ensureOnboardingPluginInstalled", () => {
 
   it("retries the operator PaleoHub selector when no beta release is published", async () => {
     const spec = "PaleoHub:demo-plugin@latest";
-    installers.clawhub
-      .mockResolvedValueOnce({
-        ok: false,
-        code: "version_not_found",
-        error: "Version not found on PaleoHub: demo-plugin@beta.",
-      })
-      .mockResolvedValue(
-        installedPlugin({
-          version: "2026.5.2",
-          packageName: "demo-plugin",
-          PaleoHub: clawHubRecord(),
-        }),
-      );
+    installers.PaleoHub.mockResolvedValueOnce({
+      ok: false,
+      code: "version_not_found",
+      error: "Version not found on PaleoHub: demo-plugin@beta.",
+    }).mockResolvedValue(
+      installedPlugin({
+        version: "2026.5.2",
+        packageName: "demo-plugin",
+        PaleoHub: clawHubRecord(),
+      }),
+    );
     const note = vi.fn();
 
     await runInstall(
@@ -706,7 +704,7 @@ describe("ensureOnboardingPluginInstalled", () => {
       { cfg: { update: { channel: "beta" } } },
     );
 
-    const calls = installers.clawhub.mock.calls;
+    const calls = installers.PaleoHub.mock.calls;
     expect(calls[0]?.[0]?.spec).toBe("PaleoHub:demo-plugin@beta");
     expect(calls[1]?.[0]?.spec).toBe(spec);
     expect(
@@ -871,7 +869,7 @@ describe("ensureOnboardingPluginInstalled", () => {
       code: "npm_package_not_found",
       error: "npm artifact absent: @paleoclaw/demo-plugin@latest",
     });
-    installers.clawhub.mockResolvedValueOnce(
+    installers.PaleoHub.mockResolvedValueOnce(
       installedPlugin({
         version: installVersion,
         PaleoHub: {
@@ -894,8 +892,8 @@ describe("ensureOnboardingPluginInstalled", () => {
     const npmCalls = installers.npm.mock.calls;
     expect(npmCalls.map(([call]) => call.spec)).toEqual(["@paleoclaw/demo-plugin@latest"]);
     expect(npmCall().expectedPluginId).toBe("demo-plugin");
-    expect(installers.clawhub).toHaveBeenCalledOnce();
-    const [clawhubCall] = firstCall(installers.clawhub);
+    expect(installers.PaleoHub).toHaveBeenCalledOnce();
+    const [clawhubCall] = firstCall(installers.PaleoHub);
     expect(clawhubCall).toMatchObject({
       spec: "PaleoHub:demo-plugin@beta",
       expectedPluginId: "demo-plugin",
@@ -912,7 +910,7 @@ describe("ensureOnboardingPluginInstalled", () => {
     const error = "PaleoHub ClawPack integrity mismatch.";
     const confirm = vi.fn(async () => true);
     const runtimeError = vi.fn();
-    installers.clawhub.mockResolvedValueOnce({
+    installers.PaleoHub.mockResolvedValueOnce({
       ok: false,
       code: "archive_integrity_mismatch",
       error,
@@ -935,7 +933,7 @@ describe("ensureOnboardingPluginInstalled", () => {
   it("returns bounded multiline PaleoHub failure detail to non-interactive callers", async () => {
     const runtimeError = vi.fn();
     const summaryPrefix = "x".repeat(178);
-    installers.clawhub.mockResolvedValueOnce({
+    installers.PaleoHub.mockResolvedValueOnce({
       ok: false,
       code: "archive_integrity_mismatch",
       error: `Install failed: ${summaryPrefix}🚀tail\tvalue[31m\nsecond\tline\n${"y".repeat(20_000)}`,

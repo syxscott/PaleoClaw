@@ -618,7 +618,7 @@ describe("msteams messenger", () => {
       expect(ids).toEqual(["id:hello"]);
       expect(refs).toEqual([
         expect.objectContaining({
-          serviceUrl: "https://smba.trafficmanager.net/amer",
+          serviceUrl: "https://smba.trafficmanager.net/amer/",
           tenantId: "tenant-abc",
           aadObjectId: "aad-user-123",
           conversation: expect.objectContaining({

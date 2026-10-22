@@ -76,7 +76,7 @@ it("leaves a real Responses producer for file teardown", async () => {
       defaults: {
         workspace: import.meta.dirname,
         skipBootstrap: true,
-        model: { primary: "fixture/" + modelId },
+        model: { primary: "fixture" + modelId },
         models: { ["fixture/" + modelId]: { agentRuntime: { id: "paleoclaw" } } },
       },
     },

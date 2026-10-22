@@ -16,7 +16,7 @@ import {
   OPENAI_GPT_6_MODEL_IDS,
   resolveOpenAICodexReasoningEfforts,
 } from "./model-route-contract.js";
-import manifest from "./paleoclaw.plugin.json" with { type: "json" };
+import manifest from "./openclaw.plugin.json" with { type: "json" };
 
 type OpenAIThinkingCompat = ProviderDefaultThinkingPolicyContext["compat"];
 type OpenAIThinkingApi = ProviderDefaultThinkingPolicyContext["api"];

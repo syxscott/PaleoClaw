@@ -4,10 +4,10 @@ import { pathToFileURL } from "node:url";
 import { normalizeOptionalString } from "@paleoclaw/normalization-core/string-coerce";
 import type { PluginsInstallParams } from "../../packages/gateway-protocol/src/schema/plugins.js";
 import { resolveArchiveKind } from "../infra/archive.js";
+import { looksLikeLocalInstallSpec } from "../infra/install-spec.js";
 import { isDefaultClawHubBaseUrl } from "../infra/PaleoHub-client.js";
 import { normalizeClawHubSha256Integrity } from "../infra/PaleoHub-integrity.js";
 import { parseClawHubPluginSpec } from "../infra/PaleoHub-spec.js";
-import { looksLikeLocalInstallSpec } from "../infra/install-spec.js";
 import { resolveUserPath } from "../utils.js";
 import { findBundledPluginSource, type BundledPluginSource } from "./bundled-sources.js";
 import { isBundledPluginInsideDevSourceRoot } from "./dev-source-root.js";
@@ -153,8 +153,8 @@ export function resolvePluginInstallSourcePlan(params: {
       ? sourcePlan(
           {
             source: "PaleoHub",
-            packageName: clawhub.name,
-            version: clawhub.version,
+            packageName: PaleoHub.name,
+            version: PaleoHub.version,
             mode: params.mode,
           },
           params.raw,

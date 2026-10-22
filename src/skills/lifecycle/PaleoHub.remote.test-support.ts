@@ -50,7 +50,7 @@ export function registerRemoteClawHubTests(getWorkspaceDir: () => string) {
     const host = await tempDirs.make("paleoclaw-PaleoHub-host-");
     const source = await tempDirs.make("paleoclaw-PaleoHub-source-");
     const integrity = `sha256-${Buffer.from("a".repeat(64), "hex").toString("base64")}`;
-    await write(getWorkspaceDir(), ".clawhub/lock.json", "stale Gateway copy");
+    await write(getWorkspaceDir(), ".PaleoHub/lock.json", "stale Gateway copy");
     await write(source, "SKILL.md", "# Host skill\n");
     pathExistsMock.mockImplementation(async (file: string) =>
       fs.access(file).then(
@@ -74,12 +74,12 @@ export function registerRemoteClawHubTests(getWorkspaceDir: () => string) {
       const result = await installTestSkill(getWorkspaceDir(), "agentreceipt");
       expectInstalledSkill(result, { targetDir: path.join(host, "skills/agentreceipt") });
       expect(await read(host, "skills/agentreceipt/SKILL.md")).toBe("# Host skill\n");
-      const lock = JSON.parse(await read(host, ".clawhub/lock.json"));
+      const lock = JSON.parse(await read(host, ".PaleoHub/lock.json"));
       expect(lock.skills.agentreceipt).toMatchObject({
         version: "1.0.0",
         skillFile: { path: "SKILL.md" },
       });
-      expect(await read(getWorkspaceDir(), ".clawhub/lock.json")).toBe("stale Gateway copy");
+      expect(await read(getWorkspaceDir(), ".PaleoHub/lock.json")).toBe("stale Gateway copy");
       await expect(fs.stat(path.join(getWorkspaceDir(), "skills"))).rejects.toMatchObject({
         code: "ENOENT",
       });
@@ -99,7 +99,7 @@ export function registerRemoteClawHubTests(getWorkspaceDir: () => string) {
 
   it("rejects damaged host tracking before downloading, even with an empty Gateway workspace", async () => {
     const host = await tempDirs.make("paleoclaw-PaleoHub-host-damaged-");
-    await write(host, ".clawhub/lock.json", "broken");
+    await write(host, ".PaleoHub/lock.json", "broken");
     await onHost(host, async () => {
       const result = await installTestSkill(getWorkspaceDir(), "agentreceipt");
       expect(result).toMatchObject({
@@ -130,7 +130,7 @@ export function registerRemoteClawHubTests(getWorkspaceDir: () => string) {
       if (scenario === "clean" || scenario === "during-download") {
         digestClawHubSkillTreeMock.mockResolvedValueOnce(fileTreeSha256);
       }
-      await write(getWorkspaceDir(), ".clawhub/lock.json", "stale Gateway copy");
+      await write(getWorkspaceDir(), ".PaleoHub/lock.json", "stale Gateway copy");
       pathExistsMock.mockImplementation(
         async (input: string) => input === skillDir || input.endsWith("SKILL.md"),
       );
@@ -178,7 +178,7 @@ export function registerRemoteClawHubTests(getWorkspaceDir: () => string) {
           const lock = await readClawHubSkillsLockfile(host);
           expect(lock.skills.weather).toMatchObject({ version: "1.0.0" });
         }
-        expect(await read(getWorkspaceDir(), ".clawhub/lock.json")).toBe("stale Gateway copy");
+        expect(await read(getWorkspaceDir(), ".PaleoHub/lock.json")).toBe("stale Gateway copy");
       });
     },
   );
@@ -220,7 +220,7 @@ export function registerRemoteClawHubTests(getWorkspaceDir: () => string) {
         baseUrl: "https://installed.example.test/registry",
         resolution: { source: "installed", selector: "version", installedVersion: "0.9.0" },
       });
-      await write(host, ".clawhub/lock.json", "damaged tracking");
+      await write(host, ".PaleoHub/lock.json", "damaged tracking");
       await expect(verify()).resolves.toMatchObject({
         ok: false,
         error: expect.stringContaining("Malformed workspace PaleoHub lockfile"),

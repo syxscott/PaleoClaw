@@ -1,4 +1,4 @@
-import { formatTerminalLink } from "../utils.js";
+import { formatTerminalLink } from "../../packages/terminal-core/src/terminal-link.js";
 
 export const DOCS_ROOT = "https://docs.paleoclaw.ai";
 

@@ -61,11 +61,11 @@ function readStringRecord(value: unknown): Record<string, string> {
 }
 
 function hasPackagePluginMetadata(manifest: Record<string, unknown>): boolean {
-  const paleoclaw = manifest.openclaw;
+  const paleoclaw = manifest.paleoclaw;
   if (!isRecord(paleoclaw)) {
     return false;
   }
-  const extensions = openclaw.extensions;
+  const extensions = paleoclaw.extensions;
   return Array.isArray(extensions) && extensions.some((entry) => typeof entry === "string");
 }
 

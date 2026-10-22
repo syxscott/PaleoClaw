@@ -71,8 +71,8 @@ async function resolvePluginAliases(pluginDir: string, packageJson: Record<strin
 }
 
 function resolveAssetCommand(packageJson: Record<string, unknown>, phase: AssetPhase) {
-  const assetScripts = isRecord(packageJson.openclaw)
-    ? packageJson.openclaw.assetScripts
+  const assetScripts = isRecord(packageJson.paleoclaw)
+    ? packageJson.paleoclaw.assetScripts
     : undefined;
   if (!isRecord(assetScripts)) {
     return null;

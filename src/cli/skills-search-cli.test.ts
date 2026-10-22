@@ -14,7 +14,7 @@ const skill = <T extends object>(fields: T) => ({
 });
 
 vi.mock("../runtime.js", () => ({ defaultRuntime }));
-vi.mock("../skills/lifecycle/clawhub.js", () => ({
+vi.mock("../skills/lifecycle/PaleoHub.js", () => ({
   searchSkillsFromClawHub: searchSkillsFromClawHubMock,
 }));
 

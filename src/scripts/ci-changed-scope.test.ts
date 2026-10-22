@@ -21,7 +21,7 @@ const tempDirs = useAutoCleanupTempDirTracker(afterEach);
 it.each(["pull_request", "push", "schedule", "workflow_dispatch"])(
   "keeps Android capture scope outside ordinary PRs (%s)",
   (workflowEventName) => {
-    const changedPaths = ["apps/android/app/src/main/java/ai/paleoclaw/app/MainActivity.kt"];
+    const changedPaths = ["apps/android/app/src/main/java/ai/openclaw/app/MainActivity.kt"];
     const output = path.join(tempDirs.make("paleoclaw-ci-capture-scope-"), "scope.out");
     writeGitHubOutput(
       detectChangedScope(changedPaths),

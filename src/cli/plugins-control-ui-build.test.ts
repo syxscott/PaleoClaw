@@ -99,7 +99,7 @@ describe("native plugin browser builds", () => {
       const project = await fixture();
       const packagePath = path.join(project.rootDir, "package.json");
       const packageJson = JSON.parse(await fs.readFile(packagePath, "utf8"));
-      packageJson.openclaw = { controlUi: project.source };
+      packageJson.paleoclaw = { controlUi: project.source };
       await fs.writeFile(packagePath, JSON.stringify(packageJson));
       const manifestPath = path.join(project.rootDir, "openclaw.plugin.json");
       const settingsViews =

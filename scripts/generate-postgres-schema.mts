@@ -423,7 +423,10 @@ export async function generatePostgresSchemas(
         : (["state", "agent"] as const).map((store) => ({
             id: store,
             store,
-            sql: fs.readFileSync(path.join(root, `src/state/paleoclaw-${store}-schema.sql`), "utf8"),
+            sql: fs.readFileSync(
+              path.join(root, `src/state/paleoclaw-${store}-schema.sql`),
+              "utf8",
+            ),
           }));
     Object.assign(files, await generateSqliteSchemaCatalogs(inputs, ROOT));
   }

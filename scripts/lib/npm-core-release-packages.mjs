@@ -21,7 +21,7 @@ export function collectPublishableCorePackages(rootDir, root = readManifest(root
       return false;
     }
     const manifest = readManifest(directory);
-    if (!policy.dependency && manifest.openclaw?.release?.publishToNpm !== true) {
+    if (!policy.dependency && manifest.paleoclaw?.release?.publishToNpm !== true) {
       return false;
     }
     if (manifest.name !== policy.name || manifest.version !== root.version) {

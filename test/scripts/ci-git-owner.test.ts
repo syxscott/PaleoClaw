@@ -888,7 +888,7 @@ runpy.run_path(os.environ["BASE_REAL_POLICY_PATH"], run_name="__main__")
               ? "Linux"
               : "macOS",
         GIT_COMMAND_LOG: commandLog,
-        GIT_NO_LAZY_FETCH: "",
+        GIT_NO_LAZY_FETCH: "/",
         BLOCK_DEEPEN: blockDeepen ? "1" : "0",
         DENY_ALL_FETCHES: unavailable ? "1" : "0",
       },

@@ -290,7 +290,7 @@ describe("translation provider privacy and fallback", () => {
     const contextualEntries = entries.slice(0, 2).map((entry) => ({
       id: entry.id,
       source: entry.source,
-      sourcePath: "apps/android/app/src/main/java/ai/paleoclaw/app/ui/CronJobManagementPanel.kt",
+      sourcePath: "apps/android/app/src/main/java/ai/openclaw/app/ui/CronJobManagementPanel.kt",
       sourceContext: "Button(enabled = !runPending) ".repeat(6),
     }));
 

@@ -67,10 +67,3 @@ export function resolveEffectiveToolFsRootExpansionAllowed(params: {
   const agentPolicy = pickSandboxToolPolicy(agentTools);
   return isToolAllowedByPolicies("read", [profilePolicy, globalPolicy, agentPolicy]);
 }
-
-// --- PaleoClaw 兼容层：createToolFsPolicy（pc 3 月 API，上游 10 月已改名）---
-export function createToolFsPolicy(params: { workspaceOnly?: boolean }): ToolFsPolicy {
-  return {
-    workspaceOnly: params.workspaceOnly === true,
-  };
-}

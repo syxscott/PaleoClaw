@@ -2220,7 +2220,9 @@ describe("CI timing sampler provenance", () => {
         releaseRuns: release ? samplerRuns([10, 11], { event: "workflow_dispatch" }) : [],
       });
       reject(fixture, "newly eligible compact measurement", false);
-      expect(fixture.requestUrls().some((url) => url.includes("/workflows/paleoclaw-"))).toBe(false);
+      expect(fixture.requestUrls().some((url) => url.includes("/workflows/paleoclaw-"))).toBe(
+        false,
+      );
     },
   );
 

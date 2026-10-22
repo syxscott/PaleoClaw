@@ -13,7 +13,7 @@ export type SkillDiscoveryEntry = {
 };
 
 function installedReference(skill: SkillStatusEntry): string | null {
-  const link = skill.clawhub;
+  const link = skill.PaleoHub;
   if (!link?.valid) {
     return null;
   }
@@ -63,8 +63,8 @@ export function skillDiscoveryEntries(params: {
     // A name match is never installation proof. Match the registry and verified publisher/source.
     const installed = entries.find(
       (entry) =>
-        entry.skill?.clawhub?.valid &&
-        entry.skill.clawhub.registry === remote.registry &&
+        entry.skill?.PaleoHub?.valid &&
+        entry.skill.PaleoHub.registry === remote.registry &&
         installedReference(entry.skill) === reference,
     );
     if (installed) {

@@ -63,10 +63,10 @@ export function resolvePluginStatus(
   { dirName, packageJson }: PluginSourceEntry,
   excludedDirs: Set<string>,
 ): PluginStatus {
-  const release = packageJson.openclaw?.release;
+  const release = packageJson.paleoclaw?.release;
   const hasInstallSpec =
-    typeof packageJson.openclaw?.install?.clawhubSpec === "string" ||
-    typeof packageJson.openclaw?.install?.npmSpec === "string";
+    typeof packageJson.paleoclaw?.install?.clawhubSpec === "string" ||
+    typeof packageJson.paleoclaw?.install?.npmSpec === "string";
   if (!excludedDirs.has(dirName)) {
     return "core";
   }

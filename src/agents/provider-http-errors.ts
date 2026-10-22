@@ -511,7 +511,7 @@ export function assertProviderBinaryResponseContent(
     !contentType ||
     contentType === "application/json" ||
     contentType.endsWith("+json") ||
-    contentType.startsWith("text/") ||
+    contentType.startsWith("text") ||
     (requiresMediaFamily &&
       (!providerMediaContentTypePattern.test(rawContentType.trim()) ||
         (!unspecifiedMedia && mediaKindFromMime(contentType) !== kind)))

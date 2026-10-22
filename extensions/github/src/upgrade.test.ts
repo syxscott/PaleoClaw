@@ -4,7 +4,7 @@ import {
 } from "paleoclaw/plugin-sdk/plugin-config-runtime";
 import type { OpenClawConfig } from "paleoclaw/plugin-sdk/runtime-config-snapshot";
 import { describe, expect, it } from "vitest";
-import githubManifest from "../paleoclaw.plugin.json" with { type: "json" };
+import githubManifest from "../openclaw.plugin.json" with { type: "json" };
 import { collectGitHubUpgradeWarnings } from "./upgrade.js";
 
 function evaluate(config: OpenClawConfig) {

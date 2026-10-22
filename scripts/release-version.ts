@@ -13,7 +13,7 @@ import { booleanFlag, parseFlagArgs } from "./lib/arg-utils.mts";
 import { parseReleaseVersion } from "./lib/release-version.mjs";
 import { versionValueFlag } from "./lib/version-script-args.ts";
 
-const MACOS_INFO_PLIST = "apps/macos/Sources/paleoclaw/Resources/Info.plist";
+const MACOS_INFO_PLIST = "apps/macos/Sources/OpenClaw/Resources/Info.plist";
 const ANDROID_CHANGELOG_FILE = "apps/android/CHANGELOG.md";
 const ANDROID_RELEASE_NOTES_FILE = "apps/android/fastlane/metadata/android/en-US/release_notes.txt";
 const ANDROID_VERSION_FILE = "apps/android/version.json";

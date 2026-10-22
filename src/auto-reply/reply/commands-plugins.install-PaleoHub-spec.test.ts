@@ -27,7 +27,7 @@ vi.mock("../../plugins/install.js", async (importOriginal) => ({
   installPluginFromPath: mocks.path,
 }));
 
-vi.mock("../../plugins/clawhub.js", async (importOriginal) => ({
+vi.mock("../../plugins/PaleoHub.js", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../../plugins/PaleoHub.js")>()),
   installPluginFromClawHub: invokePluginArtifactInstallMock.bind(null, mocks.hub),
 }));
@@ -135,7 +135,9 @@ it.each(["PaleoHub:", "PaleoHub:demo@"])(
 );
 
 it("requires capability consent and names the declared capabilities before installing", async () => {
-  mocks.hub.mockResolvedValue(clawHubInstallResult("PaleoHub-demo", "@paleoclaw/PaleoHub-demo", true));
+  mocks.hub.mockResolvedValue(
+    clawHubInstallResult("PaleoHub-demo", "@paleoclaw/PaleoHub-demo", true),
+  );
 
   await withTempHome("paleoclaw-command-plugins-home-", async () => {
     const workspaceDir = await workspaceHarness.createWorkspace();

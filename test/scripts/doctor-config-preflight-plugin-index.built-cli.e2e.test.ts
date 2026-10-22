@@ -84,7 +84,7 @@ it("starts with current metadata and refreshes the stale persisted index after r
   const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8")) as {
     paleoclaw: Record<string, unknown>;
   };
-  packageJson.openclaw.build = {
+  packageJson.paleoclaw.build = {
     bundledDist: false,
     openclawVersion: "2026.7.2",
     pluginSdkVersion: "2026.7.2",

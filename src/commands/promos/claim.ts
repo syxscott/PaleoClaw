@@ -119,7 +119,7 @@ function resolveCatalogPluginPackageNames(entry: ProviderInstallCatalogEntry): s
     entry.installSource?.npm?.expectedPackageName ?? entry.installSource?.npm?.packageName;
   return [
     ...new Set(
-      [npmPackage, entry.installSource?.clawhub?.packageName].filter((name): name is string =>
+      [npmPackage, entry.installSource?.PaleoHub?.packageName].filter((name): name is string =>
         Boolean(name),
       ),
     ),

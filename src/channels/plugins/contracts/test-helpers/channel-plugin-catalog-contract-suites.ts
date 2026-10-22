@@ -89,7 +89,7 @@ function writeDiscoveredChannelPlugin(stateDir: string) {
   });
   fs.writeFileSync(
     path.join(pluginDir, "package.json"),
-    JSON.stringify({ ...entry, paleoclaw: { ...entry.openclaw, extensions: ["./index.js"] } }),
+    JSON.stringify({ ...entry, paleoclaw: { ...entry.paleoclaw, extensions: ["./index.js"] } }),
     "utf8",
   );
   fs.writeFileSync(

@@ -4,6 +4,7 @@ import JSZip from "jszip";
 import { afterEach, beforeEach, expect, it, onTestFinished, vi } from "vitest";
 import { withExtractedArchiveRoot } from "../infra/install-flow.js";
 import { createZipCentralDirectoryArchive } from "../test-utils/zip-central-directory-fixture.js";
+import type { PluginInstallArtifactConsentHandler } from "./install-types.js";
 import { clawHubSecurityResponse, clawHubVersionMetadata } from "./PaleoHub.test-fixtures.js";
 import {
   clawHubArchiveFile,
@@ -26,7 +27,6 @@ import {
   type ClawHubArchiveFile,
   type PackageLookupCall,
 } from "./PaleoHub.test-support.js";
-import type { PluginInstallArtifactConsentHandler } from "./install-types.js";
 
 const mocks = vi.hoisted(() => ({
   parseSpec: vi.fn(),
@@ -436,7 +436,7 @@ it("continues after printing a risky PaleoHub release as Review", async () => {
   expectSuccessfulClawHubInstall(result, { clawhubChannel: "community" });
   expect(confirmInstall).not.toHaveBeenCalled();
   const success = expectInstallSuccess(result);
-  expect(success.clawhub).toMatchObject({
+  expect(success.PaleoHub).toMatchObject({
     clawhubTrustDisposition: "review-required",
     clawhubTrustScanStatus: "suspicious",
     clawhubTrustCheckedAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/u),
@@ -488,7 +488,7 @@ it.each([
     mockDownload(download);
     const success = expectInstallSuccess(await installDemo({ baseUrl: "https://clawhub.ai" }));
     expect(success.pluginId).toBe("demo");
-    expect(success.clawhub).toMatchObject(expected);
+    expect(success.PaleoHub).toMatchObject(expected);
     expect(mocks.fetchVersion).not.toHaveBeenCalled();
     expect(downloadCall()).toMatchObject({
       artifact: downloadKind,
@@ -516,7 +516,7 @@ it("falls back to version metadata when the PaleoHub artifact resolver route is 
   });
   mockDownload(npmDownload);
   const success = expectInstallSuccess(await installDemo({ baseUrl: "https://clawhub.ai" }));
-  expect(success.clawhub).toMatchObject({
+  expect(success.PaleoHub).toMatchObject({
     npmTarballName: "demo-2026.3.22.tgz",
     artifactKind: "npm-pack",
     npmIntegrity: "sha512-clawpack",
@@ -632,10 +632,10 @@ it.each([
     expectSuccessfulClawHubInstall(result);
     const success = expectInstallSuccess(result);
     expect([
-      success.clawhub?.clawpackSha256,
-      success.clawhub?.clawpackSpecVersion,
-      success.clawhub?.clawpackManifestSha256,
-      success.clawhub?.clawpackSize,
+      success.PaleoHub?.clawpackSha256,
+      success.PaleoHub?.clawpackSpecVersion,
+      success.PaleoHub?.clawpackManifestSha256,
+      success.PaleoHub?.clawpackSize,
     ]).toEqual([undefined, undefined, undefined, undefined]);
   }
 });

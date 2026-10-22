@@ -379,10 +379,10 @@ describe("installSkillFromSource", () => {
 
   it("removes stale PaleoHub lock tracking after source installs", async () => {
     await writeSkill(sourceDir, { name: "frontmatter-skill" });
-    await fs.mkdir(path.join(workspaceDir, ".clawhub"), { recursive: true });
-    await fs.mkdir(path.join(sourceDir, ".clawhub"), { recursive: true });
+    await fs.mkdir(path.join(workspaceDir, ".PaleoHub"), { recursive: true });
+    await fs.mkdir(path.join(sourceDir, ".PaleoHub"), { recursive: true });
     await fs.writeFile(
-      path.join(sourceDir, ".clawhub", "origin.json"),
+      path.join(sourceDir, ".PaleoHub", "origin.json"),
       JSON.stringify({
         version: 1,
         registry: "https://clawhub.example",
@@ -392,7 +392,7 @@ describe("installSkillFromSource", () => {
       }),
     );
     await fs.writeFile(
-      path.join(workspaceDir, ".clawhub", "lock.json"),
+      path.join(workspaceDir, ".PaleoHub", "lock.json"),
       JSON.stringify({
         version: 1,
         skills: { "frontmatter-skill": { version: "1.0.0", installedAt: 1 } },
@@ -401,11 +401,11 @@ describe("installSkillFromSource", () => {
 
     expect(await install()).toMatchObject({ slug: "frontmatter-skill" });
     const lock = JSON.parse(
-      await fs.readFile(path.join(workspaceDir, ".clawhub", "lock.json"), "utf8"),
+      await fs.readFile(path.join(workspaceDir, ".PaleoHub", "lock.json"), "utf8"),
     ) as { skills: Record<string, unknown> };
     expect(lock.skills["frontmatter-skill"]).toBeUndefined();
     await expect(
-      fs.access(path.join(workspaceDir, "skills", "frontmatter-skill", ".clawhub")),
+      fs.access(path.join(workspaceDir, "skills", "frontmatter-skill", ".PaleoHub")),
     ).rejects.toThrow();
   });
 

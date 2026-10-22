@@ -99,29 +99,29 @@ export function collectPluginNpmPublishedRuntimeErrors(params: {
   readme?: string;
 }) {
   const packageJson = params.packageJson ?? {};
-  const paleoclaw = isRecord(packageJson.openclaw) ? packageJson.openclaw : {};
+  const paleoclaw = isRecord(packageJson.paleoclaw) ? packageJson.paleoclaw : {};
   const packageFiles = new Set([...params.files].map(normalizePackagePath));
   const packageLabel = formatPackageLabel(packageJson, params.spec);
   const errors: string[] = [];
   const extensionsResult = readPackageStringList(
     packageLabel,
     "openclaw.extensions",
-    openclaw.extensions,
+    paleoclaw.extensions,
   );
   const runtimeExtensionsResult = readPackageStringList(
     packageLabel,
     "openclaw.runtimeExtensions",
-    openclaw.runtimeExtensions,
+    paleoclaw.runtimeExtensions,
   );
   const setupEntryResult = readOptionalPackageString(
     packageLabel,
     "openclaw.setupEntry",
-    openclaw.setupEntry,
+    paleoclaw.setupEntry,
   );
   const runtimeSetupEntryResult = readOptionalPackageString(
     packageLabel,
     "openclaw.runtimeSetupEntry",
-    openclaw.runtimeSetupEntry,
+    paleoclaw.runtimeSetupEntry,
   );
   errors.push(
     ...extensionsResult.errors,

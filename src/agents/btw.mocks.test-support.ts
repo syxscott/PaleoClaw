@@ -222,7 +222,7 @@ vi.mock("./harness/runtime-plugin.js", () => ({
 
 // Selection and host-capability owner suites execute the embedded runner and capability surface.
 // BTW only needs their identities while it verifies side-question orchestration.
-vi.mock("./harness/builtin-openclaw.js", () => ({
+vi.mock("./harness/builtin-paleoclaw.js", () => ({
   createOpenClawAgentHarness: (): AgentHarness => {
     const harness: AgentHarness = {
       id: "paleoclaw",

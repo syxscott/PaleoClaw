@@ -342,7 +342,7 @@ describe("release Telegram candidate archive guard", () => {
       expect(listing.status, listing.stderr).toBe(0);
       expect(listing.stdout.trim().split("\n")).toEqual([
         "manifest.json",
-        "candidate/",
+        "candidate",
         "candidate/app/",
         "candidate/app/child",
         "candidate/app-routes.ts",

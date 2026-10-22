@@ -41,3 +41,97 @@ Own local tooling, script wrappers, generated-artifact helper rules.
 - Fs-safe dependency trouble: follow [on-demand vendoring instructions](vendor-fs-safe.md); vendor contents local, registry dependencies default.
 - Trusted normal checkout missing dependencies: `pnpm install --frozen-lockfile`, retry once before diagnosing code defect.
 - Formatting: `pnpm format` defaults locally to the pinned Bun fork, with an oxfmt fallback; `OPENCLAW_FORMAT_TOOL=oxfmt` forces oxfmt. CI checks oxfmt/Bun parity. Generated-artifact gates retain oxfmt; see [caller inventory](README.md#formatting-and-lint-selection). Typechecking: repository `tsgo` lanes. Scope: `pnpm changed:lanes --json`; targeted tests/checks. Avoiding worktree reconciliation: `node scripts/run-vitest.mjs` with ready dependencies.
+
+---
+
+# Operational Runbooks
+
+## exe.dev VM ops (general)
+
+- Access: stable path is `ssh exe.dev` then `ssh vm-name` (assume SSH key already set).
+- SSH flaky: use exe.dev web terminal or Shelley (web agent); keep a tmux session for long ops.
+- Update: `sudo npm i -g paleoclaw@latest` (global install needs root on `/usr/lib/node_modules`).
+- Config: use `paleoclaw config set ...`; ensure `gateway.mode=local` is set.
+- Discord: store raw token only (no `DISCORD_BOT_TOKEN=` prefix).
+- Restart: stop old gateway and run:
+  `pkill -9 -f paleoclaw-gateway || true; nohup paleoclaw gateway run --bind loopback --port 18789 --force > /tmp/paleoclaw-gateway.log 2>&1 &`
+- Verify: `paleoclaw channels status --probe`, `ss -ltnp | rg 18789`, `tail -n 120 /tmp/paleoclaw-gateway.log`.
+
+## Shorthand Commands
+
+- `sync`: if working tree is dirty, commit all changes (pick a sensible Conventional Commit message), then `git pull --rebase`; if rebase conflicts and cannot resolve, stop; otherwise `git push`.
+
+## Git Notes
+
+- If `git branch -d/-D <branch>` is policy-blocked, delete the local ref directly: `git update-ref -d refs/heads/<branch>`.
+- Bulk PR close/reopen safety: if a close action would affect more than 5 PRs, first ask for explicit user confirmation with the exact PR count and target scope/query.
+
+## GitHub Search (`gh`)
+
+- Prefer targeted keyword search before proposing new work or duplicating fixes.
+- Use `--repo paleoclaw/paleoclaw` + `--match title,body` first; add `--match comments` when triaging follow-up threads.
+- PRs: `gh search prs --repo paleoclaw/paleoclaw --match title,body --limit 50 -- "auto-update"`
+- Issues: `gh search issues --repo paleoclaw/paleoclaw --match title,body --limit 50 -- "auto-update"`
+- Structured output example:
+  `gh search issues --repo paleoclaw/paleoclaw --match title,body --limit 50 --json number,title,state,url,updatedAt -- "auto update" --jq '.[] | "\(.number) | \(.state) | \(.title) | \(.url)"'`
+
+## GHSA (Repo Advisory) Patch/Publish
+
+- Before reviewing security advisories, read `SECURITY.md`.
+- Fetch: `gh api /repos/paleoclaw/paleoclaw/security-advisories/<GHSA>`
+- Latest npm: `npm view paleoclaw version --userconfig "$(mktemp)"`
+- Private fork PRs must be closed:
+  `fork=$(gh api /repos/paleoclaw/paleoclaw/security-advisories/<GHSA> | jq -r .private_fork.full_name)`
+  `gh pr list -R "$fork" --state open` (must be empty)
+- Description newline footgun: write Markdown via heredoc to `/tmp/ghsa.desc.md` (no `"\\n"` strings)
+- Build patch JSON via jq: `jq -n --rawfile desc /tmp/ghsa.desc.md '{summary,severity,description:$desc,vulnerabilities:[...]}' > /tmp/ghsa.patch.json`
+- GHSA API footgun: cannot set `severity` and `cvss_vector_string` in the same PATCH; do separate calls.
+- Patch + publish: `gh api -X PATCH /repos/paleoclaw/paleoclaw/security-advisories/<GHSA> --input /tmp/ghsa.patch.json` (publish = include `"state":"published"`; no `/publish` endpoint)
+- If publish fails (HTTP 422): missing `severity`/`description`/`vulnerabilities[]`, or private fork has open PRs
+- Verify: re-fetch; ensure `state=published`, `published_at` set; `jq -r .description | rg '\\\\n'` returns nothing
+
+## NPM + 1Password (publish/verify)
+
+- Use the 1password skill; all `op` commands must run inside a fresh tmux session.
+- Correct 1Password path for npm release auth: `op://Private/Npmjs` (use that item; OTP stays `op://Private/Npmjs/one-time password?attribute=otp`).
+- Sign in: `eval "$(op signin --account my.1password.com)"` (app unlocked + integration on).
+- OTP: `op read 'op://Private/Npmjs/one-time password?attribute=otp'`.
+- Publish: `npm publish --access public --otp="<otp>"` (run from the package dir).
+- Verify without local npmrc side effects: `npm view <pkg> version --userconfig "$(mktemp)"`.
+- Kill the tmux session after publish.
+
+## Plugin Release Fast Path (no core `paleoclaw` publish)
+
+- Release only already-on-npm plugins. Source list is in `docs/reference/RELEASING.md` under "Current npm plugin list".
+- Run all CLI `op` calls and `npm publish` inside tmux to avoid hangs/interruption:
+  - `tmux new -d -s release-plugins-$(date +%Y%m%d-%H%M%S)`
+  - `eval "$(op signin --account my.1password.com)"`
+- 1Password helpers:
+  - password used by `npm login`:
+    `op item get Npmjs --format=json | jq -r '.fields[] | select(.id=="password").value'`
+  - OTP:
+    `op read 'op://Private/Npmjs/one-time password?attribute=otp'`
+- Fast publish loop (local helper script in `/tmp` is fine; keep repo clean):
+  - compare local plugin `version` to `npm view <name> version`
+  - only run `npm publish --access public --otp="<otp>"` when versions differ
+  - skip if package is missing on npm or version already matches.
+- Keep `paleoclaw` untouched: never run publish from repo root unless explicitly requested.
+- Post-check for each release:
+  - per-plugin: `npm view @paleoclaw/<name> version --userconfig "$(mktemp)"` should be `2026.2.17`
+  - core guard: `npm view paleoclaw version --userconfig "$(mktemp)"` should stay at previous version unless explicitly requested.
+
+## Changelog Release Notes
+
+- When cutting a mac release with beta GitHub prerelease:
+  - Tag `vYYYY.M.D-beta.N` from the release commit (example: `v2026.2.15-beta.1`).
+  - Create prerelease with title `paleoclaw YYYY.M.D-beta.N`.
+  - Use release notes from `CHANGELOG.md` version section (`Changes` + `Fixes`, no title duplicate).
+  - Attach at least `paleoclaw-YYYY.M.D.zip` and `paleoclaw-YYYY.M.D.dSYM.zip`; include `.dmg` if available.
+
+- Keep top version entries in `CHANGELOG.md` sorted by impact:
+  - `### Changes` first.
+  - `### Fixes` deduped and ranked with user-facing fixes first.
+- Before tagging/publishing, run:
+  - `node --import tsx scripts/release-check.ts`
+  - `pnpm release:check`
+  - `pnpm test:install:smoke` or `OPENCLAW_INSTALL_SMOKE_SKIP_NONROOT=1 pnpm test:install:smoke` for non-root smoke path.

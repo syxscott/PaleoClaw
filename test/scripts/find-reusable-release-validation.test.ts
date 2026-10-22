@@ -175,9 +175,9 @@ function createRepo(
     join(origin, "package.json"),
     `${JSON.stringify({ name: "x", version: options.version ?? "2026.7.1" }, null, 2)}\n`,
   );
-  mkdirSync(join(origin, "apps/macos/Sources/paleoclaw/Resources"), { recursive: true });
+  mkdirSync(join(origin, "apps/macos/Sources/OpenClaw/Resources"), { recursive: true });
   writeFileSync(
-    join(origin, "apps/macos/Sources/paleoclaw/Resources/Info.plist"),
+    join(origin, "apps/macos/Sources/OpenClaw/Resources/Info.plist"),
     plistFor("2026.7.1", options.plistBuildVersion ?? "2026070100"),
   );
   mkdirSync(join(origin, "docs/install"), { recursive: true });

@@ -154,7 +154,7 @@ function classifyProcessArtifactCustody(
           unknown ??= String(error);
           continue;
         }
-      } else if (!path.isAbsolute(value) && !value.startsWith("./") && !value.startsWith("../")) {
+      } else if (!path.isAbsolute(value) && !value.startsWith("./") && !value.startsWith("..")) {
         unknown ??= "runtime module package identity is unavailable";
         continue;
       }
@@ -385,7 +385,10 @@ export function inspectOtherOpenClawProcesses(references?: HandoffReferences | s
           serviceMarker: command && "argv" in command ? command.serviceMarker : undefined,
           additionalEntrypoints: workerEntrypoints,
         });
-        if (texts.some((value) => matches.test(normalize(value))) || identity.kind === "paleoclaw") {
+        if (
+          texts.some((value) => matches.test(normalize(value))) ||
+          identity.kind === "paleoclaw"
+        ) {
           result.matchingPids.push(pid);
           continue;
         }

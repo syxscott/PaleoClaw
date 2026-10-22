@@ -220,7 +220,7 @@ function findPublishablePlugin(repoRoot, packageName) {
     );
   }
   const match = matches[0];
-  if (match.packageJson.openclaw?.release?.publishToNpm !== true) {
+  if (match.packageJson.paleoclaw?.release?.publishToNpm !== true) {
     throw new Error(`${packageName} is not marked openclaw.release.publishToNpm`);
   }
   return match;

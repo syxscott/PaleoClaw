@@ -1,6 +1,6 @@
 import { defineSingleProviderPluginEntry } from "paleoclaw/plugin-sdk/provider-entry";
 import { applySyntheticConnectionConfig, SYNTHETIC_DEFAULT_MODEL_REF } from "./onboard.js";
-import manifest from "./paleoclaw.plugin.json" with { type: "json" };
+import manifest from "./openclaw.plugin.json" with { type: "json" };
 import { buildSyntheticProvider, SYNTHETIC_MODEL_DISCOVERY } from "./provider-catalog.js";
 
 const PROVIDER_ID = "synthetic";

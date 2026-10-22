@@ -1,6 +1,6 @@
 import { buildManifestModelProviderConfig } from "paleoclaw/plugin-sdk/provider-catalog-shared";
 import type { ModelProviderConfig } from "paleoclaw/plugin-sdk/provider-model-shared";
-import manifest from "./paleoclaw.plugin.json" with { type: "json" };
+import manifest from "./openclaw.plugin.json" with { type: "json" };
 
 const KIMI_PROVIDER_ID = "kimi";
 const KIMI_CODING_CATALOG = manifest.modelCatalog.providers.kimi;

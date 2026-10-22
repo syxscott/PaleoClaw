@@ -330,7 +330,7 @@ describe.skipIf(process.platform === "win32")("native test launch ownership", ()
         .replace("const eventReport = ", "let eventReport = ")
         .replace(
           "if (eventReport !== null)",
-          "eventReport = eventReport?.replaceAll('fixture/function', 'fixture/' + args[args.indexOf('--filter') + 1]); if (eventReport !== null)",
+          "eventReport = eventReport?.replaceAll('fixture/function', 'fixture' + args[args.indexOf('--filter') + 1]); if (eventReport !== null)",
         );
       fs.writeFileSync(path.join(contents, "MacOS/OpenClawRecoveryTestHost"), helper, {
         mode: 0o755,

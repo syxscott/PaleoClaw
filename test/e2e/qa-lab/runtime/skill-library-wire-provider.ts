@@ -54,7 +54,7 @@ export function executableSkillLibraryBundle(
           '  reference: fs.readFileSync(new URL("../references/value.txt", import.meta.url), "utf8"),',
           '  binary: fs.readFileSync(new URL("../references/binary.dat", import.meta.url)).toString("hex"),',
           "  executable: (fs.statSync(fileURLToPath(import.meta.url)).mode & 0o111) !== 0,",
-          '  directory: fs.realpathSync(fileURLToPath(new URL("../", import.meta.url))),',
+          '  directory: fs.realpathSync(fileURLToPath(new URL("..", import.meta.url))),',
           '  helper: "bundled-helper-v1"',
           "}));",
           "",

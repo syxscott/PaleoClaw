@@ -45,7 +45,7 @@ describe("Tlon citation scry path composition", () => {
   });
 
   it.each([
-    ["raw traversal", `${"../".repeat(7)}storage/credentials`],
+    ["raw traversal", `${"..".repeat(7)}storage/credentials`],
     ["single dot segment", "."],
   ])("makes no authenticated request for a %s post identifier", async (_label, postId) => {
     const { scry, resolveAllCites } = makeResolver();

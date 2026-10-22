@@ -114,7 +114,10 @@ it.each<[string, AdmissionCase]>([
   ["Missing config", { config: "absent" }],
   ["Missing config", { config: "absent", consolidated: true }],
   ["Configured plugin load path is unavailable", { consolidated: true, unavailablePlugin: true }],
-  ["paleoclaw config is invalid", { consolidated: true, unavailablePlugin: true, repairable: true }],
+  [
+    "paleoclaw config is invalid",
+    { consolidated: true, unavailablePlugin: true, repairable: true },
+  ],
   ["Legacy client credentials require migration", { identityFile: "device.json" }],
   ["__CANONICAL_IDENTITY_READY__", { identityFile: "device.json", canonicalIdentity: true }],
 ])(

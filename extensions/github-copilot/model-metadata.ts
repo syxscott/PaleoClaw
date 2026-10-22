@@ -2,7 +2,7 @@ import { supportsClaudeAdaptiveThinking } from "paleoclaw/plugin-sdk/claude-mode
 import { buildManifestModelProviderConfig } from "paleoclaw/plugin-sdk/provider-model-metadata";
 import type { ModelDefinitionConfig } from "paleoclaw/plugin-sdk/provider-model-shared";
 import { normalizeOptionalLowercaseString } from "paleoclaw/plugin-sdk/string-coerce-runtime";
-import manifest from "./paleoclaw.plugin.json" with { type: "json" };
+import manifest from "./openclaw.plugin.json" with { type: "json" };
 
 type CopilotRuntimeApi = "anthropic-messages" | "openai-completions" | "openai-responses";
 type CopilotReasoningCompat = {

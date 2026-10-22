@@ -37,10 +37,16 @@ export type { PluginCategorySlug, PluginCategoriesValidationResult } from "./cat
 /** Read paleoclaw package.json blocks without trusting caller input shape. */
 function readOpenClawBlock(packageJson: unknown) {
   const root = isRecord(packageJson) ? packageJson : undefined;
-  const paleoclaw = isRecord(root?.openclaw) ? root.openclaw : undefined;
-  const compat = isRecord(paleoclaw?.compat) ? openclaw.compat : undefined;
-  const build = isRecord(paleoclaw?.build) ? openclaw.build : undefined;
-  const install = isRecord(paleoclaw?.install) ? openclaw.install : undefined;
+  // New packages key the manifest block under "paleoclaw"; packages published
+  // before the rebrand still use "openclaw", so fall back to it.
+  const paleoclaw = isRecord(root?.paleoclaw)
+    ? root.paleoclaw
+    : isRecord(root?.openclaw)
+      ? root.openclaw
+      : undefined;
+  const compat = isRecord(paleoclaw?.compat) ? paleoclaw.compat : undefined;
+  const build = isRecord(paleoclaw?.build) ? paleoclaw.build : undefined;
+  const install = isRecord(paleoclaw?.install) ? paleoclaw.install : undefined;
   return { root, paleoclaw, compat, build, install };
 }
 

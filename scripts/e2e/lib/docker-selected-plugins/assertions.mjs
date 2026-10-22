@@ -63,12 +63,12 @@ for (const [pluginId, expected] of Object.entries(selected)) {
   const packageJson = readJson(path.join(pluginRoot, "package.json"));
   assert(manifest.id === pluginId, `unexpected ${pluginId} manifest id: ${manifest.id}`);
   assert(
-    packageJson.openclaw?.extensions?.includes("./index.js"),
+    packageJson.paleoclaw?.extensions?.includes("./index.js"),
     `${pluginId} package entry was not rewritten to ./index.js`,
   );
   if (expected.entries.includes("setup-entry.js")) {
     assert(
-      packageJson.openclaw?.setupEntry === "./setup-entry.js",
+      packageJson.paleoclaw?.setupEntry === "./setup-entry.js",
       `${pluginId} setup entry was not rewritten to ./setup-entry.js`,
     );
   }
@@ -88,7 +88,7 @@ for (const [pluginId, expected] of Object.entries(selected)) {
 for (const pluginId of ["clickclack", "slack", "whatsapp"]) {
   const packageJson = readJson(`/app/dist/extensions/${pluginId}/package.json`);
   assert(
-    packageJson.openclaw?.build?.bundledDist === false,
+    packageJson.paleoclaw?.build?.bundledDist === false,
     `${pluginId} bundledDist release metadata changed`,
   );
 }

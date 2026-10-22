@@ -506,7 +506,8 @@ export function classifyPullRequestCandidateLabels(pullRequest, files) {
 
   const addsPluginManifest = files.some(
     (file) =>
-      file.status === "added" && /^extensions\/[^/]+\/paleoclaw\.plugin\.json$/i.test(file.filename),
+      file.status === "added" &&
+      /^extensions\/[^/]+\/paleoclaw\.plugin\.json$/i.test(file.filename),
   );
   if (
     !clearDesignContext &&

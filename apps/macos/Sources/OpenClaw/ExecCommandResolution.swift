@@ -130,7 +130,7 @@ struct ExecCommandResolution: Sendable {
         guard !trimmed.isEmpty else { return nil }
 
         var segments: [String] = []
-        var current = ""
+        var current = "/"
         var inSingle = false
         var inDouble = false
         var escaped = false

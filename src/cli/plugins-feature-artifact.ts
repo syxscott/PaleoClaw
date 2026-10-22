@@ -30,7 +30,7 @@ async function packFeaturePlugin(opts: PluginsPackOptions) {
   }
   const source = await root(rootDir, { symlinks: "reject", hardlinks: "reject" });
   const packageManifest = await source.readJson("package.json");
-  if (!isRecord(packageManifest) || !isRecord(packageManifest.openclaw)) {
+  if (!isRecord(packageManifest) || !isRecord(packageManifest.paleoclaw)) {
     throw new Error("Plugin package metadata is missing. Run paleoclaw plugins build.");
   }
   const extensions = resolvePackageExtensionEntries(packageManifest);
@@ -88,7 +88,7 @@ async function packFeaturePlugin(opts: PluginsPackOptions) {
       runtimeExtensions: _runtime,
       runtimeSetupEntry: _runtimeSetup,
       ...openclaw
-    } = packageManifest.openclaw;
+    } = packageManifest.paleoclaw;
     // Only runtime package metadata travels with the archive. Build-time dependencies
     // and scripts cannot trigger additional executable downloads after approval.
     const packedPackage = {

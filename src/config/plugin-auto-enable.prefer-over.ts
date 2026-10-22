@@ -42,7 +42,7 @@ function resolveExternalCatalogPreferOver(channelId: string, env: NodeJS.Process
         throw payload.error;
       }
       for (const entry of parseExternalPluginCatalogEntries(payload.value)) {
-        const channel = isRecord(entry.openclaw) ? entry.openclaw.channel : undefined;
+        const channel = isRecord(entry.paleoclaw) ? entry.paleoclaw.channel : undefined;
         if (!isRecord(channel) || normalizeOptionalString(channel.id) !== channelId) {
           continue;
         }

@@ -1,5 +1,6 @@
-import { createHash, randomUUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import { enqueueKeyedTask } from "paleoclaw/plugin-sdk/keyed-async-queue";
+import { sha256Hex } from "paleoclaw/plugin-sdk/node-crypto-runtime";
 import type { PluginStateKeyedStore } from "paleoclaw/plugin-sdk/plugin-state-runtime";
 import { createSubsystemLogger } from "paleoclaw/plugin-sdk/runtime-env";
 import type { PluginRuntime } from "paleoclaw/plugin-sdk/runtime-store";
@@ -111,11 +112,9 @@ export type BrowserDashboardStopIntent = z.infer<typeof browserDashboardStopInte
 function browserDashboardStopIntentKey(
   identity: Pick<BrowserDashboardIdentity, "sessionKey" | "agentId" | "instanceId" | "name">,
 ): string {
-  return `dashboard-stop:${createHash("sha256")
-    .update(
-      JSON.stringify([identity.sessionKey, identity.agentId, identity.instanceId, identity.name]),
-    )
-    .digest("hex")}`;
+  return `dashboard-stop:${sha256Hex(
+    JSON.stringify([identity.sessionKey, identity.agentId, identity.instanceId, identity.name]),
+  )}`;
 }
 
 export function parseBrowserDashboardStopIntent(

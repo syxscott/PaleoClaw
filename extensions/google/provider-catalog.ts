@@ -3,7 +3,7 @@ import type {
   ModelDefinitionConfig,
   ModelProviderConfig,
 } from "paleoclaw/plugin-sdk/provider-model-shared";
-import manifest from "./paleoclaw.plugin.json" with { type: "json" };
+import manifest from "./openclaw.plugin.json" with { type: "json" };
 
 const GOOGLE_VERTEX_BASE_URL = "https://{location}-aiplatform.googleapis.com";
 export const GOOGLE_GEMINI_MANIFEST_PROVIDER = buildManifestModelProviderConfig({

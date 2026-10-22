@@ -11,7 +11,7 @@ import {
 } from "paleoclaw/plugin-sdk/provider-model-metadata";
 import { isRecord, normalizeOptionalString } from "paleoclaw/plugin-sdk/string-coerce-runtime";
 import { applyKimiCodeConfig } from "./onboard.js";
-import manifest from "./paleoclaw.plugin.json" with { type: "json" };
+import manifest from "./openclaw.plugin.json" with { type: "json" };
 import { buildKimiCodingProvider, normalizeKimiCodingModelId } from "./provider-catalog.js";
 import {
   isKimiK3ModelId,

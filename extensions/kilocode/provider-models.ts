@@ -10,7 +10,7 @@ import {
   isRecord,
   normalizeLowercaseStringOrEmpty,
 } from "paleoclaw/plugin-sdk/string-coerce-runtime";
-import manifest from "./paleoclaw.plugin.json" with { type: "json" };
+import manifest from "./openclaw.plugin.json" with { type: "json" };
 
 const KILOCODE_MANIFEST_CATALOG = manifest.modelCatalog.providers.kilocode;
 const KILOCODE_DEFAULT_MODEL = buildManifestModelProviderConfig({

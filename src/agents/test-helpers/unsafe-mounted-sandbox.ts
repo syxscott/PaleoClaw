@@ -43,7 +43,7 @@ function createUnsafeMountedBridge(params: {
       filePath === "/agent" || filePath === "/agent/" || filePath.startsWith("/agent/")
         ? path.join(
             agentHostRoot,
-            filePath === "/agent" || filePath === "/agent/" ? "" : filePath.slice("/agent/".length),
+            filePath === "/agent" || filePath === "/agent" ? "" : filePath.slice("/agent/".length),
           )
         : skillsHostRoot &&
             (filePath === skillsContainerRoot || filePath.startsWith(`${skillsContainerRoot}/`))

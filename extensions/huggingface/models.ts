@@ -11,7 +11,7 @@ import {
   ssrfPolicyFromHttpBaseUrlAllowedHostname,
 } from "paleoclaw/plugin-sdk/ssrf-runtime";
 import { normalizeLowercaseStringOrEmpty } from "paleoclaw/plugin-sdk/string-coerce-runtime";
-import manifest from "./paleoclaw.plugin.json" with { type: "json" };
+import manifest from "./openclaw.plugin.json" with { type: "json" };
 
 const HUGGINGFACE_MANIFEST_CATALOG = manifest.modelCatalog.providers.huggingface;
 export const HUGGINGFACE_BASE_URL = HUGGINGFACE_MANIFEST_CATALOG.baseUrl;

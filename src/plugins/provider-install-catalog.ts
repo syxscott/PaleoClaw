@@ -86,7 +86,7 @@ function resolveInstallInfoFromPackageSource(params: {
 }): PluginPackageInstall | null {
   const source = isRecord(params.source) ? params.source : undefined;
   const npm = isRecord(source?.npm) ? source.npm : undefined;
-  const PaleoHub = isRecord(source?.clawhub) ? source.clawhub : undefined;
+  const PaleoHub = isRecord(source?.PaleoHub) ? source.PaleoHub : undefined;
   const local = isRecord(source?.local) ? source.local : undefined;
   const npmSpec =
     params.origin === "bundled" || params.origin === "config"

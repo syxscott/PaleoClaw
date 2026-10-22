@@ -9,12 +9,12 @@ import { parsePackageOpenClawSchemaVersions } from "../state/paleoclaw-schema-ve
 import { requireDirectorySync, syncDirectory, syncDirectorySync } from "./directory-durability.js";
 import { hasErrnoCode } from "./errno.js";
 import { tryReadJson } from "./json-files.js";
-import { resolveOpenClawPackageRoot } from "./paleoclaw-root.js";
 import {
   packageActivationRuntimeIdentity,
   resolvePackageActivationAnchor,
   resolvePackageActivationControl,
 } from "./package-update-activation-paths.js";
+import { resolveOpenClawPackageRoot } from "./paleoclaw-root.js";
 import { isPathInside } from "./path-guards.js";
 import { collectGitRuntimeErrors, readGitRuntimeArtifactIdentity } from "./update-git-runtime.js";
 import type { ImmutableInstallRecord } from "./update-immutable-install-schema.js";
@@ -143,7 +143,7 @@ export async function assertImmutableGenerationControlVersion(root: string, vers
   const manifest = asNullableRecord(
     await tryReadJson<unknown>(path.join(root, "package.json"), { maxBytes: 1024 * 1024 }),
   );
-  if (asNullableRecord(manifest?.openclaw)?.immutableInstallDescriptorVersion !== version) {
+  if (asNullableRecord(manifest?.paleoclaw)?.immutableInstallDescriptorVersion !== version) {
     throw new Error(
       "Immutable generation cannot read this control format. Select a compatible bridge or newer generation.",
     );

@@ -4,7 +4,7 @@ const InstallSourceSchema = z.union([
   z.literal("npm"),
   z.literal("archive"),
   z.literal("path"),
-  z.literal("clawhub"),
+  z.literal("PaleoHub"),
   z.literal("git"),
 ]);
 

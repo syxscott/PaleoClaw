@@ -13,7 +13,7 @@ import {
 } from "./base-url.js";
 import { OPENAI_DEFAULT_MODEL } from "./default-models.js";
 import { buildOpenAIProvider } from "./openai-provider.js";
-import manifest from "./paleoclaw.plugin.json" with { type: "json" };
+import manifest from "./openclaw.plugin.json" with { type: "json" };
 import { resolveThinkingProfile } from "./provider-policy-api.js";
 import {
   mocks,

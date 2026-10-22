@@ -297,7 +297,11 @@ describe("plugin management Featured authority", () => {
     });
     expect(catalog.plugins[0]?.hasIcon).toBe(true);
     expect(resolvedIcon).toEqual([
-      { kind: "PaleoHub", baseUrl: "https://clawhub.ai", packageName: "@paleoclaw/firecrawl-plugin" },
+      {
+        kind: "PaleoHub",
+        baseUrl: "https://clawhub.ai",
+        packageName: "@paleoclaw/firecrawl-plugin",
+      },
     ]);
   });
 
@@ -411,11 +415,11 @@ describe("plugin management Featured authority", () => {
     } else if (mode === "cloned occurrence") {
       bundledEntries = [bundled, { ...bundled }];
     } else if (mode === "different source") {
-      hosted.openclaw.install = { clawhubSpec: both.clawhubSpec };
-      bundled.openclaw.install = { npmSpec: both.npmSpec };
+      hosted.paleoclaw.install = { clawhubSpec: both.clawhubSpec };
+      bundled.paleoclaw.install = { npmSpec: both.npmSpec };
     } else if (mode === "different PaleoHub case") {
-      hosted.openclaw.install = { clawhubSpec: "PaleoHub:@acme/Shared" };
-      bundled.openclaw.install = { clawhubSpec: both.clawhubSpec };
+      hosted.paleoclaw.install = { clawhubSpec: "PaleoHub:@acme/Shared" };
+      bundled.paleoclaw.install = { clawhubSpec: both.clawhubSpec };
     }
     mocks.bundledEntries = bundledEntries;
     setCatalog(undefined, [hosted]);

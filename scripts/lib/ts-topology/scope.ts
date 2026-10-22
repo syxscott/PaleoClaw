@@ -61,7 +61,11 @@ export function createPluginSdkScope(_repoRoot: string): TopologyScope {
     sourcePath: `src/plugin-sdk/${entrypoint}.ts`,
     importSpecifier: `paleoclaw/plugin-sdk/${entrypoint}`,
   }));
-  return buildScopeFromEntrypoints("plugin-sdk", "paleoclaw plugin-sdk public surface", entrypoints);
+  return buildScopeFromEntrypoints(
+    "plugin-sdk",
+    "paleoclaw plugin-sdk public surface",
+    entrypoints,
+  );
 }
 
 export function createFilesystemPublicSurfaceScope(

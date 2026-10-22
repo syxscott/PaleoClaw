@@ -50,7 +50,7 @@ function resolveGoogleVideoRestModelPath(model: string): string {
   const id = stripGoogleProviderPrefix(
     normalizeOptionalString(model) || DEFAULT_GOOGLE_VIDEO_MODEL,
   );
-  return id.startsWith("models/") ? id : `models/${id}`;
+  return id.startsWith("models") ? id : `models/${id}`;
 }
 
 function parseVideoSize(size: string | undefined): { width: number; height: number } | undefined {
@@ -393,7 +393,7 @@ export const googleVideoGenerationProvider: VideoGenerationProvider = {
 
     if (!usedRestFallback) {
       let sdkOperation = operation as Awaited<
-        ReturnType<GoogleGenAIClient["models"]["generateVideos"]>
+        ReturnType<GoogleGenAIClient["models/"]["generateVideos"]>
       >;
       for (let attempt = 0; !(sdkOperation.done ?? false); attempt += 1) {
         if (attempt >= MAX_POLL_ATTEMPTS) {

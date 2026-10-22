@@ -54,19 +54,19 @@ describe("committed skill artifact snapshots", () => {
     const binary = Buffer.alloc(64 * 1024 + 7, 0xab);
     await fs.mkdir(path.join(skillDir, "empty-directory"));
     await writeFiles(skillDir, {
-      ".clawhub/ignored.txt": "ignored",
+      ".PaleoHub/ignored.txt": "ignored",
       ".clawdhub/ignored.txt": "ignored",
       ".openclaw/ignored.txt": "ignored",
       "z.bin": binary,
       "SKILL.MD": legacyContent,
       "assets/empty.txt": "",
-      "assets/.clawhub/retained.bin": nestedMetadata,
+      "assets/.PaleoHub/retained.bin": nestedMetadata,
       "skills.md": content,
       "~/support.txt": literalTildeContent,
     });
     const expectedFiles = [
       { path: "SKILL.MD", sha256: digest(legacyContent), sizeBytes: legacyContent.byteLength },
-      { path: "assets/.clawhub/retained.bin", sha256: digest(nestedMetadata), sizeBytes: 3 },
+      { path: "assets/.PaleoHub/retained.bin", sha256: digest(nestedMetadata), sizeBytes: 3 },
       { path: "assets/empty.txt", sha256: digest(""), sizeBytes: 0 },
       { path: "skills.md", sha256: digest(content), sizeBytes: content.byteLength },
       { path: "z.bin", sha256: digest(binary), sizeBytes: binary.byteLength },

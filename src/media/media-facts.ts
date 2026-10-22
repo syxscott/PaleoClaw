@@ -41,7 +41,7 @@ export type MediaFactInput = {
   [Key in keyof MediaFact]?: MediaFact[Key] | null;
 };
 
-const RUNTIME_PROMPT_MEDIA_FACTS = Symbol.for("openclaw.runtimePromptMediaFacts");
+const RUNTIME_PROMPT_MEDIA_FACTS = Symbol.for("paleoclaw.runtimePromptMediaFacts");
 
 /** Attaches facts to a runtime prompt message without changing serialized/model-visible bytes. */
 export function attachRuntimePromptMediaFacts<T extends object>(
@@ -236,7 +236,7 @@ export function canonicalizePersistedUserMessageMedia<T extends object>(
   }
   const paleoclaw = { ...asNonArrayRecord(record["__openclaw"]) };
   if (media.length > 0 || canonical !== undefined || topLevelMedia !== undefined) {
-    openclaw.media = media;
+    paleoclaw.media = media;
   }
   if (Object.keys(paleoclaw).length > 0) {
     next["__openclaw"] = paleoclaw;

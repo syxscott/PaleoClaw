@@ -231,12 +231,12 @@ function targetFixture(t, candidateVersion = 1) {
   chmodSync(join(candidate, "package.json"), 0o644);
   const candidatePackage = JSON.parse(readFileSync(join(candidate, "package.json")));
   candidatePackage.exports = { "./plugin-sdk/core": "./fixture-sdk.cjs" };
-  candidatePackage.openclaw.schemaVersions = { state: candidateVersion, agent: candidateVersion };
+  candidatePackage.paleoclaw.schemaVersions = { state: candidateVersion, agent: candidateVersion };
   writeFileSync(join(candidate, "package.json"), JSON.stringify(candidatePackage));
   const manifestPath = join(candidate, "deployment.json");
   chmodSync(manifestPath, 0o644);
   const deployment = JSON.parse(readFileSync(manifestPath));
-  deployment.schemaVersions = candidatePackage.openclaw.schemaVersions;
+  deployment.schemaVersions = candidatePackage.paleoclaw.schemaVersions;
   writeFileSync(manifestPath, JSON.stringify(deployment));
   writeFileSync(join(candidate, "fixture-sdk.cjs"), `module.exports={candidate:${JSON.stringify(targetSha)}};`);
   f.success(spawnSync(process.execPath, [library, "seal-tree", candidate], { env: f.env, encoding: "utf8" }));

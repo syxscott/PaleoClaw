@@ -176,7 +176,9 @@ export async function runPluginsBuildCommand(opts: PluginsBuildOptions): Promise
       !jsonSchemaValuesEqual(currentManifest, manifest) ||
       !jsonSchemaValuesEqual(currentPackage, nextPackageManifest)
     ) {
-      defaultRuntime.error("Generated plugin metadata is out of date. Run paleoclaw plugins build.");
+      defaultRuntime.error(
+        "Generated plugin metadata is out of date. Run paleoclaw plugins build.",
+      );
       return defaultRuntime.exit(1);
     }
     defaultRuntime.log("Plugin metadata is up to date.");
@@ -439,7 +441,7 @@ function writeProviderPluginScaffold(params: { rootDir: string; id: string; name
     scripts: {
       build: "tsc -p tsconfig.json",
       test: "vitest run --config ./vitest.config.ts",
-      validate: "npm run build && PaleoHub package validate . --out .clawhub-validation",
+      validate: "npm run build && PaleoHub package validate . --out .PaleoHub-validation",
     },
     files: ["dist", "openclaw.plugin.json", "README.md"],
     peerDependencies: {
@@ -633,7 +635,7 @@ npm test
 npm run validate
 \`\`\`
 
-\`npm run validate\` builds the plugin and runs \`PaleoHub package validate . --out .clawhub-validation\`.
+\`npm run validate\` builds the plugin and runs \`PaleoHub package validate . --out .PaleoHub-validation\`.
 
 ## Provider Setup
 

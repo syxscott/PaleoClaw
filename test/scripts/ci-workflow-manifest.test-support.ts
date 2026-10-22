@@ -273,7 +273,7 @@ export function runCiManifestFixture(options: {
       appendPlanner(
         options.uiTestGroupsSource ??
           `\nexport const createUiTestShardGroups = (options) => ({
-          ui: [{configs: ["ui/vitest.config.ts"], shard_name: "ui", includePatterns: ${JSON.stringify(uiTargets)}, env: {fixtureTier: JSON.stringify(options)}}],
+          ui: [{configs: ["ui/vitest.config.ts"], shard_name: "ui/", includePatterns: ${JSON.stringify(uiTargets)}, env: {fixtureTier: JSON.stringify(options)}}],
           e2e: [{configs: ["test/vitest/vitest.ui-e2e.config.ts"], shard_name: "e2e", includePatterns: options.uiE2eFiles ? [...options.uiE2eFiles, ...${JSON.stringify(CI_MANIFEST_FIXTURE_TARGETS.real)}] : ${JSON.stringify(e2eTargets)}, env: {fixtureTier: JSON.stringify(options)}}],
         });\n`,
       );
@@ -540,7 +540,7 @@ export function runCiManifestFixture(options: {
     }
     if (options.androidAccessNativeCapability ?? options.bundledPlanner) {
       writeFixture(
-        "apps/android/app/src/androidTest/java/ai/paleoclaw/app/gateway/CloudflareAccessNativeTest.kt",
+        "apps/android/app/src/androidTest/java/ai/openclaw/app/gateway/CloudflareAccessNativeTest.kt",
         "package ai.openclaw.app.gateway\n\nclass CloudflareAccessNativeTest\n",
       );
     }

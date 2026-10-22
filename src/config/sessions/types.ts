@@ -5,7 +5,10 @@ import type {
   SessionAcpMeta,
 } from "@paleoclaw/acp-core/types";
 import { asNonNegativeFiniteNumber } from "@paleoclaw/normalization-core/number-coercion";
-import { normalizeOptionalString, type FastMode } from "@paleoclaw/normalization-core/string-coerce";
+import {
+  normalizeOptionalString,
+  type FastMode,
+} from "@paleoclaw/normalization-core/string-coerce";
 import type {
   SessionEntryArchiveReason,
   SessionRow,
@@ -56,6 +59,24 @@ export type { SessionScope } from "../types.base.js";
 export type SessionChatType = ChatType;
 export type PersistedSessionRunStatus = Exclude<SessionRunStatus, "running" | "queued">;
 export const SESSION_TOTAL_TOKENS_VERSION = 1 as const;
+
+type SessionGitHubPullRequestSource = {
+  repository: string;
+  repositoryId: number;
+  branch: string;
+  commit: string;
+};
+
+/** Original PR selection for one managed workspace; never a publication receipt or permission grant. */
+export type SessionGitHubPullRequestBinding = {
+  url: string;
+  host: string;
+  number: number;
+  base: SessionGitHubPullRequestSource;
+  head: SessionGitHubPullRequestSource;
+  /** Prepared initial PR head; absence means its first import is incomplete. */
+  preparedHeadCommit?: string;
+};
 
 export type SessionOrigin = {
   label?: string;
@@ -349,6 +370,7 @@ type SessionEntryCore = SessionRestartRecoveryState &
       repoRoot: string;
       /** Durable skill workspace prepared when this session runs from a managed worktree. */
       canonicalWorkspaceDir?: string;
+      githubPullRequest?: SessionGitHubPullRequestBinding;
     };
     /** Project registry id selected when this logical session node was created. */
     projectId?: string;

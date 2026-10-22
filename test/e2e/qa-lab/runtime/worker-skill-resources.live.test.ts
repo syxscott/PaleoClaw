@@ -45,7 +45,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
-const directory = fs.realpathSync(fileURLToPath(new URL("../", import.meta.url)));
+const directory = fs.realpathSync(fileURLToPath(new URL("..", import.meta.url)));
 const workspace = path.dirname(path.dirname(directory));
 const payload = fs.readFileSync(path.join(directory, "payload.txt"));
 const ancestors = [];

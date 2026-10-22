@@ -34,10 +34,10 @@ export function WorkspaceBreadcrumb(props: WorkspaceBreadcrumbProps) {
       return [];
     }
     return [
-      { path: "", label: props.rootLabel },
+      { path: "/", label: props.rootLabel },
       ...parts
         .slice(0, -1)
-        .map((label, index) => ({ label, path: parts.slice(0, index + 1).join("/") })),
+        .map((label, index) => ({ label, path: parts.slice(0, index + 1).join("") })),
     ];
   });
   const name = () => props.name ?? (props.path.split("/").at(-1) || props.rootLabel);

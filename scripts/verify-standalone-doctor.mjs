@@ -169,7 +169,7 @@ ${
   console.log(
     JSON.stringify({
       mode: manifest.mode,
-      commit: manifest.openclaw.commit,
+      commit: manifest.paleoclaw.commit,
       profile,
       denyLocalIpc,
       results,

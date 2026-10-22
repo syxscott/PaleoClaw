@@ -314,15 +314,15 @@ function prepare(baselineVersion, candidateTarball, stateDir, snapshotFile, conf
   assert.equal(manifest.name, "paleoclaw", "candidate is not an paleoclaw package");
   for (const kind of ["state", "agent"]) {
     assert(
-      Number.isInteger(manifest.openclaw?.schemaVersions?.[kind]) &&
-        manifest.openclaw.schemaVersions[kind] >= 0,
+      Number.isInteger(manifest.paleoclaw?.schemaVersions?.[kind]) &&
+        manifest.paleoclaw.schemaVersions[kind] >= 0,
       `candidate package is missing its ${kind} schema version`,
     );
   }
   const snapshot = {
     baselineVersion,
     candidateVersion: manifest.version,
-    candidateSchemaVersions: manifest.openclaw.schemaVersions,
+    candidateSchemaVersions: manifest.paleoclaw.schemaVersions,
     stateDir,
     databases: readSchemas(stateDir),
     agents: readSeededAgents(stateDir, configFile, path.dirname(snapshotFile)),

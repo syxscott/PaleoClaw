@@ -457,7 +457,7 @@ describe("scripts/restart-mac.sh", () => {
   it("keeps the restart grace period longer than the app signal failsafe", () => {
     const cleanupBlock = block("kill_all_openclaw()", "stop_launch_agent()");
     const watcher = fs.readFileSync(
-      "apps/macos/Sources/paleoclaw/TerminationSignalWatcher.swift",
+      "apps/macos/Sources/OpenClaw/TerminationSignalWatcher.swift",
       "utf8",
     );
     const maxAttempts = Number(cleanupBlock.match(/local max_attempts=(\d+)/u)?.[1]);

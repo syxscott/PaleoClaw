@@ -100,7 +100,9 @@ function setup(
 ) {
   const fetchMock = vi.fn(async (url: unknown, init?: RequestInit) => fetcher(String(url), init));
   globalThis.fetch = withBrowserFetchPreconnect(fetchMock);
-  const paleoclaw = createTestBrowserRouteContext({ getState: () => state }).forProfile("paleoclaw");
+  const paleoclaw = createTestBrowserRouteContext({ getState: () => state }).forProfile(
+    "paleoclaw",
+  );
   return { state, paleoclaw, runtime: state.profiles.get("paleoclaw")!, fetchMock };
 }
 
@@ -143,8 +145,8 @@ async function labeled() {
     }
     throw new Error("unexpected fetch: " + url);
   });
-  await harness.openclaw.labelTab("ABCDEF123456", "docs");
-  await harness.openclaw.labelTab("ABC999", "app");
+  await harness.paleoclaw.labelTab("ABCDEF123456", "docs");
+  await harness.paleoclaw.labelTab("ABC999", "app");
   return harness;
 }
 
@@ -168,9 +170,9 @@ describe("browser tab selection and ownership", () => {
       throw new Error("unexpected fetch: " + url);
     });
     state.resolved.ssrfPolicy = {};
-    await openclaw.openTab("about:blank", { label: "good" });
+    await paleoclaw.openTab("about:blank", { label: "good" });
     const aliases = structuredClone(runtime.tabAliases);
-    await expect(openclaw.openTab("https://example.com", { label: "blocked" })).rejects.toThrow(
+    await expect(paleoclaw.openTab("https://example.com", { label: "blocked" })).rejects.toThrow(
       /private|blocked|ssrf/i,
     );
     expect(runtime.lastTargetId).toBe("GOOD");
@@ -186,10 +188,10 @@ describe("browser tab selection and ownership", () => {
     mockCreatedTarget("UNDISCOVERED", "https://example.com/final");
     const { paleoclaw, runtime, fetchMock } = listOnly(() => [page("GOOD")]);
     runtime.running = mockLaunchedChrome(vi.fn(), 1234);
-    await openclaw.listTabs();
+    await paleoclaw.listTabs();
     runtime.lastTargetId = "GOOD";
     const aliases = structuredClone(runtime.tabAliases);
-    const opening = openclaw.openTab("https://example.com/start", { label: "undiscovered" });
+    const opening = paleoclaw.openTab("https://example.com/start", { label: "undiscovered" });
     await vi.advanceTimersByTimeAsync(2_100);
     await expect(opening).resolves.toEqual({
       targetId: "UNDISCOVERED",
@@ -201,7 +203,7 @@ describe("browser tab selection and ownership", () => {
     expect(runtime.lastTargetId).toBe("GOOD");
     expect(runtime.tabAliases).toEqual(aliases);
     expect(fetchMock.mock.calls.some(([url]) => String(url).includes("/json/close/"))).toBe(false);
-    await expect(openclaw.ensureTabAvailable()).resolves.toMatchObject({
+    await expect(paleoclaw.ensureTabAvailable()).resolves.toMatchObject({
       targetId: "GOOD",
       tabId: "t1",
     });
@@ -231,7 +233,7 @@ describe("browser tab selection and ownership", () => {
       };
       const aliases = structuredClone(runtime.tabAliases);
       await expect(
-        openclaw.openTab("https://example.com", { label: "unsettled" }),
+        paleoclaw.openTab("https://example.com", { label: "unsettled" }),
       ).resolves.toEqual({
         targetId: "UNSETTLED",
         title: transport === "CDP" ? "" : "UNSETTLED",
@@ -249,7 +251,7 @@ describe("browser tab selection and ownership", () => {
   it("rejects invalid labels before any browser mutation", async () => {
     const create = vi.spyOn(cdp, "createTargetViaCdp");
     const { paleoclaw, runtime, fetchMock } = listOnly(() => []);
-    await expect(openclaw.openTab("about:blank", { label: "not allowed" })).rejects.toThrow(
+    await expect(paleoclaw.openTab("about:blank", { label: "not allowed" })).rejects.toThrow(
       /tab label/i,
     );
     expect(create).not.toHaveBeenCalled();
@@ -266,7 +268,7 @@ describe("browser tab selection and ownership", () => {
     const cleanup = Promise.withResolvers<void>();
     const { paleoclaw, runtime } = setupManagedTabEviction(closed, cleanup);
     runtime.running = mockLaunchedChrome(vi.fn(), 1234);
-    const opened = await openclaw.openTab("http://127.0.0.1:3009");
+    const opened = await paleoclaw.openTab("http://127.0.0.1:3009");
     expect(opened).toMatchObject({
       targetId: "NEW",
       ownership: {
@@ -299,7 +301,7 @@ describe("browser tab selection and ownership", () => {
     );
     const { paleoclaw, runtime } = setupManagedTabEviction(closed, cleanup);
     runtime.running = mockLaunchedChrome(vi.fn(), 1234);
-    await openclaw.openTab("http://127.0.0.1:3009");
+    await paleoclaw.openTab("http://127.0.0.1:3009");
     await cleanup.promise;
     // OLD1 is dashboard-retained; among the rest OLD2 carries the oldest
     // recorded activity, so it is evicted even though OLD8 sits last in the
@@ -322,7 +324,7 @@ describe("browser tab selection and ownership", () => {
     );
     const { paleoclaw, runtime } = setupManagedTabEviction(closed, cleanup);
     runtime.running = mockLaunchedChrome(vi.fn(), 1234);
-    await openclaw.openTab("http://127.0.0.1:3009");
+    await paleoclaw.openTab("http://127.0.0.1:3009");
     await cleanup.promise;
     // OLD2 and OLD3 carry no recorded activity, so OLD3 (ahead of OLD2 in the
     // reversed CDP listing) is evicted before any tracked tab.
@@ -347,7 +349,7 @@ describe("browser tab selection and ownership", () => {
     });
     runtime.running = mockLaunchedChrome(vi.fn(), 1234);
     try {
-      expect((await openclaw.openTab("http://127.0.0.1:3009")).targetId).toBe("NEW");
+      expect((await paleoclaw.openTab("http://127.0.0.1:3009")).targetId).toBe("NEW");
       await started.promise;
       expect(requests).toEqual(["http://127.0.0.1:18800/json/close/OLD8"]);
     } finally {
@@ -366,13 +368,13 @@ describe("browser tab selection and ownership", () => {
       throw new Error("unexpected fetch: " + url);
     }, state);
     runtime.running = mockLaunchedChrome(vi.fn(), 1234);
-    expect((await openclaw.openTab("about:blank")).targetId).toBe("NEW");
+    expect((await paleoclaw.openTab("about:blank")).targetId).toBe("NEW");
     expect(fetchMock.mock.calls.some(([url]) => String(url).includes("/json/close/"))).toBe(false);
   });
 
   it("blocks file URLs before HTTP tab creation", async () => {
     const { paleoclaw, fetchMock } = listOnly(() => []);
-    await expect(openclaw.openTab("file:///etc/passwd")).rejects.toBeInstanceOf(
+    await expect(paleoclaw.openTab("file:///etc/passwd")).rejects.toBeInstanceOf(
       InvalidBrowserNavigationUrlError,
     );
     expect(fetchMock).not.toHaveBeenCalled();
@@ -389,12 +391,14 @@ describe("browser tab selection and ownership", () => {
       .mockResolvedValueOnce(page("NEW", "https://example.com"));
     const { state, paleoclaw, runtime } = listOnly(() => []);
     state.resolved.ssrfPolicy = {};
-    await expect(openclaw.openTab("https://example.com", { label: "raw" })).resolves.toMatchObject({
-      targetId: "NEW",
-      tabId: "t1",
-      label: "raw",
-      suggestedTargetId: "raw",
-    });
+    await expect(paleoclaw.openTab("https://example.com", { label: "raw" })).resolves.toMatchObject(
+      {
+        targetId: "NEW",
+        tabId: "t1",
+        label: "raw",
+        suggestedTargetId: "raw",
+      },
+    );
     expect(runtime.lastTargetId).toBe("NEW");
     expect(committed).toHaveBeenCalledWith(
       expect.objectContaining({ requestedUrl: "https://example.com" }),
@@ -414,7 +418,7 @@ describe("browser tab selection and ownership", () => {
     vi.spyOn(cdpHelpers, "fetchJson").mockResolvedValue(page("RAW_BLOCKED", "https://example.com"));
     const { state, paleoclaw, runtime } = listOnly(() => []);
     state.resolved.ssrfPolicy = {};
-    await expect(openclaw.openTab("https://example.com", { label: "blocked" })).rejects.toThrow(
+    await expect(paleoclaw.openTab("https://example.com", { label: "blocked" })).rejects.toThrow(
       /private|blocked|ssrf/i,
     );
     expect(runtime.lastTargetId).toBeNull();
@@ -449,7 +453,7 @@ describe("browser tab selection and ownership", () => {
     });
     const { state, paleoclaw } = listOnly(() => []);
     state.resolved.ssrfPolicy = {};
-    const selected = await openclaw.ensureTabAvailable();
+    const selected = await paleoclaw.ensureTabAvailable();
     expect(selected).toMatchObject({
       targetId: "NEW",
       title: "Listed",
@@ -465,24 +469,24 @@ describe("browser tab selection and ownership", () => {
     const same = "https://app.example/same";
     let targets = [page("OLD_LEFT", same), page("OLD_RIGHT", same)];
     const { paleoclaw, runtime } = listOnly(() => targets);
-    expect((await openclaw.listTabs()).map((tab) => [tab.targetId, tab.tabId])).toEqual([
+    expect((await paleoclaw.listTabs()).map((tab) => [tab.targetId, tab.tabId])).toEqual([
       ["OLD_LEFT", "t1"],
       ["OLD_RIGHT", "t2"],
     ]);
-    await openclaw.labelTab("t1", "left");
-    await openclaw.labelTab("t2", "right");
+    await paleoclaw.labelTab("t1", "left");
+    await paleoclaw.labelTab("t2", "right");
     runtime.lastTargetId = "OLD_LEFT";
     targets = [page("NEW_RIGHT", same), page("NEW_LEFT", same)];
-    await expect(openclaw.listTabs()).resolves.toEqual([
+    await expect(paleoclaw.listTabs()).resolves.toEqual([
       expect.objectContaining({ targetId: "NEW_RIGHT", tabId: "t3", suggestedTargetId: "t3" }),
       expect.objectContaining({ targetId: "NEW_LEFT", tabId: "t4", suggestedTargetId: "t4" }),
     ]);
     expect(runtime.lastTargetId).toBe("OLD_LEFT");
-    await expect(openclaw.ensureTabAvailable("left")).rejects.toThrow(/tab not found/i);
-    await expect(openclaw.ensureTabAvailable()).rejects.toThrow(/tab not found/i);
-    await openclaw.labelTab("t3", "fresh-right");
+    await expect(paleoclaw.ensureTabAvailable("left")).rejects.toThrow(/tab not found/i);
+    await expect(paleoclaw.ensureTabAvailable()).rejects.toThrow(/tab not found/i);
+    await paleoclaw.labelTab("t3", "fresh-right");
     targets = [page("NEW_LEFT", same), page("NEWER_RIGHT", same)];
-    await expect(openclaw.listTabs()).resolves.toEqual([
+    await expect(paleoclaw.listTabs()).resolves.toEqual([
       expect.objectContaining({ targetId: "NEW_LEFT", tabId: "t4" }),
       expect.objectContaining({
         targetId: "NEWER_RIGHT",
@@ -515,7 +519,7 @@ describe("browser tab selection and ownership", () => {
       throw new Error("unexpected fetch: " + url);
     });
     await expect(
-      openclaw.openTab("http://127.0.0.1:8080", { requireDurableOwnership: true }),
+      paleoclaw.openTab("http://127.0.0.1:8080", { requireDurableOwnership: true }),
     ).rejects.toThrow(/could not verify durable ownership/);
     expect(closed).toEqual(["http://127.0.0.1:18800/json/close/CREATED"]);
     expect(fetchMock.mock.calls.some(([url]) => String(url).includes(":19999"))).toBe(false);
@@ -554,7 +558,7 @@ describe("browser tab selection and ownership", () => {
     });
     const controller = new AbortController();
     const error = new Error("caller aborted managed ownership probe");
-    const opening = openclaw.openTab("http://127.0.0.1:8080", { signal: controller.signal });
+    const opening = paleoclaw.openTab("http://127.0.0.1:8080", { signal: controller.signal });
     await started.promise;
     controller.abort(error);
     expect(versionSignal?.aborted).toBe(true);

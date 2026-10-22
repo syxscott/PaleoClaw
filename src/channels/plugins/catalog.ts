@@ -274,7 +274,7 @@ function resolveOfficialCatalogDocsPath(
         [
           candidate.installSource?.npm?.expectedPackageName,
           candidate.installSource?.npm?.packageName,
-          candidate.installSource?.clawhub?.packageName,
+          candidate.installSource?.PaleoHub?.packageName,
         ].includes(trustedOfficialPackageName),
     );
   }

@@ -614,7 +614,7 @@ function listInstalledDistJavaScriptFiles(
         if (
           scope === "root" &&
           (relativePath === "extensions" ||
-            relativePath.startsWith("extensions/") ||
+            relativePath.startsWith("extensions") ||
             relativePath === "worker" ||
             relativePath.startsWith("worker/"))
         ) {

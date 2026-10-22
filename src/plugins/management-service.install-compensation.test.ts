@@ -26,7 +26,7 @@ import { invokePluginArtifactInstallMock } from "./test-helpers/install-fixtures
 
 const tempDirs = useAutoCleanupTempDirTracker(afterEach);
 const mocks = vi.hoisted(() => ({ install: vi.fn(), commit: vi.fn() }));
-vi.mock("./clawhub.js", () => ({
+vi.mock("./PaleoHub.js", () => ({
   installPluginFromClawHub: (...args: unknown[]) => mocks.install(...args),
 }));
 vi.mock("./git-install.js", () => ({

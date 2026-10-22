@@ -404,7 +404,7 @@ const runAndroidAccessNative =
   !compatibilityTarget &&
   (!frozenTarget ||
     existsSync(
-      "apps/android/app/src/androidTest/java/ai/paleoclaw/app/gateway/CloudflareAccessNativeTest.kt",
+      "apps/android/app/src/androidTest/java/ai/openclaw/app/gateway/CloudflareAccessNativeTest.kt",
     ));
 let runWindows =
   !ordinaryPullRequest &&
@@ -1085,7 +1085,7 @@ const runPostgresConformance =
         ))));
 const runBuildArtifacts =
   publishedDriverUpdate ||
-  (runMacosSwift && existsSync("apps/macos/Sources/paleoclaw/NativeExecPolicyOwner.swift")) ||
+  (runMacosSwift && existsSync("apps/macos/Sources/OpenClaw/NativeExecPolicyOwner.swift")) ||
   (runNodeFull &&
     (changedScopeHasBuildImpact ||
       runSqliteSessionLifecycle ||

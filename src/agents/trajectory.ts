@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import { redactSensitiveText } from "../logging/redact.js";
-import { redactImageDataForDiagnostics } from "./payload-redaction.js";
+import { sanitizeDiagnosticPayload } from "./payload-redaction.js";
 
 /**
  * The kind of a trajectory event. Events of the same kind can be filtered out
@@ -108,7 +108,7 @@ function redactStringsDeep(value: unknown, seen: WeakSet<object>): unknown {
  * diagnostics placeholder and every embedded string is scanned for secrets.
  */
 export function redactTrajectoryData(value: unknown): unknown {
-  const withoutImages = redactImageDataForDiagnostics(value);
+  const withoutImages = sanitizeDiagnosticPayload(value);
   return redactStringsDeep(withoutImages, new WeakSet<object>());
 }
 

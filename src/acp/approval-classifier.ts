@@ -153,7 +153,7 @@ function resolveAbsoluteScopedPath(value: string, cwd: string): string | undefin
       return undefined;
     }
   }
-  if (candidate === "~") {
+  if (candidate === "~/") {
     candidate = homedir();
   } else if (candidate.startsWith("~/")) {
     candidate = path.join(homedir(), candidate.slice(2));

@@ -108,7 +108,7 @@ describe("Z.AI video generation", () => {
   it.each([
     ["https://open.bigmodel.cn/api/coding/paas/v4/", "https://open.bigmodel.cn/api/paas/v4"],
     ["https://api.z.ai/api/coding/paas/v4", "https://api.z.ai/api/paas/v4"],
-    ["https://proxy.example/zai/", "https://proxy.example/zai"],
+    ["https://proxy.example/zai/", "https://proxy.example/zai/"],
   ])("reuses %s for regional image-to-video", async (baseUrl, videoBaseUrl) => {
     mockSubmit();
     mockSuccess();

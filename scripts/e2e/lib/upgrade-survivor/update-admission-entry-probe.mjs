@@ -48,7 +48,7 @@ function snapshotProfile() {
 }
 
 const manifest = JSON.parse(fs.readFileSync(path.join(packageRoot, "package.json"), "utf8"));
-assert.equal(manifest.openclaw?.updateAdmissionProtocol, 1);
+assert.equal(manifest.paleoclaw?.updateAdmissionProtocol, 1);
 const pendingPath = path.join(packageRoot, ".openclaw-lifecycle-pending");
 assert.equal(fs.existsSync(pendingPath), false, "Refusing to replace an existing lifecycle marker");
 assert.equal(fs.existsSync(path.join(packageRoot, "dist/paleoclaw-install-guard")), false);

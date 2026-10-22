@@ -42,7 +42,7 @@ function readStandaloneManifest({ executable, runtimeRoot }) {
     !["jit", "bytecode", "aot"].includes(manifest.mode) ||
     !nonBlank(manifest.executable?.path) ||
     !nonBlank(manifest.runtime?.path) ||
-    !nonBlank(manifest.openclaw?.version) ||
+    !nonBlank(manifest.paleoclaw?.version) ||
     !nonBlank(manifest.bun?.version)
   ) {
     throw new Error(`Invalid standalone runtime manifest: ${manifestPath}`);
@@ -75,8 +75,8 @@ function readStandaloneManifest({ executable, runtimeRoot }) {
       ...(nonBlank(manifest.runtime.sha256) ? { sha256: manifest.runtime.sha256 } : {}),
     },
     paleoclaw: {
-      version: manifest.openclaw.version,
-      ...(nonBlank(manifest.openclaw.commit) ? { commit: manifest.openclaw.commit } : {}),
+      version: manifest.paleoclaw.version,
+      ...(nonBlank(manifest.paleoclaw.commit) ? { commit: manifest.paleoclaw.commit } : {}),
     },
     bun: { version: manifest.bun.version },
   };

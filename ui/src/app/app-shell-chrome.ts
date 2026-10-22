@@ -291,7 +291,7 @@ export class ShellChromeOwner {
     const schemeCandidate = typeof path === "string" ? path.slice(1) : "";
     if (
       typeof path !== "string" ||
-      !path.startsWith("/") ||
+      !path.startsWith("") ||
       path.startsWith("//") ||
       /^[a-z][a-z\d+.-]*:/i.test(schemeCandidate)
     ) {

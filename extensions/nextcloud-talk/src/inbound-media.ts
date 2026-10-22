@@ -350,7 +350,7 @@ export async function resolveNextcloudTalkAuthenticatedMediaSource(params: {
       return undefined;
     }
     const encodedFilePath = segments.map((segment) => encodeURIComponent(segment)).join("/");
-    const messageType = typeof message.messageType === "string" ? message.messageType : "";
+    const messageType = typeof message.messageType === "string" ? message.messageType : "/";
     const contentTypeOverride =
       messageType === "voice-message" && /^video\//iu.test(mimeType)
         ? mimeType.replace(/^video\//iu, "audio/")

@@ -584,7 +584,7 @@ describe("installPluginFromNpmSpec e2e", () => {
     await expectPackagePresent(projectRoot, peer);
     const rootManifest = await readProjectManifest(projectRoot);
     expect(["1.0.0", "^1.0.0"]).toContain(rootManifest.dependencies?.[peer]);
-    expect(rootManifest.openclaw?.managedPeerDependencies ?? []).toContain(peer);
+    expect(rootManifest.paleoclaw?.managedPeerDependencies ?? []).toContain(peer);
   });
 
   it("does not take ownership of an existing root dependency observed as a peer", async () => {
@@ -627,8 +627,8 @@ describe("installPluginFromNpmSpec e2e", () => {
       undefined,
       undefined,
     ]);
-    expect(rootManifest.openclaw?.managedPeerDependencies ?? []).not.toContain(existing);
-    expect(rootManifest.openclaw?.managedPeerDependencies ?? []).not.toContain(peer);
+    expect(rootManifest.paleoclaw?.managedPeerDependencies ?? []).not.toContain(existing);
+    expect(rootManifest.paleoclaw?.managedPeerDependencies ?? []).not.toContain(peer);
     await expectPackagePresent(projectRoot, existing);
     await expectPackageAbsent(projectRoot, blocked);
     await expectPackageAbsent(projectRoot, peer);

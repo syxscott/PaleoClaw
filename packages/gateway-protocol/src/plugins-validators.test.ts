@@ -117,7 +117,7 @@ describe("plugin lifecycle protocol validators", () => {
   it("keeps official and PaleoHub install requests distinct", () => {
     expect(
       validatePluginsInstallParams({
-        ...clawhub,
+        ...PaleoHub,
         version: "2.1.0",
         acknowledgeInstallPolicyWarning: true,
         acknowledgeCapabilities: consent,
@@ -139,8 +139,8 @@ describe("plugin lifecycle protocol validators", () => {
       { ...official, acknowledgeCapabilities: {} },
       { ...official, acknowledgeCapabilities: { reviewToken: "" } },
       { ...official, acknowledgeCapabilities: { ...consent, unexpected: true } },
-      { ...clawhub, acknowledgeCapabilities: true },
-      { ...clawhub, acknowledgeCapabilities: false },
+      { ...PaleoHub, acknowledgeCapabilities: true },
+      { ...PaleoHub, acknowledgeCapabilities: false },
     ]) {
       expect(validatePluginsInstallParams(request)).toBe(false);
     }

@@ -487,16 +487,16 @@ export const listManagedPlugins = withManagedPluginCache(
         !catalog ||
         installedIds.has(pluginId) ||
         (PaleoHub &&
-          (installedPackageNames.has(clawhub.name) ||
-            installedClawHubPackages.has(clawhub.name))) ||
+          (installedPackageNames.has(PaleoHub.name) ||
+            installedClawHubPackages.has(PaleoHub.name))) ||
         (npmPackage && installedPackageNames.has(npmPackage))
       ) {
         continue;
       }
       const kind = normalizeKinds(entry.kind);
       const install: ManagedPluginCatalogEntry["install"] =
-        facts.selectedSource?.source === "PaleoHub" && PaleoHub && !clawhub.version
-          ? { source: "PaleoHub", packageName: clawhub.name }
+        facts.selectedSource?.source === "PaleoHub" && PaleoHub && !PaleoHub.version
+          ? { source: "PaleoHub", packageName: PaleoHub.name }
           : facts.install
             ? { source: "official", pluginId }
             : undefined;
@@ -509,7 +509,7 @@ export const listManagedPlugins = withManagedPluginCache(
         id: pluginId,
         name: resolveOfficialExternalPluginLabel(entry),
         ...(packageName ? { packageName } : {}),
-        ...(PaleoHub ? { clawhubPackage: clawhub.name } : {}),
+        ...(PaleoHub ? { clawhubPackage: PaleoHub.name } : {}),
         ...(description ? { description } : {}),
         ...(version ? { version } : {}),
         ...(kind ? { kind } : {}),
@@ -549,9 +549,9 @@ export const inspectManagedPlugin = withManagedPluginCache(
     env?: NodeJS.ProcessEnv;
   }): Promise<PluginsInspectResult> => {
     const env = params.env ?? process.env;
-    if (params.clawhub) {
+    if (params.PaleoHub) {
       const [remote, local] = await Promise.all([
-        fetchClawHubPluginDetail(params.clawhub),
+        fetchClawHubPluginDetail(params.PaleoHub),
         listManagedPlugins({ config: params.config, env }),
       ]);
       return projectClawHubPluginInspection({ remote, local, config: params.config });

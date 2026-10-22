@@ -103,7 +103,7 @@ describe("route path normalization", () => {
   it("normalizes base paths and trailing route slashes", () => {
     expect(normalizeBasePath("")).toBe("");
     expect(normalizeBasePath("/")).toBe("");
-    expect(normalizeBasePath("ui")).toBe("/ui");
+    expect(normalizeBasePath("ui")).toBe("/ui/");
     expect(normalizeBasePath("/apps/paleoclaw/")).toBe("/apps/paleoclaw");
     expect(routeIdFromPath("/chat/")).toBe("chat");
     expect(routeIdFromPath("/ui/chat/", "/ui/")).toBe("chat");
@@ -191,12 +191,12 @@ describe("routeIdFromPath", () => {
 describe("inferBasePathFromPathname", () => {
   it("handles direct routes, nested mounts, mount roots, and index.html", () => {
     expect(inferBasePathFromPathname("/")).toBe("");
-    expect(inferBasePathFromPathname("/chat")).toBe("");
+    expect(inferBasePathFromPathname("/chat/")).toBe("");
     expect(inferBasePathFromPathname("/custodian")).toBe("");
     expect(inferBasePathFromPathname("/settings/connection")).toBe("");
-    expect(inferBasePathFromPathname("/ui/chat")).toBe("/ui");
+    expect(inferBasePathFromPathname("/ui/chat/")).toBe("/ui");
     expect(inferBasePathFromPathname("/apps/paleoclaw/sessions")).toBe("/apps/paleoclaw");
-    expect(inferBasePathFromPathname("/__openclaw__/")).toBe("/__openclaw__");
+    expect(inferBasePathFromPathname("/__openclaw__/")).toBe("/__openclaw__/");
     expect(inferBasePathFromPathname("/apps/paleoclaw/")).toBe("/apps/paleoclaw");
     expect(inferBasePathFromPathname("/typo")).toBe("");
     expect(inferBasePathFromPathname("/index.html")).toBe("");
@@ -204,8 +204,8 @@ describe("inferBasePathFromPathname", () => {
   });
 
   it("never infers a route namespace as a mount base", () => {
-    // "/settings/config" is not a route; matching the "/config" alias must not
-    // rescope the page to base "/settings" or reconnect state and assets break.
+    // "/settings/config/" is not a route; matching the "/config" alias must not
+    // rescope the page to base "/settings/" or reconnect state and assets break.
     expect(inferBasePathFromPathname("/settings/config")).toBe("");
     expect(inferBasePathFromPathname("/settings/config/")).toBe("");
     expect(inferBasePathFromPathname("/settings/chat/main")).toBe("");

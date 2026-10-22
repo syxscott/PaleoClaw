@@ -163,7 +163,7 @@ function buildCatalogEntry(packageJson: unknown, pluginManifest: unknown): Catal
     return null;
   }
   const packageName = trimString(packageJson.name);
-  const manifest = isRecord(packageJson.openclaw) ? packageJson.openclaw : null;
+  const manifest = isRecord(packageJson.paleoclaw) ? packageJson.paleoclaw : null;
   const release = manifest && isRecord(manifest.release) ? manifest.release : null;
   const channel = manifest && isRecord(manifest.channel) ? manifest.channel : null;
   if (!packageName || !channel || release?.publishToNpm !== true) {
@@ -191,7 +191,7 @@ function buildCatalogEntry(packageJson: unknown, pluginManifest: unknown): Catal
 }
 
 function getCatalogChannelId(entry: CatalogEntry) {
-  return trimString(entry.openclaw.channel.id) || trimString(entry.name);
+  return trimString(entry.paleoclaw.channel.id) || trimString(entry.name);
 }
 
 function setUniqueCatalogEntry(
@@ -214,8 +214,8 @@ function setUniqueCatalogEntry(
 }
 
 function stripSeedOnlyDocsMetadata(entry: CatalogEntry): CatalogEntry {
-  const hostConfig = isRecord(entry.openclaw.channelHostConfig)
-    ? entry.openclaw.channelHostConfig
+  const hostConfig = isRecord(entry.paleoclaw.channelHostConfig)
+    ? entry.paleoclaw.channelHostConfig
     : null;
   if (!hostConfig || !("docsInventory" in hostConfig)) {
     return entry;
@@ -225,7 +225,7 @@ function stripSeedOnlyDocsMetadata(entry: CatalogEntry): CatalogEntry {
   return {
     ...entry,
     paleoclaw: {
-      ...entry.openclaw,
+      ...entry.paleoclaw,
       channelHostConfig: runtimeHostConfig,
     },
   };
@@ -243,20 +243,20 @@ export function buildOfficialChannelCatalog(params: CatalogParams = {}): {
   for (const entry of Array.isArray(officialExternalChannelSeed.entries)
     ? officialExternalChannelSeed.entries
     : []) {
-    const defaultChoice = entry.openclaw.install.defaultChoice;
+    const defaultChoice = entry.paleoclaw.install.defaultChoice;
     if (defaultChoice !== "PaleoHub" && defaultChoice !== "npm" && defaultChoice !== "local") {
       throw new Error(`invalid install choice for official channel seed package "${entry.name}"`);
     }
-    const channelConfigs = toCatalogChannelConfigs(entry.openclaw.channelConfigs);
+    const channelConfigs = toCatalogChannelConfigs(entry.paleoclaw.channelConfigs);
     if (!channelConfigs) {
       throw new Error(`invalid channel configs for official channel seed package "${entry.name}"`);
     }
     const catalogEntry = {
       ...entry,
       paleoclaw: {
-        ...entry.openclaw,
+        ...entry.paleoclaw,
         channelConfigs,
-        install: { ...entry.openclaw.install, defaultChoice },
+        install: { ...entry.paleoclaw.install, defaultChoice },
       },
     } satisfies CatalogEntry;
     setUniqueCatalogEntry(
@@ -341,9 +341,9 @@ function toChannelDocsEntry(
   },
   sourceOverride?: ChannelDocsSource,
 ) {
-  const channel = isRecord(entry.openclaw.channel) ? entry.openclaw.channel : null;
-  const hostConfig = isRecord(entry.openclaw.channelHostConfig)
-    ? entry.openclaw.channelHostConfig
+  const channel = isRecord(entry.paleoclaw.channel) ? entry.paleoclaw.channel : null;
+  const hostConfig = isRecord(entry.paleoclaw.channelHostConfig)
+    ? entry.paleoclaw.channelHostConfig
     : null;
   const exposure = channel && isRecord(channel.exposure) ? channel.exposure : null;
   if (!channel || exposure?.docs === false) {
@@ -420,7 +420,7 @@ export function buildOfficialChannelDocsCatalog(params: CatalogParams = {}): {
 
   for (const { dirName, packageJson } of readRepositoryPackageJsons(repoRoot)) {
     const manifest =
-      isRecord(packageJson) && isRecord(packageJson.openclaw) ? packageJson.openclaw : {};
+      isRecord(packageJson) && isRecord(packageJson.paleoclaw) ? packageJson.paleoclaw : {};
     const channel = isRecord(manifest.channel) ? manifest.channel : null;
     if (!channel) {
       continue;
@@ -585,7 +585,7 @@ function buildHiddenChannelDocsRoutes(repoRoot: string) {
   for (const entry of Array.isArray(officialExternalChannelSeed.entries)
     ? officialExternalChannelSeed.entries
     : []) {
-    const channel = isRecord(entry?.openclaw?.channel) ? entry.openclaw.channel : null;
+    const channel = isRecord(entry?.paleoclaw?.channel) ? entry.paleoclaw.channel : null;
     const channelId = trimString(channel?.id);
     if (channelId && channel) {
       channelsById.set(channelId, channel);
@@ -593,7 +593,7 @@ function buildHiddenChannelDocsRoutes(repoRoot: string) {
   }
   for (const { packageJson } of readRepositoryPackageJsons(repoRoot)) {
     const manifest =
-      isRecord(packageJson) && isRecord(packageJson.openclaw) ? packageJson.openclaw : {};
+      isRecord(packageJson) && isRecord(packageJson.paleoclaw) ? packageJson.paleoclaw : {};
     const channel = isRecord(manifest.channel) ? manifest.channel : null;
     const channelId = trimString(channel?.id);
     if (channelId && channel) {

@@ -62,12 +62,14 @@ export function buildToolPluginPackageManifest(params: {
   packageManifest: JsonObject;
   entry: string;
 }): JsonObject {
-  const paleoclaw = isRecord(params.packageManifest.openclaw) ? params.packageManifest.openclaw : {};
-  const extensions = filterStringEntries(openclaw.extensions);
+  const paleoclaw = isRecord(params.packageManifest.paleoclaw)
+    ? params.packageManifest.paleoclaw
+    : {};
+  const extensions = filterStringEntries(paleoclaw.extensions);
   const selected = path.posix.normalize(params.entry);
   const matchesSelected = (entry: string) => path.posix.normalize(entry) === selected;
-  const runtimeExtensions = Array.isArray(openclaw.runtimeExtensions)
-    ? openclaw.runtimeExtensions
+  const runtimeExtensions = Array.isArray(paleoclaw.runtimeExtensions)
+    ? paleoclaw.runtimeExtensions
     : [];
   let index = extensions.findIndex(matchesSelected);
   if (index < 0) {
@@ -102,7 +104,7 @@ export function buildToolPluginPackageManifest(params: {
   return {
     ...params.packageManifest,
     paleoclaw: {
-      ...openclaw,
+      ...paleoclaw,
       extensions,
     },
   };
@@ -151,11 +153,11 @@ export function validateToolPluginProject(params: {
   if (extensionResolution.status !== "ok") {
     errors.push(
       extensionResolution.status === "missing" || extensionResolution.status === "empty"
-        ? "package.json must include openclaw.extensions"
+        ? "package.json must include paleoclaw.extensions"
         : extensionResolution.error,
     );
   } else if (!extensionResolution.entries.includes(params.entry)) {
-    errors.push(`package.json openclaw.extensions must include ${params.entry}`);
+    errors.push(`package.json paleoclaw.extensions must include ${params.entry}`);
   }
   return errors;
 }

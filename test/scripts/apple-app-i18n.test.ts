@@ -28,7 +28,7 @@ const probe = vi.hoisted(() => ({
   source: "",
   catalogs: new Map<string, string>(),
   paths: [
-    "apps/macos/Sources/paleoclaw/OnboardingAISetupView.swift",
+    "apps/macos/Sources/OpenClaw/OnboardingAISetupView.swift",
     "apps/ios/Sources/Gateway/ExecApprovalPromptDialog.swift",
     "apps/shared/OpenClawKit/Sources/OpenClawChatUI/ChatComposer+Controls.swift",
     "apps/shared/OpenClawKit/Sources/OpenClawKit/GatewayDiscoveryStatusText.swift",
@@ -106,7 +106,7 @@ it("warns only when obsolete Apple keys are the entire catalog drift", async () 
   const catalogs = await Promise.all(
     Object.entries({
       "apps/ios/Resources/Localizable.xcstrings": apple.buildIosCatalog,
-      "apps/macos/Sources/paleoclaw/Resources/Localizable.xcstrings": apple.buildMacosCatalog,
+      "apps/macos/Sources/OpenClaw/Resources/Localizable.xcstrings": apple.buildMacosCatalog,
     }).map(async ([file, buildCatalog]) => {
       const filePath = path.resolve(file);
       const existing = JSON.parse(await readFile(filePath, "utf8"));

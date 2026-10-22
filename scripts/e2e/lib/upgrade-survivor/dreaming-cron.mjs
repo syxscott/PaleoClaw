@@ -44,7 +44,7 @@ function installedIdentity(root) {
   const build = JSON.parse(buildBytes);
   assert.equal(manifest.name, "paleoclaw");
   assert.equal(manifest.version, build.version);
-  const schemaVersions = manifest.openclaw?.schemaVersions;
+  const schemaVersions = manifest.paleoclaw?.schemaVersions;
   for (const kind of ["state", "agent"]) {
     assert(Number.isSafeInteger(schemaVersions?.[kind]) && schemaVersions[kind] >= 0);
   }

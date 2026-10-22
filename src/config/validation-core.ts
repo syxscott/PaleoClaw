@@ -51,25 +51,6 @@ import {
 import { OpenClawSchema } from "./zod-schema.js";
 import { McpServerNameSchema, NodeHostMcpServerNameSchema } from "./zod-schema.root-support.js";
 
-export function collectHeartbeatOwnerWarnings(config: OpenClawConfig): ConfigValidationIssue[] {
-  const agentEntries = listAgentEntries(config);
-  // Match heartbeat enrollment so validation never warns for an owner the runner can use.
-  const unresolved =
-    listAgentIds(config).length > 1 &&
-    !agentEntries.some((entry) => Boolean(entry.heartbeat)) &&
-    !config.agents?.defaults?.heartbeat &&
-    tryResolveAmbientOwnerAgentId(config) === undefined;
-  return unresolved
-    ? [
-        {
-          path: "agents.defaults.heartbeat.agentId",
-          message:
-            "Multi-agent config has no ambient heartbeat owner; heartbeats stay disabled until agents.defaults.heartbeat.agentId or agents.defaults.systemAgent.agentId is set.",
-        },
-      ]
-    : [];
-}
-
 // The schema accepts any string, but log redaction drops entries the safe-regex compiler
 // rejects; warn so operators do not rely on a mask that never applies.
 export function collectRedactPatternWarnings(config: OpenClawConfig): ConfigValidationIssue[] {
@@ -518,4 +499,23 @@ export function validateConfigObject(
       }),
     ),
   };
+}
+
+export function collectHeartbeatOwnerWarnings(config: OpenClawConfig): ConfigValidationIssue[] {
+  const agentEntries = listAgentEntries(config);
+  // Match heartbeat enrollment so validation never warns for an owner the runner can use.
+  const unresolved =
+    listAgentIds(config).length > 1 &&
+    !agentEntries.some((entry) => Boolean(entry.heartbeat)) &&
+    !config.agents?.defaults?.heartbeat &&
+    tryResolveAmbientOwnerAgentId(config) === undefined;
+  return unresolved
+    ? [
+        {
+          path: "agents.defaults.heartbeat.agentId",
+          message:
+            "Multi-agent config has no ambient heartbeat owner; heartbeats stay disabled until agents.defaults.heartbeat.agentId or agents.defaults.systemAgent.agentId is set.",
+        },
+      ]
+    : [];
 }

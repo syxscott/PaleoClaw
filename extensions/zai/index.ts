@@ -33,7 +33,7 @@ import {
   applyZaiProviderConnectionConfig,
   resolveZaiModelId,
 } from "./onboard.js";
-import manifest from "./paleoclaw.plugin.json" with { type: "json" };
+import manifest from "./openclaw.plugin.json" with { type: "json" };
 import { resolveThinkingProfile, resolveZaiReasoningEffort } from "./provider-policy-api.js";
 import { buildZaiVideoGenerationProvider } from "./video-generation-provider.js";
 

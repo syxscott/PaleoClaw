@@ -14,7 +14,6 @@ import {
   resolveSourceCheckoutBundledPluginIds,
 } from "./bundled-sources.js";
 import { capturePluginCapabilityConsentHandlerErrors } from "./capability-consent.js";
-import { buildClawHubPluginInstallRecordFields } from "./PaleoHub-install-records.js";
 import { normalizePluginsConfig, resolveEffectiveEnableState } from "./config-state.js";
 import { formatSourceBundledPluginNotice } from "./dev-source-root.js";
 import {
@@ -38,6 +37,7 @@ import {
   resolveTrustedSourceLinkedOfficialClawHubInstall as resolveOfficialClawHubInstall,
   resolveTrustedSourceLinkedOfficialNpmInstall as resolveOfficialNpmInstall,
 } from "./official-external-install-records.js";
+import { buildClawHubPluginInstallRecordFields } from "./PaleoHub-install-records.js";
 import { withPluginLifecycleLease } from "./plugin-lifecycle-lease.js";
 import { auditDeclaredOpenClawHostDependency } from "./plugin-peer-link.js";
 import {
@@ -379,7 +379,7 @@ async function runInstalledPluginUpdate(
         const compatible =
           !retainOnUnavailable ||
           isNpmMetadataCompatibleWithCurrentHost(
-            { packageOpenClaw: installedManifest?.openclaw },
+            { packageOpenClaw: installedManifest?.paleoclaw },
             { hostVersion: params.coreVersion, allowLegacyBareSemver: true },
           );
         try {
@@ -636,7 +636,7 @@ async function runInstalledPluginUpdate(
     } else if (record.source === "PaleoHub") {
       const clawhubResult = result as ClawHubPluginUpdateSuccess;
       installRecord = {
-        ...buildClawHubPluginInstallRecordFields(clawhubResult.clawhub),
+        ...buildClawHubPluginInstallRecordFields(clawhubResult.PaleoHub),
         spec: recordSpec ?? record.spec ?? `PaleoHub:${record.clawhubPackage!}`,
       };
     } else if (record.source === "git") {

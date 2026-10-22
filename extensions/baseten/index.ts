@@ -19,7 +19,7 @@ import {
   usesBasetenChatTemplateThinking,
 } from "./models.js";
 import { applyBasetenSetupConfig } from "./onboard.js";
-import manifest from "./paleoclaw.plugin.json" with { type: "json" };
+import manifest from "./openclaw.plugin.json" with { type: "json" };
 import { buildStaticBasetenProvider } from "./provider-catalog.js";
 
 const PROVIDER_ID = "baseten";

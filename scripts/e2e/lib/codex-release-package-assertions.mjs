@@ -35,7 +35,7 @@ export function assertCodexReleasePackageContract(params) {
       `@paleoclaw/codex must depend on @openai/codex ${expectedVersion}; found ${String(dependency)}`,
     );
   }
-  const requiredPlatformPackages = pluginPackage.openclaw?.install?.requiredPlatformPackages;
+  const requiredPlatformPackages = pluginPackage.paleoclaw?.install?.requiredPlatformPackages;
   if (
     !Array.isArray(requiredPlatformPackages) ||
     !requiredPlatformPackages.includes(target.alias)

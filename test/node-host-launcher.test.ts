@@ -504,7 +504,7 @@ if (fs.existsSync(process.env.TEST_ATTEMPT)) {
   await restart();
   report('restart-accepted');
   const manifest = JSON.parse(fs.readFileSync(process.env.TEST_CANDIDATE_MANIFEST, 'utf8'));
-  manifest.openclaw.schemaVersions.state += 1;
+  manifest.paleoclaw.schemaVersions.state += 1;
   fs.writeFileSync(process.env.TEST_CANDIDATE_MANIFEST, JSON.stringify(manifest));
   process.exit(0);
 }

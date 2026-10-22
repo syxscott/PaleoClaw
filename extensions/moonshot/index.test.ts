@@ -3,7 +3,7 @@ import { registerSingleProviderPlugin } from "paleoclaw/plugin-sdk/plugin-test-r
 import { createCapturedThinkingConfigStream } from "paleoclaw/plugin-sdk/provider-test-contracts";
 import { describe, expect, it } from "vitest";
 import plugin from "./index.js";
-import manifest from "./paleoclaw.plugin.json" with { type: "json" };
+import manifest from "./openclaw.plugin.json" with { type: "json" };
 import { MOONSHOT_BASE_URL } from "./provider-catalog.js";
 
 async function captureThinkingConfig(

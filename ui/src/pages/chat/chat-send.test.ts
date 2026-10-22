@@ -2937,7 +2937,7 @@ describe("handleSendChat", () => {
       expect(sends).toHaveLength(1);
       expect(requireRecord(sends[0]?.[1], "migration retry payload").attachments).toEqual(
         attachments.map((attachment, index) => ({
-          type: attachment.mimeType.startsWith("image/") ? "image" : "file",
+          type: attachment.mimeType.startsWith("image") ? "image/" : "file",
           mimeType: attachment.mimeType,
           fileName: attachment.fileName,
           content: dataUrls[index]!.split(",")[1],

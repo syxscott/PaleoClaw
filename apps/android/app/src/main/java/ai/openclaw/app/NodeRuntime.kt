@@ -461,7 +461,7 @@ class NodeRuntime(context: Context) {
     scope.launch {
       if (!_nodeConnected.value) {
         _canvasRehydratePending.value = false
-        _canvasRehydrateErrorText.value = "Node offline. Reconnect and retry."
+        _canvasRehydrateErrorText.value = appContext.getString(R.string.canvas_rehydrate_offline)
         return@launch
       }
       if (!force && didAutoRequestCanvasRehydrate) return@launch
@@ -492,7 +492,7 @@ class NodeRuntime(context: Context) {
         }
         if (canvasRehydrateSeq.get() == requestId) {
           _canvasRehydratePending.value = false
-          _canvasRehydrateErrorText.value = "Failed to request restore. Tap to retry."
+          _canvasRehydrateErrorText.value = appContext.getString(R.string.canvas_rehydrate_request_failed)
         }
         Log.w("OpenClawCanvas", "canvas rehydrate request failed ($source): transport unavailable")
         return@launch
@@ -503,7 +503,7 @@ class NodeRuntime(context: Context) {
         if (!_canvasRehydratePending.value) return@launch
         if (_canvasA2uiHydrated.value) return@launch
         _canvasRehydratePending.value = false
-        _canvasRehydrateErrorText.value = "No canvas update yet. Tap to retry."
+        _canvasRehydrateErrorText.value = appContext.getString(R.string.canvas_rehydrate_no_update)
       }
     }
   }

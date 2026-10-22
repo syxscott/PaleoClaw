@@ -7,7 +7,7 @@ import {
   createPayloadPatchStreamWrapper,
 } from "paleoclaw/plugin-sdk/provider-stream-shared";
 import { buildProviderToolCompatFamilyHooks } from "paleoclaw/plugin-sdk/provider-tools";
-import manifest from "./paleoclaw.plugin.json" with { type: "json" };
+import manifest from "./openclaw.plugin.json" with { type: "json" };
 
 const PROVIDER_ID = "gmi";
 

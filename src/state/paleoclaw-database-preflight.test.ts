@@ -45,7 +45,7 @@ function createState() {
 }
 
 it("keeps package schema support metadata aligned", () => {
-  expect(packageJson.openclaw.schemaVersions).toEqual(supportedVersions);
+  expect(packageJson.paleoclaw.schemaVersions).toEqual(supportedVersions);
 });
 
 it("keeps restart discovery off the caller thread and observes changed retained-deletion facts", async () => {

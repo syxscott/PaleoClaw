@@ -394,7 +394,7 @@ function collectPackageInventory(
     if (policy.dependency && typeof rootManifest.dependencies?.[policy.dependency] !== "string") {
       continue;
     }
-    if (!policy.dependency && manifest.openclaw?.release?.publishToNpm !== true) {
+    if (!policy.dependency && manifest.paleoclaw?.release?.publishToNpm !== true) {
       continue;
     }
     if (manifest.version !== version) {

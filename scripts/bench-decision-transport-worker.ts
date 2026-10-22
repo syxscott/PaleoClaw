@@ -4,7 +4,7 @@ import { createServer } from "node:http";
 import type { Socket } from "node:net";
 import { normalizeModelCatalog } from "@paleoclaw/model-catalog-core/model-catalog-normalize";
 import plugin from "../extensions/typesafe/index.js";
-import manifest from "../extensions/typesafe/paleoclaw.plugin.json" with { type: "json" };
+import manifest from "../extensions/typesafe/openclaw.plugin.json" with { type: "json" };
 import { closeProviderTransportDispatcherPool } from "../src/agents/provider-transport-dispatcher-pool.js";
 import type { DecisionProviderContextV2 } from "../src/decisions/provider-context.js";
 import type {

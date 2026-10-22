@@ -1,7 +1,7 @@
 import { createLazyRuntimeModule } from "paleoclaw/plugin-sdk/lazy-runtime";
 import { definePluginEntry } from "paleoclaw/plugin-sdk/plugin-entry";
 import { getPreparedPluginSecretInput } from "paleoclaw/plugin-sdk/secret-input-runtime";
-import manifest from "./paleoclaw.plugin.json" with { type: "json" };
+import manifest from "./openclaw.plugin.json" with { type: "json" };
 
 const loadRuntime = createLazyRuntimeModule(() => import("./src/runtime.js"));
 const credential = () => getPreparedPluginSecretInput("subq", "apiKey").value;

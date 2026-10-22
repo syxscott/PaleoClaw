@@ -45,7 +45,7 @@ export function createStandaloneRequireAdapter({ runtimeRoot, embeddedPaths }) {
     const imageFilename = (specifier) => {
       if (typeof specifier !== "string") return undefined;
       const filename = path.isAbsolute(specifier) ? path.resolve(specifier)
-        : specifier.startsWith("./") || specifier.startsWith("../")
+        : specifier.startsWith("./") || specifier.startsWith("..")
           ? path.resolve(path.dirname(parent), specifier) : undefined;
       if (filename === undefined) return undefined;
       if (embedded(filename)) return filename;

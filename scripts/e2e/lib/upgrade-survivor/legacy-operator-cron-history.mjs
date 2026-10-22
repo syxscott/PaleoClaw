@@ -25,7 +25,7 @@ function identity(manifestBytes, buildBytes) {
   JSON.parse(buildBytes.toString());
   return {
     version: manifest.version,
-    stateSchemaVersion: manifest.openclaw.schemaVersions.state,
+    stateSchemaVersion: manifest.paleoclaw.schemaVersions.state,
     manifestSha256: hash(manifestBytes),
     buildInfoSha256: hash(buildBytes),
   };

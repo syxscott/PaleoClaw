@@ -238,9 +238,9 @@ function SkillRow(props: { skill: SkillStatusEntry; view: SkillsProps }) {
       <div class="settings-row__control">
         <SkillStateStatus skill={props.skill} verdict={verdict()} />
         <Show
-          when={props.skill.clawhub?.status === "linked"}
+          when={props.skill.PaleoHub?.status === "linked"}
           fallback={
-            <Show when={props.skill.clawhub?.status === "invalid"}>
+            <Show when={props.skill.PaleoHub?.status === "invalid"}>
               <SettingsStatus kind="warn" label={t("skillsPage.invalidLink")} />
             </Show>
           }
@@ -274,7 +274,7 @@ function SkillDetail(props: { skill: SkillStatusEntry; view: SkillsProps }) {
     props.view.state.skillsDetailTab === "card" && props.skill.skillCard?.present
       ? "card"
       : "overview";
-  const hasTabs = () => Boolean(props.skill.clawhub || props.skill.skillCard?.present);
+  const hasTabs = () => Boolean(props.skill.PaleoHub || props.skill.skillCard?.present);
   return (
     <SkillReaderDialog
       label={props.skill.name}
@@ -474,7 +474,7 @@ function InstalledClawHubOverview(props: {
   view: SkillsProps;
   verdict: ClawHubSkillSecurityVerdict | null;
 }) {
-  const link = () => props.skill.clawhub;
+  const link = () => props.skill.PaleoHub;
   const invalidReason = () => {
     const value = link();
     return value?.status === "invalid" ? value.reason : null;

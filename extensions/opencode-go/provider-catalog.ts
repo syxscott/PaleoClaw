@@ -10,7 +10,7 @@ import {
 } from "paleoclaw/plugin-sdk/provider-catalog-live-runtime";
 import { normalizeBaseUrl } from "paleoclaw/plugin-sdk/provider-http";
 import { normalizeModelCompat } from "paleoclaw/plugin-sdk/provider-model-shared";
-import manifest from "./paleoclaw.plugin.json" with { type: "json" };
+import manifest from "./openclaw.plugin.json" with { type: "json" };
 import { isOpencodeGoKimiNoReasoningModelId } from "./provider-policy-api.js";
 
 const PROVIDER_ID = "opencode-go";

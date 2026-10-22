@@ -516,7 +516,7 @@ async function fixture(
         const manifest = readJson(manifestPath);
         const names = Array.from({ length: options.advisoryCount }, (_, n) => `advisory-${n}`);
         manifest.dependencies = Object.fromEntries(names.map((name) => [name, "1.2.3"]));
-        manifest.openclaw.release.requireLatestDependencies = names;
+        manifest.paleoclaw.release.requireLatestDependencies = names;
         writeFileSync(manifestPath, JSON.stringify(manifest));
       }
       write(

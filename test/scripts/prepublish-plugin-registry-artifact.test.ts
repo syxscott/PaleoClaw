@@ -256,7 +256,7 @@ describe("prepublish plugin registry artifact", () => {
     const packedPackage = JSON.parse(
       execFileSync("tar", ["-xOf", tarball, "package/package.json"], { encoding: "utf8" }),
     );
-    expect(packedPackage.openclaw.runtimeExtensions).toEqual(["./dist/index.js"]);
+    expect(packedPackage.paleoclaw.runtimeExtensions).toEqual(["./dist/index.js"]);
     const runtime = execFileSync("tar", ["-xOf", tarball, "package/dist/index.js"]);
     const loaded = await import(`data:text/javascript;base64,${runtime.toString("base64")}`);
     expect(loaded.message).toBe("built before packing");
@@ -522,9 +522,9 @@ describe("prepublish plugin registry artifact", () => {
         installPrefix,
         "paleoclaw",
       ]);
-      expect(readJson(path.join(installPrefix, "node_modules/paleoclaw/package.json")).version).toBe(
-        candidateVersion,
-      );
+      expect(
+        readJson(path.join(installPrefix, "node_modules/paleoclaw/package.json")).version,
+      ).toBe(candidateVersion);
       expect(upstreamRequests).not.toContain("/paleoclaw/extended-stable");
       expect(upstreamRequests).not.toContain(`/paleoclaw/${candidateVersion}`);
     } finally {

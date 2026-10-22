@@ -622,7 +622,7 @@ export function validatePluginPackageManifest(params, packageManifest) {
       `${params.packageName}: packed package.json must not override the approved publication tag.`,
     );
   }
-  const release = packageManifest.openclaw?.release;
+  const release = packageManifest.paleoclaw?.release;
   const referencesMetaIdentity =
     params.packageName === META_PACKAGE || params.packageDir === META_PACKAGE_DIR;
   if (

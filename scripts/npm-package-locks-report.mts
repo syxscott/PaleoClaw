@@ -31,7 +31,7 @@ async function readPackage(rootDir: string, packageDir: string) {
   ) {
     throw new Error(`${packageDir}: expected package name and version`);
   }
-  const release = isRecord(manifest.openclaw) ? manifest.openclaw.release : undefined;
+  const release = isRecord(manifest.paleoclaw) ? manifest.paleoclaw.release : undefined;
   const dependencies = isRecord(manifest.dependencies) ? manifest.dependencies : {};
   const optionalDependencies = isRecord(manifest.optionalDependencies)
     ? manifest.optionalDependencies

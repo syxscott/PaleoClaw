@@ -335,7 +335,7 @@ describe.skipIf(!connection)("Matrix declared account-root database portability"
         sqliteRows(capturedGlobal!.sourcePath, "SELECT agent_id, path FROM agent_databases"),
       ).toEqual([{ agent_id: "retained", path: agentPath }]);
       for (const [index, file] of files.entries()) {
-        const directory = state.path(`restored-${index}`, path.basename(`${file}.postgres`));
+        const directory = state.path(`restored-${index}`, path.basename(`${file}.postgres/`));
         await fs.mkdir(directory, { recursive: true });
         const capsule = backup.snapshots.filter((entry) =>
           entry.archiveSourcePath.startsWith(`${file}.postgres/`),

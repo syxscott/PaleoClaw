@@ -128,7 +128,7 @@ it("observes mutations to returned rows in later lookups and projections", () =>
   const { name: originalName, paleoclaw: originalManifest } = entry;
   try {
     entry.name = "@fixture/renamed";
-    entry.openclaw = {
+    entry.paleoclaw = {
       plugin: { id: "Renamed" },
       channel: { id: "RenamedChannel", label: "Renamed" },
     };
@@ -145,7 +145,7 @@ it("observes mutations to returned rows in later lookups and projections", () =>
     expect(providerTarget({ providerIds: ["OriginalProvider"], env: {} })).toBe(false);
   } finally {
     entry.name = originalName;
-    entry.openclaw = originalManifest;
+    entry.paleoclaw = originalManifest;
   }
 });
 

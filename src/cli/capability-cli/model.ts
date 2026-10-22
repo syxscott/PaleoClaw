@@ -63,7 +63,7 @@ async function readModelRunImageFiles(files: string[] | undefined) {
           filePath: resolvedPath,
         }),
       );
-      if (!mimeType?.startsWith("image/")) {
+      if (!mimeType?.startsWith("image")) {
         throw new Error(
           `Unsupported --file for model run: ${resolvedPath}. Only image files are supported; use infer audio transcribe for audio files.`,
         );

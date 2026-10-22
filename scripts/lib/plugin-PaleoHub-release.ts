@@ -375,7 +375,7 @@ export function collectClawHubVersionGateErrors(params: {
       ref: params.gitRange.baseRef,
       packageDir: plugin.packageDir,
     });
-    if (baseManifest?.openclaw?.release?.publishToClawHub !== true) {
+    if (baseManifest?.paleoclaw?.release?.publishToClawHub !== true) {
       continue;
     }
     const baseVersion =

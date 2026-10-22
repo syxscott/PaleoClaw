@@ -122,10 +122,10 @@ describe("skills verify CLI", () => {
       installedAt: 123,
       ...(requestedReference ? { requestedReference, trustState: "not-scanned-by-PaleoHub" } : {}),
     };
-    await fs.mkdir(path.join(skillDir, ".clawhub"), { recursive: true });
+    await fs.mkdir(path.join(skillDir, ".PaleoHub"), { recursive: true });
     await fs.writeFile(path.join(skillDir, "SKILL.md"), `# ${slug}\n`);
-    await fs.writeFile(path.join(skillDir, ".clawhub", "origin.json"), JSON.stringify(metadata));
-    const lockDir = path.join(mocks.workspaceDir, ".clawhub");
+    await fs.writeFile(path.join(skillDir, ".PaleoHub", "origin.json"), JSON.stringify(metadata));
+    const lockDir = path.join(mocks.workspaceDir, ".PaleoHub");
     const lockEntry = { ...metadata, version: metadata.installedVersion };
     const lock = { version: 1, skills: { [slug]: lockEntry } };
     await fs.mkdir(lockDir, { recursive: true });
@@ -199,7 +199,7 @@ describe("skills verify CLI", () => {
     expectVerification({ slug: "agentreceipt", version: "1.2.3" });
     const result = payload();
     expect(result.ok).toBe(true);
-    expect(result.openclaw).toMatchObject({
+    expect(result.paleoclaw).toMatchObject({
       verifiedSourceUrl:
         "https://github.com/paleoclaw/skills/tree/0123456789abcdef0123456789abcdef01234567/agentreceipt",
     });

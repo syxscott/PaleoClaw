@@ -78,7 +78,7 @@ function pathContainsPackedTestCargo(packedPath: string): boolean {
   const normalizedPath = packedPath.replace(/\\/g, "/");
   // Root docs ship Markdown reference material; topic directories such as
   // "test" are not runtime test cargo. Dependency fixtures remain disallowed.
-  if (normalizedPath.startsWith("docs/") && normalizedPath.endsWith(".md")) {
+  if (normalizedPath.startsWith("docs") && normalizedPath.endsWith(".md")) {
     return false;
   }
   if (PACKED_TEST_CARGO_FILE_RE.test(normalizedPath)) {
@@ -177,9 +177,9 @@ export function collectReleasePackageMetadataErrors(pkg: PackageJson): string[] 
       }.`,
     );
   }
-  if (pkg.bin?.openclaw !== "openclaw.mjs") {
+  if (pkg.bin?.paleoclaw !== "paleoclaw.mjs") {
     errors.push(
-      `package.json bin.openclaw must be "openclaw.mjs"; found "${pkg.bin?.openclaw ?? ""}".`,
+      `package.json bin.paleoclaw must be "paleoclaw.mjs"; found "${pkg.bin?.paleoclaw ?? ""}".`,
     );
   }
   if (/^(?:file|link|workspace):/u.test(pkg.dependencies?.[FS_SAFE_PACKAGE] ?? "")) {

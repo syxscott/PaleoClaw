@@ -209,7 +209,7 @@ function resolveTargetUrl(
 }
 
 function isAzureSdkProxyPath(pathname: string): boolean {
-  return pathname === "/openai" || pathname.startsWith("/openai/");
+  return pathname === "/openai/" || pathname.startsWith("/openai/");
 }
 
 function hasValidProxyCredential(

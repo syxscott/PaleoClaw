@@ -30,7 +30,7 @@ vi.mock("../../agents/agent-scope.js", () => ({
   resolveSessionAgentId: vi.fn(() => undefined),
 }));
 
-vi.mock("../../skills/lifecycle/clawhub.js", () => ({
+vi.mock("../../skills/lifecycle/PaleoHub.js", () => ({
   installSkillFromClawHub: (...args: unknown[]) => installSkillFromClawHubMock(...args),
   updateSkillsFromClawHub: (...args: unknown[]) => updateSkillsFromClawHubMock(...args),
 }));

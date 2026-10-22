@@ -32,16 +32,16 @@ it("release-aligns the actual Nextcloud manifest before plugin-first publication
   fs.writeFileSync(packagePath, JSON.stringify(original));
   expect(syncPluginVersions(root).updated).toContain("@paleoclaw/nextcloud-talk");
   const aligned = JSON.parse(fs.readFileSync(packagePath, "utf8"));
-  expect(aligned.openclaw.install.minHostVersion).toBe(original.openclaw.install.minHostVersion);
-  expect(aligned.openclaw.compat.pluginApi).toBe(`>=${releaseVersion}`);
-  expect(aligned.openclaw.build.openclawVersion).toBe(releaseVersion);
+  expect(aligned.paleoclaw.install.minHostVersion).toBe(original.paleoclaw.install.minHostVersion);
+  expect(aligned.paleoclaw.compat.pluginApi).toBe(`>=${releaseVersion}`);
+  expect(aligned.paleoclaw.build.openclawVersion).toBe(releaseVersion);
 
   for (const hostVersion of [oldHostVersion, releaseVersion]) {
     const compatible = hostVersion === releaseVersion;
     const result = validateOpenClawPackageInstallCompatibility({
       runtime: { checkMinHostVersion, resolveCompatibilityHostVersion: () => hostVersion },
       pluginId: "nextcloud-talk",
-      packageMetadata: aligned.openclaw,
+      packageMetadata: aligned.paleoclaw,
     });
     if (compatible) {
       expect(result).toBeNull();
@@ -55,7 +55,7 @@ it("release-aligns the actual Nextcloud manifest before plugin-first publication
     expect(
       shouldSkipIncompatiblePackagePluginApi({
         origin: "global",
-        packageManifest: aligned.openclaw,
+        packageManifest: aligned.paleoclaw,
         pluginId: "nextcloud-talk",
         packageDir,
         env: { OPENCLAW_COMPATIBILITY_HOST_VERSION: hostVersion },

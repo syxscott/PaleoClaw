@@ -1,6 +1,7 @@
 import { randomBytes } from "node:crypto";
 import fs from "node:fs/promises";
 import type { ThinkLevel } from "../../auto-reply/thinking.js";
+import { resolveAgentModelFallbackValues } from "../../config/model-input.js";
 import {
   ensureContextEnginesInitialized,
   resolveContextEngine,
@@ -12,18 +13,16 @@ import type { PluginHookBeforeAgentStartResult } from "../../plugins/types.js";
 import { enqueueCommandInLane } from "../../process/command-queue.js";
 import { isMarkdownCapableMessageChannel } from "../../utils/message-channel.js";
 import { resolveOpenClawAgentDir } from "../agent-paths.js";
-import { hasConfiguredModelFallbacks } from "../agent-scope.js";
+import { resolveRunModelFallbacksOverride } from "../agent-scope.js";
 import {
   isProfileInCooldown,
   type AuthProfileFailureReason,
   markAuthProfileFailure,
-  markAuthProfileGood,
-  markAuthProfileUsed,
+  markAuthProfileSuccess,
   resolveProfilesUnavailableReason,
 } from "../auth-profiles.js";
 import {
   CONTEXT_WINDOW_HARD_MIN_TOKENS,
-  CONTEXT_WINDOW_WARN_BELOW_TOKENS,
   evaluateContextWindowGuard,
   resolveContextWindowInfo,
 } from "../context-window-guard.js";
@@ -292,11 +291,14 @@ export async function runEmbeddedPiAgent(
       let provider = (params.provider ?? DEFAULT_PROVIDER).trim() || DEFAULT_PROVIDER;
       let modelId = (params.model ?? DEFAULT_MODEL).trim() || DEFAULT_MODEL;
       const agentDir = params.agentDir ?? resolveOpenClawAgentDir();
-      const fallbackConfigured = hasConfiguredModelFallbacks({
-        cfg: params.config,
-        agentId: params.agentId,
-        sessionKey: params.sessionKey,
-      });
+      const fallbackConfigured =
+        (
+          resolveRunModelFallbacksOverride({
+            cfg: params.config,
+            agentId: params.agentId,
+            sessionKey: params.sessionKey,
+          }) ?? resolveAgentModelFallbackValues(params.config?.agents?.defaults?.model)
+        ).length > 0;
       await ensureOpenClawModelsJson(params.config, agentDir);
 
       // Run before_model_resolve hooks early so plugins can override the
@@ -383,12 +385,11 @@ export async function runEmbeddedPiAgent(
           : model;
       const ctxGuard = evaluateContextWindowGuard({
         info: ctxInfo,
-        warnBelowTokens: CONTEXT_WINDOW_WARN_BELOW_TOKENS,
         hardMinTokens: CONTEXT_WINDOW_HARD_MIN_TOKENS,
       });
       if (ctxGuard.shouldWarn) {
         log.warn(
-          `low context window: ${provider}/${modelId} ctx=${ctxGuard.tokens} (warn<${CONTEXT_WINDOW_WARN_BELOW_TOKENS}) source=${ctxGuard.source}`,
+          `low context window: ${provider}/${modelId} ctx=${ctxGuard.tokens} (warn<${ctxGuard.warnBelowTokens}) source=${ctxGuard.source}`,
         );
       }
       if (ctxGuard.shouldBlock) {
@@ -1443,14 +1444,9 @@ export async function runEmbeddedPiAgent(
             `embedded run done: runId=${params.runId} sessionId=${params.sessionId} durationMs=${Date.now() - started} aborted=${aborted}`,
           );
           if (lastProfileId) {
-            await markAuthProfileGood({
+            await markAuthProfileSuccess({
               store: authStore,
               provider,
-              profileId: lastProfileId,
-              agentDir: params.agentDir,
-            });
-            await markAuthProfileUsed({
-              store: authStore,
               profileId: lastProfileId,
               agentDir: params.agentDir,
             });

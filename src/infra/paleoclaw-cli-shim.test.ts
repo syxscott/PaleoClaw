@@ -40,7 +40,7 @@ describe.skipIf(process.platform === "win32")("Gateway agent CLI shim", () => {
     "runs the source CLI version command outside the checkout (%s)",
     (parentLoader) =>
       withTempDir("paleoclaw-agent-cli-version-", async (root) => {
-        const checkout = fileURLToPath(new URL("../../", import.meta.url));
+        const checkout = fileURLToPath(new URL("../..", import.meta.url));
         const loader = pathToFileURL(createRequire(import.meta.url).resolve("tsx")).href;
         const execArgv =
           parentLoader === "inline bare TSX"

@@ -19,7 +19,7 @@ vi.mock("./runtime-api.js", () => ({
 }));
 
 import plugin from "./index.js";
-import manifest from "./paleoclaw.plugin.json" with { type: "json" };
+import manifest from "./openclaw.plugin.json" with { type: "json" };
 import { createTokenjuiceAgentToolResultMiddleware } from "./tool-result-middleware.js";
 
 const toolResultHandler =

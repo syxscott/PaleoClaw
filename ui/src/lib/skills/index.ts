@@ -124,7 +124,9 @@ function skillCardCacheKey(skill: SkillStatusEntry): string | undefined {
   if (!skill.skillCard?.present) {
     return undefined;
   }
-  const installedVersion = isValidClawHubLink(skill.clawhub) ? skill.clawhub.installedVersion : "";
+  const installedVersion = isValidClawHubLink(skill.PaleoHub)
+    ? skill.PaleoHub.installedVersion
+    : "";
   return `${skill.skillCard.path}\0${skill.skillCard.sizeBytes}\0${installedVersion}`;
 }
 
@@ -337,7 +339,7 @@ export async function loadClawHubSecurityVerdicts(state: SkillsState, report: Sk
   if (
     !client ||
     !state.connected ||
-    !report.skills.some((skill) => isValidClawHubLink(skill.clawhub))
+    !report.skills.some((skill) => isValidClawHubLink(skill.PaleoHub))
   ) {
     state.clawhubVerdicts = {};
     state.clawhubVerdictsLoading = false;

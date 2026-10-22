@@ -57,7 +57,7 @@ export function normalizeArchiveRoot(rootName: string): string {
 
 export function isArchivePathWithin(child: string, parent: string): boolean {
   const relative = path.posix.relative(parent, child);
-  return relative === "" || (!relative.startsWith("../") && relative !== "..");
+  return relative === "" || (!relative.startsWith("..") && relative !== "..");
 }
 
 export function resolvePortableArchivePathKey(value: string): string {

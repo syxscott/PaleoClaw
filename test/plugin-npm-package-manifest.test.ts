@@ -743,11 +743,11 @@ it.each(["qa-lab", "qa-channel"] as const)(
         version: packageJson.version,
         private: true,
       });
-      expect(packed.peerDependencies.openclaw).toBe(packageJson.openclaw.compat.pluginApi);
-      expect(packed.openclaw.extensions).toEqual([
+      expect(packed.peerDependencies.openclaw).toBe(packageJson.paleoclaw.compat.pluginApi);
+      expect(packed.paleoclaw.extensions).toEqual([
         id === "qa-lab" ? "./dist/gateway-entry.js" : "./dist/index.js",
       ]);
-      expect(packed.openclaw.runtimeExtensions).toEqual(packed.openclaw.extensions);
+      expect(packed.paleoclaw.runtimeExtensions).toEqual(packed.paleoclaw.extensions);
       expectPackageFiles(files, [
         ...outputs.map((output) => `dist/${output}`),
         "dist/.setup/lazy.mjs",
@@ -761,19 +761,19 @@ it.each(["qa-lab", "qa-channel"] as const)(
         undefined,
         undefined,
       ]);
-      expect(packed.openclaw.build).toBeUndefined();
+      expect(packed.paleoclaw.build).toBeUndefined();
       expect(packedManifest.cliCommands).toBeUndefined();
       expect(packedManifest.configSchema).toEqual(manifest.configSchema);
       expect(packedManifest.activation).toEqual(manifest.activation);
       if (id === "qa-lab") {
         expect(packed.dependencies).toEqual({});
-        expect(packed.openclaw.setupEntry).toBeUndefined();
+        expect(packed.paleoclaw.setupEntry).toBeUndefined();
         expect(packedManifest.contracts).toEqual(manifest.contracts);
         expect(packedManifest.toolMetadata).toEqual({ qa_restart_wait: { replaySafe: true } });
       } else {
         expect(packed.dependencies).toEqual({ typebox: "1.2.3", zod: "4.5.6" });
-        expect(packed.openclaw.setupEntry).toBe("./dist/setup-entry.js");
-        expect(packed.openclaw.runtimeSetupEntry).toBe(packed.openclaw.setupEntry);
+        expect(packed.paleoclaw.setupEntry).toBe("./dist/setup-entry.js");
+        expect(packed.paleoclaw.runtimeSetupEntry).toBe(packed.paleoclaw.setupEntry);
         expect(packedManifest.channels).toEqual(["qa-channel"]);
         expect(packedManifest.channelConfigs["qa-channel"].schema).toEqual(channelSchema);
       }
@@ -848,9 +848,9 @@ it.for([
     } = makePublishableFixture("npm-package-state-runtime", false);
     const sourcePackage = readPackageJson(packageDir);
     if (extension === "cjs") {
-      sourcePackage.openclaw.build = { runtimeFormat: "cjs" };
+      sourcePackage.paleoclaw.build = { runtimeFormat: "cjs" };
     }
-    sourcePackage.openclaw.channel = {
+    sourcePackage.paleoclaw.channel = {
       id: "diffs",
       configuredState: {
         specifier: "./configured-state",
@@ -863,7 +863,7 @@ it.for([
     };
     if (partial) {
       for (const metadataKey of ["configuredState", "persistedAuthState"] as const) {
-        sourcePackage.openclaw.channel[metadataKey] = {
+        sourcePackage.paleoclaw.channel[metadataKey] = {
           ...partial,
           env: { anyOf: ["SYNTHETIC_PLUGIN_TOKEN"] },
         };
@@ -908,7 +908,7 @@ it.for([
       peerDependencies: { paleoclaw: ">=2026.4.30" },
       peerDependenciesMeta: { paleoclaw: { optional: true } },
       paleoclaw: {
-        ...sourcePackage.openclaw,
+        ...sourcePackage.paleoclaw,
         setupEntry: `./dist/setup-entry.${extension}`,
         runtimeSetupEntry: `./dist/setup-entry.${extension}`,
         runtimeExtensions: [`./dist/index.${extension}`],
@@ -918,7 +918,7 @@ it.for([
             Object.entries(stateProbes).map(([key, { file, exportName }]) => [
               key,
               partial
-                ? sourcePackage.openclaw.channel[key]
+                ? sourcePackage.paleoclaw.channel[key]
                 : { specifier: `./dist/${file}.${extension}`, exportName },
             ]),
           ),
@@ -969,7 +969,7 @@ it.for([
       }
       if (partial) {
         const channel = readPackageJson(packageRoot).openclaw.channel;
-        expect(channel).toEqual(sourcePackage.openclaw.channel);
+        expect(channel).toEqual(sourcePackage.paleoclaw.channel);
         for (const metadataKey of ["configuredState", "persistedAuthState"] as const) {
           const probe = {
             entry: {
@@ -1002,7 +1002,7 @@ import { pathToFileURL } from "node:url";
 const root = ${JSON.stringify(packageRoot)};
 const pkg = JSON.parse(fs.readFileSync(root + "/package.json", "utf8"));
 for (const key of ["configuredState", "persistedAuthState"]) {
-  const state = pkg.openclaw.channel[key];
+  const state = pkg.paleoclaw.channel[key];
   const loaded = await import(new URL(state.specifier, pathToFileURL(root + "/")));
   if (loaded[state.exportName]?.() !== true) throw new Error("packed state checker failed: " + key);
 }
@@ -1018,7 +1018,7 @@ process.stdout.write("PACKED_PLUGIN_CHANNEL_STATE_OK\\n");
       writeJsonFile(join(packageDir, "package.json"), {
         ...sourcePackage,
         paleoclaw: {
-          ...sourcePackage.openclaw,
+          ...sourcePackage.paleoclaw,
           channel: {
             id: "diffs",
             [metadataKey]: {
@@ -1148,7 +1148,7 @@ it.each([
   const { repoDir, packageDir, params, sourceManifest, installedDir, installedSource, artifacts } =
     writePatchedRuntimeFixture(bundling);
   if (bundling === "unchanged") {
-    delete sourceManifest.openclaw.setupEntry;
+    delete sourceManifest.paleoclaw.setupEntry;
     writeJsonFile(join(packageDir, "package.json"), sourceManifest);
     Object.assign(
       sourceManifest,
@@ -1381,7 +1381,7 @@ it.each(["bundle opt-out", "stale install", "stale importer spec", "wrong packag
     const { repoDir, packageDir, params, sourceManifest, installedDir, lock } =
       writePatchedRuntimeFixture();
     if (scenario === "bundle opt-out") {
-      sourceManifest.openclaw.release.bundleRuntimeDependencies = false;
+      sourceManifest.paleoclaw.release.bundleRuntimeDependencies = false;
       writeJsonFile(join(packageDir, "package.json"), sourceManifest);
     } else if (scenario === "stale install") {
       writeJsonFile(join(repoDir, "node_modules/.pnpm/lock.yaml"), {
@@ -1464,7 +1464,7 @@ it("honors plugin package opt-out for bundled runtime dependencies", () => {
     ...source,
     dependencies: { "local-runtime-dep": "file:./deps/local-runtime-dep" },
     paleoclaw: {
-      ...source.openclaw,
+      ...source.paleoclaw,
       release: { publishToNpm: true, bundleRuntimeDependencies: false },
     },
   });

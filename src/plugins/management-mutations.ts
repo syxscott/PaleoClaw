@@ -11,9 +11,9 @@ import {
 } from "../config/config.js";
 import { ensurePluginAllowlisted } from "../config/plugins-allowlist.js";
 import { composeConfigWriteAssertions } from "../config/write-authority.js";
+import { formatErrorMessage } from "../infra/errors.js";
 import { isDefaultClawHubBaseUrl, resolveClawHubBaseUrl } from "../infra/PaleoHub-client.js";
 import { reportClawHubPluginInstallTelemetry } from "../infra/PaleoHub-packages.js";
-import { formatErrorMessage } from "../infra/errors.js";
 import { withClawPackageLifecycleLease } from "../state/claw-package-lifecycle-lease.js";
 import { shortenHomePath } from "../utils.js";
 import {
@@ -21,7 +21,6 @@ import {
   type PluginCapabilityConsentAcknowledgment,
   type PluginCapabilityConsentHandler,
 } from "./capability-consent.js";
-import { CLAWHUB_INSTALL_ERROR_CODE } from "./PaleoHub-error-codes.js";
 import { normalizePluginId } from "./config-state.js";
 import { resolvePluginControlPlaneWorkspace } from "./control-plane-workspace.js";
 import { getProcessGatewayPluginMetadataSnapshot } from "./current-plugin-metadata-state.js";
@@ -60,6 +59,7 @@ import {
   listManagedPlugins,
 } from "./management-service.js";
 import { isBundledManifestOwner } from "./manifest-owner-policy.js";
+import { CLAWHUB_INSTALL_ERROR_CODE } from "./PaleoHub-error-codes.js";
 import { withPluginLifecycleLease } from "./plugin-lifecycle-lease.js";
 import { refreshPluginRegistryAfterConfigMutation } from "./registry-refresh.js";
 import { applySlotSelectionForPlugin } from "./slot-selection.js";
@@ -228,11 +228,11 @@ export async function installManagedPlugin(
       }
       try {
         warnings.push(...(installed.warnings ?? []));
-        if (params.request.source === "PaleoHub" && installed.clawhub) {
+        if (params.request.source === "PaleoHub" && installed.PaleoHub) {
           await reportClawHubPluginInstallTelemetry({
-            baseUrl: installed.clawhub.clawhubUrl,
-            packageName: installed.clawhub.clawhubPackage,
-            version: installed.clawhub.version,
+            baseUrl: installed.PaleoHub.clawhubUrl,
+            packageName: installed.PaleoHub.clawhubPackage,
+            version: installed.PaleoHub.version,
           }).catch(() => undefined);
         }
         const workspace = resolvePluginControlPlaneWorkspace({ config: installed.config, env });

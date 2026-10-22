@@ -116,7 +116,7 @@ it("cancels opened-target discovery on shutdown even when compensating close fai
   );
   const state = makeState("paleoclaw");
   const paleoclaw = createBrowserRouteContext({ getState: () => state }).forProfile("paleoclaw");
-  const open = openclaw.openTab("about:blank", { signal: new AbortController().signal });
+  const open = paleoclaw.openTab("about:blank", { signal: new AbortController().signal });
   await vi.advanceTimersByTimeAsync(0);
   expect(timers.mock.calls.some((call) => call[1] === OPEN_TAB_DISCOVERY_POLL_MS)).toBe(true);
   expect(vi.getTimerCount()).toBe(1);

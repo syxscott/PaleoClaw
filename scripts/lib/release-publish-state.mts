@@ -85,7 +85,7 @@ export function readReleasePublicationPackages(input: {
     }
     const manifest = JSON.parse(read(path)) as PluginPackageJson;
     if (
-      policy.dependency ? !requiredDependency : manifest.openclaw?.release?.publishToNpm !== true
+      policy.dependency ? !requiredDependency : manifest.paleoclaw?.release?.publishToNpm !== true
     ) {
       return [];
     }

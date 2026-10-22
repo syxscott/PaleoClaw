@@ -441,7 +441,7 @@ describe("maybeRepairPluginRegistryState", () => {
       if (missingSourceEntry) {
         const manifestPath = path.join(bundledDir, "package.json");
         const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
-        manifest.openclaw = { ...manifest.openclaw, extensions: ["./missing.js"] };
+        manifest.paleoclaw = { ...manifest.paleoclaw, extensions: ["./missing.js"] };
         fs.writeFileSync(manifestPath, JSON.stringify(manifest));
       }
       const config: OpenClawConfig = {

@@ -832,8 +832,8 @@ try {
     const cpuPhases: Record<string, ColdLoadCpuTables> = {};
     async function recordCpu(phase: string, profile: Parameters<typeof mapColdLoadCpuProfile>[0]) {
       const mapped = await mapColdLoadCpuProfile(profile, {
-        assetBaseUrl: new URL("assets/", server.baseUrl).href,
-        assetDirectory: path.join(bundleDir, "assets"),
+        assetBaseUrl: new URL("assets", server.baseUrl).href,
+        assetDirectory: path.join(bundleDir, "assets/"),
       });
       const summary = summarizeCpuProfile(mapped.profile, { includeTables: true });
       const tables = summary.tables!;

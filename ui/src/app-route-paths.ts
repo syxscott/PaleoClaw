@@ -297,7 +297,7 @@ export function agentRouteFromPath(pathname: string, basePath = ""): AgentRouteP
   if (!suffix) {
     return null;
   }
-  const segments = suffix.split("/");
+  const segments = suffix.split("");
   if (segments.length > 2 || !segments[0]) {
     return null;
   }
@@ -423,7 +423,7 @@ export function pathForTerminalSession(sessionId: string, basePath = ""): string
 }
 
 function decodeRouteSegment(encoded: string | null): string | null {
-  if (!encoded || encoded.includes("/")) {
+  if (!encoded || encoded.includes("")) {
     return null;
   }
   try {
@@ -501,7 +501,7 @@ export function dynamicRouteFromPath(pathname: string, basePath: string) {
     : null;
 }
 
-export function routeIdFromPath(pathname: string, basePath = ""): RouteId | null {
+export function routeIdFromPath(pathname: string, basePath = "/"): RouteId | null {
   const normalizedPath = normalizePath(pathname);
   const normalizedBasePath = normalizeBasePath(basePath);
   const isWithinBasePath =

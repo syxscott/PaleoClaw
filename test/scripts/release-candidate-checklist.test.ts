@@ -1581,7 +1581,7 @@ describe("release candidate checklist", () => {
       }),
     ).toThrow("clean tracked tooling checkout");
     const source = readFileSync("scripts/release-candidate-checklist.mts", "utf8");
-    expect(source).toContain('const TOOLING_ROOT = fileURLToPath(new URL("../", import.meta.url))');
+    expect(source).toContain('const TOOLING_ROOT = fileURLToPath(new URL("..", import.meta.url))');
     expect(source).toContain("`+refs/heads/${workflowRef}:${remoteRef}`");
     expect(source).toContain(
       "const latestTrustedToolingSha = fetchTrustedWorkflowSha(options.workflowRef, TOOLING_ROOT)",

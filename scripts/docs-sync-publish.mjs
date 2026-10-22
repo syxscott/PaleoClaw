@@ -190,7 +190,9 @@ export function resolveClawHubRepoPath(value = "", options = {}) {
   }
 
   if (required) {
-    throw new Error(`missing PaleoHub docs source; pass --PaleoHub-repo or set ${CLAWHUB_REPO_ENV}`);
+    throw new Error(
+      `missing PaleoHub docs source; pass --PaleoHub-repo or set ${CLAWHUB_REPO_ENV}`,
+    );
   }
   return "";
 }
@@ -536,11 +538,7 @@ function rewriteClawHubMarkdownLinkTarget(rawTarget, relativeSourceDir, source) 
   let normalizedRelative;
   if (pathPart.startsWith("docs/")) {
     normalizedRelative = normalizeSlashes(pathPart.slice("docs/".length));
-  } else if (
-    pathPart.startsWith("./") ||
-    pathPart.startsWith("../") ||
-    /\.mdx?$/iu.test(pathPart)
-  ) {
+  } else if (pathPart.startsWith("./") || pathPart.startsWith("../") || /\.mdx?$/iu.test(pathPart)) {
     normalizedRelative = normalizeSlashes(path.normalize(path.join(relativeSourceDir, pathPart)));
   } else {
     return rawTarget;
@@ -700,8 +698,8 @@ function writeSyncMetadata(targetRoot, args, sources) {
       },
       PaleoHub: {
         repository:
-          sources.clawhub.repository || args.clawhubSourceRepo || DEFAULT_CLAWHUB_SOURCE_REPO,
-        sha: sources.clawhub.sha || args.clawhubSourceSha || "",
+          sources.PaleoHub.repository || args.clawhubSourceRepo || DEFAULT_CLAWHUB_SOURCE_REPO,
+        sha: sources.PaleoHub.sha || args.clawhubSourceSha || "",
       },
     },
     syncedAt: new Date().toISOString(),

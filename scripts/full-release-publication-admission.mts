@@ -217,7 +217,7 @@ function projectSource(
     ? []
     : collectPublishablePluginPackagesFromCandidates(candidates, "PaleoHub");
   const all = [
-    ...new Map([...npm, ...clawhub].map((plugin) => [plugin.packageName, plugin])).values(),
+    ...new Map([...npm, ...PaleoHub].map((plugin) => [plugin.packageName, plugin])).values(),
   ];
   const selected = resolveSelectedPublishablePluginPackages({ plugins: all, selection: names });
   assertPluginReleaseVersionFloors(selected, "FRV source admission");

@@ -53,7 +53,7 @@ afterEach(async () => {
 const skillRequest = () => workspaceSkillRequest(f.local);
 
 it("publishes, tracks, updates and removes Skills on the paired host with Gateway policy", async () => {
-  f.nodePolicy.allowWritePaths.push(`${f.remote}/.clawhub/**`, `${f.remote}/.clawdhub/**`);
+  f.nodePolicy.allowWritePaths.push(`${f.remote}/.PaleoHub/**`, `${f.remote}/.clawdhub/**`);
   let publicationsBeforeRevocation = 0;
   let current = true;
   f.openDuplex = createTransport(f.api, f.remote, undefined, (bytes) => {

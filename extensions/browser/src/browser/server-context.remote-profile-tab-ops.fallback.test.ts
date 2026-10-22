@@ -232,11 +232,11 @@ describe("browser server-context loopback direct WebSocket profiles", () => {
     global.fetch = withBrowserFetchPreconnect(fetchMock);
     const paleoclaw = directWebSocketProfile("wss://127.0.0.1:18800/cdp?token=abc");
 
-    const tabs = await openclaw.listTabs();
+    const tabs = await paleoclaw.listTabs();
     expect(tabs.map((tab) => tab.targetId)).toEqual(["T2"]);
 
-    await openclaw.focusTab("T2");
-    await openclaw.closeTab("T2");
+    await paleoclaw.focusTab("T2");
+    await paleoclaw.closeTab("T2");
     expectFetchCalledWithManualRedirect(
       fetchMock,
       "https://127.0.0.1:18800/json/activate/T2?token=abc",
@@ -258,11 +258,11 @@ describe("browser server-context loopback direct WebSocket profiles", () => {
       { dangerouslyAllowPrivateNetwork: false, allowedHostnames: ["browserless.example.com"] },
     );
 
-    await expect(openclaw.listTabs()).rejects.toBeInstanceOf(deps.BrowserCdpEndpointBlockedError);
-    await expect(openclaw.focusTab("T1")).rejects.toBeInstanceOf(
+    await expect(paleoclaw.listTabs()).rejects.toBeInstanceOf(deps.BrowserCdpEndpointBlockedError);
+    await expect(paleoclaw.focusTab("T1")).rejects.toBeInstanceOf(
       deps.BrowserCdpEndpointBlockedError,
     );
-    await expect(openclaw.closeTab("T1")).rejects.toBeInstanceOf(
+    await expect(paleoclaw.closeTab("T1")).rejects.toBeInstanceOf(
       deps.BrowserCdpEndpointBlockedError,
     );
     expect(fetchMock).not.toHaveBeenCalled();

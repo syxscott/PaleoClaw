@@ -86,30 +86,3 @@ export function readFileDescriptorBoundedSync(fd: number, maxBytes: number): Buf
     return preserveOpenClawOverflowError(error, maxBytes);
   }
 }
-
-// --- PaleoClaw 兼容层：openBoundaryFile（pc 3 月 API，上游 10 月已改名）---
-export async function openBoundaryFile(
-  params: OpenBoundaryFileParams,
-): Promise<BoundaryFileOpenResult> {
-  const ioFs = params.ioFs ?? fs;
-  const maybeResolved = resolveBoundaryFilePathGeneric({
-    absolutePath: params.absolutePath,
-    resolve: (absolutePath) =>
-      resolveBoundaryPath({
-        absolutePath,
-        rootPath: params.rootPath,
-        rootCanonicalPath: params.rootRealPath,
-        boundaryLabel: params.boundaryLabel,
-        policy: params.aliasPolicy,
-        skipLexicalRootCheck: params.skipLexicalRootCheck,
-      }),
-  });
-  const resolved = maybeResolved instanceof Promise ? await maybeResolved : maybeResolved;
-  return finalizeBoundaryFileOpen({
-    resolved,
-    maxBytes: params.maxBytes,
-    rejectHardlinks: params.rejectHardlinks,
-    allowedType: params.allowedType,
-    ioFs,
-  });
-}

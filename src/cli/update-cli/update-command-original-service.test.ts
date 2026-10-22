@@ -406,7 +406,7 @@ it.for([
     if (scenario === "agent-support-older") {
       const packagePath = path.join(rootA, "package.json");
       const metadata = JSON.parse(await fs.readFile(packagePath, "utf8"));
-      metadata.openclaw.schemaVersions.agent = OPENCLAW_AGENT_SCHEMA_VERSION - 1;
+      metadata.paleoclaw.schemaVersions.agent = OPENCLAW_AGENT_SCHEMA_VERSION - 1;
       await fs.writeFile(packagePath, JSON.stringify(metadata));
     }
     const configSnapshot = await readConfigFileSnapshot({ observe: false });
@@ -702,7 +702,7 @@ it.each([
   }
   if (scenario === "missing-schema") {
     const metadata = JSON.parse(await fs.readFile(path.join(rootA, "package.json"), "utf8"));
-    delete metadata.openclaw;
+    delete metadata.paleoclaw;
     await fs.writeFile(path.join(rootA, "package.json"), JSON.stringify(metadata));
   }
   if (scenario === "unverified-health") {

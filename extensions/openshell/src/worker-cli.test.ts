@@ -377,7 +377,7 @@ describe("OpenShell standalone worker CLI", () => {
       {
         env: {
           OPENCLAW_CONFIG_PATH: (home) => path.join(home, ".openclaw", "openclaw.json"),
-          OPENCLAW_BUNDLED_PLUGINS_DIR: fileURLToPath(new URL("../../", import.meta.url)),
+          OPENCLAW_BUNDLED_PLUGINS_DIR: fileURLToPath(new URL("../..", import.meta.url)),
         },
       },
     );

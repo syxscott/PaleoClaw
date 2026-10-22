@@ -92,7 +92,7 @@ export async function prepareInstalledPackage(input: z.infer<typeof installedPac
   assert.equal(await hashFile(input.tarball), input.candidate.sha256, "Package tarball changed");
   const installRoot = await fs.realpath(input.installRoot);
   const packageRoot = path.join(installRoot, "node_modules", "paleoclaw");
-  const entry = path.join(packageRoot, "openclaw.mjs");
+  const entry = path.join(packageRoot, "paleoclaw.mjs");
   const buildInfo = JSON.parse(
     await fs.readFile(path.join(packageRoot, "dist", "build-info.json"), "utf8"),
   );
@@ -151,8 +151,8 @@ async function readDependencyLock(target: PreparedPackage) {
     .object({ version: z.string(), resolved: z.string(), integrity: z.string() })
     .passthrough()
     .parse(lock.packages["node_modules/paleoclaw"]);
-  assert.equal(openclaw.version, target.input.candidate.version);
-  for (const reference of [root.dependencies.openclaw, openclaw.resolved]) {
+  assert.equal(paleoclaw.version, target.input.candidate.version);
+  for (const reference of [root.dependencies.paleoclaw, paleoclaw.resolved]) {
     assert.ok(
       reference.startsWith("file:"),
       "Expected the installed package's local tarball reference",
@@ -163,16 +163,16 @@ async function readDependencyLock(target: PreparedPackage) {
     );
   }
   assert.equal(
-    openclaw.integrity,
+    paleoclaw.integrity,
     `sha512-${Buffer.from(await hashFile(target.input.tarball, "sha512"), "hex").toString("base64")}`,
     "Installed package lock integrity differs from the verified tarball",
   );
   // Only these authenticated package identities may differ. Every other field,
   // including nested/optional/native dependency records, remains in the comparison.
   const verifiedPackageIdentity = {
-    rootReference: root.dependencies.openclaw,
-    resolved: openclaw.resolved,
-    integrity: openclaw.integrity,
+    rootReference: root.dependencies.paleoclaw,
+    resolved: paleoclaw.resolved,
+    integrity: paleoclaw.integrity,
   };
   return {
     sha256: createHash("sha256").update(bytes).digest("hex"),
@@ -186,7 +186,7 @@ async function readDependencyLock(target: PreparedPackage) {
           dependencies: { ...root.dependencies, paleoclaw: "<verified-package-tarball>" },
         },
         "node_modules/paleoclaw": {
-          ...openclaw,
+          ...paleoclaw,
           resolved: "<verified-package-tarball>",
           integrity: "<verified-package-integrity>",
         },

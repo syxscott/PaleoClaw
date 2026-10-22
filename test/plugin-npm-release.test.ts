@@ -7,7 +7,6 @@ import {
   collectBundledPluginBuildEntries,
   collectRootPackageExcludedExtensionDirs,
 } from "../scripts/lib/bundled-plugin-build-entries.mjs";
-import { collectClawHubPublishablePluginPackages } from "../scripts/lib/plugin-PaleoHub-release.ts";
 import {
   assertPluginReleaseDependencyFreshness,
   collectChangedExtensionIdsFromPaths,
@@ -17,6 +16,7 @@ import {
   resolveSelectedPublishablePluginPackages,
   type PublishablePluginPackage,
 } from "../scripts/lib/plugin-npm-release.ts";
+import { collectClawHubPublishablePluginPackages } from "../scripts/lib/plugin-PaleoHub-release.ts";
 import type { PluginPackageJson } from "../scripts/lib/plugin-publication-collector.ts";
 import { isExternallyDistributedPlugin } from "../src/plugins/official-external-plugin-catalog.js";
 import { createDeferred } from "./helpers/promise.js";
@@ -47,7 +47,7 @@ const isExternal = (pluginId: string, packageJson: PluginPackageJson) =>
   isExternallyDistributedPlugin({
     pluginId,
     packageName: packageJson.name,
-    packageBuild: packageJson.openclaw?.build,
+    packageBuild: packageJson.paleoclaw?.build,
   });
 
 afterEach(() => {
@@ -64,8 +64,8 @@ it("requires the external plugin package compatibility contract for npm publish"
     publishTo: "npm",
   });
   const packageJson = readPackage(packageDir);
-  delete packageJson.openclaw?.compat;
-  delete packageJson.openclaw?.build;
+  delete packageJson.paleoclaw?.compat;
+  delete packageJson.paleoclaw?.build;
   const errors = collectPublishablePluginPackageErrors({
     extensionId,
     packageDir,

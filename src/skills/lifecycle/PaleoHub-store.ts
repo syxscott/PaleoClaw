@@ -8,11 +8,6 @@ import {
   getAgentWorkspaceAccess,
   WorkspaceAccessUnavailableError,
 } from "../../agents/workspace-access.js";
-import {
-  CLAWHUB_SKILLS_SH_REF_PREFIX,
-  CLAWHUB_SKILLS_SH_TRUST_STATE,
-  type ClawHubSkillsShTrustState,
-} from "../../infra/PaleoHub-skills.js";
 import { sha256Hex } from "../../infra/crypto-digest.js";
 import { formatErrorMessage, hasErrnoCode } from "../../infra/errors.js";
 import { pathExists, statRegularFile } from "../../infra/fs-safe.js";
@@ -23,6 +18,11 @@ import {
   tryReadJson,
   writeJson,
 } from "../../infra/json-files.js";
+import {
+  CLAWHUB_SKILLS_SH_REF_PREFIX,
+  CLAWHUB_SKILLS_SH_TRUST_STATE,
+  type ClawHubSkillsShTrustState,
+} from "../../infra/PaleoHub-skills.js";
 import {
   normalizeTrackedSkillSlug,
   resolveWorkspaceSkillInstallDir,
@@ -49,7 +49,7 @@ export type {
 
 export { normalizeOptionalStringValue };
 
-const DOT_DIR = ".clawhub";
+const DOT_DIR = ".PaleoHub";
 const CLAWHUB_OWNER_HANDLE_PATTERN = /^[a-z0-9](?:[a-z0-9._-]{0,38}[a-z0-9])?$/;
 const GITHUB_OWNER_PATTERN = /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?$/;
 const GITHUB_REPO_PATTERN = /^[A-Za-z0-9._-]{1,100}$/;

@@ -783,7 +783,7 @@ describe("native app i18n inventory", () => {
               entry,
               (site) =>
                 site.path ===
-                "apps/android/app/src/main/java/ai/paleoclaw/app/ui/SettingsScreens.kt",
+                "apps/android/app/src/main/java/ai/openclaw/app/ui/SettingsScreens.kt",
             ),
         )
         .map((entry) => entry.source),
@@ -839,7 +839,7 @@ describe("native app i18n inventory", () => {
         (entry) =>
           entry.surface === "apple" &&
           entry.source === "Connection…" &&
-          hasSite(entry, (site) => site.path === "apps/macos/Sources/paleoclaw/MenuBar.swift"),
+          hasSite(entry, (site) => site.path === "apps/macos/Sources/OpenClaw/MenuBar.swift"),
       ),
     ).toBe(true);
     expect(
@@ -1000,7 +1000,7 @@ describe("native app i18n inventory", () => {
           hasSite(
             entry,
             (site) =>
-              site.path === "apps/macos/Sources/paleoclaw/OnboardingAISetupView.swift" &&
+              site.path === "apps/macos/Sources/OpenClaw/OnboardingAISetupView.swift" &&
               site.kind === "ui-localized-call-multiline",
           ) &&
           entry.source ===
@@ -1443,7 +1443,7 @@ describe("native app i18n inventory", () => {
         "native.android.language-picker",
         "android",
         "paleoclaw translations · $languageTag",
-        "apps/android/app/src/main/java/ai/paleoclaw/app/AppLanguage.kt",
+        "apps/android/app/src/main/java/ai/openclaw/app/AppLanguage.kt",
         "conditional-branch",
       ),
       testEntry("native.android.inspect", "android", "Inspect", "apps/android/Workshop.kt"),

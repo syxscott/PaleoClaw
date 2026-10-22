@@ -304,7 +304,7 @@ export async function createQaBundledPluginsDir(params: {
         };
       };
     };
-    const candidate = coerceSemver(packageJson.openclaw?.install?.minHostVersion);
+    const candidate = coerceSemver(packageJson.paleoclaw?.install?.minHostVersion);
     if (candidate && (!hostVersion || candidate.compare(hostVersion) > 0)) {
       hostVersion = candidate;
     }

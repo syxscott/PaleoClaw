@@ -357,7 +357,7 @@ Batch assignments apply in order, then validation checks the final config. A Sec
 
 JSON path/value mode also works for SecretRefs and providers directly:
 
-```bash
+``/`bash
 paleoclaw config set channels.discord.token \
   '{"source":"env","provider":"default","id":"DISCORD_BOT_TOKEN"}' \
   --strict-json

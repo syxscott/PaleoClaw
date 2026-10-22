@@ -37,7 +37,7 @@ function readJsonFile(filePath: string, fsImpl: typeof fs) {
 }
 
 function readPackageSection(pkg: Record<string, unknown>, section: "assetScripts" | "build") {
-  const paleoclaw = isRecord(pkg.openclaw) ? pkg.openclaw : {};
+  const paleoclaw = isRecord(pkg.paleoclaw) ? pkg.paleoclaw : {};
   const value = paleoclaw[section];
   return isRecord(value) ? value : {};
 }

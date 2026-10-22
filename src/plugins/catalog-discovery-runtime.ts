@@ -98,7 +98,7 @@ async function readCatalogPage(params: {
     const agentId = report.agentId;
     const installed = new Map(
       report.skills.flatMap((skill) => {
-        const link = skill.clawhub;
+        const link = skill.PaleoHub;
         if (!link?.valid) {
           return [];
         }

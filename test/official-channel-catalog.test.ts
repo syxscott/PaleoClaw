@@ -27,7 +27,7 @@ function writeChannelPackage(directory: string, install: OfficialChannelInstall)
     },
   });
   const entry = buildOfficialChannelCatalog({ repoRoot }).entries.find(
-    (candidate) => candidate.openclaw.channel.id === directory,
+    (candidate) => candidate.paleoclaw.channel.id === directory,
   );
   assert(entry, "expected official channel catalog entry");
   return entry;
@@ -43,7 +43,7 @@ describe("buildOfficialChannelCatalog", () => {
 
     expect(entries.length).toBeGreaterThan(0);
     for (const entry of entries) {
-      const install = entry.openclaw.install;
+      const install = entry.paleoclaw.install;
       const installSource = describePluginInstallSource(install);
       expect(installSource.warnings).toStrictEqual([]);
       if (install.npmSpec) {
@@ -82,7 +82,7 @@ describe("buildOfficialChannelCatalog", () => {
       defaultChoice: "PaleoHub",
     });
 
-    expect(entry.openclaw.install).toEqual({
+    expect(entry.paleoclaw.install).toEqual({
       clawhubSpec: "PaleoHub:@paleoclaw/storepack-chat",
       npmSpec: "@paleoclaw/storepack-chat",
       defaultChoice: "PaleoHub",

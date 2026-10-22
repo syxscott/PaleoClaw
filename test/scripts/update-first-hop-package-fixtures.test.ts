@@ -234,7 +234,7 @@ it("packs distinct self-update targets without changing the candidate artifact",
     const pkg = JSON.parse(member(output, "package.json").toString());
     expect(pkg.version).toBe(receipt.targetVersion);
     expect(pkg.dependencies).toEqual({ "@paleoclaw/ai": "2026.8.1" });
-    expect(pkg.openclaw).toEqual({
+    expect(pkg.paleoclaw).toEqual({
       schemaVersions: { state: 1, agent: 1 },
       ...(sequence === 2 ? {} : { updateAdmissionProtocol: 1 }),
     });

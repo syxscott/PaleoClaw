@@ -9,7 +9,7 @@ import {
   asPositiveSafeInteger,
   normalizeOptionalString,
 } from "paleoclaw/plugin-sdk/string-coerce-runtime";
-import manifest from "./paleoclaw.plugin.json" with { type: "json" };
+import manifest from "./openclaw.plugin.json" with { type: "json" };
 import { normalizeCerebrasModelPricing } from "./pricing-api.js";
 
 export const CEREBRAS_BASE_URL = manifest.modelCatalog.providers.cerebras.baseUrl;

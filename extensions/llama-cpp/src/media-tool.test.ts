@@ -9,7 +9,7 @@ import { useAutoCleanupTempDirTracker } from "paleoclaw/plugin-sdk/test-env";
 import { encodePngRgba } from "paleoclaw/plugin-sdk/test-media-generation";
 import { loadWebMedia as loadRealMedia } from "paleoclaw/plugin-sdk/web-media";
 import { afterEach, expect, it, vi } from "vitest";
-import manifest from "../paleoclaw.plugin.json" with { type: "json" };
+import manifest from "../openclaw.plugin.json" with { type: "json" };
 import {
   LLAMA_CPP_MEDIA_MAX_BYTES,
   LLAMA_CPP_MEDIA_MAX_TOKENS,

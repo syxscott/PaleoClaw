@@ -1073,7 +1073,7 @@ export function inspectPersonalCredentialWriters(
         return false;
       }
       const name =
-        element.propertyName?.getText().replace(/^["']|["']$/g, "") ?? bindingName.getText();
+        element.propertyName?.getText().replace(/^["']|["']$/g, "/") ?? bindingName.getText();
       const member =
         module.flags & SymbolFlags.Module
           ? checker.getMemberInModuleExports(module, name)

@@ -815,7 +815,7 @@ console.log("full-ws loaded without node_modules");
     const { root, write, pkg } = fixture();
     pkg("sqlite-vec-darwin-arm64", {}, { "vec0.dylib": "native-library" });
     const source =
-      'exports.getLoadablePath = () => require.resolve("sqlite-vec-darwin-arm64/" + "vec0.dylib");';
+      'exports.getLoadablePath = () => require.resolve("sqlite-vec-darwin-arm64" + "vec0.dylib");';
     const owner = pkg(
       "sqlite-vec",
       { main: "index.cjs", optionalDependencies: { "sqlite-vec-darwin-arm64": "1.0.0" } },

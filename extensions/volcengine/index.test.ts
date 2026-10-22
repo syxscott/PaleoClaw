@@ -7,7 +7,7 @@ import {
   DOUBAO_MODEL_CATALOG,
   VOLCENGINE_PROVIDER_CATALOG,
 } from "./models.js";
-import manifest from "./paleoclaw.plugin.json" with { type: "json" };
+import manifest from "./openclaw.plugin.json" with { type: "json" };
 
 describe("volcengine plugin", () => {
   it("preserves both provider-owned static catalogs and paired ordering", async () => {

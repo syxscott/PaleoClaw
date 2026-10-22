@@ -89,7 +89,7 @@ it.each([".ts", ".tsx", ".mts", ".cts"])(
       const installParams = {
         packageDir,
         extensions,
-        manifest: { ...manifest, paleoclaw: { ...manifest.openclaw, extensions } },
+        manifest: { ...manifest, paleoclaw: { ...manifest.paleoclaw, extensions } },
       };
       expect(await validatePackageExtensionEntriesForInstall(installParams)).toEqual({
         ok: false,

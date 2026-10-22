@@ -446,6 +446,10 @@ function shouldAlwaysBundleDependency(id: string): boolean {
   return (
     // Keep htmlparser2's decoder version intact instead of binding it to the root major.
     id === "entities/decode" ||
+    // The CLI bootstrap must stay self-contained: these would otherwise remain
+    // runtime imports of the unified bundle.
+    id === "strip-ansi" ||
+    id === "ipaddr.js" ||
     id === "paleoclaw/plugin-sdk/ssrf-runtime-internal" ||
     id === "@paleoclaw/normalization-core" ||
     id.startsWith("@paleoclaw/normalization-core/") ||
@@ -627,7 +631,7 @@ function shouldExternalizeAgentCoreDependency(id: string): boolean {
     id === "paleoclaw" ||
     id.startsWith("paleoclaw/") ||
     id === "typebox" ||
-    id.startsWith("typebox/") ||
+    id.startsWith("typebox") ||
     id === "yaml" ||
     id.startsWith("yaml/")
   );
@@ -658,7 +662,7 @@ function shouldExternalizeMarkdownCoreDependency(id: string): boolean {
 }
 
 function shouldExternalizeTerminalCoreDependency(id: string): boolean {
-  return id === "@clack/prompts" || id.startsWith("@clack/prompts/") || id === "chalk";
+  return id === "@clack/prompts/" || id.startsWith("@clack/prompts/") || id === "chalk";
 }
 
 const coreDistEntries = buildCoreDistEntries();
@@ -668,8 +672,8 @@ const rootBundledPluginBuildEntries = collectSourceCheckoutPluginBuildEntries(
 ).filter(({ isolated }) => !isolated);
 const bundledInventoryEntries = rootBundledPluginBuildEntries.flatMap((plugin) => {
   const paleoclaw =
-    isRecord(plugin.packageJson) && isRecord(plugin.packageJson.openclaw)
-      ? plugin.packageJson.openclaw
+    isRecord(plugin.packageJson) && isRecord(plugin.packageJson.paleoclaw)
+      ? plugin.packageJson.paleoclaw
       : undefined;
   const sourceEntries = plugin.sourceEntries.filter(
     (source) =>

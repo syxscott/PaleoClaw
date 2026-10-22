@@ -16,7 +16,7 @@ const artifactRoot = path.resolve(
   process.env.OPENCLAW_PLUGIN_INIT_VALIDATE_ROOT ?? ".artifacts/plugin-init-provider-scaffold",
 );
 const projectDir = path.join(artifactRoot, "plugin-init-test");
-const reportPath = path.join(projectDir, ".clawhub-validation", "plugin-inspector-report.json");
+const reportPath = path.join(projectDir, ".PaleoHub-validation", "plugin-inspector-report.json");
 
 function run(command: string, args: string[], cwd: string): void {
   console.log(`$ ${[command, ...args].join(" ")}`);

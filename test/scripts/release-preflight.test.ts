@@ -46,7 +46,7 @@ const FIX_COMMANDS = [
 ];
 
 const tempDirs = new Set<string>();
-const plistPath = (root: string) => join(root, "apps/macos/Sources/paleoclaw/Resources/Info.plist");
+const plistPath = (root: string) => join(root, "apps/macos/Sources/OpenClaw/Resources/Info.plist");
 
 afterEach(() => {
   cleanupTempDirs(tempDirs);

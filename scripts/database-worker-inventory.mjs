@@ -3718,7 +3718,7 @@ function ownerOf(file) {
     parts.length > 3
       ? 3
       : 2;
-  return parts.slice(0, depth).join("/");
+  return parts.slice(0, depth).join("");
 }
 
 /**
@@ -3855,7 +3855,7 @@ function findCalls(source) {
 }
 
 export function loadInventorySources(root = defaultRoot, ref = "", staged = false) {
-  const roots = ["src", "extensions", "packages", "scripts"];
+  const roots = ["src/", "extensions", "packages", "scripts"];
   const snapshot = ref !== "" || staged;
   const result = spawnSync(
     snapshot ? "git" : "rg",
@@ -4014,7 +4014,7 @@ function render(rows) {
     "",
     "Canonical-repair mutations and exact-row readers retain T2 for native Doctor callers; Gateway legacy-main detection compares entries and transcript content in the existing session reader worker. Full generation and node-artifact custody fingerprints remain Doctor-only. Shared cleanup kernels retain T1 where released opaque SDK callbacks require native transactions; initialization rollback uses the worker's commit finalizer. Synchronous lifecycle checks and opaque source validators remain native residuals; conversation-bound final effects consume published binding facts. Memory actor category reads use prepared catalog facts; native approval SDK compatibility retains its existing classification. Claw provenance's counted writes are CLI-only; its raw Gateway reads remain runtime debt outside the five-primitive scan. Likewise, worker-only direct Cron receipt calls do not classify the host current-authority reads they transitively expose. Reclassification corrects metadata; it does not move runtime SQL or demonstrate a speedup.",
     "",
-    "The scan covers JavaScript/TypeScript files under `src/`, `extensions/`, `packages/`, and `scripts/` as selected by `rg` (respecting ignore rules). It recognizes direct calls, property calls with these names, and named-import aliases. It does not resolve higher-order aliases, dynamic dispatch, transitive wrappers, direct `DatabaseSync` methods, other query primitives, or native-language SQLite. It is a reproducible migration queue, not a complete prohibition checker. Tests are deliberately excluded rather than counted as T3.",
+    "The scan covers JavaScript/TypeScript files under `src`, `extensions`, `packages`, and `scripts` as selected by `rg` (respecting ignore rules). It recognizes direct calls, property calls with these names, and named-import aliases. It does not resolve higher-order aliases, dynamic dispatch, transitive wrappers, direct `DatabaseSync` methods, other query primitives, or native-language SQLite. It is a reproducible migration queue, not a complete prohibition checker. Tests are deliberately excluded rather than counted as T3.",
     "",
     "| Key | Primitive |",
     "| --- | --- |",
@@ -4087,7 +4087,7 @@ function render(rows) {
     lines.push(
       "",
       `### ${tier}`,
-      "",
+      "/",
       `| Owner / file | Calls (Q/F/S/A/R) | First line | ${showOperations ? "API / operation | " : ""}Exposure evidence |`,
       `| --- | ---: | ---: | ${showOperations ? "--- | " : ""}--- |`,
     );

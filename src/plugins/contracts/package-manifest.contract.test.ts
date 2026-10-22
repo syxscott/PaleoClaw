@@ -142,7 +142,7 @@ describe("plugin package authoring metadata", () => {
       },
     };
 
-    expect(getPackageManifestMetadata(manifest)).toEqual(manifest.openclaw);
+    expect(getPackageManifestMetadata(manifest)).toEqual(manifest.paleoclaw);
     expect(resolvePackageExtensionEntries(manifest)).toEqual({
       status: "ok",
       entries: ["./src/index.ts"],

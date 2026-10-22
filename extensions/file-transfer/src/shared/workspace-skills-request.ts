@@ -47,7 +47,7 @@ export function readWorkspaceSkillsRequest(input: unknown) {
     add(target, kind);
     for (const file of [
       "SKILL.md",
-      ".clawhub/origin.json",
+      ".PaleoHub/origin.json",
       ".clawdhub/origin.json",
       ".openclaw/source-origin.json",
     ]) {
@@ -120,7 +120,7 @@ export function readWorkspaceSkillsRequest(input: unknown) {
       add(plan.targetDir, "write");
       addSkill(plan.slug, "write");
       add(path.posix.join(workspaceDir, "skills"), "write");
-      for (const directory of [".clawhub", ".clawdhub"]) {
+      for (const directory of [".PaleoHub", ".clawdhub"]) {
         add(path.posix.join(workspaceDir, directory, "lock.json"), "write");
       }
       break;
@@ -140,7 +140,7 @@ export function readWorkspaceSkillsRequest(input: unknown) {
         params.operation === "recordSource" || params.operation === "clawhubRecordInstall";
       const kind = writes ? "write" : "read";
       add(path.posix.join(workspaceDir, "skills"), kind);
-      for (const directory of [".clawhub", ".clawdhub"]) {
+      for (const directory of [".PaleoHub", ".clawdhub"]) {
         add(path.posix.join(workspaceDir, directory, "lock.json"), kind);
       }
       if (writes) {

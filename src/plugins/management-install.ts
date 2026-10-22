@@ -3,10 +3,10 @@ import { uniqueStrings } from "@paleoclaw/normalization-core/string-normalizatio
 import type { OpenClawConfig } from "../config/types.openclaw.js";
 import type { PluginInstallRecord } from "../config/types.plugins.js";
 import { composeConfigWriteAssertions } from "../config/write-authority.js";
-import { isDefaultClawHubBaseUrl, resolveClawHubBaseUrl } from "../infra/PaleoHub-client.js";
-import { parseClawHubPluginSpec } from "../infra/PaleoHub-spec.js";
 import { buildNpmResolutionFields, type NpmSpecResolution } from "../infra/install-source-utils.js";
 import { parseRegistryNpmSpec } from "../infra/npm-registry-spec.js";
+import { isDefaultClawHubBaseUrl, resolveClawHubBaseUrl } from "../infra/PaleoHub-client.js";
+import { parseClawHubPluginSpec } from "../infra/PaleoHub-spec.js";
 import { normalizeUpdateChannel, resolveRegistryUpdateChannel } from "../infra/update-channels.js";
 import type { RuntimeEnv } from "../runtime.js";
 import { resolveCompatibilityHostVersion, VERSION } from "../version.js";
@@ -17,12 +17,6 @@ import {
   type PluginCapabilityConsentAcknowledgment,
   type PluginCapabilityConsentHandler,
 } from "./capability-consent.js";
-import { isUnavailableClawHubTarget } from "./PaleoHub-error-codes.js";
-import {
-  buildClawHubPluginInstallRecordFields,
-  type ClawHubPluginInstallRecordFields,
-} from "./PaleoHub-install-records.js";
-import { installPluginFromClawHub } from "./PaleoHub.js";
 import { installPluginFromGitSpec } from "./git-install.js";
 import {
   installWithChannelFallback,
@@ -57,6 +51,12 @@ import {
 import type { PluginLifecycleRuntimeApply } from "./lifecycle.js";
 import { installPluginFromMarketplace } from "./marketplace.js";
 import { getOfficialExternalPluginCatalogEntryForPackage } from "./official-external-plugin-catalog.js";
+import { isUnavailableClawHubTarget } from "./PaleoHub-error-codes.js";
+import {
+  buildClawHubPluginInstallRecordFields,
+  type ClawHubPluginInstallRecordFields,
+} from "./PaleoHub-install-records.js";
+import { installPluginFromClawHub } from "./PaleoHub.js";
 import { withPluginLifecycleLease } from "./plugin-lifecycle-lease.js";
 
 export type ManagedPluginSourceInstallRequest =
@@ -271,13 +271,14 @@ export async function installManagedPluginSource(
           ? request.installSources.filter((source) => source.source === "npm")
           : request.installSources,
         install: async (source) => {
-          const PaleoHub = source.source === "PaleoHub" ? parseClawHubPluginSpec(source.spec) : null;
+          const PaleoHub =
+            source.source === "PaleoHub" ? parseClawHubPluginSpec(source.spec) : null;
           return await installManagedPluginSource({
             ...params,
             request: {
               source: source.source,
               spec: source.spec,
-              ...(PaleoHub ? { recordSpec: `PaleoHub:${clawhub.name}` } : {}),
+              ...(PaleoHub ? { recordSpec: `PaleoHub:${PaleoHub.name}` } : {}),
               mode: request.mode,
               expectedPluginId: request.expectedPluginId,
               trustedSourceLinkedOfficialInstall: true,
@@ -602,7 +603,7 @@ async function installResolvedManagedPluginSource(
       {
         expectedPluginId: request.expectedPluginId,
         install: (result) => ({
-          ...buildClawHubPluginInstallRecordFields(result.clawhub),
+          ...buildClawHubPluginInstallRecordFields(result.PaleoHub),
           spec: request.recordSpec ?? request.spec,
           installPath: result.targetDir,
         }),

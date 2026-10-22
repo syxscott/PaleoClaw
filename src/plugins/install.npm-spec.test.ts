@@ -210,7 +210,7 @@ function writeInstalledNpmPlugin(params: MockNpmPackage) {
   writeJson(path.join(pluginDir, "package.json"), {
     name: params.packageName,
     version: params.version,
-    paleoclaw: params.openclaw ?? { extensions: ["./dist/index.js"] },
+    paleoclaw: params.paleoclaw ?? { extensions: ["./dist/index.js"] },
     ...(params.dependency
       ? { dependencies: { [params.dependency.name]: params.dependency.version } }
       : {}),
@@ -426,7 +426,7 @@ function mockPackages(packages: MockNpmPackage[]) {
           name,
           version,
           dist: { integrity, shasum },
-          ...(pkg.openclaw ? { paleoclaw: pkg.openclaw } : {}),
+          ...(pkg.paleoclaw ? { paleoclaw: pkg.paleoclaw } : {}),
         };
       });
     }
@@ -613,7 +613,7 @@ describe("installPluginFromNpmSpec", () => {
       const manifestPath = path.join(projectRoot, "package.json");
       const manifest = readManifest(projectRoot);
       manifest.overrides = { "existing-override": "1.0.0" };
-      manifest.openclaw = {
+      manifest.paleoclaw = {
         managedPeerDependencies: ["original-peer"],
         managedOverrides: ["existing-override"],
       };
@@ -877,8 +877,8 @@ describe("installPluginFromNpmSpec", () => {
       const manifest = readManifest(attemptedRoot);
       manifest.dependencies ??= {};
       manifest.dependencies[addedPeerName] = "2.0.0";
-      manifest.openclaw ??= {};
-      manifest.openclaw.managedPeerDependencies = [addedPeerName];
+      manifest.paleoclaw ??= {};
+      manifest.paleoclaw.managedPeerDependencies = [addedPeerName];
       writeJson(manifestPath, manifest);
       mutatedPeerAfterQuarantine = true;
     };
@@ -1054,7 +1054,12 @@ describe("installPluginFromNpmSpec", () => {
       spec: "@paleoclaw/codex@2026.5.7",
       logger: { info: () => {}, warn: (message) => warnings.push(message) },
     });
-    expectFailure(result, undefined, "@paleoclaw/codex", "plugin-local node_modules/paleoclaw link");
+    expectFailure(
+      result,
+      undefined,
+      "@paleoclaw/codex",
+      "plugin-local node_modules/paleoclaw link",
+    );
     expect(
       warnings.some((warning) => warning.includes("Could not locate paleoclaw package root")),
     ).toBe(true);
@@ -1147,7 +1152,9 @@ describe("installPluginFromNpmSpec", () => {
       const lockfile = readLockfile(npmProjectRoot);
       expect(lockfile.packages?.["node_modules/paleoclaw"]).toBeUndefined();
       expect(
-        fs.lstatSync(path.join(requiredPeerPluginDir, "node_modules", "paleoclaw")).isSymbolicLink(),
+        fs
+          .lstatSync(path.join(requiredPeerPluginDir, "node_modules", "paleoclaw"))
+          .isSymbolicLink(),
       ).toBe(true);
     },
   );
@@ -1360,7 +1367,7 @@ describe("installPluginFromNpmSpec", () => {
         const manifest = readManifest(options.cwd);
         const expected = attempts === 1 ? aliases : compatible;
         expect(manifest.overrides).toEqual(expected);
-        expect(manifest.openclaw?.managedOverrides).toEqual(Object.keys(expected).toSorted());
+        expect(manifest.paleoclaw?.managedOverrides).toEqual(Object.keys(expected).toSorted());
         if (attempts === 1) {
           return failedSpawn("npm ERR! Invalid comparator: npm:@nolyfill/domexception@1.0.28");
         }

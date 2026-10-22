@@ -1133,7 +1133,7 @@ describe("GatewayBrowserClient", () => {
   });
 
   it.each([
-    ["/rosita/", "/rosita", "/wilfred"],
+    ["/rosita/", "/rosita/", "/wilfred"],
     ["/control?tenant=a", "/control?tenant=a", "/control?tenant=b"],
   ])(
     "isolates cached credentials for routes %s and %s from %s",

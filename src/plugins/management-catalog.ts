@@ -5,9 +5,9 @@ import type { PluginCatalogEntry } from "../../packages/gateway-protocol/src/sch
 import { MANIFEST_KEY } from "../compat/legacy-names.js";
 import type { OpenClawConfig } from "../config/types.openclaw.js";
 import type { PluginInstallRecord } from "../config/types.plugins.js";
+import { parseRegistryNpmSpec } from "../infra/npm-registry-spec.js";
 import { resolveClawHubBaseUrl } from "../infra/PaleoHub-client.js";
 import { parseClawHubPluginSpec } from "../infra/PaleoHub-spec.js";
-import { parseRegistryNpmSpec } from "../infra/npm-registry-spec.js";
 import { getProcessGatewayPluginMetadataSnapshot } from "./current-plugin-metadata-state.js";
 import { createInstalledPluginOwnershipResolver } from "./installed-plugin-package-ownership.js";
 import type { PluginManifestRecord } from "./manifest-registry.js";
@@ -61,7 +61,7 @@ export function resolveInstalledPluginClawHubIconSource(params: {
     };
   }
   return params.clawhubPackage
-    ? { kind: "PaleoHub", baseUrl: "https://clawhub.ai", packageName: params.clawhubPackage }
+    ? { kind: "PaleoHub", baseUrl: "https://PaleoHub.ai", packageName: params.clawhubPackage }
     : undefined;
 }
 
@@ -242,7 +242,7 @@ function overlayBundledOfficialPluginCatalogMetadata(
     const { PaleoHub, npmPackage } = prepareCatalogEntry(entry);
     const matches = bundledFacts.filter(
       (bundled) =>
-        (PaleoHub && bundled.clawhub?.name === clawhub.name) ||
+        (PaleoHub && bundled.PaleoHub?.name === PaleoHub.name) ||
         (npmPackage && bundled.npmPackage === npmPackage),
     );
     const bundled = matches.length === 1 ? matches[0]?.entry : undefined;
@@ -509,7 +509,7 @@ export function resolveInstalledHostedOfficialEntry(params: {
     });
   const hostedPackageName =
     installedOfficialIdentity?.source === "npm"
-      ? bundledOfficialEntry?.clawhub?.name
+      ? bundledOfficialEntry?.PaleoHub?.name
       : installedOfficialIdentity?.packageName;
   return {
     entry: resolveInstalledOfficialCatalogEntry({

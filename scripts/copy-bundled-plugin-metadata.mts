@@ -421,19 +421,19 @@ function copyMetadata(params: CopyMetadataParams): void {
       removeFileIfExists(distPackageJsonPath);
       continue;
     }
-    if (packageJson && isRecord(packageJson.openclaw)) {
+    if (packageJson && isRecord(packageJson.paleoclaw)) {
       const extension = buildEntry.runtimeExtension;
-      const channel = resolvePluginRuntimeChannelMetadata(packageJson.openclaw.channel, {
+      const channel = resolvePluginRuntimeChannelMetadata(packageJson.paleoclaw.channel, {
         pluginDir: dirent.name,
         runtimeBuildOutputs: rewritePackageExtensions(buildEntry.sourceEntries, extension) ?? [],
         runtimeRoot: ".",
       });
-      packageJson.openclaw = {
-        ...packageJson.openclaw,
+      packageJson.paleoclaw = {
+        ...packageJson.paleoclaw,
         ...(channel ? { channel } : {}),
-        extensions: rewritePackageExtensions(packageJson.openclaw.extensions, extension),
-        ...(typeof packageJson.openclaw.setupEntry === "string"
-          ? { setupEntry: rewritePackageEntry(packageJson.openclaw.setupEntry, extension) }
+        extensions: rewritePackageExtensions(packageJson.paleoclaw.extensions, extension),
+        ...(typeof packageJson.paleoclaw.setupEntry === "string"
+          ? { setupEntry: rewritePackageEntry(packageJson.paleoclaw.setupEntry, extension) }
           : {}),
       };
     }

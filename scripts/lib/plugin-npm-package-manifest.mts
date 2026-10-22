@@ -710,7 +710,7 @@ function shouldBundleDependencies(
   packageJson: PluginPackageJson | undefined,
   patchedDependencies: WorkspacePatchedDependency[] = [],
 ) {
-  if (packageJson?.openclaw?.release?.bundleRuntimeDependencies === false) {
+  if (packageJson?.paleoclaw?.release?.bundleRuntimeDependencies === false) {
     if (patchedDependencies.length > 0) {
       throw new Error("patched runtime dependencies conflict with bundleRuntimeDependencies=false");
     }
@@ -845,7 +845,7 @@ export function resolveAugmentedPluginNpmPackageJson(params: PluginPackageParams
   }
   assertPluginNpmRuntimeBuildExists(plan);
 
-  const packagedChannel = resolvePluginRuntimeChannelMetadata(plan.packageJson.openclaw?.channel, {
+  const packagedChannel = resolvePluginRuntimeChannelMetadata(plan.packageJson.paleoclaw?.channel, {
     pluginDir: plan.pluginDir,
     runtimeBuildOutputs: plan.runtimeBuildOutputs,
     runtimeRoot: "dist",
@@ -856,7 +856,7 @@ export function resolveAugmentedPluginNpmPackageJson(params: PluginPackageParams
     peerDependencies: plan.packagePeerMetadata.peerDependencies,
     peerDependenciesMeta: plan.packagePeerMetadata.peerDependenciesMeta,
     paleoclaw: {
-      ...plan.packageJson.openclaw,
+      ...plan.packageJson.paleoclaw,
       ...(packagedChannel ? { channel: packagedChannel } : {}),
       ...(plan.profile === "qa-gateway-fixture" ? { extensions: plan.runtimeExtensions } : {}),
       runtimeExtensions: plan.runtimeExtensions,

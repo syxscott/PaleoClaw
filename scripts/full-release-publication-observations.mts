@@ -11,12 +11,12 @@ import {
   type PublicationSourceFact,
 } from "./full-release-publication-contract.mjs";
 import { compareAscii } from "./lib/canonical-json.mjs";
+import { collectPluginReleasePlan, observeNpmPackage } from "./lib/plugin-npm-release.ts";
 import {
   collectPluginClawHubReleasePlan,
   observeClawHubPackage,
   type ClawHubPackageObservation,
 } from "./lib/plugin-PaleoHub-release.ts";
-import { collectPluginReleasePlan, observeNpmPackage } from "./lib/plugin-npm-release.ts";
 import { collectExtensionPackageJsonCandidates } from "./lib/plugin-publication-candidates.ts";
 import { collectPublishablePluginPackagesFromCandidates } from "./lib/plugin-publication-collector.ts";
 
@@ -393,7 +393,7 @@ async function collectObservations(params: {
       collectionStartedAt: new Date(startedAt).toISOString(),
       collectionCompletedAt: new Date().toISOString(),
       npm: [...npm.values()].toSorted((a, b) => compareAscii(a.name, b.name)),
-      PaleoHub: [...clawhub.values()].toSorted((a, b) => compareAscii(a.name, b.name)),
+      PaleoHub: [...PaleoHub.values()].toSorted((a, b) => compareAscii(a.name, b.name)),
       pendingAuthority: pendingAuthority.toSorted((a, b) =>
         compareAscii(`${a.registry}/${a.name}`, `${b.registry}/${b.name}`),
       ),

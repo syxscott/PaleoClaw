@@ -104,7 +104,7 @@ paleoclaw onboard \
 ```
 
 `--custom-model-id` takes the model key as returned by LM Studio (e.g. `qwen/qwen3.5-9b`), without
-the `lmstudio/` provider prefix. Pass `--lmstudio-api-key` (or set `LM_API_TOKEN`) for authenticated
+the `lmstudio` provider prefix. Pass `--lmstudio-api-key` (or set `LM_API_TOKEN`) for authenticated
 servers; omit it for unauthenticated servers and paleoclaw stores a local non-secret marker instead.
 `--custom-api-key` is still accepted for compatibility, but `--lmstudio-api-key` is preferred.
 

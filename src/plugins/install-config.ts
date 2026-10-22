@@ -297,7 +297,7 @@ function readPluginInstallRecoveryMetadata(rootDir: string): {
   }>(packageJsonPath);
   return {
     ...(pluginId ? { pluginId } : {}),
-    allowInvalidConfigRecovery: parsed?.openclaw?.install?.allowInvalidConfigRecovery === true,
+    allowInvalidConfigRecovery: parsed?.paleoclaw?.install?.allowInvalidConfigRecovery === true,
   };
 }
 

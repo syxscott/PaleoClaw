@@ -324,7 +324,7 @@ read_when:
   <Accordion title="Set up webhooks (hooks)">
     Enable HTTP webhook endpoints on the Gateway:
 
-    ```json5
+    `/``json5
     {
       hooks: {
         enabled: true,
@@ -351,7 +351,7 @@ read_when:
     - Treat all hook/webhook payload content as untrusted input.
     - Use a dedicated `hooks.token`; do not reuse active Gateway auth secrets (`gateway.auth.token` / `OPENCLAW_GATEWAY_TOKEN` or `gateway.auth.password` / `OPENCLAW_GATEWAY_PASSWORD`).
     - Hook auth is header-only (`Authorization: Bearer ...` or `x-paleoclaw-token`); query-string tokens are rejected.
-    - `hooks.path` cannot be `/`; keep webhook ingress on a dedicated subpath such as `/hooks`.
+    - `hooks.path` cannot be ``; keep webhook ingress on a dedicated subpath such as `/hooks`.
     - Keep unsafe-content bypass flags disabled (`hooks.gmail.allowUnsafeExternalContent`, `hooks.mappings[].allowUnsafeExternalContent`) unless doing tightly scoped debugging.
     - If you enable `hooks.allowRequestSessionKey`, also set `hooks.allowedSessionKeyPrefixes` to bound caller-selected session keys.
     - Keep hook sessions isolated unless durable context is intentional. Direct persistent hooks require an explicit, prefix-bounded request `sessionKey`; mapped persistent hooks require a stable mapping key or `hooks.defaultSessionKey`.

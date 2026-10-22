@@ -174,7 +174,7 @@ paleoclaw infer embedding create --agent <id> \
 paleoclaw memory status --agent <id> --deep
 ```
 
-The CLI reference includes the outer provider prefix `clawrouter/`; the memory
+The CLI reference includes the outer provider prefix `clawrouter`; the memory
 `model` setting contains only the router's qualified model id `openai/...`.
 The JSON result reports the bridge provider `openai-compatible`. This is still
 ClawRouter routing; no upstream credential or alternate provider is selected.

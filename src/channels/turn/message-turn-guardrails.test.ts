@@ -145,7 +145,7 @@ describe("message turn migration guardrails", () => {
   });
 
   it("keeps plugin runtime files off deprecated reply-history map helpers", () => {
-    for (const file of listTsFiles("extensions")) {
+    for (const file of listTsFiles("extensions/")) {
       if (file.includes(".test.") || file.endsWith(".test.ts")) {
         continue;
       }

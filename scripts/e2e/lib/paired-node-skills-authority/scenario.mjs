@@ -177,7 +177,7 @@ try {
               allowWritePaths: [
                 remote + "/skills",
                 remote + "/skills/**",
-                remote + "/.clawhub/**",
+                remote + "/.PaleoHub/**",
                 remote + "/.clawdhub/**",
                 remote + "/.openclaw/skill-installs/**",
               ],
@@ -249,7 +249,7 @@ try {
     );
   const metadata = () =>
     Object.fromEntries(
-      [".clawhub/lock.json", ".clawdhub/lock.json"].map((p) => [
+      [".PaleoHub/lock.json", ".clawdhub/lock.json"].map((p) => [
         p,
         fs.existsSync(path.join(remote, p))
           ? fs.readFileSync(path.join(remote, p)).toString("base64")

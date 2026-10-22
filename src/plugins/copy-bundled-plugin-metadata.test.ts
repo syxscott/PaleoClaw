@@ -182,7 +182,7 @@ describe("copyBundledPluginMetadata", () => {
     expect(readText(distAssetsDir, "activity/acp_status.svg")).toBe(activityIcon);
     expect(readText(distAssetsDir, "runtime.js")).toBe("keep runtime asset");
     const packageJson = readBundledPackageJson(repoRoot, "acpx");
-    expect(packageJson.openclaw?.extensions).toEqual(["./index.js"]);
+    expect(packageJson.paleoclaw?.extensions).toEqual(["./index.js"]);
   });
 
   it.skipIf(process.platform === "win32")("does not copy escaped theme artwork", () => {

@@ -174,7 +174,7 @@ export function normalizeNpmViewMetadata(value: unknown, spec: string): NpmSpecR
     integrity:
       normalizeOptionalString(entry["dist.integrity"]) ?? normalizeOptionalString(dist.integrity),
     shasum: normalizeOptionalString(entry["dist.shasum"]) ?? normalizeOptionalString(dist.shasum),
-    ...(isRecord(entry.openclaw) ? { packageOpenClaw: entry.openclaw } : {}),
+    ...(isRecord(entry.paleoclaw) ? { packageOpenClaw: entry.paleoclaw } : {}),
   };
 }
 

@@ -287,7 +287,7 @@ it.each([
       hook = [
         'const file = "extensions/asset-copy/package.json";',
         'const pkg = JSON.parse(fs.readFileSync(file, "utf8"));',
-        "delete pkg.openclaw.assetScripts.copy;",
+        "delete pkg.paleoclaw.assetScripts.copy;",
         "fs.writeFileSync(file, JSON.stringify(pkg));",
       ].join("\n");
     }
@@ -314,7 +314,7 @@ it.each([
         expect(fixture.exists(input)).toBe(false);
       } else {
         const pkg = JSON.parse(fixture.read("extensions/asset-copy/package.json"));
-        expect(pkg.openclaw.assetScripts.copy).toBeUndefined();
+        expect(pkg.paleoclaw.assetScripts.copy).toBeUndefined();
       }
       fixture.assertNoOutputs();
     }

@@ -78,7 +78,7 @@ import {
   buildOpenAIChatGPTAuthMethodRuns,
   buildOpenAICodexProviderHooks,
 } from "./openai-chatgpt-provider.js";
-import manifest from "./paleoclaw.plugin.json" with { type: "json" };
+import manifest from "./openclaw.plugin.json" with { type: "json" };
 import { createOpenAIProvider } from "./provider-contract-api.js";
 import { resolveAuthoredOpenAIProviderConfig } from "./provider-policy-api.js";
 import {
@@ -361,7 +361,8 @@ async function buildOpenAICodexLiveProviderConfig(params: {
   catalogContext?: OpenAICodexModelsEndpointContext;
 }): Promise<OpenAILiveProviderCatalog> {
   const catalogRuntime = await import("paleoclaw/plugin-sdk/provider-catalog-live-runtime");
-  const { getCachedLiveCatalogValue } = await import("paleoclaw/plugin-sdk/provider-catalog-shared");
+  const { getCachedLiveCatalogValue } =
+    await import("paleoclaw/plugin-sdk/provider-catalog-shared");
   const { fetchLiveProviderModelRows, LiveModelCatalogHttpError } = catalogRuntime;
   const endpoint = await resolveOpenAICodexModelsEndpoint(params.catalogContext);
   try {

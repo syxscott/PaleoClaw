@@ -40,7 +40,7 @@ const whatsappPackageJson = JSON.parse(
   version?: string;
   paleoclaw?: { install?: { npmSpec?: string } };
 };
-const whatsappNpmSpec = whatsappPackageJson.openclaw?.install?.npmSpec ?? whatsappPackageJson.name;
+const whatsappNpmSpec = whatsappPackageJson.paleoclaw?.install?.npmSpec ?? whatsappPackageJson.name;
 const whatsappVersion = whatsappPackageJson.version;
 if (!whatsappNpmSpec || !whatsappVersion) {
   throw new Error("missing package metadata for whatsapp");

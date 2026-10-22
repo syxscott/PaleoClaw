@@ -39,7 +39,7 @@ describe("acpx package manifest", () => {
   });
 
   it("declares the transitive native platform packages required by ACP adapters", () => {
-    expect(packageJson.openclaw?.install?.requiredPlatformPackages).toEqual([
+    expect(packageJson.paleoclaw?.install?.requiredPlatformPackages).toEqual([
       "@anthropic-ai/claude-agent-sdk-linux-x64",
       "@anthropic-ai/claude-agent-sdk-linux-arm64",
       "@anthropic-ai/claude-agent-sdk-linux-x64-musl",

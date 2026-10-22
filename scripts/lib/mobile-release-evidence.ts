@@ -281,7 +281,7 @@ export function collectSelectedReleaseEvidence(
     const contextPaths =
       source.platform === "android"
         ? [
-            "apps/android/app/src/play/java/ai/paleoclaw/app/SensitiveFeatureConfig.kt",
+            "apps/android/app/src/play/java/ai/openclaw/app/SensitiveFeatureConfig.kt",
             "apps/android/app/build.gradle.kts",
             "apps/android/wear/build.gradle.kts",
           ]

@@ -538,13 +538,3 @@ export async function persistCronJobMutation(params: {
   }
   await runPostPersistCronNotifications(state, notifications);
 }
-
-// --- PaleoClaw 兼容层：persist（pc 3 月 API，上游 10 月已改名）---
-export async function persist(state: CronServiceState, opts?: { skipBackup?: boolean }) {
-  if (!state.store) {
-    return;
-  }
-  await saveCronStore(state.deps.storePath, state.store, opts);
-  // Update file mtime after save to prevent immediate reload
-  state.storeFileMtimeMs = await getFileMtimeMs(state.deps.storePath);
-}

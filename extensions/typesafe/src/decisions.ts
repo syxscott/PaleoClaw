@@ -9,7 +9,7 @@ import type {
 import { createLazyRuntimeModule } from "paleoclaw/plugin-sdk/lazy-runtime";
 import { resolveProviderRequestHeaders } from "paleoclaw/plugin-sdk/provider-http";
 import { resolveSecretInputString } from "paleoclaw/plugin-sdk/secret-input";
-import manifest from "../paleoclaw.plugin.json" with { type: "json" };
+import manifest from "../openclaw.plugin.json" with { type: "json" };
 import { hasCredentials, providerBaseUrl, type RuntimeConfig } from "./config.js";
 import { decisionFailure } from "./errors.js";
 

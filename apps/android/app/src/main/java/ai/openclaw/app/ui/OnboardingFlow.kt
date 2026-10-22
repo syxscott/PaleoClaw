@@ -69,7 +69,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.import androidx.compose.ui.graphics.
+import androidx.compose.ui.res.stringResourceimport androidx.compose.ui.graphics.
+import androidx.compose.ui.res.stringResourceBrush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
@@ -494,20 +496,20 @@ fun OnboardingFlow(viewModel: MainViewModel, modifier: Modifier = Modifier) {
     val prompt = pendingTrust!!
     AlertDialog(
       onDismissRequest = { viewModel.declineGatewayTrustPrompt() },
-      title = { Text("Trust this gateway?") },
+      title = { Text(stringResource(R.string.onboarding_trust_this_gateway)) },
       text = {
         Text(
-          "First-time TLS connection.\n\nVerify this SHA-256 fingerprint before trusting:\n${prompt.fingerprintSha256}",
+          stringResource(R.string.onboarding_first_time_tls_connection_verify_this_sha_256_fi),
         )
       },
       confirmButton = {
         TextButton(onClick = { viewModel.acceptGatewayTrustPrompt() }) {
-          Text("Trust and continue")
+          Text(stringResource(R.string.onboarding_trust_and_continue))
         }
       },
       dismissButton = {
         TextButton(onClick = { viewModel.declineGatewayTrustPrompt() }) {
-          Text("Cancel")
+          Text(stringResource(R.string.onboarding_cancel))
         }
       },
     )
@@ -538,17 +540,17 @@ fun OnboardingFlow(viewModel: MainViewModel, modifier: Modifier = Modifier) {
           verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
           Text(
-            "FIRST RUN",
+            stringResource(R.string.onboarding_first_run),
             style = onboardingCaption1Style.copy(fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp),
             color = onboardingAccent,
           )
           Text(
-            "OpenClaw\nMobile Setup",
+            stringResource(R.string.onboarding_openclaw_mobile_setup),
             style = onboardingDisplayStyle.copy(lineHeight = 38.sp),
             color = onboardingText,
           )
           Text(
-            "Step ${step.index} of 4",
+            stringResource(R.string.onboarding_step_step_index_of_4),
             style = onboardingCaption1Style,
             color = onboardingAccent,
           )
@@ -760,7 +762,7 @@ fun OnboardingFlow(viewModel: MainViewModel, modifier: Modifier = Modifier) {
           ) {
             Icon(
               Icons.AutoMirrored.Filled.ArrowBack,
-              contentDescription = "Back",
+              contentDescription = stringResource(R.string.onboarding_back),
               tint = if (backEnabled) onboardingTextSecondary else onboardingTextTertiary,
             )
           }
@@ -780,7 +782,7 @@ fun OnboardingFlow(viewModel: MainViewModel, modifier: Modifier = Modifier) {
                   disabledContentColor = Color.White,
                 ),
             ) {
-              Text("Next", style = onboardingHeadlineStyle.copy(fontWeight = FontWeight.Bold))
+              Text(stringResource(R.string.onboarding_next), style = onboardingHeadlineStyle.copy(fontWeight = FontWeight.Bold))
             }
           }
           OnboardingStep.Gateway -> {
@@ -821,7 +823,7 @@ fun OnboardingFlow(viewModel: MainViewModel, modifier: Modifier = Modifier) {
                   disabledContentColor = Color.White,
                 ),
             ) {
-              Text("Next", style = onboardingHeadlineStyle.copy(fontWeight = FontWeight.Bold))
+              Text(stringResource(R.string.onboarding_next_2), style = onboardingHeadlineStyle.copy(fontWeight = FontWeight.Bold))
             }
           }
           OnboardingStep.Permissions -> {
@@ -841,7 +843,7 @@ fun OnboardingFlow(viewModel: MainViewModel, modifier: Modifier = Modifier) {
                   disabledContentColor = Color.White,
                 ),
             ) {
-              Text("Next", style = onboardingHeadlineStyle.copy(fontWeight = FontWeight.Bold))
+              Text(stringResource(R.string.onboarding_next_3), style = onboardingHeadlineStyle.copy(fontWeight = FontWeight.Bold))
             }
           }
           OnboardingStep.FinalCheck -> {
@@ -858,7 +860,7 @@ fun OnboardingFlow(viewModel: MainViewModel, modifier: Modifier = Modifier) {
                     disabledContentColor = Color.White,
                   ),
               ) {
-                Text("Finish", style = onboardingHeadlineStyle.copy(fontWeight = FontWeight.Bold))
+                Text(stringResource(R.string.onboarding_finish), style = onboardingHeadlineStyle.copy(fontWeight = FontWeight.Bold))
               }
             } else {
               Button(
@@ -892,7 +894,7 @@ fun OnboardingFlow(viewModel: MainViewModel, modifier: Modifier = Modifier) {
                     disabledContentColor = Color.White,
                   ),
               ) {
-                Text("Connect", style = onboardingHeadlineStyle.copy(fontWeight = FontWeight.Bold))
+                Text(stringResource(R.string.onboarding_connect_at_module_verifyandroidappi18n_d_github_), style = onboardingHeadlineStyle.copy(fontWeight = FontWeight.Bold))
               }
             }
           }
@@ -952,7 +954,7 @@ private fun StepRail(current: OnboardingStep) {
 
 @Composable
 private fun WelcomeStep() {
-  StepShell(title = "What You Get") {
+  StepShell(title = stringResource(R.string.onboarding_what_you_get)) {
     Bullet("Control the gateway and operator chat from one mobile surface.")
     Bullet("Connect with setup code and recover pairing with CLI commands.")
     Bullet("Enable only the permissions and capabilities you want.")
@@ -984,11 +986,11 @@ private fun GatewayStep(
   val resolvedEndpoint = remember(setupCode) { decodeGatewaySetupCode(setupCode)?.url?.let { parseGatewayEndpoint(it)?.displayUrl } }
   val manualResolvedEndpoint = remember(manualHost, manualPort, manualTls) { composeGatewayManualUrl(manualHost, manualPort, manualTls)?.let { parseGatewayEndpoint(it)?.displayUrl } }
 
-  StepShell(title = "Gateway Connection") {
-    GuideBlock(title = "Scan onboarding QR") {
-      Text("Run these on the gateway host:", style = onboardingCalloutStyle, color = onboardingTextSecondary)
+  StepShell(title = stringResource(R.string.onboarding_gateway_connection)) {
+    GuideBlock(title = stringResource(R.string.onboarding_scan_onboarding_qr)) {
+      Text(stringResource(R.string.onboarding_run_these_on_the_gateway_host), style = onboardingCalloutStyle, color = onboardingTextSecondary)
       CommandBlock("openclaw qr")
-      Text("Then scan with this device.", style = onboardingCalloutStyle, color = onboardingTextSecondary)
+      Text(stringResource(R.string.onboarding_then_scan_with_this_device), style = onboardingCalloutStyle, color = onboardingTextSecondary)
     }
     Button(
       onClick = onScanQrClick,
@@ -1000,10 +1002,10 @@ private fun GatewayStep(
           contentColor = Color.White,
         ),
     ) {
-      Text("Scan QR code", style = onboardingHeadlineStyle.copy(fontWeight = FontWeight.Bold))
+      Text(stringResource(R.string.onboarding_scan_qr_code), style = onboardingHeadlineStyle.copy(fontWeight = FontWeight.Bold))
     }
     if (!resolvedEndpoint.isNullOrBlank()) {
-      Text("QR captured. Review endpoint below.", style = onboardingCalloutStyle, color = onboardingSuccess)
+      Text(stringResource(R.string.onboarding_qr_captured_review_endpoint_below), style = onboardingCalloutStyle, color = onboardingSuccess)
       ResolvedEndpoint(endpoint = resolvedEndpoint)
     }
 
@@ -1020,8 +1022,8 @@ private fun GatewayStep(
         horizontalArrangement = Arrangement.SpaceBetween,
       ) {
         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-          Text("Advanced setup", style = onboardingHeadlineStyle, color = onboardingText)
-          Text("Paste setup code or enter host/port manually.", style = onboardingCaption1Style, color = onboardingTextSecondary)
+          Text(stringResource(R.string.onboarding_advanced_setup), style = onboardingHeadlineStyle, color = onboardingText)
+          Text(stringResource(R.string.onboarding_paste_setup_code_or_enter_host_port_manually), style = onboardingCaption1Style, color = onboardingTextSecondary)
         }
         Icon(
           imageVector = if (advancedOpen) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
@@ -1033,17 +1035,17 @@ private fun GatewayStep(
 
     AnimatedVisibility(visible = advancedOpen) {
       Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        GuideBlock(title = "Manual setup commands") {
-          Text("Run these on the gateway host:", style = onboardingCalloutStyle, color = onboardingTextSecondary)
+        GuideBlock(title = stringResource(R.string.onboarding_manual_setup_commands)) {
+          Text(stringResource(R.string.onboarding_run_these_on_the_gateway_host_2), style = onboardingCalloutStyle, color = onboardingTextSecondary)
           CommandBlock("openclaw qr --setup-code-only")
           CommandBlock("openclaw qr --json")
           Text(
-            "`--json` prints `setupCode` and `gatewayUrl`.",
+            stringResource(R.string.onboarding_json_prints_setupcode_and_gatewayurl),
             style = onboardingCalloutStyle,
             color = onboardingTextSecondary,
           )
           Text(
-            "Auto URL discovery is not wired yet. Android emulator uses `10.0.2.2`; real devices need LAN/Tailscale host.",
+            stringResource(R.string.onboarding_auto_url_discovery_is_not_wired_yet_android_emul),
             style = onboardingCalloutStyle,
             color = onboardingTextSecondary,
           )
@@ -1051,11 +1053,11 @@ private fun GatewayStep(
         GatewayModeToggle(inputMode = inputMode, onInputModeChange = onInputModeChange)
 
         if (inputMode == GatewayInputMode.SetupCode) {
-          Text("SETUP CODE", style = onboardingCaption1Style.copy(letterSpacing = 0.9.sp), color = onboardingTextSecondary)
+          Text(stringResource(R.string.onboarding_setup_code), style = onboardingCaption1Style.copy(letterSpacing = 0.9.sp), color = onboardingTextSecondary)
           OutlinedTextField(
             value = setupCode,
             onValueChange = onSetupCodeChange,
-            placeholder = { Text("Paste code from `openclaw qr --setup-code-only`", color = onboardingTextTertiary, style = onboardingBodyStyle) },
+            placeholder = { Text(stringResource(R.string.onboarding_paste_code_from_openclaw_qr_setup_code_only), color = onboardingTextTertiary, style = onboardingBodyStyle) },
             modifier = Modifier.fillMaxWidth(),
             minLines = 3,
             maxLines = 5,
@@ -1078,23 +1080,23 @@ private fun GatewayStep(
           }
         } else {
           Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            QuickFillChip(label = "Android Emulator", onClick = {
+            QuickFillChip(label = stringResource(R.string.onboarding_android_emulator), onClick = {
               onManualHostChange("10.0.2.2")
               onManualPortChange("18789")
               onManualTlsChange(false)
             })
-            QuickFillChip(label = "Localhost", onClick = {
+            QuickFillChip(label = stringResource(R.string.onboarding_localhost), onClick = {
               onManualHostChange("127.0.0.1")
               onManualPortChange("18789")
               onManualTlsChange(false)
             })
           }
 
-          Text("HOST", style = onboardingCaption1Style.copy(letterSpacing = 0.9.sp), color = onboardingTextSecondary)
+          Text(stringResource(R.string.onboarding_host), style = onboardingCaption1Style.copy(letterSpacing = 0.9.sp), color = onboardingTextSecondary)
           OutlinedTextField(
             value = manualHost,
             onValueChange = onManualHostChange,
-            placeholder = { Text("10.0.2.2", color = onboardingTextTertiary, style = onboardingBodyStyle) },
+            placeholder = { Text(stringResource(R.string.onboarding_10_0_2_2), color = onboardingTextTertiary, style = onboardingBodyStyle) },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
@@ -1112,11 +1114,11 @@ private fun GatewayStep(
               ),
           )
 
-          Text("PORT", style = onboardingCaption1Style.copy(letterSpacing = 0.9.sp), color = onboardingTextSecondary)
+          Text(stringResource(R.string.onboarding_port), style = onboardingCaption1Style.copy(letterSpacing = 0.9.sp), color = onboardingTextSecondary)
           OutlinedTextField(
             value = manualPort,
             onValueChange = onManualPortChange,
-            placeholder = { Text("18789", color = onboardingTextTertiary, style = onboardingBodyStyle) },
+            placeholder = { Text(stringResource(R.string.onboarding_18789), color = onboardingTextTertiary, style = onboardingBodyStyle) },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -1140,8 +1142,8 @@ private fun GatewayStep(
             horizontalArrangement = Arrangement.SpaceBetween,
           ) {
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-              Text("Use TLS", style = onboardingHeadlineStyle, color = onboardingText)
-              Text("Switch to secure websocket (`wss`).", style = onboardingCalloutStyle.copy(lineHeight = 18.sp), color = onboardingTextSecondary)
+              Text(stringResource(R.string.onboarding_use_tls), style = onboardingHeadlineStyle, color = onboardingText)
+              Text(stringResource(R.string.onboarding_switch_to_secure_websocket_wss), style = onboardingCalloutStyle.copy(lineHeight = 18.sp), color = onboardingTextSecondary)
             }
             Switch(
               checked = manualTls,
@@ -1156,11 +1158,11 @@ private fun GatewayStep(
             )
           }
 
-          Text("TOKEN (OPTIONAL)", style = onboardingCaption1Style.copy(letterSpacing = 0.9.sp), color = onboardingTextSecondary)
+          Text(stringResource(R.string.onboarding_token_optional), style = onboardingCaption1Style.copy(letterSpacing = 0.9.sp), color = onboardingTextSecondary)
           OutlinedTextField(
             value = gatewayToken,
             onValueChange = onTokenChange,
-            placeholder = { Text("token", color = onboardingTextTertiary, style = onboardingBodyStyle) },
+            placeholder = { Text(stringResource(R.string.onboarding_token), color = onboardingTextTertiary, style = onboardingBodyStyle) },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Ascii),
@@ -1178,11 +1180,11 @@ private fun GatewayStep(
               ),
           )
 
-          Text("PASSWORD (OPTIONAL)", style = onboardingCaption1Style.copy(letterSpacing = 0.9.sp), color = onboardingTextSecondary)
+          Text(stringResource(R.string.onboarding_password_optional), style = onboardingCaption1Style.copy(letterSpacing = 0.9.sp), color = onboardingTextSecondary)
           OutlinedTextField(
             value = gatewayPassword,
             onValueChange = onPasswordChange,
-            placeholder = { Text("password", color = onboardingTextTertiary, style = onboardingBodyStyle) },
+            placeholder = { Text(stringResource(R.string.onboarding_password), color = onboardingTextTertiary, style = onboardingBodyStyle) },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Ascii),
@@ -1234,13 +1236,13 @@ private fun GatewayModeToggle(
 ) {
   Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
     GatewayModeChip(
-      label = "Setup Code",
+      label = stringResource(R.string.onboarding_setup_code_2),
       active = inputMode == GatewayInputMode.SetupCode,
       onClick = { onInputModeChange(GatewayInputMode.SetupCode) },
       modifier = Modifier.weight(1f),
     )
     GatewayModeChip(
-      label = "Manual",
+      label = stringResource(R.string.onboarding_manual),
       active = inputMode == GatewayInputMode.Manual,
       onClick = { onInputModeChange(GatewayInputMode.Manual) },
       modifier = Modifier.weight(1f),
@@ -1298,7 +1300,7 @@ private fun ResolvedEndpoint(endpoint: String) {
   Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
     HorizontalDivider(color = onboardingBorder)
     Text(
-      "RESOLVED ENDPOINT",
+      stringResource(R.string.onboarding_resolved_endpoint),
       style = onboardingCaption2Style.copy(fontWeight = FontWeight.SemiBold, letterSpacing = 0.7.sp),
       color = onboardingTextSecondary,
     )
@@ -1389,14 +1391,14 @@ private fun PermissionsStep(
   val notificationListenerGranted = isNotificationListenerEnabled(context)
   val appUpdatesGranted = canInstallUnknownApps(context)
 
-  StepShell(title = "Permissions") {
+  StepShell(title = stringResource(R.string.onboarding_permissions)) {
     Text(
-      "Enable only what you need now. You can change everything later in Settings.",
+      stringResource(R.string.onboarding_enable_only_what_you_need_now_you_can_change_eve),
       style = onboardingCalloutStyle,
       color = onboardingTextSecondary,
     )
     PermissionToggleRow(
-      title = "Gateway discovery",
+      title = stringResource(R.string.onboarding_gateway_discovery),
       subtitle = if (Build.VERSION.SDK_INT >= 33) "Nearby devices" else "Location (for NSD)",
       checked = enableDiscovery,
       granted = isPermissionGranted(context, discoveryPermission),
@@ -1404,8 +1406,8 @@ private fun PermissionsStep(
     )
     InlineDivider()
     PermissionToggleRow(
-      title = "Location",
-      subtitle = "location.get (while app is open unless set to Always later)",
+      title = stringResource(R.string.onboarding_location),
+      subtitle = stringResource(R.string.onboarding_location_get_while_app_is_open_unless_set_to_alw),
       checked = enableLocation,
       granted = locationGranted,
       onCheckedChange = onLocationChange,
@@ -1413,8 +1415,8 @@ private fun PermissionsStep(
     InlineDivider()
     if (Build.VERSION.SDK_INT >= 33) {
       PermissionToggleRow(
-        title = "Notifications",
-        subtitle = "system.notify and foreground alerts",
+        title = stringResource(R.string.onboarding_notifications),
+        subtitle = stringResource(R.string.onboarding_system_notify_and_foreground_alerts),
         checked = enableNotifications,
         granted = isPermissionGranted(context, Manifest.permission.POST_NOTIFICATIONS),
         onCheckedChange = onNotificationsChange,
@@ -1422,64 +1424,64 @@ private fun PermissionsStep(
       InlineDivider()
     }
     PermissionToggleRow(
-      title = "Notification listener",
-      subtitle = "notifications.list and notifications.actions (opens Android Settings)",
+      title = stringResource(R.string.onboarding_notification_listener),
+      subtitle = stringResource(R.string.onboarding_notifications_list_and_notifications_actions_ope),
       checked = enableNotificationListener,
       granted = notificationListenerGranted,
       onCheckedChange = onNotificationListenerChange,
     )
     InlineDivider()
     PermissionToggleRow(
-      title = "App updates",
-      subtitle = "app.update install confirmation (opens Android Settings)",
+      title = stringResource(R.string.onboarding_app_updates),
+      subtitle = stringResource(R.string.onboarding_app_update_install_confirmation_opens_android_se),
       checked = enableAppUpdates,
       granted = appUpdatesGranted,
       onCheckedChange = onAppUpdatesChange,
     )
     InlineDivider()
     PermissionToggleRow(
-      title = "Microphone",
-      subtitle = "Voice tab transcription",
+      title = stringResource(R.string.onboarding_microphone),
+      subtitle = stringResource(R.string.onboarding_voice_tab_transcription),
       checked = enableMicrophone,
       granted = isPermissionGranted(context, Manifest.permission.RECORD_AUDIO),
       onCheckedChange = onMicrophoneChange,
     )
     InlineDivider()
     PermissionToggleRow(
-      title = "Camera",
-      subtitle = "camera.snap and camera.clip",
+      title = stringResource(R.string.onboarding_camera),
+      subtitle = stringResource(R.string.onboarding_camera_snap_and_camera_clip),
       checked = enableCamera,
       granted = isPermissionGranted(context, Manifest.permission.CAMERA),
       onCheckedChange = onCameraChange,
     )
     InlineDivider()
     PermissionToggleRow(
-      title = "Photos",
-      subtitle = "photos.latest",
+      title = stringResource(R.string.onboarding_photos),
+      subtitle = stringResource(R.string.onboarding_photos_latest),
       checked = enablePhotos,
       granted = isPermissionGranted(context, photosPermission),
       onCheckedChange = onPhotosChange,
     )
     InlineDivider()
     PermissionToggleRow(
-      title = "Contacts",
-      subtitle = "contacts.search and contacts.add",
+      title = stringResource(R.string.onboarding_contacts),
+      subtitle = stringResource(R.string.onboarding_contacts_search_and_contacts_add),
       checked = enableContacts,
       granted = contactsGranted,
       onCheckedChange = onContactsChange,
     )
     InlineDivider()
     PermissionToggleRow(
-      title = "Calendar",
-      subtitle = "calendar.events and calendar.add",
+      title = stringResource(R.string.onboarding_calendar),
+      subtitle = stringResource(R.string.onboarding_calendar_events_and_calendar_add),
       checked = enableCalendar,
       granted = calendarGranted,
       onCheckedChange = onCalendarChange,
     )
     InlineDivider()
     PermissionToggleRow(
-      title = "Motion",
-      subtitle = "motion.activity and motion.pedometer",
+      title = stringResource(R.string.onboarding_motion),
+      subtitle = stringResource(R.string.onboarding_motion_activity_and_motion_pedometer),
       checked = enableMotion,
       granted = motionGranted,
       onCheckedChange = onMotionChange,
@@ -1489,14 +1491,14 @@ private fun PermissionsStep(
     if (smsAvailable) {
       InlineDivider()
       PermissionToggleRow(
-        title = "SMS",
-        subtitle = "Allow gateway-triggered SMS sending",
+        title = stringResource(R.string.onboarding_sms),
+        subtitle = stringResource(R.string.onboarding_allow_gateway_triggered_sms_sending),
         checked = enableSms,
         granted = isPermissionGranted(context, Manifest.permission.SEND_SMS),
         onCheckedChange = onSmsChange,
       )
     }
-    Text("All settings can be changed later in Settings.", style = onboardingCalloutStyle, color = onboardingTextSecondary)
+    Text(stringResource(R.string.onboarding_all_settings_can_be_changed_later_in_settings), style = onboardingCalloutStyle, color = onboardingTextSecondary)
   }
 }
 
@@ -1550,23 +1552,23 @@ private fun FinalStep(
   enabledPermissions: String,
   methodLabel: String,
 ) {
-  StepShell(title = "Review") {
-    SummaryField(label = "Method", value = methodLabel)
-    SummaryField(label = "Gateway", value = parsedGateway?.displayUrl ?: "Invalid gateway URL")
-    SummaryField(label = "Enabled Permissions", value = enabledPermissions)
+  StepShell(title = stringResource(R.string.onboarding_review)) {
+    SummaryField(label = stringResource(R.string.onboarding_method), value = methodLabel)
+    SummaryField(label = stringResource(R.string.onboarding_gateway), value = parsedGateway?.displayUrl ?: "Invalid gateway URL")
+    SummaryField(label = stringResource(R.string.onboarding_enabled_permissions), value = enabledPermissions)
 
     if (!attemptedConnect) {
-      Text("Press Connect to verify gateway reachability and auth.", style = onboardingCalloutStyle, color = onboardingTextSecondary)
+      Text(stringResource(R.string.onboarding_press_connect_to_verify_gateway_reachability_and), style = onboardingCalloutStyle, color = onboardingTextSecondary)
     } else {
-      Text("Status: $statusText", style = onboardingCalloutStyle, color = if (isConnected) onboardingSuccess else onboardingTextSecondary)
+      Text(stringResource(R.string.onboarding_status_statustext), style = onboardingCalloutStyle, color = if (isConnected) onboardingSuccess else onboardingTextSecondary)
       if (isConnected) {
-        Text("Connected to ${serverName ?: remoteAddress ?: "gateway"}", style = onboardingCalloutStyle, color = onboardingSuccess)
+        Text(stringResource(R.string.onboarding_connected_to_servername_remoteaddress)gateway"}", style = onboardingCalloutStyle, color = onboardingSuccess)
       } else {
-        GuideBlock(title = "Pairing Required") {
-          Text("Run these on the gateway host:", style = onboardingCalloutStyle, color = onboardingTextSecondary)
+        GuideBlock(title = stringResource(R.string.onboarding_pairing_required)) {
+          Text(stringResource(R.string.onboarding_run_these_on_the_gateway_host_3), style = onboardingCalloutStyle, color = onboardingTextSecondary)
           CommandBlock("openclaw devices list")
           CommandBlock("openclaw devices approve <requestId>")
-          Text("Then tap Connect again.", style = onboardingCalloutStyle, color = onboardingTextSecondary)
+          Text(stringResource(R.string.onboarding_then_tap_connect_again_at_module_verifyandroidap), style = onboardingCalloutStyle, color = onboardingTextSecondary)
         }
       }
     }

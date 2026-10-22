@@ -369,7 +369,7 @@ export function recordUpdateCompatibilityRelease(params: {
     buildId: build.buildId,
     commit: build.commit,
     integrity: params.integrity,
-    schemaVersions: packageJson.openclaw?.schemaVersions,
+    schemaVersions: packageJson.paleoclaw?.schemaVersions,
     chunks: [...chunks.values()]
       .toSorted((a, b) => a.path.localeCompare(b.path))
       .map((chunk) => ({

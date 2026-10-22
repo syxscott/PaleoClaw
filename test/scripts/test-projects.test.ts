@@ -1403,7 +1403,7 @@ export const single = {
     args                                                                            | owner               | watchMode | env                                         | inheritedProjectShards
     ${["src/gateway/server.health.test.ts"]}                                        | ${"gateway-server"} | ${false}  | ${undefined}                                | ${undefined}
     ${["--watch", "src/gateway/server.health.test.ts"]}                             | ${"gateway"}        | ${true}   | ${undefined}                                | ${undefined}
-    ${testFiles("src/gateway", "server.health call")}                               | ${"gateway"}        | ${false}  | ${undefined}                                | ${undefined}
+    ${testFiles("src/gateway/", "server.health call")}                              | ${"gateway"}        | ${false}  | ${undefined}                                | ${undefined}
     ${["--watch", "src/gateway/server.health.test.ts", "src/gateway/call.test.ts"]} | ${"gateway"}        | ${true}   | ${undefined}                                | ${undefined}
     ${["src/gateway/server.health.test.ts"]}                                        | ${"gateway"}        | ${false}  | ${{ OPENCLAW_GATEWAY_PROJECT_SHARDS: "0" }} | ${undefined}
     ${["src/gateway/server.health.test.ts"]}                                        | ${"gateway"}        | ${false}  | ${undefined}                                | ${"0"}
@@ -2033,7 +2033,7 @@ export const single = {
         (plan) => (plan.includePatterns?.length ?? 0) <= TELEGRAM_TEST_PROCESS_FILE_LIMIT,
       ),
     ).toBe(true);
-    expect(selectedTestFiles(plans)).toEqual(listOrdinaryExtensionFiles("extensions/telegram"));
+    expect(selectedTestFiles(plans)).toEqual(listOrdinaryExtensionFiles("extensions/telegram/"));
   });
 
   it.each([
@@ -2057,12 +2057,12 @@ export const single = {
     {
       channel: "Telegram",
       config: configFile("extension-telegram"),
-      directory: "extensions/telegram",
+      directory: "extensions/telegram/",
     },
     {
       channel: "Matrix",
       config: configFile("extension-matrix"),
-      directory: "extensions/matrix",
+      directory: "extensions/matrix/",
     },
   ])("preserves an externally scoped $channel directory run spec", ({ config, directory }) => {
     withIncludeFile(
@@ -2089,7 +2089,7 @@ export const single = {
       inherited: testFiles("extensions/matrix/src/matrix", "client/storage thread-bindings"),
     },
     {
-      directory: "extensions/matrix/src/matrix/sdk",
+      directory: "extensions/matrix/src/matrix/sdk/",
       // Worker membership belongs to the database lane; this case protects the
       // directory intersection as that membership grows.
       selected: databaseWorkerExtensionTestFiles.filter((file) =>
@@ -2116,7 +2116,7 @@ export const single = {
   );
 
   it("keeps grouped Matrix targets covered when bounding the directory", () => {
-    const testFile = listExtensionTestFilesForRoots(["extensions/matrix"])[0];
+    const testFile = listExtensionTestFilesForRoots(["extensions/matrix/"])[0];
     if (!testFile) {
       throw new Error("expected a Matrix test fixture");
     }
@@ -2128,7 +2128,7 @@ export const single = {
       plans.every((plan) => (plan.includePatterns?.length ?? 0) <= MATRIX_TEST_PROCESS_FILE_LIMIT),
     ).toBe(true);
     expect(selectedTestFiles(plans).toSorted()).toEqual(
-      listExtensionTestFilesForRoots(["extensions/matrix"]).toSorted(),
+      listExtensionTestFilesForRoots(["extensions/matrix/"]).toSorted(),
     );
   });
 
@@ -2139,7 +2139,7 @@ export const single = {
         config: configFile("extension-database-workers"),
         forwardedArgs: [],
         includePatterns: databaseWorkerExtensionTestFiles.filter((file) =>
-          file.startsWith("extensions/matrix/"),
+          file.startsWith("extensions/matrix"),
         ),
         watchMode: false,
       },
@@ -2148,7 +2148,7 @@ export const single = {
   });
 
   it("keeps explicit Matrix files and watch runs unchunked", () => {
-    const testFile = listExtensionTestFilesForRoots(["extensions/matrix"])[0];
+    const testFile = listExtensionTestFilesForRoots(["extensions/matrix/"])[0];
     expect(testFile).toBeDefined();
     expect(planRuns([testFile!])).toHaveLength(1);
     const plans = planRuns(["--watch", "extensions/matrix"]);
@@ -2157,7 +2157,7 @@ export const single = {
         config: configFile("database-worker-watch"),
         databaseWorkerWatchOwner: configFile("extension-matrix"),
         databaseWorkerWatchTests: databaseWorkerExtensionTestFiles.filter((file) =>
-          file.startsWith("extensions/matrix/"),
+          file.startsWith("extensions/matrix"),
         ),
         forwardedArgs: [],
         includePatterns: expect.arrayContaining(["extensions/matrix/**/*.test.ts"]),
@@ -2425,8 +2425,8 @@ export const single = {
     {
       expandGlobs: true,
       withRepo: withTinyGitRepo,
-      patterns: testFiles("src/gateway", "**/* server-* @(core|server-startup)"),
-      expected: testFiles("src/gateway", "core server-methods/ping server-startup"),
+      patterns: testFiles("src/gateway/", "**/* server-* @(core|server-startup)"),
+      expected: testFiles("src/gateway/", "core server-methods/ping server-startup"),
     },
     {
       expandGlobs: false,
@@ -3382,7 +3382,7 @@ describe("scripts/test-projects full-suite sharding", () => {
       );
       expect(gatewayTargets.every((files) => files.length > 0 && files.length <= 16)).toBe(true);
       expect(gatewayTargets.flat()).toEqual(
-        listGitTrackedFiles({ pathspecs: "src/gateway" })
+        listGitTrackedFiles({ pathspecs: "src/gateway/" })
           ?.filter(isGatewayServerTestFile)
           .toSorted((a, b) => a.localeCompare(b)),
       );

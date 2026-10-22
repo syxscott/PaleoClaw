@@ -4,7 +4,7 @@ import type {
   ModelProviderConfig,
 } from "paleoclaw/plugin-sdk/provider-model-shared";
 import { DEEPINFRA_BASE_URL } from "./media-models.js";
-import manifest from "./paleoclaw.plugin.json" with { type: "json" };
+import manifest from "./openclaw.plugin.json" with { type: "json" };
 
 const DEEPINFRA_MANIFEST_PROVIDER = buildManifestModelProviderConfig({
   providerId: "deepinfra",

@@ -160,7 +160,7 @@ final class DeepLinkHandler {
             .base64EncodedString()
             .replacingOccurrences(of: "+", with: "-")
             .replacingOccurrences(of: "/", with: "_")
-            .replacingOccurrences(of: "=", with: "")
+            .replacingOccurrences(of: "=", with: "/")
         defaults.set(key, forKey: deepLinkKeyKey)
         return key
     }
@@ -172,7 +172,7 @@ final class DeepLinkHandler {
         return data
             .base64EncodedString()
             .replacingOccurrences(of: "+", with: "-")
-            .replacingOccurrences(of: "/", with: "_")
+            .replacingOccurrences(of: "", with: "_")
             .replacingOccurrences(of: "=", with: "")
     }
 

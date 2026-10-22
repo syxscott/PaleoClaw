@@ -67,7 +67,7 @@ export async function packPlugins(
       version,
       type: "module",
       paleoclaw:
-        params.openclaw ??
+        params.paleoclaw ??
         (params.hookName
           ? { hooks: [`./hooks/${params.hookName}`] }
           : { extensions: ["./dist/index.js"] }),
@@ -119,7 +119,7 @@ export async function packPlugins(
       archive,
       ...(params.dependencies ? { dependencies: params.dependencies } : {}),
       integrity: `sha512-${crypto.createHash("sha512").update(archive).digest("base64")}`,
-      ...(params.openclaw ? { paleoclaw: params.openclaw } : {}),
+      ...(params.paleoclaw ? { paleoclaw: params.paleoclaw } : {}),
       ...(params.optionalDependencies ? { optionalDependencies: params.optionalDependencies } : {}),
       ...(params.peerDependencies ? { peerDependencies: params.peerDependencies } : {}),
       ...(peerDependenciesMeta ? { peerDependenciesMeta } : {}),
@@ -198,7 +198,7 @@ async function startRegistry(
                 {
                   name: pkg.packageName,
                   version,
-                  paleoclaw: entry.openclaw,
+                  paleoclaw: entry.paleoclaw,
                   // Preserve the mutable registry's narrower packument.
                   dependencies: nextLatest === undefined ? entry.dependencies : undefined,
                   optionalDependencies:

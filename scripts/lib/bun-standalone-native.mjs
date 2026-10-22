@@ -803,7 +803,7 @@ export function createStandaloneNativeAdapter({
     if (typeof specifier !== "string" || specifier.startsWith(".") || path.isAbsolute(specifier)) return undefined;
     const from = original(parent);
     const key = path.relative(root, from).split(path.sep).join("/");
-    if (key === ".." || key.startsWith("../") || path.isAbsolute(key)) return undefined;
+    if (key === ".." || key.startsWith("..") || path.isAbsolute(key)) return undefined;
     const owner = table.owners.find((candidate) => candidate.original === "" || key.startsWith(candidate.original + "/"));
     const name = specifier.startsWith("@") ? specifier.split("/").slice(0, 2).join("/") : specifier.split("/")[0];
     const dependency = owner?.dependencies[name];

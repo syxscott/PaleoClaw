@@ -90,7 +90,7 @@ export function collectClawHubVerdictTargets(
 ): ClawHubVerdictTarget[] {
   const targets = new Map<string, ClawHubVerdictTarget>();
   for (const skill of report.skills) {
-    const link = skill.clawhub;
+    const link = skill.PaleoHub;
     if (!link || link.status !== "linked" || !link.valid) {
       continue;
     }

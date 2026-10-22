@@ -255,15 +255,15 @@ describe("plugin manifest", () => {
     expect(integration?.maxOutputBytes).toBeGreaterThan(
       maxRefsPerRequest * worstCaseEscapedValueBytes,
     );
-    expect(packageJson.openclaw?.build?.staticAssets).toContainEqual({
+    expect(packageJson.paleoclaw?.build?.staticAssets).toContainEqual({
       source: "./onepassword-op-path.js",
       output: "onepassword-op-path.js",
     });
-    expect(packageJson.openclaw?.build?.staticAssets).toContainEqual({
+    expect(packageJson.paleoclaw?.build?.staticAssets).toContainEqual({
       source: "./onepassword-secret-ref-resolver.js",
       output: "onepassword-secret-ref-resolver.js",
     });
-    expect(packageJson.openclaw?.build?.staticAssets).toContainEqual({
+    expect(packageJson.paleoclaw?.build?.staticAssets).toContainEqual({
       source: "./onepassword-secret-id.js",
       output: "onepassword-secret-id.js",
     });

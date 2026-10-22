@@ -271,7 +271,7 @@ describe.skipIf(process.platform !== "linux")("immutable activation orchestratio
     ]) {
       const file = path.join(generation, "package.json");
       const manifest = JSON.parse(fs.readFileSync(file, "utf8"));
-      manifest.openclaw.immutableInstallDescriptorVersion = 3;
+      manifest.paleoclaw.immutableInstallDescriptorVersion = 3;
       fs.writeFileSync(file, JSON.stringify(manifest));
     }
     const current = read();

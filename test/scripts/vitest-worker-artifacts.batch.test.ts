@@ -50,7 +50,7 @@ process.exitCode = await runVitestBatch({
     const generations = fs.existsSync(${JSON.stringify(observed)})
       ? fs.readFileSync(${JSON.stringify(observed)}, 'utf8').trim().split('\\n').map(line => JSON.parse(line)) : [];
     fs.writeFileSync(${JSON.stringify(completed)}, JSON.stringify({
-      ...outcome, generationPresent: generations.some(url => fs.existsSync(new URL('../../', url))),
+      ...outcome, generationPresent: generations.some(url => fs.existsSync(new URL('../..', url))),
     }));
   },
 });`,

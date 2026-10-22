@@ -226,7 +226,7 @@ async function resolvePlugins(options: NodeBootstrapArtifactOptions, packageRoot
       if (manifest.id !== id) {
         throw new Error(`Node bootstrap plugin identity does not match ${id}`);
       }
-      const entries = packageJson.openclaw?.runtimeExtensions ?? packageJson.openclaw?.extensions;
+      const entries = packageJson.paleoclaw?.runtimeExtensions ?? packageJson.paleoclaw?.extensions;
       if (!entries?.length) {
         throw new Error(`Node bootstrap plugin ${id} has no runtime entry`);
       }

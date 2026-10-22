@@ -21,7 +21,7 @@ it("keeps first-party generated Swift findings while removing dependency-only fi
   const dependency = "apps/macos/.build/checkouts/dependency/Sources/Example.swift";
   const generated =
     "apps/macos/.build/plugins/outputs/openclawkit/OpenClawProtocol/destination/GenerateGatewayProtocol/GatewayModels.swift";
-  const handwritten = "apps/macos/Sources/paleoclaw/GatewayConnection.swift";
+  const handwritten = "apps/macos/Sources/OpenClaw/GatewayConnection.swift";
   const finding = (ruleId: string, ...locations: string[]) => ({
     ruleId,
     locations: locations.map((uri) => ({ physicalLocation: { artifactLocation: { uri } } })),

@@ -463,7 +463,7 @@ describe("resolveProviderHttpRequestConfig", () => {
   it("preserves explicit caller headers but protects attribution headers", () => {
     const resolved = resolveProviderHttpRequestConfig({
       baseUrl: "https://api.openai.com/v1/",
-      defaultBaseUrl: "https://api.openai.com/v1",
+      defaultBaseUrl: "https://api.openai.com/v1/",
       headers: {
         authorization: "Bearer override",
         "User-Agent": "custom-agent/1.0",

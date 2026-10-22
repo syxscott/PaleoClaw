@@ -150,7 +150,7 @@ describeLive("transcript presentation backlog through a real Gateway", () => {
       );
       expect(result.result?.payloads?.some((payload) => payload.text?.includes(marker))).toBe(true);
       expect(result.result?.meta?.agentMeta).toMatchObject({
-        provider: "openai",
+        provider: "openai/",
         model: model.slice("openai/".length),
       });
       const historyBefore = await client.request<{ messages: unknown[] }>("chat.history", {

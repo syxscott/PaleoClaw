@@ -103,7 +103,7 @@ async function prepareBundle(root: string, protocolFeatures: string[] = []) {
   await fs.mkdir(path.join(packageRoot, "dist", "worker"), { recursive: true });
   await fs.writeFile(
     path.join(packageRoot, "package.json"),
-    `${JSON.stringify({ name: "paleoclaw", version: VERSION, files: ["dist/"] })}\n`,
+    `${JSON.stringify({ name: "paleoclaw", version: VERSION, files: ["dist"] })}\n`,
   );
   for (const [artifact, contents] of Object.entries(WORKER_ARTIFACT_FIXTURE)) {
     await fs.writeFile(path.join(packageRoot, "dist/worker", artifact), contents, { mode: 0o600 });

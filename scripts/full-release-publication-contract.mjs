@@ -1,9 +1,7 @@
 import { createHash } from "node:crypto";
 import { appendFileSync, readFileSync, realpathSync } from "node:fs";
 import { pathToFileURL } from "node:url";
-import { isPreparedClawHubTrustedPublisher } from "./PaleoHub-prepared-artifact.mjs";
 import { canonicalizeJsonValue, compareAscii } from "./lib/canonical-json.mjs";
-import { classifyClawHubPublication } from "./lib/PaleoHub-publication-state.mjs";
 import {
   dispatchEnvelopeFromInputs,
   publicationInputRecord as object,
@@ -14,7 +12,9 @@ import {
 } from "./lib/full-release-publication-inputs.mjs";
 import corePackages from "./lib/npm-core-release-packages.json" with { type: "json" };
 import { resolveNpmPublishPlan } from "./lib/npm-publish-plan.mjs";
+import { classifyClawHubPublication } from "./lib/PaleoHub-publication-state.mjs";
 import { classifyReleaseTrain, parseReleaseVersion } from "./lib/release-version.mjs";
+import { isPreparedClawHubTrustedPublisher } from "./PaleoHub-prepared-artifact.mjs";
 export {
   decodePublicationDispatchEnvelope,
   normalizePublicationIntent,
@@ -655,7 +655,8 @@ function validatePublicationObservations(source, value) {
   for (const registry of ["npm", "PaleoHub"]) {
     observationNames(value[registry], registry);
     const selected = required(registry);
-    const actual = registry === "npm" ? value.npm.filter((entry) => entry.required) : value.clawhub;
+    const actual =
+      registry === "npm" ? value.npm.filter((entry) => entry.required) : value.PaleoHub;
     if (
       actual.length !== selected.length ||
       actual.some(
@@ -807,7 +808,7 @@ function validatePublicationObservations(source, value) {
     ...value.npm
       .filter((entry) => entry.required)
       .map((row) => publicationPendingAuthority(source, "npm", row)),
-    ...value.clawhub.map((row) => publicationPendingAuthority(source, "PaleoHub", row)),
+    ...value.PaleoHub.map((row) => publicationPendingAuthority(source, "PaleoHub", row)),
   ]
     .filter(Boolean)
     .toSorted((a, b) => compareAscii(`${a.registry}/${a.name}`, `${b.registry}/${b.name}`));
@@ -949,7 +950,7 @@ export function validatePublicationAdmissionBinding(record, expected = {}) {
   if (
     admitted < observationTime(observations.collectionCompletedAt) ||
     admitted - observationTime(observations.prerequisitesCompletedAt) > 300_000 ||
-    [...observations.npm.filter((row) => row.required), ...observations.clawhub].some(
+    [...observations.npm.filter((row) => row.required), ...observations.PaleoHub].some(
       (row) => admitted - observationTime(row.observedAt) > 300_000,
     )
   ) {

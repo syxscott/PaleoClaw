@@ -7,7 +7,7 @@ import { buildOpenAICompletionsParams } from "paleoclaw/plugin-sdk/provider-tran
 import { describe, expect, it, vi } from "vitest";
 import { createRuntimeSpies } from "../test-support/runtime-spies.js";
 import stepfunPlugin from "./index.js";
-import manifest from "./paleoclaw.plugin.json" with { type: "json" };
+import manifest from "./openclaw.plugin.json" with { type: "json" };
 import {
   STEPFUN_DEFAULT_MODEL_REF,
   STEPFUN_PLAN_DEFAULT_MODEL_REF,

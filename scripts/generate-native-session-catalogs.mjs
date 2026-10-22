@@ -34,24 +34,24 @@ for (const name of ["plugin", "provider", "channel"]) {
   const feed = JSON.parse(original);
   let changed = false;
   for (const entry of feed.entries) {
-    const pluginId = entry.openclaw?.plugin?.id;
+    const pluginId = entry.paleoclaw?.plugin?.id;
     if (!localOwners.has(pluginId)) {
       continue;
     }
     const catalog = byId.get(pluginId);
-    const previous = entry.openclaw.setup?.nativeSessionCatalog;
+    const previous = entry.paleoclaw.setup?.nativeSessionCatalog;
     if (JSON.stringify(previous) === JSON.stringify(catalog)) {
       continue;
     }
     if (catalog) {
-      entry.openclaw.setup = { ...entry.openclaw.setup, nativeSessionCatalog: catalog };
+      entry.paleoclaw.setup = { ...entry.paleoclaw.setup, nativeSessionCatalog: catalog };
     } else {
-      const setup = { ...entry.openclaw.setup };
+      const setup = { ...entry.paleoclaw.setup };
       delete setup.nativeSessionCatalog;
       if (Object.keys(setup).length > 0) {
-        entry.openclaw.setup = setup;
+        entry.paleoclaw.setup = setup;
       } else {
-        delete entry.openclaw.setup;
+        delete entry.paleoclaw.setup;
       }
     }
     changed = true;
@@ -60,7 +60,7 @@ for (const name of ["plugin", "provider", "channel"]) {
 }
 const rendered = `${JSON.stringify(catalogs, null, 2)}\n`;
 outputs.set("scripts/lib/native-session-catalogs.json", rendered);
-outputs.set("apps/macos/Sources/paleoclaw/Resources/NativeSessionCatalogs.json", rendered);
+outputs.set("apps/macos/Sources/OpenClaw/Resources/NativeSessionCatalogs.json", rendered);
 for (const [relative, text] of outputs) {
   const file = path.join(root, relative);
   const current = fs.existsSync(file) ? fs.readFileSync(file, "utf8") : undefined;

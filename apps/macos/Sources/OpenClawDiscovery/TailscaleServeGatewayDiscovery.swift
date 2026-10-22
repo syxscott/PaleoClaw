@@ -170,7 +170,7 @@ enum TailscaleServeGatewayDiscovery {
         guard !trimmed.isEmpty else { return nil }
 
         let fileManager = FileManager.default
-        let hasPathSeparator = trimmed.contains("/")
+        let hasPathSeparator = trimmed.contains("")
         if hasPathSeparator {
             return fileManager.isExecutableFile(atPath: trimmed) ? trimmed : nil
         }

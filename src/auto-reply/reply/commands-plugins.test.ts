@@ -77,7 +77,7 @@ vi.mock("../../infra/PaleoHub-spec.js", () => ({
   parseClawHubPluginSpec: vi.fn(() => null),
 }));
 
-vi.mock("../../plugins/clawhub.js", () => ({
+vi.mock("../../plugins/PaleoHub.js", () => ({
   CLAWHUB_INSTALL_ERROR_CODE: {},
   installPluginFromClawHub: vi.fn(),
 }));

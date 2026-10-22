@@ -204,7 +204,7 @@ export function MobileWorkspaceContents(props: {
       breadcrumbs: [
         { path: "", label: t("chat.workspaceFiles.root") },
         ...segments.map((label, index) => ({
-          path: segments.slice(0, index + 1).join("/"),
+          path: segments.slice(0, index + 1).join(""),
           label,
         })),
       ],

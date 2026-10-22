@@ -260,9 +260,7 @@ function hasExplicitVitestConfigArg(argv: string[]): boolean {
 }
 
 function isPathLikeExplicitFileArg(arg: string): boolean {
-  return (
-    path.isAbsolute(arg) || arg.startsWith("./") || arg.startsWith("../") || /[/\\]/u.test(arg)
-  );
+  return path.isAbsolute(arg) || arg.startsWith("./") || arg.startsWith("../") || /[/\\]/u.test(arg);
 }
 
 function isExplicitFileTargetArg(arg: string): boolean {

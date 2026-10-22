@@ -10,7 +10,7 @@ import { buildOpenAICompletionsParams } from "paleoclaw/plugin-sdk/provider-tran
 import { describe, expect, it, vi } from "vitest";
 import { runSingleProviderCatalog } from "../test-support/provider-model-test-helpers.js";
 import tencentPlugin from "./index.js";
-import manifest from "./paleoclaw.plugin.json" with { type: "json" };
+import manifest from "./openclaw.plugin.json" with { type: "json" };
 
 type OpenAICompletionsModel = Model<"openai-completions">;
 

@@ -6,7 +6,7 @@ import {
 import { runLiveProviderCatalog } from "paleoclaw/plugin-sdk/provider-catalog-live-runtime";
 import { defineSingleProviderPluginEntry } from "paleoclaw/plugin-sdk/provider-entry";
 import type { ModelProviderConfig } from "paleoclaw/plugin-sdk/provider-model-shared";
-import manifest from "./paleoclaw.plugin.json" with { type: "json" };
+import manifest from "./openclaw.plugin.json" with { type: "json" };
 
 const loadCatalog = createLazyRuntimeModule(() => import("./catalog.js"));
 const loadOAuth = createLazyRuntimeModule(() => import("./oauth.js"));

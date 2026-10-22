@@ -20,8 +20,8 @@ export function matchesPlannedPluginProbe(
   pkg: PlannedClawPackage,
   probe: SuccessfulPluginProbe,
 ): pkg is VerifiedPlannedPlugin {
-  const probeIntegrity = probe.clawhub.integrity
-    ? normalizeClawHubSha256Integrity(probe.clawhub.integrity)
+  const probeIntegrity = probe.PaleoHub.integrity
+    ? normalizeClawHubSha256Integrity(probe.PaleoHub.integrity)
     : null;
   const plannedExtensionInspection = pkg.extension
     ? {

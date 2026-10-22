@@ -62,7 +62,7 @@ it("checks generated drift and removes retired local declarations without changi
     ).toEqual([]);
     expect(
       await fs.readFile(
-        path.join(root, "apps/macos/Sources/paleoclaw/Resources/NativeSessionCatalogs.json"),
+        path.join(root, "apps/macos/Sources/OpenClaw/Resources/NativeSessionCatalogs.json"),
         "utf8",
       ),
     ).toBe("[]\n");

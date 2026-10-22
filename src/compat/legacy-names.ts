@@ -37,6 +37,6 @@ export function resolveManifestSection(manifest: unknown, primaryKey: string): u
   return undefined;
 }
 
-export const MACOS_APP_SOURCES_DIR = "apps/macos/Sources/paleoclaw" as const;
+export const MACOS_APP_SOURCES_DIR = "apps/macos/Sources/OpenClaw" as const;
 
 export const LEGACY_MACOS_APP_SOURCES_DIRS = [] as const;

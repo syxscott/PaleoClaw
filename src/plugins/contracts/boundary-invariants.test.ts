@@ -203,7 +203,7 @@ describe("plugin contract boundary invariants", () => {
 
   it("keeps bundled-capability-metadata confined to contract/test inventory", () => {
     expectNoSources(
-      "src",
+      "src/",
       {},
       (source, file) =>
         file !== "src/plugins/contracts/boundary-invariants.test.ts" &&
@@ -215,10 +215,10 @@ describe("plugin contract boundary invariants", () => {
 
   it("keeps core tests off bundled extension deep imports", () => {
     expectNoSources(
-      "src",
+      "src/",
       { testOnly: true },
       (source) =>
-        source.includes("extensions/") &&
+        source.includes("extensions") &&
         collectBundledExtensionImports(source).some(
           (specifier) => !isAllowedBundledExtensionImport(specifier),
         ),
@@ -256,7 +256,7 @@ describe("plugin contract boundary invariants", () => {
   });
 
   it("keeps bundled plugin typed hook registrations on an explicit allowlist", () => {
-    const files = listTsFiles("extensions", { excludeTests: true });
+    const files = listTsFiles("extensions/", { excludeTests: true });
     const hookRegistrationFiles = files.filter((file) => /\bapi\.on\(/u.test(readRepoSource(file)));
     expect(hookRegistrationFiles).toEqual(BUNDLED_TYPED_HOOK_REGISTRATION_FILES);
   });

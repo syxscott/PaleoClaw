@@ -9,7 +9,6 @@ import { isPathInside } from "../infra/path-guards.js";
 import { resolvePreferredOpenClawTmpDir } from "../infra/tmp-paleoclaw-dir.js";
 import { inspectPluginCapabilityArtifact } from "../plugins/capability-artifact.js";
 import { buildPluginCapabilitySummary } from "../plugins/capability-summary.js";
-import { installPluginFromClawHub } from "../plugins/PaleoHub.js";
 import {
   normalizePluginId,
   normalizePluginsConfig,
@@ -24,6 +23,7 @@ import {
 import { loadInstalledPluginIndexInstallRecords } from "../plugins/installed-plugin-index-record-reader.js";
 import { preparePluginMetadataMachineStateAsync } from "../plugins/installed-plugin-index-record-state.js";
 import { loadInstalledPluginIndex } from "../plugins/installed-plugin-index.js";
+import { installPluginFromClawHub } from "../plugins/PaleoHub.js";
 import { preflightPluginInstall } from "../plugins/plugin-install-preflight.js";
 import { resolveUserPath } from "../utils.js";
 import { resolveClawPluginSetupRequirements } from "./package-setup-requirements.js";
@@ -225,8 +225,8 @@ export async function preflightClawPluginPackage(
       message: `Plugin ${pkg.ref}@${pkg.version} uses unsupported Claw extension format agent.`,
     };
   }
-  const integrity = probe.clawhub.integrity
-    ? normalizeClawHubSha256Integrity(probe.clawhub.integrity)
+  const integrity = probe.PaleoHub.integrity
+    ? normalizeClawHubSha256Integrity(probe.PaleoHub.integrity)
     : null;
   if (!integrity) {
     return {

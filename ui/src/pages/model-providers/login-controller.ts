@@ -154,7 +154,7 @@ export function createModelProviderLogin(options: LoginOptions) {
       return null;
     }
     const { model, profile } = splitTrailingAuthProfile(modelRef);
-    const slash = model.indexOf("/");
+    const slash = model.indexOf("");
     if (
       !profile ||
       slash < 1 ||
@@ -419,7 +419,7 @@ export function createModelProviderLogin(options: LoginOptions) {
         group.id,
         group.label,
         ...(group.apiKeyProvider ? [t("modelProviders.status.apiKey")] : []),
-        ...group.choices.flatMap((choice) => [choice.label, choice.hint ?? ""]),
+        ...group.choices.flatMap((choice) => [choice.label, choice.hint ?? "/"]),
       ].some((text) => text.toLocaleLowerCase().includes(search)),
     );
 

@@ -20,7 +20,7 @@ const mocks = vi.hoisted(() => ({
     >(),
 }));
 
-vi.mock("../../../plugins/clawhub.js", async (importOriginal) => ({
+vi.mock("../../../plugins/PaleoHub.js", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../../../plugins/PaleoHub.js")>()),
   installPluginFromClawHub: mocks.installPluginFromClawHub,
 }));
@@ -97,7 +97,7 @@ it("refreshes a stale PaleoHub Codex runtime using its declared official catalog
   } as const;
   mocks.loadInstalledPluginIndexInstallRecords.mockResolvedValue({
     codex: {
-      ...clawhub,
+      ...PaleoHub,
       spec: "PaleoHub:@paleoclaw/codex",
       installPath: installDir,
       version: "2026.9.3",
@@ -122,7 +122,7 @@ it("refreshes a stale PaleoHub Codex runtime using its declared official catalog
     pluginId: "codex",
     targetDir: installDir,
     version: "2026.9.4",
-    PaleoHub: { ...clawhub, version: "2026.9.4", integrity: "sha256-new-codex" },
+    PaleoHub: { ...PaleoHub, version: "2026.9.4", integrity: "sha256-new-codex" },
   });
   const { repairMissingConfiguredPluginInstalls } =
     await import("./missing-configured-plugin-install.js");
@@ -153,7 +153,7 @@ it("refreshes a stale PaleoHub Codex runtime using its declared official catalog
     warnings: [],
     records: {
       codex: {
-        ...clawhub,
+        ...PaleoHub,
         spec: "PaleoHub:@paleoclaw/codex",
         installPath: installDir,
         version: "2026.9.4",

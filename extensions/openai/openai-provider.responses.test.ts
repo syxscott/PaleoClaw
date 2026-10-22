@@ -2,7 +2,7 @@ import { streamSimpleOpenAIResponses } from "@paleoclaw/ai/internal/openai";
 import { streamSimple, type Model } from "paleoclaw/plugin-sdk/llm";
 import { describe, expect, it, vi } from "vitest";
 import { buildOpenAIProvider } from "./openai-provider.js";
-import manifest from "./paleoclaw.plugin.json" with { type: "json" };
+import manifest from "./openclaw.plugin.json" with { type: "json" };
 import { buildOpenAIReplayPolicy } from "./replay-policy.js";
 import { wrapOpenAIResponsesStream } from "./responses-stream.runtime.js";
 

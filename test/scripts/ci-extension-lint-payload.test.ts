@@ -97,7 +97,7 @@ it("rejects paths outside exact native package roots before execution", () => {
   ]) {
     expect(() => createOxlintExtensionRootScope(roots, cwd)).toThrow("canonical package roots");
   }
-  const rootsArg = ["--extension-roots-json", '["extensions/alpha"]'];
+  const rootsArg = ["--extension-roots-json", '["extensions/alpha/"]'];
   expect(() => parseShardRunnerArgs(["--only=core", ...rootsArg])).toThrow("--only=extensions");
   expect(() =>
     parseShardRunnerArgs([

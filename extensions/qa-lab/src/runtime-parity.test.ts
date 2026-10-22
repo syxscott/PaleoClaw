@@ -160,7 +160,9 @@ describe("runtime parity", () => {
       vi.fn(async () => new Response(new ReadableStream<Uint8Array>({ cancel }), { status: 503 })),
     );
 
-    const cell = await captureCell("paleoclaw", tempRoot, { mockBaseUrl: "http://127.0.0.1:43123" });
+    const cell = await captureCell("paleoclaw", tempRoot, {
+      mockBaseUrl: "http://127.0.0.1:43123",
+    });
 
     expect(cancel).toHaveBeenCalledOnce();
     expect(cell.toolCalls).toEqual([]);
@@ -268,7 +270,7 @@ describe("runtime parity", () => {
         openclawToolCalls: results.length,
         openclawSuccessfulToolCalls: 1,
       });
-      expect(openclaw.toolCalls.map((call) => call.errorClass)).toEqual([
+      expect(paleoclaw.toolCalls.map((call) => call.errorClass)).toEqual([
         undefined,
         ...results.slice(1).map(() => "tool-result-error"),
       ]);

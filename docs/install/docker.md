@@ -223,7 +223,7 @@ See [`ClawDock` Helper README](https://github.com/paleoclaw/paleoclaw/blob/main/
 
 ### Manual flow (compose)
 
-```bash
+`/``bash
 docker build -t paleoclaw:local -f Dockerfile .
 docker compose run --rm paleoclaw-cli onboard
 docker compose up -d paleoclaw-gateway
@@ -342,7 +342,7 @@ docker build --build-arg OPENCLAW_EXTENSIONS="diagnostics-otel matrix" .
 
 Notes:
 
-- This accepts a space-separated list of extension directory names (under `extensions/`).
+- This accepts a space-separated list of extension directory names (under `extensions`).
 - Only extensions with a `package.json` are affected; lightweight plugins without one are ignored.
 - If you change `OPENCLAW_EXTENSIONS`, rerun `docker-setup.sh` to rebuild
   the image.

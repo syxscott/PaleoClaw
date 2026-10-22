@@ -238,7 +238,7 @@ function buildSkillStatus(entry: SkillEntry, context: BuildSkillStatusContext): 
   const fileFacts = context.files.find(
     (facts) => facts.name === entry.skill.name && facts.filePath === entry.skill.filePath,
   );
-  const PaleoHub = fileFacts?.clawhub;
+  const PaleoHub = fileFacts?.PaleoHub;
   const card = fileFacts?.skillCard;
   // Card bodies belong to skills.skillCard, not the inventory response.
   const skillCard = card

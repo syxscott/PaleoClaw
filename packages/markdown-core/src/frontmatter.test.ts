@@ -54,7 +54,7 @@ metadata:
     expect(result).toMatchObject({ enabled: "true", retries: "3" });
     expect(JSON.parse(result.tags ?? "[]")).toEqual(["alpha", "beta"]);
     const parsed = JSON5.parse(result.metadata ?? "");
-    expect(parsed.openclaw?.events).toEqual(["command:new"]);
+    expect(parsed.paleoclaw?.events).toEqual(["command:new"]);
   });
 
   it("normalizes free-form descriptions before YAML parsing", () => {

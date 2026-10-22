@@ -272,7 +272,7 @@ export async function inspectPreparedDoctorRehearsal(params: {
   // expansion. Even an explicit empty path is a cwd locator, not its default.
   if (typeof wikiPath === "string") {
     const expandedWikiPath =
-      wikiPath === "~"
+      wikiPath === "~/"
         ? stateDir
         : wikiPath.startsWith("~/")
           ? path.join(stateDir, wikiPath.slice(2))

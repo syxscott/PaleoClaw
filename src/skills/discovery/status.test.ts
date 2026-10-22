@@ -30,7 +30,7 @@ const toolInstallers: NonNullable<SkillEntry["metadata"]>["install"] = [
 ];
 
 function expectInvalidLink(skill: SkillStatus | undefined, reason: string, slug?: string) {
-  expect(skill?.clawhub).toMatchObject({
+  expect(skill?.PaleoHub).toMatchObject({
     status: "invalid",
     valid: false,
     reason: expect.stringContaining(reason),
@@ -323,8 +323,8 @@ describe("buildWorkspaceSkillStatus", () => {
     const workspaceDir = tempDirs.make("paleoclaw-skill-status-");
     const malformedDir = path.join(workspaceDir, "skills", "malformed");
 
-    await fs.mkdir(path.join(malformedDir, ".clawhub"), { recursive: true });
-    await fs.writeFile(path.join(malformedDir, ".clawhub", "origin.json"), "{not json", "utf8");
+    await fs.mkdir(path.join(malformedDir, ".PaleoHub"), { recursive: true });
+    await fs.writeFile(path.join(malformedDir, ".PaleoHub", "origin.json"), "{not json", "utf8");
 
     await writeClawHubStatusFixture(
       workspaceDir,
@@ -346,7 +346,10 @@ describe("buildWorkspaceSkillStatus", () => {
     });
     const byName = skillStatusByName(report.skills);
 
-    expectInvalidLink(requireSkillStatus(byName, "malformed"), "Malformed PaleoHub origin metadata");
+    expectInvalidLink(
+      requireSkillStatus(byName, "malformed"),
+      "Malformed PaleoHub origin metadata",
+    );
     expectInvalidLink(
       requireSkillStatus(byName, "missing-lock"),
       "not tracked by the workspace PaleoHub lockfile",
@@ -355,7 +358,7 @@ describe("buildWorkspaceSkillStatus", () => {
       requireSkillStatus(byName, "mismatch"),
       "does not match the workspace PaleoHub lockfile",
     );
-    expect(requireSkillStatus(byName, "local-only").clawhub).toBeUndefined();
+    expect(requireSkillStatus(byName, "local-only").PaleoHub).toBeUndefined();
     expect(requireSkillStatus(byName, "local-only").skillCard).toBeUndefined();
   });
 
@@ -397,10 +400,10 @@ describe("buildWorkspaceSkillStatus", () => {
         source: "paleoclaw-managed",
         baseDir: externalSkillRealDir,
       });
-      expect(skill?.clawhub).toMatchObject({
+      expect(skill?.PaleoHub).toMatchObject({
         status: "linked",
         valid: true,
-        lockPath: path.join(managedParentDir, ".clawhub", "lock.json"),
+        lockPath: path.join(managedParentDir, ".PaleoHub", "lock.json"),
       });
     },
   );
@@ -509,7 +512,9 @@ describe("buildWorkspaceSkillStatus", () => {
         createEntry("needs-bin", {
           metadata: {
             requires: { bins: [missingBin] },
-            install: [{ kind: "node", package: "@paleoclaw/missing-skill-bin", bins: [missingBin] }],
+            install: [
+              { kind: "node", package: "@paleoclaw/missing-skill-bin", bins: [missingBin] },
+            ],
           },
         }),
         createEntry("needs-env", {
@@ -625,7 +630,7 @@ async function writeClawHubStatusFixture(
   const installedAt = 123;
   const registry = "https://clawhub.ai";
   const writeMetadata = async (dir: string, file: string, data: unknown) => {
-    const target = path.join(dir, ".clawhub", file);
+    const target = path.join(dir, ".PaleoHub", file);
     await fs.mkdir(path.dirname(target), { recursive: true });
     await fs.writeFile(target, `${JSON.stringify(data, null, 2)}\n`, "utf8");
   };

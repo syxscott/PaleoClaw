@@ -47,7 +47,7 @@ function fixture(platform: "ios" | "android" = "ios") {
   if (platform === "android") {
     write("apps/android/wear/src/main/java/Watch.kt", 'val label = "Talk"\n');
     write(
-      "apps/android/app/src/play/java/ai/paleoclaw/app/SensitiveFeatureConfig.kt",
+      "apps/android/app/src/play/java/ai/openclaw/app/SensitiveFeatureConfig.kt",
       "object SensitiveFeatureConfig {\n  const val smsEnabled = false\n  const val accessibilityControlEnabled = false\n}\n",
     );
   }
@@ -226,7 +226,8 @@ describe("generated mobile store notes", () => {
 
   it("keeps v2 phone and legacy Wear baselines and text separate", async () => {
     const f = fixture("android");
-    const sourceRef = "refs/paleoclaw/mobile-releases/android/v2/2026.7.3/0/1/2026070449-2026070450";
+    const sourceRef =
+      "refs/paleoclaw/mobile-releases/android/v2/2026.7.3/0/1/2026070449-2026070450";
     const wearBase = f.sourceSha;
     f.ref("refs/paleoclaw/mobile-releases/android/2026.7.3-2026070302", wearBase);
     f.plan.releaseNotesBaselines[1]!.build = "2026070352";
@@ -249,7 +250,7 @@ describe("generated mobile store notes", () => {
     for (const index of [2, 5]) {
       expect(requestInput(index).evidence).toContainEqual(
         expect.objectContaining({
-          file: "apps/android/app/src/play/java/ai/paleoclaw/app/SensitiveFeatureConfig.kt",
+          file: "apps/android/app/src/play/java/ai/openclaw/app/SensitiveFeatureConfig.kt",
           kind: "context",
           patch: expect.stringContaining("smsEnabled = false"),
         }),

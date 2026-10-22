@@ -184,7 +184,7 @@ function buildSendSchema(options: MessageToolSchemaOptions) {
     asDocument: optionalBooleanSchema("Alias for forceDocument."),
   };
   if (options.includeClawHub) {
-    props.clawhub = Type.Optional(
+    props.PaleoHub = Type.Optional(
       Type.Object(
         {
           query: Type.String({ minLength: 1, maxLength: 160 }),

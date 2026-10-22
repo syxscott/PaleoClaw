@@ -204,14 +204,14 @@ function runtimeIdentity(packageRoot, entry) {
   const manifest = readJson(path.join(packageRoot, "package.json"));
   assert.equal(manifest.name, "paleoclaw", "retained runtime is not paleoclaw");
   assert(
-    Number.isSafeInteger(manifest.openclaw?.schemaVersions?.agent),
+    Number.isSafeInteger(manifest.paleoclaw?.schemaVersions?.agent),
     "baseline agent schema missing",
   );
   return {
     packageRoot,
     entry,
     version: manifest.version,
-    schemaVersions: manifest.openclaw.schemaVersions,
+    schemaVersions: manifest.paleoclaw.schemaVersions,
     manifestSha256: hashFile(path.join(packageRoot, "package.json")),
     entrySha256: hashFile(entry),
   };

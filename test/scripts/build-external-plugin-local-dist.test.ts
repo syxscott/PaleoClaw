@@ -395,7 +395,7 @@ fs.writeFileSync("assets/generated.txt", "generated asset");
       const pluginRoot = path.join(repoRoot, "dist/extensions", id);
       const metadata = readJson(pluginRoot, "package.json");
       const extension = runtimeFormat === "cjs" ? ".cjs" : ".js";
-      const { extensions, setupEntry, channel: builtChannel } = metadata.openclaw;
+      const { extensions, setupEntry, channel: builtChannel } = metadata.paleoclaw;
       expect({ extensions, setupEntry, channel: builtChannel }).toEqual({
         extensions: [`./index${extension}`],
         setupEntry: `./setup-entry${extension}`,
@@ -436,11 +436,11 @@ fs.writeFileSync("assets/generated.txt", "generated asset");
         const root = pathToFileURL(process.cwd() + "/");
         const require = createRequire(new URL("package.json", root));
         const pkg = JSON.parse(readFileSync(new URL("package.json", root)));
-        for (const entry of [...pkg.openclaw.extensions, pkg.openclaw.setupEntry]) {
+        for (const entry of [...pkg.paleoclaw.extensions, pkg.paleoclaw.setupEntry]) {
           assert.equal((await import(new URL(entry, root))).identity, ${JSON.stringify(id)});
         }
         for (const key of ["configuredState", "persistedAuthState"]) {
-          const state = pkg.openclaw.channel[key];
+          const state = pkg.paleoclaw.channel[key];
           const checker = require(require.resolve(state.specifier))[state.exportName];
           assert.equal(checker({ cfg: {} }), false);
           assert.equal(checker({ cfg: { ready: true } }), true);
@@ -452,9 +452,9 @@ fs.writeFileSync("assets/generated.txt", "generated asset");
       const sourcePackagePath = path.join(repoRoot, "extensions", id, "package.json");
       const sourceText = readText(sourcePackagePath);
       const sourcePackage = JSON.parse(sourceText);
-      expect(sourcePackage.openclaw.channel).toEqual({ id, label: id, ...channelStateFixtures });
+      expect(sourcePackage.paleoclaw.channel).toEqual({ id, label: id, ...channelStateFixtures });
       const setState = (metadataKey: string, declaration: object) => {
-        sourcePackage.openclaw.channel = {
+        sourcePackage.paleoclaw.channel = {
           id,
           label: id,
           ...channelStateFixtures,
@@ -476,7 +476,7 @@ fs.writeFileSync("assets/generated.txt", "generated asset");
             setState(metadataKey, declaration);
             copyMetadata(repoRoot);
             const channel = readJson(pluginRoot, "package.json").openclaw.channel;
-            expect(channel).toEqual({ ...metadata.openclaw.channel, [metadataKey]: declaration });
+            expect(channel).toEqual({ ...metadata.paleoclaw.channel, [metadataKey]: declaration });
             const stateProbe = {
               entry: { channel, pluginId: id, rootDir: pluginRoot, origin: "bundled" as const },
               metadataKey,
@@ -789,7 +789,7 @@ fs.writeFileSync("assets/generated.txt", "generated asset");
     );
     copyMetadata(repoRoot, env);
     const builtPackage = readJson(distRoot, "extensions/demo/package.json");
-    const { extensions, setupEntry, channel } = builtPackage.openclaw;
+    const { extensions, setupEntry, channel } = builtPackage.paleoclaw;
     expect({ extensions, setupEntry, channel }).toEqual({
       extensions: ["./index.js"],
       setupEntry: "./setup-entry.js",

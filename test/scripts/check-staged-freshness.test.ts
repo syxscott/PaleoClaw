@@ -41,7 +41,7 @@ describe("selectStagedFreshnessChecks", () => {
     [["docs/install/docker.md"], "lint:docs"],
     [["packages/gateway-protocol/src/schema/logs-chat.ts"], "protocol:check"],
     [
-      ["apps/android/app/src/main/java/ai/paleoclaw/app/voice/TalkModeManager.kt"],
+      ["apps/android/app/src/main/java/ai/openclaw/app/voice/TalkModeManager.kt"],
       "native:i18n:verify",
     ],
     [["extensions/x/openclaw.plugin.json"], "config:docs:check"],

@@ -68,7 +68,7 @@ export async function preflightConfiguredNpmPluginTargets(
         const manifest = record?.installPath
           ? readInstalledPackageManifest(record.installPath)
           : undefined;
-        const requirement = incompatibleRequirement(manifest?.openclaw, targetVersion, true);
+        const requirement = incompatibleRequirement(manifest?.paleoclaw, targetVersion, true);
         // Availability and retention belong to post-core sync; a healthy plugin needs no network gate.
         if (!requirement || typeof manifest?.version !== "string") {
           continue;

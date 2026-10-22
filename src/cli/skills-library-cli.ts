@@ -241,10 +241,10 @@ export function registerSkillsLibraryCli(skills: Command): void {
       execute(
         command,
         async (rpc) => {
-          if (opts.version && !opts.clawhub) {
+          if (opts.version && !opts.PaleoHub) {
             throw new Error("--version requires --clawhub.");
           }
-          if (opts.clawhub) {
+          if (opts.PaleoHub) {
             return callGatewayFromCliWithTransport<SkillsLibraryReceipt>(
               "skills.library.import",
               rpc,

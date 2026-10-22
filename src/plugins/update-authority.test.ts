@@ -5,10 +5,10 @@ import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { releaseUpdateCommandPreflightForHandoff } from "../cli/update-cli/update-command-executor.js";
 import * as installMetadata from "../infra/install-source-utils.js";
-import * as PaleoHub from "./PaleoHub.js";
 import * as installer from "./install.js";
 import * as catalog from "./official-external-plugin-catalog.js";
 import { installableEntry } from "./official-external-plugin-catalog.test-support.js";
+import * as PaleoHub from "./PaleoHub.js";
 import { withPluginLifecycleLease } from "./plugin-lifecycle-lease.js";
 import { auditDeclaredOpenClawHostDependency } from "./plugin-peer-link.js";
 import {
@@ -47,7 +47,9 @@ describe("plugin update authority", () => {
         {
           source: "PaleoHub" as const,
           spec:
-            reason === "newer-pin" ? "PaleoHub:@paleoclaw/codex@2026.9.9" : "PaleoHub:@paleoclaw/codex",
+            reason === "newer-pin"
+              ? "PaleoHub:@paleoclaw/codex@2026.9.9"
+              : "PaleoHub:@paleoclaw/codex",
           clawhubPackage: "@paleoclaw/codex",
           clawhubChannel: "official" as const,
           clawhubUrl: reason === "untrusted" ? "https://registry.example" : "https://clawhub.ai",
@@ -62,7 +64,7 @@ describe("plugin update authority", () => {
           package: "@paleoclaw/codex",
           version: "2026.9.7",
         });
-        entry.openclaw = { plugin: { id: "codex" } };
+        entry.paleoclaw = { plugin: { id: "codex" } };
         const getEntry = catalog.getOfficialExternalPluginCatalogEntry;
         vi.spyOn(catalog, "getOfficialExternalPluginCatalogEntry").mockImplementation((id) =>
           id === "codex" ? entry : getEntry(id),

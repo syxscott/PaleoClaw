@@ -49,8 +49,8 @@ async function readUpdateAdmissionProtocol(candidateRoot: string): Promise<1 | u
     maxBytes: 1024 * 1024,
   });
   return isRecord(manifest) &&
-    isRecord(manifest.openclaw) &&
-    manifest.openclaw.updateAdmissionProtocol === UPDATE_ADMISSION_PROTOCOL
+    isRecord(manifest.paleoclaw) &&
+    manifest.paleoclaw.updateAdmissionProtocol === UPDATE_ADMISSION_PROTOCOL
     ? UPDATE_ADMISSION_PROTOCOL
     : undefined;
 }

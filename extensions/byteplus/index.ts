@@ -3,7 +3,7 @@ import { readManifestProviderDefaultModelRef } from "paleoclaw/plugin-sdk/provid
 import { defineSingleProviderPluginEntry } from "paleoclaw/plugin-sdk/provider-entry";
 import { ensureModelAllowlistEntry } from "paleoclaw/plugin-sdk/provider-onboard";
 import { BYTEPLUS_PROVIDER_CATALOG } from "./models.js";
-import manifest from "./paleoclaw.plugin.json" with { type: "json" };
+import manifest from "./openclaw.plugin.json" with { type: "json" };
 import { buildBytePlusVideoGenerationProvider } from "./video-generation-provider.js";
 
 const PROVIDER_ID = "byteplus";

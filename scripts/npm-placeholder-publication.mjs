@@ -206,7 +206,7 @@ export function resolveSelectedPackageSources(repoRoot, packageNames) {
       if (
         entry?.source === "official" &&
         typeof entry.name === "string" &&
-        entry.openclaw?.install?.npmSpec === entry.name
+        entry.paleoclaw?.install?.npmSpec === entry.name
       ) {
         officialPackageNames.add(entry.name);
       }
@@ -245,9 +245,9 @@ export function resolveSelectedPackageSources(repoRoot, packageNames) {
     if (
       match.packageJson.private === true ||
       ["private", "restricted"].includes(match.packageJson.publishConfig?.access) ||
-      match.packageJson.openclaw?.install?.npmSpec !== packageName ||
-      match.packageJson.openclaw?.build?.bundledDist !== false ||
-      match.packageJson.openclaw?.release?.publishToNpm !== true
+      match.packageJson.paleoclaw?.install?.npmSpec !== packageName ||
+      match.packageJson.paleoclaw?.build?.bundledDist !== false ||
+      match.packageJson.paleoclaw?.release?.publishToNpm !== true
     ) {
       throw new Error(`${packageName} is not a public release-enabled npm plugin.`);
     }

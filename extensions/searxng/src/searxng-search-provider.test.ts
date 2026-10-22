@@ -96,7 +96,7 @@ describe("searxng web search provider", () => {
           id: "SEARXNG_BASE_URL",
         }),
       ),
-    ).toBe("http://localhost:8888");
+    ).toBe("http://localhost:8888/");
 
     vi.stubEnv("SEARXNG_BASE_URL", "https://search.local/searxng///");
     expect(resolveSearxngBaseUrl({})).toBe("https://search.local/searxng");

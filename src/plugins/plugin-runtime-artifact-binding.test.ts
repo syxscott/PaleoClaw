@@ -89,7 +89,7 @@ it("recognizes staging execution only when it resolves into the same canonical o
 it.each(["inside", "outside"])(
   "denies a compiled-tree redirect %s the running package",
   (where) => {
-    const foreign = artifact(`${where === "inside" ? "owner/" : ""}foreign/extensions/workboard`);
+    const foreign = artifact(`${where === "inside" ? "owner" : ""}foreign/extensions/workboard`);
     owner.packageRoot = path.join(root, "owner");
     fs.mkdirSync(path.join(owner.packageRoot, "dist"), { recursive: true });
     fs.symlinkSync(path.dirname(foreign.rootDir), path.join(owner.packageRoot, "dist/extensions"));

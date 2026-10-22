@@ -459,9 +459,9 @@ at $0.30 per million tokens. See
   <Accordion title="Endpoint and model ref reference">
     | Provider   | Model ref prefix | Endpoint                      | Auth env var        |
     | ---------- | ---------------- | ------------------------------ | ------------------- |
-    | Moonshot   | `moonshot/`      | `https://api.moonshot.ai/v1`  | `MOONSHOT_API_KEY`  |
+    | Moonshot   | `moonshot`      | `https://api.moonshot.ai/v1`  | `MOONSHOT_API_KEY`  |
     | Moonshot CN| `moonshot/`      | `https://api.moonshot.cn/v1`  | `MOONSHOT_API_KEY`  |
-    | Kimi Coding| `kimi/`          | Kimi Coding endpoint           | `KIMI_API_KEY`      |
+    | Kimi Coding| `kimi`          | Kimi Coding endpoint           | `KIMI_API_KEY`      |
     | Web search | N/A              | Same as Moonshot API region    | `KIMI_API_KEY` or `MOONSHOT_API_KEY` |
 
     - Kimi web search uses `KIMI_API_KEY` or `MOONSHOT_API_KEY` with `POST /tools/search`, defaulting to `https://api.moonshot.ai/v1`. It returns structured results without a chat model; `plugins.entries.moonshot.config.webSearch.model` is deprecated and ignored. See [Kimi search](/tools/kimi-search).

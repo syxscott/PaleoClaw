@@ -66,7 +66,7 @@ function formatProcessedDelta(params: {
   paleoclaw: Pick<TokenEfficiencyRuntimeUsage, "processedTokenEvidence">;
   codex: Pick<TokenEfficiencyRuntimeUsage, "processedTokenEvidence">;
 }): string {
-  return params.openclaw.processedTokenEvidence === "unavailable" ||
+  return params.paleoclaw.processedTokenEvidence === "unavailable" ||
     params.codex.processedTokenEvidence === "unavailable"
     ? "N/A"
     : formatPercent(params.deltaPercent);
@@ -139,12 +139,12 @@ function buildRow(params: {
   thresholdPercent: number;
   usageSource: "live-usage" | "mock-estimate";
 }) {
-  const paleoclaw = runtimeUsage(params.result.cells.openclaw);
+  const paleoclaw = runtimeUsage(params.result.cells.paleoclaw);
   const codex = runtimeUsage(params.result.cells.codex);
   const comparable =
-    openclaw.processedTokenEvidence !== "unavailable" &&
+    paleoclaw.processedTokenEvidence !== "unavailable" &&
     codex.processedTokenEvidence !== "unavailable";
-  const delta = comparable ? deltaPercent(openclaw.processedTokens, codex.processedTokens) : 0;
+  const delta = comparable ? deltaPercent(paleoclaw.processedTokens, codex.processedTokens) : 0;
   const flagged = params.usageSource === "live-usage" && delta > params.thresholdPercent;
   const classification =
     delta > params.thresholdPercent
@@ -160,7 +160,7 @@ function buildRow(params: {
     deltaPercent: delta,
     classification,
     flagged,
-    toolsUsed: toolNamesForCells(params.result.cells.openclaw, params.result.cells.codex),
+    toolsUsed: toolNamesForCells(params.result.cells.paleoclaw, params.result.cells.codex),
   };
 }
 
@@ -216,12 +216,12 @@ function buildAggregate(rows: readonly TokenEfficiencyRow[]) {
   const paleoclaw = buildAggregateRuntime(rows, "paleoclaw");
   const codex = buildAggregateRuntime(rows, "codex");
   const comparable =
-    openclaw.processedTokenEvidence !== "unavailable" &&
+    paleoclaw.processedTokenEvidence !== "unavailable" &&
     codex.processedTokenEvidence !== "unavailable";
   return {
     paleoclaw,
     codex,
-    deltaPercent: comparable ? deltaPercent(openclaw.processedTokens, codex.processedTokens) : 0,
+    deltaPercent: comparable ? deltaPercent(paleoclaw.processedTokens, codex.processedTokens) : 0,
     flaggedScenarios: rows.filter((row) => row.flagged).map((row) => row.scenarioId),
     savingsScenarios: rows
       .filter((row) => row.classification === "savings")
@@ -336,7 +336,7 @@ export function buildTokenEfficiencyReport(params: {
     const rowFailures =
       liveUsage && result
         ? [
-            ...liveUsageShapeFailures(row.scenarioId, "paleoclaw", result.cells.openclaw.usage),
+            ...liveUsageShapeFailures(row.scenarioId, "paleoclaw", result.cells.paleoclaw.usage),
             ...liveUsageShapeFailures(row.scenarioId, "codex", result.cells.codex.usage),
             ...liveEvidenceFailures(row),
           ]

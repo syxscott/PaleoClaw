@@ -341,7 +341,7 @@ export const CODE_MODE_CONTROLLER_SOURCE = String.raw`
   ]));
   const api = Object.freeze({
     list: async (prefix = "") => {
-      // list takes a directory prefix, so tolerate a trailing slash (API.list("mcp/"))
+      // list takes a directory prefix, so tolerate a trailing slash (API.list("mcp"))
       // that read's exact-path normalizer would otherwise reject as an empty segment.
       const rawPrefix = prefix == null ? "" : String(prefix).trim().replace(/\/+$/, "");
       const normalizedPrefix = rawPrefix === "" ? "" : normalizeApiPath(rawPrefix);

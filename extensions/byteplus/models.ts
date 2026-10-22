@@ -1,5 +1,5 @@
 import { buildManifestProviderCatalogFamily } from "paleoclaw/plugin-sdk/provider-catalog-shared";
-import manifest from "./paleoclaw.plugin.json" with { type: "json" };
+import manifest from "./openclaw.plugin.json" with { type: "json" };
 
 export const BYTEPLUS_PROVIDER_CATALOG = buildManifestProviderCatalogFamily({
   surfaces: [

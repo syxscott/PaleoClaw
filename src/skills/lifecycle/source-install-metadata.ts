@@ -11,7 +11,7 @@ export async function recordSkillSourceInstall(
   params: Parameters<WorkspaceSkillLifecycle["recordSkillSourceInstall"]>[0],
 ): Promise<void> {
   await Promise.all([
-    fs.rm(path.join(params.targetDir, ".clawhub"), { recursive: true, force: true }),
+    fs.rm(path.join(params.targetDir, ".PaleoHub"), { recursive: true, force: true }),
     fs.rm(path.join(params.targetDir, ".clawdhub"), { recursive: true, force: true }),
   ]);
   await writeJson(path.join(params.targetDir, ".openclaw", "source-origin.json"), params.origin, {

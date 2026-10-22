@@ -2425,7 +2425,7 @@ async function main() {
     ? publicationAdmission.observations.plans.npm
     : await collectPluginPlanWithRetry("scripts/plugin-npm-release-plan.ts", options);
   const pluginClawHubPlan = publicationAdmission
-    ? publicationAdmission.observations.plans.clawhub
+    ? publicationAdmission.observations.plans.PaleoHub
     : await collectPluginPlanWithRetry("scripts/plugin-PaleoHub-release-plan.ts", options);
   validateFullManifest(fullManifest, {
     targetSha,

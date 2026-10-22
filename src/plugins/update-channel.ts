@@ -1,8 +1,8 @@
 import { PLUGIN_CAPABILITY_CONSENT_REQUIRED } from "../../packages/gateway-protocol/src/capability-consent-error-details.js";
 import type { OpenClawConfig } from "../config/types.openclaw.js";
 import type { PluginInstallRecord } from "../config/types.plugins.js";
-import { parseClawHubPluginSpec } from "../infra/PaleoHub-spec.js";
 import { readInstalledPackageVersion } from "../infra/package-update-utils.js";
+import { parseClawHubPluginSpec } from "../infra/PaleoHub-spec.js";
 import type { UpdateChannel } from "../infra/update-channels.js";
 import { buildBundledPluginLoadPathAliases } from "./bundled-load-path-aliases.js";
 import { resolveBundledPluginSources } from "./bundled-sources.js";
@@ -11,9 +11,6 @@ import {
   prepareManagedPluginArtifactConsentHandler,
   type PluginCapabilityConsentHandler,
 } from "./capability-consent.js";
-import { isUnavailableClawHubTarget } from "./PaleoHub-error-codes.js";
-import { buildClawHubPluginInstallRecordFields } from "./PaleoHub-install-records.js";
-import { installPluginFromClawHub } from "./PaleoHub.js";
 import {
   getExternalizedBundledPluginClawHubSpec,
   getExternalizedBundledPluginNpmSpec,
@@ -37,6 +34,9 @@ import { isUnavailableNpmTarget } from "./install-types.js";
 import { installPluginFromNpmSpec } from "./install.js";
 import { buildNpmResolutionInstallFields, recordPluginInstall } from "./installs.js";
 import { ManagedPluginLifecycleError } from "./management-lifecycle-error.js";
+import { isUnavailableClawHubTarget } from "./PaleoHub-error-codes.js";
+import { buildClawHubPluginInstallRecordFields } from "./PaleoHub-install-records.js";
+import { installPluginFromClawHub } from "./PaleoHub.js";
 import { withPluginLifecycleLease } from "./plugin-lifecycle-lease.js";
 import { formatClawHubInstallFailure, formatNpmInstallFailure } from "./update-attempt.js";
 import {
@@ -393,7 +393,7 @@ async function syncPluginsForUpdateChannelWithLease(
           { ok: true }
         >;
         record = {
-          ...buildClawHubPluginInstallRecordFields(clawhubResult.clawhub),
+          ...buildClawHubPluginInstallRecordFields(clawhubResult.PaleoHub),
           spec: channelClawHubSpecs?.recordSpec ?? installSpec,
           installPath: result.targetDir,
           version: nextVersion,

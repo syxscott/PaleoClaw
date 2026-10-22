@@ -105,7 +105,7 @@ describe("ls tool", () => {
     await Promise.all(["beta", "gamma"].map((name) => fs.writeFile(path.join(cwd, name), "")));
     const tool = createLsTool(cwd);
     const first = await tool.execute("first-page", { limit: 1 });
-    expect(textContent(first).split("\n")[0]).toBe('"alpha/"');
+    expect(textContent(first).split("\n")[0]).toBe('"alpha"');
     expect(first.details?.nextAfter).toBe("alpha");
     await fs.rmdir(path.join(cwd, "alpha"));
 
@@ -134,7 +134,7 @@ describe("ls tool", () => {
     await fs.symlink(path.join(cwd, "target-dir"), path.join(cwd, "link-to-dir"), symlinkType);
     await fs.writeFile(path.join(cwd, "z-file.txt"), "fixture\n");
     expect((await list()).content).toEqual([
-      { type: "text", text: '"a-broken"\n"link-to-dir"\n"target-dir/"\n"z-file.txt"' },
+      { type: "text", text: '"a-broken"\n"link-to-dir"\n"target-dir"\n"z-file.txt"' },
     ]);
 
     const limited = await list(1);

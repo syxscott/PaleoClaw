@@ -11,7 +11,7 @@ import {
   normalizeLowercaseStringOrEmpty,
   normalizeOptionalString,
 } from "paleoclaw/plugin-sdk/string-coerce-runtime";
-import manifest from "./paleoclaw.plugin.json" with { type: "json" };
+import manifest from "./openclaw.plugin.json" with { type: "json" };
 import { normalizeChutesModelPricing } from "./pricing-api.js";
 
 const CHUTES_MANIFEST_CATALOG = manifest.modelCatalog.providers.chutes;

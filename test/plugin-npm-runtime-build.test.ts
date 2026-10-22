@@ -437,7 +437,7 @@ it("plans package-local runtime entries for every publishable plugin package", (
     expect(plan).toMatchObject({
       outDir: path.join(plan.packageDir, "dist"),
       packagePeerMetadata: {
-        peerDependencies: { paleoclaw: plan.packageJson.openclaw?.compat?.pluginApi },
+        peerDependencies: { paleoclaw: plan.packageJson.paleoclaw?.compat?.pluginApi },
         peerDependenciesMeta: { paleoclaw: { optional: true } },
       },
     });

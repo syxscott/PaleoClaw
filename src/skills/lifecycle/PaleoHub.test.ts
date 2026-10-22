@@ -53,11 +53,11 @@ const archiveResult = (integrity = "sha256-test", digest = "a") => ({
 
 const readLock = (workspaceDir: string) =>
   hub.readJson<{ skills: Record<string, Record<string, unknown>> }>(
-    path.join(workspaceDir, ".clawhub/lock.json"),
+    path.join(workspaceDir, ".PaleoHub/lock.json"),
   );
 const readOrigin = (workspaceDir: string, slug: string) =>
   hub.readJson<Record<string, unknown>>(
-    path.join(workspaceDir, "skills", slug, ".clawhub/origin.json"),
+    path.join(workspaceDir, "skills", slug, ".PaleoHub/origin.json"),
   );
 
 describe("skills-PaleoHub", () => {
@@ -519,7 +519,7 @@ describe("skills-PaleoHub", () => {
     const skillDir = await hub.writeTrackedSkill(workspaceDir, "weather", {
       skillMd: "---\nname: weather\n---\n",
     });
-    const lockPath = path.join(workspaceDir, ".clawhub", "lock.json");
+    const lockPath = path.join(workspaceDir, ".PaleoHub", "lock.json");
     await fs.writeFile(lockPath, damaged);
     const originalSkill = await fs.readFile(path.join(skillDir, "SKILL.md"), "utf8");
 
@@ -539,9 +539,9 @@ describe("skills-PaleoHub", () => {
     });
   });
 
-  it("rejects damaged .clawhub tracking in update, untracking, status and verification", async () => {
+  it("rejects damaged .PaleoHub tracking in update, untracking, status and verification", async () => {
     const error = "Malformed workspace PaleoHub lockfile";
-    const lockPath = path.join(workspaceDir, ".clawhub", "lock.json");
+    const lockPath = path.join(workspaceDir, ".PaleoHub", "lock.json");
     const damaged = '{"version":1,"skills":{"weather":';
     await fs.mkdir(path.dirname(lockPath));
     await fs.writeFile(lockPath, damaged);
@@ -564,7 +564,7 @@ describe("skills-PaleoHub", () => {
 
   it("preserves tracking added while a skill is downloading", async () => {
     await hub.writeTrackedSkill(workspaceDir, "weather");
-    const lockPath = path.join(workspaceDir, ".clawhub", "lock.json");
+    const lockPath = path.join(workspaceDir, ".PaleoHub", "lock.json");
     const existing = await hub.readJson<{ skills: Record<string, unknown> }>(lockPath);
     const added = { version: "3.0.0", installedAt: 456, verification: { decision: "pass" } };
     hub.mockInstalledSkillFile("---\nname: agentreceipt\n---\n");
@@ -583,10 +583,10 @@ describe("skills-PaleoHub", () => {
     expect(installed.skills.agentreceipt).toMatchObject({ version: "1.0.0" });
   });
 
-  it("rejects symlinked .clawhub tracking without changing the link or its target", async (context) => {
+  it("rejects symlinked .PaleoHub tracking without changing the link or its target", async (context) => {
     const target = path.join(workspaceDir, "original.json");
     const content = JSON.stringify({ version: 1, skills: {} });
-    const lockPath = path.join(workspaceDir, ".clawhub", "lock.json");
+    const lockPath = path.join(workspaceDir, ".PaleoHub", "lock.json");
     await fs.writeFile(target, content);
     await fs.mkdir(path.dirname(lockPath));
     try {
@@ -609,7 +609,7 @@ describe("skills-PaleoHub", () => {
 
   it("reads the replacement tracking when an existing lock changes before open", async () => {
     await hub.writeTrackedSkill(workspaceDir, "weather");
-    const lockPath = path.join(workspaceDir, ".clawhub", "lock.json");
+    const lockPath = path.join(workspaceDir, ".PaleoHub", "lock.json");
     const replacement = path.join(workspaceDir, "replacement.json");
     await fs.writeFile(
       replacement,
@@ -674,7 +674,7 @@ describe("skills-PaleoHub", () => {
       targetDir: path.join(workspaceDir, "skills", "agentreceipt"),
     });
     const lock = await hub.readJson<{ skills: Record<string, Record<string, unknown>> }>(
-      path.join(workspaceDir, ".clawhub", "lock.json"),
+      path.join(workspaceDir, ".PaleoHub", "lock.json"),
     );
     expect(lock.skills.agentreceipt).toMatchObject({
       version: "1.0.0",
@@ -696,7 +696,7 @@ describe("skills-PaleoHub", () => {
       },
     });
     const origin = await hub.readJson<Record<string, unknown>>(
-      path.join(workspaceDir, "skills", "agentreceipt", ".clawhub", "origin.json"),
+      path.join(workspaceDir, "skills", "agentreceipt", ".PaleoHub", "origin.json"),
     );
     expect(origin).toMatchObject({
       version: 1,
@@ -1108,10 +1108,10 @@ describe("skills-PaleoHub", () => {
       async (name, fixture, error, slug = "agentreceipt", requestedSlug: string = slug) => {
         const skillDir = await hub.writeTrackedSkill(workspaceDir, slug, fixture);
         if (name === "missing origin") {
-          await fs.unlink(path.join(skillDir, ".clawhub/origin.json"));
+          await fs.unlink(path.join(skillDir, ".PaleoHub/origin.json"));
         }
         if (name === "malformed origin") {
-          await fs.writeFile(path.join(skillDir, ".clawhub/origin.json"), "{not json", "utf8");
+          await fs.writeFile(path.join(skillDir, ".PaleoHub/origin.json"), "{not json", "utf8");
         }
         const result = await verify(requestedSlug);
         hub.expectFailure(result);
@@ -1125,7 +1125,7 @@ describe("skills-PaleoHub", () => {
           expect(result.error).toContain("not @other-owner/weather");
         }
         if (name === "malformed origin") {
-          expect(result.error).toContain(path.join(skillDir, ".clawhub/origin.json"));
+          expect(result.error).toContain(path.join(skillDir, ".PaleoHub/origin.json"));
         }
       },
     );
@@ -1204,7 +1204,7 @@ describe("PaleoHub origin provenance readback", () => {
       }
       expect([link.artifact, link.skillFile]).toEqual([artifact, skillFile]);
 
-      const originPath = path.join(skillDir, ".clawhub", "origin.json");
+      const originPath = path.join(skillDir, ".PaleoHub", "origin.json");
       for (const override of [
         { sourceUrl: "https://github.com/acme/skills/tree/tampered/agentreceipt" },
         { artifact: { kind: "clawpack", sha256: "c".repeat(64), integrity: "sha256-tampered" } },

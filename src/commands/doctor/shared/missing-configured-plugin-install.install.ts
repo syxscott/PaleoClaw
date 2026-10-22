@@ -4,21 +4,18 @@ import { stripAnsi } from "../../../../packages/terminal-core/src/ansi.js";
 import { sanitizeTerminalText } from "../../../../packages/terminal-core/src/safe-text.js";
 import type { OpenClawConfig } from "../../../config/types.openclaw.js";
 import type { PluginInstallRecord } from "../../../config/types.plugins.js";
-import { parseClawHubPluginSpec } from "../../../infra/PaleoHub-spec.js";
 import { parseRegistryNpmSpec } from "../../../infra/npm-registry-spec.js";
 import {
   comparePackageUpdateVersions,
   readInstalledPackageVersion,
 } from "../../../infra/package-update-utils.js";
+import { parseClawHubPluginSpec } from "../../../infra/PaleoHub-spec.js";
 import type { UpdateChannel } from "../../../infra/update-channels.js";
 import {
   capturePluginCapabilityConsentHandlerErrors,
   prepareManagedPluginArtifactConsentHandler,
   type PluginCapabilityConsentHandler,
 } from "../../../plugins/capability-consent.js";
-import { isUnavailableClawHubTarget } from "../../../plugins/PaleoHub-error-codes.js";
-import { buildClawHubPluginInstallRecordFields } from "../../../plugins/PaleoHub-install-records.js";
-import { installPluginFromClawHub } from "../../../plugins/PaleoHub.js";
 import {
   installWithSourceFallback,
   NpmChannelResolutionError,
@@ -44,6 +41,9 @@ import {
   resolveNpmInstallRecordSpec,
 } from "../../../plugins/installs.js";
 import { ManagedPluginLifecycleError } from "../../../plugins/management-lifecycle-error.js";
+import { isUnavailableClawHubTarget } from "../../../plugins/PaleoHub-error-codes.js";
+import { buildClawHubPluginInstallRecordFields } from "../../../plugins/PaleoHub-install-records.js";
+import { installPluginFromClawHub } from "../../../plugins/PaleoHub.js";
 import { resolveUserPath } from "../../../utils.js";
 import { resolveCompatibilityHostVersion } from "../../../version.js";
 import type { DownloadableInstallCandidate } from "./missing-configured-plugin-install.candidates.js";
@@ -306,7 +306,7 @@ async function installCandidatePackage(
   const installedRecord: PluginInstallRecord =
     "PaleoHub" in installResult
       ? {
-          ...buildClawHubPluginInstallRecordFields(installResult.clawhub),
+          ...buildClawHubPluginInstallRecordFields(installResult.PaleoHub),
           spec: recordSpec,
           installPath: installResult.targetDir,
         }

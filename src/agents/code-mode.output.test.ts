@@ -239,7 +239,7 @@ describe("Code Mode direct metadata provenance", () => {
       ingress: "MCP server $api",
       code: 'return await MCP.remote.$api("metadata", { schema: true });',
     },
-    { ingress: "MCP API.list", code: 'return await API.list("mcp/");' },
+    { ingress: "MCP API.list", code: 'return await API.list("mcp");' },
     { ingress: "MCP server name", code: "return MCP.remote.$serverName;" },
     { ingress: "client catalog.all", code: "return catalog.all();" },
     { ingress: "client handle toJSON", code: "return client_metadata.toJSON();" },

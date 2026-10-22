@@ -340,7 +340,7 @@ it.each([
     const liveHost = path.join(root, "live-host");
     const candidateHost = path.join(root, "candidate-host");
     const dependency = path.join(root, "external-dependency");
-    const modulesDir = relative.includes("npm/")
+    const modulesDir = relative.includes("npm")
       ? path.dirname(packageDir)
       : path.join(packageDir, "node_modules");
     await fs.mkdir(path.join(packageDir, "node_modules"), { recursive: true });

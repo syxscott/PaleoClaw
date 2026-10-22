@@ -68,7 +68,7 @@ vi.mock("../../plugins/provider-thinking-active.js", async (importOriginal) => (
 
 vi.mock("../../status/status-plugin-health.runtime.js", () => pluginHealthRuntimeMock);
 
-vi.mock("../../agents/harness/builtin-openclaw.js", () => ({
+vi.mock("../../agents/harness/builtin-paleoclaw.js", () => ({
   createOpenClawAgentHarness: () => ({
     id: "paleoclaw",
     label: "paleoclaw Default",

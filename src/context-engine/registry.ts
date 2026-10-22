@@ -287,15 +287,11 @@ export async function registerContextEngineForOwner(
   id: string,
   factory: ContextEngineFactory,
   owner: string,
-  opts?: RegisterContextEngineForOwnerOptions,
+  opts?: Omit<RegisterContextEngineForOwnerOptions, "lifecycle">,
 ): Promise<ContextEngineRegistrationResult> {
   const targetRegistry = requireActivePluginRegistry();
   const result = registerContextEngineInRegistry(targetRegistry, id, factory, owner, opts);
-  if (
-    result.ok &&
-    (opts?.lifecycle ?? "runtime") === "runtime" &&
-    getActivePluginRegistry() === targetRegistry
-  ) {
+  if (result.ok && getActivePluginRegistry() === targetRegistry) {
     const assertCurrent = () => {
       if (getActivePluginRegistry() !== targetRegistry) {
         throw new Error("Context engine registration was superseded");
@@ -388,7 +384,7 @@ export function getContextEngineRegistration(id: string): ContextEngineRegistrat
   return getContextEngines().get(id);
 }
 
-export const listContextEngineIds = () => [...getContextEngines().keys()].toSorted();
+const listContextEngineIds = () => [...getContextEngines().keys()].toSorted();
 
 /**
  * Return the trusted plugin id that registered a resolved context engine.
@@ -741,14 +737,3 @@ async function resolveDefaultContextEngine(
     await preparation?.completion;
   }
 }
-
-// --- PaleoClaw 兼容层：registerContextEngine（pc 3 月 API，上游 10 月已改名）---
-export function registerContextEngine(id: string, factory: ContextEngineFactory): void {
-  _engines.set(id, factory);
-}
-
-// --- PaleoClaw 兼容层：getContextEngineFactory（pc 3 月 API，上游 10 月已改名）---
-export function getContextEngineFactory(id: string): ContextEngineFactory | undefined {
-  return _engines.get(id);
-}
-

@@ -40,7 +40,7 @@ function isCopySensitiveToken(word: string): boolean {
     word.startsWith("/") ||
     word.startsWith("~/") ||
     word.startsWith("./") ||
-    word.startsWith("../")
+    word.startsWith("..")
   ) {
     return true;
   }

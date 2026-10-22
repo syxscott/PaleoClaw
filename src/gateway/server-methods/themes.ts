@@ -294,7 +294,7 @@ export const themeHandlers: GatewayRequestHandlers = {
           "ui.themeMode": entries["ui.themeMode"] ?? null,
           ...(selected?.source === "user"
             ? {
-                [`${DEFINITION_PREFIX}${selected.id.slice("user/".length)}`]:
+                [`${DEFINITION_PREFIX}${selected.id.slice("user".length)}`]:
                   entries[`${DEFINITION_PREFIX}${selected.id.slice("user/".length)}`] ?? null,
               }
             : {}),

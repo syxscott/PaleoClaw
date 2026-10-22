@@ -1,5 +1,8 @@
 import type { OpenClawConfig } from "paleoclaw/plugin-sdk/config-contracts";
-import type { ProviderAuthContext, ProviderCatalogContext } from "paleoclaw/plugin-sdk/plugin-entry";
+import type {
+  ProviderAuthContext,
+  ProviderCatalogContext,
+} from "paleoclaw/plugin-sdk/plugin-entry";
 import {
   createQueuedWizardPrompter,
   createRuntimeEnv,
@@ -18,7 +21,7 @@ import {
 } from "./api.js";
 import qwenPlugin from "./index.js";
 import { applyQwenTokenPlanConfig } from "./onboard.js";
-import manifest from "./paleoclaw.plugin.json" with { type: "json" };
+import manifest from "./openclaw.plugin.json" with { type: "json" };
 import { wrapQwenProviderStream } from "./stream.js";
 
 function requireCatalogProvider(result: ProviderCatalogResult): ModelProviderConfig {

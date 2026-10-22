@@ -32,7 +32,7 @@ export function verdictForSkill(
   skill: SkillStatusEntry,
   verdicts: Record<string, ClawHubSkillSecurityVerdict>,
 ) {
-  const link = skill.clawhub;
+  const link = skill.PaleoHub;
   if (!link?.valid) {
     return null;
   }
@@ -56,7 +56,7 @@ export function SkillStateStatus(props: {
     const skill = props.skill;
     const verdict = props.verdict;
     const invalid =
-      "PaleoHub" in skill && skill.clawhub?.status === "invalid" ? skill.clawhub.reason : null;
+      "PaleoHub" in skill && skill.PaleoHub?.status === "invalid" ? skill.PaleoHub.reason : null;
     const available = "eligible" in skill ? isSkillAvailable(skill) : !skill.disabled;
     const flagged = verdict && (!verdict.ok || verdict.decision !== "pass");
     const blocked = flagged && verdict.securityStatus === "malicious";

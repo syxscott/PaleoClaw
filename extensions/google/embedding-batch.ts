@@ -97,7 +97,7 @@ function getGeminiBatchFileUrl(
   const endpoint =
     route === "upload"
       ? fileId
-      : `${fileId.startsWith("files/") ? fileId : `files/${fileId}`}:download`;
+      : `${fileId.startsWith("files") ? fileId : `files/${fileId}`}:download`;
   const url = new URL(resolveEmbeddingEndpointUrl(base.href, endpoint));
   url.searchParams.set(
     route === "upload" ? "uploadType" : "alt",

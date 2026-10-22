@@ -413,34 +413,3 @@ export function resolveAgentsDirFromSessionStorePath(storePath: string): string 
   }
   return agentsDir;
 }
-
-// --- PaleoClaw 兼容层：resolveStorePath（pc 3 月 API，上游 10 月已改名）---
-export function resolveStorePath(store?: string, opts?: { agentId?: string }) {
-  const agentId = normalizeAgentId(opts?.agentId ?? DEFAULT_AGENT_ID);
-  if (!store) {
-    return resolveDefaultSessionStorePath(agentId);
-  }
-  if (store.includes("{agentId}")) {
-    const expanded = store.replaceAll("{agentId}", agentId);
-    if (expanded.startsWith("~")) {
-      return path.resolve(
-        expandHomePrefix(expanded, {
-          home: resolveRequiredHomeDir(process.env, os.homedir),
-          env: process.env,
-          homedir: os.homedir,
-        }),
-      );
-    }
-    return path.resolve(expanded);
-  }
-  if (store.startsWith("~")) {
-    return path.resolve(
-      expandHomePrefix(store, {
-        home: resolveRequiredHomeDir(process.env, os.homedir),
-        env: process.env,
-        homedir: os.homedir,
-      }),
-    );
-  }
-  return path.resolve(store);
-}

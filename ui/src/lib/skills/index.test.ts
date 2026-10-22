@@ -6,7 +6,6 @@ import type { SkillStatusReport } from "../../api/types.ts";
 import { gatewayHelloForMethods } from "../../test-helpers/gateway-methods.ts";
 import { waitForFast } from "../../test-helpers/wait-for.ts";
 import { createRuntimeConfigCapability } from "../config/runtime-config-capability.ts";
-import { searchClawHub } from "./PaleoHub-search.ts";
 import { createDeferredRequestQueue, type TestRequest } from "./index.test-support.ts";
 import {
   clawhubVerdictKey,
@@ -22,6 +21,7 @@ import {
   updateSkillEdit,
   updateSkillEnabled,
 } from "./index.ts";
+import { searchClawHub } from "./PaleoHub-search.ts";
 
 type SkillsState = Parameters<typeof loadSkills>[0];
 
@@ -164,8 +164,8 @@ function createSkillCardReport(installedVersion?: string, installedAt = 123): Sk
                 slug: "agentreceipt",
                 installedVersion,
                 installedAt,
-                originPath: "/tmp/workspace/skills/agentreceipt/.clawhub/origin.json",
-                lockPath: "/tmp/workspace/.clawhub/lock.json",
+                originPath: "/tmp/workspace/skills/agentreceipt/.PaleoHub/origin.json",
+                lockPath: "/tmp/workspace/.PaleoHub/lock.json",
               },
             }
           : {}),

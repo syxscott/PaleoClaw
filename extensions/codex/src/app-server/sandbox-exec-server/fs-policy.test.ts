@@ -143,7 +143,7 @@ describe("sandbox fs glob matching", () => {
   it("matches repeated globstar-slash tokens without rescanning per cursor", () => {
     const matcher = createGlobReadMatcher(`/${"**/".repeat(2000)}`);
     const started = Date.now();
-    expect(matcher(`/${"a/".repeat(2000)}`)).toBe(true);
+    expect(matcher(`/${"a".repeat(2000)}`)).toBe(true);
     expect(Date.now() - started).toBeLessThan(250);
   });
 
