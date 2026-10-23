@@ -1,14 +1,9 @@
-import type { PluginRuntime } from "paleoclaw/plugin-sdk/zalo";
+import type { PluginRuntime } from "paleoclaw/plugin-sdk/core";
+import { createPluginRuntimeStore } from "paleoclaw/plugin-sdk/runtime-store";
 
-let runtime: PluginRuntime | null = null;
-
-export function setZaloRuntime(next: PluginRuntime): void {
-  runtime = next;
-}
-
-export function getZaloRuntime(): PluginRuntime {
-  if (!runtime) {
-    throw new Error("Zalo runtime not initialized");
-  }
-  return runtime;
-}
+const { setRuntime: setZaloRuntime, getRuntime: getZaloRuntime } =
+  createPluginRuntimeStore<PluginRuntime>({
+    pluginId: "zalo",
+    errorMessage: "Zalo runtime not initialized",
+  });
+export { getZaloRuntime, setZaloRuntime };

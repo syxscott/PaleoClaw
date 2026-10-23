@@ -1,17 +1,26 @@
-import type { ChannelPlugin, OpenClawPluginApi } from "paleoclaw/plugin-sdk/telegram";
-import { emptyPluginConfigSchema } from "paleoclaw/plugin-sdk/telegram";
-import { telegramPlugin } from "./src/channel.js";
-import { setTelegramRuntime } from "./src/runtime.js";
+import { defineBundledChannelEntry } from "paleoclaw/plugin-sdk/channel-entry-contract";
+import { registerTelegramMiniApp } from "./miniapp-api.js";
 
-const plugin = {
+export default defineBundledChannelEntry({
   id: "telegram",
   name: "Telegram",
   description: "Telegram channel plugin",
-  configSchema: emptyPluginConfigSchema(),
-  register(api: OpenClawPluginApi) {
-    setTelegramRuntime(api.runtime);
-    api.registerChannel({ plugin: telegramPlugin as ChannelPlugin });
+  importMetaUrl: import.meta.url,
+  plugin: {
+    specifier: "./channel-plugin-api.js",
+    exportName: "telegramPlugin",
   },
-};
-
-export default plugin;
+  secrets: {
+    specifier: "./secret-contract-api.js",
+    exportName: "channelSecrets",
+  },
+  runtime: {
+    specifier: "./runtime-setter-api.js",
+    exportName: "setTelegramRuntime",
+  },
+  accountInspect: {
+    specifier: "./account-inspect-api.js",
+    exportName: "inspectTelegramReadOnlyAccount",
+  },
+  registerFull: registerTelegramMiniApp,
+});

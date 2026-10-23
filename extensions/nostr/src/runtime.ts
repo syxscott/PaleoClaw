@@ -1,14 +1,9 @@
-import type { PluginRuntime } from "paleoclaw/plugin-sdk/nostr";
+import type { PluginRuntime } from "paleoclaw/plugin-sdk/core";
+import { createPluginRuntimeStore } from "paleoclaw/plugin-sdk/runtime-store";
 
-let runtime: PluginRuntime | null = null;
-
-export function setNostrRuntime(next: PluginRuntime): void {
-  runtime = next;
-}
-
-export function getNostrRuntime(): PluginRuntime {
-  if (!runtime) {
-    throw new Error("Nostr runtime not initialized");
-  }
-  return runtime;
-}
+const { setRuntime: setNostrRuntime, getRuntime: getNostrRuntime } =
+  createPluginRuntimeStore<PluginRuntime>({
+    pluginId: "nostr",
+    errorMessage: "Nostr runtime not initialized",
+  });
+export { getNostrRuntime, setNostrRuntime };

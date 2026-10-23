@@ -1,0 +1,110 @@
+import { text } from "node:stream/consumers";
+import { App } from "@slack/bolt";
+import { WebClient } from "@slack/web-api";
+import { withServer } from "paleoclaw/plugin-sdk/test-env";
+import { describe, expect, it, vi } from "vitest";
+import type { SlackMessageEvent } from "../types.js";
+import { createMonitorTestContext } from "./monitor-context.test-support.js";
+
+const enqueue = vi.hoisted(() => vi.fn(async (_entry: unknown) => {}));
+
+vi.mock("paleoclaw/plugin-sdk/channel-inbound", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("paleoclaw/plugin-sdk/channel-inbound")>()),
+  createChannelInboundDebouncer: () => ({
+    debounceMs: 0,
+    debouncer: {
+      enqueue,
+      flushKey: async () => {},
+      cancelKey: () => false,
+      drain: async () => {},
+    },
+  }),
+}));
+
+const { createSlackMessageHandler } = await import("./message-handler.js");
+
+describe("Slack message handler thread resolution", () => {
+  it("coalesces Enterprise lookups and retains separate caches for replacement and default clients", async () => {
+    enqueue.mockClear();
+    const requests: Array<{ path?: string; token?: string; body: string }> = [];
+    await withServer(
+      (request, response) => {
+        void text(request).then((body) => {
+          requests.push({
+            path: request.url,
+            token: request.headers.authorization,
+            body,
+          });
+          const root = request.headers.authorization?.endsWith("replacement") ? "100.2" : "100.1";
+          response.writeHead(200, { "content-type": "application/json" });
+          response.end(JSON.stringify({ ok: true, messages: [{ ts: "100.3", thread_ts: root }] }));
+        });
+      },
+      async (baseUrl) => {
+        const clientOptions = { slackApiUrl: `${baseUrl}/api/`, retryConfig: { retries: 0 } };
+        const client = (token: string) => new WebClient(token, clientOptions);
+        const app = new App({
+          token: "synthetic-default",
+          signingSecret: "synthetic-signing-secret",
+          tokenVerificationEnabled: false,
+          clientOptions,
+        });
+        const listenerClient = client("synthetic-listener");
+        const replacementClient = client("synthetic-replacement");
+        const handler = createSlackMessageHandler({
+          ctx: createMonitorTestContext({ cfg: {}, accountId: "thread-test", app }),
+        });
+        const message: SlackMessageEvent = {
+          type: "message",
+          channel: "C111",
+          user: "U111",
+          parent_user_id: "U222",
+          ts: "100.3",
+          text: "thread reply",
+        };
+        const eventScope = { teamId: "T111", client: listenerClient };
+        await Promise.all([
+          handler(message, { source: "message", eventScope }),
+          handler(message, { source: "app_mention", eventScope }),
+        ]);
+        await handler(message, { source: "message", eventScope });
+        expect(requests).toHaveLength(1);
+        expect(enqueue).toHaveBeenCalledTimes(3);
+        for (const [entry] of enqueue.mock.calls) {
+          expect(entry).toMatchObject({ message: { thread_ts: "100.1" } });
+        }
+
+        await handler(message, {
+          source: "message",
+          eventScope: { teamId: "T111", client: replacementClient },
+        });
+        expect(requests).toHaveLength(2);
+        expect(enqueue).toHaveBeenLastCalledWith(
+          expect.objectContaining({ message: expect.objectContaining({ thread_ts: "100.2" }) }),
+        );
+
+        await Promise.all([
+          handler(message, { source: "message" }),
+          handler(message, { source: "app_mention" }),
+        ]);
+        await handler(message, { source: "message" });
+        expect(requests).toHaveLength(3);
+        expect(requests.map((request) => request.token)).toEqual([
+          "Bearer synthetic-listener",
+          "Bearer synthetic-replacement",
+          "Bearer synthetic-default",
+        ]);
+        for (const request of requests) {
+          expect(request.path).toBe("/api/conversations.history");
+          expect(Object.fromEntries(new URLSearchParams(request.body))).toMatchObject({
+            channel: "C111",
+            latest: "100.3",
+            oldest: "100.3",
+            inclusive: "true",
+            limit: "1",
+          });
+        }
+      },
+    );
+  });
+});

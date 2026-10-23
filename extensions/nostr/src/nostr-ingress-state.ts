@@ -1,0 +1,63 @@
+import {
+  createChannelIngressError,
+  type ChannelIngressQueue,
+} from "paleoclaw/plugin-sdk/channel-outbound";
+import { isRecord } from "paleoclaw/plugin-sdk/string-coerce-runtime";
+
+export const NOSTR_INGRESS_PAYLOAD_VERSION = 1;
+
+export type NostrIngressPayload = {
+  version: 1;
+  receivedAt: number;
+  rawEvent: string;
+};
+
+export const NostrIngressPermanentError = createChannelIngressError<string>(
+  "NostrIngressPermanentError",
+  { withReason: true },
+);
+
+function requiredString(value: unknown, field: string): string {
+  if (typeof value === "string" && value.trim()) {
+    return value;
+  }
+  throw new NostrIngressPermanentError("invalid-event", `Nostr event is missing ${field}.`);
+}
+
+export function inspectNostrIngressEvent(event: unknown): { eventId: string; laneKey: string } {
+  if (!isRecord(event)) {
+    throw new NostrIngressPermanentError("invalid-event", "Nostr event must be an object.");
+  }
+  return {
+    eventId: requiredString(event.id, "id"),
+    laneKey: `direct:${requiredString(event.pubkey, "pubkey")}`,
+  };
+}
+
+/** Convert the retired persisted LRU seed into durable completion tombstones. */
+export async function migrateNostrLegacyRecentEventIds(params: {
+  queue: ChannelIngressQueue<NostrIngressPayload>;
+  eventIds: readonly string[];
+  migratedAt?: number;
+}): Promise<void> {
+  const migratedAt = params.migratedAt ?? Date.now();
+  for (const eventId of new Set(params.eventIds)) {
+    if (!eventId.trim()) {
+      continue;
+    }
+    const result = await params.queue.enqueue(
+      eventId,
+      { version: NOSTR_INGRESS_PAYLOAD_VERSION, receivedAt: migratedAt, rawEvent: "" },
+      { receivedAt: migratedAt, laneKey: `legacy:${eventId}` },
+    );
+    const ownsMarker =
+      result.kind === "accepted" ||
+      (result.kind === "pending" && result.record.payload.rawEvent === "");
+    if (ownsMarker) {
+      const completed = await params.queue.complete(eventId, { completedAt: migratedAt });
+      if (!completed) {
+        throw new Error(`Failed to migrate Nostr replay event ${eventId}.`);
+      }
+    }
+  }
+}

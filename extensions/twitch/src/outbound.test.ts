@@ -1,49 +1,42 @@
-/**
- * Tests for outbound.ts module
- *
- * Tests cover:
- * - resolveTarget with various modes (explicit, implicit, heartbeat)
- * - sendText with markdown stripping
- * - sendMedia delegation to sendText
- * - Error handling for missing accounts/channels
- * - Abort signal handling
- */
-
+import {
+  createMessageReceiptFromOutboundResults,
+  type MessageReceipt,
+} from "paleoclaw/plugin-sdk/channel-outbound";
 import { describe, expect, it, vi } from "vitest";
-import { twitchOutbound } from "./outbound.js";
+import { resolveTwitchAccountContext } from "./config.js";
+import { twitchMessageAdapter, twitchOutbound } from "./outbound.js";
+import { sendMessageTwitchInternal } from "./send.js";
 import {
   BASE_TWITCH_TEST_ACCOUNT,
   installTwitchTestHooks,
   makeTwitchTestConfig,
 } from "./test-fixtures.js";
 
-// Mock dependencies
 vi.mock("./config.js", () => ({
   DEFAULT_ACCOUNT_ID: "default",
-  getAccountConfig: vi.fn(),
+  resolveTwitchAccountContext: vi.fn(),
 }));
 
-vi.mock("./send.js", () => ({
-  sendMessageTwitchInternal: vi.fn(),
-}));
+// mock-isolation: Observe outbound payloads and receipts without a live Twitch transport.
+vi.mock("./send.js", () => ({ sendMessageTwitchInternal: vi.fn() }));
 
-vi.mock("./utils/markdown.js", () => ({
-  chunkTextForTwitch: vi.fn((text) => text.split(/(.{500})/).filter(Boolean)),
-}));
+function expectTarget(
+  params: Parameters<NonNullable<typeof twitchOutbound.resolveTarget>>[0],
+  to: string,
+) {
+  expect(twitchOutbound.resolveTarget!(params)).toEqual({ ok: true, to });
+}
 
-vi.mock("./utils/twitch.js", () => ({
-  normalizeTwitchChannel: (channel: string) => channel.toLowerCase().replace(/^#/, ""),
-  missingTargetError: (channel: string, hint: string) =>
-    new Error(`Missing target for ${channel}. Provide ${hint}`),
-}));
+function expectTargetError(
+  params: Parameters<NonNullable<typeof twitchOutbound.resolveTarget>>[0],
+) {
+  const result = twitchOutbound.resolveTarget!(params);
 
-function assertResolvedTarget(
-  result: ReturnType<NonNullable<typeof twitchOutbound.resolveTarget>>,
-): string {
-  if (!result.ok) {
-    throw result.error;
+  expect(result.ok).toBe(false);
+  if (result.ok) {
+    throw new Error("expected resolveTarget to fail");
   }
-  return result.to;
+  expect(result.error.message).toContain("Twitch");
 }
 
 describe("outbound", () => {
@@ -51,353 +44,173 @@ describe("outbound", () => {
     ...BASE_TWITCH_TEST_ACCOUNT,
     accessToken: "oauth:test123",
   };
-  const resolveTarget = twitchOutbound.resolveTarget!;
 
   const mockConfig = makeTwitchTestConfig(mockAccount);
+  const sendParams = { cfg: mockConfig, to: "#testchannel", text: "Hello!", accountId: "default" };
+  const internalParams = {
+    channel: "testchannel",
+    cfg: mockConfig,
+    account: mockAccount,
+    accountId: "default",
+    clientManager: undefined,
+  };
   installTwitchTestHooks();
 
-  describe("metadata", () => {
-    it("should have direct delivery mode", () => {
-      expect(twitchOutbound.deliveryMode).toBe("direct");
-    });
+  function setupAccountContext(params?: {
+    account?: typeof mockAccount | null;
+    configured?: boolean;
+  }) {
+    const account = params?.account === undefined ? mockAccount : params.account;
+    vi.mocked(resolveTwitchAccountContext).mockImplementation((_cfg, accountId) => ({
+      accountId: accountId?.trim() || "default",
+      account,
+      tokenResolution: { token: account?.accessToken ?? "" },
+      configured: account ? (params?.configured ?? true) : false,
+      availableAccountIds: ["default"],
+    }));
+  }
 
-    it("should have 500 character text chunk limit", () => {
-      expect(twitchOutbound.textChunkLimit).toBe(500);
-    });
+  it.each(["sendText", "sendMedia"] as const)("%s should handle abort signal", async (method) => {
+    const abortController = new AbortController();
+    abortController.abort();
+    const params = {
+      ...sendParams,
+      mediaUrl: "https://example.com/image.png",
+      signal: abortController.signal,
+    };
+    await expect(twitchOutbound[method]!(params)).rejects.toThrow("Outbound delivery aborted");
+    expect(resolveTwitchAccountContext).not.toHaveBeenCalled();
+  });
 
-    it("should have chunker function", () => {
-      expect(twitchOutbound.chunker).toBeDefined();
-      expect(typeof twitchOutbound.chunker).toBe("function");
+  it("preserves declared text and media receipts through both outbound interfaces", async () => {
+    setupAccountContext();
+    const capabilities = { text: true, media: true, messageSendingHooks: true };
+    expect(twitchOutbound.deliveryCapabilities?.durableFinal).toEqual(capabilities);
+    expect(twitchMessageAdapter.durableFinal?.capabilities).toEqual(capabilities);
+    const receipt: MessageReceipt = {
+      primaryPlatformMessageId: "twitch-msg-123",
+      platformMessageIds: ["twitch-msg-123"],
+      parts: [{ platformMessageId: "twitch-msg-123", kind: "text", index: 0 }],
+      sentAt: 1700000000000,
+    };
+    vi.spyOn(Date, "now").mockReturnValue(1700000000123);
+    vi.mocked(sendMessageTwitchInternal).mockResolvedValue({
+      messageId: "twitch-msg-123",
+      receipt,
     });
+    for (const send of [
+      { text: twitchOutbound.sendText!, media: twitchOutbound.sendMedia! },
+      { text: twitchMessageAdapter.send!.text!, media: twitchMessageAdapter.send!.media! },
+    ]) {
+      vi.mocked(sendMessageTwitchInternal).mockClear();
+      const textResult = await send.text({
+        ...sendParams,
+        text: "Hello Twitch!",
+      });
+      expect(sendMessageTwitchInternal).toHaveBeenCalledOnce();
+      expect(sendMessageTwitchInternal).toHaveBeenCalledWith({
+        ...internalParams,
+        text: "Hello Twitch!",
+      });
+      const mediaResult = await send.media({
+        ...sendParams,
+        text: "image",
+        mediaUrl: "https://example.com/image.png",
+      });
+      expect(sendMessageTwitchInternal).toHaveBeenCalledTimes(2);
+      expect(sendMessageTwitchInternal).toHaveBeenNthCalledWith(2, {
+        ...internalParams,
+        text: "image https://example.com/image.png",
+      });
+      for (const result of [textResult, mediaResult]) {
+        expect(result.receipt).toBe(receipt);
+        expect(result).toMatchObject({ messageId: "twitch-msg-123", timestamp: 1700000000123 });
+      }
+      expect(mediaResult.receipt?.parts.map((part) => part.kind)).toEqual(["text"]);
+    }
   });
 
   describe("resolveTarget", () => {
-    it("should normalize and return target in explicit mode", () => {
-      const result = resolveTarget({
-        to: "#MyChannel",
-        mode: "explicit",
-        allowFrom: [],
-      });
-
-      expect(result.ok).toBe(true);
-      expect(assertResolvedTarget(result)).toBe("mychannel");
+    it.each([
+      ["allowlisted", "#allowed", "implicit", ["#allowed", "#other"], "allowed"],
+      ["empty allowlist", "#anychannel", "heartbeat", [], "anychannel"],
+      ["wildcard", "#mychannel", "implicit", ["*", "#specific"], "mychannel"],
+    ] as const)("accepts %s target", (_name, to, mode, allowFrom, expected) => {
+      expectTarget({ to, mode, allowFrom: [...allowFrom] }, expected);
     });
-
-    it("should return target in implicit mode with wildcard allowlist", () => {
-      const result = resolveTarget({
-        to: "#AnyChannel",
-        mode: "implicit",
-        allowFrom: ["*"],
-      });
-
-      expect(result.ok).toBe(true);
-      expect(assertResolvedTarget(result)).toBe("anychannel");
-    });
-
-    it("should return target in implicit mode when in allowlist", () => {
-      const result = resolveTarget({
-        to: "#allowed",
-        mode: "implicit",
-        allowFrom: ["#allowed", "#other"],
-      });
-
-      expect(result.ok).toBe(true);
-      expect(assertResolvedTarget(result)).toBe("allowed");
-    });
-
-    it("should error when target not in allowlist (implicit mode)", () => {
-      const result = resolveTarget({
-        to: "#notallowed",
-        mode: "implicit",
-        allowFrom: ["#primary", "#secondary"],
-      });
-
-      expect(result.ok).toBe(false);
-      if (result.ok) {
-        throw new Error("expected resolveTarget to fail");
-      }
-      expect(result.error.message).toContain("Twitch");
-    });
-
-    it("should accept any target when allowlist is empty", () => {
-      const result = resolveTarget({
-        to: "#anychannel",
-        mode: "heartbeat",
-        allowFrom: [],
-      });
-
-      expect(result.ok).toBe(true);
-      expect(assertResolvedTarget(result)).toBe("anychannel");
-    });
-
-    it("should error when no target provided with allowlist", () => {
-      const result = resolveTarget({
-        to: undefined,
-        mode: "implicit",
-        allowFrom: ["#fallback", "#other"],
-      });
-
-      expect(result.ok).toBe(false);
-      if (result.ok) {
-        throw new Error("expected resolveTarget to fail");
-      }
-      expect(result.error.message).toContain("Twitch");
-    });
-
-    it("should return error when no target and no allowlist", () => {
-      const result = resolveTarget({
-        to: undefined,
-        mode: "explicit",
-        allowFrom: [],
-      });
-
-      expect(result.ok).toBe(false);
-      if (result.ok) {
-        throw new Error("expected resolveTarget to fail");
-      }
-      expect(result.error.message).toContain("Missing target");
-    });
-
-    it("should handle whitespace-only target", () => {
-      const result = resolveTarget({
-        to: "   ",
-        mode: "explicit",
-        allowFrom: [],
-      });
-
-      expect(result.ok).toBe(false);
-      if (result.ok) {
-        throw new Error("expected resolveTarget to fail");
-      }
-      expect(result.error.message).toContain("Missing target");
-    });
-
-    it("should error when target normalizes to empty string", () => {
-      const result = resolveTarget({
-        to: "#",
-        mode: "explicit",
-        allowFrom: [],
-      });
-
-      expect(result.ok).toBe(false);
-      if (result.ok) {
-        throw new Error("expected resolveTarget to fail");
-      }
-      expect(result.error.message).toContain("Twitch");
-    });
-
-    it("should filter wildcard from allowlist when checking membership", () => {
-      const result = resolveTarget({
-        to: "#mychannel",
-        mode: "implicit",
-        allowFrom: ["*", "#specific"],
-      });
-
-      // With wildcard, any target is accepted
-      expect(result.ok).toBe(true);
-      expect(assertResolvedTarget(result)).toBe("mychannel");
+    it.each(["#notallowed", undefined])("rejects unavailable implicit target %s", (to) => {
+      expectTargetError({ to, mode: "implicit", allowFrom: ["#primary", "#secondary"] });
     });
   });
 
   describe("sendText", () => {
-    it("should send message successfully", async () => {
-      const { getAccountConfig } = await import("./config.js");
-      const { sendMessageTwitchInternal } = await import("./send.js");
-
-      vi.mocked(getAccountConfig).mockReturnValue(mockAccount);
+    it("preserves intentional no-send through outbound", async () => {
+      setupAccountContext();
       vi.mocked(sendMessageTwitchInternal).mockResolvedValue({
-        ok: true,
-        messageId: "twitch-msg-123",
+        outcome: "not_sent",
+        messageId: "",
+        receipt: createMessageReceiptFromOutboundResults({ results: [] }),
       });
-
       const result = await twitchOutbound.sendText!({
-        cfg: mockConfig,
-        to: "#testchannel",
-        text: "Hello Twitch!",
-        accountId: "default",
+        ...sendParams,
+        text: "---",
       });
-
-      expect(result.channel).toBe("twitch");
-      expect(result.messageId).toBe("twitch-msg-123");
-      expect(sendMessageTwitchInternal).toHaveBeenCalledWith(
-        "testchannel",
-        "Hello Twitch!",
-        mockConfig,
-        "default",
-        true,
-        console,
-      );
-      expect(result.timestamp).toBeGreaterThan(0);
+      expect(result).toMatchObject({
+        outcome: "not_sent",
+        receipt: { platformMessageIds: [], parts: [] },
+      });
+      expect(result.messageId ?? "").toBe("");
     });
 
     it("should throw when account not found", async () => {
-      const { getAccountConfig } = await import("./config.js");
-
-      vi.mocked(getAccountConfig).mockReturnValue(null);
-
+      setupAccountContext({ account: null });
       await expect(
         twitchOutbound.sendText!({
-          cfg: mockConfig,
-          to: "#testchannel",
-          text: "Hello!",
+          ...sendParams,
           accountId: "nonexistent",
         }),
       ).rejects.toThrow("Twitch account not found: nonexistent");
     });
 
     it("should throw when no channel specified", async () => {
-      const { getAccountConfig } = await import("./config.js");
-
       const accountWithoutChannel = { ...mockAccount, channel: undefined as unknown as string };
-      vi.mocked(getAccountConfig).mockReturnValue(accountWithoutChannel);
-
+      setupAccountContext({ account: accountWithoutChannel });
       await expect(
         twitchOutbound.sendText!({
-          cfg: mockConfig,
+          ...sendParams,
           to: "",
-          text: "Hello!",
-          accountId: "default",
         }),
       ).rejects.toThrow("No channel specified");
     });
 
-    it("should use account channel when target not provided", async () => {
-      const { getAccountConfig } = await import("./config.js");
-      const { sendMessageTwitchInternal } = await import("./send.js");
-
-      vi.mocked(getAccountConfig).mockReturnValue(mockAccount);
-      vi.mocked(sendMessageTwitchInternal).mockResolvedValue({
-        ok: true,
-        messageId: "msg-456",
-      });
-
-      await twitchOutbound.sendText!({
-        cfg: mockConfig,
-        to: "",
-        text: "Hello!",
-        accountId: "default",
-      });
-
-      expect(sendMessageTwitchInternal).toHaveBeenCalledWith(
-        "testchannel",
-        "Hello!",
-        mockConfig,
-        "default",
-        true,
-        console,
+    it("rejects an unconfigured account before attempting delivery", async () => {
+      setupAccountContext({ configured: false });
+      await expect(twitchOutbound.sendText!(sendParams)).rejects.toThrow(
+        "Account default is not properly configured. Required: username, clientId, and accessToken (config or env for default account).",
       );
-    });
-
-    it("should handle abort signal", async () => {
-      const abortController = new AbortController();
-      abortController.abort();
-
-      await expect(
-        twitchOutbound.sendText!({
-          cfg: mockConfig,
-          to: "#testchannel",
-          text: "Hello!",
-          accountId: "default",
-          signal: abortController.signal,
-        } as Parameters<NonNullable<typeof twitchOutbound.sendText>>[0]),
-      ).rejects.toThrow("Outbound delivery aborted");
-    });
-
-    it("should throw on send failure", async () => {
-      const { getAccountConfig } = await import("./config.js");
-      const { sendMessageTwitchInternal } = await import("./send.js");
-
-      vi.mocked(getAccountConfig).mockReturnValue(mockAccount);
-      vi.mocked(sendMessageTwitchInternal).mockResolvedValue({
-        ok: false,
-        messageId: "failed-msg",
-        error: "Connection lost",
-      });
-
-      await expect(
-        twitchOutbound.sendText!({
-          cfg: mockConfig,
-          to: "#testchannel",
-          text: "Hello!",
-          accountId: "default",
-        }),
-      ).rejects.toThrow("Connection lost");
+      expect(sendMessageTwitchInternal).not.toHaveBeenCalled();
     });
   });
 
-  describe("sendMedia", () => {
-    it("should combine text and media URL", async () => {
-      const { sendMessageTwitchInternal } = await import("./send.js");
-      const { getAccountConfig } = await import("./config.js");
-
-      vi.mocked(getAccountConfig).mockReturnValue(mockAccount);
-      vi.mocked(sendMessageTwitchInternal).mockResolvedValue({
-        ok: true,
-        messageId: "media-msg-123",
-      });
-
-      const result = await twitchOutbound.sendMedia!({
-        cfg: mockConfig,
-        to: "#testchannel",
-        text: "Check this:",
-        mediaUrl: "https://example.com/image.png",
-        accountId: "default",
-      });
-
-      expect(result.channel).toBe("twitch");
-      expect(result.messageId).toBe("media-msg-123");
-      expect(sendMessageTwitchInternal).toHaveBeenCalledWith(
-        expect.anything(),
-        "Check this: https://example.com/image.png",
-        expect.anything(),
-        expect.anything(),
-        expect.anything(),
-        expect.anything(),
-      );
+  it("should send media URL only when no text", async () => {
+    setupAccountContext();
+    vi.mocked(sendMessageTwitchInternal).mockResolvedValue({
+      messageId: "media-only-msg",
+      receipt: createMessageReceiptFromOutboundResults({
+        results: [
+          { channel: "twitch", conversationId: "testchannel", messageId: "media-only-msg" },
+        ],
+        kind: "text",
+      }),
     });
-
-    it("should send media URL only when no text", async () => {
-      const { sendMessageTwitchInternal } = await import("./send.js");
-      const { getAccountConfig } = await import("./config.js");
-
-      vi.mocked(getAccountConfig).mockReturnValue(mockAccount);
-      vi.mocked(sendMessageTwitchInternal).mockResolvedValue({
-        ok: true,
-        messageId: "media-only-msg",
-      });
-
-      await twitchOutbound.sendMedia!({
-        cfg: mockConfig,
-        to: "#testchannel",
-        text: "",
-        mediaUrl: "https://example.com/image.png",
-        accountId: "default",
-      });
-
-      expect(sendMessageTwitchInternal).toHaveBeenCalledWith(
-        expect.anything(),
-        "https://example.com/image.png",
-        expect.anything(),
-        expect.anything(),
-        expect.anything(),
-        expect.anything(),
-      );
+    await twitchOutbound.sendMedia!({
+      ...sendParams,
+      text: "",
+      mediaUrl: "https://example.com/image.png",
     });
-
-    it("should handle abort signal", async () => {
-      const abortController = new AbortController();
-      abortController.abort();
-
-      await expect(
-        twitchOutbound.sendMedia!({
-          cfg: mockConfig,
-          to: "#testchannel",
-          text: "Check this:",
-          mediaUrl: "https://example.com/image.png",
-          accountId: "default",
-          signal: abortController.signal,
-        } as Parameters<NonNullable<typeof twitchOutbound.sendMedia>>[0]),
-      ).rejects.toThrow("Outbound delivery aborted");
+    expect(sendMessageTwitchInternal).toHaveBeenCalledWith({
+      ...internalParams,
+      text: "https://example.com/image.png",
     });
   });
 });

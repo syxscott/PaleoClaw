@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, test, vi } from "vitest";
-import type { ChannelPlugin } from "../channels/plugins/types.js";
+import type { ChannelPlugin } from "../channels/plugins/types.public.js";
 import { createChannelTestPluginBase } from "../test-utils/channel-plugins.js";
 import { setRegistry } from "./server.agent.gateway-server-agent.mocks.js";
 import { createRegistry } from "./server.e2e-registry-helpers.js";
@@ -8,61 +8,38 @@ import {
   installGatewayTestHooks,
   rpcReq,
   startServerWithClient,
-  type RpcResponse,
 } from "./test-helpers.js";
-
-let readConfigFileSnapshot: typeof import("../config/config.js").readConfigFileSnapshot;
-let writeConfigFile: typeof import("../config/config.js").writeConfigFile;
 
 installGatewayTestHooks({ scope: "suite" });
 
 const createStubChannelPlugin = (params: {
   id: ChannelPlugin["id"];
   label: string;
-  summary?: Record<string, unknown>;
-  logoutCleared?: boolean;
+  inspection?: Record<string, unknown>;
 }): ChannelPlugin => ({
   ...createChannelTestPluginBase({
     id: params.id,
     label: params.label,
-    config: { isConfigured: async () => false },
+    config: {
+      inspectAccount: (_cfg, accountId) => ({
+        accountId,
+        enabled: true,
+        configured: false,
+        ...params.inspection,
+      }),
+      isConfigured: async () => false,
+    },
   }),
   status: {
-    buildChannelSummary: async () => ({
-      configured: false,
-      ...params.summary,
-    }),
+    defaultRuntime: { accountId: "default", lastProbeAt: null },
   },
   gateway: {
     logoutAccount: async () => ({
-      cleared: params.logoutCleared ?? false,
+      cleared: false,
       envToken: false,
     }),
   },
 });
-
-const telegramPlugin: ChannelPlugin = {
-  ...createStubChannelPlugin({
-    id: "telegram",
-    label: "Telegram",
-    summary: { tokenSource: "none", lastProbeAt: null },
-    logoutCleared: true,
-  }),
-  gateway: {
-    logoutAccount: async ({ cfg }) => {
-      const nextTelegram = cfg.channels?.telegram ? { ...cfg.channels.telegram } : {};
-      delete nextTelegram.botToken;
-      await writeConfigFile({
-        ...cfg,
-        channels: {
-          ...cfg.channels,
-          telegram: nextTelegram,
-        },
-      });
-      return { cleared: true, envToken: false, loggedOut: true };
-    },
-  },
-};
 
 const defaultRegistry = createRegistry([
   {
@@ -73,7 +50,11 @@ const defaultRegistry = createRegistry([
   {
     pluginId: "telegram",
     source: "test",
-    plugin: telegramPlugin,
+    plugin: createStubChannelPlugin({
+      id: "telegram",
+      label: "Telegram",
+      inspection: { tokenSource: "none" },
+    }),
   },
   {
     pluginId: "signal",
@@ -81,7 +62,6 @@ const defaultRegistry = createRegistry([
     plugin: createStubChannelPlugin({
       id: "signal",
       label: "Signal",
-      summary: { lastProbeAt: null },
     }),
   },
 ]);
@@ -90,7 +70,6 @@ let server: Awaited<ReturnType<typeof startServerWithClient>>["server"];
 let ws: Awaited<ReturnType<typeof startServerWithClient>>["ws"];
 
 beforeAll(async () => {
-  ({ readConfigFileSnapshot, writeConfigFile } = await import("../config/config.js"));
   setRegistry(defaultRegistry);
   const started = await startServerWithClient();
   server = started.server;
@@ -107,10 +86,7 @@ describe("gateway server channels", () => {
   test("channels.status returns snapshot without probe", async () => {
     vi.stubEnv("TELEGRAM_BOT_TOKEN", undefined);
     setRegistry(defaultRegistry);
-    const res = (await rpcReq(ws, "channels.status", {
-      probe: false,
-      timeoutMs: 2000,
-    })) as RpcResponse<{
+    const res = await rpcReq<{
       channels?: Record<
         string,
         {
@@ -121,11 +97,11 @@ describe("gateway server channels", () => {
           linked?: boolean;
         }
       >;
-    }>;
+    }>(ws, "channels.status", { probe: false, timeoutMs: 2000 });
     expect(res.ok).toBe(true);
     const telegram = res.payload?.channels?.telegram;
     const signal = res.payload?.channels?.signal;
-    expect(res.payload?.channels?.whatsapp).toBeTruthy();
+    expect(res.payload?.channels?.whatsapp?.configured).toBe(false);
     expect(telegram?.configured).toBe(false);
     expect(telegram?.tokenSource).toBe("none");
     expect(telegram?.probe).toBeUndefined();
@@ -137,38 +113,11 @@ describe("gateway server channels", () => {
 
   test("channels.logout reports no session when missing", async () => {
     setRegistry(defaultRegistry);
-    const res = (await rpcReq(ws, "channels.logout", {
+    const res = await rpcReq<{ cleared?: boolean; channel?: string }>(ws, "channels.logout", {
       channel: "whatsapp",
-    })) as RpcResponse<{ cleared?: boolean; channel?: string }>;
+    });
     expect(res.ok).toBe(true);
     expect(res.payload?.channel).toBe("whatsapp");
     expect(res.payload?.cleared).toBe(false);
-  });
-
-  test("channels.logout clears telegram bot token from config", async () => {
-    vi.stubEnv("TELEGRAM_BOT_TOKEN", undefined);
-    setRegistry(defaultRegistry);
-    await writeConfigFile({
-      channels: {
-        telegram: {
-          botToken: "123:abc",
-          groups: { "*": { requireMention: false } },
-        },
-      },
-    });
-    const res = (await rpcReq(ws, "channels.logout", { channel: "telegram" })) as RpcResponse<{
-      cleared?: boolean;
-      envToken?: boolean;
-      channel?: string;
-    }>;
-    expect(res.ok).toBe(true);
-    expect(res.payload?.channel).toBe("telegram");
-    expect(res.payload?.cleared).toBe(true);
-    expect(res.payload?.envToken).toBe(false);
-
-    const snap = await readConfigFileSnapshot();
-    expect(snap.valid).toBe(true);
-    expect(snap.config?.channels?.telegram?.botToken).toBeUndefined();
-    expect(snap.config?.channels?.telegram?.groups?.["*"]?.requireMention).toBe(false);
   });
 });

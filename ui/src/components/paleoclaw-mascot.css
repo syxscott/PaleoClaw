@@ -1,0 +1,23 @@
+paleoclaw-mascot {
+  display: inline-block;
+  width: var(--paleoclaw-mascot-size, 120px);
+  height: var(--paleoclaw-mascot-size, 120px);
+  overflow: visible;
+  contain: layout style;
+  pointer-events: none;
+  line-height: 0;
+}
+
+paleoclaw-mascot > canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  will-change: transform;
+}
+
+paleoclaw-mascot > .openclaw-mascot--neutral,
+paleoclaw-mascot > .openclaw-mascot--neutral svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}

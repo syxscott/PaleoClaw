@@ -1,94 +1,52 @@
-function failOrUndefined(params: { onMissing: "throw" | "undefined"; message: string }): undefined {
-  if (params.onMissing === "throw") {
-    throw new Error(params.message);
-  }
-  return undefined;
-}
+/** JSON Pointer token helpers for file-backed secret refs. */
+import { isRecord as isJsonObject } from "@paleoclaw/normalization-core/record-coerce";
+import { parseConfigPathArrayIndex } from "../shared/path-array-index.js";
 
-export function decodeJsonPointerToken(token: string): string {
-  return token.replace(/~1/g, "/").replace(/~0/g, "~");
-}
-
+/**
+ * Encodes one JSON Pointer path token using RFC 6901 escaping.
+ */
 export function encodeJsonPointerToken(token: string): string {
   return token.replace(/~/g, "~0").replace(/\//g, "~1");
 }
 
+/**
+ * Reads a value from a JSON-like document using an absolute JSON Pointer.
+ * Missing segments throw by default; `onMissing: "undefined"` is for optional probes.
+ */
 export function readJsonPointer(
   root: unknown,
   pointer: string,
   options: { onMissing?: "throw" | "undefined" } = {},
 ): unknown {
   const onMissing = options.onMissing ?? "throw";
+  const fail = (message: string): undefined => {
+    if (onMissing === "throw") {
+      throw new Error(message);
+    }
+    return undefined;
+  };
   if (!pointer.startsWith("/")) {
-    return failOrUndefined({
-      onMissing,
-      message:
-        'File-backed secret ids must be absolute JSON pointers (for example: "/providers/openai/apiKey").',
-    });
+    return fail(
+      'File-backed secret ids must be absolute JSON pointers (for example: "/providers/openai/apiKey").',
+    );
   }
 
-  const tokens = pointer
-    .slice(1)
-    .split("/")
-    .map((token) => decodeJsonPointerToken(token));
-
   let current: unknown = root;
-  for (const token of tokens) {
+  for (const rawToken of pointer.slice(1).split("/")) {
+    const token = rawToken.replace(/~1/g, "/").replace(/~0/g, "~");
     if (Array.isArray(current)) {
-      const index = Number.parseInt(token, 10);
-      if (!Number.isFinite(index) || index < 0 || index >= current.length) {
-        return failOrUndefined({
-          onMissing,
-          message: `JSON pointer segment "${token}" is out of bounds.`,
-        });
+      // Array segments must be canonical non-negative indexes, not partial parses like "1abc".
+      const index = parseConfigPathArrayIndex(token);
+      if (index === undefined || index >= current.length) {
+        return fail(`JSON pointer segment "${token}" is out of bounds.`);
       }
       current = current[index];
       continue;
     }
-    if (typeof current !== "object" || current === null || Array.isArray(current)) {
-      return failOrUndefined({
-        onMissing,
-        message: `JSON pointer segment "${token}" does not exist.`,
-      });
+    if (!isJsonObject(current) || !Object.hasOwn(current, token)) {
+      return fail(`JSON pointer segment "${token}" does not exist.`);
     }
-    const record = current as Record<string, unknown>;
-    if (!Object.hasOwn(record, token)) {
-      return failOrUndefined({
-        onMissing,
-        message: `JSON pointer segment "${token}" does not exist.`,
-      });
-    }
-    current = record[token];
+    current = current[token];
   }
   return current;
-}
-
-export function setJsonPointer(
-  root: Record<string, unknown>,
-  pointer: string,
-  value: unknown,
-): void {
-  if (!pointer.startsWith("/")) {
-    throw new Error(`Invalid JSON pointer "${pointer}".`);
-  }
-
-  const tokens = pointer
-    .slice(1)
-    .split("/")
-    .map((token) => decodeJsonPointerToken(token));
-
-  let current: Record<string, unknown> = root;
-  for (let index = 0; index < tokens.length; index += 1) {
-    const token = tokens[index];
-    const isLast = index === tokens.length - 1;
-    if (isLast) {
-      current[token] = value;
-      return;
-    }
-    const child = current[token];
-    if (typeof child !== "object" || child === null || Array.isArray(child)) {
-      current[token] = {};
-    }
-    current = current[token] as Record<string, unknown>;
-  }
 }

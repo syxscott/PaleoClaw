@@ -1,24 +1,50 @@
 {
   "name": "@paleoclaw/diagnostics-otel",
-  "version": "1.8.0",
-  "description": "paleoclaw diagnostics OpenTelemetry exporter",
+  "version": "2026.10.5",
+  "description": "paleoclaw diagnostics OpenTelemetry exporter for metrics, traces, and logs.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/syxscott/PaleoClaw"
+  },
   "type": "module",
   "dependencies": {
-    "@opentelemetry/api": "^1.9.0",
-    "@opentelemetry/api-logs": "^0.213.0",
-    "@opentelemetry/exporter-logs-otlp-proto": "^0.213.0",
-    "@opentelemetry/exporter-metrics-otlp-proto": "^0.213.0",
-    "@opentelemetry/exporter-trace-otlp-proto": "^0.213.0",
-    "@opentelemetry/resources": "^2.6.0",
-    "@opentelemetry/sdk-logs": "^0.213.0",
-    "@opentelemetry/sdk-metrics": "^2.6.0",
-    "@opentelemetry/sdk-node": "^0.213.0",
-    "@opentelemetry/sdk-trace-base": "^2.6.0",
-    "@opentelemetry/semantic-conventions": "^1.40.0"
+    "@opentelemetry/api": "1.9.1",
+    "@opentelemetry/api-logs": "0.223.0",
+    "@opentelemetry/context-async-hooks": "2.12.0",
+    "@opentelemetry/core": "2.12.0",
+    "@opentelemetry/exporter-logs-otlp-proto": "0.223.0",
+    "@opentelemetry/exporter-metrics-otlp-proto": "0.223.0",
+    "@opentelemetry/exporter-trace-otlp-proto": "0.223.0",
+    "@opentelemetry/propagator-b3": "2.12.0",
+    "@opentelemetry/propagator-jaeger": "2.12.0",
+    "@opentelemetry/resources": "2.12.0",
+    "@opentelemetry/sdk-logs": "0.223.0",
+    "@opentelemetry/sdk-metrics": "2.12.0",
+    "@opentelemetry/sdk-trace-base": "2.12.0",
+    "@opentelemetry/semantic-conventions": "1.43.0"
+  },
+  "devDependencies": {
+    "@paleoclaw/plugin-sdk": "workspace:*"
   },
   "paleoclaw": {
     "extensions": [
       "./index.ts"
-    ]
+    ],
+    "install": {
+      "clawhubSpec": "PaleoHub:@paleoclaw/diagnostics-otel",
+      "npmSpec": "@paleoclaw/diagnostics-otel",
+      "defaultChoice": "npm",
+      "minHostVersion": ">=2026.4.25"
+    },
+    "compat": {
+      "pluginApi": ">=2026.10.5"
+    },
+    "build": {
+      "openclawVersion": "2026.10.5"
+    },
+    "release": {
+      "publishToClawHub": true,
+      "publishToNpm": true
+    }
   }
 }

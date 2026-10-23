@@ -1,376 +1,853 @@
-import fs from "node:fs/promises";
-import os from "node:os";
-import path from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import assert from "node:assert/strict";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
-  loadConfigMock as loadConfig,
-  pickPrimaryLanIPv4Mock as pickPrimaryLanIPv4,
-  pickPrimaryTailnetIPv4Mock as pickPrimaryTailnetIPv4,
-  resolveGatewayPortMock as resolveGatewayPort,
-} from "../gateway/gateway-connection.test-mocks.js";
-import { captureEnv, withEnvAsync } from "../test-utils/env.js";
+  type HelloOk,
+  validateSessionsDescribeParams,
+  validateSessionsListParams,
+} from "../../packages/gateway-protocol/src/index.js";
+import { GATEWAY_SERVER_CAPS } from "../../packages/gateway-protocol/src/server-capabilities.js";
+import { GATEWAY_STARTUP_ADMISSION_WAIT_MS } from "../../packages/gateway-protocol/src/startup-unavailable.js";
+import { normalizeTestText } from "../../test/helpers/normalize-text.js";
+import { createDeferred } from "../../test/helpers/promise.js";
+import { createClientTestIdentity } from "../gateway/client.test-support.js";
+import { ChatLog } from "./components/chat-log.js";
+import { withGatewayChatConnection } from "./gateway-chat.test-support.js";
+import type { TuiEvent, TuiSessionDescription, TuiSessionList } from "./tui-backend.js";
+import {
+  createTuiCommandHandlersHarness,
+  firstMockArg,
+  flushAsyncSelect,
+} from "./tui-command-handlers-test-support.js";
+import { createEventHandlers } from "./tui-event-handlers.js";
+import { makeTuiState } from "./tui-event-test-support.js";
+import {
+  createBaseState,
+  createTestSessionActions,
+  makeTui,
+  makeTuiSessionList,
+} from "./tui-session-actions-test-support.js";
+import type { ChatEvent, TuiHistoryLoadResult } from "./tui-types.js";
 
-const { resolveGatewayConnection } = await import("./gateway-chat.js");
+const { GatewayChatClient } = await import("./gateway-chat.js");
+const { GatewayClient, GatewayClientRequestError } = await import("../gateway/client.js");
+const connection = { url: "ws://127.0.0.1:18789", token: "test-token" };
+const model = (id: string, name = id) => ({ provider: "fixture", id, name });
 
-async function fileExists(filePath: string): Promise<boolean> {
-  try {
-    await fs.access(filePath);
-    return true;
-  } catch {
-    return false;
-  }
+function createClient() {
+  return new GatewayChatClient(connection);
 }
 
-type ModeExecProviderFixture = {
-  tokenMarker: string;
-  passwordMarker: string;
-  providers: {
-    tokenProvider: {
-      source: "exec";
-      command: string;
-      args: string[];
-      allowInsecurePath: true;
-    };
-    passwordProvider: {
-      source: "exec";
-      command: string;
-      args: string[];
-      allowInsecurePath: true;
-    };
+function mockRequest(response?: unknown) {
+  return vi.spyOn(GatewayClient.prototype, "request").mockResolvedValue(response);
+}
+
+function mockClient(response?: unknown) {
+  return { request: mockRequest(response), client: createClient() };
+}
+
+function expectRequests(request: { mock: { calls: unknown[][] } }, ...calls: unknown[][]) {
+  expect(request.mock.calls).toEqual(calls);
+}
+
+function hello(
+  methods: string[] = [],
+  scopes = ["operator.admin"],
+  capabilities?: string[],
+): HelloOk {
+  return {
+    type: "hello-ok",
+    protocol: 3,
+    server: { version: "test", connId: "catalog-test" },
+    features: { methods, events: [], capabilities },
+    snapshot: { presence: [], health: {}, stateVersion: { presence: 0, health: 0 }, uptimeMs: 0 },
+    auth: { role: "operator", scopes },
+    policy: { maxPayload: 1024, maxBufferedBytes: 1024, tickIntervalMs: 1000 },
   };
-};
-
-async function withModeExecProviderFixture(
-  label: string,
-  run: (fixture: ModeExecProviderFixture) => Promise<void>,
-) {
-  const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), `paleoclaw-tui-mode-${label}-`));
-  const tokenMarker = path.join(tempDir, "token-provider-ran");
-  const passwordMarker = path.join(tempDir, "password-provider-ran");
-  const tokenExecProgram = [
-    "const fs=require('node:fs');",
-    `fs.writeFileSync(${JSON.stringify(tokenMarker)},'1');`,
-    "process.stdout.write(JSON.stringify({ protocolVersion: 1, values: { TOKEN_SECRET: 'token-from-exec' } }));", // pragma: allowlist secret
-  ].join("");
-  const passwordExecProgram = [
-    "const fs=require('node:fs');",
-    `fs.writeFileSync(${JSON.stringify(passwordMarker)},'1');`,
-    "process.stdout.write(JSON.stringify({ protocolVersion: 1, values: { PASSWORD_SECRET: 'password-from-exec' } }));", // pragma: allowlist secret
-  ].join("");
-
-  try {
-    await run({
-      tokenMarker,
-      passwordMarker,
-      providers: {
-        tokenProvider: {
-          source: "exec",
-          command: process.execPath,
-          args: ["-e", tokenExecProgram],
-          allowInsecurePath: true,
-        },
-        passwordProvider: {
-          source: "exec",
-          command: process.execPath,
-          args: ["-e", passwordExecProgram],
-          allowInsecurePath: true,
-        },
-      },
-    });
-  } finally {
-    await fs.rm(tempDir, { recursive: true, force: true });
-  }
 }
 
-describe("resolveGatewayConnection", () => {
-  let envSnapshot: ReturnType<typeof captureEnv>;
-
-  beforeEach(() => {
-    envSnapshot = captureEnv(["OPENCLAW_GATEWAY_TOKEN", "OPENCLAW_GATEWAY_PASSWORD"]);
-    loadConfig.mockClear();
-    resolveGatewayPort.mockClear();
-    pickPrimaryTailnetIPv4.mockClear();
-    pickPrimaryLanIPv4.mockClear();
-    resolveGatewayPort.mockReturnValue(18789);
-    pickPrimaryTailnetIPv4.mockReturnValue(undefined);
-    pickPrimaryLanIPv4.mockReturnValue(undefined);
-    delete process.env.OPENCLAW_GATEWAY_TOKEN;
-    delete process.env.OPENCLAW_GATEWAY_PASSWORD;
+function legacyParameterError(method: string, parameter: string) {
+  return new GatewayClientRequestError({
+    code: "INVALID_REQUEST",
+    message: `invalid ${method} params: at root: unexpected property '${parameter}'`,
   });
+}
 
-  afterEach(() => {
-    envSnapshot.restore();
+function startupError(message: string, details: Record<string, string>) {
+  return new GatewayClientRequestError({
+    code: "UNAVAILABLE",
+    message,
+    details,
+    retryable: true,
+    retryAfterMs: 250,
   });
+}
 
-  it("throws when url override is missing explicit credentials", async () => {
-    loadConfig.mockReturnValue({ gateway: { mode: "local" } });
-
-    await expect(resolveGatewayConnection({ url: "wss://override.example/ws" })).rejects.toThrow(
-      "explicit credentials",
-    );
-  });
-
-  it.each([
-    {
-      label: "token",
-      auth: { token: "explicit-token" },
-      expected: { token: "explicit-token", password: undefined },
-    },
-    {
-      label: "password",
-      auth: { password: "explicit-password" },
-      expected: { token: undefined, password: "explicit-password" },
-    },
-  ])("uses explicit $label when url override is set", async ({ auth, expected }) => {
-    loadConfig.mockReturnValue({ gateway: { mode: "local" } });
-
-    const result = await resolveGatewayConnection({
-      url: "wss://override.example/ws",
-      ...auth,
-    });
-
-    expect(result).toEqual({
-      url: "wss://override.example/ws",
-      ...expected,
-    });
-  });
-
-  it.each([
-    {
-      label: "tailnet",
-      bind: "tailnet",
-      setup: () => pickPrimaryTailnetIPv4.mockReturnValue("100.64.0.1"),
-    },
-    {
-      label: "lan",
-      bind: "lan",
-      setup: () => pickPrimaryLanIPv4.mockReturnValue("192.168.1.42"),
-    },
-  ])("uses loopback host when local bind is $label", async ({ bind, setup }) => {
-    loadConfig.mockReturnValue({ gateway: { mode: "local", bind } });
-    resolveGatewayPort.mockReturnValue(18800);
-    setup();
-
-    const result = await withEnvAsync({ OPENCLAW_GATEWAY_TOKEN: "env-token" }, async () => {
-      return await resolveGatewayConnection({});
-    });
-
-    expect(result.url).toBe("ws://127.0.0.1:18800");
-  });
-
-  it("uses config auth token for local mode when both config and env tokens are set", async () => {
-    loadConfig.mockReturnValue({ gateway: { mode: "local", auth: { token: "config-token" } } });
-
-    await withEnvAsync({ OPENCLAW_GATEWAY_TOKEN: "env-token" }, async () => {
-      const result = await resolveGatewayConnection({});
-      expect(result.token).toBe("config-token");
-    });
-  });
-
-  it("falls back to OPENCLAW_GATEWAY_TOKEN when config token is missing", async () => {
-    loadConfig.mockReturnValue({ gateway: { mode: "local" } });
-
-    await withEnvAsync({ OPENCLAW_GATEWAY_TOKEN: "env-token" }, async () => {
-      const result = await resolveGatewayConnection({});
-      expect(result.token).toBe("env-token");
-    });
-  });
-
-  it("uses local password auth when gateway.auth.mode is unset and password-only is configured", async () => {
-    loadConfig.mockReturnValue({
-      gateway: {
-        mode: "local",
-        auth: {
-          password: "config-password", // pragma: allowlist secret
-        },
-      },
-    });
-
-    const result = await resolveGatewayConnection({});
-    expect(result.password).toBe("config-password");
-    expect(result.token).toBeUndefined();
-  });
-
-  it("fails when both local token and password are configured but gateway.auth.mode is unset", async () => {
-    loadConfig.mockReturnValue({
-      gateway: {
-        mode: "local",
-        auth: {
-          token: "config-token",
-          password: "config-password", // pragma: allowlist secret
-        },
-      },
-    });
-
-    await expect(resolveGatewayConnection({})).rejects.toThrow(
-      "gateway.auth.mode is unset. Set gateway.auth.mode to token or password.",
-    );
-  });
-
-  it("resolves env-template config auth token from referenced env var", async () => {
-    loadConfig.mockReturnValue({
-      secrets: {
-        providers: {
-          default: { source: "env" },
-        },
-      },
-      gateway: {
-        mode: "local",
-        auth: { token: "${CUSTOM_GATEWAY_TOKEN}" },
-      },
-    });
-
-    await withEnvAsync({ CUSTOM_GATEWAY_TOKEN: "custom-token" }, async () => {
-      const result = await resolveGatewayConnection({});
-      expect(result.token).toBe("custom-token");
-    });
-  });
-
-  it("fails with guidance when env-template config auth token is unresolved", async () => {
-    loadConfig.mockReturnValue({
-      gateway: {
-        mode: "local",
-        auth: { token: "${MISSING_GATEWAY_TOKEN}" },
-      },
-    });
-
-    await expect(resolveGatewayConnection({})).rejects.toThrow(
-      "gateway.auth.token SecretRef is unresolved",
-    );
-  });
-
-  it("prefers OPENCLAW_GATEWAY_PASSWORD over remote password fallback", async () => {
-    loadConfig.mockReturnValue({
-      gateway: {
-        mode: "remote",
-        remote: { url: "wss://remote.example/ws", token: "remote-token", password: "remote-pass" }, // pragma: allowlist secret
-      },
-    });
-
-    const gatewayPasswordEnv = "OPENCLAW_GATEWAY_PASSWORD"; // pragma: allowlist secret
-    const gatewayPassword = "env-pass"; // pragma: allowlist secret
-    await withEnvAsync({ [gatewayPasswordEnv]: gatewayPassword }, async () => {
-      const result = await resolveGatewayConnection({});
-      expect(result.password).toBe(gatewayPassword);
-    });
-  });
-
-  it.runIf(process.platform !== "win32")(
-    "resolves file-backed SecretRef token for local mode",
-    async () => {
-      const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "paleoclaw-tui-file-secret-"));
-      const secretFile = path.join(tempDir, "secrets.json");
-      await fs.writeFile(secretFile, JSON.stringify({ gatewayToken: "file-secret-token" }), "utf8");
-      await fs.chmod(secretFile, 0o600);
-
-      loadConfig.mockReturnValue({
-        secrets: {
-          providers: {
-            fileProvider: {
-              source: "file",
-              path: secretFile,
-              mode: "json",
-              allowInsecurePath: true,
-            },
-          },
-        },
-        gateway: {
-          mode: "local",
-          auth: {
-            token: { source: "file", provider: "fileProvider", id: "/gatewayToken" },
-          },
-        },
+function mockSessions(
+  sessions: TuiSessionList["sessions"],
+  defaults: TuiSessionDescription["defaults"],
+) {
+  return vi.spyOn(GatewayClient.prototype, "request").mockImplementation(async (method, params) => {
+    if (method === "sessions.describe" && validateSessionsDescribeParams(params)) {
+      return { session: sessions.find((row) => row.key === params.key) ?? null };
+    }
+    if (method === "sessions.list" && validateSessionsListParams(params)) {
+      const search = params.search ?? "";
+      const matches = sessions.filter(
+        (row) => row.key.includes(search) || row.label?.includes(search),
+      );
+      return makeTuiSessionList({
+        sessions: matches.slice(params.offset ?? 0, params.limit),
+        defaults,
       });
+    }
+    throw new Error(`Unexpected request: ${method}`);
+  });
+}
 
-      try {
-        const result = await resolveGatewayConnection({});
-        expect(result.token).toBe("file-secret-token");
-      } finally {
-        await fs.rm(tempDir, { recursive: true, force: true });
+afterEach(() => {
+  vi.useRealTimers();
+  vi.restoreAllMocks();
+});
+
+describe("GatewayChatClient", () => {
+  it.each([true, false])(
+    "scopes model catalogs by negotiated session support: %s",
+    async (sessionScoped) => {
+      const first = { ...model("first", "First"), available: false, unavailableReason: "cooldown" };
+      const { request, client } = mockClient({ models: [{ ...first }] });
+      client.hello = hello(["models.list"], undefined, [
+        GATEWAY_SERVER_CAPS.PUBLISHED_MODEL_CATALOG,
+        ...(sessionScoped ? [GATEWAY_SERVER_CAPS.SESSION_SCOPED_MODEL_CATALOG] : []),
+      ]);
+      const scope = (suffix: string) => ({ agentId: "work", sessionKey: `agent:work:${suffix}` });
+      await client.listModels(scope("first"));
+      const params = { agentId: "work", includeDetails: true };
+      expectRequests(request, [
+        "models.list",
+        { ...params, ...(sessionScoped ? { sessionKey: scope("first").sessionKey } : {}) },
+      ]);
+      expect(client.getKnownModels(scope("first"))?.[0]).toEqual(first);
+      if (sessionScoped) {
+        request.mockResolvedValueOnce({ models: [model("second", "Second")] });
+        await client.listModels(scope("second"));
+        expect(request).toHaveBeenNthCalledWith(2, "models.list", {
+          ...params,
+          sessionKey: scope("second").sessionKey,
+        });
+        expect(request).toHaveBeenCalledTimes(2);
+        expect(client.getKnownModels(scope("first"))?.[0]).toEqual(first);
       }
+      expect(client.getKnownModels(scope("second"))?.[0]?.id).toBe(
+        sessionScoped ? "second" : "first",
+      );
     },
   );
 
-  it("resolves exec-backed SecretRef token for local mode", async () => {
-    const execProgram = [
-      "process.stdout.write(",
-      "JSON.stringify({ protocolVersion: 1, values: { EXEC_GATEWAY_TOKEN: 'exec-secret-token' } })",
-      ");",
-    ].join("");
-
-    loadConfig.mockReturnValue({
-      secrets: {
-        providers: {
-          execProvider: {
-            source: "exec",
-            command: process.execPath,
-            args: ["-e", execProgram],
-            allowInsecurePath: true,
-          },
-        },
-      },
-      gateway: {
-        mode: "local",
-        auth: {
-          token: { source: "exec", provider: "execProvider", id: "EXEC_GATEWAY_TOKEN" },
-        },
-      },
-    });
-
-    const result = await resolveGatewayConnection({});
-    expect(result.token).toBe("exec-secret-token");
+  it("retains agent-scoped choices during a held refresh but cannot republish after stop", async () => {
+    const models = [model("known", "Known")];
+    const held = createDeferred<{ models: typeof models }>();
+    mockRequest().mockResolvedValueOnce({ models }).mockReturnValueOnce(held.promise);
+    const client = createClient();
+    try {
+      await client.listModels({ agentId: "work" });
+      const refresh = client.listModels({ agentId: "work" });
+      const sharedRefresh = client.listModels({ agentId: "work" });
+      expect(client.getKnownModels({ agentId: "work" })).toEqual(models);
+      expect(client.getKnownModels({ agentId: "main" })).toBeUndefined();
+      await client.stop();
+      held.resolve({ models: [model("obsolete", "Obsolete")] });
+      await Promise.all([refresh, sharedRefresh]);
+      expect(client.getKnownModels({ agentId: "work" })).toBeUndefined();
+    } finally {
+      held.resolve({ models });
+    }
   });
 
-  it("resolves only token SecretRef when gateway.auth.mode is token", async () => {
-    await withModeExecProviderFixture(
-      "token",
-      async ({ tokenMarker, passwordMarker, providers }) => {
-        loadConfig.mockReturnValue({
-          secrets: {
-            providers,
-          },
-          gateway: {
-            mode: "local",
-            auth: {
-              mode: "token",
-              token: { source: "exec", provider: "tokenProvider", id: "TOKEN_SECRET" },
-              password: { source: "exec", provider: "passwordProvider", id: "PASSWORD_SECRET" },
-            },
-          },
+  it("keeps rows through sign-in and restores the highlighted model after policy retirement", async () => {
+    const models = ["first", "current", "highlighted"].map((id) => model(id));
+    const held = createDeferred<{ models: typeof models }>();
+    const request = vi.fn().mockResolvedValueOnce({ models }).mockReturnValue(held.promise);
+    await withGatewayChatConnection(request, async (client, callbacks) => {
+      const onEvent = callbacks.onEvent;
+      assert(onEvent);
+      try {
+        await client.listModels({ agentId: "main" });
+        const harness = createTuiCommandHandlersHarness({
+          getKnownModels: (opts) => client.getKnownModels(opts),
+          listModels: vi.fn((opts) => client.listModels(opts)),
+          sessionInfo: { modelProvider: "fixture", model: "current" },
         });
+        client.onModelsChanged = harness.client.onModelsChanged;
+        await harness.handleCommand("/models");
+        const selector = firstMockArg(harness.openOverlay, "openOverlay") as {
+          handleInput(data: string): void;
+          render(width: number): string[];
+        };
+        selector.handleInput("\u001b[B");
+        selector.handleInput("\u001b[B");
+        onEvent({ type: "event", event: "config.changed", payload: {} });
+        expect(selector.render(100).join("\n")).not.toContain("Checking models...");
+        expect(selector.render(100).join("\n")).toContain("fixture/highlighted");
+        onEvent({
+          type: "event",
+          event: "chat.metadata.changed",
+          payload: { modelSelectionChanged: true },
+        });
+        expect(selector.render(100).join("\n")).toContain("Checking models...");
+        held.resolve({ models });
+        await client.listModels({ agentId: "main" });
+        selector.handleInput("\r");
+        await flushAsyncSelect();
+        expect(harness.patchSession).toHaveBeenCalledWith({
+          key: "agent:main:main",
+          model: "fixture/highlighted",
+        });
+      } finally {
+        held.resolve({ models });
+      }
+    });
+  });
 
-        const result = await resolveGatewayConnection({});
-        expect(result.token).toBe("token-from-exec");
-        expect(result.password).toBeUndefined();
-        expect(await fileExists(tokenMarker)).toBe(true);
-        expect(await fileExists(passwordMarker)).toBe(false);
+  it("waits for gateway transport teardown on stop", async () => {
+    const client = createClient();
+    const teardown = createDeferred();
+    const stopAndWait = vi
+      .spyOn(GatewayClient.prototype, "stopAndWait")
+      .mockReturnValue(teardown.promise);
+    let stopped = false;
+    const stopPromise = client.stop().then(() => {
+      stopped = true;
+    });
+
+    expect(stopAndWait).toHaveBeenCalledOnce();
+    expect(stopped).toBe(false);
+    teardown.resolve();
+    await stopPromise;
+    expect(stopped).toBe(true);
+  });
+
+  it("requests TUI operator scopes and forwards one connect failure per socket", async () => {
+    const remote = {
+      url: "wss://remote.example/rpc",
+      deviceAuthScope: "wss://remote.example/rpc",
+      sshTunnel: { target: "me@studio", remotePort: 18789 },
+      token: "test-token",
+      tlsFingerprint: "sha256:11:22:33:44",
+      preauthHandshakeTimeoutMs: 30_000,
+    };
+    await withGatewayChatConnection(
+      async () => {
+        throw new Error("unexpected request");
       },
+      async (client, options) => {
+        const onConnectError = vi.fn();
+        const onDisconnected = vi.fn();
+        client.onConnectError = onConnectError;
+        client.onDisconnected = onDisconnected;
+        const connectError = new GatewayClientRequestError({
+          code: "INVALID_REQUEST",
+          message: "pairing required",
+          details: { code: "PAIRING_REQUIRED", requestId: "pair-1" },
+        });
+        expect(options).toMatchObject({
+          clientName: "paleoclaw-tui",
+          mode: "ui",
+          scopes: ["operator.admin", "operator.read", "operator.write", "operator.approvals"],
+          ...remote,
+          notifyOnStartupRetry: true,
+        });
+        expect(options).not.toHaveProperty("deviceIdentity");
+
+        options.onConnectError?.(connectError);
+        options.onConnectError?.(new Error("duplicate failure for the same socket"));
+        options.onClose?.(1008, "pairing required");
+
+        expect(onConnectError).toHaveBeenCalledExactlyOnceWith(connectError);
+        expect(connectError.message).toContain("Pairing request sent.");
+        expect(connectError.message).toContain("Control UI (Settings -> Devices)");
+        expect(connectError.message).toContain("paleoclaw devices approve --latest");
+        expect(connectError.details).toEqual({ code: "PAIRING_REQUIRED", requestId: "pair-1" });
+        expect(onDisconnected).not.toHaveBeenCalled();
+
+        const retryError = new Error("retry failed");
+        options.onConnectError?.(retryError);
+        expect(onConnectError).toHaveBeenNthCalledWith(2, retryError);
+        options.onConnectError?.(new Error("duplicate within the retry socket"));
+        expect(onConnectError).toHaveBeenCalledTimes(2);
+        options.onHelloOk?.(hello());
+        await client.waitForReady();
+        options.onConnectError?.(retryError);
+        expect(onConnectError).toHaveBeenNthCalledWith(3, retryError);
+
+        options.onHelloOk?.(hello());
+        onDisconnected.mockClear();
+        client.onConnectError = (error) => {
+          onConnectError(error);
+          client.onConnectError = undefined;
+        };
+        (
+          client as unknown as { notifyUnclosedConnectError: (error: Error) => void }
+        ).notifyUnclosedConnectError(new Error("one-shot structured failure"));
+        expect(onDisconnected).not.toHaveBeenCalled();
+
+        options.onHelloOk?.(hello());
+        onConnectError.mockClear();
+        onDisconnected.mockClear();
+        client.onConnectError = onConnectError;
+        const unavailable = startupError("gateway starting; retry shortly", {
+          reason: "startup-sidecars",
+        });
+        for (const handler of [onConnectError, undefined]) {
+          onDisconnected.mockClear();
+          client.onConnectError = handler;
+          options.onConnectError?.(unavailable);
+          options.onClose?.(1013, "gateway starting");
+          expect(onConnectError).not.toHaveBeenCalled();
+          expect(onDisconnected).toHaveBeenCalledExactlyOnceWith("gateway starting");
+        }
+      },
+      remote,
     );
   });
 
-  it("resolves only password SecretRef when gateway.auth.mode is password", async () => {
-    await withModeExecProviderFixture(
-      "password",
-      async ({ tokenMarker, passwordMarker, providers }) => {
-        loadConfig.mockReturnValue({
-          secrets: {
-            providers,
-          },
-          gateway: {
-            mode: "local",
-            auth: {
-              mode: "password",
-              token: { source: "exec", provider: "tokenProvider", id: "TOKEN_SECRET" },
-              password: { source: "exec", provider: "passwordProvider", id: "PASSWORD_SECRET" },
-            },
-          },
-        });
+  it("surfaces loopback block-mode start failures through disconnect handler", async () => {
+    vi.useFakeTimers();
+    const identity = await import("../infra/device-identity-async.js");
+    vi.spyOn(identity, "loadOrCreateDeviceIdentityAsync").mockResolvedValue(
+      createClientTestIdentity("fixture-tui-proxy-device"),
+    );
+    // The preceding mock test resets modules; keep client and proxy ownership together.
+    const { GatewayChatClient: CurrentGatewayChatClient } = await import("./gateway-chat.js");
+    const { startProxy, stopProxy } = await import("../infra/net/proxy/proxy-lifecycle.js");
+    const proxyHandle = await startProxy({
+      proxyUrl: "http://127.0.0.1:3128",
+      loopbackMode: "block",
+    });
+    const disconnected = createDeferred<string>();
+    const onDisconnected = vi.fn(disconnected.resolve);
+    const client = new CurrentGatewayChatClient(connection);
+    client.onDisconnected = onDisconnected;
 
-        const result = await resolveGatewayConnection({});
-        expect(result.password).toBe("password-from-exec");
-        expect(result.token).toBeUndefined();
-        expect(await fileExists(tokenMarker)).toBe(false);
-        expect(await fileExists(passwordMarker)).toBe(true);
+    try {
+      client.start();
+      await vi.advanceTimersByTimeAsync(2);
+
+      const message =
+        "proxy: Gateway loopback control-plane connections are blocked by proxy.loopbackMode; " +
+        "run paleoclaw config set proxy.loopbackMode gateway-only to allow local runtime traffic.";
+      await expect(disconnected.promise).resolves.toBe(message);
+      expect(onDisconnected).toHaveBeenCalledExactlyOnceWith(message);
+    } finally {
+      await client.stop();
+      await stopProxy(proxyHandle);
+    }
+  });
+
+  it("retries startup-unavailable history only while the backend is active", async () => {
+    vi.useFakeTimers();
+
+    const client = createClient();
+    const unavailable = startupError("chat.history unavailable during gateway startup", {
+      method: "chat.history",
+    });
+    const request = mockRequest()
+      .mockRejectedValueOnce(unavailable)
+      .mockResolvedValueOnce({ messages: [] });
+
+    const historyPromise = client.loadHistory({ sessionKey: "main", limit: 200 });
+    await vi.advanceTimersByTimeAsync(250);
+
+    await expect(historyPromise).resolves.toEqual({ messages: [] });
+    expect(request).toHaveBeenCalledTimes(2);
+
+    const baselineTimerCount = vi.getTimerCount();
+    request.mockRejectedValueOnce(unavailable).mockRejectedValueOnce(unavailable);
+    const pendingHistory = Promise.all([
+      client.loadHistory({ sessionKey: "first" }).catch((error: unknown) => error),
+      client.loadHistory({ sessionKey: "second" }).catch((error: unknown) => error),
+    ]);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(request).toHaveBeenCalledTimes(4);
+    expect(vi.getTimerCount()).toBe(baselineTimerCount + 2);
+
+    await client.stop();
+
+    expect(vi.getTimerCount()).toBe(baselineTimerCount);
+    await expect(pendingHistory).resolves.toEqual([
+      expect.objectContaining({ name: "AbortError" }),
+      expect.objectContaining({ name: "AbortError" }),
+    ]);
+    await expect(client.loadHistory({ sessionKey: "stopped" })).rejects.toMatchObject({
+      name: "AbortError",
+    });
+    await vi.advanceTimersByTimeAsync(250);
+    expect(request).toHaveBeenCalledTimes(4);
+    expect(vi.getTimerCount()).toBe(baselineTimerCount);
+  });
+
+  it("passes selected-agent global scope through chat methods", async () => {
+    vi.useFakeTimers();
+    const { client, request } = mockClient({ messages: [] });
+    const scope = { sessionKey: "global", agentId: "work" };
+    const runId = "run-global-work";
+    await client.sendChat({ ...scope, message: "hello", runId });
+    await client.loadHistory({ ...scope, limit: 50 });
+    await client.abortChat({ ...scope, runId });
+    await client.listModels({ agentId: "work" });
+
+    expectRequests(
+      request,
+      [
+        "chat.send",
+        {
+          ...scope,
+          message: "hello",
+          thinking: undefined,
+          deliver: undefined,
+          timeoutMs: undefined,
+          idempotencyKey: runId,
+        },
+        {
+          timeoutMs: GATEWAY_STARTUP_ADMISSION_WAIT_MS,
+          signal: expect.any(AbortSignal),
+          retainSentResultOnAbort: true,
+        },
+      ],
+      ["chat.history", { ...scope, limit: 50 }],
+      ["chat.abort", { ...scope, runId }],
+      ["models.list", { agentId: "work" }],
+    );
+  });
+
+  it("retries session aborts without side-run preservation on older Gateways", async () => {
+    const { client, request } = mockClient();
+    const result = { ok: true, aborted: true, runIds: ["run-main"] };
+    request
+      .mockRejectedValueOnce(legacyParameterError("chat.abort", "preserveSideRuns"))
+      .mockResolvedValueOnce(result);
+
+    await expect(client.abortChat({ sessionKey: "main" })).resolves.toEqual(result);
+    expectRequests(
+      request,
+      ["chat.abort", { sessionKey: "main", preserveSideRuns: true }],
+      ["chat.abort", { sessionKey: "main" }],
+    );
+  });
+
+  it.each([true, false])(
+    "retries legacy creation with succeedsParent=%s",
+    async (succeedsParent) => {
+      vi.useFakeTimers();
+      const { client, request } = mockClient();
+      const result = { ok: true, key: "agent:main:tui-next" };
+      request
+        .mockRejectedValueOnce(legacyParameterError("sessions.create", "succeedsParent"))
+        .mockResolvedValueOnce(result);
+      const opts = {
+        key: "tui-next",
+        ...(succeedsParent ? {} : { agentId: "main" }),
+        parentSessionKey: "agent:main:main",
+        succeedsParent,
+      };
+      await expect(client.createSession(opts)).resolves.toEqual(result);
+      expect(request).toHaveBeenNthCalledWith(
+        1,
+        "sessions.create",
+        {
+          ...opts,
+          emitCommandHooks: true,
+        },
+        {
+          timeoutMs: GATEWAY_STARTUP_ADMISSION_WAIT_MS,
+          signal: expect.any(AbortSignal),
+          retainSentResultOnAbort: true,
+        },
+      );
+      expect(request).toHaveBeenNthCalledWith(
+        2,
+        "sessions.create",
+        succeedsParent
+          ? { key: "tui-next", parentSessionKey: "agent:main:main", emitCommandHooks: true }
+          : { key: "tui-next", agentId: "main" },
+        {
+          timeoutMs: GATEWAY_STARTUP_ADMISSION_WAIT_MS,
+          signal: expect.any(AbortSignal),
+          retainSentResultOnAbort: true,
+        },
+      );
+    },
+  );
+
+  it("returns the actual chat send ack status from the gateway", async () => {
+    const client = createClient();
+    mockRequest({ runId: "run-gateway", status: "timeout" });
+    await expect(
+      client.sendChat({ sessionKey: "main", message: "hello", runId: "run-local" }),
+    ).resolves.toEqual({ runId: "run-gateway", status: "timeout" });
+  });
+
+  it("lists gateway commands through commands.list", async () => {
+    const command = {
+      name: "tts",
+      textAliases: ["/tts"],
+      description: "Text to speech",
+      source: "plugin",
+      scope: "both",
+      acceptsArgs: false,
+    };
+    const { client, request } = mockClient({ commands: [command] });
+    const opts = { agentId: "main", provider: "discord", scope: "text" as const };
+
+    await expect(client.listCommands(opts)).resolves.toEqual([command]);
+    expect(request).toHaveBeenCalledWith("commands.list", opts);
+  });
+
+  it("lists and resolves plugin approvals through the gateway", async () => {
+    const { client, request } = mockClient();
+    const pending = [{ id: "plugin:skill-1" }];
+    request.mockResolvedValueOnce(pending).mockResolvedValueOnce({ ok: true });
+
+    await expect(client.listPluginApprovals()).resolves.toEqual(pending);
+    await expect(client.resolvePluginApproval("plugin:skill-1", "allow-once")).resolves.toEqual({
+      ok: true,
+    });
+
+    expectRequests(
+      request,
+      ["plugin.approval.list", {}],
+      ["plugin.approval.resolve", { id: "plugin:skill-1", decision: "allow-once" }],
+    );
+  });
+
+  it("requests a new non-worktree session even without mode capabilities", async () => {
+    const { client, request } = mockClient();
+    const suggestion = {
+      id: "task_1",
+      title: "Investigate a restarting service",
+      prompt: "Inspect the service status and logs.",
+      tldr: "The service is unexpectedly restarting.",
+      cwd: "/workspace",
+      sessionKey: "agent:main:main",
+      agentId: "main",
+      createdAt: 1_000,
+    };
+    const accepted = { taskId: "task_1", key: "agent:main:task" };
+    const dismissed = { taskId: "task_2", dismissed: true };
+    request
+      .mockResolvedValueOnce({ suggestions: [suggestion] })
+      .mockResolvedValueOnce(accepted)
+      .mockResolvedValueOnce(dismissed);
+    client.hello = hello([
+      "taskSuggestions.list",
+      "taskSuggestions.accept",
+      "taskSuggestions.dismiss",
+    ]);
+
+    await expect(client.listTaskSuggestions()).resolves.toEqual([suggestion]);
+    await expect(client.acceptTaskSuggestion("task_1")).resolves.toEqual(accepted);
+    await expect(client.dismissTaskSuggestion("task_2")).resolves.toEqual(dismissed);
+
+    expectRequests(
+      request,
+      ["taskSuggestions.list", {}],
+      ["taskSuggestions.accept", { taskId: "task_1", mode: "local" }],
+      ["taskSuggestions.dismiss", { taskId: "task_2" }],
+    );
+  });
+
+  it("derives task suggestion actions from negotiated methods and scopes", () => {
+    const client = createClient();
+    const methods = ["taskSuggestions.accept", "taskSuggestions.dismiss"];
+    client.hello = hello(methods, ["operator.write"]);
+
+    expect(client.getTaskSuggestionActionCapabilities()).toEqual({
+      canAccept: false,
+      canDismiss: true,
+    });
+
+    client.hello = hello(methods);
+    expect(client.getTaskSuggestionActionCapabilities()).toEqual({
+      canAccept: true,
+      canDismiss: true,
+    });
+  });
+
+  it("skips task suggestion refreshes against older gateways", async () => {
+    const client = createClient();
+    const request = mockRequest();
+    client.hello = hello(["chat.history"]);
+
+    await expect(client.listTaskSuggestions()).resolves.toEqual([]);
+    expect(request).not.toHaveBeenCalled();
+  });
+});
+
+describe("GatewayChatClient session description", () => {
+  it("refreshes an exact session behind more than five newer prefix and label matches", async () => {
+    const sessionKey = "agent:work:notes";
+    const selected = { key: sessionKey, sessionId: "selected-session", model: "selected-model" };
+    const rows: TuiSessionList["sessions"] = [
+      ...Array.from({ length: 3 }, (_, index) => ({
+        key: `${sessionKey}-${index}`,
+        sessionId: `prefix-${index}`,
+      })),
+      ...Array.from({ length: 3 }, (_, index) => ({
+        key: `agent:work:other-${index}`,
+        label: `${sessionKey} label ${index}`,
+        sessionId: `label-${index}`,
+      })),
+      selected,
+    ];
+    const defaults = { model: "default-model", modelProvider: "openai", contextTokens: 16000 };
+    mockSessions(rows, defaults);
+    const state = createBaseState({ currentSessionKey: sessionKey, currentAgentId: "work" });
+    const { refreshSessionInfo } = createTestSessionActions({ client: createClient(), state });
+    await refreshSessionInfo();
+    expect(state).toMatchObject({
+      currentSessionId: "selected-session",
+      sessionInfo: { model: "selected-model", modelProvider: "openai", contextTokens: 16000 },
+    });
+  });
+
+  it("excludes phantom sessions from exact metadata reads", async () => {
+    const session = { key: "agent:work:sessions", sessionId: " " };
+    const defaults = { model: "work-default" };
+    const request = mockSessions([session], defaults);
+    await expect(createClient().describeSession({ sessionKey: session.key })).resolves.toEqual({
+      session: null,
+      defaults,
+    });
+    expectRequests(
+      request,
+      ["sessions.describe", { key: session.key }, { signal: expect.any(AbortSignal) }],
+      ["sessions.list", { agentId: "work", limit: 1 }, { signal: expect.any(AbortSignal) }],
+    );
+  });
+});
+
+const metadataSessionKey = "agent:work:notes";
+function metadataDescription(prefix: string, contextTokens: number): TuiSessionDescription {
+  return {
+    session: {
+      key: metadataSessionKey,
+      sessionId: `${prefix}-session`,
+      model: `${prefix}-session-model`,
+    },
+    defaults: { model: `${prefix}-default-model`, contextTokens },
+  };
+}
+const oldDescription = metadataDescription("old", 8192);
+const currentDescription = metadataDescription("current", 32768);
+const oldListing = makeTuiSessionList({ defaults: oldDescription.defaults });
+const currentListing = makeTuiSessionList({ defaults: currentDescription.defaults });
+
+function metadataHello(connId: string): HelloOk {
+  return {
+    ...hello(
+      ["chat.history", "sessions.describe", "sessions.list"],
+      ["operator.read", "operator.write"],
+      [],
+    ),
+    protocol: 4,
+    server: { version: "2026.9.4", connId },
+  };
+}
+
+describe("GatewayChatClient session description lifetime", () => {
+  it("stops a disconnected metadata retry without dispatching on a later connection", async () => {
+    const entered = createDeferred();
+    const held = createDeferred<unknown>();
+    const request = vi.fn(async (method: string) => {
+      if (method === "sessions.describe") {
+        entered.resolve();
+        return held.promise;
+      }
+      return oldListing;
+    });
+    await withGatewayChatConnection(request, async (client, callbacks) => {
+      callbacks.onHelloOk?.(metadataHello("old"));
+      const description = client.describeSession({ sessionKey: metadataSessionKey });
+      const rejected = expect(description).rejects.toMatchObject({ name: "AbortError" });
+      await entered.promise;
+      callbacks.onClose?.(1001, "reconnecting");
+      held.resolve({ session: oldDescription.session });
+      await new Promise<void>((resolve) => {
+        setImmediate(resolve);
+      });
+      await client.stop();
+      await rejected;
+      const completedCalls = request.mock.calls.length;
+      callbacks.onHelloOk?.(metadataHello("late"));
+      expect(request).toHaveBeenCalledTimes(completedCalls);
+      await expect(
+        client.describeSession({ sessionKey: metadataSessionKey }),
+      ).rejects.toMatchObject({
+        name: "AbortError",
+      });
+      expect(request).toHaveBeenCalledTimes(completedCalls);
+    });
+  });
+
+  it.each([
+    { heldMethod: "sessions.describe", reconnect: true, failure: true },
+    { heldMethod: "sessions.list", reconnect: true, failure: false },
+    { heldMethod: "sessions.list", reconnect: false, failure: true },
+  ])(
+    "settles $heldMethod metadata (reconnect=$reconnect, failure=$failure)",
+    async ({ heldMethod, reconnect, failure }) => {
+      const entered = createDeferred();
+      const held = createDeferred<unknown>();
+      const error = new Error("Metadata request failed");
+      let current = !reconnect;
+      const response = (method: string) =>
+        method === "sessions.describe"
+          ? { session: (current ? currentDescription : oldDescription).session }
+          : current
+            ? currentListing
+            : oldListing;
+      const request = vi.fn(async (method: string, params?: unknown) => {
+        if (method === "sessions.describe" && validateSessionsDescribeParams(params)) {
+          expect(params).toEqual({ key: metadataSessionKey, agentId: "work" });
+        } else if (method === "sessions.list" && validateSessionsListParams(params)) {
+          expect(params).toEqual({ agentId: "work", limit: 1 });
+        } else {
+          throw new Error(`Unexpected metadata request: ${method}`);
+        }
+        if (method === heldMethod && (!reconnect || !current)) {
+          entered.resolve();
+          return held.promise;
+        }
+        return response(method);
+      });
+      await withGatewayChatConnection(request, async (client, callbacks) => {
+        callbacks.onHelloOk?.(metadataHello(current ? "current" : "old"));
+        const description = client.describeSession({
+          sessionKey: metadataSessionKey,
+          agentId: "work",
+        });
+        const settled = reconnect
+          ? expect(description).resolves.toEqual(currentDescription)
+          : expect(description).rejects.toBe(error);
+        await entered.promise;
+        const oldResponse = response(heldMethod);
+        if (reconnect) {
+          callbacks.onClose?.(1001, "reconnecting");
+          current = true;
+          callbacks.onHelloOk?.(metadataHello("current"));
+        }
+        if (failure) {
+          held.reject(error);
+        } else {
+          held.resolve(oldResponse);
+        }
+        await settled;
+        if (!reconnect) {
+          expect(request.mock.calls.filter(([method]) => method === heldMethod)).toHaveLength(1);
+        }
+      });
+    },
+  );
+});
+
+describe("GatewayChatClient streaming", () => {
+  it("continues a background stream after session selection and a lagging history response", async () => {
+    const selectedKey = "agent:main:b";
+    const history = createDeferred<unknown>();
+    const request = vi.fn(async (method: string) => {
+      if (method !== "chat.history") {
+        throw new Error(`Unexpected request: ${method}`);
+      }
+      return history.promise;
+    });
+    await withGatewayChatConnection(request, async (client, callbacks) => {
+      const state = makeTuiState({ currentSessionKey: "agent:main:a", currentSessionId: "a" });
+      const chatLog = new ChatLog();
+      const tui = makeTui();
+      const btw = { clear: vi.fn(), showResult: vi.fn() };
+      const setActivityStatus = (activity: string) => {
+        state.activityStatus = activity;
+      };
+      const view = { state, chatLog, btw, tui, setActivityStatus };
+      let loadHistory: () => Promise<TuiHistoryLoadResult> = async () => ({ loaded: false });
+      const handlers = createEventHandlers({
+        ...view,
+        updateFooter: vi.fn(),
+        loadHistory: () => loadHistory(),
+        streamingWatchdogMs: 0,
+      });
+      const actions = createTestSessionActions({
+        client,
+        ...view,
+        invalidateRunOwnership: handlers.dispose,
+      });
+      loadHistory = actions.loadHistory;
+      client.onEvent = (event) => {
+        if (event.event === "chat") {
+          handlers.handleChatEvent(event.payload);
+        }
+      };
+      const emit = (payload: ChatEvent) =>
+        callbacks.onEvent?.({ type: "event", event: "chat", payload });
+      const delta = { sessionKey: selectedKey, runId: "run-b", state: "delta" as const };
+      const render = () => normalizeTestText(chatLog.render(120).join("\n"));
+      try {
+        emit({
+          ...delta,
+          seq: 1,
+          deltaText: "Hello",
+          message: { role: "assistant", content: "Hello" },
+        });
+        expect(render()).not.toContain("Hello");
+
+        const selecting = actions.setSession(selectedKey);
+        expect(request).toHaveBeenCalledWith("chat.history", {
+          sessionKey: selectedKey,
+          limit: 200,
+        });
+        emit({ ...delta, seq: 2, deltaText: " world" });
+        history.resolve({
+          messages: [],
+          sessionInfo: { key: selectedKey, sessionId: "b", activeRunIds: ["run-b"] },
+          inFlightRun: { runId: "run-b", text: "Hello" },
+        });
+        await selecting;
+        expect(state.activeChatRunId).toBe("run-b");
+        expect(render()).toContain("Hello");
+        emit({ ...delta, seq: 3, deltaText: "!" });
+        expect(render()).toContain("Hello world!");
+
+        emit({ ...delta, seq: 4, deltaText: "", replace: true });
+        expect(render()).not.toContain("Hello");
+        emit({ ...delta, seq: 5, deltaText: "Rewritten" });
+        expect(render()).toContain("Rewritten");
+      } finally {
+        handlers.dispose();
+        chatLog.dispose();
+      }
+    });
+  });
+
+  it.each(["disconnect", "stop"] as const)("retires wire baselines on %s", async (boundary) => {
+    await withGatewayChatConnection(
+      async () => ({}),
+      async (client, callbacks) => {
+        const received: TuiEvent[] = [];
+        client.onEvent = (event) => received.push(event);
+        const delta = { sessionKey: "agent:main:b", runId: "run-b", state: "delta" };
+        const emit = (payload: unknown) =>
+          callbacks.onEvent?.({ type: "event", event: "chat", payload });
+        emit({ ...delta, message: { role: "assistant", content: "Retired" } });
+        if (boundary === "disconnect") {
+          callbacks.onClose?.(1006, "reconnecting");
+        } else {
+          await client.stop();
+        }
+        emit({ ...delta, deltaText: " suffix" });
+        expect(received.at(-1)?.payload).toEqual({
+          ...delta,
+          deltaText: " suffix",
+          message: undefined,
+        });
       },
     );
   });

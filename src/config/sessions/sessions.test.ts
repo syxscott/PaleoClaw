@@ -1,129 +1,253 @@
 import fs from "node:fs";
-import fsPromises from "node:fs/promises";
-import os from "node:os";
 import path from "node:path";
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import * as jsonFiles from "../../infra/json-files.js";
-import {
-  clearSessionStoreCacheForTest,
-  loadSessionStore,
-  mergeSessionEntry,
-  resolveAndPersistSessionFile,
-  updateSessionStore,
-} from "../sessions.js";
+import { describe, expect, it } from "vitest";
+import { normalizePersistedSessionEntryShape } from "../../commands/doctor/shared/session-entry-shape.js";
+import { withTempDirSync } from "../../test-helpers/temp-dir.js";
+import { withMockedPlatform } from "../../test-utils/vitest-spies.js";
 import type { SessionConfig } from "../types.base.js";
+import { parseSqliteSessionFileMarker } from "./legacy-sqlite-marker.js";
+import { resolveSessionWorkStartError } from "./lifecycle.js";
 import {
-  resolveSessionFilePath,
+  resolveSessionFilePathCore,
   resolveSessionFilePathOptions,
   resolveSessionTranscriptPathInDir,
   validateSessionId,
 } from "./paths.js";
-import { resolveSessionResetPolicy } from "./reset.js";
-import { appendAssistantMessageToSessionTranscript } from "./transcript.js";
-import type { SessionEntry } from "./types.js";
+import { evaluateSessionFreshness, resolveSessionResetPolicy } from "./reset.js";
+import { mergeRestartRecoveryTerminalRunIds } from "./restart-recovery-state.js";
 
-function useTempSessionsFixture(prefix: string) {
-  let tempDir = "";
-  let storePath = "";
-  let sessionsDir = "";
+it.each([
+  ["linux", "legacy:session", "/state/agents/main/agent/paleoclaw-agent.sqlite"],
+  ["linux", "legacy:x", "/state/paleoclaw-agent.sqlite"],
+  ["win32", "legacy:x", "C:\\state\\paleoclaw-agent.sqlite"],
+  ["win32", "legacy:x", "C:/state/paleoclaw-agent.sqlite"],
+  ["win32", "legacy:x", "\\\\server\\state\\paleoclaw-agent.sqlite"],
+  ["linux", "session", "/state/archive:part/paleoclaw-agent.sqlite"],
+  ["linux", "session", "relative/sessions.json"],
+  ["win32", "session", "relative\\sessions.json"],
+] as const)(
+  "preserves the %s transcript ID %s and store path %s in legacy markers",
+  (platform, sessionId, storePath) => {
+    expect(
+      withMockedPlatform(platform, () =>
+        parseSqliteSessionFileMarker(`sqlite:main:${sessionId}:${storePath}`),
+      ),
+    ).toEqual({ agentId: "main", sessionId, storePath });
+  },
+);
 
-  beforeEach(() => {
-    tempDir = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
-    sessionsDir = path.join(tempDir, "agents", "main", "sessions");
-    fs.mkdirSync(sessionsDir, { recursive: true });
-    storePath = path.join(sessionsDir, "sessions.json");
-  });
+it("merges bounded restart tombstones without evicting fresh-only ids", () => {
+  const existing = Array.from({ length: 64 }, (_, index) => `run-${index}`);
+  expect(mergeRestartRecoveryTerminalRunIds(existing, [...existing.slice(1), "run-new"])).toEqual([
+    ...existing.slice(1),
+    "run-new",
+  ]);
+  expect(mergeRestartRecoveryTerminalRunIds(existing, ["run-0"])).toEqual(existing);
+});
 
-  afterEach(() => {
-    fs.rmSync(tempDir, { recursive: true, force: true });
-  });
+type EntryFields = Record<string, unknown>;
+type NormalizationCase = [
+  name: string,
+  input: EntryFields,
+  expected?: EntryFields,
+  absent?: string[],
+  sessionKey?: string,
+];
+const repairBacklog = [
+  { id: "repair-1", text: "first", provider: "openai", model: "gpt-5.5", createdAt: 42 },
+  { id: "repair-2", text: "second", createdAt: 43 },
+];
+const deliveries = ["prepared", "delivered"].map((state) => ({ id: state, state }));
+const archived = { archivedAt: 41, archiveReason: "active-session-cap" };
+const actor = { type: "human", id: "operator" };
+const childKey = "agent:child:main";
+const pluginExtensions = { wordboard: { draftId: "draft-1" } };
+const snoozed = { snoozedUntil: Number.MAX_SAFE_INTEGER, snoozedAt: 41 };
+const session = (input: EntryFields) => ({ sessionId: "session-1", updatedAt: 42, ...input });
+const pendingDelivery = {
+  kind: "replayable",
+  text: "reply",
+  createdAt: 41,
+  intentId: "intent-1",
+  deliveries: [...deliveries, { id: "", state: "queued" }, { id: "invalid", state: "invalid" }],
+};
 
-  return {
-    storePath: () => storePath,
-    sessionsDir: () => sessionsDir,
-  };
-}
+it.each<NormalizationCase>([
+  ["noncanonical ID", { sessionId: "legacy:session", pluginExtensions: { memory: {} } }],
+  [
+    "retired conversation link",
+    { conversationLink: { url: "https://example.test" }, pluginExtensions },
+    session({ pluginExtensions: structuredClone(pluginExtensions) }),
+    ["conversationLink"],
+  ],
+  ["known archive reason", archived, { archiveReason: "active-session-cap" }],
+  [
+    "orphan archive metadata",
+    { archivedBy: actor, archiveReason: "active-session-cap" },
+    { updatedAt: 42 },
+    ["archivedBy", "archiveReason"],
+  ],
+  [
+    "unknown archive reason preserves actor",
+    { ...archived, archivedBy: actor, archiveReason: "unknown" },
+    { archivedBy: structuredClone(actor) },
+  ],
+  ...[undefined, Number.NaN, 0].map((snoozedUntil): NormalizationCase => [
+    `invalid snooze ${String(snoozedUntil)}`,
+    { snoozedUntil, snoozedAt: 41 },
+    { updatedAt: 42 },
+    ["snoozedUntil", "snoozedAt"],
+  ]),
+  ["archived snooze", { ...archived, ...snoozed }, archived, ["snoozedUntil", "snoozedAt"]],
+  [
+    "shipped pending key-as-ID",
+    { sessionId: childKey },
+    { initializationPending: true, updatedAt: 42 },
+    ["sessionId"],
+    childKey,
+  ],
+  [
+    "locked key-as-ID",
+    { sessionId: childKey, modelSelectionLocked: true },
+    undefined,
+    undefined,
+    childKey,
+  ],
+  [
+    "boolean pending delivery",
+    { pendingFinalDelivery: true },
+    { pendingFinalDelivery: { kind: "transport-only", createdAt: 42 } },
+  ],
+  [
+    "pending delivery owners",
+    { pendingFinalDelivery: structuredClone(pendingDelivery) },
+    { pendingFinalDelivery: { intentId: "intent-1", deliveries } },
+  ],
+  [
+    "transcript repair backlog",
+    { pendingTranscriptRepair: structuredClone(repairBacklog) },
+    { pendingTranscriptRepair: repairBacklog },
+  ],
+  ...[{ id: "repair-1", text: "first", createdAt: 42 }, [{ kind: "transport-only" }]].map(
+    (pendingTranscriptRepair): NormalizationCase => [
+      `invalid repair backlog ${JSON.stringify(pendingTranscriptRepair)}`,
+      { pendingTranscriptRepair },
+      { updatedAt: 42 },
+      ["pendingTranscriptRepair"],
+    ],
+  ),
+])("normalization: %s", (_name, input, expected, absent, sessionKey) => {
+  const entry = normalizePersistedSessionEntryShape(session(input), { sessionKey });
+  if (expected === undefined) {
+    expect(entry).toBeUndefined();
+  } else {
+    expect(entry).toMatchObject(expected);
+    for (const property of absent ?? []) {
+      expect(entry).not.toHaveProperty(property);
+    }
+  }
+});
+
+it("retains valid snooze metadata without turning it into a work-admission barrier", () => {
+  const entry = normalizePersistedSessionEntryShape(session(snoozed));
+  expect(entry).toMatchObject(snoozed);
+  expect(resolveSessionWorkStartError("agent:main:snoozed", entry)).toBeUndefined();
+});
 
 describe("session path safety", () => {
-  it("rejects unsafe session IDs", () => {
-    const unsafeSessionIds = ["../etc/passwd", "a/b", "a\\b", "/abs"];
-    for (const sessionId of unsafeSessionIds) {
+  const defaultSessionsDir = "/tmp/paleoclaw/agents/main/sessions";
+  it("preserves path-safe Unicode session IDs", () => {
+    for (const sessionId of ["volume-main-会議-000000", "volume-main-हिन्दी-000001"]) {
+      expect(validateSessionId(sessionId)).toBe(sessionId);
+      expect(normalizePersistedSessionEntryShape(session({ sessionId }))).toMatchObject(
+        session({ sessionId }),
+      );
+      expect(resolveSessionTranscriptPathInDir(sessionId, defaultSessionsDir)).toBe(
+        path.resolve(defaultSessionsDir, `${sessionId}.jsonl`),
+      );
+    }
+  });
+
+  it("rejects unsafe and noncanonical session IDs", () => {
+    for (const sessionId of [
+      "session-Å",
+      "session-A\u030A",
+      "session-e\u0301",
+      "../etc/passwd",
+      "a/b",
+      "a\\b",
+      "/abs",
+      "session:legacy",
+      "session-🙂",
+      "sess.checkpoint.11111111-1111-4111-8111-111111111111",
+      `session-${"会".repeat(82)}`,
+    ]) {
       expect(() => validateSessionId(sessionId), sessionId).toThrow(/Invalid session ID/);
+      expect(normalizePersistedSessionEntryShape(session({ sessionId }))).toBeUndefined();
     }
   });
 
   it("resolves transcript path inside an explicit sessions dir", () => {
-    const sessionsDir = "/tmp/paleoclaw/agents/main/sessions";
-    const resolved = resolveSessionTranscriptPathInDir("sess-1", sessionsDir, "topic/a+b");
+    expect(resolveSessionTranscriptPathInDir("sess-1", defaultSessionsDir, "topic/a+b")).toBe(
+      path.resolve(defaultSessionsDir, "sess-1-topic-topic%2Fa%2Bb.jsonl"),
+    );
+  });
 
-    expect(resolved).toBe(path.resolve(sessionsDir, "sess-1-topic-topic%2Fa%2Bb.jsonl"));
+  it("rejects topic-qualified transcript filenames over 255 bytes", () => {
+    const sessionId = "会".repeat(82);
+    expect(validateSessionId(sessionId)).toBe(sessionId);
+    expect(() => resolveSessionTranscriptPathInDir(sessionId, "/tmp/sessions", 1)).toThrow(
+      /Invalid session transcript filename/,
+    );
   });
 
   it("falls back to derived path when sessionFile is outside known agent sessions dirs", () => {
-    const sessionsDir = "/tmp/paleoclaw/agents/main/sessions";
-
-    const resolved = resolveSessionFilePath(
+    const resolved = resolveSessionFilePathCore(
       "sess-1",
       { sessionFile: "/tmp/paleoclaw/agents/work/not-sessions/abc-123.jsonl" },
-      { sessionsDir },
+      { sessionsDir: defaultSessionsDir },
     );
-    expect(resolved).toBe(path.resolve(sessionsDir, "sess-1.jsonl"));
+    expect(resolved).toBe(path.resolve(defaultSessionsDir, "sess-1.jsonl"));
   });
 
   it("ignores multi-store sentinel paths when deriving session file options", () => {
-    expect(resolveSessionFilePathOptions({ agentId: "worker", storePath: "(multiple)" })).toEqual({
-      agentId: "worker",
-    });
-    expect(resolveSessionFilePathOptions({ storePath: "(multiple)" })).toBeUndefined();
+    for (const agentId of ["worker", undefined]) {
+      expect(resolveSessionFilePathOptions({ agentId, storePath: "(multiple)" })).toEqual(
+        agentId ? { agentId } : undefined,
+      );
+    }
   });
 
-  it("accepts symlink-alias session paths that resolve under the sessions dir", () => {
+  it.each([false, true])("contains symlink session paths (escape=%s)", (escape) => {
     if (process.platform === "win32") {
       return;
     }
-    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "paleoclaw-symlink-session-"));
-    const realRoot = path.join(tmpDir, "real-state");
-    const aliasRoot = path.join(tmpDir, "alias-state");
-    try {
+    withTempDirSync({ prefix: "paleoclaw-symlink-session-" }, (tmpDir) => {
+      const realRoot = path.join(tmpDir, "real-state");
       const sessionsDir = path.join(realRoot, "agents", "main", "sessions");
+      const expected = path.join(sessionsDir, "sess-1.jsonl");
       fs.mkdirSync(sessionsDir, { recursive: true });
-      fs.symlinkSync(realRoot, aliasRoot, "dir");
-      const viaAlias = path.join(aliasRoot, "agents", "main", "sessions", "sess-1.jsonl");
-      fs.writeFileSync(path.join(sessionsDir, "sess-1.jsonl"), "");
-      const resolved = resolveSessionFilePath("sess-1", { sessionFile: viaAlias }, { sessionsDir });
-      expect(fs.realpathSync(resolved)).toBe(
-        fs.realpathSync(path.join(sessionsDir, "sess-1.jsonl")),
-      );
-    } finally {
-      fs.rmSync(tmpDir, { recursive: true, force: true });
-    }
-  });
-
-  it("falls back when sessionFile is a symlink that escapes sessions dir", () => {
-    if (process.platform === "win32") {
-      return;
-    }
-    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "paleoclaw-symlink-escape-"));
-    const sessionsDir = path.join(tmpDir, "agents", "main", "sessions");
-    const outsideDir = path.join(tmpDir, "outside");
-    try {
-      fs.mkdirSync(sessionsDir, { recursive: true });
-      fs.mkdirSync(outsideDir, { recursive: true });
-      const outsideFile = path.join(outsideDir, "escaped.jsonl");
-      fs.writeFileSync(outsideFile, "");
-      const symlinkPath = path.join(sessionsDir, "escaped.jsonl");
-      fs.symlinkSync(outsideFile, symlinkPath, "file");
-
-      const resolved = resolveSessionFilePath(
-        "sess-1",
-        { sessionFile: symlinkPath },
-        { sessionsDir },
-      );
+      let sessionFile: string;
+      if (escape) {
+        const outsideDir = path.join(tmpDir, "outside");
+        fs.mkdirSync(outsideDir);
+        const outsideFile = path.join(outsideDir, "escaped.jsonl");
+        fs.writeFileSync(outsideFile, "");
+        sessionFile = path.join(sessionsDir, "escaped.jsonl");
+        fs.symlinkSync(outsideFile, sessionFile, "file");
+      } else {
+        const aliasRoot = path.join(tmpDir, "alias-state");
+        fs.symlinkSync(realRoot, aliasRoot, "dir");
+        sessionFile = path.join(aliasRoot, "agents", "main", "sessions", "sess-1.jsonl");
+        fs.writeFileSync(expected, "");
+      }
+      const resolved = resolveSessionFilePathCore("sess-1", { sessionFile }, { sessionsDir });
       expect(fs.realpathSync(path.dirname(resolved))).toBe(fs.realpathSync(sessionsDir));
       expect(path.basename(resolved)).toBe("sess-1.jsonl");
-    } finally {
-      fs.rmSync(tmpDir, { recursive: true, force: true });
-    }
+      if (!escape) {
+        expect(fs.realpathSync(resolved)).toBe(fs.realpathSync(expected));
+      }
+    });
   });
 });
 
@@ -141,244 +265,91 @@ describe("resolveSessionResetPolicy", () => {
         resetType: "group",
       });
 
-      expect(groupPolicy.mode).toBe("daily");
+      expect(groupPolicy.mode).toBe("none");
     });
   });
-});
 
-describe("session store lock (Promise chain mutex)", () => {
-  let lockFixtureRoot = "";
-  let lockCaseId = 0;
-  let lockTmpDirs: string[] = [];
+  it("defaults to no automatic reset", () => {
+    const policy = resolveSessionResetPolicy({
+      resetType: "direct",
+    });
 
-  async function makeTmpStore(
-    initial: Record<string, unknown> = {},
-  ): Promise<{ dir: string; storePath: string }> {
-    const dir = path.join(lockFixtureRoot, `case-${lockCaseId++}`);
-    await fsPromises.mkdir(dir);
-    lockTmpDirs.push(dir);
-    const storePath = path.join(dir, "sessions.json");
-    if (Object.keys(initial).length > 0) {
-      await fsPromises.writeFile(storePath, JSON.stringify(initial, null, 2), "utf-8");
-    }
-    return { dir, storePath };
+    expect(policy.mode).toBe("none");
+    expect(policy.atHour).toBe(4);
+  });
+
+  const dailyNow = new Date(2026, 3, 25, 12).getTime();
+  const idleNow = 60 * 60_000;
+  type Input = Parameters<typeof evaluateSessionFreshness>[0];
+  function input(
+    mode: "daily" | "idle",
+    timestamps: Partial<Input> = {},
+    idleMinutes?: number,
+  ): Input {
+    const now = mode === "daily" ? dailyNow : idleNow;
+    return {
+      updatedAt: now,
+      now,
+      policy: { mode, atHour: 4, idleMinutes },
+      ...timestamps,
+    };
   }
-
-  beforeAll(async () => {
-    lockFixtureRoot = await fsPromises.mkdtemp(path.join(os.tmpdir(), "paleoclaw-lock-test-"));
-  });
-
-  afterAll(async () => {
-    if (lockFixtureRoot) {
-      await fsPromises.rm(lockFixtureRoot, { recursive: true, force: true }).catch(() => undefined);
-    }
-  });
-
-  afterEach(async () => {
-    clearSessionStoreCacheForTest();
-    lockTmpDirs = [];
-  });
-
-  it("serializes concurrent updateSessionStore calls without data loss", async () => {
-    const key = "agent:main:test";
-    const { storePath } = await makeTmpStore({
-      [key]: { sessionId: "s1", updatedAt: 100, counter: 0 },
-    });
-
-    const N = 4;
-    await Promise.all(
-      Array.from({ length: N }, (_, i) =>
-        updateSessionStore(storePath, async (store) => {
-          const entry = store[key] as Record<string, unknown>;
-          await Promise.resolve();
-          entry.counter = (entry.counter as number) + 1;
-          entry.tag = `writer-${i}`;
-        }),
-      ),
-    );
-
-    const store = loadSessionStore(storePath);
-    expect((store[key] as Record<string, unknown>).counter).toBe(N);
-  });
-
-  it("skips session store disk writes when payload is unchanged", async () => {
-    const key = "agent:main:no-op-save";
-    const { storePath } = await makeTmpStore({
-      [key]: { sessionId: "s-noop", updatedAt: Date.now() },
-    });
-
-    const writeSpy = vi.spyOn(jsonFiles, "writeTextAtomic");
-    await updateSessionStore(
-      storePath,
-      async () => {
-        // Intentionally no-op mutation.
-      },
-      { skipMaintenance: true },
-    );
-    expect(writeSpy).not.toHaveBeenCalled();
-    writeSpy.mockRestore();
-  });
-
-  it("multiple consecutive errors do not permanently poison the queue", async () => {
-    const key = "agent:main:multi-err";
-    const { storePath } = await makeTmpStore({
-      [key]: { sessionId: "s1", updatedAt: 100 },
-    });
-
-    const errors = Array.from({ length: 3 }, (_, i) =>
-      updateSessionStore(storePath, async () => {
-        throw new Error(`fail-${i}`);
-      }),
-    );
-
-    const success = updateSessionStore(storePath, async (store) => {
-      store[key] = { ...store[key], modelOverride: "recovered" } as unknown as SessionEntry;
-    });
-
-    for (const p of errors) {
-      await expect(p).rejects.toThrow();
-    }
-    await success;
-
-    const store = loadSessionStore(storePath);
-    expect(store[key]?.modelOverride).toBe("recovered");
-  });
-
-  it("clears stale runtime provider when model is patched without provider", () => {
-    const merged = mergeSessionEntry(
-      {
-        sessionId: "sess-runtime",
-        updatedAt: 100,
-        modelProvider: "anthropic",
-        model: "claude-opus-4-6",
-      },
-      {
-        model: "gpt-5.2",
-      },
-    );
-    expect(merged.model).toBe("gpt-5.2");
-    expect(merged.modelProvider).toBeUndefined();
-  });
-
-  it("normalizes orphan modelProvider fields at store write boundary", async () => {
-    const key = "agent:main:orphan-provider";
-    const { storePath } = await makeTmpStore({
-      [key]: {
-        sessionId: "sess-orphan",
-        updatedAt: 100,
-        modelProvider: "anthropic",
-      },
-    });
-
-    await updateSessionStore(storePath, async (store) => {
-      const entry = store[key];
-      entry.updatedAt = Date.now();
-    });
-
-    const store = loadSessionStore(storePath);
-    expect(store[key]?.modelProvider).toBeUndefined();
-    expect(store[key]?.model).toBeUndefined();
-  });
-});
-
-describe("appendAssistantMessageToSessionTranscript", () => {
-  const fixture = useTempSessionsFixture("transcript-test-");
-
-  it("creates transcript file and appends message for valid session", async () => {
-    const sessionId = "test-session-id";
-    const sessionKey = "test-session";
-    const store = {
-      [sessionKey]: {
-        sessionId,
-        chatType: "direct",
-        channel: "discord",
-      },
-    };
-    fs.writeFileSync(fixture.storePath(), JSON.stringify(store), "utf-8");
-
-    const result = await appendAssistantMessageToSessionTranscript({
-      sessionKey,
-      text: "Hello from delivery mirror!",
-      storePath: fixture.storePath(),
-    });
-
-    expect(result.ok).toBe(true);
-    if (result.ok) {
-      expect(fs.existsSync(result.sessionFile)).toBe(true);
-      const sessionFileMode = fs.statSync(result.sessionFile).mode & 0o777;
-      if (process.platform !== "win32") {
-        expect(sessionFileMode).toBe(0o600);
-      }
-
-      const lines = fs.readFileSync(result.sessionFile, "utf-8").trim().split("\n");
-      expect(lines.length).toBe(2);
-
-      const header = JSON.parse(lines[0]);
-      expect(header.type).toBe("session");
-      expect(header.id).toBe(sessionId);
-
-      const messageLine = JSON.parse(lines[1]);
-      expect(messageLine.type).toBe("message");
-      expect(messageLine.message.role).toBe("assistant");
-      expect(messageLine.message.content[0].type).toBe("text");
-      expect(messageLine.message.content[0].text).toBe("Hello from delivery mirror!");
+  const combined = {
+    sessionStartedAt: new Date(2026, 3, 24, 23).getTime(),
+    lastInteractionAt: new Date(2026, 3, 25, 11).getTime(),
+  };
+  const futureOffset = 30 * 24 * 60 * 60_000;
+  it.each`
+    name                          | request                                                              | expected
+    ${"zero idle timeout"}        | ${input("idle", { updatedAt: 1_000 }, 0)}                            | ${{ fresh: true, dailyResetAt: undefined, idleExpiresAt: undefined }}
+    ${"daily uses session start"} | ${input("daily", { sessionStartedAt: dailyNow - 25 * 60 * 60_000 })} | ${{ fresh: false, staleReason: "daily" }}
+    ${"idle uses interaction"}    | ${input("idle", { lastInteractionAt: 0 }, 5)}                        | ${{ fresh: false, idleExpiresAt: 5 * 60_000, staleReason: "idle" }}
+    ${"idle uses session start"}  | ${input("idle", { sessionStartedAt: 0 }, 5)}                         | ${{ fresh: false, idleExpiresAt: 5 * 60_000, staleReason: "idle" }}
+    ${"first combined deadline"}  | ${input("daily", combined, 30)}                                      | ${{ fresh: false, staleReason: "daily" }}
+    ${"future daily timestamp"}   | ${input("daily", { updatedAt: dailyNow + futureOffset })}            | ${{ fresh: false }}
+    ${"future idle timestamp"}    | ${input("idle", { updatedAt: idleNow + futureOffset }, 5)}           | ${{ fresh: false, idleExpiresAt: 5 * 60_000 }}
+  `("$name", ({ request, expected }) => {
+    const freshness = evaluateSessionFreshness(request);
+    if (expected.fresh) {
+      expect(freshness).toEqual(expected);
+    } else {
+      expect(freshness).toMatchObject(expected);
     }
   });
 });
 
-describe("resolveAndPersistSessionFile", () => {
-  const fixture = useTempSessionsFixture("session-file-test-");
+it("fails closed while trusted session initialization is pending", () => {
+  const entry = { sessionId: "pending-session" };
+  const key = "agent:main:pending";
+  expect(resolveSessionWorkStartError(key, { ...entry, initializationPending: true })).toContain(
+    "still initializing",
+  );
+  expect(resolveSessionWorkStartError(key, entry)).toBeUndefined();
+});
 
-  it("persists fallback topic transcript paths for sessions without sessionFile", async () => {
-    const sessionId = "topic-session-id";
-    const sessionKey = "agent:main:telegram:group:123:topic:456";
-    const store = {
-      [sessionKey]: {
-        sessionId,
-        updatedAt: Date.now(),
+it("keeps restart-recovery tombstones terminal when archive metadata is missing", () => {
+  const entry = {
+    sessionId: "failed-session",
+    mainRestartRecovery: {
+      cycleId: "cycle-1",
+      revision: 4,
+      chargedAttempts: 3,
+      tombstone: {
+        reason: "automatic recovery exhausted",
+        recoveredSessionId: "dashboard-successor",
+        recoveredSessionKey: "agent:main:dashboard:successor",
       },
-    };
-    fs.writeFileSync(fixture.storePath(), JSON.stringify(store), "utf-8");
-    const sessionStore = loadSessionStore(fixture.storePath(), { skipCache: true });
-    const fallbackSessionFile = resolveSessionTranscriptPathInDir(
-      sessionId,
-      fixture.sessionsDir(),
-      456,
-    );
+    },
+  };
 
-    const result = await resolveAndPersistSessionFile({
-      sessionId,
-      sessionKey,
-      sessionStore,
-      storePath: fixture.storePath(),
-      sessionEntry: sessionStore[sessionKey],
-      fallbackSessionFile,
-    });
-
-    expect(result.sessionFile).toBe(fallbackSessionFile);
-
-    const saved = loadSessionStore(fixture.storePath(), { skipCache: true });
-    expect(saved[sessionKey]?.sessionFile).toBe(fallbackSessionFile);
-  });
-
-  it("creates and persists entry when session is not yet present", async () => {
-    const sessionId = "new-session-id";
-    const sessionKey = "agent:main:telegram:group:123";
-    fs.writeFileSync(fixture.storePath(), JSON.stringify({}), "utf-8");
-    const sessionStore = loadSessionStore(fixture.storePath(), { skipCache: true });
-    const fallbackSessionFile = resolveSessionTranscriptPathInDir(sessionId, fixture.sessionsDir());
-
-    const result = await resolveAndPersistSessionFile({
-      sessionId,
-      sessionKey,
-      sessionStore,
-      storePath: fixture.storePath(),
-      fallbackSessionFile,
-    });
-
-    expect(result.sessionFile).toBe(fallbackSessionFile);
-    expect(result.sessionEntry.sessionId).toBe(sessionId);
-    const saved = loadSessionStore(fixture.storePath(), { skipCache: true });
-    expect(saved[sessionKey]?.sessionFile).toBe(fallbackSessionFile);
-  });
+  const key = "agent:main:matrix:channel:room-a";
+  expect([
+    resolveSessionWorkStartError(key, entry),
+    resolveSessionWorkStartError(key, { ...entry, modelSelectionLocked: true }),
+    resolveSessionWorkStartError(key, entry, { allowRestartTombstoneReplacement: true }),
+  ]).toEqual([
+    expect.stringContaining("ended during restart recovery"),
+    expect.stringContaining("Open it in WebChat and use Resume."),
+    undefined,
+  ]);
 });

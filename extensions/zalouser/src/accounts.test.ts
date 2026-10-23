@@ -1,23 +1,13 @@
-import { DEFAULT_ACCOUNT_ID } from "paleoclaw/plugin-sdk/account-id";
-import type { OpenClawConfig } from "paleoclaw/plugin-sdk/zalouser";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { OpenClawConfig } from "paleoclaw/plugin-sdk/config-contracts";
+// Zalouser tests cover accounts plugin behavior.
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
-  getZcaUserInfo,
-  listEnabledZalouserAccounts,
   listZalouserAccountIds,
   resolveDefaultZalouserAccountId,
-  resolveZalouserAccount,
   resolveZalouserAccountSync,
 } from "./accounts.js";
-import { checkZaloAuthenticated, getZaloUserInfo } from "./zalo-js.js";
-
-vi.mock("./zalo-js.js", () => ({
-  checkZaloAuthenticated: vi.fn(),
-  getZaloUserInfo: vi.fn(),
-}));
-
-const mockCheckAuthenticated = vi.mocked(checkZaloAuthenticated);
-const mockGetUserInfo = vi.mocked(getZaloUserInfo);
+const originalZalouserProfile = process.env.ZALOUSER_PROFILE;
+const originalZcaProfile = process.env.ZCA_PROFILE;
 
 function asConfig(value: unknown): OpenClawConfig {
   return value as OpenClawConfig;
@@ -25,77 +15,38 @@ function asConfig(value: unknown): OpenClawConfig {
 
 describe("zalouser account resolution", () => {
   beforeEach(() => {
-    mockCheckAuthenticated.mockReset();
-    mockGetUserInfo.mockReset();
     delete process.env.ZALOUSER_PROFILE;
     delete process.env.ZCA_PROFILE;
   });
 
-  it("returns default account id when no accounts are configured", () => {
-    expect(listZalouserAccountIds(asConfig({}))).toEqual([DEFAULT_ACCOUNT_ID]);
+  afterEach(() => {
+    if (originalZalouserProfile === undefined) {
+      delete process.env.ZALOUSER_PROFILE;
+    } else {
+      process.env.ZALOUSER_PROFILE = originalZalouserProfile;
+    }
+    if (originalZcaProfile === undefined) {
+      delete process.env.ZCA_PROFILE;
+    } else {
+      process.env.ZCA_PROFILE = originalZcaProfile;
+    }
   });
 
-  it("returns sorted configured account ids", () => {
+  it("preserves top-level default account when named accounts are configured", () => {
     const cfg = asConfig({
       channels: {
         zalouser: {
+          profile: "personal",
           accounts: {
-            work: {},
-            personal: {},
-            default: {},
+            work: { enabled: false },
           },
         },
       },
     });
 
-    expect(listZalouserAccountIds(cfg)).toEqual(["default", "personal", "work"]);
-  });
-
-  it("uses configured defaultAccount when present", () => {
-    const cfg = asConfig({
-      channels: {
-        zalouser: {
-          defaultAccount: "work",
-          accounts: {
-            default: {},
-            work: {},
-          },
-        },
-      },
-    });
-
-    expect(resolveDefaultZalouserAccountId(cfg)).toBe("work");
-  });
-
-  it("falls back to default account when configured defaultAccount is missing", () => {
-    const cfg = asConfig({
-      channels: {
-        zalouser: {
-          defaultAccount: "missing",
-          accounts: {
-            default: {},
-            work: {},
-          },
-        },
-      },
-    });
-
+    expect(listZalouserAccountIds(cfg)).toEqual(["default", "work"]);
     expect(resolveDefaultZalouserAccountId(cfg)).toBe("default");
-  });
-
-  it("falls back to first sorted configured account when default is absent", () => {
-    const cfg = asConfig({
-      channels: {
-        zalouser: {
-          accounts: {
-            zzz: {},
-            aaa: {},
-          },
-        },
-      },
-    });
-
-    expect(resolveDefaultZalouserAccountId(cfg)).toBe("aaa");
+    expect(resolveZalouserAccountSync({ cfg }).profile).toBe("personal");
   });
 
   it("resolves sync account by merging base + account config", () => {
@@ -122,6 +73,27 @@ describe("zalouser account resolution", () => {
     expect(resolved.name).toBe("Work");
     expect(resolved.config.dmPolicy).toBe("allowlist");
     expect(resolved.config.allowFrom).toEqual(["123"]);
+  });
+
+  it("uses configured defaultAccount when accountId is omitted", () => {
+    const cfg = asConfig({
+      channels: {
+        zalouser: {
+          defaultAccount: "work",
+          accounts: {
+            work: {
+              name: "Work",
+              profile: "work-profile",
+            },
+          },
+        },
+      },
+    });
+
+    const resolved = resolveZalouserAccountSync({ cfg });
+    expect(resolved.accountId).toBe("work");
+    expect(resolved.name).toBe("Work");
+    expect(resolved.profile).toBe("work-profile");
   });
 
   it("resolves profile precedence correctly", () => {
@@ -161,54 +133,5 @@ describe("zalouser account resolution", () => {
     });
 
     expect(resolveZalouserAccountSync({ cfg, accountId: "work" }).profile).toBe("explicit-profile");
-  });
-
-  it("checks authentication during async account resolution", async () => {
-    mockCheckAuthenticated.mockResolvedValueOnce(true);
-    const cfg = asConfig({
-      channels: {
-        zalouser: {
-          accounts: {
-            default: {},
-          },
-        },
-      },
-    });
-
-    const resolved = await resolveZalouserAccount({ cfg, accountId: "default" });
-    expect(mockCheckAuthenticated).toHaveBeenCalledWith("default");
-    expect(resolved.authenticated).toBe(true);
-  });
-
-  it("filters disabled accounts when listing enabled accounts", async () => {
-    mockCheckAuthenticated.mockResolvedValue(true);
-    const cfg = asConfig({
-      channels: {
-        zalouser: {
-          accounts: {
-            default: { enabled: true },
-            work: { enabled: false },
-          },
-        },
-      },
-    });
-
-    const accounts = await listEnabledZalouserAccounts(cfg);
-    expect(accounts.map((account) => account.accountId)).toEqual(["default"]);
-  });
-
-  it("maps account info helper from zalo-js", async () => {
-    mockGetUserInfo.mockResolvedValueOnce({
-      userId: "123",
-      displayName: "Alice",
-      avatar: "https://example.com/avatar.png",
-    });
-    expect(await getZcaUserInfo("default")).toEqual({
-      userId: "123",
-      displayName: "Alice",
-    });
-
-    mockGetUserInfo.mockResolvedValueOnce(null);
-    expect(await getZcaUserInfo("default")).toBeNull();
   });
 });

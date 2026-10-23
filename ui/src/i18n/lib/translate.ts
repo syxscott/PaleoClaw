@@ -1,150 +1,216 @@
-import { en } from "../locales/en.ts";
 import {
   DEFAULT_LOCALE,
+  RTL_LOCALES,
   SUPPORTED_LOCALES,
   isSupportedLocale,
-  loadLazyLocaleTranslation,
   resolveNavigatorLocale,
-} from "./registry.ts";
-import type { Locale, TranslationMap } from "./types.ts";
+  type Locale,
+} from "../../../../src/shared/control-ui-locale.ts";
+import { getOrCreatePromise } from "../../../../src/shared/lazy-promise.ts";
+import { getSafeLocalStorage } from "../../local-storage.ts";
+import { en } from "../locales/en.ts";
+import { getLazyLocaleCatalog } from "./locale-catalog.ts";
+import { loadLazyLocaleTranslation } from "./registry.ts";
+import type { TranslationMap } from "./types.ts";
+
+function lookupTranslation(map: TranslationMap | undefined, keys: readonly string[]): unknown {
+  let value: unknown = map;
+  for (const key of keys) {
+    if (!value || typeof value !== "object") {
+      return undefined;
+    }
+    value = Reflect.get(value, key);
+  }
+  return value;
+}
 
 type Subscriber = (locale: Locale) => void;
+type LocaleLoadRecovery = {
+  isUnrecoverableError: (error: unknown) => boolean;
+  onUnrecoverableLocaleLoad?: (locale: Locale) => void;
+};
+type LocaleTranslationLoader = (locale: Locale) => Promise<TranslationMap | null>;
 
 export { SUPPORTED_LOCALES, isSupportedLocale };
+
+function syncDocumentLocale(locale: Locale): void {
+  if (typeof document === "undefined") {
+    return;
+  }
+  document.documentElement.lang = locale;
+  document.documentElement.dir = RTL_LOCALES.includes(locale) ? "rtl" : "ltr";
+}
 
 class I18nManager {
   private locale: Locale = DEFAULT_LOCALE;
   private translations: Partial<Record<Locale, TranslationMap>> = { [DEFAULT_LOCALE]: en };
   private subscribers: Set<Subscriber> = new Set();
-  // Hardening (adapted from the 9.2 control UI): only the latest setLocale
-  // request may commit after its async chunk load, and a locale whose load
-  // failed stays "pending" so it can be retried instead of silently sticking
-  // to the previous language.
-  private localeRequestGeneration = 0;
+  // Locale chunks are served by the gateway, so a selection made while disconnected can fail.
+  // Preserve the target for the next connected transition; otherwise the chrome silently stays
+  // in the old language forever.
   private pendingLocale: Locale | null = null;
-  /** Set when a load failed; lets the next t() call retry exactly once. */
-  private pendingLocaleAutoRetryArmed = false;
+  private pendingLocaleShouldPersist = true;
+  // Only the latest selection may update retry state or become active after an async chunk load.
+  private localeRequestGeneration = 0;
+  // One chunk import per locale may be active. Settlement removes it so a
+  // disconnected/failed load remains retryable on the next connected transition.
+  private inFlightLocaleLoads = new Map<Locale, Promise<TranslationMap | null>>();
+  private localeLoadRecovery: LocaleLoadRecovery | undefined;
+  private observedNamespaceLoads = new WeakSet<Promise<void>>();
 
-  constructor() {
+  constructor(
+    private readonly loadLocaleTranslation: LocaleTranslationLoader = loadLazyLocaleTranslation,
+  ) {
     this.loadLocale();
   }
 
   private readStoredLocale(): string | null {
     try {
-      return localStorage.getItem("paleoclaw.i18n.locale");
+      return getSafeLocalStorage()?.getItem("openclaw.i18n.locale") ?? null;
     } catch {
-      // Storage can throw in private/blocked contexts.
       return null;
     }
   }
 
-  private persistLocale(locale: Locale) {
+  private persistLocale(locale: Locale | null) {
+    const storage = getSafeLocalStorage();
+    if (!storage) {
+      return;
+    }
     try {
-      localStorage.setItem("paleoclaw.i18n.locale", locale);
+      if (locale === null) {
+        storage.removeItem("openclaw.i18n.locale");
+      } else {
+        storage.setItem("openclaw.i18n.locale", locale);
+      }
     } catch {
-      // Ignore storage write failures; the in-memory locale still applies.
+      // Ignore storage write failures in private/blocked contexts.
     }
-  }
-
-  private resolveInitialLocale(): Locale {
-    const saved = this.readStoredLocale();
-    if (isSupportedLocale(saved)) {
-      return saved;
-    }
-    return resolveNavigatorLocale(navigator.language);
   }
 
   private loadLocale() {
-    const initialLocale = this.resolveInitialLocale();
-    if (initialLocale === DEFAULT_LOCALE) {
+    const saved = this.readStoredLocale();
+    const shouldPersist = isSupportedLocale(saved);
+    const locale = shouldPersist ? saved : this.getSystemLocale();
+    if (locale === DEFAULT_LOCALE) {
       this.locale = DEFAULT_LOCALE;
+      syncDocumentLocale(DEFAULT_LOCALE);
+      if (!shouldPersist) {
+        this.persistLocale(null);
+      }
       return;
     }
-    // Use the normal locale setter so startup locale loading follows the same
-    // translation-loading + notify path as manual locale changes.
-    void this.setLocale(initialLocale);
+    void this.applyLocale(locale, false, shouldPersist);
   }
 
   public getLocale(): Locale {
     return this.locale;
   }
 
-  public async setLocale(locale: Locale) {
-    await this.requestLocale(locale);
+  public getRequestedLocale(): Locale {
+    return this.pendingLocale ?? this.locale;
   }
 
-  /**
-   * Single locale-load pipeline. `fromRetry` marks requests issued by
-   * retryPendingLocale (t()-driven or reconnect hook): a retry that fails
-   * again must NOT re-arm the auto-retry, or every t() call would fire a new
-   * locale import() forever.
-   */
-  private async requestLocale(locale: Locale, opts?: { fromRetry?: boolean }) {
-    const fromRetry = opts?.fromRetry === true;
+  public async prepareLocale(): Promise<void> {
+    let locale;
+    do {
+      locale = this.locale;
+      await this.prepareCatalog(locale);
+    } while (locale !== this.locale);
+  }
+
+  private prepareCatalog(locale: Locale): Promise<void> | undefined {
+    return getLazyLocaleCatalog(this.translations[locale]!)?.prepare(
+      this.translations[DEFAULT_LOCALE]!,
+    );
+  }
+
+  public getSystemLocale(): Locale {
+    const language =
+      typeof globalThis.navigator?.language === "string" ? globalThis.navigator.language : null;
+    return resolveNavigatorLocale(language ?? "");
+  }
+
+  public async setLocale(locale: Locale) {
+    return this.applyLocale(locale, false, true);
+  }
+
+  public async useSystemLocale() {
+    return this.applyLocale(this.getSystemLocale(), false, false);
+  }
+
+  private async applyLocale(locale: Locale, retrying: boolean, shouldPersist: boolean) {
     const requestGeneration = ++this.localeRequestGeneration;
     const needsTranslationLoad = locale !== DEFAULT_LOCALE && !this.translations[locale];
+    if (!shouldPersist) {
+      // System mode is an unset preference. Clear it before any async chunk
+      // load so a failed load cannot resurrect the previous explicit locale.
+      this.persistLocale(null);
+    }
     if (this.locale === locale && !needsTranslationLoad) {
       this.pendingLocale = null;
+      if (shouldPersist) {
+        this.persistLocale(locale);
+      }
       return;
     }
 
-    if (needsTranslationLoad) {
+    if (locale !== DEFAULT_LOCALE) {
       this.pendingLocale = locale;
+      this.pendingLocaleShouldPersist = shouldPersist;
       try {
-        const translation = await loadLazyLocaleTranslation(locale);
-        // A newer locale selection superseded this request: discard the stale
-        // load so rapid switching can never let an older chunk win.
-        if (requestGeneration !== this.localeRequestGeneration) {
-          return;
-        }
-        if (!translation) {
-          return; // Stays pending for retryPendingLocale().
-        }
-        this.translations[locale] = translation;
-      } catch (e) {
-        if (requestGeneration === this.localeRequestGeneration) {
-          this.pendingLocale = locale;
-          // Arm exactly one t()-driven retry; after that only the exported
-          // retry hook (or another setLocale) re-attempts. Retry-originated
-          // failures are exempt — see requestLocale docs above.
-          if (!fromRetry) {
-            this.pendingLocaleAutoRetryArmed = true;
+        if (needsTranslationLoad) {
+          const translation = await getOrCreatePromise(
+            this.inFlightLocaleLoads,
+            locale,
+            () => this.loadLocaleTranslation(locale),
+            { evictOnSettled: true },
+          );
+          if (!translation) {
+            return;
           }
+          this.translations[locale] = translation;
+        }
+        await this.prepareCatalog(locale);
+      } catch (e) {
+        const isCurrentRequest = this.localeRequestGeneration === requestGeneration;
+        if (retrying && isCurrentRequest && this.localeLoadRecovery?.isUnrecoverableError(e)) {
+          if (shouldPersist) {
+            this.persistLocale(locale);
+          }
+          this.localeLoadRecovery.onUnrecoverableLocaleLoad?.(locale);
         }
         console.error(`Failed to load locale: ${locale}`, e);
         return;
       }
     }
 
-    if (requestGeneration !== this.localeRequestGeneration) {
+    if (this.localeRequestGeneration !== requestGeneration) {
       return;
     }
     this.pendingLocale = null;
-    this.pendingLocaleAutoRetryArmed = false;
     this.locale = locale;
-    this.persistLocale(locale);
+    syncDocumentLocale(locale);
+    if (shouldPersist) {
+      this.persistLocale(locale);
+    }
     this.notify();
   }
 
-  /**
-   * Retries the locale whose lazy load failed earlier (e.g. a gateway hiccup
-   * while fetching the chunk). Safe to call anytime; no-op when nothing is
-   * pending. Also exposed as a hook for "gateway reconnected" handlers.
-   */
   public retryPendingLocale(): void {
-    const target = this.pendingLocale;
-    if (target === null || target === this.locale) {
+    if (this.pendingLocale === null || this.pendingLocale === this.locale) {
       return;
     }
-    void this.requestLocale(target, { fromRetry: true });
+    const target = this.pendingLocale;
+    const shouldPersist = this.pendingLocaleShouldPersist;
+    this.pendingLocale = null;
+    void this.applyLocale(target, true, shouldPersist);
   }
 
-  private retryPendingLocaleOnce() {
-    if (!this.pendingLocaleAutoRetryArmed || this.pendingLocale === null) {
-      return;
-    }
-    this.pendingLocaleAutoRetryArmed = false;
-    this.retryPendingLocale();
+  public setLocaleLoadRecovery(recovery: LocaleLoadRecovery | undefined): void {
+    // Keep this leaf independent of app-level stale-chunk policy; the app injects both the
+    // error classifier and guarded recovery action.
+    this.localeLoadRecovery = recovery;
   }
 
   public registerTranslation(locale: Locale, map: TranslationMap) {
@@ -160,45 +226,38 @@ class I18nManager {
     this.subscribers.forEach((sub) => sub(this.locale));
   }
 
-  /**
-   * Never throws and always returns a string: requested locale → English →
-   * the raw key. Any unexpected failure resolves to the raw key.
-   */
-  public t(key: string, params?: Record<string, string>): string {
-    try {
-      // A locale load failed earlier? Give it exactly one more shot on the
-      // next translate call before falling back (English → key).
-      this.retryPendingLocaleOnce();
-      return this.translate(key, params);
-    } catch {
-      return key;
+  private lookupActive(keys: readonly string[]): unknown {
+    const catalog = this.translations[this.locale];
+    const value = lookupTranslation(catalog, keys);
+    if (value !== undefined || !catalog) {
+      return value;
     }
+    const namespace = keys[0]!;
+    const load = getLazyLocaleCatalog(catalog)?.load(namespace);
+    if (load && !this.observedNamespaceLoads.has(load)) {
+      this.observedNamespaceLoads.add(load);
+      void load.then(
+        () => {
+          if (this.translations[this.locale] === catalog) {
+            this.notify();
+          }
+        },
+        (error: unknown) => console.error(`Failed to load locale namespace: ${namespace}`, error),
+      );
+    }
+    return value;
   }
 
-  private translate(key: string, params?: Record<string, string>): string {
+  public translateActive(key: string): string | undefined {
+    const value = this.lookupActive(key.split("."));
+    return typeof value === "string" ? value : undefined;
+  }
+
+  public t(key: string, params?: Record<string, string>): string {
     const keys = key.split(".");
-    let value: unknown = this.translations[this.locale] || this.translations[DEFAULT_LOCALE];
-
-    for (const k of keys) {
-      if (value && typeof value === "object") {
-        value = (value as Record<string, unknown>)[k];
-      } else {
-        value = undefined;
-        break;
-      }
-    }
-
-    // Fallback to English.
+    let value = this.lookupActive(keys);
     if (value === undefined && this.locale !== DEFAULT_LOCALE) {
-      value = this.translations[DEFAULT_LOCALE];
-      for (const k of keys) {
-        if (value && typeof value === "object") {
-          value = (value as Record<string, unknown>)[k];
-        } else {
-          value = undefined;
-          break;
-        }
-      }
+      value = lookupTranslation(this.translations[DEFAULT_LOCALE], keys);
     }
 
     if (typeof value !== "string") {
@@ -217,5 +276,12 @@ class I18nManager {
 
 export const i18n = new I18nManager();
 export const t = (key: string, params?: Record<string, string>) => i18n.t(key, params);
-/** Exported retry hook for the pending locale (e.g. call on gateway reconnect). */
-export const retryPendingLocale = () => i18n.retryPendingLocale();
+export const translateActive = (key: string) => i18n.translateActive(key);
+
+if (typeof process !== "undefined" && (process.env?.VITEST || process.env?.NODE_ENV === "test")) {
+  (globalThis as Record<PropertyKey, unknown>)[Symbol.for("openclaw.i18nManagerTestApi")] = {
+    createI18nManager(loadLocaleTranslation: LocaleTranslationLoader) {
+      return new I18nManager(loadLocaleTranslation);
+    },
+  };
+}

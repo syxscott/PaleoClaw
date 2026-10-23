@@ -1,0 +1,4 @@
+interface:
+  display_name: "paleoclaw Testing"
+  short_description: "Choose cheap, targeted paleoclaw validation"
+  default_prompt: "Use $paleoclaw-testing to choose the cheapest safe test or CI verification path, inspect failures, and rerun only the relevant paleoclaw lane."

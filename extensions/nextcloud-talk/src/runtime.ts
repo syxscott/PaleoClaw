@@ -1,14 +1,12 @@
-import type { PluginRuntime } from "paleoclaw/plugin-sdk/nextcloud-talk";
+import { createPluginRuntimeStore } from "paleoclaw/plugin-sdk/runtime-store";
+import type { PluginRuntime } from "paleoclaw/plugin-sdk/runtime-store";
 
-let runtime: PluginRuntime | null = null;
-
-export function setNextcloudTalkRuntime(next: PluginRuntime) {
-  runtime = next;
-}
-
-export function getNextcloudTalkRuntime(): PluginRuntime {
-  if (!runtime) {
-    throw new Error("Nextcloud Talk runtime not initialized");
-  }
-  return runtime;
-}
+const {
+  setRuntime: setNextcloudTalkRuntime,
+  getRuntime: getNextcloudTalkRuntime,
+  tryGetRuntime: getOptionalNextcloudTalkRuntime,
+} = createPluginRuntimeStore<PluginRuntime>({
+  pluginId: "nextcloud-talk",
+  errorMessage: "Nextcloud Talk runtime not initialized",
+});
+export { getNextcloudTalkRuntime, getOptionalNextcloudTalkRuntime, setNextcloudTalkRuntime };

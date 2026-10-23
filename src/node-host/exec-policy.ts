@@ -1,25 +1,31 @@
-import { requiresExecApproval, type ExecAsk, type ExecSecurity } from "../infra/exec-approvals.js";
+import { resolveAgentConfig } from "../agents/agent-scope-config.js";
+import type { OpenClawConfig } from "../config/types.openclaw.js";
+import { DEFAULT_ASK, DEFAULT_SECURITY } from "../infra/exec-approvals-config.js";
+import {
+  requiresExecApproval,
+  resolveExecModePolicy,
+  type ExecAsk,
+  type ExecSecurity,
+} from "../infra/exec-approvals.js";
+import { applyExecPolicyLayer } from "../infra/exec-policy.js";
 
-export type ExecApprovalDecision = "allow-once" | "allow-always" | null;
+/** One config owner for system.run and plugin-hosted execution. */
+export function resolveNodeExecConfigPolicy(params: {
+  cfg: OpenClawConfig;
+  agentId: string | undefined;
+}) {
+  const agentExec = params.agentId
+    ? resolveAgentConfig(params.cfg, params.agentId)?.tools?.exec
+    : undefined;
+  const globalExec = params.cfg.tools?.exec;
+  const layered = applyExecPolicyLayer(
+    applyExecPolicyLayer({ security: DEFAULT_SECURITY, ask: DEFAULT_ASK }, globalExec),
+    agentExec,
+  );
+  return { agentExec, globalExec, ...resolveExecModePolicy(layered) };
+}
 
-export type SystemRunPolicyDecision = {
-  analysisOk: boolean;
-  allowlistSatisfied: boolean;
-  shellWrapperBlocked: boolean;
-  windowsShellWrapperBlocked: boolean;
-  requiresAsk: boolean;
-  approvalDecision: ExecApprovalDecision;
-  approvedByAsk: boolean;
-} & (
-  | {
-      allowed: true;
-    }
-  | {
-      allowed: false;
-      eventReason: "security=deny" | "approval-required" | "allowlist-miss";
-      errorMessage: string;
-    }
-);
+type ExecApprovalDecision = "allow-once" | "allow-always" | null;
 
 export function resolveExecApprovalDecision(value: unknown): ExecApprovalDecision {
   if (value === "allow-once" || value === "allow-always") {
@@ -28,107 +34,85 @@ export function resolveExecApprovalDecision(value: unknown): ExecApprovalDecisio
   return null;
 }
 
-export function formatSystemRunAllowlistMissMessage(params?: {
-  shellWrapperBlocked?: boolean;
-  windowsShellWrapperBlocked?: boolean;
-}): string {
-  if (params?.windowsShellWrapperBlocked) {
-    return (
-      "SYSTEM_RUN_DENIED: allowlist miss " +
-      "(Windows shell wrappers like cmd.exe /c require approval; " +
-      "approve once/always or run with --ask on-miss|always)"
-    );
-  }
-  if (params?.shellWrapperBlocked) {
-    return (
-      "SYSTEM_RUN_DENIED: allowlist miss " +
-      "(shell wrappers like sh/bash/zsh -c require approval; " +
-      "approve once/always or run with --ask on-miss|always)"
-    );
-  }
-  return "SYSTEM_RUN_DENIED: allowlist miss";
-}
-
 export function evaluateSystemRunPolicy(params: {
   security: ExecSecurity;
   ask: ExecAsk;
   analysisOk: boolean;
   allowlistSatisfied: boolean;
+  durableApprovalSatisfied?: boolean;
   approvalDecision: ExecApprovalDecision;
   approved?: boolean;
   isWindows: boolean;
   cmdInvocation: boolean;
   shellWrapperInvocation: boolean;
-}): SystemRunPolicyDecision {
-  const shellWrapperBlocked = params.security === "allowlist" && params.shellWrapperInvocation;
-  const windowsShellWrapperBlocked =
-    shellWrapperBlocked && params.isWindows && params.cmdInvocation;
+}) {
+  // POSIX node execution intentionally uses `/bin/sh -lc` as a transport wrapper.
+  // Keep allowlist decisions based on the analyzed inner shell payload there.
+  // Windows `cmd.exe /c` wrappers still require explicit approval because they
+  // change execution semantics for builtins and quoting/parsing behavior.
+  const shellWrapperBlocked =
+    params.security === "allowlist" &&
+    params.shellWrapperInvocation &&
+    params.isWindows &&
+    params.cmdInvocation;
   const analysisOk = shellWrapperBlocked ? false : params.analysisOk;
   const allowlistSatisfied = shellWrapperBlocked ? false : params.allowlistSatisfied;
   const approvedByAsk = params.approvalDecision !== null || params.approved === true;
+  const requiresAsk =
+    params.security !== "deny" &&
+    requiresExecApproval({
+      ask: params.ask,
+      security: params.security,
+      analysisOk,
+      allowlistSatisfied,
+      durableApprovalSatisfied: params.durableApprovalSatisfied,
+    });
+  const context = {
+    analysisOk,
+    allowlistSatisfied,
+    shellWrapperBlocked,
+    approvalDecision: params.approvalDecision,
+    approvedByAsk,
+  };
 
   if (params.security === "deny") {
     return {
-      allowed: false,
-      eventReason: "security=deny",
+      allowed: false as const,
+      eventReason: "security=deny" as const,
       errorMessage: "SYSTEM_RUN_DISABLED: security=deny",
-      analysisOk,
-      allowlistSatisfied,
-      shellWrapperBlocked,
-      windowsShellWrapperBlocked,
-      requiresAsk: false,
-      approvalDecision: params.approvalDecision,
-      approvedByAsk,
+      ...context,
     };
   }
 
-  const requiresAsk = requiresExecApproval({
-    ask: params.ask,
-    security: params.security,
-    analysisOk,
-    allowlistSatisfied,
-  });
   if (requiresAsk && !approvedByAsk) {
     return {
-      allowed: false,
-      eventReason: "approval-required",
+      allowed: false as const,
+      eventReason: "approval-required" as const,
       errorMessage: "SYSTEM_RUN_DENIED: approval required",
-      analysisOk,
-      allowlistSatisfied,
-      shellWrapperBlocked,
-      windowsShellWrapperBlocked,
-      requiresAsk,
-      approvalDecision: params.approvalDecision,
-      approvedByAsk,
+      ...context,
     };
   }
 
-  if (params.security === "allowlist" && (!analysisOk || !allowlistSatisfied) && !approvedByAsk) {
+  if (
+    params.security === "allowlist" &&
+    (!analysisOk || !allowlistSatisfied) &&
+    !approvedByAsk &&
+    !params.durableApprovalSatisfied
+  ) {
     return {
-      allowed: false,
-      eventReason: "allowlist-miss",
-      errorMessage: formatSystemRunAllowlistMissMessage({
-        shellWrapperBlocked,
-        windowsShellWrapperBlocked,
-      }),
-      analysisOk,
-      allowlistSatisfied,
-      shellWrapperBlocked,
-      windowsShellWrapperBlocked,
-      requiresAsk,
-      approvalDecision: params.approvalDecision,
-      approvedByAsk,
+      allowed: false as const,
+      eventReason: "allowlist-miss" as const,
+      errorMessage: shellWrapperBlocked
+        ? "SYSTEM_RUN_DENIED: allowlist miss " +
+          "(Windows shell wrappers like cmd.exe /c require approval; " +
+          "approve once/always or run with --ask on-miss|always)"
+        : "SYSTEM_RUN_DENIED: allowlist miss",
+      ...context,
     };
   }
 
   return {
-    allowed: true,
-    analysisOk,
-    allowlistSatisfied,
-    shellWrapperBlocked,
-    windowsShellWrapperBlocked,
-    requiresAsk,
-    approvalDecision: params.approvalDecision,
-    approvedByAsk,
+    allowed: true as const,
+    ...context,
   };
 }

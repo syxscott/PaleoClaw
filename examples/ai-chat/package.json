@@ -1,0 +1,13 @@
+{
+  "name": "@paleoclaw/example-ai-chat",
+  "version": "0.0.0-private",
+  "private": true,
+  "description": "Minimal external-consumer example for @paleoclaw/ai",
+  "type": "module",
+  "scripts": {
+    "start": "node index.mjs"
+  },
+  "dependencies": {
+    "@paleoclaw/ai": "workspace:*"
+  }
+}

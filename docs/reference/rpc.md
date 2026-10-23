@@ -1,12 +1,10 @@
 ---
-summary: "RPC adapters for external CLIs (signal-cli, legacy imsg) and gateway patterns"
+summary: "RPC adapters for external CLIs (signal-cli, imsg) and gateway patterns"
 read_when:
   - Adding or changing external CLI integrations
   - Debugging RPC adapters (signal-cli, imsg)
-title: "RPC Adapters"
+title: "RPC adapters"
 ---
-
-# RPC adapters
 
 paleoclaw integrates external CLIs via JSON-RPC. Two patterns are used today.
 
@@ -14,16 +12,14 @@ paleoclaw integrates external CLIs via JSON-RPC. Two patterns are used today.
 
 - `signal-cli` runs as a daemon with JSON-RPC over HTTP.
 - Event stream is SSE (`/api/v1/events`).
-- Health probe: `/api/v1/check`.
-- paleoclaw owns lifecycle when `channels.signal.autoStart=true`.
+- Health check: `/api/v1/check`.
+- paleoclaw owns lifecycle when `channels.signal.transport.kind="managed-native"` (the default).
 
 See [Signal](/channels/signal) for setup and endpoints.
 
-## Pattern B: stdio child process (legacy: imsg)
+## Pattern B: stdio child process (imsg)
 
-> **Note:** For new iMessage setups, use [BlueBubbles](/channels/bluebubbles) instead.
-
-- paleoclaw spawns `imsg rpc` as a child process (legacy iMessage integration).
+- paleoclaw spawns `imsg rpc` as a child process for [iMessage](/channels/imessage).
 - JSON-RPC is line-delimited over stdin/stdout (one JSON object per line).
 - No TCP port, no daemon required.
 
@@ -32,12 +28,16 @@ Core methods used:
 - `watch.subscribe` → notifications (`method: "message"`)
 - `watch.unsubscribe`
 - `send`
-- `chats.list` (probe/diagnostics)
+- `chats.list` (check/diagnostics)
 
-See [iMessage](/channels/imessage) for legacy setup and addressing (`chat_id` preferred).
+See [iMessage](/channels/imessage) for setup and addressing (`chat_id` preferred over display strings).
 
 ## Adapter guidelines
 
 - Gateway owns the process (start/stop tied to provider lifecycle).
 - Keep RPC clients resilient: timeouts, restart on exit.
 - Prefer stable IDs (e.g., `chat_id`) over display strings.
+
+## Related
+
+- [Gateway protocol](/gateway/protocol)

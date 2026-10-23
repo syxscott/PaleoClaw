@@ -1,74 +1,36 @@
-import { randomUUID } from "node:crypto";
-import fs from "node:fs/promises";
-import path from "node:path";
+import { writeTextAtomic as writeFsSafeTextAtomic } from "@openclaw/fs-safe/atomic";
+import { tryReadJsonSync } from "@openclaw/fs-safe/json";
+import { asNullableRecord } from "@paleoclaw/normalization-core/record-coerce";
 
-export async function readJsonFile<T>(filePath: string): Promise<T | null> {
-  try {
-    const raw = await fs.readFile(filePath, "utf8");
-    return JSON.parse(raw) as T;
-  } catch {
-    return null;
-  }
+export {
+  JsonFileReadError,
+  readJson,
+  readJsonIfExists,
+  readJsonIfExists as readDurableJsonFile, // Sanctioned domain alias.
+  readJsonSync,
+  readRootJsonObjectSync,
+  tryReadJson,
+  tryReadJson as readJsonFile, // Sanctioned domain alias.
+  tryReadJsonSync,
+  writeJson,
+  writeJson as writeJsonAtomic, // Sanctioned domain alias.
+  writeJsonSync,
+} from "@openclaw/fs-safe/json";
+
+export { createAsyncLock } from "@openclaw/fs-safe/advanced";
+
+export function tryReadJsonObjectSync(filePath: string): Record<string, unknown> | null {
+  return asNullableRecord(tryReadJsonSync(filePath));
 }
 
-export async function writeJsonAtomic(
-  filePath: string,
-  value: unknown,
-  options?: { mode?: number; trailingNewline?: boolean; ensureDirMode?: number },
-) {
-  const text = JSON.stringify(value, null, 2);
-  await writeTextAtomic(filePath, text, {
+export const writeTextAtomic: typeof writeFsSafeTextAtomic = async (filePath, content, options) => {
+  // The public SDK treats empty prefixes as defaults and ignores unrelated options.
+  await writeFsSafeTextAtomic(filePath, content, {
     mode: options?.mode,
-    ensureDirMode: options?.ensureDirMode,
-    appendTrailingNewline: options?.trailingNewline,
+    dirMode: options?.dirMode,
+    trailingNewline: options?.trailingNewline,
+    durable: options?.durable,
+    beforeRename: options?.beforeRename || undefined,
+    tempPrefix: options?.tempPrefix || undefined,
   });
-}
-
-export async function writeTextAtomic(
-  filePath: string,
-  content: string,
-  options?: { mode?: number; ensureDirMode?: number; appendTrailingNewline?: boolean },
-) {
-  const mode = options?.mode ?? 0o600;
-  const payload =
-    options?.appendTrailingNewline && !content.endsWith("\n") ? `${content}\n` : content;
-  const mkdirOptions: { recursive: true; mode?: number } = { recursive: true };
-  if (typeof options?.ensureDirMode === "number") {
-    mkdirOptions.mode = options.ensureDirMode;
-  }
-  await fs.mkdir(path.dirname(filePath), mkdirOptions);
-  const tmp = `${filePath}.${randomUUID()}.tmp`;
-  try {
-    await fs.writeFile(tmp, payload, "utf8");
-    try {
-      await fs.chmod(tmp, mode);
-    } catch {
-      // best-effort; ignore on platforms without chmod
-    }
-    await fs.rename(tmp, filePath);
-    try {
-      await fs.chmod(filePath, mode);
-    } catch {
-      // best-effort; ignore on platforms without chmod
-    }
-  } finally {
-    await fs.rm(tmp, { force: true }).catch(() => undefined);
-  }
-}
-
-export function createAsyncLock() {
-  let lock: Promise<void> = Promise.resolve();
-  return async function withLock<T>(fn: () => Promise<T>): Promise<T> {
-    const prev = lock;
-    let release: (() => void) | undefined;
-    lock = new Promise<void>((resolve) => {
-      release = resolve;
-    });
-    await prev;
-    try {
-      return await fn();
-    } finally {
-      release?.();
-    }
-  };
-}
+};

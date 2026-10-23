@@ -1,97 +1,34 @@
+/** Scans auth-profile stores for plaintext credentials, SecretRefs, and OAuth tokens. */
 import { isNonEmptyString, isRecord } from "./shared.js";
-import { listAuthProfileSecretTargetEntries } from "./target-registry.js";
+import { AUTH_PROFILE_SECRET_FIELDS } from "./target-registry-data.js";
 
-export type AuthProfileCredentialType = "api_key" | "token";
-
-type AuthProfileFieldSpec = {
-  valueField: string;
-  refField: string;
-};
-
-type ApiKeyCredentialVisit = {
-  kind: "api_key";
+type StaticCredentialVisit = {
   profileId: string;
   provider: string;
+  /** Original mutable profile record from auth-profiles.json. */
   profile: Record<string, unknown>;
+  /** Canonical plaintext credential field name. */
   valueField: string;
+  /** Canonical SecretRef sibling field name. */
   refField: string;
   value: unknown;
   refValue: unknown;
-};
-
-type TokenCredentialVisit = {
-  kind: "token";
-  profileId: string;
-  provider: string;
-  profile: Record<string, unknown>;
-  valueField: string;
-  refField: string;
-  value: unknown;
-  refValue: unknown;
-};
+} & ({ kind: "api_key" } | { kind: "token" });
 
 type OauthCredentialVisit = {
   kind: "oauth";
   profileId: string;
   provider: string;
   profile: Record<string, unknown>;
+  /** Whether the profile currently stores a materialized OAuth access token. */
   hasAccess: boolean;
+  /** Whether the profile currently stores a materialized OAuth refresh token. */
   hasRefresh: boolean;
 };
 
-export type AuthProfileCredentialVisit =
-  | ApiKeyCredentialVisit
-  | TokenCredentialVisit
-  | OauthCredentialVisit;
+type AuthProfileCredentialVisit = StaticCredentialVisit | OauthCredentialVisit;
 
-function getAuthProfileFieldName(pathPattern: string): string {
-  const segments = pathPattern.split(".").filter(Boolean);
-  return segments[segments.length - 1] ?? "";
-}
-
-const AUTH_PROFILE_FIELD_SPEC_BY_TYPE = (() => {
-  const defaults: Record<AuthProfileCredentialType, AuthProfileFieldSpec> = {
-    api_key: { valueField: "key", refField: "keyRef" },
-    token: { valueField: "token", refField: "tokenRef" },
-  };
-  for (const target of listAuthProfileSecretTargetEntries()) {
-    if (!target.authProfileType) {
-      continue;
-    }
-    defaults[target.authProfileType] = {
-      valueField: getAuthProfileFieldName(target.pathPattern),
-      refField:
-        target.refPathPattern !== undefined
-          ? getAuthProfileFieldName(target.refPathPattern)
-          : defaults[target.authProfileType].refField,
-    };
-  }
-  return defaults;
-})();
-
-export function getAuthProfileFieldSpec(type: AuthProfileCredentialType): AuthProfileFieldSpec {
-  return AUTH_PROFILE_FIELD_SPEC_BY_TYPE[type];
-}
-
-function toSecretCredentialVisit(params: {
-  kind: AuthProfileCredentialType;
-  profileId: string;
-  provider: string;
-  profile: Record<string, unknown>;
-}): ApiKeyCredentialVisit | TokenCredentialVisit {
-  const spec = getAuthProfileFieldSpec(params.kind);
-  return {
-    kind: params.kind,
-    profileId: params.profileId,
-    provider: params.provider,
-    profile: params.profile,
-    valueField: spec.valueField,
-    refField: spec.refField,
-    value: params.profile[spec.valueField],
-    refValue: params.profile[spec.refField],
-  };
-}
-
+/** Iterates credential-bearing auth profiles with normalized field metadata for audit/apply. */
 export function* iterateAuthProfileCredentials(
   profiles: Record<string, unknown>,
 ): Iterable<AuthProfileCredentialVisit> {
@@ -99,14 +36,19 @@ export function* iterateAuthProfileCredentials(
     if (!isRecord(value) || !isNonEmptyString(value.provider)) {
       continue;
     }
-    const provider = String(value.provider);
+    const provider = value.provider;
     if (value.type === "api_key" || value.type === "token") {
-      yield toSecretCredentialVisit({
+      const spec = AUTH_PROFILE_SECRET_FIELDS[value.type];
+      yield {
         kind: value.type,
         profileId,
         provider,
         profile: value,
-      });
+        valueField: spec.valueField,
+        refField: spec.refField,
+        value: value[spec.valueField],
+        refValue: value[spec.refField],
+      };
       continue;
     }
     if (value.type === "oauth") {

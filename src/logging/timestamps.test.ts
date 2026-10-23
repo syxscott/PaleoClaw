@@ -1,65 +1,46 @@
-import * as fs from "node:fs";
-import * as path from "node:path";
+// Timestamp tests cover timestamp formatting and timezone fallback behavior.
 import { describe, expect, it } from "vitest";
-import { formatLocalIsoWithOffset, isValidTimeZone } from "./timestamps.js";
+import { formatDiagnosticFilenameTimestamp, formatTimestamp } from "./timestamps.js";
 
-describe("formatLocalIsoWithOffset", () => {
-  const testDate = new Date("2025-01-01T04:00:00.000Z");
-
-  it("produces +00:00 offset for UTC", () => {
-    const result = formatLocalIsoWithOffset(testDate, "UTC");
-    expect(result).toBe("2025-01-01T04:00:00.000+00:00");
-  });
-
-  it("produces +08:00 offset for Asia/Shanghai", () => {
-    const result = formatLocalIsoWithOffset(testDate, "Asia/Shanghai");
-    expect(result).toBe("2025-01-01T12:00:00.000+08:00");
-  });
-
-  it("produces correct offset for America/New_York", () => {
-    const result = formatLocalIsoWithOffset(testDate, "America/New_York");
-    // January is EST = UTC-5
-    expect(result).toBe("2024-12-31T23:00:00.000-05:00");
-  });
-
-  it("produces correct offset for America/New_York in summer (EDT)", () => {
-    const summerDate = new Date("2025-07-01T12:00:00.000Z");
-    const result = formatLocalIsoWithOffset(summerDate, "America/New_York");
-    // July is EDT = UTC-4
-    expect(result).toBe("2025-07-01T08:00:00.000-04:00");
-  });
-
-  it("outputs a valid ISO 8601 string with offset", () => {
-    const result = formatLocalIsoWithOffset(testDate, "Asia/Shanghai");
-    // ISO 8601 with offset: YYYY-MM-DDTHH:MM:SS.mmm±HH:MM
-    const iso8601WithOffset = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}[+-]\d{2}:\d{2}$/;
-    expect(result).toMatch(iso8601WithOffset);
-  });
-
-  it("falls back gracefully for an invalid timezone", () => {
-    const result = formatLocalIsoWithOffset(testDate, "not-a-tz");
-    const iso8601WithOffset = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}[+-]\d{2}:\d{2}$/;
-    expect(result).toMatch(iso8601WithOffset);
-  });
-
-  it("does NOT use getHours, getMinutes, getTimezoneOffset in the implementation", () => {
-    const source = fs.readFileSync(path.resolve(__dirname, "timestamps.ts"), "utf-8");
-    expect(source).not.toMatch(/\.getHours\s*\(/);
-    expect(source).not.toMatch(/\.getMinutes\s*\(/);
-    expect(source).not.toMatch(/\.getTimezoneOffset\s*\(/);
+describe("formatDiagnosticFilenameTimestamp", () => {
+  it("formats an ISO timestamp for filenames", () => {
+    expect(formatDiagnosticFilenameTimestamp(new Date("2024-01-15T14:30:45.123Z"))).toBe(
+      "2024-01-15T14-30-45-123Z",
+    );
   });
 });
 
-describe("isValidTimeZone", () => {
-  it("returns true for valid IANA timezones", () => {
-    expect(isValidTimeZone("UTC")).toBe(true);
-    expect(isValidTimeZone("America/New_York")).toBe(true);
-    expect(isValidTimeZone("Asia/Shanghai")).toBe(true);
+describe("formatTimestamp", () => {
+  const testDate = new Date("2024-01-15T14:30:45.123Z");
+
+  it("formats medium style with milliseconds and offset", () => {
+    expect(formatTimestamp(testDate, { style: "medium", timeZone: "UTC" })).toBe(
+      "14:30:45.123+00:00",
+    );
   });
 
-  it("returns false for invalid timezone strings", () => {
-    expect(isValidTimeZone("not-a-tz")).toBe(false);
-    expect(isValidTimeZone("yo agent's")).toBe(false);
-    expect(isValidTimeZone("")).toBe(false);
+  it("keeps milliseconds and calendar boundaries fresh across consecutive timestamps", () => {
+    for (const [time, timeZone, expected] of [
+      ["1969-12-31T23:59:59.001Z", "UTC", "1969-12-31T23:59:59.001+00:00"],
+      ["1969-12-31T23:59:59.999Z", "UTC", "1969-12-31T23:59:59.999+00:00"],
+      ["1970-01-01T00:00:00.000Z", "UTC", "1970-01-01T00:00:00.000+00:00"],
+      ["2024-03-10T06:59:59.999Z", "America/New_York", "2024-03-10T01:59:59.999-05:00"],
+      ["2024-03-10T07:00:00.000Z", "America/New_York", "2024-03-10T03:00:00.000-04:00"],
+      ["2024-03-10T07:00:00.123Z", "America/New_York", "2024-03-10T03:00:00.123-04:00"],
+      ["2024-03-10T07:00:00.123Z", "UTC", "2024-03-10T07:00:00.123+00:00"],
+      ["2024-03-10T07:00:00.123Z", "America/New_York", "2024-03-10T03:00:00.123-04:00"],
+      ["2024-03-10T06:59:59.999Z", "America/New_York", "2024-03-10T01:59:59.999-05:00"],
+    ] as const) {
+      expect(formatTimestamp(new Date(time), { style: "long", timeZone })).toBe(expected);
+    }
+    expect(() =>
+      formatTimestamp(new Date(Number.NaN), { style: "long", timeZone: "America/New_York" }),
+    ).toThrow(RangeError);
+  });
+
+  it("falls back to a valid offset when the timezone is invalid", () => {
+    expect(formatTimestamp(testDate, { style: "short", timeZone: "not-a-tz" })).toMatch(
+      /^\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}$/,
+    );
   });
 });

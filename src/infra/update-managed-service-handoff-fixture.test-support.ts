@@ -1,0 +1,112 @@
+import { EventEmitter } from "node:events";
+import { readFileSync } from "node:fs";
+import { PassThrough } from "node:stream";
+import { afterEach, beforeEach, expect, vi } from "vitest";
+import { closeStateDatabaseForTest } from "../test-utils/database-cleanup.js";
+import * as artifacts from "./update-managed-service-handoff-artifacts.test-support.js";
+import { createManagedServiceManagerBoundary } from "./update-managed-service-handoff-boundary.test-support.js";
+import { signalMockManagedUpdateHandoffReady as signalReady } from "./update-managed-service-handoff.test-support.js";
+
+const { kill, tmp, spawn } = vi.hoisted(() => ({
+  kill: vi.fn(),
+  tmp: vi.fn(),
+  spawn: vi.fn(),
+}));
+
+const mockedChildren = new Set<ReturnType<typeof createSpawnMock>>();
+
+export function createSpawnMock(params?: { pid?: number }) {
+  const child = Object.assign(new EventEmitter(), {
+    pid: params?.pid ?? process.pid,
+    exitCode: null,
+    signalCode: null,
+    stdin: new PassThrough(),
+    stdout: new PassThrough(),
+    unref: vi.fn(),
+  });
+  mockedChildren.add(child);
+  return child;
+}
+
+vi.mock("node:child_process", async (original) => ({
+  ...(await original<typeof import("node:child_process")>()),
+  spawn,
+}));
+
+vi.mock("../process/child-process-tree.js", async (original) => ({
+  ...(await original<typeof import("../process/child-process-tree.js")>()),
+  forceKillChildProcessTree: kill,
+}));
+
+vi.mock("./tmp-paleoclaw-dir.js", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("./tmp-paleoclaw-dir.js")>()),
+  resolvePreferredOpenClawTmpDir: tmp,
+}));
+
+export function useManagedServiceHandoffLifecycleFixture() {
+  const tempDirs = artifacts.createManagedHandoffTempDirTracker();
+  const processCleanups = new Set<() => Promise<void>>();
+  const leaseCleanups = new Set<() => void>();
+  const handoffs = new Map<string, string>();
+
+  beforeEach(() => {
+    // Helpers in one fixture share a coordinator without touching the operator's database.
+    tmp.mockReturnValue(tempDirs.make("paleoclaw-handoff-coordinator-"));
+    kill.mockReset();
+    spawn.mockReset();
+    spawn.mockImplementation((_command: string, args: string[]) => {
+      const child = createSpawnMock();
+      const { paramsPath } = artifacts.readManagedHandoffArtifacts(args);
+      const params = JSON.parse(readFileSync(paramsPath, "utf8")) as {
+        updateLeaseKey: string;
+        handoffId: string;
+      };
+      handoffs.set(params.updateLeaseKey, params.handoffId);
+      process.nextTick(() => signalReady({ child, paramsPath, cleanups: leaseCleanups }));
+      return child;
+    });
+  });
+
+  afterEach(async () => {
+    vi.useRealTimers();
+    await Promise.all([...processCleanups].map((cleanup) => cleanup()));
+    processCleanups.clear();
+    for (const child of mockedChildren) {
+      child.emit("exit", 0, null);
+    }
+    for (const cleanup of leaseCleanups) {
+      cleanup();
+    }
+    try {
+      for (const [installRoot, handoffId] of handoffs) {
+        const { cancelManagedServiceUpdateHandoff: cancel } =
+          await import("./update-managed-service-handoff.js");
+        // Cancellation retires the exited owner only after verifying its lease was released.
+        await expect(
+          cancel({ kind: "managed-update-handoff", installRoot, handoffId }),
+        ).resolves.toBe("restored-in-process");
+      }
+    } finally {
+      handoffs.clear();
+      for (const child of mockedChildren) {
+        child.stdin.destroy();
+        child.stdout.destroy();
+      }
+      mockedChildren.clear();
+      await closeStateDatabaseForTest();
+      await tempDirs.cleanup();
+    }
+  });
+
+  return {
+    forceKillChildProcessTreeMock: kill,
+    resolvePreferredOpenClawTmpDirMock: tmp,
+    spawnMock: spawn,
+    tempDirs,
+    runManagedServiceManagerBoundary: createManagedServiceManagerBoundary({
+      spawnMock: spawn,
+      tempDirs,
+      cleanups: processCleanups,
+    }),
+  };
+}

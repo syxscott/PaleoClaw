@@ -1,10 +1,10 @@
-# PaleoClaw OpenClaw 4.14 更新计划
+# PaleoClaw paleoclaw 4.14 更新计划
 
 ## 概述
 
-将 PaleoClaw 从 openclaw-main（下载日期 2026.3.8）更新到 openclaw-main（下载日期 2026.4.14）
+将 PaleoClaw 从 paleoclaw-main（下载日期 2026.3.8）更新到 paleoclaw-main（下载日期 2026.4.14）
 
-**说明**：版本号中的 3.8 和 4.14 表示下载日期（月份.日期），而非 OpenClaw 的语义化版本。
+**说明**：版本号中的 3.8 和 4.14 表示下载日期（月份.日期），而非 paleoclaw 的语义化版本。
 
 ## 合并策略
 

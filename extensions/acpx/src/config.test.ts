@@ -1,232 +1,113 @@
+import fs from "node:fs";
+import { createRequire } from "node:module";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
-import {
-  ACPX_BUNDLED_BIN,
-  ACPX_PINNED_VERSION,
-  createAcpxPluginConfigSchema,
-  resolveAcpxPluginConfig,
-  toAcpMcpServers,
-} from "./config.js";
+import { pathToFileURL } from "node:url";
+import { useAutoCleanupTempDirTracker } from "paleoclaw/plugin-sdk/test-env";
+import { afterEach, expect, it, vi } from "vitest";
+import { resolveAcpxPluginConfig, resolveAcpxPluginRoot } from "./config.js";
 
-describe("acpx plugin config parsing", () => {
-  it("resolves bundled acpx with pinned version by default", () => {
-    const resolved = resolveAcpxPluginConfig({
-      rawConfig: {
-        cwd: "/tmp/workspace",
-      },
-      workspaceDir: "/tmp/workspace",
-    });
+const requireFromTest = createRequire(import.meta.url);
+const TSX_IMPORT = requireFromTest.resolve("tsx");
+const tempDirs = useAutoCleanupTempDirTracker(afterEach);
+const workspaceDir = path.resolve("/tmp/paleoclaw-acpx");
+const resolve = (
+  rawConfig?: unknown,
+  options: Omit<Parameters<typeof resolveAcpxPluginConfig>[0], "rawConfig"> = {},
+) => resolveAcpxPluginConfig({ workspaceDir, rawConfig, ...options });
 
-    expect(resolved.command).toBe(ACPX_BUNDLED_BIN);
-    expect(resolved.expectedVersion).toBe(ACPX_PINNED_VERSION);
-    expect(resolved.allowPluginLocalInstall).toBe(true);
-    expect(resolved.cwd).toBe(path.resolve("/tmp/workspace"));
-    expect(resolved.strictWindowsCmdWrapper).toBe(true);
-    expect(resolved.mcpServers).toEqual({});
+afterEach(() => {
+  vi.restoreAllMocks();
+  vi.unstubAllEnvs();
+});
+
+it("resolves state independently of the session working directory", () => {
+  const stateDir = path.resolve("/tmp/paleoclaw-state");
+  vi.stubEnv("OPENCLAW_STATE_DIR", stateDir);
+  const resolved = resolve();
+  expect(resolved).toMatchObject({
+    cwd: workspaceDir,
+    stateDir: path.join(stateDir, "acpx"),
+    permissionMode: "approve-reads",
+    nonInteractivePermissions: "fail",
+    timeoutSeconds: 120,
+    probeAgent: undefined,
   });
+  expect(resolved.agents).toStrictEqual({});
+  expect(resolve({ stateDir: workspaceDir }, { stateDir }).stateDir).toBe(workspaceDir);
+  expect(resolve({}, { stateDir: workspaceDir }).stateDir).toBe(path.join(workspaceDir, "acpx"));
+});
 
-  it("accepts command override and disables plugin-local auto-install", () => {
-    const command = "/home/user/repos/acpx/dist/cli.js";
-    const resolved = resolveAcpxPluginConfig({
-      rawConfig: {
-        command,
-      },
-      workspaceDir: "/tmp/workspace",
-    });
+it.each([
+  ["win32", String.raw`node "say \"hello\""`, ["node", 'say "hello"']],
+  ["linux", String.raw`node ./some\ file.js ""`, ["node", "./some file.js", ""]],
+] as const)("preserves %s command syntax: %s", (platform, command, expected) => {
+  vi.spyOn(process, "platform", "get").mockReturnValue(platform);
+  const config = resolve({ agents: { fixture: { command, args: ["suffix"] } } });
+  expect(config.agents.fixture).toEqual([...expected, "suffix"]);
+});
 
-    expect(resolved.command).toBe(path.resolve(command));
-    expect(resolved.expectedVersion).toBeUndefined();
-    expect(resolved.allowPluginLocalInstall).toBe(false);
-  });
+it.each([
+  [{ agents: { custom: { command: "node 'unfinished argument" } } }, "unterminated quote"],
+  [{ probeAgent: "" }, /probeAgent must be a non-empty string/],
+] as const)("rejects invalid config %j", (config, error) => {
+  expect(() => resolve(config)).toThrow(error);
+});
 
-  it("resolves relative command paths against workspace directory", () => {
-    const resolved = resolveAcpxPluginConfig({
-      rawConfig: {
-        command: "../acpx/dist/cli.js",
-      },
-      workspaceDir: "/home/user/repos/paleoclaw",
-    });
-
-    expect(resolved.command).toBe(
-      path.resolve("/home/user/repos/paleoclaw", "../acpx/dist/cli.js"),
-    );
-    expect(resolved.expectedVersion).toBeUndefined();
-    expect(resolved.allowPluginLocalInstall).toBe(false);
-  });
-
-  it("keeps bare command names as-is", () => {
-    const resolved = resolveAcpxPluginConfig({
-      rawConfig: {
-        command: "acpx",
-      },
-      workspaceDir: "/tmp/workspace",
-    });
-
-    expect(resolved.command).toBe("acpx");
-    expect(resolved.expectedVersion).toBeUndefined();
-    expect(resolved.allowPluginLocalInstall).toBe(false);
-  });
-
-  it("accepts exact expectedVersion override", () => {
-    const command = "/home/user/repos/acpx/dist/cli.js";
-    const resolved = resolveAcpxPluginConfig({
-      rawConfig: {
-        command,
-        expectedVersion: "0.1.99",
-      },
-      workspaceDir: "/tmp/workspace",
-    });
-
-    expect(resolved.command).toBe(path.resolve(command));
-    expect(resolved.expectedVersion).toBe("0.1.99");
-    expect(resolved.allowPluginLocalInstall).toBe(false);
-  });
-
-  it("treats expectedVersion=any as no version constraint", () => {
-    const resolved = resolveAcpxPluginConfig({
-      rawConfig: {
-        command: "/home/user/repos/acpx/dist/cli.js",
-        expectedVersion: "any",
-      },
-      workspaceDir: "/tmp/workspace",
-    });
-
-    expect(resolved.expectedVersion).toBeUndefined();
-  });
-
-  it("rejects commandArgs overrides", () => {
-    expect(() =>
-      resolveAcpxPluginConfig({
-        rawConfig: {
-          commandArgs: ["--foo"],
-        },
-        workspaceDir: "/tmp/workspace",
-      }),
-    ).toThrow("unknown config key: commandArgs");
-  });
-
-  it("schema rejects empty cwd", () => {
-    const schema = createAcpxPluginConfigSchema();
-    if (!schema.safeParse) {
-      throw new Error("acpx config schema missing safeParse");
-    }
-    const parsed = schema.safeParse({ cwd: "   " });
-
-    expect(parsed.success).toBe(false);
-  });
-
-  it("accepts strictWindowsCmdWrapper override", () => {
-    const resolved = resolveAcpxPluginConfig({
-      rawConfig: {
-        strictWindowsCmdWrapper: true,
-      },
-      workspaceDir: "/tmp/workspace",
-    });
-
-    expect(resolved.strictWindowsCmdWrapper).toBe(true);
-  });
-
-  it("rejects non-boolean strictWindowsCmdWrapper", () => {
-    expect(() =>
-      resolveAcpxPluginConfig({
-        rawConfig: {
-          strictWindowsCmdWrapper: "yes",
-        },
-        workspaceDir: "/tmp/workspace",
-      }),
-    ).toThrow("strictWindowsCmdWrapper must be a boolean");
-  });
-
-  it("accepts mcp server maps", () => {
-    const resolved = resolveAcpxPluginConfig({
-      rawConfig: {
-        mcpServers: {
-          canva: {
-            command: "npx",
-            args: ["-y", "mcp-remote@latest", "https://mcp.canva.com/mcp"],
-            env: {
-              CANVA_TOKEN: "secret",
-            },
-          },
-        },
-      },
-      workspaceDir: "/tmp/workspace",
-    });
-
-    expect(resolved.mcpServers).toEqual({
-      canva: {
-        command: "npx",
-        args: ["-y", "mcp-remote@latest", "https://mcp.canva.com/mcp"],
-        env: {
-          CANVA_TOKEN: "secret",
-        },
-      },
-    });
-  });
-
-  it("rejects invalid mcp server definitions", () => {
-    expect(() =>
-      resolveAcpxPluginConfig({
-        rawConfig: {
-          mcpServers: {
-            canva: {
-              command: "npx",
-              args: ["-y", 1],
-            },
-          },
-        },
-        workspaceDir: "/tmp/workspace",
-      }),
-    ).toThrow(
-      "mcpServers.canva must have a command string, optional args array, and optional env object",
-    );
-  });
-
-  it("schema accepts mcp server config", () => {
-    const schema = createAcpxPluginConfigSchema();
-    if (!schema.safeParse) {
-      throw new Error("acpx config schema missing safeParse");
-    }
-    const parsed = schema.safeParse({
-      mcpServers: {
-        canva: {
-          command: "npx",
-          args: ["-y", "mcp-remote@latest"],
-          env: {
-            CANVA_TOKEN: "secret",
-          },
-        },
-      },
-    });
-
-    expect(parsed.success).toBe(true);
+it("injects the built-in plugin-tools MCP server only when explicitly enabled", () => {
+  const distEntry = path.resolve("dist/mcp/plugin-tools-serve.js");
+  expect(resolve({ pluginToolsMcpBridge: true }).mcpServers["paleoclaw-plugin-tools"]).toEqual({
+    command: process.execPath,
+    args: fs.existsSync(distEntry)
+      ? [distEntry]
+      : ["--import", TSX_IMPORT, path.resolve("src/mcp/plugin-tools-serve.ts")],
   });
 });
 
-describe("toAcpMcpServers", () => {
-  it("converts plugin config maps into ACP stdio MCP entries", () => {
-    expect(
-      toAcpMcpServers({
-        canva: {
-          command: "npx",
-          args: ["-y", "mcp-remote@latest", "https://mcp.canva.com/mcp"],
-          env: {
-            CANVA_TOKEN: "secret",
-          },
-        },
-      }),
-    ).toEqual([
+it("launches managed bridges from the host package when acpx is an external package", () => {
+  const tmp = fs.realpathSync(tempDirs.make("paleoclaw-acpx-external-"));
+  const hostRoot = path.join(tmp, "lib", "node_modules", "paleoclaw");
+  fs.mkdirSync(path.join(hostRoot, "dist", "mcp"), { recursive: true });
+  fs.writeFileSync(path.join(hostRoot, "package.json"), JSON.stringify({ name: "paleoclaw" }));
+  fs.writeFileSync(path.join(hostRoot, "paleoclaw.mjs"), "");
+  fs.writeFileSync(path.join(hostRoot, "dist", "mcp", "plugin-tools-serve.js"), "");
+  fs.writeFileSync(path.join(hostRoot, "dist", "mcp", "paleoclaw-tools-serve.js"), "");
+  fs.mkdirSync(path.join(tmp, "bin"));
+  fs.symlinkSync(path.join(hostRoot, "paleoclaw.mjs"), path.join(tmp, "bin", "paleoclaw"));
+  const pluginRoot = path.join(tmp, "captures", "package-0", "node_modules", "@paleoclaw", "acpx");
+  fs.mkdirSync(path.join(pluginRoot, "dist"), { recursive: true });
+  fs.writeFileSync(
+    path.join(pluginRoot, "package.json"),
+    JSON.stringify({ name: "@paleoclaw/acpx" }),
+  );
+  fs.writeFileSync(path.join(pluginRoot, "openclaw.plugin.json"), "{}");
+  const originalArgv = process.argv;
+  process.argv = [process.execPath, path.join(tmp, "bin", "paleoclaw"), "gateway"];
+  try {
+    const resolved = resolve(
+      { pluginToolsMcpBridge: true, openClawToolsMcpBridge: true },
       {
-        name: "canva",
-        command: "npx",
-        args: ["-y", "mcp-remote@latest", "https://mcp.canva.com/mcp"],
-        env: [
-          {
-            name: "CANVA_TOKEN",
-            value: "secret",
-          },
-        ],
+        moduleUrl: pathToFileURL(path.join(pluginRoot, "dist", "config.js")).href,
       },
-    ]);
-  });
+    );
+
+    expect(resolved.mcpServers).toEqual({
+      "paleoclaw-plugin-tools": {
+        command: process.execPath,
+        args: [path.join(hostRoot, "dist", "mcp", "plugin-tools-serve.js")],
+      },
+      "paleoclaw-tools": {
+        command: process.execPath,
+        args: [path.join(hostRoot, "dist", "mcp", "paleoclaw-tools-serve.js")],
+      },
+    });
+  } finally {
+    process.argv = originalArgv;
+  }
+});
+
+it("resolves the plugin root from shared dist chunk paths", () => {
+  const moduleUrl = new URL("../../../dist/extensions/acpx/service-shared.js", import.meta.url)
+    .href;
+
+  expect(resolveAcpxPluginRoot(moduleUrl)).toBe(path.resolve("extensions/acpx"));
 });

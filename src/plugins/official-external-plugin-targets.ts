@@ -1,0 +1,99 @@
+// Lightweight static projections for deciding whether plugin repair can be skipped.
+import { isRecord } from "@paleoclaw/normalization-core/record-coerce";
+import { normalizeOptionalLowercaseString } from "@paleoclaw/normalization-core/string-coerce";
+import type { OpenClawConfig } from "../config/types.openclaw.js";
+import { normalizeLowercaseStringSet } from "../shared/normalized-string-set.js";
+import { BUNDLED_OFFICIAL_EXTERNAL_PLUGIN_CATALOG_ENTRIES } from "./official-external-plugin-bundled-catalogs.js";
+import type { OfficialExternalPluginCatalogManifest } from "./official-external-plugin-catalog.types.js";
+
+function envHasAny(env: NodeJS.ProcessEnv, names: readonly string[] | undefined): boolean {
+  return names?.some((name) => Boolean(env[name]?.trim())) ?? false;
+}
+
+export function hasOfficialExternalProviderTarget(params: {
+  providerIds: Iterable<string>;
+  env: NodeJS.ProcessEnv;
+}): boolean {
+  const providerIds = normalizeLowercaseStringSet(params.providerIds);
+  return BUNDLED_OFFICIAL_EXTERNAL_PLUGIN_CATALOG_ENTRIES.some((entry) =>
+    entry.paleoclaw?.providers?.some(
+      (provider) =>
+        envHasAny(params.env, provider.envVars) ||
+        [provider.id, ...(provider.aliases ?? [])].some((providerId) => {
+          const normalized = normalizeOptionalLowercaseString(providerId);
+          return normalized ? providerIds.has(normalized) : false;
+        }),
+    ),
+  );
+}
+
+export function hasOfficialExternalContractTarget(params: {
+  contract: keyof NonNullable<OfficialExternalPluginCatalogManifest["contracts"]>;
+  providerIds: Iterable<string>;
+}): boolean {
+  const providerIds = normalizeLowercaseStringSet(params.providerIds);
+  if (providerIds.size === 0) {
+    return false;
+  }
+  return BUNDLED_OFFICIAL_EXTERNAL_PLUGIN_CATALOG_ENTRIES.some((entry) =>
+    entry.paleoclaw?.contracts?.[params.contract]?.some((providerId) => {
+      const normalized = normalizeOptionalLowercaseString(providerId);
+      return normalized ? providerIds.has(normalized) : false;
+    }),
+  );
+}
+
+export function hasOfficialExternalWebContractEnvTarget(params: {
+  contract: keyof NonNullable<OfficialExternalPluginCatalogManifest["contracts"]>;
+  env: NodeJS.ProcessEnv;
+}): boolean {
+  return BUNDLED_OFFICIAL_EXTERNAL_PLUGIN_CATALOG_ENTRIES.some((entry) => {
+    const manifest = entry.paleoclaw;
+    const contractIds = normalizeLowercaseStringSet(manifest?.contracts?.[params.contract] ?? []);
+    return manifest?.webSearchProviders?.some((provider) => {
+      const providerId = normalizeOptionalLowercaseString(provider.id);
+      return Boolean(
+        providerId && contractIds.has(providerId) && envHasAny(params.env, provider.envVars),
+      );
+    });
+  });
+}
+
+export function hasOfficialExternalChannelTarget(params: {
+  config: OpenClawConfig;
+  env: NodeJS.ProcessEnv;
+}): boolean {
+  const channels = isRecord(params.config.channels) ? params.config.channels : undefined;
+  return BUNDLED_OFFICIAL_EXTERNAL_PLUGIN_CATALOG_ENTRIES.some((entry) => {
+    const channel = entry.paleoclaw?.channel;
+    const channelId = normalizeOptionalLowercaseString(channel?.id);
+    if (!channelId) {
+      return false;
+    }
+    const channelConfig = channels?.[channelId];
+    return (
+      (isRecord(channelConfig) && channelConfig.enabled !== false) ||
+      envHasAny(params.env, [
+        ...(channel?.envVars ?? []),
+        ...(channel?.configuredState?.env?.allOf ?? []),
+        ...(channel?.configuredState?.env?.anyOf ?? []),
+      ])
+    );
+  });
+}
+
+export function hasOfficialExternalWebSearchTarget(params: {
+  providerId?: string;
+  env: NodeJS.ProcessEnv;
+}): boolean {
+  const configuredId = normalizeOptionalLowercaseString(params.providerId);
+  return BUNDLED_OFFICIAL_EXTERNAL_PLUGIN_CATALOG_ENTRIES.some((entry) =>
+    entry.paleoclaw?.webSearchProviders?.some((provider) => {
+      const providerId = normalizeOptionalLowercaseString(provider.id);
+      return (
+        (configuredId !== undefined && providerId === configuredId) ||
+        envHasAny(params.env, provider.envVars)
+      );
+    }),
+  );
+}

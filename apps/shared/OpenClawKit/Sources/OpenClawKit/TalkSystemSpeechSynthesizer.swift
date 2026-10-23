@@ -16,8 +16,6 @@ public final class TalkSystemSpeechSynthesizer: NSObject {
     private var currentToken = UUID()
     private var watchdog: Task<Void, Never>?
 
-    public var isSpeaking: Bool { self.synth.isSpeaking }
-
     override private init() {
         super.init()
         self.synth.delegate = self
@@ -35,10 +33,12 @@ public final class TalkSystemSpeechSynthesizer: NSObject {
     public func speak(
         text: String,
         language: String? = nil,
-        onStart: (() -> Void)? = nil
-    ) async throws {
+        onStart: (() -> Void)? = nil) async throws
+    {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
+        // A cancelled caller must not retire the utterance already playing.
+        guard !Task.isCancelled else { throw SpeakError.canceled }
 
         self.stop()
         let token = UUID()
@@ -51,11 +51,12 @@ public final class TalkSystemSpeechSynthesizer: NSObject {
         }
         self.currentUtterance = utterance
 
-        let estimatedSeconds = max(3.0, min(180.0, Double(trimmed.count) * 0.08))
-        self.watchdog?.cancel()
+        let watchdogTimeout = Self.watchdogTimeoutSeconds(
+            text: trimmed,
+            language: language ?? utterance.voice?.language)
         self.watchdog = Task { @MainActor [weak self] in
             guard let self else { return }
-            try? await Task.sleep(nanoseconds: UInt64(estimatedSeconds * 1_000_000_000))
+            try? await Task.sleep(nanoseconds: UInt64(watchdogTimeout * 1_000_000_000))
             if Task.isCancelled { return }
             guard self.currentToken == token else { return }
             if self.synth.isSpeaking {
@@ -63,7 +64,7 @@ public final class TalkSystemSpeechSynthesizer: NSObject {
             }
             self.finishCurrent(
                 with: NSError(domain: "TalkSystemSpeechSynthesizer", code: 408, userInfo: [
-                    NSLocalizedDescriptionKey: "system TTS timed out after \(estimatedSeconds)s",
+                    NSLocalizedDescriptionKey: "system TTS timed out after \(watchdogTimeout)s",
                 ]))
         }
 
@@ -74,6 +75,9 @@ public final class TalkSystemSpeechSynthesizer: NSObject {
             }
         }, onCancel: {
             Task { @MainActor in
+                // A replacement may start before this actor hop runs. Cancellation
+                // must stop only the utterance owned by the canceled call.
+                guard self.currentToken == token else { return }
                 self.stop()
             }
         })
@@ -81,6 +85,28 @@ public final class TalkSystemSpeechSynthesizer: NSObject {
         if self.currentToken != token {
             throw SpeakError.canceled
         }
+    }
+
+    static func watchdogTimeoutSeconds(text: String, language: String?) -> Double {
+        // Estimate speech duration per language, then apply 3x safety margin.
+        // The watchdog is a hang guard — normal completion relies on didFinish.
+        //
+        // Speech rates based on Pellegrino et al. (2019) syllable-per-second data,
+        // adjusted for TTS synthesis (slower than natural speech):
+        // https://www.science.org/doi/10.1126/sciadv.aaw2594
+        //   Japanese: 7.84 SPS -> ~0.20s/char (mixed kana/kanji avg ~1.5 mora/char)
+        //   Korean:   5.96 SPS -> ~0.25s/char (1 char = 1 syllable)
+        //   Chinese:  5.18 SPS -> ~0.28s/char (1 char = 1 syllable)
+        //   English:  6.19 SPS -> ~0.08s/char (avg ~5 chars/syllable)
+        let normalizedLanguage = language?.lowercased() ?? "en"
+        let profiles: [(language: String, perCharSeconds: Double)] = [
+            ("ko", 0.25), ("zh", 0.28), ("ja", 0.20),
+        ]
+        let profile = profiles.first { normalizedLanguage.hasPrefix($0.language) }
+        let perCharSeconds = profile?.perCharSeconds ?? 0.08
+        let minSeconds = profile == nil ? 3.0 : 10.0
+        let estimatedSeconds = max(minSeconds, min(300.0, Double(text.count) * perCharSeconds))
+        return estimatedSeconds * 3.0
     }
 
     private func matchesCurrentUtterance(_ utteranceID: ObjectIdentifier) -> Bool {
@@ -100,11 +126,7 @@ public final class TalkSystemSpeechSynthesizer: NSObject {
         self.didStartCallback = nil
         let cont = self.speakContinuation
         self.speakContinuation = nil
-        if let error {
-            cont?.resume(throwing: error)
-        } else {
-            cont?.resume(returning: ())
-        }
+        if let cont { ThrowingContinuationSupport.resumeVoid(cont, error: error) }
     }
 }
 

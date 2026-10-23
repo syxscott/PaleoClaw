@@ -1,0 +1,276 @@
+import { resolveChannelGroupPolicy } from "paleoclaw/plugin-sdk/channel-policy";
+import { validateTestChannelConfig } from "paleoclaw/plugin-sdk/channel-test-helpers";
+import type { TelegramAccountConfig } from "paleoclaw/plugin-sdk/config-contracts";
+import { describe, expect, it } from "vitest";
+import { mergeTelegramAccountConfig } from "./account-config.js";
+import { normalizeAllowFrom, type NormalizedAllowFrom } from "./bot-access.js";
+import { TelegramConfigSchema } from "./config-schema.js";
+import {
+  evaluateTelegramGroupBaseAccess,
+  evaluateTelegramGroupPolicyAccess,
+} from "./group-access.js";
+
+function allow(entries: string[], hasWildcard = false): NormalizedAllowFrom {
+  return {
+    entries,
+    hasWildcard,
+    hasEntries: entries.length > 0 || hasWildcard,
+    invalidEntries: [],
+  };
+}
+
+function runBaseAccess(overrides: Partial<Parameters<typeof evaluateTelegramGroupBaseAccess>[0]>) {
+  return evaluateTelegramGroupBaseAccess({
+    hasGroupAllowOverride: true,
+    effectiveGroupAllow: allow([]),
+    senderId: "12345",
+    enforceAllowOverride: true,
+    requireSenderForAllowOverride: true,
+    ...overrides,
+  });
+}
+
+describe("evaluateTelegramGroupBaseAccess", () => {
+  it("normalizes sender-only allowlist entries and rejects group ids", () => {
+    const result = normalizeAllowFrom(["-1001234567890", " tg:-100999 ", "745123456", "@someone"]);
+
+    expect(result).toEqual({
+      entries: ["745123456"],
+      hasWildcard: false,
+      hasEntries: true,
+      invalidEntries: ["-1001234567890", "-100999", "@someone"],
+    });
+  });
+
+  it("fails closed when explicit group allowFrom override is empty", () => {
+    expect(runBaseAccess({})).toEqual({ allowed: false, reason: "group-override-unauthorized" });
+  });
+
+  it("allows group message when override is not configured", () => {
+    expect(runBaseAccess({ hasGroupAllowOverride: false })).toEqual({ allowed: true });
+  });
+
+  it("allows sender explicitly listed in override", () => {
+    expect(runBaseAccess({ effectiveGroupAllow: allow(["12345"]) })).toEqual({ allowed: true });
+  });
+});
+
+type GroupAccessParams = Parameters<typeof evaluateTelegramGroupPolicyAccess>[0];
+
+const DEFAULT_GROUP_ACCESS_PARAMS: GroupAccessParams = {
+  isGroup: true,
+  chatId: "-100123456",
+  cfg: { channels: { telegram: {} } },
+  telegramCfg: { groupPolicy: "allowlist" },
+  effectiveGroupAllow: allow([]),
+  senderId: "999",
+  resolveGroupPolicy: () => ({
+    allowlistEnabled: true,
+    allowed: true,
+    groupConfig: { requireMention: false },
+  }),
+  enforceAllowlistAuthorization: true,
+  allowEmptyAllowlistEntries: false,
+};
+
+function runAccess(overrides: Partial<GroupAccessParams>) {
+  return evaluateTelegramGroupPolicyAccess({
+    ...DEFAULT_GROUP_ACCESS_PARAMS,
+    ...overrides,
+  });
+}
+
+describe("evaluateTelegramGroupPolicyAccess", () => {
+  it.each([
+    {
+      policy: "allowlist",
+      senderId: "222",
+      expected: {
+        allowed: false,
+        reason: "group-policy-allowlist-unauthorized",
+        groupPolicy: "allowlist",
+      },
+    },
+    {
+      policy: "allowlist",
+      senderId: "111",
+      expected: { allowed: true, groupPolicy: "allowlist" },
+    },
+    {
+      policy: "open",
+      senderId: "222",
+      expected: { allowed: true, groupPolicy: "open" },
+    },
+  ] as const)(
+    "enforces inherited $policy for sender $senderId after named-account validation",
+    async ({ policy, senderId, expected }) => {
+      const channel = TelegramConfigSchema.parse({
+        groupPolicy: policy,
+        groupAllowFrom: ["111"],
+        groups: { "*": { requireMention: false } },
+        accounts: { work: {} },
+      });
+      const cfg = await validateTestChannelConfig("telegram", channel);
+      const telegramCfg = mergeTelegramAccountConfig(cfg, "work");
+
+      expect(
+        runAccess({
+          cfg,
+          telegramCfg,
+          senderId,
+          effectiveGroupAllow: normalizeAllowFrom(telegramCfg.groupAllowFrom),
+          resolveGroupPolicy: (chatId, turnCfg) =>
+            resolveChannelGroupPolicy({
+              cfg: turnCfg,
+              channel: "telegram",
+              accountId: "work",
+              groupId: String(chatId),
+            }),
+        }),
+      ).toEqual(expected);
+    },
+  );
+
+  it("allows a group explicitly listed in groups config even when no allowFrom entries exist", () => {
+    expect(runAccess({})).toEqual({ allowed: true, groupPolicy: "allowlist" });
+  });
+
+  it("still blocks when only wildcard match and no allowFrom entries", () => {
+    const result = runAccess({
+      resolveGroupPolicy: () => ({
+        allowlistEnabled: true,
+        allowed: true,
+        groupConfig: undefined,
+      }),
+    });
+
+    expect(result).toEqual({
+      allowed: false,
+      reason: "group-policy-allowlist-empty",
+      groupPolicy: "allowlist",
+    });
+  });
+
+  it("rejects a group not in groups config", () => {
+    const result = runAccess({
+      chatId: "-100999999",
+      resolveGroupPolicy: () => ({
+        allowlistEnabled: true,
+        allowed: false,
+      }),
+    });
+
+    expect(result).toEqual({
+      allowed: false,
+      reason: "group-chat-not-allowed",
+      groupPolicy: "allowlist",
+    });
+  });
+
+  it("blocks unauthorized sender even when chat is explicitly allowed and sender entries exist", () => {
+    const result = runAccess({
+      effectiveGroupAllow: allow(["111"]),
+      senderId: "222",
+      resolveGroupPolicy: () => ({
+        allowlistEnabled: true,
+        allowed: true,
+        groupConfig: { requireMention: false },
+      }),
+    });
+
+    expect(result).toEqual({
+      allowed: false,
+      reason: "group-policy-allowlist-unauthorized",
+      groupPolicy: "allowlist",
+    });
+  });
+
+  it("allows when groupPolicy is open regardless of allowlist state", () => {
+    const result = runAccess({
+      telegramCfg: { groupPolicy: "open" } as TelegramAccountConfig,
+      resolveGroupPolicy: () => ({
+        allowlistEnabled: false,
+        allowed: false,
+      }),
+    });
+
+    expect(result).toEqual({ allowed: true, groupPolicy: "open" });
+  });
+
+  it("rejects when groupPolicy is disabled", () => {
+    const result = runAccess({
+      telegramCfg: { groupPolicy: "disabled" } as TelegramAccountConfig,
+      resolveGroupPolicy: () => ({
+        allowlistEnabled: false,
+        allowed: false,
+      }),
+    });
+
+    expect(result).toEqual({
+      allowed: false,
+      reason: "group-policy-disabled",
+      groupPolicy: "disabled",
+    });
+  });
+
+  it("uses topic policy before group and account policy", () => {
+    expect(
+      runAccess({
+        telegramCfg: { groupPolicy: "open" } as TelegramAccountConfig,
+        groupConfig: { groupPolicy: "open" },
+        topicConfig: { groupPolicy: "disabled" },
+      }),
+    ).toEqual({
+      allowed: false,
+      reason: "group-policy-disabled",
+      groupPolicy: "disabled",
+    });
+    expect(
+      runAccess({
+        telegramCfg: { groupPolicy: "open" } as TelegramAccountConfig,
+        groupConfig: { groupPolicy: "disabled" },
+        topicConfig: { groupPolicy: "open" },
+      }),
+    ).toEqual({ allowed: true, groupPolicy: "open" });
+  });
+
+  it("allows non-group messages without any checks", () => {
+    const result = runAccess({
+      isGroup: false,
+      chatId: "12345",
+      resolveGroupPolicy: () => ({
+        allowlistEnabled: true,
+        allowed: false,
+      }),
+    });
+
+    expect(result).toEqual({ allowed: true, groupPolicy: "allowlist" });
+  });
+
+  it("blocks allowlist groups without sender identity before sender matching", () => {
+    const result = runAccess({
+      senderId: undefined,
+      effectiveGroupAllow: allow(["111"]),
+    });
+
+    expect(result).toEqual({
+      allowed: false,
+      reason: "group-policy-allowlist-no-sender",
+      groupPolicy: "allowlist",
+    });
+  });
+
+  it("allows authorized sender in wildcard-matched group with sender entries", () => {
+    const result = runAccess({
+      effectiveGroupAllow: allow(["111"]),
+      senderId: "111",
+      resolveGroupPolicy: () => ({
+        allowlistEnabled: true,
+        allowed: true,
+        groupConfig: undefined,
+      }),
+    });
+
+    expect(result).toEqual({ allowed: true, groupPolicy: "allowlist" });
+  });
+});

@@ -4,18 +4,31 @@ read_when:
   - You want to enqueue a system event without creating a cron job
   - You need to enable or disable heartbeats
   - You want to inspect system presence entries
-title: "system"
+title: "System"
 ---
 
 # `paleoclaw system`
 
-System-level helpers for the Gateway: enqueue system events, control heartbeats,
-and view presence.
+System-level helpers for the Gateway: enqueue system events, control
+heartbeats, and view presence.
+
+All `system` subcommands use Gateway RPC and accept the shared client flags:
+
+| Flag                    | Default                              | Description                                                                                                                                                                                            |
+| ----------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `--url <url>`           | `gateway.remote.url` when configured | Gateway WebSocket URL.                                                                                                                                                                                 |
+| `--port <port>`         | none                                 | Local Gateway port.                                                                                                                                                                                    |
+| `--token <token>`       | none                                 | Gateway token (if required).                                                                                                                                                                           |
+| `--password <password>` | none                                 | Gateway password (if required).                                                                                                                                                                        |
+| `--timeout <ms>`        | `30000`                              | RPC timeout in milliseconds.                                                                                                                                                                           |
+| `--expect-final`        | off                                  | Accepted as a shared client flag, but has no effect on system commands.                                                                                                                                |
+| `--json`                | off                                  | Output JSON. `heartbeat last/enable/disable` and `system presence` always print the raw RPC JSON payload regardless of this flag; `system event` uses it to switch between JSON and a plain `ok` line. |
 
 ## Common commands
 
 ```bash
 paleoclaw system event --text "Check for urgent follow-ups" --mode now
+paleoclaw system event --text "Check for urgent follow-ups" --url ws://127.0.0.1:18789 --token "$OPENCLAW_GATEWAY_TOKEN"
 paleoclaw system heartbeat enable
 paleoclaw system heartbeat last
 paleoclaw system presence
@@ -23,38 +36,63 @@ paleoclaw system presence
 
 ## `system event`
 
-Enqueue a system event on the **main** session. The next heartbeat will inject
-it as a `System:` line in the prompt. Use `--mode now` to trigger the heartbeat
-immediately; `next-heartbeat` waits for the next scheduled tick.
+Enqueue a system event on the **main** session by default. The next
+heartbeat injects it as a `System:` line in the prompt. Use `--mode now` to
+trigger the heartbeat immediately; `next-heartbeat` (default) waits for the
+next scheduled tick.
+
+The command returns when the Gateway accepts the event, not when the heartbeat
+finishes. `--expect-final` does not wait for a heartbeat or agent response.
+
+Pass `--session-key` to target a specific session, for example to relay an
+async-task completion back to the channel that started it. Prefer an
+agent-qualified key. For example, if the `ops` agent is configured:
+
+```bash
+paleoclaw system event --text "Deploy finished" --session-key agent:ops:main --mode now
+```
+
+With `heartbeat.isolatedSession: true`, a targeted wake reads and consumes the
+event from the selected session while running in a fresh heartbeat session.
+Events queued for other sessions stay untouched.
+
+<Note>
+**Timing exception with `--session-key`:** when `--session-key` is supplied,
+`--mode next-heartbeat` collapses to an immediate targeted wake instead of
+waiting for the next scheduled tick. Targeted wakes use heartbeat intent
+`immediate` so they bypass the runner's not-due gate that would otherwise
+defer (and effectively drop) an `event`-intent wake. If you want delayed
+delivery, omit `--session-key` so the event lands on the main session and
+rides the next regular heartbeat.
+</Note>
 
 Flags:
 
 - `--text <text>`: required system event text.
 - `--mode <mode>`: `now` or `next-heartbeat` (default).
-- `--json`: machine-readable output.
+- `--session-key <sessionKey>`: optional; target a specific agent session
+  instead of the agent's main session. The Gateway rejects malformed
+  agent-qualified keys, keys for unknown agents, targets that conflict with the
+  caller's agent scope, and subagent sessions. Rejected targets do not fall back
+  to the main session.
 
 ## `system heartbeat last|enable|disable`
-
-Heartbeat controls:
 
 - `last`: show the last heartbeat event.
 - `enable`: turn heartbeats back on (use this if they were disabled).
 - `disable`: pause heartbeats.
-
-Flags:
-
-- `--json`: machine-readable output.
 
 ## `system presence`
 
 List the current system presence entries the Gateway knows about (nodes,
 instances, and similar status lines).
 
-Flags:
-
-- `--json`: machine-readable output.
-
 ## Notes
 
-- Requires a running Gateway reachable by your current config (local or remote).
+- Requires a running Gateway reachable by your current config (local or
+  remote).
 - System events are ephemeral and not persisted across restarts.
+
+## Related
+
+- [CLI reference](/cli)

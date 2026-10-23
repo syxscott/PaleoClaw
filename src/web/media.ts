@@ -6,12 +6,7 @@ import { SafeOpenError, readLocalFileSafely } from "../infra/fs-safe.js";
 import type { SsrFPolicy } from "../infra/net/ssrf.js";
 import { type MediaKind, maxBytesForKind } from "../media/constants.js";
 import { fetchRemoteMedia } from "../media/fetch.js";
-import {
-  convertHeicToJpeg,
-  hasAlphaChannel,
-  optimizeImageToPng,
-  resizeToJpeg,
-} from "../media/image-ops.js";
+import { convertHeicToJpeg, optimizeImageToPng, resizeToJpeg } from "../media/image-ops.js";
 import { getDefaultMediaLocalRoots } from "../media/local-roots.js";
 import { detectMime, extensionForMime, kindFromMime } from "../media/mime.js";
 import { resolveUserPath } from "../utils.js";
@@ -205,6 +200,27 @@ function logOptimizedImage(params: { originalSize: number; optimized: OptimizedI
   );
 }
 
+/**
+ * Detect an alpha channel from the PNG IHDR color type.
+ *
+ * Upstream dropped the sharp-backed helper in favour of the rastermill header
+ * probe, so this web surface keeps the check it needs without a native codec:
+ * PNG color type 4 (gray+alpha) and 6 (RGBA) carry an alpha channel.
+ */
+function hasPngAlphaChannel(buffer: Buffer): boolean {
+  // 8 byte signature + IHDR chunk header + type + width + height + bit depth + color type
+  if (buffer.length < 26) {
+    return false;
+  }
+  const isPngSignature =
+    buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4e && buffer[3] === 0x47;
+  if (!isPngSignature) {
+    return false;
+  }
+  const colorType = buffer[25];
+  return colorType === 4 || colorType === 6;
+}
+
 async function optimizeImageWithFallback(params: {
   buffer: Buffer;
   cap: number;
@@ -212,7 +228,7 @@ async function optimizeImageWithFallback(params: {
 }): Promise<OptimizedImage> {
   const { buffer, cap, meta } = params;
   const isPng = meta?.contentType === "image/png" || meta?.fileName?.toLowerCase().endsWith(".png");
-  const hasAlpha = isPng && (await hasAlphaChannel(buffer));
+  const hasAlpha = isPng && hasPngAlphaChannel(buffer);
 
   if (hasAlpha) {
     const optimized = await optimizeImageToPng(buffer, cap);

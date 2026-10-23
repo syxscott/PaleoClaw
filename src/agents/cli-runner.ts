@@ -1,510 +1,648 @@
-import type { ImageContent } from "@mariozechner/pi-ai";
-import { resolveHeartbeatPrompt } from "../auto-reply/heartbeat.js";
-import type { ThinkLevel } from "../auto-reply/thinking.js";
-import type { OpenClawConfig } from "../config/config.js";
-import { shouldLogVerbose } from "../globals.js";
-import { isTruthyEnvValue } from "../infra/env.js";
-import { requestHeartbeatNow } from "../infra/heartbeat-wake.js";
-import { enqueueSystemEvent } from "../infra/system-events.js";
+import { runWithCliHistoryWriter } from "../config/sessions/cli-history-boundary.js";
+import { prepareCronRootSessionGeneration } from "../config/sessions/session-delivery-generation.js";
+import { buildGenericCliContextEngineHostSupport } from "../context-engine/host-compat.js";
+import { assertAgentRunLifecycleGenerationCurrent } from "../infra/agent-events.js";
+import { formatErrorMessage } from "../infra/errors.js";
 import { createSubsystemLogger } from "../logging/subsystem.js";
-import { getProcessSupervisor } from "../process/supervisor/index.js";
-import { scopedHeartbeatWakeOptions } from "../routing/session-key.js";
-import { resolveSessionAgentIds } from "./agent-scope.js";
 import {
-  analyzeBootstrapBudget,
-  buildBootstrapInjectionStats,
-  buildBootstrapPromptWarning,
-  buildBootstrapTruncationReportMeta,
-} from "./bootstrap-budget.js";
-import { makeBootstrapWarn, resolveBootstrapContextForRun } from "./bootstrap-files.js";
-import { resolveCliBackendConfig } from "./cli-backends.js";
+  buildAgentHookContextChannelFields,
+  buildAgentHookContextIdentityFields,
+} from "../plugins/hook-agent-context.js";
+import { getGlobalHookRunner } from "../plugins/hook-runner-global.js";
+import { sleep } from "../utils/sleep.js";
 import {
-  appendImagePathsToPrompt,
-  buildCliSupervisorScopeKey,
-  buildCliArgs,
-  buildSystemPrompt,
-  enqueueCliRun,
-  normalizeCliModel,
-  parseCliJson,
-  parseCliJsonl,
-  resolveCliNoOutputTimeoutMs,
-  resolvePromptInput,
-  resolveSessionIdToSend,
-  resolveSystemPromptUsage,
-  writeCliImages,
-} from "./cli-runner/helpers.js";
-import { resolveOpenClawDocsPath } from "./docs-path.js";
-import { FailoverError, resolveFailoverStatus } from "./failover-error.js";
+  hasAcceptedSessionSpawn,
+  hasCompletionMessageSessionSpawn,
+} from "./accepted-session-spawn.js";
+import { bindOperatorModelExecution, readRunOperatorAuthority } from "./admitted-run-context.js";
+import { runCliBeforeAgentReply } from "./cli-runner/before-agent-reply.js";
+import { acceptsCliLiveSession } from "./cli-runner/cli-live-session-registry.js";
 import {
-  classifyFailoverReason,
-  isFailoverErrorMessage,
-  resolveBootstrapMaxChars,
-  resolveBootstrapPromptTruncationWarningMode,
-  resolveBootstrapTotalMaxChars,
-} from "./pi-embedded-helpers.js";
-import type { EmbeddedPiRunResult } from "./pi-embedded-runner.js";
-import { buildSystemPromptReport } from "./system-prompt-report.js";
-import { redactRunIdentifier, resolveRunWorkspaceDir } from "./workspace-run.js";
+  resolveCliSessionId,
+  runCliRecovery,
+  type CliRecoveryOptions,
+} from "./cli-runner/cli-run-recovery.js";
+import {
+  buildBlockedCliRunResult,
+  buildCliDeliveredFailure,
+  buildCliRunResult,
+  formatCliTerminalInterruption,
+  isClaudeCliBackend,
+  settleCliPreparationError,
+  settlePreparedCliRun,
+} from "./cli-runner/cli-run-settlement.js";
+import {
+  buildCliHookAssistantMessage,
+  buildCliHookUserMessage,
+  finalizeCliContextEngineTurn,
+  persistApprovedCliUserTurnTranscript,
+  persistCliAssistantTranscript,
+  persistCliRunBlock,
+  resolveCliAssistantStopReason,
+  runCliAgentEndHook,
+} from "./cli-runner/cli-run-transcript.js";
+import {
+  attachCliMessagingDeliveryEvidence,
+  getCliMessagingDeliveryEvidence,
+} from "./cli-runner/delivery-evidence.js";
+import { createCliFailoverError } from "./cli-runner/exit-error.js";
+import { cliBackendLog } from "./cli-runner/log.js";
+import type { ClaudeCliRunDiagnosticLifecycle } from "./cli-runner/run-diagnostics.js";
+import {
+  loadCliSessionContextEngineMessages,
+  loadCliSessionHistoryMessages,
+} from "./cli-runner/session-history.js";
+import { prepareCliRunTerminalReply } from "./cli-runner/terminal-reply.js";
+import { runWithCliTurn } from "./cli-runner/turn-admission.js";
+import type { PreparedCliRunContext, RunCliAgentParams } from "./cli-runner/types.js";
+import { claudeCliSessionTranscriptHasContent } from "./command/attempt-execution.helpers.js";
+import type { EmbeddedAgentRunResult } from "./embedded-agent-runner.js";
+import { resolveSourceReplyDelivery } from "./embedded-agent-runner/delivery-evidence.js";
+import { coerceToFailoverError, recordModelFallbackStop } from "./failover-error.js";
+import { runBeforeAgentRunGate } from "./harness/before-agent-run.js";
+import { bootstrapHarnessContextEngine } from "./harness/context-engine-lifecycle.js";
+import { buildAgentHookContext } from "./harness/hook-context.js";
+import { buildAgentHookConversationMessages } from "./harness/hook-history.js";
+import {
+  runAgentHarnessLlmInputHook,
+  runAgentHarnessLlmOutputHook,
+} from "./harness/lifecycle-hook-helpers.js";
+import { isRequiredReplyExpectation, resolveReplyExpectation } from "./reply-completion.js";
+import {
+  createAdmittedGatewayToolCallerIdentity,
+  withGatewayToolCallerIdentity,
+} from "./tools/gateway-caller-context.js";
 
-const log = createSubsystemLogger("agent/claude-cli");
+const log = createSubsystemLogger("agents/cli-runner");
 
-export async function runCliAgent(params: {
-  sessionId: string;
-  sessionKey?: string;
-  agentId?: string;
-  sessionFile: string;
-  workspaceDir: string;
-  config?: OpenClawConfig;
-  prompt: string;
-  provider: string;
-  model?: string;
-  thinkLevel?: ThinkLevel;
-  timeoutMs: number;
-  runId: string;
-  extraSystemPrompt?: string;
-  streamParams?: import("../commands/agent/types.js").AgentStreamParams;
-  ownerNumbers?: string[];
-  cliSessionId?: string;
-  bootstrapPromptWarningSignaturesSeen?: string[];
-  /** Backward-compat fallback when only the previous signature is available. */
-  bootstrapPromptWarningSignature?: string;
-  images?: ImageContent[];
-}): Promise<EmbeddedPiRunResult> {
-  const started = Date.now();
-  const workspaceResolution = resolveRunWorkspaceDir({
-    workspaceDir: params.workspaceDir,
-    sessionKey: params.sessionKey,
-    agentId: params.agentId,
-    config: params.config,
-  });
-  const resolvedWorkspace = workspaceResolution.workspaceDir;
-  const redactedSessionId = redactRunIdentifier(params.sessionId);
-  const redactedSessionKey = redactRunIdentifier(params.sessionKey);
-  const redactedWorkspace = redactRunIdentifier(resolvedWorkspace);
-  if (workspaceResolution.usedFallback) {
-    log.warn(
-      `[workspace-fallback] caller=runCliAgent reason=${workspaceResolution.fallbackReason} run=${params.runId} session=${redactedSessionId} sessionKey=${redactedSessionKey} agent=${workspaceResolution.agentId} workspace=${redactedWorkspace}`,
-    );
+/** Checks whether a Claude CLI session binding has reached its transcript file. */
+export async function isCliBindingFlushed(
+  sessionId: string | undefined,
+  provider: string | undefined,
+  workspaceDir?: string,
+  options?: { skipTranscriptProbe?: boolean },
+): Promise<boolean> {
+  if (!provider || !isClaudeCliBackend(provider)) {
+    return true;
   }
-  const workspaceDir = resolvedWorkspace;
-
-  const backendResolved = resolveCliBackendConfig(params.provider, params.config);
-  if (!backendResolved) {
-    throw new Error(`Unknown CLI backend: ${params.provider}`);
+  if (!sessionId) {
+    return false;
   }
-  const backend = backendResolved.config;
-  const modelId = (params.model ?? "default").trim() || "default";
-  const normalizedModel = normalizeCliModel(modelId, backend);
-  const modelDisplay = `${params.provider}/${modelId}`;
-
-  const extraSystemPrompt = [
-    params.extraSystemPrompt?.trim(),
-    "Tools are disabled in this session. Do not call tools.",
-  ]
-    .filter(Boolean)
-    .join("\n");
-
-  const sessionLabel = params.sessionKey ?? params.sessionId;
-  const { bootstrapFiles, contextFiles } = await resolveBootstrapContextForRun({
-    workspaceDir,
-    config: params.config,
-    sessionKey: params.sessionKey,
-    sessionId: params.sessionId,
-    warn: makeBootstrapWarn({ sessionLabel, warn: (message) => log.warn(message) }),
-  });
-  const bootstrapMaxChars = resolveBootstrapMaxChars(params.config);
-  const bootstrapTotalMaxChars = resolveBootstrapTotalMaxChars(params.config);
-  const bootstrapAnalysis = analyzeBootstrapBudget({
-    files: buildBootstrapInjectionStats({
-      bootstrapFiles,
-      injectedFiles: contextFiles,
-    }),
-    bootstrapMaxChars,
-    bootstrapTotalMaxChars,
-  });
-  const bootstrapPromptWarningMode = resolveBootstrapPromptTruncationWarningMode(params.config);
-  const bootstrapPromptWarning = buildBootstrapPromptWarning({
-    analysis: bootstrapAnalysis,
-    mode: bootstrapPromptWarningMode,
-    seenSignatures: params.bootstrapPromptWarningSignaturesSeen,
-    previousSignature: params.bootstrapPromptWarningSignature,
-  });
-  const { defaultAgentId, sessionAgentId } = resolveSessionAgentIds({
-    sessionKey: params.sessionKey,
-    config: params.config,
-    agentId: params.agentId,
-  });
-  const heartbeatPrompt =
-    sessionAgentId === defaultAgentId
-      ? resolveHeartbeatPrompt(params.config?.agents?.defaults?.heartbeat?.prompt)
-      : undefined;
-  const docsPath = await resolveOpenClawDocsPath({
-    workspaceDir,
-    argv1: process.argv[1],
-    cwd: process.cwd(),
-    moduleUrl: import.meta.url,
-  });
-  const systemPrompt = buildSystemPrompt({
-    workspaceDir,
-    config: params.config,
-    defaultThinkLevel: params.thinkLevel,
-    extraSystemPrompt,
-    ownerNumbers: params.ownerNumbers,
-    heartbeatPrompt,
-    docsPath: docsPath ?? undefined,
-    tools: [],
-    contextFiles,
-    bootstrapTruncationWarningLines: bootstrapPromptWarning.lines,
-    modelDisplay,
-    agentId: sessionAgentId,
-  });
-  const systemPromptReport = buildSystemPromptReport({
-    source: "run",
-    generatedAt: Date.now(),
-    sessionId: params.sessionId,
-    sessionKey: params.sessionKey,
-    provider: params.provider,
-    model: modelId,
-    workspaceDir,
-    bootstrapMaxChars,
-    bootstrapTotalMaxChars,
-    bootstrapTruncation: buildBootstrapTruncationReportMeta({
-      analysis: bootstrapAnalysis,
-      warningMode: bootstrapPromptWarningMode,
-      warning: bootstrapPromptWarning,
-    }),
-    sandbox: { mode: "off", sandboxed: false },
-    systemPrompt,
-    bootstrapFiles,
-    injectedFiles: contextFiles,
-    skillsPrompt: "",
-    tools: [],
-  });
-
-  // Helper function to execute CLI with given session ID
-  const executeCliWithSession = async (
-    cliSessionIdToUse?: string,
-  ): Promise<{
-    text: string;
-    sessionId?: string;
-    usage?: {
-      input?: number;
-      output?: number;
-      cacheRead?: number;
-      cacheWrite?: number;
-      total?: number;
-    };
-  }> => {
-    const { sessionId: resolvedSessionId, isNew } = resolveSessionIdToSend({
-      backend,
-      cliSessionId: cliSessionIdToUse,
-    });
-    const useResume = Boolean(
-      cliSessionIdToUse && resolvedSessionId && backend.resumeArgs && backend.resumeArgs.length > 0,
-    );
-    const systemPromptArg = resolveSystemPromptUsage({
-      backend,
-      isNewSession: isNew,
-      systemPrompt,
-    });
-
-    let imagePaths: string[] | undefined;
-    let cleanupImages: (() => Promise<void>) | undefined;
-    let prompt = params.prompt;
-    if (params.images && params.images.length > 0) {
-      const imagePayload = await writeCliImages(params.images);
-      imagePaths = imagePayload.paths;
-      cleanupImages = imagePayload.cleanup;
-      if (!backend.imageArg) {
-        prompt = appendImagePathsToPrompt(prompt, imagePaths);
-      }
+  // Warm-stdin sessions keep continuity in the managed stdio child and do not
+  // write native transcripts. Probing them would always clear a valid binding.
+  if (options?.skipTranscriptProbe) {
+    return true;
+  }
+  for (const delayMs of [0, 50, 150]) {
+    if (delayMs > 0) {
+      await sleep(delayMs);
     }
-
-    const { argsPrompt, stdin } = resolvePromptInput({
-      backend,
-      prompt,
-    });
-    const stdinPayload = stdin ?? "";
-    const baseArgs = useResume ? (backend.resumeArgs ?? backend.args ?? []) : (backend.args ?? []);
-    const resolvedArgs = useResume
-      ? baseArgs.map((entry) => entry.replaceAll("{sessionId}", resolvedSessionId ?? ""))
-      : baseArgs;
-    const args = buildCliArgs({
-      backend,
-      baseArgs: resolvedArgs,
-      modelId: normalizedModel,
-      sessionId: resolvedSessionId,
-      systemPrompt: systemPromptArg,
-      imagePaths,
-      promptArg: argsPrompt,
-      useResume,
-    });
-
-    const serialize = backend.serialize ?? true;
-    const queueKey = serialize ? backendResolved.id : `${backendResolved.id}:${params.runId}`;
-
-    try {
-      const output = await enqueueCliRun(queueKey, async () => {
-        log.info(
-          `cli exec: provider=${params.provider} model=${normalizedModel} promptChars=${params.prompt.length}`,
-        );
-        const logOutputText = isTruthyEnvValue(process.env.OPENCLAW_CLAUDE_CLI_LOG_OUTPUT);
-        if (logOutputText) {
-          const logArgs: string[] = [];
-          for (let i = 0; i < args.length; i += 1) {
-            const arg = args[i] ?? "";
-            if (arg === backend.systemPromptArg) {
-              const systemPromptValue = args[i + 1] ?? "";
-              logArgs.push(arg, `<systemPrompt:${systemPromptValue.length} chars>`);
-              i += 1;
-              continue;
-            }
-            if (arg === backend.sessionArg) {
-              logArgs.push(arg, args[i + 1] ?? "");
-              i += 1;
-              continue;
-            }
-            if (arg === backend.modelArg) {
-              logArgs.push(arg, args[i + 1] ?? "");
-              i += 1;
-              continue;
-            }
-            if (arg === backend.imageArg) {
-              logArgs.push(arg, "<image>");
-              i += 1;
-              continue;
-            }
-            logArgs.push(arg);
-          }
-          if (argsPrompt) {
-            const promptIndex = logArgs.indexOf(argsPrompt);
-            if (promptIndex >= 0) {
-              logArgs[promptIndex] = `<prompt:${argsPrompt.length} chars>`;
-            }
-          }
-          log.info(`cli argv: ${backend.command} ${logArgs.join(" ")}`);
-        }
-
-        const env = (() => {
-          const next = { ...process.env, ...backend.env };
-          for (const key of backend.clearEnv ?? []) {
-            delete next[key];
-          }
-          return next;
-        })();
-        const noOutputTimeoutMs = resolveCliNoOutputTimeoutMs({
-          backend,
-          timeoutMs: params.timeoutMs,
-          useResume,
-        });
-        const supervisor = getProcessSupervisor();
-        const scopeKey = buildCliSupervisorScopeKey({
-          backend,
-          backendId: backendResolved.id,
-          cliSessionId: useResume ? resolvedSessionId : undefined,
-        });
-
-        const managedRun = await supervisor.spawn({
-          sessionId: params.sessionId,
-          backendId: backendResolved.id,
-          scopeKey,
-          replaceExistingScope: Boolean(useResume && scopeKey),
-          mode: "child",
-          argv: [backend.command, ...args],
-          timeoutMs: params.timeoutMs,
-          noOutputTimeoutMs,
-          cwd: workspaceDir,
-          env,
-          input: stdinPayload,
-        });
-        const result = await managedRun.wait();
-
-        const stdout = result.stdout.trim();
-        const stderr = result.stderr.trim();
-        if (logOutputText) {
-          if (stdout) {
-            log.info(`cli stdout:\n${stdout}`);
-          }
-          if (stderr) {
-            log.info(`cli stderr:\n${stderr}`);
-          }
-        }
-        if (shouldLogVerbose()) {
-          if (stdout) {
-            log.debug(`cli stdout:\n${stdout}`);
-          }
-          if (stderr) {
-            log.debug(`cli stderr:\n${stderr}`);
-          }
-        }
-
-        if (result.exitCode !== 0 || result.reason !== "exit") {
-          if (result.reason === "no-output-timeout" || result.noOutputTimedOut) {
-            const timeoutReason = `CLI produced no output for ${Math.round(noOutputTimeoutMs / 1000)}s and was terminated.`;
-            log.warn(
-              `cli watchdog timeout: provider=${params.provider} model=${modelId} session=${resolvedSessionId ?? params.sessionId} noOutputTimeoutMs=${noOutputTimeoutMs} pid=${managedRun.pid ?? "unknown"}`,
-            );
-            if (params.sessionKey) {
-              const stallNotice = [
-                `CLI agent (${params.provider}) produced no output for ${Math.round(noOutputTimeoutMs / 1000)}s and was terminated.`,
-                "It may have been waiting for interactive input or an approval prompt.",
-                "For Claude Code, prefer --permission-mode bypassPermissions --print.",
-              ].join(" ");
-              enqueueSystemEvent(stallNotice, { sessionKey: params.sessionKey });
-              requestHeartbeatNow(
-                scopedHeartbeatWakeOptions(params.sessionKey, { reason: "cli:watchdog:stall" }),
-              );
-            }
-            throw new FailoverError(timeoutReason, {
-              reason: "timeout",
-              provider: params.provider,
-              model: modelId,
-              status: resolveFailoverStatus("timeout"),
-            });
-          }
-          if (result.reason === "overall-timeout") {
-            const timeoutReason = `CLI exceeded timeout (${Math.round(params.timeoutMs / 1000)}s) and was terminated.`;
-            throw new FailoverError(timeoutReason, {
-              reason: "timeout",
-              provider: params.provider,
-              model: modelId,
-              status: resolveFailoverStatus("timeout"),
-            });
-          }
-          const err = stderr || stdout || "CLI failed.";
-          const reason = classifyFailoverReason(err) ?? "unknown";
-          const status = resolveFailoverStatus(reason);
-          throw new FailoverError(err, {
-            reason,
-            provider: params.provider,
-            model: modelId,
-            status,
-          });
-        }
-
-        const outputMode = useResume ? (backend.resumeOutput ?? backend.output) : backend.output;
-
-        if (outputMode === "text") {
-          return { text: stdout, sessionId: undefined };
-        }
-        if (outputMode === "jsonl") {
-          const parsed = parseCliJsonl(stdout, backend);
-          return parsed ?? { text: stdout };
-        }
-
-        const parsed = parseCliJson(stdout, backend);
-        return parsed ?? { text: stdout };
-      });
-
-      return output;
-    } finally {
-      if (cleanupImages) {
-        await cleanupImages();
-      }
+    if (await claudeCliSessionTranscriptHasContent({ sessionId, workspaceDir })) {
+      return true;
     }
-  };
+  }
+  return false;
+}
 
-  // Try with the provided CLI session ID first
+export function runCliAgent(paramsInput: RunCliAgentParams): Promise<EmbeddedAgentRunResult> {
+  return runWithCliTurn(paramsInput, runCliAgentInternal);
+}
+
+async function runCliAgentInternal(
+  params: RunCliAgentParams,
+  diagnosticLifecycle?: ClaudeCliRunDiagnosticLifecycle,
+): Promise<EmbeddedAgentRunResult> {
+  assertAgentRunLifecycleGenerationCurrent(params.lifecycleGeneration!);
+  // The hook gate must fire before prepareCliRunContext — that call allocates
+  // backend resources released only by runPreparedCliAgent's try…finally.
+  await params.onExecutionStarted?.();
+  assertAgentRunLifecycleGenerationCurrent(params.lifecycleGeneration!);
+  params.abortSignal?.throwIfAborted();
+  params.assertCurrent?.();
+  let modelExecution: ReturnType<typeof bindOperatorModelExecution>;
+  const assertCallerCurrent = params.assertCurrent;
+  const generationAbortController = new AbortController();
+  let generation: Awaited<ReturnType<typeof prepareCronRootSessionGeneration>>;
   try {
-    const output = await executeCliWithSession(params.cliSessionId);
-    const text = output.text?.trim();
-    const payloads = text ? [{ text }] : undefined;
-
-    return {
-      payloads,
-      meta: {
-        durationMs: Date.now() - started,
-        systemPromptReport,
-        agentMeta: {
-          sessionId: output.sessionId ?? params.cliSessionId ?? params.sessionId ?? "",
-          provider: params.provider,
-          model: modelId,
-          usage: output.usage,
-        },
-      },
-    };
-  } catch (err) {
-    if (err instanceof FailoverError) {
-      // Check if this is a session expired error and we have a session to clear
-      if (err.reason === "session_expired" && params.cliSessionId && params.sessionKey) {
-        log.warn(
-          `CLI session expired, clearing session ID and retrying: provider=${params.provider} session=${redactRunIdentifier(params.cliSessionId)}`,
-        );
-
-        // Clear the expired session ID from the session entry
-        // This requires access to the session store, which we don't have here
-        // We'll need to modify the caller to handle this case
-
-        // For now, retry without the session ID to create a new session
-        const output = await executeCliWithSession(undefined);
-        const text = output.text?.trim();
-        const payloads = text ? [{ text }] : undefined;
-
-        return {
-          payloads,
-          meta: {
-            durationMs: Date.now() - started,
-            systemPromptReport,
-            agentMeta: {
-              sessionId: output.sessionId ?? params.sessionId ?? "",
-              provider: params.provider,
-              model: modelId,
-              usage: output.usage,
+    const target = params.sessionTarget;
+    generation =
+      target && !params.sessionManager && !params.isolatedCompletion
+        ? await prepareCronRootSessionGeneration(
+            {
+              ...target,
+              sessionKey: params.sessionKey ?? target.sessionKey,
+              sessionId: params.sessionId,
+              lifecycleRevision:
+                params.expectedLifecycleRevision ?? params.sessionEntry?.lifecycleRevision,
             },
-          },
-        };
-      }
-      throw err;
+            (reason) => generationAbortController.abort(reason),
+          )
+        : undefined;
+    const hookResult = await runCliBeforeAgentReply(params, generation?.assertCurrent);
+    if (hookResult) {
+      return hookResult;
     }
-    const message = err instanceof Error ? err.message : String(err);
-    if (isFailoverErrorMessage(message)) {
-      const reason = classifyFailoverReason(message) ?? "unknown";
-      const status = resolveFailoverStatus(reason);
-      throw new FailoverError(message, {
-        reason,
-        provider: params.provider,
-        model: modelId,
-        status,
-      });
+    modelExecution = bindOperatorModelExecution(
+      readRunOperatorAuthority(params),
+      params.requesterModel,
+      params.mapOperatorAuthorizationError,
+    );
+    const abortSignals = [
+      params.abortSignal,
+      modelExecution?.signal,
+      generation ? generationAbortController.signal : undefined,
+    ].filter((signal) => signal !== undefined);
+    const runParams =
+      modelExecution || generation
+        ? {
+            ...params,
+            abortSignal: abortSignals.length > 1 ? AbortSignal.any(abortSignals) : abortSignals[0],
+            assertCurrent: () => {
+              assertCallerCurrent?.();
+              modelExecution?.assertCurrent();
+              generation?.assertCurrent();
+            },
+          }
+        : params;
+    const { prepareCliRunContext } = await import("./cli-runner/prepare.runtime.js");
+    let context: PreparedCliRunContext;
+    try {
+      context = await prepareCliRunContext(runParams);
+    } catch (error) {
+      await settleCliPreparationError(error, runParams);
+      throw error;
     }
-    throw err;
+    // Preparation resolves the execution owner and effective capture config;
+    // publish both before commentary can arrive from the prepared run. The
+    // captured prompt is published by execution, which composes what the CLI
+    // actually receives (history reseed, input transforms, context, images).
+    diagnosticLifecycle?.setExecutionContext(context.params);
+    diagnosticLifecycle?.publishCapturedContent({
+      userPrompt: context.params.prompt,
+    });
+    // Settlement owns post-commit tolerance: an authority loss after the final
+    // reply commits records a warning and stays successful (#170757); authority
+    // checks live at the protected effect boundaries in the run params instead.
+    return await runPreparedCliAgent(context, diagnosticLifecycle);
+  } finally {
+    generation?.release();
+    modelExecution?.release();
   }
 }
 
-export async function runClaudeCliAgent(params: {
-  sessionId: string;
-  sessionKey?: string;
-  agentId?: string;
-  sessionFile: string;
-  workspaceDir: string;
-  config?: OpenClawConfig;
-  prompt: string;
-  provider?: string;
-  model?: string;
-  thinkLevel?: ThinkLevel;
-  timeoutMs: number;
-  runId: string;
-  extraSystemPrompt?: string;
-  ownerNumbers?: string[];
-  claudeSessionId?: string;
-  images?: ImageContent[];
-}): Promise<EmbeddedPiRunResult> {
-  return runCliAgent({
-    sessionId: params.sessionId,
-    sessionKey: params.sessionKey,
-    agentId: params.agentId,
-    sessionFile: params.sessionFile,
-    workspaceDir: params.workspaceDir,
-    config: params.config,
-    prompt: params.prompt,
-    provider: params.provider ?? "claude-cli",
-    model: params.model ?? "opus",
-    thinkLevel: params.thinkLevel,
-    timeoutMs: params.timeoutMs,
-    runId: params.runId,
-    extraSystemPrompt: params.extraSystemPrompt,
-    ownerNumbers: params.ownerNumbers,
-    cliSessionId: params.claudeSessionId,
-    images: params.images,
+export async function runPreparedCliAgent(
+  context: PreparedCliRunContext,
+  diagnosticLifecycle?: ClaudeCliRunDiagnosticLifecycle,
+): Promise<EmbeddedAgentRunResult> {
+  const caller = createAdmittedGatewayToolCallerIdentity({
+    admittedRunContext: context.params.admittedRunContext,
+    agentId: context.params.agentId,
+    sessionKey: context.params.sessionKey,
+    approvalSignals: context.params.abortSignal ? [context.params.abortSignal] : undefined,
   });
+  return await withGatewayToolCallerIdentity(
+    caller && {
+      ...caller,
+      watchdogAttempt: context.params.diagnosticOwner?.watchdogAttempt,
+    },
+    () =>
+      settlePreparedCliRun({
+        context,
+        diagnosticLifecycle,
+        run: (complete) =>
+          runWithCliHistoryWriter(context.cliHistoryWriter, () =>
+            runPreparedCliAgentOwned(context, complete, diagnosticLifecycle),
+          ),
+      }),
+  );
+}
+
+async function runPreparedCliAgentOwned(
+  context: PreparedCliRunContext,
+  complete: (result: EmbeddedAgentRunResult) => void,
+  diagnosticLifecycle?: ClaudeCliRunDiagnosticLifecycle,
+): Promise<EmbeddedAgentRunResult> {
+  let executePreparedCliRun: typeof import("./cli-runner/execute.runtime.js").executePreparedCliRun;
+  const { params } = context;
+  const cliFailoverContext = {
+    provider: params.provider,
+    model: context.modelId,
+    sessionId: params.sessionId,
+    lane: params.lane,
+  };
+  const sessionBindingDisabled = context.preparedBackend.backend.sessionMode === "none";
+  const preparedContextAgentMeta =
+    isClaudeCliBackend(params.provider) && context.contextWindowInfo
+      ? {
+          contextTokens: context.contextWindowInfo.tokens,
+          contextTokensSource: "resolved" as const,
+        }
+      : {};
+  const resultContext = { context, preparedContextAgentMeta, sessionBindingDisabled };
+  const isolatedCompletion = params.isolatedCompletion === true;
+  const controlOperation = params.controlOperation !== undefined;
+  const turnSideEffectsDisabled = isolatedCompletion || controlOperation;
+  const hookRunner = turnSideEffectsDisabled ? undefined : getGlobalHookRunner();
+  const hasLlmInputHooks = hookRunner?.hasHooks("llm_input") === true;
+  const hasLlmOutputHooks = hookRunner?.hasHooks("llm_output") === true;
+  const hasAgentEndHooks = hookRunner?.hasHooks("agent_end") === true;
+  const hasBeforeAgentRunHooks = hookRunner?.hasHooks("before_agent_run") === true;
+  const needsHookHistory = hasLlmInputHooks || hasAgentEndHooks || hasBeforeAgentRunHooks;
+  let historyMessages: unknown[] = [];
+  const promptForHooks = context.promptForHooks ?? params.prompt;
+  const contextWindowFields = () => ({
+    ...(context.contextWindowInfo?.tokens
+      ? { contextTokenBudget: context.contextWindowInfo.tokens }
+      : {}),
+    ...(context.contextWindowInfo?.source
+      ? { contextWindowSource: context.contextWindowInfo.source }
+      : {}),
+    ...(context.contextWindowInfo?.referenceTokens
+      ? { contextWindowReferenceTokens: context.contextWindowInfo.referenceTokens }
+      : {}),
+  });
+  const hookContext = {
+    runId: params.runId,
+    jobId: params.jobId,
+    agentId: params.agentId,
+    sessionKey: params.sessionKey,
+    sessionId: params.sessionId,
+    workspaceDir: params.workspaceDir,
+    trigger: params.trigger,
+    ...(params.config ? { config: params.config } : {}),
+    ...contextWindowFields(),
+    ...buildAgentHookContextChannelFields(params),
+    ...buildAgentHookContextIdentityFields({
+      trigger: params.trigger,
+      senderId: params.senderId,
+      chatId: params.chatId,
+      channelContext: params.channelContext,
+    }),
+  } as const;
+
+  const buildAgentEndMessages = (lastAssistant?: unknown): unknown[] =>
+    buildAgentHookConversationMessages({
+      historyMessages,
+      currentTurnMessages: [
+        buildCliHookUserMessage(promptForHooks),
+        ...(lastAssistant ? [lastAssistant] : []),
+      ],
+    });
+
+  const finishAgentEndHook = (messages: unknown[], error?: string) =>
+    runCliAgentEndHook(params, {
+      event: {
+        messages,
+        success: error === undefined,
+        ...(error !== undefined ? { error } : {}),
+        durationMs: Date.now() - context.started,
+      },
+      ctx: hookContext,
+      hookRunner,
+    });
+  const finishFailedAgentEndHook = (error: unknown) =>
+    finishAgentEndHook(buildAgentEndMessages(), formatErrorMessage(error));
+
+  const finishBlockedRun = async (message: string, pluginId: string) => {
+    await persistCliRunBlock(params, { message, pluginId });
+    await finishAgentEndHook(
+      buildAgentHookConversationMessages({
+        historyMessages,
+        currentTurnMessages: [buildCliHookUserMessage(message)],
+      }),
+      message,
+    );
+    return buildBlockedCliRunResult({ ...resultContext, message });
+  };
+
+  let userTurnHandled = false;
+  const executeCliAttempt = async (cliSessionIdToUse?: string, options?: CliRecoveryOptions) => {
+    const timeoutMs = options?.timeoutMs ?? params.timeoutMs;
+    const forkCliSessionOnResume =
+      options?.forkCliSessionOnResume ?? context.params.forkCliSessionOnResume;
+    const cliSessionResumeAt =
+      cliSessionIdToUse && forkCliSessionOnResume
+        ? (options?.resumeAt ??
+          context.params.cliSessionResumeAt ??
+          context.params.cliSessionBinding?.resumeCheckpointId)
+        : undefined;
+    const persistCliSessionForkSuccessor =
+      options?.onForkSuccessorPersisted && context.params.persistCliSessionForkSuccessor
+        ? async (sessionId: string) => {
+            await context.params.persistCliSessionForkSuccessor?.(sessionId);
+            options.onForkSuccessorPersisted?.(sessionId);
+          }
+        : context.params.persistCliSessionForkSuccessor;
+    const attemptContext =
+      timeoutMs === params.timeoutMs &&
+      forkCliSessionOnResume === context.params.forkCliSessionOnResume &&
+      cliSessionResumeAt === context.params.cliSessionResumeAt &&
+      persistCliSessionForkSuccessor === context.params.persistCliSessionForkSuccessor
+        ? context
+        : {
+            ...context,
+            params: {
+              ...context.params,
+              timeoutMs,
+              forkCliSessionOnResume,
+              cliSessionResumeAt,
+              persistCliSessionForkSuccessor,
+            },
+          };
+    diagnosticLifecycle?.setPhase("send");
+    const output = await executePreparedCliRun(
+      attemptContext,
+      cliSessionIdToUse,
+      diagnosticLifecycle
+        ? {
+            onPhase: diagnosticLifecycle.setPhase,
+            onPromptPrepared: (prompt) =>
+              diagnosticLifecycle.publishCapturedContent({ userPrompt: prompt }),
+          }
+        : undefined,
+    );
+    params.assertCurrent?.();
+    // Test facades and non-instrumented executors may not signal the boundary.
+    diagnosticLifecycle?.setPhase("resolve");
+    const preparedReply = prepareCliRunTerminalReply(context, output);
+    const { sourceReplyMirror, completedFinalSource } = preparedReply;
+    const assistantText = preparedReply.text;
+    const replyExpectation = resolveReplyExpectation(params);
+    if (
+      !output.terminalInterruption &&
+      !output.yielded &&
+      ((replyExpectation === "result-required" &&
+        !params.controlOperation &&
+        !(isolatedCompletion && params.outputTextPolicy === "strict-visible") &&
+        preparedReply.terminalReply.disposition !== "visible" &&
+        !completedFinalSource) ||
+        (isRequiredReplyExpectation(replyExpectation) &&
+          !output.text.trim() &&
+          !params.controlOperation &&
+          resolveSourceReplyDelivery(output) === "missing" &&
+          !output.toolMediaUrls?.length &&
+          !hasCompletionMessageSessionSpawn(output.acceptedSessionSpawns) &&
+          // Strict isolated completion owns valid-empty output after reasoning is removed.
+          !(isolatedCompletion && params.outputTextPolicy === "strict-visible")))
+    ) {
+      const process = output.diagnostics?.process;
+      if (process) {
+        const diagnostics = [
+          `backend=${process.backendId}`,
+          `reason=${process.processReason}`,
+          `exitCode=${process.exitCode ?? "null"}`,
+          `exitSignal=${process.exitSignal ?? "null"}`,
+          `durationMs=${process.durationMs}`,
+          `stdoutBytes=${process.stdoutBytes}`,
+          `stdoutHash=${process.stdoutHash}`,
+          `stderrBytes=${process.stderrBytes}`,
+          `stderrHash=${process.stderrHash}`,
+          `useResume=${process.useResume ? "true" : "false"}`,
+        ].join(" ");
+        cliBackendLog.warn(`cli empty response diagnostics: ${diagnostics}`);
+      }
+      const error = createCliFailoverError(
+        "CLI backend returned an empty response.",
+        "empty_response",
+        cliFailoverContext,
+      );
+      if (
+        (output.toolSummary?.calls ?? 0) > 0 ||
+        hasAcceptedSessionSpawn(output.acceptedSessionSpawns)
+      ) {
+        // Missing a final answer cannot authorize replaying completed tool effects.
+        recordModelFallbackStop(error);
+      }
+      throw attachCliMessagingDeliveryEvidence(error, output);
+    }
+    const assistantTexts = assistantText ? [assistantText] : [];
+    const lastAssistant =
+      assistantText.length > 0
+        ? buildCliHookAssistantMessage({
+            text: assistantText,
+            provider: params.provider,
+            model: context.modelId,
+            usage: output.usage,
+            stopReason: resolveCliAssistantStopReason(output),
+          })
+        : undefined;
+    if (hasLlmOutputHooks) {
+      runAgentHarnessLlmOutputHook({
+        event: {
+          runId: params.runId,
+          sessionId: params.sessionId,
+          provider: params.provider,
+          model: context.modelId,
+          ...contextWindowFields(),
+          resolvedRef: `${params.provider}/${context.modelId}`,
+          assistantTexts,
+          ...(lastAssistant ? { lastAssistant } : {}),
+          ...(output.usage ? { usage: output.usage } : {}),
+        },
+        ctx: hookContext,
+        hookRunner,
+      });
+    }
+    return {
+      output,
+      preparedReply,
+      assistantText,
+      lastAssistant,
+      sourceReplyWasDelivered: sourceReplyMirror.delivered,
+      usedHistoryPrompt:
+        cliSessionIdToUse === undefined && context.openClawHistoryPrompt !== undefined,
+    };
+  };
+
+  const executeRun = async (): Promise<EmbeddedAgentRunResult> => {
+    ({ executePreparedCliRun } = await import("./cli-runner/execute.runtime.js"));
+    historyMessages = needsHookHistory ? await loadCliSessionHistoryMessages(params) : [];
+    const llmInputEvent = {
+      runId: params.runId,
+      sessionId: params.sessionId,
+      provider: params.provider,
+      model: context.modelId,
+      systemPrompt: context.systemPrompt,
+      prompt: promptForHooks,
+      historyMessages,
+      imagesCount: params.images?.length ?? 0,
+    } as const;
+    if (turnSideEffectsDisabled) {
+      const reusableCliSessionId = isolatedCompletion
+        ? undefined
+        : resolveCliSessionId(context.reusableCliSession);
+      if (!isolatedCompletion && !reusableCliSessionId) {
+        throw new Error(
+          `CLI backend ${context.backendResolved.id} cannot ${params.controlOperation} without a reusable native session.`,
+        );
+      }
+      const { output, preparedReply, usedHistoryPrompt } =
+        await executeCliAttempt(reusableCliSessionId);
+      return buildCliRunResult({
+        ...resultContext,
+        output,
+        preparedReply,
+        ...(!isolatedCompletion ? { effectiveCliSessionId: reusableCliSessionId } : {}),
+        bindingFlushOk: true,
+        assistantTranscriptOwned: false,
+        usedHistoryPrompt,
+        userTurnHandled,
+      });
+    }
+    await bootstrapHarnessContextEngine({
+      admittedRunContext: params.admittedRunContext,
+      preparedRunAdmission: params.preparedRunAdmission,
+      hadSessionFile: context.hadSessionFile,
+      contextEngine: context.contextEngine,
+      sessionId: params.sessionId,
+      sessionKey: params.sessionKey,
+      sessionTarget: params.sessionTarget,
+      sessionFile: params.sessionFile,
+      sessionManager: params.sessionManager,
+      transcriptReadFence: params.sessionManager
+        ? undefined
+        : params.userTurnTranscriptRecorder?.getAdmissionReceipt(),
+      config: context.contextEngineConfig,
+      contextEngineHostSupport: buildGenericCliContextEngineHostSupport({
+        backendId: context.backendResolved.id,
+      }),
+      providerId: params.provider,
+      modelId: context.modelId,
+      warn: (message) => log.warn(message),
+    });
+    const contextEngineHistoryMessages = context.contextEngine
+      ? await loadCliSessionContextEngineMessages(params)
+      : [];
+    const finishCliAttempt = async (
+      result: Awaited<ReturnType<typeof executeCliAttempt>>,
+      fallbackCliSessionId?: string,
+    ) => {
+      const {
+        output,
+        preparedReply,
+        assistantText,
+        lastAssistant,
+        sourceReplyWasDelivered,
+        usedHistoryPrompt,
+      } = result;
+      let completed: EmbeddedAgentRunResult | undefined;
+      try {
+        const terminalInterruption = output.terminalInterruption;
+        const effectiveCliSessionId = output.sessionId ?? fallbackCliSessionId;
+        // Native continuity must be resolved before the final transcript commit.
+        const bindingFlushOk = sessionBindingDisabled
+          ? true
+          : await isCliBindingFlushed(
+              effectiveCliSessionId,
+              params.provider,
+              context.cwd ?? context.workspaceDir,
+              { skipTranscriptProbe: acceptsCliLiveSession(context) },
+            );
+        const assistantTranscript = await persistCliAssistantTranscript({
+          runParams: params,
+          // Dispatch owns source-reply transcript mirrors and their idempotency keys.
+          // Persisting them here would duplicate the same visible assistant reply.
+          text: sourceReplyWasDelivered ? "" : output.text,
+          modelId: context.modelId,
+          usage: output.usage,
+          turnUsage: output.diagnosticUsage,
+          stopReason: resolveCliAssistantStopReason(output),
+          yielded: output.yielded,
+        });
+        const runResult = buildCliRunResult({
+          ...resultContext,
+          output,
+          preparedReply,
+          effectiveCliSessionId,
+          bindingFlushOk,
+          assistantTranscriptOwned: assistantTranscript.owned,
+          assistantTranscriptIdempotencyKey: assistantTranscript.idempotencyKey,
+          usedHistoryPrompt,
+          userTurnHandled,
+        });
+        if (!terminalInterruption && !output.yielded && assistantTranscript.idempotencyKey) {
+          completed = runResult;
+          complete(runResult);
+        }
+        await finalizeCliContextEngineTurn({
+          context,
+          historyMessages: contextEngineHistoryMessages,
+          assistantText,
+          terminalAnchor: assistantTranscript.terminalAnchor,
+          output,
+        });
+        const interruptionError = terminalInterruption
+          ? formatCliTerminalInterruption(terminalInterruption)
+          : undefined;
+        await finishAgentEndHook(buildAgentEndMessages(lastAssistant), interruptionError);
+        return runResult;
+      } catch (error) {
+        if (completed) {
+          log.warn(
+            `CLI run ${params.runId} finalization failed after final reply commit: ${formatErrorMessage(error)}`,
+          );
+          return completed;
+        }
+        throw attachCliMessagingDeliveryEvidence(error, output);
+      }
+    };
+
+    const finishDeliveredFailure = async (
+      error: unknown,
+      bindingReplacedDuringRun: boolean,
+    ): Promise<EmbeddedAgentRunResult | undefined> => {
+      const evidence = getCliMessagingDeliveryEvidence(error);
+      if (!evidence) {
+        return undefined;
+      }
+      await finishFailedAgentEndHook(error);
+      return buildCliDeliveredFailure({
+        ...resultContext,
+        error,
+        evidence,
+        reusableCliSessionId: resolveCliSessionId(context.reusableCliSession),
+        bindingReplacedDuringRun,
+      });
+    };
+
+    const block = await runBeforeAgentRunGate(
+      hookRunner,
+      {
+        prompt: promptForHooks,
+        systemPrompt: context.systemPrompt,
+        messages: buildAgentHookConversationMessages({ historyMessages, currentTurnMessages: [] }),
+        channelId: hookContext.channelId,
+        accountId: params.agentAccountId,
+        senderId: params.senderId ?? undefined,
+        senderIsOwner: params.senderIsOwner,
+      },
+      buildAgentHookContext(hookContext),
+    );
+    if (block) {
+      return finishBlockedRun(block.message, block.blockedBy);
+    }
+
+    userTurnHandled = await persistApprovedCliUserTurnTranscript(params);
+    runAgentHarnessLlmInputHook({
+      event: llmInputEvent,
+      ctx: hookContext,
+      hookRunner,
+    });
+    return await runCliRecovery({
+      context,
+      executeAttempt: executeCliAttempt,
+      finishAttempt: finishCliAttempt,
+      finishDeliveredFailure,
+      onTerminalFailure: finishFailedAgentEndHook,
+    });
+  };
+
+  try {
+    const result = await executeRun();
+    // Publish captured content before backend and session cleanup can throw.
+    diagnosticLifecycle?.publishResultContent(result);
+    return result;
+  } catch (error) {
+    throw coerceToFailoverError(error, cliFailoverContext) ?? error;
+  }
 }

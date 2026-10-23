@@ -1,90 +1,66 @@
-import { normalizeChannelId } from "../channels/plugins/index.js";
-import type { ChannelId } from "../channels/plugins/types.js";
-import { isPlainObject } from "../infra/plain-object.js";
-import type { CommandsConfig, NativeCommandsSetting } from "./types.js";
+import { normalizeOptionalLowercaseString } from "@paleoclaw/normalization-core/string-coerce";
+import { getLoadedChannelPlugin, normalizeChannelId } from "../channels/plugins/index.js";
+import { resolveReadOnlyChannelCommandDefaults } from "../channels/plugins/read-only-command-defaults.js";
+import type { ChannelId } from "../channels/plugins/types.public.js";
+import type { NativeCommandsSetting } from "./types.js";
+import type { OpenClawConfig } from "./types.openclaw.js";
 
-export type CommandFlagKey = {
-  [K in keyof CommandsConfig]-?: Exclude<CommandsConfig[K], undefined> extends boolean ? K : never;
-}[keyof CommandsConfig];
+type NativeCommandSettingParams = {
+  providerId: ChannelId;
+  providerSetting?: NativeCommandsSetting;
+  globalSetting?: NativeCommandsSetting;
+  env?: NodeJS.ProcessEnv;
+  stateDir?: string;
+  workspaceDir?: string;
+  config?: OpenClawConfig;
+  autoDefault?: boolean;
+};
 
-function resolveAutoDefault(providerId?: ChannelId): boolean {
-  const id = normalizeChannelId(providerId);
+/** Resolves native skill exposure for a provider, with provider config overriding global config. */
+export function resolveNativeSkillsEnabled(params: NativeCommandSettingParams): boolean {
+  return resolveNativeCommandSetting(params, "nativeSkills");
+}
+
+/** Resolves native command exposure for a provider, with provider config overriding global config. */
+export function resolveNativeCommandsEnabled(params: NativeCommandSettingParams): boolean {
+  return resolveNativeCommandSetting(params, "native");
+}
+
+function resolveNativeCommandSetting(
+  params: NativeCommandSettingParams,
+  kind: "native" | "nativeSkills",
+): boolean {
+  const { providerId, providerSetting, globalSetting, ...options } = params;
+  const setting = providerSetting === undefined ? globalSetting : providerSetting;
+  if (typeof setting === "boolean") {
+    return setting;
+  }
+  const id = normalizeChannelId(providerId) ?? normalizeOptionalLowercaseString(providerId);
   if (!id) {
     return false;
   }
-  if (id === "discord" || id === "telegram") {
-    return true;
+  if (typeof options.autoDefault === "boolean") {
+    return options.autoDefault;
   }
-  if (id === "slack") {
-    return false;
-  }
-  return false;
+  // Prefer live plugin metadata; fall back to read-only manifest defaults during cold config paths.
+  const commandDefaults =
+    getLoadedChannelPlugin(id)?.commands ??
+    (options.config
+      ? resolveReadOnlyChannelCommandDefaults(id, {
+          ...options,
+          config: options.config,
+        })
+      : undefined);
+  return kind === "native"
+    ? commandDefaults?.nativeCommandsAutoEnabled === true
+    : commandDefaults?.nativeSkillsAutoEnabled === true;
 }
 
-export function resolveNativeSkillsEnabled(params: {
-  providerId: ChannelId;
-  providerSetting?: NativeCommandsSetting;
-  globalSetting?: NativeCommandsSetting;
-}): boolean {
-  return resolveNativeCommandSetting(params);
-}
-
-export function resolveNativeCommandsEnabled(params: {
-  providerId: ChannelId;
-  providerSetting?: NativeCommandsSetting;
-  globalSetting?: NativeCommandsSetting;
-}): boolean {
-  return resolveNativeCommandSetting(params);
-}
-
-function resolveNativeCommandSetting(params: {
-  providerId: ChannelId;
-  providerSetting?: NativeCommandsSetting;
-  globalSetting?: NativeCommandsSetting;
-}): boolean {
-  const { providerId, providerSetting, globalSetting } = params;
-  const setting = providerSetting === undefined ? globalSetting : providerSetting;
-  if (setting === true) {
-    return true;
-  }
-  if (setting === false) {
-    return false;
-  }
-  return resolveAutoDefault(providerId);
-}
-
+/** Returns true only when native commands are explicitly disabled by provider or inherited global config. */
 export function isNativeCommandsExplicitlyDisabled(params: {
   providerSetting?: NativeCommandsSetting;
   globalSetting?: NativeCommandsSetting;
 }): boolean {
   const { providerSetting, globalSetting } = params;
-  if (providerSetting === false) {
-    return true;
-  }
-  if (providerSetting === undefined) {
-    return globalSetting === false;
-  }
-  return false;
-}
-
-function getOwnCommandFlagValue(
-  config: { commands?: unknown } | undefined,
-  key: CommandFlagKey,
-): unknown {
-  const { commands } = config ?? {};
-  if (!isPlainObject(commands) || !Object.hasOwn(commands, key)) {
-    return undefined;
-  }
-  return commands[key];
-}
-
-export function isCommandFlagEnabled(
-  config: { commands?: unknown } | undefined,
-  key: CommandFlagKey,
-): boolean {
-  return getOwnCommandFlagValue(config, key) === true;
-}
-
-export function isRestartEnabled(config?: { commands?: unknown }): boolean {
-  return getOwnCommandFlagValue(config, "restart") !== false;
+  return providerSetting === false || (providerSetting === undefined && globalSetting === false);
 }

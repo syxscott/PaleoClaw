@@ -1,91 +1,77 @@
-import type { ExecToolDefaults } from "../../../agents/bash-tools.js";
-import type { SkillSnapshot } from "../../../agents/skills.js";
-import type { OpenClawConfig } from "../../../config/config.js";
-import type { SessionEntry } from "../../../config/sessions.js";
-import type { OriginatingChannelType } from "../../templating.js";
-import type { ElevatedLevel, ReasoningLevel, ThinkLevel, VerboseLevel } from "../directives.js";
+import type { MediaImageLayout } from "../../../agents/embedded-agent-runner/run/prompt-image-metadata.js";
+import type {
+  FollowupRun,
+  ReplyOperationRunState,
+} from "../../../sessions/session-controller.contracts.js";
 
-export type QueueMode = "steer" | "followup" | "collect" | "steer-backlog" | "interrupt" | "queue";
+export type { FollowupRun } from "../../../sessions/session-controller.contracts.js";
+export type {
+  QueuedFollowupReplyBatch,
+  QueuedFollowupReplyDelivery,
+} from "./followup-run-payload.types.js";
+export type {
+  QueueDropPolicy,
+  QueueSettings,
+  ResolveQueueSettingsParams,
+  QueueDedupeMode,
+  EnqueueFollowupRunOptions,
+} from "./queue-settings.types.js";
 
-export type QueueDropPolicy = "old" | "new" | "summarize";
+export class FollowupRunDeferredError extends Error {
+  constructor(message = "Follow-up run deferred") {
+    super(message);
+    this.name = "FollowupRunDeferredError";
+  }
+}
 
-export type QueueSettings = {
-  mode: QueueMode;
-  debounceMs?: number;
-  cap?: number;
-  dropPolicy?: QueueDropPolicy;
-};
-
-export type QueueDedupeMode = "message-id" | "prompt" | "none";
-
-export type FollowupRun = {
-  prompt: string;
-  /** Provider message ID, when available (for deduplication). */
-  messageId?: string;
-  summaryLine?: string;
-  enqueuedAt: number;
-  /**
-   * Originating channel for reply routing.
-   * When set, replies should be routed back to this provider
-   * instead of using the session's lastChannel.
-   */
-  originatingChannel?: OriginatingChannelType;
-  /**
-   * Originating destination for reply routing.
-   * The chat/channel/user ID where the reply should be sent.
-   */
-  originatingTo?: string;
-  /** Provider account id (multi-account). */
-  originatingAccountId?: string;
-  /** Thread id for reply routing (Telegram topic id or Matrix thread event id). */
-  originatingThreadId?: string | number;
-  /** Chat type for context-aware threading (e.g., DM vs channel). */
-  originatingChatType?: string;
-  run: {
-    agentId: string;
-    agentDir: string;
-    sessionId: string;
-    sessionKey?: string;
-    messageProvider?: string;
-    agentAccountId?: string;
-    groupId?: string;
-    groupChannel?: string;
-    groupSpace?: string;
-    senderId?: string;
-    senderName?: string;
-    senderUsername?: string;
-    senderE164?: string;
-    senderIsOwner?: boolean;
-    sessionFile: string;
-    workspaceDir: string;
-    config: OpenClawConfig;
-    skillsSnapshot?: SkillSnapshot;
-    provider: string;
-    model: string;
-    authProfileId?: string;
-    authProfileIdSource?: "auto" | "user";
-    thinkLevel?: ThinkLevel;
-    verboseLevel?: VerboseLevel;
-    reasoningLevel?: ReasoningLevel;
-    elevatedLevel?: ElevatedLevel;
-    execOverrides?: Pick<ExecToolDefaults, "host" | "security" | "ask" | "node">;
-    bashElevated?: {
-      enabled: boolean;
-      allowed: boolean;
-      defaultLevel: ElevatedLevel;
-    };
-    timeoutMs: number;
-    blockReplyBreak: "text_end" | "message_end";
-    ownerNumbers?: string[];
-    extraSystemPrompt?: string;
-    enforceFinalTag?: boolean;
+export function bindReplyOperationQueueDisposition(
+  run: Pick<FollowupRun, "onQueueDisposition">,
+  state: ReplyOperationRunState | undefined,
+): void {
+  const observe = run.onQueueDisposition;
+  run.onQueueDisposition = (disposition) => {
+    if (state) {
+      state.followupQueueDisposition = disposition;
+    }
+    observe?.(disposition);
+    if (state && (disposition !== "queue-cap-old" || state.admission?.status !== "accepted")) {
+      state.admission = { status: "skipped", reason: "queue-cap" };
+    }
   };
+}
+
+/** Admission-owned image facts stay out of the public FollowupRun contract. */
+export type InternalFollowupRun = FollowupRun & {
+  currentTurnImagesPrepared?: true;
+  /** Fact indexes are relative to this run's media array. */
+  mediaImageLayout?: MediaImageLayout;
 };
 
-export type ResolveQueueSettingsParams = {
-  cfg: OpenClawConfig;
-  channel?: string;
-  sessionEntry?: SessionEntry;
-  inlineMode?: QueueMode;
-  inlineOptions?: Partial<QueueSettings>;
-};
+export function isFollowupRunAborted(
+  run: Pick<
+    FollowupRun,
+    "abortSignal" | "queueAbortSignal" | "operatorAuthority" | "controllerInput"
+  >,
+): boolean {
+  return (
+    (!run.controllerInput?.custody.cancellationRetired &&
+      (run.abortSignal?.aborted === true || run.controllerInput?.abortSignal.aborted === true)) ||
+    run.queueAbortSignal?.aborted === true ||
+    run.operatorAuthority?.signal?.aborted === true
+  );
+}
+
+export function resolveFollowupAbortSignal(
+  run: Pick<
+    FollowupRun,
+    "abortSignal" | "queueAbortSignal" | "operatorAuthority" | "controllerInput"
+  >,
+): AbortSignal | undefined {
+  const signals = [
+    run.controllerInput?.custody.cancellationRetired ? undefined : run.abortSignal,
+    run.controllerInput?.custody.cancellationRetired ? undefined : run.controllerInput?.abortSignal,
+    run.queueAbortSignal,
+    run.operatorAuthority?.signal,
+  ].filter((signal): signal is AbortSignal => signal !== undefined);
+  return signals.length > 1 ? AbortSignal.any(signals) : signals[0];
+}

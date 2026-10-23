@@ -59,7 +59,7 @@ describe("bundled plugin sources", () => {
       return {
         ok: false,
         error: "invalid manifest",
-        manifestPath: `${rootDir}/paleoclaw.plugin.json`,
+        manifestPath: `${rootDir}/openclaw.plugin.json`,
       };
     });
 

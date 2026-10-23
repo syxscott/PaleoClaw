@@ -1,5 +1,8 @@
-import { resolveChannelGroupRequireMention } from "paleoclaw/plugin-sdk/compat";
-import type { ChannelGroupContext } from "paleoclaw/plugin-sdk/mattermost";
+import {
+  buildChannelGroupsScopeTree,
+  resolveScopeRequireMention,
+} from "paleoclaw/plugin-sdk/channel-policy";
+import type { ChannelGroupContext } from "../runtime-api.js";
 import { resolveMattermostAccount } from "./mattermost/accounts.js";
 
 export function resolveMattermostGroupRequireMention(
@@ -9,15 +12,10 @@ export function resolveMattermostGroupRequireMention(
     cfg: params.cfg,
     accountId: params.accountId,
   });
-  const requireMentionOverride =
-    typeof params.requireMentionOverride === "boolean"
-      ? params.requireMentionOverride
-      : account.requireMention;
-  return resolveChannelGroupRequireMention({
-    cfg: params.cfg,
-    channel: "mattermost",
-    groupId: params.groupId,
-    accountId: params.accountId,
-    requireMentionOverride,
+  return resolveScopeRequireMention({
+    tree: buildChannelGroupsScopeTree(params.cfg, "mattermost", params.accountId),
+    path: params.groupId ? [params.groupId] : [],
+    requireMentionOverride: params.requireMentionOverride ?? account.requireMention,
+    overrideOrder: "after-config",
   });
 }

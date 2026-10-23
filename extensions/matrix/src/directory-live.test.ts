@@ -1,9 +1,22 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { listMatrixDirectoryGroupsLive, listMatrixDirectoryPeersLive } from "./directory-live.js";
 import { resolveMatrixAuth } from "./matrix/client.js";
 
+const { requestJsonMock } = vi.hoisted(() => ({
+  requestJsonMock: vi.fn(),
+}));
+
 vi.mock("./matrix/client.js", () => ({
   resolveMatrixAuth: vi.fn(),
+}));
+
+// mock-isolation: Directory fixtures replace the HTTP transport to prevent live Matrix requests.
+vi.mock("./matrix/sdk/http-client.js", () => ({
+  MatrixAuthedHttpClient: class {
+    requestJson(params: unknown) {
+      return requestJsonMock(params);
+    }
+  },
 }));
 
 describe("matrix directory live", () => {
@@ -12,74 +25,91 @@ describe("matrix directory live", () => {
   beforeEach(() => {
     vi.mocked(resolveMatrixAuth).mockReset();
     vi.mocked(resolveMatrixAuth).mockResolvedValue({
+      accountId: "assistant",
       homeserver: "https://matrix.example.org",
       userId: "@bot:example.org",
       accessToken: "test-token",
     });
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => ({ results: [] }),
-        text: async () => "",
-      }),
-    );
+    requestJsonMock.mockReset();
+    requestJsonMock.mockResolvedValue({ results: [] });
   });
 
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
+  it.each([
+    ["peer", listMatrixDirectoryPeersLive, "   "],
+    ["group", listMatrixDirectoryGroupsLive, ""],
+  ] as const)(
+    "returns no %s results for empty query without resolving auth",
+    async (_kind, list, query) => {
+      expect(await list({ cfg, query })).toStrictEqual([]);
+      expect(resolveMatrixAuth).not.toHaveBeenCalled();
+      expect(requestJsonMock).not.toHaveBeenCalled();
+    },
+  );
 
-  it("passes accountId to peer directory auth resolution", async () => {
+  it("preserves query casing when searching the Matrix user directory", async () => {
     await listMatrixDirectoryPeersLive({
       cfg,
       accountId: "assistant",
-      query: "alice",
-      limit: 10,
+      query: "Alice",
+      limit: 3,
     });
 
     expect(resolveMatrixAuth).toHaveBeenCalledWith({ cfg, accountId: "assistant" });
+    expect(requestJsonMock).toHaveBeenCalledWith({
+      method: "POST",
+      endpoint: "/_matrix/client/v3/user_directory/search",
+      timeoutMs: 10_000,
+      body: { search_term: "Alice", limit: 3 },
+    });
   });
 
-  it("passes accountId to group directory auth resolution", async () => {
-    await listMatrixDirectoryGroupsLive({
+  it.each([
+    [
+      "user",
+      listMatrixDirectoryPeersLive,
+      "matrix:user:@Alice:Example.org",
+      { kind: "user", id: "@Alice:Example.org" },
+    ],
+    [
+      "room",
+      listMatrixDirectoryGroupsLive,
+      "matrix:room:!team:example.org",
+      { kind: "group", id: "!team:example.org", name: "!team:example.org" },
+    ],
+  ] as const)(
+    "accepts a prefixed %s id without Matrix lookups",
+    async (_kind, list, query, expected) => {
+      expect(await list({ cfg, query })).toEqual([expected]);
+      expect(requestJsonMock).not.toHaveBeenCalled();
+    },
+  );
+
+  it("resolves prefixed room aliases through the hardened Matrix HTTP client", async () => {
+    const id = "!team:example.org",
+      alias = "#Team:Example.org";
+    requestJsonMock.mockResolvedValueOnce({ room_id: id });
+
+    const results = await listMatrixDirectoryGroupsLive({
       cfg,
       accountId: "assistant",
-      query: "!room:example.org",
-      limit: 10,
+      query: `channel:${alias}`,
     });
 
+    expect(results).toEqual([{ kind: "group", id, name: alias, handle: alias }]);
     expect(resolveMatrixAuth).toHaveBeenCalledWith({ cfg, accountId: "assistant" });
+    expect(requestJsonMock).toHaveBeenCalledWith({
+      method: "GET",
+      endpoint: "/_matrix/client/v3/directory/room/%23Team%3AExample.org",
+      timeoutMs: 10_000,
+      body: undefined,
+    });
   });
 
-  it("returns no peer results for empty query without resolving auth", async () => {
-    const result = await listMatrixDirectoryPeersLive({
-      cfg,
-      query: "   ",
-    });
+  it("rejects a non-object joined-rooms response instead of returning no groups", async () => {
+    requestJsonMock.mockResolvedValue([]);
 
-    expect(result).toEqual([]);
-    expect(resolveMatrixAuth).not.toHaveBeenCalled();
-  });
-
-  it("returns no group results for empty query without resolving auth", async () => {
-    const result = await listMatrixDirectoryGroupsLive({
-      cfg,
-      query: "",
-    });
-
-    expect(result).toEqual([]);
-    expect(resolveMatrixAuth).not.toHaveBeenCalled();
-  });
-
-  it("preserves original casing for room IDs without :server suffix", async () => {
-    const mixedCaseId = "!EonMPPbOuhntHEHgZ2dnBO-c_EglMaXlIh2kdo8cgiA";
-    const result = await listMatrixDirectoryGroupsLive({
-      cfg,
-      query: mixedCaseId,
-    });
-
-    expect(result).toHaveLength(1);
-    expect(result[0].id).toBe(mixedCaseId);
+    await expect(listMatrixDirectoryGroupsLive({ cfg, query: "somegroup" })).rejects.toThrow(
+      /non-object JSON response/,
+    );
   });
 });

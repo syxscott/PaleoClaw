@@ -48,12 +48,16 @@ export async function runCommandWithRuntime(
   }
 }
 
-export function resolveOptionFromCommand(command: Command | undefined, key: string): unknown {
+// oxlint-disable-next-line typescript/no-unnecessary-type-parameters -- Commander option values are typed by the caller.
+export function resolveOptionFromCommand<T>(
+  command: Command | undefined,
+  key: string,
+): T | undefined {
   let current: Command | null | undefined = command;
   while (current) {
     const opts = current.opts?.() ?? {};
     if (opts[key] !== undefined) {
-      return opts[key];
+      return opts[key] as T;
     }
     current = current.parent ?? undefined;
   }

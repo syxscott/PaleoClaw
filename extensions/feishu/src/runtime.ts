@@ -1,14 +1,9 @@
-import type { PluginRuntime } from "paleoclaw/plugin-sdk/feishu";
+import type { PluginRuntime } from "paleoclaw/plugin-sdk/core";
+import { createPluginRuntimeStore } from "paleoclaw/plugin-sdk/runtime-store";
 
-let runtime: PluginRuntime | null = null;
-
-export function setFeishuRuntime(next: PluginRuntime) {
-  runtime = next;
-}
-
-export function getFeishuRuntime(): PluginRuntime {
-  if (!runtime) {
-    throw new Error("Feishu runtime not initialized");
-  }
-  return runtime;
-}
+const { setRuntime: setFeishuRuntime, getRuntime: getFeishuRuntime } =
+  createPluginRuntimeStore<PluginRuntime>({
+    pluginId: "feishu",
+    errorMessage: "Feishu runtime not initialized",
+  });
+export { getFeishuRuntime, setFeishuRuntime };

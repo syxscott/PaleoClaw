@@ -1,49 +1,37 @@
+import {
+  hasOutboundReplyContent,
+  resolveSendableOutboundReplyParts,
+} from "paleoclaw/plugin-sdk/reply-payload";
+import { sanitizeUserFacingText } from "../../agents/embedded-agent-helpers/sanitize-user-facing-text.js";
+import { renderUserFacingText } from "../../agents/embedded-agent-helpers/user-facing-text.js";
+import type { MessagingToolSend } from "../../agents/embedded-agent-messaging.types.js";
 import type { ReplyToMode } from "../../config/types.js";
+import type { OpenClawConfig } from "../../config/types.openclaw.js";
 import { logVerbose } from "../../globals.js";
+import { createLazyImportLoader } from "../../shared/lazy-promise.js";
+import { stripLegacyBracketToolCallBlocks } from "../../shared/text/assistant-visible-text.js";
 import { stripHeartbeatToken } from "../heartbeat.js";
-import type { OriginatingChannelType } from "../templating.js";
-import { SILENT_REPLY_TOKEN } from "../tokens.js";
-import type { ReplyPayload } from "../types.js";
-import { formatBunFetchSocketError, isBunFetchSocketError } from "./agent-runner-utils.js";
-import { createBlockReplyPayloadKey, type BlockReplyPipeline } from "./block-reply-pipeline.js";
 import {
-  resolveOriginAccountId,
-  resolveOriginMessageProvider,
-  resolveOriginMessageTo,
-} from "./origin-routing.js";
-import { normalizeReplyPayloadDirectives } from "./reply-delivery.js";
-import {
-  applyReplyThreading,
-  filterMessagingToolDuplicates,
-  filterMessagingToolMediaDuplicates,
+  copyReplyPayloadMetadata,
+  getReplyPayloadMetadata,
+  isReplyPayloadTerminalContent,
+  setReplyPayloadMetadata,
   isRenderablePayload,
-  shouldSuppressMessagingToolReplies,
-} from "./reply-payloads.js";
+} from "../reply-payload.js";
+import type { OriginatingChannelType } from "../templating.js";
+import type { ReplyPayload, ReplyThreadingPolicy } from "../types.js";
+import { createBlockReplyContentKey, type BlockReplyPipeline } from "./block-reply-pipeline.js";
+import { normalizeReplyPayload } from "./normalize-reply.js";
+import { resolveOriginMessageProvider } from "./origin-routing.js";
+import { normalizeReplyPayloadDirectives, type DirectBlockDelivery } from "./reply-delivery.js";
+import { shouldRetryReplyDispatch } from "./reply-dispatch-outcome.js";
+import { applyReplyThreading, resolveReplyThreadingPayloads } from "./reply-payloads-base.js";
+import { createReplyDeliveryContext } from "./reply-threading.js";
 
-function hasPayloadMedia(payload: ReplyPayload): boolean {
-  return Boolean(payload.mediaUrl) || (payload.mediaUrls?.length ?? 0) > 0;
-}
-
-async function normalizeReplyPayloadMedia(params: {
-  payload: ReplyPayload;
-  normalizeMediaPaths?: (payload: ReplyPayload) => Promise<ReplyPayload>;
-}): Promise<ReplyPayload> {
-  if (!params.normalizeMediaPaths || !hasPayloadMedia(params.payload)) {
-    return params.payload;
-  }
-
-  try {
-    return await params.normalizeMediaPaths(params.payload);
-  } catch (err) {
-    logVerbose(`reply payload media normalization failed: ${String(err)}`);
-    return {
-      ...params.payload,
-      mediaUrl: undefined,
-      mediaUrls: undefined,
-      audioAsVoice: false,
-    };
-  }
-}
+const replyPayloadsDedupeRuntimeLoader = createLazyImportLoader(
+  () => import("./reply-payloads-dedupe.js"),
+);
+const BUN_FETCH_SOCKET_ERROR_RE = /socket connection was closed unexpectedly/i;
 
 async function normalizeSentMediaUrlsForDedupe(params: {
   sentMediaUrls: string[];
@@ -53,111 +41,175 @@ async function normalizeSentMediaUrlsForDedupe(params: {
     return params.sentMediaUrls;
   }
 
-  const normalizedUrls: string[] = [];
-  const seen = new Set<string>();
+  const normalizedUrls = new Set<string>();
   for (const raw of params.sentMediaUrls) {
     const trimmed = raw.trim();
     if (!trimmed) {
       continue;
     }
-    if (!seen.has(trimmed)) {
-      seen.add(trimmed);
-      normalizedUrls.push(trimmed);
-    }
+    normalizedUrls.add(trimmed);
     try {
       const normalized = await params.normalizeMediaPaths({
         mediaUrl: trimmed,
         mediaUrls: [trimmed],
       });
-      const normalizedMediaUrls = normalized.mediaUrls?.length
-        ? normalized.mediaUrls
-        : normalized.mediaUrl
-          ? [normalized.mediaUrl]
-          : [];
+      const normalizedMediaUrls = resolveSendableOutboundReplyParts(normalized).mediaUrls;
       for (const mediaUrl of normalizedMediaUrls) {
-        const candidate = mediaUrl.trim();
-        if (!candidate || seen.has(candidate)) {
-          continue;
-        }
-        seen.add(candidate);
-        normalizedUrls.push(candidate);
+        normalizedUrls.add(mediaUrl);
       }
     } catch (err) {
       logVerbose(`messaging tool sent-media normalization failed: ${String(err)}`);
     }
   }
 
-  return normalizedUrls;
+  return [...normalizedUrls];
+}
+
+function shouldKeepPayloadDuringSilentTurn(payload: ReplyPayload): boolean {
+  if (payload.isError || getReplyPayloadMetadata(payload)?.deliverDespiteSourceReplySuppression) {
+    return true;
+  }
+  return payload.audioAsVoice === true && resolveSendableOutboundReplyParts(payload).hasMedia;
+}
+
+function sanitizeFinalReplyText(
+  payload: ReplyPayload,
+  text: string | undefined,
+  conversationContext?: string,
+): string | undefined {
+  if (!text) {
+    return text;
+  }
+  return payload.isError
+    ? renderUserFacingText(text, { errorContext: true, conversationContext })
+    : sanitizeUserFacingText(text, { conversationContext });
+}
+
+function copyPayloadWithSanitizedText(
+  payload: ReplyPayload,
+  text: string | undefined,
+  conversationContext?: string,
+): ReplyPayload {
+  const sanitizedText = sanitizeFinalReplyText(payload, text, conversationContext);
+  const next = copyReplyPayloadMetadata(payload, {
+    ...payload,
+    text: sanitizedText,
+  });
+  const mirror = getReplyPayloadMetadata(payload)?.sourceReplyTranscriptMirror;
+  if (!mirror?.text) {
+    return next;
+  }
+  setReplyPayloadMetadata(next, {
+    sourceReplyTranscriptMirror: {
+      ...mirror,
+      text: sanitizeFinalReplyText(payload, mirror.text, conversationContext) || undefined,
+    },
+  });
+  return next;
 }
 
 export async function buildReplyPayloads(params: {
+  config?: OpenClawConfig;
   payloads: ReplyPayload[];
+  /** Exact prompt bytes from this turn's finalized inbound owner. */
+  conversationContext?: string;
   isHeartbeat: boolean;
-  didLogHeartbeatStrip: boolean;
+  silentExpected?: boolean;
   blockStreamingEnabled: boolean;
   blockReplyPipeline: BlockReplyPipeline | null;
-  /** Payload keys sent directly (not via pipeline) during tool flush. */
-  directlySentBlockKeys?: Set<string>;
+  /** Direct receipts distinguish confirmed sends from retained retry custody. */
+  directBlockDeliveries?: DirectBlockDelivery[];
   replyToMode: ReplyToMode;
   replyToChannel?: OriginatingChannelType;
   currentMessageId?: string;
+  replyThreading?: ReplyThreadingPolicy;
+  applyReplyToMode?: (payload: ReplyPayload) => ReplyPayload;
   messageProvider?: string;
   messagingToolSentTexts?: string[];
   messagingToolSentMediaUrls?: string[];
-  messagingToolSentTargets?: Parameters<
-    typeof shouldSuppressMessagingToolReplies
-  >[0]["messagingToolSentTargets"];
+  messagingToolSentTargets?: MessagingToolSend[];
+  onDeliveredTerminalDuplicate?: () => void;
   originatingChannel?: OriginatingChannelType;
+  originatingChatType?: string | null;
   originatingTo?: string;
+  originatingThreadId?: string | number;
   accountId?: string;
+  extractMarkdownImages?: boolean;
   normalizeMediaPaths?: (payload: ReplyPayload) => Promise<ReplyPayload>;
-}): Promise<{ replyPayloads: ReplyPayload[]; didLogHeartbeatStrip: boolean }> {
-  let didLogHeartbeatStrip = params.didLogHeartbeatStrip;
-  const sanitizedPayloads = params.isHeartbeat
-    ? params.payloads
-    : params.payloads.flatMap((payload) => {
-        let text = payload.text;
+}): Promise<{ replyPayloads: ReplyPayload[] }> {
+  const sanitizedPayloads: ReplyPayload[] = [];
+  for (const payload of params.payloads) {
+    let text = payload.text;
+    if (params.isHeartbeat) {
+      if (text) {
+        text = stripLegacyBracketToolCallBlocks(text);
+      }
+    } else {
+      if (payload.isError && text && BUN_FETCH_SOCKET_ERROR_RE.test(text)) {
+        text =
+          "⚠️ Lost the connection to the AI service. Check the conversation before trying again. For details, open Settings → Logs in the Control UI or run `paleoclaw logs --follow`.";
+      }
 
-        if (payload.isError && text && isBunFetchSocketError(text)) {
-          text = formatBunFetchSocketError(text);
-        }
-
-        if (!text || !text.includes("HEARTBEAT_OK")) {
-          return [{ ...payload, text }];
-        }
+      if (text?.includes("HEARTBEAT_OK")) {
         const stripped = stripHeartbeatToken(text, { mode: "message" });
-        if (stripped.didStrip && !didLogHeartbeatStrip) {
-          didLogHeartbeatStrip = true;
-          logVerbose("Stripped stray HEARTBEAT_OK token from reply");
+        if (stripped.shouldSkip && !resolveSendableOutboundReplyParts(payload).hasMedia) {
+          continue;
         }
-        const hasMedia = Boolean(payload.mediaUrl) || (payload.mediaUrls?.length ?? 0) > 0;
-        if (stripped.shouldSkip && !hasMedia) {
-          return [];
-        }
-        return [{ ...payload, text: stripped.text }];
-      });
+        text = stripped.text;
+      }
+    }
+    sanitizedPayloads.push(copyPayloadWithSanitizedText(payload, text, params.conversationContext));
+  }
 
-  const replyTaggedPayloads = (
-    await Promise.all(
-      applyReplyThreading({
-        payloads: sanitizedPayloads,
-        replyToMode: params.replyToMode,
-        replyToChannel: params.replyToChannel,
+  const messageProvider = resolveOriginMessageProvider({
+    originatingChannel: params.originatingChannel,
+    provider: params.messageProvider,
+  });
+  const accountId = params.accountId;
+  const replyDelivery = createReplyDeliveryContext(params.replyToMode, params.originatingChatType);
+  const replyDeliverySource = messageProvider
+    ? {
+        channel: messageProvider,
+        ...(accountId ? { accountId } : {}),
+      }
+    : undefined;
+  const resolveThreading = params.applyReplyToMode
+    ? resolveReplyThreadingPayloads
+    : applyReplyThreading;
+  const replyTaggedPayloadCandidates = await Promise.all(
+    resolveThreading({
+      payloads: sanitizedPayloads,
+      replyToMode: params.replyToMode,
+      replyToChannel: params.replyToChannel,
+      currentMessageId: params.currentMessageId,
+      replyThreading: params.replyThreading,
+    }).map(async (payload) => {
+      const parsed = normalizeReplyPayloadDirectives({
+        payload,
         currentMessageId: params.currentMessageId,
-      }).map(async (payload) => {
-        const parsed = normalizeReplyPayloadDirectives({
-          payload,
-          currentMessageId: params.currentMessageId,
-          silentToken: SILENT_REPLY_TOKEN,
-          parseMode: "always",
-        }).payload;
-        return await normalizeReplyPayloadMedia({
-          payload: parsed,
-          normalizeMediaPaths: params.normalizeMediaPaths,
-        });
-      }),
-    )
-  ).filter(isRenderablePayload);
+        parseMode: "always",
+        extractMarkdownImages: params.extractMarkdownImages,
+      });
+      const mediaNormalizedPayload =
+        params.normalizeMediaPaths && resolveSendableOutboundReplyParts(parsed.payload).hasMedia
+          ? copyReplyPayloadMetadata(
+              parsed.payload,
+              await params.normalizeMediaPaths(parsed.payload),
+            )
+          : parsed.payload;
+      return setReplyPayloadMetadata(mediaNormalizedPayload, {
+        replyDelivery,
+        ...(replyDeliverySource ? { replyDeliverySource } : {}),
+      });
+    }),
+  );
+  const replyTaggedPayloads = replyTaggedPayloadCandidates.filter(isRenderablePayload);
+  const silentFilteredPayloads = params.silentExpected
+    ? replyTaggedPayloads.filter(shouldKeepPayloadDuringSilentTurn)
+    : replyTaggedPayloads;
+  const threadedPayloads = params.applyReplyToMode
+    ? silentFilteredPayloads.map(params.applyReplyToMode)
+    : silentFilteredPayloads;
 
   // Drop final payloads only when block streaming succeeded end-to-end.
   // If streaming aborted (e.g., timeout), fall back to final payloads.
@@ -167,59 +219,194 @@ export async function buildReplyPayloads(params: {
     !params.blockReplyPipeline?.isAborted();
   const messagingToolSentTexts = params.messagingToolSentTexts ?? [];
   const messagingToolSentTargets = params.messagingToolSentTargets ?? [];
-  const suppressMessagingToolReplies = shouldSuppressMessagingToolReplies({
-    messageProvider: resolveOriginMessageProvider({
-      originatingChannel: params.originatingChannel,
-      provider: params.messageProvider,
-    }),
-    messagingToolSentTargets,
-    originatingTo: resolveOriginMessageTo({
-      originatingTo: params.originatingTo,
-    }),
-    accountId: resolveOriginAccountId({
-      originatingAccountId: params.accountId,
-    }),
+  const shouldCheckMessagingToolDedupe =
+    messagingToolSentTexts.length > 0 ||
+    (params.messagingToolSentMediaUrls?.length ?? 0) > 0 ||
+    messagingToolSentTargets.length > 0;
+  let dedupedPayloads = threadedPayloads;
+  if (shouldCheckMessagingToolDedupe) {
+    const dedupeRuntime = await replyPayloadsDedupeRuntimeLoader.load();
+    const originatingTo = params.originatingTo;
+    dedupedPayloads = [];
+    for (const payload of threadedPayloads) {
+      // Source mirrors exist because an internal sink send must reach the UI and
+      // transcript; that send is not outbound evidence for dropping the mirror.
+      if (getReplyPayloadMetadata(payload)?.sourceReplyTranscriptMirror) {
+        dedupedPayloads.push(payload);
+        continue;
+      }
+      dedupedPayloads.push(
+        ...(await dedupeRuntime.filterMessagingToolReplyPayload({
+          payload,
+          config: params.config,
+          messageProvider,
+          messagingToolSentTargets,
+          originatingTo,
+          originatingThreadId: params.originatingThreadId,
+          accountId,
+          sentMediaUrls: params.messagingToolSentMediaUrls,
+          sentTexts: messagingToolSentTexts,
+          onDeliveredTerminalDuplicate: params.onDeliveredTerminalDuplicate,
+          normalizeSentMediaUrls: (sentMediaUrls) =>
+            normalizeSentMediaUrlsForDedupe({
+              sentMediaUrls,
+              normalizeMediaPaths: params.normalizeMediaPaths,
+            }),
+        })),
+      );
+    }
+  }
+  const retryBlockedDirectPayloads = (params.directBlockDeliveries ?? [])
+    .filter((delivery) => delivery.pending || !shouldRetryReplyDispatch(delivery.outcome))
+    .map((delivery) => delivery.payload);
+  for (const payload of dedupedPayloads) {
+    const assistantMessageIndex = getReplyPayloadMetadata(payload)?.assistantMessageIndex;
+    const direct = (params.directBlockDeliveries ?? []).filter(
+      (delivery) =>
+        isReplyPayloadTerminalContent(delivery.payload) &&
+        getReplyPayloadMetadata(delivery.payload)?.assistantMessageIndex === assistantMessageIndex,
+    );
+    const directSources =
+      direct.some((delivery) => delivery.source?.complete === false) &&
+      direct
+        .map((delivery) => delivery.payload.text ?? "")
+        .join("")
+        .trim() === payload.text?.trim()
+        ? Array.from(new Set(direct.flatMap((delivery) => delivery.source ?? [])))
+        : undefined;
+    const sources = params.blockReplyPipeline?.getSourceRecovery?.(payload) ?? directSources;
+    if (sources) {
+      setReplyPayloadMetadata(payload, { blockReplySources: sources });
+    }
+  }
+  const directTextFragmentsByAssistantMessage = new Map<number | undefined, string[]>();
+  for (const sentPayload of retryBlockedDirectPayloads) {
+    if (!isReplyPayloadTerminalContent(sentPayload)) {
+      continue;
+    }
+    const sentText = sentPayload.text ?? resolveSendableOutboundReplyParts(sentPayload).trimmedText;
+    if (!sentText) {
+      continue;
+    }
+    const assistantMessageIndex = getReplyPayloadMetadata(sentPayload)?.assistantMessageIndex;
+    const fragments = directTextFragmentsByAssistantMessage.get(assistantMessageIndex) ?? [];
+    fragments.push(sentText);
+    directTextFragmentsByAssistantMessage.set(assistantMessageIndex, fragments);
+  }
+  const isDirectBlockRetryBlocked = (payload: ReplyPayload) => {
+    if (getReplyPayloadMetadata(payload)?.blockReplySources) {
+      return false;
+    }
+    const contentKey = createBlockReplyContentKey(payload);
+    const assistantMessageIndex = getReplyPayloadMetadata(payload)?.assistantMessageIndex;
+    return retryBlockedDirectPayloads.some(
+      (sentPayload) =>
+        isReplyPayloadTerminalContent(sentPayload) &&
+        (assistantMessageIndex === undefined ||
+          getReplyPayloadMetadata(sentPayload)?.assistantMessageIndex === assistantMessageIndex) &&
+        createBlockReplyContentKey(sentPayload) === contentKey,
+    );
+  };
+  const isDirectTextRetryBlocked = (payload: ReplyPayload): boolean => {
+    if (isDirectBlockRetryBlocked(payload)) {
+      return true;
+    }
+    const text = resolveSendableOutboundReplyParts(payload).trimmedText;
+    if (!text || !retryBlockedDirectPayloads.length) {
+      return false;
+    }
+    const assistantMessageIndex = getReplyPayloadMetadata(payload)?.assistantMessageIndex;
+    const applicableFragments = directTextFragmentsByAssistantMessage.get(assistantMessageIndex);
+    return applicableFragments ? applicableFragments.join("").trim() === text : false;
+  };
+  const preserveUnsentMediaAfterBlockSend = (payload: ReplyPayload): ReplyPayload | null => {
+    if (
+      payload.isError ||
+      payload.isFallbackNotice ||
+      getReplyPayloadMetadata(payload)?.blockReplySources
+    ) {
+      return payload;
+    }
+    if (params.blockReplyPipeline?.isFinalPayloadRetryBlocked?.(payload)) {
+      return null;
+    }
+    const reply = resolveSendableOutboundReplyParts(payload);
+    if (!reply.hasMedia) {
+      // Aggregate coverage suppresses plain text split across streamed blocks; rich content needs
+      // exact evidence. Partial coverage cannot safely reconstruct a formatted remainder, so
+      // preserve the complete final rather than silently truncate it.
+      const hasRichContent = hasOutboundReplyContent(
+        { ...payload, text: undefined, mediaUrl: undefined, mediaUrls: undefined },
+        { trimText: true },
+      );
+      const wasSent = hasRichContent
+        ? params.blockReplyPipeline?.hasSentExactPayload?.(payload)
+        : params.blockReplyPipeline?.hasSentPayload(payload) || isDirectTextRetryBlocked(payload);
+      return wasSent ? null : payload;
+    }
+    if (!reply.trimmedText) {
+      return payload;
+    }
+    const textOnlyPayload = copyReplyPayloadMetadata(payload, {
+      ...payload,
+      mediaUrl: undefined,
+      mediaUrls: undefined,
+      audioAsVoice: undefined,
+    });
+    const textShouldBeOmitted =
+      params.blockReplyPipeline?.hasSentPayload(textOnlyPayload) ||
+      params.blockReplyPipeline?.isFinalPayloadRetryBlocked?.(
+        copyReplyPayloadMetadata(payload, { text: payload.text }),
+      ) ||
+      isDirectTextRetryBlocked(textOnlyPayload);
+    if (!textShouldBeOmitted) {
+      return payload;
+    }
+    return copyReplyPayloadMetadata(payload, {
+      ...payload,
+      text: undefined,
+      audioAsVoice: payload.audioAsVoice || undefined,
+    });
+  };
+  const contentSuppressedPayloads =
+    shouldDropFinalPayloads || params.blockStreamingEnabled || retryBlockedDirectPayloads.length > 0
+      ? dedupedPayloads.flatMap((payload) => {
+          if (
+            !shouldDropFinalPayloads &&
+            ((params.blockStreamingEnabled && params.blockReplyPipeline?.hasSentPayload(payload)) ||
+              isDirectBlockRetryBlocked(payload))
+          ) {
+            return [];
+          }
+          return preserveUnsentMediaAfterBlockSend(payload) ?? [];
+        })
+      : dedupedPayloads;
+  const blockMediaUrlsToOmit = await normalizeSentMediaUrlsForDedupe({
+    sentMediaUrls: [
+      ...(params.blockStreamingEnabled
+        ? (params.blockReplyPipeline?.getSentMediaUrls() ?? [])
+        : []),
+      ...(params.blockReplyPipeline?.getRetryBlockedMediaUrls?.() ?? []),
+      ...retryBlockedDirectPayloads.flatMap(
+        (payload) => resolveSendableOutboundReplyParts(payload).mediaUrls,
+      ),
+    ],
+    normalizeMediaPaths: params.normalizeMediaPaths,
   });
-  // Only dedupe against messaging tool sends for the same origin target.
-  // Cross-target sends (for example posting to another channel) must not
-  // suppress the current conversation's final reply.
-  // If target metadata is unavailable, keep legacy dedupe behavior.
-  const dedupeMessagingToolPayloads =
-    suppressMessagingToolReplies || messagingToolSentTargets.length === 0;
-  const messagingToolSentMediaUrls = dedupeMessagingToolPayloads
-    ? await normalizeSentMediaUrlsForDedupe({
-        sentMediaUrls: params.messagingToolSentMediaUrls ?? [],
-        normalizeMediaPaths: params.normalizeMediaPaths,
-      })
-    : (params.messagingToolSentMediaUrls ?? []);
-  const dedupedPayloads = dedupeMessagingToolPayloads
-    ? filterMessagingToolDuplicates({
-        payloads: replyTaggedPayloads,
-        sentTexts: messagingToolSentTexts,
-      })
-    : replyTaggedPayloads;
-  const mediaFilteredPayloads = dedupeMessagingToolPayloads
-    ? filterMessagingToolMediaDuplicates({
-        payloads: dedupedPayloads,
-        sentMediaUrls: messagingToolSentMediaUrls,
-      })
-    : dedupedPayloads;
-  // Filter out payloads already sent via pipeline or directly during tool flush.
-  const filteredPayloads = shouldDropFinalPayloads
-    ? []
-    : params.blockStreamingEnabled
-      ? mediaFilteredPayloads.filter(
-          (payload) => !params.blockReplyPipeline?.hasSentPayload(payload),
-        )
-      : params.directlySentBlockKeys?.size
-        ? mediaFilteredPayloads.filter(
-            (payload) => !params.directlySentBlockKeys!.has(createBlockReplyPayloadKey(payload)),
-          )
-        : mediaFilteredPayloads;
-  const replyPayloads = suppressMessagingToolReplies ? [] : filteredPayloads;
-
+  const filteredPayloads =
+    blockMediaUrlsToOmit.length > 0
+      ? (await replyPayloadsDedupeRuntimeLoader.load()).filterMessagingToolMediaDuplicates({
+          payloads: contentSuppressedPayloads,
+          sentMediaUrls: blockMediaUrlsToOmit,
+        })
+      : contentSuppressedPayloads;
   return {
-    replyPayloads,
-    didLogHeartbeatStrip,
+    replyPayloads: filteredPayloads.flatMap(
+      (payload) =>
+        normalizeReplyPayload(payload, {
+          applyChannelTransforms: false,
+          conversationContext: params.conversationContext,
+        }) ?? [],
+    ),
   };
 }

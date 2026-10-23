@@ -1,225 +1,152 @@
-import fs from "node:fs";
-import os from "node:os";
-import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { afterAll, assert, expect, it, vi } from "vitest";
+import { createTempDirTracker } from "../../test/helpers/temp-dir.js";
+import { withPluginMetadataSnapshotScope } from "../plugins/current-plugin-metadata-snapshot.js";
+import { createPluginMetadataSnapshotFixture } from "../plugins/plugin-metadata.test-support.js";
 import {
-  calculateAuthProfileCooldownMs,
-  ensureAuthProfileStore,
-  markAuthProfileFailure,
-} from "./auth-profiles.js";
+  closeOpenClawAgentDatabasesAsync,
+  closeOpenClawAgentDatabasesForTest,
+} from "../state/paleoclaw-agent-db.js";
+import { clearRuntimeAuthProfileStoreSnapshots } from "./auth-profiles/runtime-snapshots.js";
+import {
+  readPersistedAuthProfileStateRaw,
+  readPersistedAuthProfileStoreRaw,
+} from "./auth-profiles/sqlite.js";
+import {
+  ensureAuthProfileStore as loadStore,
+  saveAuthProfileStore as saveStore,
+} from "./auth-profiles/store-runtime.js";
+import type { AuthProfileStore } from "./auth-profiles/types.js";
+import {
+  markAuthProfileFailure as markFailure,
+  markAuthProfileBlockedUntil as blockUntil,
+  markInlineProviderApiKeyFailure as markInlineFailure,
+  resolveInlineProviderApiKeyUsageId as inlineUsageId,
+} from "./auth-profiles/usage.js";
 
-type AuthProfileStore = ReturnType<typeof ensureAuthProfileStore>;
+vi.mock("./cli-credentials.js", () => ({
+  readCodexCliCredentialsCached: () => null,
+  readMiniMaxCliCredentialsCached: () => null,
+}));
+// mock-isolation: Usage-state fixtures own the seeded profiles; ambient provider discovery must not add credentials.
+vi.mock("../plugins/provider-external-auth-core.js", () => ({
+  createProviderExternalAuthResolver: () => ({
+    resolveExternalAuthProfilesWithPlugins: () => [],
+    withPreparedExternalAuthProfiles: async <T>(_params: unknown, run: () => Promise<T>) => run(),
+  }),
+}));
 
-async function withAuthProfileStore(
-  fn: (ctx: { agentDir: string; store: AuthProfileStore }) => Promise<void>,
-): Promise<void> {
-  const agentDir = fs.mkdtempSync(path.join(os.tmpdir(), "paleoclaw-auth-"));
-  try {
-    const authPath = path.join(agentDir, "auth-profiles.json");
-    fs.writeFileSync(
-      authPath,
-      JSON.stringify({
-        version: 1,
-        profiles: {
-          "anthropic:default": {
-            type: "api_key",
-            provider: "anthropic",
-            key: "sk-default",
-          },
-          "openrouter:default": {
-            type: "api_key",
-            provider: "openrouter",
-            key: "sk-or-default",
-          },
-        },
-      }),
-    );
-
-    const store = ensureAuthProfileStore(agentDir);
-    await fn({ agentDir, store });
-  } finally {
-    fs.rmSync(agentDir, { recursive: true, force: true });
-  }
-}
-
-function expectCooldownInRange(remainingMs: number, minMs: number, maxMs: number): void {
-  expect(remainingMs).toBeGreaterThan(minMs);
-  expect(remainingMs).toBeLessThan(maxMs);
-}
-
-describe("markAuthProfileFailure", () => {
-  it("disables billing failures for ~5 hours by default", async () => {
-    await withAuthProfileStore(async ({ agentDir, store }) => {
-      const startedAt = Date.now();
-      await markAuthProfileFailure({
-        store,
-        profileId: "anthropic:default",
-        reason: "billing",
-        agentDir,
-      });
-
-      const disabledUntil = store.usageStats?.["anthropic:default"]?.disabledUntil;
-      expect(typeof disabledUntil).toBe("number");
-      const remainingMs = (disabledUntil as number) - startedAt;
-      expectCooldownInRange(remainingMs, 4.5 * 60 * 60 * 1000, 5.5 * 60 * 60 * 1000);
-    });
-  });
-  it("honors per-provider billing backoff overrides", async () => {
-    await withAuthProfileStore(async ({ agentDir, store }) => {
-      const startedAt = Date.now();
-      await markAuthProfileFailure({
-        store,
-        profileId: "anthropic:default",
-        reason: "billing",
-        agentDir,
-        cfg: {
-          auth: {
-            cooldowns: {
-              billingBackoffHoursByProvider: { Anthropic: 1 },
-              billingMaxHours: 2,
-            },
-          },
-        } as never,
-      });
-
-      const disabledUntil = store.usageStats?.["anthropic:default"]?.disabledUntil;
-      expect(typeof disabledUntil).toBe("number");
-      const remainingMs = (disabledUntil as number) - startedAt;
-      expectCooldownInRange(remainingMs, 0.8 * 60 * 60 * 1000, 1.2 * 60 * 60 * 1000);
-    });
-  });
-  it("keeps persisted cooldownUntil unchanged across mid-window retries", async () => {
-    await withAuthProfileStore(async ({ agentDir, store }) => {
-      await markAuthProfileFailure({
-        store,
-        profileId: "anthropic:default",
-        reason: "rate_limit",
-        agentDir,
-      });
-
-      const firstCooldownUntil = store.usageStats?.["anthropic:default"]?.cooldownUntil;
-      expect(typeof firstCooldownUntil).toBe("number");
-
-      await markAuthProfileFailure({
-        store,
-        profileId: "anthropic:default",
-        reason: "rate_limit",
-        agentDir,
-      });
-
-      const secondCooldownUntil = store.usageStats?.["anthropic:default"]?.cooldownUntil;
-      expect(secondCooldownUntil).toBe(firstCooldownUntil);
-
-      const reloaded = ensureAuthProfileStore(agentDir);
-      expect(reloaded.usageStats?.["anthropic:default"]?.cooldownUntil).toBe(firstCooldownUntil);
-    });
-  });
-  it("records overloaded failures in the cooldown bucket", async () => {
-    await withAuthProfileStore(async ({ agentDir, store }) => {
-      await markAuthProfileFailure({
-        store,
-        profileId: "anthropic:default",
-        reason: "overloaded",
-        agentDir,
-      });
-
-      const stats = store.usageStats?.["anthropic:default"];
-      expect(typeof stats?.cooldownUntil).toBe("number");
-      expect(stats?.disabledUntil).toBeUndefined();
-      expect(stats?.disabledReason).toBeUndefined();
-      expect(stats?.failureCounts?.overloaded).toBe(1);
-    });
-  });
-  it("disables auth_permanent failures via disabledUntil (like billing)", async () => {
-    await withAuthProfileStore(async ({ agentDir, store }) => {
-      await markAuthProfileFailure({
-        store,
-        profileId: "anthropic:default",
-        reason: "auth_permanent",
-        agentDir,
-      });
-
-      const stats = store.usageStats?.["anthropic:default"];
-      expect(typeof stats?.disabledUntil).toBe("number");
-      expect(stats?.disabledReason).toBe("auth_permanent");
-      // Should NOT set cooldownUntil (that's for transient errors)
-      expect(stats?.cooldownUntil).toBeUndefined();
-    });
-  });
-  it("resets backoff counters outside the failure window", async () => {
-    const agentDir = fs.mkdtempSync(path.join(os.tmpdir(), "paleoclaw-auth-"));
-    try {
-      const authPath = path.join(agentDir, "auth-profiles.json");
-      const now = Date.now();
-      fs.writeFileSync(
-        authPath,
-        JSON.stringify({
-          version: 1,
-          profiles: {
-            "anthropic:default": {
-              type: "api_key",
-              provider: "anthropic",
-              key: "sk-default",
-            },
-          },
-          usageStats: {
-            "anthropic:default": {
-              errorCount: 9,
-              failureCounts: { billing: 3 },
-              lastFailureAt: now - 48 * 60 * 60 * 1000,
-            },
-          },
-        }),
-      );
-
-      const store = ensureAuthProfileStore(agentDir);
-      await markAuthProfileFailure({
-        store,
-        profileId: "anthropic:default",
-        reason: "billing",
-        agentDir,
-        cfg: {
-          auth: { cooldowns: { failureWindowHours: 24 } },
-        } as never,
-      });
-
-      expect(store.usageStats?.["anthropic:default"]?.errorCount).toBe(1);
-      expect(store.usageStats?.["anthropic:default"]?.failureCounts?.billing).toBe(1);
-    } finally {
-      fs.rmSync(agentDir, { recursive: true, force: true });
-    }
-  });
-
-  it("does not persist cooldown windows for OpenRouter profiles", async () => {
-    await withAuthProfileStore(async ({ agentDir, store }) => {
-      await markAuthProfileFailure({
-        store,
-        profileId: "openrouter:default",
-        reason: "rate_limit",
-        agentDir,
-      });
-
-      await markAuthProfileFailure({
-        store,
-        profileId: "openrouter:default",
-        reason: "billing",
-        agentDir,
-      });
-
-      expect(store.usageStats?.["openrouter:default"]).toBeUndefined();
-
-      const reloaded = ensureAuthProfileStore(agentDir);
-      expect(reloaded.usageStats?.["openrouter:default"]).toBeUndefined();
-    });
-  });
+const tempDirs = createTempDirTracker();
+afterAll(async () => {
+  clearRuntimeAuthProfileStoreSnapshots();
+  await closeOpenClawAgentDatabasesAsync();
+  closeOpenClawAgentDatabasesForTest();
+  tempDirs.cleanup();
 });
 
-describe("calculateAuthProfileCooldownMs", () => {
-  it("applies exponential backoff with a 1h cap", () => {
-    expect(calculateAuthProfileCooldownMs(1)).toBe(60_000);
-    expect(calculateAuthProfileCooldownMs(2)).toBe(5 * 60_000);
-    expect(calculateAuthProfileCooldownMs(3)).toBe(25 * 60_000);
-    expect(calculateAuthProfileCooldownMs(4)).toBe(60 * 60_000);
-    expect(calculateAuthProfileCooldownMs(5)).toBe(60 * 60_000);
+const profileId = "anthropic:default";
+const apiKey = (provider: string, key: string) => ({ type: "api_key" as const, provider, key });
+const saveOptions = { filterExternalAuthProfiles: false, syncExternalCli: false };
+function fixture(usageStats?: AuthProfileStore["usageStats"]) {
+  const agentDir = tempDirs.make("paleoclaw-auth-");
+  const store: AuthProfileStore = {
+    version: 1,
+    profiles: {
+      [profileId]: apiKey("anthropic", "sk-default"),
+      "local:default": apiKey("local", "synthetic-key"),
+    },
+    usageStats,
+  };
+  saveStore(store, agentDir, saveOptions);
+  return { store: loadStore(agentDir), agentDir };
+}
+
+it("does not overwrite fresher credentials with a stale runtime snapshot", async () => {
+  const auth = fixture();
+  saveStore(
+    { ...auth.store, profiles: { [profileId]: apiKey("anthropic", "sk-fresh") } },
+    auth.agentDir,
+    saveOptions,
+  );
+  expect(auth.store.profiles[profileId]).toMatchObject({ key: "sk-default" });
+  await markFailure({ ...auth, profileId, reason: "rate_limit" });
+  clearRuntimeAuthProfileStoreSnapshots();
+  const reloaded = loadStore(auth.agentDir);
+  expect(reloaded.profiles[profileId]).toMatchObject({ type: "api_key", key: "sk-fresh" });
+  expect(reloaded.usageStats?.[profileId]?.cooldownUntil).toEqual(expect.any(Number));
+});
+
+it("records inline-key billing backoff without creating an auth profile", async () => {
+  const auth = fixture();
+  const startedAt = Date.now();
+  await markInlineFailure({ ...auth, provider: "anthropic", reason: "billing" });
+  const usageId = inlineUsageId("anthropic");
+  const stats = auth.store.usageStats?.[usageId];
+  expect(auth.store.profiles[usageId]).toBeUndefined();
+  expect(stats?.disabledReason).toBe("billing");
+  expect(loadStore(auth.agentDir).usageStats?.[usageId]?.disabledReason).toBe("billing");
+  assert(stats?.lastFailureAt !== undefined);
+  expect(stats.lastFailureAt).toBeGreaterThanOrEqual(startedAt);
+  expect(stats.lastFailureAt).toBeLessThanOrEqual(Date.now());
+  expect(stats.disabledUntil).toBe(stats.lastFailureAt + 10 * 60_000);
+});
+
+it.each([
+  { reason: "billing", age: 48 * 60 * 60_000, errors: 9, failures: 1, delay: 600_000 },
+  { reason: "rate_limit", age: 120_000, errors: 3, failures: 4, delay: 240_000 },
+] as const)("resets stale $reason backoff and preserves its deadline on retry", async (row) => {
+  const now = Date.now();
+  const { reason, age, errors, failures, delay } = row;
+  const field = reason === "billing" ? "disabledUntil" : "cooldownUntil";
+  const auth = fixture({
+    [profileId]: {
+      errorCount: errors,
+      failureCounts: { [reason]: 3 },
+      lastFailureAt: now - age,
+      ...(reason === "rate_limit" ? { cooldownUntil: now - 60_000 } : {}),
+    },
   });
+  const fail = () => markFailure({ ...auth, profileId, reason });
+  await fail();
+  const first = auth.store.usageStats?.[profileId];
+  expect(first).toMatchObject({ errorCount: 1, failureCounts: { [reason]: failures } });
+  assert(first?.lastFailureAt !== undefined);
+  expect(first.lastFailureAt).toBeGreaterThanOrEqual(now);
+  expect(first.lastFailureAt).toBeLessThanOrEqual(Date.now());
+  const deadline = first[field];
+  expect(deadline).toBe(first.lastFailureAt + delay);
+  await fail();
+  expect(auth.store.usageStats?.[profileId]?.[field]).toBe(deadline);
+  expect(loadStore(auth.agentDir).usageStats?.[profileId]?.[field]).toBe(deadline);
+});
+
+const managedSnapshot = createPluginMetadataSnapshotFixture({
+  plugins: [{ id: "local-gateway", providers: ["local"], managesOwnAvailability: true }],
+});
+const withManagedProvider = (run: () => Promise<void>) =>
+  withPluginMetadataSnapshotScope(managedSnapshot, run, { trustConfigIdentity: true });
+
+it("does not persist direct overload failures for self-managed providers", async () => {
+  const auth = fixture();
+  await withManagedProvider(() =>
+    markFailure({ ...auth, profileId: "local:default", reason: "overloaded" }),
+  );
+  expect(readPersistedAuthProfileStoreRaw(auth.agentDir)).toMatchObject({
+    profiles: { "local:default": { provider: "local" } },
+  });
+  expect(readPersistedAuthProfileStateRaw(auth.agentDir)).toBeNull();
+});
+
+it("keeps subscription blocks and inline-key billing on self-managed providers", async () => {
+  const auth = fixture();
+  const until = Date.now() + 60_000;
+  await withManagedProvider(async () => {
+    await blockUntil({ ...auth, profileId: "local:default", blockedUntil: until, source: "wham" });
+    await markInlineFailure({ ...auth, provider: "local", reason: "billing" });
+  });
+  const persisted = loadStore(auth.agentDir);
+  expect(persisted.usageStats?.["local:default"]).toMatchObject({
+    blockedUntil: until,
+    blockedReason: "subscription_limit",
+  });
+  expect(persisted.usageStats?.[inlineUsageId("local")]?.disabledReason).toBe("billing");
 });

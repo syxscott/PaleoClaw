@@ -17,7 +17,7 @@ async function writeConfig(
   home: string,
   dirname: ".paleoclaw",
   port: number,
-  filename: string = "paleoclaw.json",
+  filename: string = "openclaw.json",
 ) {
   const dir = path.join(home, dirname);
   await fs.mkdir(dir, { recursive: true });
@@ -46,7 +46,7 @@ describe("config io paths", () => {
   it("defaults to ~/.paleoclaw/paleoclaw.json when config is missing", async () => {
     await withTempHome(async (home) => {
       const io = createIoForHome(home);
-      expect(io.configPath).toBe(path.join(home, ".paleoclaw", "paleoclaw.json"));
+      expect(io.configPath).toBe(path.join(home, ".paleoclaw", "openclaw.json"));
     });
   });
 
@@ -56,7 +56,7 @@ describe("config io paths", () => {
         env: { OPENCLAW_HOME: path.join(home, "svc-home") } as NodeJS.ProcessEnv,
         homedir: () => path.join(home, "ignored-home"),
       });
-      expect(io.configPath).toBe(path.join(home, "svc-home", ".paleoclaw", "paleoclaw.json"));
+      expect(io.configPath).toBe(path.join(home, "svc-home", ".paleoclaw", "openclaw.json"));
     });
   });
 
@@ -82,7 +82,7 @@ describe("config io paths", () => {
     await withTempHome(async (home) => {
       const configDir = path.join(home, ".paleoclaw");
       await fs.mkdir(configDir, { recursive: true });
-      const configPath = path.join(configDir, "paleoclaw.json");
+      const configPath = path.join(configDir, "openclaw.json");
       await fs.writeFile(
         configPath,
         JSON.stringify(
@@ -142,7 +142,7 @@ describe("config io paths", () => {
     await withTempHome(async (home) => {
       const configDir = path.join(home, ".paleoclaw");
       await fs.mkdir(configDir, { recursive: true });
-      const configPath = path.join(configDir, "paleoclaw.json");
+      const configPath = path.join(configDir, "openclaw.json");
       await fs.writeFile(
         configPath,
         JSON.stringify({ gateway: { port: "not-a-number" } }, null, 2),

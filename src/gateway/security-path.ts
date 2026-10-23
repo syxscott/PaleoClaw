@@ -1,4 +1,8 @@
-export type SecurityPathCanonicalization = {
+// Gateway path security canonicalizes repeatedly encoded paths and protects
+// plugin HTTP routes even under malformed encoding.
+import { normalizeLowercaseStringOrEmpty } from "@paleoclaw/normalization-core/string-coerce";
+
+type SecurityPathCanonicalization = {
   canonicalPath: string;
   candidates: string[];
   decodePasses: number;
@@ -17,49 +21,24 @@ function normalizePathSeparators(pathname: string): string {
   return collapsed.replace(/\/+$/, "");
 }
 
-function normalizeProtectedPrefix(prefix: string): string {
-  return normalizePathSeparators(prefix.toLowerCase()) || "/";
-}
-
-function resolveDotSegments(pathname: string): string {
-  try {
-    return new URL(pathname, "http://localhost").pathname;
-  } catch {
-    return pathname;
-  }
-}
-
 function normalizePathForSecurity(pathname: string): string {
-  return normalizePathSeparators(resolveDotSegments(pathname).toLowerCase()) || "/";
+  const resolved = URL.parse(pathname, "http://localhost")?.pathname ?? pathname;
+  return normalizePathSeparators(normalizeLowercaseStringOrEmpty(resolved)) || "/";
 }
 
-function pushNormalizedCandidate(candidates: string[], seen: Set<string>, value: string): void {
-  const normalized = normalizePathForSecurity(value);
-  if (seen.has(normalized)) {
-    return;
-  }
-  seen.add(normalized);
-  candidates.push(normalized);
-}
-
-export function buildCanonicalPathCandidates(
-  pathname: string,
-  maxDecodePasses = MAX_PATH_DECODE_PASSES,
-): {
+function buildCanonicalPathCandidates(pathname: string): {
   candidates: string[];
   decodePasses: number;
   decodePassLimitReached: boolean;
   malformedEncoding: boolean;
 } {
-  const candidates: string[] = [];
-  const seen = new Set<string>();
-  pushNormalizedCandidate(candidates, seen, pathname);
+  const candidates = new Set([normalizePathForSecurity(pathname)]);
 
   let decoded = pathname;
   let malformedEncoding = false;
   let decodePasses = 0;
-  for (let pass = 0; pass < maxDecodePasses; pass++) {
-    let nextDecoded = decoded;
+  for (let pass = 0; pass < MAX_PATH_DECODE_PASSES; pass++) {
+    let nextDecoded;
     try {
       nextDecoded = decodeURIComponent(decoded);
     } catch {
@@ -71,7 +50,7 @@ export function buildCanonicalPathCandidates(
     }
     decodePasses += 1;
     decoded = nextDecoded;
-    pushNormalizedCandidate(candidates, seen, decoded);
+    candidates.add(normalizePathForSecurity(decoded));
   }
   let decodePassLimitReached = false;
   if (!malformedEncoding) {
@@ -82,7 +61,7 @@ export function buildCanonicalPathCandidates(
     }
   }
   return {
-    candidates,
+    candidates: [...candidates],
     decodePasses,
     decodePassLimitReached,
     malformedEncoding,
@@ -92,15 +71,6 @@ export function buildCanonicalPathCandidates(
 export function canonicalizePathVariant(pathname: string): string {
   const { candidates } = buildCanonicalPathCandidates(pathname);
   return candidates[candidates.length - 1] ?? "/";
-}
-
-function prefixMatch(pathname: string, prefix: string): boolean {
-  return (
-    pathname === prefix ||
-    pathname.startsWith(`${prefix}/`) ||
-    // Fail closed when malformed %-encoding follows the protected prefix.
-    pathname.startsWith(`${prefix}%`)
-  );
 }
 
 export function canonicalizePathForSecurity(pathname: string): SecurityPathCanonicalization {
@@ -113,49 +83,8 @@ export function canonicalizePathForSecurity(pathname: string): SecurityPathCanon
     decodePasses,
     decodePassLimitReached,
     malformedEncoding,
-    rawNormalizedPath: normalizePathSeparators(pathname.toLowerCase()) || "/",
+    rawNormalizedPath: normalizePathSeparators(normalizeLowercaseStringOrEmpty(pathname)) || "/",
   };
 }
 
-export function hasSecurityPathCanonicalizationAnomaly(pathname: string): boolean {
-  const canonical = canonicalizePathForSecurity(pathname);
-  return canonical.malformedEncoding || canonical.decodePassLimitReached;
-}
-
-const normalizedPrefixesCache = new WeakMap<readonly string[], readonly string[]>();
-
-function getNormalizedPrefixes(prefixes: readonly string[]): readonly string[] {
-  const cached = normalizedPrefixesCache.get(prefixes);
-  if (cached) {
-    return cached;
-  }
-  const normalized = prefixes.map(normalizeProtectedPrefix);
-  normalizedPrefixesCache.set(prefixes, normalized);
-  return normalized;
-}
-
-export function isPathProtectedByPrefixes(pathname: string, prefixes: readonly string[]): boolean {
-  const canonical = canonicalizePathForSecurity(pathname);
-  const normalizedPrefixes = getNormalizedPrefixes(prefixes);
-  if (
-    canonical.candidates.some((candidate) =>
-      normalizedPrefixes.some((prefix) => prefixMatch(candidate, prefix)),
-    )
-  ) {
-    return true;
-  }
-  // Fail closed when canonicalization depth cannot be fully resolved.
-  if (canonical.decodePassLimitReached) {
-    return true;
-  }
-  if (!canonical.malformedEncoding) {
-    return false;
-  }
-  return normalizedPrefixes.some((prefix) => prefixMatch(canonical.rawNormalizedPath, prefix));
-}
-
 export const PROTECTED_PLUGIN_ROUTE_PREFIXES = ["/api/channels"] as const;
-
-export function isProtectedPluginRoutePath(pathname: string): boolean {
-  return isPathProtectedByPrefixes(pathname, PROTECTED_PLUGIN_ROUTE_PREFIXES);
-}

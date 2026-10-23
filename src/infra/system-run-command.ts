@@ -1,3 +1,4 @@
+import { normalizeNullableString } from "@paleoclaw/normalization-core/string-coerce";
 import {
   extractShellWrapperCommand,
   hasEnvManipulationBeforeShellWrapper,
@@ -6,30 +7,23 @@ import {
   unwrapKnownShellMultiplexerInvocation,
 } from "./exec-wrapper-resolution.js";
 import {
+  NUSHELL_INLINE_COMMAND_FLAGS,
   POSIX_INLINE_COMMAND_FLAGS,
-  POWERSHELL_INLINE_COMMAND_FLAGS,
+  isPowerShellInlineRestCommandFlag,
   resolveInlineCommandMatch,
+  resolvePowerShellInlineCommandMatch,
 } from "./shell-inline-command.js";
+import { formatExecCommand, POSIX_SHELL_WRAPPERS } from "./shell-wrapper-resolution.js";
 
-export type SystemRunCommandValidation =
-  | {
-      ok: true;
-      shellCommand: string | null;
-      cmdText: string;
-    }
-  | {
-      ok: false;
-      message: string;
-      details?: Record<string, unknown>;
-    };
+export { formatExecCommand } from "./shell-wrapper-resolution.js";
 
-export type ResolvedSystemRunCommand =
+type ResolvedSystemRunCommand =
   | {
       ok: true;
       argv: string[];
-      rawCommand: string | null;
-      shellCommand: string | null;
-      cmdText: string;
+      commandText: string;
+      shellPayload: string | null;
+      previewText: string | null;
     }
   | {
       ok: false;
@@ -37,35 +31,15 @@ export type ResolvedSystemRunCommand =
       details?: Record<string, unknown>;
     };
 
-export function formatExecCommand(argv: string[]): string {
-  return argv
-    .map((arg) => {
-      if (arg.length === 0) {
-        return '""';
-      }
-      const needsQuotes = /\s|"/.test(arg);
-      if (!needsQuotes) {
-        return arg;
-      }
-      return `"${arg.replace(/"/g, '\\"')}"`;
-    })
-    .join(" ");
-}
-
+/** Extract the inline shell payload carried by a shell wrapper argv. */
 export function extractShellCommandFromArgv(argv: string[]): string | null {
   return extractShellWrapperCommand(argv).command;
 }
 
 const POSIX_OR_POWERSHELL_INLINE_WRAPPER_NAMES = new Set([
-  "ash",
-  "bash",
-  "dash",
-  "fish",
-  "ksh",
+  ...POSIX_SHELL_WRAPPERS,
   "powershell",
   "pwsh",
-  "sh",
-  "zsh",
 ]);
 
 function unwrapShellWrapperArgv(argv: string[]): string[] {
@@ -88,70 +62,50 @@ function hasTrailingPositionalArgvAfterInlineCommand(argv: string[]): boolean {
 
   const inlineCommandIndex =
     wrapper === "powershell" || wrapper === "pwsh"
-      ? resolveInlineCommandMatch(wrapperArgv, POWERSHELL_INLINE_COMMAND_FLAGS).valueTokenIndex
-      : resolveInlineCommandMatch(wrapperArgv, POSIX_INLINE_COMMAND_FLAGS, {
-          allowCombinedC: true,
-        }).valueTokenIndex;
+      ? resolvePowerShellInlineCommandMatch(wrapperArgv).valueTokenIndex
+      : wrapper === "nu"
+        ? resolveNushellInlineCommandValueTokenIndex(wrapperArgv)
+        : resolveInlineCommandMatch(wrapperArgv, POSIX_INLINE_COMMAND_FLAGS, {
+            allowCombinedC: true,
+          }).valueTokenIndex;
   if (inlineCommandIndex === null) {
+    return false;
+  }
+  if (
+    (wrapper === "powershell" || wrapper === "pwsh") &&
+    isPowerShellInlineRestCommandFlag(wrapperArgv[inlineCommandIndex - 1] ?? "")
+  ) {
     return false;
   }
   return wrapperArgv.slice(inlineCommandIndex + 1).some((entry) => entry.trim().length > 0);
 }
 
-export function validateSystemRunCommandConsistency(params: {
-  argv: string[];
-  rawCommand?: string | null;
-}): SystemRunCommandValidation {
-  const raw =
-    typeof params.rawCommand === "string" && params.rawCommand.trim().length > 0
-      ? params.rawCommand.trim()
-      : null;
-  const shellWrapperResolution = extractShellWrapperCommand(params.argv);
-  const shellCommand = shellWrapperResolution.command;
-  const shellWrapperPositionalArgv = hasTrailingPositionalArgvAfterInlineCommand(params.argv);
-  const envManipulationBeforeShellWrapper =
-    shellWrapperResolution.isWrapper && hasEnvManipulationBeforeShellWrapper(params.argv);
-  const mustBindDisplayToFullArgv = envManipulationBeforeShellWrapper || shellWrapperPositionalArgv;
-  const inferred =
-    shellCommand !== null && !mustBindDisplayToFullArgv
-      ? shellCommand.trim()
-      : formatExecCommand(params.argv);
-
-  if (raw && raw !== inferred) {
-    return {
-      ok: false,
-      message: "INVALID_REQUEST: rawCommand does not match command",
-      details: {
-        code: "RAW_COMMAND_MISMATCH",
-        rawCommand: raw,
-        inferred,
-      },
-    };
+function resolveNushellInlineCommandValueTokenIndex(argv: string[]): number | null {
+  for (let i = 1; i < argv.length; i += 1) {
+    const arg = argv[i]?.trim() ?? "";
+    if (!arg || arg === "--") {
+      return null;
+    }
+    const equalsIndex = arg.indexOf("=");
+    if (equalsIndex === -1) {
+      continue;
+    }
+    const flag = arg.slice(0, equalsIndex).toLowerCase();
+    if (flag.startsWith("--") && NUSHELL_INLINE_COMMAND_FLAGS.has(flag)) {
+      return i;
+    }
   }
-
-  return {
-    ok: true,
-    // Only treat this as a shell command when argv is a recognized shell wrapper.
-    // For direct argv execution and shell wrappers with env prelude modifiers,
-    // rawCommand is purely display/approval text and must match the formatted argv.
-    shellCommand:
-      shellCommand !== null
-        ? envManipulationBeforeShellWrapper
-          ? shellCommand
-          : (raw ?? shellCommand)
-        : null,
-    cmdText: raw ?? inferred,
-  };
+  return resolveInlineCommandMatch(argv, NUSHELL_INLINE_COMMAND_FLAGS, {
+    allowCombinedC: true,
+  }).valueTokenIndex;
 }
 
-export function resolveSystemRunCommand(params: {
+/** Resolve request command fields while accepting the legacy shell-preview text. */
+export function resolveSystemRunCommandRequest(params: {
   command?: unknown;
   rawCommand?: unknown;
 }): ResolvedSystemRunCommand {
-  const raw =
-    typeof params.rawCommand === "string" && params.rawCommand.trim().length > 0
-      ? params.rawCommand.trim()
-      : null;
+  const raw = normalizeNullableString(params.rawCommand);
   const command = Array.isArray(params.command) ? params.command : [];
   if (command.length === 0) {
     if (raw) {
@@ -164,30 +118,46 @@ export function resolveSystemRunCommand(params: {
     return {
       ok: true,
       argv: [],
-      rawCommand: null,
-      shellCommand: null,
-      cmdText: "",
+      commandText: "",
+      shellPayload: null,
+      previewText: null,
     };
   }
 
   const argv = command.map((v) => String(v));
-  const validation = validateSystemRunCommandConsistency({
-    argv,
-    rawCommand: raw,
-  });
-  if (!validation.ok) {
-    return {
-      ok: false,
-      message: validation.message,
-      details: validation.details ?? { code: "RAW_COMMAND_MISMATCH" },
-    };
+  const rawlessShellWrapperResolution = extractShellWrapperCommand(argv);
+  const shellWrapperResolution =
+    rawlessShellWrapperResolution.command === null && raw !== null
+      ? extractShellWrapperCommand(argv, raw)
+      : rawlessShellWrapperResolution;
+  const shellPayload = shellWrapperResolution.command;
+  const shellWrapperPositionalArgv = hasTrailingPositionalArgvAfterInlineCommand(argv);
+  const envManipulationBeforeShellWrapper =
+    shellWrapperResolution.isWrapper && hasEnvManipulationBeforeShellWrapper(argv);
+  const commandText = formatExecCommand(argv);
+  const previewText =
+    shellPayload !== null && !envManipulationBeforeShellWrapper && !shellWrapperPositionalArgv
+      ? shellPayload.trim()
+      : null;
+
+  if (raw) {
+    // rawCommand is display-only metadata. Reject mismatches so approvals cannot
+    // show one command while executing a different argv.
+    const matchesCanonicalArgv = raw === commandText;
+    const matchesLegacyShellText = previewText !== null && raw === previewText;
+    if (!matchesCanonicalArgv && !matchesLegacyShellText) {
+      return {
+        ok: false,
+        message: "INVALID_REQUEST: rawCommand does not match command",
+        details: {
+          code: "RAW_COMMAND_MISMATCH",
+          rawCommand: raw,
+          inferred: commandText,
+          formattedArgv: commandText,
+        },
+      };
+    }
   }
 
-  return {
-    ok: true,
-    argv,
-    rawCommand: raw,
-    shellCommand: validation.shellCommand,
-    cmdText: validation.cmdText,
-  };
+  return { ok: true, argv, commandText, shellPayload, previewText };
 }

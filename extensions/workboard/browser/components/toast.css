@@ -1,0 +1,66 @@
+paleoclaw-workboard-toast {
+  position: fixed;
+  right: calc(20px + var(--safe-area-right, 0px));
+  bottom: calc(20px + var(--safe-area-bottom, 0px));
+  z-index: var(--z-toast);
+  width: min(380px, calc(100vw - 40px));
+}
+
+paleoclaw-workboard-toast[hidden] {
+  display: none;
+}
+
+paleoclaw-workboard-toast .toast {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 8px 8px 8px 16px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  background: var(--popover);
+  color: var(--popover-foreground);
+  box-shadow: var(--shadow-lg);
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+paleoclaw-workboard-toast .toast--error {
+  border-color: var(--danger);
+}
+
+paleoclaw-workboard-toast .message {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+paleoclaw-workboard-toast button {
+  display: grid;
+  flex: 0 0 32px;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  border-radius: var(--radius-full);
+  corner-shape: round;
+  background: transparent;
+  color: var(--muted);
+  cursor: default;
+}
+
+paleoclaw-workboard-toast button:hover {
+  background: var(--bg-muted);
+  color: var(--text-strong);
+}
+
+paleoclaw-workboard-toast button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+paleoclaw-workboard-toast svg {
+  width: 16px;
+  height: 16px;
+}

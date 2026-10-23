@@ -1,0 +1,15 @@
+{
+  "name": "@paleoclaw/deepgram-provider",
+  "version": "2026.10.5",
+  "private": true,
+  "description": "paleoclaw Deepgram media-understanding provider",
+  "type": "module",
+  "devDependencies": {
+    "@paleoclaw/plugin-sdk": "workspace:*"
+  },
+  "paleoclaw": {
+    "extensions": [
+      "./index.ts"
+    ]
+  }
+}

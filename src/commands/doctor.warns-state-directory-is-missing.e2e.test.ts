@@ -1,119 +1,311 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { beforeAll, describe, expect, it, vi } from "vitest";
-import { createDoctorRuntime, mockDoctorConfigSnapshot, note } from "./doctor.e2e-harness.js";
+import { beforeAll, beforeEach, expect, it, vi } from "vitest";
+import type { OpenClawConfig } from "../config/types.openclaw.js";
+import { withEnvAsync } from "../test-utils/env.js";
+import {
+  callGateway,
+  createDoctorRuntime,
+  ensureAuthProfileStore,
+  mockDoctorConfigSnapshot,
+  transformConfigFile,
+} from "./doctor.e2e-harness.js";
+import { terminalNoteMock } from "./doctor.note-test-helpers.js";
 import "./doctor.fast-path-mocks.js";
-
-vi.doUnmock("./doctor-state-integrity.js");
 
 let doctorCommand: typeof import("./doctor.js").doctorCommand;
 
-describe("doctor command", () => {
-  beforeAll(async () => {
-    ({ doctorCommand } = await import("./doctor.js"));
-  });
-
-  it("warns when the state directory is missing", async () => {
-    mockDoctorConfigSnapshot();
-
-    const missingDir = fs.mkdtempSync(path.join(os.tmpdir(), "paleoclaw-missing-state-"));
-    fs.rmSync(missingDir, { recursive: true, force: true });
-    process.env.OPENCLAW_STATE_DIR = missingDir;
-    note.mockClear();
-
-    await doctorCommand(createDoctorRuntime(), {
-      nonInteractive: true,
-      workspaceSuggestions: false,
-    });
-
-    const stateNote = note.mock.calls.find((call) => call[1] === "State integrity");
-    expect(stateNote).toBeTruthy();
-    expect(String(stateNote?.[0])).toContain("CRITICAL");
-  });
-
-  it("warns about opencode provider overrides", async () => {
-    mockDoctorConfigSnapshot({
-      config: {
-        models: {
-          providers: {
-            opencode: {
-              api: "openai-completions",
-              baseUrl: "https://opencode.ai/zen/v1",
-            },
+function mockCodexProviderSnapshot(provider: Record<string, unknown>): void {
+  mockDoctorConfigSnapshot({
+    config: {
+      models: { providers: { "openai-codex": provider } },
+      auth: {
+        profiles: {
+          "openai:user@example.com": {
+            provider: "openai",
+            mode: "oauth",
+            email: "user@example.com",
           },
         },
       },
-    });
+    },
+  });
+}
 
-    await doctorCommand(createDoctorRuntime(), {
-      nonInteractive: true,
-      workspaceSuggestions: false,
-    });
+function execRef(id: string) {
+  return { source: "exec" as const, provider: "default", id };
+}
 
-    const warned = note.mock.calls.some(
-      ([message, title]) =>
-        title === "OpenCode Zen" && String(message).includes("models.providers.opencode"),
+const execHealthMessage =
+  "Gateway health checks skipped because gateway credentials use an exec SecretRef.";
+
+async function expectExecGatewayProbe(
+  gateway: NonNullable<OpenClawConfig["gateway"]>,
+  skipped: boolean,
+  env: Record<string, string> = {},
+): Promise<void> {
+  mockDoctorConfigSnapshot({
+    config: {
+      gateway,
+      secrets: { providers: { default: { source: "exec", command: process.execPath } } },
+    },
+  });
+  callGateway.mockClear();
+  await withEnvAsync(env, runDoctorNonInteractive);
+  if (skipped) {
+    expect(callGateway).not.toHaveBeenCalled();
+    requireTerminalNote({ title: "Gateway", messageIncludes: execHealthMessage });
+  } else {
+    expect(
+      terminalNoteMock.mock.calls.some(
+        ([message, title]) => title === "Gateway" && String(message).includes(execHealthMessage),
+      ),
+    ).toBe(false);
+  }
+}
+
+async function runDoctorNonInteractive(): Promise<void> {
+  await doctorCommand(createDoctorRuntime(), {
+    nonInteractive: true,
+    workspaceSuggestions: false,
+  });
+}
+
+function requireTerminalNote(params: { title?: string; messageIncludes?: string }) {
+  const note = terminalNoteMock.mock.calls.find(
+    ([message, title]) =>
+      (params.title === undefined || title === params.title) &&
+      (params.messageIncludes === undefined || String(message).includes(params.messageIncludes)),
+  );
+  if (!note) {
+    throw new Error(
+      `expected terminal note${params.title ? ` titled ${params.title}` : ""}${
+        params.messageIncludes ? ` containing ${params.messageIncludes}` : ""
+      }`,
     );
-    expect(warned).toBe(true);
+  }
+  return note;
+}
+
+beforeAll(async () => {
+  vi.doUnmock("../flows/doctor-health-contributions.js");
+  vi.doUnmock("./doctor-state-integrity.js");
+  ({ doctorCommand } = await import("./doctor.js"));
+});
+
+beforeEach(() => {
+  terminalNoteMock.mockClear();
+});
+
+it("reports when the state directory was missing at doctor start", async () => {
+  mockDoctorConfigSnapshot();
+
+  const missingDir = fs.mkdtempSync(path.join(os.tmpdir(), "paleoclaw-missing-state-"));
+  fs.rmSync(missingDir, { recursive: true, force: true });
+  await withEnvAsync({ OPENCLAW_STATE_DIR: missingDir }, async () => {
+    await runDoctorNonInteractive();
   });
 
-  it("skips gateway auth warning when OPENCLAW_GATEWAY_TOKEN is set", async () => {
-    mockDoctorConfigSnapshot({
-      config: {
-        gateway: { mode: "local" },
+  requireTerminalNote({
+    title: "State integrity",
+    messageIncludes: "State directory was missing at doctor start",
+  });
+});
+
+it("routes browser readiness through health contributions", async () => {
+  const { noteChromeMcpBrowserReadiness } = await import("./doctor-browser.js");
+  const browserReadiness = vi.mocked(noteChromeMcpBrowserReadiness);
+  browserReadiness.mockClear();
+  mockDoctorConfigSnapshot({
+    config: {
+      browser: {
+        defaultProfile: "user",
       },
-    });
-
-    const prevToken = process.env.OPENCLAW_GATEWAY_TOKEN;
-    process.env.OPENCLAW_GATEWAY_TOKEN = "env-token-1234567890";
-    note.mockClear();
-
-    try {
-      await doctorCommand(createDoctorRuntime(), {
-        nonInteractive: true,
-        workspaceSuggestions: false,
-      });
-    } finally {
-      if (prevToken === undefined) {
-        delete process.env.OPENCLAW_GATEWAY_TOKEN;
-      } else {
-        process.env.OPENCLAW_GATEWAY_TOKEN = prevToken;
-      }
-    }
-
-    const warned = note.mock.calls.some(([message]) =>
-      String(message).includes("Gateway auth is off or missing a token"),
-    );
-    expect(warned).toBe(false);
+    },
   });
 
-  it("warns when token and password are both configured and gateway.auth.mode is unset", async () => {
-    mockDoctorConfigSnapshot({
-      config: {
-        gateway: {
-          mode: "local",
-          auth: {
-            token: "token-value",
-            password: "password-value", // pragma: allowlist secret
+  await runDoctorNonInteractive();
+
+  expect(browserReadiness).toHaveBeenCalledExactlyOnceWith(
+    expect.objectContaining({ browser: { defaultProfile: "user" } }),
+  );
+});
+
+it("warns about active OpenCode provider overrides", async () => {
+  mockDoctorConfigSnapshot({
+    config: {
+      models: {
+        providers: {
+          opencode: {
+            api: "openai-completions",
+            baseUrl: "https://opencode.ai/zen/v1",
+          },
+          "opencode-go": {
+            api: "openai-completions",
+            baseUrl: "https://opencode.ai/zen/go/v1",
           },
         },
       },
-    });
-
-    note.mockClear();
-
-    await doctorCommand(createDoctorRuntime(), {
-      nonInteractive: true,
-      workspaceSuggestions: false,
-    });
-
-    const gatewayAuthNote = note.mock.calls.find((call) => call[1] === "Gateway auth");
-    expect(gatewayAuthNote).toBeTruthy();
-    expect(String(gatewayAuthNote?.[0])).toContain("gateway.auth.mode is unset");
-    expect(String(gatewayAuthNote?.[0])).toContain("paleoclaw config set gateway.auth.mode token");
-    expect(String(gatewayAuthNote?.[0])).toContain(
-      "paleoclaw config set gateway.auth.mode password",
-    );
+    },
   });
+
+  await runDoctorNonInteractive();
+
+  const warned = terminalNoteMock.mock.calls.some(
+    ([message, title]) =>
+      title === "OpenCode" &&
+      String(message).includes("models.providers.opencode") &&
+      String(message).includes("models.providers.opencode-go"),
+  );
+  expect(warned).toBe(true);
+});
+
+it.each([
+  ["custom OpenAI proxy", { api: "openai-responses", baseUrl: "https://custom.example.com" }],
+  [
+    "header-only",
+    {
+      baseUrl: "https://custom.example.com",
+      headers: { "X-Custom-Auth": "token-123" },
+      models: [{ id: "gpt-5.4" }],
+    },
+  ],
+] as const)("does not warn for %s overrides", async (_label, provider) => {
+  mockCodexProviderSnapshot(provider);
+  ensureAuthProfileStore.mockReturnValue({ version: 1, profiles: {} });
+  await runDoctorNonInteractive();
+  expect(terminalNoteMock.mock.calls.some(([, title]) => title === "Codex OAuth")).toBe(false);
+});
+
+it("keeps doctor read-only when gateway token is SecretRef-managed but unresolved", async () => {
+  mockDoctorConfigSnapshot({
+    config: {
+      gateway: {
+        mode: "local",
+        auth: {
+          mode: "token",
+          token: {
+            source: "env",
+            provider: "default",
+            id: "OPENCLAW_GATEWAY_TOKEN",
+          },
+        },
+      },
+      secrets: {
+        providers: {
+          default: { source: "env" },
+        },
+      },
+    },
+  });
+
+  await withEnvAsync({ OPENCLAW_GATEWAY_TOKEN: undefined }, runDoctorNonInteractive);
+
+  const gatewayAuthNote = requireTerminalNote({ title: "Gateway auth" });
+  expect(String(gatewayAuthNote[0])).toContain(
+    "Gateway token SecretRef could not be resolved: gateway.auth.token SecretRef is unresolved",
+  );
+  requireTerminalNote({
+    title: "Gateway auth",
+    messageIncludes: "Doctor will not overwrite gateway.auth.token with a plaintext value.",
+  });
+  expect(transformConfigFile).not.toHaveBeenCalled();
+});
+
+it.each([
+  [
+    "token mode with env password",
+    { mode: "local", auth: { mode: "token", token: execRef("gateway/token") } },
+    true,
+    { OPENCLAW_GATEWAY_PASSWORD: "fallback-password" },
+  ],
+  [
+    "ambiguous exec refs",
+    {
+      mode: "local",
+      auth: { token: execRef("gateway/token"), password: execRef("gateway/password") },
+    },
+    true,
+    {},
+  ],
+  [
+    "remote exec token with env token",
+    {
+      mode: "remote",
+      remote: { url: "https://gateway.example.test", token: execRef("gateway/remote-token") },
+    },
+    true,
+    { OPENCLAW_GATEWAY_TOKEN: "fallback-token" },
+  ],
+  [
+    "remote with local exec fallback",
+    {
+      mode: "remote",
+      auth: { mode: "password", token: execRef("gateway/token") },
+      remote: { url: "https://gateway.example.test" },
+    },
+    true,
+    {},
+  ],
+  [
+    "non-token auth with dormant exec token",
+    {
+      mode: "local",
+      auth: {
+        mode: "password",
+        password: "configured-password",
+        token: execRef("gateway/token"),
+      },
+    },
+    false,
+    {},
+  ],
+  [
+    "env token winning over exec password",
+    { mode: "local", auth: { password: execRef("gateway/password") } },
+    false,
+    { OPENCLAW_GATEWAY_TOKEN: "fallback-token" },
+  ],
+  [
+    "exec password with env password",
+    { mode: "local", auth: { mode: "password", password: execRef("gateway/password") } },
+    true,
+    { OPENCLAW_GATEWAY_PASSWORD: "fallback-password" },
+  ],
+  [
+    "remote exec password with winning env token",
+    {
+      mode: "remote",
+      auth: { mode: "password" },
+      remote: {
+        url: "https://gateway.example.test",
+        password: execRef("gateway/remote-password"),
+      },
+    },
+    false,
+    { OPENCLAW_GATEWAY_TOKEN: "fallback-token" },
+  ],
+  [
+    "remote exec token with winning env password",
+    {
+      mode: "remote",
+      auth: { mode: "token" },
+      remote: { url: "https://gateway.example.test", token: execRef("gateway/remote-token") },
+    },
+    false,
+    { OPENCLAW_GATEWAY_PASSWORD: "fallback-password" },
+  ],
+  [
+    "local auth with dormant remote exec refs",
+    {
+      mode: "local",
+      auth: { mode: "token", token: "configured-token" },
+      remote: { url: "https://gateway.example.test", token: execRef("gateway/remote-token") },
+    },
+    false,
+    {},
+  ],
+] as const)("gateway probe selection: %s", async (_label, gateway, skipped, env) => {
+  await expectExecGatewayProbe(gateway, skipped, env);
 });

@@ -1,113 +1,330 @@
-import type { Command } from "commander";
-import {
-  channelsAddCommand,
-  channelsCapabilitiesCommand,
-  channelsListCommand,
-  channelsLogsCommand,
-  channelsRemoveCommand,
-  channelsResolveCommand,
-  channelsStatusCommand,
-} from "../commands/channels.js";
+import { Option, type Command } from "commander";
+import { theme } from "../../packages/terminal-core/src/theme.js";
+import type { ChannelSetupFieldMetadata } from "../channels/plugins/setup-contract.js";
+import { parseAccountSelector } from "../commands/channels/account-selector.js";
 import { danger } from "../globals.js";
+import { getCommandArgsWithRootOptions } from "../infra/cli-root-options.js";
+import { formatErrorMessage } from "../infra/errors.js";
 import { defaultRuntime } from "../runtime.js";
-import { formatDocsLink } from "../terminal/links.js";
-import { theme } from "../terminal/theme.js";
+import { resolveCliArgvInvocation } from "./argv-invocation.js";
 import { runChannelLogin, runChannelLogout } from "./channel-auth.js";
 import { formatCliChannelOptions } from "./channel-options.js";
 import { runCommandWithRuntime } from "./cli-utils.js";
-import { hasExplicitOptions } from "./command-options.js";
-import { formatHelpExamples } from "./help-format.js";
+import { hasExplicitOptions, inheritOptionFromParent } from "./command-options.js";
+import { formatDocsHelp, formatHelpExamples } from "./help-format.js";
+import { applyParentDefaultHelpAction } from "./program/parent-default-help.js";
+import { normalizeWindowsArgv } from "./windows-argv.js";
 
-const optionNamesAdd = [
-  "channel",
-  "account",
-  "name",
-  "token",
-  "tokenFile",
-  "botToken",
-  "appToken",
-  "signalNumber",
-  "cliPath",
-  "dbPath",
-  "service",
-  "region",
-  "authDir",
-  "httpUrl",
-  "httpHost",
-  "httpPort",
-  "webhookPath",
-  "webhookUrl",
-  "audienceType",
-  "audience",
-  "useEnv",
-  "homeserver",
-  "userId",
-  "accessToken",
-  "password",
-  "deviceName",
-  "initialSyncLimit",
-  "ship",
-  "url",
-  "code",
-  "groupChannels",
-  "dmAllowlist",
-  "autoDiscoverChannels",
-] as const;
+type ChannelSetupFlagArity = "boolean" | "value" | "conflict";
+
+type ChannelSetupCliOption = ChannelSetupFieldMetadata["cli"];
+
+const CHANNEL_ADD_SHARED_BOOLEAN_OPTIONS = new Set(["--help", "-h"]);
+const CHANNEL_ADD_SHARED_VALUE_OPTIONS = new Set(["--agent", "--channel", "--account", "--name"]);
+
+function getChannelSetupOptionSwitches(option: Option): string[] {
+  return [option.short, option.long].filter((flag): flag is string => Boolean(flag));
+}
+
+function resolveChannelSetupFlagArity(flags: string): Exclude<ChannelSetupFlagArity, "conflict"> {
+  return /<[^>]+>|\[[^\]]+\]/u.test(flags) ? "value" : "boolean";
+}
+
+function buildChannelSetupFlagArityMap(
+  options: readonly ChannelSetupCliOption[],
+): Map<string, ChannelSetupFlagArity> {
+  const arityBySwitch = new Map<string, ChannelSetupFlagArity>();
+  const addSwitch = (flag: string, arity: Exclude<ChannelSetupFlagArity, "conflict">) => {
+    const existing = arityBySwitch.get(flag);
+    arityBySwitch.set(flag, existing === undefined || existing === arity ? arity : "conflict");
+  };
+  for (const option of options) {
+    const arity = resolveChannelSetupFlagArity(option.flags);
+    for (const flag of getChannelSetupOptionSwitches(new Option(option.flags))) {
+      addSwitch(flag, arity);
+    }
+    if (option.negatedFlags) {
+      for (const flag of getChannelSetupOptionSwitches(new Option(option.negatedFlags))) {
+        addSwitch(flag, "boolean");
+      }
+    }
+  }
+  return arityBySwitch;
+}
+
+async function resolveChannelsAddChannelFromArgv(argv: string[]): Promise<string | undefined> {
+  const normalizedArgv = normalizeWindowsArgv(argv);
+  const args = getCommandArgsWithRootOptions(normalizedArgv, {
+    commandPath: ["channels", "add"],
+    valueFlags: ["--agent"],
+    mode: "command-path",
+  });
+  if (!args) {
+    return undefined;
+  }
+  let explicitChannel: string | undefined;
+  for (let index = 0; index < args.length; index += 1) {
+    const arg = args[index];
+    if (!arg || arg === "--") {
+      break;
+    }
+    if (arg === "--channel") {
+      const value = args[index + 1]?.trim();
+      explicitChannel = value || explicitChannel;
+      index += 1;
+      continue;
+    }
+    if (CHANNEL_ADD_SHARED_VALUE_OPTIONS.has(arg)) {
+      index += 1;
+      continue;
+    }
+    if (arg.startsWith("--channel=")) {
+      const value = arg.slice("--channel=".length).trim();
+      explicitChannel = value || explicitChannel;
+    }
+  }
+  if (explicitChannel) {
+    return explicitChannel;
+  }
+
+  let channelFlagArities: Map<string, ChannelSetupFlagArity> | undefined;
+  for (let index = 0; index < args.length; index += 1) {
+    const arg = args[index];
+    if (!arg || arg === "--") {
+      break;
+    }
+    if (CHANNEL_ADD_SHARED_VALUE_OPTIONS.has(arg)) {
+      index += 1;
+      continue;
+    }
+    if (arg.includes("=") && CHANNEL_ADD_SHARED_VALUE_OPTIONS.has(arg.slice(0, arg.indexOf("=")))) {
+      continue;
+    }
+    if (CHANNEL_ADD_SHARED_BOOLEAN_OPTIONS.has(arg)) {
+      continue;
+    }
+    if (arg.startsWith("-")) {
+      // Shipped `channels add` accepted channel flags before a positional id by registering every
+      // channel option. Lazily inspect serialized all-channel metadata for arity only; actual
+      // option registration remains scoped to the selected channel.
+      if (!channelFlagArities) {
+        const { resolveChannelSetupCliOptionMetadata } =
+          await import("../channels/plugins/cli-add-options.js");
+        const { optionCandidates } = resolveChannelSetupCliOptionMetadata(undefined, {
+          includeAll: true,
+        });
+        channelFlagArities = buildChannelSetupFlagArityMap(optionCandidates);
+      }
+      const equalsIndex = arg.indexOf("=");
+      const optionSwitch = equalsIndex === -1 ? arg : arg.slice(0, equalsIndex);
+      const arity = channelFlagArities.get(optionSwitch);
+      if (!arity || arity === "conflict") {
+        return undefined;
+      }
+      if (equalsIndex === -1 && arity === "value") {
+        index += 1;
+      }
+      continue;
+    }
+    return arg;
+  }
+  return undefined;
+}
+
+function resolveChannelsAddOptions(
+  channelArg: string | undefined,
+  opts: Record<string, unknown>,
+  command: Pick<Command, "getOptionValueSource">,
+  params?: {
+    preserveLegacyDefaults?: boolean;
+    /** Attribute names whose empty Commander defaults should be dropped (legacy int options). */
+    dropEmptyLegacyDefaultsForAttributeNames?: ReadonlySet<string>;
+  },
+): Record<string, unknown> {
+  const forwardedOpts = Object.fromEntries(
+    Object.entries(opts).filter(([key, value]) => {
+      const source = command.getOptionValueSource(key);
+      if (source === "cli") {
+        return true;
+      }
+      // Legacy plugins still install manifest defaults through Commander.
+      // Keep those values. Drop empty-string defaults only for int options so
+      // omitted ints are not treated as explicitly blank user input, while
+      // empty text defaults remain valid plugin metadata.
+      if (params?.preserveLegacyDefaults !== true || source !== "default" || value === undefined) {
+        return false;
+      }
+      if (value === "") {
+        return !params.dropEmptyLegacyDefaultsForAttributeNames?.has(key);
+      }
+      return true;
+    }),
+  );
+  return {
+    ...forwardedOpts,
+    channel: forwardedOpts.channel ?? channelArg,
+  };
+}
 
 const optionNamesRemove = ["channel", "account", "delete"] as const;
+const CHANNEL_ADD_SELECTION_OPTION_NAMES = new Set(["agent", "channel"]);
 
-function runChannelsCommand(action: () => Promise<void>) {
-  return runCommandWithRuntime(defaultRuntime, action);
-}
+type RegisterChannelsCliOptions = {
+  includeSetupOptions?: boolean;
+};
+
+type AddChannelSetupOptionsParams = {
+  channelId?: string;
+  includeAll?: boolean;
+};
+
+type ChannelSetupOptionRegistration = Awaited<ReturnType<typeof addChannelSetupOptions>>;
+
+const LEGACY_CHANNEL_SETUP_OPTIONS: readonly ChannelSetupCliOption[] = [
+  { flags: "--token <token>", description: "Channel token or credential payload" },
+  {
+    flags: "--token-file <path>",
+    description: "Read channel token or credential payload from file",
+  },
+  { flags: "--secret <secret>", description: "Channel shared secret" },
+  { flags: "--bot-token <token>", description: "Bot token" },
+  { flags: "--app-token <token>", description: "App token" },
+  { flags: "--password <password>", description: "Channel password or login secret" },
+  { flags: "--cli-path <path>", description: "Channel CLI path" },
+  { flags: "--url <url>", description: "Channel setup URL" },
+  { flags: "--base-url <url>", description: "Channel base URL" },
+  { flags: "--http-url <url>", description: "Channel HTTP service URL" },
+  { flags: "--auth-dir <path>", description: "Channel auth directory override" },
+  {
+    flags: "--use-env",
+    description: "Use env-backed credentials when supported",
+    defaultValue: false,
+  },
+];
 
 function runChannelsCommandWithDanger(action: () => Promise<void>, label: string) {
   return runCommandWithRuntime(defaultRuntime, action, (err) => {
-    defaultRuntime.error(danger(`${label}: ${String(err)}`));
+    defaultRuntime.error(danger(`${label}: ${formatErrorMessage(err)}`));
     defaultRuntime.exit(1);
   });
 }
 
-export function registerChannelsCli(program: Command) {
+function resolveStringOption(command: Command, name: string): string | undefined {
+  const value = inheritOptionFromParent<string>(command, name) ?? command.getOptionValue(name);
+  return typeof value === "string" ? value : undefined;
+}
+
+function addChannelSetupOption(
+  command: Command,
+  option: ChannelSetupCliOption,
+  seenFlags: Set<string>,
+): void {
+  const prepared = command.createOption(option.flags, option.description);
+  const optionSwitches = getChannelSetupOptionSwitches(prepared);
+  if (optionSwitches.some((flag) => seenFlags.has(flag))) {
+    return;
+  }
+  optionSwitches.forEach((flag) => seenFlags.add(flag));
+  command.addOption(prepared.makeOptionMandatory(false).default(option.defaultValue));
+  if (option.negatedFlags) {
+    const negated = command.createOption(option.negatedFlags, option.description);
+    const negatedSwitches = getChannelSetupOptionSwitches(negated);
+    if (!negatedSwitches.some((flag) => seenFlags.has(flag))) {
+      negatedSwitches.forEach((flag) => seenFlags.add(flag));
+      command.addOption(negated.makeOptionMandatory(false).default(undefined));
+    }
+  }
+}
+
+function shouldRegisterChannelSetupOptions(
+  argv: string[] = process.argv,
+  options: RegisterChannelsCliOptions = {},
+): boolean {
+  // Channel-specific setup flags are expensive to load and only needed on `channels add`.
+  if (options.includeSetupOptions) {
+    return true;
+  }
+  const { commandPath } = resolveCliArgvInvocation(normalizeWindowsArgv(argv));
+  return commandPath[0] === "channels" && commandPath[1] === "add";
+}
+
+async function addChannelSetupOptions(command: Command, params: AddChannelSetupOptionsParams = {}) {
+  const { resolveChannelSetupCliOptionMetadata } =
+    await import("../channels/plugins/cli-add-options.js");
+  const selected = params.channelId?.trim().toLowerCase();
+  const { options, selectedChannel, valueMetadataByAttributeName } =
+    resolveChannelSetupCliOptionMetadata(selected, {
+      includeAll: params.includeAll,
+    });
+  const seenFlags = new Set(command.options.flatMap(getChannelSetupOptionSwitches));
+  for (const option of options) {
+    addChannelSetupOption(command, option, seenFlags);
+  }
+  if (params.includeAll || (selected && selectedChannel?.setup === undefined)) {
+    for (const option of LEGACY_CHANNEL_SETUP_OPTIONS) {
+      addChannelSetupOption(command, option, seenFlags);
+    }
+  }
+  const legacyIntDefaultAttributeNames = new Set<string>();
+  for (const [attributeName, metadata] of valueMetadataByAttributeName) {
+    if (metadata.valueType === "int") {
+      legacyIntDefaultAttributeNames.add(attributeName);
+    }
+  }
+  return {
+    preserveLegacyDefaults: !selected || !selectedChannel?.setup,
+    dropEmptyLegacyDefaultsForAttributeNames: legacyIntDefaultAttributeNames,
+  };
+}
+
+export async function registerChannelsCli(
+  program: Command,
+  argv: string[] = process.argv,
+  options: RegisterChannelsCliOptions = {},
+) {
   const channelNames = formatCliChannelOptions();
   const channels = program
     .command("channels")
     .description("Manage connected chat channels and accounts")
+    .option("--agent <id>", "Agent owner for channel commands that require workspace context")
     .addHelpText(
       "after",
       () =>
         `\n${theme.heading("Examples:")}\n${formatHelpExamples([
-          ["paleoclaw channels list", "List configured channels and auth profiles."],
-          ["paleoclaw channels status --probe", "Run channel status checks and probes."],
+          ["paleoclaw channels list", "List configured channels."],
+          ["paleoclaw channels list --all", "Show configured, bundled, and installable channels."],
+          ["paleoclaw channels add", "Open guided channel setup."],
+          ["paleoclaw channels status --probe", "Check channel status and connectivity."],
           [
             "paleoclaw channels add --channel telegram --token <token>",
             "Add or update a channel account non-interactively.",
           ],
           ["paleoclaw channels login --channel whatsapp", "Link a WhatsApp Web account."],
-        ])}\n\n${theme.muted("Docs:")} ${formatDocsLink(
-          "/cli/channels",
-          "docs.paleoclaw.ai/cli/channels",
-        )}\n`,
+        ])}\n${formatDocsHelp("/cli/channels")}`,
     );
 
   channels
     .command("list")
-    .description("List configured channels + auth profiles")
-    .option("--no-usage", "Skip model provider usage/quota snapshots")
+    .description("List chat channels (configured by default; pass --all for installable catalog)")
+    .option("--all", "Include bundled and installable catalog channels", false)
     .option("--json", "Output JSON", false)
     .action(async (opts) => {
-      await runChannelsCommand(async () => {
+      await runCommandWithRuntime(defaultRuntime, async () => {
+        const { channelsListCommand } = await import("../commands/channels/list.js");
         await channelsListCommand(opts, defaultRuntime);
       });
     });
 
   channels
     .command("status")
-    .description("Show gateway channel status (use status --deep for local)")
-    .option("--probe", "Probe channel credentials", false)
-    .option("--timeout <ms>", "Timeout in ms", "10000")
+    .description("Show channel status (use paleoclaw status --deep for a full connection check)")
+    .option("--channel <name>", `Only show one channel (${formatCliChannelOptions(["all"])})`)
+    .option("--probe", "Check channel credentials", false)
+    .option("--timeout <ms>", "Timeout in ms")
     .option("--json", "Output JSON", false)
     .action(async (opts) => {
-      await runChannelsCommand(async () => {
+      await runCommandWithRuntime(defaultRuntime, async () => {
+        const { channelsStatusCommand } = await import("../commands/channels/status.js");
         await channelsStatusCommand(opts, defaultRuntime);
       });
     });
@@ -115,14 +332,19 @@ export function registerChannelsCli(program: Command) {
   channels
     .command("capabilities")
     .description("Show provider capabilities (intents/scopes + supported features)")
+    .option("--agent <id>", "Agent owner for channel discovery")
     .option("--channel <name>", `Channel (${formatCliChannelOptions(["all"])})`)
-    .option("--account <id>", "Account id (only with --channel)")
+    .option("--account <id>", "Account id (only with --channel)", parseAccountSelector)
     .option("--target <dest>", "Channel target for permission audit (Discord channel:<id>)")
     .option("--timeout <ms>", "Timeout in ms", "10000")
     .option("--json", "Output JSON", false)
-    .action(async (opts) => {
-      await runChannelsCommand(async () => {
-        await channelsCapabilitiesCommand(opts, defaultRuntime);
+    .action(async (opts, command) => {
+      await runCommandWithRuntime(defaultRuntime, async () => {
+        const { channelsCapabilitiesCommand } = await import("../commands/channels.js");
+        await channelsCapabilitiesCommand(
+          { ...opts, agent: resolveStringOption(command, "agent") },
+          defaultRuntime,
+        );
       });
     });
 
@@ -131,16 +353,23 @@ export function registerChannelsCli(program: Command) {
     .description("Resolve channel/user names to IDs")
     .argument("<entries...>", "Entries to resolve (names or ids)")
     .option("--channel <name>", `Channel (${channelNames})`)
-    .option("--account <id>", "Account id (accountId)")
-    .option("--kind <kind>", "Target kind (auto|user|group)", "auto")
+    .option("--account <id>", "Account id (accountId)", parseAccountSelector)
+    .option("--agent <id>", "Agent owner for channel resolution")
+    .addOption(
+      new Option("--kind <kind>", "Target kind (auto|user|group|channel)")
+        .choices(["auto", "user", "group", "channel"])
+        .default("auto"),
+    )
     .option("--json", "Output JSON", false)
-    .action(async (entries, opts) => {
-      await runChannelsCommand(async () => {
+    .action(async (entries, opts, command) => {
+      await runCommandWithRuntime(defaultRuntime, async () => {
+        const { channelsResolveCommand } = await import("../commands/channels.js");
         await channelsResolveCommand(
           {
+            agent: resolveStringOption(command, "agent"),
             channel: opts.channel as string | undefined,
             account: opts.account as string | undefined,
-            kind: opts.kind as "auto" | "user" | "group",
+            kind: opts.kind as "auto" | "user" | "group" | "channel",
             json: Boolean(opts.json),
             entries: Array.isArray(entries) ? entries : [String(entries)],
           },
@@ -152,105 +381,166 @@ export function registerChannelsCli(program: Command) {
   channels
     .command("logs")
     .description("Show recent channel logs from the gateway log file")
-    .option("--channel <name>", `Channel (${formatCliChannelOptions(["all"])})`, "all")
+    .option("--channel <name>", `Channel (${formatCliChannelOptions(["all"])}; default: all)`)
     .option("--lines <n>", "Number of lines (default: 200)", "200")
     .option("--json", "Output JSON", false)
     .action(async (opts) => {
-      await runChannelsCommand(async () => {
-        await channelsLogsCommand(opts, defaultRuntime);
+      await runCommandWithRuntime(defaultRuntime, async () => {
+        const { channelsLogsCommand } = await import("../commands/channels.js");
+        await channelsLogsCommand(opts);
       });
     });
 
-  channels
-    .command("add")
-    .description("Add or update a channel account")
-    .option("--channel <name>", `Channel (${channelNames})`)
-    .option("--account <id>", "Account id (default when omitted)")
-    .option("--name <name>", "Display name for this account")
-    .option("--token <token>", "Bot token (Telegram/Discord)")
-    .option("--token-file <path>", "Bot token file (Telegram)")
-    .option("--bot-token <token>", "Slack bot token (xoxb-...)")
-    .option("--app-token <token>", "Slack app token (xapp-...)")
-    .option("--signal-number <e164>", "Signal account number (E.164)")
-    .option("--cli-path <path>", "CLI path (signal-cli or imsg)")
-    .option("--db-path <path>", "iMessage database path")
-    .option("--service <service>", "iMessage service (imessage|sms|auto)")
-    .option("--region <region>", "iMessage region (for SMS)")
-    .option("--auth-dir <path>", "WhatsApp auth directory override")
-    .option("--http-url <url>", "Signal HTTP daemon base URL")
-    .option("--http-host <host>", "Signal HTTP host")
-    .option("--http-port <port>", "Signal HTTP port")
-    .option("--webhook-path <path>", "Webhook path (Google Chat/BlueBubbles)")
-    .option("--webhook-url <url>", "Google Chat webhook URL")
-    .option("--audience-type <type>", "Google Chat audience type (app-url|project-number)")
-    .option("--audience <value>", "Google Chat audience value (app URL or project number)")
-    .option("--homeserver <url>", "Matrix homeserver URL")
-    .option("--user-id <id>", "Matrix user ID")
-    .option("--access-token <token>", "Matrix access token")
-    .option("--password <password>", "Matrix password")
-    .option("--device-name <name>", "Matrix device name")
-    .option("--initial-sync-limit <n>", "Matrix initial sync limit")
-    .option("--ship <ship>", "Tlon ship name (~sampel-palnet)")
-    .option("--url <url>", "Tlon ship URL")
-    .option("--code <code>", "Tlon login code")
-    .option("--group-channels <list>", "Tlon group channels (comma-separated)")
-    .option("--dm-allowlist <list>", "Tlon DM allowlist (comma-separated ships)")
-    .option("--auto-discover-channels", "Tlon auto-discover group channels")
-    .option("--no-auto-discover-channels", "Disable Tlon auto-discovery")
-    .option("--use-env", "Use env token (default account only)", false)
+  const deadLetters = channels
+    .command("dead-letters")
+    .description("Inspect and resubmit failed inbound channel events")
+    .option("--account <id>", "Account id", "default");
+
+  deadLetters
+    .command("list")
+    .description("List failed inbound events for one channel account")
+    .requiredOption("--channel <name>", "Channel id")
+    .option("--account <id>", "Account id", "default")
+    .option("--limit <n>", "Maximum entries", "100")
+    .option("--json", "Output JSON", false)
     .action(async (opts, command) => {
-      await runChannelsCommand(async () => {
-        const hasFlags = hasExplicitOptions(command, optionNamesAdd);
-        await channelsAddCommand(opts, defaultRuntime, { hasFlags });
+      await runCommandWithRuntime(defaultRuntime, async () => {
+        const { channelsDeadLettersListCommand } =
+          await import("../commands/channels/dead-letters.js");
+        await channelsDeadLettersListCommand({
+          ...opts,
+          account: resolveStringOption(command, "account"),
+        });
       });
     });
+
+  deadLetters
+    .command("resubmit")
+    .description("Re-enqueue one failed inbound event")
+    .argument("<event-id>", "Ingress event id")
+    .requiredOption("--channel <name>", "Channel id")
+    .option("--account <id>", "Account id", "default")
+    .option("--json", "Output JSON", false)
+    .action(async (eventId, opts, command) => {
+      await runCommandWithRuntime(defaultRuntime, async () => {
+        const { channelsDeadLettersResubmitCommand } =
+          await import("../commands/channels/dead-letters.js");
+        await channelsDeadLettersResubmitCommand(eventId, {
+          ...opts,
+          account: resolveStringOption(command, "account"),
+        });
+      });
+    });
+
+  applyParentDefaultHelpAction(deadLetters);
+
+  const addCommand = channels
+    .command("add")
+    .description("Add or update a channel account")
+    .argument("[channel]", "Channel id")
+    .addHelpText(
+      "after",
+      () =>
+        `\n${theme.heading("Examples:")}\n${formatHelpExamples([
+          ["paleoclaw channels add", "Open guided setup for available chat channels."],
+          [
+            "paleoclaw channels add --channel telegram --token <token>",
+            "Add or update Telegram non-interactively.",
+          ],
+          ["paleoclaw channels list --all", "Find channel ids before using --channel."],
+        ])}\n`,
+    )
+    .option("--channel <name>", `Channel (${channelNames})`)
+    .option("--agent <id>", "Agent owner for channel setup")
+    .option("--account <id>", "Account id (default when omitted)")
+    .option("--name <name>", "Display name for this account");
+
+  let channelSetupRegistration: ChannelSetupOptionRegistration = {
+    preserveLegacyDefaults: true,
+    dropEmptyLegacyDefaultsForAttributeNames: new Set(),
+  };
+  const selectedChannelId = await resolveChannelsAddChannelFromArgv(argv);
+  if (
+    shouldRegisterChannelSetupOptions(argv, options) &&
+    (selectedChannelId !== undefined || options.includeSetupOptions)
+  ) {
+    channelSetupRegistration = await addChannelSetupOptions(addCommand, {
+      channelId: selectedChannelId,
+      includeAll: options.includeSetupOptions,
+    });
+  }
+
+  addCommand.action(async (channelArg: string | undefined, opts, command: Command) => {
+    await runCommandWithRuntime(defaultRuntime, async () => {
+      const { channelsAddCommand } = await import("../commands/channels.js");
+      const hasFlags = hasExplicitOptions(
+        command,
+        command.options
+          .map((option) => option.attributeName())
+          .filter((name) => !CHANNEL_ADD_SELECTION_OPTION_NAMES.has(name)),
+      );
+      await channelsAddCommand(
+        {
+          ...resolveChannelsAddOptions(channelArg, opts, command, channelSetupRegistration),
+          agent: resolveStringOption(command, "agent"),
+        },
+        defaultRuntime,
+        {
+          hasFlags,
+        },
+      );
+    });
+  });
 
   channels
     .command("remove")
     .description("Disable or delete a channel account")
+    .option("--agent <id>", "Agent owner for channel discovery")
     .option("--channel <name>", `Channel (${channelNames})`)
     .option("--account <id>", "Account id (default when omitted)")
     .option("--delete", "Delete config entries (no prompt)", false)
     .action(async (opts, command) => {
-      await runChannelsCommand(async () => {
+      await runCommandWithRuntime(defaultRuntime, async () => {
+        const { channelsRemoveCommand } = await import("../commands/channels.js");
         const hasFlags = hasExplicitOptions(command, optionNamesRemove);
-        await channelsRemoveCommand(opts, defaultRuntime, { hasFlags });
+        await channelsRemoveCommand(
+          { ...opts, agent: resolveStringOption(command, "agent") },
+          defaultRuntime,
+          { hasFlags },
+        );
       });
     });
 
-  channels
-    .command("login")
-    .description("Link a channel account (if supported)")
-    .option("--channel <channel>", "Channel alias (auto when only one is configured)")
-    .option("--account <id>", "Account id (accountId)")
-    .option("--verbose", "Verbose connection logs", false)
-    .action(async (opts) => {
-      await runChannelsCommandWithDanger(async () => {
-        await runChannelLogin(
-          {
-            channel: opts.channel as string | undefined,
-            account: opts.account as string | undefined,
-            verbose: Boolean(opts.verbose),
-          },
-          defaultRuntime,
-        );
-      }, "Channel login failed");
+  for (const mode of ["login", "logout"] as const) {
+    const auth = channels
+      .command(mode)
+      .description(
+        mode === "login"
+          ? "Link a channel account (if supported)"
+          : "Log out of a channel session (if supported)",
+      )
+      .option("--agent <id>", "Agent owner for channel discovery")
+      .option("--channel <channel>", "Channel alias (auto when only one is configured)")
+      .option("--account <id>", "Account id (accountId)");
+    if (mode === "login") {
+      auth.option("--verbose", "Verbose connection logs", false);
+    }
+    auth.action(async (opts, command) => {
+      await runChannelsCommandWithDanger(
+        () =>
+          (mode === "login" ? runChannelLogin : runChannelLogout)(
+            {
+              agent: resolveStringOption(command, "agent"),
+              channel: opts.channel as string | undefined,
+              account: opts.account as string | undefined,
+              ...(mode === "login" ? { verbose: Boolean(opts.verbose) } : {}),
+            },
+            defaultRuntime,
+          ),
+        `Channel ${mode} failed`,
+      );
     });
+  }
 
-  channels
-    .command("logout")
-    .description("Log out of a channel session (if supported)")
-    .option("--channel <channel>", "Channel alias (auto when only one is configured)")
-    .option("--account <id>", "Account id (accountId)")
-    .action(async (opts) => {
-      await runChannelsCommandWithDanger(async () => {
-        await runChannelLogout(
-          {
-            channel: opts.channel as string | undefined,
-            account: opts.account as string | undefined,
-          },
-          defaultRuntime,
-        );
-      }, "Channel logout failed");
-    });
+  applyParentDefaultHelpAction(channels);
 }

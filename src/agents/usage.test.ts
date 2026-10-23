@@ -1,209 +1,157 @@
-import { describe, expect, it } from "vitest";
+import { expect, it } from "vitest";
 import {
-  normalizeUsage,
-  hasNonzeroUsage,
+  deriveContextPromptTokens,
   derivePromptTokens,
   deriveSessionTotalTokens,
+  normalizeUsage,
+  toOpenAiChatCompletionsUsage,
+  type NormalizedUsage,
 } from "./usage.js";
 
-describe("normalizeUsage", () => {
-  it("normalizes cache fields from provider response", () => {
-    const usage = normalizeUsage({
-      input: 1000,
-      output: 500,
-      cacheRead: 2000,
-      cacheWrite: 300,
-    });
-    expect(usage).toEqual({
-      input: 1000,
-      output: 500,
-      cacheRead: 2000,
-      cacheWrite: 300,
-      total: undefined,
-    });
+function expectNormalized(input: Parameters<typeof normalizeUsage>[0], expected: NormalizedUsage) {
+  expect(normalizeUsage(input)).toEqual({
+    input: undefined,
+    output: undefined,
+    cacheRead: undefined,
+    cacheWrite: undefined,
+    total: undefined,
+    ...expected,
   });
+}
 
-  it("normalizes cache fields from alternate naming", () => {
-    const usage = normalizeUsage({
-      input_tokens: 1000,
-      output_tokens: 500,
-      cache_read_input_tokens: 2000,
-      cache_creation_input_tokens: 300,
-    });
-    expect(usage).toEqual({
-      input: 1000,
-      output: 500,
-      cacheRead: 2000,
-      cacheWrite: 300,
-      total: undefined,
-    });
-  });
+const billingUsage = {
+  input: 12,
+  output: 15_104,
+  cacheRead: 819_661,
+  cacheWrite: 93_130,
+  total: 927_907,
+};
 
-  it("handles cache_read and cache_write naming variants", () => {
-    const usage = normalizeUsage({
-      input: 1000,
-      cache_read: 1500,
-      cache_write: 200,
-    });
-    expect(usage).toEqual({
-      input: 1000,
-      output: undefined,
-      cacheRead: 1500,
-      cacheWrite: 200,
-      total: undefined,
-    });
-  });
+const contextUsage = {
+  state: "available",
+  promptTokens: 148_874,
+  totalTokens: 163_978,
+} as const;
 
-  it("handles Moonshot/Kimi cached_tokens field", () => {
-    // Moonshot v1 returns cached_tokens instead of cache_read_input_tokens
-    const usage = normalizeUsage({
-      prompt_tokens: 30,
-      completion_tokens: 9,
-      total_tokens: 39,
-      cached_tokens: 19,
-    });
-    expect(usage).toEqual({
-      input: 30,
-      output: 9,
-      cacheRead: 19,
-      cacheWrite: undefined,
-      total: 39,
-    });
-  });
+it("preserves only complete context snapshots", () => {
+  expect(normalizeUsage({ input: 12, contextUsage })).toMatchObject({ input: 12, contextUsage });
+  expectNormalized(
+    {
+      input: 12,
+      contextUsage: { state: "available", promptTokens: 163_978, totalTokens: 148_874 },
+    },
+    { input: 12 },
+  );
+});
 
-  it("handles Kimi K2 prompt_tokens_details.cached_tokens field", () => {
-    // Kimi K2 uses automatic prefix caching and returns cached_tokens in prompt_tokens_details
-    const usage = normalizeUsage({
-      prompt_tokens: 1113,
-      completion_tokens: 5,
-      total_tokens: 1118,
-      prompt_tokens_details: { cached_tokens: 1024 },
-    });
-    expect(usage).toEqual({
-      input: 1113,
-      output: 5,
-      cacheRead: 1024,
-      cacheWrite: undefined,
-      total: 1118,
-    });
-  });
+it("handles OpenAI Responses input_tokens_details.cached_tokens field", () => {
+  expectNormalized(
+    {
+      input_tokens: 120,
+      output_tokens: 30,
+      total_tokens: 250,
+      input_tokens_details: { cached_tokens: 100 },
+      output_tokens_details: { reasoning_tokens: 17 },
+    },
+    {
+      input: 20,
+      output: 30,
+      cacheRead: 100,
+      reasoningTokens: 17,
+      total: 250,
+    },
+  );
+});
 
-  it("clamps negative input to zero (pre-subtracted cached_tokens > prompt_tokens)", () => {
-    // pi-ai OpenAI-format providers subtract cached_tokens from prompt_tokens
-    // upstream.  When cached_tokens exceeds prompt_tokens the result is negative.
-    const usage = normalizeUsage({
-      input: -4900,
-      output: 200,
-      cacheRead: 5000,
-    });
-    expect(usage).toEqual({
-      input: 0,
-      output: 200,
-      cacheRead: 5000,
-      cacheWrite: undefined,
-      total: undefined,
-    });
-  });
+it("normalizes zero Anthropic output reasoning tokens", () => {
+  expect(
+    normalizeUsage({
+      input_tokens: 30,
+      output_tokens: 40,
+      output_tokens_details: { thinking_tokens: 0 },
+    }),
+  ).toMatchObject({ input: 30, output: 40, reasoningTokens: 0 });
+});
 
-  it("clamps negative prompt_tokens alias to zero", () => {
-    const usage = normalizeUsage({
-      prompt_tokens: -12,
-      completion_tokens: 4,
-    });
-    expect(usage).toEqual({
-      input: 0,
-      output: 4,
-      cacheRead: undefined,
-      cacheWrite: undefined,
-      total: undefined,
-    });
-  });
+it("clamps negative input to zero (pre-subtracted cached_tokens > prompt_tokens)", () => {
+  expectNormalized(
+    { input: -4900, output: 200, cacheRead: 5000 },
+    { input: 0, output: 200, cacheRead: 5000 },
+  );
+});
 
-  it("returns undefined when no valid fields are provided", () => {
-    const usage = normalizeUsage(null);
-    expect(usage).toBeUndefined();
-  });
+it("returns undefined when no valid fields are provided", () => {
+  expect(normalizeUsage(null)).toBeUndefined();
+});
+it("preserves reasoning token details", () => {
+  const usage = {
+    prompt_tokens: 10,
+    completion_tokens: 8,
+    completion_tokens_details: { reasoning_tokens: 6 },
+    total_tokens: 18,
+  };
+  expect(toOpenAiChatCompletionsUsage(normalizeUsage(structuredClone(usage)))).toEqual(usage);
+});
 
-  it("handles undefined input", () => {
-    const usage = normalizeUsage(undefined);
-    expect(usage).toBeUndefined();
+it("returns zeros for undefined usage", () => {
+  expect(toOpenAiChatCompletionsUsage(undefined)).toEqual({
+    prompt_tokens: 0,
+    completion_tokens: 0,
+    total_tokens: 0,
   });
 });
 
-describe("hasNonzeroUsage", () => {
-  it("returns true when cache read is nonzero", () => {
-    const usage = { cacheRead: 100 };
-    expect(hasNonzeroUsage(usage)).toBe(true);
-  });
-
-  it("returns true when cache write is nonzero", () => {
-    const usage = { cacheWrite: 50 };
-    expect(hasNonzeroUsage(usage)).toBe(true);
-  });
-
-  it("returns true when both cache fields are nonzero", () => {
-    const usage = { cacheRead: 100, cacheWrite: 50 };
-    expect(hasNonzeroUsage(usage)).toBe(true);
-  });
-
-  it("returns false when cache fields are zero", () => {
-    const usage = { cacheRead: 0, cacheWrite: 0 };
-    expect(hasNonzeroUsage(usage)).toBe(false);
-  });
-
-  it("returns false for undefined usage", () => {
-    expect(hasNonzeroUsage(undefined)).toBe(false);
+it("forwards cached_tokens via prompt_tokens_details when cache was hit", () => {
+  expect(
+    toOpenAiChatCompletionsUsage({
+      input: 594,
+      output: 79,
+      cacheRead: 30848,
+      cacheWrite: 0,
+      total: 31521,
+    }),
+  ).toEqual({
+    prompt_tokens: 31442,
+    completion_tokens: 79,
+    total_tokens: 31521,
+    prompt_tokens_details: { cached_tokens: 30848 },
   });
 });
-
-describe("derivePromptTokens", () => {
-  it("includes cache tokens in prompt total", () => {
-    const usage = {
-      input: 1000,
-      cacheRead: 500,
-      cacheWrite: 200,
-    };
-    const promptTokens = derivePromptTokens(usage);
-    expect(promptTokens).toBe(1700); // 1000 + 500 + 200
-  });
-
-  it("handles missing cache fields", () => {
-    const usage = {
-      input: 1000,
-    };
-    const promptTokens = derivePromptTokens(usage);
-    expect(promptTokens).toBe(1000);
-  });
-
-  it("returns undefined for empty usage", () => {
-    const promptTokens = derivePromptTokens({});
-    expect(promptTokens).toBeUndefined();
-  });
+it("returns undefined for empty usage", () => {
+  expect(derivePromptTokens({})).toBeUndefined();
 });
-
-describe("deriveSessionTotalTokens", () => {
-  it("includes cache tokens in total calculation", () => {
-    const totalTokens = deriveSessionTotalTokens({
-      usage: {
-        input: 1000,
-        cacheRead: 500,
-        cacheWrite: 200,
-      },
+it("does not treat total-only usage as a prompt snapshot", () => {
+  expect(deriveContextPromptTokens({ lastCallUsage: { input: 1_000, total: 1_200 } })).toBe(1_000);
+  expect(deriveContextPromptTokens({ lastCallUsage: { total: 1_200 } })).toBeUndefined();
+  expect(deriveContextPromptTokens({ lastCallUsage: { output: 200, total: 1_200 } })).toBe(1_000);
+});
+it.each([
+  [
+    "last-call usage",
+    {
+      lastCallUsage: { input: 38_333, output: 66, cacheRead: 120_320, total: 158_719 },
+      usage: { input: 497_720, output: 7_485, cacheRead: 1_323_520, total: 1_828_725 },
+    },
+    158_653,
+  ],
+  ["explicit context", { usage: { ...billingUsage, contextUsage } }, 148_874],
+  [
+    "unavailable context",
+    { usage: { ...billingUsage, contextUsage: { state: "unavailable" } } },
+    undefined,
+  ],
+  [
+    "prompt override",
+    {
+      usage: { input: 1000, cacheRead: 500, cacheWrite: 200 },
       contextTokens: 4000,
-    });
-    expect(totalTokens).toBe(1700); // 1000 + 500 + 200
-  });
-
-  it("prefers promptTokens override over derived total", () => {
-    const totalTokens = deriveSessionTotalTokens({
-      usage: {
-        input: 1000,
-        cacheRead: 500,
-        cacheWrite: 200,
-      },
-      contextTokens: 4000,
-      promptTokens: 2500, // Override
-    });
-    expect(totalTokens).toBe(2500);
-  });
-});
+      promptTokens: 2500,
+    },
+    2500,
+  ],
+] satisfies Array<[string, Parameters<typeof deriveSessionTotalTokens>[0], number | undefined]>)(
+  "uses %s for session context",
+  (_name, input, expected) => {
+    expect(deriveSessionTotalTokens(input)).toBe(expected);
+  },
+);

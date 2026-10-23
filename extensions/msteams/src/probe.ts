@@ -1,12 +1,16 @@
+import { DEFAULT_ACCOUNT_ID, normalizeAccountId } from "paleoclaw/plugin-sdk/account-id";
+import { isFutureDateTimestampMs } from "paleoclaw/plugin-sdk/number-runtime";
 import {
   normalizeStringEntries,
   type BaseProbeResult,
   type MSTeamsConfig,
-} from "paleoclaw/plugin-sdk/msteams";
+} from "../runtime-api.js";
+import { resolveMSTeamsSdkCloudOptions } from "./cloud.js";
+import { loadMSTeamsDelegatedTokens } from "./delegated-state.js";
 import { formatUnknownError } from "./errors.js";
-import { loadMSTeamsSdkWithAuth } from "./sdk.js";
-import { readAccessToken } from "./token-response.js";
-import { resolveMSTeamsCredentials } from "./token.js";
+import { withMSTeamsRequestDeadline } from "./request-timeout.js";
+import { createMSTeamsTokenProvider, loadMSTeamsSdkWithAuth } from "./sdk.js";
+import { resolveMSTeamsCredentials } from "./token-config.js";
 
 export type ProbeMSTeamsResult = BaseProbeResult<string> & {
   appId?: string;
@@ -16,6 +20,12 @@ export type ProbeMSTeamsResult = BaseProbeResult<string> & {
     roles?: string[];
     scopes?: string[];
   };
+  delegatedAuth?: {
+    ok: boolean;
+    error?: string;
+    scopes?: string[];
+    userPrincipalName?: string;
+  };
 };
 
 function decodeJwtPayload(token: string): Record<string, unknown> | null {
@@ -23,11 +33,8 @@ function decodeJwtPayload(token: string): Record<string, unknown> | null {
   if (parts.length < 2) {
     return null;
   }
-  const payload = parts[1] ?? "";
-  const padded = payload.padEnd(payload.length + ((4 - (payload.length % 4)) % 4), "=");
-  const normalized = padded.replace(/-/g, "+").replace(/_/g, "/");
   try {
-    const decoded = Buffer.from(normalized, "base64").toString("utf8");
+    const decoded = Buffer.from(parts[1] ?? "", "base64url").toString("utf8");
     const parsed = JSON.parse(decoded) as Record<string, unknown>;
     return parsed && typeof parsed === "object" ? parsed : null;
   } catch {
@@ -44,18 +51,21 @@ function readStringArray(value: unknown): string[] | undefined {
 }
 
 function readScopes(value: unknown): string[] | undefined {
-  if (typeof value !== "string") {
-    return undefined;
-  }
-  const out = value
-    .split(/\s+/)
-    .map((entry) => entry.trim())
-    .filter(Boolean);
-  return out.length > 0 ? out : undefined;
+  return typeof value === "string" ? readStringArray(value.split(/\s+/)) : undefined;
 }
 
-export async function probeMSTeams(cfg?: MSTeamsConfig): Promise<ProbeMSTeamsResult> {
-  const creds = resolveMSTeamsCredentials(cfg);
+export async function probeMSTeams(
+  cfg?: MSTeamsConfig,
+  params?: { accountId?: string | null },
+): Promise<ProbeMSTeamsResult> {
+  const accountId = normalizeAccountId(params?.accountId ?? DEFAULT_ACCOUNT_ID);
+  const creds = resolveMSTeamsCredentials(cfg, {
+    allowEnvFallback: accountId === DEFAULT_ACCOUNT_ID,
+    pathPrefix:
+      accountId === DEFAULT_ACCOUNT_ID
+        ? "channels.msteams"
+        : `channels.msteams.accounts.${accountId}`,
+  });
   if (!creds) {
     return {
       ok: false,
@@ -64,20 +74,24 @@ export async function probeMSTeams(cfg?: MSTeamsConfig): Promise<ProbeMSTeamsRes
   }
 
   try {
-    const { sdk, authConfig } = await loadMSTeamsSdkWithAuth(creds);
-    const tokenProvider = new sdk.MsalTokenProvider(authConfig);
-    await tokenProvider.getAccessToken("https://api.botframework.com");
-    let graph:
-      | {
-          ok: boolean;
-          error?: string;
-          roles?: string[];
-          scopes?: string[];
-        }
-      | undefined;
+    const { app } = await loadMSTeamsSdkWithAuth(creds, resolveMSTeamsSdkCloudOptions(cfg));
+    const tokenProvider = createMSTeamsTokenProvider(app);
+    // Token-manager calls can outlive the SDK HTTP timeout, so keep both probe
+    // phases bounded by the shared Teams request deadline.
+    const botTokenValue = await withMSTeamsRequestDeadline({
+      label: "MS Teams Bot Framework token check",
+      work: () => tokenProvider.getAccessToken("https://api.botframework.com"),
+    });
+    if (!botTokenValue) {
+      throw new Error("Failed to acquire bot token");
+    }
+
+    let graph: ProbeMSTeamsResult["graph"];
     try {
-      const graphToken = await tokenProvider.getAccessToken("https://graph.microsoft.com");
-      const accessToken = readAccessToken(graphToken);
+      const accessToken = await withMSTeamsRequestDeadline({
+        label: "MS Teams Graph token check",
+        work: () => tokenProvider.getAccessToken("https://graph.microsoft.com"),
+      });
       const payload = accessToken ? decodeJwtPayload(accessToken) : null;
       graph = {
         ok: true,
@@ -87,7 +101,31 @@ export async function probeMSTeams(cfg?: MSTeamsConfig): Promise<ProbeMSTeamsRes
     } catch (err) {
       graph = { ok: false, error: formatUnknownError(err) };
     }
-    return { ok: true, appId: creds.appId, ...(graph ? { graph } : {}) };
+    let delegatedAuth: ProbeMSTeamsResult["delegatedAuth"];
+    if (cfg?.delegatedAuth?.enabled) {
+      try {
+        const tokens = await loadMSTeamsDelegatedTokens(accountId);
+        if (tokens) {
+          const isExpired = !isFutureDateTimestampMs(tokens.expiresAt);
+          delegatedAuth = {
+            ok: !isExpired,
+            scopes: tokens.scopes,
+            userPrincipalName: tokens.userPrincipalName,
+            ...(isExpired ? { error: "token expired (will auto-refresh on next use)" } : {}),
+          };
+        } else {
+          delegatedAuth = { ok: false, error: "no delegated tokens found (run setup wizard)" };
+        }
+      } catch {
+        delegatedAuth = { ok: false, error: "failed to load delegated tokens" };
+      }
+    }
+    return {
+      ok: true,
+      appId: creds.appId,
+      ...(graph ? { graph } : {}),
+      ...(delegatedAuth ? { delegatedAuth } : {}),
+    };
   } catch (err) {
     return {
       ok: false,

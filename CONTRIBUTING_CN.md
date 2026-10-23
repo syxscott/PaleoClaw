@@ -112,7 +112,7 @@ pnpm test
 ### 运行特定测试
 
 ```bash
-pnpm test --filter <test-name>
+pnpm test -- <test-name>
 ```
 
 ### 运行 lint 检查

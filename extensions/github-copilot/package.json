@@ -1,0 +1,15 @@
+{
+  "name": "@paleoclaw/github-copilot-provider",
+  "version": "2026.10.5",
+  "private": true,
+  "description": "paleoclaw GitHub Copilot provider plugin",
+  "type": "module",
+  "devDependencies": {
+    "@paleoclaw/plugin-sdk": "workspace:*"
+  },
+  "paleoclaw": {
+    "extensions": [
+      "./index.ts"
+    ]
+  }
+}

@@ -1,1 +1,1 @@
-export { pruneStaleCommandPolls } from "./command-poll-backoff.js";
+export { pruneStaleCommandPollsCore as pruneStaleCommandPolls } from "./command-poll-backoff.js";

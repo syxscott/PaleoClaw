@@ -1,24 +1,8 @@
+// Sender label tests cover display-label formatting for channel senders.
 import { describe, expect, it } from "vitest";
-import { listSenderLabelCandidates, resolveSenderLabel } from "./sender-label.js";
+import { resolveSenderLabel } from "./sender-label.js";
 
 describe("resolveSenderLabel", () => {
-  it("prefers display + identifier when both are available", () => {
-    expect(
-      resolveSenderLabel({
-        name: " Alice ",
-        e164: " +15551234567 ",
-      }),
-    ).toBe("Alice (+15551234567)");
-  });
-
-  it("falls back to identifier-only labels", () => {
-    expect(
-      resolveSenderLabel({
-        id: " user-123 ",
-      }),
-    ).toBe("user-123");
-  });
-
   it("returns null when all values are empty", () => {
     expect(
       resolveSenderLabel({
@@ -30,16 +14,19 @@ describe("resolveSenderLabel", () => {
   });
 });
 
-describe("listSenderLabelCandidates", () => {
-  it("returns unique normalized candidates plus resolved label", () => {
+describe("resolveSenderLabel opaque ids", () => {
+  it("never appends an opaque profile UUID to the display label", () => {
     expect(
-      listSenderLabelCandidates({
-        name: "Alice",
-        username: "alice",
-        tag: "alice",
-        e164: "+15551234567",
-        id: "user-123",
+      resolveSenderLabel({
+        name: "steipete",
+        id: "c3e32452-0467-47e5-aafa-233cd5dae29f",
       }),
-    ).toEqual(["Alice", "alice", "+15551234567", "user-123", "Alice (+15551234567)"]);
+    ).toBe("steipete");
+  });
+
+  it("still appends a disambiguating handle", () => {
+    expect(resolveSenderLabel({ name: "Peter", id: "peter@example.com" })).toBe(
+      "Peter (peter@example.com)",
+    );
   });
 });

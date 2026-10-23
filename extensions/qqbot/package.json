@@ -1,0 +1,32 @@
+{
+  "name": "@paleoclaw/qqbot",
+  "version": "2026.10.5",
+  "description": "paleoclaw QQ 机器人 channel plugin (QQ open platform official bot, WebSocket gateway)",
+  "type": "module",
+  "dependencies": {
+    "ws": "^8.20.0",
+    "zod": "^4.3.6"
+  },
+  "paleoclaw": {
+    "extensions": [
+      "./index.ts"
+    ],
+    "channel": {
+      "id": "qqbot",
+      "label": "QQ 机器人",
+      "selectionLabel": "QQ 机器人 (官方 WebSocket)",
+      "docsPath": "/channels/qqbot",
+      "docsLabel": "qqbot",
+      "blurb": "QQ 开放平台官方机器人：WebSocket 网关收消息，REST API 发消息（支持 markdown / 图片 / 文件上传）。",
+      "aliases": [
+        "qq"
+      ],
+      "order": 96
+    },
+    "install": {
+      "npmSpec": "@paleoclaw/qqbot",
+      "localPath": "extensions/qqbot",
+      "defaultChoice": "npm"
+    }
+  }
+}

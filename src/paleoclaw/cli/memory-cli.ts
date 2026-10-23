@@ -18,6 +18,26 @@ interface MemoryCommandOptions {
   taskId?: string;
   summary?: string;
   includeRunning?: boolean;
+  session?: string;
+  allSessions?: boolean;
+}
+
+/**
+ * Parse a `--limit` value, returning null when it is unusable.
+ *
+ * The list paths interpret `limit` two different ways (`Array.slice` vs a
+ * `>=` break), so an unparsed value used to produce "no rows" on one command
+ * and "every row" on the other. Rejecting up front keeps the CLI predictable
+ * and tells the user what went wrong.
+ */
+function parseLimitOption(raw: string | undefined, fallback: number): number | null {
+  const value = String(raw ?? "").trim() || String(fallback);
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed < 1) {
+    console.error(`Invalid --limit: ${raw} (expected a positive integer)`);
+    return null;
+  }
+  return parsed;
 }
 
 export function registerMemoryCommands(program: Command): void {
@@ -68,7 +88,11 @@ export function registerMemoryCommands(program: Command): void {
     .action(async (options: MemoryCommandOptions) => {
       try {
         const store = new TaskMemoryStore();
-        const limit = parseInt(options.limit || "20", 10);
+        const limit = parseLimitOption(options.limit, 20);
+        if (limit === null) {
+          process.exitCode = 1;
+          return;
+        }
         const memories = store.listShort({ limit, status: options.status });
 
         if (options.json) {
@@ -121,7 +145,11 @@ export function registerMemoryCommands(program: Command): void {
     .action(async (options: MemoryCommandOptions) => {
       try {
         const store = new TaskMemoryStore();
-        const limit = parseInt(options.limit || "20", 10);
+        const limit = parseLimitOption(options.limit, 20);
+        if (limit === null) {
+          process.exitCode = 1;
+          return;
+        }
         const memories = store.listLong({ limit });
 
         if (options.json) {
@@ -224,6 +252,11 @@ export function registerMemoryCommands(program: Command): void {
     .option("-s, --scope <scope>", "Search scope (short, long, archive, all)", "long")
     .option("-k, --top-k <n>", "Number of results", "5")
     .option("-m, --min-score <score>", "Minimum similarity score", "0.15")
+    .option("--session <id>", "Limit chat digests to one session")
+    .option(
+      "--all-sessions",
+      "Include chat digests from every session (operator browse; off by default)",
+    )
     .option("--json", "Output as JSON")
     .action(async (query: string, options: MemoryCommandOptions) => {
       try {
@@ -246,6 +279,8 @@ export function registerMemoryCommands(program: Command): void {
           scope: options.scope || "long",
           topK,
           minScore,
+          sessionId: options.session,
+          includeAllSessions: options.allSessions === true,
         });
 
         if (options.json) {
@@ -291,10 +326,11 @@ export function registerMemoryCommands(program: Command): void {
     .command("context")
     .description("Build fenced memory context for a query")
     .argument("<query>", "Query used for memory prefetch")
+    .option("--session <id>", "Recall chat digests for one session (matches the agent path)")
     .option("--json", "Output as JSON")
     .action(async (query: string, options: MemoryCommandOptions) => {
       try {
-        const manager = createDefaultMemoryManager();
+        const manager = createDefaultMemoryManager({ sessionId: options.session });
         const contextBlock = await manager.prefetchAll(query);
 
         if (options.json) {

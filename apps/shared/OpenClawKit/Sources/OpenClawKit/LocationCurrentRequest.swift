@@ -4,8 +4,7 @@ import Foundation
 public enum LocationCurrentRequest {
     public typealias TimeoutRunner = @Sendable (
         _ timeoutMs: Int,
-        _ operation: @escaping @Sendable () async throws -> CLLocation
-    ) async throws -> CLLocation
+        _ operation: @escaping @Sendable () async throws -> CLLocation) async throws -> CLLocation
 
     @MainActor
     public static func resolve(
@@ -19,6 +18,7 @@ public enum LocationCurrentRequest {
         let now = Date()
         if let maxAgeMs,
            let cached = manager.location,
+           cached.timestamp <= now,
            now.timeIntervalSince(cached.timestamp) * 1000 <= Double(maxAgeMs)
         {
             return cached
@@ -26,9 +26,7 @@ public enum LocationCurrentRequest {
 
         manager.desiredAccuracy = self.accuracyValue(desiredAccuracy)
         let timeout = max(0, timeoutMs ?? 10000)
-        return try await withTimeout(timeout) {
-            try await request()
-        }
+        return try await withTimeout(timeout, request)
     }
 
     public static func accuracyValue(_ accuracy: OpenClawLocationAccuracy) -> CLLocationAccuracy {

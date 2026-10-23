@@ -1,0 +1,17 @@
+{
+  "name": "@paleoclaw/linux-node",
+  "version": "2026.10.5",
+  "description": "paleoclaw Linux node device capabilities",
+  "type": "module",
+  "dependencies": {
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@paleoclaw/plugin-sdk": "workspace:*"
+  },
+  "paleoclaw": {
+    "extensions": [
+      "./index.ts"
+    ]
+  }
+}

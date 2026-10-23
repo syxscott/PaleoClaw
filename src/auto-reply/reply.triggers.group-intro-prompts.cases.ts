@@ -1,131 +1,200 @@
-import { describe, expect, it } from "vitest";
+/** Reusable group-intro prompt assertions shared by auto-reply trigger tests. */
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { makeCfg } from "../../test/helpers/auto-reply/trigger-handling-test-harness.js";
 import {
-  getRunEmbeddedPiAgentMock,
-  makeCfg,
-  mockRunEmbeddedPiAgentOk,
-  withTempHome,
-} from "./reply.triggers.trigger-handling.test-harness.js";
+  captureActivePluginRegistrySnapshot,
+  resetPluginRuntimeStateForTest,
+  restoreActivePluginRegistrySnapshot,
+  setActivePluginRegistry,
+} from "../plugins/runtime.js";
+import { createChannelTestPluginBase, createTestRegistry } from "../test-utils/channel-plugins.js";
+import { buildSourceConversationContext, buildGroupIntro } from "./reply/groups.js";
 
-type GetReplyFromConfig = typeof import("./reply.js").getReplyFromConfig;
+type GetReplyFromConfig = typeof import("./reply/get-reply.js").getReplyFromConfig;
 type InboundMessage = Parameters<GetReplyFromConfig>[0];
 
-function getLastExtraSystemPrompt() {
-  return getRunEmbeddedPiAgentMock().mock.calls.at(-1)?.[0]?.extraSystemPrompt ?? "";
-}
-
-export function registerGroupIntroPromptCases(params: {
-  getReplyFromConfig: () => GetReplyFromConfig;
-}): void {
+export function registerGroupIntroPromptCases(): void {
   describe("group intro prompts", () => {
+    let previousPluginRegistry: ReturnType<typeof captureActivePluginRegistrySnapshot>;
+
+    beforeEach(() => {
+      previousPluginRegistry = captureActivePluginRegistrySnapshot();
+      resetPluginRuntimeStateForTest();
+      setActivePluginRegistry(
+        createTestRegistry([
+          {
+            pluginId: "telegram",
+            source: "test",
+            plugin: {
+              ...createChannelTestPluginBase({ id: "telegram" }),
+              messaging: { defaultMarkdownTableMode: "block" },
+            },
+          },
+        ]),
+      );
+    });
+    afterEach(() => {
+      resetPluginRuntimeStateForTest();
+      restoreActivePluginRegistrySnapshot(previousPluginRegistry);
+    });
+
     type GroupIntroCase = {
       name: string;
       message: InboundMessage;
       expected: string[];
+      forbidden?: string[];
+      defaultActivation?: "always" | "mention";
       setup?: (cfg: ReturnType<typeof makeCfg>) => void;
     };
     const groupParticipationNote =
-      "Be a good group participant: mostly lurk and follow the conversation; reply only when directly addressed or you can add clear value. Emoji reactions are welcome when available. Write like a human. Avoid Markdown tables. Don't type literal \\n sequences; use real line breaks sparingly.";
-    it("labels group chats using channel-specific metadata", async () => {
-      await withTempHome(async (home) => {
-        const cases: GroupIntroCase[] = [
-          {
-            name: "discord",
-            message: {
-              Body: "status update",
-              From: "discord:group:dev",
-              To: "+1888",
-              ChatType: "group",
-              GroupSubject: "Release Squad",
-              GroupMembers: "Alice, Bob",
-              Provider: "discord",
-            },
-            expected: [
-              '"channel": "discord"',
-              `You are in the Discord group chat "Release Squad". Participants: Alice, Bob.`,
-              `Activation: trigger-only (you are invoked only when explicitly mentioned; recent context may be included). ${groupParticipationNote} Address the specific sender noted in the message context.`,
-            ],
-          },
-          {
-            name: "whatsapp",
-            message: {
-              Body: "ping",
-              From: "123@g.us",
-              To: "+1999",
-              ChatType: "group",
-              GroupSubject: "Ops",
-              Provider: "whatsapp",
-            },
-            expected: [
-              '"channel": "whatsapp"',
-              `You are in the WhatsApp group chat "Ops".`,
-              `WhatsApp IDs: SenderId is the participant JID (group participant id).`,
-              `Activation: trigger-only (you are invoked only when explicitly mentioned; recent context may be included). WhatsApp IDs: SenderId is the participant JID (group participant id). ${groupParticipationNote} Address the specific sender noted in the message context.`,
-            ],
-          },
-          {
-            name: "telegram",
-            message: {
-              Body: "ping",
-              From: "telegram:group:tg",
-              To: "+1777",
-              ChatType: "group",
-              GroupSubject: "Dev Chat",
-              Provider: "telegram",
-            },
-            expected: [
-              '"channel": "telegram"',
-              `You are in the Telegram group chat "Dev Chat".`,
-              `Activation: trigger-only (you are invoked only when explicitly mentioned; recent context may be included). ${groupParticipationNote} Address the specific sender noted in the message context.`,
-            ],
-          },
-          {
-            name: "whatsapp-always-on",
-            setup: (cfg) => {
-              cfg.channels ??= {};
-              cfg.channels.whatsapp = {
-                ...cfg.channels.whatsapp,
-                allowFrom: ["*"],
-                groups: { "*": { requireMention: false } },
-              };
-              cfg.messages = {
-                ...cfg.messages,
-                groupChat: {},
-              };
-            },
-            message: {
-              Body: "hello group",
-              From: "123@g.us",
-              To: "+2000",
-              ChatType: "group",
-              Provider: "whatsapp",
-              SenderE164: "+2000",
-              GroupSubject: "Test Group",
-              GroupMembers: "Alice (+1), Bob (+2)",
-            },
-            expected: [
-              '"channel": "whatsapp"',
-              '"chat_type": "group"',
-              "Activation: always-on (you receive every group message).",
-            ],
-          },
-        ];
+      "Be a good group participant: mostly lurk and follow the conversation; reply only when directly addressed or you can add clear value. Emoji reactions are welcome when available. Write like a human. Avoid Markdown tables. Minimize empty lines and use normal chat conventions, not document-style spacing. Don't type literal \\n sequences; use real line breaks sparingly.";
+    const telegramGroupParticipationNote =
+      "Be a good group participant: mostly lurk and follow the conversation; reply only when directly addressed or you can add clear value. Emoji reactions are welcome when available. Write like a human. Minimize empty lines and use normal chat conventions, not document-style spacing. Don't type literal \\n sequences; use real line breaks sparingly.";
+    const groupSilentNote =
+      'If no text reply is needed, including after a reaction or other action, reply with exactly "NO_REPLY" as the entire final answer, without commentary, punctuation, or formatting. NO_REPLY discards anything written this turn that was not sent, so send confirmations before ending silently.';
+    const automaticGroupDeliveryGuidance = [
+      "Your text replies are automatically sent to this group chat unless the current-turn context says final replies stay private.",
+      "For ordinary text, do not use the message tool to send to this same destination unless the current-turn context asks for visible output via message(action=send).",
+      "Use message(action=send) only when you need to send files, images, or other attachments to this same group/topic.",
+    ];
+    const automaticChannelDeliveryGuidance = [
+      "Your text replies are automatically sent to this channel unless the current-turn context says final replies stay private.",
+      "For ordinary text, do not use the message tool to send to this same destination unless the current-turn context asks for visible output via message(action=send).",
+      "Use message(action=send) only when you need to send files, images, or other attachments to this same channel/thread.",
+    ];
+    const cases: GroupIntroCase[] = [
+      {
+        name: "discord",
+        message: {
+          Body: "status update",
+          From: "discord:group:dev",
+          To: "+1888",
+          ChatType: "group",
+          GroupSubject: "Release Squad",
+          GroupMembers: "Alice, Bob",
+          Provider: "discord",
+        },
+        expected: [
+          "You are in a Discord group chat.",
+          groupParticipationNote,
+          groupSilentNote,
+          "Activation: trigger-only (you are invoked only when explicitly mentioned; recent context may be included). Address the specific sender noted in the message context.",
+        ],
+      },
+      {
+        name: "whatsapp",
+        message: {
+          Body: "ping",
+          From: "123@g.us",
+          To: "+1999",
+          ChatType: "group",
+          GroupSubject: "Ops",
+          Provider: "whatsapp",
+        },
+        expected: [
+          "You are in a WhatsApp group chat.",
+          ...automaticGroupDeliveryGuidance,
+          groupParticipationNote,
+          groupSilentNote,
+          "Activation: trigger-only (you are invoked only when explicitly mentioned; recent context may be included). Address the specific sender noted in the message context.",
+        ],
+      },
+      {
+        name: "telegram",
+        message: {
+          Body: "ping",
+          From: "telegram:group:tg",
+          To: "+1777",
+          ChatType: "group",
+          GroupSubject: "Dev Chat",
+          Provider: "telegram",
+        },
+        expected: [
+          "You are in a Telegram group chat.",
+          telegramGroupParticipationNote,
+          groupSilentNote,
+          "Activation: trigger-only (you are invoked only when explicitly mentioned; recent context may be included). Address the specific sender noted in the message context.",
+        ],
+        forbidden: ["Avoid Markdown tables"],
+      },
+      {
+        name: "mattermost-channel",
+        message: {
+          Body: "release status",
+          From: "mattermost:channel:town-square",
+          To: "channel:town-square",
+          ChatType: "channel",
+          GroupSubject: "Town Square",
+          Provider: "mattermost",
+        },
+        expected: [
+          "You are in a Mattermost channel.",
+          ...automaticChannelDeliveryGuidance,
+          groupParticipationNote,
+          groupSilentNote,
+          "Activation: trigger-only (you are invoked only when explicitly mentioned; recent context may be included). Address the specific sender noted in the message context.",
+        ],
+        forbidden: ["Mattermost group chat"],
+      },
+      {
+        name: "whatsapp-always-on",
+        setup: (cfg) => {
+          cfg.channels ??= {};
+          cfg.channels.whatsapp = {
+            ...cfg.channels.whatsapp,
+            allowFrom: ["*"],
+            groups: { "*": { requireMention: false } },
+          };
+          cfg.messages = {
+            ...cfg.messages,
+            groupChat: {},
+          };
+        },
+        message: {
+          Body: "hello group",
+          From: "123@g.us",
+          To: "+2000",
+          ChatType: "group",
+          Provider: "whatsapp",
+          SenderE164: "+2000",
+          GroupSubject: "Test Group",
+          GroupMembers: "Alice (+1), Bob (+2)",
+        },
+        expected: [
+          "You are in a WhatsApp group chat.",
+          "Activation: always-on (you receive every group message). You see every message; most need no response. When you do reply, address the specific sender noted in the message context.",
+          groupSilentNote,
+        ],
+        defaultActivation: "always",
+      },
+    ];
 
-        for (const testCase of cases) {
-          mockRunEmbeddedPiAgentOk();
-          const cfg = makeCfg(home);
-          testCase.setup?.(cfg);
-          await params.getReplyFromConfig()(testCase.message, {}, cfg);
+    for (const testCase of cases) {
+      it(`labels group chats using channel-specific metadata: ${testCase.name}`, async () => {
+        const cfg = makeCfg(`/tmp/group-intro-${testCase.name}`);
+        testCase.setup?.(cfg);
+        const extraSystemPrompt = [
+          buildSourceConversationContext({
+            sessionCtx: testCase.message,
+          }),
+          buildGroupIntro({
+            defaultActivation: testCase.defaultActivation ?? "mention",
+          }),
+        ]
+          .filter(Boolean)
+          .join("\n\n");
 
-          expect(getRunEmbeddedPiAgentMock(), testCase.name).toHaveBeenCalledOnce();
-          const extraSystemPrompt = getLastExtraSystemPrompt();
-          for (const expectedFragment of testCase.expected) {
-            expect(extraSystemPrompt, `${testCase.name}:${expectedFragment}`).toContain(
-              expectedFragment,
-            );
-          }
-          getRunEmbeddedPiAgentMock().mockClear();
+        for (const expectedFragment of testCase.expected) {
+          expect(extraSystemPrompt, `${testCase.name}:${expectedFragment}`).toContain(
+            expectedFragment,
+          );
+        }
+        for (const forbiddenFragment of testCase.forbidden ?? []) {
+          expect(extraSystemPrompt, `${testCase.name}:${forbiddenFragment}`).not.toContain(
+            forbiddenFragment,
+          );
         }
       });
-    });
+    }
   });
 }

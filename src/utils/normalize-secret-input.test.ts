@@ -1,3 +1,4 @@
+// Secret input normalization tests cover trimming and empty-value handling.
 import { describe, expect, it } from "vitest";
 import { normalizeOptionalSecretInput, normalizeSecretInput } from "./normalize-secret-input.js";
 
@@ -9,17 +10,11 @@ describe("normalizeSecretInput", () => {
     expect(normalizeSecretInput({})).toBe("");
   });
 
-  it("strips embedded line breaks and surrounding whitespace", () => {
-    expect(normalizeSecretInput("  sk-\r\nabc\n123  ")).toBe("sk-abc123");
-  });
-
-  it("drops non-Latin1 code points that can break HTTP ByteString headers", () => {
-    // U+0417 (Cyrillic З) and U+2502 (box drawing │) are > 255.
-    expect(normalizeSecretInput("key-\u0417\u2502-token")).toBe("key--token");
-  });
-
-  it("preserves Latin-1 characters and internal spaces", () => {
-    expect(normalizeSecretInput("  café token  ")).toBe("café token");
+  it("strips embedded control characters while preserving ordinary spaces", () => {
+    expect(normalizeSecretInput("  café sk-\u0000a\r\nb\tc\u007f\u0085\u0417\u2502  ")).toBe(
+      "café sk-abc",
+    );
+    expect(normalizeSecretInput("  Bearer token value  ")).toBe("Bearer token value");
   });
 });
 
@@ -27,9 +22,5 @@ describe("normalizeOptionalSecretInput", () => {
   it("returns undefined when normalized value is empty", () => {
     expect(normalizeOptionalSecretInput(" \r\n ")).toBeUndefined();
     expect(normalizeOptionalSecretInput("\u0417\u2502")).toBeUndefined();
-  });
-
-  it("returns normalized value when non-empty", () => {
-    expect(normalizeOptionalSecretInput("  key-\u0417  ")).toBe("key-");
   });
 });

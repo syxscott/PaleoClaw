@@ -1,210 +1,556 @@
-import type { MatrixClient } from "@vector-im/matrix-bot-sdk";
-import { normalizeAccountId } from "paleoclaw/plugin-sdk/account-id";
+import { normalizeOptionalAccountId } from "paleoclaw/plugin-sdk/account-id";
+import { toStringifiedError as toRetirementError } from "paleoclaw/plugin-sdk/error-runtime";
+import { createDeferred } from "paleoclaw/plugin-sdk/extension-shared";
+import { resolveGlobalSingleton } from "paleoclaw/plugin-sdk/global-singleton";
+import { createLazyRuntimeModule } from "paleoclaw/plugin-sdk/lazy-runtime";
+import { raceWithTimeout } from "paleoclaw/plugin-sdk/time-runtime";
+import { getMatrixRuntimeLifecycle, type MatrixRuntimeLifecycle } from "../../runtime.js";
 import type { CoreConfig } from "../../types.js";
-import { getMatrixLogService } from "../sdk-runtime.js";
+import { getMatrixMonitorTaskSignal } from "../monitor/task-runner.js";
+import type { MatrixClient } from "../sdk.js";
+import { awaitMatrixStartupWithAbort, throwIfMatrixStartupAborted } from "../startup-abort.js";
 import { resolveMatrixAuth } from "./config.js";
-import { createMatrixClient } from "./create-client.js";
-import { startMatrixClientWithGrace } from "./startup.js";
-import { DEFAULT_ACCOUNT_KEY } from "./storage.js";
+import type { PreparedMatrixClientStorage } from "./create-client.js";
 import type { MatrixAuth } from "./types.js";
+
+const loadMatrixCreateClientDeps = createLazyRuntimeModule(() => import("./create-client.js"));
+const MATRIX_RETIREMENT_DRAIN_TIMEOUT_MS = 5_000;
+
+export type MatrixClientLeaseRole = "monitor" | "transient";
+export type MatrixClientReleaseMode = "stop" | "persist" | "discard";
+
+export type MatrixMonitorRetirement = {
+  closeTaskAdmission: () => void;
+  detachListeners: () => void;
+  waitForTasks: () => Promise<void>;
+  cleanup: () => Promise<void> | void;
+};
+
+export type SharedMatrixClientLease = {
+  abortSignal: AbortSignal;
+  client: MatrixClient;
+  role: MatrixClientLeaseRole;
+  registerMonitorRetirement: (retirement: MatrixMonitorRetirement) => void;
+  start: (abortSignal?: AbortSignal) => Promise<void>;
+  release: (params?: { mode?: MatrixClientReleaseMode }) => Promise<void>;
+};
+
+type SharedMatrixClientPhase = "open" | "retiring";
+
+type SharedMatrixClientLeaseState = {
+  abortController: AbortController;
+  monitorRetirement: MatrixMonitorRetirement | null;
+  monitorRetirementPromise: Promise<void> | null;
+  role: MatrixClientLeaseRole;
+  releasePromise: Promise<void> | null;
+};
 
 type SharedMatrixClientState = {
   client: MatrixClient;
   key: string;
+  storageOwnerKey: string | null;
   started: boolean;
-  cryptoReady: boolean;
+  startPromise: Promise<void> | null;
+  phase: SharedMatrixClientPhase;
+  leases: Set<SharedMatrixClientLeaseState>;
+  monitorRetirementPromises: Set<Promise<void>>;
+  noLeases: { promise: Promise<void>; resolve: () => void };
+  retirementPromise: Promise<void> | null;
+  poisonError: Error | null;
+  releaseMode: MatrixClientReleaseMode;
+  ownerSignal?: AbortSignal;
+  detachLifecycle?: () => void;
 };
 
-// Support multiple accounts with separate clients
-const sharedClientStates = new Map<string, SharedMatrixClientState>();
-const sharedClientPromises = new Map<string, Promise<SharedMatrixClientState>>();
-const sharedClientStartPromises = new Map<string, Promise<void>>();
+type SharedMatrixClientParams = {
+  cfg?: CoreConfig;
+  env?: NodeJS.ProcessEnv;
+  timeoutMs?: number;
+  auth?: MatrixAuth;
+  startClient?: boolean;
+  accountId?: string | null;
+  abortSignal?: AbortSignal;
+  role?: MatrixClientLeaseRole;
+};
 
-function buildSharedClientKey(auth: MatrixAuth, accountId?: string | null): string {
-  const normalizedAccountId = normalizeAccountId(accountId);
-  return [
+const sharedClientRegistry = resolveGlobalSingleton(
+  Symbol.for("openclaw.matrix.shared-client-registry"),
+  () => ({
+    states: new Map<string, SharedMatrixClientState>(),
+    promises: new Map<string, Promise<SharedMatrixClientState>>(),
+    storageOwners: new Map<string, Promise<SharedMatrixClientState>>(),
+  }),
+);
+const sharedClientStates = sharedClientRegistry.states;
+const sharedClientPromises = sharedClientRegistry.promises;
+const sharedStorageOwners = sharedClientRegistry.storageOwners;
+
+class MatrixTransportGenerationBusyError extends Error {
+  readonly code = "MATRIX_ACCOUNT_RESTARTING";
+  readonly retryable = true;
+
+  constructor() {
+    super("Matrix account transport is changing; retry after the account restart finishes.");
+  }
+}
+
+function buildSharedClientKey(auth: MatrixAuth): string {
+  // Serialize the tuple as a whole: Matrix URLs and credentials may contain `|`,
+  // so delimiter-joined keys can alias distinct clients and couple crypto/leases.
+  return JSON.stringify([
     auth.homeserver,
     auth.userId,
     auth.accessToken,
     auth.encryption ? "e2ee" : "plain",
-    normalizedAccountId || DEFAULT_ACCOUNT_KEY,
-  ].join("|");
+    auth.allowPrivateNetwork ? "private-net" : "strict-net",
+    auth.dispatcherPolicy ?? null,
+    auth.accountId,
+  ]);
 }
 
 async function createSharedMatrixClient(params: {
   auth: MatrixAuth;
   timeoutMs?: number;
-  accountId?: string | null;
+  lifecycle?: MatrixRuntimeLifecycle;
+  preparedStorage: PreparedMatrixClientStorage;
 }): Promise<SharedMatrixClientState> {
-  const client = await createMatrixClient({
-    homeserver: params.auth.homeserver,
-    userId: params.auth.userId,
-    accessToken: params.auth.accessToken,
-    encryption: params.auth.encryption,
-    localTimeoutMs: params.timeoutMs,
-    accountId: params.accountId,
-  });
+  const { createMatrixClient } = await loadMatrixCreateClientDeps();
+  const client = await createMatrixClient(
+    { ...params.auth, localTimeoutMs: params.timeoutMs },
+    params.preparedStorage,
+  );
   return {
     client,
-    key: buildSharedClientKey(params.auth, params.accountId),
+    key: buildSharedClientKey(params.auth),
+    storageOwnerKey: params.preparedStorage.storagePaths?.idbSnapshotPath ?? null,
     started: false,
-    cryptoReady: false,
+    startPromise: null,
+    phase: "open",
+    leases: new Set(),
+    monitorRetirementPromises: new Set(),
+    noLeases: createDeferred<void>(),
+    retirementPromise: null,
+    poisonError: null,
+    releaseMode: "discard",
+    ownerSignal: params.lifecycle?.signal,
   };
 }
 
-async function ensureSharedClientStarted(params: {
-  state: SharedMatrixClientState;
-  timeoutMs?: number;
-  initialSyncLimit?: number;
-  encryption?: boolean;
-}): Promise<void> {
-  if (params.state.started) {
-    return;
+function deleteSharedClientState(state: SharedMatrixClientState): void {
+  if (sharedClientStates.get(state.key) === state) {
+    sharedClientStates.delete(state.key);
+    if (state.storageOwnerKey) {
+      sharedStorageOwners.delete(state.storageOwnerKey);
+    }
   }
-  const key = params.state.key;
-  const existingStartPromise = sharedClientStartPromises.get(key);
-  if (existingStartPromise) {
-    await existingStartPromise;
-    return;
-  }
-  const startPromise = (async () => {
-    const client = params.state.client;
+  const detachLifecycle = state.detachLifecycle;
+  state.detachLifecycle = undefined;
+  detachLifecycle?.();
+}
 
-    // Initialize crypto if enabled
-    if (params.encryption && !params.state.cryptoReady) {
+function bindSharedClientLifecycle(
+  state: SharedMatrixClientState,
+  lifecycle: MatrixRuntimeLifecycle | undefined,
+): void {
+  if (!lifecycle) {
+    return;
+  }
+  state.detachLifecycle = lifecycle.onDispose(() => forceRetireState(state));
+}
+
+async function ensureSharedClientStarted(
+  state: SharedMatrixClientState,
+  abortSignal?: AbortSignal,
+): Promise<void> {
+  if (state.started) {
+    return;
+  }
+  if (state.startPromise) {
+    await awaitMatrixStartupWithAbort(state.startPromise, abortSignal);
+    return;
+  }
+
+  const startPromise = (async () => {
+    await state.client.start({ abortSignal });
+    throwIfMatrixStartupAborted(abortSignal);
+    state.started = true;
+  })();
+  const guardedStart = startPromise.finally(() => {
+    if (state.startPromise === guardedStart) {
+      state.startPromise = null;
+    }
+  });
+  state.startPromise = guardedStart;
+  await awaitMatrixStartupWithAbort(guardedStart, abortSignal);
+}
+
+async function resolveSharedMatrixAuth(params: SharedMatrixClientParams): Promise<MatrixAuth> {
+  const requestedAccountId = normalizeOptionalAccountId(params.accountId);
+  if (params.auth && requestedAccountId && requestedAccountId !== params.auth.accountId) {
+    throw new Error(
+      `Matrix shared client account mismatch: requested ${requestedAccountId}, auth resolved ${params.auth.accountId}`,
+    );
+  }
+  if (params.auth) {
+    return params.auth;
+  }
+  if (!params.cfg) {
+    throw new Error(
+      "Matrix shared client requires a resolved runtime config. Load and resolve config at the command or gateway boundary, then pass cfg through the runtime path.",
+    );
+  }
+  return resolveMatrixAuth({ cfg: params.cfg, env: params.env, accountId: params.accountId });
+}
+
+async function resolveOpenSharedMatrixClientState(
+  params: SharedMatrixClientParams,
+  lifecycle: MatrixRuntimeLifecycle | undefined,
+): Promise<SharedMatrixClientState> {
+  const auth = await resolveSharedMatrixAuth(params);
+  throwIfMatrixStartupAborted(params.abortSignal);
+  const key = buildSharedClientKey(auth);
+
+  while (true) {
+    const existing = sharedClientStates.get(key);
+    if (existing?.poisonError) {
+      throw existing.poisonError;
+    }
+    if (existing?.phase === "open" && existing.ownerSignal === lifecycle?.signal) {
+      return existing;
+    }
+    if (existing?.retirementPromise) {
+      await awaitMatrixStartupWithAbort(existing.retirementPromise, params.abortSignal);
+      continue;
+    }
+    if (existing) {
+      // Wait for the state cached in this module to drain and retire before
+      // creating another client for the same auth key under a new owner.
+      await awaitMatrixStartupWithAbort(existing.noLeases.promise, params.abortSignal);
+      continue;
+    }
+
+    const pending = sharedClientPromises.get(key);
+    if (pending) {
+      await awaitMatrixStartupWithAbort(pending, params.abortSignal);
+      continue;
+    }
+
+    const { prepareMatrixClientStorage } = await loadMatrixCreateClientDeps();
+    const preparedStorage = await prepareMatrixClientStorage(auth);
+    throwIfMatrixStartupAborted(params.abortSignal);
+    // Preparation may choose an existing token-rotation alias. Admit that exact
+    // store before creation writes metadata, opens sync state, or initializes crypto.
+    if (sharedClientStates.has(key) || sharedClientPromises.has(key)) {
+      continue;
+    }
+    const storageOwnerKey = preparedStorage.storagePaths?.idbSnapshotPath ?? null;
+    const ownerPromise = storageOwnerKey ? sharedStorageOwners.get(storageOwnerKey) : undefined;
+    if (ownerPromise) {
+      const owner = await awaitMatrixStartupWithAbort(ownerPromise, params.abortSignal);
+      if (owner.retirementPromise) {
+        await awaitMatrixStartupWithAbort(owner.retirementPromise, params.abortSignal);
+        continue;
+      }
+      throw new MatrixTransportGenerationBusyError();
+    }
+
+    const creationPromise = createSharedMatrixClient({
+      auth,
+      timeoutMs: params.timeoutMs,
+      lifecycle,
+      preparedStorage,
+    });
+    sharedClientPromises.set(key, creationPromise);
+    if (storageOwnerKey) {
+      sharedStorageOwners.set(storageOwnerKey, creationPromise);
+    }
+    try {
+      const created = await creationPromise;
+      sharedClientStates.set(key, created);
       try {
-        const joinedRooms = await client.getJoinedRooms();
-        if (client.crypto) {
-          await (client.crypto as { prepare: (rooms?: string[]) => Promise<void> }).prepare(
-            joinedRooms,
-          );
-          params.state.cryptoReady = true;
-        }
-      } catch (err) {
-        const LogService = getMatrixLogService();
-        LogService.warn("MatrixClientLite", "Failed to prepare crypto:", err);
+        bindSharedClientLifecycle(created, lifecycle);
+      } catch (error) {
+        await forceRetireState(created);
+        throw error;
+      }
+      return created;
+    } finally {
+      if (sharedClientPromises.get(key) === creationPromise) {
+        sharedClientPromises.delete(key);
+      }
+      if (
+        storageOwnerKey &&
+        !sharedClientStates.has(key) &&
+        sharedStorageOwners.get(storageOwnerKey) === creationPromise
+      ) {
+        sharedStorageOwners.delete(storageOwnerKey);
       }
     }
-
-    await startMatrixClientWithGrace({
-      client,
-      onError: (err: unknown) => {
-        params.state.started = false;
-        const LogService = getMatrixLogService();
-        LogService.error("MatrixClientLite", "client.start() error:", err);
-      },
-    });
-    params.state.started = true;
-  })();
-  sharedClientStartPromises.set(key, startPromise);
-  try {
-    await startPromise;
-  } finally {
-    sharedClientStartPromises.delete(key);
   }
 }
 
-export async function resolveSharedMatrixClient(
-  params: {
-    cfg?: CoreConfig;
-    env?: NodeJS.ProcessEnv;
-    timeoutMs?: number;
-    auth?: MatrixAuth;
-    startClient?: boolean;
-    accountId?: string | null;
-  } = {},
-): Promise<MatrixClient> {
-  const accountId = normalizeAccountId(params.accountId);
-  const auth =
-    params.auth ?? (await resolveMatrixAuth({ cfg: params.cfg, env: params.env, accountId }));
-  const key = buildSharedClientKey(auth, accountId);
-  const shouldStart = params.startClient !== false;
-
-  // Check if we already have a client for this key
-  const existingState = sharedClientStates.get(key);
-  if (existingState) {
-    if (shouldStart) {
-      await ensureSharedClientStarted({
-        state: existingState,
-        timeoutMs: params.timeoutMs,
-        initialSyncLimit: auth.initialSyncLimit,
-        encryption: auth.encryption,
-      });
-    }
-    return existingState.client;
+async function runMonitorRetirement(
+  retirement: MatrixMonitorRetirement | undefined,
+): Promise<void> {
+  if (!retirement) {
+    return;
   }
+  retirement.closeTaskAdmission();
+  retirement.detachListeners();
+  await retirement.waitForTasks();
+  await retirement.cleanup();
+}
 
-  // Check if there's a pending creation for this key
-  const existingPromise = sharedClientPromises.get(key);
-  if (existingPromise) {
-    const pending = await existingPromise;
-    if (shouldStart) {
-      await ensureSharedClientStarted({
-        state: pending,
-        timeoutMs: params.timeoutMs,
-        initialSyncLimit: auth.initialSyncLimit,
-        encryption: auth.encryption,
-      });
-    }
-    return pending.client;
+function retireMonitorLease(
+  state: SharedMatrixClientState,
+  lease: SharedMatrixClientLeaseState,
+): Promise<void> {
+  if (lease.monitorRetirementPromise) {
+    return lease.monitorRetirementPromise;
   }
+  lease.monitorRetirementPromise = runMonitorRetirement(lease.monitorRetirement ?? undefined);
+  state.monitorRetirementPromises.add(lease.monitorRetirementPromise);
+  return lease.monitorRetirementPromise;
+}
 
-  // Create a new client for this account
-  const createPromise = createSharedMatrixClient({
-    auth,
-    timeoutMs: params.timeoutMs,
-    accountId,
-  });
-  sharedClientPromises.set(key, createPromise);
-  try {
-    const created = await createPromise;
-    sharedClientStates.set(key, created);
-    if (shouldStart) {
-      await ensureSharedClientStarted({
-        state: created,
-        timeoutMs: params.timeoutMs,
-        initialSyncLimit: auth.initialSyncLimit,
-        encryption: auth.encryption,
-      });
-    }
-    return created.client;
-  } finally {
-    sharedClientPromises.delete(key);
+async function retireMonitorLeases(
+  state: SharedMatrixClientState,
+  leases: SharedMatrixClientLeaseState[],
+): Promise<void> {
+  for (const lease of leases) {
+    void retireMonitorLease(state, lease);
+  }
+  const results = await Promise.allSettled(state.monitorRetirementPromises);
+  const failure = results.find((result) => result.status === "rejected");
+  if (failure?.status === "rejected") {
+    throw failure.reason;
   }
 }
 
-export async function waitForMatrixSync(_params: {
-  client: MatrixClient;
-  timeoutMs?: number;
-  abortSignal?: AbortSignal;
+function mergeReleaseMode(
+  current: MatrixClientReleaseMode,
+  requested: MatrixClientReleaseMode,
+): MatrixClientReleaseMode {
+  // Release requirements belong to the generation; one lease cannot weaken another's durability.
+  if (current === "persist" || requested === "persist") {
+    return "persist";
+  }
+  if (current === "stop" || requested === "stop") {
+    return "stop";
+  }
+  return "discard";
+}
+
+function abortTransientLeases(state: SharedMatrixClientState): void {
+  for (const lease of state.leases) {
+    if (lease.role === "transient") {
+      lease.abortController.abort();
+    }
+  }
+}
+
+function forceReleaseLeases(state: SharedMatrixClientState, releasePromise: Promise<void>): void {
+  for (const lease of state.leases) {
+    // Only monitor owners join shutdown; their transient child tasks must be able to drain.
+    lease.releasePromise ??= lease.role === "monitor" ? releasePromise : Promise.resolve();
+    lease.abortController.abort();
+  }
+  state.leases.clear();
+  state.noLeases.resolve();
+}
+
+function waitForRetirement(retirement: Promise<void>): Promise<void> {
+  return raceWithTimeout(
+    retirement,
+    MATRIX_RETIREMENT_DRAIN_TIMEOUT_MS,
+    () => {
+      throw new Error("Matrix client retirement did not settle within 5000ms");
+    },
+    { ref: false },
+  );
+}
+
+function beginGenerationRetirement(params: {
+  state: SharedMatrixClientState;
+  monitorLeases?: SharedMatrixClientLeaseState[];
 }): Promise<void> {
-  // @vector-im/matrix-bot-sdk handles sync internally in start()
-  // This is kept for API compatibility but is essentially a no-op now
-}
-
-export function stopSharedClient(key?: string): void {
-  if (key) {
-    // Stop a specific client
-    const state = sharedClientStates.get(key);
-    if (state) {
-      state.client.stop();
-      sharedClientStates.delete(key);
-    }
-  } else {
-    // Stop all clients (backward compatible behavior)
-    for (const state of sharedClientStates.values()) {
-      state.client.stop();
-    }
-    sharedClientStates.clear();
+  const { state } = params;
+  if (state.retirementPromise) {
+    return waitForRetirement(state.retirementPromise);
   }
+  state.phase = "retiring";
+  if (state.leases.size === 0) {
+    state.noLeases.resolve();
+  }
+  const result = createDeferred<void>();
+  state.retirementPromise = result.promise;
+  const owner = Promise.resolve().then(async () => {
+    // Timeout bounds the caller, not SDK ownership. A replacement still waits for
+    // this one shutdown to finish; there is no separate late-drain recovery path.
+    await state.startPromise?.catch(() => undefined);
+    try {
+      await state.client.quiesceSync();
+      state.started = false;
+      await state.client.drainPendingDecryptions("matrix monitor sync quiesce");
+    } catch (error) {
+      state.poisonError = toRetirementError(error);
+    }
+    try {
+      await retireMonitorLeases(state, params.monitorLeases ?? []);
+    } catch (error) {
+      state.poisonError ??= toRetirementError(error);
+    }
+    await state.noLeases.promise;
+    if (state.poisonError) {
+      // A failed first drain may still have crypto writes in flight. Rejoin them
+      // before discard; successful quiescence already blocked every producer.
+      await state.client
+        .drainPendingDecryptions("matrix failed shutdown")
+        .catch((error: unknown) => {
+          state.poisonError = toRetirementError(error);
+        });
+    }
+    let failure = state.poisonError;
+    let discard = failure !== null || state.releaseMode === "discard";
+    if (!discard) {
+      try {
+        await state.client.stopAndPersist();
+      } catch (error) {
+        discard = true;
+        if (state.releaseMode === "persist") {
+          failure = state.poisonError = toRetirementError(error);
+        }
+      }
+    }
+    if (discard) {
+      await state.client.stopWithoutPersist();
+    }
+    deleteSharedClientState(state);
+    if (failure) {
+      throw failure;
+    }
+  });
+  void owner.then(result.resolve, (error: unknown) => {
+    state.poisonError = toRetirementError(error);
+    result.reject(state.poisonError);
+  });
+  abortTransientLeases(state);
+  return waitForRetirement(state.retirementPromise);
 }
 
-/**
- * Stop the shared client for a specific account.
- * Use this instead of stopSharedClient() when shutting down a single account
- * to avoid stopping all accounts.
- */
-export function stopSharedClientForAccount(auth: MatrixAuth, accountId?: string | null): void {
-  const key = buildSharedClientKey(auth, normalizeAccountId(accountId));
-  stopSharedClient(key);
+function createSharedMatrixClientLease(
+  state: SharedMatrixClientState,
+  role: MatrixClientLeaseRole,
+): SharedMatrixClientLease {
+  if (state.phase !== "open" || state.poisonError) {
+    throw new Error("Matrix client is retiring; retry the operation after shutdown");
+  }
+  const leaseState: SharedMatrixClientLeaseState = {
+    abortController: new AbortController(),
+    monitorRetirement: null,
+    monitorRetirementPromise: null,
+    role,
+    releasePromise: null,
+  };
+  state.leases.add(leaseState);
+
+  return {
+    abortSignal: leaseState.abortController.signal,
+    client: state.client,
+    role,
+    registerMonitorRetirement: (retirement) => {
+      leaseState.monitorRetirement = retirement;
+    },
+    start: async (abortSignal) => {
+      if (leaseState.releasePromise) {
+        throw new Error("Matrix client lease has already been released");
+      }
+      if (state.phase !== "open") {
+        throw new Error("Matrix client generation is retiring");
+      }
+      const startupSignal = abortSignal
+        ? AbortSignal.any([abortSignal, leaseState.abortController.signal])
+        : leaseState.abortController.signal;
+      await ensureSharedClientStarted(state, startupSignal);
+    },
+    release: (releaseParams = {}) => {
+      if (leaseState.releasePromise) {
+        return leaseState.releasePromise;
+      }
+      state.releaseMode = mergeReleaseMode(state.releaseMode, releaseParams.mode ?? "stop");
+      state.leases.delete(leaseState);
+      if (state.leases.size === 0) {
+        state.noLeases.resolve();
+      }
+
+      const finalMonitor =
+        role === "monitor" && !Array.from(state.leases).some((lease) => lease.role === "monitor");
+      if (role === "monitor" && !finalMonitor) {
+        leaseState.releasePromise = retireMonitorLease(state, leaseState);
+        return leaseState.releasePromise;
+      }
+      // Retirement drains monitor tasks, which can themselves release transient leases.
+      // Those child releases must not wait for the enclosing generation to finish.
+      const shouldRetire = state.phase === "open" && (finalMonitor || state.leases.size === 0);
+      if (!shouldRetire) {
+        leaseState.releasePromise = state.poisonError
+          ? Promise.reject(state.poisonError)
+          : Promise.resolve();
+        return leaseState.releasePromise;
+      }
+      leaseState.releasePromise = beginGenerationRetirement({
+        state,
+        monitorLeases: role === "monitor" ? [leaseState] : undefined,
+      });
+      return leaseState.releasePromise;
+    },
+  };
+}
+
+export async function acquireSharedMatrixClient(
+  params: SharedMatrixClientParams = {},
+): Promise<SharedMatrixClientLease> {
+  const lifecycle = getMatrixRuntimeLifecycle();
+  const signals = [getMatrixMonitorTaskSignal(), params.abortSignal, lifecycle?.signal].filter(
+    (signal): signal is AbortSignal => signal !== undefined,
+  );
+  const abortSignal = signals.length > 1 ? AbortSignal.any(signals) : signals[0];
+  const acquisition = { ...params, abortSignal };
+  throwIfMatrixStartupAborted(abortSignal);
+  const state = await resolveOpenSharedMatrixClientState(acquisition, lifecycle);
+  if (abortSignal?.aborted) {
+    // An awaited creation can outlive its caller; retire an unclaimed client before rejecting.
+    if (state.phase === "open" && state.leases.size === 0) {
+      await beginGenerationRetirement({ state });
+    }
+    throwIfMatrixStartupAborted(abortSignal);
+  }
+  const lease = createSharedMatrixClientLease(state, params.role ?? "transient");
+  if (params.startClient !== false) {
+    try {
+      await lease.start(abortSignal);
+    } catch (error) {
+      await lease.release({ mode: "stop" }).catch(() => undefined);
+      throw error;
+    }
+  }
+  return lease;
+}
+
+async function forceRetireState(state: SharedMatrixClientState): Promise<void> {
+  state.releaseMode = mergeReleaseMode(state.releaseMode, "stop");
+  const retirementPromise = beginGenerationRetirement({
+    state,
+    monitorLeases: Array.from(state.leases).filter((lease) => lease.role === "monitor"),
+  });
+  forceReleaseLeases(state, retirementPromise);
+  await retirementPromise;
+}
+
+export async function stopSharedClientForAccount(auth: MatrixAuth): Promise<void> {
+  const state = sharedClientStates.get(buildSharedClientKey(auth));
+  if (!state || state.ownerSignal !== getMatrixRuntimeLifecycle()?.signal) {
+    return;
+  }
+  await forceRetireState(state);
 }

@@ -3,6 +3,7 @@ import type { SimpleStreamOptions } from "@mariozechner/pi-ai";
 import { streamSimple } from "@mariozechner/pi-ai";
 import type { ThinkLevel } from "../../auto-reply/thinking.js";
 import type { OpenClawConfig } from "../../config/config.js";
+import { isOpenAiShapedApi, resolveProviderCapability } from "../provider-capabilities.js";
 import { log } from "./logger.js";
 
 const OPENROUTER_APP_HEADERS: Record<string, string> = {
@@ -634,6 +635,45 @@ function createOpenRouterSystemCacheWrapper(baseStreamFn: StreamFn | undefined):
 }
 
 /**
+ * Attach the OpenAI `prompt_cache_key` to an outgoing payload.
+ *
+ * pi-ai 0.66.1 only sets `prompt_cache_key` in the OpenAI Responses family
+ * (`openai-responses`, `openai-codex-responses`, `azure-openai-responses`).
+ * Every provider that speaks the OpenAI chat-completions shape (DeepSeek,
+ * Moonshot, Mistral-compatible endpoints, self-hosted gateways, LiteLLM /
+ * Bifrost, ...) therefore sends no cache-affinity key at all, so the backend
+ * cannot reuse the cached prompt prefix between turns.
+ *
+ * The key is the pi-agent session id (`options.sessionId`), so all requests of
+ * a session map to the same cache entry. An unstable or empty key is worse
+ * than none, so nothing is sent when the session id is unknown. A key that
+ * pi-ai already set is never overwritten.
+ */
+function createPromptCacheKeyWrapper(baseStreamFn: StreamFn | undefined): StreamFn {
+  const underlying = baseStreamFn ?? streamSimple;
+  return (model, context, options) => {
+    const sessionId = options?.sessionId?.trim();
+    if (!sessionId) {
+      return underlying(model, context, options);
+    }
+    const originalOnPayload = options?.onPayload;
+    return underlying(model, context, {
+      ...options,
+      onPayload: (payload, payloadModel) => {
+        if (payload && typeof payload === "object" && isOpenAiShapedApi(payloadModel?.api)) {
+          const payloadObj = payload as Record<string, unknown>;
+          const existing = payloadObj.prompt_cache_key;
+          if (typeof existing !== "string" || existing.trim() === "") {
+            payloadObj.prompt_cache_key = sessionId;
+          }
+        }
+        originalOnPayload?.(payload, payloadModel);
+      },
+    });
+  };
+}
+
+/**
  * Map paleoclaw's ThinkLevel to OpenRouter's reasoning.effort values.
  * "off" maps to "none"; all other levels pass through as-is.
  */
@@ -1245,12 +1285,12 @@ export function applyExtraParamsToAgent(
     // Omit the thinkingLevel so we never inject `reasoning.effort: "none"`,
     // which would cause a 400 on models where reasoning is mandatory.
     // Users who need reasoning control should target a specific model ID.
-    // See: paleoclaw/paleoclaw#24851
+    // See: syxscott/PaleoClaw#24851
     //
     // x-ai/grok models do not support OpenRouter's reasoning.effort parameter
     // and reject payloads containing it with "Invalid arguments passed to the
     // model." Skip reasoning injection for these models.
-    // See: paleoclaw/paleoclaw#32039
+    // See: syxscott/PaleoClaw#32039
     const skipReasoningInjection = modelId === "auto" || isProxyReasoningUnsupported(modelId);
     const openRouterThinkingLevel = skipReasoningInjection ? undefined : thinkingLevel;
     agent.streamFn = createOpenRouterWrapper(agent.streamFn, openRouterThinkingLevel);
@@ -1260,7 +1300,7 @@ export function applyExtraParamsToAgent(
   if (provider === "kilocode") {
     log.debug(`applying Kilocode feature header for ${provider}/${modelId}`);
     // kilo/auto is a dynamic routing model — skip reasoning injection
-    // (same rationale as OpenRouter "auto"). See: paleoclaw/paleoclaw#24851
+    // (same rationale as OpenRouter "auto"). See: syxscott/PaleoClaw#24851
     // Also skip for models known to reject reasoning.effort (e.g. x-ai/*).
     const kilocodeThinkingLevel =
       modelId === "kilo/auto" || isProxyReasoningUnsupported(modelId) ? undefined : thinkingLevel;
@@ -1314,5 +1354,15 @@ export function applyExtraParamsToAgent(
           : typeof rawParallelToolCalls;
       log.warn(`ignoring invalid parallel_tool_calls param: ${summary}`);
     }
+  }
+
+  // Prompt-cache affinity for providers that speak the OpenAI cache shape.
+  // The capability table decides which shape a provider understands, so an
+  // Anthropic-shaped backend never receives the OpenAI `prompt_cache_key`
+  // (the wrong shape silently yields a 0% cache hit).
+  const cacheCapability = resolveProviderCapability({ provider, modelId });
+  if (cacheCapability.cacheMechanism === "prompt_cache_key") {
+    log.debug(`applying prompt_cache_key for ${provider}/${modelId}`);
+    agent.streamFn = createPromptCacheKeyWrapper(agent.streamFn);
   }
 }

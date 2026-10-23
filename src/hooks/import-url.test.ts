@@ -1,62 +1,53 @@
 import fs from "node:fs";
-import os from "node:os";
 import path from "node:path";
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
+import { useAutoCleanupTempDirTracker } from "../../test/helpers/temp-dir.js";
 import { buildImportUrl } from "./import-url.js";
 
 describe("buildImportUrl", () => {
-  let tmpDir: string;
-  let tmpFile: string;
+  const tempDirs = useAutoCleanupTempDirTracker(afterAll);
+  let fixtureRoot: string;
+  let immutableHandlerPath: string;
 
-  beforeEach(() => {
-    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "import-url-test-"));
-    tmpFile = path.join(tmpDir, "handler.js");
-    fs.writeFileSync(tmpFile, "export default () => {};");
+  beforeAll(() => {
+    fixtureRoot = tempDirs.make("import-url-test-");
+    immutableHandlerPath = path.join(fixtureRoot, "handler.js");
+    fs.writeFileSync(immutableHandlerPath, "export default () => {};");
   });
 
-  afterEach(() => {
-    fs.rmSync(tmpDir, { recursive: true, force: true });
-  });
+  it("reloads a workspace hook after a same-size edit with restored mtime", async () => {
+    const tmpFile = path.join(fixtureRoot, "reload-handler.js");
+    const initialSource = 'export default () => "before";\n';
+    const editedSource = 'export default () => "after!";\n';
+    expect(Buffer.byteLength(editedSource)).toBe(Buffer.byteLength(initialSource));
 
-  it("returns bare URL for bundled hooks (no query string)", () => {
-    const url = buildImportUrl(tmpFile, "paleoclaw-bundled");
-    expect(url).not.toContain("?t=");
-    expect(url).toMatch(/^file:\/\//);
-  });
+    fs.writeFileSync(tmpFile, initialSource);
+    const cleanTime = new Date(Math.floor(Date.now() / 1000) * 1000);
+    fs.utimesSync(tmpFile, cleanTime, cleanTime);
+    const initialStat = fs.statSync(tmpFile);
+    const initialUrl = buildImportUrl(tmpFile, "paleoclaw-workspace");
+    const initialHandler = (await import(/* @vite-ignore */ initialUrl)).default as () => string;
+    expect(initialHandler()).toBe("before");
 
-  it("appends mtime-based cache buster for workspace hooks", () => {
-    const url = buildImportUrl(tmpFile, "paleoclaw-workspace");
-    expect(url).toMatch(/\?t=[\d.]+&s=\d+/);
+    await vi.waitFor(
+      () => {
+        fs.writeFileSync(tmpFile, editedSource);
+        fs.utimesSync(tmpFile, initialStat.atime, initialStat.mtime);
+        expect(fs.statSync(tmpFile).ctimeMs).not.toBe(initialStat.ctimeMs);
+      },
+      { interval: 1, timeout: 1_000 },
+    );
 
-    const { mtimeMs, size } = fs.statSync(tmpFile);
-    expect(url).toContain(`?t=${mtimeMs}`);
-    expect(url).toContain(`&s=${size}`);
-  });
-
-  it("appends mtime-based cache buster for managed hooks", () => {
-    const url = buildImportUrl(tmpFile, "paleoclaw-managed");
-    expect(url).toMatch(/\?t=[\d.]+&s=\d+/);
-  });
-
-  it("appends mtime-based cache buster for plugin hooks", () => {
-    const url = buildImportUrl(tmpFile, "paleoclaw-plugin");
-    expect(url).toMatch(/\?t=[\d.]+&s=\d+/);
-  });
-
-  it("returns same URL for bundled hooks across calls (cacheable)", () => {
-    const url1 = buildImportUrl(tmpFile, "paleoclaw-bundled");
-    const url2 = buildImportUrl(tmpFile, "paleoclaw-bundled");
-    expect(url1).toBe(url2);
-  });
-
-  it("returns same URL for workspace hooks when file is unchanged", () => {
-    const url1 = buildImportUrl(tmpFile, "paleoclaw-workspace");
-    const url2 = buildImportUrl(tmpFile, "paleoclaw-workspace");
-    expect(url1).toBe(url2);
+    const editedStat = fs.statSync(tmpFile);
+    expect(editedStat.size).toBe(initialStat.size);
+    expect(editedStat.mtimeMs).toBe(initialStat.mtimeMs);
+    const editedUrl = buildImportUrl(tmpFile, "paleoclaw-workspace");
+    const editedHandler = (await import(/* @vite-ignore */ editedUrl)).default as () => string;
+    expect(editedHandler()).toBe("after!");
   });
 
   it("falls back to Date.now() when file does not exist", () => {
-    const url = buildImportUrl("/nonexistent/handler.js", "paleoclaw-workspace");
+    const url = buildImportUrl(path.join(fixtureRoot, "missing-handler.js"), "paleoclaw-workspace");
     expect(url).toMatch(/\?t=\d+/);
   });
 });

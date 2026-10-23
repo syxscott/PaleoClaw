@@ -1,22 +1,31 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
-import type { AuthRateLimiter } from "./auth-rate-limit.js";
-import type { ResolvedGatewayAuth } from "./auth.js";
-import { authorizeGatewayBearerRequestOrReply } from "./http-auth-helpers.js";
-import { readJsonBodyOrError, sendMethodNotAllowed } from "./http-common.js";
+import {
+  readJsonBodyOrError,
+  sendMethodNotAllowed,
+  sendMissingScopeForbidden,
+} from "./http-common.js";
+import type { GatewayHttpRequestAuthOptions } from "./http-request-authority.js";
+import {
+  authorizeGatewayHttpRequestOrReply,
+  type AuthorizedGatewayHttpRequest,
+  resolveSharedSecretHttpOperatorScopes,
+} from "./http-utils.js";
+import { authorizeOperatorScopesForMethod } from "./method-scopes.js";
 
 export async function handleGatewayPostJsonEndpoint(
   req: IncomingMessage,
   res: ServerResponse,
-  opts: {
+  opts: GatewayHttpRequestAuthOptions & {
     pathname: string;
-    auth: ResolvedGatewayAuth;
     maxBodyBytes: number;
-    trustedProxies?: string[];
-    allowRealIpFallback?: boolean;
-    rateLimiter?: AuthRateLimiter;
+    requiredOperatorMethod: string;
   },
-): Promise<false | { body: unknown } | undefined> {
-  const url = new URL(req.url ?? "/", `http://${req.headers.host || "localhost"}`);
+): Promise<
+  | false
+  | { body: unknown; requestAuth: AuthorizedGatewayHttpRequest; operatorScopes: string[] }
+  | undefined
+> {
+  const url = new URL(req.url ?? "/", "http://localhost");
   if (url.pathname !== opts.pathname) {
     return false;
   }
@@ -26,22 +35,35 @@ export async function handleGatewayPostJsonEndpoint(
     return undefined;
   }
 
-  const authorized = await authorizeGatewayBearerRequestOrReply({
+  const requestAuth = await authorizeGatewayHttpRequestOrReply({
+    ...opts,
     req,
     res,
-    auth: opts.auth,
-    trustedProxies: opts.trustedProxies,
-    allowRealIpFallback: opts.allowRealIpFallback,
-    rateLimiter: opts.rateLimiter,
   });
-  if (!authorized) {
+  if (!requestAuth) {
     return undefined;
   }
 
-  const body = await readJsonBodyOrError(req, res, opts.maxBodyBytes);
+  // Compat HTTP treats shared-secret bearer auth as full operator access.
+  const operatorScopes = resolveSharedSecretHttpOperatorScopes(req, requestAuth);
+  const scopeAuth = authorizeOperatorScopesForMethod(opts.requiredOperatorMethod, operatorScopes);
+  if (!scopeAuth.allowed) {
+    sendMissingScopeForbidden(res, scopeAuth.missingScope);
+    return undefined;
+  }
+
+  const body = await readJsonBodyOrError(req, res, opts.maxBodyBytes, 60_000);
   if (body === undefined) {
     return undefined;
   }
+  try {
+    await requestAuth.revalidate();
+  } catch (error) {
+    if (res.writableEnded || res.destroyed) {
+      return undefined;
+    }
+    throw error;
+  }
 
-  return { body };
+  return { body, requestAuth, operatorScopes };
 }

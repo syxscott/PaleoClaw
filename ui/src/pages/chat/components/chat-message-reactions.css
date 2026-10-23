@@ -1,0 +1,129 @@
+paleoclaw-message-reaction-picker {
+  display: inline-flex;
+}
+paleoclaw-message-reaction-picker button {
+  font: inherit;
+  color: var(--text);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  background: transparent;
+  cursor: default;
+}
+paleoclaw-message-reaction-picker button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+paleoclaw-message-reaction-picker .trigger {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border-radius: var(--radius-md);
+  color: var(--muted);
+  transition:
+    color 120ms ease,
+    background-color 120ms ease;
+}
+paleoclaw-message-reaction-picker .trigger svg {
+  width: 14px;
+  height: 14px;
+}
+paleoclaw-message-reaction-picker .trigger:hover,
+paleoclaw-message-reaction-picker .trigger[aria-expanded="true"] {
+  color: var(--accent);
+  background: var(--bg-hover);
+}
+paleoclaw-message-reaction-picker[compact] .trigger {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  background: var(--bg-elevated);
+}
+paleoclaw-message-reaction-picker[compact] .trigger:hover,
+paleoclaw-message-reaction-picker[compact] .trigger[aria-expanded="true"] {
+  border-color: var(--accent);
+  background: var(--accent-subtle);
+}
+paleoclaw-message-reaction-picker .chat-reaction-picker {
+  pointer-events: auto;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  background: var(--popover);
+  color: var(--text);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.08),
+    0 12px 32px rgba(0, 0, 0, 0.16);
+}
+paleoclaw-message-reaction-picker .chat-reaction-picker.custom {
+  border-radius: var(--radius-md);
+}
+paleoclaw-message-reaction-picker .palette {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+paleoclaw-message-reaction-picker .palette .emoji {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-full);
+  font-size: 20px;
+  line-height: 1;
+  transition:
+    transform 120ms ease,
+    background-color 120ms ease;
+}
+paleoclaw-message-reaction-picker .palette .emoji:hover {
+  background: var(--bg-hover);
+  transform: scale(1.18);
+}
+paleoclaw-message-reaction-picker .palette .emoji[aria-pressed="true"] {
+  background: var(--accent-subtle);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+paleoclaw-message-reaction-picker .divider {
+  width: 1px;
+  height: 20px;
+  margin: 0 3px;
+  background: var(--border);
+}
+paleoclaw-message-reaction-picker .more,
+paleoclaw-message-reaction-picker .back {
+  border-radius: var(--radius-full);
+  color: var(--muted);
+}
+paleoclaw-message-reaction-picker .more:hover,
+paleoclaw-message-reaction-picker .back:hover {
+  color: var(--text);
+  background: var(--bg-hover);
+}
+paleoclaw-message-reaction-picker .more {
+  width: 30px;
+  height: 30px;
+}
+paleoclaw-message-reaction-picker .more svg {
+  width: 16px;
+  height: 16px;
+}
+paleoclaw-message-reaction-picker .custom {
+  width: min(292px, calc(100vw - 32px));
+  padding: 4px;
+}
+paleoclaw-message-reaction-picker .back {
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+}
+paleoclaw-message-reaction-picker .back svg {
+  width: 14px;
+  height: 14px;
+}
+@media (prefers-reduced-motion: reduce) {
+  paleoclaw-message-reaction-picker .trigger,
+  paleoclaw-message-reaction-picker .palette .emoji {
+    transition: none;
+  }
+  paleoclaw-message-reaction-picker .palette .emoji:hover {
+    transform: none;
+  }
+}

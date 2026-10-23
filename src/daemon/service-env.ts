@@ -1,42 +1,31 @@
+import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { VERSION } from "../version.js";
+import { normalizeOptionalString } from "@paleoclaw/normalization-core/string-coerce";
+import { resolveNodeStartupTlsEnvironment } from "../bootstrap/node-startup-env.js";
+import type { GatewayDaemonRuntime } from "../commands/daemon-runtime.js";
+import { omitSecretEgressProxyEnvironment } from "../secrets/egress-proxy/environment.js";
 import {
   GATEWAY_SERVICE_KIND,
   GATEWAY_SERVICE_MARKER,
   resolveGatewayLaunchAgentLabel,
   resolveGatewaySystemdServiceName,
   resolveGatewayWindowsTaskName,
-  NODE_SERVICE_KIND,
-  NODE_SERVICE_MARKER,
-  NODE_WINDOWS_TASK_SCRIPT_NAME,
-  resolveNodeLaunchAgentLabel,
-  resolveNodeSystemdServiceName,
-  resolveNodeWindowsTaskName,
+  resolveNodeServiceIdentityEnvironment,
 } from "./constants.js";
+import { resolveGatewayHeapNodeOptions } from "./gateway-heap.js";
+import { resolveGatewayStateDir } from "./paths.js";
 
-export type MinimalServicePathOptions = {
+type MinimalServicePathOptions = {
   platform?: NodeJS.Platform;
   extraDirs?: string[];
   home?: string;
   env?: Record<string, string | undefined>;
+  includeMissingUserBinDefaults?: boolean;
 };
 
-type BuildServicePathOptions = MinimalServicePathOptions & {
-  env?: Record<string, string | undefined>;
-};
-
-type SharedServiceEnvironmentFields = {
-  stateDir: string | undefined;
-  configPath: string | undefined;
-  tmpDir: string;
-  minimalPath: string | undefined;
-  proxyEnv: Record<string, string | undefined>;
-  nodeCaCerts: string | undefined;
-  nodeUseSystemCa: string | undefined;
-};
-
-const SERVICE_PROXY_ENV_KEYS = [
+export const SERVICE_PROXY_ENV_KEYS = [
+  "OPENCLAW_PROXY_URL",
   "HTTP_PROXY",
   "HTTPS_PROXY",
   "NO_PROXY",
@@ -47,28 +36,75 @@ const SERVICE_PROXY_ENV_KEYS = [
   "all_proxy",
 ] as const;
 
-function readServiceProxyEnvironment(
-  env: Record<string, string | undefined>,
-): Record<string, string | undefined> {
-  const out: Record<string, string | undefined> = {};
-  for (const key of SERVICE_PROXY_ENV_KEYS) {
-    const value = env[key];
-    if (typeof value !== "string") {
-      continue;
-    }
-    const trimmed = value.trim();
-    if (!trimmed) {
-      continue;
-    }
-    out[key] = trimmed;
+function normalizeServicePathDir(dir: string | undefined): string | undefined {
+  const trimmed = dir?.trim();
+  // Service PATH snapshots are only emitted for macOS/Linux; keep POSIX semantics
+  // even when tests or helper callers run on Windows.
+  if (!trimmed || !path.posix.isAbsolute(trimmed)) {
+    return undefined;
   }
-  return out;
+  return path.posix.normalize(trimmed);
 }
 
-function addNonEmptyDir(dirs: string[], dir: string | undefined): void {
-  if (dir) {
-    dirs.push(dir);
+function realpathServicePathDir(dir: string): string | undefined {
+  try {
+    return path.posix.normalize(fs.realpathSync.native(dir));
+  } catch {
+    return undefined;
   }
+}
+
+function realpathExistingServicePathDir(dir: string): string | undefined {
+  const parts: string[] = [];
+  let current = dir;
+  // Resolve the nearest existing ancestor so future-created bin dirs can still
+  // be compared against the install workspace realpath.
+  while (true) {
+    const realCurrent = realpathServicePathDir(current);
+    if (realCurrent) {
+      return path.posix.join(realCurrent, ...parts.toReversed());
+    }
+    const parent = path.posix.dirname(current);
+    if (!current || current === parent) {
+      return undefined;
+    }
+    parts.push(path.posix.basename(current));
+    current = parent;
+  }
+}
+
+function isSameOrChildPath(candidate: string, parent: string): boolean {
+  return candidate === parent || candidate.startsWith(`${parent}/`);
+}
+
+function isWorkspaceDerivedPath(dir: string, homeDir: string): boolean {
+  // Install-time workspace env vars must not become durable service PATH entries.
+  if (isSameOrChildPath(dir, "/proc")) {
+    return true;
+  }
+  const cwd = normalizeServicePathDir(process.cwd());
+  if (!cwd) {
+    return false;
+  }
+  const home = normalizeServicePathDir(homeDir);
+  if (home && cwd === home) {
+    return false;
+  }
+  if (isSameOrChildPath(dir, cwd)) {
+    return true;
+  }
+  const realDir = realpathExistingServicePathDir(dir);
+  const realCwd = realpathServicePathDir(cwd);
+  const realHome = home ? realpathServicePathDir(home) : undefined;
+  return Boolean(realDir && realCwd && realHome !== realCwd && isSameOrChildPath(realDir, realCwd));
+}
+
+function addEnvConfiguredBinDir(dirs: string[], dir: string | undefined, home: string): void {
+  const normalized = normalizeServicePathDir(dir);
+  if (!normalized || isWorkspaceDerivedPath(normalized, home)) {
+    return;
+  }
+  dirs.push(normalized);
 }
 
 function appendSubdir(base: string | undefined, subdir: string): string | undefined {
@@ -78,29 +114,23 @@ function appendSubdir(base: string | undefined, subdir: string): string | undefi
   return base.endsWith(`/${subdir}`) ? base : path.posix.join(base, subdir);
 }
 
-function addCommonUserBinDirs(dirs: string[], home: string): void {
-  dirs.push(`${home}/.local/bin`);
-  dirs.push(`${home}/.npm-global/bin`);
-  dirs.push(`${home}/bin`);
-  dirs.push(`${home}/.volta/bin`);
-  dirs.push(`${home}/.asdf/shims`);
-  dirs.push(`${home}/.bun/bin`);
-}
-
-function addCommonEnvConfiguredBinDirs(
-  dirs: string[],
-  env: Record<string, string | undefined> | undefined,
-): void {
-  addNonEmptyDir(dirs, env?.PNPM_HOME);
-  addNonEmptyDir(dirs, appendSubdir(env?.NPM_CONFIG_PREFIX, "bin"));
-  addNonEmptyDir(dirs, appendSubdir(env?.BUN_INSTALL, "bin"));
-  addNonEmptyDir(dirs, appendSubdir(env?.VOLTA_HOME, "bin"));
-  addNonEmptyDir(dirs, appendSubdir(env?.ASDF_DATA_DIR, "shims"));
+function addExistingDir(dirs: string[], candidate: string): void {
+  if (fs.existsSync(candidate)) {
+    dirs.push(candidate);
+  }
 }
 
 function resolveSystemPathDirs(platform: NodeJS.Platform): string[] {
   if (platform === "darwin") {
-    return ["/opt/homebrew/bin", "/usr/local/bin", "/usr/bin", "/bin"];
+    return [
+      "/opt/homebrew/bin",
+      "/opt/homebrew/sbin",
+      "/usr/local/bin",
+      "/usr/bin",
+      "/bin",
+      "/usr/sbin",
+      "/sbin",
+    ];
   }
   if (platform === "linux") {
     return ["/usr/local/bin", "/usr/bin", "/bin"];
@@ -108,232 +138,221 @@ function resolveSystemPathDirs(platform: NodeJS.Platform): string[] {
   return [];
 }
 
-/**
- * Resolve common user bin directories for macOS.
- * These are paths where npm global installs and node version managers typically place binaries.
- *
- * Key differences from Linux:
- * - fnm: macOS uses ~/Library/Application Support/fnm (not ~/.local/share/fnm)
- * - pnpm: macOS uses ~/Library/pnpm (not ~/.local/share/pnpm)
- */
-export function resolveDarwinUserBinDirs(
+/** Resolve Linux user bin directories after trusted system directories. */
+function resolveUserBinDirs(
   home: string | undefined,
-  env?: Record<string, string | undefined>,
+  env: Record<string, string | undefined>,
+  includeMissingUserBinDefaults = true,
 ): string[] {
   if (!home) {
     return [];
   }
 
   const dirs: string[] = [];
-
-  // Env-configured bin roots (override defaults when present).
-  // Note: FNM_DIR on macOS defaults to ~/Library/Application Support/fnm
-  // Note: PNPM_HOME on macOS defaults to ~/Library/pnpm
-  addCommonEnvConfiguredBinDirs(dirs, env);
-  // nvm: no stable default path, relies on env or user's shell config
-  // User must set NVM_DIR and source nvm.sh for it to work
-  addNonEmptyDir(dirs, env?.NVM_DIR);
-  // fnm: use aliases/default (not current)
-  addNonEmptyDir(dirs, appendSubdir(env?.FNM_DIR, "aliases/default/bin"));
-  // pnpm: binary is directly in PNPM_HOME (not in bin subdirectory)
-
-  // Common user bin directories
-  addCommonUserBinDirs(dirs, home);
-
-  // Node version managers - macOS specific paths
-  // nvm: no stable default path, depends on user's shell configuration
-  // fnm: macOS default is ~/Library/Application Support/fnm, not ~/.fnm
-  dirs.push(`${home}/Library/Application Support/fnm/aliases/default/bin`); // fnm default
-  dirs.push(`${home}/.fnm/aliases/default/bin`); // fnm if customized to ~/.fnm
-  // pnpm: macOS default is ~/Library/pnpm, not ~/.local/share/pnpm
-  dirs.push(`${home}/Library/pnpm`); // pnpm default
-  dirs.push(`${home}/.local/share/pnpm`); // pnpm XDG fallback
-
-  return dirs;
-}
-
-/**
- * Resolve common user bin directories for Linux.
- * These are paths where npm global installs and node version managers typically place binaries.
- */
-export function resolveLinuxUserBinDirs(
-  home: string | undefined,
-  env?: Record<string, string | undefined>,
-): string[] {
-  if (!home) {
-    return [];
+  addEnvConfiguredBinDir(dirs, env.PNPM_HOME, home);
+  addEnvConfiguredBinDir(dirs, appendSubdir(env.PNPM_HOME, "bin"), home);
+  addEnvConfiguredBinDir(dirs, appendSubdir(env.NPM_CONFIG_PREFIX, "bin"), home);
+  addEnvConfiguredBinDir(dirs, appendSubdir(env.BUN_INSTALL, "bin"), home);
+  addEnvConfiguredBinDir(dirs, appendSubdir(env.VOLTA_HOME, "bin"), home);
+  addEnvConfiguredBinDir(dirs, appendSubdir(env.ASDF_DATA_DIR, "shims"), home);
+  addEnvConfiguredBinDir(dirs, appendSubdir(env.NVM_DIR, "current/bin"), home);
+  addEnvConfiguredBinDir(dirs, appendSubdir(env.FNM_DIR, "aliases/default/bin"), home);
+  addEnvConfiguredBinDir(dirs, appendSubdir(env.FNM_DIR, "current/bin"), home);
+  for (const directory of [".local/bin", ".npm-global/bin", "bin"]) {
+    const candidate = `${home}/${directory}`;
+    if (includeMissingUserBinDefaults || fs.existsSync(candidate)) {
+      dirs.push(candidate);
+    }
   }
-
-  const dirs: string[] = [];
-
-  // Env-configured bin roots (override defaults when present).
-  addCommonEnvConfiguredBinDirs(dirs, env);
-  addNonEmptyDir(dirs, appendSubdir(env?.NVM_DIR, "current/bin"));
-  addNonEmptyDir(dirs, appendSubdir(env?.FNM_DIR, "current/bin"));
-
-  // Common user bin directories
-  addCommonUserBinDirs(dirs, home);
-
-  // Node version managers
-  dirs.push(`${home}/.nvm/current/bin`); // nvm with current symlink
-  dirs.push(`${home}/.fnm/current/bin`); // fnm
-  dirs.push(`${home}/.local/share/pnpm`); // pnpm global bin
-
+  for (const directory of [".volta/bin", ".asdf/shims", ".bun/bin"]) {
+    addExistingDir(dirs, `${home}/${directory}`);
+  }
+  // Nix gives the rightmost profile highest priority; otherwise use the default profile.
+  const nixProfiles = env.NIX_PROFILES?.trim();
+  if (nixProfiles) {
+    for (const profile of nixProfiles.split(/\s+/).toReversed()) {
+      addEnvConfiguredBinDir(dirs, appendSubdir(profile, "bin"), home);
+    }
+  } else {
+    const defaultProfileBin = `${home}/.nix-profile/bin`;
+    if (includeMissingUserBinDefaults || fs.existsSync(defaultProfileBin)) {
+      dirs.push(defaultProfileBin);
+    }
+  }
+  // Preserve both the pnpm root (v10) and its bin subdirectory (v11) in order.
+  for (const directory of [
+    ".nvm/current/bin",
+    ".local/share/fnm/aliases/default/bin",
+    ".local/share/fnm/current/bin",
+    ".fnm/aliases/default/bin",
+    ".fnm/current/bin",
+    ".local/share/pnpm/bin",
+    ".local/share/pnpm",
+  ]) {
+    addExistingDir(dirs, `${home}/${directory}`);
+  }
   return dirs;
 }
 
-export function getMinimalServicePathParts(options: MinimalServicePathOptions = {}): string[] {
+export function getMinimalServicePathPartsFromEnv(
+  options: MinimalServicePathOptions = {},
+): string[] {
+  const env = options.env ?? process.env;
   const platform = options.platform ?? process.platform;
   if (platform === "win32") {
+    // Windows scheduled tasks inherit PATH from the task host; generated cmd
+    // launchers should not freeze install-time PATH snapshots.
     return [];
   }
 
-  const parts: string[] = [];
   const extraDirs = options.extraDirs ?? [];
   const systemDirs = resolveSystemPathDirs(platform);
 
-  // Add user bin directories for version managers (npm global, nvm, fnm, volta, etc.)
   const userDirs =
     platform === "linux"
-      ? resolveLinuxUserBinDirs(options.home, options.env)
-      : platform === "darwin"
-        ? resolveDarwinUserBinDirs(options.home, options.env)
-        : [];
+      ? resolveUserBinDirs(options.home ?? env.HOME, env, options.includeMissingUserBinDefaults)
+      : [];
 
-  const add = (dir: string) => {
-    if (!dir) {
-      return;
-    }
-    if (!parts.includes(dir)) {
-      parts.push(dir);
-    }
-  };
-
-  for (const dir of extraDirs) {
-    add(dir);
-  }
-  // User dirs first so user-installed binaries take precedence
-  for (const dir of userDirs) {
-    add(dir);
-  }
-  for (const dir of systemDirs) {
-    add(dir);
-  }
-
-  return parts;
+  return [...new Set([...extraDirs, ...systemDirs, ...userDirs].filter(Boolean))];
 }
 
-export function getMinimalServicePathPartsFromEnv(options: BuildServicePathOptions = {}): string[] {
-  const env = options.env ?? process.env;
-  return getMinimalServicePathParts({
-    ...options,
-    home: options.home ?? env.HOME,
-    env,
-  });
-}
-
-export function buildMinimalServicePath(options: BuildServicePathOptions = {}): string {
-  const env = options.env ?? process.env;
-  const platform = options.platform ?? process.platform;
-  if (platform === "win32") {
-    return env.PATH ?? "";
+function resolveGatewaySystemdUnitEnv(env: Record<string, string | undefined>): string {
+  const override = normalizeOptionalString(env.OPENCLAW_SYSTEMD_UNIT);
+  if (override) {
+    return override.endsWith(".service") ? override : `${override}.service`;
   }
-
-  return getMinimalServicePathPartsFromEnv({ ...options, env }).join(path.posix.delimiter);
+  return `${resolveGatewaySystemdServiceName(env.OPENCLAW_PROFILE)}.service`;
 }
 
-export function buildServiceEnvironment(params: {
+type ServiceEnvironmentParams = {
   env: Record<string, string | undefined>;
-  port: number;
-  launchdLabel?: string;
+  runtime?: GatewayDaemonRuntime;
   platform?: NodeJS.Platform;
-}): Record<string, string | undefined> {
+  extraPathDirs?: string[];
+  execPath?: string;
+};
+
+export function buildServiceEnvironment(
+  params: ServiceEnvironmentParams & {
+    port: number;
+    existingNodeOptions?: string;
+    launchdLabel?: string;
+  },
+): Record<string, string | undefined> {
   const { env, port, launchdLabel } = params;
   const platform = params.platform ?? process.platform;
-  const sharedEnv = resolveSharedServiceEnvironmentFields(env, platform);
+  const commonEnvironment = buildCommonServiceEnvironment(params, platform);
   const profile = env.OPENCLAW_PROFILE;
+  const wrapperPath = normalizeOptionalString(env.OPENCLAW_WRAPPER);
   const resolvedLaunchdLabel =
     launchdLabel || (platform === "darwin" ? resolveGatewayLaunchAgentLabel(profile) : undefined);
-  const systemdUnit = `${resolveGatewaySystemdServiceName(profile)}.service`;
+  const systemdUnit = resolveGatewaySystemdUnitEnv(env);
   return {
-    ...buildCommonServiceEnvironment(env, sharedEnv),
+    ...commonEnvironment,
+    // An empty assignment clears supervisor ambient options; omission would
+    // allow preloads/debug flags to bypass the heap-only service boundary.
+    NODE_OPTIONS: resolveGatewayHeapNodeOptions(
+      params.existingNodeOptions,
+      wrapperPath ? undefined : params.runtime,
+    ),
     OPENCLAW_PROFILE: profile,
+    ...(env.OPENCLAW_CONFIG_READONLY !== undefined
+      ? { OPENCLAW_CONFIG_READONLY: env.OPENCLAW_CONFIG_READONLY }
+      : {}),
+    OPENCLAW_WRAPPER: wrapperPath,
     OPENCLAW_GATEWAY_PORT: String(port),
     OPENCLAW_LAUNCHD_LABEL: resolvedLaunchdLabel,
     OPENCLAW_SYSTEMD_UNIT: systemdUnit,
     OPENCLAW_WINDOWS_TASK_NAME: resolveGatewayWindowsTaskName(profile),
+    OPENCLAW_WINDOWS_TASK_HIDDEN_LAUNCHER: "1",
     OPENCLAW_SERVICE_MARKER: GATEWAY_SERVICE_MARKER,
     OPENCLAW_SERVICE_KIND: GATEWAY_SERVICE_KIND,
-    OPENCLAW_SERVICE_VERSION: VERSION,
   };
 }
 
-export function buildNodeServiceEnvironment(params: {
-  env: Record<string, string | undefined>;
-  platform?: NodeJS.Platform;
-}): Record<string, string | undefined> {
+export function buildNodeServiceEnvironment(
+  params: ServiceEnvironmentParams,
+): Record<string, string | undefined> {
   const { env } = params;
   const platform = params.platform ?? process.platform;
-  const sharedEnv = resolveSharedServiceEnvironmentFields(env, platform);
-  const gatewayToken =
-    env.OPENCLAW_GATEWAY_TOKEN?.trim() || env.CLAWDBOT_GATEWAY_TOKEN?.trim() || undefined;
+  const commonEnvironment = buildCommonServiceEnvironment(params, platform);
   return {
-    ...buildCommonServiceEnvironment(env, sharedEnv),
-    OPENCLAW_GATEWAY_TOKEN: gatewayToken,
-    OPENCLAW_LAUNCHD_LABEL: resolveNodeLaunchAgentLabel(),
-    OPENCLAW_SYSTEMD_UNIT: resolveNodeSystemdServiceName(),
-    OPENCLAW_WINDOWS_TASK_NAME: resolveNodeWindowsTaskName(),
-    OPENCLAW_TASK_SCRIPT_NAME: NODE_WINDOWS_TASK_SCRIPT_NAME,
-    OPENCLAW_LOG_PREFIX: "node",
-    OPENCLAW_SERVICE_MARKER: NODE_SERVICE_MARKER,
-    OPENCLAW_SERVICE_KIND: NODE_SERVICE_KIND,
-    OPENCLAW_SERVICE_VERSION: VERSION,
+    ...commonEnvironment,
+    OPENCLAW_GATEWAY_TOKEN: normalizeOptionalString(env.OPENCLAW_GATEWAY_TOKEN),
+    OPENCLAW_GATEWAY_PASSWORD: normalizeOptionalString(env.OPENCLAW_GATEWAY_PASSWORD),
+    CF_ACCESS_CLIENT_ID: normalizeOptionalString(env.CF_ACCESS_CLIENT_ID),
+    CF_ACCESS_CLIENT_SECRET: normalizeOptionalString(env.CF_ACCESS_CLIENT_SECRET),
+    OPENCLAW_ALLOW_INSECURE_PRIVATE_WS: normalizeOptionalString(
+      env.OPENCLAW_ALLOW_INSECURE_PRIVATE_WS,
+    ),
+    // launchd manager variables outlive the installer. Worker snapshots scope
+    // this host fence by the canonical managed-node service identity.
+    NODE_DISABLE_COMPILE_CACHE: platform === "darwin" ? "1" : undefined,
+    ...resolveNodeServiceIdentityEnvironment(),
   };
+}
+
+function resolveServiceTmpDir(
+  env: Record<string, string | undefined>,
+  platform: NodeJS.Platform,
+): string {
+  if (platform === "darwin") {
+    try {
+      return path.join(resolveGatewayStateDir(env), "tmp");
+    } catch {
+      // Fall back to the same host temporary directory used by other platforms.
+    }
+  }
+  return env.TMPDIR?.trim() || os.tmpdir();
 }
 
 function buildCommonServiceEnvironment(
-  env: Record<string, string | undefined>,
-  sharedEnv: SharedServiceEnvironmentFields,
-): Record<string, string | undefined> {
-  const serviceEnv: Record<string, string | undefined> = {
-    HOME: env.HOME,
-    TMPDIR: sharedEnv.tmpDir,
-    ...sharedEnv.proxyEnv,
-    NODE_EXTRA_CA_CERTS: sharedEnv.nodeCaCerts,
-    NODE_USE_SYSTEM_CA: sharedEnv.nodeUseSystemCa,
-    OPENCLAW_STATE_DIR: sharedEnv.stateDir,
-    OPENCLAW_CONFIG_PATH: sharedEnv.configPath,
-  };
-  if (sharedEnv.minimalPath) {
-    serviceEnv.PATH = sharedEnv.minimalPath;
-  }
-  return serviceEnv;
-}
-
-function resolveSharedServiceEnvironmentFields(
-  env: Record<string, string | undefined>,
+  { env: invocationEnv, extraPathDirs, execPath, runtime }: ServiceEnvironmentParams,
   platform: NodeJS.Platform,
-): SharedServiceEnvironmentFields {
-  const stateDir = env.OPENCLAW_STATE_DIR;
-  const configPath = env.OPENCLAW_CONFIG_PATH;
-  // Keep a usable temp directory for supervised services even when the host env omits TMPDIR.
-  const tmpDir = env.TMPDIR?.trim() || os.tmpdir();
-  const proxyEnv = readServiceProxyEnvironment(env);
+): Record<string, string | undefined> {
+  const env = omitSecretEgressProxyEnvironment(invocationEnv, platform);
+  const tmpDir = resolveServiceTmpDir(env, platform);
   // On macOS, launchd services don't inherit the shell environment, so Node's undici/fetch
   // cannot locate the system CA bundle. Default to /etc/ssl/cert.pem so TLS verification
   // works correctly when running as a LaunchAgent without extra user configuration.
-  const nodeCaCerts =
-    env.NODE_EXTRA_CA_CERTS ?? (platform === "darwin" ? "/etc/ssl/cert.pem" : undefined);
-  const nodeUseSystemCa = env.NODE_USE_SYSTEM_CA ?? (platform === "darwin" ? "1" : undefined);
-  return {
-    stateDir,
-    configPath,
-    tmpDir,
-    // On Windows, Scheduled Tasks should inherit the current task PATH instead of
-    // freezing the install-time snapshot into gateway.cmd/node-host.cmd.
-    minimalPath: platform === "win32" ? undefined : buildMinimalServicePath({ env, platform }),
-    proxyEnv,
-    nodeCaCerts,
-    nodeUseSystemCa,
+  // On Linux, nvm-installed Node may need the host CA bundle injected before startup.
+  const startupTlsEnv = resolveNodeStartupTlsEnvironment({
+    env,
+    platform,
+    execPath,
+  });
+  // Windows tasks inherit PATH rather than freezing an install-time snapshot.
+  const minimalPath =
+    platform === "win32"
+      ? undefined
+      : getMinimalServicePathPartsFromEnv({ env, platform, extraDirs: extraPathDirs }).join(
+          path.posix.delimiter,
+        );
+  // Generic shell proxy vars are audited but never frozen into services.
+  const proxyUrl = normalizeOptionalString(env.OPENCLAW_PROXY_URL);
+  const environment: Record<string, string | undefined> = {
+    HOME: env.HOME,
+    TMPDIR: tmpDir,
+    NODE_EXTRA_CA_CERTS: startupTlsEnv.NODE_EXTRA_CA_CERTS,
+    NODE_USE_SYSTEM_CA: startupTlsEnv.NODE_USE_SYSTEM_CA,
+    OPENCLAW_STATE_DIR: env.OPENCLAW_STATE_DIR,
+    OPENCLAW_CONFIG_PATH: env.OPENCLAW_CONFIG_PATH,
+    ...(proxyUrl ? { OPENCLAW_PROXY_URL: proxyUrl } : {}),
+    ...(minimalPath ? { PATH: minimalPath } : {}),
   };
+  // Match the installing shell's probed SQLite library; wrappers hide the runtime.
+  if (
+    platform === "darwin" &&
+    (runtime === "bun" || normalizeOptionalString(env.OPENCLAW_WRAPPER))
+  ) {
+    const library = normalizeOptionalString(env.OPENCLAW_SQLITE_LIBRARY);
+    const prefix = normalizeOptionalString(env.HOMEBREW_PREFIX);
+    if (library) {
+      environment.OPENCLAW_SQLITE_LIBRARY = library;
+    }
+    if (prefix && path.posix.isAbsolute(prefix)) {
+      environment.HOMEBREW_PREFIX = prefix;
+    }
+  }
+  return environment;
 }

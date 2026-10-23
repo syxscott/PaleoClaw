@@ -1,3 +1,9 @@
+/**
+ * Produces short adjective/noun IDs with numbered and random fallbacks when
+ * collisions are reported by the session store.
+ */
+import { generateSecureInt } from "../infra/secure-random.js";
+
 const SLUG_ADJECTIVES = [
   "amber",
   "briny",
@@ -100,14 +106,37 @@ const SLUG_NOUNS = [
   "zephyr",
 ];
 
+const CRUSTACEAN_NOUNS = [
+  "barnacle",
+  "claw",
+  "crab",
+  "crayfish",
+  "krill",
+  "langoustine",
+  "lobster",
+  "prawn",
+  "shrimp",
+  "shell",
+];
+
 function randomChoice(values: string[], fallback: string) {
-  return values[Math.floor(Math.random() * values.length)] ?? fallback;
+  return values[generateSecureInt(values.length)] ?? fallback;
 }
 
-function createSlugBase(words = 2) {
-  const parts = [randomChoice(SLUG_ADJECTIVES, "steady"), randomChoice(SLUG_NOUNS, "harbor")];
+const SLUG_FALLBACK_ALPHABET = "abcdefghijklmnopqrstuvwxyz0123456789";
+
+function createFallbackSuffix(length: number): string {
+  let suffix = "";
+  for (let i = 0; i < length; i += 1) {
+    suffix += SLUG_FALLBACK_ALPHABET[generateSecureInt(SLUG_FALLBACK_ALPHABET.length)] ?? "x";
+  }
+  return suffix;
+}
+
+function createSlugBase(words = 2, nouns = SLUG_NOUNS) {
+  const parts = [randomChoice(SLUG_ADJECTIVES, "steady"), randomChoice(nouns, "harbor")];
   if (words > 2) {
-    parts.push(randomChoice(SLUG_NOUNS, "reef"));
+    parts.push(randomChoice(nouns, "reef"));
   }
   return parts.join("-");
 }
@@ -115,9 +144,10 @@ function createSlugBase(words = 2) {
 function createAvailableSlug(
   words: number,
   isIdTaken: (id: string) => boolean,
+  nouns = SLUG_NOUNS,
 ): string | undefined {
   for (let attempt = 0; attempt < 12; attempt += 1) {
-    const base = createSlugBase(words);
+    const base = createSlugBase(words, nouns);
     if (!isIdTaken(base)) {
       return base;
     }
@@ -131,16 +161,24 @@ function createAvailableSlug(
   return undefined;
 }
 
-export function createSessionSlug(isTaken?: (id: string) => boolean): string {
+function createUniqueSlug(nouns: string[], isTaken?: (id: string) => boolean): string {
   const isIdTaken = isTaken ?? (() => false);
-  const twoWord = createAvailableSlug(2, isIdTaken);
-  if (twoWord) {
-    return twoWord;
+  for (const words of [2, 3]) {
+    const slug = createAvailableSlug(words, isIdTaken, nouns);
+    if (slug) {
+      return slug;
+    }
   }
-  const threeWord = createAvailableSlug(3, isIdTaken);
-  if (threeWord) {
-    return threeWord;
-  }
-  const fallback = `${createSlugBase(3)}-${Math.random().toString(36).slice(2, 5)}`;
+  const fallback = `${createSlugBase(3, nouns)}-${createFallbackSuffix(3)}`;
   return isIdTaken(fallback) ? `${fallback}-${Date.now().toString(36)}` : fallback;
+}
+
+/** Creates a human-readable unique session slug with numbered and random fallbacks. */
+export function createSessionSlug(isTaken?: (id: string) => boolean): string {
+  return createUniqueSlug(SLUG_NOUNS, isTaken);
+}
+
+/** Creates a human-readable crustacean-themed slug for unnamed worktrees. */
+export function createCrustaceanSlug(isTaken?: (id: string) => boolean): string {
+  return createUniqueSlug(CRUSTACEAN_NOUNS, isTaken);
 }

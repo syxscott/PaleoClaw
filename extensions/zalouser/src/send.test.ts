@@ -1,157 +1,161 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  sendDeliveredZalouser,
-  sendImageZalouser,
-  sendLinkZalouser,
-  sendMessageZalouser,
-  sendReactionZalouser,
-  sendSeenZalouser,
-  sendTypingZalouser,
-} from "./send.js";
-import {
-  sendZaloDeliveredEvent,
-  sendZaloLink,
-  sendZaloReaction,
-  sendZaloSeenEvent,
-  sendZaloTextMessage,
-  sendZaloTypingEvent,
-} from "./zalo-js.js";
+import { createZalouserSendReceipt } from "./send-receipt.js";
+import { sendImageZalouser, sendMessageZalouser } from "./send.js";
+import { parseZalouserTextStyles } from "./text-styles.js";
+import { sendZaloTextMessage } from "./zalo-js.js";
+import { TextStyle } from "./zca-constants.js";
 
-vi.mock("./zalo-js.js", () => ({
+vi.mock("./zalo-js.js", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("./zalo-js.js")>()),
   sendZaloTextMessage: vi.fn(),
-  sendZaloLink: vi.fn(),
-  sendZaloTypingEvent: vi.fn(),
-  sendZaloReaction: vi.fn(),
-  sendZaloDeliveredEvent: vi.fn(),
-  sendZaloSeenEvent: vi.fn(),
 }));
 
 const mockSendText = vi.mocked(sendZaloTextMessage);
-const mockSendLink = vi.mocked(sendZaloLink);
-const mockSendTyping = vi.mocked(sendZaloTypingEvent);
-const mockSendReaction = vi.mocked(sendZaloReaction);
-const mockSendDelivered = vi.mocked(sendZaloDeliveredEvent);
-const mockSendSeen = vi.mocked(sendZaloSeenEvent);
+
+function sendResult(messageId: string, threadId = "thread") {
+  return {
+    messageId,
+    receipt: createZalouserSendReceipt({ messageId, threadId, kind: "text" }),
+  };
+}
+
+function expectTextCall(
+  index: number,
+  thread: string,
+  text: unknown,
+  options: Record<string, unknown>,
+) {
+  expect(mockSendText.mock.calls[index]?.slice(0, 3)).toEqual([
+    thread,
+    text,
+    expect.objectContaining(options),
+  ]);
+}
+
+const imageOptions = { profile: "p2", isGroup: false, textMode: "markdown" as const };
+const imageUrl = "https://example.com/a.png";
 
 describe("zalouser send helpers", () => {
   beforeEach(() => {
     mockSendText.mockReset();
-    mockSendLink.mockReset();
-    mockSendTyping.mockReset();
-    mockSendReaction.mockReset();
-    mockSendDelivered.mockReset();
-    mockSendSeen.mockReset();
   });
 
-  it("delegates text send to JS transport", async () => {
-    mockSendText.mockResolvedValueOnce({ ok: true, messageId: "mid-1" });
-
-    const result = await sendMessageZalouser("thread-1", "hello", {
-      profile: "default",
-      isGroup: true,
-    });
-
-    expect(mockSendText).toHaveBeenCalledWith("thread-1", "hello", {
-      profile: "default",
-      isGroup: true,
-    });
-    expect(result).toEqual({ ok: true, messageId: "mid-1" });
-  });
-
-  it("maps image helper to media send", async () => {
-    mockSendText.mockResolvedValueOnce({ ok: true, messageId: "mid-2" });
-
-    await sendImageZalouser("thread-2", "https://example.com/a.png", {
-      profile: "p2",
-      caption: "cap",
-      isGroup: false,
-    });
-
-    expect(mockSendText).toHaveBeenCalledWith("thread-2", "cap", {
-      profile: "p2",
-      caption: "cap",
-      isGroup: false,
-      mediaUrl: "https://example.com/a.png",
+  it.each([
+    {
+      name: "formats image captions in markdown mode",
+      caption: "_cap_",
+      text: "cap",
+      styles: [{ start: 0, len: 3, st: TextStyle.Italic }],
+    },
+    {
+      name: "does not retain an empty raw markdown caption",
+      caption: "```\n```",
+      text: "",
+      styles: undefined,
+    },
+  ])("$name", async ({ caption, text, styles }) => {
+    mockSendText.mockResolvedValueOnce(sendResult("mid-2", "thread-2"));
+    await sendImageZalouser("thread-2", imageUrl, { ...imageOptions, caption });
+    expectTextCall(0, "thread-2", text, {
+      ...imageOptions,
+      caption: undefined,
+      mediaUrl: imageUrl,
+      textStyles: styles,
     });
   });
 
-  it("delegates link helper to JS transport", async () => {
-    mockSendLink.mockResolvedValueOnce({ ok: false, error: "boom" });
+  it("combines earlier chunks with a failed chunk's partial receipt without duplicate parts", async () => {
+    mockSendText
+      .mockResolvedValueOnce(sendResult("mid-first"))
+      .mockImplementationOnce(async (_threadId, _text, _options, onDeliveryResult) => {
+        const accepted = sendResult("mid-caption");
+        await onDeliveryResult?.(accepted);
+        throw new Error("voice send failed");
+      });
 
-    const result = await sendLinkZalouser("thread-3", "https://paleoclaw.ai", {
-      profile: "p3",
-      isGroup: true,
-    });
-
-    expect(mockSendLink).toHaveBeenCalledWith("thread-3", "https://paleoclaw.ai", {
-      profile: "p3",
-      isGroup: true,
-    });
-    expect(result).toEqual({ ok: false, error: "boom" });
-  });
-
-  it("delegates typing helper to JS transport", async () => {
-    await sendTypingZalouser("thread-4", { profile: "p4", isGroup: true });
-
-    expect(mockSendTyping).toHaveBeenCalledWith("thread-4", {
-      profile: "p4",
-      isGroup: true,
-    });
-  });
-
-  it("delegates reaction helper to JS transport", async () => {
-    mockSendReaction.mockResolvedValueOnce({ ok: true });
-
-    const result = await sendReactionZalouser({
-      threadId: "thread-5",
-      profile: "p5",
-      isGroup: true,
-      msgId: "100",
-      cliMsgId: "200",
-      emoji: "👍",
-    });
-
-    expect(mockSendReaction).toHaveBeenCalledWith({
-      profile: "p5",
-      threadId: "thread-5",
-      isGroup: true,
-      msgId: "100",
-      cliMsgId: "200",
-      emoji: "👍",
-      remove: undefined,
-    });
-    expect(result).toEqual({ ok: true, error: undefined });
-  });
-
-  it("delegates delivered+seen helpers to JS transport", async () => {
-    mockSendDelivered.mockResolvedValueOnce();
-    mockSendSeen.mockResolvedValueOnce();
-
-    const message = {
-      msgId: "100",
-      cliMsgId: "200",
-      uidFrom: "1",
-      idTo: "2",
-      msgType: "webchat",
-      st: 1,
-      at: 0,
-      cmd: 0,
-      ts: "123",
-    };
-
-    await sendDeliveredZalouser({ profile: "p6", isGroup: true, message, isSeen: false });
-    await sendSeenZalouser({ profile: "p6", isGroup: true, message });
-
-    expect(mockSendDelivered).toHaveBeenCalledWith({
-      profile: "p6",
-      isGroup: true,
-      message,
-      isSeen: false,
-    });
-    expect(mockSendSeen).toHaveBeenCalledWith({
-      profile: "p6",
-      isGroup: true,
-      message,
+    await expect(sendMessageZalouser("thread", "a".repeat(2001))).rejects.toMatchObject({
+      code: "CHANNEL_PARTIAL_DELIVERY",
+      message: "voice send failed",
+      deliveryResult: {
+        messageIds: ["mid-first", "mid-caption"],
+        receipt: {
+          parts: [
+            expect.objectContaining({ platformMessageId: "mid-first" }),
+            expect.objectContaining({ platformMessageId: "mid-caption" }),
+          ],
+        },
+        visibleReplySent: true,
+      },
     });
   });
+
+  it("retains nested progress when the transport throws without a progress subscriber", async () => {
+    const cause = new Error("voice authority ended");
+    mockSendText.mockImplementationOnce(async (_threadId, _text, _options, onDeliveryResult) => {
+      await onDeliveryResult?.(sendResult("mid-caption"));
+      throw cause;
+    });
+
+    await expect(sendMessageZalouser("thread", "caption")).rejects.toMatchObject({
+      code: "CHANNEL_PARTIAL_DELIVERY",
+      cause,
+      deliveryResult: { messageIds: ["mid-caption"], visibleReplySent: true },
+    });
+  });
+
+  it("retains provider acceptance when the delivery callback fails", async () => {
+    const cause = new Error("receipt persistence failed");
+    mockSendText.mockResolvedValueOnce(sendResult("mid-accepted"));
+
+    await expect(
+      sendMessageZalouser("thread", "a".repeat(2001), {
+        onDeliveryResult: () => {
+          throw cause;
+        },
+      }),
+    ).rejects.toMatchObject({
+      code: "CHANNEL_PARTIAL_DELIVERY",
+      cause,
+      deliveryResult: { messageIds: ["mid-accepted"], visibleReplySent: true },
+    });
+    expect(mockSendText).toHaveBeenCalledOnce();
+  });
+
+  it.each(["newline", "media caption"] as const)(
+    "preserves formatted %s across two sends",
+    async (mode) => {
+      const newline = mode === "newline";
+      const text = newline
+        ? `**${"a".repeat(1995)}**\n\nsecond paragraph`
+        : "\t".repeat(500) + "a".repeat(1500);
+      const options = {
+        ...imageOptions,
+        ...(newline ? { textChunkMode: "newline" as const } : {}),
+      };
+      mockSendText
+        .mockResolvedValueOnce(sendResult("first"))
+        .mockResolvedValueOnce(sendResult("last"));
+      const result = newline
+        ? await sendMessageZalouser("thread", text, options)
+        : await sendImageZalouser("thread", imageUrl, { ...options, caption: text });
+
+      expect(mockSendText).toHaveBeenCalledTimes(2);
+      expect(mockSendText.mock.calls.map((call) => call[1]).join("")).toBe(
+        parseZalouserTextStyles(text).text,
+      );
+      expectTextCall(0, "thread", newline ? `${"a".repeat(1995)}\n\n` : expect.any(String), {
+        ...options,
+        ...(newline
+          ? { textStyles: [{ start: 0, len: 1995, st: TextStyle.Bold }] }
+          : { caption: undefined, mediaUrl: imageUrl }),
+      });
+      expectTextCall(
+        1,
+        "thread",
+        newline ? "second paragraph" : expect.any(String),
+        newline ? { ...options, textStyles: undefined } : { mediaUrl: undefined },
+      );
+      expect(result).toMatchObject({ messageId: "last" });
+    },
+  );
 });

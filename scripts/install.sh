@@ -1896,7 +1896,7 @@ resolve_openclaw_bin() {
 
 install_openclaw_from_git() {
     local repo_dir="$1"
-    local repo_url="https://github.com/paleoclaw/paleoclaw.git"
+    local repo_url="https://github.com/syxscott/PaleoClaw.git"
 
     if [[ -d "$repo_dir/.git" ]]; then
         ui_info "Installing paleoclaw from git checkout: ${repo_dir}"

@@ -1,7 +1,7 @@
 package ai.openclaw.app.node
 
-import android.content.Context
 import ai.openclaw.app.gateway.GatewaySession
+import android.content.Context
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
@@ -32,7 +32,7 @@ class NotificationsHandlerTest {
             notifications = emptyList(),
           ),
         )
-      val handler = NotificationsHandler.forTesting(appContext = appContext(), stateProvider = provider)
+      val handler = provider.handler(appContext())
 
       val result = handler.handleNotificationsList(null)
 
@@ -57,7 +57,7 @@ class NotificationsHandlerTest {
             notifications = listOf(sampleEntry("n1")),
           ),
         )
-      val handler = NotificationsHandler.forTesting(appContext = appContext(), stateProvider = provider)
+      val handler = provider.handler(appContext())
 
       val result = handler.handleNotificationsList(null)
 
@@ -82,7 +82,7 @@ class NotificationsHandlerTest {
             notifications = listOf(sampleEntry("n2")),
           ),
         )
-      val handler = NotificationsHandler.forTesting(appContext = appContext(), stateProvider = provider)
+      val handler = provider.handler(appContext())
 
       val result = handler.handleNotificationsList(null)
 
@@ -106,7 +106,7 @@ class NotificationsHandlerTest {
             notifications = listOf(sampleEntry("n2")),
           ),
         )
-      val handler = NotificationsHandler.forTesting(appContext = appContext(), stateProvider = provider)
+      val handler = provider.handler(appContext())
 
       val result = handler.handleNotificationsActions("""{"key":"n2","action":"dismiss"}""")
 
@@ -131,9 +131,49 @@ class NotificationsHandlerTest {
             notifications = listOf(sampleEntry("n3")),
           ),
         )
-      val handler = NotificationsHandler.forTesting(appContext = appContext(), stateProvider = provider)
+      val handler = provider.handler(appContext())
 
       val result = handler.handleNotificationsActions("""{"key":"n3","action":"reply"}""")
+
+      assertFalse(result.ok)
+      assertEquals("INVALID_REQUEST", result.error?.code)
+      assertEquals(0, provider.actionRequests)
+    }
+
+  @Test
+  fun notificationsActions_rejectsMissingKey() =
+    runTest {
+      val provider =
+        FakeNotificationsStateProvider(
+          DeviceNotificationSnapshot(
+            enabled = true,
+            connected = true,
+            notifications = listOf(sampleEntry("n3")),
+          ),
+        )
+      val handler = provider.handler(appContext())
+
+      val result = handler.handleNotificationsActions("""{"action":"open"}""")
+
+      assertFalse(result.ok)
+      assertEquals("INVALID_REQUEST", result.error?.code)
+      assertEquals(0, provider.actionRequests)
+    }
+
+  @Test
+  fun notificationsActions_rejectsInvalidAction() =
+    runTest {
+      val provider =
+        FakeNotificationsStateProvider(
+          DeviceNotificationSnapshot(
+            enabled = true,
+            connected = true,
+            notifications = listOf(sampleEntry("n3")),
+          ),
+        )
+      val handler = provider.handler(appContext())
+
+      val result = handler.handleNotificationsActions("""{"key":"n3","action":"archive"}""")
 
       assertFalse(result.ok)
       assertEquals("INVALID_REQUEST", result.error?.code)
@@ -158,12 +198,35 @@ class NotificationsHandlerTest {
               message = "NOTIFICATION_NOT_FOUND: notification key not found",
             )
         }
-      val handler = NotificationsHandler.forTesting(appContext = appContext(), stateProvider = provider)
+      val handler = provider.handler(appContext())
 
       val result = handler.handleNotificationsActions("""{"key":"n4","action":"open"}""")
 
       assertFalse(result.ok)
       assertEquals("NOTIFICATION_NOT_FOUND", result.error?.code)
+      assertEquals(1, provider.actionRequests)
+    }
+
+  @Test
+  fun notificationsActions_fallsBackWhenProviderOmitsErrorDetails() =
+    runTest {
+      val provider =
+        FakeNotificationsStateProvider(
+          DeviceNotificationSnapshot(
+            enabled = true,
+            connected = true,
+            notifications = listOf(sampleEntry("n4")),
+          ),
+        ).also {
+          it.actionResult = NotificationActionResult(ok = false)
+        }
+      val handler = provider.handler(appContext())
+
+      val result = handler.handleNotificationsActions("""{"key":"n4","action":"open"}""")
+
+      assertFalse(result.ok)
+      assertEquals("UNAVAILABLE", result.error?.code)
+      assertEquals("notification action failed", result.error?.message)
       assertEquals(1, provider.actionRequests)
     }
 
@@ -178,7 +241,7 @@ class NotificationsHandlerTest {
             notifications = listOf(sampleEntry("n5")),
           ),
         )
-      val handler = NotificationsHandler.forTesting(appContext = appContext(), stateProvider = provider)
+      val handler = provider.handler(appContext())
 
       val result = handler.handleNotificationsActions("""{"key":"n5","action":"open"}""")
 
@@ -200,6 +263,18 @@ class NotificationsHandlerTest {
 
     assertEquals(512, sanitized?.length)
     assertTrue((sanitized ?: "").all { it == 'x' })
+  }
+
+  @Test
+  fun sanitizeNotificationTextPreservesUtf16BoundariesAtLimit() {
+    val splitPairPrefix = "a".repeat(511)
+    assertEquals(splitPairPrefix, sanitizeNotificationText("$splitPairPrefix🚀 trailing text"))
+
+    val completePairPrefix = "a".repeat(510)
+    assertEquals(
+      "$completePairPrefix🚀",
+      sanitizeNotificationText("$completePairPrefix🚀 trailing text"),
+    )
   }
 
   @Test
@@ -233,7 +308,7 @@ class NotificationsHandlerTest {
 
 private class FakeNotificationsStateProvider(
   private val snapshot: DeviceNotificationSnapshot,
-) : NotificationsStateProvider {
+) {
   var rebindRequests: Int = 0
     private set
   var actionRequests: Int = 0
@@ -241,18 +316,15 @@ private class FakeNotificationsStateProvider(
   var actionResult: NotificationActionResult = NotificationActionResult(ok = true)
   var lastAction: NotificationActionRequest? = null
 
-  override fun readSnapshot(context: Context): DeviceNotificationSnapshot = snapshot
-
-  override fun requestServiceRebind(context: Context) {
-    rebindRequests += 1
-  }
-
-  override fun executeAction(
-    context: Context,
-    request: NotificationActionRequest,
-  ): NotificationActionResult {
-    actionRequests += 1
-    lastAction = request
-    return actionResult
-  }
+  fun handler(context: Context): NotificationsHandler =
+    NotificationsHandler(
+      appContext = context,
+      readSnapshot = { snapshot },
+      requestServiceRebind = { rebindRequests += 1 },
+      executeAction = { request ->
+        actionRequests += 1
+        lastAction = request
+        actionResult
+      },
+    )
 }

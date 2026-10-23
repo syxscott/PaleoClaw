@@ -1,184 +1,269 @@
-import { afterEach, expect, test } from "vitest";
+import { afterEach, beforeEach, expect, test, vi } from "vitest";
+import { withExecRequestTurn } from "../infra/exec-request-context.js";
+import type { RunExit } from "../process/supervisor/types.js";
+import { createDeferredCore } from "../shared/deferred.js";
+import { captureExecRequestCancellation } from "./bash-process-control.js";
+import { getFinishedSession, getSession, waitForExecScope } from "./bash-process-registry.js";
+import { resetProcessRegistryForTests } from "./bash-process-registry.test-support.js";
+import { createRunExit } from "./bash-tools.exec-runtime.test-support.js";
+import { createProcessTool } from "./bash-tools.process.js";
+import { applyCodeModeCatalog } from "./code-mode.js";
 import {
-  getFinishedSession,
-  getSession,
-  resetProcessRegistryForTests,
-} from "./bash-process-registry.js";
-import { createExecTool } from "./bash-tools.exec.js";
-import { killProcessTree } from "./shell-utils.js";
+  createCodeModeHarness,
+  resetCodeModeTestState,
+  resultDetails,
+} from "./code-mode.test-support.js";
+import { createLazyExecTool } from "./lazy-exec-tool.js";
+import { createAgentRunDirectAbortError } from "./run-termination.js";
 
-const BACKGROUND_HOLD_CMD = 'node -e "setTimeout(() => {}, 5000)"';
-const ABORT_SETTLE_MS = process.platform === "win32" ? 200 : 25;
-const ABORT_WAIT_TIMEOUT_MS = process.platform === "win32" ? 1_500 : 240;
-const POLL_INTERVAL_MS = 15;
-const FINISHED_WAIT_TIMEOUT_MS = process.platform === "win32" ? 8_000 : 600;
-const BACKGROUND_TIMEOUT_SEC = process.platform === "win32" ? 0.2 : 0.05;
+const supervisorMockState = vi.hoisted(() => ({
+  onSpawn: undefined as (() => void) | undefined,
+  finish: new Map<string, () => void>(),
+  cancelled: [] as string[],
+}));
+
+vi.mock("../process/supervisor/index.js", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../process/supervisor/index.js")>();
+  let counter = 0;
+  return {
+    ...actual,
+    getProcessSupervisor: () => ({
+      spawn: async (input: { runId?: string; timeoutMs?: number }) => {
+        supervisorMockState.onSpawn?.();
+        const runId = input.runId ?? `mock-run-${++counter}`;
+        const activity = { resultSettled: false, lastOutputAtMs: Date.now() };
+        const completion = createDeferredCore<RunExit>();
+        const settle = (reason: "manual-cancel" | "overall-timeout" | "exit") => {
+          if (activity.resultSettled) {
+            return;
+          }
+          activity.resultSettled = true;
+          completion.resolve(
+            createRunExit({
+              reason,
+              exitCode: reason === "exit" ? 0 : null,
+              durationMs: input.timeoutMs ?? 0,
+              timedOut: reason === "overall-timeout",
+            }),
+          );
+        };
+        supervisorMockState.finish.set(runId, () => settle("exit"));
+        if (input.timeoutMs !== undefined) {
+          setTimeout(() => settle("overall-timeout"), Math.max(50, input.timeoutMs));
+        }
+        return {
+          activity,
+          runId,
+          startedAtMs: Date.now(),
+          stdin: undefined,
+          wait: () => completion.promise,
+          cancel: () => {
+            supervisorMockState.cancelled.push(runId);
+            settle("manual-cancel");
+          },
+        };
+      },
+      cancel: vi.fn(),
+      cancelScope: vi.fn(),
+    }),
+  };
+});
+
+vi.mock("../infra/shell-env.js", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../infra/shell-env.js")>()),
+  getShellPathFromLoginShell: vi.fn(() => null),
+  resolveShellEnvFallbackTimeoutMs: vi.fn(() => 0),
+}));
+
+vi.mock("./bash-tools.exec-host-gateway.js", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("./bash-tools.exec-host-gateway.js")>()),
+  processGatewayAllowlist: vi.fn(async () => ({})),
+}));
+
+vi.mock("./bash-tools.exec-host-node.js", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("./bash-tools.exec-host-node.js")>()),
+  executeNodeHostCommand: vi.fn(async () => {
+    throw new Error("node host not expected in background abort tests");
+  }),
+}));
+
+const BACKGROUND_HOLD_CMD =
+  process.platform === "win32" ? 'node -e "setTimeout(() => {}, 1000)"' : "exec sleep 1";
 const TEST_EXEC_DEFAULTS = {
-  security: "full" as const,
-  ask: "off" as const,
-};
+  host: "gateway",
+  security: "full",
+  ask: "off",
+  allowBackground: true,
+  notifyOnExit: false,
+} as const;
+const command = { command: BACKGROUND_HOLD_CMD, timeoutSeconds: 60 };
+function identity(runId: string, sessionKey: string, sessionId: string) {
+  return { runId, sessionKey, sessionId, agentId: "main" };
+}
+const makeTool = (owner: Partial<ReturnType<typeof identity>>, scopeKey: string) =>
+  createLazyExecTool({ ...TEST_EXEC_DEFAULTS, ...owner, scopeKey });
 
-const createTestExecTool = (
-  defaults?: Parameters<typeof createExecTool>[0],
-): ReturnType<typeof createExecTool> => createExecTool({ ...TEST_EXEC_DEFAULTS, ...defaults });
+async function finishProcesses() {
+  for (const finish of supervisorMockState.finish.values()) {
+    finish();
+  }
+  await vi.advanceTimersByTimeAsync(60_000);
+}
 
-afterEach(() => {
+function runningSession(details: ReturnType<typeof resultDetails>) {
+  if (details.status !== "running" || typeof details.sessionId !== "string") {
+    throw new Error("Expected a supervised command");
+  }
+  return details.sessionId;
+}
+
+async function yieldExec(
+  tool: ReturnType<typeof createLazyExecTool>,
+  runId: string,
+  args: Parameters<typeof tool.execute>[1],
+  signal: AbortSignal,
+  codeMode = false,
+  scopeKey?: string,
+) {
+  const spawned = createDeferredCore();
+  supervisorMockState.onSpawn = () => spawned.resolve();
+  const harness = codeMode ? createCodeModeHarness() : undefined;
+  if (harness) {
+    applyCodeModeCatalog({
+      ...harness.ctx,
+      tools: [...harness.tools, tool, createProcessTool({ scopeKey })],
+    });
+  }
+  const pending = harness
+    ? harness.tools[0]!.execute(
+        runId,
+        { code: `return await exec(${JSON.stringify(args)});` },
+        signal,
+      )
+    : tool.execute(runId, args, signal);
+  await Promise.race([
+    spawned.promise,
+    pending.then((result) => {
+      throw new Error(`Exec did not start: ${JSON.stringify(resultDetails(result))}`);
+    }),
+  ]);
+  await vi.advanceTimersByTimeAsync(10);
+  const details = resultDetails(await pending);
+  if (harness) {
+    expect(details.status).toBe("completed");
+  }
+  return runningSession(harness ? resultDetails({ details: details.value }) : details);
+}
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  supervisorMockState.onSpawn = undefined;
+  supervisorMockState.finish.clear();
+  supervisorMockState.cancelled.length = 0;
+});
+
+afterEach(async () => {
   resetProcessRegistryForTests();
+  vi.useRealTimers();
+  await resetCodeModeTestState();
 });
 
-async function waitForFinishedSession(sessionId: string) {
-  let finished = getFinishedSession(sessionId);
-  await expect
-    .poll(
-      () => {
-        finished = getFinishedSession(sessionId);
-        return Boolean(finished);
-      },
-      {
-        timeout: FINISHED_WAIT_TIMEOUT_MS,
-        interval: POLL_INTERVAL_MS,
-      },
-    )
-    .toBe(true);
-  return finished;
-}
+test.each([false, true])(
+  "invocation disposal preserves yielded exec until request Stop (owned=%s)",
+  async (owned) => {
+    vi.useFakeTimers();
+    const returned = createDeferredCore<string>();
+    const finishTurn = createDeferredCore();
+    const owner = identity("yielded-stop", "agent:main:yielded-stop", "yielded-session");
+    const request = new AbortController();
+    const invocation = new AbortController();
+    const execute = async () => {
+      const tool = makeTool(owned ? owner : {}, owner.sessionKey);
+      const args = { ...command, yieldMs: 10 };
+      returned.resolve(await yieldExec(tool, "ordinary-command", args, invocation.signal));
+      await finishTurn.promise;
+    };
+    const running = owned
+      ? withExecRequestTurn({ identity: owner, abortSignal: request.signal }, execute)
+      : execute();
+    try {
+      const sessionId = await returned.promise;
+      invocation.abort();
+      expect(supervisorMockState.cancelled).toEqual([]);
+      if (owned) {
+        request.abort(createAgentRunDirectAbortError());
+      } else {
+        supervisorMockState.finish.get(sessionId)?.();
+      }
+      finishTurn.resolve();
+      await running;
+      await waitForExecScope(owner.sessionKey);
+      expect(supervisorMockState.cancelled).toEqual(owned ? [sessionId] : []);
+      expect(getFinishedSession(sessionId)).toMatchObject({
+        exited: true,
+        exitReason: owned ? "manual-cancel" : "exit",
+      });
+    } finally {
+      finishTurn.resolve();
+      await finishProcesses();
+      await running;
+      await waitForExecScope(owner.sessionKey);
+    }
+  },
+);
 
-function cleanupRunningSession(sessionId: string) {
-  const running = getSession(sessionId);
-  const pid = running?.pid;
-  if (pid) {
-    killProcessTree(pid);
-  }
-  return running;
-}
-
-async function expectBackgroundSessionSurvivesAbort(params: {
-  tool: ReturnType<typeof createExecTool>;
-  executeParams: Record<string, unknown>;
-}) {
-  const abortController = new AbortController();
-  const result = await params.tool.execute(
-    "toolcall",
-    params.executeParams,
-    abortController.signal,
-  );
-  expect(result.details.status).toBe("running");
-  const sessionId = (result.details as { sessionId: string }).sessionId;
-
-  abortController.abort();
-  const startedAt = Date.now();
-  await expect
-    .poll(
-      () => {
-        const running = getSession(sessionId);
-        const finished = getFinishedSession(sessionId);
-        return Date.now() - startedAt >= ABORT_SETTLE_MS && !finished && running?.exited === false;
-      },
-      { timeout: ABORT_WAIT_TIMEOUT_MS, interval: POLL_INTERVAL_MS },
-    )
-    .toBe(true);
-
-  const running = getSession(sessionId);
-  const finished = getFinishedSession(sessionId);
-  try {
-    expect(finished).toBeUndefined();
-    expect(running?.exited).toBe(false);
-  } finally {
-    cleanupRunningSession(sessionId);
-  }
-}
-
-async function expectBackgroundSessionTimesOut(params: {
-  tool: ReturnType<typeof createExecTool>;
-  executeParams: Record<string, unknown>;
-  signal?: AbortSignal;
-  abortAfterStart?: boolean;
-}) {
-  const abortController = new AbortController();
-  const signal = params.signal ?? abortController.signal;
-  const result = await params.tool.execute("toolcall", params.executeParams, signal);
-  expect(result.details.status).toBe("running");
-  const sessionId = (result.details as { sessionId: string }).sessionId;
-
-  if (params.abortAfterStart) {
-    abortController.abort();
-  }
-
-  const finished = await waitForFinishedSession(sessionId);
-  try {
-    expect(finished).toBeTruthy();
-    expect(finished?.status).toBe("failed");
-  } finally {
-    cleanupRunningSession(sessionId);
-  }
-}
-
-test("background exec is not killed when tool signal aborts", async () => {
-  const tool = createTestExecTool({ allowBackground: true, backgroundMs: 0 });
-  await expectBackgroundSessionSurvivesAbort({
-    tool,
-    executeParams: { command: BACKGROUND_HOLD_CMD, background: true },
-  });
-});
-
-test("pty background exec is not killed when tool signal aborts", async () => {
-  const tool = createTestExecTool({ allowBackground: true, backgroundMs: 0 });
-  await expectBackgroundSessionSurvivesAbort({
-    tool,
-    executeParams: { command: BACKGROUND_HOLD_CMD, background: true, pty: true },
-  });
-});
-
-test("background exec still times out after tool signal abort", async () => {
-  const tool = createTestExecTool({ allowBackground: true, backgroundMs: 0 });
-  await expectBackgroundSessionTimesOut({
-    tool,
-    executeParams: {
-      command: BACKGROUND_HOLD_CMD,
-      background: true,
-      timeout: BACKGROUND_TIMEOUT_SEC,
-    },
-    abortAfterStart: true,
-  });
-});
-
-test("background exec without explicit timeout ignores default timeout", async () => {
-  const tool = createTestExecTool({
-    allowBackground: true,
-    backgroundMs: 0,
-    timeoutSec: BACKGROUND_TIMEOUT_SEC,
-  });
-  const result = await tool.execute("toolcall", { command: BACKGROUND_HOLD_CMD, background: true });
-  expect(result.details.status).toBe("running");
-  const sessionId = (result.details as { sessionId: string }).sessionId;
-  const waitMs = Math.max(ABORT_SETTLE_MS + 80, BACKGROUND_TIMEOUT_SEC * 1000 + 80);
-
-  const startedAt = Date.now();
-  await expect
-    .poll(
-      () => {
-        const running = getSession(sessionId);
-        const finished = getFinishedSession(sessionId);
-        return Date.now() - startedAt >= waitMs && !finished && running?.exited === false;
-      },
-      {
-        timeout: waitMs + ABORT_WAIT_TIMEOUT_MS,
-        interval: POLL_INTERVAL_MS,
-      },
-    )
-    .toBe(true);
-
-  cleanupRunningSession(sessionId);
-});
-
-test("yielded background exec still times out", async () => {
-  const tool = createTestExecTool({ allowBackground: true, backgroundMs: 10 });
-  await expectBackgroundSessionTimesOut({
-    tool,
-    executeParams: {
-      command: BACKGROUND_HOLD_CMD,
-      yieldMs: 5,
-      timeout: BACKGROUND_TIMEOUT_SEC,
-    },
-  });
-});
+test.each([false, true])(
+  "request Stop preserves tool disposal, services and new requests (Code Mode=%s)",
+  async (codeMode) => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "Date", "performance"] });
+    const sessionKey = "agent:main:request-stop";
+    const source = new AbortController();
+    const toolLifetime = new AbortController();
+    async function launch(runId: string, independent = false) {
+      const owner = identity(runId, sessionKey, "request-stop-session");
+      return withExecRequestTurn(
+        {
+          identity: owner,
+          abortSignal: source.signal,
+        },
+        () =>
+          yieldExec(
+            makeTool(owner, sessionKey),
+            runId,
+            { ...command, ...(independent ? { background: true } : { yieldMs: 10 }) },
+            toolLifetime.signal,
+            codeMode,
+            sessionKey,
+          ),
+      );
+    }
+    const ordinary = await launch("original");
+    const service = await launch("service", true);
+    const cancellation = captureExecRequestCancellation(
+      identity("original", sessionKey, "request-stop-session"),
+    );
+    const next = await launch("new-human-request");
+    // All foreground calls and the original turn have finished successfully.
+    // Disposing their tool generation is not an explicit request cancellation.
+    toolLifetime.abort();
+    expect(supervisorMockState.cancelled).toEqual([]);
+    try {
+      expect(cancellation.cancel()).toBe(true);
+      await cancellation.settle();
+      expect(supervisorMockState.cancelled).toEqual([ordinary]);
+      expect(getFinishedSession(ordinary)).toMatchObject({
+        exited: true,
+        exitReason: "manual-cancel",
+      });
+      expect(getSession(service)?.exited).toBe(false);
+      expect(getSession(next)?.exited).toBe(false);
+      supervisorMockState.finish.get(service)?.();
+      supervisorMockState.finish.get(next)?.();
+      await waitForExecScope(sessionKey);
+      expect(getFinishedSession(next)).toMatchObject({ exitCode: 0, exitReason: "exit" });
+    } finally {
+      await finishProcesses();
+      await waitForExecScope(sessionKey);
+    }
+  },
+);

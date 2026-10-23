@@ -1,32 +1,46 @@
-import type { OpenClawConfig } from "../../config/config.js";
-import { resolveAccountEntry } from "../../routing/account-lookup.js";
-import { normalizeAccountId } from "../../routing/session-key.js";
-import type { ChannelId } from "./types.js";
+import { normalizeLowercaseStringOrEmpty } from "@paleoclaw/normalization-core/string-coerce";
+import type { OpenClawConfig } from "../../config/types.openclaw.js";
+import {
+  authorizeConfigWriteShared,
+  canBypassConfigWritePolicyShared,
+  formatConfigWriteDeniedMessageShared,
+  resolveConfigWriteTargetFromPathShared,
+  resolveExplicitConfigWriteTargetShared,
+  type ConfigWriteAuthorizationResultLike,
+  type ConfigWriteScopeLike,
+  type ConfigWriteTargetLike,
+} from "./config-write-policy-shared.js";
 
-type ChannelConfigWithAccounts = {
-  configWrites?: boolean;
-  accounts?: Record<string, { configWrites?: boolean }>;
-};
+export type ConfigWriteTarget = ConfigWriteTargetLike;
 
-function resolveAccountConfig(accounts: ChannelConfigWithAccounts["accounts"], accountId: string) {
-  return resolveAccountEntry(accounts, accountId);
+export const authorizeConfigWrite: (params: {
+  cfg: OpenClawConfig;
+  origin?: ConfigWriteScopeLike;
+  target?: ConfigWriteTarget;
+  allowBypass?: boolean;
+}) => ConfigWriteAuthorizationResultLike = authorizeConfigWriteShared;
+
+export const resolveExplicitConfigWriteTarget: (scope: ConfigWriteScopeLike) => ConfigWriteTarget =
+  resolveExplicitConfigWriteTargetShared;
+
+export const formatConfigWriteDeniedMessage: (params: {
+  result: Exclude<ConfigWriteAuthorizationResultLike, { allowed: true }>;
+  fallbackChannelId?: string | null;
+}) => string = formatConfigWriteDeniedMessageShared;
+
+export function resolveConfigWriteTargetFromPath(path: string[]): ConfigWriteTarget {
+  return resolveConfigWriteTargetFromPathShared({
+    path,
+    normalizeChannelId: normalizeLowercaseStringOrEmpty,
+  });
 }
 
-export function resolveChannelConfigWrites(params: {
-  cfg: OpenClawConfig;
-  channelId?: ChannelId | null;
-  accountId?: string | null;
+export function canBypassConfigWritePolicy(params: {
+  channel?: string | null;
+  gatewayClientScopes?: string[] | null;
 }): boolean {
-  if (!params.channelId) {
-    return true;
-  }
-  const channels = params.cfg.channels as Record<string, ChannelConfigWithAccounts> | undefined;
-  const channelConfig = channels?.[params.channelId];
-  if (!channelConfig) {
-    return true;
-  }
-  const accountId = normalizeAccountId(params.accountId);
-  const accountConfig = resolveAccountConfig(channelConfig.accounts, accountId);
-  const value = accountConfig?.configWrites ?? channelConfig.configWrites;
-  return value !== false;
+  return canBypassConfigWritePolicyShared({
+    ...params,
+    isInternalMessageChannel: (channel) => normalizeLowercaseStringOrEmpty(channel) === "webchat",
+  });
 }

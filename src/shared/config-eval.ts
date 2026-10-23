@@ -1,22 +1,211 @@
 import fs from "node:fs";
 import path from "node:path";
+import { isBlockedObjectKey } from "../infra/prototype-keys.js";
+import { getOrCreatePromise } from "./lazy-promise.js";
+import { isOsRequirementSatisfied, type RequirementsMetadata } from "./requirements.js";
 
-export function isTruthy(value: unknown): boolean {
-  if (value === undefined || value === null) {
-    return false;
+/** Checks a config path with fallback defaults only when the path is unresolved. */
+export function isConfigPathTruthyWithDefaults(
+  config: unknown,
+  pathStr: string,
+  defaults: Record<string, boolean>,
+): boolean {
+  const parts = pathStr.split(".").filter(Boolean);
+  let value: unknown = config;
+  for (const part of parts) {
+    if (typeof value !== "object" || value === null || isBlockedObjectKey(part)) {
+      value = undefined;
+      break;
+    }
+    value = (value as Record<string, unknown>)[part];
   }
-  if (typeof value === "boolean") {
-    return value;
+  if (
+    value === undefined &&
+    !parts.some((part) => isBlockedObjectKey(part)) &&
+    Object.hasOwn(defaults, pathStr)
+  ) {
+    return defaults[pathStr] ?? false;
   }
-  if (typeof value === "number") {
-    return value !== 0;
-  }
-  if (typeof value === "string") {
-    return value.trim().length > 0;
-  }
-  return true;
+  return typeof value === "string"
+    ? value.trim().length > 0
+    : value !== undefined && value !== null && value !== false && value !== 0;
 }
 
+/** Enforces OS compatibility before allowing `always` to bypass runtime requirements. */
+export function evaluateRuntimeEligibility(
+  params: RequirementsMetadata & {
+    platform?: string;
+    remotePlatforms?: string[];
+    always?: boolean;
+    hasBin: (bin: string) => boolean;
+    hasAnyRemoteBin?: (bins: string[]) => boolean;
+    hasRemoteBin?: (bin: string) => boolean;
+    hasEnv: (envName: string) => boolean;
+    isConfigPathTruthy: (pathStr: string) => boolean;
+  },
+): boolean {
+  if (
+    !isOsRequirementSatisfied(params.os ?? [], [
+      params.platform ?? process.platform,
+      ...(params.remotePlatforms ?? []),
+    ])
+  ) {
+    return false;
+  }
+  const requires = params.requires;
+  if (params.always === true || !requires) {
+    return true;
+  }
+  for (const envName of requires.env ?? []) {
+    if (!params.hasEnv(envName)) {
+      return false;
+    }
+  }
+  for (const configPath of requires.config ?? []) {
+    if (!params.isConfigPathTruthy(configPath)) {
+      return false;
+    }
+  }
+  for (const bin of requires.bins ?? []) {
+    if (!params.hasBin(bin) && !params.hasRemoteBin?.(bin)) {
+      return false;
+    }
+  }
+  const requiredAnyBins = requires.anyBins ?? [];
+  return (
+    requiredAnyBins.length === 0 ||
+    requiredAnyBins.some((bin) => params.hasBin(bin)) ||
+    Boolean(params.hasAnyRemoteBin?.(requiredAnyBins))
+  );
+}
+
+function windowsPathExtensions(raw: string | undefined): string[] {
+  const list =
+    raw !== undefined ? raw.split(";").map((v) => v.trim()) : [".EXE", ".CMD", ".BAT", ".COM"];
+  return ["", ...list.filter(Boolean)];
+}
+
+// Share pending I/O only so completed misses are checked again on the next preparation.
+const pendingBinaryAccess = new Map<string, Promise<boolean>>();
+
+// Installs can create binaries under unchanged PATH/PATHEXT, so cache only successful probes.
+let binaryCache: { path: string; pathExt: string; hits: Set<string> } | undefined;
+
+function resolveBinaryCache() {
+  const isWindows = process.platform === "win32";
+  const pathEnv = process.env.PATH ?? "";
+  const pathExt = isWindows ? (process.env.PATHEXT ?? "") : "";
+  if (binaryCache?.path !== pathEnv || binaryCache.pathExt !== pathExt) {
+    binaryCache = { path: pathEnv, pathExt, hits: new Set() };
+  }
+  return binaryCache;
+}
+
+function resolveBinarySearch(cache = resolveBinaryCache()) {
+  const isWindows = process.platform === "win32";
+  return {
+    cache,
+    parts: cache.path.split(path.delimiter).filter(Boolean),
+    extensions: isWindows ? windowsPathExtensions(process.env.PATHEXT) : [""],
+  };
+}
+
+function* binaryCandidates(search: ReturnType<typeof resolveBinarySearch>, bin: string) {
+  for (const part of search.parts) {
+    for (const ext of search.extensions) {
+      yield path.join(part, bin + ext);
+    }
+  }
+}
+
+export function hasBinary(bin: string): boolean {
+  const cache = resolveBinaryCache();
+  if (cache.hits.has(bin)) {
+    return true;
+  }
+  const search = resolveBinarySearch(cache);
+  for (const candidate of binaryCandidates(search, bin)) {
+    try {
+      // Follow executable symlinks, but do not treat searchable directories as binaries.
+      if (!fs.statSync(candidate, { throwIfNoEntry: false })?.isFile()) {
+        continue;
+      }
+      fs.accessSync(candidate, fs.constants.X_OK);
+      search.cache.hits.add(bin);
+      return true;
+    } catch {
+      // keep scanning
+    }
+  }
+  return false;
+}
+
+/** Binary facts belong to one preparation; probe installations and removals again next time. */
+export async function prepareBinaryAvailability(
+  bins: Iterable<string>,
+  assertCurrent?: () => void,
+): Promise<{ hasBinary: (bin: string) => boolean }> {
+  const search = resolveBinarySearch();
+  const cwd = process.cwd();
+  const pending = new Set(bins).values();
+  const available = new Set<string>();
+  let failure: { error: unknown } | undefined;
+  const probe = async (bin: string) => {
+    for (const candidate of binaryCandidates(search, bin)) {
+      if (failure) {
+        return;
+      }
+      assertCurrent?.();
+      try {
+        // access uses the filesystem's case, permission, and symlink semantics.
+        const resolvedCandidate = path.resolve(cwd, candidate);
+        const isFile = await getOrCreatePromise(
+          pendingBinaryAccess,
+          resolvedCandidate,
+          async () => {
+            await fs.promises.access(resolvedCandidate, fs.constants.X_OK);
+            return (await fs.promises.stat(resolvedCandidate)).isFile();
+          },
+          { evictOnSettled: true },
+        );
+        if (!isFile) {
+          continue;
+        }
+      } catch {
+        continue;
+      }
+      assertCurrent?.();
+      available.add(bin);
+      return;
+    }
+  };
+  const worker = async () => {
+    try {
+      for (;;) {
+        if (failure) {
+          return;
+        }
+        assertCurrent?.();
+        const next = pending.next();
+        if (next.done) {
+          return;
+        }
+        await probe(next.value);
+      }
+    } catch (error) {
+      failure ??= { error };
+    }
+  };
+  // Leave filesystem work bounded even when many skills require different missing tools.
+  await Promise.all(Array.from({ length: 4 }, worker));
+  if (failure) {
+    throw failure.error;
+  }
+  assertCurrent?.();
+  return { hasBinary: (bin) => available.has(bin) };
+}
+
+// --- PaleoClaw 兼容层：resolveConfigPath（pc 3 月 API，上游 10 月已改名）---
 export function resolveConfigPath(config: unknown, pathStr: string): unknown {
   const parts = pathStr.split(".").filter(Boolean);
   let current: unknown = config;
@@ -29,152 +218,7 @@ export function resolveConfigPath(config: unknown, pathStr: string): unknown {
   return current;
 }
 
-export function isConfigPathTruthyWithDefaults(
-  config: unknown,
-  pathStr: string,
-  defaults: Record<string, boolean>,
-): boolean {
-  const value = resolveConfigPath(config, pathStr);
-  if (value === undefined && pathStr in defaults) {
-    return defaults[pathStr] ?? false;
-  }
-  return isTruthy(value);
-}
-
-export type RuntimeRequires = {
-  bins?: string[];
-  anyBins?: string[];
-  env?: string[];
-  config?: string[];
-};
-
-type RuntimeRequirementEvalParams = {
-  requires?: RuntimeRequires;
-  hasBin: (bin: string) => boolean;
-  hasAnyRemoteBin?: (bins: string[]) => boolean;
-  hasRemoteBin?: (bin: string) => boolean;
-  hasEnv: (envName: string) => boolean;
-  isConfigPathTruthy: (pathStr: string) => boolean;
-};
-
-export function evaluateRuntimeRequires(params: RuntimeRequirementEvalParams): boolean {
-  const requires = params.requires;
-  if (!requires) {
-    return true;
-  }
-
-  const requiredBins = requires.bins ?? [];
-  if (requiredBins.length > 0) {
-    for (const bin of requiredBins) {
-      if (params.hasBin(bin)) {
-        continue;
-      }
-      if (params.hasRemoteBin?.(bin)) {
-        continue;
-      }
-      return false;
-    }
-  }
-
-  const requiredAnyBins = requires.anyBins ?? [];
-  if (requiredAnyBins.length > 0) {
-    const anyFound = requiredAnyBins.some((bin) => params.hasBin(bin));
-    if (!anyFound && !params.hasAnyRemoteBin?.(requiredAnyBins)) {
-      return false;
-    }
-  }
-
-  const requiredEnv = requires.env ?? [];
-  if (requiredEnv.length > 0) {
-    for (const envName of requiredEnv) {
-      if (!params.hasEnv(envName)) {
-        return false;
-      }
-    }
-  }
-
-  const requiredConfig = requires.config ?? [];
-  if (requiredConfig.length > 0) {
-    for (const configPath of requiredConfig) {
-      if (!params.isConfigPathTruthy(configPath)) {
-        return false;
-      }
-    }
-  }
-
-  return true;
-}
-
-export function evaluateRuntimeEligibility(
-  params: {
-    os?: string[];
-    remotePlatforms?: string[];
-    always?: boolean;
-  } & RuntimeRequirementEvalParams,
-): boolean {
-  const osList = params.os ?? [];
-  const remotePlatforms = params.remotePlatforms ?? [];
-  if (
-    osList.length > 0 &&
-    !osList.includes(resolveRuntimePlatform()) &&
-    !remotePlatforms.some((platform) => osList.includes(platform))
-  ) {
-    return false;
-  }
-  if (params.always === true) {
-    return true;
-  }
-  return evaluateRuntimeRequires({
-    requires: params.requires,
-    hasBin: params.hasBin,
-    hasRemoteBin: params.hasRemoteBin,
-    hasAnyRemoteBin: params.hasAnyRemoteBin,
-    hasEnv: params.hasEnv,
-    isConfigPathTruthy: params.isConfigPathTruthy,
-  });
-}
-
+// --- PaleoClaw 兼容层：resolveRuntimePlatform（pc 3 月 API，上游 10 月已改名）---
 export function resolveRuntimePlatform(): string {
   return process.platform;
-}
-
-function windowsPathExtensions(): string[] {
-  const raw = process.env.PATHEXT;
-  const list =
-    raw !== undefined ? raw.split(";").map((v) => v.trim()) : [".EXE", ".CMD", ".BAT", ".COM"];
-  return ["", ...list.filter(Boolean)];
-}
-
-let cachedHasBinaryPath: string | undefined;
-let cachedHasBinaryPathExt: string | undefined;
-const hasBinaryCache = new Map<string, boolean>();
-
-export function hasBinary(bin: string): boolean {
-  const pathEnv = process.env.PATH ?? "";
-  const pathExt = process.platform === "win32" ? (process.env.PATHEXT ?? "") : "";
-  if (cachedHasBinaryPath !== pathEnv || cachedHasBinaryPathExt !== pathExt) {
-    cachedHasBinaryPath = pathEnv;
-    cachedHasBinaryPathExt = pathExt;
-    hasBinaryCache.clear();
-  }
-  if (hasBinaryCache.has(bin)) {
-    return hasBinaryCache.get(bin)!;
-  }
-
-  const parts = pathEnv.split(path.delimiter).filter(Boolean);
-  const extensions = process.platform === "win32" ? windowsPathExtensions() : [""];
-  for (const part of parts) {
-    for (const ext of extensions) {
-      const candidate = path.join(part, bin + ext);
-      try {
-        fs.accessSync(candidate, fs.constants.X_OK);
-        hasBinaryCache.set(bin, true);
-        return true;
-      } catch {
-        // keep scanning
-      }
-    }
-  }
-  hasBinaryCache.set(bin, false);
-  return false;
 }

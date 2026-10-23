@@ -1,5 +1,10 @@
 package ai.openclaw.app.node
 
+import ai.openclaw.app.NotificationBurstLimiter
+import ai.openclaw.app.SecurePrefs
+import ai.openclaw.app.allowsPackage
+import ai.openclaw.app.isWithinQuietHours
+import ai.openclaw.app.takeUtf16Safe
 import android.app.Notification
 import android.app.NotificationManager
 import android.app.RemoteInput
@@ -8,6 +13,7 @@ import android.content.Context
 import android.content.Intent
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
+import androidx.core.content.edit
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
@@ -16,9 +22,25 @@ import kotlinx.serialization.json.put
 private const val MAX_NOTIFICATION_TEXT_CHARS = 512
 private const val NOTIFICATIONS_CHANGED_EVENT = "notifications.changed"
 
+/**
+ * Trims notification text and caps payload size before it enters gateway-visible state.
+ */
 internal fun sanitizeNotificationText(value: CharSequence?): String? {
   val normalized = value?.toString()?.trim().orEmpty()
-  return normalized.take(MAX_NOTIFICATION_TEXT_CHARS).ifEmpty { null }
+  // Notification extras can include long previews; cap before sending over node events.
+  return normalized.takeUtf16Safe(MAX_NOTIFICATION_TEXT_CHARS).ifEmpty { null }
+}
+
+/**
+ * Keeps app-owned notifications outside the gateway list/action trust boundary.
+ */
+internal fun isGatewayVisibleNotification(
+  appPackageName: String,
+  notificationPackageName: String?,
+): Boolean {
+  val appPackage = appPackageName.trim()
+  val notificationPackage = notificationPackageName?.trim().orEmpty()
+  return appPackage.isNotEmpty() && notificationPackage.isNotEmpty() && notificationPackage != appPackage
 }
 
 data class DeviceNotificationEntry(
@@ -34,8 +56,8 @@ data class DeviceNotificationEntry(
   val isClearable: Boolean,
 )
 
-internal fun DeviceNotificationEntry.toJsonObject(): JsonObject {
-  return buildJsonObject {
+internal fun DeviceNotificationEntry.toJsonObject(): JsonObject =
+  buildJsonObject {
     put("key", JsonPrimitive(key))
     put("packageName", JsonPrimitive(packageName))
     put("postTimeMs", JsonPrimitive(postTimeMs))
@@ -47,7 +69,6 @@ internal fun DeviceNotificationEntry.toJsonObject(): JsonObject {
     category?.let { put("category", JsonPrimitive(it)) }
     channelId?.let { put("channelId", JsonPrimitive(it)) }
   }
-}
 
 data class DeviceNotificationSnapshot(
   val enabled: Boolean,
@@ -61,6 +82,9 @@ enum class NotificationActionKind {
   Reply,
 }
 
+/**
+ * Gateway action request; [key] must match Android's StatusBarNotification key.
+ */
 data class NotificationActionRequest(
   val key: String,
   val kind: NotificationActionKind,
@@ -73,10 +97,16 @@ data class NotificationActionResult(
   val message: String? = null,
 )
 
-internal fun actionRequiresClearableNotification(kind: NotificationActionKind): Boolean {
-  return kind == NotificationActionKind.Dismiss
-}
+private fun notificationActionError(
+  code: String,
+  message: String,
+): NotificationActionResult = NotificationActionResult(ok = false, code = code, message = "$code: $message")
 
+internal fun actionRequiresClearableNotification(kind: NotificationActionKind): Boolean = kind == NotificationActionKind.Dismiss
+
+/**
+ * Process-local cache of active notifications mirrored from Android listener callbacks.
+ */
 private object DeviceNotificationStore {
   private val lock = Any()
   private var connected = false
@@ -85,9 +115,7 @@ private object DeviceNotificationStore {
   fun replace(entries: List<DeviceNotificationEntry>) {
     synchronized(lock) {
       byKey.clear()
-      for (entry in entries) {
-        byKey[entry.key] = entry
-      }
+      entries.associateByTo(byKey, DeviceNotificationEntry::key)
     }
   }
 
@@ -107,25 +135,32 @@ private object DeviceNotificationStore {
     synchronized(lock) {
       connected = value
       if (!value) {
+        // Android invalidates activeNotifications when the listener disconnects.
         byKey.clear()
       }
     }
   }
 
-  fun snapshot(enabled: Boolean): DeviceNotificationSnapshot {
-    val (isConnected, entries) =
-      synchronized(lock) {
-        connected to byKey.values.sortedByDescending { it.postTimeMs }
-      }
-    return DeviceNotificationSnapshot(
-      enabled = enabled,
-      connected = isConnected,
-      notifications = entries,
-    )
-  }
+  fun snapshot(
+    enabled: Boolean,
+    appPackageName: String,
+  ): DeviceNotificationSnapshot =
+    synchronized(lock) {
+      DeviceNotificationSnapshot(
+        enabled = enabled,
+        connected = connected,
+        notifications =
+          byKey.values
+            .filter { isGatewayVisibleNotification(appPackageName, it.packageName) }
+            .sortedByDescending { it.postTimeMs },
+      )
+    }
 }
 
 class DeviceNotificationListenerService : NotificationListenerService() {
+  private val securePrefs by lazy { SecurePrefs(applicationContext) }
+  private val forwardingLimiter = NotificationBurstLimiter()
+
   override fun onListenerConnected() {
     super.onListenerConnected()
     activeService = this
@@ -150,26 +185,13 @@ class DeviceNotificationListenerService : NotificationListenerService() {
 
   override fun onNotificationPosted(sbn: StatusBarNotification?) {
     super.onNotificationPosted(sbn)
-    val entry = sbn?.toEntry() ?: return
+    val posted = sbn ?: return
+    if (!isGatewayVisibleNotification(packageName, posted.packageName)) return
+    val entry = posted.toEntry()
     DeviceNotificationStore.upsert(entry)
-    if (entry.packageName == packageName) {
-      return
-    }
-    emitNotificationsChanged(
-      buildJsonObject {
-        put("change", JsonPrimitive("posted"))
-        put("key", JsonPrimitive(entry.key))
-        put("packageName", JsonPrimitive(entry.packageName))
-        put("postTimeMs", JsonPrimitive(entry.postTimeMs))
-        put("isOngoing", JsonPrimitive(entry.isOngoing))
-        put("isClearable", JsonPrimitive(entry.isClearable))
-        entry.title?.let { put("title", JsonPrimitive(it)) }
-        entry.text?.let { put("text", JsonPrimitive(it)) }
-        entry.subText?.let { put("subText", JsonPrimitive(it)) }
-        entry.category?.let { put("category", JsonPrimitive(it)) }
-        entry.channelId?.let { put("channelId", JsonPrimitive(it)) }
-      }.toString(),
-    )
+    rememberRecentPackage(entry.packageName)
+    val payload = notificationChangedPayload(entry) ?: return
+    emitNotificationsChanged(payload)
   }
 
   override fun onNotificationRemoved(sbn: StatusBarNotification?) {
@@ -180,26 +202,78 @@ class DeviceNotificationListenerService : NotificationListenerService() {
       return
     }
     DeviceNotificationStore.remove(key)
+    rememberRecentPackage(removed.packageName)
     if (removed.packageName == packageName) {
       return
     }
-    emitNotificationsChanged(
-      buildJsonObject {
-        put("change", JsonPrimitive("removed"))
-        put("key", JsonPrimitive(key))
-        val packageName = removed.packageName.trim()
-        if (packageName.isNotEmpty()) {
-          put("packageName", JsonPrimitive(packageName))
-        }
-      }.toString(),
-    )
+    val packageName = removed.packageName.trim()
+    val payload =
+      notificationChangedPayload(
+        entry =
+          DeviceNotificationEntry(
+            key = key,
+            packageName = packageName,
+            title = null,
+            text = null,
+            subText = null,
+            category = null,
+            channelId = null,
+            postTimeMs = removed.postTime,
+            isOngoing = removed.isOngoing,
+            isClearable = removed.isClearable,
+          ),
+        change = "removed",
+      ) ?: return
+    emitNotificationsChanged(payload)
+  }
+
+  private fun notificationChangedPayload(
+    entry: DeviceNotificationEntry,
+    change: String = "posted",
+  ): String? {
+    val normalizedPackage = entry.packageName.trim()
+    if (normalizedPackage.isEmpty()) {
+      return null
+    }
+    val policy = securePrefs.getNotificationForwardingPolicy(appPackageName = this.packageName)
+    if (!policy.enabled) {
+      return null
+    }
+    if (!policy.allowsPackage(normalizedPackage)) {
+      return null
+    }
+    val nowEpochMs = System.currentTimeMillis()
+    if (policy.isWithinQuietHours(nowEpochMs = nowEpochMs)) {
+      return null
+    }
+    // Apply burst limits after package/quiet-hour filters so blocked notifications do not consume quota.
+    if (!forwardingLimiter.allow(nowEpochMs, policy.maxEventsPerMinute)) {
+      return null
+    }
+    return buildJsonObject {
+      put("change", JsonPrimitive(change))
+      put("key", JsonPrimitive(entry.key))
+      put("packageName", JsonPrimitive(normalizedPackage))
+      put("postTimeMs", JsonPrimitive(entry.postTimeMs))
+      put("isOngoing", JsonPrimitive(entry.isOngoing))
+      put("isClearable", JsonPrimitive(entry.isClearable))
+      policy.sessionKey?.let { put("sessionKey", JsonPrimitive(it)) }
+      entry.title?.let { put("title", JsonPrimitive(it)) }
+      entry.text?.let { put("text", JsonPrimitive(it)) }
+      entry.subText?.let { put("subText", JsonPrimitive(it)) }
+      entry.category?.let { put("category", JsonPrimitive(it)) }
+      entry.channelId?.let { put("channelId", JsonPrimitive(it)) }
+    }.toString()
   }
 
   private fun refreshActiveNotifications() {
     val entries =
       runCatching {
         activeNotifications
+          ?.asSequence()
+          ?.filter { isGatewayVisibleNotification(packageName, it.packageName) }
           ?.mapNotNull { it.toEntry() }
+          ?.toList()
           ?: emptyList()
       }.getOrElse { emptyList() }
     DeviceNotificationStore.replace(entries)
@@ -228,15 +302,30 @@ class DeviceNotificationListenerService : NotificationListenerService() {
   }
 
   companion object {
+    private const val recentPackagesPref = "notifications.forwarding.recentPackages"
+    private const val recentPackagesLimit = 64
+
     @Volatile private var activeService: DeviceNotificationListenerService? = null
+
     @Volatile private var nodeEventSink: ((event: String, payloadJson: String?) -> Unit)? = null
 
-    private fun serviceComponent(context: Context): ComponentName {
-      return ComponentName(context, DeviceNotificationListenerService::class.java)
-    }
+    private fun serviceComponent(context: Context): ComponentName = ComponentName(context, DeviceNotificationListenerService::class.java)
 
     fun setNodeEventSink(sink: ((event: String, payloadJson: String?) -> Unit)?) {
       nodeEventSink = sink
+    }
+
+    private fun recentPackagesPrefs(context: Context) = context.applicationContext.getSharedPreferences("openclaw.secure", Context.MODE_PRIVATE)
+
+    /** Returns recent third-party packages seen by the listener for settings suggestions. */
+    fun recentPackages(context: Context): List<String> {
+      val prefs = recentPackagesPrefs(context)
+      val stored = prefs.getString(recentPackagesPref, null).orEmpty()
+      return stored
+        .split(',')
+        .map { it.trim() }
+        .filter { it.isNotEmpty() }
+        .distinct()
     }
 
     fun isAccessEnabled(context: Context): Boolean {
@@ -244,30 +333,33 @@ class DeviceNotificationListenerService : NotificationListenerService() {
       return manager.isNotificationListenerAccessGranted(serviceComponent(context))
     }
 
-    fun snapshot(context: Context, enabled: Boolean = isAccessEnabled(context)): DeviceNotificationSnapshot {
-      return DeviceNotificationStore.snapshot(enabled = enabled)
-    }
+    /** Reads the current mirrored notification snapshot without forcing service startup. */
+    fun snapshot(
+      context: Context,
+      enabled: Boolean = isAccessEnabled(context),
+    ): DeviceNotificationSnapshot =
+      DeviceNotificationStore.snapshot(
+        enabled = enabled,
+        appPackageName = context.packageName,
+      )
 
+    /** Asks Android to rebind the listener after settings grant access but callbacks have not arrived. */
     fun requestServiceRebind(context: Context) {
       runCatching {
         NotificationListenerService.requestRebind(serviceComponent(context))
       }
     }
 
-    fun executeAction(context: Context, request: NotificationActionRequest): NotificationActionResult {
+    fun executeAction(
+      context: Context,
+      request: NotificationActionRequest,
+    ): NotificationActionResult {
       if (!isAccessEnabled(context)) {
-        return NotificationActionResult(
-          ok = false,
-          code = "NOTIFICATIONS_DISABLED",
-          message = "NOTIFICATIONS_DISABLED: enable notification access in system Settings",
-        )
+        return notificationActionError("NOTIFICATIONS_DISABLED", "enable notification access in system Settings")
       }
-      val service = activeService
-        ?: return NotificationActionResult(
-          ok = false,
-          code = "NOTIFICATIONS_UNAVAILABLE",
-          message = "NOTIFICATIONS_UNAVAILABLE: notification listener not connected",
-        )
+      val service =
+        activeService
+          ?: return notificationActionError("NOTIFICATIONS_UNAVAILABLE", "notification listener not connected")
       return service.executeActionInternal(request)
     }
 
@@ -276,82 +368,67 @@ class DeviceNotificationListenerService : NotificationListenerService() {
         nodeEventSink?.invoke(NOTIFICATIONS_CHANGED_EVENT, payloadJson)
       }
     }
+
+    private fun rememberRecentPackage(packageName: String?) {
+      val service = activeService ?: return
+      val normalized = packageName?.trim().orEmpty()
+      if (normalized.isEmpty() || normalized == service.packageName) return
+      val prefs = recentPackagesPrefs(service.applicationContext)
+      val existing =
+        prefs
+          .getString(recentPackagesPref, null)
+          .orEmpty()
+          .split(',')
+          .map { it.trim() }
+          .filter { it.isNotEmpty() && it != normalized }
+          .take(recentPackagesLimit - 1)
+      // Most recent package first keeps settings suggestions useful without storing notification content.
+      val updated = listOf(normalized) + existing
+      prefs.edit { putString(recentPackagesPref, updated.joinToString(",")) }
+    }
   }
 
   private fun executeActionInternal(request: NotificationActionRequest): NotificationActionResult {
     val sbn =
       activeNotifications
-        ?.firstOrNull { it.key == request.key }
-        ?: return NotificationActionResult(
-          ok = false,
-          code = "NOTIFICATION_NOT_FOUND",
-          message = "NOTIFICATION_NOT_FOUND: notification key not found",
-        )
+        ?.firstOrNull {
+          it.key == request.key &&
+            isGatewayVisibleNotification(packageName, it.packageName)
+        }
+        ?: return notificationActionError("NOTIFICATION_NOT_FOUND", "notification key not found")
     if (actionRequiresClearableNotification(request.kind) && !sbn.isClearable) {
-      return NotificationActionResult(
-        ok = false,
-        code = "NOTIFICATION_NOT_CLEARABLE",
-        message = "NOTIFICATION_NOT_CLEARABLE: notification is ongoing or protected",
-      )
+      return notificationActionError("NOTIFICATION_NOT_CLEARABLE", "notification is ongoing or protected")
     }
 
     return when (request.kind) {
       NotificationActionKind.Open -> {
-        val pendingIntent = sbn.notification.contentIntent
-          ?: return NotificationActionResult(
-            ok = false,
-            code = "ACTION_UNAVAILABLE",
-            message = "ACTION_UNAVAILABLE: notification has no open action",
-          )
-        runCatching {
+        val pendingIntent =
+          sbn.notification.contentIntent
+            ?: return notificationActionError("ACTION_UNAVAILABLE", "notification has no open action")
+        performNotificationAction("open failed") {
           pendingIntent.send()
-        }.fold(
-          onSuccess = { NotificationActionResult(ok = true) },
-          onFailure = { err ->
-            NotificationActionResult(
-              ok = false,
-              code = "ACTION_FAILED",
-              message = "ACTION_FAILED: ${err.message ?: "open failed"}",
-            )
-          },
-        )
+        }
       }
 
       NotificationActionKind.Dismiss -> {
-        runCatching {
+        performNotificationAction("dismiss failed") {
           cancelNotification(sbn.key)
           DeviceNotificationStore.remove(sbn.key)
-        }.fold(
-          onSuccess = { NotificationActionResult(ok = true) },
-          onFailure = { err ->
-            NotificationActionResult(
-              ok = false,
-              code = "ACTION_FAILED",
-              message = "ACTION_FAILED: ${err.message ?: "dismiss failed"}",
-            )
-          },
-        )
+        }
       }
 
       NotificationActionKind.Reply -> {
         val replyText = request.replyText?.trim().orEmpty()
         if (replyText.isEmpty()) {
-          return NotificationActionResult(
-            ok = false,
-            code = "INVALID_REQUEST",
-            message = "INVALID_REQUEST: replyText required for reply action",
-          )
+          return notificationActionError("INVALID_REQUEST", "replyText required for reply action")
         }
         val action =
           sbn.notification.actions
             ?.firstOrNull { candidate ->
+              // Android reply actions are identified by RemoteInput, not by a stable action title.
               candidate.actionIntent != null && !candidate.remoteInputs.isNullOrEmpty()
             }
-            ?: return NotificationActionResult(
-              ok = false,
-              code = "ACTION_UNAVAILABLE",
-              message = "ACTION_UNAVAILABLE: notification has no reply action",
-            )
+            ?: return notificationActionError("ACTION_UNAVAILABLE", "notification has no reply action")
         val remoteInputs = action.remoteInputs ?: emptyArray()
         val fillInIntent = Intent()
         val replyBundle = android.os.Bundle()
@@ -359,19 +436,21 @@ class DeviceNotificationListenerService : NotificationListenerService() {
           replyBundle.putCharSequence(remoteInput.resultKey, replyText)
         }
         RemoteInput.addResultsToIntent(remoteInputs, fillInIntent, replyBundle)
-        runCatching {
+        performNotificationAction("reply failed") {
           action.actionIntent.send(this, 0, fillInIntent)
-        }.fold(
-          onSuccess = { NotificationActionResult(ok = true) },
-          onFailure = { err ->
-            NotificationActionResult(
-              ok = false,
-              code = "ACTION_FAILED",
-              message = "ACTION_FAILED: ${err.message ?: "reply failed"}",
-            )
-          },
-        )
+        }
       }
     }
   }
+
+  private inline fun performNotificationAction(
+    fallbackMessage: String,
+    action: () -> Unit,
+  ): NotificationActionResult =
+    try {
+      action()
+      NotificationActionResult(ok = true)
+    } catch (err: Throwable) {
+      notificationActionError("ACTION_FAILED", err.message ?: fallbackMessage)
+    }
 }

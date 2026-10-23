@@ -1,54 +1,35 @@
-import { execFileSync, execSync } from "node:child_process";
+import { execSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import type { OAuthCredentials, OAuthProvider } from "@mariozechner/pi-ai";
-import { loadJsonFile, saveJsonFile } from "../infra/json-file.js";
-import { createSubsystemLogger } from "../logging/subsystem.js";
-import { resolveUserPath } from "../utils.js";
+import { extractErrorCode } from "@paleoclaw/normalization-core/error-coercion";
+import {
+  asDateTimestampMs,
+  resolveExpiresAtMsFromDurationMs,
+} from "@paleoclaw/normalization-core/number-coercion";
+import { asOptionalRecord } from "@paleoclaw/normalization-core/record-coerce";
+import type { OpenClawConfig } from "../config/types.openclaw.js";
+import { resolveOsHomeRelativePath } from "../infra/home-dir.js";
+import { loadJsonFileThroughSymlink } from "../infra/json-file.js";
+import {
+  attestClaudeNativeLoginOwner,
+  readClaudeNativeLoginOwner,
+} from "../plugin-sdk/provider-auth-claude-compat.js";
+import type { OAuthProvider } from "./auth-profiles/types.js";
 
-const log = createSubsystemLogger("agents/auth-profiles");
-
-const CLAUDE_CLI_CREDENTIALS_RELATIVE_PATH = ".claude/.credentials.json";
 const CODEX_CLI_AUTH_FILENAME = "auth.json";
-const QWEN_CLI_CREDENTIALS_RELATIVE_PATH = ".qwen/oauth_creds.json";
 const MINIMAX_CLI_CREDENTIALS_RELATIVE_PATH = ".minimax/oauth_creds.json";
-
-const CLAUDE_CLI_KEYCHAIN_SERVICE = "Claude Code-credentials";
-const CLAUDE_CLI_KEYCHAIN_ACCOUNT = "Claude Code";
+const GEMINI_CLI_CREDENTIALS_RELATIVE_PATH = ".gemini/oauth_creds.json";
+const CODEX_CLI_FALLBACK_EXPIRY_MS = 60 * 60 * 1000;
 
 type CachedValue<T> = {
   value: T | null;
   readAt: number;
   cacheKey: string;
+  sourceFingerprint: number | null;
 };
 
-let claudeCliCache: CachedValue<ClaudeCliCredential> | null = null;
-let codexCliCache: CachedValue<CodexCliCredential> | null = null;
-let qwenCliCache: CachedValue<QwenCliCredential> | null = null;
-let minimaxCliCache: CachedValue<MiniMaxCliCredential> | null = null;
-
-export function resetCliCredentialCachesForTest(): void {
-  claudeCliCache = null;
-  codexCliCache = null;
-  qwenCliCache = null;
-  minimaxCliCache = null;
-}
-
-export type ClaudeCliCredential =
-  | {
-      type: "oauth";
-      provider: "anthropic";
-      access: string;
-      refresh: string;
-      expires: number;
-    }
-  | {
-      type: "token";
-      provider: "anthropic";
-      token: string;
-      expires: number;
-    };
+const readCachedCodexCredential = createCachedCliCredentialReader<CodexCliCredential>();
 
 export type CodexCliCredential = {
   type: "oauth";
@@ -57,17 +38,16 @@ export type CodexCliCredential = {
   refresh: string;
   expires: number;
   accountId?: string;
+  idToken?: string;
 };
 
-export type QwenCliCredential = {
-  type: "oauth";
-  provider: "qwen-portal";
-  access: string;
-  refresh: string;
-  expires: number;
+export type CodexCliApiKeyCredential = {
+  type: "api_key";
+  provider: "openai";
+  key: string;
 };
 
-export type MiniMaxCliCredential = {
+type MiniMaxCliCredential = {
   type: "oauth";
   provider: "minimax-portal";
   access: string;
@@ -75,62 +55,23 @@ export type MiniMaxCliCredential = {
   expires: number;
 };
 
-type ClaudeCliFileOptions = {
-  homeDir?: string;
-};
-
-type ClaudeCliWriteOptions = ClaudeCliFileOptions & {
-  platform?: NodeJS.Platform;
-  writeKeychain?: (credentials: OAuthCredentials) => boolean;
-  writeFile?: (credentials: OAuthCredentials, options?: ClaudeCliFileOptions) => boolean;
+export type GeminiCliCredential = {
+  type: "oauth";
+  provider: "google-gemini-cli";
+  access: string;
+  refresh: string;
+  expires: number;
+  accountId?: string;
+  email?: string;
 };
 
 type ExecSyncFn = typeof execSync;
-type ExecFileSyncFn = typeof execFileSync;
 
-function resolveClaudeCliCredentialsPath(homeDir?: string) {
-  const baseDir = homeDir ?? resolveUserPath("~");
-  return path.join(baseDir, CLAUDE_CLI_CREDENTIALS_RELATIVE_PATH);
-}
-
-function parseClaudeCliOauthCredential(claudeOauth: unknown): ClaudeCliCredential | null {
-  if (!claudeOauth || typeof claudeOauth !== "object") {
-    return null;
-  }
-  const accessToken = (claudeOauth as Record<string, unknown>).accessToken;
-  const refreshToken = (claudeOauth as Record<string, unknown>).refreshToken;
-  const expiresAt = (claudeOauth as Record<string, unknown>).expiresAt;
-
-  if (typeof accessToken !== "string" || !accessToken) {
-    return null;
-  }
-  if (typeof expiresAt !== "number" || !Number.isFinite(expiresAt) || expiresAt <= 0) {
-    return null;
-  }
-  if (typeof refreshToken === "string" && refreshToken) {
-    return {
-      type: "oauth",
-      provider: "anthropic",
-      access: accessToken,
-      refresh: refreshToken,
-      expires: expiresAt,
-    };
-  }
-  return {
-    type: "token",
-    provider: "anthropic",
-    token: accessToken,
-    expires: expiresAt,
-  };
-}
-
-function resolveCodexCliAuthPath() {
-  return path.join(resolveCodexHomePath(), CODEX_CLI_AUTH_FILENAME);
-}
-
-function resolveCodexHomePath() {
-  const configured = process.env.CODEX_HOME;
-  const home = configured ? resolveUserPath(configured) : resolveUserPath("~/.codex");
+export function resolveCodexCliHomePath(codexHome?: string, env: NodeJS.ProcessEnv = process.env) {
+  const configured = codexHome ?? env.CODEX_HOME;
+  // External CLI state belongs to the OS user, not paleoclaw's relocatable
+  // home. Otherwise an isolated OPENCLAW_HOME hides an already logged-in CLI.
+  const home = resolveOsHomeRelativePath(configured || "~/.codex", { env });
   try {
     return fs.realpathSync.native(home);
   } catch {
@@ -138,14 +79,73 @@ function resolveCodexHomePath() {
   }
 }
 
-function resolveQwenCliCredentialsPath(homeDir?: string) {
-  const baseDir = homeDir ?? resolveUserPath("~");
-  return path.join(baseDir, QWEN_CLI_CREDENTIALS_RELATIVE_PATH);
+function readCodexAuthMode(data: Record<string, unknown>): string {
+  const authMode = typeof data.auth_mode === "string" ? data.auth_mode.toLowerCase() : undefined;
+  return authMode || (typeof data.OPENAI_API_KEY === "string" ? "api_key" : "chatgpt");
 }
 
-function resolveMiniMaxCliCredentialsPath(homeDir?: string) {
-  const baseDir = homeDir ?? resolveUserPath("~");
-  return path.join(baseDir, MINIMAX_CLI_CREDENTIALS_RELATIVE_PATH);
+/** Presence is only a discovery hint; Codex verifies the login without exporting its tokens. */
+export function hasCodexCliAuthFile(codexHome?: string): boolean {
+  try {
+    const file = fs.statSync(
+      path.join(resolveCodexCliHomePath(codexHome), CODEX_CLI_AUTH_FILENAME),
+    );
+    return file.isFile() && file.size > 0;
+  } catch (error) {
+    const code = extractErrorCode(error);
+    if (code === "ENOENT" || code === "ENOTDIR") {
+      return false;
+    }
+    throw error;
+  }
+}
+
+function readFileMtimeMs(filePath: string): number | null {
+  try {
+    return fs.statSync(filePath).mtimeMs;
+  } catch {
+    return null;
+  }
+}
+
+function createCachedCliCredentialReader<T>() {
+  let cache: CachedValue<T> | null = null;
+  return (options: {
+    ttlMs: number;
+    cacheKey: string;
+    read: () => T | null;
+    sourcePath: string;
+  }): T | null => {
+    const { ttlMs, cacheKey, read, sourcePath } = options;
+    if (ttlMs <= 0) {
+      return read();
+    }
+
+    const now = Date.now();
+    const sourceFingerprint = readFileMtimeMs(sourcePath);
+    if (
+      cache &&
+      cache.cacheKey === cacheKey &&
+      cache.sourceFingerprint === sourceFingerprint &&
+      now - cache.readAt < ttlMs
+    ) {
+      return cache.value;
+    }
+
+    const value = read();
+    const cachedSourceFingerprint = readFileMtimeMs(sourcePath);
+    if (cachedSourceFingerprint === sourceFingerprint) {
+      cache = {
+        value,
+        readAt: now,
+        cacheKey,
+        sourceFingerprint: cachedSourceFingerprint,
+      };
+    } else {
+      cache = null;
+    }
+    return value;
+  };
 }
 
 function computeCodexKeychainAccount(codexHome: string) {
@@ -153,17 +153,48 @@ function computeCodexKeychainAccount(codexHome: string) {
   return `cli|${hash.slice(0, 16)}`;
 }
 
-function readCodexKeychainCredentials(options?: {
+function resolveCodexKeychainParams(options?: {
+  codexHome?: string;
   platform?: NodeJS.Platform;
   execSync?: ExecSyncFn;
-}): CodexCliCredential | null {
-  const platform = options?.platform ?? process.platform;
-  if (platform !== "darwin") {
+}) {
+  return {
+    platform: options?.platform ?? process.platform,
+    execSyncImpl: options?.execSync ?? execSync,
+    codexHome: resolveCodexCliHomePath(options?.codexHome),
+  };
+}
+
+function decodeJwtPayload(token: string): Record<string, unknown> | undefined {
+  const encodedPayload = token.split(".").at(1);
+  if (!encodedPayload) {
+    return undefined;
+  }
+  try {
+    const payload: unknown = JSON.parse(Buffer.from(encodedPayload, "base64url").toString("utf8"));
+    return asOptionalRecord(payload);
+  } catch {
+    return undefined;
+  }
+}
+
+function decodeJwtExpiryMs(token: string): number | null {
+  const exp = decodeJwtPayload(token)?.exp;
+  return typeof exp === "number" && Number.isFinite(exp) && exp > 0
+    ? (asDateTimestampMs(exp * 1000) ?? null)
+    : null;
+}
+
+function readCodexKeychainAuthRecord(options?: {
+  codexHome?: string;
+  platform?: NodeJS.Platform;
+  execSync?: ExecSyncFn;
+  allowKeychainPrompt?: boolean;
+}): Record<string, unknown> | null {
+  const { platform, execSyncImpl, codexHome } = resolveCodexKeychainParams(options);
+  if (platform !== "darwin" || options?.allowKeychainPrompt === false) {
     return null;
   }
-  const execSyncImpl = options?.execSync ?? execSync;
-
-  const codexHome = resolveCodexHomePath();
   const account = computeCodexKeychainAccount(codexHome);
 
   try {
@@ -177,59 +208,62 @@ function readCodexKeychainCredentials(options?: {
     ).trim();
 
     const parsed = JSON.parse(secret) as Record<string, unknown>;
-    const tokens = parsed.tokens as Record<string, unknown> | undefined;
-    const accessToken = tokens?.access_token;
-    const refreshToken = tokens?.refresh_token;
-    if (typeof accessToken !== "string" || !accessToken) {
-      return null;
-    }
-    if (typeof refreshToken !== "string" || !refreshToken) {
-      return null;
-    }
-
-    // No explicit expiry stored; treat as fresh for an hour from last_refresh or now.
-    const lastRefreshRaw = parsed.last_refresh;
-    const lastRefresh =
-      typeof lastRefreshRaw === "string" || typeof lastRefreshRaw === "number"
-        ? new Date(lastRefreshRaw).getTime()
-        : Date.now();
-    const expires = Number.isFinite(lastRefresh)
-      ? lastRefresh + 60 * 60 * 1000
-      : Date.now() + 60 * 60 * 1000;
-    const accountId = typeof tokens?.account_id === "string" ? tokens.account_id : undefined;
-
-    log.info("read codex credentials from keychain", {
-      source: "keychain",
-      expires: new Date(expires).toISOString(),
-    });
-
-    return {
-      type: "oauth",
-      provider: "openai-codex" as OAuthProvider,
-      access: accessToken,
-      refresh: refreshToken,
-      expires,
-      accountId,
-    };
+    return parsed;
   } catch {
     return null;
   }
 }
 
-function readQwenCliCredentials(options?: { homeDir?: string }): QwenCliCredential | null {
-  const credPath = resolveQwenCliCredentialsPath(options?.homeDir);
-  return readPortalCliOauthCredentials(credPath, "qwen-portal");
+function resolveCodexFallbackExpiryMs(nowMs?: number): number | undefined {
+  const baseMs = nowMs === undefined ? undefined : Math.floor(nowMs);
+  return resolveExpiresAtMsFromDurationMs(CODEX_CLI_FALLBACK_EXPIRY_MS, { nowMs: baseMs });
 }
 
-function readPortalCliOauthCredentials<TProvider extends string>(
-  credPath: string,
-  provider: TProvider,
-): { type: "oauth"; provider: TProvider; access: string; refresh: string; expires: number } | null {
-  const raw = loadJsonFile(credPath);
-  if (!raw || typeof raw !== "object") {
+function parseCodexOauthCredential(
+  data: Record<string, unknown>,
+  fallbackExpiry: number | undefined,
+): CodexCliCredential | null {
+  if (!["chatgpt", "chatgptauthtokens"].includes(readCodexAuthMode(data))) {
     return null;
   }
-  const data = raw as Record<string, unknown>;
+  const tokens = data.tokens as Record<string, unknown> | undefined;
+  const accessToken = tokens?.access_token;
+  const refreshToken = tokens?.refresh_token;
+  if (typeof accessToken !== "string" || !accessToken) {
+    return null;
+  }
+  if (typeof refreshToken !== "string" || !refreshToken) {
+    return null;
+  }
+
+  const expires = decodeJwtExpiryMs(accessToken) ?? fallbackExpiry;
+  if (expires === undefined) {
+    return null;
+  }
+  return {
+    type: "oauth",
+    provider: "openai" as OAuthProvider,
+    access: accessToken,
+    refresh: refreshToken,
+    expires,
+    accountId: typeof tokens?.account_id === "string" ? tokens.account_id : undefined,
+    idToken: typeof tokens?.id_token === "string" ? tokens.id_token : undefined,
+  };
+}
+
+function parseCodexApiKeyCredential(
+  data: Record<string, unknown>,
+): CodexCliApiKeyCredential | null {
+  if (!["apikey", "api_key"].includes(readCodexAuthMode(data))) {
+    return null;
+  }
+  const key = typeof data.OPENAI_API_KEY === "string" ? data.OPENAI_API_KEY.trim() : "";
+  return key ? { type: "api_key", provider: "openai", key } : null;
+}
+
+function readCliOauthTokenFields(
+  data: Record<string, unknown>,
+): { access: string; refresh: string; expires: number } | null {
   const accessToken = data.access_token;
   const refreshToken = data.refresh_token;
   const expiresAt = data.expiry_date;
@@ -244,329 +278,261 @@ function readPortalCliOauthCredentials<TProvider extends string>(
     return null;
   }
 
-  return {
-    type: "oauth",
-    provider,
-    access: accessToken,
-    refresh: refreshToken,
-    expires: expiresAt,
-  };
+  return { access: accessToken, refresh: refreshToken, expires: expiresAt };
 }
 
-function readMiniMaxCliCredentials(options?: { homeDir?: string }): MiniMaxCliCredential | null {
-  const credPath = resolveMiniMaxCliCredentialsPath(options?.homeDir);
-  return readPortalCliOauthCredentials(credPath, "minimax-portal");
-}
-
-function readClaudeCliKeychainCredentials(
-  execSyncImpl: ExecSyncFn = execSync,
-): ClaudeCliCredential | null {
-  try {
-    const result = execSyncImpl(
-      `security find-generic-password -s "${CLAUDE_CLI_KEYCHAIN_SERVICE}" -w`,
-      { encoding: "utf8", timeout: 5000, stdio: ["pipe", "pipe", "pipe"] },
-    );
-
-    const data = JSON.parse(result.trim());
-    return parseClaudeCliOauthCredential(data?.claudeAiOauth);
-  } catch {
-    return null;
-  }
-}
-
-export function readClaudeCliCredentials(options?: {
-  allowKeychainPrompt?: boolean;
-  platform?: NodeJS.Platform;
-  homeDir?: string;
-  execSync?: ExecSyncFn;
-}): ClaudeCliCredential | null {
-  const platform = options?.platform ?? process.platform;
-  if (platform === "darwin" && options?.allowKeychainPrompt !== false) {
-    const keychainCreds = readClaudeCliKeychainCredentials(options?.execSync);
-    if (keychainCreds) {
-      log.info("read anthropic credentials from claude cli keychain", {
-        type: keychainCreds.type,
-      });
-      return keychainCreds;
-    }
-  }
-
-  const credPath = resolveClaudeCliCredentialsPath(options?.homeDir);
-  const raw = loadJsonFile(credPath);
+function readMiniMaxCliCredentials(credPath: string): MiniMaxCliCredential | null {
+  const raw = loadJsonFileThroughSymlink(credPath);
   if (!raw || typeof raw !== "object") {
     return null;
   }
-
-  const data = raw as Record<string, unknown>;
-  return parseClaudeCliOauthCredential(data.claudeAiOauth);
+  const tokens = readCliOauthTokenFields(raw as Record<string, unknown>);
+  return tokens ? { type: "oauth", provider: "minimax-portal", ...tokens } : null;
 }
 
-export function readClaudeCliCredentialsCached(options?: {
-  allowKeychainPrompt?: boolean;
-  ttlMs?: number;
-  platform?: NodeJS.Platform;
-  homeDir?: string;
-  execSync?: ExecSyncFn;
-}): ClaudeCliCredential | null {
-  const ttlMs = options?.ttlMs ?? 0;
-  const now = Date.now();
-  const cacheKey = resolveClaudeCliCredentialsPath(options?.homeDir);
-  if (
-    ttlMs > 0 &&
-    claudeCliCache &&
-    claudeCliCache.cacheKey === cacheKey &&
-    now - claudeCliCache.readAt < ttlMs
-  ) {
-    return claudeCliCache.value;
+function readGeminiCliCredentials(credPath: string): GeminiCliCredential | null {
+  const raw = loadJsonFileThroughSymlink(credPath);
+  if (!raw || typeof raw !== "object") {
+    return null;
   }
-  const value = readClaudeCliCredentials({
+  const data = raw as Record<string, unknown>;
+  const tokens = readCliOauthTokenFields(data);
+  if (!tokens) {
+    return null;
+  }
+
+  // Non-secret Google identity changes the auth epoch when another account signs in,
+  // retiring stale session bindings.
+  const idTokenRaw = data.id_token;
+  const identity =
+    typeof idTokenRaw === "string" && idTokenRaw ? decodeJwtPayload(idTokenRaw) : undefined;
+
+  return {
+    type: "oauth",
+    provider: "google-gemini-cli",
+    ...tokens,
+    ...(typeof identity?.email === "string" && identity.email ? { email: identity.email } : {}),
+    ...(typeof identity?.sub === "string" && identity.sub ? { accountId: identity.sub } : {}),
+  };
+}
+
+function formatCodexApiKeyForLoginStatus(key: string): string {
+  return key.length <= 13 ? "***" : `${key.slice(0, 8)}***${key.slice(-5)}`;
+}
+
+/** Reads an API key only when Codex confirms that exact credential is active. */
+export function readCodexCliActiveApiKey(options?: {
+  codexHome?: string;
+  allowKeychainPrompt?: boolean;
+  platform?: NodeJS.Platform;
+  execSync?: ExecSyncFn;
+}): CodexCliApiKeyCredential | null {
+  const { execSyncImpl, codexHome } = resolveCodexKeychainParams(options);
+  let status: string;
+  try {
+    status = execSyncImpl("codex login status 2>&1", {
+      encoding: "utf8",
+      timeout: 5000,
+      stdio: ["pipe", "pipe", "pipe"],
+      env: { ...process.env, CODEX_HOME: codexHome },
+    }).trim();
+  } catch {
+    return null;
+  }
+  const statusMatch = /^Logged in using an API key - (.+)$/mu.exec(status);
+  const activeFingerprint = statusMatch?.[1]?.trim();
+  const legacyApiKeyStatus = status.trim() === "Logged in using an API key";
+  if (!activeFingerprint && !legacyApiKeyStatus) {
+    return null;
+  }
+
+  const candidates: CodexCliApiKeyCredential[] = [];
+  const authPath = path.join(codexHome, CODEX_CLI_AUTH_FILENAME);
+  const raw = loadJsonFileThroughSymlink(authPath);
+  if (raw && typeof raw === "object") {
+    const fileCredential = parseCodexApiKeyCredential(raw as Record<string, unknown>);
+    if (fileCredential) {
+      candidates.push(fileCredential);
+    }
+  }
+  const keychainRecord = readCodexKeychainAuthRecord({
+    codexHome,
     allowKeychainPrompt: options?.allowKeychainPrompt,
     platform: options?.platform,
-    homeDir: options?.homeDir,
     execSync: options?.execSync,
   });
-  if (ttlMs > 0) {
-    claudeCliCache = { value, readAt: now, cacheKey };
-  }
-  return value;
-}
-
-export function writeClaudeCliKeychainCredentials(
-  newCredentials: OAuthCredentials,
-  options?: { execFileSync?: ExecFileSyncFn },
-): boolean {
-  const execFileSyncImpl = options?.execFileSync ?? execFileSync;
-  try {
-    const existingResult = execFileSyncImpl(
-      "security",
-      ["find-generic-password", "-s", CLAUDE_CLI_KEYCHAIN_SERVICE, "-w"],
-      { encoding: "utf8", timeout: 5000, stdio: ["pipe", "pipe", "pipe"] },
-    );
-
-    const existingData = JSON.parse(existingResult.trim());
-    const existingOauth = existingData?.claudeAiOauth;
-    if (!existingOauth || typeof existingOauth !== "object") {
-      return false;
-    }
-
-    existingData.claudeAiOauth = {
-      ...existingOauth,
-      accessToken: newCredentials.access,
-      refreshToken: newCredentials.refresh,
-      expiresAt: newCredentials.expires,
-    };
-
-    const newValue = JSON.stringify(existingData);
-
-    // Use execFileSync to avoid shell interpretation of user-controlled token values.
-    // This prevents command injection via $() or backtick expansion in OAuth tokens.
-    execFileSyncImpl(
-      "security",
-      [
-        "add-generic-password",
-        "-U",
-        "-s",
-        CLAUDE_CLI_KEYCHAIN_SERVICE,
-        "-a",
-        CLAUDE_CLI_KEYCHAIN_ACCOUNT,
-        "-w",
-        newValue,
-      ],
-      { encoding: "utf8", timeout: 5000, stdio: ["pipe", "pipe", "pipe"] },
-    );
-
-    log.info("wrote refreshed credentials to claude cli keychain", {
-      expires: new Date(newCredentials.expires).toISOString(),
-    });
-    return true;
-  } catch (error) {
-    log.warn("failed to write credentials to claude cli keychain", {
-      error: error instanceof Error ? error.message : String(error),
-    });
-    return false;
-  }
-}
-
-export function writeClaudeCliFileCredentials(
-  newCredentials: OAuthCredentials,
-  options?: ClaudeCliFileOptions,
-): boolean {
-  const credPath = resolveClaudeCliCredentialsPath(options?.homeDir);
-
-  if (!fs.existsSync(credPath)) {
-    return false;
-  }
-
-  try {
-    const raw = loadJsonFile(credPath);
-    if (!raw || typeof raw !== "object") {
-      return false;
-    }
-
-    const data = raw as Record<string, unknown>;
-    const existingOauth = data.claudeAiOauth as Record<string, unknown> | undefined;
-    if (!existingOauth || typeof existingOauth !== "object") {
-      return false;
-    }
-
-    data.claudeAiOauth = {
-      ...existingOauth,
-      accessToken: newCredentials.access,
-      refreshToken: newCredentials.refresh,
-      expiresAt: newCredentials.expires,
-    };
-
-    saveJsonFile(credPath, data);
-    log.info("wrote refreshed credentials to claude cli file", {
-      expires: new Date(newCredentials.expires).toISOString(),
-    });
-    return true;
-  } catch (error) {
-    log.warn("failed to write credentials to claude cli file", {
-      error: error instanceof Error ? error.message : String(error),
-    });
-    return false;
-  }
-}
-
-export function writeClaudeCliCredentials(
-  newCredentials: OAuthCredentials,
-  options?: ClaudeCliWriteOptions,
-): boolean {
-  const platform = options?.platform ?? process.platform;
-  const writeKeychain = options?.writeKeychain ?? writeClaudeCliKeychainCredentials;
-  const writeFile =
-    options?.writeFile ??
-    ((credentials, fileOptions) => writeClaudeCliFileCredentials(credentials, fileOptions));
-
-  if (platform === "darwin") {
-    const didWriteKeychain = writeKeychain(newCredentials);
-    if (didWriteKeychain) {
-      return true;
+  if (keychainRecord) {
+    const keychainCredential = parseCodexApiKeyCredential(keychainRecord);
+    if (keychainCredential) {
+      candidates.push(keychainCredential);
     }
   }
 
-  return writeFile(newCredentials, { homeDir: options?.homeDir });
+  const matchingKeys = new Set(
+    candidates
+      .filter(
+        (candidate) =>
+          legacyApiKeyStatus ||
+          formatCodexApiKeyForLoginStatus(candidate.key) === activeFingerprint,
+      )
+      .map((candidate) => candidate.key),
+  );
+  if (matchingKeys.size !== 1) {
+    return null;
+  }
+  const key = [...matchingKeys][0];
+  return key ? { type: "api_key", provider: "openai", key } : null;
 }
 
-export function readCodexCliCredentials(options?: {
+function readCodexCliCredentials(options?: {
+  codexHome?: string;
+  allowKeychainPrompt?: boolean;
   platform?: NodeJS.Platform;
   execSync?: ExecSyncFn;
 }): CodexCliCredential | null {
-  const keychain = readCodexKeychainCredentials({
-    platform: options?.platform,
-    execSync: options?.execSync,
-  });
-  if (keychain) {
-    return keychain;
+  const keychainRecord = readCodexKeychainAuthRecord(options);
+  if (keychainRecord) {
+    const lastRefreshRaw = keychainRecord.last_refresh;
+    const lastRefresh =
+      typeof lastRefreshRaw === "string" || typeof lastRefreshRaw === "number"
+        ? new Date(lastRefreshRaw).getTime()
+        : Date.now();
+    const keychainCredential = parseCodexOauthCredential(
+      keychainRecord,
+      resolveCodexFallbackExpiryMs(lastRefresh) ?? resolveCodexFallbackExpiryMs(),
+    );
+    if (keychainCredential) {
+      return keychainCredential;
+    }
   }
 
-  const authPath = resolveCodexCliAuthPath();
-  const raw = loadJsonFile(authPath);
+  const authPath = path.join(resolveCodexCliHomePath(options?.codexHome), CODEX_CLI_AUTH_FILENAME);
+  const raw = loadJsonFileThroughSymlink(authPath);
   if (!raw || typeof raw !== "object") {
     return null;
   }
-
-  const data = raw as Record<string, unknown>;
-  const tokens = data.tokens as Record<string, unknown> | undefined;
-  if (!tokens || typeof tokens !== "object") {
-    return null;
-  }
-
-  const accessToken = tokens.access_token;
-  const refreshToken = tokens.refresh_token;
-
-  if (typeof accessToken !== "string" || !accessToken) {
-    return null;
-  }
-  if (typeof refreshToken !== "string" || !refreshToken) {
-    return null;
-  }
-
-  let expires: number;
+  let fallbackExpiry: number | undefined;
   try {
-    const stat = fs.statSync(authPath);
-    expires = stat.mtimeMs + 60 * 60 * 1000;
+    fallbackExpiry = resolveCodexFallbackExpiryMs(fs.statSync(authPath).mtimeMs);
   } catch {
-    expires = Date.now() + 60 * 60 * 1000;
+    fallbackExpiry = resolveCodexFallbackExpiryMs();
   }
-
-  return {
-    type: "oauth",
-    provider: "openai-codex" as OAuthProvider,
-    access: accessToken,
-    refresh: refreshToken,
-    expires,
-    accountId: typeof tokens.account_id === "string" ? tokens.account_id : undefined,
-  };
+  return parseCodexOauthCredential(raw as Record<string, unknown>, fallbackExpiry);
 }
 
 export function readCodexCliCredentialsCached(options?: {
+  codexHome?: string;
+  allowKeychainPrompt?: boolean;
   ttlMs?: number;
   platform?: NodeJS.Platform;
   execSync?: ExecSyncFn;
 }): CodexCliCredential | null {
+  const platform = options?.platform ?? process.platform;
   const ttlMs = options?.ttlMs ?? 0;
-  const now = Date.now();
-  const cacheKey = `${options?.platform ?? process.platform}|${resolveCodexCliAuthPath()}`;
-  if (
-    ttlMs > 0 &&
-    codexCliCache &&
-    codexCliCache.cacheKey === cacheKey &&
-    now - codexCliCache.readAt < ttlMs
-  ) {
-    return codexCliCache.value;
-  }
-  const value = readCodexCliCredentials({
-    platform: options?.platform,
-    execSync: options?.execSync,
+  const authPath = path.join(resolveCodexCliHomePath(options?.codexHome), CODEX_CLI_AUTH_FILENAME);
+  const keychainIntent =
+    platform === "darwin" && options?.allowKeychainPrompt !== false ? "keychain" : "file";
+  return readCachedCodexCredential({
+    ttlMs,
+    cacheKey: `${platform}|${authPath}:${keychainIntent}`,
+    read: () =>
+      readCodexCliCredentials({
+        codexHome: options?.codexHome,
+        allowKeychainPrompt: options?.allowKeychainPrompt,
+        platform: options?.platform,
+        execSync: options?.execSync,
+      }),
+    sourcePath: authPath,
   });
-  if (ttlMs > 0) {
-    codexCliCache = { value, readAt: now, cacheKey };
-  }
-  return value;
 }
 
-export function readQwenCliCredentialsCached(options?: {
+type CliFileCredentialOptions = {
   ttlMs?: number;
   homeDir?: string;
-}): QwenCliCredential | null {
-  const ttlMs = options?.ttlMs ?? 0;
-  const now = Date.now();
-  const cacheKey = resolveQwenCliCredentialsPath(options?.homeDir);
-  if (
-    ttlMs > 0 &&
-    qwenCliCache &&
-    qwenCliCache.cacheKey === cacheKey &&
-    now - qwenCliCache.readAt < ttlMs
-  ) {
-    return qwenCliCache.value;
-  }
-  const value = readQwenCliCredentials({ homeDir: options?.homeDir });
-  if (ttlMs > 0) {
-    qwenCliCache = { value, readAt: now, cacheKey };
-  }
-  return value;
+};
+
+function createCachedCliFileReader<T>(relativePath: string, read: (pathname: string) => T | null) {
+  const readCached = createCachedCliCredentialReader<T>();
+  return (options?: CliFileCredentialOptions): T | null => {
+    const credPath = path.join(resolveOsHomeRelativePath(options?.homeDir ?? "~"), relativePath);
+    return readCached({
+      ttlMs: options?.ttlMs ?? 0,
+      cacheKey: credPath,
+      read: () => read(credPath),
+      sourcePath: credPath,
+    });
+  };
 }
 
-export function readMiniMaxCliCredentialsCached(options?: {
-  ttlMs?: number;
-  homeDir?: string;
-}): MiniMaxCliCredential | null {
-  const ttlMs = options?.ttlMs ?? 0;
-  const now = Date.now();
-  const cacheKey = resolveMiniMaxCliCredentialsPath(options?.homeDir);
-  if (
-    ttlMs > 0 &&
-    minimaxCliCache &&
-    minimaxCliCache.cacheKey === cacheKey &&
-    now - minimaxCliCache.readAt < ttlMs
-  ) {
-    return minimaxCliCache.value;
-  }
-  const value = readMiniMaxCliCredentials({ homeDir: options?.homeDir });
-  if (ttlMs > 0) {
-    minimaxCliCache = { value, readAt: now, cacheKey };
-  }
-  return value;
+const readCachedMiniMax = createCachedCliFileReader(
+  MINIMAX_CLI_CREDENTIALS_RELATIVE_PATH,
+  readMiniMaxCliCredentials,
+);
+const readCachedGemini = createCachedCliFileReader(
+  GEMINI_CLI_CREDENTIALS_RELATIVE_PATH,
+  readGeminiCliCredentials,
+);
+
+export function readMiniMaxCliCredentialsCached(
+  options?: CliFileCredentialOptions,
+): MiniMaxCliCredential | null {
+  return readCachedMiniMax(options);
+}
+
+export function readGeminiCliCredentialsCached(
+  options?: CliFileCredentialOptions,
+): GeminiCliCredential | null {
+  return readCachedGemini(options);
+}
+
+/** Native login owner attested at a boundary that may wait on the network. */
+export type NativeCliLoginAttestation = {
+  /** Non-secret owner reference, set only when the provider attested the credential. */
+  owner?: string;
+  /** From this time the CLI rotates the credential before it accepts a prompt. */
+  refreshDueAt?: number;
+};
+
+/**
+ * Attestation sends the CLI's own access token to its provider, so it runs only when the
+ * owning plugin opts in. For Claude that is
+ * `plugins.entries.anthropic.config.historyRecovery.attestNativeLogin: true`. Off by default:
+ * the native login then has no owner and history stays refused, as before.
+ */
+export function isNativeCliLoginAttestationEnabled(
+  backendId: string,
+  config: OpenClawConfig | undefined,
+): boolean {
+  const pluginConfig = asOptionalRecord(config?.plugins?.entries?.anthropic?.config);
+  return (
+    backendId === "claude-cli" &&
+    asOptionalRecord(pluginConfig?.historyRecovery)?.attestNativeLogin === true
+  );
+}
+
+/**
+ * Owner of the native login a local run of this CLI backend would use under
+ * `env`, attested by the provider for the credential itself rather than read
+ * from local account metadata. No owner when the backend has no native login or
+ * the attestation fails; callers must then treat history as unknown.
+ */
+export async function resolveNativeCliLoginOwner(
+  backendId: string,
+  /** Environment the CLI process receives; the Gateway process is not the identity source. */
+  env: NodeJS.ProcessEnv,
+): Promise<NativeCliLoginAttestation> {
+  return backendId === "claude-cli" ? await attestClaudeNativeLoginOwner({ env }) : {};
+}
+
+/**
+ * Synchronous recheck for spawn, send and commit boundaries: the owner this
+ * process already attested for the credential `env` selects now, or undefined
+ * when that credential changed since and has not been attested. Never waits on
+ * the network.
+ */
+export function readAttestedNativeCliLoginOwner(
+  backendId: string,
+  env: NodeJS.ProcessEnv,
+): string | undefined {
+  return backendId === "claude-cli" ? readClaudeNativeLoginOwner({ env }) : undefined;
 }

@@ -1,0 +1,19 @@
+{
+  "name": "@paleoclaw/web-readability-plugin",
+  "version": "2026.10.5",
+  "private": true,
+  "description": "paleoclaw local Readability web extraction plugin",
+  "type": "module",
+  "dependencies": {
+    "@mozilla/readability": "0.6.0",
+    "linkedom": "0.18.13"
+  },
+  "devDependencies": {
+    "@paleoclaw/plugin-sdk": "workspace:*"
+  },
+  "paleoclaw": {
+    "extensions": [
+      "./index.ts"
+    ]
+  }
+}

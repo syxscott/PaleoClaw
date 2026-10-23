@@ -1,0 +1,4 @@
+interface:
+  display_name: "paleoclaw Debugging"
+  short_description: "Debug model, tool, stream, and live behavior"
+  default_prompt: "Use $paleoclaw-debugging to identify the right paleoclaw debug boundary, turn on targeted logs, and choose the narrowest local or Crabbox proof."

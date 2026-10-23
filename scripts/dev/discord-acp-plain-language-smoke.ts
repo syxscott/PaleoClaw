@@ -123,7 +123,7 @@ function parseNumber(value: string | undefined, fallback: number): number {
 function resolveStateDir(): string {
   const override = process.env.OPENCLAW_STATE_DIR?.trim() || process.env.CLAWDBOT_STATE_DIR?.trim();
   if (override) {
-    return override.startsWith("~")
+    return override.startsWith("~/")
       ? path.resolve(process.env.HOME || "", override.slice(1))
       : path.resolve(override);
   }

@@ -1,195 +1,230 @@
+import { createActionGate } from "paleoclaw/plugin-sdk/channel-actions";
+import type {
+  ChannelMessageActionAdapter,
+  ChannelMessageActionName,
+  ChannelMessageToolDiscovery,
+  ChannelMessageToolSchemaContribution,
+} from "paleoclaw/plugin-sdk/channel-contract";
+import { extractToolSend } from "paleoclaw/plugin-sdk/tool-send";
+import { Type } from "typebox";
+import { requiresExplicitMatrixDefaultAccount } from "./account-selection.js";
 import {
-  createActionGate,
-  readNumberParam,
-  readStringParam,
-  type ChannelMessageActionAdapter,
-  type ChannelMessageActionContext,
-  type ChannelMessageActionName,
-  type ChannelToolSend,
-} from "paleoclaw/plugin-sdk/matrix";
-import { resolveMatrixAccount } from "./matrix/accounts.js";
-import { handleMatrixAction } from "./tool-actions.js";
+  resolveDefaultMatrixAccountId,
+  resolveMatrixAccount,
+  resolveMatrixAccountAsync,
+  type ResolvedMatrixAccount,
+} from "./matrix/accounts.js";
 import type { CoreConfig } from "./types.js";
 
+const MATRIX_PLUGIN_HANDLED_ACTIONS = new Set<ChannelMessageActionName>([
+  "send",
+  "poll-vote",
+  "react",
+  "reactions",
+  "emoji-list",
+  "read",
+  "edit",
+  "delete",
+  "pin",
+  "unpin",
+  "list-pins",
+  "set-profile",
+  "member-info",
+  "channel-info",
+  "permissions",
+]);
+const MATRIX_PROFILE_MEDIA_PROPERTIES = {
+  avatarUrl: Type.Optional(
+    Type.String({
+      description:
+        "Profile avatar URL for Matrix self-profile update actions. Matrix accepts mxc:// and http(s) URLs.",
+    }),
+  ),
+  avatar_url: Type.Optional(
+    Type.String({
+      description:
+        "snake_case alias of avatarUrl for Matrix self-profile update actions. Matrix accepts mxc:// and http(s) URLs.",
+    }),
+  ),
+  avatarPath: Type.Optional(
+    Type.String({
+      description:
+        "Local avatar file path for Matrix self-profile update actions. Matrix uploads this file and sets the resulting MXC URI.",
+    }),
+  ),
+  avatar_path: Type.Optional(
+    Type.String({
+      description:
+        "snake_case alias of avatarPath for Matrix self-profile update actions. Matrix uploads this file and sets the resulting MXC URI.",
+    }),
+  ),
+} as const;
+const MATRIX_PROFILE_MEDIA_SOURCE_PARAMS = ["avatarUrl", "avatarPath"] as const;
+
+function createMatrixExposedActions(params: {
+  gate: ReturnType<typeof createActionGate>;
+  encryptionEnabled: boolean;
+  senderIsOwner?: boolean;
+}) {
+  const actions = new Set<ChannelMessageActionName>(["poll", "poll-vote"]);
+  const addGatedActions = (gate: string, ...names: ChannelMessageActionName[]) => {
+    if (params.gate(gate)) {
+      for (const name of names) {
+        actions.add(name);
+      }
+    }
+  };
+  addGatedActions("messages", "send", "read", "edit", "delete");
+  addGatedActions("reactions", "react", "reactions", "emoji-list");
+  addGatedActions("pins", "pin", "unpin", "list-pins");
+  if (params.gate("profile") && params.senderIsOwner === true) {
+    actions.add("set-profile");
+  }
+  addGatedActions("memberInfo", "member-info");
+  addGatedActions("channelInfo", "channel-info");
+  if (params.encryptionEnabled && params.gate("verification") && params.senderIsOwner === true) {
+    actions.add("permissions");
+  }
+  return actions;
+}
+
+function buildMatrixProfileToolSchema(): ChannelMessageToolSchemaContribution {
+  return {
+    actions: ["set-profile"],
+    properties: {
+      displayName: Type.Optional(
+        Type.String({
+          description: "Profile display name for Matrix self-profile update actions.",
+        }),
+      ),
+      display_name: Type.Optional(
+        Type.String({
+          description: "snake_case alias of displayName for Matrix self-profile update actions.",
+        }),
+      ),
+      ...MATRIX_PROFILE_MEDIA_PROPERTIES,
+    },
+  };
+}
+
+function buildMatrixReadCursorToolSchema(): ChannelMessageToolSchemaContribution {
+  const cursor =
+    "Matrix read: pagination token from a previous read's nextBatch/prevBatch, not an event id;";
+  return {
+    // The shared before/after parameters keep read valid across channels; this
+    // contribution only adds Matrix cursor guidance for those parameters.
+    actions: [],
+    properties: {
+      before: Type.Optional(Type.String({ description: `${cursor} pages toward older messages.` })),
+      after: Type.Optional(Type.String({ description: `${cursor} pages toward newer messages.` })),
+    },
+  };
+}
+
+function resolveMatrixActionAccount(params: { cfg: CoreConfig; accountId?: string | null }) {
+  if (!params.accountId && requiresExplicitMatrixDefaultAccount(params.cfg)) {
+    return null;
+  }
+  const account = resolveMatrixAccount({
+    cfg: params.cfg,
+    accountId: params.accountId ?? resolveDefaultMatrixAccountId(params.cfg),
+  });
+  return account.enabled && account.configured ? account : null;
+}
+
+function describeMatrixMessageTool(
+  account: ResolvedMatrixAccount | null,
+  senderIsOwner?: boolean,
+): ChannelMessageToolDiscovery {
+  if (!account?.enabled || !account.configured) {
+    return { actions: [], capabilities: [] };
+  }
+  const gate = createActionGate(account.config.actions);
+  const actions = createMatrixExposedActions({
+    gate,
+    encryptionEnabled: account.config.encryption === true,
+    senderIsOwner,
+  });
+  const listedActions = Array.from(actions);
+  const schema: ChannelMessageToolSchemaContribution[] = [];
+  if (actions.has("read")) {
+    schema.push(buildMatrixReadCursorToolSchema());
+  }
+  if (actions.has("set-profile")) {
+    schema.push(buildMatrixProfileToolSchema());
+  }
+  if (actions.has("react")) {
+    schema.push({
+      actions: ["react", "reactions"],
+      properties: {
+        emoji: Type.Optional(
+          Type.String({
+            description: `Unicode emoji or custom emote shortcode.${actions.has("emoji-list") ? ' Discover room and personal custom emotes with action:"emoji-list".' : ""}`,
+          }),
+        ),
+      },
+    });
+  }
+  return {
+    actions: listedActions,
+    capabilities: ["presentation"],
+    schema: schema.length > 1 ? schema : (schema[0] ?? null),
+    mediaSourceParams: listedActions.includes("set-profile")
+      ? { "set-profile": MATRIX_PROFILE_MEDIA_SOURCE_PARAMS }
+      : null,
+  };
+}
+
 export const matrixMessageActions: ChannelMessageActionAdapter = {
-  listActions: ({ cfg }) => {
-    const account = resolveMatrixAccount({ cfg: cfg as CoreConfig });
-    if (!account.enabled || !account.configured) {
-      return [];
-    }
-    const gate = createActionGate((cfg as CoreConfig).channels?.matrix?.actions);
-    const actions = new Set<ChannelMessageActionName>(["send", "poll"]);
-    if (gate("reactions")) {
-      actions.add("react");
-      actions.add("reactions");
-    }
-    if (gate("messages")) {
-      actions.add("read");
-      actions.add("edit");
-      actions.add("delete");
-    }
-    if (gate("pins")) {
-      actions.add("pin");
-      actions.add("unpin");
-      actions.add("list-pins");
-    }
-    if (gate("memberInfo")) {
-      actions.add("member-info");
-    }
-    if (gate("channelInfo")) {
-      actions.add("channel-info");
-    }
-    return Array.from(actions);
+  providerOwnedReadGates: true,
+  readAuthorityActions: [
+    "read",
+    "reactions",
+    "list-pins",
+    "emoji-list",
+    "member-info",
+    "channel-info",
+  ],
+  /** @deprecated Use describeMessageToolAsync. Final compatibility day: 2026-12-31. Removal in the first January 2027 stable release. */
+  describeMessageTool: ({ cfg, accountId, senderIsOwner }) => {
+    return describeMatrixMessageTool(
+      resolveMatrixActionAccount({ cfg: cfg as CoreConfig, accountId }),
+      senderIsOwner,
+    );
   },
-  supportsAction: ({ action }) => action !== "poll",
-  extractToolSend: ({ args }): ChannelToolSend | null => {
-    const action = typeof args.action === "string" ? args.action.trim() : "";
-    if (action !== "sendMessage") {
+  describeMessageToolAsync: async ({ cfg, accountId, senderIsOwner }) => {
+    // SAFETY: The host validates channels.matrix against this plugin's config schema.
+    const resolvedCfg = cfg as CoreConfig;
+    const account =
+      !accountId && requiresExplicitMatrixDefaultAccount(resolvedCfg)
+        ? null
+        : await resolveMatrixAccountAsync({
+            cfg: resolvedCfg,
+            accountId: accountId ?? resolveDefaultMatrixAccountId(resolvedCfg),
+          });
+    return describeMatrixMessageTool(account, senderIsOwner);
+  },
+  supportsAction: ({ action }) => MATRIX_PLUGIN_HANDLED_ACTIONS.has(action),
+  extractToolSend: ({ args }) => {
+    return extractToolSend(args, "sendMessage");
+  },
+  prepareSendPayload: async ({ ctx, payload }) => {
+    if (ctx.action !== "send") {
       return null;
     }
-    const to = typeof args.to === "string" ? args.to : undefined;
-    if (!to) {
+    const cfg = ctx.cfg as CoreConfig;
+    if (!ctx.accountId && requiresExplicitMatrixDefaultAccount(cfg)) {
       return null;
     }
-    return { to };
+    const account = await resolveMatrixAccountAsync({ cfg, accountId: ctx.accountId });
+    return account.enabled &&
+      account.configured &&
+      createActionGate(account.config.actions)("messages")
+      ? payload
+      : null;
   },
-  handleAction: async (ctx: ChannelMessageActionContext) => {
-    const { action, params, cfg } = ctx;
-    const resolveRoomId = () =>
-      readStringParam(params, "roomId") ??
-      readStringParam(params, "channelId") ??
-      readStringParam(params, "to", { required: true });
-
-    if (action === "send") {
-      const to = readStringParam(params, "to", { required: true });
-      const content = readStringParam(params, "message", {
-        required: true,
-        allowEmpty: true,
-      });
-      const mediaUrl = readStringParam(params, "media", { trim: false });
-      const replyTo = readStringParam(params, "replyTo");
-      const threadId = readStringParam(params, "threadId");
-      return await handleMatrixAction(
-        {
-          action: "sendMessage",
-          to,
-          content,
-          mediaUrl: mediaUrl ?? undefined,
-          replyToId: replyTo ?? undefined,
-          threadId: threadId ?? undefined,
-        },
-        cfg as CoreConfig,
-      );
-    }
-
-    if (action === "react") {
-      const messageId = readStringParam(params, "messageId", { required: true });
-      const emoji = readStringParam(params, "emoji", { allowEmpty: true });
-      const remove = typeof params.remove === "boolean" ? params.remove : undefined;
-      return await handleMatrixAction(
-        {
-          action: "react",
-          roomId: resolveRoomId(),
-          messageId,
-          emoji,
-          remove,
-        },
-        cfg as CoreConfig,
-      );
-    }
-
-    if (action === "reactions") {
-      const messageId = readStringParam(params, "messageId", { required: true });
-      const limit = readNumberParam(params, "limit", { integer: true });
-      return await handleMatrixAction(
-        {
-          action: "reactions",
-          roomId: resolveRoomId(),
-          messageId,
-          limit,
-        },
-        cfg as CoreConfig,
-      );
-    }
-
-    if (action === "read") {
-      const limit = readNumberParam(params, "limit", { integer: true });
-      return await handleMatrixAction(
-        {
-          action: "readMessages",
-          roomId: resolveRoomId(),
-          limit,
-          before: readStringParam(params, "before"),
-          after: readStringParam(params, "after"),
-        },
-        cfg as CoreConfig,
-      );
-    }
-
-    if (action === "edit") {
-      const messageId = readStringParam(params, "messageId", { required: true });
-      const content = readStringParam(params, "message", { required: true });
-      return await handleMatrixAction(
-        {
-          action: "editMessage",
-          roomId: resolveRoomId(),
-          messageId,
-          content,
-        },
-        cfg as CoreConfig,
-      );
-    }
-
-    if (action === "delete") {
-      const messageId = readStringParam(params, "messageId", { required: true });
-      return await handleMatrixAction(
-        {
-          action: "deleteMessage",
-          roomId: resolveRoomId(),
-          messageId,
-        },
-        cfg as CoreConfig,
-      );
-    }
-
-    if (action === "pin" || action === "unpin" || action === "list-pins") {
-      const messageId =
-        action === "list-pins"
-          ? undefined
-          : readStringParam(params, "messageId", { required: true });
-      return await handleMatrixAction(
-        {
-          action:
-            action === "pin" ? "pinMessage" : action === "unpin" ? "unpinMessage" : "listPins",
-          roomId: resolveRoomId(),
-          messageId,
-        },
-        cfg as CoreConfig,
-      );
-    }
-
-    if (action === "member-info") {
-      const userId = readStringParam(params, "userId", { required: true });
-      return await handleMatrixAction(
-        {
-          action: "memberInfo",
-          userId,
-          roomId: readStringParam(params, "roomId") ?? readStringParam(params, "channelId"),
-        },
-        cfg as CoreConfig,
-      );
-    }
-
-    if (action === "channel-info") {
-      return await handleMatrixAction(
-        {
-          action: "channelInfo",
-          roomId: resolveRoomId(),
-        },
-        cfg as CoreConfig,
-      );
-    }
-
-    throw new Error(`Action ${action} is not supported for provider matrix.`);
+  handleAction: async (ctx) => {
+    const { handleMatrixAction } = await import("./tool-actions.js");
+    return await handleMatrixAction(ctx);
   },
 };

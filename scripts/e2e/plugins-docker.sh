@@ -38,7 +38,7 @@ module.exports = {
   },
 };
 JS
-  cat > "$HOME/.paleoclaw/extensions/demo-plugin/paleoclaw.plugin.json" <<'"'"'JSON'"'"'
+  cat > "$HOME/.paleoclaw/extensions/demo-plugin/openclaw.plugin.json" <<'"'"'JSON'"'"'
 {
   "id": "demo-plugin",
   "configSchema": {
@@ -98,7 +98,7 @@ module.exports = {
   },
 };
 JS
-  cat > "$pack_dir/package/paleoclaw.plugin.json" <<'"'"'JSON'"'"'
+  cat > "$pack_dir/package/openclaw.plugin.json" <<'"'"'JSON'"'"'
 {
   "id": "demo-plugin-tgz",
   "configSchema": {
@@ -145,7 +145,7 @@ module.exports = {
   },
 };
 JS
-  cat > "$dir_plugin/paleoclaw.plugin.json" <<'"'"'JSON'"'"'
+  cat > "$dir_plugin/openclaw.plugin.json" <<'"'"'JSON'"'"'
 {
   "id": "demo-plugin-dir",
   "configSchema": {
@@ -192,7 +192,7 @@ module.exports = {
   },
 };
 JS
-  cat > "$file_pack_dir/package/paleoclaw.plugin.json" <<'"'"'JSON'"'"'
+  cat > "$file_pack_dir/package/openclaw.plugin.json" <<'"'"'JSON'"'"'
 {
   "id": "demo-plugin-file",
   "configSchema": {

@@ -1,151 +1,218 @@
+import { nip19 } from "nostr-tools";
+import {
+  createPluginSetupWizardConfigure,
+  createTestWizardPrompter,
+  runSetupWizardConfigure,
+} from "paleoclaw/plugin-sdk/plugin-test-runtime";
+import { withEnv } from "paleoclaw/plugin-sdk/test-env";
 import { describe, expect, it } from "vitest";
+import type { OpenClawConfig } from "../runtime-api.js";
 import { nostrPlugin } from "./channel.js";
+import { nostrSetupPlugin } from "./channel.setup.js";
+import { nostrSetupContract, nostrSetupWizard } from "./setup-surface.js";
+import {
+  TEST_HEX_PRIVATE_KEY,
+  TEST_HEX_PUBLIC_KEY,
+  TEST_SETUP_RELAY_URLS,
+  buildResolvedNostrAccount,
+  createConfiguredNostrCfg,
+} from "./test-fixtures.js";
+import { resolveNostrAccount } from "./types.js";
 
-describe("nostrPlugin", () => {
-  describe("meta", () => {
-    it("has correct id", () => {
-      expect(nostrPlugin.id).toBe("nostr");
-    });
+const npub = nip19.npubEncode(TEST_HEX_PUBLIC_KEY);
+const secretCfg: OpenClawConfig = {
+  channels: {
+    nostr: {
+      defaultAccount: "Team.A",
+      privateKey: { source: "env", provider: "default", id: "MISSING_NOSTR_KEY" },
+    },
+  },
+};
 
-    it("has required meta fields", () => {
-      expect(nostrPlugin.meta.label).toBe("Nostr");
-      expect(nostrPlugin.meta.docsPath).toBe("/channels/nostr");
-      expect(nostrPlugin.meta.blurb).toContain("NIP-04");
+describe("nostr targets and access policy", () => {
+  it("resolves a prefixed public key", () => {
+    const to = `  nostr:${npub.toUpperCase()}  `;
+    const normalized = nostrPlugin.messaging?.normalizeTarget?.(to);
+    expect(normalized).toBe(TEST_HEX_PUBLIC_KEY);
+    expect(nostrPlugin.messaging?.targetResolver?.looksLikeId?.(to)).toBe(true);
+    expect(nostrPlugin.messaging?.targetResolver?.looksLikeId?.(to, normalized)).toBe(true);
+    expect(nostrPlugin.messaging?.inferTargetChatType?.({ to })).toBe("direct");
+    expect(nostrPlugin.outbound?.resolveTarget?.({ cfg: {}, to, mode: "explicit" })).toEqual({
+      ok: true,
+      to: TEST_HEX_PUBLIC_KEY,
     });
   });
 
-  describe("capabilities", () => {
-    it("supports direct messages", () => {
-      expect(nostrPlugin.capabilities.chatTypes).toContain("direct");
-    });
-
-    it("does not support groups (MVP)", () => {
-      expect(nostrPlugin.capabilities.chatTypes).not.toContain("group");
-    });
-
-    it("does not support media (MVP)", () => {
-      expect(nostrPlugin.capabilities.media).toBe(false);
+  it("rejects invalid direct-message targets", () => {
+    const to = "not-a-public-key";
+    expect(nostrPlugin.messaging?.targetResolver?.looksLikeId?.(to)).toBe(false);
+    expect(nostrPlugin.messaging?.inferTargetChatType?.({ to })).toBeUndefined();
+    expect(nostrPlugin.outbound?.resolveTarget?.({ cfg: {}, to, mode: "explicit" })).toMatchObject({
+      ok: false,
+      error: expect.any(Error),
     });
   });
 
-  describe("config adapter", () => {
-    it("has required config functions", () => {
-      expect(nostrPlugin.config.listAccountIds).toBeTypeOf("function");
-      expect(nostrPlugin.config.resolveAccount).toBeTypeOf("function");
-      expect(nostrPlugin.config.isConfigured).toBeTypeOf("function");
+  it("explains a missing outbound target", () => {
+    const result = nostrPlugin.outbound?.resolveTarget?.({ cfg: {}, mode: "explicit" });
+    expect(result).toMatchObject({
+      ok: false,
+      error: { message: "Delivering to Nostr requires target <npub|hex pubkey|nostr:npub...>" },
     });
+  });
 
-    it("listAccountIds returns empty array for unconfigured", () => {
-      const cfg = { channels: {} };
-      const ids = nostrPlugin.config.listAccountIds(cfg);
-      expect(ids).toEqual([]);
+  it("formats nostr:* without widening access", () => {
+    expect(nostrPlugin.config.formatAllowFrom?.({ cfg: {}, allowFrom: ["nostr:*"] })).toEqual([
+      "nostr:*",
+    ]);
+  });
+
+  it("normalizes pairing entries with spaced prefixes", () => {
+    expect(nostrPlugin.pairing?.normalizeAllowEntry?.(`  nostr:${TEST_HEX_PUBLIC_KEY}  `)).toBe(
+      TEST_HEX_PUBLIC_KEY,
+    );
+  });
+
+  it("applies the configured DM policy and its allowlist normalizer", () => {
+    const entry = `  nostr:${TEST_HEX_PUBLIC_KEY}  `;
+    const allowFrom = [entry];
+    const cfg = createConfiguredNostrCfg({ dmPolicy: "allowlist", allowFrom });
+    const result = nostrPlugin.security?.resolveDmPolicy?.({
+      cfg,
+      account: buildResolvedNostrAccount({ config: cfg.channels.nostr }),
     });
+    expect(result).toMatchObject({ policy: "allowlist", allowFrom });
+    expect(result?.normalizeEntry?.(entry)).toBe(TEST_HEX_PUBLIC_KEY);
+  });
+});
 
-    it("listAccountIds returns default for configured", () => {
-      const cfg = {
-        channels: {
-          nostr: {
-            privateKey: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
-          },
+describe("nostr accounts", () => {
+  it("resolves a disabled named account and its configured relays", () => {
+    const cfg = createConfiguredNostrCfg({
+      name: "Test Bot",
+      defaultAccount: "work",
+      enabled: false,
+      relays: ["wss://test.relay"],
+    });
+    expect(nostrPlugin.config.listAccountIds(cfg)).toEqual(["work"]);
+    expect(resolveNostrAccount({ cfg, accountId: "custom" })).toMatchObject({
+      accountId: "custom",
+      name: "Test Bot",
+      enabled: false,
+      configured: true,
+      privateKey: TEST_HEX_PRIVATE_KEY,
+      publicKey: expect.stringMatching(/^[0-9a-f]{64}$/),
+      relays: ["wss://test.relay"],
+    });
+  });
+
+  it("leaves the public key empty for invalid credentials", () => {
+    expect(
+      resolveNostrAccount({ cfg: createConfiguredNostrCfg({ privateKey: "invalid-key" }) }),
+    ).toMatchObject({ configured: true, publicKey: "" });
+  });
+
+  it("uses the environment key for an unconfigured default account", () => {
+    withEnv({ NOSTR_PRIVATE_KEY: TEST_HEX_PRIVATE_KEY }, () => {
+      expect(
+        resolveNostrAccount({ cfg: { channels: { nostr: { enabled: true } } } }),
+      ).toMatchObject({
+        configured: true,
+        privateKey: TEST_HEX_PRIVATE_KEY,
+        publicKey: expect.stringMatching(/^[0-9a-f]{64}$/),
+      });
+    });
+  });
+
+  it("keeps unresolved SecretRefs configured without ambient credential fallback", () => {
+    withEnv({ NOSTR_PRIVATE_KEY: TEST_HEX_PRIVATE_KEY }, () => {
+      expect(nostrPlugin.config.listAccountIds(secretCfg)).toEqual(["team-a"]);
+      expect(resolveNostrAccount({ cfg: secretCfg })).toMatchObject({
+        accountId: "team-a",
+        configured: true,
+        privateKey: "",
+        publicKey: "",
+        config: { privateKey: secretCfg.channels?.nostr?.privateKey },
+      });
+    });
+  });
+
+  it("inspects a SecretRef without exposing a materialized value", () => {
+    withEnv({ NOSTR_PRIVATE_KEY: undefined }, () => {
+      expect(
+        nostrSetupWizard.credentials?.[0]?.inspect?.({ cfg: secretCfg, accountId: "default" }),
+      ).toEqual({
+        accountConfigured: true,
+        hasConfiguredValue: true,
+        resolvedValue: undefined,
+        envValue: undefined,
+      });
+    });
+  });
+});
+
+describe("nostr setup", () => {
+  it.each([
+    { accountId: "default", relayUrls: TEST_SETUP_RELAY_URLS.join(", ") },
+    { accountId: "work", relayUrls: "" },
+  ])("configures the $accountId account through the wizard", async ({ accountId, relayUrls }) => {
+    const result = await runSetupWizardConfigure({
+      configure: createPluginSetupWizardConfigure(nostrPlugin),
+      cfg: {},
+      prompter: createTestWizardPrompter({
+        text: async ({ message }) => {
+          if (message === "Nostr private key (nsec... or hex)") {
+            return TEST_HEX_PRIVATE_KEY;
+          }
+          if (message === "Relay URLs (comma-separated, optional)") {
+            return relayUrls;
+          }
+          throw new Error(`Unexpected prompt: ${message}`);
         },
-      };
-      const ids = nostrPlugin.config.listAccountIds(cfg);
-      expect(ids).toContain("default");
+      }),
+      options: {},
+      accountOverrides: accountId === "default" ? undefined : { nostr: accountId },
     });
+    expect(result.accountId).toBe(accountId);
+    expect(result.cfg.channels?.nostr).toMatchObject({
+      enabled: true,
+      privateKey: TEST_HEX_PRIVATE_KEY,
+    });
+    if (accountId === "default") {
+      expect(result.cfg.channels?.nostr?.relays).toEqual(TEST_SETUP_RELAY_URLS);
+    } else {
+      expect(result.cfg.channels?.nostr?.defaultAccount).toBe("work");
+    }
   });
 
-  describe("messaging", () => {
-    it("has target resolver", () => {
-      expect(nostrPlugin.messaging?.targetResolver?.looksLikeId).toBeTypeOf("function");
-    });
-
-    it("recognizes npub as valid target", () => {
-      const looksLikeId = nostrPlugin.messaging?.targetResolver?.looksLikeId;
-      if (!looksLikeId) {
-        return;
-      }
-
-      expect(looksLikeId("npub1xyz123")).toBe(true);
-    });
-
-    it("recognizes hex pubkey as valid target", () => {
-      const looksLikeId = nostrPlugin.messaging?.targetResolver?.looksLikeId;
-      if (!looksLikeId) {
-        return;
-      }
-
-      const hexPubkey = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
-      expect(looksLikeId(hexPubkey)).toBe(true);
-    });
-
-    it("rejects invalid input", () => {
-      const looksLikeId = nostrPlugin.messaging?.targetResolver?.looksLikeId;
-      if (!looksLikeId) {
-        return;
-      }
-
-      expect(looksLikeId("not-a-pubkey")).toBe(false);
-      expect(looksLikeId("")).toBe(false);
-    });
-
-    it("normalizeTarget strips nostr: prefix", () => {
-      const normalize = nostrPlugin.messaging?.normalizeTarget;
-      if (!normalize) {
-        return;
-      }
-
-      const hexPubkey = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
-      expect(normalize(`nostr:${hexPubkey}`)).toBe(hexPubkey);
-    });
+  it("uses the configured setup default when accountId is omitted", () => {
+    expect(
+      nostrPlugin.setupContract?.resolveAccountId?.({
+        cfg: createConfiguredNostrCfg({ defaultAccount: "work" }),
+        input: {},
+      }),
+    ).toBe("work");
   });
 
-  describe("outbound", () => {
-    it("has correct delivery mode", () => {
-      expect(nostrPlugin.outbound?.deliveryMode).toBe("direct");
-    });
-
-    it("has reasonable text chunk limit", () => {
-      expect(nostrPlugin.outbound?.textChunkLimit).toBe(4000);
-    });
+  it("accepts uppercase bech32 private keys in lightweight setup", () => {
+    const privateKey = nip19.nsecEncode(Buffer.from(TEST_HEX_PRIVATE_KEY, "hex")).toUpperCase();
+    expect(
+      nostrSetupPlugin.setupContract?.validateInput?.({
+        cfg: {},
+        accountId: "default",
+        input: { privateKey },
+      }),
+    ).toBeNull();
   });
 
-  describe("pairing", () => {
-    it("has id label for pairing", () => {
-      expect(nostrPlugin.pairing?.idLabel).toBe("nostrPubkey");
-    });
-
-    it("normalizes nostr: prefix in allow entries", () => {
-      const normalize = nostrPlugin.pairing?.normalizeAllowEntry;
-      if (!normalize) {
-        return;
-      }
-
-      const hexPubkey = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
-      expect(normalize(`nostr:${hexPubkey}`)).toBe(hexPubkey);
-    });
-  });
-
-  describe("security", () => {
-    it("has resolveDmPolicy function", () => {
-      expect(nostrPlugin.security?.resolveDmPolicy).toBeTypeOf("function");
-    });
-  });
-
-  describe("gateway", () => {
-    it("has startAccount function", () => {
-      expect(nostrPlugin.gateway?.startAccount).toBeTypeOf("function");
-    });
-  });
-
-  describe("status", () => {
-    it("has default runtime", () => {
-      expect(nostrPlugin.status?.defaultRuntime).toBeDefined();
-      expect(nostrPlugin.status?.defaultRuntime?.accountId).toBe("default");
-      expect(nostrPlugin.status?.defaultRuntime?.running).toBe(false);
-    });
-
-    it("has buildAccountSnapshot function", () => {
-      expect(nostrPlugin.status?.buildAccountSnapshot).toBeTypeOf("function");
-    });
+  it.each([
+    ["malformed nsec", "nsec1not-a-real-secret"],
+    ["wrong payload length", nip19.nsecEncode(new Uint8Array(31))],
+    ["curve-order scalar", "fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141"],
+  ])("rejects %s across setup surfaces", (_label, privateKey) => {
+    const input = { cfg: {}, accountId: "default", input: { privateKey } };
+    const error = "Nostr private key must be valid nsec or 64-character hex.";
+    expect(nostrSetupContract.validateInput?.(input)).toBe(error);
+    expect(nostrSetupPlugin.setupContract?.validateInput?.(input)).toBe(error);
   });
 });

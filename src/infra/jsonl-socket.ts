@@ -1,43 +1,129 @@
+import { addAbortListener } from "node:events";
 import net from "node:net";
+import { clearTimeout as clearNodeTimeout, setTimeout as setNodeTimeout } from "node:timers";
+import { toErrorObject } from "@paleoclaw/normalization-core/error-coercion";
+import { resolveTimerTimeoutMs } from "@paleoclaw/normalization-core/number-coercion";
 
-export async function requestJsonlSocket<T>(params: {
+const JSONL_SOCKET_MAX_LINE_BYTES = 16 * 1024 * 1024;
+
+type JsonlSocketRequest<T> = {
   socketPath: string;
-  payload: string;
+  requestLine: string;
   timeoutMs: number;
+  onTimeout?: () => T;
+  onResponseLost?: () => T;
+  signal?: AbortSignal;
+  beforeSend?: () => void;
+  maxResponseLineBytes?: number;
   accept: (msg: unknown) => T | null | undefined;
-}): Promise<T | null> {
-  const { socketPath, payload, timeoutMs, accept } = params;
-  return await new Promise((resolve) => {
+};
+
+/**
+ * Sends one JSONL request line, half-closes the write side, and waits for an accepted response line.
+ */
+export async function requestJsonlSocket<T>(params: JsonlSocketRequest<T>): Promise<T | null> {
+  const { socketPath, requestLine, accept, signal } = params;
+  const timeoutMs = params.timeoutMs === 0 ? 0 : resolveTimerTimeoutMs(params.timeoutMs, 1);
+  return await new Promise((resolve, reject) => {
     const client = new net.Socket();
     let settled = false;
-    let buffer = "";
+    let requestSent = false;
+    let timer: ReturnType<typeof setNodeTimeout> | undefined;
+    // Keep raw bytes until a line is complete so chunk boundaries cannot split
+    // a UTF-8 code point before JSON parsing.
+    const lineChunks: Buffer[] = [];
+    let lineBytes = 0;
 
+    const cleanup = () => {
+      if (settled) {
+        return false;
+      }
+      settled = true;
+      clearNodeTimeout(timer);
+      abortListener?.[Symbol.dispose]();
+      client.destroy();
+      return true;
+    };
     const finish = (value: T | null) => {
+      if (cleanup()) {
+        resolve(value);
+      }
+    };
+    const fail = (error: unknown) => {
+      if (cleanup()) {
+        reject(toErrorObject(error, "Socket request failed before sending."));
+      }
+    };
+
+    const finishPeerLoss = () => finish(requestSent ? (params.onResponseLost?.() ?? null) : null);
+    const appendLineChunk = (chunk: Buffer): boolean => {
+      if (
+        lineBytes + chunk.byteLength >
+        (params.maxResponseLineBytes ?? JSONL_SOCKET_MAX_LINE_BYTES)
+      ) {
+        finishPeerLoss();
+        return false;
+      }
+      if (chunk.byteLength > 0) {
+        lineChunks.push(chunk);
+        lineBytes += chunk.byteLength;
+      }
+      return true;
+    };
+
+    if (timeoutMs > 0) {
+      timer = setNodeTimeout(
+        () => finish(requestSent ? (params.onTimeout?.() ?? null) : null),
+        timeoutMs,
+      );
+    }
+    const abortListener = signal ? addAbortListener(signal, () => finish(null)) : undefined;
+    // Preparation may have yielded before reaching the transport. Never connect
+    // or send for an invocation that has already lost its lifetime.
+    if (signal?.aborted) {
+      finish(null);
+      return;
+    }
+
+    client.on("error", finishPeerLoss);
+    client.on("end", finishPeerLoss);
+    client.on("close", finishPeerLoss);
+    client.connect(socketPath, () => {
       if (settled) {
         return;
       }
-      settled = true;
       try {
-        client.destroy();
-      } catch {
-        // ignore
+        params.beforeSend?.();
+      } catch (error) {
+        fail(error);
+        return;
       }
-      resolve(value);
-    };
-
-    const timer = setTimeout(() => finish(null), timeoutMs);
-
-    client.on("error", () => finish(null));
-    client.connect(socketPath, () => {
-      client.write(`${payload}\n`);
+      if (settled) {
+        return;
+      }
+      requestSent = true;
+      client.end(`${requestLine}\n`);
     });
-    client.on("data", (data) => {
-      buffer += data.toString("utf8");
-      let idx = buffer.indexOf("\n");
-      while (idx !== -1) {
-        const line = buffer.slice(0, idx).trim();
-        buffer = buffer.slice(idx + 1);
-        idx = buffer.indexOf("\n");
+    client.on("data", (data: Buffer) => {
+      let offset = 0;
+      while (offset < data.byteLength) {
+        const newlineIndex = data.indexOf(0x0a, offset);
+        if (newlineIndex === -1) {
+          appendLineChunk(data.subarray(offset));
+          return;
+        }
+        // Bound bytes before concatenating or parsing; both complete and unterminated
+        // peer-controlled lines must stay below the same allocation ceiling.
+        if (!appendLineChunk(data.subarray(offset, newlineIndex))) {
+          return;
+        }
+        const line =
+          (lineChunks.length > 1 ? Buffer.concat(lineChunks, lineBytes) : lineChunks[0])
+            ?.toString("utf8")
+            .trim() ?? "";
+        lineChunks.length = 0;
+        lineBytes = 0;
+        offset = newlineIndex + 1;
         if (!line) {
           continue;
         }
@@ -47,7 +133,6 @@ export async function requestJsonlSocket<T>(params: {
           if (result === undefined) {
             continue;
           }
-          clearTimeout(timer);
           finish(result);
           return;
         } catch {

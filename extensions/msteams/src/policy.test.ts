@@ -1,221 +1,180 @@
-import type { MSTeamsConfig } from "paleoclaw/plugin-sdk/msteams";
 import { describe, expect, it } from "vitest";
+import type { MSTeamsConfig } from "../runtime-api.js";
 import {
-  isMSTeamsGroupAllowed,
+  resolveMSTeamsGroupToolPolicy,
   resolveMSTeamsReplyPolicy,
   resolveMSTeamsRouteConfig,
 } from "./policy.js";
 
+function toolConfig(teams: MSTeamsConfig["teams"]) {
+  return { channels: { msteams: { teams } } };
+}
+
+function toolPolicy(teams: MSTeamsConfig["teams"], groupSpace: string, groupId: string) {
+  return resolveMSTeamsGroupToolPolicy({ cfg: toolConfig(teams), groupSpace, groupId });
+}
+
 describe("msteams policy", () => {
   describe("resolveMSTeamsRouteConfig", () => {
-    it("returns team and channel config when present", () => {
-      const cfg: MSTeamsConfig = {
-        teams: {
-          team123: {
-            requireMention: false,
-            channels: {
-              chan456: { requireMention: true },
-            },
-          },
-        },
-      };
-
-      const res = resolveMSTeamsRouteConfig({
-        cfg,
-        teamId: "team123",
-        conversationId: "chan456",
-      });
-
-      expect(res.teamConfig?.requireMention).toBe(false);
-      expect(res.channelConfig?.requireMention).toBe(true);
-      expect(res.allowlistConfigured).toBe(true);
-      expect(res.allowed).toBe(true);
-      expect(res.channelMatchKey).toBe("chan456");
-      expect(res.channelMatchSource).toBe("direct");
-    });
-
     it("returns undefined configs when teamId is missing", () => {
-      const cfg: MSTeamsConfig = {
-        teams: { team123: { requireMention: false } },
-      };
+      const cfg: MSTeamsConfig = { teams: { team123: { requireMention: false } } };
 
       const res = resolveMSTeamsRouteConfig({
         cfg,
         teamId: undefined,
         conversationId: "chan",
       });
-      expect(res.teamConfig).toBeUndefined();
-      expect(res.channelConfig).toBeUndefined();
-      expect(res.allowlistConfigured).toBe(true);
-      expect(res.allowed).toBe(false);
+      expect(res).toMatchObject({
+        teamConfig: undefined,
+        channelConfig: undefined,
+        allowlistConfigured: true,
+        allowed: false,
+      });
     });
 
-    it("matches team and channel by name", () => {
-      const cfg: MSTeamsConfig = {
-        teams: {
-          "My Team": {
-            requireMention: true,
-            channels: {
-              "General Chat": { requireMention: false },
+    it("blocks team and channel name matches by default", () => {
+      const res = resolveMSTeamsRouteConfig({
+        cfg: { teams: { "My Team": { channels: { "General Chat": {} } } } },
+        teamName: "My Team",
+        channelName: "General Chat",
+        conversationId: "ignored",
+        allowNameMatching: false,
+      });
+
+      expect(res).toMatchObject({
+        teamConfig: undefined,
+        channelConfig: undefined,
+        allowed: false,
+      });
+    });
+  });
+
+  const mention = { requireMention: true };
+  const noMention = { requireMention: false };
+  const dmGlobal = { ...noMention, replyStyle: "top-level" as const };
+  it.each([
+    ["DM", { isDirectMessage: true, globalConfig: dmGlobal }, false, "thread"],
+    ["default", { globalConfig: {} }, true, "thread"],
+    ["channel", { teamConfig: mention, channelConfig: noMention }, false, "top-level"],
+    ["team", { teamConfig: noMention }, false, "top-level"],
+  ] satisfies [
+    string,
+    Partial<Parameters<typeof resolveMSTeamsReplyPolicy>[0]>,
+    boolean,
+    string,
+  ][])("reply policy: %s", (_name, overrides, requireMention, replyStyle) => {
+    expect(
+      resolveMSTeamsReplyPolicy({
+        isDirectMessage: false,
+        globalConfig: mention,
+        ...overrides,
+      }),
+    ).toEqual({ requireMention, replyStyle });
+  });
+
+  describe("resolveMSTeamsGroupToolPolicy", () => {
+    it("uses stable projected keys and never raw mutable names", () => {
+      const cfg = {
+        channels: {
+          msteams: {
+            dangerouslyAllowNameMatching: true,
+            teams: {
+              "Mutable Team": {
+                channels: {
+                  "Mutable Channel": { tools: { allow: ["exec"] } },
+                },
+              },
+              "19:stable-team@thread.tacv2": {
+                channels: {
+                  "19:stable-channel@thread.tacv2": { tools: { allow: ["read"] } },
+                },
+              },
             },
           },
         },
       };
 
-      const res = resolveMSTeamsRouteConfig({
-        cfg,
-        teamName: "My Team",
-        channelName: "General Chat",
-        conversationId: "ignored",
-      });
-
-      expect(res.teamConfig?.requireMention).toBe(true);
-      expect(res.channelConfig?.requireMention).toBe(false);
-      expect(res.allowed).toBe(true);
-    });
-  });
-
-  describe("resolveMSTeamsReplyPolicy", () => {
-    it("forces thread replies for direct messages", () => {
-      const policy = resolveMSTeamsReplyPolicy({
-        isDirectMessage: true,
-        globalConfig: { replyStyle: "top-level", requireMention: false },
-      });
-      expect(policy).toEqual({ requireMention: false, replyStyle: "thread" });
-    });
-
-    it("defaults to requireMention=true and replyStyle=thread", () => {
-      const policy = resolveMSTeamsReplyPolicy({
-        isDirectMessage: false,
-        globalConfig: {},
-      });
-      expect(policy).toEqual({ requireMention: true, replyStyle: "thread" });
-    });
-
-    it("defaults replyStyle to top-level when requireMention=false", () => {
-      const policy = resolveMSTeamsReplyPolicy({
-        isDirectMessage: false,
-        globalConfig: { requireMention: false },
-      });
-      expect(policy).toEqual({
-        requireMention: false,
-        replyStyle: "top-level",
-      });
-    });
-
-    it("prefers channel overrides over team and global defaults", () => {
-      const policy = resolveMSTeamsReplyPolicy({
-        isDirectMessage: false,
-        globalConfig: { requireMention: true },
-        teamConfig: { requireMention: true },
-        channelConfig: { requireMention: false },
-      });
-
-      // requireMention from channel -> false, and replyStyle defaults from requireMention -> top-level
-      expect(policy).toEqual({
-        requireMention: false,
-        replyStyle: "top-level",
-      });
-    });
-
-    it("inherits team mention settings when channel config is missing", () => {
-      const policy = resolveMSTeamsReplyPolicy({
-        isDirectMessage: false,
-        globalConfig: { requireMention: true },
-        teamConfig: { requireMention: false },
-      });
-      expect(policy).toEqual({
-        requireMention: false,
-        replyStyle: "top-level",
-      });
-    });
-
-    it("uses explicit replyStyle even when requireMention defaults would differ", () => {
-      const policy = resolveMSTeamsReplyPolicy({
-        isDirectMessage: false,
-        globalConfig: { requireMention: false, replyStyle: "thread" },
-      });
-      expect(policy).toEqual({ requireMention: false, replyStyle: "thread" });
-    });
-  });
-
-  describe("isMSTeamsGroupAllowed", () => {
-    it("allows when policy is open", () => {
       expect(
-        isMSTeamsGroupAllowed({
-          groupPolicy: "open",
-          allowFrom: [],
-          senderId: "user-id",
-          senderName: "User",
+        resolveMSTeamsGroupToolPolicy({
+          cfg,
+          groupId: "19:unknown@thread.tacv2",
+          groupChannel: "Mutable Channel",
+          groupSpace: "Mutable Team",
         }),
-      ).toBe(true);
+      ).toBeUndefined();
+      expect(
+        resolveMSTeamsGroupToolPolicy({
+          cfg,
+          groupId: "19:stable-channel@thread.tacv2",
+          groupSpace: "19:stable-team@thread.tacv2",
+        }),
+      ).toEqual({ allow: ["read"] });
     });
 
-    it("blocks when policy is disabled", () => {
-      expect(
-        isMSTeamsGroupAllowed({
-          groupPolicy: "disabled",
-          allowFrom: ["user-id"],
-          senderId: "user-id",
-          senderName: "User",
-        }),
-      ).toBe(false);
+    it.each([
+      [
+        "scans across teams when none matches",
+        "missing-team",
+        {
+          first: { channels: { other: { tools: { deny: ["other"] } } } },
+          second: { channels: { target: { tools: { allow: ["cross-team"] } } } },
+        },
+        { allow: ["cross-team"] },
+      ],
+      [
+        "scans past a policy-less matched team",
+        "unknown-team",
+        {
+          "*": {},
+          actual: { channels: { target: { tools: { deny: ["shell"] } } } },
+        },
+        { deny: ["shell"] },
+      ],
+      [
+        "does not scan past a matched channel",
+        "mine",
+        {
+          mine: { channels: { target: {} } },
+          other: { channels: { target: { tools: { deny: ["shell"] } } } },
+        },
+        undefined,
+      ],
+    ] satisfies [
+      string,
+      string,
+      MSTeamsConfig["teams"],
+      ReturnType<typeof resolveMSTeamsGroupToolPolicy>,
+    ][])("%s", (_name, groupSpace, teams, expected) => {
+      expect(toolPolicy(teams, groupSpace, "target")).toEqual(expected);
     });
 
-    it("blocks allowlist when empty", () => {
+    it("falls from a fieldless channel entry to its team policy", () => {
       expect(
-        isMSTeamsGroupAllowed({
-          groupPolicy: "allowlist",
-          allowFrom: [],
-          senderId: "user-id",
-          senderName: "User",
-        }),
-      ).toBe(false);
+        toolPolicy(
+          {
+            team: {
+              tools: { deny: ["team"] },
+              channels: { channel: {} },
+            },
+          },
+          "team",
+          "channel",
+        ),
+      ).toEqual({ deny: ["team"] });
     });
 
-    it("allows allowlist when sender matches", () => {
-      expect(
-        isMSTeamsGroupAllowed({
-          groupPolicy: "allowlist",
-          allowFrom: ["User-Id"],
-          senderId: "user-id",
-          senderName: "User",
-        }),
-      ).toBe(true);
-    });
+    it("keeps slash-bearing flat scope keys collision-free", () => {
+      const cfg = toolConfig({
+        "a/channel:b": { tools: { allow: ["slash-team"] } },
+        a: { channels: { b: { tools: { allow: ["nested-channel"] } } } },
+      });
 
-    it("blocks sender-name allowlist matches by default", () => {
-      expect(
-        isMSTeamsGroupAllowed({
-          groupPolicy: "allowlist",
-          allowFrom: ["user"],
-          senderId: "other",
-          senderName: "User",
-        }),
-      ).toBe(false);
-    });
-
-    it("allows sender-name allowlist matches when explicitly enabled", () => {
-      expect(
-        isMSTeamsGroupAllowed({
-          groupPolicy: "allowlist",
-          allowFrom: ["user"],
-          senderId: "other",
-          senderName: "User",
-          allowNameMatching: true,
-        }),
-      ).toBe(true);
-    });
-
-    it("allows allowlist wildcard", () => {
-      expect(
-        isMSTeamsGroupAllowed({
-          groupPolicy: "allowlist",
-          allowFrom: ["*"],
-          senderId: "other",
-          senderName: "User",
-        }),
-      ).toBe(true);
+      expect(resolveMSTeamsGroupToolPolicy({ cfg, groupSpace: "a/channel:b" })).toEqual({
+        allow: ["slash-team"],
+      });
+      expect(resolveMSTeamsGroupToolPolicy({ cfg, groupSpace: "a", groupId: "b" })).toEqual({
+        allow: ["nested-channel"],
+      });
     });
   });
 });

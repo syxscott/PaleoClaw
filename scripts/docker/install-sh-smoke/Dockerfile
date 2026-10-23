@@ -1,6 +1,12 @@
-FROM node:22-bookworm-slim@sha256:3cfe526ec8dd62013b8843e8e5d4877e297b886e5aace4a59fec25dc20736e45
+# syntax=docker/dockerfile:1.28.0@sha256:bb22d9815c728170f72750f4e5b0d672e06176142e1d602c7e66c050100b7e5b
 
-RUN set -eux; \
+FROM node:24-trixie-slim@sha256:7f486cabe892bff8fef04c0f7da8dba84a560be3e4e2740b7a86afc57ebec315
+
+# Smoke images are pinned and short-lived, so skip distro upgrades here and
+# spend the time budget on installer coverage instead.
+RUN --mount=type=cache,id=paleoclaw-install-sh-smoke-apt-cache,target=/var/cache/apt,sharing=locked \
+  --mount=type=cache,id=paleoclaw-install-sh-smoke-apt-lists,target=/var/lib/apt,sharing=locked \
+  set -eux; \
   for attempt in 1 2 3; do \
     if apt-get update -o Acquire::Retries=3; then break; fi; \
     echo "apt-get update failed (attempt ${attempt})" >&2; \
@@ -15,8 +21,7 @@ RUN set -eux; \
     g++ \
     make \
     python3 \
-    sudo \
-  && rm -rf /var/lib/apt/lists/*
+    sudo
 
 COPY install-sh-common/cli-verify.sh /usr/local/install-sh-common/cli-verify.sh
 COPY install-sh-smoke/run.sh /usr/local/bin/openclaw-install-smoke

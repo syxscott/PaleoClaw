@@ -1,0 +1,62 @@
+import { describeAccountSnapshot } from "paleoclaw/plugin-sdk/account-helpers";
+import type { ChannelPlugin } from "paleoclaw/plugin-sdk/channel-core";
+import { matrixConfigAdapter } from "./config-adapter.js";
+import { MatrixChannelConfigSchema } from "./config-schema.js";
+import {
+  resolveMatrixAccount,
+  resolveMatrixAccountAsync,
+  type ResolvedMatrixAccount,
+} from "./matrix/accounts.js";
+import { createMatrixSetupWizardProxy, matrixSetupContract } from "./setup-core.js";
+
+const matrixSetupWizard = createMatrixSetupWizardProxy(async () => ({
+  matrixSetupWizard: (await import("./onboarding.js")).matrixOnboardingAdapter,
+}));
+
+export const matrixPluginBase = {
+  id: "matrix",
+  meta: {
+    id: "matrix",
+    label: "Matrix",
+    selectionLabel: "Matrix (plugin)",
+    docsPath: "/channels/matrix",
+    docsLabel: "matrix",
+    blurb: "open protocol; configure a homeserver + access token.",
+    order: 70,
+    quickstartAllowFrom: true,
+  },
+  setupWizard: matrixSetupWizard,
+  setupContract: matrixSetupContract,
+  capabilities: {
+    chatTypes: ["direct", "group", "thread"],
+    polls: true,
+    reactions: true,
+    threads: true,
+    media: true,
+  },
+  reload: { configPrefixes: ["channels.matrix"], noopPrefixes: ["messages.ackReactionScope"] },
+  configSchema: MatrixChannelConfigSchema,
+  config: {
+    ...matrixConfigAdapter,
+    isConfigured: (account) => account.configured,
+    describeAccount: (account) =>
+      describeAccountSnapshot({
+        account,
+        configured: account.configured,
+        extra: {
+          baseUrl: account.homeserver,
+        },
+      }),
+  },
+} satisfies ChannelPlugin<ResolvedMatrixAccount>;
+
+export const matrixSetupPlugin: ChannelPlugin<ResolvedMatrixAccount> = {
+  ...matrixPluginBase,
+  config: {
+    ...matrixPluginBase.config,
+    /** @deprecated Use hasConfiguredStateAsync. Final compatibility day: 2026-12-31. Removal in the first January 2027 stable release. */
+    hasConfiguredState: ({ cfg, env }) => resolveMatrixAccount({ cfg, env }).configured,
+    hasConfiguredStateAsync: async ({ cfg, env }) =>
+      (await resolveMatrixAccountAsync({ cfg, env })).configured,
+  },
+};

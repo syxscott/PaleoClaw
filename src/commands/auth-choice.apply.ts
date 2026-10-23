@@ -1,62 +1,95 @@
-import type { OpenClawConfig } from "../config/config.js";
-import type { RuntimeEnv } from "../runtime.js";
-import type { WizardPrompter } from "../wizard/prompts.js";
-import { applyAuthChoiceAnthropic } from "./auth-choice.apply.anthropic.js";
-import { applyAuthChoiceApiProviders } from "./auth-choice.apply.api-providers.js";
-import { applyAuthChoiceBytePlus } from "./auth-choice.apply.byteplus.js";
-import { applyAuthChoiceCopilotProxy } from "./auth-choice.apply.copilot-proxy.js";
-import { applyAuthChoiceGitHubCopilot } from "./auth-choice.apply.github-copilot.js";
-import { applyAuthChoiceGoogleGeminiCli } from "./auth-choice.apply.google-gemini-cli.js";
-import { applyAuthChoiceMiniMax } from "./auth-choice.apply.minimax.js";
-import { applyAuthChoiceOAuth } from "./auth-choice.apply.oauth.js";
-import { applyAuthChoiceOpenAI } from "./auth-choice.apply.openai.js";
-import { applyAuthChoiceQwenPortal } from "./auth-choice.apply.qwen-portal.js";
-import { applyAuthChoiceVllm } from "./auth-choice.apply.vllm.js";
-import { applyAuthChoiceVolcengine } from "./auth-choice.apply.volcengine.js";
-import { applyAuthChoiceXAI } from "./auth-choice.apply.xai.js";
-import type { AuthChoice, OnboardOptions } from "./onboard-types.js";
+import { formatCliCommand } from "../cli/command-format.js";
+import { prepareAuthChoiceLoadedPluginProvider } from "../plugins/provider-auth-choice.js";
+import type {
+  ApplyAuthChoiceParams,
+  ApplyAuthChoiceResult,
+  PreparedAuthChoiceResult,
+} from "./auth-choice.apply.types.js";
 
-export type ApplyAuthChoiceParams = {
-  authChoice: AuthChoice;
-  config: OpenClawConfig;
-  prompter: WizardPrompter;
-  runtime: RuntimeEnv;
-  agentDir?: string;
-  setDefaultModel: boolean;
-  agentId?: string;
-  opts?: Partial<OnboardOptions>;
-};
+/** Prepare a selected auth choice without writing its returned provider profiles. */
+export async function prepareAuthChoice(
+  params: ApplyAuthChoiceParams,
+): Promise<PreparedAuthChoiceResult> {
+  let authChoice = params.authChoice;
+  if (authChoice === "oauth") {
+    authChoice = "setup-token";
+  } else {
+    const { resolveLegacyOnboardAuthChoice } = await import("./auth-choice-legacy.js");
+    authChoice = resolveLegacyOnboardAuthChoice(authChoice, params).authChoice ?? authChoice;
+  }
+  if (
+    params.opts?.tokenProvider &&
+    (authChoice === "apiKey" || authChoice === "token" || authChoice === "setup-token")
+  ) {
+    const { normalizeApiKeyTokenProviderAuthChoice } =
+      await import("./auth-choice.apply.api-providers.js");
+    authChoice = normalizeApiKeyTokenProviderAuthChoice({
+      authChoice,
+      tokenProvider: params.opts.tokenProvider,
+      config: params.config,
+      workspaceDir: params.workspaceDir,
+      env: params.env,
+    });
+  }
+  const normalizedParams = authChoice === params.authChoice ? params : { ...params, authChoice };
+  const result = await prepareAuthChoiceLoadedPluginProvider(
+    normalizedParams,
+    (prepared) => prepared,
+  );
+  if (result) {
+    return result;
+  }
 
-export type ApplyAuthChoiceResult = {
-  config: OpenClawConfig;
-  agentModelOverride?: string;
-};
+  const { resolveManifestDeprecatedProviderAuthChoice } =
+    await import("../plugins/provider-auth-choices.js");
+  const deprecatedChoice =
+    resolveManifestDeprecatedProviderAuthChoice(authChoice, normalizedParams) ??
+    (
+      await import("../plugins/provider-install-catalog.js")
+    ).resolveDeprecatedProviderInstallCatalogEntry(authChoice, {
+      ...normalizedParams,
+      includeUntrustedWorkspacePlugins: false,
+    });
+  if (deprecatedChoice) {
+    throw new Error(
+      `Auth choice ${JSON.stringify(authChoice)} is no longer supported. Use ${JSON.stringify(deprecatedChoice.choiceId)} instead, or run ${formatCliCommand("paleoclaw onboard")} to choose interactively.`,
+    );
+  }
 
+  if (normalizedParams.authChoice === "token" || normalizedParams.authChoice === "setup-token") {
+    throw new Error(
+      [
+        `Auth choice "${normalizedParams.authChoice}" was not matched to a provider setup flow.`,
+        `Run ${formatCliCommand("paleoclaw models auth login --provider <provider>")} for provider auth, or rerun ${formatCliCommand("paleoclaw onboard")} to choose interactively.`,
+      ].join("\n"),
+    );
+  }
+
+  if (normalizedParams.authChoice === "oauth") {
+    throw new Error(
+      `Auth choice "oauth" is no longer supported directly. Use a provider-specific auth entry, or run ${formatCliCommand("paleoclaw models auth login --provider <provider>")}.`,
+    );
+  }
+
+  return {
+    config: normalizedParams.config,
+    authProfiles: [],
+    persistAuthProfiles: async () => {},
+  };
+}
+
+/** Apply a selected auth choice, returning the mutated config or retry/model override signals. */
 export async function applyAuthChoice(
   params: ApplyAuthChoiceParams,
 ): Promise<ApplyAuthChoiceResult> {
-  const handlers: Array<(p: ApplyAuthChoiceParams) => Promise<ApplyAuthChoiceResult | null>> = [
-    applyAuthChoiceAnthropic,
-    applyAuthChoiceVllm,
-    applyAuthChoiceOpenAI,
-    applyAuthChoiceOAuth,
-    applyAuthChoiceApiProviders,
-    applyAuthChoiceMiniMax,
-    applyAuthChoiceGitHubCopilot,
-    applyAuthChoiceGoogleGeminiCli,
-    applyAuthChoiceCopilotProxy,
-    applyAuthChoiceQwenPortal,
-    applyAuthChoiceXAI,
-    applyAuthChoiceVolcengine,
-    applyAuthChoiceBytePlus,
-  ];
-
-  for (const handler of handlers) {
-    const result = await handler(params);
-    if (result) {
-      return result;
-    }
-  }
-
-  return { config: params.config };
+  const prepared = await prepareAuthChoice(params);
+  await prepared.persistAuthProfiles();
+  return {
+    config: prepared.config,
+    ...(prepared.utilityModelOverride
+      ? { utilityModelOverride: prepared.utilityModelOverride, modelTarget: prepared.modelTarget }
+      : {}),
+    ...(prepared.agentModelOverride ? { agentModelOverride: prepared.agentModelOverride } : {}),
+    ...(prepared.retrySelection ? { retrySelection: true } : {}),
+  };
 }

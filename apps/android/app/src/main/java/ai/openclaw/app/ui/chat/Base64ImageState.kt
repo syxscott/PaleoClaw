@@ -1,35 +1,43 @@
 package ai.openclaw.app.ui.chat
 
-import android.graphics.BitmapFactory
-import android.util.Base64
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
+/** Dispatcher for chat image decoding; tests provide their own to drain decodes explicitly. */
+internal val LocalChatImageDecodeDispatcher = staticCompositionLocalOf<CoroutineDispatcher> { Dispatchers.Default }
+
+/** Compose state for async base64 image decoding. */
 internal data class Base64ImageState(
   val image: ImageBitmap?,
   val failed: Boolean,
 )
 
+/** Decodes a base64 image off the UI thread and reports failure state. */
 @Composable
-internal fun rememberBase64ImageState(base64: String): Base64ImageState {
-  var image by remember(base64) { mutableStateOf<ImageBitmap?>(null) }
-  var failed by remember(base64) { mutableStateOf(false) }
+internal fun rememberBase64ImageState(
+  base64: String,
+  source: Base64ImageSource = Base64ImageSource.Inline,
+): Base64ImageState {
+  val decodeDispatcher = LocalChatImageDecodeDispatcher.current
+  var image by remember(base64, source) { mutableStateOf<ImageBitmap?>(null) }
+  var failed by remember(base64, source) { mutableStateOf(false) }
 
-  LaunchedEffect(base64) {
+  LaunchedEffect(base64, source, decodeDispatcher) {
     failed = false
     image =
-      withContext(Dispatchers.Default) {
+      withContext(decodeDispatcher) {
         try {
-          val bytes = Base64.decode(base64, Base64.DEFAULT)
-          val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size) ?: return@withContext null
+          val bitmap = decodeBase64Bitmap(base64, source = source) ?: return@withContext null
           bitmap.asImageBitmap()
         } catch (_: Throwable) {
           null

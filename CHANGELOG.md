@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2026.10.5] - 2026-10-22
+
+### 🔧 Changed
+
+- **Version scheme**: the package version moves from the `1.x` line to calendar versioning, so the CLI, the npm package, the iOS and macOS apps and the QQ, WeCom and WeChat plugin packages all report `2026.10.5`. The release tooling derives the iOS and Android versions from that same number, which is what the iOS and macOS release checks were waiting on.
+- **App versions**: the iOS bundle version and the Android version name and code now come from the shared release version files instead of copies pasted into the app manifests, so the app and the gateway can no longer report different versions.
+
+### 🛠 Fixed
+
+- **Fresh installs**: the published launcher no longer starts with a byte-order mark, so `paleoclaw --version` succeeds right after `npm install -g paleoclaw@latest` instead of exiting with an error.
+- **Desktop companion**: the Linux, Windows and macOS companion apps build again. The companion was staged from a Bun release repository that does not exist, and the Windows runtime was checked against a signing identity that the published release does not carry.
+- **macOS app**: the package manifest declares the dependencies the sources import and points at the repositories those dependencies actually live in, so the app resolves and compiles again instead of failing on a missing module.
+- **iOS app**: the share extension and the node app model hand the gateway their credentials the way the node session now takes them, so the iOS targets compile again.
+- **iOS minimum version**: the app now requires iOS 26.2. The bundled design layer already calls iOS 26 APIs, so the previous minimum could not build the shipped code.
+- **iOS watch app**: the watch target now finds the voice bridge archive its build script produces, and compiles the shared waveform and mascot it draws, so the watch app builds again.
+
 ## [1.8.0] - 2026-09-08
 
 ### 🛠 Fixed
@@ -17,6 +33,25 @@ Comprehensive bug-fix pass across the core, paleoclaw domain modules, Android ap
 - **paleoclaw modules**: session store and task-memory store now import correctly (missing `path`/shadowed `paleoclawHome`); auto-review promotion is guarded against duplicates; chat day-files are excluded from archiving.
 - **Android**: missing `android.util.Log` import fixed; version-name normalization rewritten (case-insensitive `-dev` suffix strip, release builds verbatim).
 - **Control UI**: all six `docs.paleoclaw.ai` dead links repointed at the deployed manual; `GatewayHost.execApprovalTimers` type error fixed; empty streaming deltas no longer wipe accumulated text; dead `moonshot-kimi-k2.ts` removed.
+- **Memory**: chat day digests no longer inflate the short-term counts, render `undefined` rows in `paleo-memory short`, or dominate search results with a constant score; the built-in provider now records every agent turn, so earlier conversations can actually be recalled. An invalid `--limit` is rejected with a message instead of returning no rows on one command and the entire history on another.
+- **Sessions**: two-stage session titles now run (an instant title derived from the first user message, then the optional LLM upgrade); a corrupt or locked SQLite database surfaces an error instead of silently downgrading to the JSON backend and splitting history across two files; `upsertSession` keeps session metadata other than `tags`, and a sequence conflict is retried instead of losing the message.
+- **Tools**: `literature_summary` no longer splits sentences on every period, so `et al.` and `1.5 Ma` stay intact; CrossRef requests identify with the real version and an optional contact address (`PALEOCLAW_CONTACT_EMAIL`) so they reach the polite pool; third-party API responses injected as auto-tool context are labelled as untrusted data rather than as system instructions.
+- **Web/WhatsApp**: mention matching now goes through the shared helper, so a configured legacy pattern such as `/\bopenclaw\b/i` still matches after the rebrand; a rejected socket close no longer takes the WhatsApp monitor down.
+- **Channel access control**: the QQ, WeCom and WeChat plugins now enforce `dmPolicy`/`allowFrom` on the inbound path, read the pairing store, and issue a pairing code instead of silently dropping an unauthorized sender; the QQ pairing approval hint points at a command that now works. A WeChat deployment that never set `dmPolicy` is no longer reachable by every sender, and a WeCom deployment with `dmPolicy=allowlist` now actually blocks senders outside the list.
+- **Channel packaging**: the `qqbot`, `wecom` and `weixin` plugin-sdk subpaths are built, typed and published like every other channel subpath, and `scripts/check-plugin-sdk-exports.mjs` now guards them, so a missing build artifact can no longer reach a release unnoticed.
+- **Session and memory stores**: concurrent writers no longer lose a session message (the SQLite store waits on a busy lock and retries the whole transaction), memory recall no longer leaks one session's conversation into another session's prompt, and rotating a channel credential no longer keeps serving the token minted for the old one.
+- **Literature summary**: a genus abbreviation such as `T. rex` is no longer split into two summary points, and the taxonomic abbreviations (`sp.`, `nov.`, `aff.`, `gen.`) survive summarisation.
+- **Upstream sync (openclaw 2026-10-21)**: the runtime is brought up to the October upstream tree — the agent session/cron/state layers, the gateway control-UI and hook surfaces, the plugin registry and the Telegram/Slack channel plugins now carry the upstream behaviour, and the shared config types are derived from the upstream Zod schemas instead of the older hand-written shapes. The `.d.ts` build is green again.
+- **PaleoHub registry naming**: the registry-source field is now `PaleoHub` on every surface that reads it (plugin install records, skill status, catalog entries, the control UI and the plugin SDK), so a plugin installed from the registry is no longer reported as having no source at all.
+- **Config and manifest paths**: the CLI resolves the same configuration file the Gateway reads (`openclaw.json` in the state directory) in profile mode, and the plugin authoring errors name the real manifest file (`openclaw.plugin.json`).
+- **Launcher and scripts**: the published `paleoclaw` launcher no longer carries a byte-order mark that disabled its `#!` shebang (which made the npm-installed CLI fail to start on macOS), and the repository's shell scripts keep the executable bit so CI jobs can run them directly.
+- **Native app localisation**: the Android onboarding flow and the iOS/macOS settings and talk-mode screens now read their copy from the string catalogues instead of hardcoded literals, and the i18n allowlists point at the real `ai/openclaw` and `Sources/OpenClaw` source paths, so the Android and Apple localisation checks pass again.
+- **Repository path literals**: build, release and CI scripts that referenced the macOS, iOS and shared Swift sources now use the directories that actually exist on disk again, so the Apple i18n, protocol-coverage and release-preflight checks can find their inputs.
+- **Update CLI surface**: `paleoclaw update` registers the upstream subcommands again (`repair`, `recover`, `adopt-immutable`, `cleanup`, `migration-plan`, plus the internal `admit` protocol) and accepts the upstream options (`--admission`, `--accept-capabilities`, `--full-integrity-check`, `--drain-timeout`, `--sha`, `--tag <spec>`), so a stranded update can be reconciled from the command line and the published release chunks keep resolving.
+- **Android onboarding copy**: the setup steps now show the commands the fork actually ships (`paleoclaw qr`, `paleoclaw devices approve`) instead of the pre-rebrand ones, the connection notification reads "paleoclaw Node", and the format placeholders the catalogue expects (`%1$s`, `%1$d`) are used instead of Kotlin templates that the resource compiler cannot render.
+- **Native locale catalogues**: the Android and Apple translation artefacts are re-keyed onto the current string inventory, so the localisation check no longer reports stale identifiers; the simplified and traditional Chinese catalogues carry real translations for the new onboarding and permission copy, and every per-locale Android catalogue now contains the onboarding strings.
+- **Launcher name**: the CLI launcher is `paleoclaw.mjs` and every reference to it — the package `bin`/`exports`/`files` entries, the Docker image, the node-host launcher, the installer helpers and the CI smoke steps — uses that name again. The references still said `openclaw.mjs`, so the packaged CLI could not start from the published tarball.
+- **Third-party package scope**: `@openclaw/uirouter` and `@openclaw/libterminal` are published npm packages rather than workspace packages, so their scope stays as published; the control UI imports and the Vite aliases use the published names again and the UI bundle builds.
 
 ### ✨ Added
 
@@ -27,6 +62,9 @@ Comprehensive bug-fix pass across the core, paleoclaw domain modules, Android ap
 - **Control UI**: wake/online reconnect for suspended tabs, IndexedDB composer drafts, per-session scroll memory, send-failure retry, mobile viewport meta with no-flash theme bootstrap, hardened i18n runtime.
 - **Website**: full zh/en/ja coverage (259 keys), real favicon set + OG/social meta, robots.txt + sitemap.xml, keyboard-accessible navigation, clipboard fallbacks.
 - **Private state dirs** (0o700) for session/memory data.
+- **QQ bot channel** (`channels.qqbot`): QQ open platform official bot. Inbound events arrive over the official WebSocket gateway, replies go out through the REST API as markdown payloads, and media is uploaded through the QQ files API.
+- **WeCom channel** (`channels.wecom`): WeCom self-built app. Inbound messages arrive on an encrypted callback (WXBizMsgCrypt), and replies are sent proactively through `message/send` with a cached access token.
+- **WeChat channel** (`channels.weixin`): WeChat personal account bridge over Tencent's iLink bot API, with QR-code login and long-poll message delivery.
 
 ---
 

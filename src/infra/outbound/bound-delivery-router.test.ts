@@ -1,152 +1,174 @@
+import fs from "node:fs/promises";
 import { beforeEach, describe, expect, it } from "vitest";
-import { createBoundDeliveryRouter } from "./bound-delivery-router.js";
+import { observeHostDataSql } from "../../../test/helpers/sqlite-statement-execution-counter.js";
+import { openOpenClawStateDatabase } from "../../state/paleoclaw-state-db.js";
+import { resolveOpenClawStateSqlitePath } from "../../state/paleoclaw-state-db.paths.js";
+import { withOpenClawTestState } from "../../test-utils/paleoclaw-test-state.js";
+import { INTERNAL_MESSAGE_CHANNEL } from "../../utils/message-channel-constants.js";
+import { createAccountScopedConversationBindingManager } from "./account-scoped-conversation-bindings.js";
+import { resolveBoundDeliveryDestination } from "./bound-delivery-router.js";
 import {
-  __testing,
+  testing,
+  getSessionBindingService,
   registerSessionBindingAdapter,
   type SessionBindingRecord,
 } from "./session-binding-service.js";
 
 const TARGET_SESSION_KEY = "agent:main:subagent:child";
 
-function createDiscordBinding(
-  targetSessionKey: string,
+function createRuntimeBinding(
   conversationId: string,
-  boundAt: number,
-  parentConversationId?: string,
+  boundAt = 1,
+  conversation: Partial<SessionBindingRecord["conversation"]> = {},
 ): SessionBindingRecord {
   return {
     bindingId: `runtime:${conversationId}`,
-    targetSessionKey,
+    targetSessionKey: TARGET_SESSION_KEY,
     targetKind: "subagent",
-    conversation: {
-      channel: "discord",
-      accountId: "runtime",
-      conversationId,
-      parentConversationId,
-    },
+    conversation: { channel: "richchat", accountId: "runtime", conversationId, ...conversation },
     status: "active",
     boundAt,
   };
 }
 
-function registerDiscordSessionBindings(
-  targetSessionKey: string,
-  bindings: SessionBindingRecord[],
-): void {
-  registerSessionBindingAdapter({
-    channel: "discord",
-    accountId: "runtime",
-    listBySession: (requestedSessionKey) =>
-      requestedSessionKey === targetSessionKey ? bindings : [],
-    resolveByConversation: () => null,
-  });
+async function withoutHostSql(run: () => Promise<void>) {
+  const hostSql = observeHostDataSql();
+  try {
+    await run();
+    for (const call of hostSql.calls) {
+      expect(call).not.toHaveBeenCalled();
+    }
+  } finally {
+    hostSql.restore();
+  }
 }
 
+beforeEach(() => testing.resetSessionBindingAdaptersForTests());
+
 describe("bound delivery router", () => {
-  beforeEach(() => {
-    __testing.resetSessionBindingAdaptersForTests();
-  });
-
-  it("resolves to a bound destination when a single active binding exists", () => {
-    registerDiscordSessionBindings(TARGET_SESSION_KEY, [
-      createDiscordBinding(TARGET_SESSION_KEY, "thread-1", 1, "parent-1"),
-    ]);
-
-    const route = createBoundDeliveryRouter().resolveDestination({
-      eventKind: "task_completion",
-      targetSessionKey: TARGET_SESSION_KEY,
-      requester: {
-        channel: "discord",
-        accountId: "runtime",
-        conversationId: "parent-1",
-      },
-      failClosed: false,
-    });
-
-    expect(route.mode).toBe("bound");
-    expect(route.binding?.conversation.conversationId).toBe("thread-1");
-  });
-
-  it("falls back when no active binding exists", () => {
-    const route = createBoundDeliveryRouter().resolveDestination({
-      eventKind: "task_completion",
+  it.each([
+    {
+      name: "resolves to a bound destination when a single active binding exists",
+      bindings: [createRuntimeBinding("thread-1", 1, { parentConversationId: "parent-1" })],
+      requesterConversationId: "parent-1",
+      expectedConversationId: "thread-1",
+    },
+    {
+      name: "falls back when no active binding exists",
       targetSessionKey: "agent:main:subagent:missing",
-      requester: {
-        channel: "discord",
+      requesterConversationId: "parent-1",
+      expectedConversationId: undefined,
+    },
+    {
+      name: "fails closed when requester signal is missing even with a single binding",
+      bindings: [createRuntimeBinding("thread-1")],
+      expectedConversationId: undefined,
+    },
+    {
+      name: "normalizes adapter binding conversations before requester matching",
+      bindings: [
+        createRuntimeBinding(" thread-1 ", 1, { channel: " richchat ", accountId: " runtime " }),
+        createRuntimeBinding(" thread-2 ", 2, { channel: " RICHCHAT ", accountId: " Runtime " }),
+      ],
+      requesterConversationId: "thread-2",
+      expectedConversationId: " thread-2 ",
+    },
+    {
+      name: "falls back for invalid requester conversation values",
+      bindings: [createRuntimeBinding("thread-1")],
+      requesterConversationId: " ",
+      expectedConversationId: undefined,
+    },
+  ])("$name", async ({ expectedConversationId, ...params }) => {
+    const { bindings, targetSessionKey = TARGET_SESSION_KEY, requesterConversationId } = params;
+    if (bindings) {
+      registerSessionBindingAdapter({
+        channel: "richchat",
         accountId: "runtime",
-        conversationId: "parent-1",
-      },
-      failClosed: false,
+        listBySession: (key) => (key === targetSessionKey ? bindings : []),
+        resolveByConversation: () => null,
+      });
+    }
+    const route = await resolveBoundDeliveryDestination({
+      targetSessionKey,
+      requester:
+        requesterConversationId === undefined
+          ? undefined
+          : {
+              channel: "richchat",
+              accountId: "runtime",
+              conversationId: requesterConversationId,
+            },
     });
 
-    expect(route).toEqual({
-      binding: null,
-      mode: "fallback",
-      reason: "no-active-binding",
-    });
+    if (expectedConversationId !== undefined) {
+      expect(route?.conversation.conversationId).toBe(expectedConversationId);
+    } else {
+      expect(route).toBeNull();
+    }
   });
+});
 
-  it("fails closed when multiple bindings exist without requester signal", () => {
-    registerDiscordSessionBindings(TARGET_SESSION_KEY, [
-      createDiscordBinding(TARGET_SESSION_KEY, "thread-1", 1),
-      createDiscordBinding(TARGET_SESSION_KEY, "thread-2", 2),
-    ]);
-
-    const route = createBoundDeliveryRouter().resolveDestination({
-      eventKind: "task_completion",
-      targetSessionKey: TARGET_SESSION_KEY,
-      failClosed: true,
+it("lists account and generic destinations and prunes expiry without host SQL", async () => {
+  await withOpenClawTestState({ label: "bound-destination-worker-list" }, async () => {
+    const manager = createAccountScopedConversationBindingManager({
+      channel: "fixture",
+      accountId: "owner",
+      cfg: {},
+      stateKey: Symbol("binding-list"),
+      toStoredTargetKind: (kind) => kind,
+      toSessionBindingTargetKind: (kind) => kind,
     });
-
-    expect(route).toEqual({
-      binding: null,
-      mode: "fallback",
-      reason: "ambiguous-without-requester",
-    });
+    try {
+      manager.bindConversation({
+        conversationId: "owned-room",
+        targetSessionKey: TARGET_SESSION_KEY,
+        targetKind: "session",
+      });
+      const service = getSessionBindingService();
+      const bind = (conversationId: string, ttlMs?: number) =>
+        service.bind({
+          conversation: { channel: INTERNAL_MESSAGE_CHANNEL, accountId: "default", conversationId },
+          targetSessionKey: TARGET_SESSION_KEY,
+          targetKind: "session",
+          ...(ttlMs === undefined ? {} : { ttlMs }),
+        });
+      const generic = await bind("generic-room");
+      const expired = await bind("expired-room", 0);
+      const { db } = openOpenClawStateDatabase();
+      const row = db.prepare(
+        "SELECT record_json FROM current_conversation_bindings WHERE binding_id = ?",
+      );
+      expect(row.get(expired.bindingId)).toBeDefined();
+      const genericBefore = row.get(generic.bindingId);
+      await withoutHostSql(async () => {
+        const route = await resolveBoundDeliveryDestination({
+          targetSessionKey: TARGET_SESSION_KEY,
+          requester: { channel: "fixture", accountId: "owner", conversationId: "owned-room" },
+        });
+        expect(route).toMatchObject({ bindingId: "owner:owned-room" });
+      });
+      expect(row.get(expired.bindingId)).toBeUndefined();
+      expect(row.get(generic.bindingId)).toEqual(genericBefore);
+    } finally {
+      manager.stop();
+    }
   });
+});
 
-  it("selects requester-matching conversation when multiple bindings exist", () => {
-    registerDiscordSessionBindings(TARGET_SESSION_KEY, [
-      createDiscordBinding(TARGET_SESSION_KEY, "thread-1", 1),
-      createDiscordBinding(TARGET_SESSION_KEY, "thread-2", 2),
-    ]);
-
-    const route = createBoundDeliveryRouter().resolveDestination({
-      eventKind: "task_completion",
-      targetSessionKey: TARGET_SESSION_KEY,
-      requester: {
-        channel: "discord",
-        accountId: "runtime",
-        conversationId: "thread-2",
-      },
-      failClosed: true,
+it("creates the binding store on the first destination lookup without host SQL", async () => {
+  await withOpenClawTestState({ label: "bound-destination-cold-list" }, async () => {
+    const databasePath = resolveOpenClawStateSqlitePath();
+    await expect(fs.stat(databasePath)).rejects.toMatchObject({ code: "ENOENT" });
+    await withoutHostSql(async () => {
+      expect(
+        await resolveBoundDeliveryDestination({ targetSessionKey: TARGET_SESSION_KEY }),
+      ).toBeNull();
     });
-
-    expect(route.mode).toBe("bound");
-    expect(route.reason).toBe("requester-match");
-    expect(route.binding?.conversation.conversationId).toBe("thread-2");
-  });
-
-  it("falls back for invalid requester conversation values", () => {
-    registerDiscordSessionBindings(TARGET_SESSION_KEY, [
-      createDiscordBinding(TARGET_SESSION_KEY, "thread-1", 1),
-    ]);
-
-    const route = createBoundDeliveryRouter().resolveDestination({
-      eventKind: "task_completion",
-      targetSessionKey: TARGET_SESSION_KEY,
-      requester: {
-        channel: "discord",
-        accountId: "runtime",
-        conversationId: " ",
-      },
-      failClosed: true,
-    });
-
-    expect(route).toEqual({
-      binding: null,
-      mode: "fallback",
-      reason: "invalid-requester",
-    });
+    expect((await fs.stat(databasePath)).isFile()).toBe(true);
+    const { db } = openOpenClawStateDatabase();
+    expect(db.prepare("SELECT COUNT(*) AS count FROM current_conversation_bindings").get()).toEqual(
+      { count: 0 },
+    );
   });
 });

@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import type { ChannelPlugin } from "../channels/plugins/types.js";
+import type { ChannelPlugin } from "../channels/plugins/types.public.js";
 import { setActivePluginRegistry } from "../plugins/runtime.js";
-import { createTestRegistry } from "../test-utils/channel-plugins.js";
+import { createChannelTestPluginBase, createTestRegistry } from "../test-utils/channel-plugins.js";
 import { resolveChannelCapabilities } from "./channel-capabilities.js";
 import type { OpenClawConfig } from "./config.js";
 
@@ -45,23 +45,12 @@ describe("resolveChannelCapabilities", () => {
 
   it("falls back to provider capabilities when account capabilities are missing", () => {
     const cfg = {
-      channels: {
-        telegram: {
-          capabilities: ["inlineButtons"],
-          accounts: {
-            default: {},
-          },
-        },
-      },
+      channels: { telegram: { capabilities: ["inlineButtons"], accounts: { default: {} } } },
     } satisfies Partial<OpenClawConfig>;
 
-    expect(
-      resolveChannelCapabilities({
-        cfg,
-        channel: "telegram",
-        accountId: "default",
-      }),
-    ).toEqual(["inlineButtons"]);
+    expect(resolveChannelCapabilities({ cfg, channel: "telegram", accountId: "default" })).toEqual([
+      "inlineButtons",
+    ]);
   });
 
   it("matches account keys case-insensitively", () => {
@@ -85,25 +74,12 @@ describe("resolveChannelCapabilities", () => {
   });
 
   it("supports msteams capabilities", () => {
-    setActivePluginRegistry(
-      createTestRegistry([
-        {
-          pluginId: "msteams",
-          source: "test",
-          plugin: createMSTeamsPlugin(),
-        },
-      ]),
-    );
+    setActivePluginRegistry(createTestRegistry([registryEntry("msteams")]));
     const cfg = {
       channels: { msteams: { capabilities: [" polls ", ""] } },
     } satisfies Partial<OpenClawConfig>;
 
-    expect(
-      resolveChannelCapabilities({
-        cfg,
-        channel: "msteams",
-      }),
-    ).toEqual(["polls"]);
+    expect(resolveChannelCapabilities({ cfg, channel: "msteams" })).toEqual(["polls"]);
   });
 
   it("handles object-format capabilities gracefully (e.g., { inlineButtons: 'dm' })", () => {
@@ -127,25 +103,12 @@ describe("resolveChannelCapabilities", () => {
   });
 });
 
-const createStubPlugin = (id: string): ChannelPlugin => ({
-  id,
-  meta: {
+const registryEntry = (id: string) => ({
+  pluginId: id,
+  source: "test",
+  plugin: createChannelTestPluginBase({
     id,
-    label: id,
-    selectionLabel: id,
-    docsPath: `/channels/${id}`,
-    blurb: "test stub.",
-  },
-  capabilities: { chatTypes: ["direct"] },
-  config: {
-    listAccountIds: () => [],
-    resolveAccount: () => ({}),
-  },
+    config: { listAccountIds: () => [] },
+  }) satisfies ChannelPlugin,
 });
-
-const baseRegistry = createTestRegistry([
-  { pluginId: "telegram", source: "test", plugin: createStubPlugin("telegram") },
-  { pluginId: "slack", source: "test", plugin: createStubPlugin("slack") },
-]);
-
-const createMSTeamsPlugin = (): ChannelPlugin => createStubPlugin("msteams");
+const baseRegistry = createTestRegistry(["telegram", "slack"].map(registryEntry));

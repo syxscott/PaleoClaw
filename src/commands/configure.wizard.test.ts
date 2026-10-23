@@ -1,161 +1,302 @@
-import { describe, expect, it, vi } from "vitest";
-import type { OpenClawConfig } from "../config/config.js";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { formatCliCommand } from "../cli/command-format.js";
+import { ConfigMutationConflictError } from "../config/mutate.js";
+import type { OpenClawConfig } from "../config/types.openclaw.js";
+import { committedConfigFiles } from "./committed-config.test-support.js";
+import {
+  EMPTY_CONFIG_SNAPSHOT,
+  queueWizardTestPrompts as queueWizardPrompts,
+  runConfigureWizard,
+  setupWizardTestDefaults,
+  setupBaseWizardTestState as setupBaseWizardState,
+  wizardTestMocks as mocks,
+} from "./configure.wizard.test-support.js";
 
-const mocks = vi.hoisted(() => ({
-  clackIntro: vi.fn(),
-  clackOutro: vi.fn(),
-  clackSelect: vi.fn(),
-  clackText: vi.fn(),
-  clackConfirm: vi.fn(),
-  readConfigFileSnapshot: vi.fn(),
-  writeConfigFile: vi.fn(),
-  resolveGatewayPort: vi.fn(),
-  ensureControlUiAssetsBuilt: vi.fn(),
-  createClackPrompter: vi.fn(),
-  note: vi.fn(),
-  printWizardHeader: vi.fn(),
-  probeGatewayReachable: vi.fn(),
-  waitForGatewayReachable: vi.fn(),
-  resolveControlUiLinks: vi.fn(),
-  summarizeExistingConfig: vi.fn(),
-}));
+const { configureCommandFromSectionsArg } = await import("./configure.commands.js");
 
-vi.mock("@clack/prompts", () => ({
-  intro: mocks.clackIntro,
-  outro: mocks.clackOutro,
-  select: mocks.clackSelect,
-  text: mocks.clackText,
-  confirm: mocks.clackConfirm,
-}));
+const written = () => mocks.writeConfigFile.mock.calls.at(-1)![0];
+const configureWeb = () => runConfigureWizard({ sections: ["web"] });
+const nativeSearchConfig: OpenClawConfig = {
+  auth: { profiles: { "openai:default": { provider: "openai", mode: "oauth" } } },
+};
+const copilotConfig = (config: Record<string, string>): OpenClawConfig => ({
+  plugins: { entries: { "github-copilot": { enabled: false, config } } },
+});
 
-vi.mock("../config/config.js", () => ({
-  CONFIG_PATH: "~/.paleoclaw/paleoclaw.json",
-  readConfigFileSnapshot: mocks.readConfigFileSnapshot,
-  writeConfigFile: mocks.writeConfigFile,
-  resolveGatewayPort: mocks.resolveGatewayPort,
-}));
+function agentConfig(config: OpenClawConfig) {
+  setupBaseWizardState(config);
+  mocks.readConfigFileSnapshot.mockResolvedValue({
+    ...EMPTY_CONFIG_SNAPSHOT,
+    exists: true,
+    config,
+    sourceConfig: config,
+  });
+  queueWizardPrompts({ select: ["configure"], confirm: [], text: "/tmp/new-workspace" });
+}
 
-vi.mock("../infra/control-ui-assets.js", () => ({
-  ensureControlUiAssetsBuilt: mocks.ensureControlUiAssetsBuilt,
-}));
-
-vi.mock("../wizard/clack-prompter.js", () => ({
-  createClackPrompter: mocks.createClackPrompter,
-}));
-
-vi.mock("../terminal/note.js", () => ({
-  note: mocks.note,
-}));
-
-vi.mock("./onboard-helpers.js", () => ({
-  DEFAULT_WORKSPACE: "~/.paleoclaw/workspace",
-  applyWizardMetadata: (cfg: OpenClawConfig) => cfg,
-  ensureWorkspaceAndSessions: vi.fn(),
-  guardCancel: <T>(value: T) => value,
-  printWizardHeader: mocks.printWizardHeader,
-  probeGatewayReachable: mocks.probeGatewayReachable,
-  resolveControlUiLinks: mocks.resolveControlUiLinks,
-  summarizeExistingConfig: mocks.summarizeExistingConfig,
-  waitForGatewayReachable: mocks.waitForGatewayReachable,
-}));
-
-vi.mock("./health.js", () => ({
-  healthCommand: vi.fn(),
-}));
-
-vi.mock("./health-format.js", () => ({
-  formatHealthCheckFailure: vi.fn(),
-}));
-
-vi.mock("./configure.gateway.js", () => ({
-  promptGatewayConfig: vi.fn(),
-}));
-
-vi.mock("./configure.gateway-auth.js", () => ({
-  promptAuthConfig: vi.fn(),
-}));
-
-vi.mock("./configure.channels.js", () => ({
-  removeChannelConfigWizard: vi.fn(),
-}));
-
-vi.mock("./configure.daemon.js", () => ({
-  maybeInstallDaemon: vi.fn(),
-}));
-
-vi.mock("./onboard-remote.js", () => ({
-  promptRemoteGatewayConfig: vi.fn(),
-}));
-
-vi.mock("./onboard-skills.js", () => ({
-  setupSkills: vi.fn(),
-}));
-
-vi.mock("./onboard-channels.js", () => ({
-  setupChannels: vi.fn(),
-}));
-
-import { WizardCancelledError } from "../wizard/prompts.js";
-import { runConfigureWizard } from "./configure.wizard.js";
+function expectWorkspaceSetup(workspaceDir: string, agentId: string) {
+  expect(mocks.setupPluginConfig).toHaveBeenCalledWith(expect.objectContaining({ workspaceDir }));
+  expect(mocks.setupSkills).toHaveBeenCalledWith(
+    expect.any(Object),
+    workspaceDir,
+    expect.any(Object),
+    expect.any(Object),
+  );
+  expect(mocks.ensureWorkspaceAndSessions).toHaveBeenCalledWith(
+    workspaceDir,
+    expect.any(Object),
+    expect.objectContaining({ agentId }),
+  );
+}
 
 describe("runConfigureWizard", () => {
-  it("persists gateway.mode=local when only the run mode is selected", async () => {
-    mocks.readConfigFileSnapshot.mockResolvedValue({
-      exists: false,
-      valid: true,
-      config: {},
-      issues: [],
+  beforeEach(() => {
+    vi.resetAllMocks();
+    setupWizardTestDefaults();
+    setupBaseWizardState();
+  });
+
+  it("directs invalid config to Doctor before making changes", async () => {
+    mocks.readConfigFileSnapshot.mockResolvedValueOnce({
+      ...EMPTY_CONFIG_SNAPSHOT,
+      exists: true,
+      valid: false,
+      issues: [{ path: "browser.actionTimeoutTypoMs", message: "Unknown key" }],
     });
-    mocks.resolveGatewayPort.mockReturnValue(18789);
-    mocks.probeGatewayReachable.mockResolvedValue({ ok: false });
-    mocks.resolveControlUiLinks.mockReturnValue({ wsUrl: "ws://127.0.0.1:18789" });
-    mocks.summarizeExistingConfig.mockReturnValue("");
-    mocks.createClackPrompter.mockReturnValue({});
-
-    const selectQueue = ["local", "__continue"];
-    mocks.clackSelect.mockImplementation(async () => selectQueue.shift());
-    mocks.clackIntro.mockResolvedValue(undefined);
-    mocks.clackOutro.mockResolvedValue(undefined);
-    mocks.clackText.mockResolvedValue("");
-    mocks.clackConfirm.mockResolvedValue(false);
-
-    await runConfigureWizard(
-      { command: "configure" },
-      {
-        log: vi.fn(),
-        error: vi.fn(),
-        exit: vi.fn(),
-      },
+    const runtime = mocks.runtime;
+    await runConfigureWizard({});
+    expect(mocks.clackOutro).toHaveBeenCalledWith(
+      "Config invalid. Run `paleoclaw doctor --fix` to apply supported repairs, then re-run configure.",
     );
+    expect(runtime.exit).toHaveBeenCalledWith(1);
+    expect(mocks.clackSelect).not.toHaveBeenCalled();
+    expect(mocks.writeConfigFile).not.toHaveBeenCalled();
+  });
 
-    expect(mocks.writeConfigFile).toHaveBeenCalledWith(
+  it("dispatches the memory section and persists its verified choice without gateway setup", async () => {
+    const config: OpenClawConfig = {
+      memory: { search: { cache: { enabled: false } } },
+    };
+    setupBaseWizardState(config);
+    mocks.runMemorySetupFlow.mockImplementation(async (candidate) => ({
+      ...candidate,
+      memory: {
+        ...candidate.memory,
+        search: { ...candidate.memory?.search, provider: "openai", model: "embedding-model" },
+      },
+    }));
+    await configureCommandFromSectionsArg(["memory"]);
+    expect(mocks.runMemorySetupFlow).toHaveBeenCalledOnce();
+    expect(written().memory?.search).toEqual({
+      cache: { enabled: false },
+      provider: "openai",
+      model: "embedding-model",
+    });
+    expect(mocks.promptGatewayConfig).not.toHaveBeenCalled();
+    expect(mocks.maybeInstallDaemon).not.toHaveBeenCalled();
+  });
+
+  it.each([true, false])(
+    "does not write a skipped memory section (section flag: %s)",
+    async (flag) => {
+      setupBaseWizardState({ gateway: { mode: "local" } });
+      queueWizardPrompts({ select: ["local", "memory", "__continue"], confirm: [] });
+      await runConfigureWizard(flag ? { sections: ["memory"] } : {});
+      expect(mocks.runMemorySetupFlow).toHaveBeenCalledOnce();
+      expect(mocks.writeConfigFile).not.toHaveBeenCalled();
+      expect(mocks.clackOutro).toHaveBeenCalledWith("No configuration changes selected.");
+    },
+  );
+
+  it("disables search when plugin policy leaves no available provider", async () => {
+    mocks.resolveSearchProviderOptions.mockReturnValue([]);
+    queueWizardPrompts({ select: [], confirm: [true, false] });
+    await configureWeb();
+    expect(mocks.note).toHaveBeenCalledWith(
+      expect.stringContaining("No web search providers are currently available"),
+      "Web search",
+    );
+    expect(written().tools?.web?.search?.enabled).toBe(false);
+  });
+
+  it("enables native search without a managed provider", async () => {
+    setupBaseWizardState(nativeSearchConfig);
+    queueWizardPrompts({ select: ["cached"], confirm: [true, true, false, true] });
+    await configureWeb();
+    expect(written().tools?.web).toMatchObject({
+      search: { enabled: true, openaiCodex: { enabled: true, mode: "cached" } },
+      fetch: { enabled: true },
+    });
+    expect(mocks.setupSearch).not.toHaveBeenCalled();
+  });
+
+  it("preserves the native search mode when disabling it", async () => {
+    setupBaseWizardState({
+      ...nativeSearchConfig,
+      tools: { web: { search: { enabled: true, openaiCodex: { enabled: true, mode: "live" } } } },
+    });
+    queueWizardPrompts({ select: ["firecrawl"], confirm: [true, false, true, false] });
+    await configureWeb();
+    expect(written().tools?.web?.search).toMatchObject({
+      enabled: true,
+      openaiCodex: { enabled: false, mode: "live" },
+    });
+    expect(mocks.setupSearch).toHaveBeenCalledOnce();
+  });
+
+  it("preserves concurrent nested plugin writes on conflict (#64188)", async () => {
+    const config = copilotConfig({ region: "us-east-1" });
+    const updated = copilotConfig({ region: "us-east-1", accessToken: "plugin-wrote-this" });
+    queueWizardPrompts({ select: [], confirm: [] });
+    const snapshot = (source: OpenClawConfig, hash: string) => ({
+      ...EMPTY_CONFIG_SNAPSHOT,
+      config: source,
+      sourceConfig: source,
+      hash,
+    });
+    mocks.readConfigFileSnapshot
+      .mockResolvedValueOnce(snapshot(config, "before"))
+      .mockResolvedValueOnce(snapshot(config, "before"))
+      .mockResolvedValueOnce(snapshot(updated, "after"));
+    mocks.replaceConfigFile
+      .mockImplementationOnce(async ({ baseHash }) => {
+        expect(baseHash).toBe("before");
+        throw new ConfigMutationConflictError("config changed since last load");
+      })
+      .mockImplementationOnce(async ({ nextConfig, baseHash }) => {
+        expect(baseHash).toBe("after");
+        await mocks.writeConfigFile(nextConfig);
+        return committedConfigFiles.write(nextConfig);
+      });
+    await runConfigureWizard({ sections: ["workspace"] });
+    expect(mocks.replaceConfigFile).toHaveBeenCalledTimes(2);
+    expect(mocks.writeConfigFile).toHaveBeenCalledOnce();
+    expect(mocks.readConfigFileSnapshot).toHaveBeenCalledTimes(3);
+    expect(written().agents?.defaults?.workspace).toContain("/.openclaw/workspace");
+    expect(written().plugins).toEqual(updated.plugins);
+  });
+
+  it("does not retry after config path ownership changes", async () => {
+    queueWizardPrompts({ select: [], confirm: [] });
+    mocks.assertConfigPathForWrite.mockImplementation(() => {
+      throw new ConfigMutationConflictError("config path changed since last load", {
+        retryable: false,
+      });
+    });
+    await expect(runConfigureWizard({ sections: ["workspace"] })).rejects.toThrow(
+      "config path changed since last load",
+    );
+    expect(mocks.replaceConfigFile).toHaveBeenCalledOnce();
+    expect(mocks.readConfigFileSnapshot).toHaveBeenCalledTimes(2);
+    expect(mocks.writeConfigFile).not.toHaveBeenCalled();
+  });
+
+  it("uses one selected agent through setup and commits before channel hooks", async () => {
+    agentConfig({
+      agents: {
+        ownership: "explicit",
+        defaults: { workspace: "/tmp/global" },
+        entries: { alpha: { workspace: "/tmp/alpha" }, beta: {} },
+      },
+    });
+    queueWizardPrompts({ select: ["beta", "configure"], confirm: [], text: "/tmp/new-workspace" });
+    const hook = vi.fn(async () => {});
+    mocks.setupChannels.mockImplementationOnce(async (config, _runtime, _prompter, options) => {
+      options?.onPostWriteHook?.({ channel: "matrix", accountId: "beta", run: hook });
+      return config;
+    });
+    await runConfigureWizard({ sections: ["workspace", "plugins", "skills", "channels"] });
+    expect(written().agents).toEqual({
+      ownership: "explicit",
+      defaults: { workspace: "/tmp/global" },
+      entries: { alpha: { workspace: "/tmp/alpha" }, beta: { workspace: "/tmp/new-workspace" } },
+    });
+    expectWorkspaceSetup("/tmp/new-workspace", "beta");
+    expect(mocks.setupChannels).toHaveBeenCalledWith(
+      expect.any(Object),
+      expect.any(Object),
+      expect.any(Object),
       expect.objectContaining({
-        gateway: expect.objectContaining({ mode: "local" }),
+        workspaceDir: "/tmp/new-workspace",
+        deferStatusUntilSelection: true,
+        skipStatusNote: true,
       }),
     );
+    expect(
+      mocks.clackSelect.mock.calls.filter(
+        ([params]) => params.message === "Which agent do you want to configure?",
+      ),
+    ).toHaveLength(1);
+    expect(hook).toHaveBeenCalledOnce();
+    expect(mocks.writeConfigFile.mock.invocationCallOrder[0]!).toBeLessThan(
+      hook.mock.invocationCallOrder[0]!,
+    );
   });
 
-  it("exits with code 1 when configure wizard is cancelled", async () => {
-    const runtime = {
-      log: vi.fn(),
-      error: vi.fn(),
-      exit: vi.fn(),
+  it("does not persist an unprovisionable workspace", async () => {
+    agentConfig({ agents: { entries: { ops: { workspace: "/tmp/ops" } } } });
+    mocks.ensureWorkspaceAndSessions.mockRejectedValueOnce(new Error("workspace is unwritable"));
+    await expect(
+      runConfigureWizard({ sections: ["workspace", "plugins", "skills"] }),
+    ).rejects.toThrow("workspace is unwritable");
+    expect(mocks.setupPluginConfig).not.toHaveBeenCalled();
+    expect(mocks.setupSkills).not.toHaveBeenCalled();
+    expect(mocks.writeConfigFile).not.toHaveBeenCalled();
+  });
+
+  it("removes channel config without selecting an agent", async () => {
+    const config: OpenClawConfig = {
+      agents: { ownership: "explicit", entries: { alpha: {}, beta: {} } },
     };
-
-    mocks.readConfigFileSnapshot.mockResolvedValue({
-      exists: false,
-      valid: true,
-      config: {},
-      issues: [],
-    });
-    mocks.probeGatewayReachable.mockResolvedValue({ ok: false });
-    mocks.resolveControlUiLinks.mockReturnValue({ wsUrl: "ws://127.0.0.1:18789" });
-    mocks.summarizeExistingConfig.mockReturnValue("");
-    mocks.createClackPrompter.mockReturnValue({});
-    mocks.clackSelect.mockRejectedValueOnce(new WizardCancelledError());
-
-    await runConfigureWizard({ command: "configure" }, runtime);
-
-    expect(runtime.exit).toHaveBeenCalledWith(1);
+    agentConfig(config);
+    mocks.clackSelect.mockResolvedValueOnce("remove");
+    await runConfigureWizard({ sections: ["channels"] });
+    expect(mocks.setupChannels).not.toHaveBeenCalled();
+    expect(mocks.clackSelect).toHaveBeenCalledOnce();
+    expect(written()).toEqual(config);
   });
+  it("rejects non-interactive configure before prompting (#93953)", async () => {
+    const runtime = mocks.runtime;
+    mocks.isTerminalInteractive.mockReturnValue(false);
+    await configureCommandFromSectionsArg(undefined);
+    expect(runtime.exit).toHaveBeenCalledWith(1);
+    expect(runtime.error).toHaveBeenCalledOnce();
+    const message = runtime.error.mock.calls[0]?.[0];
+    expect(message).toContain("requires an interactive terminal (TTY)");
+    expect(message).toContain(formatCliCommand("paleoclaw config set"));
+    expect(message).toContain(formatCliCommand("paleoclaw config validate"));
+    expect(mocks.clackIntro).not.toHaveBeenCalled();
+    expect(mocks.writeConfigFile).not.toHaveBeenCalled();
+  });
+
+  it("opens the full wizard for Commander's empty section list", async () => {
+    queueWizardPrompts({ select: ["local", "__continue"], confirm: [] });
+    await configureCommandFromSectionsArg([]);
+    expect(written().gateway?.mode).toBe("local");
+    expect(mocks.writeConfigFile).toHaveBeenCalledOnce();
+  });
+
+  it("dispatches trimmed section names through the wizard", async () => {
+    queueWizardPrompts({ select: ["configure"], confirm: [] });
+    await configureCommandFromSectionsArg(["  channels  ", "\tplugins\t"]);
+    expect(mocks.setupChannels).toHaveBeenCalledOnce();
+    expect(mocks.setupPluginConfig).toHaveBeenCalledOnce();
+    expect(mocks.promptGatewayConfig).not.toHaveBeenCalled();
+    expect(mocks.writeConfigFile).toHaveBeenCalledOnce();
+  });
+
+  it.each([["  ", '""']])(
+    "rejects section %j before the terminal guard",
+    async (section, diagnostic) => {
+      const runtime = mocks.runtime;
+      mocks.isTerminalInteractive.mockReturnValue(false);
+      await configureCommandFromSectionsArg(["channels", section]);
+      expect(runtime.exit).toHaveBeenCalledWith(1);
+      expect(runtime.error).toHaveBeenCalledWith(
+        expect.stringContaining(`Invalid --section: ${diagnostic}`),
+      );
+      expect(mocks.clackIntro).not.toHaveBeenCalled();
+      expect(mocks.writeConfigFile).not.toHaveBeenCalled();
+    },
+  );
 });

@@ -1,0 +1,3 @@
+[workspace]
+members = ["paleoclaw-gateway-client", "paleoclaw-node-host"]
+resolver = "2"

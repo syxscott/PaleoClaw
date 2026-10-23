@@ -1,3 +1,8 @@
+/**
+ * Sandbox test fixture helpers.
+ *
+ * Builds complete sandbox contexts with Docker defaults so tests can override only the fields under scrutiny.
+ */
 import type { SandboxContext } from "./types.js";
 
 export function createSandboxTestContext(params?: {
@@ -7,7 +12,7 @@ export function createSandboxTestContext(params?: {
   const overrides = params?.overrides ?? {};
   const { docker: _unusedDockerOverrides, ...sandboxOverrides } = overrides;
   const docker = {
-    image: "paleoclaw-sandbox:bookworm-slim",
+    image: "paleoclaw-sandbox:trixie-slim",
     containerPrefix: "paleoclaw-sbx-",
     network: "none",
     user: "1000:1000",
@@ -28,10 +33,13 @@ export function createSandboxTestContext(params?: {
 
   return {
     enabled: true,
+    backendId: "docker",
     sessionKey: "sandbox:test",
     workspaceDir: "/tmp/workspace",
     agentWorkspaceDir: "/tmp/workspace",
     workspaceAccess: "rw",
+    runtimeId: "paleoclaw-sbx-test",
+    runtimeLabel: "paleoclaw-sbx-test",
     containerName: "paleoclaw-sbx-test",
     containerWorkdir: "/workspace",
     tools: { allow: ["*"], deny: [] },

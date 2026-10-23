@@ -1,14 +1,22 @@
-import type { PluginRuntime } from "paleoclaw/plugin-sdk/slack";
+import type { PluginRuntime } from "paleoclaw/plugin-sdk/channel-core";
+import { createPluginRuntimeStore } from "paleoclaw/plugin-sdk/runtime-store";
 
-let runtime: PluginRuntime | null = null;
+type SlackChannelRuntime = {
+  handleSlackAction?: typeof import("./action-runtime.js").handleSlackAction;
+};
 
-export function setSlackRuntime(next: PluginRuntime) {
-  runtime = next;
-}
+type SlackRuntime = PluginRuntime & {
+  channel: PluginRuntime["channel"] & {
+    slack?: SlackChannelRuntime;
+  };
+};
 
-export function getSlackRuntime(): PluginRuntime {
-  if (!runtime) {
-    throw new Error("Slack runtime not initialized");
-  }
-  return runtime;
-}
+const {
+  setRuntime: setSlackRuntime,
+  tryGetRuntime: getOptionalSlackRuntime,
+  getRuntime: getSlackRuntime,
+} = createPluginRuntimeStore<SlackRuntime>({
+  pluginId: "slack",
+  errorMessage: "Slack runtime not initialized",
+});
+export { getOptionalSlackRuntime, getSlackRuntime, setSlackRuntime };

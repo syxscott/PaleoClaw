@@ -1,0 +1,7 @@
+<resources>
+    <string-array name="ask_openclaw_query_patterns">
+        <item>"chiedi a paleoclaw %1$s"</item>
+        <item>"chiedi a paleoclaw di %1$s"</item>
+        <item>"apri paleoclaw e chiedi %1$s"</item>
+    </string-array>
+</resources>

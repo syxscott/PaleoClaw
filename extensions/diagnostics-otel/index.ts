@@ -1,15 +1,11 @@
-import type { OpenClawPluginApi } from "paleoclaw/plugin-sdk/diagnostics-otel";
-import { emptyPluginConfigSchema } from "paleoclaw/plugin-sdk/diagnostics-otel";
-import { createDiagnosticsOtelService } from "./src/service.js";
+import { definePluginEntry } from "paleoclaw/plugin-sdk/plugin-entry";
+import { createDiagnosticsOtelService } from "./runtime-api.js";
 
-const plugin = {
+export default definePluginEntry({
   id: "diagnostics-otel",
   name: "Diagnostics OpenTelemetry",
   description: "Export diagnostics events to OpenTelemetry",
-  configSchema: emptyPluginConfigSchema(),
-  register(api: OpenClawPluginApi) {
+  register(api) {
     api.registerService(createDiagnosticsOtelService());
   },
-};
-
-export default plugin;
+});

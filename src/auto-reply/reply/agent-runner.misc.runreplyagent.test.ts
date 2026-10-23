@@ -1,689 +1,661 @@
-import crypto from "node:crypto";
 import fs from "node:fs/promises";
-import os from "node:os";
 import path from "node:path";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { expectDefined } from "@paleoclaw/normalization-core";
+import { createRequireRecord } from "paleoclaw/plugin-sdk/test-fixtures";
+import { describe, expect, it, vi } from "vitest";
+import { awaitGateBeforeSettlement, createDeferred } from "../../../test/helpers/promise.js";
+import { parseCliOutput } from "../../agents/cli-output.js";
+import type { RunEmbeddedAgentInternalParams } from "../../agents/embedded-agent-runner/run/internal-params.js";
+import { registerPendingAgentQuestion } from "../../agents/harness/gateway-question.js";
+import {
+  beginForegroundSessionMaintenance,
+  waitForSessionMaintenance,
+} from "../../agents/session-maintenance/coordinator.js";
+import { SessionManager } from "../../agents/sessions/session-manager.js";
+import { makeAssistantMessageFixture } from "../../agents/test-helpers/assistant-message-fixtures.js";
+import {
+  runFallbackModelAttempt,
+  runInitialModelFallbackAttempt,
+  type TestModelFallbackRunnerParams,
+} from "../../agents/test-helpers/model-fallback-runner.test-support.js";
+import { setRuntimeConfigSnapshot, type OpenClawConfig } from "../../config/config.js";
 import type { SessionEntry } from "../../config/sessions.js";
-import { loadSessionStore, saveSessionStore } from "../../config/sessions.js";
-import { onAgentEvent } from "../../infra/agent-events.js";
-import { peekSystemEvents, resetSystemEventsForTest } from "../../infra/system-events.js";
-import type { TemplateContext } from "../templating.js";
-import type { FollowupRun, QueueSettings } from "./queue.js";
-import { createMockTypingController } from "./test-helpers.js";
+import { loadSessionEntry, replaceSessionEntry } from "../../config/sessions/session-accessor.js";
+import { settlePendingFinalDelivery } from "../../infra/outbound/delivery-completion.js";
+import { resolveSystemEventQueueKey } from "../../infra/system-event-ownership.js";
+import { peekSystemEvents } from "../../infra/system-events.js";
+import { flushLogger, setLoggerOverride } from "../../logging/logger.js";
+import {
+  registerMemoryCapability,
+  type MemoryFlushPlanResolver,
+} from "../../plugins/memory-state.test-fixtures.js";
+import {
+  getPluginRuntimeGatewayRequestScope,
+  withPluginRuntimeGatewayRequestScope,
+} from "../../plugins/runtime/gateway-request-scope.js";
+import { GatewayDrainingError } from "../../process/command-queue.js";
+import {
+  createReplyOperation,
+  getSessionControllerOperation,
+  type ReplyOperation,
+} from "../../sessions/session-controller.js";
+import type { VisibleWorkSession } from "../get-reply-options.types.js";
+import {
+  getReplyPayloadMetadata,
+  isReplyPayloadTerminalContent,
+  type ReplyPayload,
+} from "../reply-payload.js";
+import { normalizeVerboseLevel } from "../thinking.js";
+import type { VerboseLevel } from "../thinking.shared.js";
+import {
+  compactState,
+  loadCronStoreMock,
+  rootDir,
+  runCliAgentMock,
+  runEmbeddedAgentMock,
+  runWithModelFallbackMock,
+  runtimeErrorMock,
+  setupAgentRunnerTestHooks,
+  tempDirs,
+} from "./agent-runner.misc.runreplyagent.test-support.js";
+import { type BaseRunOptions, createBaseRun } from "./agent-runner.runreplyagent.test-support.js";
+import { clearPendingFinalDeliveryAfterSuccess } from "./dispatch-from-config.pending-final.js";
+import { scheduleFollowupDrain } from "./queue.js";
+import { REPLY_OPERATION_RUN_STATE } from "./reply-operation-run-state.js";
+import { buildTestCtx } from "./test-ctx.js";
 
-const runEmbeddedPiAgentMock = vi.fn();
-const runCliAgentMock = vi.fn();
-const runWithModelFallbackMock = vi.fn();
-const runtimeErrorMock = vi.fn();
+function registerMemoryFlushPlanResolverForTest(resolver: MemoryFlushPlanResolver): void {
+  registerMemoryCapability("memory-core", { flushPlanResolver: resolver });
+}
 
-vi.mock("../../agents/model-fallback.js", () => ({
-  runWithModelFallback: (params: {
-    provider: string;
-    model: string;
-    run: (provider: string, model: string) => Promise<unknown>;
-  }) => runWithModelFallbackMock(params),
-}));
+type RunWithModelFallbackParams = TestModelFallbackRunnerParams;
 
-vi.mock("../../agents/pi-embedded.js", async () => {
-  const actual = await vi.importActual<typeof import("../../agents/pi-embedded.js")>(
-    "../../agents/pi-embedded.js",
-  );
-  return {
-    ...actual,
-    queueEmbeddedPiMessage: vi.fn().mockReturnValue(false),
-    runEmbeddedPiAgent: (params: unknown) => runEmbeddedPiAgentMock(params),
-  };
+const requireRecord = createRequireRecord("record", "expected-label-object");
+
+function sessionFixture(overrides: Partial<SessionEntry> = {}): SessionEntry {
+  return { sessionId: "session", updatedAt: Date.now(), ...overrides };
+}
+
+function sessionState(sessionKey: string, sessionEntry: SessionEntry) {
+  return { sessionKey, sessionEntry, sessionStore: { [sessionKey]: sessionEntry } };
+}
+
+function replyResult<T extends Record<string, unknown>>(text: string, meta: T) {
+  return { payloads: [{ text }], meta };
+}
+
+function replyText(result: Awaited<ReturnType<typeof runReplyAgent>>) {
+  return (Array.isArray(result) ? result : [result])
+    .map((payload) => payload?.text ?? "")
+    .join("\n");
+}
+
+function expectReplyText(result: unknown, text: string): void {
+  expect(requireRecord(result, "reply result")).toMatchObject({ text });
+}
+
+type MockCallSource = { mock: { calls: ReadonlyArray<ReadonlyArray<unknown>> } };
+
+function firstMockCallArg(mock: MockCallSource, label: string): unknown {
+  return expectDefined(mock.mock.calls[0], `expected ${label} to have at least one call`)[0];
+}
+
+// Hoist mocks before static dependencies, but defer the runner to avoid incomplete cyclic exports.
+await vi.hoisted(async () => {
+  await import("./agent-runner.misc.runreplyagent.test-support.js");
 });
+const { runReplyAgent } = await import("./agent-runner-run.js");
 
-vi.mock("../../agents/cli-runner.js", async () => {
-  const actual = await vi.importActual<typeof import("../../agents/cli-runner.js")>(
-    "../../agents/cli-runner.js",
-  );
-  return {
-    ...actual,
-    runCliAgent: (params: unknown) => runCliAgentMock(params),
-  };
-});
+setupAgentRunnerTestHooks();
 
-vi.mock("../../runtime.js", async () => {
-  const actual = await vi.importActual<typeof import("../../runtime.js")>("../../runtime.js");
-  return {
-    ...actual,
-    defaultRuntime: {
-      ...actual.defaultRuntime,
-      log: vi.fn(),
-      error: (...args: unknown[]) => runtimeErrorMock(...args),
-      exit: vi.fn(),
+it("refuses an unbound question without falling through to active-run queueing", async () => {
+  const gatewayCall = vi.fn(async () => ({ status: "answered" }));
+  const reservation = registerPendingAgentQuestion({
+    questionId: "ask_direct_cli_answer",
+    sessionKey: "main",
+    questions: [
+      {
+        id: "color",
+        header: "Color",
+        question: "Which color?",
+        options: [{ label: "Blue" }, { label: "Green" }],
+      },
+    ],
+    gatewayCall,
+    answer: Promise.resolve({ status: "pending" }),
+  });
+  reservation.attachRegistration(Promise.resolve({ id: "ask_direct_cli_answer" }));
+  const replyOperationRunState = {};
+  const testRun = createBaseRun({
+    context: { agentText: "Green" },
+    followup: { transcriptPrompt: "Green" },
+    reply: {
+      commandBody: "Green",
+      transcriptCommandBody: "Green",
+      sessionKey: "main",
+      isActive: true,
+      shouldSteer: true,
+      opts: { [REPLY_OPERATION_RUN_STATE]: replyOperationRunState },
     },
-  };
-});
+  });
 
-vi.mock("./queue.js", async () => {
-  const actual = await vi.importActual<typeof import("./queue.js")>("./queue.js");
-  return {
-    ...actual,
-    enqueueFollowupRun: vi.fn(),
-    scheduleFollowupDrain: vi.fn(),
-  };
-});
-
-const loadCronStoreMock = vi.fn();
-vi.mock("../../cron/store.js", async () => {
-  const actual = await vi.importActual<typeof import("../../cron/store.js")>("../../cron/store.js");
-  return {
-    ...actual,
-    loadCronStore: (...args: unknown[]) => loadCronStoreMock(...args),
-  };
-});
-
-import { runReplyAgent } from "./agent-runner.js";
-
-type RunWithModelFallbackParams = {
-  provider: string;
-  model: string;
-  run: (provider: string, model: string) => Promise<unknown>;
-};
-
-beforeEach(() => {
-  runEmbeddedPiAgentMock.mockClear();
-  runCliAgentMock.mockClear();
-  runWithModelFallbackMock.mockClear();
-  runtimeErrorMock.mockClear();
-  loadCronStoreMock.mockClear();
-  // Default: no cron jobs in store.
-  loadCronStoreMock.mockResolvedValue({ version: 1, jobs: [] });
-  resetSystemEventsForTest();
-
-  // Default: no provider switch; execute the chosen provider+model.
-  runWithModelFallbackMock.mockImplementation(
-    async ({ provider, model, run }: RunWithModelFallbackParams) => ({
-      result: await run(provider, model),
-      provider,
-      model,
-    }),
-  );
-});
-
-afterEach(() => {
-  vi.useRealTimers();
-  resetSystemEventsForTest();
-});
-
-describe("runReplyAgent onAgentRunStart", () => {
-  function createRun(params?: {
-    provider?: string;
-    model?: string;
-    opts?: {
-      runId?: string;
-      onAgentRunStart?: (runId: string) => void;
-    };
-  }) {
-    const provider = params?.provider ?? "anthropic";
-    const model = params?.model ?? "claude";
-    const typing = createMockTypingController();
-    const sessionCtx = {
-      Provider: "webchat",
-      OriginatingTo: "session:1",
-      AccountId: "primary",
-      MessageSid: "msg",
-    } as unknown as TemplateContext;
-    const resolvedQueue = { mode: "interrupt" } as unknown as QueueSettings;
-    const followupRun = {
-      prompt: "hello",
-      summaryLine: "hello",
-      enqueuedAt: Date.now(),
-      run: {
-        sessionId: "session",
-        sessionKey: "main",
-        messageProvider: "webchat",
-        sessionFile: "/tmp/session.jsonl",
-        workspaceDir: "/tmp",
-        config: {},
-        skillsSnapshot: {},
-        provider,
-        model,
-        thinkLevel: "low",
-        verboseLevel: "off",
-        elevatedLevel: "off",
-        bashElevated: {
-          enabled: false,
-          allowed: false,
-          defaultLevel: "off",
-        },
-        timeoutMs: 1_000,
-        blockReplyBreak: "message_end",
-      },
-    } as unknown as FollowupRun;
-
-    return runReplyAgent({
-      commandBody: "hello",
-      followupRun,
-      queueKey: "main",
-      resolvedQueue,
-      shouldSteer: false,
-      shouldFollowup: false,
-      isActive: false,
-      isStreaming: false,
-      opts: params?.opts,
-      typing,
-      sessionCtx,
-      defaultModel: `${provider}/${model}`,
-      resolvedVerboseLevel: "off",
-      isNewSession: false,
-      blockStreamingEnabled: false,
-      resolvedBlockStreamingBreak: "message_end",
-      shouldInjectGroupIntro: false,
-      typingMode: "instant",
+  try {
+    await expect(testRun.run()).resolves.toEqual({
+      text: expect.stringContaining("pending question has no prepared creator authority"),
+      isError: true,
     });
+    expect(gatewayCall).not.toHaveBeenCalled();
+    expect(runEmbeddedAgentMock).not.toHaveBeenCalled();
+    expect(runCliAgentMock).not.toHaveBeenCalled();
+    expect(testRun.typing.cleanup).toHaveBeenCalledOnce();
+  } finally {
+    reservation.dispose();
   }
-
-  it("does not emit start callback when fallback fails before run start", async () => {
-    runWithModelFallbackMock.mockRejectedValueOnce(
-      new Error('No API key found for provider "anthropic".'),
-    );
-    const onAgentRunStart = vi.fn();
-
-    const result = await createRun({
-      opts: { runId: "run-no-start", onAgentRunStart },
-    });
-
-    expect(onAgentRunStart).not.toHaveBeenCalled();
-    expect(result).toMatchObject({
-      text: expect.stringContaining('No API key found for provider "anthropic".'),
-    });
-  });
-
-  it("emits start callback when cli runner starts", async () => {
-    runCliAgentMock.mockResolvedValueOnce({
-      payloads: [{ text: "ok" }],
-      meta: {
-        agentMeta: {
-          provider: "claude-cli",
-          model: "opus-4.5",
-        },
-      },
-    });
-    const onAgentRunStart = vi.fn();
-
-    const result = await createRun({
-      provider: "claude-cli",
-      model: "opus-4.5",
-      opts: { runId: "run-started", onAgentRunStart },
-    });
-
-    expect(onAgentRunStart).toHaveBeenCalledTimes(1);
-    expect(onAgentRunStart).toHaveBeenCalledWith("run-started");
-    expect(result).toMatchObject({ text: "ok" });
-  });
-});
-
-describe("runReplyAgent authProfileId fallback scoping", () => {
-  it("drops authProfileId when provider changes during fallback", async () => {
-    runWithModelFallbackMock.mockImplementationOnce(
-      async ({ run }: RunWithModelFallbackParams) => ({
-        result: await run("openai-codex", "gpt-5.2"),
-        provider: "openai-codex",
-        model: "gpt-5.2",
-      }),
-    );
-
-    runEmbeddedPiAgentMock.mockResolvedValue({ payloads: [{ text: "ok" }], meta: {} });
-
-    const typing = createMockTypingController();
-    const sessionCtx = {
-      Provider: "telegram",
-      OriginatingTo: "chat",
-      AccountId: "primary",
-      MessageSid: "msg",
-      Surface: "telegram",
-    } as unknown as TemplateContext;
-
-    const resolvedQueue = { mode: "interrupt" } as unknown as QueueSettings;
-    const followupRun = {
-      prompt: "hello",
-      summaryLine: "hello",
-      enqueuedAt: Date.now(),
-      run: {
-        agentId: "main",
-        agentDir: "/tmp/agent",
-        sessionId: "session",
-        sessionKey: "main",
-        messageProvider: "telegram",
-        sessionFile: "/tmp/session.jsonl",
-        workspaceDir: "/tmp",
-        config: {},
-        skillsSnapshot: {},
-        provider: "anthropic",
-        model: "claude-opus",
-        authProfileId: "anthropic:paleoclaw",
-        authProfileIdSource: "manual",
-        thinkLevel: "low",
-        verboseLevel: "off",
-        elevatedLevel: "off",
-        bashElevated: {
-          enabled: false,
-          allowed: false,
-          defaultLevel: "off",
-        },
-        timeoutMs: 5_000,
-        blockReplyBreak: "message_end",
-      },
-    } as unknown as FollowupRun;
-
-    const sessionKey = "main";
-    const sessionEntry = {
-      sessionId: "session",
-      updatedAt: Date.now(),
-      totalTokens: 1,
-      compactionCount: 0,
-    };
-
-    await runReplyAgent({
-      commandBody: "hello",
-      followupRun,
-      queueKey: sessionKey,
-      resolvedQueue,
-      shouldSteer: false,
-      shouldFollowup: false,
-      isActive: false,
-      isStreaming: false,
-      typing,
-      sessionCtx,
-      sessionEntry,
-      sessionStore: { [sessionKey]: sessionEntry },
-      sessionKey,
-      storePath: undefined,
-      defaultModel: "anthropic/claude-opus-4-5",
-      agentCfgContextTokens: 100_000,
-      resolvedVerboseLevel: "off",
-      isNewSession: false,
-      blockStreamingEnabled: false,
-      resolvedBlockStreamingBreak: "message_end",
-      shouldInjectGroupIntro: false,
-      typingMode: "instant",
-    });
-
-    expect(runEmbeddedPiAgentMock).toHaveBeenCalledTimes(1);
-    const call = runEmbeddedPiAgentMock.mock.calls[0]?.[0] as {
-      authProfileId?: unknown;
-      authProfileIdSource?: unknown;
-      provider?: unknown;
-    };
-
-    expect(call.provider).toBe("openai-codex");
-    expect(call.authProfileId).toBeUndefined();
-    expect(call.authProfileIdSource).toBeUndefined();
-  });
 });
 
 describe("runReplyAgent auto-compaction token update", () => {
-  type EmbeddedRunParams = {
-    prompt?: string;
-    extraSystemPrompt?: string;
-    onAgentEvent?: (evt: {
-      stream?: string;
-      data?: { phase?: string; willRetry?: boolean };
-    }) => void;
-  };
-
-  async function seedSessionStore(params: {
-    storePath: string;
-    sessionKey: string;
-    entry: Record<string, unknown>;
-  }) {
-    await fs.mkdir(path.dirname(params.storePath), { recursive: true });
-    await fs.writeFile(
-      params.storePath,
-      JSON.stringify({ [params.sessionKey]: params.entry }, null, 2),
-      "utf-8",
-    );
-  }
-
-  function createBaseRun(params: {
-    storePath: string;
-    sessionEntry: Record<string, unknown>;
-    config?: Record<string, unknown>;
-    sessionFile?: string;
-    workspaceDir?: string;
-  }) {
-    const typing = createMockTypingController();
-    const sessionCtx = {
-      Provider: "whatsapp",
-      OriginatingTo: "+15550001111",
-      AccountId: "primary",
-      MessageSid: "msg",
-    } as unknown as TemplateContext;
-    const resolvedQueue = { mode: "interrupt" } as unknown as QueueSettings;
-    const followupRun = {
-      prompt: "hello",
-      summaryLine: "hello",
-      enqueuedAt: Date.now(),
-      run: {
-        agentId: "main",
-        agentDir: "/tmp/agent",
-        sessionId: "session",
-        sessionKey: "main",
-        messageProvider: "whatsapp",
-        sessionFile: params.sessionFile ?? "/tmp/session.jsonl",
-        workspaceDir: params.workspaceDir ?? "/tmp",
-        config: params.config ?? {},
-        skillsSnapshot: {},
-        provider: "anthropic",
-        model: "claude",
-        thinkLevel: "low",
-        verboseLevel: "off",
-        elevatedLevel: "off",
-        bashElevated: { enabled: false, allowed: false, defaultLevel: "off" },
-        timeoutMs: 1_000,
-        blockReplyBreak: "message_end",
-      },
-    } as unknown as FollowupRun;
-    return { typing, sessionCtx, resolvedQueue, followupRun };
-  }
-
-  it("updates totalTokens after auto-compaction using lastCallUsage", async () => {
-    const tmp = await fs.mkdtemp(path.join(os.tmpdir(), "paleoclaw-compact-tokens-"));
-    const storePath = path.join(tmp, "sessions.json");
-    const sessionKey = "main";
-    const sessionEntry = {
-      sessionId: "session",
-      updatedAt: Date.now(),
-      totalTokens: 181_000,
-      compactionCount: 0,
-    };
-
-    await seedSessionStore({ storePath, sessionKey, entry: sessionEntry });
-
-    runEmbeddedPiAgentMock.mockImplementation(async (params: EmbeddedRunParams) => {
-      // Simulate auto-compaction during agent run
-      params.onAgentEvent?.({ stream: "compaction", data: { phase: "start" } });
-      params.onAgentEvent?.({ stream: "compaction", data: { phase: "end", willRetry: false } });
-      return {
-        payloads: [{ text: "done" }],
-        meta: {
-          agentMeta: {
-            // Accumulated usage across pre+post compaction calls — inflated
-            usage: { input: 190_000, output: 8_000, total: 198_000 },
-            // Last individual API call's usage — actual post-compaction context
-            lastCallUsage: { input: 10_000, output: 3_000, total: 13_000 },
-            compactionCount: 1,
-          },
-        },
-      };
-    });
-
-    // Disable memory flush so we isolate the auto-compaction path
-    const config = {
-      agents: { defaults: { compaction: { memoryFlush: { enabled: false } } } },
-    };
-    const { typing, sessionCtx, resolvedQueue, followupRun } = createBaseRun({
-      storePath,
-      sessionEntry,
-      config,
-    });
-
-    await runReplyAgent({
-      commandBody: "hello",
-      followupRun,
-      queueKey: "main",
-      resolvedQueue,
-      shouldSteer: false,
-      shouldFollowup: false,
-      isActive: false,
-      isStreaming: false,
-      typing,
-      sessionCtx,
-      sessionEntry,
-      sessionStore: { [sessionKey]: sessionEntry },
-      sessionKey,
-      storePath,
-      defaultModel: "anthropic/claude-opus-4-5",
-      agentCfgContextTokens: 200_000,
-      resolvedVerboseLevel: "off",
-      isNewSession: false,
-      blockStreamingEnabled: false,
-      resolvedBlockStreamingBreak: "message_end",
-      shouldInjectGroupIntro: false,
-      typingMode: "instant",
-    });
-
-    const stored = JSON.parse(await fs.readFile(storePath, "utf-8"));
-    // totalTokens should reflect actual post-compaction context (~10k), not
-    // the stale pre-compaction value (181k) or the inflated accumulated (190k)
-    expect(stored[sessionKey].totalTokens).toBe(10_000);
-    // compactionCount should be incremented
-    expect(stored[sessionKey].compactionCount).toBe(1);
-  });
-
   it("updates totalTokens from lastCallUsage even without compaction", async () => {
-    const tmp = await fs.mkdtemp(path.join(os.tmpdir(), "paleoclaw-usage-last-"));
-    const storePath = path.join(tmp, "sessions.json");
+    const storePath = path.join(tempDirs.make("paleoclaw-usage-last-"), "sessions.json");
     const sessionKey = "main";
-    const sessionEntry = {
-      sessionId: "session",
-      updatedAt: Date.now(),
-      totalTokens: 50_000,
-    };
-
-    await seedSessionStore({ storePath, sessionKey, entry: sessionEntry });
-
-    runEmbeddedPiAgentMock.mockResolvedValue({
-      payloads: [{ text: "ok" }],
-      meta: {
+    const sessionEntry = sessionFixture({ totalTokens: 50_000 });
+    await replaceSessionEntry({ storePath, sessionKey }, sessionEntry);
+    runEmbeddedAgentMock.mockResolvedValue(
+      replyResult("ok", {
         agentMeta: {
-          // Tool-use loop: accumulated input is higher than last call's input
           usage: { input: 75_000, output: 5_000, total: 80_000 },
           lastCallUsage: { input: 55_000, output: 2_000, total: 57_000 },
         },
-      },
-    });
-
-    const { typing, sessionCtx, resolvedQueue, followupRun } = createBaseRun({
-      storePath,
-      sessionEntry,
-    });
-
-    await runReplyAgent({
-      commandBody: "hello",
-      followupRun,
-      queueKey: "main",
-      resolvedQueue,
-      shouldSteer: false,
-      shouldFollowup: false,
-      isActive: false,
-      isStreaming: false,
-      typing,
-      sessionCtx,
-      sessionEntry,
-      sessionStore: { [sessionKey]: sessionEntry },
-      sessionKey,
-      storePath,
-      defaultModel: "anthropic/claude-opus-4-5",
-      agentCfgContextTokens: 200_000,
-      resolvedVerboseLevel: "off",
-      isNewSession: false,
-      blockStreamingEnabled: false,
-      resolvedBlockStreamingBreak: "message_end",
-      shouldInjectGroupIntro: false,
-      typingMode: "instant",
-    });
-
-    const stored = JSON.parse(await fs.readFile(storePath, "utf-8"));
-    // totalTokens should use lastCallUsage (55k), not accumulated (75k)
-    expect(stored[sessionKey].totalTokens).toBe(55_000);
-  });
-
-  it("does not enqueue legacy post-compaction audit warnings", async () => {
-    const tmp = await fs.mkdtemp(path.join(os.tmpdir(), "paleoclaw-no-audit-warning-"));
-    const workspaceDir = path.join(tmp, "workspace");
-    await fs.mkdir(workspaceDir, { recursive: true });
-    const sessionFile = path.join(tmp, "session.jsonl");
-    await fs.writeFile(
-      sessionFile,
-      `${JSON.stringify({ type: "message", message: { role: "assistant", content: [] } })}\n`,
-      "utf-8",
+      }),
     );
+    await createBaseRun({
+      run: { agentId: "main", agentDir: path.join(rootDir, "agent"), reasoningLevel: "on" },
+      reply: { ...sessionState(sessionKey, sessionEntry), storePath },
+    }).run();
+    expect(loadSessionEntry({ storePath, sessionKey })?.totalTokens).toBe(55_000);
+  }, 180_000);
 
-    const storePath = path.join(tmp, "sessions.json");
-    const sessionKey = "main";
-    const sessionEntry = {
-      sessionId: "session",
-      updatedAt: Date.now(),
-      totalTokens: 10_000,
-      compactionCount: 0,
-    };
-
-    await seedSessionStore({ storePath, sessionKey, entry: sessionEntry });
-
-    runEmbeddedPiAgentMock.mockImplementation(async (params: EmbeddedRunParams) => {
-      params.onAgentEvent?.({ stream: "compaction", data: { phase: "start" } });
-      params.onAgentEvent?.({ stream: "compaction", data: { phase: "end", willRetry: false } });
-      return {
-        payloads: [{ text: "done" }],
-        meta: {
-          agentMeta: {
-            usage: { input: 11_000, output: 500, total: 11_500 },
-            lastCallUsage: { input: 10_500, output: 500, total: 11_000 },
-            compactionCount: 1,
-          },
-        },
-      };
+  it("keeps an unarmed preflight drain visible instead of dropping the reply", async () => {
+    const storePath = path.join(tempDirs.make("paleoclaw-preflight-drain-"), "sessions.json");
+    const sessionKey = "agent:main:main";
+    const sessionEntry = sessionFixture({
+      totalTokens: 200_000,
+      totalTokensFresh: true,
+      totalTokensVersion: 1 as const,
     });
+    await replaceSessionEntry({ storePath, sessionKey }, sessionEntry);
+    compactState.compactEmbeddedAgentSessionMock.mockRejectedValueOnce(new GatewayDrainingError());
 
-    const config = {
-      agents: { defaults: { compaction: { memoryFlush: { enabled: false } } } },
-    };
-    const { typing, sessionCtx, resolvedQueue, followupRun } = createBaseRun({
-      storePath,
-      sessionEntry,
-      config,
-      sessionFile,
-      workspaceDir,
-    });
+    const result = await createBaseRun({
+      run: { agentId: "main", agentDir: path.join(rootDir, "agent"), reasoningLevel: "on" },
+      reply: { queueKey: sessionKey, ...sessionState(sessionKey, sessionEntry), storePath },
+    }).run();
 
-    await runReplyAgent({
-      commandBody: "hello",
-      followupRun,
-      queueKey: "main",
-      resolvedQueue,
-      shouldSteer: false,
-      shouldFollowup: false,
-      isActive: false,
-      isStreaming: false,
-      typing,
-      sessionCtx,
-      sessionEntry,
-      sessionStore: { [sessionKey]: sessionEntry },
-      sessionKey,
-      storePath,
-      defaultModel: "anthropic/claude-opus-4-5",
-      agentCfgContextTokens: 200_000,
-      resolvedVerboseLevel: "off",
-      isNewSession: false,
-      blockStreamingEnabled: false,
-      resolvedBlockStreamingBreak: "message_end",
-      shouldInjectGroupIntro: false,
-      typingMode: "instant",
-    });
-
-    const queuedSystemEvents = peekSystemEvents(sessionKey);
-    expect(queuedSystemEvents.some((event) => event.includes("Post-Compaction Audit"))).toBe(false);
-    expect(queuedSystemEvents.some((event) => event.includes("WORKFLOW_AUTO.md"))).toBe(false);
+    expect(compactState.compactEmbeddedAgentSessionMock).toHaveBeenCalledTimes(1);
+    expectReplyText(result, "⚠️ Gateway is restarting. Please wait a few seconds and try again.");
   });
-});
 
-describe("runReplyAgent block streaming", () => {
-  it("coalesces duplicate text_end block replies", async () => {
-    const onBlockReply = vi.fn();
-    runEmbeddedPiAgentMock.mockImplementationOnce(async (params) => {
-      const block = params.onBlockReply as ((payload: { text?: string }) => void) | undefined;
-      block?.({ text: "Hello" });
-      block?.({ text: "Hello" });
-      return {
-        payloads: [{ text: "Final message" }],
-        meta: {},
+  it.each([
+    { preempted: false, retiredGateway: false },
+    { preempted: true, retiredGateway: false },
+    { preempted: false, retiredGateway: true },
+    { preempted: false, retiredGateway: false, compactAfterFlush: true },
+  ])(
+    "defers optional memory until real delivery settles ($preempted, retired=$retiredGateway, compact=$compactAfterFlush)",
+    async ({ preempted, retiredGateway, compactAfterFlush = false }) => {
+      const tmp = tempDirs.make("paleoclaw-early-flush-");
+      const logPath = path.join(tmp, "maintenance.log");
+      setLoggerOverride({ level: "debug", consoleLevel: "silent", file: logPath });
+      const storePath = path.join(tmp, "sessions.json");
+      const sessionKey = "agent:main:main";
+      const scope = { agentId: "main", sessionId: "session", sessionKey, storePath };
+      const sessionEntry = sessionFixture({
+        totalTokens: 10_920,
+        totalTokensFresh: true,
+        totalTokensVersion: 1,
+        compactionCount: 0,
+      });
+      const prompt = "What is two plus two? Answer in one short sentence without tools.";
+      const onReplyOperationOwned = vi.fn<(operation: ReplyOperation) => boolean>(() => true);
+      const delivery = createDeferred();
+      const requestBudget = {
+        contextWindow: 32_768,
+        reserveTokens: 8_192,
+        fixedTokens: 9_500,
+        pendingTokens: 512,
+        pendingUserIdempotencyKey: "processed-user",
       };
-    });
-
-    const typing = createMockTypingController();
-    const sessionCtx = {
-      Provider: "discord",
-      OriginatingTo: "channel:C1",
-      AccountId: "primary",
-      MessageSid: "msg",
-    } as unknown as TemplateContext;
-    const resolvedQueue = { mode: "interrupt" } as unknown as QueueSettings;
-    const followupRun = {
-      prompt: "hello",
-      summaryLine: "hello",
-      enqueuedAt: Date.now(),
-      run: {
-        sessionId: "session",
-        sessionKey: "main",
-        messageProvider: "discord",
-        sessionFile: "/tmp/session.jsonl",
-        workspaceDir: "/tmp",
-        config: {
-          agents: {
-            defaults: {
-              blockStreamingCoalesce: {
-                minChars: 1,
-                maxChars: 200,
-                idleMs: 0,
-              },
+      let memoryParams: RunEmbeddedAgentInternalParams | undefined;
+      let memoryScope: ReturnType<typeof getPluginRuntimeGatewayRequestScope>;
+      let gatewayActive = true;
+      const gatewayContext = {
+        terminalSessions: {},
+        resolveGatewayContext: () => (gatewayActive ? gatewayContext : undefined),
+      } as never;
+      const resolveGatewayContext = () => gatewayContext;
+      let releaseForeground: (() => void) | undefined;
+      const config: OpenClawConfig = {
+        models: {
+          providers: {
+            anthropic: {
+              baseUrl: "https://example.test",
+              models: [
+                {
+                  id: "claude-opus-4-6",
+                  name: "Test model",
+                  contextTokens: 32_768,
+                  reasoning: false,
+                  input: ["text"],
+                  maxTokens: 8_192,
+                  cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+                },
+              ],
             },
           },
         },
-        skillsSnapshot: {},
-        provider: "anthropic",
-        model: "claude",
-        thinkLevel: "low",
-        verboseLevel: "off",
-        elevatedLevel: "off",
-        bashElevated: {
-          enabled: false,
-          allowed: false,
-          defaultLevel: "off",
-        },
-        timeoutMs: 1_000,
-        blockReplyBreak: "text_end",
-      },
-    } as unknown as FollowupRun;
+      };
+      registerMemoryFlushPlanResolverForTest(({ cfg, contextWindowTokens }) => {
+        expect(cfg?.models?.providers?.anthropic?.models).toMatchObject([
+          { id: "claude-opus-4-6", contextTokens: 32_768 },
+        ]);
+        expect(contextWindowTokens).toBe(32_768);
+        return {
+          softThresholdTokens: 4_000,
+          reserveTokensFloor: 20_000,
+          forceFlushTranscriptBytes: 1_000_000_000,
+          prompt: "Pre-compaction memory flush.",
+          systemPrompt: "Write durable memory, then reply NO_REPLY.",
+          relativePath: "memory/active.md",
+        };
+      });
+      // The usage counters are from bounded QA metadata. This assembled prompt and
+      // transcript are synthetic; their estimates are not an observed second-turn budget.
+      const terminalMessage = (input: number, output: number) =>
+        makeAssistantMessageFixture({
+          provider: "anthropic",
+          api: "anthropic-messages",
+          model: "claude-opus-4-6",
+          content: [{ type: "text", text: "NO_REPLY" }],
+          stopReason: "stop",
+          errorMessage: undefined,
+          usage: {
+            input,
+            output,
+            totalTokens: input + output,
+            cacheRead: 0,
+            cacheWrite: 0,
+            cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 },
+          },
+        });
+      runEmbeddedAgentMock.mockImplementation(async (params: RunEmbeddedAgentInternalParams) => {
+        expect(params.config?.models?.providers?.anthropic?.models).toEqual(
+          config.models?.providers?.anthropic?.models,
+        );
+        if (params.trigger === "memory") {
+          memoryParams = params;
+          memoryScope = getPluginRuntimeGatewayRequestScope();
+          const privateTranscript = expectDefined(params.sessionManager, "memory transcript");
+          expect(privateTranscript.getSessionTarget()).toBeUndefined();
+          privateTranscript.appendMessage(terminalMessage(7_039, 34));
+          return {
+            payloads: [],
+            meta: { agentMeta: { lastCallUsage: { input: 7_039, output: 34 } } },
+          };
+        }
+        expect(params.prompt).toContain(prompt);
+        params.onSuccessfulAuthProfile?.(undefined);
+        params.onCompactionRequestBudget?.(requestBudget);
+        return replyResult("Two plus two is four.", {
+          agentMeta: {
+            sessionId: "session",
+            agentHarnessId: "paleoclaw",
+            provider: "anthropic",
+            model: "claude-opus-4-6",
+            lastCallUsage: { input: compactAfterFlush ? 26_000 : 10_920, output: 10 },
+          },
+        });
+      });
+      try {
+        // Memory-flush persistence reads runtime config again; share its authoritative source
+        // with the queued turn so the selected model cannot escape into real catalog discovery.
+        setRuntimeConfigSnapshot(config, config);
+        await replaceSessionEntry(scope, sessionEntry);
+        SessionManager.open(scope, tmp).appendMessage(terminalMessage(10_920, 10));
+        const turn = createBaseRun({
+          followup: { prompt },
+          run: {
+            agentId: "main",
+            agentDir: path.join(tmp, "agent"),
+            sessionKey,
+            sessionFile: path.join(tmp, "session.jsonl"),
+            workspaceDir: tmp,
+            model: "claude-opus-4-6",
+            config,
+            timeoutMs: 600_000,
+            senderIsOwner: true,
+          },
+          reply: {
+            commandBody: prompt,
+            ...sessionState(sessionKey, sessionEntry),
+            storePath,
+            opts: { onReplyOperationOwned },
+          },
+        });
+        const result = await withPluginRuntimeGatewayRequestScope(
+          {
+            isWebchatConnect: () => false,
+            resolveGatewayContext,
+            nodePlacementGrantAuthority: {
+              agentId: "main",
+              sessionKey,
+              runId: "foreground",
+              assertCurrent: () => {},
+            },
+          },
+          turn.run,
+        );
+        const operation = expectDefined(
+          onReplyOperationOwned.mock.calls[0]?.[0],
+          "admitted reply operation",
+        );
 
-    const result = await runReplyAgent({
-      commandBody: "hello",
-      followupRun,
-      queueKey: "main",
-      resolvedQueue,
-      shouldSteer: false,
-      shouldFollowup: false,
-      isActive: false,
-      isStreaming: false,
-      opts: { onBlockReply },
-      typing,
-      sessionCtx,
-      defaultModel: "anthropic/claude-opus-4-5",
-      resolvedVerboseLevel: "off",
-      isNewSession: false,
-      blockStreamingEnabled: true,
-      blockReplyChunking: {
-        minChars: 1,
-        maxChars: 200,
-        breakPreference: "paragraph",
-      },
-      resolvedBlockStreamingBreak: "text_end",
-      shouldInjectGroupIntro: false,
-      typingMode: "instant",
+        expect(compactState.compactEmbeddedAgentSessionMock).not.toHaveBeenCalled();
+        expect(runtimeErrorMock).not.toHaveBeenCalled();
+        expect(runEmbeddedAgentMock.mock.calls.map(([params]) => params.trigger)).toEqual(["user"]);
+        expectReplyText(result, "Two plus two is four.");
+        expect(loadSessionEntry(scope)?.memoryFlush).toBeUndefined();
+        vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+        operation.completeWithAfterClearBarrier(delivery.promise, 1);
+        await vi.advanceTimersByTimeAsync(1);
+        expect(runEmbeddedAgentMock.mock.calls.map(([params]) => params.trigger)).toEqual(["user"]);
+        // Foreground priority has cleared, but maintenance still waits for actual delivery.
+        let maintenanceSettled = false;
+        const maintenance = waitForSessionMaintenance(sessionKey).then(() => {
+          maintenanceSettled = true;
+        });
+        await Promise.resolve();
+        await Promise.resolve();
+        expect(maintenanceSettled).toBe(false);
+        if (preempted) {
+          releaseForeground = await beginForegroundSessionMaintenance(sessionKey);
+        }
+        vi.useRealTimers();
+        const completion = getReplyPayloadMetadata(
+          expectDefined(Array.isArray(result) ? result[0] : result, "delivered reply"),
+        )?.pendingFinalDeliveryCompletion;
+        expect(completion).toBeDefined();
+        await settlePendingFinalDelivery({ kind: "pending-final", ...completion! }, "delivered");
+        await clearPendingFinalDeliveryAfterSuccess(completion);
+        gatewayActive = !retiredGateway;
+        delivery.resolve();
+        await operation.ownerSettlement;
+        await maintenance;
+        await flushLogger();
+        const diagnostic = await fs.readFile(logPath, "utf8");
+        expect(
+          runEmbeddedAgentMock.mock.calls.map(([params]) => params.trigger),
+          diagnostic,
+        ).toEqual(preempted || retiredGateway ? ["user"] : ["user", "memory"]);
+        if (preempted || retiredGateway) {
+          expect(loadSessionEntry(scope)?.memoryFlush).toBeUndefined();
+        } else {
+          expect(memoryParams?.senderIsOwner).toBe(false);
+          expect(memoryScope?.nodePlacementGrantAuthority).toBeUndefined();
+          expect(memoryScope?.resolveGatewayContext?.()).toBe(gatewayContext);
+          expect(loadSessionEntry(scope)?.memoryFlush).toMatchObject({
+            kind: "succeeded",
+            compactionCount: 0,
+          });
+          if (compactAfterFlush) {
+            expect(compactState.compactEmbeddedAgentSessionMock).toHaveBeenCalledWith(
+              expect.objectContaining({ trigger: "budget" }),
+              expect.objectContaining({ requestBudget: { ...requestBudget, pendingTokens: 0 } }),
+            );
+          }
+        }
+      } finally {
+        vi.useRealTimers();
+        delivery.resolve();
+        onReplyOperationOwned.mock.calls[0]?.[0].complete();
+        releaseForeground?.();
+        await waitForSessionMaintenance(sessionKey);
+        setLoggerOverride(null);
+      }
+    },
+  );
+
+  it("loads post-compaction context before starting a queued followup drain", async () => {
+    const workspaceDir = tempDirs.make("paleoclaw-post-compaction-queued-followup-");
+    await fs.writeFile(
+      path.join(workspaceDir, "AGENTS.md"),
+      "## Session Startup\nRead the queued workspace startup file.\n\n## Red Lines\nNever skip startup context after compaction.\n",
+      "utf-8",
+    );
+    const sessionKey = "main";
+    const sessionEntry = sessionFixture({ totalTokens: 50_000 });
+    runEmbeddedAgentMock.mockImplementationOnce(async (params: RunEmbeddedAgentInternalParams) => {
+      await params.onAgentEvent?.({ stream: "compaction", data: { phase: "start" } });
+      await params.onAgentEvent?.({
+        stream: "compaction",
+        data: { phase: "end", completed: true },
+      });
+      return replyResult("ok", { agentMeta: {} });
     });
 
+    vi.mocked(scheduleFollowupDrain).mockImplementation((key) => {
+      const events = peekSystemEvents(resolveSystemEventQueueKey(key, "main"));
+      expect(events).toHaveLength(1);
+      expect(events[0]).toContain("Read the queued workspace startup file.");
+      expect(events[0]).toContain("Never skip startup context after compaction.");
+    });
+
+    await createBaseRun({
+      run: {
+        agentId: "main",
+        agentDir: path.join(rootDir, "agent"),
+        workspaceDir,
+        reasoningLevel: "on",
+        config: {
+          agents: {
+            defaults: { compaction: { postCompactionSections: ["Session Startup", "Red Lines"] } },
+          },
+        },
+      },
+      reply: { ...sessionState(sessionKey, sessionEntry) },
+    }).run();
+
+    expect(scheduleFollowupDrain).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps a provided reply operation active until final delivery completes", async () => {
+    const sessionKey = "main";
+    const sessionEntry = sessionFixture({ totalTokens: 50_000 });
+    const replyOperation = createReplyOperation({
+      sessionKey,
+      sessionId: sessionEntry.sessionId,
+      resetTriggered: false,
+    });
+    const deliveryOrder: string[] = [];
+    runEmbeddedAgentMock.mockResolvedValue(replyResult("ok", { agentMeta: {} }));
+
+    vi.mocked(scheduleFollowupDrain).mockImplementation((key) => {
+      expect(key).toBe(sessionKey);
+      expect(getSessionControllerOperation(sessionKey)).toBeUndefined();
+      deliveryOrder.push("followup");
+    });
+
+    const result = await createBaseRun({
+      run: { agentId: "main", agentDir: path.join(rootDir, "agent"), reasoningLevel: "on" },
+      reply: { queueKey: sessionKey, ...sessionState(sessionKey, sessionEntry), replyOperation },
+    }).run();
+
+    expectReplyText(result, "ok");
+    expect(getSessionControllerOperation(sessionKey)).toBe(replyOperation);
+    expect(replyOperation.result).toBeNull();
+    expect(scheduleFollowupDrain).not.toHaveBeenCalled();
+
+    deliveryOrder.push("final");
+    replyOperation.complete();
+
+    expect(deliveryOrder).toEqual(["final", "followup"]);
+    expect(scheduleFollowupDrain).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    { label: "its upstream signal", superseded: false, expectedCode: "aborted_by_user" as const },
+    {
+      label: "a visible-turn supersession",
+      superseded: true,
+      expectedCode: "aborted_for_supersession" as const,
+    },
+  ])(
+    "records a settled fallback cancelled by $label without losing committed compaction",
+    async ({ superseded, expectedCode }) => {
+      const root = tempDirs.make("paleoclaw-aborted-compaction-");
+      const storePath = path.join(root, "sessions.json");
+      const upstreamAbort = new AbortController();
+      const sessionKey = `${superseded ? "superseded" : "upstream-cancelled"}-settled-fallback`;
+      const sessionEntry = {
+        sessionId: "session-upstream-cancelled",
+        lifecycleRevision: "original-generation",
+        updatedAt: Date.now(),
+        compactionCount: 3,
+        totalTokens: 50_000,
+      };
+      await replaceSessionEntry({ storePath, sessionKey }, sessionEntry);
+      const onReplyOperationOwned = vi.fn<(operation: ReplyOperation) => boolean>(() => true);
+      const candidateSettled = createDeferred();
+      const fallbackRelease = createDeferred();
+      runEmbeddedAgentMock.mockImplementationOnce(
+        async (params: RunEmbeddedAgentInternalParams) => {
+          params.onCompactionAccounting?.({
+            kind: "durable",
+            count: 1,
+            currentContextSnapshot: { tokens: 40 },
+            target: {
+              agentId: "main",
+              sessionId: sessionEntry.sessionId,
+              sessionKey,
+              storePath,
+              lifecycleRevision: sessionEntry.lifecycleRevision,
+              activeWriterRunId: undefined,
+            },
+          });
+          return replyResult("late reply", {
+            agentMeta: { compactionCount: 1, compactionTokensAfter: 40 },
+          });
+        },
+      );
+      runWithModelFallbackMock.mockImplementationOnce(
+        async (params: RunWithModelFallbackParams) => {
+          const result = await runInitialModelFallbackAttempt(params);
+          candidateSettled.resolve();
+          await fallbackRelease.promise;
+          return { result, provider: params.provider, model: params.model, attempts: [] };
+        },
+      );
+      const baseRun = createBaseRun({
+        run: {
+          agentId: "main",
+          agentDir: path.join(rootDir, "agent"),
+          sessionId: sessionEntry.sessionId,
+          sessionKey,
+          reasoningLevel: "on",
+        },
+        reply: {
+          ...sessionState(sessionKey, sessionEntry),
+          storePath,
+          opts: { abortSignal: upstreamAbort.signal, onReplyOperationOwned },
+        },
+      });
+
+      try {
+        const pending = baseRun.run();
+        await awaitGateBeforeSettlement(
+          candidateSettled.promise,
+          pending,
+          "Reply settled before the fallback candidate completed",
+        );
+        const replyOperation = expectDefined(
+          onReplyOperationOwned.mock.calls[0]?.[0],
+          "admitted reply operation",
+        );
+        if (superseded) {
+          replyOperation.supersede();
+        } else {
+          upstreamAbort.abort(new Error("caller cancelled"));
+        }
+        fallbackRelease.resolve();
+
+        expect(await pending).toEqual({});
+        expect(replyOperation.result).toEqual({ kind: "aborted", code: expectedCode });
+        expect(
+          loadSessionEntry({ storePath, sessionKey, readConsistency: "latest" }),
+        ).toMatchObject({
+          sessionId: sessionEntry.sessionId,
+          lifecycleRevision: "original-generation",
+          compactionCount: 4,
+          totalTokens: 40,
+          totalTokensFresh: true,
+        });
+        expect(peekSystemEvents(resolveSystemEventQueueKey(sessionKey, "main"))).toEqual([]);
+      } finally {
+        fallbackRelease.resolve();
+        onReplyOperationOwned.mock.calls[0]?.[0].complete();
+      }
+    },
+  );
+});
+
+describe("runReplyAgent block streaming", () => {
+  function runBlockStreaming(opts: NonNullable<Parameters<typeof runReplyAgent>[0]["opts"]>) {
+    return createBaseRun({
+      context: {
+        Provider: "discord",
+        OriginatingTo: "channel:C1",
+        AccountId: "primary",
+        MessageSid: "msg",
+      },
+      run: {
+        messageProvider: "discord",
+        config: {
+          agents: {
+            defaults: { blockStreamingCoalesce: { minChars: 1, maxChars: 200, idleMs: 0 } },
+          },
+        },
+        thinkLevel: "low",
+        reasoningLevel: "on",
+        blockReplyBreak: "text_end",
+      },
+      reply: {
+        opts,
+        blockStreamingEnabled: true,
+        blockReplyChunking: { minChars: 1, maxChars: 200, breakPreference: "paragraph" },
+        resolvedBlockStreamingBreak: "text_end",
+      },
+    }).run();
+  }
+
+  it("coalesces duplicate text_end block replies", async () => {
+    const onBlockReply = vi.fn();
+    runEmbeddedAgentMock.mockImplementationOnce(async (params) => {
+      const block = params.onBlockReply as ((payload: { text?: string }) => void) | undefined;
+      block?.({ text: "Hello" });
+      block?.({ text: "Hello" });
+      return replyResult("Final message", {});
+    });
+
+    const result = await runBlockStreaming({ onBlockReply });
+
     expect(onBlockReply).toHaveBeenCalledTimes(1);
-    expect(onBlockReply.mock.calls[0][0].text).toBe("Hello");
-    expect(result).toBeUndefined();
+    expect((firstMockCallArg(onBlockReply, "block reply") as { text?: string }).text).toBe("Hello");
+    // The unsent final survives the different text already streamed by the block pipeline.
+    expectReplyText(result, "Final message");
   });
 
   it("returns the final payload when onBlockReply times out", async () => {
     vi.useFakeTimers();
     let sawAbort = false;
+    const blockReplyStarted = createDeferred();
 
     const onBlockReply = vi.fn((_payload, context) => {
       return new Promise<void>((resolve) => {
@@ -695,532 +667,611 @@ describe("runReplyAgent block streaming", () => {
           },
           { once: true },
         );
+        blockReplyStarted.resolve();
       });
     });
 
-    runEmbeddedPiAgentMock.mockImplementationOnce(async (params) => {
+    runEmbeddedAgentMock.mockImplementationOnce(async (params) => {
       const block = params.onBlockReply as ((payload: { text?: string }) => void) | undefined;
       block?.({ text: "Chunk" });
-      return {
-        payloads: [{ text: "Final message" }],
-        meta: {},
-      };
+      return replyResult("Final message", {});
     });
 
-    const typing = createMockTypingController();
-    const sessionCtx = {
-      Provider: "discord",
-      OriginatingTo: "channel:C1",
-      AccountId: "primary",
-      MessageSid: "msg",
-    } as unknown as TemplateContext;
-    const resolvedQueue = { mode: "interrupt" } as unknown as QueueSettings;
-    const followupRun = {
-      prompt: "hello",
-      summaryLine: "hello",
-      enqueuedAt: Date.now(),
-      run: {
-        sessionId: "session",
-        sessionKey: "main",
-        messageProvider: "discord",
-        sessionFile: "/tmp/session.jsonl",
-        workspaceDir: "/tmp",
-        config: {
-          agents: {
-            defaults: {
-              blockStreamingCoalesce: {
-                minChars: 1,
-                maxChars: 200,
-                idleMs: 0,
-              },
-            },
-          },
-        },
-        skillsSnapshot: {},
-        provider: "anthropic",
-        model: "claude",
-        thinkLevel: "low",
-        verboseLevel: "off",
-        elevatedLevel: "off",
-        bashElevated: {
-          enabled: false,
-          allowed: false,
-          defaultLevel: "off",
-        },
-        timeoutMs: 1_000,
-        blockReplyBreak: "text_end",
-      },
-    } as unknown as FollowupRun;
+    const resultPromise = runBlockStreaming({ onBlockReply, blockReplyTimeoutMs: 1 });
 
-    const resultPromise = runReplyAgent({
-      commandBody: "hello",
-      followupRun,
-      queueKey: "main",
-      resolvedQueue,
-      shouldSteer: false,
-      shouldFollowup: false,
-      isActive: false,
-      isStreaming: false,
-      opts: { onBlockReply, blockReplyTimeoutMs: 1 },
-      typing,
-      sessionCtx,
-      defaultModel: "anthropic/claude-opus-4-5",
-      resolvedVerboseLevel: "off",
-      isNewSession: false,
-      blockStreamingEnabled: true,
-      blockReplyChunking: {
-        minChars: 1,
-        maxChars: 200,
-        breakPreference: "paragraph",
-      },
-      resolvedBlockStreamingBreak: "text_end",
-      shouldInjectGroupIntro: false,
-      typingMode: "instant",
-    });
-
+    await blockReplyStarted.promise;
     await vi.advanceTimersByTimeAsync(5);
     const result = await resultPromise;
 
     expect(sawAbort).toBe(true);
-    expect(result).toMatchObject({ text: "Final message" });
+    expectReplyText(result, "Final message");
   });
 });
 
-describe("runReplyAgent claude-cli routing", () => {
-  function createRun() {
-    const typing = createMockTypingController();
-    const sessionCtx = {
+it("delivers tool progress with inline on over stored full", async () => {
+  const stored = "full";
+  const override = "on";
+  const storePath = path.join(rootDir, "sessions.json");
+  const sessionKey = "main";
+  const sessionEntry = sessionFixture({ verboseLevel: stored });
+  await replaceSessionEntry({ storePath, sessionKey }, sessionEntry);
+  const onToolResult = vi.fn(async (_payload: ReplyPayload) => {});
+  const onRunVerbosityResolved = vi.fn();
+  runEmbeddedAgentMock.mockImplementationOnce(async (params: RunEmbeddedAgentInternalParams) => {
+    expect(onRunVerbosityResolved).toHaveBeenCalledExactlyOnceWith({
+      verboseLevelOverride: override,
+      resolvedVerboseLevel: override,
+    });
+    if (params.shouldEmitToolResult?.()) {
+      await params.onToolResult?.({ text: "Tool summary" });
+    }
+    if (params.shouldEmitToolOutput?.()) {
+      await params.onToolResult?.({ text: "Tool output" });
+    }
+    return replyResult("Done", {});
+  });
+  const result = await createBaseRun({
+    run: { sessionKey, verboseLevel: override, verboseLevelOverride: override },
+    reply: {
+      ...sessionState(sessionKey, sessionEntry),
+      storePath,
+      resolvedVerboseLevel: override,
+      opts: { onToolResult, onRunVerbosityResolved },
+    },
+  }).run();
+  expect(onToolResult.mock.calls.map(([payload]) => payload.text)).toEqual(["Tool summary"]);
+  expect(loadSessionEntry({ storePath, sessionKey })?.verboseLevel).toBe(stored);
+  expectReplyText(result, "Done");
+});
+
+describe("runReplyAgent Active Memory inline debug", () => {
+  it.each([
+    ["turn", "raw", "off", true, true, true],
+    ["live", undefined, "raw", true, false, true],
+    ["off", "off", "raw", true, true, false],
+    ["unauthorized", "raw", "raw", false, false, false],
+  ] as const)(
+    "keeps selected trace after native final delivery: %s",
+    async (_selection, override, live, authorized, returned, raw) => {
+      const storePath = path.join(tempDirs.make("paleoclaw-delivered-trace-"), "sessions.json");
+      const sessionKey = "main";
+      const sessionEntry: SessionEntry = { sessionId: "session", updatedAt: 1, traceLevel: "off" };
+      await replaceSessionEntry({ storePath, sessionKey }, sessionEntry);
+      const onPreparedBlockReply = vi.fn(async () => {});
+      const reply = "Delivered native answer";
+      runEmbeddedAgentMock.mockImplementationOnce(
+        async (params: RunEmbeddedAgentInternalParams) => {
+          await replaceSessionEntry(
+            { storePath, sessionKey },
+            { ...sessionEntry, traceLevel: live },
+          );
+          await params.onAgentEvent?.({
+            stream: "lifecycle",
+            data: { phase: "start" },
+            transcriptStart: null,
+          });
+          await params.onBlockReply?.({ text: reply });
+          return {
+            payloads: returned ? [{ text: reply }] : [],
+            meta: { finalPromptText: "Trace input", finalAssistantRawText: reply },
+          };
+        },
+      );
+      const result = await createBaseRun({
+        context: { Provider: "webchat", Surface: "webchat", MessageSid: "trace-message" },
+        run: {
+          agentId: "main",
+          sessionKey,
+          messageProvider: "webchat",
+          traceAuthorized: authorized,
+          traceLevelOverride: override,
+        },
+        reply: {
+          ...sessionState(sessionKey, sessionEntry),
+          storePath,
+          blockStreamingEnabled: true,
+          opts: { onPreparedBlockReply },
+        },
+      }).run();
+      expect(onPreparedBlockReply).toHaveBeenCalledOnce();
+      expect(firstMockCallArg(onPreparedBlockReply, "native final")).toMatchObject({
+        payload: { text: reply },
+      });
+      const payloads = Array.isArray(result) ? result : result ? [result] : [];
+      expect(payloads.filter(isReplyPayloadTerminalContent)).toEqual([]);
+      const diagnosticsText = payloads.map((payload) => payload.text).join("\n");
+      expect(diagnosticsText.includes("Model Input (User Role)")).toBe(raw);
+      expect(diagnosticsText.includes("Model Output (Assistant Role)")).toBe(raw);
+      expect(payloads).toHaveLength(raw ? 1 : 0);
+      expect(payloads.every((payload) => payload.isStatusNotice === true)).toBe(true);
+      if (!raw) {
+        expect(result).toBeUndefined();
+      }
+      expect(loadSessionEntry({ storePath, sessionKey })?.traceLevel).toBe(live);
+    },
+  );
+
+  async function runActiveMemoryDebugCase(
+    sessionEntry: SessionEntry,
+    options: {
+      run?: BaseRunOptions["run"];
+      liveTraceLevel?: SessionEntry["traceLevel"];
+      resolvedVerboseLevel?: VerboseLevel;
+    } = {},
+  ) {
+    const storePath = path.join(tempDirs.make("paleoclaw-active-memory-inline-"), "sessions.json");
+    const sessionKey = "main";
+    const resolvedVerboseLevel =
+      options.resolvedVerboseLevel ?? normalizeVerboseLevel(sessionEntry.verboseLevel) ?? "off";
+    await replaceSessionEntry({ storePath, sessionKey }, sessionEntry);
+    runEmbeddedAgentMock.mockImplementationOnce(async () => {
+      await replaceSessionEntry(
+        { storePath, sessionKey },
+        {
+          ...sessionEntry,
+          traceLevel: options.liveTraceLevel ?? sessionEntry.traceLevel,
+          pluginDebugEntries: [
+            {
+              pluginId: "active-memory",
+              lines: [
+                "🧩 Active Memory: status=ok elapsed=842ms query=recent summary=34 chars",
+                "🔎 Active Memory Debug: Lemon pepper wings with blue cheese.",
+              ],
+            },
+          ],
+        },
+      );
+      return replyResult("Normal reply", { requestShaping: { trace: sessionEntry.traceLevel } });
+    });
+    const result = await createBaseRun({
+      context: {
+        Provider: "telegram",
+        OriginatingTo: "chat:1",
+        AccountId: "primary",
+        MessageSid: "msg",
+      },
+      run: {
+        agentId: "main",
+        sessionKey,
+        messageProvider: "telegram",
+        traceAuthorized: true,
+        thinkLevel: "low",
+        verboseLevel: resolvedVerboseLevel,
+        ...options.run,
+      },
+      reply: {
+        ...sessionState(sessionKey, sessionEntry),
+        storePath,
+        resolvedVerboseLevel,
+      },
+    }).run();
+    expect(loadSessionEntry({ storePath, sessionKey })?.traceLevel).toBe(
+      options.liveTraceLevel ?? sessionEntry.traceLevel,
+    );
+    return result;
+  }
+
+  it("does not expose raw turn or stored trace without authorization", async () => {
+    const result = await runActiveMemoryDebugCase(sessionFixture({ traceLevel: "raw" }), {
+      run: { traceLevelOverride: "raw", traceAuthorized: false },
+    });
+    const text = replyText(result);
+    expect(text).toContain("Normal reply");
+    expect(text).not.toContain("Active Memory Debug:");
+    expect(text).not.toContain("Model Input (User Role)");
+  });
+
+  it.each([
+    { stored: "off", live: "on", override: undefined, trace: true },
+    { stored: "on", live: "off", override: undefined, trace: false },
+    { stored: "off", live: "on", override: "off", trace: false },
+    { stored: "on", live: "off", override: "on", trace: true },
+  ] as const)(
+    "uses live session trace $live after $stored unless turn override is $override",
+    async ({ stored, live, override, trace }) => {
+      const result = await runActiveMemoryDebugCase(
+        { sessionId: "session", updatedAt: Date.now(), traceLevel: stored },
+        { run: { traceLevelOverride: override }, liveTraceLevel: live },
+      );
+      const text = replyText(result);
+      expect(text.includes("Active Memory Debug:")).toBe(trace);
+    },
+  );
+
+  it("disables plugin status using turn verbosity off over stored on", async () => {
+    const result = await runActiveMemoryDebugCase(
+      sessionFixture({ verboseLevel: "on", traceLevel: "raw" }),
+      { resolvedVerboseLevel: "off", run: { verboseLevelOverride: "off" } },
+    );
+    const text = replyText(result);
+    expect(text).not.toContain("🧩 Active Memory: status=ok");
+    expect(text).toContain("Model Input (User Role)");
+  });
+
+  function runRawTraceCase(
+    scope: {
+      sessionEntry: SessionEntry;
+      sessionFile: string;
+      storePath: string;
+    },
+    run: BaseRunOptions["run"],
+    commandBody: string,
+  ) {
+    const sessionKey = "main";
+    return createBaseRun({
+      context: {
+        Provider: "telegram",
+        OriginatingTo: "chat:1",
+        AccountId: "primary",
+        MessageSid: "msg",
+        CommandBody: commandBody,
+      },
+      run: {
+        agentId: "main",
+        sessionKey,
+        messageProvider: "telegram",
+        sessionFile: scope.sessionFile,
+        ...run,
+      },
+      reply: {
+        ...sessionState(sessionKey, scope.sessionEntry),
+        storePath: scope.storePath,
+      },
+    }).run();
+  }
+
+  it("appends raw trace payloads when trace raw is enabled", async () => {
+    const tmp = tempDirs.make("paleoclaw-trace-raw-usage-");
+    const storePath = path.join(tmp, "sessions.json");
+    const sessionKey = "main";
+    const sessionEntry = sessionFixture({ traceLevel: "raw", compactionCount: 3 });
+
+    await replaceSessionEntry({ storePath, sessionKey }, sessionEntry);
+    const transcript = await SessionManager.openAsync(
+      { agentId: "main", sessionId: sessionEntry.sessionId, sessionKey, storePath },
+      tmp,
+    );
+    await transcript.appendMessageAsync({ role: "user", content: "Earlier turn", timestamp: 0 });
+    await transcript.appendMessageAsync(
+      makeAssistantMessageFixture({
+        content: [{ type: "text", text: "Earlier reply" }],
+        stopReason: "stop",
+        errorMessage: undefined,
+        usage: {
+          input: 200,
+          output: 10,
+          cacheRead: 20,
+          cacheWrite: 5,
+          totalTokens: 235,
+          cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 },
+        },
+      }),
+    );
+
+    runWithModelFallbackMock.mockImplementationOnce(async (params: RunWithModelFallbackParams) => ({
+      result: await runFallbackModelAttempt(params, "anthropic", "claude", "timeout"),
+      provider: "anthropic",
+      model: "claude",
+      attempts: [
+        {
+          provider: "openai",
+          model: "gpt-5.5",
+          error: "LLM request timed out.",
+          reason: "timeout",
+          status: 408,
+        },
+      ],
+    }));
+    runEmbeddedAgentMock.mockImplementationOnce(async (params: RunEmbeddedAgentInternalParams) => {
+      params.onCompactionAccounting?.({
+        kind: "durable",
+        count: 1,
+        currentContextSnapshot: { tokens: 1250 },
+        target: {
+          agentId: "main",
+          sessionId: sessionEntry.sessionId,
+          sessionKey,
+          storePath,
+          lifecycleRevision: sessionEntry.lifecycleRevision,
+          activeWriterRunId: undefined,
+        },
+      });
+      return replyResult("Visible reply", {
+        finalPromptText:
+          "Context:\n<active_memory_plugin>\nPrefer from/to failover logs.\n</active_memory_plugin>\n\n/trace raw show me everything",
+        finalAssistantVisibleText: "Visible reply",
+        finalAssistantRawText: "<final>Visible reply</final>",
+        executionTrace: {
+          winnerProvider: "anthropic",
+          winnerModel: "claude",
+          runner: "embedded",
+          fallbackUsed: false,
+          attempts: [
+            {
+              provider: "anthropic",
+              model: "claude",
+              result: "success",
+              stage: "assistant",
+              elapsedMs: 4200,
+            },
+          ],
+        },
+        toolSummary: {
+          calls: 2,
+          tools: ["active-memory", "github-search"],
+          failures: 0,
+          totalToolTimeMs: 481,
+        },
+        completion: { finishReason: "stop", stopReason: "end_turn", refusal: false },
+        agentMeta: {
+          sessionId: "session",
+          provider: "anthropic",
+          model: "claude",
+          usage: { input: 1200, output: 45, cacheRead: 800, cacheWrite: 200, total: 2245 },
+          lastCallUsage: {
+            input: 1000,
+            output: 45,
+            cacheRead: 750,
+            cacheWrite: 150,
+            total: 1945,
+          },
+          promptTokens: 1250,
+          compactionCount: 1,
+        },
+      });
+    });
+
+    const result = await runRawTraceCase(
+      { sessionEntry, sessionFile: sessionKey, storePath },
+      { reasoningLevel: "on", thinkLevel: "low", traceAuthorized: true },
+      "/trace raw show me everything",
+    );
+
+    expect(Array.isArray(result)).toBe(true);
+    expect((result as { text?: string }[])[0]?.text).toBe("Visible reply");
+    const traceText = (result as { text?: string }[])[1]?.text ?? "";
+    expect(traceText).toContain("🔎 Usage (Session Total):");
+    expect(traceText).toContain("🔎 Usage (Last Turn Total):");
+    expect(traceText).not.toContain("🔎 Provider Usage (Turn Total):");
+    expect(traceText).not.toContain("🔎 Provider Usage (Last Provider Call):");
+    expect(traceText).toContain("used=1,250 tok (1.3k)");
+    expect(traceText).toContain("winner=anthropic/claude");
+    expect(traceText).toContain("fallbackUsed=yes");
+    expect(traceText).toContain("attempts=2");
+    expect(traceText).toContain("runner=embedded");
+    expect(traceText).toContain("1. openai/gpt-5.5");
+    expect(traceText).toContain("result=timeout");
+    expect(traceText).toContain("status=408");
+    expect(traceText).toContain("2. anthropic/claude");
+    expect(traceText).toContain("result=success");
+    expect(traceText).toContain("provider=anthropic");
+    expect(traceText).toContain("model=claude");
+    expect(traceText).toContain("thinking=low");
+    expect(traceText).toContain("reasoning=on");
+    expect(traceText).toContain("verbose=off");
+    expect(traceText).toContain("trace=raw");
+    expect(traceText).toContain("blockStreaming=message_end");
+    expect(traceText).toContain("active_memory_plugin=");
+    expect(traceText).toContain("user_message=");
+    expect(traceText).toContain("totalPromptText=");
+    expect(traceText).toContain("calls=2");
+    expect(traceText).toContain("tools=active-memory, github-search");
+    expect(traceText).toContain("failures=0");
+    expect(traceText).toContain("totalToolTimeMs=481");
+    expect(traceText).toContain("finishReason=stop");
+    expect(traceText).toContain("stopReason=end_turn");
+    expect(traceText).toContain("refusal=no");
+    expect(traceText).toContain("sessionCompactions=4");
+    expect(traceText).toContain("lastTurnCompactions=1");
+    expect(traceText).toContain(
+      "Summary: winner=claude 🧠 low fallback=yes attempts=2 stop=end_turn prompt=1.3k/200k ⬇️ 1.2k ⬆️ 45 ♻️ 800 🆕 200 🔢 2.2k tools=2 compactions=1",
+    );
+    let previousSection = -1;
+    for (const heading of [
+      "🔎 Context Window (Last Model Request):",
+      "🔎 Execution Result:",
+      "🔎 Fallback Chain:",
+      "🔎 Request Shaping:",
+      "🔎 Prompt Segments:",
+      "🔎 Tool Summary:",
+      "🔎 Completion:",
+      "🔎 Context Management:",
+      "🔎 Model Input (User Role):",
+      "🔎 Model Output (Assistant Role):",
+      "Summary: winner=claude 🧠 low",
+    ]) {
+      const position = traceText.indexOf(heading);
+      expect(position, heading).toBeGreaterThan(previousSection);
+      previousSection = position;
+    }
+  });
+
+  it.each([false, true])("guards raw trace presentation (authorized=%s)", async (authorized) => {
+    const tmp = tempDirs.make("paleoclaw-trace-raw-");
+    const storePath = path.join(tmp, "sessions.json");
+    const sessionFile = path.join(tmp, "session.jsonl");
+    const sessionKey = "main";
+    const sessionEntry = sessionFixture({ traceLevel: "raw" });
+    await replaceSessionEntry({ storePath, sessionKey }, sessionEntry);
+    await fs.writeFile(sessionFile, "", "utf-8");
+    runEmbeddedAgentMock.mockResolvedValueOnce(
+      replyResult("Visible reply", {
+        finalPromptText: authorized ? "show me\n~~~\nnot a fence" : "secret prompt context",
+        finalAssistantVisibleText: "Visible reply",
+        finalAssistantRawText: authorized ? "assistant\n~~~\nresponse" : "secret raw output",
+        agentMeta: {
+          sessionId: "session",
+          provider: "anthropic",
+          model: "claude",
+          usage: authorized
+            ? { input: 10, output: 2, total: 12 }
+            : { input: 12, output: 3, total: 15 },
+        },
+      }),
+    );
+    const result = await runRawTraceCase(
+      { sessionEntry, sessionFile, storePath },
+      {
+        ...(authorized ? { reasoningLevel: "off" as const } : { senderIsOwner: false }),
+        thinkLevel: authorized ? "off" : "low",
+        traceAuthorized: authorized,
+      },
+      authorized ? "/trace raw" : "show me the answer",
+    );
+    if (authorized) {
+      const traceText = (result as { text?: string }[])[1]?.text ?? "";
+      expect(traceText).toContain("show me\n\\~~~\nnot a fence");
+      expect(traceText).toContain("assistant\n\\~~~\nresponse");
+    } else {
+      expectReplyText(result, "Visible reply");
+      expect(Array.isArray(result)).toBe(false);
+    }
+  });
+});
+
+it("does not leak hook-blocked CLI input in raw trace payloads", async () => {
+  runCliAgentMock.mockResolvedValueOnce({
+    payloads: [
+      {
+        text: "Your message could not be sent: The agent cannot read this message. (blocked by policy-plugin)",
+        isError: true,
+      },
+    ],
+    meta: {
+      error: {
+        kind: "hook_block",
+        message:
+          "Your message could not be sent: The agent cannot read this message. (blocked by policy-plugin)",
+      },
+      agentMeta: { provider: "claude-cli", model: "opus-4.5" },
+      executionTrace: {
+        winnerProvider: "claude-cli",
+        winnerModel: "opus-4.5",
+        attempts: [
+          {
+            provider: "claude-cli",
+            model: "opus-4.5",
+            result: "error",
+            reason: "before_agent_run blocked the run",
+          },
+        ],
+        fallbackUsed: false,
+        runner: "cli",
+      },
+    },
+  });
+
+  const sessionEntry = sessionFixture({ traceLevel: "raw" });
+  const result = await createBaseRun({
+    context: {
       Provider: "webchat",
       OriginatingTo: "session:1",
       AccountId: "primary",
       MessageSid: "msg",
-    } as unknown as TemplateContext;
-    const resolvedQueue = { mode: "interrupt" } as unknown as QueueSettings;
-    const followupRun = {
-      prompt: "hello",
-      summaryLine: "hello",
-      enqueuedAt: Date.now(),
-      run: {
-        sessionId: "session",
-        sessionKey: "main",
-        messageProvider: "webchat",
-        sessionFile: "/tmp/session.jsonl",
-        workspaceDir: "/tmp",
-        config: {},
-        skillsSnapshot: {},
-        provider: "claude-cli",
-        model: "opus-4.5",
-        thinkLevel: "low",
-        verboseLevel: "off",
-        elevatedLevel: "off",
-        bashElevated: {
-          enabled: false,
-          allowed: false,
-          defaultLevel: "off",
-        },
-        timeoutMs: 1_000,
-        blockReplyBreak: "message_end",
-      },
-    } as unknown as FollowupRun;
-
-    return runReplyAgent({
-      commandBody: "hello",
-      followupRun,
-      queueKey: "main",
-      resolvedQueue,
-      shouldSteer: false,
-      shouldFollowup: false,
-      isActive: false,
-      isStreaming: false,
-      typing,
-      sessionCtx,
+      CommandBody: "secret hitl prompt",
+      RawBody: "secret hitl prompt",
+      BodyForAgent: "secret hitl prompt",
+      Body: "secret hitl prompt",
+    },
+    followup: { prompt: "secret hitl prompt", summaryLine: "secret hitl prompt" },
+    run: {
+      agentId: "main",
+      messageProvider: "webchat",
+      traceAuthorized: true,
+      provider: "claude-cli",
+      model: "opus-4.5",
+      thinkLevel: "low",
+    },
+    reply: {
+      commandBody: "secret hitl prompt",
+      sessionEntry,
+      sessionStore: { main: sessionEntry },
       defaultModel: "claude-cli/opus-4.5",
-      resolvedVerboseLevel: "off",
-      isNewSession: false,
-      blockStreamingEnabled: false,
-      resolvedBlockStreamingBreak: "message_end",
-      shouldInjectGroupIntro: false,
-      typingMode: "instant",
-    });
-  }
+    },
+  }).run();
 
-  it("uses claude-cli runner for claude-cli provider", async () => {
-    const runId = "00000000-0000-0000-0000-000000000001";
-    const randomSpy = vi.spyOn(crypto, "randomUUID").mockReturnValue(runId);
-    const lifecyclePhases: string[] = [];
-    const unsubscribe = onAgentEvent((evt) => {
-      if (evt.runId !== runId) {
-        return;
-      }
-      if (evt.stream !== "lifecycle") {
-        return;
-      }
-      const phase = evt.data?.phase;
-      if (typeof phase === "string") {
-        lifecyclePhases.push(phase);
-      }
-    });
-    runCliAgentMock.mockResolvedValueOnce({
-      payloads: [{ text: "ok" }],
-      meta: {
-        agentMeta: {
-          provider: "claude-cli",
-          model: "opus-4.5",
-        },
-      },
-    });
-
-    const result = await createRun();
-    unsubscribe();
-    randomSpy.mockRestore();
-
-    expect(runCliAgentMock).toHaveBeenCalledTimes(1);
-    expect(runEmbeddedPiAgentMock).not.toHaveBeenCalled();
-    expect(lifecyclePhases).toEqual(["start", "end"]);
-    expect(result).toMatchObject({ text: "ok" });
-  });
+  const texts = replyText(result);
+  expect(texts).toContain(
+    "Your message could not be sent: The agent cannot read this message. (blocked by policy-plugin)",
+  );
+  expect(texts).toContain("Summary: fallback=no attempts=1");
+  expect(texts).not.toContain("winner=");
+  expect(texts).toContain("Model Input (User Role):\n~~~text\n<empty>\n~~~");
+  expect(texts).toContain("Model Output (Assistant Role):\n~~~text\n<empty>\n~~~");
+  expect(texts).not.toContain("secret hitl prompt");
 });
 
-describe("runReplyAgent messaging tool suppression", () => {
-  function createRun(
-    messageProvider = "slack",
-    opts: { storePath?: string; sessionKey?: string } = {},
-  ) {
-    const typing = createMockTypingController();
-    const sessionKey = opts.sessionKey ?? "main";
-    const sessionCtx = {
-      Provider: messageProvider,
-      OriginatingTo: "channel:C1",
-      AccountId: "primary",
-      MessageSid: "msg",
-    } as unknown as TemplateContext;
-    const resolvedQueue = { mode: "interrupt" } as unknown as QueueSettings;
-    const followupRun = {
-      prompt: "hello",
-      summaryLine: "hello",
-      enqueuedAt: Date.now(),
-      run: {
-        sessionId: "session",
-        sessionKey,
-        messageProvider,
-        sessionFile: "/tmp/session.jsonl",
-        workspaceDir: "/tmp",
-        config: {},
-        skillsSnapshot: {},
-        provider: "anthropic",
-        model: "claude",
-        thinkLevel: "low",
-        verboseLevel: "off",
-        elevatedLevel: "off",
-        bashElevated: {
-          enabled: false,
-          allowed: false,
-          defaultLevel: "off",
-        },
-        timeoutMs: 1_000,
-        blockReplyBreak: "message_end",
+describe("runReplyAgent messaging tool dedupe", () => {
+  function createRun() {
+    return createBaseRun({
+      context: {
+        Provider: "slack",
+        OriginatingTo: "channel:C1",
+        AccountId: "primary",
+        MessageSid: "msg",
       },
-    } as unknown as FollowupRun;
-
-    return runReplyAgent({
-      commandBody: "hello",
-      followupRun,
-      queueKey: "main",
-      resolvedQueue,
-      shouldSteer: false,
-      shouldFollowup: false,
-      isActive: false,
-      isStreaming: false,
-      typing,
-      sessionCtx,
-      sessionKey,
-      storePath: opts.storePath,
-      defaultModel: "anthropic/claude-opus-4-5",
-      resolvedVerboseLevel: "off",
-      isNewSession: false,
-      blockStreamingEnabled: false,
-      resolvedBlockStreamingBreak: "message_end",
-      shouldInjectGroupIntro: false,
-      typingMode: "instant",
-    });
+      run: { sessionKey: "main", messageProvider: "slack", config: {}, thinkLevel: "low" },
+      reply: { queueKey: "main", sessionKey: "main", storePath: undefined },
+    }).run();
   }
 
-  it("drops replies when a messaging tool sent via the same provider + target", async () => {
-    runEmbeddedPiAgentMock.mockResolvedValueOnce({
-      payloads: [{ text: "hello world!" }],
-      messagingToolSentTexts: ["different message"],
-      messagingToolSentTargets: [{ tool: "slack", provider: "slack", to: "channel:C1" }],
-      meta: {},
-    });
+  it.each([
+    ["different text at the same target", "different message", "slack", undefined],
+    ["matching text at another provider", "hello world!", "discord", undefined],
+    ["another account", "different message", "slack", "alt"],
+  ])(
+    "keeps final replies for a messaging send with %s",
+    async (_label, text, provider, accountId) => {
+      runEmbeddedAgentMock.mockResolvedValueOnce({
+        payloads: [{ text: "hello world!" }],
+        messagingToolSentTexts: [text],
+        messagingToolSentTargets: [
+          {
+            tool: provider,
+            provider,
+            to: "channel:C1",
+            ...(accountId === undefined ? {} : { accountId }),
+          },
+        ],
+        meta: {},
+      });
+      expectReplyText(await createRun(), "hello world!");
+    },
+  );
 
-    const result = await createRun("slack");
-
-    expect(result).toBeUndefined();
-  });
-
-  it("delivers replies when tool provider does not match", async () => {
-    runEmbeddedPiAgentMock.mockResolvedValueOnce({
-      payloads: [{ text: "hello world!" }],
-      messagingToolSentTexts: ["different message"],
-      messagingToolSentTargets: [{ tool: "discord", provider: "discord", to: "channel:C1" }],
-      meta: {},
-    });
-
-    const result = await createRun("slack");
-
-    expect(result).toMatchObject({ text: "hello world!" });
-  });
-
-  it("keeps final reply when text matches a cross-target messaging send", async () => {
-    runEmbeddedPiAgentMock.mockResolvedValueOnce({
-      payloads: [{ text: "hello world!" }],
-      messagingToolSentTexts: ["hello world!"],
-      messagingToolSentTargets: [{ tool: "discord", provider: "discord", to: "channel:C1" }],
-      meta: {},
-    });
-
-    const result = await createRun("slack");
-
-    expect(result).toMatchObject({ text: "hello world!" });
-  });
-
-  it("delivers replies when account ids do not match", async () => {
-    runEmbeddedPiAgentMock.mockResolvedValueOnce({
-      payloads: [{ text: "hello world!" }],
-      messagingToolSentTexts: ["different message"],
-      messagingToolSentTargets: [
-        {
-          tool: "slack",
-          provider: "slack",
-          to: "channel:C1",
-          accountId: "alt",
-        },
-      ],
-      meta: {},
-    });
-
-    const result = await createRun("slack");
-
-    expect(result).toMatchObject({ text: "hello world!" });
-  });
-
-  it("persists usage fields even when replies are suppressed", async () => {
-    const storePath = path.join(
-      await fs.mkdtemp(path.join(os.tmpdir(), "paleoclaw-session-store-")),
-      "sessions.json",
-    );
-    const sessionKey = "main";
-    const entry: SessionEntry = { sessionId: "session", updatedAt: Date.now() };
-    await saveSessionStore(storePath, { [sessionKey]: entry });
-
-    runEmbeddedPiAgentMock.mockResolvedValueOnce({
-      payloads: [{ text: "hello world!" }],
-      messagingToolSentTexts: ["different message"],
-      messagingToolSentTargets: [{ tool: "slack", provider: "slack", to: "channel:C1" }],
-      meta: {
-        agentMeta: {
-          usage: { input: 10, output: 5 },
-          model: "claude-opus-4-5",
-          provider: "anthropic",
-        },
-      },
-    });
-
-    const result = await createRun("slack", { storePath, sessionKey });
-
-    expect(result).toBeUndefined();
-    const store = loadSessionStore(storePath, { skipCache: true });
-    expect(store[sessionKey]?.inputTokens).toBe(10);
-    expect(store[sessionKey]?.outputTokens).toBe(5);
-    expect(store[sessionKey]?.totalTokens).toBeUndefined();
-    expect(store[sessionKey]?.totalTokensFresh).toBe(false);
-    expect(store[sessionKey]?.model).toBe("claude-opus-4-5");
-  });
-
-  it("persists totalTokens from promptTokens when snapshot is available", async () => {
-    const storePath = path.join(
-      await fs.mkdtemp(path.join(os.tmpdir(), "paleoclaw-session-store-")),
-      "sessions.json",
-    );
-    const sessionKey = "main";
-    const entry: SessionEntry = { sessionId: "session", updatedAt: Date.now() };
-    await saveSessionStore(storePath, { [sessionKey]: entry });
-
-    runEmbeddedPiAgentMock.mockResolvedValueOnce({
-      payloads: [{ text: "hello world!" }],
-      messagingToolSentTexts: ["different message"],
-      messagingToolSentTargets: [{ tool: "slack", provider: "slack", to: "channel:C1" }],
-      meta: {
-        agentMeta: {
-          usage: { input: 10, output: 5 },
-          promptTokens: 42_000,
-          model: "claude-opus-4-5",
-          provider: "anthropic",
-        },
-      },
-    });
-
-    const result = await createRun("slack", { storePath, sessionKey });
-
-    expect(result).toBeUndefined();
-    const store = loadSessionStore(storePath, { skipCache: true });
-    expect(store[sessionKey]?.totalTokens).toBe(42_000);
-    expect(store[sessionKey]?.totalTokensFresh).toBe(true);
-    expect(store[sessionKey]?.model).toBe("claude-opus-4-5");
-  });
-
-  it("persists totalTokens from promptTokens when provider omits usage", async () => {
-    const storePath = path.join(
-      await fs.mkdtemp(path.join(os.tmpdir(), "paleoclaw-session-store-")),
-      "sessions.json",
-    );
-    const sessionKey = "main";
-    const entry: SessionEntry = {
-      sessionId: "session",
-      updatedAt: Date.now(),
-      inputTokens: 111,
-      outputTokens: 22,
-    };
-    await saveSessionStore(storePath, { [sessionKey]: entry });
-
-    runEmbeddedPiAgentMock.mockResolvedValueOnce({
-      payloads: [{ text: "hello world!" }],
-      messagingToolSentTexts: ["different message"],
-      messagingToolSentTargets: [{ tool: "slack", provider: "slack", to: "channel:C1" }],
-      meta: {
-        agentMeta: {
-          promptTokens: 41_000,
-          model: "claude-opus-4-5",
-          provider: "anthropic",
-        },
-      },
-    });
-
-    const result = await createRun("slack", { storePath, sessionKey });
-
-    expect(result).toBeUndefined();
-    const store = loadSessionStore(storePath, { skipCache: true });
-    expect(store[sessionKey]?.totalTokens).toBe(41_000);
-    expect(store[sessionKey]?.totalTokensFresh).toBe(true);
-    expect(store[sessionKey]?.inputTokens).toBe(111);
-    expect(store[sessionKey]?.outputTokens).toBe(22);
-  });
+  it.each([
+    { state: undefined, routed: true, delivered: true },
+    { state: "missing", routed: true, delivered: false },
+    { state: undefined, routed: false, delivered: false },
+  ] as const)(
+    "requires current-source evidence before suppressing a deduplicated final: $state/$routed",
+    async ({ state, routed, delivered }) => {
+      runEmbeddedAgentMock.mockResolvedValueOnce({
+        payloads: [{ text: "hello world!" }],
+        sourceReplyDeliveryState: state,
+        messagingToolSentTexts: ["hello world!"],
+        messagingToolSentTargets: routed
+          ? [{ tool: "slack", provider: "slack", to: "channel:C1" }]
+          : undefined,
+        meta: {},
+      });
+      const result = await createRun();
+      if (delivered) {
+        expect(result).toBeUndefined();
+      } else {
+        expect(result).toMatchObject({ isError: true, text: expect.any(String) });
+      }
+    },
+  );
 });
 
-describe("runReplyAgent reminder commitment guard", () => {
-  function createRun(params?: { sessionKey?: string; omitSessionKey?: boolean }) {
-    const typing = createMockTypingController();
-    const sessionCtx = {
-      Provider: "telegram",
-      OriginatingTo: "chat",
-      AccountId: "primary",
-      MessageSid: "msg",
-      Surface: "telegram",
-    } as unknown as TemplateContext;
-    const resolvedQueue = { mode: "interrupt" } as unknown as QueueSettings;
-    const followupRun = {
-      prompt: "hello",
-      summaryLine: "hello",
-      enqueuedAt: Date.now(),
-      run: {
-        sessionId: "session",
-        sessionKey: "main",
-        messageProvider: "telegram",
-        sessionFile: "/tmp/session.jsonl",
-        workspaceDir: "/tmp",
-        config: {},
-        skillsSnapshot: {},
-        provider: "anthropic",
-        model: "claude",
-        thinkLevel: "low",
-        verboseLevel: "off",
-        elevatedLevel: "off",
-        bashElevated: {
-          enabled: false,
-          allowed: false,
-          defaultLevel: "off",
-        },
-        timeoutMs: 1_000,
-        blockReplyBreak: "message_end",
-      },
-    } as unknown as FollowupRun;
-
-    return runReplyAgent({
-      commandBody: "hello",
-      followupRun,
-      queueKey: "main",
-      resolvedQueue,
-      shouldSteer: false,
-      shouldFollowup: false,
-      isActive: false,
-      isStreaming: false,
-      typing,
-      sessionCtx,
-      ...(params?.omitSessionKey ? {} : { sessionKey: params?.sessionKey ?? "main" }),
-      defaultModel: "anthropic/claude-opus-4-5",
-      resolvedVerboseLevel: "off",
-      isNewSession: false,
-      blockStreamingEnabled: false,
-      resolvedBlockStreamingBreak: "message_end",
-      shouldInjectGroupIntro: false,
-      typingMode: "instant",
-    });
-  }
-
-  it("appends guard note when reminder commitment is not backed by cron.add", async () => {
-    runEmbeddedPiAgentMock.mockResolvedValueOnce({
-      payloads: [{ text: "I'll remind you tomorrow morning." }],
-      meta: {},
-      successfulCronAdds: 0,
-    });
-
-    const result = await createRun();
-    expect(result).toMatchObject({
-      text: "I'll remind you tomorrow morning.\n\nNote: I did not schedule a reminder in this turn, so this will not trigger automatically.",
-    });
-  });
-
-  it("keeps reminder commitment unchanged when cron.add succeeded", async () => {
-    runEmbeddedPiAgentMock.mockResolvedValueOnce({
-      payloads: [{ text: "I'll remind you tomorrow morning." }],
-      meta: {},
-      successfulCronAdds: 1,
-    });
-
-    const result = await createRun();
-    expect(result).toMatchObject({
-      text: "I'll remind you tomorrow morning.",
-    });
-  });
-
-  it("suppresses guard note when session already has an active cron job", async () => {
-    loadCronStoreMock.mockResolvedValueOnce({
-      version: 1,
-      jobs: [
-        {
-          id: "existing-job",
-          name: "monitor-task",
-          enabled: true,
-          sessionKey: "main",
-          createdAtMs: Date.now() - 60_000,
-          updatedAtMs: Date.now() - 60_000,
-        },
-      ],
-    });
-
-    runEmbeddedPiAgentMock.mockResolvedValueOnce({
-      payloads: [{ text: "I'll ping you when it's done." }],
-      meta: {},
-      successfulCronAdds: 0,
-    });
-
-    const result = await createRun();
-    expect(result).toMatchObject({
-      text: "I'll ping you when it's done.",
-    });
-  });
-
-  it("still appends guard note when cron jobs exist but not for the current session", async () => {
+it.each([
+  ["unrelated cron jobs", "I'll remind you tomorrow morning.", false],
+  ["a failed cron store read", "I'll remind you after lunch.", true],
+] as const)("appends a guard note with %s", async (_label, text, readFailed) => {
+  if (readFailed) {
+    loadCronStoreMock.mockRejectedValueOnce(new Error("store read failed"));
+  } else {
     loadCronStoreMock.mockResolvedValueOnce({
       version: 1,
       jobs: [
@@ -1234,397 +1285,328 @@ describe("runReplyAgent reminder commitment guard", () => {
         },
       ],
     });
-
-    runEmbeddedPiAgentMock.mockResolvedValueOnce({
-      payloads: [{ text: "I'll remind you tomorrow morning." }],
-      meta: {},
-      successfulCronAdds: 0,
-    });
-
-    const result = await createRun();
-    expect(result).toMatchObject({
-      text: "I'll remind you tomorrow morning.\n\nNote: I did not schedule a reminder in this turn, so this will not trigger automatically.",
-    });
+  }
+  runEmbeddedAgentMock.mockResolvedValueOnce({
+    payloads: [{ text }],
+    meta: {},
+    successfulCronAdds: 0,
   });
-
-  it("still appends guard note when cron jobs for session exist but are disabled", async () => {
-    loadCronStoreMock.mockResolvedValueOnce({
-      version: 1,
-      jobs: [
-        {
-          id: "disabled-job",
-          name: "old-monitor",
-          enabled: false,
-          sessionKey: "main",
-          createdAtMs: Date.now() - 60_000,
-          updatedAtMs: Date.now() - 60_000,
-        },
-      ],
-    });
-
-    runEmbeddedPiAgentMock.mockResolvedValueOnce({
-      payloads: [{ text: "I'll check back in an hour." }],
-      meta: {},
-      successfulCronAdds: 0,
-    });
-
-    const result = await createRun();
-    expect(result).toMatchObject({
-      text: "I'll check back in an hour.\n\nNote: I did not schedule a reminder in this turn, so this will not trigger automatically.",
-    });
-  });
-
-  it("still appends guard note when sessionKey is missing", async () => {
-    loadCronStoreMock.mockResolvedValueOnce({
-      version: 1,
-      jobs: [
-        {
-          id: "existing-job",
-          name: "monitor-task",
-          enabled: true,
-          sessionKey: "main",
-          createdAtMs: Date.now() - 60_000,
-          updatedAtMs: Date.now() - 60_000,
-        },
-      ],
-    });
-
-    runEmbeddedPiAgentMock.mockResolvedValueOnce({
-      payloads: [{ text: "I'll ping you later." }],
-      meta: {},
-      successfulCronAdds: 0,
-    });
-
-    const result = await createRun({ omitSessionKey: true });
-    expect(result).toMatchObject({
-      text: "I'll ping you later.\n\nNote: I did not schedule a reminder in this turn, so this will not trigger automatically.",
-    });
-  });
-
-  it("still appends guard note when cron store read fails", async () => {
-    loadCronStoreMock.mockRejectedValueOnce(new Error("store read failed"));
-
-    runEmbeddedPiAgentMock.mockResolvedValueOnce({
-      payloads: [{ text: "I'll remind you after lunch." }],
-      meta: {},
-      successfulCronAdds: 0,
-    });
-
-    const result = await createRun({ sessionKey: "main" });
-    expect(result).toMatchObject({
-      text: "I'll remind you after lunch.\n\nNote: I did not schedule a reminder in this turn, so this will not trigger automatically.",
-    });
-  });
+  const result = await createBaseRun({
+    context: {
+      Provider: "telegram",
+      OriginatingTo: "chat",
+      AccountId: "primary",
+      MessageSid: "msg",
+      Surface: "telegram",
+    },
+    run: { messageProvider: "telegram", config: {}, thinkLevel: "low" },
+    reply: { sessionKey: "main" },
+  }).run();
+  expectReplyText(
+    result,
+    text +
+      "\n\nNote: I did not schedule a reminder in this turn, so this will not trigger automatically.",
+  );
 });
 
 describe("runReplyAgent fallback reasoning tags", () => {
-  type EmbeddedPiAgentParams = {
-    enforceFinalTag?: boolean;
-    prompt?: string;
-  };
-
-  function createRun(params?: {
-    sessionEntry?: SessionEntry;
-    sessionKey?: string;
-    agentCfgContextTokens?: number;
-  }) {
-    const typing = createMockTypingController();
-    const sessionCtx = {
-      Provider: "whatsapp",
-      OriginatingTo: "+15550001111",
-      AccountId: "primary",
-      MessageSid: "msg",
-    } as unknown as TemplateContext;
-    const resolvedQueue = { mode: "interrupt" } as unknown as QueueSettings;
-    const sessionKey = params?.sessionKey ?? "main";
-    const followupRun = {
-      prompt: "hello",
-      summaryLine: "hello",
-      enqueuedAt: Date.now(),
-      run: {
-        agentId: "main",
-        agentDir: "/tmp/agent",
-        sessionId: "session",
-        sessionKey,
-        messageProvider: "whatsapp",
-        sessionFile: "/tmp/session.jsonl",
-        workspaceDir: "/tmp",
-        config: {},
-        skillsSnapshot: {},
-        provider: "anthropic",
-        model: "claude",
-        thinkLevel: "low",
-        verboseLevel: "off",
-        elevatedLevel: "off",
-        bashElevated: {
-          enabled: false,
-          allowed: false,
-          defaultLevel: "off",
-        },
-        timeoutMs: 1_000,
-        blockReplyBreak: "message_end",
-      },
-    } as unknown as FollowupRun;
-
-    return runReplyAgent({
-      commandBody: "hello",
-      followupRun,
-      queueKey: "main",
-      resolvedQueue,
-      shouldSteer: false,
-      shouldFollowup: false,
-      isActive: false,
-      isStreaming: false,
-      typing,
-      sessionCtx,
-      sessionEntry: params?.sessionEntry,
-      sessionKey,
-      defaultModel: "anthropic/claude-opus-4-5",
-      agentCfgContextTokens: params?.agentCfgContextTokens,
-      resolvedVerboseLevel: "off",
-      isNewSession: false,
-      blockStreamingEnabled: false,
-      resolvedBlockStreamingBreak: "message_end",
-      shouldInjectGroupIntro: false,
-      typingMode: "instant",
-    });
-  }
+  type EmbeddedAgentParams = { enforceFinalTag?: boolean; prompt?: string };
 
   it("enforces <final> when the fallback provider requires reasoning tags", async () => {
-    runEmbeddedPiAgentMock.mockResolvedValueOnce({
-      payloads: [{ text: "ok" }],
-      meta: {},
-    });
-    runWithModelFallbackMock.mockImplementationOnce(
-      async ({ run }: RunWithModelFallbackParams) => ({
-        result: await run("google-gemini-cli", "gemini-3"),
-        provider: "google-gemini-cli",
-        model: "gemini-3",
-      }),
-    );
+    runEmbeddedAgentMock.mockResolvedValueOnce(replyResult("ok", {}));
+    runWithModelFallbackMock.mockImplementationOnce(async (params: RunWithModelFallbackParams) => ({
+      result: await runFallbackModelAttempt(params, "google", "gemini-2.5-pro", "unknown"),
+      provider: "google",
+      model: "gemini-2.5-pro",
+      attempts: [],
+    }));
 
-    await createRun();
+    const result = await createBaseRun({
+      run: {
+        agentId: "main",
+        agentDir: path.join(rootDir, "agent"),
+      },
+      reply: { queueKey: "main", sessionEntry: undefined, sessionKey: "main" },
+    }).run();
+    const payloads = Array.isArray(result) ? result : [result];
+    expect(payloads.filter((payload) => payload?.text === "ok")).toHaveLength(1);
 
-    const call = runEmbeddedPiAgentMock.mock.calls[0]?.[0] as EmbeddedPiAgentParams | undefined;
-    expect(call?.enforceFinalTag).toBe(true);
+    const call = firstMockCallArg(
+      runEmbeddedAgentMock,
+      "embedded run params",
+    ) as EmbeddedAgentParams;
+    expect(call.enforceFinalTag).toBe(true);
   });
 
   it("enforces <final> during memory flush on fallback providers", async () => {
-    runEmbeddedPiAgentMock.mockImplementation(async (params: EmbeddedPiAgentParams) => {
-      if (params.prompt?.includes("Pre-compaction memory flush.")) {
-        return { payloads: [], meta: {} };
-      }
-      return { payloads: [{ text: "ok" }], meta: {} };
+    const root = await fs.realpath(tempDirs.make("paleoclaw-memory-flush-tags-"));
+    const storePath = path.join(root, "sessions.json");
+    const sessionKey = "agent:main:memory-flush-tags";
+    const sessionEntry = sessionFixture({
+      totalTokens: 1_000_000,
+      totalTokensFresh: true,
+      totalTokensVersion: 1,
+      compactionCount: 0,
     });
-    runWithModelFallbackMock.mockImplementation(async ({ run }: RunWithModelFallbackParams) => ({
-      result: await run("google-gemini-cli", "gemini-3"),
+    await replaceSessionEntry({ storePath, sessionKey }, sessionEntry);
+    registerMemoryFlushPlanResolverForTest(() => ({
+      softThresholdTokens: 1_000,
+      forceFlushTranscriptBytes: 1_000_000_000,
+      reserveTokensFloor: 20_000,
+      prompt: "Pre-compaction memory flush.",
+      systemPrompt: "Flush memory into the configured memory file.",
+      relativePath: "memory/active.md",
+    }));
+    runEmbeddedAgentMock.mockResolvedValue({ payloads: [], meta: {} });
+    runCliAgentMock.mockResolvedValueOnce(replyResult("ok", {}));
+    runWithModelFallbackMock.mockImplementation(async (params: RunWithModelFallbackParams) => ({
+      result: await runFallbackModelAttempt(params, "google-gemini-cli", "gemini-3", "unknown"),
       provider: "google-gemini-cli",
       model: "gemini-3",
+      attempts: [],
     }));
-
-    await createRun({
-      sessionEntry: {
-        sessionId: "session",
-        updatedAt: Date.now(),
-        totalTokens: 1_000_000,
-        compactionCount: 0,
-      },
+    compactState.compactEmbeddedAgentSessionMock.mockResolvedValueOnce({
+      ok: true,
+      compacted: true,
+      result: { tokensAfter: 1_000_000 },
     });
 
-    const flushCall = runEmbeddedPiAgentMock.mock.calls.find(([params]) =>
-      (params as EmbeddedPiAgentParams | undefined)?.prompt?.includes(
-        "Pre-compaction memory flush.",
-      ),
-    )?.[0] as EmbeddedPiAgentParams | undefined;
+    const result = await createBaseRun({
+      run: {
+        agentId: "main",
+        agentDir: path.join(root, "agent"),
+        sessionKey,
+        workspaceDir: root,
+      },
+      reply: { queueKey: sessionKey, ...sessionState(sessionKey, sessionEntry), storePath },
+    }).run();
 
+    const flushCall = runEmbeddedAgentMock.mock.calls.find(([params]) =>
+      (params as EmbeddedAgentParams | undefined)?.prompt?.includes("Pre-compaction memory flush."),
+    )?.[0] as EmbeddedAgentParams | undefined;
     expect(flushCall?.enforceFinalTag).toBe(true);
+    expect(runCliAgentMock).toHaveBeenCalledOnce();
+    const payloads = Array.isArray(result) ? result : [result];
+    expect(payloads.filter((payload) => payload?.text === "ok")).toHaveLength(1);
   });
 });
 
 describe("runReplyAgent response usage footer", () => {
-  function createRun(params: { responseUsage: "tokens" | "full"; sessionKey: string }) {
-    const typing = createMockTypingController();
-    const sessionCtx = {
-      Provider: "whatsapp",
-      OriginatingTo: "+15550001111",
-      AccountId: "primary",
-      MessageSid: "msg",
-    } as unknown as TemplateContext;
-    const resolvedQueue = { mode: "interrupt" } as unknown as QueueSettings;
-
-    const sessionEntry: SessionEntry = {
-      sessionId: "session",
-      updatedAt: Date.now(),
-      responseUsage: params.responseUsage,
-    };
-
-    const followupRun = {
-      prompt: "hello",
-      summaryLine: "hello",
-      enqueuedAt: Date.now(),
+  async function usageFooter(
+    responseUsage: "tokens" | "full",
+    usage: ReturnType<typeof parseCliOutput>["usage"],
+    bedrock = true,
+    text = "ok",
+  ) {
+    const provider = bedrock ? "amazon-bedrock" : "anthropic";
+    const model = bedrock ? "us.anthropic.claude-sonnet-4-6" : "claude";
+    runEmbeddedAgentMock.mockResolvedValueOnce(
+      replyResult(text, { agentMeta: { provider, model, usage } }),
+    );
+    const sessionKey = "agent:main:whatsapp:dm:+1000";
+    const result = await createBaseRun({
       run: {
         agentId: "main",
-        agentDir: "/tmp/agent",
-        sessionId: "session",
-        sessionKey: params.sessionKey,
-        messageProvider: "whatsapp",
-        sessionFile: "/tmp/session.jsonl",
-        workspaceDir: "/tmp",
-        config: {},
-        skillsSnapshot: {},
-        provider: "anthropic",
-        model: "claude",
+        agentDir: path.join(rootDir, "agent"),
+        sessionKey,
+        provider,
+        model,
         thinkLevel: "low",
-        verboseLevel: "off",
-        elevatedLevel: "off",
-        bashElevated: {
-          enabled: false,
-          allowed: false,
-          defaultLevel: "off",
+        config: {
+          models: {
+            providers: {
+              [provider]: {
+                baseUrl: "https://example.test",
+                ...(bedrock ? { auth: "aws-sdk" as const } : {}),
+                models: [
+                  {
+                    id: model,
+                    name: model,
+                    reasoning: false,
+                    input: ["text"],
+                    maxTokens: 8192,
+                    cost: bedrock
+                      ? { input: 3, output: 15, cacheRead: 0.3, cacheWrite: 3.75 }
+                      : { input: 3, output: 15, cacheRead: 0, cacheWrite: 0 },
+                  },
+                ],
+              },
+            },
+          },
         },
-        timeoutMs: 1_000,
-        blockReplyBreak: "message_end",
       },
-    } as unknown as FollowupRun;
-
-    return runReplyAgent({
-      commandBody: "hello",
-      followupRun,
-      queueKey: "main",
-      resolvedQueue,
-      shouldSteer: false,
-      shouldFollowup: false,
-      isActive: false,
-      isStreaming: false,
-      typing,
-      sessionCtx,
-      sessionEntry,
-      sessionKey: params.sessionKey,
-      defaultModel: "anthropic/claude-opus-4-5",
-      resolvedVerboseLevel: "off",
-      isNewSession: false,
-      blockStreamingEnabled: false,
-      resolvedBlockStreamingBreak: "message_end",
-      shouldInjectGroupIntro: false,
-      typingMode: "instant",
-    });
+      reply: { queueKey: sessionKey, sessionKey, sessionEntry: sessionFixture({ responseUsage }) },
+    }).run();
+    return (Array.isArray(result) ? result[0] : result)?.text ?? "";
   }
 
-  it("appends session key when responseUsage=full", async () => {
-    runEmbeddedPiAgentMock.mockResolvedValueOnce({
-      payloads: [{ text: "ok" }],
-      meta: {
-        agentMeta: {
-          provider: "anthropic",
-          model: "claude",
-          usage: { input: 12, output: 3 },
-        },
-      },
+  it("shows cache-only counts without cost or session keys in tokens mode", async () => {
+    const output = parseCliOutput({
+      raw: JSON.stringify({ result: "ok", usage: { cacheRead: 800, cacheWrite: 200 } }),
+      backend: { command: "fixture-cli" },
+      providerId: "fixture-cli",
+      outputMode: "json",
     });
-
-    const sessionKey = "agent:main:whatsapp:dm:+1000";
-    const res = await createRun({ responseUsage: "full", sessionKey });
-    const payload = Array.isArray(res) ? res[0] : res;
-    expect(String(payload?.text ?? "")).toContain("Usage:");
-    expect(String(payload?.text ?? "")).toContain(`· session \`${sessionKey}\``);
+    const text = await usageFooter("tokens", output.usage, true, output.text);
+    expect(text).toBe("ok\nUsage: ? in / ? out · cache 800 cached / 200 new");
+    expect(text).not.toContain("est $");
+    expect(text).not.toContain("· session ");
   });
 
-  it("does not append session key when responseUsage=tokens", async () => {
-    runEmbeddedPiAgentMock.mockResolvedValueOnce({
-      payloads: [{ text: "ok" }],
-      meta: {
-        agentMeta: {
-          provider: "anthropic",
-          model: "claude",
-          usage: { input: 12, output: 3 },
-        },
-      },
-    });
+  it("omits aggregate-only token totals in the built-in full footer", async () => {
+    const text = await usageFooter("full", { total: 1250 }, false);
+    expect(text).toContain("anthropic🤖claude");
+    expect(text).not.toContain("↕️");
+    expect(text).not.toContain("💰");
+    expect(text).not.toContain("Usage:");
+  });
 
-    const sessionKey = "agent:main:whatsapp:dm:+1000";
-    const res = await createRun({ responseUsage: "tokens", sessionKey });
-    const payload = Array.isArray(res) ? res[0] : res;
-    expect(String(payload?.text ?? "")).toContain("Usage:");
-    expect(String(payload?.text ?? "")).not.toContain("· session ");
+  it("shows configured costs for aws-sdk providers when responseUsage=full", async () => {
+    const text = await usageFooter("full", {
+      input: 1_000,
+      output: 2_000,
+      cacheRead: 500,
+      cacheWrite: 2_000,
+    });
+    expect(text).toContain("amazon-bedrock🤖us.anthropic.claude-sonnet-4-6🌘🐌");
+    expect(text).not.toContain("↕️");
+    expect(text).not.toContain("🗄");
+    expect(text).toContain("💰0.0406");
+    expect(text).not.toContain("Usage:");
+    expect(text).not.toContain("· session ");
   });
 });
 
-describe("runReplyAgent transient HTTP retry", () => {
-  it("retries once after transient 521 HTML failure and then succeeds", async () => {
-    vi.useFakeTimers();
-    runEmbeddedPiAgentMock
-      .mockRejectedValueOnce(
-        new Error(
-          `521 <!DOCTYPE html><html lang="en-US"><head><title>Web server is down</title></head><body>Cloudflare</body></html>`,
-        ),
-      )
-      .mockResolvedValueOnce({
-        payloads: [{ text: "Recovered response" }],
-        meta: {},
-      });
+describe("runReplyAgent provider failures", () => {
+  function createRun(defaultModel?: string) {
+    return createBaseRun({
+      context: { Provider: "telegram", MessageSid: "msg" },
+      run: { messageProvider: "telegram", config: {}, thinkLevel: "low" },
+      reply: defaultModel ? { defaultModel } : {},
+    }).run();
+  }
 
-    const typing = createMockTypingController();
-    const sessionCtx = {
-      Provider: "telegram",
-      MessageSid: "msg",
-    } as unknown as TemplateContext;
-    const resolvedQueue = { mode: "interrupt" } as unknown as QueueSettings;
-    const followupRun = {
-      prompt: "hello",
-      summaryLine: "hello",
-      enqueuedAt: Date.now(),
-      run: {
-        sessionId: "session",
-        sessionKey: "main",
-        messageProvider: "telegram",
-        sessionFile: "/tmp/session.jsonl",
-        workspaceDir: "/tmp",
-        config: {},
-        skillsSnapshot: {},
-        provider: "anthropic",
-        model: "claude",
-        thinkLevel: "low",
-        verboseLevel: "off",
-        elevatedLevel: "off",
-        bashElevated: {
-          enabled: false,
-          allowed: false,
-          defaultLevel: "off",
-        },
-        timeoutMs: 1_000,
-        blockReplyBreak: "message_end",
-      },
-    } as unknown as FollowupRun;
-
-    const runPromise = runReplyAgent({
-      commandBody: "hello",
-      followupRun,
-      queueKey: "main",
-      resolvedQueue,
-      shouldSteer: false,
-      shouldFollowup: false,
-      isActive: false,
-      isStreaming: false,
-      typing,
-      sessionCtx,
-      defaultModel: "anthropic/claude-opus-4-5",
-      resolvedVerboseLevel: "off",
-      isNewSession: false,
-      blockStreamingEnabled: false,
-      resolvedBlockStreamingBreak: "message_end",
-      shouldInjectGroupIntro: false,
-      typingMode: "instant",
-    });
-
-    await vi.advanceTimersByTimeAsync(2_500);
-    const result = await runPromise;
-
-    expect(runEmbeddedPiAgentMock).toHaveBeenCalledTimes(2);
-    expect(runtimeErrorMock).toHaveBeenCalledWith(
-      expect.stringContaining("Transient HTTP provider error before reply"),
-    );
-
+  it.each([
+    {
+      name: "transient HTTP",
+      error:
+        '521 <!DOCTYPE html><html lang="en-US"><head><title>Web server is down</title></head><body>Cloudflare</body></html>',
+      expected: "The AI service is having trouble",
+      defaultModel: undefined,
+    },
+    {
+      name: "billing with overflow wording",
+      error: "402 Payment Required: request token limit exceeded for this billing plan",
+      expected: "billing problem",
+      defaultModel: "anthropic/claude",
+    },
+  ])("classifies $name without a reply-layer retry", async ({ error, expected, defaultModel }) => {
+    runEmbeddedAgentMock.mockRejectedValueOnce(new Error(error));
+    const result = await createRun(defaultModel);
     const payload = Array.isArray(result) ? result[0] : result;
-    expect(payload?.text).toContain("Recovered response");
+    expect(runEmbeddedAgentMock).toHaveBeenCalledTimes(1);
+    expect(payload?.text).toContain(expected);
+    if (defaultModel) {
+      expect(payload?.text).not.toContain("Context overflow");
+    }
+  });
+
+  it.each([false, true])("handles retry-limit output (mediaOnly=%s)", async (mediaOnly) => {
+    const mediaUrl = "https://example.test/image.png";
+    runEmbeddedAgentMock.mockResolvedValueOnce({
+      payloads: [mediaOnly ? { mediaUrl } : { text: "reasoning", isReasoning: true }],
+      meta: {
+        error: { kind: "retry_limit", message: "429 Too Many Requests: rate limit exceeded" },
+      },
+    });
+    const result = await createRun("anthropic/claude");
+    const payload = Array.isArray(result) ? result[0] : result;
+    if (mediaOnly) {
+      expect(requireRecord(payload, "media-only retry-limit payload")).toMatchObject({ mediaUrl });
+      expect(payload?.text).toBeUndefined();
+    } else {
+      expect(payload?.text).toContain("The AI service needs a short break");
+    }
   });
 });
+
+/* oxlint-disable max-lines -- TODO: split this grandfathered oversized file. */
+
+it.each(["completed", "failed", "hidden"] as const)(
+  "reports accepted visible work before final dispatch for a %s run",
+  async (outcome) => {
+    const { dispatchReplyFromConfig } = await import("./dispatch-from-config.js");
+    const { createReplyDispatcher } = await import("./reply-dispatcher.js");
+    const order: string[] = [];
+    const visibleWork: VisibleWorkSession[][] = [];
+    const visible = {
+      runId: "visible-run",
+      childSessionKey: "agent:main:dashboard:visible-work",
+      sessionUrl: "https://openclaw.example/chat/main/visible-work",
+      label: "Review",
+    };
+    runEmbeddedAgentMock.mockResolvedValueOnce({
+      payloads: [{ text: "Finished", ...(outcome === "failed" ? { isError: true } : {}) }],
+      acceptedSessionSpawns: [
+        { runId: "hidden-run", childSessionKey: "agent:main:subagent:hidden" },
+        ...(outcome === "hidden" ? [] : [visible, { ...visible, runId: "duplicate-run" }]),
+      ],
+      meta: outcome === "failed" ? { error: { kind: "unknown", message: "Run failed" } } : {},
+    });
+    const storePath = path.join(rootDir, "sessions.sqlite");
+    const cfg: OpenClawConfig = {
+      agents: { defaults: { workspace: rootDir } },
+      session: { store: storePath },
+      plugins: { enabled: false },
+    };
+    const sessionEntry = sessionFixture();
+    await replaceSessionEntry({ storePath, sessionKey: "agent:main:main" }, sessionEntry);
+    const ctx = buildTestCtx({
+      Body: "Start visible work",
+      SessionKey: "agent:main:main",
+      MessageSid: `visible-work-${outcome}`,
+    });
+    const dispatcher = createReplyDispatcher({
+      deliver: async (_payload, info) => {
+        order.push(info.kind);
+      },
+    });
+    try {
+      await dispatchReplyFromConfig({
+        ctx,
+        cfg,
+        dispatcher,
+        replyOptions: {
+          onVisibleWorkSessions: (sessions) => {
+            visibleWork.push([...sessions]);
+            order.push("visible-work");
+          },
+        },
+        replyResolver: async (_ctx, opts) =>
+          createBaseRun({
+            context: ctx,
+            run: { config: cfg, sessionKey: ctx.SessionKey },
+            reply: {
+              opts,
+              replyOperation: opts?.replyOperation,
+              queueKey: ctx.SessionKey,
+              sessionKey: ctx.SessionKey,
+              storePath,
+              sessionEntry,
+              sessionStore: { "agent:main:main": sessionEntry },
+            },
+          }).run(),
+      });
+    } finally {
+      dispatcher.markComplete();
+      await dispatcher.waitForIdle();
+    }
+
+    expect(visibleWork).toEqual(
+      outcome === "hidden"
+        ? []
+        : [[{ sessionKey: visible.childSessionKey, url: visible.sessionUrl, label: "Review" }]],
+    );
+    expect(order).toEqual(outcome === "hidden" ? ["final"] : ["visible-work", "final"]);
+  },
+);

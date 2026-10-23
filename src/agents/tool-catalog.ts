@@ -1,11 +1,43 @@
+/**
+ * Core tool catalog and profile defaults.
+ * Drives built-in profile allowlists, group expansion, and UI section metadata
+ * for paleoclaw-owned tools.
+ *
+ * This module is bundled into the Control UI via tool-policy-shared. Keep it
+ * pure data + tiny pure functions: a value import of server config/runtime
+ * modules here drags the whole gateway graph into the ui build and breaks it.
+ */
+import {
+  AGENTS_WAIT_TOOL_DISPLAY_SUMMARY,
+  ASK_USER_TOOL_DISPLAY_SUMMARY,
+  CRON_TOOL_DISPLAY_SUMMARY,
+  EXEC_TOOL_DISPLAY_SUMMARY,
+  PROCESS_TOOL_DISPLAY_SUMMARY,
+  SESSIONS_HISTORY_TOOL_DISPLAY_SUMMARY,
+  SESSIONS_LIST_TOOL_DISPLAY_SUMMARY,
+  SESSIONS_SEARCH_TOOL_DISPLAY_SUMMARY,
+  SESSIONS_SEND_TOOL_DISPLAY_SUMMARY,
+  SESSIONS_SPAWN_TOOL_DISPLAY_SUMMARY,
+  SESSION_STATUS_TOOL_DISPLAY_SUMMARY,
+  SKILL_WORKSHOP_TOOL_DISPLAY_SUMMARY,
+  SUGGEST_TASK_TOOL_DISPLAY_SUMMARY,
+  DISMISS_TASK_TOOL_DISPLAY_SUMMARY,
+} from "./tool-description-presets.js";
+import { AUTOMATIONS_TOOL_NAME } from "./tools/automations-tool-name.js";
+
+// Shared with restart classification without importing the tool-search runtime contract.
+export const TOOL_CALL_RAW_TOOL_NAME = "dispatch_action";
+
+/** Built-in tool profile ids exposed in config and UI. */
 export type ToolProfileId = "minimal" | "coding" | "messaging" | "full";
 
+/** Allow/deny policy generated from a built-in tool profile. */
 type ToolProfilePolicy = {
   allow?: string[];
   deny?: string[];
 };
 
-export type CoreToolSection = {
+type CoreToolSection = {
   id: string;
   label: string;
   tools: Array<{
@@ -15,12 +47,21 @@ export type CoreToolSection = {
   }>;
 };
 
-type CoreToolDefinition = {
+export type CoreToolFactoryFamily = "base-coding" | "shell" | "paleoclaw";
+
+type CoreToolFacts = {
+  factoryFamily?: CoreToolFactoryFamily;
+  // Recorded-call replay and blind attempt retry have distinct audited allowlists.
+  replay?: "both" | "blind" | "recorded";
+};
+
+type CoreToolDefinition = CoreToolFacts & {
   id: string;
-  label: string;
   description: string;
   sectionId: string;
   profiles: ToolProfileId[];
+  executionLocation?: "placement" | "gateway";
+  includeInSectionGroup?: boolean;
   includeInOpenClawGroup?: boolean;
 };
 
@@ -38,206 +79,266 @@ const CORE_TOOL_SECTION_ORDER: Array<{ id: string; label: string }> = [
   { id: "media", label: "Media" },
 ];
 
+type CoreToolOptions = Omit<CoreToolDefinition, "id" | "description" | "sectionId">;
+
+function coreTools(
+  sectionId: string,
+  defaults: CoreToolOptions,
+  tools: Array<[id: string, description: string, options?: Partial<CoreToolOptions>]>,
+): CoreToolDefinition[] {
+  return tools.map(([id, description, options]) => ({
+    id,
+    description,
+    sectionId,
+    factoryFamily: "paleoclaw",
+    ...defaults,
+    ...options,
+  }));
+}
+
 const CORE_TOOL_DEFINITIONS: CoreToolDefinition[] = [
-  {
-    id: "read",
-    label: "read",
-    description: "Read file contents",
-    sectionId: "fs",
-    profiles: ["coding"],
-  },
-  {
-    id: "write",
-    label: "write",
-    description: "Create or overwrite files",
-    sectionId: "fs",
-    profiles: ["coding"],
-  },
-  {
-    id: "edit",
-    label: "edit",
-    description: "Make precise edits",
-    sectionId: "fs",
-    profiles: ["coding"],
-  },
-  {
-    id: "apply_patch",
-    label: "apply_patch",
-    description: "Patch files (OpenAI)",
-    sectionId: "fs",
-    profiles: ["coding"],
-  },
-  {
-    id: "exec",
-    label: "exec",
-    description: "Run shell commands",
-    sectionId: "runtime",
-    profiles: ["coding"],
-  },
-  {
-    id: "process",
-    label: "process",
-    description: "Manage background processes",
-    sectionId: "runtime",
-    profiles: ["coding"],
-  },
-  {
-    id: "web_search",
-    label: "web_search",
-    description: "Search the web",
-    sectionId: "web",
-    profiles: [],
-    includeInOpenClawGroup: true,
-  },
-  {
-    id: "web_fetch",
-    label: "web_fetch",
-    description: "Fetch web content",
-    sectionId: "web",
-    profiles: [],
-    includeInOpenClawGroup: true,
-  },
-  {
-    id: "memory_search",
-    label: "memory_search",
-    description: "Semantic search",
-    sectionId: "memory",
-    profiles: ["coding"],
-    includeInOpenClawGroup: true,
-  },
-  {
-    id: "memory_get",
-    label: "memory_get",
-    description: "Read memory files",
-    sectionId: "memory",
-    profiles: ["coding"],
-    includeInOpenClawGroup: true,
-  },
-  {
-    id: "sessions_list",
-    label: "sessions_list",
-    description: "List sessions",
-    sectionId: "sessions",
-    profiles: ["coding", "messaging"],
-    includeInOpenClawGroup: true,
-  },
-  {
-    id: "sessions_history",
-    label: "sessions_history",
-    description: "Session history",
-    sectionId: "sessions",
-    profiles: ["coding", "messaging"],
-    includeInOpenClawGroup: true,
-  },
-  {
-    id: "sessions_send",
-    label: "sessions_send",
-    description: "Send to session",
-    sectionId: "sessions",
-    profiles: ["coding", "messaging"],
-    includeInOpenClawGroup: true,
-  },
-  {
-    id: "sessions_spawn",
-    label: "sessions_spawn",
-    description: "Spawn sub-agent",
-    sectionId: "sessions",
-    profiles: ["coding"],
-    includeInOpenClawGroup: true,
-  },
-  {
-    id: "subagents",
-    label: "subagents",
-    description: "Manage sub-agents",
-    sectionId: "sessions",
-    profiles: ["coding"],
-    includeInOpenClawGroup: true,
-  },
-  {
-    id: "session_status",
-    label: "session_status",
-    description: "Session status",
-    sectionId: "sessions",
-    profiles: ["minimal", "coding", "messaging"],
-    includeInOpenClawGroup: true,
-  },
-  {
-    id: "browser",
-    label: "browser",
-    description: "Control web browser",
-    sectionId: "ui",
-    profiles: [],
-    includeInOpenClawGroup: true,
-  },
-  {
-    id: "canvas",
-    label: "canvas",
-    description: "Control canvases",
-    sectionId: "ui",
-    profiles: [],
-    includeInOpenClawGroup: true,
-  },
-  {
-    id: "message",
-    label: "message",
-    description: "Send messages",
-    sectionId: "messaging",
-    profiles: ["messaging"],
-    includeInOpenClawGroup: true,
-  },
-  {
-    id: "cron",
-    label: "cron",
-    description: "Schedule tasks",
-    sectionId: "automation",
-    profiles: ["coding"],
-    includeInOpenClawGroup: true,
-  },
-  {
-    id: "gateway",
-    label: "gateway",
-    description: "Gateway control",
-    sectionId: "automation",
-    profiles: [],
-    includeInOpenClawGroup: true,
-  },
-  {
-    id: "nodes",
-    label: "nodes",
-    description: "Nodes + devices",
-    sectionId: "nodes",
-    profiles: [],
-    includeInOpenClawGroup: true,
-  },
-  {
-    id: "agents_list",
-    label: "agents_list",
-    description: "List agents",
-    sectionId: "agents",
-    profiles: [],
-    includeInOpenClawGroup: true,
-  },
-  {
-    id: "image",
-    label: "image",
-    description: "Image understanding",
-    sectionId: "media",
-    profiles: ["coding"],
-    includeInOpenClawGroup: true,
-  },
-  {
-    id: "tts",
-    label: "tts",
-    description: "Text-to-speech conversion",
-    sectionId: "media",
-    profiles: [],
-    includeInOpenClawGroup: true,
-  },
+  ...coreTools("agents", { profiles: ["coding", "messaging"], includeInOpenClawGroup: true }, [
+    ["decision_evaluate", "Evaluate explicit evidence with the agent's decision model"],
+  ]),
+  ...coreTools(
+    "fs",
+    { profiles: ["coding"], executionLocation: "placement", factoryFamily: "base-coding" },
+    [
+      ["ls", "List directory entries", { replay: "both" }],
+      ["read", "Read file contents", { replay: "both" }],
+      ["write", "Create or overwrite files"],
+      ["edit", "Make precise edits"],
+      ["apply_patch", "Patch files", { factoryFamily: "shell" }],
+    ],
+  ),
+  ...coreTools("runtime", { profiles: ["coding"] }, [
+    ["exec", EXEC_TOOL_DISPLAY_SUMMARY, { executionLocation: "placement", factoryFamily: "shell" }],
+    [
+      "process",
+      PROCESS_TOOL_DISPLAY_SUMMARY,
+      { executionLocation: "placement", factoryFamily: "shell" },
+    ],
+    [
+      "code_execution",
+      "Run sandboxed remote analysis",
+      { includeInOpenClawGroup: true, factoryFamily: undefined },
+    ],
+    [
+      "secrets",
+      "Request and manage write-only credentials",
+      {
+        profiles: ["coding", "messaging"],
+        includeInOpenClawGroup: true,
+      },
+    ],
+  ]),
+  ...coreTools(
+    "web",
+    {
+      profiles: ["coding"],
+      includeInOpenClawGroup: true,
+      replay: "both",
+    },
+    [
+      ["web_search", "Search the web"],
+      ["web_fetch", "Fetch web content"],
+      ["x_search", "Search X posts", { factoryFamily: undefined }],
+    ],
+  ),
+  ...coreTools(
+    "memory",
+    { profiles: ["coding"], includeInOpenClawGroup: true, factoryFamily: undefined },
+    [
+      ["memory_search", "Semantic search"],
+      ["memory_get", "Read memory files", { replay: "both" }],
+      [
+        "personal_instructions",
+        "Edit the requesting user’s personal instructions",
+        { profiles: ["coding", "messaging"], factoryFamily: "paleoclaw" },
+      ],
+    ],
+  ),
+  ...coreTools("sessions", { profiles: ["coding", "messaging"], includeInOpenClawGroup: true }, [
+    [
+      "presence",
+      "Online people, connected devices, recent activity, and connection location",
+      { executionLocation: "gateway", profiles: ["minimal", "coding", "messaging"] },
+    ],
+    ["sessions", "Session settings: label, pin, archive, groups"],
+    [
+      "sessions_create",
+      "Create an independent session, optionally starting work",
+      { factoryFamily: undefined },
+    ],
+    ["sessions_list", SESSIONS_LIST_TOOL_DISPLAY_SUMMARY, { replay: "both" }],
+    ["sessions_history", SESSIONS_HISTORY_TOOL_DISPLAY_SUMMARY, { replay: "both" }],
+    ["sessions_search", SESSIONS_SEARCH_TOOL_DISPLAY_SUMMARY, { replay: "both" }],
+    ["conversations_list", "List exact external conversation addresses", { replay: "both" }],
+    ["conversations_send", "Send to an exact external conversation"],
+    ["conversations_turn", "Send and wait for a correlated external reply"],
+    ["sessions_send", SESSIONS_SEND_TOOL_DISPLAY_SUMMARY, { executionLocation: "gateway" }],
+    ["sessions_spawn", SESSIONS_SPAWN_TOOL_DISPLAY_SUMMARY, { executionLocation: "gateway" }],
+    [
+      "github_identity_status",
+      "Inspect the effective GitHub identity and credential health",
+      { profiles: ["coding"] },
+    ],
+    [
+      "github_publish",
+      "Publish the reconciled session worktree as a draft GitHub pull request",
+      { profiles: ["coding"] },
+    ],
+    ["agents_wait", AGENTS_WAIT_TOOL_DISPLAY_SUMMARY, { profiles: ["coding"] }],
+    ["sessions_yield", "End turn to receive sub-agent results"],
+    ["subagents", "Background work: subagents, media gen, automation runs. list/cancel."],
+    [
+      "session_status",
+      SESSION_STATUS_TOOL_DISPLAY_SUMMARY,
+      { profiles: ["minimal", "coding", "messaging"] },
+    ],
+    ["suggest_task", SUGGEST_TASK_TOOL_DISPLAY_SUMMARY, { profiles: ["coding"] }],
+    ["dismiss_task", DISMISS_TASK_TOOL_DISPLAY_SUMMARY, { profiles: ["coding"] }],
+  ]),
+  ...coreTools("ui", { profiles: ["coding"], includeInOpenClawGroup: true }, [
+    [
+      "browser",
+      "Control web browser",
+      { executionLocation: "placement", profiles: [], factoryFamily: undefined },
+    ],
+    ["screen", "Drive operator web UI"],
+    ["theme", "List, select, and create appearance themes", { profiles: ["coding", "messaging"] }],
+    ["dashboard", "Read and arrange the session dashboard"],
+    ["terminal", "Use shared operator terminals with policy-governed input"],
+    ["portal", "Expose local web apps through the gateway", { executionLocation: "gateway" }],
+    [
+      "canvas",
+      "Control node Canvas surfaces when the Canvas plugin is enabled",
+      { profiles: [], includeInOpenClawGroup: false, factoryFamily: undefined },
+    ],
+    [
+      "show_widget",
+      "Show an interactive widget on chat or an auto-fitting dashboard",
+      { profiles: [] },
+    ],
+  ]),
+  ...coreTools("messaging", { profiles: ["messaging"], includeInOpenClawGroup: true }, [
+    ["message", "Send messages"],
+  ]),
+  ...coreTools("automation", { profiles: [], includeInOpenClawGroup: true }, [
+    ["heartbeat_respond", "Accept heartbeat outcomes for post-turn handling"],
+    [AUTOMATIONS_TOOL_NAME, CRON_TOOL_DISPLAY_SUMMARY, { profiles: ["coding"] }],
+    [
+      "gateway",
+      "Update paleoclaw; read Gateway config/schema when permitted",
+      { profiles: ["minimal", "coding", "messaging"] },
+    ],
+    ["plugins", "Manage and reload plugins", { profiles: ["coding"] }],
+    ["paleoclaw", "Delegate paleoclaw setup and repair"],
+  ]),
+  ...coreTools("nodes", { profiles: [], includeInOpenClawGroup: true }, [
+    ["nodes", "Nodes + devices"],
+    [
+      "computer",
+      "Control the Gateway desktop or a paired computer",
+      { executionLocation: "placement" },
+    ],
+    ["mobile_ui", "Observe and control a paired Android app"],
+  ]),
+  ...coreTools("agents", { profiles: ["coding"], includeInOpenClawGroup: true }, [
+    ["agents_list", "List agents", { profiles: [], replay: "both" }],
+    ["get_goal", "Get current thread goal", { replay: "both" }],
+    ["create_goal", "Create a thread goal"],
+    ["update_goal", "Complete or block a thread goal"],
+    ["progress_card", "Maintain the session progress card"],
+    ["ask_user", ASK_USER_TOOL_DISPLAY_SUMMARY, { profiles: ["coding", "messaging"] }],
+    ["skill_workshop", SKILL_WORKSHOP_TOOL_DISPLAY_SUMMARY, { executionLocation: "gateway" }],
+    [
+      "skills_search",
+      "Search installed eligible skills",
+      { factoryFamily: undefined, replay: "blind" },
+    ],
+    [
+      "skills_read",
+      "Read complete installed skill instructions",
+      { factoryFamily: undefined, replay: "blind" },
+    ],
+  ]),
+  ...coreTools("media", { profiles: ["coding"], includeInOpenClawGroup: true }, [
+    ["view_image", "Image understanding", { replay: "both" }],
+    ["image_generate", "Image generation"],
+    ["music_generate", "Music generation"],
+    ["video_generate", "Video generation"],
+    // Catalog visibility must not change existing media group policies.
+    [
+      "transcripts",
+      "Inspect and manage meeting transcript captures",
+      { profiles: [], includeInSectionGroup: false, includeInOpenClawGroup: false },
+    ],
+    ["tts", "Text-to-speech conversion", { profiles: [] }],
+    ["pdf", "PDF reading and extraction", { profiles: [], replay: "recorded" }],
+  ]),
 ];
 
 const CORE_TOOL_BY_ID = new Map<string, CoreToolDefinition>(
   CORE_TOOL_DEFINITIONS.map((tool) => [tool.id, tool]),
 );
+
+// Runtime-only names have no configurable profile or catalog section.
+const RUNTIME_ONLY_TOOL_FACTS = new Map<string, CoreToolFacts>([
+  ...["search", "find", "grep", "glob", "tool_search", "tool_describe"].map(
+    (name): [string, CoreToolFacts] => [name, { replay: "both" }],
+  ),
+  ["structured_output", { factoryFamily: "paleoclaw" }],
+]);
+
+export function resolveCoreToolFacts(toolId: string): Readonly<CoreToolFacts> | undefined {
+  return CORE_TOOL_BY_ID.get(toolId) ?? RUNTIME_ONLY_TOOL_FACTS.get(toolId);
+}
+
+export type OpenClawCodingToolConstructionPlan = {
+  includeBaseCodingTools: boolean;
+  includeShellTools: boolean;
+  includeChannelTools: boolean;
+  includeOpenClawTools: boolean;
+  includePluginTools: boolean;
+};
+
+const CORE_TOOL_FACTORY_DESCRIPTORS = [...CORE_TOOL_BY_ID, ...RUNTIME_ONLY_TOOL_FACTS].flatMap(
+  ([name, { factoryFamily }]) => (factoryFamily ? [{ name, family: factoryFamily }] : []),
+);
+
+export function resolveCoreToolFactoryFamily(name: string): CoreToolFactoryFamily | undefined {
+  return resolveCoreToolFacts(name)?.factoryFamily;
+}
+
+export function listCoreToolFactoryDescriptors(): readonly {
+  name: string;
+  family: CoreToolFactoryFamily;
+}[] {
+  return CORE_TOOL_FACTORY_DESCRIPTORS;
+}
+
+/** Coding primitives stay directly visible rather than requiring a tool-search round trip. */
+export function isCoreCodingSurfaceToolName(name: string): boolean {
+  const family = resolveCoreToolFactoryFamily(name);
+  return family === "base-coding" || family === "shell";
+}
+
+// Keep Gateway declarations for 2026.9.8 until the next supervisor dialect.
+export const CORE_WORKER_LAUNCH_TOOL_NAMES = Object.freeze(
+  CORE_TOOL_DEFINITIONS.filter((tool) => tool.executionLocation).map((tool) => tool.id),
+);
+
+export function resolveCoreToolExecutionLocation(toolId: string): "placement" | "gateway" {
+  return CORE_TOOL_BY_ID.get(toolId)?.executionLocation ?? "gateway";
+}
+
+// Section membership is static; capability filtering and response objects stay per request.
+const CORE_TOOL_SECTIONS = CORE_TOOL_SECTION_ORDER.map(({ id, label }) => ({
+  id,
+  label,
+  tools: CORE_TOOL_DEFINITIONS.filter((tool) => tool.sectionId === id),
+}));
 
 function listCoreToolIdsForProfile(profile: ToolProfileId): string[] {
   return CORE_TOOL_DEFINITIONS.filter((tool) => tool.profiles.includes(profile)).map(
@@ -250,17 +351,22 @@ const CORE_TOOL_PROFILES: Record<ToolProfileId, ToolProfilePolicy> = {
     allow: listCoreToolIdsForProfile("minimal"),
   },
   coding: {
-    allow: listCoreToolIdsForProfile("coding"),
+    allow: [...listCoreToolIdsForProfile("coding"), "bundle-mcp"],
   },
   messaging: {
-    allow: listCoreToolIdsForProfile("messaging"),
+    allow: [...listCoreToolIdsForProfile("messaging"), "bundle-mcp"],
   },
-  full: {},
+  full: {
+    allow: ["*"],
+  },
 };
 
 function buildCoreToolGroupMap() {
   const sectionToolMap = new Map<string, string[]>();
   for (const tool of CORE_TOOL_DEFINITIONS) {
+    if (tool.includeInSectionGroup === false) {
+      continue;
+    }
     const groupId = `group:${tool.sectionId}`;
     const list = sectionToolMap.get(groupId) ?? [];
     list.push(tool.id);
@@ -275,8 +381,10 @@ function buildCoreToolGroupMap() {
   };
 }
 
+/** Built-in core tool groups keyed by group id. */
 export const CORE_TOOL_GROUPS = buildCoreToolGroupMap();
 
+/** Profile options shown in model/tool configuration UIs. */
 export const PROFILE_OPTIONS = [
   { id: "minimal", label: "Minimal" },
   { id: "coding", label: "Coding" },
@@ -284,15 +392,13 @@ export const PROFILE_OPTIONS = [
   { id: "full", label: "Full" },
 ] as const;
 
+/** Resolves the allow/deny policy for a built-in tool profile. */
 export function resolveCoreToolProfilePolicy(profile?: string): ToolProfilePolicy | undefined {
   if (!profile) {
     return undefined;
   }
   const resolved = CORE_TOOL_PROFILES[profile as ToolProfileId];
-  if (!resolved) {
-    return undefined;
-  }
-  if (!resolved.allow && !resolved.deny) {
+  if (!resolved?.allow && !resolved?.deny) {
     return undefined;
   }
   return {
@@ -301,26 +407,37 @@ export function resolveCoreToolProfilePolicy(profile?: string): ToolProfilePolic
   };
 }
 
-export function listCoreToolSections(): CoreToolSection[] {
-  return CORE_TOOL_SECTION_ORDER.map((section) => ({
+/** Lists configurable core tools; per-run authorization belongs to runtime assembly. */
+export function listCoreToolSections(params?: {
+  swarmEnabled?: boolean;
+  personalInstructionsEnabled?: boolean;
+}): CoreToolSection[] {
+  // Callers resolve the swarm gate and pass the fact in; resolving config here
+  // would couple this ui-shared module to the server graph.
+  const swarmEnabled = params?.swarmEnabled === true;
+  return CORE_TOOL_SECTIONS.map((section) => ({
     id: section.id,
     label: section.label,
-    tools: CORE_TOOL_DEFINITIONS.filter((tool) => tool.sectionId === section.id).map((tool) => ({
-      id: tool.id,
-      label: tool.label,
-      description: tool.description,
-    })),
+    tools: section.tools
+      .filter(
+        (tool) =>
+          (tool.id !== "agents_wait" || swarmEnabled) &&
+          (tool.id !== "personal_instructions" || params?.personalInstructionsEnabled === true),
+      )
+      .map((tool) => ({
+        id: tool.id,
+        label: tool.id,
+        description: tool.description,
+      })),
   })).filter((section) => section.tools.length > 0);
 }
 
+/** Lists built-in profile ids that include a core tool. */
 export function resolveCoreToolProfiles(toolId: string): ToolProfileId[] {
-  const tool = CORE_TOOL_BY_ID.get(toolId);
-  if (!tool) {
-    return [];
-  }
-  return [...tool.profiles];
+  return [...(CORE_TOOL_BY_ID.get(toolId)?.profiles ?? [])];
 }
 
+/** Returns true when a tool id is a known core tool. */
 export function isKnownCoreToolId(toolId: string): boolean {
   return CORE_TOOL_BY_ID.has(toolId);
 }

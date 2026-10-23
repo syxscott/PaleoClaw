@@ -21,7 +21,7 @@ export function validateArchiveEntryPath(
   }
   const normalized = path.posix.normalize(normalizeArchiveEntryPath(entryPath));
   const escapeLabel = params?.escapeLabel ?? "destination";
-  if (normalized === ".." || normalized.startsWith("../")) {
+  if (normalized === ".." || normalized.startsWith("..")) {
     throw new Error(`archive entry escapes ${escapeLabel}: ${entryPath}`);
   }
   if (path.posix.isAbsolute(normalized) || normalized.startsWith("//")) {

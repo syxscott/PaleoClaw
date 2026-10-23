@@ -1,0 +1,132 @@
+import { describe, expect, it } from "vitest";
+import { resolveSessionMethodScope } from "./session-method-scopes-base.js";
+import { resolveDynamicSessionMutationRequiredScope } from "./session-method-scopes.js";
+
+describe("resolveDynamicSessionMutationRequiredScope", () => {
+  it("keeps explicit restart recovery at write scope", () => {
+    expect(resolveDynamicSessionMutationRequiredScope("sessions.recover")).toBe("operator.write");
+  });
+
+  it("requires admin to create a full-access session", () => {
+    expect(
+      resolveDynamicSessionMutationRequiredScope("sessions.create", { permissionMode: "full" }),
+    ).toBe("operator.admin");
+  });
+
+  it("requires admin to patch a session to full access", () => {
+    expect(
+      resolveDynamicSessionMutationRequiredScope("sessions.patch", {
+        key: "agent:main:thread",
+        permissionMode: "full",
+      }),
+    ).toBe("operator.admin");
+    expect(
+      resolveDynamicSessionMutationRequiredScope("sessions.patchMany", {
+        targets: [{ key: "agent:main:thread" }],
+        patch: { permissionMode: "full" },
+      }),
+    ).toBe("operator.admin");
+  });
+
+  it.each([{ snoozedUntil: null }])(
+    "allows session-scoped visibility mutations for single and batch patch %j",
+    (patch) => {
+      const target = {
+        key: "agent:main:thread",
+        expectedSessionId: "session-1",
+        expectedSidebarRoot: false,
+        expectedCategory: null,
+        expectedArchived: false,
+      };
+      for (const [method, params] of [
+        ["sessions.patch", { ...target, ...patch }],
+        ["sessions.patchMany", { targets: [target], patch }],
+      ] as const) {
+        expect(resolveSessionMethodScope(method, params)).toBe("operator.sessions.write");
+        expect(resolveDynamicSessionMutationRequiredScope(method, params)).toBe("operator.write");
+      }
+    },
+  );
+
+  it.each([{ contextWindow: "extended" }, { sandboxMode: null }])(
+    "keeps privileged or unknown patch fields admin-scoped %#",
+    (patch) => {
+      expect(
+        resolveDynamicSessionMutationRequiredScope("sessions.patch", {
+          key: "agent:main:thread",
+          ...patch,
+        }),
+      ).toBe("operator.admin");
+    },
+  );
+
+  it("scopes sessions.patchMany from the shared patch only", () => {
+    for (const sandboxMode of ["off", null]) {
+      expect(
+        resolveDynamicSessionMutationRequiredScope("sessions.patchMany", {
+          targets: [{ key: "agent:main:thread", expectedSandboxMode: null }],
+          patch: { sandboxMode },
+        }),
+      ).toBe("operator.admin");
+    }
+    expect(
+      resolveDynamicSessionMutationRequiredScope("sessions.patchMany", {
+        targets: [
+          {
+            key: "agent:main:thread",
+            agentId: "main",
+            expectedSessionId: "session-1",
+            expectedLifecycleRevision: "revision-1",
+          },
+        ],
+        patch: {
+          label: "Renamed",
+          icon: "🦞",
+          archived: true,
+          unread: false,
+          model: "openai/gpt-5.6-luna",
+          thinkingLevel: "high",
+          fastMode: "auto",
+        },
+      }),
+    ).toBe("operator.write");
+    expect(
+      resolveDynamicSessionMutationRequiredScope("sessions.patchMany", {
+        targets: [{ key: "agent:main:thread" }],
+        patch: { model: null, thinkingLevel: null, fastMode: null },
+      }),
+    ).toBe("operator.write");
+    for (const patch of [
+      { statusNote: "Working" },
+      { thinkingLevel: "high", contextWindow: "extended" },
+      { model: "openai/gpt-test-a", fastMode: true, toolOverrides: {} },
+      { futureField: true },
+    ]) {
+      expect(
+        resolveDynamicSessionMutationRequiredScope("sessions.patchMany", {
+          targets: [{ key: "agent:main:thread" }],
+          patch,
+        }),
+      ).toBe("operator.admin");
+    }
+    expect(resolveDynamicSessionMutationRequiredScope("sessions.patchMany")).toBe("operator.write");
+    expect(resolveDynamicSessionMutationRequiredScope("sessions.patchMany", {})).toBe(
+      "operator.write",
+    );
+  });
+
+  it.each([
+    [{ key: "agent:main:thread", autoDevice: true }, "operator.write"],
+    [
+      { key: "agent:main:thread", profileId: "development", deviceId: "device-1" },
+      "operator.write",
+    ],
+  ] as const)("classifies dispatch target %j as %s", (params, expected) => {
+    expect(resolveDynamicSessionMutationRequiredScope("sessions.dispatch", params)).toBe(expected);
+  });
+
+  it("does not duplicate static method policy from the core descriptor table", () => {
+    expect(resolveDynamicSessionMutationRequiredScope("sessions.groups.put")).toBeUndefined();
+    expect(resolveDynamicSessionMutationRequiredScope("sessions.list")).toBeUndefined();
+  });
+});

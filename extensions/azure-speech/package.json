@@ -1,0 +1,15 @@
+{
+  "name": "@paleoclaw/azure-speech",
+  "version": "2026.10.5",
+  "private": true,
+  "description": "paleoclaw Azure Speech plugin",
+  "type": "module",
+  "devDependencies": {
+    "@paleoclaw/plugin-sdk": "workspace:*"
+  },
+  "paleoclaw": {
+    "extensions": [
+      "./index.ts"
+    ]
+  }
+}

@@ -1,29 +1,25 @@
-import type { RuntimeEnv } from "paleoclaw/plugin-sdk/feishu";
-import { probeFeishu } from "./probe.js";
+import {
+  normalizeLowercaseStringOrEmpty,
+  normalizeOptionalString,
+} from "paleoclaw/plugin-sdk/string-coerce-runtime";
+import type { RuntimeEnv } from "../runtime-api.js";
+import { readCachedFeishuBotIdentity, writeCachedFeishuBotIdentity } from "./bot-identity-cache.js";
+import { resolveStartupProbeTimeoutMs } from "./monitor-startup-timeout.js";
+import { probeFeishu, registerFeishuAiAgent } from "./probe.js";
 import type { ResolvedFeishuAccount } from "./types.js";
 
-export const FEISHU_STARTUP_BOT_INFO_TIMEOUT_MS = 10_000;
+const FEISHU_STARTUP_BOT_INFO_TIMEOUT_MS = resolveStartupProbeTimeoutMs();
 
 type FetchBotOpenIdOptions = {
   runtime?: RuntimeEnv;
   abortSignal?: AbortSignal;
-  timeoutMs?: number;
+  allowCachedFallback?: boolean;
 };
 
 export type FeishuMonitorBotIdentity = {
   botOpenId?: string;
-  botName?: string;
+  source?: "provider" | "cache";
 };
-
-function isTimeoutErrorMessage(message: string | undefined): boolean {
-  return message?.toLowerCase().includes("timeout") || message?.toLowerCase().includes("timed out")
-    ? true
-    : false;
-}
-
-function isAbortErrorMessage(message: string | undefined): boolean {
-  return message?.toLowerCase().includes("aborted") ?? false;
-}
 
 export async function fetchBotIdentityForMonitor(
   account: ResolvedFeishuAccount,
@@ -33,32 +29,85 @@ export async function fetchBotIdentityForMonitor(
     return {};
   }
 
-  const timeoutMs = options.timeoutMs ?? FEISHU_STARTUP_BOT_INFO_TIMEOUT_MS;
+  const timeoutMs = FEISHU_STARTUP_BOT_INFO_TIMEOUT_MS;
   const result = await probeFeishu(account, {
     timeoutMs,
     abortSignal: options.abortSignal,
   });
-  if (result.ok) {
-    return { botOpenId: result.botOpenId, botName: result.botName };
+  const resultAppId = normalizeOptionalString(result.appId);
+  if (result.ok && resultAppId === account.appId) {
+    // AI-agent registration is provider metadata, not channel identity. Keep it
+    // best-effort so its quota or availability cannot suppress message ingress.
+    void registerFeishuAiAgent(account, { abortSignal: options.abortSignal })
+      .then((registration) => {
+        if (!registration.ok && registration.reason !== "aborted") {
+          const log = options.runtime?.log ?? console.log;
+          log(
+            `feishu[${account.accountId}]: AI-agent registration unavailable (${registration.reason}); continuing with standard bot identity`,
+          );
+        }
+      })
+      .catch(() => {
+        const log = options.runtime?.log ?? console.log;
+        log(
+          `feishu[${account.accountId}]: AI-agent registration failed unexpectedly; continuing with standard bot identity`,
+        );
+      });
+    try {
+      await writeCachedFeishuBotIdentity({
+        accountId: account.accountId,
+        appId: account.appId,
+        botOpenId: result.botOpenId,
+        botName: result.botName,
+      });
+    } catch {
+      options.runtime?.log?.(
+        `feishu[${account.accountId}]: bot identity cache write failed; continuing startup`,
+      );
+    }
+    return {
+      botOpenId: normalizeOptionalString(result.botOpenId),
+      source: "provider",
+    };
   }
 
-  if (options.abortSignal?.aborted || isAbortErrorMessage(result.error)) {
+  if (result.ok) {
+    const log = options.runtime?.log ?? console.log;
+    log(
+      `feishu[${account.accountId}]: bot info check returned identity for a different app; ignoring stale result`,
+    );
+  }
+
+  const probeError = normalizeLowercaseStringOrEmpty(result.error);
+  if (options.abortSignal?.aborted || probeError.includes("aborted")) {
     return {};
   }
 
-  if (isTimeoutErrorMessage(result.error)) {
+  if (probeError.includes("timeout") || probeError.includes("timed out")) {
     const error = options.runtime?.error ?? console.error;
     error(
-      `feishu[${account.accountId}]: bot info probe timed out after ${timeoutMs}ms; continuing startup`,
+      `feishu[${account.accountId}]: bot info check timed out after ${timeoutMs}ms; continuing startup`,
     );
   }
-  return {};
-}
-
-export async function fetchBotOpenIdForMonitor(
-  account: ResolvedFeishuAccount,
-  options: FetchBotOpenIdOptions = {},
-): Promise<string | undefined> {
-  const identity = await fetchBotIdentityForMonitor(account, options);
-  return identity.botOpenId;
+  if (options.allowCachedFallback === false) {
+    return {};
+  }
+  try {
+    const cached = await readCachedFeishuBotIdentity({
+      accountId: account.accountId,
+      appId: account.appId,
+    });
+    if (!cached) {
+      return {};
+    }
+    options.runtime?.log?.(
+      `feishu[${account.accountId}]: using cached provider-verified bot identity while the fresh check is unavailable`,
+    );
+    return { botOpenId: cached.botOpenId, source: "cache" };
+  } catch {
+    options.runtime?.log?.(
+      `feishu[${account.accountId}]: bot identity cache read failed; continuing without cached identity`,
+    );
+    return {};
+  }
 }

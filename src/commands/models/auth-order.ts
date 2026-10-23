@@ -1,45 +1,61 @@
-import { resolveAgentDir, resolveDefaultAgentId } from "../../agents/agent-scope.js";
+import { normalizeStringEntries } from "@paleoclaw/normalization-core/string-normalization";
 import {
   type AuthProfileStore,
-  ensureAuthProfileStore,
+  externalCliDiscoveryForProviderAuth,
+  ensureAuthProfileStoreAsync,
+  resolveAuthStatePathForDisplay,
   setAuthProfileOrder,
 } from "../../agents/auth-profiles.js";
-import { normalizeProviderId } from "../../agents/model-selection.js";
-import type { RuntimeEnv } from "../../runtime.js";
-import { normalizeStringEntries } from "../../shared/string-normalization.js";
+import { findNormalizedProviderValue, normalizeProviderId } from "../../agents/model-selection.js";
+import { resolveProviderIdForAuth } from "../../agents/provider-auth-aliases.js";
+import { formatCliCommand } from "../../cli/command-format.js";
+import type { OpenClawConfig } from "../../config/types.openclaw.js";
+import { type RuntimeEnv, writeRuntimeJson } from "../../runtime.js";
 import { shortenHomePath } from "../../utils.js";
+import { refreshRunningGatewayAuthState } from "./auth-refresh.js";
 import { loadModelsConfig } from "./load-config.js";
-import { resolveKnownAgentId } from "./shared.js";
+import { resolveModelsTargetAgent } from "./shared.js";
 
-function resolveTargetAgent(
-  cfg: Awaited<ReturnType<typeof loadModelsConfig>>,
-  raw?: string,
-): {
-  agentId: string;
-  agentDir: string;
-} {
-  const agentId = resolveKnownAgentId({ cfg, rawAgentId: raw }) ?? resolveDefaultAgentId(cfg);
-  const agentDir = resolveAgentDir(cfg, agentId);
-  return { agentId, agentDir };
+function describeOrder(store: AuthProfileStore, provider: string, cfg: OpenClawConfig): string[] {
+  const authProvider = resolveProviderIdForAuth(provider, { config: cfg });
+  const canonical = findNormalizedProviderValue(store.order, authProvider);
+  if (canonical !== undefined) {
+    return canonical;
+  }
+  return (
+    Object.entries(store.order ?? {})
+      .filter(([key]) => resolveProviderIdForAuth(key, { config: cfg }) === authProvider)
+      .toSorted(([left], [right]) => left.localeCompare(right))[0]?.[1] ?? []
+  );
 }
 
-function describeOrder(store: AuthProfileStore, provider: string): string[] {
-  const providerKey = normalizeProviderId(provider);
-  const order = store.order?.[providerKey];
-  return Array.isArray(order) ? order : [];
+function describeOrderFallback(cfg: OpenClawConfig, provider: string): string {
+  const authProvider = resolveProviderIdForAuth(provider, { config: cfg });
+  const configuredOrder =
+    findNormalizedProviderValue(cfg.auth?.order, authProvider) ??
+    findNormalizedProviderValue(cfg.auth?.order, provider);
+  if (configuredOrder === undefined) {
+    return "selecting automatically";
+  }
+  return configuredOrder.length > 0
+    ? `using order from config: ${configuredOrder.join(", ")}`
+    : "config selects no profiles";
 }
 
 async function resolveAuthOrderContext(
   opts: { provider: string; agent?: string },
   runtime: RuntimeEnv,
+  kind: "read" | "mutation",
 ) {
   const rawProvider = opts.provider?.trim();
   if (!rawProvider) {
-    throw new Error("Missing --provider.");
+    throw new Error(
+      `Missing --provider. Run ${formatCliCommand("paleoclaw models auth list")} to see saved provider profiles.`,
+    );
   }
   const provider = normalizeProviderId(rawProvider);
   const cfg = await loadModelsConfig({ commandName: "models auth-order", runtime });
-  const { agentId, agentDir } = resolveTargetAgent(cfg, opts.agent);
+  const { agentId, agentDir } = resolveModelsTargetAgent(cfg, opts.agent, { kind });
   return { cfg, agentId, agentDir, provider };
 }
 
@@ -47,89 +63,89 @@ export async function modelsAuthOrderGetCommand(
   opts: { provider: string; agent?: string; json?: boolean },
   runtime: RuntimeEnv,
 ) {
-  const { agentId, agentDir, provider } = await resolveAuthOrderContext(opts, runtime);
-  const store = ensureAuthProfileStore(agentDir, {
-    allowKeychainPrompt: false,
+  const { cfg, agentId, agentDir, provider } = await resolveAuthOrderContext(opts, runtime, "read");
+  const store = await ensureAuthProfileStoreAsync(agentDir, {
+    externalCli: externalCliDiscoveryForProviderAuth({ cfg, provider }),
   });
-  const order = describeOrder(store, provider);
+  const order = describeOrder(store, provider, cfg);
 
   if (opts.json) {
-    runtime.log(
-      JSON.stringify(
-        {
-          agentId,
-          agentDir,
-          provider,
-          authStorePath: shortenHomePath(`${agentDir}/auth-profiles.json`),
-          order: order.length > 0 ? order : null,
-        },
-        null,
-        2,
-      ),
-    );
+    writeRuntimeJson(runtime, {
+      agentId,
+      agentDir,
+      provider,
+      authStatePath: shortenHomePath(resolveAuthStatePathForDisplay(agentDir)),
+      order: order.length > 0 ? order : null,
+    });
     return;
   }
 
   runtime.log(`Agent: ${agentId}`);
   runtime.log(`Provider: ${provider}`);
-  runtime.log(`Auth file: ${shortenHomePath(`${agentDir}/auth-profiles.json`)}`);
-  runtime.log(order.length > 0 ? `Order override: ${order.join(", ")}` : "Order override: (none)");
+  runtime.log(`Auth state store: ${shortenHomePath(resolveAuthStatePathForDisplay(agentDir))}`);
+  runtime.log(
+    order.length > 0
+      ? `Auth profile order override: ${order.join(", ")}`
+      : `Auth profile order override: none (${describeOrderFallback(cfg, provider)})`,
+  );
 }
 
-export async function modelsAuthOrderClearCommand(
-  opts: { provider: string; agent?: string },
+export async function modelsAuthOrderUpdateCommand(
+  opts: { provider: string; agent?: string; order: string[] | null },
   runtime: RuntimeEnv,
 ) {
-  const { agentId, agentDir, provider } = await resolveAuthOrderContext(opts, runtime);
-  const updated = await setAuthProfileOrder({
-    agentDir,
-    provider,
-    order: null,
-  });
-  if (!updated) {
-    throw new Error("Failed to update auth-profiles.json (lock busy?).");
+  const context = await resolveAuthOrderContext(opts, runtime, "mutation");
+  const { cfg, agentId, agentDir, provider } = context;
+
+  const store =
+    opts.order === null
+      ? null
+      : await ensureAuthProfileStoreAsync(agentDir, {
+          externalCli: externalCliDiscoveryForProviderAuth({ cfg, provider }),
+        });
+  const providerKey = resolveProviderIdForAuth(provider, { config: cfg });
+  const requested = opts.order === null ? null : normalizeStringEntries(opts.order ?? []);
+  if (requested?.length === 0) {
+    throw new Error(
+      `Missing profile ids. Run ${formatCliCommand("paleoclaw models auth list --provider " + provider)} to choose one or more profile ids.`,
+    );
   }
 
-  runtime.log(`Agent: ${agentId}`);
-  runtime.log(`Provider: ${provider}`);
-  runtime.log("Cleared per-agent order override.");
-}
-
-export async function modelsAuthOrderSetCommand(
-  opts: { provider: string; agent?: string; order: string[] },
-  runtime: RuntimeEnv,
-) {
-  const { agentId, agentDir, provider } = await resolveAuthOrderContext(opts, runtime);
-
-  const store = ensureAuthProfileStore(agentDir, {
-    allowKeychainPrompt: false,
-  });
-  const providerKey = provider;
-  const requested = normalizeStringEntries(opts.order ?? []);
-  if (requested.length === 0) {
-    throw new Error("Missing profile ids. Provide one or more profile ids.");
-  }
-
-  for (const profileId of requested) {
-    const cred = store.profiles[profileId];
+  for (const profileId of requested ?? []) {
+    const cred = store?.profiles[profileId];
     if (!cred) {
-      throw new Error(`Auth profile "${profileId}" not found in ${agentDir}.`);
+      throw new Error(
+        `Auth profile "${profileId}" not found in ${shortenHomePath(agentDir)}. Run ${formatCliCommand("paleoclaw models auth list --provider " + provider)} to see saved profiles.`,
+      );
     }
-    if (normalizeProviderId(cred.provider) !== providerKey) {
+    if (
+      resolveProviderIdForAuth(cred.provider, { config: cfg, storedCredential: true }) !==
+      providerKey
+    ) {
       throw new Error(`Auth profile "${profileId}" is for ${cred.provider}, not ${provider}.`);
     }
   }
 
   const updated = await setAuthProfileOrder({
     agentDir,
-    provider,
+    provider: providerKey,
     order: requested,
   });
   if (!updated) {
-    throw new Error("Failed to update auth-profiles.json (lock busy?).");
+    const command = requested
+      ? `paleoclaw models auth order set --provider ${provider} <profileIds...>`
+      : `paleoclaw models auth order clear --provider ${provider}`;
+    throw new Error(
+      `Failed to update auth state; the auth state lock may be busy. Wait a moment and rerun ${formatCliCommand(command)}.`,
+    );
   }
 
   runtime.log(`Agent: ${agentId}`);
   runtime.log(`Provider: ${provider}`);
-  runtime.log(`Order override: ${describeOrder(updated, provider).join(", ")}`);
+  runtime.log(
+    requested
+      ? `Auth profile order override: ${describeOrder(updated, provider, cfg).join(", ")}`
+      : `Auth profile order override cleared; ${describeOrderFallback(cfg, provider)}.`,
+  );
+  await refreshRunningGatewayAuthState(agentId, "update", runtime);
 }

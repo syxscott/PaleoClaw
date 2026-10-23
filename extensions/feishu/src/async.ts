@@ -1,7 +1,11 @@
+import { resolveTimerTimeoutMs } from "paleoclaw/plugin-sdk/number-runtime";
+import { sleepWithAbort } from "paleoclaw/plugin-sdk/runtime-env";
+import { racePromiseWithAbortSignal, raceWithTimeout } from "paleoclaw/plugin-sdk/time-runtime";
+
 const RACE_TIMEOUT = Symbol("race-timeout");
 const RACE_ABORT = Symbol("race-abort");
 
-export type RaceWithTimeoutAndAbortResult<T> =
+type RaceWithTimeoutAndAbortResult<T> =
   | { status: "resolved"; value: T }
   | { status: "timeout" }
   | { status: "aborted" };
@@ -21,29 +25,16 @@ export async function raceWithTimeoutAndAbort<T>(
     return { status: "resolved", value: await promise };
   }
 
-  let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
-  let abortHandler: (() => void) | undefined;
-  const contenders: Array<Promise<T | typeof RACE_TIMEOUT | typeof RACE_ABORT>> = [promise];
-
-  if (options.timeoutMs !== undefined) {
-    contenders.push(
-      new Promise((resolve) => {
-        timeoutHandle = setTimeout(() => resolve(RACE_TIMEOUT), options.timeoutMs);
-      }),
-    );
-  }
-
-  if (options.abortSignal) {
-    contenders.push(
-      new Promise((resolve) => {
-        abortHandler = () => resolve(RACE_ABORT);
-        options.abortSignal?.addEventListener("abort", abortHandler, { once: true });
-      }),
-    );
-  }
-
   try {
-    const result = await Promise.race(contenders);
+    const result =
+      options.timeoutMs === undefined
+        ? await racePromiseWithAbortSignal(promise, options.abortSignal, () => RACE_ABORT)
+        : await raceWithTimeout<T, typeof RACE_TIMEOUT | typeof RACE_ABORT>(
+            promise,
+            resolveTimerTimeoutMs(options.timeoutMs, 1),
+            () => RACE_TIMEOUT,
+            { signal: options.abortSignal, onAbort: () => RACE_ABORT },
+          );
     if (result === RACE_TIMEOUT) {
       return { status: "timeout" };
     }
@@ -51,12 +42,29 @@ export async function raceWithTimeoutAndAbort<T>(
       return { status: "aborted" };
     }
     return { status: "resolved", value: result };
-  } finally {
-    if (timeoutHandle) {
-      clearTimeout(timeoutHandle);
+  } catch (error) {
+    if (error === RACE_ABORT) {
+      return { status: "aborted" };
     }
-    if (abortHandler) {
-      options.abortSignal?.removeEventListener("abort", abortHandler);
-    }
+    throw error;
   }
+}
+
+export function waitForAbortableDelay(
+  delayMs: number,
+  abortSignal?: AbortSignal,
+): Promise<boolean> {
+  if (abortSignal?.aborted) {
+    return Promise.resolve(false);
+  }
+
+  return sleepWithAbort(resolveTimerTimeoutMs(delayMs, 1), abortSignal, { ref: false }).then(
+    () => true,
+    (error: unknown) => {
+      if (error instanceof Error && error.name === "AbortError") {
+        return false;
+      }
+      throw error;
+    },
+  );
 }

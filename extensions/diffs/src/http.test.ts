@@ -1,257 +1,109 @@
-import fs from "node:fs/promises";
-import type { IncomingMessage } from "node:http";
-import os from "node:os";
+// Diffs plugin module implements http tests.
+import { createServer } from "node:http";
+import type { Server } from "node:http";
 import path from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { createMockServerResponse } from "../../../src/test-utils/mock-http-response.js";
-import { createDiffsHttpHandler } from "./http.js";
-import { DiffArtifactStore } from "./store.js";
+import { beforeAll, describe, expect, it } from "vitest";
+import {
+  createDiffStoreHarness,
+  ensureCuratedViewerRuntimeForTests,
+  registerDiffsHttpRouteForTest,
+} from "./test-helpers.js";
 
-describe("createDiffsHttpHandler", () => {
-  let rootDir: string;
-  let store: DiffArtifactStore;
+const VIEWER_RUNTIME_PATH = "/plugins/diffs/assets/viewer-runtime.js";
+const UNKNOWN_ASSET_PATH = "/plugins/diffs/assets/does-not-exist.js";
+const UNKNOWN_VIEW_PATH = "/plugins/diffs/view/not-an-artifact/not-a-token";
 
-  beforeEach(async () => {
-    rootDir = await fs.mkdtemp(path.join(os.tmpdir(), "paleoclaw-diffs-http-"));
-    store = new DiffArtifactStore({ rootDir });
-  });
-
-  afterEach(async () => {
-    await fs.rm(rootDir, { recursive: true, force: true });
-  });
-
-  it("serves a stored diff document", async () => {
-    const artifact = await store.createArtifact({
-      html: "<html>viewer</html>",
-      title: "Demo",
-      inputKind: "before_after",
-      fileCount: 1,
-    });
-
-    const handler = createDiffsHttpHandler({ store });
-    const res = createMockServerResponse();
-    const handled = await handler(
-      localReq({
-        method: "GET",
-        url: artifact.viewerPath,
-      }),
-      res,
-    );
-
-    expect(handled).toBe(true);
-    expect(res.statusCode).toBe(200);
-    expect(res.body).toBe("<html>viewer</html>");
-    expect(res.getHeader("content-security-policy")).toContain("default-src 'none'");
-  });
-
-  it("rejects invalid tokens", async () => {
-    const artifact = await store.createArtifact({
-      html: "<html>viewer</html>",
-      title: "Demo",
-      inputKind: "before_after",
-      fileCount: 1,
-    });
-
-    const handler = createDiffsHttpHandler({ store });
-    const res = createMockServerResponse();
-    const handled = await handler(
-      localReq({
-        method: "GET",
-        url: artifact.viewerPath.replace(artifact.token, "bad-token"),
-      }),
-      res,
-    );
-
-    expect(handled).toBe(true);
-    expect(res.statusCode).toBe(404);
-  });
-
-  it("rejects malformed artifact ids before reading from disk", async () => {
-    const handler = createDiffsHttpHandler({ store });
-    const res = createMockServerResponse();
-    const handled = await handler(
-      localReq({
-        method: "GET",
-        url: "/plugins/diffs/view/not-a-real-id/not-a-real-token",
-      }),
-      res,
-    );
-
-    expect(handled).toBe(true);
-    expect(res.statusCode).toBe(404);
-  });
-
-  it("serves the shared viewer asset", async () => {
-    const handler = createDiffsHttpHandler({ store });
-    const res = createMockServerResponse();
-    const handled = await handler(
-      localReq({
-        method: "GET",
-        url: "/plugins/diffs/assets/viewer.js",
-      }),
-      res,
-    );
-
-    expect(handled).toBe(true);
-    expect(res.statusCode).toBe(200);
-    expect(String(res.body)).toContain("/plugins/diffs/assets/viewer-runtime.js?v=");
-  });
-
-  it("serves the shared viewer runtime asset", async () => {
-    const handler = createDiffsHttpHandler({ store });
-    const res = createMockServerResponse();
-    const handled = await handler(
-      localReq({
-        method: "GET",
-        url: "/plugins/diffs/assets/viewer-runtime.js",
-      }),
-      res,
-    );
-
-    expect(handled).toBe(true);
-    expect(res.statusCode).toBe(200);
-    expect(String(res.body)).toContain("openclawDiffsReady");
-  });
-
-  it("blocks non-loopback viewer access by default", async () => {
-    const artifact = await store.createArtifact({
-      html: "<html>viewer</html>",
-      title: "Demo",
-      inputKind: "before_after",
-      fileCount: 1,
-    });
-
-    const handler = createDiffsHttpHandler({ store });
-    const res = createMockServerResponse();
-    const handled = await handler(
-      remoteReq({
-        method: "GET",
-        url: artifact.viewerPath,
-      }),
-      res,
-    );
-
-    expect(handled).toBe(true);
-    expect(res.statusCode).toBe(404);
-  });
-
-  it("blocks loopback requests that carry proxy forwarding headers by default", async () => {
-    const artifact = await store.createArtifact({
-      html: "<html>viewer</html>",
-      title: "Demo",
-      inputKind: "before_after",
-      fileCount: 1,
-    });
-
-    const handler = createDiffsHttpHandler({ store });
-    const res = createMockServerResponse();
-    const handled = await handler(
-      localReq({
-        method: "GET",
-        url: artifact.viewerPath,
-        headers: { "x-forwarded-for": "203.0.113.10" },
-      }),
-      res,
-    );
-
-    expect(handled).toBe(true);
-    expect(res.statusCode).toBe(404);
-  });
-
-  it("allows remote access when allowRemoteViewer is enabled", async () => {
-    const artifact = await store.createArtifact({
-      html: "<html>viewer</html>",
-      title: "Demo",
-      inputKind: "before_after",
-      fileCount: 1,
-    });
-
-    const handler = createDiffsHttpHandler({ store, allowRemoteViewer: true });
-    const res = createMockServerResponse();
-    const handled = await handler(
-      remoteReq({
-        method: "GET",
-        url: artifact.viewerPath,
-      }),
-      res,
-    );
-
-    expect(handled).toBe(true);
-    expect(res.statusCode).toBe(200);
-    expect(res.body).toBe("<html>viewer</html>");
-  });
-
-  it("allows proxied loopback requests when allowRemoteViewer is enabled", async () => {
-    const artifact = await store.createArtifact({
-      html: "<html>viewer</html>",
-      title: "Demo",
-      inputKind: "before_after",
-      fileCount: 1,
-    });
-
-    const handler = createDiffsHttpHandler({ store, allowRemoteViewer: true });
-    const res = createMockServerResponse();
-    const handled = await handler(
-      localReq({
-        method: "GET",
-        url: artifact.viewerPath,
-        headers: { "x-forwarded-for": "203.0.113.10" },
-      }),
-      res,
-    );
-
-    expect(handled).toBe(true);
-    expect(res.statusCode).toBe(200);
-    expect(res.body).toBe("<html>viewer</html>");
-  });
-
-  it("rate-limits repeated remote misses", async () => {
-    const handler = createDiffsHttpHandler({ store, allowRemoteViewer: true });
-
-    for (let i = 0; i < 40; i++) {
-      const miss = createMockServerResponse();
-      await handler(
-        remoteReq({
-          method: "GET",
-          url: "/plugins/diffs/view/aaaaaaaaaaaaaaaaaaaa/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
-        }),
-        miss,
-      );
-      expect(miss.statusCode).toBe(404);
-    }
-
-    const limited = createMockServerResponse();
-    await handler(
-      remoteReq({
-        method: "GET",
-        url: "/plugins/diffs/view/aaaaaaaaaaaaaaaaaaaa/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
-      }),
-      limited,
-    );
-    expect(limited.statusCode).toBe(429);
-  });
+beforeAll(async () => {
+  // viewer-runtime.js is ignored generated output; build the fixture before
+  // serving assets in a clean checkout.
+  await ensureCuratedViewerRuntimeForTests();
 });
 
-function localReq(input: {
-  method: string;
-  url: string;
-  headers?: Record<string, string>;
-}): IncomingMessage {
-  return {
-    ...input,
-    headers: input.headers ?? {},
-    socket: { remoteAddress: "127.0.0.1" },
-  } as unknown as IncomingMessage;
+type ServedResponse = {
+  status: number;
+  contentLength: string | null;
+  bodyBytes: number;
+};
+
+async function withDiffsServer(run: (base: string) => Promise<void>): Promise<void> {
+  const fixture = await createDiffStoreHarness("paleoclaw-diffs-http-");
+  try {
+    const handler = registerDiffsHttpRouteForTest({
+      stateDir: path.join(path.dirname(fixture.rootDir), "state"),
+    });
+    const server: Server = createServer((req, res) => {
+      void Promise.resolve(handler(req, res)).then((handled) => {
+        if (!handled) {
+          res.statusCode = 404;
+          res.end();
+        }
+      });
+    });
+    await new Promise<void>((resolve) => {
+      server.listen(0, "127.0.0.1", resolve);
+    });
+    try {
+      const address = server.address();
+      if (!address || typeof address === "string") {
+        throw new Error("expected TCP server address");
+      }
+      await run(`http://127.0.0.1:${address.port}`);
+    } finally {
+      await new Promise<void>((resolve, reject) => {
+        server.close((error) => (error ? reject(error) : resolve()));
+      });
+    }
+  } finally {
+    await fixture.cleanup();
+  }
 }
 
-function remoteReq(input: {
-  method: string;
-  url: string;
-  headers?: Record<string, string>;
-}): IncomingMessage {
+async function fetchServed(
+  base: string,
+  requestPath: string,
+  method = "GET",
+): Promise<ServedResponse> {
+  const response = await fetch(`${base}${requestPath}`, { method });
+  const body = await response.arrayBuffer();
   return {
-    ...input,
-    headers: input.headers ?? {},
-    socket: { remoteAddress: "203.0.113.10" },
-  } as unknown as IncomingMessage;
+    status: response.status,
+    contentLength: response.headers.get("content-length"),
+    bodyBytes: body.byteLength,
+  };
 }
+
+describe("diffs viewer http handler", () => {
+  it("sends byte-accurate Content-Length on HEAD asset responses", async () => {
+    await withDiffsServer(async (base) => {
+      const get = await fetchServed(base, VIEWER_RUNTIME_PATH);
+      const head = await fetchServed(base, VIEWER_RUNTIME_PATH, "HEAD");
+
+      expect(get.status).toBe(200);
+      expect(get.bodyBytes).toBeGreaterThan(0);
+      expect(get.contentLength).toBe(String(get.bodyBytes));
+      expect(head.status).toBe(200);
+      expect(head.bodyBytes).toBe(0);
+      expect(head.contentLength).toBe(String(get.bodyBytes));
+    });
+  });
+
+  it("sends Content-Length on HEAD 404 responses for missing assets", async () => {
+    await withDiffsServer(async (base) => {
+      const head = await fetchServed(base, UNKNOWN_ASSET_PATH, "HEAD");
+
+      expect(head.status).toBe(404);
+      expect(head.bodyBytes).toBe(0);
+      expect(head.contentLength).toBe(String(Buffer.byteLength("Asset not found")));
+    });
+  });
+
+  it("sends Content-Length on HEAD 404 responses for unknown diff views", async () => {
+    await withDiffsServer(async (base) => {
+      const head = await fetchServed(base, UNKNOWN_VIEW_PATH, "HEAD");
+
+      expect(head.status).toBe(404);
+      expect(head.bodyBytes).toBe(0);
+      expect(head.contentLength).toBe(String(Buffer.byteLength("Diff not found")));
+    });
+  });
+});

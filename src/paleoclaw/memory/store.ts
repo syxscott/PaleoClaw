@@ -5,7 +5,13 @@
 
 import * as fs from "fs";
 import * as path from "path";
-import { paleoclawHome, atomicWriteFile, ensurePrivateDir } from "../paths.js";
+import {
+  paleoclawHome,
+  atomicWriteFile,
+  ensurePrivateDir,
+  fileLockPath,
+  withFileLock,
+} from "../paths.js";
 import { SessionProfile, loadSessionProfile, memoryContext } from "../profile/layers.js";
 import { bestMatches, SearchItem } from "./retrieval.js";
 
@@ -176,6 +182,122 @@ function chatDayKey(event: Date): string {
   return event.toISOString().slice(0, 10).replace(/-/g, "");
 }
 
+/** Chat day-file name pattern: chat-YYYYMMDD-<safeSessionId>.json */
+const CHAT_DAY_FILE_RE = /^chat-(\d{8})-.+\.json$/;
+
+/**
+ * Parse a YYYYMMDD day key into calendar parts, or null when the key is not
+ * a real calendar date (e.g. "99999999" or "20260230").
+ */
+function parseDayKey(dayKey: string): { year: number; month: number; day: number } | null {
+  if (!/^\d{8}$/.test(dayKey)) {
+    return null;
+  }
+  const year = Number(dayKey.slice(0, 4));
+  const month = Number(dayKey.slice(4, 6));
+  const day = Number(dayKey.slice(6, 8));
+  if (month < 1 || month > 12 || day < 1 || day > 31) {
+    return null;
+  }
+  const stamp = Date.UTC(year, month - 1, day);
+  if (!Number.isFinite(stamp)) {
+    return null;
+  }
+  const back = new Date(stamp);
+  if (
+    back.getUTCFullYear() !== year ||
+    back.getUTCMonth() !== month - 1 ||
+    back.getUTCDate() !== day
+  ) {
+    return null;
+  }
+  return { year, month, day };
+}
+
+/** Shift a YYYYMMDD day key by whole days (negative shifts into the past). */
+function shiftDayKey(dayKey: string, deltaDays: number): string {
+  const parts = parseDayKey(dayKey);
+  if (!parts) {
+    return dayKey;
+  }
+  const shifted = new Date(
+    Date.UTC(parts.year, parts.month - 1, parts.day) + deltaDays * 86_400_000,
+  );
+  return shifted.toISOString().slice(0, 10).replace(/-/g, "");
+}
+
+// Retention for chat day digests: files older than this are swept when a new
+// turn is written. Chat digests are conversation history rather than task
+// memories, so archiveShort deliberately skips them — without a retention
+// window they would accumulate on disk forever.
+const CHAT_RETENTION_DAYS = 90;
+// Retrieval window (calendar days) and item cap for the chat corpus.
+const CHAT_RETRIEVAL_WINDOW_DAYS = 30;
+const CHAT_RETRIEVAL_MAX_ITEMS = 30;
+// How long a lock file is considered abandoned (e.g. the writer crashed) and
+// may be broken. The wait timeout itself lives in the shared `withFileLock`
+// primitive in `paths.ts`.
+const CHAT_LOCK_STALE_MS = 30_000;
+
+/**
+ * Path of the lock file that serializes updates to one chat day file.
+ * Exported so callers/tests can reason about the same convention.
+ */
+export function chatDayLockPath(filePath: string): string {
+  return fileLockPath(filePath);
+}
+
+/**
+ * Chat day files (`chat-YYYYMMDD-<safeSessionId>.json`) live in the same
+ * directory as task memories but hold a ChatDailyRecord, not a TaskMemory.
+ * They are conversation digests, never task entries, so every task-shaped
+ * reader must skip them — otherwise counts inflate, listings render rows of
+ * `undefined`, and search feeds a constant string into the ranker.
+ */
+function isChatDayFile(name: string): boolean {
+  return name.startsWith("chat-") && name.endsWith(".json");
+}
+
+/** Task memories are the only `.json` files in shortDir that are not chat digests. */
+function isTaskFile(name: string): boolean {
+  return name.endsWith(".json") && !isChatDayFile(name);
+}
+
+/**
+ * Shape guard for on-disk task records. A file can be valid JSON and still
+ * not be a TaskMemory (chat digests, stray backups, truncated writes), so
+ * listing paths must verify the discriminator before treating a row as a task.
+ */
+function isTaskMemoryShape(value: unknown): value is TaskMemory {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return false;
+  }
+  const candidate = value as Partial<TaskMemory>;
+  return (
+    typeof candidate.taskId === "string" &&
+    candidate.taskId.length > 0 &&
+    typeof candidate.command === "string"
+  );
+}
+
+/**
+ * Normalize a caller-supplied row limit.
+ *
+ * The two list paths previously disagreed on garbage input: `rows.slice(0,
+ * NaN)` yields `[]` (silently empty) while `rows.length >= NaN` is never
+ * true (silently *everything*). A negative limit is just as bad — `slice(0,
+ * -1)` drops the newest rows instead of clamping. Normalizing once here makes
+ * every list path behave identically; the CLI still rejects bad input up
+ * front with a message.
+ */
+function normalizeLimit(value: number | undefined, fallback: number): number {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 1) {
+    return fallback;
+  }
+  return Math.floor(parsed);
+}
+
 export class TaskMemoryStore {
   private root: string;
   private shortDir: string;
@@ -314,6 +436,34 @@ export class TaskMemoryStore {
     return parts.filter((x) => x && x.trim()).join("\n");
   }
 
+  /**
+   * Search text for a chat day digest. Chat records are not TaskMemory-shaped,
+   * so they must never go through buildSearchText() — that would index only the
+   * constant source label and make every digest a permanent match for the word
+   * "short". Index the actual turn content instead, plus the intents/modes
+   * recorded for the day.
+   */
+  private buildChatSearchText(record: ChatDailyRecord): string {
+    const digest = record?.chat_digest;
+    if (!digest || typeof digest !== "object") {
+      return "";
+    }
+    const parts: string[] = [
+      "chat",
+      record.sessionId || "",
+      record.day || "",
+      ...(Array.isArray(digest.intents) ? digest.intents : []),
+      ...(Array.isArray(digest.modes) ? digest.modes : []),
+    ];
+    for (const turn of Array.isArray(digest.recent_turns) ? digest.recent_turns : []) {
+      if (!turn || typeof turn !== "object") {
+        continue;
+      }
+      parts.push(turn.user || "", turn.assistant || "");
+    }
+    return parts.filter((x) => x && x.trim()).join("\n");
+  }
+
   private memoryProfileSnapshot(): Record<string, unknown> {
     if (!this.sessionProfile) {
       return {};
@@ -365,12 +515,26 @@ export class TaskMemoryStore {
   }
 
   /**
+   * Run `fn` while holding the exclusive lock for `filePath`.
+   *
+   * Delegates to the shared primitive in `paths.ts` so the memory store and
+   * the JSON session store use the same cross-process lock convention.
+   */
+  private withChatFileLock<T>(filePath: string, fn: () => T): T {
+    return withFileLock(filePath, fn);
+  }
+
+  /**
    * Fold one chat turn into the session's day file
    * (chat-YYYYMMDD-<safeSessionId>.json in the short-term dir). Only a
    * rolling digest is kept — recent_turns holds at most the last 8 turns
    * (user text clipped to 160 chars, assistant to 200, as in GeoClaw) and
    * intents/modes the last 10 distinct values — so full transcripts are
    * never persisted. Ported from GeoClaw's record_chat_turn.
+   *
+   * The read-merge-write runs under an exclusive lock: without it two
+   * processes writing the same (day, session) would both read the same base
+   * digest and the later writer would drop the earlier turn.
    */
   recordChatTurn(input: {
     sessionId: string;
@@ -388,84 +552,191 @@ export class TaskMemoryStore {
     const intent = input.intent || "chat";
     const mode = input.mode || "fallback";
 
-    let record: ChatDailyRecord | null = null;
-    try {
-      const parsed = JSON.parse(fs.readFileSync(filePath, "utf-8")) as ChatDailyRecord;
-      if (parsed && typeof parsed === "object") {
-        record = parsed;
+    this.withChatFileLock(filePath, () => {
+      let record: ChatDailyRecord | null = null;
+      try {
+        const parsed = JSON.parse(fs.readFileSync(filePath, "utf-8")) as ChatDailyRecord;
+        if (parsed && typeof parsed === "object") {
+          record = parsed;
+        }
+      } catch {
+        // Missing or corrupt day file: start a fresh digest (GeoClaw behavior).
+        record = null;
       }
-    } catch {
-      // Missing or corrupt day file: start a fresh digest (GeoClaw behavior).
-      record = null;
-    }
 
-    if (!record) {
-      record = { sessionId: sid, day, chat_digest: emptyChatDigest() };
-    }
-    record.sessionId = sid;
-    record.day = day;
+      if (!record) {
+        record = { sessionId: sid, day, chat_digest: emptyChatDigest() };
+      }
+      record.sessionId = sid;
+      record.day = day;
 
-    const digest =
-      record.chat_digest && typeof record.chat_digest === "object"
-        ? record.chat_digest
-        : emptyChatDigest();
+      const digest =
+        record.chat_digest && typeof record.chat_digest === "object"
+          ? record.chat_digest
+          : emptyChatDigest();
 
-    digest.turn_count = (Number(digest.turn_count) || 0) + 1;
-    digest.last_turn_at = nowIso;
-    if (!digest.first_turn_at) {
-      digest.first_turn_at = nowIso;
-    }
+      digest.turn_count = (Number(digest.turn_count) || 0) + 1;
+      digest.last_turn_at = nowIso;
+      if (!digest.first_turn_at) {
+        digest.first_turn_at = nowIso;
+      }
 
-    const intents = (digest.intents || []).map((x) => String(x).trim()).filter((x) => x);
-    if (intent && !intents.includes(intent)) {
-      intents.push(intent);
-    }
-    digest.intents = intents.slice(-10);
+      const intents = (digest.intents || []).map((x) => String(x).trim()).filter((x) => x);
+      if (intent && !intents.includes(intent)) {
+        intents.push(intent);
+      }
+      digest.intents = intents.slice(-10);
 
-    const modes = (digest.modes || []).map((x) => String(x).trim()).filter((x) => x);
-    if (mode && !modes.includes(mode)) {
-      modes.push(mode);
-    }
-    digest.modes = modes.slice(-10);
+      const modes = (digest.modes || []).map((x) => String(x).trim()).filter((x) => x);
+      if (mode && !modes.includes(mode)) {
+        modes.push(mode);
+      }
+      digest.modes = modes.slice(-10);
 
-    const turns = (digest.recent_turns || []).filter((x) => x && typeof x === "object");
-    turns.push({
-      ts: nowIso,
-      user: clipText(input.userText, 160),
-      assistant: clipText(input.assistantText, 200),
+      const turns = (digest.recent_turns || []).filter((x) => x && typeof x === "object");
+      turns.push({
+        ts: nowIso,
+        user: clipText(input.userText, 160),
+        assistant: clipText(input.assistantText, 200),
+      });
+      digest.recent_turns = turns.slice(-8);
+
+      record.chat_digest = digest;
+      // Chat day files are not TaskMemory-shaped, so write via atomicWriteFile
+      // directly instead of writeShort.
+      atomicWriteFile(filePath, JSON.stringify(record, null, 2));
     });
-    digest.recent_turns = turns.slice(-8);
 
-    record.chat_digest = digest;
-    // Chat day files are not TaskMemory-shaped, so write via atomicWriteFile
-    // directly instead of writeShort.
-    atomicWriteFile(filePath, JSON.stringify(record, null, 2));
+    // Retention sweep: chat digests are never archived, so old ones are
+    // removed here. The file we just wrote is always kept.
+    try {
+      this.purgeChatDaily({ beforeDays: CHAT_RETENTION_DAYS, keepPath: filePath });
+    } catch {
+      // Retention is best-effort — never fail a turn because of it.
+    }
   }
 
   /**
-   * List chat day files, most recent first (by filename date descending).
-   * Defaults to the last 7 days; corrupt files are skipped. Ported from
-   * GeoClaw's list_chat_daily.
+   * Delete chat day files whose day is older than `beforeDays` days.
+   *
+   * Chat digests are conversation history rather than task memories, so
+   * archiveShort deliberately skips them; without this sweep they would
+   * accumulate on disk forever. Task memories are never touched.
+   *
+   * `keepPath` protects a single file (e.g. the digest that was just
+   * written) from being swept by the write that triggered the sweep.
+   */
+  purgeChatDaily(options: { beforeDays?: number; keepPath?: string } = {}): {
+    removed: number;
+    kept: number;
+    beforeDays: number;
+    cutoffDay: string;
+  } {
+    const requested = Math.floor(Number(options.beforeDays));
+    const beforeDays =
+      Number.isFinite(requested) && requested >= 0 ? requested : CHAT_RETENTION_DAYS;
+    const cutoffDay = shiftDayKey(chatDayKey(new Date()), -beforeDays);
+
+    let files: string[] = [];
+    try {
+      files = fs.readdirSync(this.shortDir);
+    } catch {
+      return { removed: 0, kept: 0, beforeDays, cutoffDay };
+    }
+
+    // Abandoned locks from a crashed writer are dropped once they are stale.
+    // They are not chat digests, so they are not counted in the result.
+    for (const file of files) {
+      if (!file.endsWith(".lock")) {
+        continue;
+      }
+      try {
+        const stat = fs.statSync(path.join(this.shortDir, file));
+        if (Date.now() - stat.mtimeMs > CHAT_LOCK_STALE_MS) {
+          fs.rmSync(path.join(this.shortDir, file), { force: true });
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    let removed = 0;
+    let kept = 0;
+    for (const file of files) {
+      const filePath = path.join(this.shortDir, file);
+      if (!CHAT_DAY_FILE_RE.test(file)) {
+        continue;
+      }
+      if (options.keepPath && path.resolve(filePath) === path.resolve(options.keepPath)) {
+        kept++;
+        continue;
+      }
+      const fileDay = CHAT_DAY_FILE_RE.exec(file)?.[1] ?? "";
+      if (!parseDayKey(fileDay) || fileDay >= cutoffDay) {
+        kept++;
+        continue;
+      }
+      try {
+        fs.rmSync(filePath, { force: true });
+        removed++;
+      } catch {
+        kept++;
+      }
+    }
+
+    return { removed, kept, beforeDays, cutoffDay };
+  }
+
+  /**
+   * List chat day digests within the last `days` calendar days, newest first.
+   *
+   * `days` is a real date window: the window ends on the newest day present
+   * in the store (not on the wall clock), so the result never depends on when
+   * the caller runs. The previous implementation capped the *number of files*
+   * instead, which silently shrank the recall window as soon as a store held
+   * more sessions than days. Corrupt files are skipped.
    */
   listChatDaily(days = 7): ChatDailyRecord[] {
     const rows: ChatDailyRecord[] = [];
     const requested = Math.floor(Number(days));
-    const limit = Number.isFinite(requested) ? Math.max(1, requested) : 7;
+    const windowDays = Number.isFinite(requested) ? Math.max(1, requested) : 7;
 
     let files: string[] = [];
     try {
       files = fs
         .readdirSync(this.shortDir)
-        .filter((f) => /^chat-\d{8}-.+\.json$/.test(f))
+        .filter((f) => CHAT_DAY_FILE_RE.test(f))
         .toSorted()
         .toReversed();
     } catch {
       return rows;
     }
+    if (files.length === 0) {
+      return rows;
+    }
+
+    // Files are sorted newest-first, so the first one with a real calendar
+    // day anchors the window.
+    let anchorDay = "";
+    for (const file of files) {
+      const candidate = CHAT_DAY_FILE_RE.exec(file)?.[1] ?? "";
+      if (parseDayKey(candidate)) {
+        anchorDay = candidate;
+        break;
+      }
+    }
+    if (!anchorDay) {
+      return rows;
+    }
+    const cutoff = shiftDayKey(anchorDay, -(windowDays - 1));
 
     for (const file of files) {
-      if (rows.length >= limit) {
-        break;
+      const fileDay = CHAT_DAY_FILE_RE.exec(file)?.[1] ?? "";
+      if (!parseDayKey(fileDay)) {
+        continue; // not a real calendar day — ignore the file entirely
+      }
+      if (fileDay < cutoff) {
+        break; // files are newest-first, so everything left is older
       }
       try {
         const content = fs.readFileSync(path.join(this.shortDir, file), "utf-8");
@@ -618,21 +889,42 @@ export class TaskMemoryStore {
     return this.readShort(taskId);
   }
 
-  listShort(options: { limit?: number; status?: string } = {}): TaskMemory[] {
-    const { limit = 20, status = "" } = options;
+  /**
+   * Read every task-shaped record in the short-term dir. Both the listing and
+   * the count go through here so they can never disagree about what counts as
+   * a task memory (a valid-JSON-but-not-a-task file must not inflate the
+   * count that `paleo-memory status` and the agent system prompt report).
+   */
+  private readAllShort(): TaskMemory[] {
     const rows: TaskMemory[] = [];
 
-    const files = fs.readdirSync(this.shortDir).filter((f) => f.endsWith(".json"));
+    let files: string[];
+    try {
+      files = fs.readdirSync(this.shortDir).filter(isTaskFile);
+    } catch {
+      return rows;
+    }
 
     for (const file of files) {
       try {
         const content = fs.readFileSync(path.join(this.shortDir, file), "utf-8");
-        const payload = JSON.parse(content) as TaskMemory;
+        const payload: unknown = JSON.parse(content);
+        if (!isTaskMemoryShape(payload)) {
+          continue;
+        }
         rows.push(payload);
       } catch {
         // Skip invalid files
       }
     }
+
+    return rows;
+  }
+
+  listShort(options: { limit?: number; status?: string } = {}): TaskMemory[] {
+    const limit = normalizeLimit(options.limit, 20);
+    const status = options.status || "";
+    const rows = this.readAllShort();
 
     // Sort by updatedAt descending — filename sort is unreliable across
     // process restarts because the per-process counter resets.
@@ -645,7 +937,7 @@ export class TaskMemoryStore {
   }
 
   listLong(options: { limit?: number } = {}): LongTermMemory[] {
-    const { limit = 20 } = options;
+    const limit = normalizeLimit(options.limit, 20);
     const rows: LongTermMemory[] = [];
 
     if (!fs.existsSync(this.longFile)) {
@@ -675,23 +967,23 @@ export class TaskMemoryStore {
   }
 
   listArchiveShort(options: { limit?: number; status?: string } = {}): TaskMemory[] {
-    const { limit = 20, status = "" } = options;
+    const limit = normalizeLimit(options.limit, 20);
+    const status = options.status || "";
     const rows: TaskMemory[] = [];
 
     if (!fs.existsSync(this.archiveShortDir)) {
       return rows;
     }
 
-    const files = fs
-      .readdirSync(this.archiveShortDir)
-      .filter((f) => f.endsWith(".json"))
-      .toSorted()
-      .toReversed();
+    const files = fs.readdirSync(this.archiveShortDir).filter(isTaskFile).toSorted().toReversed();
 
     for (const file of files) {
       try {
         const content = fs.readFileSync(path.join(this.archiveShortDir, file), "utf-8");
-        const payload = JSON.parse(content) as TaskMemory;
+        const payload: unknown = JSON.parse(content);
+        if (!isTaskMemoryShape(payload)) {
+          continue;
+        }
 
         if (status && payload.status !== status) {
           continue;
@@ -725,16 +1017,18 @@ export class TaskMemoryStore {
 
     // chat-*.json files are conversational day digests, not task memories —
     // exclude them from archiving so chat history is never swept away.
-    const files = fs
-      .readdirSync(this.shortDir)
-      .filter((f) => f.endsWith(".json") && !f.startsWith("chat-"));
+    const files = fs.readdirSync(this.shortDir).filter(isTaskFile);
 
     for (const file of files) {
       const filePath = path.join(this.shortDir, file);
 
       try {
         const content = fs.readFileSync(filePath, "utf-8");
-        const payload = JSON.parse(content) as TaskMemory;
+        const payload: unknown = JSON.parse(content);
+        if (!isTaskMemoryShape(payload)) {
+          skipped++;
+          continue;
+        }
 
         if (status && payload.status !== status) {
           skipped++;
@@ -795,6 +1089,20 @@ export class TaskMemoryStore {
     scope?: string;
     topK?: number;
     minScore?: number;
+    /**
+     * Session whose chat digests may be recalled. Chat transcripts are
+     * session-private: a caller that does not name a session gets no chat
+     * corpus at all, so one user's conversation can never be injected into
+     * another user's prompt by accident.
+     */
+    sessionId?: string;
+    /**
+     * Owner-side opt-in: recall chat digests from EVERY session instead of
+     * one. This exists for the `paleo-memory` CLI, where the operator is
+     * deliberately browsing their own store. The agent path must never set
+     * it — it always names its own session.
+     */
+    includeAllSessions?: boolean;
   }): SearchItem[] {
     const { query, scope = "long", topK = 5, minScore = 0.15 } = options;
     const scopeText = scope.toLowerCase() || "long";
@@ -813,6 +1121,46 @@ export class TaskMemoryStore {
           searchText: this.buildSearchText(row, "short"),
           payload: row as unknown as Record<string, unknown>,
         });
+      }
+
+      // Chat day digests share shortDir with task memories but are a distinct
+      // record shape, so they are indexed separately (and with their own search
+      // text) rather than being filtered out of the corpus entirely.
+      //
+      // Chat content is session-scoped: only the owning session's digests are
+      // indexed. Task memories above stay global — they describe work, not
+      // conversations, and carry no session identity.
+      const rawSessionId = String(options.sessionId ?? "").trim();
+      const sessionKey = rawSessionId ? safeSessionKey(rawSessionId) : "";
+      // Owner-side tooling (the `paleo-memory` CLI) may explicitly opt into
+      // every session's digests. The agent path never does — it always names
+      // its own session — so one user's conversation can never leak into
+      // another user's prompt.
+      const includeAllSessions = options.includeAllSessions === true;
+      if (sessionKey || includeAllSessions) {
+        const chatRecords = this.listChatDaily(CHAT_RETRIEVAL_WINDOW_DAYS)
+          .filter((chat) => includeAllSessions || chat.sessionId === sessionKey)
+          .slice(0, CHAT_RETRIEVAL_MAX_ITEMS);
+
+        for (const chat of chatRecords) {
+          const searchText = this.buildChatSearchText(chat);
+          if (!searchText) {
+            continue;
+          }
+          const turns = chat.chat_digest?.recent_turns ?? [];
+          const lastTurn = turns[turns.length - 1];
+          items.push({
+            source: "chat",
+            taskId: `chat-${chat.day}-${chat.sessionId}`,
+            searchText,
+            payload: {
+              day: chat.day,
+              sessionId: chat.sessionId,
+              turnCount: chat.chat_digest?.turn_count ?? 0,
+              excerpt: lastTurn?.user || lastTurn?.assistant || "",
+            },
+          });
+        }
       }
     }
 
@@ -842,11 +1190,10 @@ export class TaskMemoryStore {
   }
 
   countShort(): number {
-    try {
-      return fs.readdirSync(this.shortDir).filter((f) => f.endsWith(".json")).length;
-    } catch {
-      return 0;
-    }
+    // Same filter as listShort(): a valid-JSON-but-not-a-task file must not
+    // inflate the count reported by `paleo-memory status` and the agent
+    // system prompt.
+    return this.readAllShort().length;
   }
 
   countLong(): number {

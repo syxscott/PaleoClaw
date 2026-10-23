@@ -45,6 +45,7 @@
     "src/plugin-sdk/nostr.ts",
     "src/plugin-sdk/open-prose.ts",
     "src/plugin-sdk/phone-control.ts",
+    "src/plugin-sdk/qqbot.ts",
     "src/plugin-sdk/qwen-portal-auth.ts",
     "src/plugin-sdk/synology-chat.ts",
     "src/plugin-sdk/talk-voice.ts",
@@ -53,6 +54,8 @@
     "src/plugin-sdk/tlon.ts",
     "src/plugin-sdk/twitch.ts",
     "src/plugin-sdk/voice-call.ts",
+    "src/plugin-sdk/wecom.ts",
+    "src/plugin-sdk/weixin.ts",
     "src/plugin-sdk/zalo.ts",
     "src/plugin-sdk/zalouser.ts",
     "src/types/**/*.d.ts"

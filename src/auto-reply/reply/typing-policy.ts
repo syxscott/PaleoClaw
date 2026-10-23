@@ -1,7 +1,7 @@
 import { INTERNAL_MESSAGE_CHANNEL } from "../../utils/message-channel.js";
 import type { TypingPolicy } from "../types.js";
 
-export type ResolveRunTypingPolicyParams = {
+type ResolveRunTypingPolicyParams = {
   requestedPolicy?: TypingPolicy;
   suppressTyping?: boolean;
   isHeartbeat?: boolean;
@@ -9,11 +9,12 @@ export type ResolveRunTypingPolicyParams = {
   systemEvent?: boolean;
 };
 
-export type ResolvedRunTypingPolicy = {
+type ResolvedRunTypingPolicy = {
   typingPolicy: TypingPolicy;
   suppressTyping: boolean;
 };
 
+/** Resolves typing policy and suppresses typing for non-user-visible turns. */
 export function resolveRunTypingPolicy(
   params: ResolveRunTypingPolicyParams,
 ): ResolvedRunTypingPolicy {

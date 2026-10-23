@@ -1,16 +1,75 @@
+// Covers root CLI option token parsing.
 import { describe, expect, it } from "vitest";
-import { consumeRootOptionToken } from "./cli-root-options.js";
+import {
+  getCommandArgsWithRootOptions,
+  getCommandPositionalsWithRootOptions,
+  isValueToken,
+} from "./cli-root-options.js";
 
-describe("consumeRootOptionToken", () => {
-  it("consumes boolean and inline root options", () => {
-    expect(consumeRootOptionToken(["--dev"], 0)).toBe(1);
-    expect(consumeRootOptionToken(["--profile=work"], 0)).toBe(1);
-    expect(consumeRootOptionToken(["--log-level=debug"], 0)).toBe(1);
+function expectValueTokenCases(
+  cases: ReadonlyArray<{ value: string | undefined; expected: boolean }>,
+): void {
+  for (const { value, expected } of cases) {
+    expect(isValueToken(value)).toBe(expected);
+  }
+}
+
+describe("isValueToken", () => {
+  it("classifies value-like and flag-like tokens", () => {
+    expectValueTokenCases([
+      { value: "work", expected: true },
+      { value: "-1", expected: true },
+      { value: "-1.5", expected: true },
+      { value: "-0.5", expected: true },
+      { value: "--", expected: false },
+      { value: "--dev", expected: false },
+      { value: "-", expected: false },
+      { value: "", expected: false },
+      { value: undefined, expected: false },
+    ]);
+  });
+});
+
+describe("literal command discovery", () => {
+  it.each(["route", "command-path"] as const)(
+    "requires the root command before command options in %s mode",
+    (mode) => {
+      const options = { commandPath: ["models"], booleanFlags: ["--json"], mode };
+      expect(
+        getCommandPositionalsWithRootOptions(
+          ["node", "paleoclaw", "--json", "models", "status"],
+          options,
+        ),
+      ).toBeNull();
+      for (const args of [
+        ["models", "--json", "status"],
+        ["--profile", "models", "models", "--json", "status"],
+      ]) {
+        expect(
+          getCommandPositionalsWithRootOptions(["node", "paleoclaw", ...args], options),
+        ).toEqual(["status"]);
+      }
+    },
+  );
+
+  it.each([
+    ["--", "channels", "add", "--channel", "example"],
+    ["channels", "--", "add", "--channel", "example"],
+    ["channels", "add", "--", "--channel", "example"],
+  ])("retains the literal boundary in a delegated argument tail: %j", (...args) => {
+    expect(
+      getCommandArgsWithRootOptions(["node", "paleoclaw", ...args], {
+        commandPath: ["channels", "add"],
+        mode: "command-path",
+      }),
+    ).toEqual(["--", "--channel", "example"]);
   });
 
-  it("consumes split root value option only when next token is a value", () => {
-    expect(consumeRootOptionToken(["--profile", "work"], 0)).toBe(2);
-    expect(consumeRootOptionToken(["--profile", "--no-color"], 0)).toBe(1);
-    expect(consumeRootOptionToken(["--profile", "--"], 0)).toBe(1);
+  it("keeps literal root invocations out of conservative fast routes", () => {
+    expect(
+      getCommandPositionalsWithRootOptions(["node", "paleoclaw", "--", "config", "get"], {
+        commandPath: ["config", "get"],
+      }),
+    ).toBeNull();
   });
 });

@@ -1,10 +1,18 @@
+// Systemd hint tests cover Linux daemon setup guidance.
 import { describe, expect, it } from "vitest";
+import { formatCliCommand } from "../cli/command-format.js";
 import { isSystemdUnavailableDetail, renderSystemdUnavailableHints } from "./systemd-hints.js";
 
 describe("isSystemdUnavailableDetail", () => {
   it("matches systemd unavailable error details", () => {
     expect(
       isSystemdUnavailableDetail("systemctl --user unavailable: Failed to connect to bus"),
+    ).toBe(true);
+    expect(isSystemdUnavailableDetail("systemctl --user unavailable: ENOMEDIUM")).toBe(true);
+    expect(
+      isSystemdUnavailableDetail(
+        "systemctl --user unavailable: Failed to connect to bus: Permission denied",
+      ),
     ).toBe(true);
     expect(
       isSystemdUnavailableDetail(
@@ -25,9 +33,31 @@ describe("renderSystemdUnavailableHints", () => {
   });
 
   it("renders generic Linux recovery hints outside WSL", () => {
-    expect(renderSystemdUnavailableHints()).toEqual([
+    expect(renderSystemdUnavailableHints({ kind: "generic_unavailable" })).toEqual([
       "systemd user services are unavailable; install/enable systemd or run the gateway under your supervisor.",
-      "If you're in a container, run the gateway in the foreground instead of `paleoclaw gateway`.",
+      `If you're in a container, run the gateway in the foreground instead of \`${formatCliCommand("paleoclaw gateway")}\`.`,
+    ]);
+  });
+
+  it("adds headless recovery hints only for user bus/session failures", () => {
+    expect(renderSystemdUnavailableHints({ kind: "user_bus_unavailable" })).toEqual([
+      "systemd user services are unavailable; install/enable systemd or run the gateway under your supervisor.",
+      "On a headless server (SSH/no desktop session): run `sudo loginctl enable-linger $(whoami)` to persist your systemd user session across logins.",
+      "Also check that XDG_RUNTIME_DIR is set: `export XDG_RUNTIME_DIR=/run/user/$(id -u)`, then retry.",
+      `If you're in a container, run the gateway in the foreground instead of \`${formatCliCommand("paleoclaw gateway")}\`.`,
+    ]);
+  });
+
+  it("skips headless recovery hints when container context is known", () => {
+    const env = { OPENCLAW_CONTAINER_HINT: "sandbox" };
+    expect(
+      renderSystemdUnavailableHints({
+        kind: "user_bus_unavailable",
+        env,
+      }),
+    ).toEqual([
+      "systemd user services are unavailable; install/enable systemd or run the gateway under your supervisor.",
+      `If you're in a container, run the gateway in the foreground instead of \`${formatCliCommand("paleoclaw gateway", env)}\`.`,
     ]);
   });
 });

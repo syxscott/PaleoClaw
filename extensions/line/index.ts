@@ -1,19 +1,29 @@
-import type { OpenClawPluginApi } from "paleoclaw/plugin-sdk/line";
-import { emptyPluginConfigSchema } from "paleoclaw/plugin-sdk/line";
-import { registerLineCardCommand } from "./src/card-command.js";
-import { linePlugin } from "./src/channel.js";
-import { setLineRuntime } from "./src/runtime.js";
+import { defineBundledChannelEntry } from "paleoclaw/plugin-sdk/channel-entry-contract";
 
-const plugin = {
+export default defineBundledChannelEntry({
   id: "line",
   name: "LINE",
   description: "LINE Messaging API channel plugin",
-  configSchema: emptyPluginConfigSchema(),
-  register(api: OpenClawPluginApi) {
-    setLineRuntime(api.runtime);
-    api.registerChannel({ plugin: linePlugin });
-    registerLineCardCommand(api);
+  importMetaUrl: import.meta.url,
+  plugin: {
+    specifier: "./channel-plugin-api.js",
+    exportName: "linePlugin",
   },
-};
-
-export default plugin;
+  runtime: {
+    specifier: "./runtime-api.js",
+    exportName: "setLineRuntime",
+  },
+  registerFull(api) {
+    api.registerCommand({
+      name: "card",
+      description: "Send a rich card message.",
+      channels: ["line"],
+      acceptsArgs: true,
+      requireAuth: false,
+      async handler(ctx) {
+        const { handleLineCardCommand } = await import("./src/card-command.js");
+        return await handleLineCardCommand(ctx.args);
+      },
+    });
+  },
+});

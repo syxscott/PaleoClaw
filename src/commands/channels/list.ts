@@ -1,183 +1,294 @@
-import { loadAuthProfileStore } from "../../agents/auth-profiles.js";
-import { listChannelPlugins } from "../../channels/plugins/index.js";
-import { buildChannelAccountSnapshot } from "../../channels/plugins/status.js";
-import type { ChannelAccountSnapshot, ChannelPlugin } from "../../channels/plugins/types.js";
-import { withProgress } from "../../cli/progress.js";
-import { formatUsageReportLines, loadProviderUsageSummary } from "../../infra/provider-usage.js";
-import { defaultRuntime, type RuntimeEnv } from "../../runtime.js";
-import { formatDocsLink } from "../../terminal/links.js";
-import { theme } from "../../terminal/theme.js";
-import { formatChannelAccountLabel, requireValidConfig } from "./shared.js";
+import { formatDocsLink } from "../../../packages/terminal-core/src/links.js";
+import { theme } from "../../../packages/terminal-core/src/theme.js";
+import { isChannelVisibleInConfiguredLists } from "../../channels/plugins/exposure.js";
+import { listReadOnlyChannelPluginsForConfig } from "../../channels/plugins/read-only.js";
+import { resolveChannelAccountSnapshot } from "../../channels/plugins/status.js";
+import type { AnyChannelPlugin as ChannelPlugin } from "../../channels/plugins/types.plugin.js";
+import type { ChannelAccountSnapshot } from "../../channels/plugins/types.public.js";
+import {
+  normalizeRuntimeChannelAccountSnapshots,
+  resolveChannelAccountStatusRows,
+  type RuntimeChannelStatusPayload,
+} from "../../channels/status/read-model.js";
+import { callGateway } from "../../gateway/call.js";
+import { resolvePluginControlPlaneWorkspace } from "../../plugins/control-plane-workspace.js";
+import { resolveMissingOfficialExternalChannelPluginRepairHints } from "../../plugins/official-external-plugin-repair-hints.js";
+import { resolvePluginMetadataSnapshot } from "../../plugins/plugin-metadata-snapshot.js";
+import { listPluginContributionIds } from "../../plugins/plugin-registry.js";
+import { defaultRuntime, type RuntimeEnv, writeRuntimeJson } from "../../runtime.js";
+import { listTrustedChannelPluginCatalogEntries } from "../channel-setup/trusted-catalog.js";
+import {
+  formatChannelAccountLabel,
+  NO_CONFIGURED_CHAT_CHANNELS_LINE,
+  requireValidChannelConfig,
+} from "./shared.js";
 
-export type ChannelsListOptions = {
+type ChannelsListOptions = {
   json?: boolean;
-  usage?: boolean;
+  all?: boolean;
 };
 
-const colorValue = (value: string) => {
-  if (value === "none") {
-    return theme.error(value);
+async function readGatewayChannelStatus(): Promise<RuntimeChannelStatusPayload | null> {
+  try {
+    return (await callGateway({
+      method: "channels.status",
+      params: { probe: false, timeoutMs: 5_000 },
+      timeoutMs: 5_000,
+    })) as RuntimeChannelStatusPayload;
+  } catch {
+    return null;
   }
-  if (value === "env") {
-    return theme.accent(value);
-  }
-  return theme.success(value);
-};
+}
 
 function formatEnabled(value: boolean | undefined): string {
   return value === false ? theme.error("disabled") : theme.success("enabled");
 }
 
-function formatConfigured(value: boolean): string {
-  return value ? theme.success("configured") : theme.warn("not configured");
+function formatPresence(label: string, value: boolean): string {
+  return value ? theme.success(label) : theme.warn(`not ${label}`);
 }
 
-function formatTokenSource(source?: string): string {
+function formatSource(label: string, source?: string, status?: string): string {
   const value = source || "none";
-  return `token=${colorValue(value)}`;
-}
-
-function formatSource(label: string, source?: string): string {
-  const value = source || "none";
-  return `${label}=${colorValue(value)}`;
-}
-
-function formatLinked(value: boolean): string {
-  return value ? theme.success("linked") : theme.warn("not linked");
-}
-
-function shouldShowConfigured(channel: ChannelPlugin): boolean {
-  return channel.meta.showConfigured !== false;
+  const formatted =
+    value === "none"
+      ? theme.error(value)
+      : status === "configured_unavailable"
+        ? theme.warn(`${value}-unavailable`)
+        : value === "env"
+          ? theme.accent(value)
+          : theme.success(value);
+  return `${label}=${formatted}`;
 }
 
 function formatAccountLine(params: {
-  channel: ChannelPlugin;
+  plugin: ChannelPlugin;
   snapshot: ChannelAccountSnapshot;
+  installed: boolean;
 }): string {
-  const { channel, snapshot } = params;
+  const { plugin: channel, snapshot, installed } = params;
   const label = formatChannelAccountLabel({
     channel: channel.id,
     accountId: snapshot.accountId,
     name: snapshot.name,
+    channelLabel: channel.meta.label ?? channel.id,
     channelStyle: theme.accent,
     accountStyle: theme.heading,
   });
-  const bits: string[] = [];
-  if (snapshot.linked !== undefined) {
-    bits.push(formatLinked(snapshot.linked));
-  }
-  if (shouldShowConfigured(channel) && typeof snapshot.configured === "boolean") {
-    bits.push(formatConfigured(snapshot.configured));
-  }
-  if (snapshot.tokenSource) {
-    bits.push(formatTokenSource(snapshot.tokenSource));
-  }
-  if (snapshot.botTokenSource) {
-    bits.push(formatSource("bot", snapshot.botTokenSource));
-  }
-  if (snapshot.appTokenSource) {
-    bits.push(formatSource("app", snapshot.appTokenSource));
-  }
-  if (snapshot.baseUrl) {
-    bits.push(`base=${theme.muted(snapshot.baseUrl)}`);
+  const bits = [formatPresence("installed", installed)];
+  if (isChannelVisibleInConfiguredLists(channel.meta) && typeof snapshot.configured === "boolean") {
+    bits.push(formatPresence("configured", snapshot.configured));
   }
   if (typeof snapshot.enabled === "boolean") {
     bits.push(formatEnabled(snapshot.enabled));
   }
-  return `- ${label}: ${bits.join(", ")}`;
-}
-async function loadUsageWithProgress(
-  runtime: RuntimeEnv,
-): Promise<Awaited<ReturnType<typeof loadProviderUsageSummary>> | null> {
-  try {
-    return await withProgress(
-      { label: "Fetching usage snapshot…", indeterminate: true, enabled: true },
-      async () => await loadProviderUsageSummary(),
-    );
-  } catch (err) {
-    runtime.error(String(err));
-    return null;
+  if (snapshot.linked !== undefined) {
+    bits.push(formatPresence("linked", snapshot.linked));
   }
+  if (snapshot.tokenSource) {
+    bits.push(formatSource("token", snapshot.tokenSource, snapshot.tokenStatus));
+  }
+  if (snapshot.botTokenSource) {
+    bits.push(formatSource("bot", snapshot.botTokenSource, snapshot.botTokenStatus));
+  }
+  if (snapshot.appTokenSource) {
+    bits.push(formatSource("app", snapshot.appTokenSource, snapshot.appTokenStatus));
+  }
+  if (snapshot.baseUrl) {
+    bits.push(`base=${theme.muted(snapshot.baseUrl)}`);
+  }
+  return `- ${label}: ${bits.join(", ")}`;
 }
 
 export async function channelsListCommand(
   opts: ChannelsListOptions,
   runtime: RuntimeEnv = defaultRuntime,
 ) {
-  const cfg = await requireValidConfig(runtime);
+  const cfg = await requireValidChannelConfig(runtime);
   if (!cfg) {
     return;
   }
-  const includeUsage = opts.usage !== false;
+  const showAll = opts.all === true;
+  const workspace = resolvePluginControlPlaneWorkspace({
+    config: cfg,
+    env: process.env,
+  });
+  const workspaceDir = workspace.workspaceDir;
+  // Plugin metadata is process-stable. Resolve it once and carry its manifest,
+  // discovery, and installed-index facts through every list projection.
+  const metadataSnapshot = resolvePluginMetadataSnapshot({
+    config: cfg,
+    ...(workspaceDir ? { workspaceDir } : {}),
+    env: process.env,
+    allowWorkspaceScopedCurrent: true,
+  });
 
-  const plugins = listChannelPlugins();
+  // JSON needs only manifest-backed account ids. Text keeps setup-backed snapshots
+  // because its credential/status details are part of the human output contract.
+  const plugins = listReadOnlyChannelPluginsForConfig(cfg, {
+    ...(!opts.json ? { includeSetupFallbackPlugins: true } : {}),
+    metadataSnapshot,
+  });
+  const catalogEntries = listTrustedChannelPluginCatalogEntries({
+    cfg,
+    ...(workspaceDir ? { workspaceDir } : {}),
+    ...(metadataSnapshot.discovery ? { discovery: metadataSnapshot.discovery } : {}),
+    ...(metadataSnapshot.index.installRecords
+      ? { installRecords: metadataSnapshot.index.installRecords }
+      : {}),
+  });
+  const runtimeAccountsByChannel =
+    opts.json === true
+      ? new Map<string, ChannelAccountSnapshot[]>()
+      : normalizeRuntimeChannelAccountSnapshots(await readGatewayChannelStatus());
+  // Installed ids are one prepared manifest fact set for the invocation. Rebuilding
+  // discovery for each catalog row turns this read into a full filesystem walk per row.
+  const manifestInstalledChannelIds = new Set<string>(
+    listPluginContributionIds({
+      contribution: "channels",
+      includeDisabled: true,
+      lookUpTable: metadataSnapshot,
+    }),
+  );
+  const installedByChannelId = new Map(
+    catalogEntries.map((entry) => [entry.id, manifestInstalledChannelIds.has(entry.id)]),
+  );
+  // Metadata-backed plugins are installed by definition; catalog-only rows use
+  // the manifest snapshot above because no plugin projection exists for them.
+  const isInstalled = (channelId: string): boolean => installedByChannelId.get(channelId) ?? true;
 
-  const authStore = loadAuthProfileStore();
-  const authProfiles = Object.entries(authStore.profiles).map(([profileId, profile]) => ({
-    id: profileId,
-    provider: profile.provider,
-    type: profile.type,
-    isExternal: false,
-  }));
-  if (opts.json) {
-    const usage = includeUsage ? await loadProviderUsageSummary() : undefined;
-    const chat: Record<string, string[]> = {};
-    for (const plugin of plugins) {
-      chat[plugin.id] = plugin.config.listAccountIds(cfg);
+  const accountLines: Parameters<typeof formatAccountLine>[0][] = [];
+  const accountIdsByPlugin = new Map(
+    plugins.map((plugin) => [plugin.id, plugin.config.listAccountIds(cfg) ?? []]),
+  );
+  const renderedPlugins = plugins.filter(
+    (plugin) =>
+      (accountIdsByPlugin.get(plugin.id)?.length ?? 0) > 0 ||
+      (showAll && isChannelVisibleInConfiguredLists(plugin.meta)),
+  );
+  const renderedChannelIds = new Set(renderedPlugins.map((plugin) => plugin.id));
+
+  for (const plugin of opts.json ? [] : renderedPlugins) {
+    const accountIds = accountIdsByPlugin.get(plugin.id) ?? [];
+    let rows: Array<{ snapshot: ChannelAccountSnapshot }>;
+    if (accountIds.length > 0) {
+      const runtimeAccounts = runtimeAccountsByChannel.get(plugin.id) ?? [];
+      rows = await resolveChannelAccountStatusRows({
+        localAccountIds: accountIds,
+        runtimeAccounts,
+        resolveLocalSnapshot: (accountId) =>
+          resolveChannelAccountSnapshot({ plugin, cfg, accountId }),
+      });
+    } else {
+      // Unconfigured --all rows still inspect the default account before applying runtime facts.
+      const snapshot = await resolveChannelAccountSnapshot({ plugin, cfg, accountId: "default" });
+      const runtimeSnapshot = runtimeAccountsByChannel
+        .get(plugin.id)
+        ?.find((account) => account.accountId === "default");
+      rows = [{ snapshot: runtimeSnapshot ?? snapshot }];
     }
-    const payload = { chat, auth: authProfiles, ...(usage ? { usage } : {}) };
-    runtime.log(JSON.stringify(payload, null, 2));
+    for (const { snapshot } of rows) {
+      accountLines.push({ plugin, snapshot, installed: isInstalled(plugin.id) });
+    }
+  }
+
+  // --all includes installed and installable catalog-only channels; ordinary lists
+  // retain missing configured owners. Evaluate presence once for this inventory.
+  const catalogOnlyEntries = catalogEntries.filter((entry) => !renderedChannelIds.has(entry.id));
+  const repairHintsByChannelId = new Map(
+    resolveMissingOfficialExternalChannelPluginRepairHints({
+      config: cfg,
+      channelIds: catalogOnlyEntries.map((entry) => entry.id),
+      ...(workspaceDir ? { workspaceDir } : {}),
+      manifestRecords: metadataSnapshot.plugins,
+    }).map((hint) => [hint.channelId, hint]),
+  );
+  const catalogOnlyLines = catalogOnlyEntries
+    .map((entry) => {
+      const hint = repairHintsByChannelId.get(entry.id);
+      return {
+        entry,
+        installed: isInstalled(entry.id),
+        configured: Boolean(hint),
+        repairHint: hint ? `run ${hint.installCommand} or ${hint.doctorFixCommand}` : undefined,
+      };
+    })
+    .filter((line) => showAll || line.configured);
+
+  if (opts.json) {
+    type JsonChannelEntry = {
+      accounts: string[];
+      label: string;
+      docsPath?: string;
+      installed: boolean;
+      origin: "configured" | "available" | "installable";
+    };
+    const chat: Record<string, JsonChannelEntry> = {};
+    const catalogById = new Map(catalogEntries.map((entry) => [entry.id, entry]));
+    for (const plugin of renderedPlugins) {
+      const accountIds = accountIdsByPlugin.get(plugin.id) ?? [];
+      const installed = isInstalled(plugin.id);
+      const catalog = catalogById.get(plugin.id);
+      const metadata = {
+        label: catalog?.meta.label ?? plugin.meta.label,
+        ...(catalog?.officialDocsPath ? { docsPath: catalog.officialDocsPath } : {}),
+      };
+      chat[plugin.id] = {
+        accounts: accountIds,
+        ...metadata,
+        installed,
+        origin: accountIds.length > 0 ? "configured" : "available",
+      };
+    }
+    for (const line of catalogOnlyLines) {
+      chat[line.entry.id] = {
+        accounts: [],
+        label: line.entry.meta.label,
+        ...(line.entry.officialDocsPath ? { docsPath: line.entry.officialDocsPath } : {}),
+        installed: line.installed,
+        origin: line.configured ? "configured" : line.installed ? "available" : "installable",
+      };
+    }
+    writeRuntimeJson(runtime, {
+      chat,
+      ...(workspace.diagnostic ? { diagnostics: [workspace.diagnostic] } : {}),
+    });
     return;
   }
 
   const lines: string[] = [];
   lines.push(theme.heading("Chat channels:"));
-
-  for (const plugin of plugins) {
-    const accounts = plugin.config.listAccountIds(cfg);
-    if (!accounts || accounts.length === 0) {
-      continue;
-    }
-    for (const accountId of accounts) {
-      const snapshot = await buildChannelAccountSnapshot({
-        plugin,
-        cfg,
-        accountId,
-      });
-      lines.push(
-        formatAccountLine({
-          channel: plugin,
-          snapshot,
-        }),
-      );
-    }
+  if (workspace.diagnostic) {
+    lines.push(theme.warn(`- ${workspace.diagnostic.message}`));
   }
-
-  lines.push("");
-  lines.push(theme.heading("Auth providers (OAuth + API keys):"));
-  if (authProfiles.length === 0) {
-    lines.push(theme.muted("- none"));
+  if (accountLines.length === 0 && catalogOnlyLines.length === 0) {
+    lines.push(
+      theme.muted(showAll ? "- no chat channels found" : NO_CONFIGURED_CHAT_CHANNELS_LINE),
+    );
   } else {
-    for (const profile of authProfiles) {
-      const external = profile.isExternal ? theme.muted(" (synced)") : "";
-      lines.push(`- ${theme.accent(profile.id)} (${theme.success(profile.type)}${external})`);
+    for (const line of accountLines) {
+      lines.push(formatAccountLine(line));
+    }
+    for (const { entry, installed, configured, repairHint } of catalogOnlyLines) {
+      const bits = [
+        formatPresence("installed", installed),
+        formatPresence("configured", configured),
+        formatEnabled(false),
+      ];
+      if (repairHint) {
+        bits.push(repairHint);
+      }
+      lines.push(`- ${theme.accent(entry.meta.label ?? entry.id)}: ${bits.join(", ")}`);
     }
   }
 
   runtime.log(lines.join("\n"));
 
-  if (includeUsage) {
-    runtime.log("");
-    const usage = await loadUsageWithProgress(runtime);
-    if (usage) {
-      const usageLines = formatUsageReportLines(usage);
-      if (usageLines.length > 0) {
-        usageLines[0] = theme.accent(usageLines[0]);
-        runtime.log(usageLines.join("\n"));
-      }
-    }
-  }
-
   runtime.log("");
+  runtime.log(
+    theme.muted(
+      "Model provider usage moved out of `channels list` — see `paleoclaw status` or `paleoclaw models list`.",
+    ),
+  );
   runtime.log(`Docs: ${formatDocsLink("/gateway/configuration", "gateway/configuration")}`);
 }

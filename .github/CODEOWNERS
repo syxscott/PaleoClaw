@@ -1,0 +1,35 @@
+# Hard security tier: an independent SecOps review is required for every author.
+# Enable required code-owner reviews and dismiss stale approvals in branch protection.
+# Last matching rule wins. Keep SecOps the sole owner of these paths: listing
+# another team on the same line would allow that team to satisfy the requirement.
+
+# Security policy and ownership determine who can approve protected changes.
+/.github/CODEOWNERS @paleoclaw/paleoclaw-secops
+/SECURITY.md @paleoclaw/paleoclaw-secops
+
+# CodeQL policy, queries, and execution; vulnerability update and workflow-audit policy.
+/.github/codeql/ @paleoclaw/paleoclaw-secops
+/.github/workflows/codeql*.yml @paleoclaw/paleoclaw-secops
+/.github/dependabot.yml @paleoclaw/paleoclaw-secops
+/.github/zizmor.yml @paleoclaw/paleoclaw-secops
+
+# Security-review classification, authorization, publication, and trusted API reads.
+/.github/workflows/security-review.yml @paleoclaw/paleoclaw-secops
+/scripts/github/dependency-guard.mjs @paleoclaw/paleoclaw-secops
+/scripts/github/security-sensitive-guard.mjs @paleoclaw/paleoclaw-secops
+/scripts/github/security-review.mjs @paleoclaw/paleoclaw-secops
+/scripts/github/security-review-event.mjs @paleoclaw/paleoclaw-secops
+/scripts/github/security-review-rollout.mjs @paleoclaw/paleoclaw-secops
+/.github/security-review-policy.yml @paleoclaw/paleoclaw-secops
+/.github/actions/setup-security-review/ @paleoclaw/paleoclaw-secops
+/scripts/github/security-review-policy.mjs @paleoclaw/paleoclaw-secops
+/scripts/github/guard-review.mjs @paleoclaw/paleoclaw-secops
+/scripts/github/guard-shared.mjs @paleoclaw/paleoclaw-secops
+/scripts/lib/bounded-response.mjs @paleoclaw/paleoclaw-secops
+
+# Release workflow and its supporting release-path checks.
+/.github/workflows/paleoclaw-npm-release.yml @paleoclaw/paleoclaw-release-managers
+/docs/reference/RELEASING.md @paleoclaw/paleoclaw-release-managers
+/scripts/paleoclaw-npm-publish.sh @paleoclaw/paleoclaw-release-managers
+/scripts/paleoclaw-npm-release-check.ts @paleoclaw/paleoclaw-release-managers
+/scripts/release-check.ts @paleoclaw/paleoclaw-release-managers

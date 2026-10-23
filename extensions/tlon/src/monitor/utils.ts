@@ -1,75 +1,26 @@
+import { resolveAllowlistMatchByCandidates } from "paleoclaw/plugin-sdk/allow-from";
+import {
+  formatAgentEnvelope,
+  resolveEnvelopeFormatOptions,
+} from "paleoclaw/plugin-sdk/channel-inbound";
+import type {
+  ChannelIngressContextBinding,
+  StableChannelIngressIdentityParams,
+} from "paleoclaw/plugin-sdk/channel-ingress-runtime";
+import type { OpenClawConfig } from "paleoclaw/plugin-sdk/config-contracts";
+import { expectDefined } from "paleoclaw/plugin-sdk/expect-runtime";
+import { asNullableRecord, readStringField } from "paleoclaw/plugin-sdk/string-coerce-runtime";
+import { escapeRegExp } from "paleoclaw/plugin-sdk/text-utility-runtime";
+import { getTlonRuntime } from "../runtime.js";
 import { normalizeShip } from "../targets.js";
-
-// Cite types for message references
-export interface ChanCite {
-  chan: { nest: string; where: string };
-}
-export interface GroupCite {
-  group: string;
-}
-export interface DeskCite {
-  desk: { flag: string; where: string };
-}
-export interface BaitCite {
-  bait: { group: string; graph: string; where: string };
-}
-export type Cite = ChanCite | GroupCite | DeskCite | BaitCite;
-
-export interface ParsedCite {
-  type: "chan" | "group" | "desk" | "bait";
-  nest?: string;
-  author?: string;
-  postId?: string;
-  group?: string;
-  flag?: string;
-  where?: string;
-}
-
-// Extract all cites from message content
-export function extractCites(content: unknown): ParsedCite[] {
-  if (!content || !Array.isArray(content)) {
-    return [];
-  }
-
-  const cites: ParsedCite[] = [];
-
-  for (const verse of content) {
-    if (verse?.block?.cite && typeof verse.block.cite === "object") {
-      const cite = verse.block.cite;
-
-      if (cite.chan && typeof cite.chan === "object") {
-        const { nest, where } = cite.chan;
-        const whereMatch = where?.match(/\/msg\/(~[a-z-]+)\/(.+)/);
-        cites.push({
-          type: "chan",
-          nest,
-          where,
-          author: whereMatch?.[1],
-          postId: whereMatch?.[2],
-        });
-      } else if (cite.group && typeof cite.group === "string") {
-        cites.push({ type: "group", group: cite.group });
-      } else if (cite.desk && typeof cite.desk === "object") {
-        cites.push({ type: "desk", flag: cite.desk.flag, where: cite.desk.where });
-      } else if (cite.bait && typeof cite.bait === "object") {
-        cites.push({
-          type: "bait",
-          group: cite.bait.group,
-          nest: cite.bait.graph,
-          where: cite.bait.where,
-        });
-      }
-    }
-  }
-
-  return cites;
-}
 
 export function formatModelName(modelString?: string | null): string {
   if (!modelString) {
     return "AI";
   }
-  const modelName = modelString.includes("/") ? modelString.split("/")[1] : modelString;
+  const modelName = modelString.includes("/")
+    ? expectDefined(modelString.split("/").at(1), "provider/model second segment")
+    : modelString;
   const modelMappings: Record<string, string> = {
     "claude-opus-4-5": "Claude Opus 4.5",
     "claude-sonnet-4-5": "Claude Sonnet 4.5",
@@ -81,8 +32,9 @@ export function formatModelName(modelString?: string | null): string {
     "gemini-pro": "Gemini Pro",
   };
 
-  if (modelMappings[modelName]) {
-    return modelMappings[modelName];
+  const mappedName = Object.hasOwn(modelMappings, modelName) ? modelMappings[modelName] : undefined;
+  if (mappedName !== undefined) {
+    return mappedName;
   }
   return modelName
     .replace(/-/g, " ")
@@ -100,22 +52,19 @@ export function isBotMentioned(
     return false;
   }
 
-  // Check for @all mention
   if (/@all\b/i.test(messageText)) {
     return true;
   }
 
-  // Check for ship mention
   const normalizedBotShip = normalizeShip(botShipName);
-  const escapedShip = normalizedBotShip.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const escapedShip = escapeRegExp(normalizedBotShip);
   const mentionPattern = new RegExp(`(^|\\s)${escapedShip}(?=\\s|$)`, "i");
   if (mentionPattern.test(messageText)) {
     return true;
   }
 
-  // Check for nickname mention (case-insensitive, word boundary)
   if (nickname) {
-    const escapedNickname = nickname.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const escapedNickname = escapeRegExp(nickname);
     const nicknamePattern = new RegExp(`(^|\\s)${escapedNickname}(?=\\s|$|[,!?.])`, "i");
     if (nicknamePattern.test(messageText)) {
       return true;
@@ -125,168 +74,212 @@ export function isBotMentioned(
   return false;
 }
 
-/**
- * Strip bot ship mention from message text for command detection.
- * "~bot-ship /status" → "/status"
- */
 export function stripBotMention(messageText: string, botShipName: string): string {
-  if (!messageText || !botShipName) return messageText;
+  if (!messageText || !botShipName) {
+    return messageText;
+  }
   return messageText.replace(normalizeShip(botShipName), "").trim();
 }
 
-export function isDmAllowed(senderShip: string, allowlist: string[] | undefined): boolean {
-  if (!allowlist || allowlist.length === 0) {
-    return false;
-  }
-  const normalizedSender = normalizeShip(senderShip);
-  return allowlist.map((ship) => normalizeShip(ship)).some((ship) => ship === normalizedSender);
+export function extractDmPartnerShip(whom: unknown): string {
+  const raw =
+    typeof whom === "string"
+      ? whom
+      : whom && typeof whom === "object" && "ship" in whom && typeof whom.ship === "string"
+        ? whom.ship
+        : "";
+  const normalized = normalizeShip(raw);
+  // Keep DM routing strict: accept only patp-like values.
+  return /^~?[a-z-]+$/i.test(normalized) ? normalized : "";
 }
 
-/**
- * Check if a group invite from a ship should be auto-accepted.
- *
- * SECURITY: Fail-safe to deny. If allowlist is empty or undefined,
- * ALL invites are rejected - even if autoAcceptGroupInvites is enabled.
- * This prevents misconfigured bots from accepting malicious invites.
- */
+const tlonIngressIdentity = {
+  key: "sender-ship",
+  normalize: normalizeShip,
+  sensitivity: "pii",
+  isWildcardEntry: () => false,
+  entryIdPrefix: "tlon-entry",
+} satisfies StableChannelIngressIdentityParams;
+
+export async function isDmAllowedWithIngress(
+  senderShip: string,
+  allowlist: string[] | undefined,
+): Promise<boolean> {
+  const access = await resolveTlonMessageIngress({
+    senderShip,
+    allowFrom: allowlist ?? [],
+    conversation: { kind: "direct", id: "direct" },
+  });
+  return access.senderAccess.allowed;
+}
+
+export async function resolveTlonMessageIngress(params: {
+  senderShip: string;
+  allowFrom: string[];
+  conversation: { kind: "direct" | "group"; id: string };
+  accountId?: string;
+  groupPolicy?: "open" | "allowlist";
+  contextBinding?: ChannelIngressContextBinding;
+}) {
+  return await getTlonRuntime().channel.inbound.ingress.resolveStable({
+    channelId: "tlon",
+    accountId: params.accountId ?? "default",
+    identity: tlonIngressIdentity,
+    subject: { stableId: params.senderShip },
+    conversation: params.conversation,
+    contextBinding: params.contextBinding,
+    dmPolicy: "allowlist",
+    groupPolicy: params.groupPolicy ?? "open",
+    allowFrom: params.allowFrom,
+    groupAllowFrom: params.allowFrom,
+  });
+}
+
+export async function resolveTlonCommandAuthorizationWithIngress(params: {
+  senderShip: string;
+  ownerShip: string | null | undefined;
+}) {
+  const normalizedOwner = params.ownerShip ? normalizeShip(params.ownerShip) : null;
+  return await getTlonRuntime().channel.inbound.ingress.resolveStable({
+    channelId: "tlon",
+    accountId: "default",
+    identity: tlonIngressIdentity,
+    useAccessGroups: true,
+    subject: { stableId: params.senderShip },
+    conversation: {
+      kind: "direct",
+      id: "command",
+    },
+    event: {
+      authMode: "none",
+      mayPair: false,
+    },
+    dmPolicy: "allowlist",
+    groupPolicy: "open",
+    allowFrom: normalizedOwner ? [normalizedOwner] : [],
+    command: {},
+  });
+}
+
 export function isGroupInviteAllowed(
   inviterShip: string,
   allowlist: string[] | undefined,
 ): boolean {
-  // SECURITY: Fail-safe to deny when no allowlist configured
-  if (!allowlist || allowlist.length === 0) {
-    return false;
-  }
   const normalizedInviter = normalizeShip(inviterShip);
-  return allowlist.map((ship) => normalizeShip(ship)).some((ship) => ship === normalizedInviter);
+  return resolveAllowlistMatchByCandidates({
+    allowList: (allowlist ?? []).map((ship) => normalizeShip(ship)),
+    candidates: [{ value: normalizedInviter, source: "ship" }],
+  }).allowed;
 }
 
-// Helper to recursively extract text from inline content
-function extractInlineText(items: any[]): string {
-  return items
-    .map((item: any) => {
-      if (typeof item === "string") {
-        return item;
-      }
-      if (item && typeof item === "object") {
-        if (item.ship) {
-          return item.ship;
-        }
-        if ("sect" in item) {
-          return `@${item.sect || "all"}`;
-        }
-        if (item["inline-code"]) {
-          return `\`${item["inline-code"]}\``;
-        }
-        if (item.code) {
-          return `\`${item.code}\``;
-        }
-        if (item.link && item.link.href) {
-          return item.link.content || item.link.href;
-        }
-        if (item.bold && Array.isArray(item.bold)) {
-          return `**${extractInlineText(item.bold)}**`;
-        }
-        if (item.italics && Array.isArray(item.italics)) {
-          return `*${extractInlineText(item.italics)}*`;
-        }
-        if (item.strike && Array.isArray(item.strike)) {
-          return `~~${extractInlineText(item.strike)}~~`;
-        }
-      }
-      return "";
-    })
-    .join("");
+function renderInlineItem(item: unknown, topLevel = false): string {
+  if (typeof item === "string") {
+    return item;
+  }
+  const record = asNullableRecord(item);
+  if (!record) {
+    return "";
+  }
+  const ship = readStringField(record, "ship");
+  if (ship) {
+    return ship;
+  }
+  if ("sect" in record) {
+    const sect = record.sect;
+    if (typeof sect === "string") {
+      return `@${sect || "all"}`;
+    }
+    if (sect === null) {
+      return "@all";
+    }
+  }
+  if (topLevel && "break" in record) {
+    return "\n";
+  }
+  const code = readStringField(record, "inline-code") || readStringField(record, "code");
+  if (code) {
+    return `\`${code}\``;
+  }
+  const link = asNullableRecord(record.link);
+  const linkHref = link ? readStringField(link, "href") : undefined;
+  if (link && linkHref) {
+    const linkContent = readStringField(link, "content");
+    return topLevel ? linkHref : linkContent || linkHref;
+  }
+  if (Array.isArray(record.bold)) {
+    return `**${extractInlineText(record.bold)}**`;
+  }
+  if (Array.isArray(record.italics)) {
+    return `*${extractInlineText(record.italics)}*`;
+  }
+  if (Array.isArray(record.strike)) {
+    return `~~${extractInlineText(record.strike)}~~`;
+  }
+  if (topLevel && Array.isArray(record.blockquote)) {
+    return `> ${extractInlineText(record.blockquote)}`;
+  }
+  return "";
+}
+
+function extractInlineText(items: readonly unknown[]): string {
+  return items.map((item) => renderInlineItem(item)).join("");
 }
 
 export function extractMessageText(content: unknown): string {
-  if (!content || !Array.isArray(content)) {
+  if (!Array.isArray(content)) {
     return "";
   }
 
   return content
-    .map((verse: any) => {
-      // Handle inline content (text, ships, links, etc.)
-      if (verse.inline && Array.isArray(verse.inline)) {
-        return verse.inline
-          .map((item: any) => {
-            if (typeof item === "string") {
-              return item;
-            }
-            if (item && typeof item === "object") {
-              if (item.ship) {
-                return item.ship;
-              }
-              // Handle sect (role mentions like @all)
-              if ("sect" in item) {
-                return `@${item.sect || "all"}`;
-              }
-              if (item.break !== undefined) {
-                return "\n";
-              }
-              if (item.link && item.link.href) {
-                return item.link.href;
-              }
-              // Handle inline code (Tlon uses "inline-code" key)
-              if (item["inline-code"]) {
-                return `\`${item["inline-code"]}\``;
-              }
-              if (item.code) {
-                return `\`${item.code}\``;
-              }
-              // Handle bold/italic/strike - recursively extract text
-              if (item.bold && Array.isArray(item.bold)) {
-                return `**${extractInlineText(item.bold)}**`;
-              }
-              if (item.italics && Array.isArray(item.italics)) {
-                return `*${extractInlineText(item.italics)}*`;
-              }
-              if (item.strike && Array.isArray(item.strike)) {
-                return `~~${extractInlineText(item.strike)}~~`;
-              }
-              // Handle blockquote inline
-              if (item.blockquote && Array.isArray(item.blockquote)) {
-                return `> ${extractInlineText(item.blockquote)}`;
-              }
-            }
-            return "";
-          })
-          .join("");
+    .map((verse) => {
+      const verseRecord = asNullableRecord(verse);
+      if (!verseRecord) {
+        return "";
       }
 
-      // Handle block content (images, code blocks, etc.)
-      if (verse.block && typeof verse.block === "object") {
-        const block = verse.block;
+      if (Array.isArray(verseRecord.inline)) {
+        return verseRecord.inline.map((item) => renderInlineItem(item, true)).join("");
+      }
 
-        // Image blocks
-        if (block.image && block.image.src) {
-          const alt = block.image.alt ? ` (${block.image.alt})` : "";
-          return `\n${block.image.src}${alt}\n`;
+      const block = asNullableRecord(verseRecord.block);
+      if (block) {
+        const image = asNullableRecord(block.image);
+
+        if (image) {
+          const imageSrc = readStringField(image, "src");
+          if (imageSrc) {
+            const altText = readStringField(image, "alt");
+            const alt = altText ? ` (${altText})` : "";
+            return `\n${imageSrc}${alt}\n`;
+          }
         }
 
-        // Code blocks
-        if (block.code && typeof block.code === "object") {
-          const lang = block.code.lang || "";
-          const code = block.code.code || "";
-          return `\n\`\`\`${lang}\n${code}\n\`\`\`\n`;
+        const codeBlock = asNullableRecord(block.code);
+        if (codeBlock) {
+          const lang = readStringField(codeBlock, "lang") ?? "";
+          const code = readStringField(codeBlock, "code") ?? "";
+          let fenceLength = 3;
+          for (const match of code.matchAll(/`+/g)) {
+            fenceLength = Math.max(fenceLength, match[0].length + 1);
+          }
+          const fence = "`".repeat(fenceLength);
+          return `\n${fence}${lang}\n${code}\n${fence}\n`;
         }
 
-        // Header blocks
-        if (block.header && typeof block.header === "object") {
-          const text =
-            block.header.content
-              ?.map((item: any) => (typeof item === "string" ? item : ""))
-              .join("") || "";
+        const header = asNullableRecord(block.header);
+        if (header) {
+          const headerContent = Array.isArray(header.content) ? header.content : [];
+          const text = headerContent.map((item) => (typeof item === "string" ? item : "")).join("");
           return `\n## ${text}\n`;
         }
 
-        // Cite/quote blocks - parse the reference structure
-        if (block.cite && typeof block.cite === "object") {
-          const cite = block.cite;
+        const cite = asNullableRecord(block.cite);
+        if (cite) {
+          const chanCite = asNullableRecord(cite.chan);
 
-          // ChanCite - reference to a channel message
-          if (cite.chan && typeof cite.chan === "object") {
-            const { nest, where } = cite.chan;
+          if (chanCite) {
+            const nest = readStringField(chanCite, "nest");
+            const where = readStringField(chanCite, "where");
             // where is typically /msg/~author/timestamp
             const whereMatch = where?.match(/\/msg\/(~[a-z-]+)\/(.+)/);
             if (whereMatch) {
@@ -296,19 +289,26 @@ export function extractMessageText(content: unknown): string {
             return `\n> [quoted from ${nest}]\n`;
           }
 
-          // GroupCite - reference to a group
-          if (cite.group && typeof cite.group === "string") {
-            return `\n> [ref: group ${cite.group}]\n`;
+          const group = readStringField(cite, "group");
+          if (group) {
+            return `\n> [ref: group ${group}]\n`;
           }
 
-          // DeskCite - reference to an app/desk
-          if (cite.desk && typeof cite.desk === "object") {
-            return `\n> [ref: ${cite.desk.flag}]\n`;
+          const desk = asNullableRecord(cite.desk);
+          if (desk) {
+            const flag = readStringField(desk, "flag");
+            if (flag) {
+              return `\n> [ref: ${flag}]\n`;
+            }
           }
 
-          // BaitCite - reference with group+graph context
-          if (cite.bait && typeof cite.bait === "object") {
-            return `\n> [ref: ${cite.bait.graph} in ${cite.bait.group}]\n`;
+          const bait = asNullableRecord(cite.bait);
+          if (bait) {
+            const graph = readStringField(bait, "graph");
+            const groupName = readStringField(bait, "group");
+            if (graph && groupName) {
+              return `\n> [ref: ${graph} in ${groupName}]\n`;
+            }
           }
 
           return `\n> [quoted message]\n`;
@@ -332,11 +332,25 @@ export function isSummarizationRequest(messageText: string): boolean {
   return patterns.some((pattern) => pattern.test(messageText));
 }
 
-export function formatChangesDate(daysAgo = 5): string {
-  const now = new Date();
-  const targetDate = new Date(now.getTime() - daysAgo * 24 * 60 * 60 * 1000);
-  const year = targetDate.getFullYear();
-  const month = targetDate.getMonth() + 1;
-  const day = targetDate.getDate();
-  return `~${year}.${month}.${day}..20.19.51..9b9d`;
+/**
+ * Formats channel history for a summarization request. Each entry is rendered
+ * through the shared inbound envelope so timestamps honor the configured user
+ * timezone instead of the host process zone (matches Mattermost/Feishu).
+ */
+export function formatSummarizationHistoryText(
+  history: ReadonlyArray<{ author: string; content: string; timestamp: number }>,
+  cfg?: OpenClawConfig,
+): string {
+  const envelopeOptions = resolveEnvelopeFormatOptions(cfg);
+  return history
+    .map((msg) =>
+      formatAgentEnvelope({
+        channel: "Tlon",
+        from: msg.author,
+        timestamp: msg.timestamp,
+        body: msg.content,
+        envelope: envelopeOptions,
+      }),
+    )
+    .join("\n");
 }

@@ -1,12 +1,30 @@
+// Shared Vitest mock harness for channel command config and secret resolution.
 import { vi } from "vitest";
 import type { MockFn } from "../test-utils/vitest-mock-fn.js";
 
+const readConfigFileSnapshotMock = vi.fn() as unknown as MockFn;
+const readConfigFileSnapshotForWriteMock = vi.fn(async () => {
+  const snapshot = await readConfigFileSnapshotMock();
+  return {
+    snapshot: { ...snapshot, sourceConfig: snapshot.sourceConfig ?? snapshot.config },
+    writeOptions: {},
+  };
+}) as unknown as MockFn;
+const writeConfigFileMock = vi.fn().mockResolvedValue(undefined) as unknown as MockFn;
+const replaceConfigFileMock = vi.fn(async (params: { sourceConfig: unknown }) => {
+  await writeConfigFileMock(params.sourceConfig);
+}) as unknown as MockFn;
+
 export const configMocks: {
   readConfigFileSnapshot: MockFn;
+  readConfigFileSnapshotForWrite: MockFn;
   writeConfigFile: MockFn;
+  replaceConfigFile: MockFn;
 } = {
-  readConfigFileSnapshot: vi.fn() as unknown as MockFn,
-  writeConfigFile: vi.fn().mockResolvedValue(undefined) as unknown as MockFn,
+  readConfigFileSnapshot: readConfigFileSnapshotMock,
+  readConfigFileSnapshotForWrite: readConfigFileSnapshotForWriteMock,
+  writeConfigFile: writeConfigFileMock,
+  replaceConfigFile: replaceConfigFileMock,
 };
 
 export const offsetMocks: {
@@ -15,19 +33,36 @@ export const offsetMocks: {
   deleteTelegramUpdateOffset: vi.fn().mockResolvedValue(undefined) as unknown as MockFn,
 };
 
-vi.mock("../config/config.js", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("../config/config.js")>();
-  return {
-    ...actual,
-    readConfigFileSnapshot: configMocks.readConfigFileSnapshot,
-    writeConfigFile: configMocks.writeConfigFile,
-  };
-});
+export const lifecycleMocks: {
+  onAccountConfigChanged: MockFn;
+} = {
+  onAccountConfigChanged: vi.fn().mockResolvedValue(undefined) as unknown as MockFn,
+};
 
-vi.mock("../telegram/update-offset-store.js", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("../telegram/update-offset-store.js")>();
-  return {
-    ...actual,
-    deleteTelegramUpdateOffset: offsetMocks.deleteTelegramUpdateOffset,
-  };
-});
+const secretMocks = {
+  resolveCommandConfigWithSecrets: vi.fn(async ({ config }: { config: unknown }) => ({
+    resolvedConfig: config,
+    effectiveConfig: config,
+    diagnostics: [],
+  })) as unknown as MockFn,
+};
+
+vi.mock("../config/config.js", () => ({
+  readConfigFileSnapshot: configMocks.readConfigFileSnapshot,
+  readConfigFileSnapshotForWrite: configMocks.readConfigFileSnapshotForWrite,
+  writeConfigFile: configMocks.writeConfigFile,
+  replaceConfigFile: configMocks.replaceConfigFile,
+}));
+
+vi.mock("../cli/command-config-resolution.js", () => ({
+  resolveCommandConfigWithSecrets: secretMocks.resolveCommandConfigWithSecrets,
+}));
+
+// mock-isolation: Store routing is external I/O here; persistence tests prove durable writes.
+vi.mock("../cli/local-state-owner.js", () => ({
+  runWithLocalStateOwner: vi.fn(async () => undefined),
+}));
+
+vi.mock("../cli/command-secret-targets.js", () => ({
+  getChannelsCommandSecretTargetIds: () => new Set<string>(),
+}));

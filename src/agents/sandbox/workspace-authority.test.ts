@@ -1,0 +1,258 @@
+import fs from "node:fs";
+import path from "node:path";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { replaceSessionEntry } from "../../config/sessions/session-accessor.js";
+import type { AgentSandboxConfig } from "../../config/types.agents-shared.js";
+import type { OpenClawConfig } from "../../config/types.openclaw.js";
+import {
+  createOpenClawTestState,
+  type OpenClawTestState,
+} from "../../test-utils/paleoclaw-test-state.js";
+import { withPreparedSessionCapabilityRead } from "../subagents/spawn/subagent-session-store.js";
+import { resolveSandboxRuntimeStatusAsync } from "./runtime-status.js";
+import { resolveSandboxWorkspaceAuthority } from "./workspace-authority.js";
+
+type AuthorityParams = Omit<
+  Parameters<typeof resolveSandboxWorkspaceAuthority>[0],
+  "preparedRuntimeStatus"
+>;
+
+async function prepareWorkspaceAuthority(
+  config: OpenClawConfig,
+  overrides: Partial<Omit<AuthorityParams, "config">> = {},
+) {
+  const params = {
+    config,
+    agentId: "main",
+    sessionKey: "agent:main:subagent:workboard-card",
+    ...overrides,
+  };
+  const preparedRuntimeStatus = await resolveSandboxRuntimeStatusAsync({
+    cfg: params.config,
+    agentId: params.agentId,
+    sessionKey: params.sessionKey,
+  });
+  return withPreparedSessionCapabilityRead(() =>
+    resolveSandboxWorkspaceAuthority({ ...params, preparedRuntimeStatus }),
+  );
+}
+
+const SAFE_WORKBOARD_TOOLS = ["exec", "process", "read", "write", "edit", "apply_patch"];
+const lifecycleTools = {
+  confinedToolNames: ["workboard_complete"],
+  requiredToolNames: ["workboard_complete"],
+};
+
+function configWithSandbox(sandbox: AgentSandboxConfig = {}): OpenClawConfig {
+  return {
+    agents: {
+      defaults: {
+        workspace: "/workspace",
+        sandbox: { mode: "all", workspaceAccess: "rw", scope: "session", ...sandbox },
+      },
+      entries: { main: { workspace: "/workspace" } },
+    },
+    tools: {
+      sandbox: { tools: { allow: SAFE_WORKBOARD_TOOLS } },
+    },
+  };
+}
+
+describe("resolveSandboxWorkspaceAuthority", () => {
+  let state: OpenClawTestState;
+  beforeEach(async () => {
+    state = await createOpenClawTestState({
+      label: "sandbox-workspace-authority",
+      layout: "state-only",
+    });
+  });
+  afterEach(async () => {
+    await state.cleanup();
+  });
+
+  function createSessionStorePath(prefix: string): string {
+    const root = fs.mkdtempSync(path.join(state.root, prefix));
+    return path.join(root, "agents", "main", "sessions", "sessions.json");
+  }
+
+  it.each(["docker", "Podman"])("attests a writable %s workspace", async (backend) => {
+    const result = await prepareWorkspaceAuthority(configWithSandbox({ backend }));
+    expect(result).toEqual({ sandboxed: true, workspaceAccess: "rw" });
+  });
+
+  it("preserves read-only authority", async () => {
+    const result = await prepareWorkspaceAuthority(
+      configWithSandbox({ mode: "all", workspaceAccess: "ro" }),
+    );
+
+    expect(result).toEqual({ sandboxed: true, workspaceAccess: "ro" });
+  });
+
+  it("caps role-required access and rejects principal-shared worker authority", async () => {
+    const sessionKey = "agent:main:guest-worker";
+    const storePath = createSessionStorePath("paleoclaw-required-workspace-authority-");
+    await replaceSessionEntry(
+      { sessionKey, storePath },
+      {
+        sessionId: "guest-worker",
+        updatedAt: Date.now(),
+        sandbox: "required",
+        createdActor: { type: "human", source: "unknown", id: "guest-principal" },
+      },
+    );
+    const config = configWithSandbox({ mode: "off", scope: "session", workspaceAccess: "rw" });
+    config.session = { store: storePath };
+
+    expect(await prepareWorkspaceAuthority(config, { sessionKey })).toMatchObject({
+      sandboxed: true,
+      workspaceAccess: "ro",
+      confinementError: expect.stringContaining("not exclusive"),
+    });
+  });
+
+  it("rejects Docker and shell escape configurations", async () => {
+    const externalBind = await prepareWorkspaceAuthority(
+      configWithSandbox({
+        docker: { dangerouslyAllowExternalBindSources: true },
+      }),
+    );
+    expect(externalBind.confinementError).toContain("dangerous Docker");
+
+    const gatewayExecConfig = configWithSandbox();
+    const gatewayExec = await prepareWorkspaceAuthority({
+      ...gatewayExecConfig,
+      tools: { ...gatewayExecConfig.tools, exec: { host: "gateway" } },
+    });
+    expect(gatewayExec.confinementError).toContain("outside the sandbox");
+  });
+
+  it("rejects non-session, elevated, and delegating workers", async () => {
+    const agentScoped = await prepareWorkspaceAuthority(configWithSandbox({ scope: "agent" }));
+    expect(agentScoped.confinementError).toContain("not exclusive");
+
+    const shared = await prepareWorkspaceAuthority(configWithSandbox({ scope: "shared" }));
+    expect(shared.confinementError).toContain("not exclusive");
+
+    const elevatedConfig = configWithSandbox();
+    elevatedConfig.tools!.elevated = { enabled: true };
+    const elevated = await prepareWorkspaceAuthority(elevatedConfig);
+    expect(elevated.confinementError).toContain("elevated execution");
+
+    // A delegated child can write through its own workspace authority.
+    const delegatingConfig = configWithSandbox();
+    delegatingConfig.tools!.sandbox!.tools!.allow = [...SAFE_WORKBOARD_TOOLS, "sessions_spawn"];
+    delegatingConfig.tools!.subagents = { tools: { alsoAllow: ["sessions_spawn"] } };
+    const delegating = await prepareWorkspaceAuthority(delegatingConfig);
+    expect(delegating.confinementError).toContain("sessions_spawn");
+    expect(delegating.sandboxed).toBe(true);
+  });
+
+  it("uses the runtime session visibility clamp", async () => {
+    const config = configWithSandbox({ sessionToolsVisibility: "all" });
+    config.agents!.entries!.main!.sandbox = { sessionToolsVisibility: "spawned" };
+    config.tools!.sessions = { visibility: "all" };
+
+    const result = await prepareWorkspaceAuthority(config);
+    expect(result.confinementError).toContain("host-wide sessions");
+  });
+
+  it("ignores unconfined tools denied by the effective policy stack", async () => {
+    const config = configWithSandbox();
+    config.tools!.sandbox!.tools!.allow = [...SAFE_WORKBOARD_TOOLS, "sessions_spawn"];
+    config.tools!.subagents = { tools: { deny: ["sessions_spawn"] } };
+
+    const result = await prepareWorkspaceAuthority(config);
+    expect(result.confinementError).toBeUndefined();
+  });
+
+  it("rejects persisted session host execution overrides", async () => {
+    const config = configWithSandbox();
+    const gateway = await prepareWorkspaceAuthority(config, {
+      sessionEntry: { execHost: "gateway" },
+    });
+    expect(gateway.confinementError).toContain("outside the sandbox");
+
+    const node = await prepareWorkspaceAuthority(config, {
+      sessionEntry: { execHost: "auto", execNode: "build-node" },
+    });
+    expect(node.confinementError).toContain("outside the sandbox");
+  });
+
+  it("rejects unbounded, plugin, MCP, and named custom tool surfaces", async () => {
+    for (const allow of [[], ["group:plugins"], ["bundle-mcp"], ["custom_tool"]]) {
+      const config = configWithSandbox();
+      config.tools!.sandbox!.tools!.allow = allow;
+      const result = await prepareWorkspaceAuthority(config);
+      expect(result.confinementError).toContain("unclassified tool surface");
+    }
+  });
+
+  it("trusts only caller-enumerated plugin tools", async () => {
+    const config = configWithSandbox({ mode: "all", workspaceAccess: "rw" });
+    config.tools!.sandbox!.tools!.allow = [
+      ...SAFE_WORKBOARD_TOOLS,
+      "workboard_complete",
+      "workboard_shell",
+    ];
+    const result = await prepareWorkspaceAuthority(config, {
+      confinedToolNames: ["workboard_complete"],
+    });
+
+    expect(result.confinementError).toContain("workboard_shell");
+  });
+
+  it("requires lifecycle tools across the complete effective policy", async () => {
+    const missingResult = await prepareWorkspaceAuthority(configWithSandbox(), lifecycleTools);
+    expect(missingResult.confinementError).toContain("required tool workboard_complete");
+
+    const denied = configWithSandbox();
+    denied.tools!.sandbox!.tools!.allow = [...SAFE_WORKBOARD_TOOLS, "workboard_complete"];
+    denied.tools!.deny = ["workboard_complete"];
+    const deniedResult = await prepareWorkspaceAuthority(denied, lifecycleTools);
+    expect(deniedResult.confinementError).toContain("required tool workboard_complete");
+
+    denied.tools!.deny = [];
+    expect(
+      (await prepareWorkspaceAuthority(denied, lifecycleTools)).confinementError,
+    ).toBeUndefined();
+  });
+
+  it("applies profile alsoAllow to required lifecycle tools", async () => {
+    const config = configWithSandbox();
+    config.tools!.profile = "minimal";
+    config.tools!.alsoAllow = ["workboard_complete"];
+    config.tools!.sandbox!.tools!.allow = [...SAFE_WORKBOARD_TOOLS, "workboard_complete"];
+
+    const result = await prepareWorkspaceAuthority(config, lifecycleTools);
+    expect(result.confinementError).toBeUndefined();
+  });
+
+  it("applies the configured target model's provider policy", async () => {
+    const config = configWithSandbox();
+    config.agents!.defaults!.model = "anthropic/claude-sonnet-4-6";
+    config.tools!.byProvider = { anthropic: { deny: ["workboard_complete"] } };
+    config.tools!.sandbox!.tools!.allow = [...SAFE_WORKBOARD_TOOLS, "workboard_complete"];
+
+    const result = await prepareWorkspaceAuthority(config, lifecycleTools);
+    expect(result.confinementError).toContain("required tool workboard_complete");
+  });
+
+  it("applies inherited session denies to required lifecycle tools", async () => {
+    const sessionKey = "agent:main:subagent:workboard-card";
+    const storePath = createSessionStorePath("paleoclaw-workspace-authority-");
+    await replaceSessionEntry(
+      { sessionKey, storePath },
+      {
+        sessionId: "workboard-card",
+        updatedAt: Date.now(),
+        inheritedToolDeny: ["workboard_complete"],
+      },
+    );
+    const config = configWithSandbox();
+    config.session = { store: storePath };
+    config.tools!.sandbox!.tools!.allow = [...SAFE_WORKBOARD_TOOLS, "workboard_complete"];
+
+    const result = await prepareWorkspaceAuthority(config, { sessionKey, ...lifecycleTools });
+    expect(result.confinementError).toContain("required tool workboard_complete");
+  });
+});

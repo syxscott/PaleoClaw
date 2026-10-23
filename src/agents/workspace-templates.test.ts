@@ -1,54 +1,60 @@
+/**
+ * Regression coverage for workspace template directory discovery.
+ * Verifies packaged and fallback documentation template search paths.
+ */
 import fs from "node:fs/promises";
-import os from "node:os";
 import path from "node:path";
-import { pathToFileURL } from "node:url";
-import { afterEach, describe, expect, it } from "vitest";
-import {
-  resetWorkspaceTemplateDirCache,
-  resolveWorkspaceTemplateDir,
-} from "./workspace-templates.js";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { useAutoCleanupTempDirTracker } from "../../test/helpers/temp-dir.js";
+import * as packageRoot from "../infra/paleoclaw-root.js";
 
-const tempDirs: string[] = [];
+const tempDirs = useAutoCleanupTempDirTracker(afterEach);
+afterEach(() => vi.restoreAllMocks());
 
-async function makeTempRoot(): Promise<string> {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), "paleoclaw-templates-"));
-  tempDirs.push(root);
-  return root;
+async function loadWorkspaceTemplateResolvers() {
+  return import("./workspace-templates.js");
 }
 
-describe("resolveWorkspaceTemplateDir", () => {
-  afterEach(async () => {
-    resetWorkspaceTemplateDirCache();
-    await Promise.all(
-      tempDirs.splice(0).map((dir) => fs.rm(dir, { recursive: true, force: true })),
-    );
-  });
-
-  it("resolves templates from package root when module url is dist-rooted", async () => {
-    const root = await makeTempRoot();
-    await fs.writeFile(path.join(root, "package.json"), JSON.stringify({ name: "paleoclaw" }));
-
-    const templatesDir = path.join(root, "docs", "reference", "templates");
-    await fs.mkdir(templatesDir, { recursive: true });
-    await fs.writeFile(path.join(templatesDir, "AGENTS.md"), "# ok\n");
-
-    const distDir = path.join(root, "dist");
-    await fs.mkdir(distDir, { recursive: true });
-    const moduleUrl = pathToFileURL(path.join(distDir, "model-selection.mjs")).toString();
-
-    const resolved = await resolveWorkspaceTemplateDir({ cwd: distDir, moduleUrl });
-    expect(resolved).toBe(templatesDir);
-  });
-
-  it("falls back to package-root docs path when templates directory is missing", async () => {
-    const root = await makeTempRoot();
+describe("resolveWorkspaceTemplateSearchDirs", () => {
+  it("falls back to checkout docs when package-root templates are missing", async () => {
+    const { resolveWorkspaceTemplateSearchDirs } = await loadWorkspaceTemplateResolvers();
+    const root = tempDirs.make("paleoclaw-templates-");
     await fs.writeFile(path.join(root, "package.json"), JSON.stringify({ name: "paleoclaw" }));
 
     const distDir = path.join(root, "dist");
     await fs.mkdir(distDir, { recursive: true });
-    const moduleUrl = pathToFileURL(path.join(distDir, "model-selection.mjs")).toString();
+    const checkoutTemplates = path.resolve("docs", "reference", "templates");
+    vi.spyOn(process, "cwd").mockReturnValue(distDir);
+    vi.spyOn(packageRoot, "resolveOpenClawPackageRoot").mockResolvedValue(root);
 
-    const resolved = await resolveWorkspaceTemplateDir({ cwd: distDir, moduleUrl });
-    expect(path.normalize(resolved)).toBe(path.resolve("docs", "reference", "templates"));
+    const [resolved = ""] = await resolveWorkspaceTemplateSearchDirs();
+    expect(path.normalize(resolved)).toBe(checkoutTemplates);
+  });
+
+  it("returns only existing documentation template directories", async () => {
+    const { resolveWorkspaceTemplateSearchDirs } = await loadWorkspaceTemplateResolvers();
+    const root = tempDirs.make("paleoclaw-templates-");
+    await fs.writeFile(path.join(root, "package.json"), JSON.stringify({ name: "paleoclaw" }));
+
+    const docsTemplatesDir = path.join(root, "docs", "reference", "templates");
+    await fs.mkdir(docsTemplatesDir, { recursive: true });
+
+    const distDir = path.join(root, "dist");
+    await fs.mkdir(distDir, { recursive: true });
+    vi.spyOn(process, "cwd").mockReturnValue(distDir);
+    vi.spyOn(packageRoot, "resolveOpenClawPackageRoot").mockResolvedValue(root);
+
+    const resolved = await resolveWorkspaceTemplateSearchDirs();
+    expect(resolved[0]).toBe(docsTemplatesDir);
+    expect(resolved).not.toContain(path.join(root, "src", "agents", "templates"));
+    for (const templateDir of resolved) {
+      expect((await fs.stat(templateDir)).isDirectory()).toBe(true);
+    }
+  });
+
+  it("does not ship a retired runtime heartbeat template", async () => {
+    const heartbeatTemplate = path.resolve("src", "agents", "templates", "HEARTBEAT.md");
+
+    await expect(fs.access(heartbeatTemplate)).rejects.toMatchObject({ code: "ENOENT" });
   });
 });

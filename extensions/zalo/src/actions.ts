@@ -1,56 +1,31 @@
 import type {
   ChannelMessageActionAdapter,
   ChannelMessageActionName,
-  OpenClawConfig,
-} from "paleoclaw/plugin-sdk/zalo";
-import { extractToolSend, jsonResult, readStringParam } from "paleoclaw/plugin-sdk/zalo";
-import { listEnabledZaloAccounts } from "./accounts.js";
-import { sendMessageZalo } from "./send.js";
+} from "paleoclaw/plugin-sdk/channel-contract";
+import type { OpenClawConfig } from "paleoclaw/plugin-sdk/config-contracts";
+import { extractToolSend } from "paleoclaw/plugin-sdk/tool-send";
+import { inspectZaloAccount, listZaloAccountIds } from "./accounts.js";
 
-const providerId = "zalo";
+const ZALO_ACTIONS = new Set<ChannelMessageActionName>(["send"]);
 
-function listEnabledAccounts(cfg: OpenClawConfig) {
-  return listEnabledZaloAccounts(cfg).filter(
-    (account) => account.enabled && account.tokenSource !== "none",
-  );
+function listEnabledAccounts(cfg: OpenClawConfig, accountId?: string | null) {
+  return (
+    accountId
+      ? [inspectZaloAccount({ cfg, accountId })]
+      : listZaloAccountIds(cfg).map((listedAccountId) =>
+          inspectZaloAccount({ cfg, accountId: listedAccountId }),
+        )
+  ).filter((account) => account.enabled && account.tokenStatus === "available");
 }
 
 export const zaloMessageActions: ChannelMessageActionAdapter = {
-  listActions: ({ cfg }) => {
-    const accounts = listEnabledAccounts(cfg);
+  describeMessageTool: ({ cfg, accountId }) => {
+    const accounts = listEnabledAccounts(cfg, accountId);
     if (accounts.length === 0) {
-      return [];
+      return null;
     }
-    const actions = new Set<ChannelMessageActionName>(["send"]);
-    return Array.from(actions);
+    return { actions: Array.from(ZALO_ACTIONS), capabilities: [] };
   },
-  supportsButtons: () => false,
+  supportsAction: ({ action }) => ZALO_ACTIONS.has(action),
   extractToolSend: ({ args }) => extractToolSend(args, "sendMessage"),
-  handleAction: async ({ action, params, cfg, accountId }) => {
-    if (action === "send") {
-      const to = readStringParam(params, "to", { required: true });
-      const content = readStringParam(params, "message", {
-        required: true,
-        allowEmpty: true,
-      });
-      const mediaUrl = readStringParam(params, "media", { trim: false });
-
-      const result = await sendMessageZalo(to ?? "", content ?? "", {
-        accountId: accountId ?? undefined,
-        mediaUrl: mediaUrl ?? undefined,
-        cfg: cfg,
-      });
-
-      if (!result.ok) {
-        return jsonResult({
-          ok: false,
-          error: result.error ?? "Failed to send Zalo message",
-        });
-      }
-
-      return jsonResult({ ok: true, to, messageId: result.messageId });
-    }
-
-    throw new Error(`Action ${action} is not supported for provider ${providerId}.`);
-  },
 };

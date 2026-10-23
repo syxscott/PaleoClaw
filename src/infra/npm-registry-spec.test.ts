@@ -1,69 +1,94 @@
+// Tests npm registry spec parsing for packages, tags, and versions.
 import { describe, expect, it } from "vitest";
 import {
+  compareOpenClawReleaseVersions,
+  formatPrereleaseResolutionError,
+  isExactSemverVersion,
+  isPrereleaseSemverVersion,
   isPrereleaseResolutionAllowed,
   parseRegistryNpmSpec,
+  resolveOpenClawReleaseCohortVersion,
   validateRegistryNpmSpec,
 } from "./npm-registry-spec.js";
 
+function parseSpecOrThrow(spec: string) {
+  const parsed = parseRegistryNpmSpec(spec);
+  if (parsed === null) {
+    throw new Error(`Expected ${spec} to parse`);
+  }
+  return parsed;
+}
+
 describe("npm registry spec validation", () => {
-  it("accepts bare package names, exact versions, and dist-tags", () => {
-    expect(validateRegistryNpmSpec("@paleoclaw/voice-call")).toBeNull();
-    expect(validateRegistryNpmSpec("@paleoclaw/voice-call@1.2.3")).toBeNull();
-    expect(validateRegistryNpmSpec("@paleoclaw/voice-call@1.2.3-beta.4")).toBeNull();
-    expect(validateRegistryNpmSpec("@paleoclaw/voice-call@latest")).toBeNull();
-    expect(validateRegistryNpmSpec("@paleoclaw/voice-call@beta")).toBeNull();
+  it.each(["@paleoclaw/voice-call@1.2.3"])("accepts %s", (spec) => {
+    expect(validateRegistryNpmSpec(spec)).toBeNull();
   });
 
-  it("rejects semver ranges", () => {
-    expect(validateRegistryNpmSpec("@paleoclaw/voice-call@^1.2.3")).toContain(
-      "exact version or dist-tag",
-    );
-    expect(validateRegistryNpmSpec("@paleoclaw/voice-call@~1.2.3")).toContain(
-      "exact version or dist-tag",
-    );
+  it.each([
+    ["@paleoclaw/voice-call@^1.2.3", "exact version or dist-tag"],
+    ["https://npmjs.org/pkg.tgz", "URLs are not allowed"],
+    ["@paleoclaw/voice-call@", "missing version/tag after @"],
+    ["@paleoclaw/voice-call@../beta", "invalid version/tag"],
+  ])("rejects %s", (spec, expected) => {
+    expect(validateRegistryNpmSpec(spec)).toContain(expected);
+  });
+});
+
+describe("npm registry spec parsing helpers", () => {
+  it.each([["v1.2.3", true]])("detects exact semver versions for %s", (value, expected) => {
+    expect(isExactSemverVersion(value)).toBe(expected);
+  });
+
+  it.each([["2026.5.3-beta.1", true]])(
+    "detects prerelease semver versions for %s",
+    (value, expected) => {
+      expect(isPrereleaseSemverVersion(value)).toBe(expected);
+    },
+  );
+
+  it.each([["2026.5.3-0", "2026.5.3", null]])(
+    "compares paleoclaw release versions for %s and %s",
+    (left, right, expected) => {
+      expect(compareOpenClawReleaseVersions(left, right)).toBe(expected);
+    },
+  );
+
+  it.each([
+    [" 2026.7.1-1 ", "2026.7.1"],
+    ["2026.7.1-beta.3", "2026.7.1-beta.3"],
+  ])("resolves the paleoclaw release cohort for %s", (version, expected) => {
+    expect(resolveOpenClawReleaseCohortVersion(version)).toBe(expected);
   });
 });
 
 describe("npm prerelease resolution policy", () => {
-  it("blocks prerelease resolutions for bare specs", () => {
-    const spec = parseRegistryNpmSpec("@paleoclaw/voice-call");
-    expect(spec).not.toBeNull();
+  it.each([
+    ["@paleoclaw/voice-call", "1.2.3-beta.1", false],
+    ["@paleoclaw/voice-call@latest", "1.2.3-rc.1", false],
+    ["@paleoclaw/voice-call@latest", "2026.5.3-1", true],
+    ["@paleoclaw/voice-call@1.2.3-beta.1", "1.2.3-beta.1", true],
+  ])("decides prerelease resolution for %s -> %s", (spec, resolvedVersion, expected) => {
     expect(
       isPrereleaseResolutionAllowed({
-        spec: spec!,
-        resolvedVersion: "1.2.3-beta.1",
+        spec: parseSpecOrThrow(spec),
+        resolvedVersion,
       }),
-    ).toBe(false);
+    ).toBe(expected);
   });
 
-  it("blocks prerelease resolutions for latest", () => {
-    const spec = parseRegistryNpmSpec("@paleoclaw/voice-call@latest");
-    expect(spec).not.toBeNull();
+  it.each([
+    ["@paleoclaw/voice-call", "1.2.3-beta.1", `Use "npm:@paleoclaw/voice-call@beta"`],
+    [
+      "@paleoclaw/voice-call@beta",
+      "1.2.3-rc.1",
+      "Use an explicit prerelease tag or exact prerelease version",
+    ],
+  ])("formats prerelease guidance for %s", (spec, resolvedVersion, expected) => {
     expect(
-      isPrereleaseResolutionAllowed({
-        spec: spec!,
-        resolvedVersion: "1.2.3-rc.1",
+      formatPrereleaseResolutionError({
+        spec: parseSpecOrThrow(spec),
+        resolvedVersion,
       }),
-    ).toBe(false);
-  });
-
-  it("allows prerelease resolutions when the user explicitly opted in", () => {
-    const tagSpec = parseRegistryNpmSpec("@paleoclaw/voice-call@beta");
-    const versionSpec = parseRegistryNpmSpec("@paleoclaw/voice-call@1.2.3-beta.1");
-
-    expect(tagSpec).not.toBeNull();
-    expect(versionSpec).not.toBeNull();
-    expect(
-      isPrereleaseResolutionAllowed({
-        spec: tagSpec!,
-        resolvedVersion: "1.2.3-beta.4",
-      }),
-    ).toBe(true);
-    expect(
-      isPrereleaseResolutionAllowed({
-        spec: versionSpec!,
-        resolvedVersion: "1.2.3-beta.1",
-      }),
-    ).toBe(true);
+    ).toContain(expected);
   });
 });

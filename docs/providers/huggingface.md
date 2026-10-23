@@ -99,7 +99,7 @@ Model refs use the form `huggingface/<org>/<model>` (Hub-style IDs). The list be
 
 **Example IDs (from the inference endpoint):**
 
-| Model                  | Ref (prefix with `huggingface/`)    |
+| Model                  | Ref (prefix with `huggingface`)    |
 | ---------------------- | ----------------------------------- |
 | DeepSeek R1            | `deepseek-ai/DeepSeek-R1`           |
 | DeepSeek V3.2          | `deepseek-ai/DeepSeek-V3.2`         |

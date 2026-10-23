@@ -1,12 +1,9 @@
 import {
-  normalizeStringEntries,
   resolveAllowlistMatchByCandidates,
   type AllowlistMatch,
-} from "paleoclaw/plugin-sdk/matrix";
-
-function normalizeAllowList(list?: Array<string | number>) {
-  return normalizeStringEntries(list);
-}
+} from "paleoclaw/plugin-sdk/allow-from";
+import { normalizeLowercaseStringOrEmpty } from "paleoclaw/plugin-sdk/string-coerce-runtime";
+import { normalizeStringEntries } from "paleoclaw/plugin-sdk/string-normalization-runtime";
 
 function normalizeMatrixUser(raw?: string | null): string {
   const value = (raw ?? "").trim();
@@ -14,19 +11,9 @@ function normalizeMatrixUser(raw?: string | null): string {
     return "";
   }
   if (!value.startsWith("@") || !value.includes(":")) {
-    return value.toLowerCase();
+    return normalizeLowercaseStringOrEmpty(value);
   }
-  const withoutAt = value.slice(1);
-  const splitIndex = withoutAt.indexOf(":");
-  if (splitIndex === -1) {
-    return value.toLowerCase();
-  }
-  const localpart = withoutAt.slice(0, splitIndex).toLowerCase();
-  const server = withoutAt.slice(splitIndex + 1).toLowerCase();
-  if (!server) {
-    return value.toLowerCase();
-  }
-  return `@${localpart}:${server.toLowerCase()}`;
+  return value;
 }
 
 export function normalizeMatrixUserId(raw?: string | null): string {
@@ -34,7 +21,7 @@ export function normalizeMatrixUserId(raw?: string | null): string {
   if (!trimmed) {
     return "";
   }
-  const lowered = trimmed.toLowerCase();
+  const lowered = normalizeLowercaseStringOrEmpty(trimmed);
   if (lowered.startsWith("matrix:")) {
     return normalizeMatrixUser(trimmed.slice("matrix:".length));
   }
@@ -52,7 +39,7 @@ function normalizeMatrixAllowListEntry(raw: string): string {
   if (trimmed === "*") {
     return trimmed;
   }
-  const lowered = trimmed.toLowerCase();
+  const lowered = normalizeLowercaseStringOrEmpty(trimmed);
   if (lowered.startsWith("matrix:")) {
     return `matrix:${normalizeMatrixUser(trimmed.slice("matrix:".length))}`;
   }
@@ -63,34 +50,23 @@ function normalizeMatrixAllowListEntry(raw: string): string {
 }
 
 export function normalizeMatrixAllowList(list?: Array<string | number>) {
-  return normalizeAllowList(list).map((entry) => normalizeMatrixAllowListEntry(entry));
+  return normalizeStringEntries(list).map(normalizeMatrixAllowListEntry);
 }
 
-export type MatrixAllowListMatch = AllowlistMatch<
-  "wildcard" | "id" | "prefixed-id" | "prefixed-user"
->;
-type MatrixAllowListSource = Exclude<MatrixAllowListMatch["matchSource"], undefined>;
+type MatrixAllowListMatch = AllowlistMatch<"wildcard" | "id" | "prefixed-id" | "prefixed-user">;
+
+type MatrixAllowListMatchSource = NonNullable<MatrixAllowListMatch["matchSource"]>;
 
 export function resolveMatrixAllowListMatch(params: {
   allowList: string[];
   userId?: string;
 }): MatrixAllowListMatch {
   const allowList = params.allowList;
-  if (allowList.length === 0) {
-    return { allowed: false };
-  }
-  if (allowList.includes("*")) {
-    return { allowed: true, matchKey: "*", matchSource: "wildcard" };
-  }
   const userId = normalizeMatrixUser(params.userId);
-  const candidates: Array<{ value?: string; source: MatrixAllowListSource }> = [
+  const candidates: Array<{ value?: string; source: MatrixAllowListMatchSource }> = [
     { value: userId, source: "id" },
     { value: userId ? `matrix:${userId}` : "", source: "prefixed-id" },
     { value: userId ? `user:${userId}` : "", source: "prefixed-user" },
   ];
-  return resolveAllowlistMatchByCandidates({ allowList, candidates });
-}
-
-export function resolveMatrixAllowListMatches(params: { allowList: string[]; userId?: string }) {
-  return resolveMatrixAllowListMatch(params).allowed;
+  return resolveAllowlistMatchByCandidates<MatrixAllowListMatchSource>({ allowList, candidates });
 }

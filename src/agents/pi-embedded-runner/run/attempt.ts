@@ -7,12 +7,13 @@ import {
   DefaultResourceLoader,
   SessionManager,
 } from "@mariozechner/pi-coding-agent";
-import { resolveHeartbeatPrompt } from "../../../auto-reply/heartbeat.js";
+import { resolveHeartbeatPromptCore } from "../../../auto-reply/heartbeat.js";
 import { resolveChannelCapabilities } from "../../../config/channel-capabilities.js";
 import type { OpenClawConfig } from "../../../config/config.js";
 import { getMachineDisplayName } from "../../../infra/machine-name.js";
-import { ensureGlobalUndiciStreamTimeouts } from "../../../infra/net/undici-global-dispatcher.js";
+import { ensureGlobalUndiciDispatcherStreamTimeouts } from "../../../infra/net/undici-global-dispatcher.js";
 import { MAX_IMAGE_BYTES } from "../../../media/constants.js";
+import { buildTtsSystemPromptHint } from "../../../plugin-sdk/tts-runtime.js";
 import { getGlobalHookRunner } from "../../../plugins/hook-runner-global.js";
 import type {
   PluginHookAgentContext,
@@ -24,7 +25,6 @@ import { joinPresentTextSegments } from "../../../shared/text/join-segments.js";
 import { resolveSignalReactionLevel } from "../../../signal/reaction-level.js";
 import { resolveTelegramInlineButtonsScope } from "../../../telegram/inline-buttons.js";
 import { resolveTelegramReactionLevel } from "../../../telegram/reaction-level.js";
-import { buildTtsSystemPromptHint } from "../../../tts/tts.js";
 import { resolveUserPath } from "../../../utils.js";
 import { normalizeMessageChannel } from "../../../utils/message-channel.js";
 import { isReasoningTagProvider } from "../../../utils/provider-utils.js";
@@ -33,19 +33,17 @@ import { resolveSessionAgentIds } from "../../agent-scope.js";
 import { createAnthropicPayloadLogger } from "../../anthropic-payload-log.js";
 import {
   analyzeBootstrapBudget,
-  buildBootstrapPromptWarning,
+  buildBootstrapPromptWarningNotice,
   buildBootstrapTruncationReportMeta,
   buildBootstrapInjectionStats,
 } from "../../bootstrap-budget.js";
 import { makeBootstrapWarn, resolveBootstrapContextForRun } from "../../bootstrap-files.js";
 import { createCacheTrace } from "../../cache-trace.js";
-import {
-  listChannelSupportedActions,
-  resolveChannelMessageToolHints,
-} from "../../channel-tools.js";
+import { resolveChannelMessageToolHints } from "../../channel-tools.js";
+import { listChannelSupportedActions } from "../../channel-tools.legacy.js";
 import { ensureCustomApiRegistered } from "../../custom-api-registry.js";
 import { DEFAULT_CONTEXT_TOKENS } from "../../defaults.js";
-import { resolveOpenClawDocsPath } from "../../docs-path.js";
+import { resolveOpenClawReferencePaths } from "../../docs-path.js";
 import { isTimeoutError } from "../../failover-error.js";
 import { resolveImageSanitizationLimits } from "../../image-sanitization.js";
 import { resolveModelAuthMode } from "../../model-auth.js";
@@ -89,6 +87,7 @@ import { buildSystemPromptReport } from "../../system-prompt-report.js";
 import { sanitizeToolCallIdsForCloudCodeAssist } from "../../tool-call-id.js";
 import { resolveEffectiveToolFsWorkspaceOnly } from "../../tool-fs-policy.js";
 import { normalizeToolName } from "../../tool-policy.js";
+import { detectContextInjections } from "../../trajectory.js";
 import { resolveTranscriptPolicy } from "../../transcript-policy.js";
 import { DEFAULT_BOOTSTRAP_FILENAME } from "../../workspace.js";
 import { isRunnerAbortError } from "../abort.js";
@@ -113,6 +112,8 @@ import { buildEmbeddedSandboxInfo } from "../sandbox-info.js";
 import { prewarmSessionFile, trackSessionManagerAccess } from "../session-manager-cache.js";
 import { prepareSessionManagerForRun } from "../session-manager-init.js";
 import { resolveEmbeddedRunSkillEntries } from "../skills-runtime.js";
+import { createStreamWatchdogWrapper } from "../stream-watchdog.js";
+import { createAnthropicPromptCacheWrapper, splitSystemPrompt } from "../system-prompt-split.js";
 import {
   applySystemPromptOverrideToSession,
   buildEmbeddedSystemPrompt,
@@ -680,6 +681,51 @@ export function buildAfterTurnLegacyCompactionParams(params: {
   };
 }
 
+/**
+ * Record the assistant turn of a run into the trajectory stream: the visible
+ * text, the reasoning blocks and the requested tool calls are separate kinds
+ * so a run can be inspected by source.
+ */
+function recordAssistantTrajectory(
+  cacheTrace: NonNullable<ReturnType<typeof createCacheTrace>>,
+  message: unknown,
+): void {
+  const content = (message as { content?: unknown }).content;
+  if (!Array.isArray(content)) {
+    return;
+  }
+  for (const block of content) {
+    if (!block || typeof block !== "object") {
+      continue;
+    }
+    const typed = block as {
+      type?: unknown;
+      text?: unknown;
+      thinking?: unknown;
+      id?: unknown;
+      name?: unknown;
+      arguments?: unknown;
+    };
+    if (typed.type === "text" && typeof typed.text === "string") {
+      cacheTrace.recordTrajectory("assistant:text", { source: "assistant", text: typed.text });
+      continue;
+    }
+    if (typed.type === "thinking" && typeof typed.thinking === "string") {
+      cacheTrace.recordTrajectory("assistant:reasoning", {
+        source: "assistant",
+        text: typed.thinking,
+      });
+      continue;
+    }
+    if (typed.type === "toolCall") {
+      cacheTrace.recordTrajectory("tool:call", {
+        source: "tool",
+        data: { id: typed.id, name: typed.name, arguments: typed.arguments },
+      });
+    }
+  }
+}
+
 function summarizeMessagePayload(msg: AgentMessage): { textChars: number; imageBlocks: number } {
   const content = (msg as { content?: unknown }).content;
   if (typeof content === "string") {
@@ -749,7 +795,7 @@ export async function runEmbeddedAttempt(
   const resolvedWorkspace = resolveUserPath(params.workspaceDir);
   const prevCwd = process.cwd();
   const runAbortController = new AbortController();
-  ensureGlobalUndiciStreamTimeouts();
+  ensureGlobalUndiciDispatcherStreamTimeouts();
 
   log.debug(
     `embedded run start: runId=${params.runId} sessionId=${params.sessionId} provider=${params.provider} model=${params.modelId} thinking=${params.thinkLevel} messageChannel=${params.messageChannel ?? params.messageProvider ?? "unknown"}`,
@@ -817,7 +863,7 @@ export async function runEmbeddedAttempt(
       bootstrapTotalMaxChars,
     });
     const bootstrapPromptWarningMode = resolveBootstrapPromptTruncationWarningMode(params.config);
-    const bootstrapPromptWarning = buildBootstrapPromptWarning({
+    const bootstrapPromptWarning = buildBootstrapPromptWarningNotice({
       analysis: bootstrapAnalysis,
       mode: bootstrapPromptWarningMode,
       seenSignatures: params.bootstrapPromptWarningSignaturesSeen,
@@ -986,7 +1032,7 @@ export async function runEmbeddedAttempt(
     });
     const isDefaultAgent = sessionAgentId === defaultAgentId;
     const promptMode = resolvePromptModeForSession(params.sessionKey);
-    const docsPath = await resolveOpenClawDocsPath({
+    const { docsPath } = await resolveOpenClawReferencePaths({
       workspaceDir: effectiveWorkspace,
       argv1: process.argv[1],
       cwd: process.cwd(),
@@ -1005,7 +1051,7 @@ export async function runEmbeddedAttempt(
       ownerDisplaySecret: ownerDisplay.ownerDisplaySecret,
       reasoningTagHint,
       heartbeatPrompt: isDefaultAgent
-        ? resolveHeartbeatPrompt(params.config?.agents?.defaults?.heartbeat?.prompt)
+        ? resolveHeartbeatPromptCore(params.config?.agents?.defaults?.heartbeat?.prompt)
         : undefined,
       skillsPrompt,
       docsPath: docsPath ?? undefined,
@@ -1214,6 +1260,55 @@ export async function runEmbeddedAttempt(
         modelApi: params.model.api,
         workspaceDir: params.workspaceDir,
       });
+      // Trajectory: record the two halves of the system prompt separately so a
+      // run can be inspected by source. The split is the same one that drives
+      // the Anthropic cache breakpoints, so the recorded halves match what the
+      // model actually receives.
+      const recordSystemPromptTrajectory = () => {
+        if (!cacheTrace) {
+          return;
+        }
+        const split = splitSystemPrompt({ prompt: systemPromptText });
+        cacheTrace.recordTrajectory("system:stable", { source: "system", text: split.stable });
+        if (split.dynamic) {
+          cacheTrace.recordTrajectory("system:dynamic", { source: "system", text: split.dynamic });
+        }
+      };
+      recordSystemPromptTrajectory();
+      const unsubscribeTrajectory = cacheTrace
+        ? activeSession.agent.subscribe((event) => {
+            try {
+              if (event.type === "message_end") {
+                recordAssistantTrajectory(cacheTrace, event.message);
+                return;
+              }
+              if (event.type === "tool_execution_end") {
+                cacheTrace.recordTrajectory("tool:result", {
+                  source: "tool",
+                  data: {
+                    toolCallId: event.toolCallId,
+                    toolName: event.toolName,
+                    isError: event.isError,
+                    result: event.result,
+                  },
+                });
+                return;
+              }
+              if (event.type === "tool_execution_start") {
+                cacheTrace.recordTrajectory("tool:call", {
+                  source: "tool",
+                  data: {
+                    toolCallId: event.toolCallId,
+                    toolName: event.toolName,
+                    args: event.args,
+                  },
+                });
+              }
+            } catch (trajectoryErr) {
+              log.debug(`trajectory recording failed: ${String(trajectoryErr)}`);
+            }
+          })
+        : undefined;
       const anthropicPayloadLogger = createAnthropicPayloadLogger({
         env: process.env,
         runId: params.runId,
@@ -1385,6 +1480,36 @@ export async function runEmbeddedAttempt(
         );
       }
 
+      // Anthropic-shaped requests: split the system prompt into a byte-stable
+      // prefix and a run-dependent suffix and attach the cache breakpoints.
+      // Providers that do not speak the Anthropic block shape are untouched.
+      activeSession.agent.streamFn = createAnthropicPromptCacheWrapper({
+        log: (message, data) => {
+          log.debug(`${message}${data ? ` ${JSON.stringify(data)}` : ""}`);
+        },
+      })(activeSession.agent.streamFn);
+
+      // Idle/stall watchdog for the embedded HTTP/SSE stream. Disabled unless
+      // explicitly configured, so existing deployments behave exactly as
+      // before.
+      activeSession.agent.streamFn = createStreamWatchdogWrapper({
+        env: process.env,
+        config: params.config?.diagnostics?.streamWatchdog,
+        runTimeoutMs: params.timeoutMs,
+        log: (level, message, data) => {
+          const suffix = data ? ` ${JSON.stringify(data)}` : "";
+          if (level === "warn") {
+            log.warn(`${message}${suffix}`);
+            return;
+          }
+          if (level === "info") {
+            log.info(`${message}${suffix}`);
+            return;
+          }
+          log.debug(`${message}${suffix}`);
+        },
+      })(activeSession.agent.streamFn);
+
       try {
         const prior = await sanitizeSessionHistory({
           messages: activeSession.messages,
@@ -1430,6 +1555,10 @@ export async function runEmbeddedAttempt(
               activeSession.agent.state.messages = assembled.messages;
             }
             if (assembled.systemPromptAddition) {
+              cacheTrace?.recordTrajectory("context:injection", {
+                source: "context-engine",
+                text: assembled.systemPromptAddition,
+              });
               systemPromptText = prependSystemPromptAddition({
                 systemPrompt: systemPromptText,
                 systemPromptAddition: assembled.systemPromptAddition,
@@ -1650,6 +1779,10 @@ export async function runEmbeddedAttempt(
         {
           if (hookResult?.prependContext) {
             effectivePrompt = `${hookResult.prependContext}\n\n${params.prompt}`;
+            cacheTrace?.recordTrajectory("context:injection", {
+              source: "hook",
+              text: hookResult.prependContext,
+            });
             log.debug(
               `hooks: prepended context to prompt (${hookResult.prependContext.length} chars)`,
             );
@@ -1669,6 +1802,18 @@ export async function runEmbeddedAttempt(
           if (prependedOrAppendedSystemPrompt) {
             const prependSystemLen = hookResult?.prependSystemContext?.trim().length ?? 0;
             const appendSystemLen = hookResult?.appendSystemContext?.trim().length ?? 0;
+            if (hookResult?.prependSystemContext) {
+              cacheTrace?.recordTrajectory("context:injection", {
+                source: "hook",
+                text: hookResult.prependSystemContext,
+              });
+            }
+            if (hookResult?.appendSystemContext) {
+              cacheTrace?.recordTrajectory("context:injection", {
+                source: "hook",
+                text: hookResult.appendSystemContext,
+              });
+            }
             applySystemPromptOverrideToSession(activeSession, prependedOrAppendedSystemPrompt);
             systemPromptText = prependedOrAppendedSystemPrompt;
             log.debug(
@@ -1682,6 +1827,13 @@ export async function runEmbeddedAttempt(
           prompt: effectivePrompt,
           messages: activeSession.messages,
         });
+        cacheTrace?.recordTrajectory("user:prompt", { source: "user", text: effectivePrompt });
+        for (const injection of detectContextInjections(effectivePrompt)) {
+          cacheTrace?.recordTrajectory("context:injection", {
+            source: injection.source,
+            text: injection.text,
+          });
+        }
 
         // Repair orphaned trailing user messages so new prompts don't violate role ordering.
         const leafEntry = sessionManager.getLeafEntry();
@@ -1832,7 +1984,7 @@ export async function runEmbeddedAttempt(
         // Previously this was before the prompt, which caused a custom entry to be
         // inserted between compaction and the next prompt — breaking the
         // prepareCompaction() guard that checks the last entry type, leading to
-        // double-compaction. See: https://github.com/paleoclaw/paleoclaw/issues/9282
+        // double-compaction. See: https://github.com/openclaw/openclaw/issues/9282
         // Skip when timed out during compaction — session state may be inconsistent.
         if (!timedOutDuringCompaction && !compactionOccurredThisAttempt) {
           const shouldTrackCacheTtl =
@@ -1986,6 +2138,13 @@ export async function runEmbeddedAttempt(
             `CRITICAL: unsubscribe failed, possible resource leak: runId=${params.runId} ${String(err)}`,
           );
         }
+        try {
+          unsubscribeTrajectory?.();
+        } catch (err) {
+          log.error(
+            `CRITICAL: trajectory unsubscribe failed, possible resource leak: runId=${params.runId} ${String(err)}`,
+          );
+        }
         clearActiveEmbeddedRun(params.sessionId, queueHandle, params.sessionKey);
         params.abortSignal?.removeEventListener?.("abort", onAbort);
       }
@@ -2062,7 +2221,7 @@ export async function runEmbeddedAttempt(
       // *before* tool execution completes in the retried agent loop. Without this wait,
       // flushPendingToolResults() fires while tools are still executing, inserting
       // synthetic "missing tool result" errors and causing silent agent failures.
-      // See: https://github.com/paleoclaw/paleoclaw/issues/8643
+      // See: https://github.com/openclaw/openclaw/issues/8643
       removeToolResultContextGuard?.();
       await flushPendingToolResultsAfterIdle({
         agent: session?.agent,

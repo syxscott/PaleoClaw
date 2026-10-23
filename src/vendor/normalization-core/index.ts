@@ -1,6 +1,6 @@
 // Public barrel for shared coercion and normalization helpers.
 //
-// Vendored from OpenClaw 2026.9.2 `@openclaw/normalization-core` (dependency-free
+// Vendored from paleoclaw 2026.9.2 `@paleoclaw/normalization-core` (dependency-free
 // modules only, intra-package imports kept as relative .js specifiers). Not
 // vendored here because they require external packages PaleoClaw does not ship:
 // `json-schema` (typebox) and `phone-presentation` (libphonenumber-js).

@@ -1,28 +1,33 @@
-import type { BaseProbeResult } from "paleoclaw/plugin-sdk/feishu";
+import type { MessageReceipt } from "paleoclaw/plugin-sdk/channel-outbound";
+import type { BaseProbeResult } from "paleoclaw/plugin-sdk/core";
 import type {
-  FeishuConfigSchema,
-  FeishuGroupSchema,
+  DynamicAgentCreationSchema,
   FeishuAccountConfigSchema,
+  FeishuConfigSchema,
+  FeishuDomainSchema,
+  FeishuToolsConfigSchema,
   z,
 } from "./config-schema.js";
-import type { MentionTarget } from "./mention.js";
+import type { MentionTarget } from "./mention-target.types.js";
 
-export type FeishuConfig = z.infer<typeof FeishuConfigSchema>;
-export type FeishuGroupConfig = z.infer<typeof FeishuGroupSchema>;
-export type FeishuAccountConfig = z.infer<typeof FeishuAccountConfigSchema>;
+type LegacyFeishuWebhookConfig = {
+  /** @deprecated Type-only until the next SDK major; Doctor migrates this to legacyWebhook.host. */
+  webhookHost?: string;
+  /** @deprecated Type-only until the next SDK major; Doctor migrates this to legacyWebhook.port. */
+  webhookPort?: number;
+};
 
-export type FeishuDomain = "feishu" | "lark" | (string & {});
-export type FeishuConnectionMode = "websocket" | "webhook";
+export type FeishuAccountConfig = z.infer<typeof FeishuAccountConfigSchema> &
+  LegacyFeishuWebhookConfig;
+export type FeishuConfig = Omit<z.infer<typeof FeishuConfigSchema>, "accounts"> &
+  LegacyFeishuWebhookConfig & {
+    accounts?: Record<string, FeishuAccountConfig | undefined>;
+  };
 
-export type FeishuDefaultAccountSelectionSource =
-  | "explicit-default"
-  | "mapped-default"
-  | "fallback";
-export type FeishuAccountSelectionSource = "explicit" | FeishuDefaultAccountSelectionSource;
+export type FeishuDomain = "feishu" | "lark" | (z.infer<typeof FeishuDomainSchema> & {});
 
 export type ResolvedFeishuAccount = {
   accountId: string;
-  selectionSource: FeishuAccountSelectionSource;
   enabled: boolean;
   configured: boolean;
   name?: string;
@@ -40,10 +45,14 @@ export type FeishuIdType = "open_id" | "user_id" | "union_id" | "chat_id";
 export type FeishuMessageContext = {
   chatId: string;
   messageId: string;
+  replyTargetMessageId?: string;
+  typingTargetMessageId?: string;
+  suppressReplyTarget?: boolean;
   senderId: string;
   senderOpenId: string;
   senderName?: string;
-  chatType: "p2p" | "group" | "private";
+  senderType: "user" | "bot";
+  chatType: FeishuChatType;
   mentionedBot: boolean;
   hasAnyMention?: boolean;
   rootId?: string;
@@ -58,32 +67,49 @@ export type FeishuMessageContext = {
 export type FeishuSendResult = {
   messageId: string;
   chatId: string;
+  receipt: MessageReceipt;
 };
 
-export type FeishuProbeResult = BaseProbeResult<string> & {
+export type FeishuChatType = "p2p" | "group" | "topic_group" | "private";
+
+export function normalizeFeishuEventChatType(value: unknown): FeishuChatType | undefined {
+  return value === "group" || value === "topic_group" || value === "private" || value === "p2p"
+    ? value
+    : undefined;
+}
+
+export function isFeishuGroupChatType(chatType: FeishuChatType | undefined): boolean {
+  return chatType === "group" || chatType === "topic_group";
+}
+
+export type FeishuMessageInfo = {
+  messageId: string;
+  chatId: string;
+  chatType?: FeishuChatType;
+  senderId?: string;
+  senderOpenId?: string;
+  senderType?: string;
+  content: string;
+  contentType: string;
+  createTime?: number;
+  /** Root message ID for replies inside Feishu topics. */
+  rootId?: string;
+  /** Feishu thread ID (omt_xxx) — present when the message belongs to a topic thread. */
+  threadId?: string;
+};
+
+export interface FeishuProbeResult extends BaseProbeResult {
   appId?: string;
   botName?: string;
   botOpenId?: string;
-};
+}
 
 export type FeishuMediaInfo = {
-  path: string;
+  path?: string;
   contentType?: string;
-  placeholder: string;
+  kind: Exclude<import("paleoclaw/plugin-sdk/media-runtime").MediaKind, "unknown">;
 };
 
-export type FeishuToolsConfig = {
-  doc?: boolean;
-  chat?: boolean;
-  wiki?: boolean;
-  drive?: boolean;
-  perm?: boolean;
-  scopes?: boolean;
-};
+export type FeishuToolsConfig = NonNullable<z.infer<typeof FeishuToolsConfigSchema>>;
 
-export type DynamicAgentCreationConfig = {
-  enabled?: boolean;
-  workspaceTemplate?: string;
-  agentDirTemplate?: string;
-  maxAgents?: number;
-};
+export type DynamicAgentCreationConfig = NonNullable<z.infer<typeof DynamicAgentCreationSchema>>;
