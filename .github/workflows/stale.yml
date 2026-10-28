@@ -20,14 +20,14 @@ jobs:
       - name: Skip when no GitHub App credentials are configured
         if: env.GH_APP_PRIVATE_KEY == '' && env.GH_APP_PRIVATE_KEY_FALLBACK == ''
         run: echo "No GitHub App credentials configured; skipping stale bot."
-      - uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547 # v1
+      - uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         id: app-token
         if: env.GH_APP_PRIVATE_KEY != ''
         continue-on-error: true
         with:
           app-id: "2729701"
           private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
-      - uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547 # v1
+      - uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         id: app-token-fallback
         if: env.GH_APP_PRIVATE_KEY_FALLBACK != ''
         continue-on-error: true
@@ -38,7 +38,7 @@ jobs:
         id: stale-primary
         if: env.GH_APP_PRIVATE_KEY != ''
         continue-on-error: true
-        uses: actions/stale@v9
+        uses: actions/stale@v11
         with:
           repo-token: ${{ steps.app-token.outputs.token || steps.app-token-fallback.outputs.token }}
           days-before-issue-stale: 7
@@ -72,7 +72,7 @@ jobs:
         id: stale-state
         if: env.GH_APP_PRIVATE_KEY != '' || env.GH_APP_PRIVATE_KEY_FALLBACK != ''
 
-        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           github-token: ${{ steps.app-token-fallback.outputs.token || steps.app-token.outputs.token }}
           script: |
@@ -95,7 +95,7 @@ jobs:
             }
       - name: Mark stale issues and pull requests (fallback)
         if: (steps.stale-primary.outcome == 'failure' || steps.stale-state.outputs.has_state == 'true') && steps.app-token-fallback.outputs.token != ''
-        uses: actions/stale@v9
+        uses: actions/stale@v11
         with:
           repo-token: ${{ steps.app-token-fallback.outputs.token }}
           days-before-issue-stale: 7
@@ -136,7 +136,7 @@ jobs:
       - name: Skip when no GitHub App credentials are configured
         if: env.GH_APP_PRIVATE_KEY == ''
         run: echo "No GitHub App credentials configured; skipping issue locking."
-      - uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547 # v1
+      - uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         id: app-token
         if: env.GH_APP_PRIVATE_KEY != ''
         with:
@@ -144,7 +144,7 @@ jobs:
           private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
       - name: Lock closed issues after 48h of no comments
         if: env.GH_APP_PRIVATE_KEY != ''
-        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           github-token: ${{ steps.app-token.outputs.token }}
           script: |

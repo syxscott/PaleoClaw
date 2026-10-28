@@ -62,7 +62,7 @@ jobs:
             needs_autobuild: false
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           submodules: false
 
@@ -75,13 +75,13 @@ jobs:
 
       - name: Setup Python
         if: matrix.needs_python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: "3.12"
 
       - name: Setup Java
         if: matrix.needs_java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: "21"
