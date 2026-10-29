@@ -47,10 +47,7 @@ updates:
       actions:
         patterns:
           - "*"
-        update-types:
-          - minor
-          - patch
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 3
 
   # Swift Package Manager - macOS app
   - package-ecosystem: swift
