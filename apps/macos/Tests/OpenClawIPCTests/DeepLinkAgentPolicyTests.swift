@@ -3,8 +3,8 @@ import OpenClawKit
 import Testing
 @testable import paleoclaw
 
-@Suite struct DeepLinkAgentPolicyTests {
-    @Test func validateMessageForHandleRejectsTooLongWhenUnkeyed() {
+struct DeepLinkAgentPolicyTests {
+    @Test func `validate message for handle rejects too long when unkeyed`() {
         let msg = String(repeating: "a", count: DeepLinkAgentPolicy.maxUnkeyedConfirmChars + 1)
         let res = DeepLinkAgentPolicy.validateMessageForHandle(message: msg, allowUnattended: false)
         switch res {
@@ -18,7 +18,7 @@ import Testing
         }
     }
 
-    @Test func validateMessageForHandleAllowsTooLongWhenKeyed() {
+    @Test func `validate message for handle allows too long when keyed`() {
         let msg = String(repeating: "a", count: DeepLinkAgentPolicy.maxUnkeyedConfirmChars + 1)
         let res = DeepLinkAgentPolicy.validateMessageForHandle(message: msg, allowUnattended: true)
         switch res {
@@ -29,7 +29,7 @@ import Testing
         }
     }
 
-    @Test func effectiveDeliveryIgnoresDeliveryFieldsWhenUnkeyed() {
+    @Test func `effective delivery ignores delivery fields when unkeyed`() {
         let link = AgentDeepLink(
             message: "Hello",
             sessionKey: "s",
@@ -45,7 +45,7 @@ import Testing
         #expect(res.channel == .last)
     }
 
-    @Test func effectiveDeliveryHonorsDeliverForDeliverableChannelsWhenKeyed() {
+    @Test func `effective delivery honors deliver for deliverable channels when keyed`() {
         let link = AgentDeepLink(
             message: "Hello",
             sessionKey: "s",
@@ -61,7 +61,7 @@ import Testing
         #expect(res.channel == .whatsapp)
     }
 
-    @Test func effectiveDeliveryStillBlocksWebChatDeliveryWhenKeyed() {
+    @Test func `effective delivery still blocks web chat delivery when keyed`() {
         let link = AgentDeepLink(
             message: "Hello",
             sessionKey: "s",

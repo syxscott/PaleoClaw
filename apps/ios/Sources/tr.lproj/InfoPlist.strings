@@ -1,16 +1,30 @@
-/* paleoclaw source: "paleoclaw can capture photos or short video clips when requested via the gateway." */
-"NSCameraUsageDescription" = "paleoclaw can capture photos or short video clips when requested via the gateway.";
+/* paleoclaw source: "paleoclaw uses your calendars to show events and scheduling context when you enable calendar access." */
+"NSCalendarsFullAccessUsageDescription" = "paleoclaw, takvim erişimini etkinleştirdiğinizde etkinlikleri ve planlama bağlamını göstermek için takvimlerinizi kullanır.";
+/* paleoclaw source: "paleoclaw uses your calendars to show events and scheduling context when you enable calendar access." */
+"NSCalendarsUsageDescription" = "paleoclaw, takvim erişimini etkinleştirdiğinizde etkinlikleri ve planlama bağlamını göstermek için takvimlerinizi kullanır.";
+/* paleoclaw source: "paleoclaw uses your calendars to add events when you enable calendar access." */
+"NSCalendarsWriteOnlyAccessUsageDescription" = "paleoclaw, takvim erişimini etkinleştirdiğinizde etkinlik eklemek için takvimlerinizi kullanır.";
+/* paleoclaw source: "paleoclaw uses the camera when you scan a Gateway setup QR code or ask your paired Gateway or assistant to capture a photo or short video from this iPhone, for example to connect to your Gateway or show your assistant a document, device screen, or workspace." */
+"NSCameraUsageDescription" = "paleoclaw; bir Gateway kurulum QR kodunu taradığınızda veya eşleştirilmiş Gateway'inizden ya da asistanınızdan bu iPhone ile fotoğraf veya kısa video çekmesini istediğinizde kamerayı kullanır. Örneğin, Gateway'inize bağlanmak veya asistanınıza bir belgeyi, aygıt ekranını ya da çalışma alanını göstermek için.";
+/* paleoclaw source: "paleoclaw uses your contacts so you can search and reference people while using the assistant." */
+"NSContactsUsageDescription" = "paleoclaw, asistanı kullanırken kişileri arayabilmeniz ve onlardan bahsedebilmeniz için kişilerinizi kullanır.";
+/* paleoclaw source: "paleoclaw reads your steps, sleep, resting heart rate, and workouts from the Apple Health app to create summaries you request and send them through your Gateway to your configured AI provider." */
+"NSHealthShareUsageDescription" = "paleoclaw; istediğiniz özetleri oluşturmak ve bunları Gateway aracılığıyla yapılandırılmış yapay zekâ sağlayıcınıza göndermek için Apple Health uygulamasındaki adım, uyku, dinlenme kalp atış hızı ve antrenman verilerinizi okur.";
+/* paleoclaw source: "paleoclaw does not write to the Apple Health app. It uses read-only data to create summaries you request and send them through your Gateway to your configured AI provider." */
+"NSHealthUpdateUsageDescription" = "paleoclaw, Apple Sağlık uygulamasına veri yazmaz. İstediğiniz özetleri oluşturmak ve bunları Gateway üzerinden yapılandırılmış yapay zekâ sağlayıcınıza göndermek için salt okunur verileri kullanır.";
 /* paleoclaw source: "paleoclaw discovers and connects to your paleoclaw gateway on the local network." */
 "NSLocalNetworkUsageDescription" = "paleoclaw, yerel ağdaki paleoclaw gateway'inizi bulur ve ona bağlanır.";
 /* paleoclaw source: "paleoclaw can share your location in the background when you enable Always." */
 "NSLocationAlwaysAndWhenInUseUsageDescription" = "Her Zaman seçeneğini etkinleştirdiğinizde paleoclaw, konumunuzu arka planda paylaşabilir.";
 /* paleoclaw source: "paleoclaw uses your location when you allow location sharing." */
 "NSLocationWhenInUseUsageDescription" = "paleoclaw, konum paylaşımına izin verdiğinizde konumunuzu kullanır.";
-/* paleoclaw source: "paleoclaw needs microphone access for voice wake." */
-"NSMicrophoneUsageDescription" = "paleoclaw needs microphone access for voice wake.";
+/* paleoclaw source: "paleoclaw uses the microphone for realtime chat, voice wake, push-to-talk, and voice notes." */
+"NSMicrophoneUsageDescription" = "paleoclaw; gerçek zamanlı sohbet, sesle uyandırma, bas-konuş ve sesli notlar için mikrofonu kullanır.";
 /* paleoclaw source: "paleoclaw may use motion data to support device-aware interactions and automations." */
 "NSMotionUsageDescription" = "paleoclaw, aygıta duyarlı etkileşimleri ve otomasyonları desteklemek için hareket verilerini kullanabilir.";
-/* paleoclaw source: "paleoclaw needs photo library access when you choose existing photos to share with your assistant." */
-"NSPhotoLibraryUsageDescription" = "paleoclaw needs photo library access when you choose existing photos to share with your assistant.";
-/* paleoclaw source: "paleoclaw uses on-device speech recognition for voice wake." */
-"NSSpeechRecognitionUsageDescription" = "paleoclaw uses on-device speech recognition for voice wake.";
+/* paleoclaw source: "paleoclaw lets your assistant read photos you allow and lets you choose photos to share." */
+"NSPhotoLibraryUsageDescription" = "paleoclaw, izin verdiğiniz fotoğrafları asistanınızın okumasına ve paylaşılacak fotoğrafları seçmenize olanak tanır.";
+/* paleoclaw source: "paleoclaw uses your reminders to list, add, and complete tasks when you enable reminders access." */
+"NSRemindersFullAccessUsageDescription" = "paleoclaw, anımsatıcı erişimini etkinleştirdiğinizde görevleri listelemek, eklemek ve tamamlamak için anımsatıcılarınızı kullanır.";
+/* paleoclaw source: "paleoclaw uses on-device speech recognition for talk mode and voice wake." */
+"NSSpeechRecognitionUsageDescription" = "paleoclaw, konuşma modu ve sesle uyandırma için aygıt üzerindeki konuşma tanıma özelliğini kullanır.";

@@ -1,11 +1,11 @@
-import AppKit
-import CryptoKit
 import Darwin
 import Foundation
 import OpenClawKit
 import OSLog
 
-struct ExecApprovalPromptRequest: Codable, Sendable {
+let execApprovalsSocketTimeoutMs = 15000
+
+struct ExecApprovalPromptRequest: Codable {
     var command: String
     var cwd: String?
     var host: String?
@@ -14,22 +14,63 @@ struct ExecApprovalPromptRequest: Codable, Sendable {
     var agentId: String?
     var resolvedPath: String?
     var sessionKey: String?
+    var allowedDecisions: [ExecApprovalDecision]?
+
+    static func allowedDecisions(
+        forAsk ask: String?,
+        allowAlwaysEligible: Bool = true) -> [ExecApprovalDecision]
+    {
+        // Older payloads did not carry ask/allowedDecisions. Preserve their durable
+        // approval option; explicit ask=always and allowedDecisions payloads are the
+        // policy-carrying shapes that remove it.
+        guard allowAlwaysEligible else { return [.allowOnce, .deny] }
+        return ask == ExecAsk.always.rawValue
+            ? [.allowOnce, .deny]
+            : [.allowOnce, .allowAlways, .deny]
+    }
 }
 
-private struct ExecApprovalSocketRequest: Codable {
+extension ExecApprovalPromptRequest {
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.command = try container.decode(String.self, forKey: .command)
+        self.cwd = try container.decodeIfPresent(String.self, forKey: .cwd)
+        self.host = try container.decodeIfPresent(String.self, forKey: .host)
+        self.security = try container.decodeIfPresent(String.self, forKey: .security)
+        self.ask = try container.decodeIfPresent(String.self, forKey: .ask)
+        self.agentId = try container.decodeIfPresent(String.self, forKey: .agentId)
+        self.resolvedPath = try container.decodeIfPresent(String.self, forKey: .resolvedPath)
+        self.sessionKey = try container.decodeIfPresent(String.self, forKey: .sessionKey)
+        let decodedDecisions = (try? container.decodeIfPresent(
+            [DecodedExecApprovalDecision].self,
+            forKey: .allowedDecisions)) ?? []
+        self.allowedDecisions = decodedDecisions.compactMap(\.decision)
+    }
+}
+
+private struct DecodedExecApprovalDecision: Decodable {
+    var decision: ExecApprovalDecision?
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        self.decision = (try? container.decode(String.self)).flatMap(ExecApprovalDecision.init(rawValue:))
+    }
+}
+
+struct ExecApprovalSocketRequest: Codable {
     var type: String
     var token: String
     var id: String
     var request: ExecApprovalPromptRequest
 }
 
-private struct ExecApprovalSocketDecision: Codable {
+struct ExecApprovalSocketDecision: Codable {
     var type: String
     var id: String
     var decision: ExecApprovalDecision
 }
 
-private struct ExecHostSocketRequest: Codable {
+struct ExecHostSocketRequest: Codable {
     var type: String
     var id: String
     var nonce: String
@@ -48,9 +89,11 @@ struct ExecHostRequest: Codable {
     var agentId: String?
     var sessionKey: String?
     var approvalDecision: ExecApprovalDecision?
+    var approvalSource: String?
+    var policySnapshot: OpenClawSystemRunApprovalPolicySnapshot?
 }
 
-private struct ExecHostRunResult: Codable {
+struct ExecHostRunResult: Codable {
     var exitCode: Int?
     var timedOut: Bool
     var success: Bool
@@ -59,13 +102,33 @@ private struct ExecHostRunResult: Codable {
     var error: String?
 }
 
+enum ExecHostOutputLimiter {
+    static let maxJsonlResponseBytes = 16 * 1024 * 1024
+    static let maxOutputFieldBytes = 1024 * 1024
+    private static let truncationMarker = "... (truncated) "
+
+    static func truncate(_ value: String) -> String {
+        let bytes = value.utf8
+        guard bytes.count > self.maxOutputFieldBytes else { return value }
+
+        let tailBudget = self.maxOutputFieldBytes - self.truncationMarker.utf8.count
+        var start = bytes.index(bytes.endIndex, offsetBy: -tailBudget)
+        while start < bytes.endIndex, (bytes[start] & 0xC0) == 0x80 {
+            start = bytes.index(after: start)
+        }
+        let tail = String(bytes: bytes[start...], encoding: .utf8) ?? ""
+        return self.truncationMarker + tail
+    }
+}
+
 struct ExecHostError: Codable, Error {
     var code: String
     var message: String
     var reason: String?
+    var details: OpenClawPermissionDetails?
 }
 
-private struct ExecHostResponse: Codable {
+struct ExecHostResponse: Codable {
     var type: String
     var id: String
     var ok: Bool
@@ -73,581 +136,231 @@ private struct ExecHostResponse: Codable {
     var error: ExecHostError?
 }
 
-private func readLineFromHandle(_ handle: FileHandle, maxBytes: Int) throws -> String? {
-    var buffer = Data()
-    while buffer.count < maxBytes {
-        let chunk = try handle.read(upToCount: 4096) ?? Data()
-        if chunk.isEmpty { break }
-        buffer.append(chunk)
-        if buffer.contains(0x0A) { break }
+func configureSocketTimeouts(_ fd: Int32, timeoutMs: Int) throws {
+    guard timeoutMs > 0 else { return }
+    var timeout = timeval(
+        tv_sec: timeoutMs / 1000,
+        tv_usec: Int32((timeoutMs % 1000) * 1000))
+    let timeoutSize = socklen_t(MemoryLayout.size(ofValue: timeout))
+    guard setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, timeoutSize) == 0,
+          setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &timeout, timeoutSize) == 0
+    else {
+        throw POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO)
     }
-    guard let newlineIndex = buffer.firstIndex(of: 0x0A) else {
-        guard !buffer.isEmpty else { return nil }
-        return String(data: buffer, encoding: .utf8)
-    }
-    let lineData = buffer.subdata(in: 0..<newlineIndex)
-    return String(data: lineData, encoding: .utf8)
 }
 
-enum ExecApprovalsSocketClient {
-    private struct TimeoutError: LocalizedError {
-        var message: String
-        var errorDescription: String? {
-            self.message
+func readLineFromSocket(_ fd: Int32, maxBytes: Int) throws -> String? {
+    // Foundation can wait for the full requested byte count on sockets. POSIX
+    // recv returns short JSONL frames; the socket timeout bounds idle peers.
+    var buffer = Data()
+    while buffer.count < maxBytes {
+        var chunk = [UInt8](repeating: 0, count: min(4096, maxBytes - buffer.count))
+        let count = chunk.withUnsafeMutableBytes { bytes in
+            recv(fd, bytes.baseAddress, bytes.count, 0)
         }
-    }
-
-    static func requestDecision(
-        socketPath: String,
-        token: String,
-        request: ExecApprovalPromptRequest,
-        timeoutMs: Int = 15000) async -> ExecApprovalDecision?
-    {
-        let trimmedPath = socketPath.trimmingCharacters(in: .whitespacesAndNewlines)
-        let trimmedToken = token.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmedPath.isEmpty, !trimmedToken.isEmpty else { return nil }
-        do {
-            return try await AsyncTimeout.withTimeoutMs(
-                timeoutMs: timeoutMs,
-                onTimeout: {
-                    TimeoutError(message: "exec approvals socket timeout")
-                },
-                operation: {
-                    try await Task.detached {
-                        try self.requestDecisionSync(
-                            socketPath: trimmedPath,
-                            token: trimmedToken,
-                            request: request)
-                    }.value
-                })
-        } catch {
-            return nil
+        if count == 0 {
+            break
         }
-    }
-
-    private static func requestDecisionSync(
-        socketPath: String,
-        token: String,
-        request: ExecApprovalPromptRequest) throws -> ExecApprovalDecision?
-    {
-        let fd = socket(AF_UNIX, SOCK_STREAM, 0)
-        guard fd >= 0 else {
-            throw NSError(domain: "ExecApprovals", code: 1, userInfo: [
-                NSLocalizedDescriptionKey: "socket create failed",
-            ])
-        }
-
-        var addr = sockaddr_un()
-        addr.sun_family = sa_family_t(AF_UNIX)
-        let maxLen = MemoryLayout.size(ofValue: addr.sun_path)
-        if socketPath.utf8.count >= maxLen {
-            throw NSError(domain: "ExecApprovals", code: 2, userInfo: [
-                NSLocalizedDescriptionKey: "socket path too long",
-            ])
-        }
-        socketPath.withCString { cstr in
-            withUnsafeMutablePointer(to: &addr.sun_path) { ptr in
-                let raw = UnsafeMutableRawPointer(ptr).assumingMemoryBound(to: Int8.self)
-                strncpy(raw, cstr, maxLen - 1)
+        if count < 0 {
+            if errno == EINTR {
+                continue
             }
+            throw POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO)
         }
-        let size = socklen_t(MemoryLayout.size(ofValue: addr))
-        let result = withUnsafePointer(to: &addr) { ptr in
-            ptr.withMemoryRebound(to: sockaddr.self, capacity: 1) { rebound in
-                connect(fd, rebound, size)
-            }
+        buffer.append(contentsOf: chunk.prefix(count))
+        if buffer.contains(0x0A) {
+            break
         }
-        if result != 0 {
-            throw NSError(domain: "ExecApprovals", code: 3, userInfo: [
-                NSLocalizedDescriptionKey: "socket connect failed",
-            ])
-        }
-
-        let handle = FileHandle(fileDescriptor: fd, closeOnDealloc: true)
-
-        let message = ExecApprovalSocketRequest(
-            type: "request",
-            token: token,
-            id: UUID().uuidString,
-            request: request)
-        let data = try JSONEncoder().encode(message)
-        var payload = data
-        payload.append(0x0A)
-        try handle.write(contentsOf: payload)
-
-        guard let line = try readLineFromHandle(handle, maxBytes: 256_000),
-              let lineData = line.data(using: .utf8)
-        else { return nil }
-        let response = try JSONDecoder().decode(ExecApprovalSocketDecision.self, from: lineData)
-        return response.decision
     }
+    guard !buffer.isEmpty else { return nil }
+    return String(data: buffer.prefix { $0 != 0x0A }, encoding: .utf8)
+}
+
+func timingSafeHexStringEquals(_ lhs: String, _ rhs: String) -> Bool {
+    let lhsBytes = Array(lhs.utf8)
+    let rhsBytes = Array(rhs.utf8)
+    guard lhsBytes.count == rhsBytes.count else {
+        return false
+    }
+
+    var diff: UInt8 = 0
+    for index in lhsBytes.indices {
+        diff |= lhsBytes[index] ^ rhsBytes[index]
+    }
+    return diff == 0
+}
+
+func execHostTimestampIsFresh(
+    nowMs: Int,
+    requestMs: Int,
+    toleranceMs: Int = 10000) -> Bool
+{
+    guard toleranceMs >= 0 else { return false }
+    let (lowerBound, lowerOverflow) = nowMs.subtractingReportingOverflow(toleranceMs)
+    if !lowerOverflow, requestMs < lowerBound {
+        return false
+    }
+    let (upperBound, upperOverflow) = nowMs.addingReportingOverflow(toleranceMs)
+    if !upperOverflow, requestMs > upperBound {
+        return false
+    }
+    return true
 }
 
 @MainActor
 final class ExecApprovalsPromptServer {
     static let shared = ExecApprovalsPromptServer()
 
-    private var server: ExecApprovalsSocketServer?
-
-    func start() {
-        guard self.server == nil else { return }
-        let approvals = ExecApprovalsStore.resolve(agentId: nil)
-        let server = ExecApprovalsSocketServer(
-            socketPath: approvals.socketPath,
-            token: approvals.token,
-            onPrompt: { request in
-                await ExecApprovalsPromptPresenter.prompt(request)
-            },
-            onExec: { request in
-                await ExecHostExecutor.handle(request)
-            })
-        server.start()
-        self.server = server
-    }
-
-    func stop() {
-        self.server?.stop()
-        self.server = nil
-    }
-}
-
-@MainActor
-private enum ExecHostExecutor {
-    private typealias ExecApprovalContext = ExecApprovalEvaluation
-
-    static func handle(_ request: ExecHostRequest) async -> ExecHostResponse {
-        let validatedRequest: ExecHostValidatedRequest
-        switch ExecHostRequestEvaluator.validateRequest(request) {
-        case let .success(request):
-            validatedRequest = request
-        case let .failure(error):
-            return self.errorResponse(error)
-        }
-
-        let context = await self.buildContext(
-            request: request,
-            command: validatedRequest.command,
-            rawCommand: validatedRequest.displayCommand)
-
-        switch ExecHostRequestEvaluator.evaluate(
-            context: context,
-            approvalDecision: request.approvalDecision)
-        {
-        case let .deny(error):
-            return self.errorResponse(error)
-        case .allow:
-            break
-        case .requiresPrompt:
-            let decision = ExecApprovalsPromptPresenter.prompt(
-                ExecApprovalPromptRequest(
-                    command: context.displayCommand,
-                    cwd: request.cwd,
-                    host: "node",
-                    security: context.security.rawValue,
-                    ask: context.ask.rawValue,
-                    agentId: context.agentId,
-                    resolvedPath: context.resolution?.resolvedPath,
-                    sessionKey: request.sessionKey))
-
-            let followupDecision: ExecApprovalDecision
-            switch decision {
-            case .deny:
-                followupDecision = .deny
-            case .allowAlways:
-                followupDecision = .allowAlways
-                self.persistAllowlistEntry(decision: decision, context: context)
-            case .allowOnce:
-                followupDecision = .allowOnce
-            }
-
-            switch ExecHostRequestEvaluator.evaluate(
-                context: context,
-                approvalDecision: followupDecision)
-            {
-            case let .deny(error):
-                return self.errorResponse(error)
-            case .allow:
-                break
-            case .requiresPrompt:
-                return self.errorResponse(
-                    code: "INVALID_REQUEST",
-                    message: "unexpected approval state",
-                    reason: "invalid")
-            }
-        }
-
-        self.persistAllowlistEntry(decision: request.approvalDecision, context: context)
-
-        if context.allowlistSatisfied {
-            var seenPatterns = Set<String>()
-            for (idx, match) in context.allowlistMatches.enumerated() {
-                if !seenPatterns.insert(match.pattern).inserted {
-                    continue
-                }
-                let resolvedPath = idx < context.allowlistResolutions.count
-                    ? context.allowlistResolutions[idx].resolvedPath
-                    : nil
-                ExecApprovalsStore.recordAllowlistUse(
-                    agentId: context.agentId,
-                    pattern: match.pattern,
-                    command: context.displayCommand,
-                    resolvedPath: resolvedPath)
-            }
-        }
-
-        if let errorResponse = await self.ensureScreenRecordingAccess(request.needsScreenRecording) {
-            return errorResponse
-        }
-
-        return await self.runCommand(
-            command: validatedRequest.command,
-            cwd: request.cwd,
-            env: context.env,
-            timeoutMs: request.timeoutMs)
-    }
-
-    private static func buildContext(
-        request: ExecHostRequest,
-        command: [String],
-        rawCommand: String?) async -> ExecApprovalContext
-    {
-        await ExecApprovalEvaluator.evaluate(
-            command: command,
-            rawCommand: rawCommand,
-            cwd: request.cwd,
-            envOverrides: request.env,
-            agentId: request.agentId)
-    }
-
-    private static func persistAllowlistEntry(
-        decision: ExecApprovalDecision?,
-        context: ExecApprovalContext)
-    {
-        guard decision == .allowAlways, context.security == .allowlist else { return }
-        var seenPatterns = Set<String>()
-        for candidate in context.allowlistResolutions {
-            guard let pattern = ExecApprovalHelpers.allowlistPattern(
-                command: context.command,
-                resolution: candidate)
-            else {
-                continue
-            }
-            if seenPatterns.insert(pattern).inserted {
-                ExecApprovalsStore.addAllowlistEntry(agentId: context.agentId, pattern: pattern)
-            }
-        }
-    }
-
-    private static func ensureScreenRecordingAccess(_ needsScreenRecording: Bool?) async -> ExecHostResponse? {
-        guard needsScreenRecording == true else { return nil }
-        let authorized = await PermissionManager
-            .status([.screenRecording])[.screenRecording] ?? false
-        if authorized { return nil }
-        return self.errorResponse(
-            code: "UNAVAILABLE",
-            message: "PERMISSION_MISSING: screenRecording",
-            reason: "permission:screenRecording")
-    }
-
-    private static func runCommand(
-        command: [String],
-        cwd: String?,
-        env: [String: String]?,
-        timeoutMs: Int?) async -> ExecHostResponse
-    {
-        let timeoutSec = timeoutMs.flatMap { Double($0) / 1000.0 }
-        let result = await Task.detached { () -> ShellExecutor.ShellResult in
-            await ShellExecutor.runDetailed(
-                command: command,
-                cwd: cwd,
-                env: env,
-                timeout: timeoutSec)
-        }.value
-        let payload = ExecHostRunResult(
-            exitCode: result.exitCode,
-            timedOut: result.timedOut,
-            success: result.success,
-            stdout: result.stdout,
-            stderr: result.stderr,
-            error: result.errorMessage)
-        return self.successResponse(payload)
-    }
-
-    private static func errorResponse(
-        _ error: ExecHostError) -> ExecHostResponse
-    {
-        ExecHostResponse(
-            type: "response",
-            id: UUID().uuidString,
-            ok: false,
-            payload: nil,
-            error: error)
-    }
-
-    private static func errorResponse(
-        code: String,
-        message: String,
-        reason: String?) -> ExecHostResponse
-    {
-        ExecHostResponse(
-            type: "exec-res",
-            id: UUID().uuidString,
-            ok: false,
-            payload: nil,
-            error: ExecHostError(code: code, message: message, reason: reason))
-    }
-
-    private static func successResponse(_ payload: ExecHostRunResult) -> ExecHostResponse {
-        ExecHostResponse(
-            type: "exec-res",
-            id: UUID().uuidString,
-            ok: true,
-            payload: payload,
-            error: nil)
-    }
-}
-
-private final class ExecApprovalsSocketServer: @unchecked Sendable {
-    private let logger = Logger(subsystem: "ai.paleoclaw", category: "exec-approvals.socket")
-    private let socketPath: String
-    private let token: String
-    private let onPrompt: @Sendable (ExecApprovalPromptRequest) async -> ExecApprovalDecision
-    private let onExec: @Sendable (ExecHostRequest) async -> ExecHostResponse
-    private var socketFD: Int32 = -1
-    private var acceptTask: Task<Void, Never>?
-    private var isRunning = false
+    private static let logger = Logger(subsystem: "ai.paleoclaw", category: "exec-approvals")
+    private let retryDelay: Duration
+    private let maximumRetryDelay: Duration
+    private let resolveSocketCredentials: @Sendable () throws -> (socketPath: String, token: String)
+    private let onPrompt: @Sendable (ExecApprovalPromptRequest) async -> ExecApprovalDecision?
+    private var startup = LocalSocketServer.Startup<ExecApprovalsSocketServer>()
 
     init(
-        socketPath: String,
-        token: String,
-        onPrompt: @escaping @Sendable (ExecApprovalPromptRequest) async -> ExecApprovalDecision,
-        onExec: @escaping @Sendable (ExecHostRequest) async -> ExecHostResponse)
+        retryDelay: Duration = .seconds(1),
+        maximumRetryDelay: Duration = .seconds(30),
+        resolveSocketCredentials: @escaping @Sendable () throws -> (socketPath: String, token: String) = {
+            try ExecApprovalsStore.localSocketCredentials()
+        },
+        onPrompt: @escaping @Sendable (ExecApprovalPromptRequest) async -> ExecApprovalDecision? = { request in
+            await ExecApprovalsPromptPresenter.prompt(
+                request,
+                timeoutMs: execApprovalsSocketTimeoutMs)
+        })
     {
-        self.socketPath = socketPath
-        self.token = token
+        self.retryDelay = retryDelay
+        self.maximumRetryDelay = maximumRetryDelay
+        self.resolveSocketCredentials = resolveSocketCredentials
         self.onPrompt = onPrompt
-        self.onExec = onExec
     }
 
     func start() {
-        guard !self.isRunning else { return }
-        self.isRunning = true
-        self.acceptTask = Task.detached { [weak self] in
-            await self?.runAcceptLoop()
-        }
-    }
+        guard self.startup.listener == nil, self.startup.task == nil else { return }
+        self.startup.generation &+= 1
+        let generation = self.startup.generation
+        let retryDelay = self.retryDelay
+        let maximumRetryDelay = self.maximumRetryDelay
+        let resolveSocketCredentials = self.resolveSocketCredentials
+        let onPrompt = self.onPrompt
+        let previousStartupTask = self.startup.cleanup
+        // Keep one lifecycle-owned retry loop. Blocking lock acquisition stays
+        // off MainActor, while generation checks prevent post-stop installation.
+        self.startup.task = Task { @MainActor [weak self] in
+            // A canceled startup may still be unwinding socket-path cleanup.
+            // Never let a replacement generation race that cleanup.
+            await previousStartupTask?.value
+            guard !Task.isCancelled, self?.startup.generation == generation else { return }
 
-    func stop() {
-        self.isRunning = false
-        self.acceptTask?.cancel()
-        self.acceptTask = nil
-        if self.socketFD >= 0 {
-            close(self.socketFD)
-            self.socketFD = -1
-        }
-        if !self.socketPath.isEmpty {
-            do {
-                try ExecApprovalsSocketPathGuard.removeExistingSocket(at: self.socketPath)
-            } catch {
-                self.logger
-                    .warning("exec approvals socket cleanup failed: \(error.localizedDescription, privacy: .public)")
-            }
-        }
-    }
-
-    private func runAcceptLoop() async {
-        let fd = self.openSocket()
-        guard fd >= 0 else {
-            self.isRunning = false
-            return
-        }
-        self.socketFD = fd
-        while self.isRunning {
-            var addr = sockaddr_un()
-            var len = socklen_t(MemoryLayout.size(ofValue: addr))
-            let client = withUnsafeMutablePointer(to: &addr) { ptr in
-                ptr.withMemoryRebound(to: sockaddr.self, capacity: 1) { rebound in
-                    accept(fd, rebound, &len)
+            var isFirstAttempt = true
+            var retryBackoff = ExecApprovalsPromptRetryBackoff(
+                initialDelay: retryDelay,
+                maximumDelay: maximumRetryDelay)
+            while !Task.isCancelled {
+                if isFirstAttempt {
+                    isFirstAttempt = false
+                } else {
+                    do {
+                        try await Task.sleep(for: retryBackoff.nextDelay())
+                    } catch {
+                        return
+                    }
                 }
-            }
-            if client < 0 {
-                if errno == EINTR { continue }
-                break
-            }
-            Task.detached { [weak self] in
-                await self?.handleClient(fd: client)
-            }
-        }
-    }
 
-    private func openSocket() -> Int32 {
-        let fd = socket(AF_UNIX, SOCK_STREAM, 0)
-        guard fd >= 0 else {
-            self.logger.error("exec approvals socket create failed")
-            return -1
-        }
-        do {
-            try ExecApprovalsSocketPathGuard.hardenParentDirectory(for: self.socketPath)
-            try ExecApprovalsSocketPathGuard.removeExistingSocket(at: self.socketPath)
-        } catch {
-            self.logger
-                .error("exec approvals socket path hardening failed: \(error.localizedDescription, privacy: .public)")
-            close(fd)
-            return -1
-        }
-        var addr = sockaddr_un()
-        addr.sun_family = sa_family_t(AF_UNIX)
-        let maxLen = MemoryLayout.size(ofValue: addr.sun_path)
-        if self.socketPath.utf8.count >= maxLen {
-            self.logger.error("exec approvals socket path too long")
-            close(fd)
-            return -1
-        }
-        self.socketPath.withCString { cstr in
-            withUnsafeMutablePointer(to: &addr.sun_path) { ptr in
-                let raw = UnsafeMutableRawPointer(ptr).assumingMemoryBound(to: Int8.self)
-                memset(raw, 0, maxLen)
-                strncpy(raw, cstr, maxLen - 1)
-            }
-        }
-        let size = socklen_t(MemoryLayout.size(ofValue: addr))
-        let result = withUnsafePointer(to: &addr) { ptr in
-            ptr.withMemoryRebound(to: sockaddr.self, capacity: 1) { rebound in
-                bind(fd, rebound, size)
-            }
-        }
-        if result != 0 {
-            self.logger.error("exec approvals socket bind failed")
-            close(fd)
-            return -1
-        }
-        if chmod(self.socketPath, 0o600) != 0 {
-            self.logger.error("exec approvals socket chmod failed")
-            close(fd)
-            try? ExecApprovalsSocketPathGuard.removeExistingSocket(at: self.socketPath)
-            return -1
-        }
-        if listen(fd, 16) != 0 {
-            self.logger.error("exec approvals socket listen failed")
-            close(fd)
-            try? ExecApprovalsSocketPathGuard.removeExistingSocket(at: self.socketPath)
-            return -1
-        }
-        self.logger.info("exec approvals socket listening at \(self.socketPath, privacy: .public)")
-        return fd
-    }
+                let credentials: (socketPath: String, token: String)
+                do {
+                    credentials = try await Task.detached(priority: .utility) {
+                        try resolveSocketCredentials()
+                    }.value
+                } catch {
+                    Self.logger.warning("execution socket retry: \(error.localizedDescription, privacy: .public)")
+                    continue
+                }
+                guard !Task.isCancelled,
+                      let self,
+                      self.startup.generation == generation
+                else { return }
 
-    private func handleClient(fd: Int32) async {
-        let handle = FileHandle(fileDescriptor: fd, closeOnDealloc: true)
-        do {
-            guard self.isAllowedPeer(fd: fd) else {
-                try self.sendApprovalResponse(handle: handle, id: UUID().uuidString, decision: .deny)
-                return
-            }
-            guard let line = try readLineFromHandle(handle, maxBytes: 256_000),
-                  let data = line.data(using: .utf8)
-            else {
-                return
-            }
-            guard
-                let envelope = try JSONSerialization.jsonObject(with: data) as? [String: Any],
-                let type = envelope["type"] as? String
-            else {
-                return
-            }
+                let token = credentials.token.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !token.isEmpty else {
+                    Self.logger.warning("local execution socket token is empty; retrying")
+                    continue
+                }
 
-            if type == "request" {
-                let request = try JSONDecoder().decode(ExecApprovalSocketRequest.self, from: data)
-                guard request.token == self.token else {
-                    try self.sendApprovalResponse(handle: handle, id: request.id, decision: .deny)
+                let server = ExecApprovalsSocketServer(
+                    socketPath: credentials.socketPath,
+                    token: token,
+                    onPrompt: onPrompt,
+                    onExec: { request in
+                        await ExecHostExecutor.handle(request)
+                    },
+                    onUnexpectedStop: { [weak self] stoppedServer in
+                        Task { @MainActor [weak self] in
+                            self?.handleUnexpectedStop(stoppedServer, generation: generation)
+                        }
+                    })
+                let ready = await withTaskCancellationHandler {
+                    await server.start()
+                } onCancel: {
+                    server.stop()
+                }
+                guard !Task.isCancelled, self.startup.generation == generation else {
+                    await server.stop().value
                     return
                 }
-                let decision = await self.onPrompt(request.request)
-                try self.sendApprovalResponse(handle: handle, id: request.id, decision: decision)
+                // The accept loop can fail after signaling readiness but before
+                // this task resumes. Do not install an already-dead listener.
+                guard ready, server.isListening else {
+                    await server.stop().value
+                    continue
+                }
+                self.startup.listener = server
+                self.startup.task = nil
                 return
             }
-
-            if type == "exec" {
-                let request = try JSONDecoder().decode(ExecHostSocketRequest.self, from: data)
-                let response = await self.handleExecRequest(request)
-                try self.sendExecResponse(handle: handle, response: response)
-                return
-            }
-        } catch {
-            self.logger.error("exec approvals socket handling failed: \(error.localizedDescription, privacy: .public)")
         }
     }
 
-    private func sendApprovalResponse(
-        handle: FileHandle,
-        id: String,
-        decision: ExecApprovalDecision) throws
+    @discardableResult
+    func stop() -> Task<Void, Never>? {
+        self.startup.stop { $0.stop() }
+    }
+
+    private func handleUnexpectedStop(
+        _ stoppedServer: ExecApprovalsSocketServer,
+        generation: UInt64)
     {
-        let response = ExecApprovalSocketDecision(type: "decision", id: id, decision: decision)
-        let data = try JSONEncoder().encode(response)
-        var payload = data
-        payload.append(0x0A)
-        try handle.write(contentsOf: payload)
+        guard self.startup.generation == generation,
+              self.startup.listener === stoppedServer
+        else { return }
+        self.startup.cleanup = stoppedServer.stop()
+        self.startup.listener = nil
+        self.start()
     }
 
-    private func sendExecResponse(handle: FileHandle, response: ExecHostResponse) throws {
-        let data = try JSONEncoder().encode(response)
-        var payload = data
-        payload.append(0x0A)
-        try handle.write(contentsOf: payload)
+    #if DEBUG
+    func _testFailActiveSocket() {
+        self.startup.listener?.failForTesting()
     }
 
-    private func isAllowedPeer(fd: Int32) -> Bool {
-        var uid = uid_t(0)
-        var gid = gid_t(0)
-        if getpeereid(fd, &uid, &gid) != 0 {
-            return false
-        }
-        return uid == geteuid()
+    #endif
+}
+
+struct ExecApprovalsPromptRetryBackoff {
+    private var currentDelay: Duration
+    private let maximumDelay: Duration
+
+    init(initialDelay: Duration, maximumDelay: Duration) {
+        self.currentDelay = initialDelay
+        self.maximumDelay = max(initialDelay, maximumDelay)
     }
 
-    private func handleExecRequest(_ request: ExecHostSocketRequest) async -> ExecHostResponse {
-        let nowMs = Int(Date().timeIntervalSince1970 * 1000)
-        if abs(nowMs - request.ts) > 10000 {
-            return ExecHostResponse(
-                type: "exec-res",
-                id: request.id,
-                ok: false,
-                payload: nil,
-                error: ExecHostError(code: "INVALID_REQUEST", message: "expired request", reason: "ttl"))
-        }
-        let expected = self.hmacHex(nonce: request.nonce, ts: request.ts, requestJson: request.requestJson)
-        if expected != request.hmac {
-            return ExecHostResponse(
-                type: "exec-res",
-                id: request.id,
-                ok: false,
-                payload: nil,
-                error: ExecHostError(code: "INVALID_REQUEST", message: "invalid auth", reason: "hmac"))
-        }
-        guard let requestData = request.requestJson.data(using: .utf8),
-              let payload = try? JSONDecoder().decode(ExecHostRequest.self, from: requestData)
-        else {
-            return ExecHostResponse(
-                type: "exec-res",
-                id: request.id,
-                ok: false,
-                payload: nil,
-                error: ExecHostError(code: "INVALID_REQUEST", message: "invalid payload", reason: "json"))
-        }
-        let response = await self.onExec(payload)
-        return ExecHostResponse(
-            type: "exec-res",
-            id: request.id,
-            ok: response.ok,
-            payload: response.payload,
-            error: response.error)
-    }
-
-    private func hmacHex(nonce: String, ts: Int, requestJson: String) -> String {
-        let key = SymmetricKey(data: Data(self.token.utf8))
-        let message = "\(nonce):\(ts):\(requestJson)"
-        let mac = HMAC<SHA256>.authenticationCode(for: Data(message.utf8), using: key)
-        return mac.map { String(format: "%02x", $0) }.joined()
+    mutating func nextDelay() -> Duration {
+        let delay = self.currentDelay
+        // A second app can hold the lifecycle lease indefinitely. Back off the
+        // SQLite credential read and bind attempt instead of polling every second.
+        self.currentDelay = min(self.currentDelay * 2, self.maximumDelay)
+        return delay
     }
 }

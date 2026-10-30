@@ -2,16 +2,8 @@ import Foundation
 import Testing
 @testable import paleoclaw
 
-@Suite struct ExecApprovalHelpersTests {
-    @Test func parseDecisionTrimsAndRejectsInvalid() {
-        #expect(ExecApprovalHelpers.parseDecision("allow-once") == .allowOnce)
-        #expect(ExecApprovalHelpers.parseDecision(" allow-always ") == .allowAlways)
-        #expect(ExecApprovalHelpers.parseDecision("deny") == .deny)
-        #expect(ExecApprovalHelpers.parseDecision("") == nil)
-        #expect(ExecApprovalHelpers.parseDecision("nope") == nil)
-    }
-
-    @Test func allowlistPatternPrefersResolution() {
+struct ExecApprovalHelpersTests {
+    @Test func `allowlist pattern prefers resolution`() {
         let resolved = ExecCommandResolution(
             rawExecutable: "rg",
             resolvedPath: "/opt/homebrew/bin/rg",
@@ -29,25 +21,19 @@ import Testing
         #expect(ExecApprovalHelpers.allowlistPattern(command: [], resolution: nil) == nil)
     }
 
-    @Test func validateAllowlistPatternReturnsReasons() {
-        #expect(ExecApprovalHelpers.isPathPattern("/usr/bin/rg"))
-        #expect(ExecApprovalHelpers.isPathPattern(" ~/bin/rg "))
-        #expect(!ExecApprovalHelpers.isPathPattern("rg"))
-
-        if case let .invalid(reason) = ExecApprovalHelpers.validateAllowlistPattern("  ") {
-            #expect(reason == .empty)
-        } else {
-            Issue.record("Expected empty pattern rejection")
-        }
-
-        if case let .invalid(reason) = ExecApprovalHelpers.validateAllowlistPattern("echo") {
-            #expect(reason == .missingPathComponent)
-        } else {
-            Issue.record("Expected basename pattern rejection")
-        }
+    @Test func `allowlist matching trims patterns and rejects blank entries`() {
+        let resolution = ExecCommandResolution(
+            rawExecutable: "rg",
+            resolvedPath: "/opt/homebrew/bin/rg",
+            executableName: "rg",
+            cwd: nil)
+        let valid = ExecAllowlistEntry(pattern: "  rg\n")
+        #expect(ExecAllowlistMatcher.match(entries: [valid], resolution: resolution) == valid)
+        #expect(ExecAllowlistMatcher.match(
+            entries: [ExecAllowlistEntry(pattern: " \n ")], resolution: resolution) == nil)
     }
 
-    @Test func requiresAskMatchesPolicy() {
+    @Test func `requires ask matches policy`() {
         let entry = ExecAllowlistEntry(pattern: "/bin/ls", lastUsedAt: nil, lastUsedCommand: nil, lastResolvedPath: nil)
         #expect(ExecApprovalHelpers.requiresAsk(
             ask: .always,

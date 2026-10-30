@@ -1,8 +1,8 @@
 import Foundation
 import Testing
 
-@Suite struct FileHandleLegacyAPIGuardTests {
-    @Test func sourcesAvoidLegacyNonThrowingFileHandleReadAPIs() throws {
+struct FileHandleLegacyAPIGuardTests {
+    @Test func `sources avoid legacy non throwing file handle read AP is`() throws {
         let testFile = URL(fileURLWithPath: #filePath)
         let packageRoot = testFile
             .deletingLastPathComponent() // OpenClawIPCTests
@@ -71,13 +71,13 @@ import Testing
 
             switch mode {
             case .code:
-                if ch == "", peek(1) == "/" {
+                if ch == "/", peek(1) == "/" {
                     out.append("  ")
                     index = source.index(index, offsetBy: 2)
                     mode = .lineComment
                     continue
                 }
-                if ch == "", peek(1) == "*" {
+                if ch == "/", peek(1) == "*" {
                     out.append("  ")
                     index = source.index(index, offsetBy: 2)
                     mode = .blockComment(depth: 1)
