@@ -123,12 +123,12 @@ describe("Discord REST API helpers", () => {
   it("routes webhook helper through the typed REST client", async () => {
     const rest = createFakeRestClient([{ id: "wh1", token: "token1" }]);
 
-    await expect(createChannelWebhook(rest, "c1", { body: { name: "paleoclaw" } })).resolves.toEqual(
-      {
-        id: "wh1",
-        token: "token1",
-      },
-    );
+    await expect(
+      createChannelWebhook(rest, "c1", { body: { name: "paleoclaw" } }),
+    ).resolves.toEqual({
+      id: "wh1",
+      token: "token1",
+    });
 
     expect(rest.calls).toEqual([
       {

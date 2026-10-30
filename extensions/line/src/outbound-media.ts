@@ -1,6 +1,9 @@
 import type { messagingApi } from "@line/bot-sdk";
 import { getFileExtension, mimeTypeFromFilePath } from "paleoclaw/plugin-sdk/media-mime";
-import { resolvePinnedHostnameWithPolicy, type SsrFPolicy } from "paleoclaw/plugin-sdk/ssrf-runtime";
+import {
+  resolvePinnedHostnameWithPolicy,
+  type SsrFPolicy,
+} from "paleoclaw/plugin-sdk/ssrf-runtime";
 import { isHttpsUrl } from "./media-url.js";
 import type { LineOutboundMediaKind } from "./types.js";
 

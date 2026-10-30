@@ -14,7 +14,10 @@ import {
   ReplyToModeSchema,
   refineChannelDmPolicy,
 } from "paleoclaw/plugin-sdk/channel-config-schema";
-import { buildSecretInputSchema, hasConfiguredSecretInput } from "paleoclaw/plugin-sdk/secret-input";
+import {
+  buildSecretInputSchema,
+  hasConfiguredSecretInput,
+} from "paleoclaw/plugin-sdk/secret-input";
 import { z } from "zod";
 import { slackChannelConfigUiHints } from "./config-ui-hints.js";
 

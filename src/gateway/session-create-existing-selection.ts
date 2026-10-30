@@ -1,5 +1,8 @@
 import { stableStringify } from "@paleoclaw/normalization-core/stable-stringify";
-import { type FastMode, normalizeOptionalString } from "@paleoclaw/normalization-core/string-coerce";
+import {
+  type FastMode,
+  normalizeOptionalString,
+} from "@paleoclaw/normalization-core/string-coerce";
 import { resolveAgentDir } from "../agents/agent-scope.js";
 import { prepareAuthProfileProvider } from "../agents/auth-profiles/store-runtime.js";
 import type { ModelCatalogSnapshot } from "../agents/model-catalog.types.js";

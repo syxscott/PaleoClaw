@@ -290,7 +290,12 @@ describe("chat pane header state", () => {
     const copy = vi.spyOn(clipboard, "copyToClipboard").mockResolvedValue(true);
     onTestFinished(() => copy.mockRestore());
     pane.handleHeaderMenuAction("copy-path", workspaceSession, "/src/paleoclaw", "feature/header");
-    pane.handleHeaderMenuAction("copy-branch", workspaceSession, "/src/paleoclaw", "feature/header");
+    pane.handleHeaderMenuAction(
+      "copy-branch",
+      workspaceSession,
+      "/src/paleoclaw",
+      "feature/header",
+    );
     await Promise.resolve();
     expect(copy).toHaveBeenNthCalledWith(1, "/src/paleoclaw");
     expect(copy).toHaveBeenNthCalledWith(2, "feature/header");

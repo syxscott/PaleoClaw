@@ -1021,7 +1021,9 @@ describe("scripts/paleoclaw-cross-os-release-checks", () => {
   it("serves installer scripts as UTF-8 text and package payloads as binary", () => {
     expect(resolveStaticFileContentType("scripts/install.sh")).toBe("text/plain; charset=utf-8");
     expect(resolveStaticFileContentType("scripts/install.ps1")).toBe("text/plain; charset=utf-8");
-    expect(resolveStaticFileContentType("paleoclaw-2026.4.14.tgz")).toBe("application/octet-stream");
+    expect(resolveStaticFileContentType("paleoclaw-2026.4.14.tgz")).toBe(
+      "application/octet-stream",
+    );
   });
 
   it.each([

@@ -6,7 +6,10 @@ import { join } from "node:path";
 import { Client as TeamsApiClient } from "@microsoft/teams.api";
 import { createDeferred } from "paleoclaw/plugin-sdk/extension-shared";
 import { withTempDir } from "paleoclaw/plugin-sdk/test-env";
-import { awaitGateBeforeSettlement, createSolidPngBuffer } from "paleoclaw/plugin-sdk/test-fixtures";
+import {
+  awaitGateBeforeSettlement,
+  createSolidPngBuffer,
+} from "paleoclaw/plugin-sdk/test-fixtures";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { OpenClawConfig } from "../runtime-api.js";
 import { msteamsPlugin } from "./channel.js";

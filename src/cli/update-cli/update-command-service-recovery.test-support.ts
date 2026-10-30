@@ -153,7 +153,9 @@ export async function createServiceActivationFixture() {
   // This fixture models an installed service even though its manager calls are simulated.
   const unitPath = path.join(root, ".config/systemd/user/paleoclaw-gateway.service");
   await fs.mkdir(path.dirname(unitPath), { recursive: true, mode: 0o755 });
-  await fs.writeFile(unitPath, "[Service]\nExecStart=/fixture/paleoclaw gateway\n", { mode: 0o600 });
+  await fs.writeFile(unitPath, "[Service]\nExecStart=/fixture/paleoclaw gateway\n", {
+    mode: 0o600,
+  });
   const configPath = path.join(root, ".openclaw", "openclaw.json");
   await fs.mkdir(path.dirname(configPath), { mode: 0o700 });
   await fs.mkdir(path.join(root, "dist"));

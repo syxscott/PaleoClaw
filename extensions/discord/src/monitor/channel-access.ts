@@ -1,4 +1,7 @@
-import { asOptionalObjectRecord, readStringField } from "paleoclaw/plugin-sdk/string-coerce-runtime";
+import {
+  asOptionalObjectRecord,
+  readStringField,
+} from "paleoclaw/plugin-sdk/string-coerce-runtime";
 
 type DiscordChannelInfoSafe = {
   id?: string;

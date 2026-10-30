@@ -65,7 +65,9 @@ export function resolveReleaseUpgradeBaseline(candidateVersion, publishedVersion
   const targetContextRef = normalizeTargetContextRef(context.targetContextRef);
   const candidate = parseVersion(candidateVersion);
   if (!candidate) {
-    throw new Error(`invalid candidate paleoclaw version: ${String(candidateVersion ?? "").trim()}`);
+    throw new Error(
+      `invalid candidate paleoclaw version: ${String(candidateVersion ?? "").trim()}`,
+    );
   }
   const allPublished = [
     ...new Set(

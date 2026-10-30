@@ -2191,11 +2191,7 @@ describe("ci workflow guards", () => {
         );
         expect(production.runner).toBe("blacksmith-4vcpu-ubuntu-2404");
         expect(central.runner).toBe("blacksmith-16vcpu-ubuntu-2404");
-        expect(JSON.parse(production.type_graph_names_json)).toEqual([
-          "core",
-          "ui",
-          "extensions",
-        ]);
+        expect(JSON.parse(production.type_graph_names_json)).toEqual(["core", "ui", "extensions"]);
         expect(JSON.parse(central.type_graph_names_json)).toEqual(
           profile === "blacksmith" && !centralCorePaths
             ? ["extensions-test", "test-root-tooling", "scripts"]
@@ -2422,13 +2418,7 @@ describe("ci workflow guards", () => {
         changedPaths: scenario.changedPaths,
       });
       for (const [name, config, output, job, stepName] of [
-        [
-          "ui",
-          "ui/vitest.config.ts",
-          "ui_test_groups_gzip_base64",
-          "checks-ui",
-          "Test Control UI",
-        ],
+        ["ui", "ui/vitest.config.ts", "ui_test_groups_gzip_base64", "checks-ui", "Test Control UI"],
         [
           "e2e",
           "test/vitest/vitest.ui-e2e.config.ts",

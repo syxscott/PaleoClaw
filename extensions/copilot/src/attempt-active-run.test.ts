@@ -33,7 +33,8 @@ const harnessMocks = vi.hoisted(() => ({
 }));
 
 vi.mock("paleoclaw/plugin-sdk/agent-harness-runtime", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("paleoclaw/plugin-sdk/agent-harness-runtime")>();
+  const actual =
+    await importOriginal<typeof import("paleoclaw/plugin-sdk/agent-harness-runtime")>();
   return {
     ...actual,
     ...harnessMocks,

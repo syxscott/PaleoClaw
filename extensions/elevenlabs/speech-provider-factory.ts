@@ -150,7 +150,8 @@ async function elevenLabsTTSStream(params: ElevenLabsTtsRequestParams): Promise<
 }> {
   const { createBoundedProviderBinaryStream } =
     await import("paleoclaw/plugin-sdk/provider-binary-stream");
-  const { assertProviderBinaryResponseContent } = await import("paleoclaw/plugin-sdk/provider-http");
+  const { assertProviderBinaryResponseContent } =
+    await import("paleoclaw/plugin-sdk/provider-http");
   const { response, release } = await requestElevenLabsTts(params, true);
   try {
     assertProviderBinaryResponseContent(response, "ElevenLabs API error", "audio");

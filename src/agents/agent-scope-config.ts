@@ -217,7 +217,9 @@ export function resolveSoleAgentId(cfg: OpenClawConfig, context?: AgentSelection
   }
   const agentIds = listAgentIds(cfg);
   if (agentIds.length === 0) {
-    throw new Error("No agents configured. Run `paleoclaw onboard` or `paleoclaw agents add` first.");
+    throw new Error(
+      "No agents configured. Run `paleoclaw onboard` or `paleoclaw agents add` first.",
+    );
   }
   throw new AgentSelectionRequiredError(agentIds, context);
 }

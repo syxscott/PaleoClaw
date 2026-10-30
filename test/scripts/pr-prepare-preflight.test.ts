@@ -146,9 +146,9 @@ describe("scripts/pr prepare mode preflight", () => {
         expect(existsSync(ghCalls)).toBe(false);
         expect(readFileSync(evidence, "utf8")).toBe("previous exact-head proof\n");
         expect(readdirSync(evidenceRoot)).toEqual(originalArtifacts);
-        expect(git("for-each-ref", "--format=%(refname)", "refs/paleoclaw/pr-operation-locks")).toBe(
-          "",
-        );
+        expect(
+          git("for-each-ref", "--format=%(refname)", "refs/paleoclaw/pr-operation-locks"),
+        ).toBe("");
       }
       for (const command of ["prepare-run", "prepare-gates", "prepare-push"]) {
         for (const scenario of [

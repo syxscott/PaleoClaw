@@ -226,7 +226,10 @@ describe("Crabbox project snapshot provisioning", () => {
       writeFile(retainedArchive, archive);
       writeFile(
         path.join(packageRoot, "package.json"),
-        JSON.stringify({ name: "paleoclaw", version: failure === "runtime" ? "0.0.0" : "2026.8.1" }),
+        JSON.stringify({
+          name: "paleoclaw",
+          version: failure === "runtime" ? "0.0.0" : "2026.8.1",
+        }),
       );
       writeFile(
         path.join(packageRoot, "paleoclaw.mjs"),

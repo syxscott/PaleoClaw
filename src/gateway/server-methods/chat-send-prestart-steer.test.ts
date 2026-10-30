@@ -116,7 +116,10 @@ test.for(["accepted", "unavailable", "rejected"] as const)(
   "preserves a prestart steer through workspace preparation when late injection is %s",
   async (injection, { signal }) => {
     const realDispatch = await loadRealChatDispatch();
-    const workspace = await initializeRepository(tempDirs.make("paleoclaw-prestart-steer-"), "repo");
+    const workspace = await initializeRepository(
+      tempDirs.make("paleoclaw-prestart-steer-"),
+      "repo",
+    );
     testState.agentConfig = { workspace };
     const { storePath } = await createSessionStoreDir();
     const preparing = createDeferred();

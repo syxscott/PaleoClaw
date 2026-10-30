@@ -12,8 +12,8 @@ import type { GatewayRestartWaitOutcome } from "../cli/daemon-cli/restart-health
 import { resolveGatewayPort } from "../config/paths.js";
 import { resolveGatewayService } from "../daemon/service.js";
 import { hasCommandProcessCleanupError } from "../process/exec-result.js";
-import { resolveOpenClawPackageRoot } from "./paleoclaw-root.js";
 import { readPackageVersion } from "./package-json.js";
+import { resolveOpenClawPackageRoot } from "./paleoclaw-root.js";
 import { readBuiltGatewayBuildId } from "./update-git-runtime.js";
 import type { InstalledUpdateCandidate } from "./update-run-interruption-store.js";
 import type { UpdateRunRecord } from "./update-run-record.js";

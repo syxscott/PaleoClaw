@@ -459,7 +459,9 @@ describe("readCodexMirroredSessionHistoryMessages", () => {
   });
 
   it("does not create a database for a missing explicit SQLite session key", async () => {
-    const dir = await fs.mkdtemp(path.join(os.tmpdir(), "paleoclaw-codex-session-history-missing-"));
+    const dir = await fs.mkdtemp(
+      path.join(os.tmpdir(), "paleoclaw-codex-session-history-missing-"),
+    );
     tempDirs.push(dir);
     const sessionId = "missing-codex-session";
     const storePath = path.join(dir, "paleoclaw-agent.sqlite");

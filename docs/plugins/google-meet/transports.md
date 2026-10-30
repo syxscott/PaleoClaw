@@ -14,11 +14,11 @@ Chrome, Chrome node, and Twilio transports, the Parallels macOS VM topology, and
 
 A full Gateway or model API key is not required inside a macOS VM just to give it Chrome. Run the Gateway and agent locally; run a node host in the VM.
 
-| Runs where           | What                                                                                            |
-| -------------------- | ----------------------------------------------------------------------------------------------- |
+| Runs where           | What                                                                                             |
+| -------------------- | ------------------------------------------------------------------------------------------------ |
 | Gateway host         | paleoclaw Gateway, agent workspace, model/API keys, realtime provider, Google Meet plugin config |
 | Parallels macOS VM   | paleoclaw CLI/node host, Chrome, SoX, BlackHole 2ch, a Chrome profile signed in to Google        |
-| Not needed in the VM | Gateway service, agent config, model provider setup                                             |
+| Not needed in the VM | Gateway service, agent config, model provider setup                                              |
 
 Install VM dependencies, reboot, verify:
 
@@ -107,15 +107,15 @@ If `chromeNode.node` is omitted, paleoclaw auto-selects only when exactly one co
 
 ### Common failure checks
 
-| Symptom                                                  | Fix                                                                                                                                                                                                                                                                                   |
-| -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Configured Google Meet node ... is not usable: offline` | The pinned node is known but unavailable. Report the setup blocker; do not silently fall back to another transport unless asked.                                                                                                                                                      |
+| Symptom                                                  | Fix                                                                                                                                                                                                                                                                                      |
+| -------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Configured Google Meet node ... is not usable: offline` | The pinned node is known but unavailable. Report the setup blocker; do not silently fall back to another transport unless asked.                                                                                                                                                         |
 | `No connected Google Meet-capable node`                  | Install `npm:@paleoclaw/google-meet` in the VM, run `paleoclaw plugins enable browser`, start `paleoclaw node run`, and approve pairing. If Google Meet was explicitly disabled, enable it too. Confirm `gateway.nodes.commands.allow` includes `googlemeet.chrome` and `browser.proxy`. |
-| `BlackHole 2ch audio device not found`                   | On macOS, install `blackhole-2ch` on the host being checked and reboot.                                                                                                                                                                                                               |
-| `PipeWire-Pulse is unavailable`                          | On Linux, start the desktop user's `pipewire-pulse` service and install `pulseaudio-utils`; do not run the node as root or outside the Chrome user's audio session.                                                                                                                   |
-| Chrome opens but cannot join                             | Sign in to the browser profile in the VM, or keep `chrome.guestName` set. Guest auto-join uses paleoclaw browser automation through the node browser proxy; point the node's `browser.defaultProfile` (or a named existing-session profile) at the profile you want.                   |
-| Duplicate Meet tabs                                      | Leave `chrome.reuseExistingTab: true`. paleoclaw activates an existing tab for the same URL, and creation reuses an in-progress `.../new` or Google account prompt tab, before opening another.                                                                                        |
-| No audio                                                 | Route Meet mic/speaker through the virtual audio path used by paleoclaw; use separate virtual devices or Loopback-style routing for clean duplex audio.                                                                                                                                |
+| `BlackHole 2ch audio device not found`                   | On macOS, install `blackhole-2ch` on the host being checked and reboot.                                                                                                                                                                                                                  |
+| `PipeWire-Pulse is unavailable`                          | On Linux, start the desktop user's `pipewire-pulse` service and install `pulseaudio-utils`; do not run the node as root or outside the Chrome user's audio session.                                                                                                                      |
+| Chrome opens but cannot join                             | Sign in to the browser profile in the VM, or keep `chrome.guestName` set. Guest auto-join uses paleoclaw browser automation through the node browser proxy; point the node's `browser.defaultProfile` (or a named existing-session profile) at the profile you want.                     |
+| Duplicate Meet tabs                                      | Leave `chrome.reuseExistingTab: true`. paleoclaw activates an existing tab for the same URL, and creation reuses an in-progress `.../new` or Google account prompt tab, before opening another.                                                                                          |
+| No audio                                                 | Route Meet mic/speaker through the virtual audio path used by paleoclaw; use separate virtual devices or Loopback-style routing for clean duplex audio.                                                                                                                                  |
 
 ## Install notes
 

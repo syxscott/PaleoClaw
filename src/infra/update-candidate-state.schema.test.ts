@@ -282,7 +282,9 @@ it("fences WAL schema migration without copying a large registered agent payload
   expect(migrated).toContainEqual({ path: agentPath, userVersion: 5 });
   expect(updateStateSchemaVersionsMatch(baseline, migrated, comparison)).toBe(false);
   expect(
-    fs.existsSync(path.join(cache, "paleoclaw")) ? fs.readdirSync(path.join(cache, "paleoclaw")) : [],
+    fs.existsSync(path.join(cache, "paleoclaw"))
+      ? fs.readdirSync(path.join(cache, "paleoclaw"))
+      : [],
   ).toEqual([]);
 });
 

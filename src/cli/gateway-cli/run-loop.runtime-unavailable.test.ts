@@ -36,7 +36,9 @@ it("closes admission and drains active work before handing runtime recovery to t
     loadState: { status: "loaded" },
     running: true,
     env: {},
-    command: { programArguments: [serviceNodeExecPath, "/fixture/paleoclaw.mjs", "gateway", "run"] },
+    command: {
+      programArguments: [serviceNodeExecPath, "/fixture/paleoclaw.mjs", "gateway", "run"],
+    },
   });
   f.restartGatewayProcessWithFreshPid.mockReturnValue({ mode: "supervised" });
   const drain = createLifecycleGate();

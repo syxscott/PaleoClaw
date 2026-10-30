@@ -6,7 +6,10 @@ import { findSourceImportBackedges } from "../../test/helpers/source-import-clos
 import { SQLITE_WORKER_PREPARE_COMMAND } from "../infra/sqlite-worker-contract.js";
 import { runWithSqliteWorkerStateContext } from "../infra/sqlite-worker-state-context.js";
 import { withOpenClawTestState } from "../test-utils/paleoclaw-test-state.js";
-import { closeOpenClawStateDatabaseAsync, openOpenClawStateDatabase } from "./paleoclaw-state-db.js";
+import {
+  closeOpenClawStateDatabaseAsync,
+  openOpenClawStateDatabase,
+} from "./paleoclaw-state-db.js";
 import { captureOpenClawStateWorkerContext } from "./paleoclaw-state-worker-context.js";
 import { openExistingSqliteWorkerBackend } from "./paleoclaw-state.worker.js";
 

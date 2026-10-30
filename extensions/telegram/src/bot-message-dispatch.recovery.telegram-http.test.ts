@@ -18,7 +18,10 @@ import {
 } from "paleoclaw/plugin-sdk/reply-payload-testing";
 import { patchSessionEntry } from "paleoclaw/plugin-sdk/session-store-runtime";
 import { isRecord } from "paleoclaw/plugin-sdk/string-coerce-runtime";
-import { makeAgentAssistantMessage, makeAgentUserMessage } from "paleoclaw/plugin-sdk/test-fixtures";
+import {
+  makeAgentAssistantMessage,
+  makeAgentUserMessage,
+} from "paleoclaw/plugin-sdk/test-fixtures";
 import { describe, expect, it } from "vitest";
 import { createTelegramDispatchHttpFixture } from "./bot-message-dispatch.telegram-http.test-support.js";
 import { resolveTelegramTestUpload } from "./send.telegram-http.test-support.js";

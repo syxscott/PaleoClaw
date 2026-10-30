@@ -24,7 +24,8 @@ export async function readSkillUsage(
     return usage;
   }
   const context = captureOpenClawStateWorkerContext(options);
-  const { executeOpenClawStateWorker } = await import("../../state/paleoclaw-state-worker-store.js");
+  const { executeOpenClawStateWorker } =
+    await import("../../state/paleoclaw-state-worker-store.js");
   const rows = await executeOpenClawStateWorker(context, {
     type: "skills.usage.read",
     input: { skillFiles: canonicalFiles },
@@ -52,7 +53,8 @@ async function recordSkillUsage(
   if (!skillKey) {
     throw new Error(`Invalid skill name: ${event.skillName}`);
   }
-  const { executeOpenClawStateWorker } = await import("../../state/paleoclaw-state-worker-store.js");
+  const { executeOpenClawStateWorker } =
+    await import("../../state/paleoclaw-state-worker-store.js");
   await executeOpenClawStateWorker(context, {
     type: "skills.usage.record",
     input: { ...event, skillFile, skillKey },

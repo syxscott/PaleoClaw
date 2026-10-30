@@ -1,4 +1,7 @@
-import { logInboundDrop, resolveInboundMentionDecision } from "paleoclaw/plugin-sdk/channel-inbound";
+import {
+  logInboundDrop,
+  resolveInboundMentionDecision,
+} from "paleoclaw/plugin-sdk/channel-inbound";
 import { resolveBotThreadMentionPolicy } from "paleoclaw/plugin-sdk/channel-mention-gating";
 import { formatErrorMessage } from "paleoclaw/plugin-sdk/error-runtime";
 import { formatAudioTranscriptForAgent } from "paleoclaw/plugin-sdk/media-understanding-runtime";

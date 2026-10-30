@@ -1,4 +1,7 @@
-import { formatReasoningMessage, resolveHumanDelayConfig } from "paleoclaw/plugin-sdk/agent-runtime";
+import {
+  formatReasoningMessage,
+  resolveHumanDelayConfig,
+} from "paleoclaw/plugin-sdk/agent-runtime";
 import { logTypingFailure } from "paleoclaw/plugin-sdk/channel-feedback";
 import {
   isChannelPartialDeliveryError,

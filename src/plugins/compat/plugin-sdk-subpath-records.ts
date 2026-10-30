@@ -27,7 +27,8 @@ const PLUGIN_SDK_SUBPATH_SEEDS = [
     subpath: "inbound-reply-dispatch",
     owner: "channel",
     removalGate: "stable-deprecation-period",
-    replacement: "`paleoclaw/plugin-sdk/channel-inbound` and `paleoclaw/plugin-sdk/channel-outbound`",
+    replacement:
+      "`paleoclaw/plugin-sdk/channel-inbound` and `paleoclaw/plugin-sdk/channel-outbound`",
   },
   {
     code: "plugin-sdk-channel-reply-pipeline-subpath",
@@ -81,7 +82,8 @@ const PLUGIN_SDK_SUBPATH_SEEDS = [
     subpath: "channel-logging",
     status: "removed",
     owner: "channel",
-    replacement: "`paleoclaw/plugin-sdk/channel-inbound` and `paleoclaw/plugin-sdk/channel-outbound`",
+    replacement:
+      "`paleoclaw/plugin-sdk/channel-inbound` and `paleoclaw/plugin-sdk/channel-outbound`",
   },
   {
     code: "plugin-sdk-channel-lifecycle-subpath",
@@ -97,7 +99,8 @@ const PLUGIN_SDK_SUBPATH_SEEDS = [
     status: "removed",
     removeAfter: "2026-09-30",
     owner: "channel",
-    replacement: "`paleoclaw/plugin-sdk/channel-outbound` and `paleoclaw/plugin-sdk/channel-inbound`",
+    replacement:
+      "`paleoclaw/plugin-sdk/channel-outbound` and `paleoclaw/plugin-sdk/channel-inbound`",
   },
   {
     code: "plugin-sdk-command-auth-subpath",

@@ -2684,7 +2684,9 @@ describe("compactEmbeddedAgentSession hooks (ownsCompaction engine)", () => {
     async (format) => {
       const dir =
         format === "session-key"
-          ? await realpath(await mkdtemp(join(tmpdir(), "paleoclaw-compaction-successor-mismatch-")))
+          ? await realpath(
+              await mkdtemp(join(tmpdir(), "paleoclaw-compaction-successor-mismatch-")),
+            )
           : undefined;
       const storePath = dir ? join(dir, "sessions.json") : TEST_STORE_PATH;
       const activeTarget = { ...wrappedCompactionArgs().sessionTarget, storePath };

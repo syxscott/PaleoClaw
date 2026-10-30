@@ -34,10 +34,13 @@ describe("resolvePluginRouteRuntimeOperatorScopes", () => {
   );
   it("preserves declared trusted-proxy scopes when the header is present", () => {
     expect(
-      resolvePluginRouteRuntimeOperatorScopes(createReq({ "x-paleoclaw-scopes": "operator.read" }), {
-        authMethod: "trusted-proxy",
-        trustDeclaredOperatorScopes: true,
-      }),
+      resolvePluginRouteRuntimeOperatorScopes(
+        createReq({ "x-paleoclaw-scopes": "operator.read" }),
+        {
+          authMethod: "trusted-proxy",
+          trustDeclaredOperatorScopes: true,
+        },
+      ),
     ).toEqual(["operator.read"]);
   });
 

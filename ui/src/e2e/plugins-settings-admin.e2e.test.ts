@@ -350,9 +350,9 @@ suite.define(() => {
           .getByRole("link", { name: "Settings", exact: true })
           .waitFor();
         await page.getByText("Plan and track agent-owned work.", { exact: true }).waitFor();
-        expect(await page.getByRole("link", { name: "View on PaleoHub", exact: true }).count()).toBe(
-          0,
-        );
+        expect(
+          await page.getByRole("link", { name: "View on PaleoHub", exact: true }).count(),
+        ).toBe(0);
         const securityAudit = page.getByRole("link", { name: /Security audit/iu });
         expect(await securityAudit.getAttribute("href")).toBe(
           "https://clawhub.ai/paleoclaw/plugins/workboard/security-audit",

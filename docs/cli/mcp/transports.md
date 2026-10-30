@@ -78,7 +78,7 @@ Connects to a remote MCP server over HTTP Server-Sent Events.
 | `headers`                   | Optional key-value map of HTTP headers (for example auth tokens) |
 | `connectionTimeoutMs`       | Per-server connection timeout in ms (optional)                   |
 | `requestTimeoutMs`          | Per-server MCP request timeout in milliseconds                   |
-| `auth: "oauth"`             | Use MCP OAuth credentials saved by `paleoclaw mcp login`          |
+| `auth: "oauth"`             | Use MCP OAuth credentials saved by `paleoclaw mcp login`         |
 | `auth: "enterprise"`        | Use Enterprise-Managed Authorization through an IdP              |
 | `sslVerify`                 | Set false only for explicitly trusted private HTTPS endpoints    |
 | `clientCert` / `clientKey`  | mTLS client certificate and key paths                            |
@@ -254,18 +254,18 @@ Run `paleoclaw mcp login enterpriseTools`, complete the browser sign-in, then ru
 
 `streamable-http` is an additional transport option alongside `sse` and `stdio`. It uses HTTP streaming for bidirectional communication with remote MCP servers.
 
-| Field                       | Description                                                                            |
-| --------------------------- | -------------------------------------------------------------------------------------- |
-| `url`                       | HTTP or HTTPS URL of the remote server (required)                                      |
+| Field                       | Description                                                                             |
+| --------------------------- | --------------------------------------------------------------------------------------- |
+| `url`                       | HTTP or HTTPS URL of the remote server (required)                                       |
 | `transport`                 | Set to `"streamable-http"` to select this transport; when omitted, paleoclaw uses `sse` |
-| `headers`                   | Optional key-value map of HTTP headers (for example auth tokens)                       |
-| `connectionTimeoutMs`       | Per-server connection timeout in ms (optional)                                         |
-| `requestTimeoutMs`          | Per-server MCP request timeout in milliseconds                                         |
+| `headers`                   | Optional key-value map of HTTP headers (for example auth tokens)                        |
+| `connectionTimeoutMs`       | Per-server connection timeout in ms (optional)                                          |
+| `requestTimeoutMs`          | Per-server MCP request timeout in milliseconds                                          |
 | `auth: "oauth"`             | Use MCP OAuth credentials saved by `paleoclaw mcp login`                                |
-| `auth: "enterprise"`        | Use an enterprise IdP assertion and resource authorization server                      |
-| `sslVerify`                 | Set false only for explicitly trusted private HTTPS endpoints                          |
-| `clientCert` / `clientKey`  | mTLS client certificate and key paths                                                  |
-| `supportsParallelToolCalls` | Hint that concurrent calls are safe for this server                                    |
+| `auth: "enterprise"`        | Use an enterprise IdP assertion and resource authorization server                       |
+| `sslVerify`                 | Set false only for explicitly trusted private HTTPS endpoints                           |
+| `clientCert` / `clientKey`  | mTLS client certificate and key paths                                                   |
+| `supportsParallelToolCalls` | Hint that concurrent calls are safe for this server                                     |
 
 paleoclaw config uses `transport: "streamable-http"` as the current spelling. CLI-native MCP `type: "http"` values are accepted when saved through `paleoclaw mcp set` and repaired by `paleoclaw doctor --fix` in existing config, but `transport` is what embedded paleoclaw consumes directly.
 

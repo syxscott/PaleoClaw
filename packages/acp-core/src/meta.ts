@@ -1,4 +1,7 @@
-import { asFiniteNumber, asSafeIntegerInRange } from "@paleoclaw/normalization-core/number-coercion";
+import {
+  asFiniteNumber,
+  asSafeIntegerInRange,
+} from "@paleoclaw/normalization-core/number-coercion";
 import { normalizeOptionalString } from "@paleoclaw/normalization-core/string-coerce";
 
 function readMetaValue<T>(

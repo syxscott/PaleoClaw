@@ -249,7 +249,9 @@ export async function prepareClawInstallSchemaVersions(
       }
       try {
         if (resolveSnapshotPath(options) !== path) {
-          throw new Error("paleoclaw state location changed before consent provenance publication.");
+          throw new Error(
+            "paleoclaw state location changed before consent provenance publication.",
+          );
         }
         assertCurrent?.();
       } catch (error) {

@@ -7,8 +7,8 @@ import { sanitizeTerminalText } from "../../packages/terminal-core/src/safe-text
 import type { OpenClawConfig } from "../config/types.openclaw.js";
 import { formatErrorMessage } from "../infra/errors.js";
 import { tryReadJson } from "../infra/json-files.js";
-import { resolveOpenClawPackageRootSync } from "../infra/paleoclaw-root.js";
 import { isPackageDependencyName } from "../infra/package-json.js";
+import { resolveOpenClawPackageRootSync } from "../infra/paleoclaw-root.js";
 import { statIfExists } from "../infra/path-existence.js";
 import {
   runInstallPolicy,

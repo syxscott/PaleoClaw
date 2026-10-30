@@ -286,7 +286,12 @@ describe("catalog publication session rows", () => {
           maxProtocol: 1,
           role: "operator",
           scopes: ["operator.admin"],
-          client: { id: "paleoclaw-control-ui", version: "test", platform: "test", mode: "webchat" },
+          client: {
+            id: "paleoclaw-control-ui",
+            version: "test",
+            platform: "test",
+            mode: "webchat",
+          },
         },
       };
       const metadataSnapshot = createPluginMetadataSnapshotFixture({

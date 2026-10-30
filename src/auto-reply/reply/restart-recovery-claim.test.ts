@@ -828,7 +828,10 @@ describe("createReplyRestartRecoveryClaimController", () => {
   it.each(["metadata", "recovery-cycle", "owner-release"] as const)(
     "admits only unchanged recovery ownership after a concurrent %s write",
     async (change) => {
-      const storePath = path.join(tempDirs.make("paleoclaw-reply-admission-race-"), "sessions.json");
+      const storePath = path.join(
+        tempDirs.make("paleoclaw-reply-admission-race-"),
+        "sessions.json",
+      );
       const sessionKey = "agent:main:telegram:group:chat:topic:thread";
       const scope = { storePath, sessionKey };
       const sessionId = "channel-session-id";

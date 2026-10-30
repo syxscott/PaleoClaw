@@ -297,9 +297,9 @@ fs.existsSync = (file) => file === "/sys/fs/cgroup/paleoclaw-gateway.service/cgr
     const invalid = busctl(home, env, "--user", "--json=short", "call", "unsupported");
     expect(invalid.status).not.toBe(0);
     expect(invalid.stderr).not.toContain("not found");
-    expect(systemctl("show", "paleoclaw-gateway.service", "--property=Unsupported").status).not.toBe(
-      0,
-    );
+    expect(
+      systemctl("show", "paleoclaw-gateway.service", "--property=Unsupported").status,
+    ).not.toBe(0);
 
     writeUnit({ programArguments: [...programArguments.slice(0, -1), "18818"] });
     expect(await inspect()).toMatchObject({ programArguments, reloadPending: true });

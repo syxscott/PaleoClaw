@@ -405,7 +405,9 @@ export async function fetchClawHubPluginCatalog(
     });
     const baseUrl = params.baseUrl;
     if (!isRecord(value) || !Array.isArray(value.results)) {
-      throw new Error("Malformed PaleoHub plugin search response: expected results to be an array.");
+      throw new Error(
+        "Malformed PaleoHub plugin search response: expected results to be an array.",
+      );
     }
     return {
       items: value.results.map((result, index) => {
@@ -504,7 +506,9 @@ export async function fetchClawHubPluginVersionCategories(
   }
   return value.packages.map((entry, index) => {
     if (!isRecord(entry)) {
-      throw new Error(`Malformed PaleoHub plugin category batch item ${index}: expected an object.`);
+      throw new Error(
+        `Malformed PaleoHub plugin category batch item ${index}: expected an object.`,
+      );
     }
     const rawCategories = entry.categories;
     let categories: string[] | null;

@@ -9,7 +9,12 @@ import type {
 import { formatCliCommand, VERSION } from "paleoclaw/plugin-sdk/cli-runtime";
 import { toErrorObject } from "paleoclaw/plugin-sdk/error-runtime";
 import { createNodeProxyAgent } from "paleoclaw/plugin-sdk/fetch-runtime";
-import { danger, success, getChildLogger, toPinoLikeLogger } from "paleoclaw/plugin-sdk/runtime-env";
+import {
+  danger,
+  success,
+  getChildLogger,
+  toPinoLikeLogger,
+} from "paleoclaw/plugin-sdk/runtime-env";
 import { ensureDir, resolveUserPath } from "paleoclaw/plugin-sdk/text-utility-runtime";
 import {
   readCredsJsonRaw,

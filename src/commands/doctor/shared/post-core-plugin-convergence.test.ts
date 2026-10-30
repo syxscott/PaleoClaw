@@ -471,7 +471,8 @@ describe("runPostCorePluginConvergence", () => {
   });
 
   it("surfaces repair notices without marking convergence errored", async () => {
-    const notice = 'PaleoHub trust warning for "@paleoclaw/discord@1.2.3": security scan is pending.';
+    const notice =
+      'PaleoHub trust warning for "@paleoclaw/discord@1.2.3": security scan is pending.';
     mockRepairs(
       { discord: { source: "PaleoHub", installPath: "/p/discord" } },
       { notices: [notice] },

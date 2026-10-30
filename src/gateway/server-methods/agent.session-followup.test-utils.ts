@@ -143,220 +143,231 @@ describe("gateway agent follow-up activity", () => {
       replace,
       hiddenTranscript,
     }) => {
-      await withPluginSubagentTestState("paleoclaw-parent-followup-", async ({ stateDir: root }) => {
-        await resetSubagentRegistryForTests({ persist: false });
-        const requesterSessionKey = "agent:main:main";
-        const childSessionKey = unregistered
-          ? "agent:main:dashboard:parent"
-          : visible
-            ? "agent:main:dashboard:review"
-            : "agent:main:subagent:review";
-        const cfg =
-          configuredTimeout === undefined
-            ? {}
-            : { agents: { defaults: { timeoutSeconds: configuredTimeout } } };
-        mocks.loadConfigReturn = cfg;
-        const previousRunId = "previous-review";
-        const runId = "continued-review";
-        if (!unregistered && !register && !persisted) {
-          await addSubagentRunForTests({
-            runId: previousRunId,
-            runTimeoutSeconds: budget,
-            childSessionKey,
-            requesterSessionKey,
-            requesterDisplayKey: requesterSessionKey,
-            task: "Review the candidate",
-            childSessionIdentity: missingIdentity
-              ? undefined
-              : {
-                  sessionId: priorSessionId ?? "spawned-child-session",
-                  lifecycleRevision: priorRevision ?? "current-revision",
-                },
-            execution: {
-              status: "terminal",
+      await withPluginSubagentTestState(
+        "paleoclaw-parent-followup-",
+        async ({ stateDir: root }) => {
+          await resetSubagentRegistryForTests({ persist: false });
+          const requesterSessionKey = "agent:main:main";
+          const childSessionKey = unregistered
+            ? "agent:main:dashboard:parent"
+            : visible
+              ? "agent:main:dashboard:review"
+              : "agent:main:subagent:review";
+          const cfg =
+            configuredTimeout === undefined
+              ? {}
+              : { agents: { defaults: { timeoutSeconds: configuredTimeout } } };
+          mocks.loadConfigReturn = cfg;
+          const previousRunId = "previous-review";
+          const runId = "continued-review";
+          if (!unregistered && !register && !persisted) {
+            await addSubagentRunForTests({
+              runId: previousRunId,
+              runTimeoutSeconds: budget,
+              childSessionKey,
+              requesterSessionKey,
+              requesterDisplayKey: requesterSessionKey,
+              task: "Review the candidate",
+              childSessionIdentity: missingIdentity
+                ? undefined
+                : {
+                    sessionId: priorSessionId ?? "spawned-child-session",
+                    lifecycleRevision: priorRevision ?? "current-revision",
+                  },
+              execution: {
+                status: "terminal",
+                startedAt: 1,
+                endedAt: 2,
+                ...(retired ? { suppressSessionEffects: true } : {}),
+                transcriptTarget: hiddenTranscript ? { sessionId: "hidden-transcript" } : undefined,
+              },
+              ...(previousState === "yielded" ? { pauseReason: "sessions_yield" as const } : {}),
+              expectsCompletionMessage: true,
+            });
+          }
+          if (sourceTool !== "sessions_send") {
+            await addSubagentRunForTests({
+              runId: "settled-grandchild",
+              childSessionKey: "agent:main:subagent:grandchild",
+              requesterSessionKey: childSessionKey,
+              requesterDisplayKey: childSessionKey,
+              task: "Report findings",
               startedAt: 1,
               endedAt: 2,
-              ...(retired ? { suppressSessionEffects: true } : {}),
-              transcriptTarget: hiddenTranscript ? { sessionId: "hidden-transcript" } : undefined,
-            },
-            ...(previousState === "yielded" ? { pauseReason: "sessions_yield" as const } : {}),
-            expectsCompletionMessage: true,
-          });
-        }
-        if (sourceTool !== "sessions_send") {
-          await addSubagentRunForTests({
-            runId: "settled-grandchild",
-            childSessionKey: "agent:main:subagent:grandchild",
-            requesterSessionKey: childSessionKey,
-            requesterDisplayKey: childSessionKey,
-            task: "Report findings",
-            startedAt: 1,
-            endedAt: 2,
-            runTimeoutSeconds: 1,
-          });
-        }
-        mocks.updateSessionStore.mockResolvedValue(undefined);
-        const storePath = path.join(root, "agents", "main", "sessions", "sessions.json");
-        mocks.userTurnStorePath = storePath;
-        let currentEntry = {
-          sessionId: "spawned-child-session",
-          lifecycleRevision: unversioned ? undefined : "current-revision",
-          updatedAt: Date.now(),
-          spawnedBy: requesterSessionKey,
-          label: "Candidate review",
-        };
-        mocks.loadSessionEntry.mockImplementation(() => ({
-          cfg,
-          storePath,
-          entry: currentEntry,
-          canonicalKey: childSessionKey,
-        }));
-        if (persisted) {
-          await writeSubagentSessionEntry({
-            stateDir: root,
-            agentId: "main",
-            sessionKey: childSessionKey,
-            defaultSessionId: currentEntry.sessionId,
-            lifecycleRevision: currentEntry.lifecycleRevision,
-          });
-          seedReleasedYieldedSubagentRun({
-            previousRunId,
-            childSessionKey,
-            requesterSessionKey,
+              runTimeoutSeconds: 1,
+            });
+          }
+          mocks.updateSessionStore.mockResolvedValue(undefined);
+          const storePath = path.join(root, "agents", "main", "sessions", "sessions.json");
+          mocks.userTurnStorePath = storePath;
+          let currentEntry = {
+            sessionId: "spawned-child-session",
+            lifecycleRevision: unversioned ? undefined : "current-revision",
+            updatedAt: Date.now(),
+            spawnedBy: requesterSessionKey,
+            label: "Candidate review",
+          };
+          mocks.loadSessionEntry.mockImplementation(() => ({
+            cfg,
             storePath,
-            budget,
-          });
-          expect(await getSubagentRunByChildSessionKey(childSessionKey)).toBeNull();
-          await initSubagentRegistry();
-          expect(await getSubagentRunByChildSessionKey(childSessionKey)).toMatchObject({
-            runId: previousRunId,
-            runTimeoutSeconds: budget,
-            pauseReason: "sessions_yield",
-          });
-          expect(await getSubagentRunByChildSessionKey(childSessionKey)).not.toHaveProperty(
-            "childSessionIdentity",
+            entry: currentEntry,
+            canonicalKey: childSessionKey,
+          }));
+          if (persisted) {
+            await writeSubagentSessionEntry({
+              stateDir: root,
+              agentId: "main",
+              sessionKey: childSessionKey,
+              defaultSessionId: currentEntry.sessionId,
+              lifecycleRevision: currentEntry.lifecycleRevision,
+            });
+            seedReleasedYieldedSubagentRun({
+              previousRunId,
+              childSessionKey,
+              requesterSessionKey,
+              storePath,
+              budget,
+            });
+            expect(await getSubagentRunByChildSessionKey(childSessionKey)).toBeNull();
+            await initSubagentRegistry();
+            expect(await getSubagentRunByChildSessionKey(childSessionKey)).toMatchObject({
+              runId: previousRunId,
+              runTimeoutSeconds: budget,
+              pauseReason: "sessions_yield",
+            });
+            expect(await getSubagentRunByChildSessionKey(childSessionKey)).not.toHaveProperty(
+              "childSessionIdentity",
+            );
+          }
+          if (register) {
+            await registerSubagentRun({
+              runId: previousRunId,
+              childSessionKey,
+              childAgentId: "main",
+              requesterSessionKey,
+              requesterDisplayKey: requesterSessionKey,
+              task: "Review the candidate",
+              cleanup: "keep",
+              runTimeoutSeconds: budget,
+              sessionEntry: currentEntry,
+            });
+            if (replace) {
+              const { replaceSubagentRunAfterSteerCore } = await vi.importActual<
+                typeof import("../../agents/subagents/registry/subagent-registry.js")
+              >("../../agents/subagents/registry/subagent-registry.js");
+              expect(
+                await replaceSubagentRunAfterSteerCore({
+                  previousRunId,
+                  nextRunId: "successor-review",
+                }),
+              ).toBe(true);
+            }
+            if (recreate) {
+              currentEntry = {
+                ...currentEntry,
+                sessionId: "recreated-child-session",
+                lifecycleRevision: "recreated-revision",
+              };
+            } else if (revise) {
+              currentEntry = { ...currentEntry, lifecycleRevision: "new-revision" };
+            }
+          }
+          const previousRun = structuredClone(
+            await getSubagentRunByChildSessionKey(childSessionKey),
           );
-        }
-        if (register) {
-          await registerSubagentRun({
-            runId: previousRunId,
-            childSessionKey,
-            childAgentId: "main",
-            requesterSessionKey,
-            requesterDisplayKey: requesterSessionKey,
-            task: "Review the candidate",
-            cleanup: "keep",
-            runTimeoutSeconds: budget,
-            sessionEntry: currentEntry,
+          const run = createDeferred<{ payloads: []; meta: { durationMs: number } }>();
+          mocks.agentCommand.mockReturnValueOnce(run.promise);
+          const context = makeContext();
+          const request = {
+            message: "Continue reviewing the new changes",
+            sessionKey: childSessionKey,
+            idempotencyKey: runId,
+            ...(timeout === undefined ? {} : { timeout }),
+            inputProvenance: {
+              kind: "inter_session" as const,
+              sourceSessionKey:
+                sourceTool === "sessions_send"
+                  ? requesterSessionKey
+                  : "agent:main:subagent:grandchild",
+              sourceTool,
+            },
+          };
+          const terminal = createDeferred();
+          const respond = vi.fn((ok, payload) => {
+            if (!ok || payload?.status === "ok" || payload?.status === "error") {
+              terminal.resolve();
+            }
           });
-          if (replace) {
-            const { replaceSubagentRunAfterSteerCore } = await vi.importActual<
-              typeof import("../../agents/subagents/registry/subagent-registry.js")
-            >("../../agents/subagents/registry/subagent-registry.js");
-            expect(
-              await replaceSubagentRunAfterSteerCore({
-                previousRunId,
-                nextRunId: "successor-review",
+          try {
+            const pending = invokeAgent(request, {
+              context,
+              respond,
+              reqId: runId,
+              client: backendGatewayClient(),
+            });
+            await pending;
+            const expectedSeconds =
+              timeout ??
+              (unregistered ||
+              retired ||
+              priorSessionId ||
+              priorRevision ||
+              missingIdentity ||
+              persisted ||
+              recreate ||
+              revise
+                ? undefined
+                : (budget ?? 0));
+            expect(mocks.agentCommand.mock.calls.at(-1)?.[0].timeout).toBe(
+              expectedSeconds?.toString(),
+            );
+            const source = rpcSourceTesting.get(runId);
+            const identity = source && getRpcSourceIdentity(source);
+            expect(identity?.sessionKey).toBe(childSessionKey);
+            expect(identity?.sessionId).toBe(currentEntry.sessionId);
+            expect(mocks.agentCommand.mock.calls.at(-1)?.[0].sessionId).toBe(
+              currentEntry.sessionId,
+            );
+            const admitted = requireValue(source, "admitted source missing");
+            const expectedMs =
+              expectedSeconds === 0
+                ? MAX_TIMER_TIMEOUT_MS
+                : (expectedSeconds ?? configuredTimeout ?? 172_800) * 1000;
+            expect(getRpcSourceExpiresAt(admitted)).toBe(
+              resolveAgentRunExpiresAtMs({
+                now: requireValue(admitted.adapter.timing, "source timing missing").queuedAtMs,
+                timeoutMs: expectedMs,
               }),
-            ).toBe(true);
+            );
+            const callCount = mocks.agentCommand.mock.calls.length;
+            await invokeAgent(request, {
+              context,
+              reqId: "replay",
+              client: backendGatewayClient(),
+            });
+            expect(mocks.agentCommand).toHaveBeenCalledTimes(callCount);
+          } finally {
+            run.resolve({ payloads: [], meta: { durationMs: 1 } });
+            await terminal.promise;
+            expectRecordFields(context.dedupe.get(`agent:${runId}`)?.payload, { status: "ok" });
           }
-          if (recreate) {
-            currentEntry = {
-              ...currentEntry,
-              sessionId: "recreated-child-session",
-              lifecycleRevision: "recreated-revision",
-            };
-          } else if (revise) {
-            currentEntry = { ...currentEntry, lifecycleRevision: "new-revision" };
+          if (persisted) {
+            expect(await getSubagentRunByChildSessionKey(childSessionKey)).toMatchObject({
+              runId,
+              taskRunId: previousRunId,
+              runTimeoutSeconds: budget,
+              generation: 2,
+              requesterSessionKey,
+              execution: { status: "running" },
+            });
+            expect(await getSubagentRunByChildSessionKey(childSessionKey)).not.toHaveProperty(
+              "childSessionIdentity",
+            );
+          } else {
+            expect(await getSubagentRunByChildSessionKey(childSessionKey)).toEqual(previousRun);
           }
-        }
-        const previousRun = structuredClone(await getSubagentRunByChildSessionKey(childSessionKey));
-        const run = createDeferred<{ payloads: []; meta: { durationMs: number } }>();
-        mocks.agentCommand.mockReturnValueOnce(run.promise);
-        const context = makeContext();
-        const request = {
-          message: "Continue reviewing the new changes",
-          sessionKey: childSessionKey,
-          idempotencyKey: runId,
-          ...(timeout === undefined ? {} : { timeout }),
-          inputProvenance: {
-            kind: "inter_session" as const,
-            sourceSessionKey:
-              sourceTool === "sessions_send"
-                ? requesterSessionKey
-                : "agent:main:subagent:grandchild",
-            sourceTool,
-          },
-        };
-        const terminal = createDeferred();
-        const respond = vi.fn((ok, payload) => {
-          if (!ok || payload?.status === "ok" || payload?.status === "error") {
-            terminal.resolve();
-          }
-        });
-        try {
-          const pending = invokeAgent(request, {
-            context,
-            respond,
-            reqId: runId,
-            client: backendGatewayClient(),
-          });
-          await pending;
-          const expectedSeconds =
-            timeout ??
-            (unregistered ||
-            retired ||
-            priorSessionId ||
-            priorRevision ||
-            missingIdentity ||
-            persisted ||
-            recreate ||
-            revise
-              ? undefined
-              : (budget ?? 0));
-          expect(mocks.agentCommand.mock.calls.at(-1)?.[0].timeout).toBe(
-            expectedSeconds?.toString(),
-          );
-          const source = rpcSourceTesting.get(runId);
-          const identity = source && getRpcSourceIdentity(source);
-          expect(identity?.sessionKey).toBe(childSessionKey);
-          expect(identity?.sessionId).toBe(currentEntry.sessionId);
-          expect(mocks.agentCommand.mock.calls.at(-1)?.[0].sessionId).toBe(currentEntry.sessionId);
-          const admitted = requireValue(source, "admitted source missing");
-          const expectedMs =
-            expectedSeconds === 0
-              ? MAX_TIMER_TIMEOUT_MS
-              : (expectedSeconds ?? configuredTimeout ?? 172_800) * 1000;
-          expect(getRpcSourceExpiresAt(admitted)).toBe(
-            resolveAgentRunExpiresAtMs({
-              now: requireValue(admitted.adapter.timing, "source timing missing").queuedAtMs,
-              timeoutMs: expectedMs,
-            }),
-          );
-          const callCount = mocks.agentCommand.mock.calls.length;
-          await invokeAgent(request, { context, reqId: "replay", client: backendGatewayClient() });
-          expect(mocks.agentCommand).toHaveBeenCalledTimes(callCount);
-        } finally {
-          run.resolve({ payloads: [], meta: { durationMs: 1 } });
-          await terminal.promise;
-          expectRecordFields(context.dedupe.get(`agent:${runId}`)?.payload, { status: "ok" });
-        }
-        if (persisted) {
-          expect(await getSubagentRunByChildSessionKey(childSessionKey)).toMatchObject({
-            runId,
-            taskRunId: previousRunId,
-            runTimeoutSeconds: budget,
-            generation: 2,
-            requesterSessionKey,
-            execution: { status: "running" },
-          });
-          expect(await getSubagentRunByChildSessionKey(childSessionKey)).not.toHaveProperty(
-            "childSessionIdentity",
-          );
-        } else {
-          expect(await getSubagentRunByChildSessionKey(childSessionKey)).toEqual(previousRun);
-        }
-      });
+        },
+      );
     },
   );
 });

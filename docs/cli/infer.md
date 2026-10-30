@@ -76,8 +76,8 @@ shell-completion metadata.
 
 ## Common tasks
 
-| Task                          | Command                                                                                       | Notes                                                 |
-| ----------------------------- | --------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
+| Task                          | Command                                                                                        | Notes                                                 |
+| ----------------------------- | ---------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
 | Run a text/model prompt       | `paleoclaw infer model run --prompt "..." --json`                                              | Local by default                                      |
 | Run a model prompt on images  | `paleoclaw infer model run --prompt "Describe this" --file ./image.png --model provider/model` | Repeat `--file` for multiple images                   |
 | Generate an image             | `paleoclaw infer image generate --prompt "..." --json`                                         | Use `image edit` when starting from an existing file  |

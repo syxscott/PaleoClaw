@@ -103,7 +103,7 @@ const results = store.searchMemory({ query: "tyrannosaurus", scope: "all" });
 - `recordChatTurn({ sessionId, userText, assistantText, intent?, mode?, ts? }): void` - fold
   one chat turn into the session day file.
 - `autoReviewToLong(taskId): LongTermMemory` / `reviewTaskToLong(taskId, summary?, lessons?,
-nextActions?): LongTermMemory` - promote a task to long-term memory.
+  nextActions?): LongTermMemory` - promote a task to long-term memory.
 - `getShort(taskId): TaskMemory` - read one task.
 - `listShort({ limit?, status? }): TaskMemory[]` / `listLong({ limit? }): LongTermMemory[]` /
   `listArchiveShort({ limit?, status? }): TaskMemory[]` - list the stores.

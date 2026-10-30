@@ -373,7 +373,9 @@ describe("SessionDiffPanel", () => {
     update({ loader: vi.fn(() => pending.promise) });
     await waitForSolid(() => {
       expect(
-        panel.querySelector("paleoclaw-panel-loading-skeleton")?.getAttribute("data-panel-skeleton"),
+        panel
+          .querySelector("paleoclaw-panel-loading-skeleton")
+          ?.getAttribute("data-panel-skeleton"),
       ).toBe("review");
       expect(panel.querySelector(".session-diff")?.getAttribute("aria-busy")).toBe("true");
     });

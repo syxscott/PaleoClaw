@@ -12,7 +12,7 @@ read_when:
 | Property        | Value                                               |
 | --------------- | --------------------------------------------------- |
 | Provider id     | `fireworks` (alias: `fireworks-ai`)                 |
-| Package         | `@paleoclaw/fireworks-provider`                      |
+| Package         | `@paleoclaw/fireworks-provider`                     |
 | Auth env var    | `FIREWORKS_API_KEY`                                 |
 | Onboarding flag | `--auth-choice fireworks-api-key`                   |
 | Direct CLI flag | `--fireworks-api-key <key>`                         |

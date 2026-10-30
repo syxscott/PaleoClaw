@@ -160,7 +160,7 @@ task failed. This does not change error reporting on human-facing channels.
 | `peers`                      | object   | `{}`     | Trusted peers keyed by lowercase names up to 64 characters.                    |
 | `peers.<name>.token`         | string   | required | Bearer token required when this peer sends requests to OpenClaw.               |
 | `peers.<name>.url`           | string   | -        | Peer JSON-RPC endpoint for outbound messages.                                  |
-| `peers.<name>.outboundToken` | string   | -        | Bearer token paleoclaw sends to the configured peer URL.                        |
+| `peers.<name>.outboundToken` | string   | -        | Bearer token paleoclaw sends to the configured peer URL.                       |
 
 Peer names must begin with a lowercase letter or number and can also contain periods, underscores, and hyphens.
 

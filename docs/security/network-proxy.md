@@ -98,7 +98,7 @@ without activating it.
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `gateway-only` (default) | Loopback HTTP and WebSocket traffic connects directly, including Gateway, browser CDP, update readiness, and native Codex inference relay listeners. No endpoint registration is required. |
 | `proxy`                  | Loopback traffic goes through the proxy. A remote proxy resolves `127.0.0.1`/`localhost` against itself, so this mode can break local runtime listeners.                                   |
-| `block`                  | paleoclaw denies Gateway control-plane, browser CDP, and guarded local-provider loopback connections before opening a socket. Other requests use the proxy.                                 |
+| `block`                  | paleoclaw denies Gateway control-plane, browser CDP, and guarded local-provider loopback connections before opening a socket. Other requests use the proxy.                                |
 
 The implicit bypass covers `localhost` and literal loopback IP URLs. LAN, tailnet, private-network, and public hosts continue through the managed proxy. Application-level SSRF checks still apply to untrusted destinations.
 

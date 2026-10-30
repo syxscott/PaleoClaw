@@ -148,7 +148,10 @@ suite.define(() => {
         if (surface === "header") {
           await page.keyboard.press("Enter");
         } else {
-          await page.locator("paleoclaw-modal-dialog").getByRole("button", { name: "Save" }).click();
+          await page
+            .locator("paleoclaw-modal-dialog")
+            .getByRole("button", { name: "Save" })
+            .click();
         }
         const patchRequest = await gateway.waitForRequest("sessions.patch");
         expect(patchRequest.params).toMatchObject({

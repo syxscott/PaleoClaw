@@ -1,6 +1,9 @@
 import type { TUI } from "@earendil-works/pi-tui";
 import { asOptionalRecord } from "@paleoclaw/normalization-core/record-coerce";
-import { normalizeOptionalString, type FastMode } from "@paleoclaw/normalization-core/string-coerce";
+import {
+  normalizeOptionalString,
+  type FastMode,
+} from "@paleoclaw/normalization-core/string-coerce";
 import type { SessionsPatchResult } from "../../packages/gateway-protocol/src/index.js";
 import { resolveSessionInfoModelSelection } from "../agents/model-selection-display.js";
 import type { SessionEntry } from "../config/sessions/types.js";

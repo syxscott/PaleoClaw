@@ -53,7 +53,8 @@ function brokerEnv(overrides: NodeJS.ProcessEnv = {}): NodeJS.ProcessEnv {
     GITHUB_RUN_ID: "12345",
     GITHUB_SHA: workflowSha,
     GITHUB_TRIGGERING_ACTOR: "maintainer",
-    GITHUB_WORKFLOW_REF: "paleoclaw/paleoclaw/.github/workflows/frv-proof-broker.yml@refs/heads/main",
+    GITHUB_WORKFLOW_REF:
+      "paleoclaw/paleoclaw/.github/workflows/frv-proof-broker.yml@refs/heads/main",
     GITHUB_WORKFLOW_SHA: workflowSha,
     ...overrides,
   };

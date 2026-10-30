@@ -32,7 +32,9 @@ describe("buildCopilotPromptGuidance", () => {
     const guidance = buildGuidance({ delegationCapability: "report_only" });
 
     expect(guidance).not.toContain("## Delegation");
-    expect(guidance).toContain("paleoclaw delivers your final response automatically to the caller");
+    expect(guidance).toContain(
+      "paleoclaw delivers your final response automatically to the caller",
+    );
     expect(
       buildGuidance({
         delegationCapability: "report_only",

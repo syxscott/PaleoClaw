@@ -56,9 +56,9 @@ Saved settings apply without restarting the Gateway under the default reload pol
 
 ## What runs where
 
-| Concern                            | paleoclaw `worker-turn` mode                          | Codex `remote-exec` mode                                |
+| Concern                            | paleoclaw `worker-turn` mode                         | Codex `remote-exec` mode                                |
 | ---------------------------------- | ---------------------------------------------------- | ------------------------------------------------------- |
-| Agent runtime and turn loop        | Cloud box (`paleoclaw worker`)                        | Gateway (Codex app-server)                              |
+| Agent runtime and turn loop        | Cloud box (`paleoclaw worker`)                       | Gateway (Codex app-server)                              |
 | Shell commands and workspace files | Cloud box                                            | Cloud node, paired device, or SSH-backed provider       |
 | Model inference and provider auth  | Gateway, proxied by `{provider, model}` reference    | Gateway, including ChatGPT subscription or API-key auth |
 | Transcript and live session state  | Gateway, fed by the worker's replayable event stream | Gateway through the normal local harness path           |

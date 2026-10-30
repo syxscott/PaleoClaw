@@ -72,7 +72,8 @@ function SecurityRow(props: { status: DebugData["status"] }) {
         title={t("debug.security.audit")}
         description={
           <>
-            {t("debug.security.runPrefix")} <span class="mono">paleoclaw security audit --deep</span>{" "}
+            {t("debug.security.runPrefix")}{" "}
+            <span class="mono">paleoclaw security audit --deep</span>{" "}
             {t("debug.security.runSuffix")}
           </>
         }

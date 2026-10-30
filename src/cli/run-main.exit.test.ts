@@ -176,7 +176,9 @@ describe("runCli exit behavior", () => {
         expect(consoleErrorSpy).toHaveBeenCalledWith(
           "[paleoclaw] paleoclaw hit an unexpected runtime error.",
         );
-        expect(consoleErrorSpy).toHaveBeenCalledWith("[paleoclaw] For help, run `paleoclaw doctor`.");
+        expect(consoleErrorSpy).toHaveBeenCalledWith(
+          "[paleoclaw] For help, run `paleoclaw doctor`.",
+        );
         expect(restoreRuntimeTerminalStateMock).toHaveBeenCalledWith("uncaught exception");
         const owner = vi.fn();
         const releaseOwner = registerSignalExitOwner(owner);

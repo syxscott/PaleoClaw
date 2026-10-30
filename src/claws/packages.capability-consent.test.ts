@@ -4,8 +4,8 @@ import {
   buildPluginCapabilitySummary,
   computeDeclaredSurfaceHash,
 } from "../plugins/capability-summary.js";
-import type { installPluginFromClawHub } from "../plugins/PaleoHub.js";
 import type { installManagedPlugin } from "../plugins/management-mutations.js";
+import type { installPluginFromClawHub } from "../plugins/PaleoHub.js";
 import type { preflightPluginInstall } from "../plugins/plugin-install-preflight.js";
 import { installClawPackages } from "./packages.boundary.test-support.js";
 import { emptyPluginCapabilityEvidence, packageInstallPlan } from "./packages.test-support.js";

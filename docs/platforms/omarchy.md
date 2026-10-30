@@ -121,14 +121,14 @@ See [Updating](/install/updating) for Gateway update guidance.
 
 ## Troubleshooting and support
 
-| Symptom                                    | Check                                                                                                                                                |
-| ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| No plugin icon                             | Validate and enable the plugin using the commands above. An older running desktop app may own the visible icon.                                      |
-| Two paleoclaw icons                         | Update both the plugin and desktop app to versions with the integration. They must run in the same desktop user session.                             |
+| Symptom                                    | Check                                                                                                                                                  |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| No plugin icon                             | Validate and enable the plugin using the commands above. An older running desktop app may own the visible icon.                                        |
+| Two paleoclaw icons                        | Update both the plugin and desktop app to versions with the integration. They must run in the same desktop user session.                               |
 | CLI not found                              | Check `OPENCLAW_DESKTOP_CLI`, `~/.openclaw/bin/paleoclaw`, or the graphical session's `PATH`. Install through your normal paleoclaw installation path. |
-| Desktop connection unavailable             | Open the desktop app and reconnect to its Primary Gateway. Resolve authentication or pairing there.                                                  |
-| Sessions look stale or sending is disabled | Refresh the panel and check the connection error. The plugin retains cached results after a failed refresh.                                          |
-| A prompt may have been sent                | Open the target session and inspect its latest messages before resubmitting.                                                                         |
+| Desktop connection unavailable             | Open the desktop app and reconnect to its Primary Gateway. Resolve authentication or pairing there.                                                    |
+| Sessions look stale or sending is disabled | Refresh the panel and check the connection error. The plugin retains cached results after a failed refresh.                                            |
+| A prompt may have been sent                | Open the target session and inspect its latest messages before resubmitting.                                                                           |
 
 The integration targets Omarchy 4's Quickshell environment. Other bars, older
 Omarchy releases, and other desktop sessions require their own integration;

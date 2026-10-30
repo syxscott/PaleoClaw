@@ -14,7 +14,7 @@ media understanding (Voxtral batch transcription), realtime STT for Voice Call
 | Property         | Value                                       |
 | ---------------- | ------------------------------------------- |
 | Provider id      | `mistral`                                   |
-| Plugin           | `@paleoclaw/mistral-provider`                |
+| Plugin           | `@paleoclaw/mistral-provider`               |
 | Auth env var     | `MISTRAL_API_KEY`                           |
 | Onboarding flag  | `--auth-choice mistral-api-key`             |
 | Direct CLI flag  | `--mistral-api-key <key>`                   |

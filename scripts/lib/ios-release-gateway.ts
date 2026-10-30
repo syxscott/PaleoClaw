@@ -144,7 +144,10 @@ function validateLock(selection: Selection, packageBytes: string, lockBytes: str
     throw new Error("Stable Gateway selection manifests changed.");
   }
   const wrapper = z
-    .object({ private: z.literal(true), dependencies: z.object({ paleoclaw: z.string() }).strict() })
+    .object({
+      private: z.literal(true),
+      dependencies: z.object({ paleoclaw: z.string() }).strict(),
+    })
     .parse(JSON.parse(packageBytes));
   const lock = z
     .object({

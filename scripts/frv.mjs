@@ -3415,7 +3415,9 @@ function print(value, json) {
     );
   }
   if (value.finalRunId) {
-    console.log(`final run: https://github.com/syxscott/PaleoClaw/actions/runs/${value.finalRunId}`);
+    console.log(
+      `final run: https://github.com/syxscott/PaleoClaw/actions/runs/${value.finalRunId}`,
+    );
   }
 }
 

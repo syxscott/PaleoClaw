@@ -535,7 +535,10 @@ fi
         const retirement = steps
           .slice(0, setupIndex)
           .find((step) => step.name === "Retire legacy Crabbox dependencies")?.run;
-        script = `${retirement ?? ""}\n${script}`.replaceAll("/var/tmp/paleoclaw-pnpm", installRoot);
+        script = `${retirement ?? ""}\n${script}`.replaceAll(
+          "/var/tmp/paleoclaw-pnpm",
+          installRoot,
+        );
       }
 
       if (

@@ -87,7 +87,9 @@ describe("openLocalFile", () => {
     vi.stubEnv("DISPLAY", ":0");
     detect.mockResolvedValue(true);
 
-    await expect(openLocalFile("/tmp/paleoclaw-browser-handoff-X/handoff.html")).resolves.toBe(true);
+    await expect(openLocalFile("/tmp/paleoclaw-browser-handoff-X/handoff.html")).resolves.toBe(
+      true,
+    );
     const argv = launch.mock.calls[0]![0];
     expect(argv).toEqual(["xdg-open", expect.stringMatching(/^file:\/\//)]);
     expect(argv[1]).not.toContain("bootstrapToken");

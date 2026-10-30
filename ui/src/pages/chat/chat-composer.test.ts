@@ -467,7 +467,9 @@ it("keeps the dictation button stable through hold progress and latch", async ()
   );
   await vi.waitFor(() => expect(query('[data-chat-talk-capability="dictation"]')).toBeNull());
 
-  const capturedButton = query<HTMLButtonElement>(".chat-talk-control > paleoclaw-tooltip > button");
+  const capturedButton = query<HTMLButtonElement>(
+    ".chat-talk-control > paleoclaw-tooltip > button",
+  );
   expect(capturedButton).not.toBeNull();
   const captures = new Set<number>();
   Object.defineProperties(capturedButton!, {

@@ -210,33 +210,35 @@ export function renderOverview(props: OverviewProps) {
               placeholder="ws://100.x.y.z:18789"
             />
           </label>
-          ${isTrustedProxy
-            ? ""
-            : html`
-                <label class="field">
-                  <span>${t("overview.access.token")}</span>
-                  <input
-                    .value=${props.settings.token}
-                    @input=${(e: Event) => {
-                      const v = (e.target as HTMLInputElement).value;
-                      props.onSettingsChange({ ...props.settings, token: v });
-                    }}
-                    placeholder="OPENCLAW_GATEWAY_TOKEN"
-                  />
-                </label>
-                <label class="field">
-                  <span>${t("overview.access.password")}</span>
-                  <input
-                    type="password"
-                    .value=${props.password}
-                    @input=${(e: Event) => {
-                      const v = (e.target as HTMLInputElement).value;
-                      props.onPasswordChange(v);
-                    }}
-                    placeholder="system or shared password"
-                  />
-                </label>
-              `}
+          ${
+            isTrustedProxy
+              ? ""
+              : html`
+                  <label class="field">
+                    <span>${t("overview.access.token")}</span>
+                    <input
+                      .value=${props.settings.token}
+                      @input=${(e: Event) => {
+                        const v = (e.target as HTMLInputElement).value;
+                        props.onSettingsChange({ ...props.settings, token: v });
+                      }}
+                      placeholder="OPENCLAW_GATEWAY_TOKEN"
+                    />
+                  </label>
+                  <label class="field">
+                    <span>${t("overview.access.password")}</span>
+                    <input
+                      type="password"
+                      .value=${props.password}
+                      @input=${(e: Event) => {
+                        const v = (e.target as HTMLInputElement).value;
+                        props.onPasswordChange(v);
+                      }}
+                      placeholder="system or shared password"
+                    />
+                  </label>
+                `
+          }
           <label class="field">
             <span>${t("overview.access.sessionKey")}</span>
             <input
@@ -268,9 +270,9 @@ export function renderOverview(props: OverviewProps) {
           <button class="btn" @click=${() => props.onConnect()}>${t("common.connect")}</button>
           <button class="btn" @click=${() => props.onRefresh()}>${t("common.refresh")}</button>
           <span class="muted"
-            >${isTrustedProxy
-              ? t("overview.access.trustedProxy")
-              : t("overview.access.connectHint")}</span
+            >${
+              isTrustedProxy ? t("overview.access.trustedProxy") : t("overview.access.connectHint")
+            }</span
           >
         </div>
       </div>
@@ -296,22 +298,26 @@ export function renderOverview(props: OverviewProps) {
           <div class="stat">
             <div class="stat-label">${t("overview.snapshot.lastChannelsRefresh")}</div>
             <div class="stat-value">
-              ${props.lastChannelsRefresh
-                ? formatRelativeTimestamp(props.lastChannelsRefresh)
-                : t("common.na")}
+              ${
+                props.lastChannelsRefresh
+                  ? formatRelativeTimestamp(props.lastChannelsRefresh)
+                  : t("common.na")
+              }
             </div>
           </div>
         </div>
-        ${props.lastError
-          ? html`<div class="callout danger" style="margin-top: 14px;">
-              <div>${props.lastError}</div>
-              ${pairingHint ?? ""} ${authHint ?? ""} ${insecureContextHint ?? ""}
-            </div>`
-          : html`
-              <div class="callout" style="margin-top: 14px">
-                ${t("overview.snapshot.channelsHint")}
-              </div>
-            `}
+        ${
+          props.lastError
+            ? html`<div class="callout danger" style="margin-top: 14px;">
+                <div>${props.lastError}</div>
+                ${pairingHint ?? ""} ${authHint ?? ""} ${insecureContextHint ?? ""}
+              </div>`
+            : html`
+                <div class="callout" style="margin-top: 14px">
+                  ${t("overview.snapshot.channelsHint")}
+                </div>
+              `
+        }
       </div>
     </section>
 
@@ -329,11 +335,13 @@ export function renderOverview(props: OverviewProps) {
       <div class="card stat-card">
         <div class="stat-label">${t("overview.stats.cron")}</div>
         <div class="stat-value">
-          ${props.cronEnabled == null
-            ? t("common.na")
-            : props.cronEnabled
-              ? t("common.enabled")
-              : t("common.disabled")}
+          ${
+            props.cronEnabled == null
+              ? t("common.na")
+              : props.cronEnabled
+                ? t("common.enabled")
+                : t("common.disabled")
+          }
         </div>
         <div class="muted">
           ${t("overview.stats.cronNext", { time: formatNextRun(props.cronNext) })}

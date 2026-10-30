@@ -36,7 +36,9 @@ it("keeps the schema retirement ledger aligned with canonical database schemas",
   const databases = { state, agent };
   const versions = { state: OPENCLAW_STATE_SCHEMA_VERSION, agent: OPENCLAW_AGENT_SCHEMA_VERSION };
   for (const [owner, database] of Object.entries(databases)) {
-    database.exec(readFileSync(new URL(`./paleoclaw-${owner}-schema.sql`, import.meta.url), "utf8"));
+    database.exec(
+      readFileSync(new URL(`./paleoclaw-${owner}-schema.sql`, import.meta.url), "utf8"),
+    );
   }
 
   for (const retirement of retirements) {

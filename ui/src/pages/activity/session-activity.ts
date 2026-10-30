@@ -1,5 +1,5 @@
-import { normalizeOptionalString } from "@paleoclaw/normalization-core/string-coerce";
 import type { RouteLocation } from "@openclaw/uirouter";
+import { normalizeOptionalString } from "@paleoclaw/normalization-core/string-coerce";
 import { sessionActivityTimestamp } from "../../../../src/shared/session-activity-timestamp.js";
 import type {
   AgentIdentityResult,

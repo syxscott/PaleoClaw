@@ -8,7 +8,15 @@ import type { PluginSourceRoots } from "./roots.js";
 import { formatPluginSourceForTable, resolvePluginSourceRoots } from "./source-display.js";
 
 const roots = {
-  stock: path.resolve(path.sep, "opt", "homebrew", "lib", "node_modules", "paleoclaw", "extensions"),
+  stock: path.resolve(
+    path.sep,
+    "opt",
+    "homebrew",
+    "lib",
+    "node_modules",
+    "paleoclaw",
+    "extensions",
+  ),
   global: path.resolve(path.sep, "Users", "x", ".openclaw", "extensions"),
   workspace: path.resolve(path.sep, "Users", "x", "ws", ".openclaw", "extensions"),
 };

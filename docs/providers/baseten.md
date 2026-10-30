@@ -8,16 +8,16 @@ read_when:
 
 [Baseten Model APIs](https://docs.baseten.co/inference/model-apis/overview) provide hosted, OpenAI-compatible access to frontier models. The official external plugin uses authenticated discovery, so paleoclaw follows the complete model set enabled for your Baseten account. Its offline fallback contains the current curated models listed below.
 
-| Property        | Value                                                    |
-| --------------- | -------------------------------------------------------- |
-| Provider id     | `baseten`                                                |
+| Property        | Value                                                     |
+| --------------- | --------------------------------------------------------- |
+| Provider id     | `baseten`                                                 |
 | Plugin          | official external package (`@paleoclaw/baseten-provider`) |
-| Auth env var    | `BASETEN_API_KEY`                                        |
-| Onboarding flag | `--auth-choice baseten-api-key`                          |
-| Direct CLI flag | `--baseten-api-key <key>`                                |
-| API             | OpenAI-compatible (`openai-completions`)                 |
-| Base URL        | `https://inference.baseten.co/v1`                        |
-| Default model   | `baseten/deepseek-ai/DeepSeek-V4.1-Flash`                |
+| Auth env var    | `BASETEN_API_KEY`                                         |
+| Onboarding flag | `--auth-choice baseten-api-key`                           |
+| Direct CLI flag | `--baseten-api-key <key>`                                 |
+| API             | OpenAI-compatible (`openai-completions`)                  |
+| Base URL        | `https://inference.baseten.co/v1`                         |
+| Default model   | `baseten/deepseek-ai/DeepSeek-V4.1-Flash`                 |
 
 ## Install plugin
 

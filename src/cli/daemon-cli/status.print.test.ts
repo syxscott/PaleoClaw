@@ -420,7 +420,9 @@ describe("printDaemonStatus", () => {
     }
 
     const errors = output(runtime.error);
-    expect(errors).toContain("Scheduled Task 'paleoclaw Custom Gateway' is registered but DISABLED");
+    expect(errors).toContain(
+      "Scheduled Task 'paleoclaw Custom Gateway' is registered but DISABLED",
+    );
     expect(errors).toContain("paleoclaw gateway start");
     expect(errors).toContain("paleoclaw doctor --fix");
     expect(errors).toContain("to re-enable it");

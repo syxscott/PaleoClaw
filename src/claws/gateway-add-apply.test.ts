@@ -5,13 +5,13 @@ import type {
 } from "../../packages/gateway-protocol/src/schema/claws.js";
 import type { OpenClawConfig } from "../config/types.openclaw.js";
 import { ClawAddMutationError } from "./add.js";
-import type { ClawHubClawTrust, withResolvedClawHubSource } from "./PaleoHub-source.js";
 import {
   applyClawAddForGateway,
   ClawGatewayPlanBlockedError,
   ClawGatewayPlanChangedError,
 } from "./gateway-add-apply.js";
 import { ClawsLabsDisabledError } from "./labs-gate.js";
+import type { ClawHubClawTrust, withResolvedClawHubSource } from "./PaleoHub-source.js";
 import type { ClawAddPlan, ClawReadResult } from "./types.js";
 
 const mocks = vi.hoisted(() => ({

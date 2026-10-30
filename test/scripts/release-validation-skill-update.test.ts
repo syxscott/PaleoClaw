@@ -17,7 +17,13 @@ const checkerSource = path.resolve(
 );
 const tempDirs = useAutoCleanupTempDirTracker(afterEach);
 const writeJson = (file: string, value: unknown) => writeFile(file, JSON.stringify(value));
-const updateCommand = ["paleoclaw", "skills", "update", "@paleoclaw/release-validation", "--global"];
+const updateCommand = [
+  "paleoclaw",
+  "skills",
+  "update",
+  "@paleoclaw/release-validation",
+  "--global",
+];
 
 function expectNoUpdate(result: Awaited<ReturnType<typeof runChecker>>, status: string) {
   expect(result.status).toBe(status);

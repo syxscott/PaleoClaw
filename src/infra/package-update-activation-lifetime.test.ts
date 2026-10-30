@@ -740,7 +740,10 @@ describe.skipIf(process.platform === "win32")(
                 throw new Error("No private staging prefix");
               }
               stagePrefix = prefix;
-              await writePackageRoot(path.join(prefix, "lib", "node_modules", "paleoclaw"), "2.0.0");
+              await writePackageRoot(
+                path.join(prefix, "lib", "node_modules", "paleoclaw"),
+                "2.0.0",
+              );
               await fsp.mkdir(path.join(prefix, "bin"), { recursive: true });
               await fsp.writeFile(path.join(prefix, "bin", "paleoclaw"), "candidate launcher\n");
               return {

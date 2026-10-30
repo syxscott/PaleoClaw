@@ -225,7 +225,8 @@ export function createPage(options: PageOptions = {}) {
           message: "Explicit acknowledgement is required for this PaleoHub release.",
           details: {
             code: "CLAWHUB_RISK_ACKNOWLEDGEMENT_REQUIRED",
-            warning: options.clawHubTrustWarning ?? "Review this PaleoHub release before adding it.",
+            warning:
+              options.clawHubTrustWarning ?? "Review this PaleoHub release before adding it.",
           },
         });
       }

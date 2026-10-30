@@ -367,32 +367,37 @@ describe("status update ledger evidence", () => {
         versionMatch: undefined,
       },
       server: { version: "2026.10.1", buildId: "2026.10.1-3745fd3c29a4" },
-      detail: "Gateway is serving 2026.10.1; the update target is unknown — run `paleoclaw update`.",
+      detail:
+        "Gateway is serving 2026.10.1; the update target is unknown — run `paleoclaw update`.",
     },
     {
       name: "a recorded stopped Gateway",
       verification: { serviceRunning: false },
       server: { version: "2026.10.1", buildId: "2026.10.1-3745fd3c29a4" },
-      detail: "Gateway is serving 2026.10.1; the update target is unknown — run `paleoclaw update`.",
+      detail:
+        "Gateway is serving 2026.10.1; the update target is unknown — run `paleoclaw update`.",
     },
     {
       // Git admission records the selected SHA before refusing its unreadable metadata.
       name: "an explicit SHA whose version was never read",
       runTarget: { kind: "git", channel: "dev", sha: "fcdb9321abcd" },
       server: { version: "2026.10.1", buildId: "2026.10.1-3745fd3c29a4" },
-      detail: "Gateway is serving 2026.10.1; the update target is unknown — run `paleoclaw update`.",
+      detail:
+        "Gateway is serving 2026.10.1; the update target is unknown — run `paleoclaw update`.",
     },
     {
       name: "an explicit tag",
       runTarget: { kind: "git", tag: "v2026.9.7" },
       server: { version: "2026.10.1", buildId: "2026.10.1-3745fd3c29a4" },
-      detail: "Gateway is serving 2026.10.1; the update target is unknown — run `paleoclaw update`.",
+      detail:
+        "Gateway is serving 2026.10.1; the update target is unknown — run `paleoclaw update`.",
     },
     {
       name: "a recorded post-update SHA without a target version",
       after: { sha: "fcdb9321abcd" },
       server: { version: "2026.10.1", buildId: "2026.10.1-3745fd3c29a4" },
-      detail: "Gateway is serving 2026.10.1; the update target is unknown — run `paleoclaw update`.",
+      detail:
+        "Gateway is serving 2026.10.1; the update target is unknown — run `paleoclaw update`.",
     },
     {
       name: "a recorded post-update build without a target version",

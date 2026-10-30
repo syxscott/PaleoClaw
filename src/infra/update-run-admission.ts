@@ -2,7 +2,10 @@ import type {
   OpenClawStateDatabaseOptions,
   OpenClawStateSchemaReadAdmission,
 } from "../state/paleoclaw-state-db-contract.js";
-import { ensureStatePostgresFragment, isStatePostgres } from "../state/paleoclaw-state-db-engine.js";
+import {
+  ensureStatePostgresFragment,
+  isStatePostgres,
+} from "../state/paleoclaw-state-db-engine.js";
 import { runExistingOpenClawStateWriteTransaction } from "../state/paleoclaw-state-db-existing-write.js";
 import {
   withExistingOpenClawStateDatabaseArtifactPreservingReadOnly,

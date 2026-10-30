@@ -12,7 +12,8 @@ const loopback = vi.hoisted<{ port: number; boundPorts: number[] }>(() => ({
 }));
 vi.mock("paleoclaw/plugin-sdk/ssrf-runtime", () => ({ fetchWithSsrFGuard: guardedFetch }));
 vi.mock("paleoclaw/plugin-sdk/provider-auth-runtime", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("paleoclaw/plugin-sdk/provider-auth-runtime")>();
+  const actual =
+    await importOriginal<typeof import("paleoclaw/plugin-sdk/provider-auth-runtime")>();
   return {
     ...actual,
     startProviderOAuthLoopbackCallbackServer: async (

@@ -344,7 +344,16 @@ function installNodeScheduledTask(env: Record<string, string>, stdout = new Pass
   return installScheduledTask({
     env: fixtureEnv,
     stdout,
-    programArguments: ["node", "paleoclaw", "node", "run", "--host", "127.0.0.1", "--port", "18789"],
+    programArguments: [
+      "node",
+      "paleoclaw",
+      "node",
+      "run",
+      "--host",
+      "127.0.0.1",
+      "--port",
+      "18789",
+    ],
     environment: {
       OPENCLAW_SERVICE_KIND: "node",
       OPENCLAW_GATEWAY_PORT: "18789",

@@ -12,20 +12,20 @@ The Codex harness configuration map and the turn-level behavior each setting con
 
 ## Configuration
 
-| Need                                                | Set                                                                                                       | Where                              |
-| --------------------------------------------------- | --------------------------------------------------------------------------------------------------------- | ---------------------------------- |
+| Need                                                | Set                                                                                                       | Where                               |
+| --------------------------------------------------- | --------------------------------------------------------------------------------------------------------- | ----------------------------------- |
 | Enable the harness                                  | `plugins.entries.codex.enabled: true`                                                                     | paleoclaw config                    |
-| Hide native Codex session discovery                 | `plugins.entries.codex.config.sessionCatalog.enabled: false`                                              | Codex plugin config                |
-| Include additional local Codex stores (stdio only)  | `plugins.entries.codex.config.sessionCatalog.homes`                                                       | Codex plugin config                |
+| Hide native Codex session discovery                 | `plugins.entries.codex.config.sessionCatalog.enabled: false`                                              | Codex plugin config                 |
+| Include additional local Codex stores (stdio only)  | `plugins.entries.codex.config.sessionCatalog.homes`                                                       | Codex plugin config                 |
 | Keep an allowlisted plugin install                  | Include `codex` in `plugins.allow`                                                                        | paleoclaw config                    |
-| Allow eligible OpenAI turns to use Codex implicitly | Exact official HTTPS Responses/ChatGPT route, no authored provider request override, runtime unset/`auto` | OpenAI provider/model config       |
-| Sign in with ChatGPT/Codex OAuth                    | `paleoclaw models auth login --provider openai`                                                            | CLI auth profile                   |
+| Allow eligible OpenAI turns to use Codex implicitly | Exact official HTTPS Responses/ChatGPT route, no authored provider request override, runtime unset/`auto` | OpenAI provider/model config        |
+| Sign in with ChatGPT/Codex OAuth                    | `paleoclaw models auth login --provider openai`                                                           | CLI auth profile                    |
 | Add API-key backup for Codex runs                   | `openai:*` API-key profile listed after subscription auth in `auth.order.openai`                          | CLI auth profile + paleoclaw config |
 | Stop execution when Codex is unavailable            | Provider or model `agentRuntime.id: "codex"`                                                              | paleoclaw model/provider config     |
-| Use direct OpenAI API traffic                       | Provider or model `agentRuntime.id: "paleoclaw"` with normal OpenAI auth                                   | paleoclaw model/provider config     |
-| Tune app-server behavior                            | `plugins.entries.codex.config.appServer.*`                                                                | Codex plugin config                |
-| Enable native Codex plugin apps                     | `plugins.entries.codex.config.codexPlugins.*`                                                             | Codex plugin config                |
-| Enable Codex Computer Use                           | `plugins.entries.codex.config.computerUse.*`                                                              | Codex plugin config                |
+| Use direct OpenAI API traffic                       | Provider or model `agentRuntime.id: "paleoclaw"` with normal OpenAI auth                                  | paleoclaw model/provider config     |
+| Tune app-server behavior                            | `plugins.entries.codex.config.appServer.*`                                                                | Codex plugin config                 |
+| Enable native Codex plugin apps                     | `plugins.entries.codex.config.codexPlugins.*`                                                             | Codex plugin config                 |
+| Enable Codex Computer Use                           | `plugins.entries.codex.config.computerUse.*`                                                              | Codex plugin config                 |
 
 Prefer `auth.order.openai` for subscription-first/API-key-backup ordering.
 Existing legacy Codex auth profile ids and legacy Codex auth order are

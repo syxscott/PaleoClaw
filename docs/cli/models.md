@@ -327,7 +327,7 @@ Use `models accounts` for accounts owned by your signed-in person on the selecte
 | Scope          | Command                                            | Where the credential belongs                                        |
 | -------------- | -------------------------------------------------- | ------------------------------------------------------------------- |
 | Personal       | `models accounts login [provider]`                 | Your verified profile on the selected Gateway, which may be remote. |
-| System / agent | `models auth login --provider <id> [--agent <id>]` | The paleoclaw installation on the machine running the command.       |
+| System / agent | `models auth login --provider <id> [--agent <id>]` | The paleoclaw installation on the machine running the command.      |
 
 To configure system/agent credentials for a remote server, run `models auth` on that server with its paleoclaw state/config. Configuring a remote Gateway URL on your laptop does not make `models auth` write to the server.
 

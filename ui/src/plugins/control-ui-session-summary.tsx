@@ -1,4 +1,7 @@
-import { createSessionProjection, reduceSessionProjection } from "@paleoclaw/gateway-client/browser";
+import {
+  createSessionProjection,
+  reduceSessionProjection,
+} from "@paleoclaw/gateway-client/browser";
 import type { BoardGetParams } from "@paleoclaw/gateway-protocol";
 import { isRecord } from "@paleoclaw/normalization-core/record-coerce";
 import { For, Show, createMemo, createSignal, onCleanup, onSettled } from "solid-js";

@@ -1,10 +1,10 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { resolveStateDir } from "../config/paths.js";
-import { resolveOpenClawPackageRoot } from "../infra/paleoclaw-root.js";
 import { collectPackageDistContentInventoryErrors } from "../infra/package-dist-inventory.js";
 import { readPackageVersion } from "../infra/package-json.js";
 import { runGlobalPackageUpdateSteps } from "../infra/package-update-steps.js";
+import { resolveOpenClawPackageRoot } from "../infra/paleoclaw-root.js";
 import {
   collectInstalledGlobalPackageErrors,
   createGlobalInstallEnv,

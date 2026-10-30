@@ -300,7 +300,8 @@ for (let attempt = 1; attempt <= modelAttempts; attempt += 1) {
   if (modelsResult?.ok) {
     modelIds = extractModelIds(modelsResult.json);
     targetModel =
-      modelIds.find((id) => id === "paleoclaw/default") ?? modelIds.find((id) => id === "paleoclaw");
+      modelIds.find((id) => id === "paleoclaw/default") ??
+      modelIds.find((id) => id === "paleoclaw");
     if (targetModel) {
       break;
     }

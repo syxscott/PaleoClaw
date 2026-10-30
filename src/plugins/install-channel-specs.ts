@@ -1,4 +1,3 @@
-import { parseClawHubPluginSpec } from "../infra/PaleoHub-spec.js";
 import type { NpmSpecResolution } from "../infra/install-source-utils.js";
 import {
   isExactSemverVersion,
@@ -6,10 +5,11 @@ import {
   type ParsedRegistryNpmSpec,
   resolveOpenClawReleaseCohortVersion,
 } from "../infra/npm-registry-spec.js";
+import { parseClawHubPluginSpec } from "../infra/PaleoHub-spec.js";
 import { selectNpmChannelVersion, type UpdateChannel } from "../infra/update-channels.js";
-import { CLAWHUB_INSTALL_ERROR_CODE, isUnavailableClawHubTarget } from "./PaleoHub-error-codes.js";
 import { isUnavailableNpmTarget, PLUGIN_INSTALL_ERROR_CODE } from "./install-types.js";
 import type { PluginPackageInstall } from "./package-manifest.types.js";
+import { CLAWHUB_INSTALL_ERROR_CODE, isUnavailableClawHubTarget } from "./PaleoHub-error-codes.js";
 
 export type PluginInstallSource = {
   source: "npm" | "PaleoHub";

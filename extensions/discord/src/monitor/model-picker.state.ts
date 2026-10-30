@@ -3,7 +3,10 @@ import type { OpenClawConfig } from "paleoclaw/plugin-sdk/config-contracts";
 import { expectDefined } from "paleoclaw/plugin-sdk/expect-runtime";
 import { createLazyRuntimeModule } from "paleoclaw/plugin-sdk/lazy-runtime";
 import type { ModelsProviderData } from "paleoclaw/plugin-sdk/models-provider-runtime";
-import { parseStrictInteger, parseStrictPositiveInteger } from "paleoclaw/plugin-sdk/number-runtime";
+import {
+  parseStrictInteger,
+  parseStrictPositiveInteger,
+} from "paleoclaw/plugin-sdk/number-runtime";
 import { normalizeProviderId } from "paleoclaw/plugin-sdk/provider-model-shared";
 import { decodeCustomIdComponent, encodeCustomIdComponent } from "../custom-id-codec.js";
 import type { ComponentData } from "../internal/discord.js";

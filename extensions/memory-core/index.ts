@@ -1,4 +1,7 @@
-import { listAgentIds, resolveSessionAgentIdStrict } from "paleoclaw/plugin-sdk/agent-scope-runtime";
+import {
+  listAgentIds,
+  resolveSessionAgentIdStrict,
+} from "paleoclaw/plugin-sdk/agent-scope-runtime";
 import { createLazyRuntimeModule } from "paleoclaw/plugin-sdk/lazy-runtime";
 import {
   asToolParamsRecord,

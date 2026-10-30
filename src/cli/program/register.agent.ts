@@ -135,7 +135,10 @@ export function registerAgentsCommands(program: Command): void {
         `
 ${theme.heading("Examples:")}
 ${formatHelpExamples([
-  ['paleoclaw agents set-identity --agent main --name "paleoclaw" --emoji "🦞"', "Set name + emoji."],
+  [
+    'paleoclaw agents set-identity --agent main --name "paleoclaw" --emoji "🦞"',
+    "Set name + emoji.",
+  ],
   ["paleoclaw agents set-identity --agent main --avatar avatars/openclaw.png", "Set avatar path."],
   [
     "paleoclaw agents set-identity --workspace ~/.openclaw/workspace --from-identity",

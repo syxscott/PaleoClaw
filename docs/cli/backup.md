@@ -345,9 +345,9 @@ Snapshot creation accepts exactly one named source. Agent sources always use
 the current configuration's resolved `<agentDir>/paleoclaw-agent.sqlite`, even
 when `agentDir` is outside the state directory:
 
-| Command                                                         | Database               |
-| --------------------------------------------------------------- | ---------------------- |
-| `paleoclaw backup sqlite create --global --repository <dir>`     | Shared paleoclaw state  |
+| Command                                                          | Database               |
+| ---------------------------------------------------------------- | ---------------------- |
+| `paleoclaw backup sqlite create --global --repository <dir>`     | Shared paleoclaw state |
 | `paleoclaw backup sqlite create --agent <id> --repository <dir>` | One per-agent database |
 
 The repository contains one directory per committed snapshot. Each snapshot directory contains exactly:

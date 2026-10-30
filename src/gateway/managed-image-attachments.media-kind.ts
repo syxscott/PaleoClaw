@@ -1,4 +1,8 @@
-import { maxBytesForKind, mediaKindFromMime, type MediaKind } from "@paleoclaw/media-core/constants";
+import {
+  maxBytesForKind,
+  mediaKindFromMime,
+  type MediaKind,
+} from "@paleoclaw/media-core/constants";
 import { normalizeMimeType } from "@paleoclaw/media-core/mime";
 import { WEBCHAT_LOCAL_MEDIA_MAX_BYTES } from "../media/configured-max-bytes.js";
 

@@ -228,7 +228,9 @@ describe("scripts/profile-extension-memory", () => {
       expected: [{ dir: "external", file: "extensions/external/dist/index.js" }],
     },
   ])("profiles $name", ({ files, selected, expected }) => {
-    const root = realpathSync(mkdtempSync(path.join(tmpdir(), "paleoclaw-extension-memory #test-")));
+    const root = realpathSync(
+      mkdtempSync(path.join(tmpdir(), "paleoclaw-extension-memory #test-")),
+    );
     try {
       for (const relativeFile of [
         ...files,

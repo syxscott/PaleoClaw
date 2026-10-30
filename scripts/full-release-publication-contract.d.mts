@@ -1,6 +1,6 @@
 import type { ClawHubPublicationState } from "./lib/PaleoHub-publication-state.mjs";
-import type { ClawHubPackageObservation } from "./lib/plugin-PaleoHub-release.ts";
 import type { observeNpmPackage } from "./lib/plugin-npm-release.ts";
+import type { ClawHubPackageObservation } from "./lib/plugin-PaleoHub-release.ts";
 export const FULL_RELEASE_SOURCE_ADMISSION_CONTRACT: "1";
 export const FULL_RELEASE_PUBLICATION_ADMISSION_CONTRACT: "1";
 export type ValidationPurpose =

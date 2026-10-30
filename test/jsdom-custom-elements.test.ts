@@ -16,7 +16,9 @@ describe("jsdom custom element tracking", () => {
     const definitions = jsdomCustomElementDefinitions(customElements);
     expect(Array.isArray(definitions)).toBe(true);
     customElements.define("paleoclaw-jsdom-contract-probe", class extends HTMLElement {});
-    expect(definitions?.some((entry) => entry.name === "paleoclaw-jsdom-contract-probe")).toBe(true);
+    expect(definitions?.some((entry) => entry.name === "paleoclaw-jsdom-contract-probe")).toBe(
+      true,
+    );
   });
 
   it("reports a rejected registration without hiding the native failure", () => {

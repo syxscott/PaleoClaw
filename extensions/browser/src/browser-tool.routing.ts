@@ -1,4 +1,7 @@
-import { hasGatewayToolRoutingContext, listNodes } from "paleoclaw/plugin-sdk/agent-harness-runtime";
+import {
+  hasGatewayToolRoutingContext,
+  listNodes,
+} from "paleoclaw/plugin-sdk/agent-harness-runtime";
 import { readRuntimeConfig as getRuntimeConfig } from "paleoclaw/plugin-sdk/runtime-config-snapshot";
 import { resolveBrowserNodeTarget } from "./browser-node-routing.js";
 import { resolveBrowserConfig, resolveProfile } from "./browser/config.js";

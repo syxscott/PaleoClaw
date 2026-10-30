@@ -469,7 +469,9 @@ describe("getReplyFromConfig message hooks", () => {
 
   it("continues dispatching when media understanding fails before reply routing", async () => {
     mocks.applyMediaUnderstanding.mockRejectedValueOnce(
-      new Error("Cannot find module '/tmp/paleoclaw/dist/media-understanding/apply.runtime-old.js'"),
+      new Error(
+        "Cannot find module '/tmp/paleoclaw/dist/media-understanding/apply.runtime-old.js'",
+      ),
     );
 
     expect(await reply(buildCtx())).toEqual({ text: "ok" });

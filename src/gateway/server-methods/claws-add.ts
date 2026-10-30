@@ -7,7 +7,6 @@ import {
   validateClawsAddPlanParams,
   validateCronAddParams,
 } from "../../../packages/gateway-protocol/src/index.js";
-import { ClawHubSourceError } from "../../claws/PaleoHub-source.js";
 import { clawCronGatewayJobMatchesRef, type PersistedClawCronRef } from "../../claws/cron.js";
 import {
   applyClawAddForGateway,
@@ -18,6 +17,7 @@ import { planClawAddForGateway } from "../../claws/gateway-add-plan.js";
 import { ClawGatewayConsentError } from "../../claws/gateway-plugin-consent.js";
 import { ClawSkillConsentError } from "../../claws/gateway-skill-consent.js";
 import { assertClawsLabsEnabled, ClawsLabsDisabledError } from "../../claws/labs-gate.js";
+import { ClawHubSourceError } from "../../claws/PaleoHub-source.js";
 import type { ClawAddPlan } from "../../claws/types.js";
 import { readCurrentConfigForPolicyCheckAsync } from "../../config/io.runtime.js";
 import { listConfiguredMcpServers } from "../../config/mcp-config.js";

@@ -2,7 +2,10 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { resolveTimerTimeoutMs } from "paleoclaw/plugin-sdk/number-runtime";
 import { readResponseWithLimit } from "paleoclaw/plugin-sdk/response-limit-runtime";
-import { asOptionalObjectRecord, readStringField } from "paleoclaw/plugin-sdk/string-coerce-runtime";
+import {
+  asOptionalObjectRecord,
+  readStringField,
+} from "paleoclaw/plugin-sdk/string-coerce-runtime";
 import { withTimeout } from "paleoclaw/plugin-sdk/time-runtime";
 
 export type QaFixtureFetchJsonOptions = {

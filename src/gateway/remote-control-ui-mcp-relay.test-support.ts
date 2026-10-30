@@ -332,7 +332,9 @@ export async function expectMcpRelayPrincipalAuthority(params: {
             }
           }
           await serving;
-          expect(Buffer.concat(chunks).toString()).toContain('data-paleoclaw-remote-ingress="true"');
+          expect(Buffer.concat(chunks).toString()).toContain(
+            'data-paleoclaw-remote-ingress="true"',
+          );
           const openSocket = (sid: string) =>
             receive("ui.ws.open", {
               sid,

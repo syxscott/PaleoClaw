@@ -315,7 +315,10 @@ async function runCommenter(
       return handler(params);
     },
   };
-  const context = { payload: { workflow_run: run }, repo: { owner: "paleoclaw", repo: "paleoclaw" } };
+  const context = {
+    payload: { workflow_run: run },
+    repo: { owner: "paleoclaw", repo: "paleoclaw" },
+  };
 
   await executeCommenter(createRequire(import.meta.url), context, core, github);
 

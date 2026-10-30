@@ -14,7 +14,9 @@ import { getPairedDevice, requestDevicePairing } from "./device-pairing.js";
 import { migrateLegacyNodePairingStore } from "./node-pairing-migration.js";
 import { resolvePairingPaths } from "./pairing-files.js";
 
-const suiteRootTracker = createSuiteTempRootTracker({ prefix: "paleoclaw-node-pairing-migration-" });
+const suiteRootTracker = createSuiteTempRootTracker({
+  prefix: "paleoclaw-node-pairing-migration-",
+});
 
 const deviceId = "canonical-node";
 async function fixture() {

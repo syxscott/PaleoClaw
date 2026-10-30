@@ -175,8 +175,8 @@ Sends a verification request from this account. `--own-user` requests self-verif
 
 For lower-level lifecycle handling - typically while shadowing inbound requests from another client - these commands act on a specific request `<id>` (printed by `verify list` and `verify request`):
 
-| Command                                    | Purpose                                                             |
-| ------------------------------------------ | ------------------------------------------------------------------- |
+| Command                                     | Purpose                                                             |
+| ------------------------------------------- | ------------------------------------------------------------------- |
 | `paleoclaw matrix verify accept <id>`       | Accept an inbound request                                           |
 | `paleoclaw matrix verify start <id>`        | Start the SAS flow                                                  |
 | `paleoclaw matrix verify sas <id>`          | Print the SAS emoji or decimals                                     |

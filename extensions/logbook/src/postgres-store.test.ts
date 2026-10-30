@@ -12,7 +12,8 @@ import type { LogbookCardDraft } from "./types.js";
 
 // mock-isolation: Exercise the real SQL owner in-process; broker transport is covered separately.
 vi.mock("paleoclaw/plugin-sdk/sqlite-worker-runtime", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("paleoclaw/plugin-sdk/sqlite-worker-runtime")>();
+  const actual =
+    await importOriginal<typeof import("paleoclaw/plugin-sdk/sqlite-worker-runtime")>();
   return { ...actual, requestSqliteWorkerOperationAdmission: vi.fn() };
 });
 

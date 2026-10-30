@@ -136,7 +136,9 @@ it("refuses unvalidated legacy session keys before assigning usage ownership", a
     markCanonicalSessionValidationPending(database, ["legacy"]);
     await closeOpenClawAgentDatabasesAsync();
 
-    await expect(discoverAllSessions({ agentId: "main" })).rejects.toThrow("paleoclaw doctor --fix");
+    await expect(discoverAllSessions({ agentId: "main" })).rejects.toThrow(
+      "paleoclaw doctor --fix",
+    );
   });
 });
 

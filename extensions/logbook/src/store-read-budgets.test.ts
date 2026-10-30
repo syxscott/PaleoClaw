@@ -21,7 +21,8 @@ const preparations = vi.hoisted(() => new Map<string, number>());
 const batchReads = vi.hoisted(() => [] as string[][]);
 const schemaStatements = vi.hoisted(() => [] as string[]);
 vi.mock("paleoclaw/plugin-sdk/sqlite-worker-runtime", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("paleoclaw/plugin-sdk/sqlite-worker-runtime")>();
+  const actual =
+    await importOriginal<typeof import("paleoclaw/plugin-sdk/sqlite-worker-runtime")>();
   return {
     ...actual,
     openNodeSqliteDatabase: (...args: Parameters<typeof actual.openNodeSqliteDatabase>) => {

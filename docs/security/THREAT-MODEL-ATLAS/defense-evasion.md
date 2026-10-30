@@ -15,9 +15,9 @@ The trust boundaries and data flows these threats cross are defined in the [thre
 | Attribute               | Value                                                                                 |
 | ----------------------- | ------------------------------------------------------------------------------------- |
 | **ATLAS ID**            | AML.T0043 - Craft Adversarial Data                                                    |
-| **Description**         | Attacker crafts skill content to evade PaleoHub moderation checks                      |
+| **Description**         | Attacker crafts skill content to evade PaleoHub moderation checks                     |
 | **Attack vector**       | Unicode homoglyphs, encoding tricks, dynamic loading                                  |
-| **Affected components** | PaleoHub moderation/scanning pipeline                                                  |
+| **Affected components** | PaleoHub moderation/scanning pipeline                                                 |
 | **Current mitigations** | Static pattern rules, AST-adjacent code scanning, LLM agentic-risk review, VirusTotal |
 | **Residual risk**       | Medium - novel obfuscation can still slip past layered heuristics                     |
 | **Recommendations**     | Continue expanding the pattern/behavioral corpus as new evasions are found            |

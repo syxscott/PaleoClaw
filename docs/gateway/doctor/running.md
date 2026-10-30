@@ -142,8 +142,8 @@ cat ~/.openclaw/openclaw.json
 `paleoclaw doctor --fix`. They share the same Doctor rule registry, but they do
 not select or act on rules in the same way:
 
-| Mode                     | Prompts   | Writes config/state                        | Output                 | Use it for                       |
-| ------------------------ | --------- | ------------------------------------------ | ---------------------- | -------------------------------- |
+| Mode                      | Prompts   | Writes config/state                        | Output                 | Use it for                       |
+| ------------------------- | --------- | ------------------------------------------ | ---------------------- | -------------------------------- |
 | `paleoclaw doctor`        | yes       | yes, safe migrations and confirmed repairs | friendly health report | guided checks and repairs        |
 | `paleoclaw doctor --json` | no        | no                                         | JSON advisory report   | machine-readable operator checks |
 | `paleoclaw doctor --fix`  | sometimes | yes, with repair policy                    | friendly repair log    | applying approved repairs        |

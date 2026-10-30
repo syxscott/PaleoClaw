@@ -14,7 +14,7 @@ model ids from Featherless at runtime.
 | Property        | Value                                    |
 | --------------- | ---------------------------------------- |
 | Provider id     | `featherless`                            |
-| Package         | `@paleoclaw/featherless-provider`         |
+| Package         | `@paleoclaw/featherless-provider`        |
 | Auth env var    | `FEATHERLESS_API_KEY`                    |
 | Onboarding flag | `--auth-choice featherless-api-key`      |
 | Direct CLI flag | `--featherless-api-key <key>`            |

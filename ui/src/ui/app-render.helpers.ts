@@ -99,9 +99,10 @@ function renderCronFilterIcon(hiddenCount: number) {
         <circle cx="12" cy="12" r="10"></circle>
         <polyline points="12 6 12 12 16 14"></polyline>
       </svg>
-      ${hiddenCount > 0
-        ? html`<span
-            style="
+      ${
+        hiddenCount > 0
+          ? html`<span
+              style="
               position: absolute;
               top: -5px;
               right: -6px;
@@ -113,9 +114,10 @@ function renderCronFilterIcon(hiddenCount: number) {
               padding: 1px 3px;
               pointer-events: none;
             "
-            >${hiddenCount}</span
-          >`
-        : ""}
+              >${hiddenCount}</span
+            >`
+          : ""
+      }
     </span>
   `;
 }
@@ -275,11 +277,13 @@ export function renderChatControls(state: AppViewState) {
           state.sessionsHideCron = !hideCron;
         }}
         aria-pressed=${hideCron}
-        title=${hideCron
-          ? hiddenCronCount > 0
-            ? t("chat.showCronSessionsHidden", { count: String(hiddenCronCount) })
-            : t("chat.showCronSessions")
-          : t("chat.hideCronSessions")}
+        title=${
+          hideCron
+            ? hiddenCronCount > 0
+              ? t("chat.showCronSessionsHidden", { count: String(hiddenCronCount) })
+              : t("chat.showCronSessions")
+            : t("chat.hideCronSessions")
+        }
       >
         ${renderCronFilterIcon(hiddenCronCount)}
       </button>

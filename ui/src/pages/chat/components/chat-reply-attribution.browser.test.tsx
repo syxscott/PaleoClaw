@@ -36,7 +36,9 @@ beforeEach(async () => {
   syncTypefaceStylesheets(typefaces);
   await expect
     .poll(() =>
-      Boolean(document.querySelector<HTMLLinkElement>(`#paleoclaw-typeface-${typefaces.ui}`)?.sheet),
+      Boolean(
+        document.querySelector<HTMLLinkElement>(`#paleoclaw-typeface-${typefaces.ui}`)?.sheet,
+      ),
     )
     .toBe(true);
   view = undefined;

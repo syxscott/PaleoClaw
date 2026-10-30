@@ -31,7 +31,10 @@ export function registerNodeCli(program: Command) {
     "after",
     () =>
       `\n${theme.heading("Examples:")}\n${formatHelpExamples([
-        ["paleoclaw node run --host 127.0.0.1 --port 18789", "Run the node host in the foreground."],
+        [
+          "paleoclaw node run --host 127.0.0.1 --port 18789",
+          "Run the node host in the foreground.",
+        ],
         ["paleoclaw node status", "Check node host service status."],
         ["paleoclaw node install", "Install the node host service."],
         ["paleoclaw node start", "Start the installed node host service."],

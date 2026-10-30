@@ -216,7 +216,8 @@ const {
   resolveBinding: vi.fn((_ref?: unknown) => null as BoundConversation),
   touchBinding: vi.fn(),
   reasoningPreviewEnabled: vi.fn(async () => false),
-  transcribeAudio: vi.fn<typeof import("paleoclaw/plugin-sdk/media-runtime").transcribeFirstAudio>(),
+  transcribeAudio:
+    vi.fn<typeof import("paleoclaw/plugin-sdk/media-runtime").transcribeFirstAudio>(),
   maybeCreateAgent: vi.fn(),
   buildInboundContext: vi.fn<(ctx: BuiltChannelInboundEventContext) => void>(),
   formatEnvelope: vi.fn(({ body }: { body: string }) => body),

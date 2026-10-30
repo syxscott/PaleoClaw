@@ -64,7 +64,11 @@ export async function classifySystemAgentApprovalIntent(params: {
     const route = await resolveSystemAgentVerifiedInferenceRoute(params.verifiedInference);
     // A second direct completion would bypass CLI and plugin-harness execution
     // ownership. Those routes require an exact closed-list approval instead.
-    if (!route || route.runner !== "embedded" || route.agentHarnessRuntimeOverride !== "paleoclaw") {
+    if (
+      !route ||
+      route.runner !== "embedded" ||
+      route.agentHarnessRuntimeOverride !== "paleoclaw"
+    ) {
       return "other";
     }
     const modelRef = route.authProfileId

@@ -2,8 +2,8 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it, vi } from "vitest";
-import type { installPluginFromClawHub } from "../plugins/PaleoHub.js";
 import { PLUGIN_ARTIFACT_ADAPTER_IDENTITY } from "../plugins/install-artifact-inspection.js";
+import type { installPluginFromClawHub } from "../plugins/PaleoHub.js";
 import { installClawPackages as installClawPackagesCore } from "./packages.boundary.test-support.js";
 import { preflightClawPackage } from "./packages.js";
 import {

@@ -4,7 +4,10 @@ import { awaitGateBeforeSettlement } from "../../test/helpers/promise.js";
 import { createDeferredCore } from "../shared/deferred.js";
 import { observeMainThreadSql } from "../test-utils/main-thread-sql-spies.test-support.js";
 import { withOpenClawTestState } from "../test-utils/paleoclaw-test-state.js";
-import { closeOpenClawStateDatabaseAsync, openOpenClawStateDatabase } from "./paleoclaw-state-db.js";
+import {
+  closeOpenClawStateDatabaseAsync,
+  openOpenClawStateDatabase,
+} from "./paleoclaw-state-db.js";
 import { withOpenClawStateLeasesWorkerAdmission } from "./paleoclaw-state-lease-worker-owner.js";
 import {
   withOpenClawStateLeaseAsync,

@@ -19,7 +19,6 @@ import { projectAgents } from "../../lib/reactive/domain-capabilities.ts";
 import { useGatewayPage } from "../../lib/reactive/gateway-page.ts";
 import { t } from "../../lib/reactive/i18n.ts";
 import { observeState } from "../../lib/reactive/observe-state.ts";
-import { searchClawHub } from "../../lib/skills/PaleoHub-search.ts";
 import {
   closeClawHubDetail,
   installFromClawHub,
@@ -36,6 +35,7 @@ import {
   updateSkillEnabled,
   type SkillsState,
 } from "../../lib/skills/index.ts";
+import { searchClawHub } from "../../lib/skills/PaleoHub-search.ts";
 import { PluginIconOwner, pluginIconFetchContext } from "../plugins/plugin-icon-owner.ts";
 import { PluginsHubHeader } from "../plugins/plugins-hub-header.tsx";
 import { PLUGINS_HUB_PANEL_ID } from "../plugins/plugins-hub.ts";

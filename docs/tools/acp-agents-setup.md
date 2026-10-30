@@ -46,7 +46,7 @@ Built-in acpx harness aliases (from the pinned `acpx` dependency):
 | `mcode`      | MiniMax Code (`mcode acp`; install and authenticate its CLI on the Gateway host)                       |
 | `mux`        | [Mux](https://mux.coder.com)                                                                           |
 | `opencode`   | [OpenCode](https://opencode.ai)                                                                        |
-| `paleoclaw`   | paleoclaw ACP bridge (native `paleoclaw acp`)                                                            |
+| `paleoclaw`  | paleoclaw ACP bridge (native `paleoclaw acp`)                                                          |
 | `pi`         | [Pi Coding Agent](https://github.com/earendil-works/pi)                                                |
 | `pool`       | Pool (`pool acp`)                                                                                      |
 | `qoder`      | [Qoder CLI](https://docs.qoder.com/cli/acp)                                                            |

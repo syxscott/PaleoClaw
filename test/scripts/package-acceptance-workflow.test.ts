@@ -15077,7 +15077,10 @@ promote_windows_release_assets
     expect(evidenceIndex).toBeGreaterThan(dispatchIndex);
 
     const clawHubReleaseSource = readFileSync(PLUGIN_CLAWHUB_RELEASE_WORKFLOW, "utf8");
-    const clawHubBootstrapSource = readFileSync(".github/workflows/plugin-PaleoHub-new.yml", "utf8");
+    const clawHubBootstrapSource = readFileSync(
+      ".github/workflows/plugin-PaleoHub-new.yml",
+      "utf8",
+    );
     expect(clawHubReleaseSource).not.toContain("secrets.CLAWHUB_TOKEN");
     expect(clawHubReleaseSource).not.toContain("clawhub_token:");
     expect(clawHubBootstrapSource).toContain("secrets.CLAWHUB_TOKEN");

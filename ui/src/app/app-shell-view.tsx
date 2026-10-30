@@ -82,7 +82,8 @@ export function ApplicationShell(props: { host: ShellViewHost }): SolidJSX.Eleme
   // Legacy Mac hosts stamp this immutable host class before mounting the shell.
   // The web-chrome flag remains a reactive view read for the current host path.
   const legacyMacChrome = () =>
-    !view().nativeWebChrome && document.documentElement.classList.contains("paleoclaw-native-macos");
+    !view().nativeWebChrome &&
+    document.documentElement.classList.contains("paleoclaw-native-macos");
   const workspace = (
     <div style={{ display: "contents" }}>
       <ShellLazyOverlays

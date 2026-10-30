@@ -23,14 +23,14 @@ Use [`paleoclaw acp`](/cli/acp) when paleoclaw should host a coding harness sess
 
 ## Choose the right MCP path
 
-| Goal                                                                | Use                                                                  | Why                                                                                                             |
-| ------------------------------------------------------------------- | -------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| Let an external MCP client read/send paleoclaw channel conversations | `paleoclaw mcp serve`                                                 | paleoclaw is the MCP server and exposes Gateway-backed conversations over stdio.                                 |
-| Save third-party MCP servers for paleoclaw-managed agent runs        | `paleoclaw mcp add`, `set`, `configure`, `tools`, `login`             | paleoclaw is the MCP client-side registry and later projects those servers into eligible runtimes.               |
-| Check a saved server without running an agent turn                  | `paleoclaw mcp status`, `doctor`, `probe`                             | `status` and `doctor` inspect config; `probe` opens a live MCP connection and lists capabilities.               |
-| Edit MCP config from a browser                                      | Control UI `/settings/mcp` (`/mcp` alias)                            | The page shows inventory, enablement, OAuth/filter summaries, command hints, and a scoped `mcp` editor.         |
-| Give Codex app-server a scoped native MCP server                    | `mcp.servers.<name>.codex`                                           | The `codex` block only affects Codex app-server thread projection and is stripped before native config handoff. |
-| Run ACP-hosted harness sessions                                     | [`paleoclaw acp`](/cli/acp) and [ACP Agents](/tools/acp-agents-setup) | ACP bridge mode does not accept per-session MCP server injection; configure gateway/plugin bridges instead.     |
+| Goal                                                                 | Use                                                                   | Why                                                                                                             |
+| -------------------------------------------------------------------- | --------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| Let an external MCP client read/send paleoclaw channel conversations | `paleoclaw mcp serve`                                                 | paleoclaw is the MCP server and exposes Gateway-backed conversations over stdio.                                |
+| Save third-party MCP servers for paleoclaw-managed agent runs        | `paleoclaw mcp add`, `set`, `configure`, `tools`, `login`             | paleoclaw is the MCP client-side registry and later projects those servers into eligible runtimes.              |
+| Check a saved server without running an agent turn                   | `paleoclaw mcp status`, `doctor`, `probe`                             | `status` and `doctor` inspect config; `probe` opens a live MCP connection and lists capabilities.               |
+| Edit MCP config from a browser                                       | Control UI `/settings/mcp` (`/mcp` alias)                             | The page shows inventory, enablement, OAuth/filter summaries, command hints, and a scoped `mcp` editor.         |
+| Give Codex app-server a scoped native MCP server                     | `mcp.servers.<name>.codex`                                            | The `codex` block only affects Codex app-server thread projection and is stripped before native config handoff. |
+| Run ACP-hosted harness sessions                                      | [`paleoclaw acp`](/cli/acp) and [ACP Agents](/tools/acp-agents-setup) | ACP bridge mode does not accept per-session MCP server injection; configure gateway/plugin bridges instead.     |
 
 <Tip>
 If you are not sure which path you need, start with `paleoclaw mcp status --verbose`. It shows what paleoclaw has saved without starting any MCP servers.
@@ -41,14 +41,14 @@ If you are not sure which path you need, start with `paleoclaw mcp status --verb
 This page is an index. `paleoclaw mcp` has six pages, one per reader job. Open
 the page that matches your task.
 
-| Page                                            | Read it when                                                                                   |
-| ----------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| Page                                             | Read it when                                                                                     |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------ |
 | [Run paleoclaw as an MCP server](/cli/mcp/serve) | An MCP client should read or send paleoclaw channel conversations through `paleoclaw mcp serve`. |
-| [Manage saved MCP servers](/cli/mcp/registry)   | You are saving, inspecting, or approving third-party MCP servers for paleoclaw-managed runs.    |
-| [JSON output shapes](/cli/mcp/json-output)      | You are scripting against `status --json`, `doctor --json`, or `probe --json`.                 |
-| [Transports and OAuth](/cli/mcp/transports)     | You need a transport config field, or you are running the MCP OAuth login flow.                |
-| [MCP in the Control UI](/cli/mcp/control-ui)    | You want to edit or inspect MCP config from a browser.                                         |
-| [MCP Apps](/cli/mcp/apps)                       | You are enabling or securing the MCP Apps host bridge.                                         |
+| [Manage saved MCP servers](/cli/mcp/registry)    | You are saving, inspecting, or approving third-party MCP servers for paleoclaw-managed runs.     |
+| [JSON output shapes](/cli/mcp/json-output)       | You are scripting against `status --json`, `doctor --json`, or `probe --json`.                   |
+| [Transports and OAuth](/cli/mcp/transports)      | You need a transport config field, or you are running the MCP OAuth login flow.                  |
+| [MCP in the Control UI](/cli/mcp/control-ui)     | You want to edit or inspect MCP config from a browser.                                           |
+| [MCP Apps](/cli/mcp/apps)                        | You are enabling or securing the MCP Apps host bridge.                                           |
 
 ## Where each section moved
 

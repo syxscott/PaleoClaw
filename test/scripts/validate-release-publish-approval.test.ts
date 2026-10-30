@@ -602,12 +602,16 @@ describe("scripts/validate-release-publish-approval.mjs", () => {
     [
       { APPROVAL_PATH: "" },
       {},
-      expect.stringContaining("PaleoHub bootstrap approval requires an attested approval artifact."),
+      expect.stringContaining(
+        "PaleoHub bootstrap approval requires an attested approval artifact.",
+      ),
     ],
     [
       {},
       { packages: ["@paleoclaw/meta-provider"] },
-      expect.stringMatching(/Attested PaleoHub bootstrap approval does not match|must use attempt/u),
+      expect.stringMatching(
+        /Attested PaleoHub bootstrap approval does not match|must use attempt/u,
+      ),
     ],
   ])("rejects PaleoHub bootstrap with env %j and artifact %j", (env, approval, message) => {
     const result = runClawHubApproval(env, approval);

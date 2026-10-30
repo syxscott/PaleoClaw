@@ -315,7 +315,10 @@ describe("Gateway Claw Add plan", () => {
     "blocks a new workspace that %s an existing agent workspace",
     async (relationship) => {
       const source = await readFixture();
-      const workspace = path.join(realpathSync(os.tmpdir()), "paleoclaw-claws-gateway-deep-overlap");
+      const workspace = path.join(
+        realpathSync(os.tmpdir()),
+        "paleoclaw-claws-gateway-deep-overlap",
+      );
       const nested = path.join(workspace, "nested-agent");
       const plan = await buildClawAddPlan({
         manifest: source.manifest,
@@ -381,7 +384,9 @@ describe("Gateway Claw Add plan", () => {
       ],
     });
     // The source document keeps public env references; reviewed facts disclose only names.
-    expect(projected.manifestDisclosure?.source.packageName).toBe("@paleoclaw/gateway-plan-fixture");
+    expect(projected.manifestDisclosure?.source.packageName).toBe(
+      "@paleoclaw/gateway-plan-fixture",
+    );
     expect(projected.manifestDisclosure?.manifestJson).toContain("${STATUSPAGE_TOKEN}");
     const response = JSON.stringify({ ...projected, manifestDisclosure: undefined });
     expect(response).not.toContain(source.source.packageRoot);

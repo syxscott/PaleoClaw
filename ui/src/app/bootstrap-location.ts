@@ -1,5 +1,5 @@
-import { asOptionalRecord } from "@paleoclaw/normalization-core/record-coerce";
 import type { RouteLocation } from "@openclaw/uirouter";
+import { asOptionalRecord } from "@paleoclaw/normalization-core/record-coerce";
 import type {
   ModelCatalogTarget,
   SessionsResolveResult,

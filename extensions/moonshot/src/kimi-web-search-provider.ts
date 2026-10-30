@@ -1,4 +1,7 @@
-import { createLazyRuntimeMethod, createLazyRuntimeModule } from "paleoclaw/plugin-sdk/lazy-runtime";
+import {
+  createLazyRuntimeMethod,
+  createLazyRuntimeModule,
+} from "paleoclaw/plugin-sdk/lazy-runtime";
 import {
   createWebSearchProviderContractFields,
   WEB_SEARCH_QUERY_COUNT_PROPERTIES,

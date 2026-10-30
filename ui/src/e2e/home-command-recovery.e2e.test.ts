@@ -33,7 +33,9 @@ suite.define(() => {
           sessions: [{ key: homeKey, kind: "direct", label: "Main", updatedAt: 1 }],
         });
         await page.goto(controlUiSessionUrl(suite.server.baseUrl, homeKey));
-        const composer = page.locator("paleoclaw-chat-page .agent-chat__composer-combobox textarea");
+        const composer = page.locator(
+          "paleoclaw-chat-page .agent-chat__composer-combobox textarea",
+        );
         await composer.waitFor({ state: "visible" });
         await gateway.deferNext("chat.send", { queueMode: "steer" });
         await composer.fill(command);

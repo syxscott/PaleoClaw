@@ -87,7 +87,10 @@ describe("package git fixture", () => {
     const packageJson = readJson(root);
     expect(packageJson.dependencies["@paleoclaw/ai"]).toBe("file:.openclaw-fixture/packages/ai");
     expect(packageJson.bundleDependencies).toEqual(["chalk"]);
-    expect(packageJson.scripts).toEqual({ build: "node build.mjs", paleoclaw: "node paleoclaw.mjs" });
+    expect(packageJson.scripts).toEqual({
+      build: "node build.mjs",
+      paleoclaw: "node paleoclaw.mjs",
+    });
     const relocatedAiPackage = readJson(root, ".openclaw-fixture/packages/ai/package.json");
     expect(relocatedAiPackage).toMatchObject({
       name: "@paleoclaw/ai",

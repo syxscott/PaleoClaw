@@ -8,7 +8,9 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { useAutoCleanupTempDirTracker } from "../helpers/temp-dir.js";
 
 const execFileAsync = promisify(execFile);
-const script = fileURLToPath(new URL("../../scripts/lib/paleoclaw-test-state.mts", import.meta.url));
+const script = fileURLToPath(
+  new URL("../../scripts/lib/paleoclaw-test-state.mts", import.meta.url),
+);
 const tempDirs = useAutoCleanupTempDirTracker(afterEach);
 let root: string;
 let snippet: string;

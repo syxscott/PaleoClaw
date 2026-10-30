@@ -290,9 +290,9 @@ export function registerGitActivationDoctorOutcomeTests(getFixture: () => GitCan
         reason: "state-migration-started",
       });
       if (outcome !== "requester-revoked") {
-        expect(result.steps.find((step) => step.name === "paleoclaw doctor")?.configChanges).toEqual(
-          configChanges,
-        );
+        expect(
+          result.steps.find((step) => step.name === "paleoclaw doctor")?.configChanges,
+        ).toEqual(configChanges);
       }
     },
   );

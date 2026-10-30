@@ -55,7 +55,11 @@ describe("Discord guild media actions forward the sender-scoped media policy", (
     await handleDiscordMessageAction({
       ...senderContext,
       action: "emoji-upload",
-      params: { guildId: "guild-1", emojiName: "blob", media: "/srv/paleoclaw/workspace/other.png" },
+      params: {
+        guildId: "guild-1",
+        emojiName: "blob",
+        media: "/srv/paleoclaw/workspace/other.png",
+      },
     });
 
     const call = vi.mocked(discordGuildActionRuntime.uploadEmojiDiscord).mock.calls[0];

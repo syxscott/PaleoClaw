@@ -52,14 +52,14 @@ the plugin does not create an identity provider or add a separate login flow.
 Tools require the running Gateway service; discovery alone never opens a separate
 grant manager. Tool calls and expiry sweeps share that service's mutation queue.
 
-| Field            | Required | Default                       | Constraints                             |
-| ---------------- | -------- | ----------------------------- | --------------------------------------- |
-| `accountId`      | Yes      | —                             | 1–128 letters, digits, `_`, or `-`.     |
-| `appId`          | Yes      | —                             | 1–128 letters, digits, `_`, or `-`.     |
-| `apiToken`       | Yes      | —                             | Nonempty resolved token string.         |
+| Field            | Required | Default                        | Constraints                             |
+| ---------------- | -------- | ------------------------------ | --------------------------------------- |
+| `accountId`      | Yes      | —                              | 1–128 letters, digits, `_`, or `-`.     |
+| `appId`          | Yes      | —                              | 1–128 letters, digits, `_`, or `-`.     |
+| `apiToken`       | Yes      | —                              | Nonempty resolved token string.         |
 | `policyName`     | No       | `Visitors (paleoclaw-managed)` | 1–200 characters; exact policy name.    |
-| `defaultTtlDays` | No       | `14`                          | Integer from 0 through 3650, or `null`. |
-| `maxVisitors`    | No       | `50`                          | Integer from 1 through 500.             |
+| `defaultTtlDays` | No       | `14`                           | Integer from 0 through 3650, or `null`. |
+| `maxVisitors`    | No       | `50`                           | Integer from 1 through 500.             |
 
 Use a secret reference value through your host or deployment's supported secret
 resolution path, then pass the resolved string as `apiToken`. This plugin does

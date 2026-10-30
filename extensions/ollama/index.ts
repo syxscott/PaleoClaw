@@ -1,6 +1,9 @@
 import { collectConfiguredModelRefValues } from "@paleoclaw/model-catalog-core/configured-model-refs";
 import type { OpenClawConfig } from "paleoclaw/plugin-sdk/config-contracts";
-import { createLazyRuntimeMethod, createLazyRuntimeModule } from "paleoclaw/plugin-sdk/lazy-runtime";
+import {
+  createLazyRuntimeMethod,
+  createLazyRuntimeModule,
+} from "paleoclaw/plugin-sdk/lazy-runtime";
 import type { MemoryEmbeddingProviderAdapter } from "paleoclaw/plugin-sdk/memory-core-host-engine-embeddings";
 import { splitTrailingAuthProfile } from "paleoclaw/plugin-sdk/model-ref-parse";
 import { resolvePluginConfigObject } from "paleoclaw/plugin-sdk/plugin-config-runtime";

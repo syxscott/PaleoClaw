@@ -1,15 +1,15 @@
 import type { OpenClawConfig } from "../config/types.js";
 import type { PluginInstallRecord } from "../config/types.plugins.js";
 import {
-  fetchClawHubPackageDetail,
-  resolveLatestVersionFromPackage,
-} from "../infra/PaleoHub-packages.js";
-import { parseClawHubPluginSpec } from "../infra/PaleoHub-spec.js";
-import {
   parseRegistryNpmSpec,
   resolveOpenClawReleaseCohortVersion,
 } from "../infra/npm-registry-spec.js";
 import { isPackageVersionDowngrade } from "../infra/package-update-utils.js";
+import {
+  fetchClawHubPackageDetail,
+  resolveLatestVersionFromPackage,
+} from "../infra/PaleoHub-packages.js";
+import { parseClawHubPluginSpec } from "../infra/PaleoHub-spec.js";
 import {
   normalizeUpdateChannel,
   resolveRegistryUpdateChannel,

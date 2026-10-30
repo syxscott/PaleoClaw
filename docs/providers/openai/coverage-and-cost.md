@@ -27,7 +27,7 @@ changing config.
 
 ## paleoclaw feature coverage
 
-| OpenAI capability         | paleoclaw surface                                                                              | Status                                                             |
+| OpenAI capability         | paleoclaw surface                                                                             | Status                                                             |
 | ------------------------- | --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
 | Chat / Responses          | `openai/<model>` model provider                                                               | Yes                                                                |
 | Codex subscription models | `openai/<model>` with OpenAI OAuth                                                            | Yes                                                                |

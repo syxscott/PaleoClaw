@@ -54,12 +54,12 @@ Only explicitly supplied content is sent. One question uses `POST /decide`;
 multiple questions use one grouped `POST /decide/batch`, not hidden fan-out.
 
 | paleoclaw kind | Sage kind | Semantics and bounds                                                                                                                                               |
-| ------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Boolean       | Yes/No    | `probabilityTrue` is P(yes). `answer: null` is successful abstention.                                                                                              |
-| Choice        | Choice    | 2–120 options; at most 20 for images. Preserve the chosen option, nullable selected probability and categorical distribution; do not normalize or take its argmax. |
-| Score         | Scale     | 2–26 rubric levels, indexed from zero. Preserve the fractional expectation, provider confidence and supplied per-level distribution.                               |
-| Sort          | Sort      | A list of 2–120 items; preserves the native order and optional list-level confidence. No image sorting.                                                            |
-| Tags          | Tags      | 1–120 labels. Text verdicts may be null; image verdicts are Boolean.                                                                                               |
+| -------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Boolean        | Yes/No    | `probabilityTrue` is P(yes). `answer: null` is successful abstention.                                                                                              |
+| Choice         | Choice    | 2–120 options; at most 20 for images. Preserve the chosen option, nullable selected probability and categorical distribution; do not normalize or take its argmax. |
+| Score          | Scale     | 2–26 rubric levels, indexed from zero. Preserve the fractional expectation, provider confidence and supplied per-level distribution.                               |
+| Sort           | Sort      | A list of 2–120 items; preserves the native order and optional list-level confidence. No image sorting.                                                            |
+| Tags           | Tags      | 1–120 labels. Text verdicts may be null; image verdicts are Boolean.                                                                                               |
 
 Text and JSON evidence are rendered as text. List item bodies and rubric entries
 retain their supplied text or JSON representation. Boolean true/false criteria,

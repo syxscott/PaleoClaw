@@ -1151,7 +1151,10 @@ describe("config cli", () => {
     it("reports schema errors for deeply nested replacement values without an engine failure", async () => {
       const resolved = {} as unknown as OpenClawConfig;
       setSnapshot(resolved, resolved);
-      const pathname = path.join(tempDirs.make("paleoclaw-config-deep-replacement-"), "patch.json5");
+      const pathname = path.join(
+        tempDirs.make("paleoclaw-config-deep-replacement-"),
+        "patch.json5",
+      );
       const nestedArray = "[".repeat(20_000) + "0" + "]".repeat(20_000);
       fs.writeFileSync(pathname, `{agents:{defaults:{params:${nestedArray}}}}`, "utf8");
       await expect(

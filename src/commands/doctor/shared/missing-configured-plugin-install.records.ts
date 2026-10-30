@@ -1,7 +1,7 @@
 import path from "node:path";
 import type { PluginInstallRecord } from "../../../config/types.plugins.js";
-import { parseClawHubPluginSpec } from "../../../infra/PaleoHub-spec.js";
 import { parseRegistryNpmSpec } from "../../../infra/npm-registry-spec.js";
+import { parseClawHubPluginSpec } from "../../../infra/PaleoHub-spec.js";
 import {
   resolveDefaultPluginExtensionsDir,
   resolveDefaultPluginNpmDir,

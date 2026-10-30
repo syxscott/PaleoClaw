@@ -301,7 +301,12 @@ async function createFixture(stateDir: string, agentDir: string) {
         connect: {
           minProtocol: 1,
           maxProtocol: 1,
-          client: { id: "paleoclaw-control-ui", version: "test", platform: "test", mode: "webchat" },
+          client: {
+            id: "paleoclaw-control-ui",
+            version: "test",
+            platform: "test",
+            mode: "webchat",
+          },
           role: "operator",
           scopes: ["operator.admin", "operator.write"],
         },

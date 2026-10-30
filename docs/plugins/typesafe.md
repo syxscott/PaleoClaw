@@ -329,10 +329,10 @@ The host supplies the model selected for the owning agent. The adapter translate
 the supported question types:
 
 | paleoclaw | TypeSafe | Result                                                       |
-| -------- | -------- | ------------------------------------------------------------ |
-| Choice   | Choice   | Reported label and probability estimates                     |
-| Score    | Score    | Reported fractional zero-based rubric position and estimates |
-| Boolean  | Noul     | Probability of true, preserved from 0 to 1                   |
+| --------- | -------- | ------------------------------------------------------------ |
+| Choice    | Choice   | Reported label and probability estimates                     |
+| Score     | Score    | Reported fractional zero-based rubric position and estimates |
+| Boolean   | Noul     | Probability of true, preserved from 0 to 1                   |
 
 Choice supports 2–255 alternatives; Score supports 2–10 rubric levels.
 Unsupported input is rejected before transmission; the adapter does not truncate

@@ -32,7 +32,7 @@ A CLI backend plugin has three contracts:
 
 | Contract             | File                   | Purpose                                                   |
 | -------------------- | ---------------------- | --------------------------------------------------------- |
-| Package entry        | `package.json`         | Points paleoclaw at the plugin runtime module              |
+| Package entry        | `package.json`         | Points paleoclaw at the plugin runtime module             |
 | Manifest ownership   | `openclaw.plugin.json` | Declares the backend id before runtime loads              |
 | Runtime registration | `index.ts`             | Calls `api.registerCliBackend(...)` with command defaults |
 
@@ -200,10 +200,10 @@ model-alias, session, and image fields as the bundled
 | `maxPromptArgChars`                                       | Max prompt length for `arg` mode before falling back to stdin                     |
 | `env` / `clearEnv`                                        | Extra env vars to inject, or names to strip before launch                         |
 | `modelArg`                                                | Flag used before the model id                                                     |
-| `modelAliases`                                            | Map paleoclaw model ids to CLI-native ids                                          |
+| `modelAliases`                                            | Map paleoclaw model ids to CLI-native ids                                         |
 | `sessionArgs`                                             | How to pass a session id using `{sessionId}`                                      |
 | `sessionMode`                                             | `always`, `existing`, or `none`                                                   |
-| `sessionIdFields`                                         | JSON fields paleoclaw reads from CLI output                                        |
+| `sessionIdFields`                                         | JSON fields paleoclaw reads from CLI output                                       |
 | `systemPromptArg` / `systemPromptFileArg`                 | System prompt transport                                                           |
 | `systemPromptFileConfigArg` / `systemPromptFileConfigKey` | Config-override transport for a system prompt file (for example `-c`)             |
 | `systemPromptMode`                                        | `append` or `replace`                                                             |
@@ -247,24 +247,24 @@ only for behavior that really belongs to the backend.
 
 `CliBackendPlugin` can also define:
 
-| Hook                               | Use                                                                               |
-| ---------------------------------- | --------------------------------------------------------------------------------- |
-| `normalizeConfig(config, context)` | Normalize the registered static adapter with runtime context                      |
-| `resolveExecutionArgs(ctx)`        | Add request-scoped flags such as thinking effort or side-question isolation       |
-| `prepareExecution(ctx)`            | Create temporary auth, config, or environment bridges before launch               |
-| `transformSystemPrompt(ctx)`       | Apply a final CLI-specific system prompt transform                                |
-| `textTransforms`                   | Bidirectional prompt/output replacements                                          |
+| Hook                               | Use                                                                                |
+| ---------------------------------- | ---------------------------------------------------------------------------------- |
+| `normalizeConfig(config, context)` | Normalize the registered static adapter with runtime context                       |
+| `resolveExecutionArgs(ctx)`        | Add request-scoped flags such as thinking effort or side-question isolation        |
+| `prepareExecution(ctx)`            | Create temporary auth, config, or environment bridges before launch                |
+| `transformSystemPrompt(ctx)`       | Apply a final CLI-specific system prompt transform                                 |
+| `textTransforms`                   | Bidirectional prompt/output replacements                                           |
 | `defaultAuthProfileId`             | Prefer a specific paleoclaw auth profile                                           |
-| `authEpochMode`                    | Decide how auth changes invalidate stored CLI sessions                            |
-| `nativeToolMode`                   | Declare whether native tools are absent, always on, or host-selectable            |
-| `toolAvailabilityEnforcement`      | Declare whether exact tool caps are enforced in argv or execution staging         |
+| `authEpochMode`                    | Decide how auth changes invalidate stored CLI sessions                             |
+| `nativeToolMode`                   | Declare whether native tools are absent, always on, or host-selectable             |
+| `toolAvailabilityEnforcement`      | Declare whether exact tool caps are enforced in argv or execution staging          |
 | `projectNativeToolAuthority`       | Map the observed native tool list to standard paleoclaw capabilities for cron caps |
-| `sideQuestionToolMode`             | Declare disabled native tools for `/btw` side questions                           |
+| `sideQuestionToolMode`             | Declare disabled native tools for `/btw` side questions                            |
 | `bundleMcp` / `bundleMcpMode`      | Opt into paleoclaw's loopback MCP tool bridge                                      |
 | `ownsNativeCompaction`             | Backend owns its own automatic compaction - paleoclaw defers                       |
-| `manualCompaction`                 | Atomic command, transport, and positive-acknowledgement contract                  |
-| `subscriptionAuthDispatch`         | Opted-in embedded runs on subscription credentials execute via this backend       |
-| `runtimeArtifact`                  | Bound a script launcher to its complete bundled package tree                      |
+| `manualCompaction`                 | Atomic command, transport, and positive-acknowledgement contract                   |
+| `subscriptionAuthDispatch`         | Opted-in embedded runs on subscription credentials execute via this backend        |
+| `runtimeArtifact`                  | Bound a script launcher to its complete bundled package tree                       |
 
 Keep these hooks provider-owned. Do not add CLI-specific branches to core when
 a backend hook can express the behavior.

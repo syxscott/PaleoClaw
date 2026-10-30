@@ -71,7 +71,10 @@ export default defineConfig({
   ...e2eConfig,
   resolve: {
     ...e2eConfig.resolve,
-    alias: [{ find: /^@paleoclaw\/crabline$/u, replacement: path.resolve(root, entry) }, ...aliases],
+    alias: [
+      { find: /^@paleoclaw\/crabline$/u, replacement: path.resolve(root, entry) },
+      ...aliases,
+    ],
   },
   test: {
     ...e2eConfig.test,

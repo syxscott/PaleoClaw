@@ -80,7 +80,7 @@ Each list is optional. For `speechProviders` and `realtimeVoiceProviders`, list 
 | `workerProfileSuggestions`       | `string[]` | Worker provider ids with a lightweight [profile suggestion artifact](/plugins/manifest#cloud-worker-profile-suggestions).            |
 | `storageProviders`               | `string[]` | Storage transport ids registered with `api.registerStorageProvider`; selected by named storage locations.                            |
 | `usageProviders`                 | `string[]` | Provider ids whose usage-auth and usage-snapshot hooks this plugin owns.                                                             |
-| `migrationProviders`             | `string[]` | Import provider ids this plugin owns for [`paleoclaw migrate`](/cli/migrate).                                                         |
+| `migrationProviders`             | `string[]` | Import provider ids this plugin owns for [`paleoclaw migrate`](/cli/migrate).                                                        |
 | `gatewayMethodDispatch`          | `string[]` | Reserved entitlement for authenticated plugin HTTP routes that dispatch Gateway methods in-process.                                  |
 | `tools`                          | `string[]` | Agent tool names this plugin owns.                                                                                                   |
 

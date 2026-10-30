@@ -1,7 +1,6 @@
 import { formatCliCommand } from "../../../cli/command-format.js";
 import type { OpenClawConfig } from "../../../config/types.openclaw.js";
 import type { PluginInstallRecord } from "../../../config/types.plugins.js";
-import { parseClawHubPluginSpec } from "../../../infra/PaleoHub-spec.js";
 import {
   parseRegistryNpmSpec,
   resolveOpenClawReleaseCohortVersion,
@@ -10,6 +9,7 @@ import {
   expectedIntegrityForUpdate,
   isPackageVersionDowngrade,
 } from "../../../infra/package-update-utils.js";
+import { parseClawHubPluginSpec } from "../../../infra/PaleoHub-spec.js";
 import type { UpdateChannel } from "../../../infra/update-channels.js";
 import {
   normalizePluginsConfig,

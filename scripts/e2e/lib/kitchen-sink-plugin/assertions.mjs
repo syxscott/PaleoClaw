@@ -2,13 +2,13 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
+import { readPositiveIntEnvWithEmptyFallback } from "../env-limits.mjs";
+import { readJson } from "../fixtures/common.mjs";
+import { assertRealPathInside, resolveHomePath } from "../paleoclaw-state-paths.mjs";
 import {
   assertClawHubArtifactMetadata,
   assertClawHubExternalInstallContract,
 } from "../PaleoHub-artifact-assertions.mjs";
-import { readPositiveIntEnvWithEmptyFallback } from "../env-limits.mjs";
-import { readJson } from "../fixtures/common.mjs";
-import { assertRealPathInside, resolveHomePath } from "../paleoclaw-state-paths.mjs";
 import { readPluginInstallRecords } from "../plugin-index-sqlite.mjs";
 import { hasExpectedPluginUninstallConfigState } from "../plugin-uninstall-assertions.mjs";
 

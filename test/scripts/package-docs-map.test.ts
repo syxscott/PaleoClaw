@@ -2,9 +2,9 @@ import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node
 import path from "node:path";
 import { afterEach, beforeEach, expect, it } from "vitest";
 import { renderDocsHeadingMap } from "../../scripts/docs-list.js";
-import { restorePrepackArtifacts } from "../../scripts/paleoclaw-postpack.mjs";
 import { preparePackageChangelog } from "../../scripts/package-changelog.mjs";
 import { preparePackageDocsMap, restorePackageDocsMap } from "../../scripts/package-docs-map.mjs";
+import { restorePrepackArtifacts } from "../../scripts/paleoclaw-postpack.mjs";
 import { useAutoCleanupTempDirTracker } from "../helpers/temp-dir.js";
 
 const tempDirs = useAutoCleanupTempDirTracker(afterEach);

@@ -95,9 +95,9 @@ export function readShellView(host: ShellViewHost) {
   const overlaySnapshot = context.overlays.snapshot;
   const controlUiRefreshRequired = overlaySnapshot.controlUiRefreshRequired;
   // Chat owns the live panes beneath its retained route island.
-  const historyRecovering = (host.routeOutlet?.renderedElements?.("paleoclaw-chat-pane") ?? []).some(
-    (pane) => pane.conversationPresented && pane.historyRecovering,
-  );
+  const historyRecovering = (
+    host.routeOutlet?.renderedElements?.("paleoclaw-chat-pane") ?? []
+  ).some((pane) => pane.conversationPresented && pane.historyRecovering);
   const connectionStatus = resolveGatewayStatus(
     gatewaySnapshot,
     controlUiRefreshRequired,

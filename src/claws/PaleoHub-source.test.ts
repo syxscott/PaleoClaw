@@ -502,7 +502,9 @@ describe("public PaleoHub Claw catalog", () => {
           { name: "brief.md", source: "brief.md", excerpt: "Brief template" },
           { name: "BOOTSTRAP.md", source: "BOOTSTRAP.md", excerpt: "First-run setup" },
         ],
-        skills: [{ name: "@paleoclaw/citation-check", version: "1.1.0", excerpt: "Citation check" }],
+        skills: [
+          { name: "@paleoclaw/citation-check", version: "1.1.0", excerpt: "Citation check" },
+        ],
         integrations: [
           { name: "@paleoclaw/source-plugin", kind: "plugin", version: "2.0.0" },
           { name: "sources", kind: "mcpServer" },

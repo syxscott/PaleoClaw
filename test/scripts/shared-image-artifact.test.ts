@@ -16,7 +16,10 @@ const ARTIFACT_ID = "789";
 const ARTIFACT_NAME = "docker-e2e-shared-images-release-aabbccddeeff-123456-2";
 const ARTIFACT_RUN_ATTEMPT = "2";
 const ARTIFACT_RUN_ID = "123456";
-const IMAGE_REFS = ["paleoclaw-docker-e2e-bare:pkg-test", "paleoclaw-docker-e2e-functional:pkg-test"];
+const IMAGE_REFS = [
+  "paleoclaw-docker-e2e-bare:pkg-test",
+  "paleoclaw-docker-e2e-functional:pkg-test",
+];
 
 function imageId(ref: string): string {
   return `sha256:${createHash("sha256").update(ref).digest("hex")}`;

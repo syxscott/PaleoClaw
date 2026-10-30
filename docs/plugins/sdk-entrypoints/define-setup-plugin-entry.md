@@ -37,8 +37,8 @@ setup entries also keep the obligation pending.
 
 Pair `defineSetupPluginEntry(...)` with the narrow setup helper families:
 
-| Import                                  | Use for                                                                                                                                                                            |
-| --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Import                                   | Use for                                                                                                                                                                            |
+| ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `paleoclaw/plugin-sdk/setup-runtime`     | Runtime-safe setup helpers: `createSetupTranslator`, import-safe setup patch adapters, lookup-note output, `promptResolvedAllowFrom`, `splitSetupEntries`, delegated setup proxies |
 | `paleoclaw/plugin-sdk/channel-setup`     | Optional-install setup surfaces                                                                                                                                                    |
 | `paleoclaw/plugin-sdk/channel-dm-policy` | Account-aware DM policy descriptors for setup flows                                                                                                                                |

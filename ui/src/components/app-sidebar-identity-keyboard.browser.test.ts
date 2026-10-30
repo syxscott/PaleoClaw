@@ -29,7 +29,9 @@ describe.runIf("__vitest_browser__" in globalThis)("identity menu keyboard navig
     const identity = sidebar.querySelector<HTMLButtonElement>(".sidebar-identity-card");
     expect(identity).not.toBeNull();
     const tooltip = () =>
-      document.querySelector<HTMLElementTagNameMap["paleoclaw-tooltip"]>("body > paleoclaw-tooltip");
+      document.querySelector<HTMLElementTagNameMap["paleoclaw-tooltip"]>(
+        "body > paleoclaw-tooltip",
+      );
     // The retained rail is icon-only: pointer and keyboard users need its identity hint.
     await page.elementLocator(identity!).hover();
     expect(tooltip()?.anchor).toBe(identity);

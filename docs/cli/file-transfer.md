@@ -61,9 +61,9 @@ so when that backup cannot be verified.
 `--json` reports the work without changing anything. Use it in a health check or
 an upgrade script.
 
-| Situation                     | Output                                                                                                        | Exit code |
-| ----------------------------- | ------------------------------------------------------------------------------------------------------------- | --------- |
-| Nothing to review             | `{"status":"ok","changed":false,"message":"No legacy permissions need review."}`                              | 0         |
+| Situation                     | Output                                                                                                         | Exit code |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------------- | --------- |
+| Nothing to review             | `{"status":"ok","changed":false,"message":"No legacy permissions need review."}`                               | 0         |
 | Permissions still need review | `{"status":"needs-input","changed":false,"items":[...],"command":"paleoclaw file-transfer approvals migrate"}` | 2         |
 
 Without `--json`, the command checks for work first. A non-interactive shell is

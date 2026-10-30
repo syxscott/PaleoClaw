@@ -311,7 +311,12 @@ describe("mobile release CI tools", () => {
       platform: "android",
       workflow: ".github/workflows/android-store-release.yml",
       buildDirectory: "release-artifacts",
-      binaries: ["paleoclaw-phone.aab", "paleoclaw-wear.aab", "OpenClaw.apk", "OpenClaw.aab.sha256"],
+      binaries: [
+        "paleoclaw-phone.aab",
+        "paleoclaw-wear.aab",
+        "OpenClaw.apk",
+        "OpenClaw.aab.sha256",
+      ],
     },
   ];
   describe.each(releasePlatforms)("$platform release artifact recovery", ({ workflow }) => {

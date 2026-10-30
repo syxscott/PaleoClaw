@@ -83,27 +83,27 @@ call those tools directly.
 With the `acpx` backend, use these ids as `/acp spawn <id>` or
 `sessions_spawn({ runtime: "acp", agentId: "<id>" })` targets:
 
-| Harness id   | Typical backend                                | Notes                                                                               |
-| ------------ | ---------------------------------------------- | ----------------------------------------------------------------------------------- |
-| `claude`     | Claude Code ACP adapter                        | Requires Claude Code auth on the host.                                              |
-| `codex`      | Codex ACP adapter                              | Explicit ACP fallback only when native `/codex` is unavailable or ACP is requested. |
-| `copilot`    | GitHub Copilot ACP adapter                     | Requires Copilot CLI/runtime auth.                                                  |
-| `cursor`     | Cursor CLI ACP (`cursor-agent acp`)            | Override the acpx command if a local install exposes a different ACP entrypoint.    |
-| `droid`      | Factory Droid CLI                              | Requires Factory/Droid auth or `FACTORY_API_KEY` in the harness environment.        |
-| `fast-agent` | fast-agent-mcp ACP adapter                     | Fetched on demand with `uvx`.                                                       |
-| `gemini`     | Gemini CLI ACP adapter                         | Requires Gemini CLI auth or API key setup.                                          |
-| `grok-build` | Grok Build CLI (`grok agent stdio`)            | Requires Grok Build installed and authenticated on the host.                        |
-| `iflow`      | iFlow CLI                                      | Adapter availability and model control depend on the installed CLI.                 |
-| `kilocode`   | Kilo Code CLI                                  | Adapter availability and model control depend on the installed CLI.                 |
-| `kimi`       | Kimi/Moonshot CLI                              | Requires Kimi/Moonshot auth on the host.                                            |
-| `kiro`       | Kiro CLI                                       | Adapter availability and model control depend on the installed CLI.                 |
-| `mux`        | Mux CLI ACP adapter                            | Fetched on demand with `npx`.                                                       |
-| `opencode`   | OpenCode ACP adapter                           | Requires OpenCode CLI/provider auth.                                                |
-| `paleoclaw`   | paleoclaw Gateway bridge through `paleoclaw acp` | Lets an ACP-aware harness talk back to an paleoclaw Gateway session.                 |
-| `pool`       | Poolside Agent (`pool acp`)                    | Requires the Poolside CLI installed and authenticated on the Gateway host.          |
-| `qoder`      | Qoder CLI                                      | Adapter availability and model control depend on the installed CLI.                 |
-| `qwen`       | Qwen Code / Qwen CLI                           | Requires Qwen-compatible auth on the host.                                          |
-| `trae`       | Trae CLI ACP adapter                           | Adapter availability and model control depend on the installed CLI.                 |
+| Harness id   | Typical backend                                  | Notes                                                                               |
+| ------------ | ------------------------------------------------ | ----------------------------------------------------------------------------------- |
+| `claude`     | Claude Code ACP adapter                          | Requires Claude Code auth on the host.                                              |
+| `codex`      | Codex ACP adapter                                | Explicit ACP fallback only when native `/codex` is unavailable or ACP is requested. |
+| `copilot`    | GitHub Copilot ACP adapter                       | Requires Copilot CLI/runtime auth.                                                  |
+| `cursor`     | Cursor CLI ACP (`cursor-agent acp`)              | Override the acpx command if a local install exposes a different ACP entrypoint.    |
+| `droid`      | Factory Droid CLI                                | Requires Factory/Droid auth or `FACTORY_API_KEY` in the harness environment.        |
+| `fast-agent` | fast-agent-mcp ACP adapter                       | Fetched on demand with `uvx`.                                                       |
+| `gemini`     | Gemini CLI ACP adapter                           | Requires Gemini CLI auth or API key setup.                                          |
+| `grok-build` | Grok Build CLI (`grok agent stdio`)              | Requires Grok Build installed and authenticated on the host.                        |
+| `iflow`      | iFlow CLI                                        | Adapter availability and model control depend on the installed CLI.                 |
+| `kilocode`   | Kilo Code CLI                                    | Adapter availability and model control depend on the installed CLI.                 |
+| `kimi`       | Kimi/Moonshot CLI                                | Requires Kimi/Moonshot auth on the host.                                            |
+| `kiro`       | Kiro CLI                                         | Adapter availability and model control depend on the installed CLI.                 |
+| `mux`        | Mux CLI ACP adapter                              | Fetched on demand with `npx`.                                                       |
+| `opencode`   | OpenCode ACP adapter                             | Requires OpenCode CLI/provider auth.                                                |
+| `paleoclaw`  | paleoclaw Gateway bridge through `paleoclaw acp` | Lets an ACP-aware harness talk back to an paleoclaw Gateway session.                |
+| `pool`       | Poolside Agent (`pool acp`)                      | Requires the Poolside CLI installed and authenticated on the Gateway host.          |
+| `qoder`      | Qoder CLI                                        | Adapter availability and model control depend on the installed CLI.                 |
+| `qwen`       | Qwen Code / Qwen CLI                             | Requires Qwen-compatible auth on the host.                                          |
+| `trae`       | Trae CLI ACP adapter                             | Adapter availability and model control depend on the installed CLI.                 |
 
 `pi` (pi-acp) is also registered in the acpx backend but is not a coding
 harness in the same sense as the others above.

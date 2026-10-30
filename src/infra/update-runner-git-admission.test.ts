@@ -501,7 +501,10 @@ it("records a warning when inspection cleanup fails", async () => {
   const remove = fsPromises.rm.bind(fsPromises);
   let retained: string | undefined;
   const denial = vi.spyOn(fsPromises, "rm").mockImplementation(async (target, options) => {
-    if (typeof target === "string" && path.basename(target).startsWith("paleoclaw-git-admission-")) {
+    if (
+      typeof target === "string" &&
+      path.basename(target).startsWith("paleoclaw-git-admission-")
+    ) {
       retained = target;
       throw new Error("synthetic inspection cleanup denied");
     }

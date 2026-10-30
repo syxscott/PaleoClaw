@@ -1,4 +1,3 @@
-
 # Repository Guidelines
 
 - Repo: https://github.com/syxscott/PaleoClaw
@@ -48,6 +47,7 @@
 
 Release, publish, advisory and remote-host runbooks live in `scripts/AGENTS.md`
 (they own the `scripts/` tooling they drive).
+
 ## Build, Test, and Development Commands
 
 - Runtime baseline: Node **22+** (keep Node + Bun paths working).

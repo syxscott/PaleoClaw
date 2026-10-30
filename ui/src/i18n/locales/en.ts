@@ -257,6 +257,7 @@ export const en: TranslationMap & {
     emptyDescription: "Files and dashboards from the session appear here.",
   },
   common: {
+    resources: "Resources",
     uploadsDisabled: "File and image uploads are disabled.",
     health: "Health",
     ok: "OK",
@@ -2036,6 +2037,13 @@ export const en: TranslationMap & {
   // Login copy lives in the lazy en-login catalog; the anchor keeps its merge target.
   login: {},
   chat: {
+    refreshTitle: "Refresh chat",
+    thinkingToggle: "Toggle thinking mode",
+    focusToggle: "Toggle focus mode",
+    showCronSessions: "Show scheduled-run sessions",
+    showCronSessionsHidden: "Show {count} scheduled-run sessions",
+    hideCronSessions: "Hide scheduled-run sessions",
+    disconnected: "Chat is unavailable while the gateway is disconnected.",
     sessionAutomation: {
       emptyHint: "Automations attached to this session will appear here.",
       scheduleUnavailable: "Schedule unavailable",
@@ -3865,6 +3873,62 @@ export const en: TranslationMap & {
       systemEventTextRequired: "System event text required.",
       agentMessageRequiredShort: "Agent message required.",
       nameRequiredShort: "Name required.",
+    },
+  },
+
+  overview: {
+    pairing: {
+      hint: "A device wants to connect. Approve the pairing request on the gateway host:",
+      mobileHint: "On mobile? Approve the request from a connected chat session instead.",
+    },
+    auth: {
+      required: "This Gateway requires a token or password. Create one on the gateway host:",
+      failed: "Authentication failed. Run {command} and reopen the tokenized URL it prints.",
+    },
+    insecure: {
+      hint: "Device identity needs a secure context. Reconnect from {url} on the gateway host, or serve the dashboard over HTTPS.",
+      stayHttp:
+        "Staying on HTTP? Set {config} in the Gateway config to allow insecure authentication.",
+    },
+    access: {
+      title: "Access",
+      subtitle: "Gateway URL, credentials, and session routing for this dashboard.",
+      wsUrl: "Gateway URL",
+      token: "Gateway token",
+      password: "Password",
+      sessionKey: "Session key",
+      language: "Language",
+      trustedProxy: "Authenticated by your trusted proxy.",
+      connectHint: "Connect to load the live snapshot.",
+    },
+    snapshot: {
+      title: "Snapshot",
+      subtitle: "Live status reported by the Gateway.",
+      status: "Status",
+      uptime: "Uptime",
+      tickInterval: "Tick interval",
+      lastChannelsRefresh: "Channels refreshed",
+      channelsHint: "Connect to load channels and presence. Refresh keeps the snapshot current.",
+    },
+    stats: {
+      instances: "Instances",
+      instancesHint: "Gateways reporting presence.",
+      sessions: "Sessions",
+      sessionsHint: "Active agent sessions.",
+      cron: "Automations",
+      cronNext: "Next run {time}",
+    },
+    notes: {
+      title: "Notes",
+      subtitle: "Quick pointers for reaching and using the Gateway.",
+      tailscaleTitle: "Tailscale access",
+      tailscaleText:
+        "Away from the host? Serve the dashboard over Tailscale and connect to your tailnet address.",
+      sessionTitle: "Sessions",
+      sessionText:
+        "The session key routes this dashboard into a chat timeline. Change it to follow a different conversation.",
+      cronTitle: "Automations",
+      cronText: "Schedule recurring agent tasks from the Automations tab.",
     },
   },
 

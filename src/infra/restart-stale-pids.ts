@@ -1,9 +1,9 @@
 import { spawnSync } from "node:child_process";
 import path from "node:path";
+import { readProcessAncestry } from "@openclaw/proc-safe/identity";
 import { formatErrorMessage as formatRawErrorMessage } from "@paleoclaw/normalization-core/error-coercion";
 import { parseStrictPositiveInteger } from "@paleoclaw/normalization-core/number-coercion";
 import { uniqueValues } from "@paleoclaw/normalization-core/string-normalization";
-import { readProcessAncestry } from "@openclaw/proc-safe/identity";
 import { resolveGatewayPort } from "../config/paths.js";
 import { createSubsystemLogger } from "../logging/subsystem.js";
 import { readUnixProcessGroupMembers, signalProcessTree } from "../process/kill-tree.js";

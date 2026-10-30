@@ -206,7 +206,9 @@ it.each(["paleoclaw.mjs", "dist/index.js"])(
     );
     const savedEntry = saved.at(-4)!;
     await expect(fs.readFile(savedEntry, "utf8")).resolves.toBe('export default "2026.10.2";\n');
-    expect(savedEntry).toBe(path.join(projectLink, "node_modules", "paleoclaw", "dist", "index.js"));
+    expect(savedEntry).toBe(
+      path.join(projectLink, "node_modules", "paleoclaw", "dist", "index.js"),
+    );
     const nodeEntry = node.programArguments[1]!;
     expect(nodeEntry).toBe(path.join(projectLink, "node_modules", "paleoclaw", "paleoclaw.mjs"));
     await expect(fs.readFile(nodeEntry, "utf8")).resolves.toBe('import "./dist/index.js";\n');

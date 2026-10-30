@@ -212,7 +212,11 @@ export async function macos(ctx: ReleaseContext): Promise<void> {
     },
   );
   if (inventory.exitCode !== 0 || !inventory.stdout.includes(JSON.stringify(state.release))) {
-    const integrity = await ctx.run("npm", ["view", `paleoclaw@${state.release}`, "dist.integrity"]);
+    const integrity = await ctx.run("npm", [
+      "view",
+      `paleoclaw@${state.release}`,
+      "dist.integrity",
+    ]);
     throw new ReleaseRefusal(
       `Update compatibility inventory on main is missing ${state.release}.`,
       [

@@ -1028,7 +1028,9 @@ async function runScenario(params: {
 }
 
 async function createBuiltGatewayRuntime(repoRoot: string): Promise<string> {
-  const runtimeRoot = await fs.mkdtemp(path.join(os.tmpdir(), "paleoclaw-acp-reset-proof-runtime-"));
+  const runtimeRoot = await fs.mkdtemp(
+    path.join(os.tmpdir(), "paleoclaw-acp-reset-proof-runtime-"),
+  );
   try {
     await fs.copyFile(path.join(repoRoot, "package.json"), path.join(runtimeRoot, "package.json"));
     await fs.cp(path.join(repoRoot, "dist"), path.join(runtimeRoot, "dist"), { recursive: true });

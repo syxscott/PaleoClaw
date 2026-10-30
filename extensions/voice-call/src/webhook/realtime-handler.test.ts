@@ -861,7 +861,10 @@ describe("RealtimeCallHandler path routing", () => {
     ]);
   });
 
-  const cancellationResult = { status: "cancelled", message: "Cancelled the active paleoclaw run." };
+  const cancellationResult = {
+    status: "cancelled",
+    message: "Cancelled the active paleoclaw run.",
+  };
   it.each([
     {
       label: "cancellation",

@@ -7,7 +7,10 @@ import type { OpenClawPluginApi, PluginLogger } from "paleoclaw/plugin-sdk/plugi
 import { isLoopbackHost } from "paleoclaw/plugin-sdk/ssrf-runtime";
 import { normalizeLowercaseStringOrEmpty } from "paleoclaw/plugin-sdk/string-coerce-runtime";
 import { resolvePreferredOpenClawTmpDir } from "paleoclaw/plugin-sdk/temp-path";
-import { createAuthRateLimiter, resolveRequestClientIp } from "paleoclaw/plugin-sdk/webhook-ingress";
+import {
+  createAuthRateLimiter,
+  resolveRequestClientIp,
+} from "paleoclaw/plugin-sdk/webhook-ingress";
 import {
   resolveDiffsPluginDefaults,
   resolveDiffsPluginSecurity,

@@ -614,7 +614,9 @@ describe("memory session update sync", () => {
     const snapshot = selectIndex(db, "chunks", "hash, text", "WHERE path = 'MEMORY.md'").all();
     expect(snapshot.some((row) => String(row.text).includes("Private violet"))).toBe(true);
     expect(
-      snapshot.some((row) => String(row.text).includes("paleoclaw-memory-promotion:shared-private")),
+      snapshot.some((row) =>
+        String(row.text).includes("paleoclaw-memory-promotion:shared-private"),
+      ),
     ).toBe(true);
     const privateHashes = new Set(snapshot.map((row) => row.hash));
     expect(cacheHashes(db).some((row) => privateHashes.has(row.hash))).toBe(true);

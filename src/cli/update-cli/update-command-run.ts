@@ -15,8 +15,8 @@ import {
   isGatewayExternallySupervised,
 } from "../../infra/gateway-supervision.js";
 import { readInstallOwner } from "../../infra/install-owner.js";
-import { resolveOpenClawPackageRootSync } from "../../infra/paleoclaw-root.js";
 import { settlePendingPackageActivation } from "../../infra/package-update-activation.js";
+import { resolveOpenClawPackageRootSync } from "../../infra/paleoclaw-root.js";
 import { normalizeUpdateChannel } from "../../infra/update-channels.js";
 import { resolveUpdateInstallKind } from "../../infra/update-check.js";
 import {

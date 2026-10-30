@@ -113,7 +113,9 @@ async function applyTheme(theme: ThemeName, mode: "light" | "dark") {
   document.documentElement.dataset.themeMode = mode;
   const typefaces = resolveTypefaces(theme);
   syncTypefaceStylesheets(typefaces);
-  const stylesheet = document.querySelector<HTMLLinkElement>(`#paleoclaw-typeface-${typefaces.ui}`)!;
+  const stylesheet = document.querySelector<HTMLLinkElement>(
+    `#paleoclaw-typeface-${typefaces.ui}`,
+  )!;
   if (!stylesheet.sheet) {
     await new Promise<void>((resolve, reject) => {
       stylesheet.addEventListener("load", () => resolve(), { once: true });

@@ -335,7 +335,9 @@ describe("browser control server", () => {
   );
 
   it("clamps overflowing navigation timeouts for Chrome MCP", async () => {
-    setBrowserControlServerProfiles({ paleoclaw: { color: "#FF4500", driver: "existing-session" } });
+    setBrowserControlServerProfiles({
+      paleoclaw: { color: "#FF4500", driver: "existing-session" },
+    });
     await startServerAndBase();
 
     const response = await post<{ ok: boolean }>("/navigate", {

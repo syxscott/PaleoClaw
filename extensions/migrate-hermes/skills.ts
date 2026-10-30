@@ -1,6 +1,9 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { createMigrationItem, MIGRATION_REASON_TARGET_EXISTS } from "paleoclaw/plugin-sdk/migration";
+import {
+  createMigrationItem,
+  MIGRATION_REASON_TARGET_EXISTS,
+} from "paleoclaw/plugin-sdk/migration";
 import type { PlannedMigrationTargets } from "paleoclaw/plugin-sdk/migration-runtime";
 import type { MigrationItem } from "paleoclaw/plugin-sdk/plugin-entry";
 import { normalizeOptionalString } from "paleoclaw/plugin-sdk/string-coerce-runtime";

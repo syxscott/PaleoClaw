@@ -5,6 +5,7 @@ import {
   validateClawsCatalogPreviewParams,
   validateClawsCatalogSearchParams,
 } from "../../../packages/gateway-protocol/src/index.js";
+import { assertClawsLabsEnabled, ClawsLabsDisabledError } from "../../claws/labs-gate.js";
 import {
   ClawHubSourceError,
   listClawHubClaws,
@@ -12,7 +13,6 @@ import {
   readClawHubClawPreview,
   searchClawHubClaws,
 } from "../../claws/PaleoHub-source.js";
-import { assertClawsLabsEnabled, ClawsLabsDisabledError } from "../../claws/labs-gate.js";
 import { createSubsystemLogger } from "../../logging/subsystem.js";
 import type { GatewayRequestHandlers, RespondFn } from "./types.js";
 import { assertValidParams } from "./validation.js";

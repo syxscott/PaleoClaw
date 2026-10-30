@@ -43,7 +43,9 @@ await mkdir(resultsRoot, { recursive: true });
 const temporaryRoot = execFileSync("getconf", ["DARWIN_USER_TEMP_DIR"], {
   encoding: "utf8",
 }).trim();
-const mountRoot = await mkdtemp(path.join(await realpath(temporaryRoot), "paleoclaw-swift-mounts-"));
+const mountRoot = await mkdtemp(
+  path.join(await realpath(temporaryRoot), "paleoclaw-swift-mounts-"),
+);
 const worker = path.join(root, "scripts/lib/mac-swift-build.sh");
 const workerArgs = (operation: string, arch: string, work: string) => [
   worker,

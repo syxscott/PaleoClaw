@@ -10,7 +10,10 @@ import {
   collectIssuesForEnabledAccounts,
   type AccountStatusSnapshot,
 } from "paleoclaw/plugin-sdk/status-helpers";
-import { asFiniteNumber, normalizeOptionalString } from "paleoclaw/plugin-sdk/string-coerce-runtime";
+import {
+  asFiniteNumber,
+  normalizeOptionalString,
+} from "paleoclaw/plugin-sdk/string-coerce-runtime";
 
 const TELEGRAM_CONNECT_GRACE_MS = 120_000;
 const TELEGRAM_POLLING_STALE_TRANSPORT_MS = 30 * 60_000;

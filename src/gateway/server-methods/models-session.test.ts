@@ -1,4 +1,8 @@
-import { asNullableRecord, expectDefined, safeParseJsonRecord } from "@paleoclaw/normalization-core";
+import {
+  asNullableRecord,
+  expectDefined,
+  safeParseJsonRecord,
+} from "@paleoclaw/normalization-core";
 import { expect, it as baseIt, vi } from "vitest";
 import { awaitGateBeforeSettlement, createDeferred } from "../../../test/helpers/promise.js";
 import type { AgentHarnessSessionRuntimeOwnership } from "../../agents/harness/types.js";

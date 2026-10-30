@@ -206,8 +206,8 @@ does not grant access to models or clients disabled by your organization's polic
 
 ## Optional flags
 
-| Command                                                                | Flag            | Description                                          |
-| ---------------------------------------------------------------------- | --------------- | ---------------------------------------------------- |
+| Command                                                                 | Flag            | Description                                          |
+| ----------------------------------------------------------------------- | --------------- | ---------------------------------------------------- |
 | `paleoclaw models auth login-github-copilot`                            | `--yes`         | Overwrite an existing auth profile without prompting |
 | `paleoclaw models auth login --provider github-copilot --method device` | `--set-default` | Also apply the provider's recommended default model  |
 

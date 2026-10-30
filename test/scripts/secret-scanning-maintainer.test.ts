@@ -4,7 +4,8 @@ import path from "node:path";
 import { expect, it } from "vitest";
 import { createScriptTestHarness } from "./test-helpers.js";
 
-const scriptPath = ".agents/skills/paleoclaw-secret-scanning-maintainer/scripts/secret-scanning.mjs";
+const scriptPath =
+  ".agents/skills/paleoclaw-secret-scanning-maintainer/scripts/secret-scanning.mjs";
 const { createTempDir } = createScriptTestHarness();
 const notificationArgs = ["notify", "123", "contributor", "issue_body", "Discord Bot Token"];
 

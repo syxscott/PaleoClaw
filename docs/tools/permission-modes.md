@@ -105,7 +105,7 @@ Use `approve-all` as the ACPX break-glass equivalent of a no-prompt harness sess
 | Block host commands completely                | `tools.exec.mode: "deny"`                                                              |
 | Let known-safe commands run only              | `tools.exec.mode: "allowlist"`                                                         |
 | Ask a human for every new command shape       | `tools.exec.mode: "ask"`                                                               |
-| Use Codex/paleoclaw auto-review before humans  | `tools.exec.mode: "auto"`                                                              |
+| Use Codex/paleoclaw auto-review before humans | `tools.exec.mode: "auto"`                                                              |
 | Skip ordinary host exec approval prompts      | `tools.exec.mode: "full"` plus matching host approvals, with `strictInlineEval: false` |
 | Make non-interactive ACPX sessions write/exec | `plugins.entries.acpx.config.permissionMode: "approve-all"`                            |
 

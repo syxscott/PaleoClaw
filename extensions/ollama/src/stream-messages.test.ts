@@ -1,5 +1,8 @@
 import type { Message } from "paleoclaw/plugin-sdk/llm";
-import { makeAgentAssistantMessage, makeAgentUserMessage } from "paleoclaw/plugin-sdk/test-fixtures";
+import {
+  makeAgentAssistantMessage,
+  makeAgentUserMessage,
+} from "paleoclaw/plugin-sdk/test-fixtures";
 import { describe, expect, it } from "vitest";
 import { convertToOllamaMessages } from "./stream-messages.js";
 

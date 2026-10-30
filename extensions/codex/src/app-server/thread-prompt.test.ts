@@ -22,7 +22,10 @@ function tool(
   };
 }
 
-function namespace(tools: CodexDynamicToolFunctionSpec[], name = "paleoclaw"): CodexDynamicToolSpec {
+function namespace(
+  tools: CodexDynamicToolFunctionSpec[],
+  name = "paleoclaw",
+): CodexDynamicToolSpec {
   return { type: "namespace", name, description: "paleoclaw tools", tools };
 }
 

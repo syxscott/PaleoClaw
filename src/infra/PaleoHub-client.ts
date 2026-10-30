@@ -8,7 +8,6 @@ import {
 } from "@paleoclaw/normalization-core/number-coercion";
 import { isStringArray } from "@paleoclaw/normalization-core/record-coerce";
 import { normalizeOptionalString } from "@paleoclaw/normalization-core/string-coerce";
-import { retryClawHubRead } from "./PaleoHub-retry.js";
 import { isTruthyEnvValue } from "./env.js";
 import { isErrno } from "./errno.js";
 import {
@@ -16,6 +15,7 @@ import {
   readResponseTextSnippet,
   readResponseWithLimit,
 } from "./http-body.js";
+import { retryClawHubRead } from "./PaleoHub-retry.js";
 
 const DEFAULT_CLAWHUB_URL = "https://clawhub.ai";
 const DEFAULT_FETCH_TIMEOUT_MS = 30_000;

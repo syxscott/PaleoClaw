@@ -128,7 +128,9 @@ async function captureSettled(page: Page, name: string, surface: Locator = page.
     const dir = createControlUiE2eArtifactDir(name);
     await writeFile(
       path.join(dir, "result.png"),
-      await takeControlUiViewportScreenshot(page, surface, [page.locator("paleoclaw-plugins-page")]),
+      await takeControlUiViewportScreenshot(page, surface, [
+        page.locator("paleoclaw-plugins-page"),
+      ]),
     );
   }
 }

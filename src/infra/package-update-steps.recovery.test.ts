@@ -379,7 +379,10 @@ describe("package update recovery safety", () => {
           ...createNpmUpdateOptions(globalRoot),
           packageRoot,
           runStep: async ({ name, argv }) => {
-            const { prefix: cwd } = await stagePackage(argv, "2.0.0", ["paleoclaw", "paleoclaw.cmd"]);
+            const { prefix: cwd } = await stagePackage(argv, "2.0.0", [
+              "paleoclaw",
+              "paleoclaw.cmd",
+            ]);
             return packageUpdateStepResult({ name, argv, cwd }, { durationMs: 0 });
           },
           postVerifyStep: async (candidateRoot) => ({
@@ -418,7 +421,9 @@ describe("package update recovery safety", () => {
       expect(result.failedStep?.stderrTail).toContain(
         path.join(globalRoot, backupDirs[0] ?? "", "paleoclaw.cmd"),
       );
-      await expectText(globalRoot, backupDirs[0] ?? "", "paleoclaw.cmd").toBe("old paleoclaw.cmd\n");
+      await expectText(globalRoot, backupDirs[0] ?? "", "paleoclaw.cmd").toBe(
+        "old paleoclaw.cmd\n",
+      );
     });
   });
 });

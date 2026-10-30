@@ -85,7 +85,9 @@ suite.define(() => {
         });
         expect(await watch.isVisible()).toBe(true);
 
-        const missing = page.locator("paleoclaw-youtube-video").filter({ hasText: "Missing cover" });
+        const missing = page
+          .locator("paleoclaw-youtube-video")
+          .filter({ hasText: "Missing cover" });
         const missingPlay = missing.getByRole("button", {
           name: "Play Missing cover",
           exact: true,

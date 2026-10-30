@@ -1,10 +1,10 @@
 import "./boot-capabilities.ts";
+import type { RouteLocation } from "@openclaw/uirouter";
 import { gatewayCredentialScope, gatewayOriginScope } from "@paleoclaw/gateway-client/browser";
 import {
   parseControlUiFocusLocation,
   type ControlUiFocusLocation,
 } from "@paleoclaw/session-url-contract";
-import type { RouteLocation } from "@openclaw/uirouter";
 import { ConnectErrorDetailCodes } from "../../../packages/gateway-protocol/src/connect-error-details.js";
 import type { GatewayBrowserClient } from "../api/gateway.ts";
 import { isSettingsTakeover } from "../app-navigation.ts";

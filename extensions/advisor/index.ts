@@ -1,5 +1,8 @@
 import { randomUUID } from "node:crypto";
-import { definePluginEntry, type PluginServiceSchedulerV1 } from "paleoclaw/plugin-sdk/plugin-entry";
+import {
+  definePluginEntry,
+  type PluginServiceSchedulerV1,
+} from "paleoclaw/plugin-sdk/plugin-entry";
 
 const REVIEW_TIMEOUT_MS = 120_000;
 const RUN_CONTEXT_NAMESPACE = "advisor:admitted-run";

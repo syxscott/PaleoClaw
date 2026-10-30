@@ -10,16 +10,16 @@ The **Meta API** uses the OpenAI-compatible **Responses API** (`POST /v1/respons
 for the Muse Wonder and Muse Spark reasoning models. paleoclaw provides Meta as an official external
 plugin.
 
-| Property                   | Value                              |
-| -------------------------- | ---------------------------------- |
-| Provider id                | `meta`                             |
-| Plugin                     | `@paleoclaw/meta-provider`          |
-| Auth env var               | `MODEL_API_KEY`                    |
-| Onboarding flag            | `--auth-choice meta-api-key`       |
-| Direct CLI flag            | `--meta-api-key <key>`             |
-| API                        | Responses API (`openai-responses`) |
-| Base URL                   | `https://api.meta.ai/v1`           |
-| Default model              | `meta/muse-spark-1.3`              |
+| Property                    | Value                              |
+| --------------------------- | ---------------------------------- |
+| Provider id                 | `meta`                             |
+| Plugin                      | `@paleoclaw/meta-provider`         |
+| Auth env var                | `MODEL_API_KEY`                    |
+| Onboarding flag             | `--auth-choice meta-api-key`       |
+| Direct CLI flag             | `--meta-api-key <key>`             |
+| API                         | Responses API (`openai-responses`) |
+| Base URL                    | `https://api.meta.ai/v1`           |
+| Default model               | `meta/muse-spark-1.3`              |
 | paleoclaw reasoning default | `high` (`reasoning.effort`)        |
 
 ## Getting started
@@ -90,13 +90,13 @@ complex coding and long-running agents, and Muse Spark for lower-cost workloads.
 New setups keep Muse Spark 1.3 as their default; Wonder is an explicit selection.
 
 | Model ref                         | Name                       | paleoclaw input | Reasoning | Context window | Input / cached input / output per 1M tokens |
-| --------------------------------- | -------------------------- | -------------- | --------- | -------------- | ------------------------------------------- |
-| `meta/muse-wonder-1.0`            | Muse Wonder                | text, image    | yes       | 1,048,576      | $4.00 / $0.20 / $20.00                      |
-| `meta/muse-spark-1.3`             | Muse Spark 1.3             | text, image    | yes       | 1,048,576      | $1.25 / $0.15 / $4.25                       |
-| `meta/muse-spark-1.3-contributor` | Muse Spark 1.3 Contributor | text, image    | yes       | 1,048,576      | $0.10 / $0.002 / $0.20                      |
-| `meta/muse-spark-1.2`             | Muse Spark 1.2             | text, image    | yes       | 1,048,576      | $1.25 / $0.15 / $4.25                       |
-| `meta/muse-spark-1.2-contributor` | Muse Spark 1.2 Contributor | text, image    | yes       | 1,048,576      | $0.10 / $0.002 / $0.20                      |
-| `meta/muse-spark-1.1`             | Muse Spark 1.1             | text, image    | yes       | 1,048,576      | $1.25 / $0.15 / $4.25                       |
+| --------------------------------- | -------------------------- | --------------- | --------- | -------------- | ------------------------------------------- |
+| `meta/muse-wonder-1.0`            | Muse Wonder                | text, image     | yes       | 1,048,576      | $4.00 / $0.20 / $20.00                      |
+| `meta/muse-spark-1.3`             | Muse Spark 1.3             | text, image     | yes       | 1,048,576      | $1.25 / $0.15 / $4.25                       |
+| `meta/muse-spark-1.3-contributor` | Muse Spark 1.3 Contributor | text, image     | yes       | 1,048,576      | $0.10 / $0.002 / $0.20                      |
+| `meta/muse-spark-1.2`             | Muse Spark 1.2             | text, image     | yes       | 1,048,576      | $1.25 / $0.15 / $4.25                       |
+| `meta/muse-spark-1.2-contributor` | Muse Spark 1.2 Contributor | text, image     | yes       | 1,048,576      | $0.10 / $0.002 / $0.20                      |
+| `meta/muse-spark-1.1`             | Muse Spark 1.1             | text, image     | yes       | 1,048,576      | $1.25 / $0.15 / $4.25                       |
 
 Muse Wonder is available in Standard mode only on Meta Model API. There is no
 `muse-wonder-1.0-contributor` API model. **Muse Wonder Full**

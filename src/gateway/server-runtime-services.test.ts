@@ -554,7 +554,9 @@ describe("server-runtime-services", () => {
     const { services } = activateScheduledServicesForTest({ log });
     await vi.dynamicImportSettled();
     expect(hoisted.recoverPendingDeliveries).toHaveBeenCalledOnce();
-    expect(recoveryLog.warn).toHaveBeenCalledWith(expect.stringContaining("paleoclaw doctor --fix"));
+    expect(recoveryLog.warn).toHaveBeenCalledWith(
+      expect.stringContaining("paleoclaw doctor --fix"),
+    );
     await vi.advanceTimersByTimeAsync(15_000);
     expect(hoisted.countPendingDeliveryQueueEntries).toHaveBeenCalledOnce();
     expect(hoisted.recoverPendingDeliveries).toHaveBeenCalledOnce();

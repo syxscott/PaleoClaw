@@ -109,7 +109,13 @@ describe("live transport QA contributions", () => {
     "routes the shipped %s command through the shared suite host",
     async (commandName) => {
       const qa = registerCommand(commandName);
-      await qa.parseAsync(["node", "paleoclaw", commandName, "--scenario", `${commandName}-canary`]);
+      await qa.parseAsync([
+        "node",
+        "paleoclaw",
+        commandName,
+        "--scenario",
+        `${commandName}-canary`,
+      ]);
 
       expect(mocks.runLiveTransportQaSuiteCommand).toHaveBeenCalledWith({
         channelId: commandName,

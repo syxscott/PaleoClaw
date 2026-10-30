@@ -46,10 +46,10 @@ Treat this endpoint as **full operator access** to the gateway instance:
 
 Auth matrix:
 
-| Auth path                                                                                            | Behavior                                                                                                                                                                                                                                                                                                  |
-| ---------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Auth path                                                                                            | Behavior                                                                                                                                                                                                                                                                                                   |
+| ---------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `gateway.auth.mode="token"` or `"password"` + `Authorization: Bearer ...`                            | Proves possession of the shared gateway secret. Ignores any `x-paleoclaw-scopes` header and restores the full default operator scope set: `operator.admin`, `operator.approvals`, `operator.pairing`, `operator.read`, `operator.talk.secrets`, `operator.write`. Treats chat turns as owner-sender turns. |
-| Trusted identity-bearing HTTP (trusted-proxy auth, or `gateway.auth.mode="none"` on private ingress) | Honors `x-paleoclaw-scopes` when present; falls back to the default operator scope set when absent. Loses owner semantics only when the caller explicitly narrows scopes and omits `operator.admin`. Requires `operator.admin` for owner-level controls such as `x-paleoclaw-model`.                        |
+| Trusted identity-bearing HTTP (trusted-proxy auth, or `gateway.auth.mode="none"` on private ingress) | Honors `x-paleoclaw-scopes` when present; falls back to the default operator scope set when absent. Loses owner semantics only when the caller explicitly narrows scopes and omits `operator.admin`. Requires `operator.admin` for owner-level controls such as `x-paleoclaw-model`.                       |
 
 See [Operator scopes](/gateway/operator-scopes), [Security](/gateway/security), and [Remote access](/gateway/remote).
 
@@ -79,21 +79,21 @@ Notes:
 
 paleoclaw treats the OpenAI `model` field as an **agent target**, not a raw provider model id.
 
-| `model` value                                | Routes to                                                                                                                |
-| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `paleoclaw`                                   | Configured default agent                                                                                                 |
-| `paleoclaw/default`                           | Configured default agent (stable alias; safe to hardcode even if the real default agent id changes between environments) |
+| `model` value                                  | Routes to                                                                                                                |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `paleoclaw`                                    | Configured default agent                                                                                                 |
+| `paleoclaw/default`                            | Configured default agent (stable alias; safe to hardcode even if the real default agent id changes between environments) |
 | `paleoclaw/<agentId>` or `paleoclaw:<agentId>` | Specific agent                                                                                                           |
-| `agent:<agentId>`                            | Specific agent (compatibility alias)                                                                                     |
+| `agent:<agentId>`                              | Specific agent (compatibility alias)                                                                                     |
 
 Optional request headers:
 
-| Header                                          | Effect                                                                                                                                                                                                                                                                      |
-| ----------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Header                                           | Effect                                                                                                                                                                                                                                                                       |
+| ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `x-paleoclaw-model: <provider/model-or-bare-id>` | Overrides the backend model for the selected agent. Shared-secret bearer callers can use this directly; identity-bearing callers (trusted-proxy, or private no-auth ingress with `x-paleoclaw-scopes`) need `operator.admin`, otherwise `403 missing scope: operator.admin`. |
-| `x-paleoclaw-agent-id: <agentId>`                | Compatibility override for agent selection.                                                                                                                                                                                                                                 |
-| `x-paleoclaw-session-key: <sessionKey>`          | Explicit session routing. Rejected with `400 invalid_request_error` if it uses a reserved internal namespace (`subagent:`, `cron:`, `acp:`).                                                                                                                                |
-| `x-paleoclaw-message-channel: <channel>`         | Sets the synthetic ingress channel context for channel-aware prompts/policies.                                                                                                                                                                                              |
+| `x-paleoclaw-agent-id: <agentId>`                | Compatibility override for agent selection.                                                                                                                                                                                                                                  |
+| `x-paleoclaw-session-key: <sessionKey>`          | Explicit session routing. Rejected with `400 invalid_request_error` if it uses a reserved internal namespace (`subagent:`, `cron:`, `acp:`).                                                                                                                                 |
+| `x-paleoclaw-message-channel: <channel>`         | Sets the synthetic ingress channel context for channel-aware prompts/policies.                                                                                                                                                                                               |
 
 `/v1/models` lists top-level agent targets (`paleoclaw`, `paleoclaw/default`, `paleoclaw/<agentId>`), not backend provider models and not sub-agents; sub-agents stay internal execution topology. If you omit `x-paleoclaw-model`, the selected agent runs with its normal configured model.
 

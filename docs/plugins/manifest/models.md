@@ -97,7 +97,7 @@ Top-level fields:
 
 | Field            | Type                                                     | What it means                                                                                               |
 | ---------------- | -------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| `modelsDev`      | `Record<string, string>`                                 | Publication-time opt-in mapping from an owned paleoclaw provider id to a models.dev provider id.             |
+| `modelsDev`      | `Record<string, string>`                                 | Publication-time opt-in mapping from an owned paleoclaw provider id to a models.dev provider id.            |
 | `providers`      | `Record<string, object>`                                 | Catalog rows for provider ids owned by this plugin. Keys should also appear in top-level `providers`.       |
 | `aliases`        | `Record<string, object>`                                 | Provider aliases that should resolve to an owned provider for catalog or suppression planning.              |
 | `suppressions`   | `object[]`                                               | Model rows from another source that this plugin suppresses for a provider-specific reason.                  |
@@ -167,7 +167,7 @@ Model fields:
 | `maxTokens`            | `number`                                                       | Maximum output tokens when known.                                                    |
 | `thinkingLevelMap`     | `Record<string, string \| null>`                               | Optional per-thinking-level model-id or param overrides.                             |
 | `cost`                 | `object`                                                       | Optional USD per million token pricing, including optional `tieredPricing`.          |
-| `compat`               | `object`                                                       | Optional compatibility flags matching paleoclaw model config compatibility.           |
+| `compat`               | `object`                                                       | Optional compatibility flags matching paleoclaw model config compatibility.          |
 | `upstreamModel`        | `string`                                                       | Optional `provider/model` ref of the same upstream model in another bundled catalog. |
 | `mediaInput`           | `object`                                                       | Optional per-modality input config. `image` is the only modality.                    |
 | `status`               | `"available"` \| `"preview"` \| `"deprecated"` \| `"disabled"` | Listing status. Suppress only when the row must not appear at all.                   |
@@ -337,11 +337,11 @@ Provider fields:
 
 Source fields:
 
-| Field                      | Type               | What it means                                                                                                        |
-| -------------------------- | ------------------ | -------------------------------------------------------------------------------------------------------------------- |
+| Field                      | Type               | What it means                                                                                                         |
+| -------------------------- | ------------------ | --------------------------------------------------------------------------------------------------------------------- |
 | `provider`                 | `string`           | External catalog provider id when it differs from the paleoclaw provider id, for example `z-ai` for a `zai` provider. |
-| `passthroughProviderModel` | `boolean`          | Treat slash-containing model ids as `vendor/model` refs priced at the vendor's rate, for gateways that bill it.      |
-| `modelIdTransforms`        | `"version-dots"[]` | Extra external catalog model-id variants. `version-dots` tries dotted version ids like `claude-opus-4.6`.            |
+| `passthroughProviderModel` | `boolean`          | Treat slash-containing model ids as `vendor/model` refs priced at the vendor's rate, for gateways that bill it.       |
+| `modelIdTransforms`        | `"version-dots"[]` | Extra external catalog model-id variants. `version-dots` tries dotted version ids like `claude-opus-4.6`.             |
 
 Prices come from whoever bills the request. A declared provider policy enables
 only its declared source mappings. Without a policy, publication tries the

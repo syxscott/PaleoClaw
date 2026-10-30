@@ -1007,7 +1007,9 @@ describe("dispatchReplyFromConfig", () => {
       pluginRoot: "/Users/huntharo/github/paleoclaw-app-server",
     });
     const dispatcher = createDispatcher();
-    const replyResolver = vi.fn(async () => ({ text: "paleoclaw fallback" }) satisfies ReplyPayload);
+    const replyResolver = vi.fn(
+      async () => ({ text: "paleoclaw fallback" }) satisfies ReplyPayload,
+    );
 
     await dispatchReplyFromConfig({
       ctx: buildTestCtx({

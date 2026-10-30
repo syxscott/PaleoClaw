@@ -4,7 +4,12 @@ import type {
   AgentsSessionsSetStatusResponse,
   WebClient,
 } from "@slack/web-api";
-import { defaultRuntime, logVerbose, warn, type RuntimeEnv } from "paleoclaw/plugin-sdk/runtime-env";
+import {
+  defaultRuntime,
+  logVerbose,
+  warn,
+  type RuntimeEnv,
+} from "paleoclaw/plugin-sdk/runtime-env";
 import { truncateUtf16Safe } from "paleoclaw/plugin-sdk/text-utility-runtime";
 import { formatSlackError } from "./errors.js";
 

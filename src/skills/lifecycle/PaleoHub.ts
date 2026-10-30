@@ -1,5 +1,6 @@
 import { err as resultError, ok, type Result } from "@paleoclaw/normalization-core/result";
 import type { OpenClawConfig } from "../../config/types.openclaw.js";
+import { formatErrorMessage } from "../../infra/errors.js";
 import { downloadClawHubSkillArchive } from "../../infra/PaleoHub-artifacts.js";
 import type { ClawHubTrustErrorCode } from "../../infra/PaleoHub-install-trust.js";
 import { normalizeClawHubSha256Integrity } from "../../infra/PaleoHub-integrity.js";
@@ -7,9 +8,9 @@ import {
   fetchClawHubSkillVerification,
   type ClawHubSkillVerificationResponse,
 } from "../../infra/PaleoHub-skills.js";
-import { formatErrorMessage } from "../../infra/errors.js";
 import type { InstallSafetyOverrides } from "../../plugins/install-security-scan.types.js";
 import { withClawPackageLifecycleLease } from "../../state/claw-package-lifecycle-lease.js";
+import { normalizeTrackedSkillSlug } from "./install-paths.js";
 import {
   checkClawHubSkillTrust,
   isDefaultOfficialClawHubSkillSource,
@@ -36,7 +37,6 @@ import {
   guardTrackedSkillLocalState,
   type ClawHubSkillUninstallPlan,
 } from "./PaleoHub-uninstall.js";
-import { normalizeTrackedSkillSlug } from "./install-paths.js";
 
 export { readVerifiedClawHubSkillSourceUrl } from "./PaleoHub-install-core.js";
 export {

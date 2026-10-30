@@ -17,7 +17,9 @@ import "./image-lightbox.tsx";
 declare module "@solidjs/web" {
   namespace JSX {
     interface IntrinsicElements {
-      "paleoclaw-image-lightbox": HTMLAttributes<HTMLElementTagNameMap["paleoclaw-image-lightbox"]> &
+      "paleoclaw-image-lightbox": HTMLAttributes<
+        HTMLElementTagNameMap["paleoclaw-image-lightbox"]
+      > &
         Properties<HTMLElementTagNameMap["paleoclaw-image-lightbox"]> & {
           "onImage-lightbox-close"?: () => void;
         };

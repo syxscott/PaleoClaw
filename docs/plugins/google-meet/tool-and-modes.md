@@ -100,7 +100,7 @@ Speaking on demand:
 | `inCall`                                                       | Chrome appears to be inside the Meet call                                                                              |
 | `micMuted`                                                     | Best-effort Meet microphone state                                                                                      |
 | `manualAction.reason` / `manualAction.message`                 | Browser profile needs manual login, Meet host admission, permissions, or browser-control repair before speech can work |
-| `speechReady` / `speechBlockedReason` / `speechBlockedMessage` | Whether managed Chrome speech is allowed now; `speechReady: false` means paleoclaw did not send the intro/test phrase   |
+| `speechReady` / `speechBlockedReason` / `speechBlockedMessage` | Whether managed Chrome speech is allowed now; `speechReady: false` means paleoclaw did not send the intro/test phrase  |
 | `providerConnected` / `realtimeReady`                          | Realtime voice bridge state                                                                                            |
 | `lastInputAt` / `lastOutputAt`                                 | Last audio seen from/sent to the bridge                                                                                |
 | `audioInputRouted` / `audioInputDeviceLabel`                   | Whether Meet's microphone is the verified native virtual-audio input                                                   |
@@ -163,10 +163,10 @@ are never retried automatically.
 
 ## Agent and bidi modes
 
-| Mode    | Who decides the answer        | Speech output path                     | Use when                                              |
-| ------- | ----------------------------- | -------------------------------------- | ----------------------------------------------------- |
-| `agent` | The configured paleoclaw agent | Normal paleoclaw TTS runtime            | You want "my agent is in the meeting" behavior        |
-| `bidi`  | The realtime voice model      | Realtime voice provider audio response | You want the lowest-latency conversational voice loop |
+| Mode    | Who decides the answer         | Speech output path                     | Use when                                              |
+| ------- | ------------------------------ | -------------------------------------- | ----------------------------------------------------- |
+| `agent` | The configured paleoclaw agent | Normal paleoclaw TTS runtime           | You want "my agent is in the meeting" behavior        |
+| `bidi`  | The realtime voice model       | Realtime voice provider audio response | You want the lowest-latency conversational voice loop |
 
 `agent` mode: the realtime transcription provider hears meeting audio, final participant transcripts route through the configured paleoclaw agent, and the answer is spoken through regular paleoclaw TTS. Nearby final-transcript fragments are coalesced before the consult so one spoken turn does not produce several stale partial answers. Isolated browser input remains available during TTS; only legacy transports with mixed loopback input retain playback and transcript echo suppression.
 

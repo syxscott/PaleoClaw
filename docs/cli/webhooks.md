@@ -18,10 +18,10 @@ paleoclaw webhooks gmail setup --account <email> [...]
 paleoclaw webhooks gmail run   [--account <email>] [...]
 ```
 
-| Subcommand    | Description                                                                           |
-| ------------- | ------------------------------------------------------------------------------------- |
+| Subcommand    | Description                                                                            |
+| ------------- | -------------------------------------------------------------------------------------- |
 | `gmail setup` | One-time wizard: Gmail watch, Pub/Sub topic/subscription, and paleoclaw hook delivery. |
-| `gmail run`   | Run `gog gmail watch serve` plus the watch auto-renew loop in the foreground.         |
+| `gmail run`   | Run `gog gmail watch serve` plus the watch auto-renew loop in the foreground.          |
 
 <Note>
 The Gateway also auto-starts `gog gmail watch serve` on boot once `hooks.enabled=true` and `hooks.gmail.account` is set (set by `gmail setup`). `gmail run` provides a foreground watcher for debugging or when the Gateway watcher is disabled. Do not run both against the same listener. See [Gmail Pub/Sub integration](/automation/cron-jobs#gmail-pubsub-integration) for the auto-start details and `OPENCLAW_SKIP_GMAIL_WATCHER` opt-out.
@@ -61,11 +61,11 @@ This command connects Gmail transport but does not create a restricted reader ag
 
 ### paleoclaw delivery options
 
-| Flag                   | Default                                       | Description                                                                      |
-| ---------------------- | --------------------------------------------- | -------------------------------------------------------------------------------- |
+| Flag                   | Default                                       | Description                                                                       |
+| ---------------------- | --------------------------------------------- | --------------------------------------------------------------------------------- |
 | `--hook-url <url>`     | `hooks.gmail.hookUrl`, then local Gateway URL | paleoclaw webhook URL; generated fallback uses `hooks.path` and the Gateway port. |
 | `--hook-token <token>` | `hooks.token`, or a generated token           | paleoclaw webhook token.                                                          |
-| `--push-token <token>` | `hooks.gmail.pushToken`, or a generated token | Separate token authenticating Pub/Sub to `gog gmail watch serve`.                |
+| `--push-token <token>` | `hooks.gmail.pushToken`, or a generated token | Separate token authenticating Pub/Sub to `gog gmail watch serve`.                 |
 
 <a id="gog-watch-serve-options" />
 
@@ -119,7 +119,7 @@ Starts the Gmail watch and runs `gog gmail watch serve` plus periodic watch rene
 | Category                | Flags                                                                            |
 | ----------------------- | -------------------------------------------------------------------------------- |
 | Pub/Sub                 | `--account`, `--topic`, `--subscription`, `--label`                              |
-| paleoclaw delivery       | `--hook-url`, `--hook-token`, `--push-token`                                     |
+| paleoclaw delivery      | `--hook-url`, `--hook-token`, `--push-token`                                     |
 | `gog gmail watch serve` | `--bind`, `--port`, `--path`, `--include-body`, `--max-bytes`, `--renew-minutes` |
 | Tailscale               | `--tailscale`, `--tailscale-path`, `--tailscale-target`                          |
 

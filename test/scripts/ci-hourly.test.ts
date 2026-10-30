@@ -14,7 +14,11 @@ const auxiliary = [
   "plugin-npm-release",
 ].map((name) => [name, readWorkflow(`.github/workflows/${name}.yml`)] as const);
 const ci = readCiWorkflow();
-const base = { repository: "syxscott/PaleoClaw", runAttempt: 1, releasePriorityRun: "123" } as const;
+const base = {
+  repository: "syxscott/PaleoClaw",
+  runAttempt: 1,
+  releasePriorityRun: "123",
+} as const;
 type Context = Parameters<typeof evaluateWorkflowExpression>[1];
 
 function evaluate(expression: string, context: Partial<Context> = {}) {

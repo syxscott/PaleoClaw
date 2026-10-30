@@ -15,7 +15,7 @@ The trust boundaries and data flows these threats cross are defined in the [thre
 | Attribute               | Value                                                                |
 | ----------------------- | -------------------------------------------------------------------- |
 | **ATLAS ID**            | AML.T0006 - Active Scanning                                          |
-| **Description**         | Attacker scans for exposed paleoclaw gateway endpoints                |
+| **Description**         | Attacker scans for exposed paleoclaw gateway endpoints               |
 | **Attack vector**       | Network scanning, Shodan queries, DNS enumeration                    |
 | **Affected components** | Gateway, exposed API endpoints                                       |
 | **Current mitigations** | Tailscale auth option, bind to loopback by default                   |

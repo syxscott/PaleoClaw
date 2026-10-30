@@ -632,7 +632,11 @@ export async function main(argv = process.argv.slice(2)) {
       await deviceCommand(device, ["install", "-t", "-g", role === "phone" ? phoneApk : wearApk]);
       await deviceCommand(device, ["install", "-t", "-g", role === "phone" ? phoneTest : wearTest]);
       device.forward = Number(
-        await deviceCommand(device, ["forward", "tcp:0", `localabstract:paleoclaw-release-${role}`]),
+        await deviceCommand(device, [
+          "forward",
+          "tcp:0",
+          `localabstract:paleoclaw-release-${role}`,
+        ]),
       );
       if (!Number.isInteger(device.forward) || device.forward <= 0) {
         throw new Error("forward-port-missing");

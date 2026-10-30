@@ -109,8 +109,9 @@ suite.define(() => {
       expect(
         await page.evaluate(
           () =>
-            document.querySelector<MeasuredPane>("paleoclaw-chat-pane.chat-pane-cache__pane--active")
-              ?.state.chatAvatarStatus,
+            document.querySelector<MeasuredPane>(
+              "paleoclaw-chat-pane.chat-pane-cache__pane--active",
+            )?.state.chatAvatarStatus,
         ),
       ).toBeNull();
       await gateway.resolveDeferred("agent.identity.get");
@@ -125,8 +126,9 @@ suite.define(() => {
       expect(
         await page.evaluate(
           () =>
-            document.querySelector<MeasuredPane>("paleoclaw-chat-pane.chat-pane-cache__pane--active")
-              ?.state.modelAuthStatusResult,
+            document.querySelector<MeasuredPane>(
+              "paleoclaw-chat-pane.chat-pane-cache__pane--active",
+            )?.state.modelAuthStatusResult,
         ),
       ).toBeNull();
       await gateway.resolveDeferred("models.authStatus");

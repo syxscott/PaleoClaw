@@ -126,7 +126,8 @@ describe("slackSetupWizard.prepare", () => {
           messages_tab_read_only_enabled: false,
         },
         agent_view: {
-          agent_description: "paleoclaw connects Slack Agent View conversations to paleoclaw agents.",
+          agent_description:
+            "paleoclaw connects Slack Agent View conversations to paleoclaw agents.",
           suggested_prompts: [
             {
               title: "What can you do?",

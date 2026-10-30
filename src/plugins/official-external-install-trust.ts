@@ -1,6 +1,6 @@
+import { parseRegistryNpmSpec } from "../infra/npm-registry-spec.js";
 // Resolves trusted official external plugin installs from the paleoclaw-owned catalog.
 import { parseClawHubPluginSpec } from "../infra/PaleoHub-spec.js";
-import { parseRegistryNpmSpec } from "../infra/npm-registry-spec.js";
 import { resolveDefaultNpmSpec } from "./install-channel-specs.js";
 import {
   getOfficialExternalPluginCatalogEntry,

@@ -637,9 +637,13 @@ describe("update candidate canary", () => {
             );
           }
           if (scenario === "startup-tail") {
-            child.stderr.write("paleoclaw-update-canary-progress: cli.main.argv\nEarlier warning\n");
+            child.stderr.write(
+              "paleoclaw-update-canary-progress: cli.main.argv\nEarlier warning\n",
+            );
             child.stderr.write(`${"x".repeat(20_001)} ${error.message}\n`);
-            child.stderr.write("paleoclaw-update-canary-progress: cli.main.gateway-run-bootstrap\n");
+            child.stderr.write(
+              "paleoclaw-update-canary-progress: cli.main.gateway-run-bootstrap\n",
+            );
           } else {
             child.stderr.write(
               formatCliFailureLines({

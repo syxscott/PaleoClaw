@@ -109,11 +109,9 @@ export function registerLlamaCppMediaTool(
             ? workspace
               ? [path.resolve(workspace)]
               : []
-            : (await import("paleoclaw/plugin-sdk/media-local-roots")).getAgentScopedMediaLocalRoots(
-                cfg,
-                ctx.agentId,
-                workspace,
-              );
+            : (
+                await import("paleoclaw/plugin-sdk/media-local-roots")
+              ).getAgentScopedMediaLocalRoots(cfg, ctx.agentId, workspace);
           const imageConfig = cfg.tools?.media?.image;
           const maxBytes = Math.min(
             asPositiveSafeInteger(imageConfig?.maxBytes) ?? LLAMA_CPP_MEDIA_MAX_BYTES,

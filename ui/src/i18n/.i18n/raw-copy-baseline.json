@@ -153,7 +153,7 @@
       "kind": "html-text",
       "name": "text",
       "path": "ui/src/components/file-preview-modal.tsx",
-      "text": "paleoclaw-file-preview-modal {"
+      "text": "openclaw-file-preview-modal {"
     },
     {
       "count": 1,

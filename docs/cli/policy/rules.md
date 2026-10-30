@@ -48,7 +48,7 @@ observed state is existing paleoclaw config or workspace metadata.
 | ----------------------------------- | --------------------------------------------------- | ---------------------------------------------------------------------- |
 | `routing.requireBindings`           | Channel route bindings, excluding ACP bindings      | Require at least one message-routing binding.                          |
 | `routing.requireConfiguredChannels` | Binding channel ids and configured `channels.*` ids | Detect stale or misspelled binding channel ids.                        |
-| `routing.probes[].route`            | The public paleoclaw route resolver                  | Describe a representative inbound route without sending a message.     |
+| `routing.probes[].route`            | The public paleoclaw route resolver                 | Describe a representative inbound route without sending a message.     |
 | `routing.probes[].expect.agentId`   | Resolved agent id                                   | Require the route to reach the reviewed agent.                         |
 | `routing.probes[].expect.matchedBy` | Resolver match kind                                 | Require peer, account, channel, or other reviewed binding specificity. |
 
@@ -74,16 +74,16 @@ private messages.
 
 ### Gateway
 
-| Policy field                            | Observed state                                | Use when                                                                             |
-| --------------------------------------- | --------------------------------------------- | ------------------------------------------------------------------------------------ |
-| `gateway.exposure.allowNonLoopbackBind` | `gateway.bind`                                | Set to `false` to require loopback Gateway binding.                                  |
-| `gateway.exposure.allowTailscaleFunnel` | Tailscale serve/funnel Gateway posture        | Set to `false` to deny Tailscale Funnel exposure.                                    |
-| `gateway.auth.requireAuth`              | `gateway.auth.mode`                           | Set to `true` to reject disabled Gateway auth.                                       |
-| `gateway.auth.requireExplicitRateLimit` | `gateway.auth.rateLimit`                      | Set to `true` to require explicit auth rate-limit config.                            |
-| `gateway.controlUi.allowInsecure`       | Device-identity invariant and origin fallback | Set to `false` to require device identity and deny Host-header origin fallback.      |
-| `gateway.remote.allow`                  | Remote Gateway mode/config                    | Set to `false` to deny remote Gateway mode.                                          |
-| `gateway.http.denyEndpoints`            | Gateway HTTP API endpoints                    | Deny endpoint ids such as `chatCompletions` or `responses`.                          |
-| `gateway.http.requireUrlAllowlists`     | Gateway HTTP URL-fetch inputs                 | Set to `true` to require URL allowlists on URL-fetch inputs.                         |
+| Policy field                            | Observed state                                | Use when                                                                              |
+| --------------------------------------- | --------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `gateway.exposure.allowNonLoopbackBind` | `gateway.bind`                                | Set to `false` to require loopback Gateway binding.                                   |
+| `gateway.exposure.allowTailscaleFunnel` | Tailscale serve/funnel Gateway posture        | Set to `false` to deny Tailscale Funnel exposure.                                     |
+| `gateway.auth.requireAuth`              | `gateway.auth.mode`                           | Set to `true` to reject disabled Gateway auth.                                        |
+| `gateway.auth.requireExplicitRateLimit` | `gateway.auth.rateLimit`                      | Set to `true` to require explicit auth rate-limit config.                             |
+| `gateway.controlUi.allowInsecure`       | Device-identity invariant and origin fallback | Set to `false` to require device identity and deny Host-header origin fallback.       |
+| `gateway.remote.allow`                  | Remote Gateway mode/config                    | Set to `false` to deny remote Gateway mode.                                           |
+| `gateway.http.denyEndpoints`            | Gateway HTTP API endpoints                    | Deny endpoint ids such as `chatCompletions` or `responses`.                           |
+| `gateway.http.requireUrlAllowlists`     | Gateway HTTP URL-fetch inputs                 | Set to `true` to require URL allowlists on URL-fetch inputs.                          |
 | `gateway.nodes.denyCommands`            | `gateway.nodes.commands.deny`                 | Require exact node command ids such as `system.run` to be denied in paleoclaw config. |
 
 `gateway.nodes.denyCommands` is an exact, case-sensitive policy deny-superset rule.
@@ -118,12 +118,12 @@ allowlist such as `["all"]`.
 
 ### Data Handling
 
-| Policy field                                        | Observed state                                                                                                   | Use when                                                               |
-| --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| Policy field                                        | Observed state                                                                                                   | Use when                                                                |
+| --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
 | `dataHandling.sensitiveLogging.requireRedaction`    | Runtime invariant `oc://openclaw.invariant/logging/redaction`                                                    | Set to `true` to record the requirement; paleoclaw always satisfies it. |
-| `dataHandling.telemetry.denyContentCapture`         | `diagnostics.otel.captureContent`                                                                                | Set to `true` to reject telemetry content capture.                     |
-| `dataHandling.retention.requireSessionMaintenance`  | `session.maintenance.mode`                                                                                       | Set to `true` to require effective session maintenance mode `enforce`. |
-| `dataHandling.memory.denySessionTranscriptIndexing` | `memory.search.experimental.sessionMemory`, `memory.search.rememberAcrossConversations`, and per-agent overrides | Set to `true` to reject session transcript indexing into memory.       |
+| `dataHandling.telemetry.denyContentCapture`         | `diagnostics.otel.captureContent`                                                                                | Set to `true` to reject telemetry content capture.                      |
+| `dataHandling.retention.requireSessionMaintenance`  | `session.maintenance.mode`                                                                                       | Set to `true` to require effective session maintenance mode `enforce`.  |
+| `dataHandling.memory.denySessionTranscriptIndexing` | `memory.search.experimental.sessionMemory`, `memory.search.rememberAcrossConversations`, and per-agent overrides | Set to `true` to reject session transcript indexing into memory.        |
 
 ### Secrets
 

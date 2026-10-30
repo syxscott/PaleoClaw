@@ -62,7 +62,9 @@ it("keeps live child headlines scoped to their run, incarnation, and connection"
   const view = mountSolid(() => createComponent(ChatSubagentActivity, { rows: rows(child) }), {
     wrapper: provider.wrapper,
   });
-  const element = view.container.querySelector<ActivityElement>("paleoclaw-chat-subagent-activity")!;
+  const element = view.container.querySelector<ActivityElement>(
+    "paleoclaw-chat-subagent-activity",
+  )!;
   onTestFinished(() => {
     view.unmount();
     sessions.dispose();

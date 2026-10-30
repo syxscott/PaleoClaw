@@ -5,7 +5,10 @@ import {
   patchAllowlistUsersInConfigEntries,
   summarizeMapping,
 } from "paleoclaw/plugin-sdk/allow-from";
-import type { DiscordAccountConfig, DiscordGuildEntry } from "paleoclaw/plugin-sdk/config-contracts";
+import type {
+  DiscordAccountConfig,
+  DiscordGuildEntry,
+} from "paleoclaw/plugin-sdk/config-contracts";
 import { isDangerousNameMatchingEnabled } from "paleoclaw/plugin-sdk/dangerous-name-runtime";
 import type { RuntimeEnv } from "paleoclaw/plugin-sdk/runtime-env";
 import { formatErrorMessage } from "paleoclaw/plugin-sdk/ssrf-runtime";

@@ -20,7 +20,10 @@ import {
   withDisposableOpenClawStateReads,
 } from "./paleoclaw-state-db-readonly.js";
 import { withExistingOpenClawStateSchema } from "./paleoclaw-state-db-schema-policy.js";
-import { closeOpenClawStateDatabaseAsync, openOpenClawStateDatabase } from "./paleoclaw-state-db.js";
+import {
+  closeOpenClawStateDatabaseAsync,
+  openOpenClawStateDatabase,
+} from "./paleoclaw-state-db.js";
 import { captureOpenClawStateReadSource } from "./paleoclaw-state-read-worker.js";
 import type {
   OpenClawStateReadCommand,

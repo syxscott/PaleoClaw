@@ -9,7 +9,10 @@ import {
   type ChannelIngressQueue,
 } from "paleoclaw/plugin-sdk/channel-outbound";
 import { isRecord } from "paleoclaw/plugin-sdk/channel-secret-basic-runtime";
-import { collectErrorGraphCandidates, formatErrorMessage } from "paleoclaw/plugin-sdk/error-runtime";
+import {
+  collectErrorGraphCandidates,
+  formatErrorMessage,
+} from "paleoclaw/plugin-sdk/error-runtime";
 import type { ChannelReplayClaimHandle } from "paleoclaw/plugin-sdk/persistent-dedupe";
 import { normalizeNullableString } from "paleoclaw/plugin-sdk/string-coerce-runtime";
 import { getFeishuRuntime } from "./runtime.js";

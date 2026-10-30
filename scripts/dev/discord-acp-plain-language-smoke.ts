@@ -851,14 +851,12 @@ if (hasFlag("--help") || hasFlag("-h")) {
   process.exit(0);
 }
 
-const result = await run().catch(
-  (err): FailureResult => ({
-    ok: false,
-    stage: "unexpected",
-    smokeId: "n/a",
-    error: err instanceof Error ? err.message : String(err),
-  }),
-);
+const result = await run().catch((err): FailureResult => ({
+  ok: false,
+  stage: "unexpected",
+  smokeId: "n/a",
+  error: err instanceof Error ? err.message : String(err),
+}));
 
 printOutput({
   json: hasFlag("--json"),

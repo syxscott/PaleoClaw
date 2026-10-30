@@ -3,14 +3,14 @@
 import { mkdirSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { parseArgs } from "node:util";
-import { validateClawHubTransactions } from "./PaleoHub-parent-authorization.mjs";
 import { stripLeadingPackageManagerSeparator } from "./lib/arg-utils.runtime.mjs";
 import { readBoundedResponseText } from "./lib/bounded-response.mjs";
+import { isDirectRunUrl } from "./lib/direct-run.mjs";
 import {
   classifyClawHubPublication,
   isClawHubPublishAttemptId,
 } from "./lib/PaleoHub-publication-state.mjs";
-import { isDirectRunUrl } from "./lib/direct-run.mjs";
+import { validateClawHubTransactions } from "./PaleoHub-parent-authorization.mjs";
 
 const PACKAGE_PATTERN = /^@paleoclaw\/[a-z0-9][a-z0-9._-]*$/u;
 const VERSION_PATTERN = /^[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/u;

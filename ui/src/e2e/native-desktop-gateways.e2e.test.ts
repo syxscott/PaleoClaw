@@ -149,7 +149,9 @@ suite.define(() => {
         await show("Retry after unlocking the credential store.");
         expect(await original?.textContent()).toContain("Retry after unlocking");
         expect(await page.getByRole("alert").count()).toBe(1);
-        await page.evaluate(() => window.dispatchEvent(new Event("paleoclaw:gateway-notice-clear")));
+        await page.evaluate(() =>
+          window.dispatchEvent(new Event("paleoclaw:gateway-notice-clear")),
+        );
         expect(await page.getByRole("alert").count()).toBe(0);
         expect(dialogs).toEqual([]);
       });

@@ -29,7 +29,9 @@ export default defineConfig({
     maxWorkers: 1,
     setupFiles: [
       ...new Set(
-        [...(baseTest.setupFiles ?? []), "test/setup-paleoclaw-runtime.ts"].map(resolveRepoRootPath),
+        [...(baseTest.setupFiles ?? []), "test/setup-paleoclaw-runtime.ts"].map(
+          resolveRepoRootPath,
+        ),
       ),
     ],
     include: [

@@ -29,7 +29,9 @@ import {
 
 installGatewayTestHooks({ scope: "suite" });
 
-const gatewaySuite = installConnectedSessionStoreGatewaySuite("paleoclaw-gw-subagent-delivery-ctx-");
+const gatewaySuite = installConnectedSessionStoreGatewaySuite(
+  "paleoclaw-gw-subagent-delivery-ctx-",
+);
 
 const defaultRegistry = createRegistry([
   {

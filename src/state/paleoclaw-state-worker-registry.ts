@@ -92,7 +92,9 @@ const loaders = {
       (m) => m.githubSetupOperations,
     ),
   agentDatabaseRegistry: () =>
-    import("./paleoclaw-agent-db-registry.worker.js").then((m) => m.agentDatabaseRegistryOperations),
+    import("./paleoclaw-agent-db-registry.worker.js").then(
+      (m) => m.agentDatabaseRegistryOperations,
+    ),
   authProfiles: () =>
     import("../agents/auth-profiles/store.worker.js").then((m) => m.authProfileOperations),
   pluginModelCatalogCredentials: () =>

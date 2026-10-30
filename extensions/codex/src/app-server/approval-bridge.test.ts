@@ -379,7 +379,8 @@ describe("Codex app-server approval bridge", () => {
       stdout: JSON.stringify({ hookSpecificOutput: { permissionDecision: "allow" } }),
       stderr: "",
       exitCode: 0,
-      message: "paleoclaw native hook relay returned a non-deny Codex app-server approval decision.",
+      message:
+        "paleoclaw native hook relay returned a non-deny Codex app-server approval decision.",
     },
     {
       label: "non-zero exit",

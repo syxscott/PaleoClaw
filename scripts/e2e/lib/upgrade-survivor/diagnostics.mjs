@@ -411,7 +411,9 @@ function readDoctorResult(
     const uid = process.getuid?.();
     const fallback = path.join(tmpdir(), uid === undefined ? "paleoclaw" : `paleoclaw-${uid}`);
     if (
-      ![...(process.platform === "win32" ? [] : ["/tmp/paleoclaw"]), fallback].includes(directory) ||
+      ![...(process.platform === "win32" ? [] : ["/tmp/paleoclaw"]), fallback].includes(
+        directory,
+      ) ||
       !/^paleoclaw-update-doctor-\d+-[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.json$/iu.test(
         path.basename(resultPath),
       )

@@ -197,7 +197,13 @@ exit 17
       const root = tempDirs.make("paleoclaw-survivor-same-version-");
       const fixture = registryFixture(
         root,
-        ["paleoclaw", "@paleoclaw/ai", "@paleoclaw/codex", "@paleoclaw/discord", "@paleoclaw/whatsapp"],
+        [
+          "paleoclaw",
+          "@paleoclaw/ai",
+          "@paleoclaw/codex",
+          "@paleoclaw/discord",
+          "@paleoclaw/whatsapp",
+        ],
         baselineVersion,
       );
       const source = readFileSync("scripts/e2e/lib/upgrade-survivor/run.sh", "utf8");

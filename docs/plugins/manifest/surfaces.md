@@ -626,7 +626,7 @@ from implementations that do not declare support.
 
 | Field         | Required | Type     | What it means                                                      |
 | ------------- | -------- | -------- | ------------------------------------------------------------------ |
-| `commandName` | Yes      | `string` | Subcommand mounted beneath `paleoclaw qa`, for example `matrix`.    |
+| `commandName` | Yes      | `string` | Subcommand mounted beneath `paleoclaw qa`, for example `matrix`.   |
 | `description` | No       | `string` | Fallback help text used when the shared host needs a stub command. |
 
 The `adapterFactory` id must match `commandName`. Do not export registrations

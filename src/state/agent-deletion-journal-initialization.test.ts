@@ -343,7 +343,10 @@ it.each(["empty-agent-wal", "unresolved-storage-env"] as const)(
   (source) => {
     const env = makeEnv();
     if (source === "empty-agent-wal") {
-      const pathname = path.join(env.OPENCLAW_STATE_DIR, "agents/main/agent/paleoclaw-agent.sqlite");
+      const pathname = path.join(
+        env.OPENCLAW_STATE_DIR,
+        "agents/main/agent/paleoclaw-agent.sqlite",
+      );
       fs.mkdirSync(path.dirname(pathname), { recursive: true });
       fs.writeFileSync(pathname, "");
       fs.writeFileSync(`${pathname}-wal`, Buffer.alloc(64));

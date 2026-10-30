@@ -145,12 +145,12 @@ live; `transcribe` stays muted. The camera stays off.
 
 | Reason                        | Action                                                                                                                |
 | ----------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `slack-login-required`        | Sign the paleoclaw Chrome profile into the dedicated Slack account, then retry.                                        |
+| `slack-login-required`        | Sign the paleoclaw Chrome profile into the dedicated Slack account, then retry.                                       |
 | `slack-huddle-not-active`     | No one is in this huddle yet. Start the huddle in Slack, then ask again.                                              |
 | `slack-confirmation-required` | Read and complete the reported confirmation in Slack. The plugin does not confirm switching huddles or other prompts. |
 | `slack-session-conflict`      | The account is already in another huddle, in this browser or on another device. Leave it, then retry.                 |
 | `slack-admission-required`    | Complete the request-to-join step and wait for admission. Refresh status after admission.                             |
-| `slack-permission-required`   | Resolve the browser microphone permission prompt in the paleoclaw Chrome profile.                                      |
+| `slack-permission-required`   | Resolve the browser microphone permission prompt in the paleoclaw Chrome profile.                                     |
 
 Leave uses Slack's **Leave Huddle** control. It never ends the huddle for everyone.
 

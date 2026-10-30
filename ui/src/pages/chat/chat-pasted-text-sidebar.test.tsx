@@ -78,7 +78,9 @@ it.each(["focus", "restore", "preview"] as const)(
     });
     document.body.append(container);
     const target =
-      action === "restore" ? "paleoclaw-chat-pasted-text button" : ".chat-attachment-file__icon svg";
+      action === "restore"
+        ? "paleoclaw-chat-pasted-text button"
+        : ".chat-attachment-file__icon svg";
     await waitForFast(() => expect(container.querySelector(target)).not.toBeNull());
     if (action === "restore") {
       const restore = button(container, ".chat-attachments-preview .chat-attachment-text-action");

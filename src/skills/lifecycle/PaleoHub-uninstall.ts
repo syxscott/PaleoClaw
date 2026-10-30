@@ -5,6 +5,7 @@ import path from "node:path";
 import { sha256Hex } from "../../infra/crypto-digest.js";
 import { formatErrorMessage, isErrno } from "../../infra/errors.js";
 import { createSubsystemLogger } from "../../logging/subsystem.js";
+import { resolveWorkspaceSkillInstallDir } from "./install-paths.js";
 import { resolveClawHubSkillStatusLinkSync } from "./PaleoHub-status.js";
 import {
   describeClawHubSkillRefMismatch,
@@ -13,7 +14,6 @@ import {
   untrackClawHubSkill,
   resolveWorkspaceClawHubSkills,
 } from "./PaleoHub-store.js";
-import { resolveWorkspaceSkillInstallDir } from "./install-paths.js";
 import {
   dispatchCommittedSkillChangeBestEffort,
   hasCommittedSkillChangeHooks,

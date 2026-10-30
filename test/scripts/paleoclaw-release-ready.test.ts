@@ -14,7 +14,6 @@ import { runInNewContext } from "node:vm";
 import JSZip from "jszip";
 import { afterEach, describe, expect, it } from "vitest";
 import { parse } from "yaml";
-import { preparedClawHubArtifactName } from "../../scripts/PaleoHub-prepared-artifact.mjs";
 import { buildFullReleaseCandidateRequest } from "../../scripts/full-release-candidate-contract.mjs";
 import {
   createPublicationAdmission,
@@ -36,6 +35,7 @@ import {
   validateReadyRelease,
   validateReleaseButtonInputs,
 } from "../../scripts/paleoclaw-release-ready.mjs";
+import { preparedClawHubArtifactName } from "../../scripts/PaleoHub-prepared-artifact.mjs";
 import { preparedNpmArtifactName } from "../../scripts/plugin-npm-prepared-release.mjs";
 import { expectedChildDispatches } from "../../scripts/release-ci-summary.mjs";
 import { useAutoCleanupTempDirTracker } from "../helpers/temp-dir.js";

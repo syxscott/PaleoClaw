@@ -2,7 +2,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { closeDiscordThreadSessions } from "./thread-session-close.js";
 
-type ResolveStorePath = typeof import("paleoclaw/plugin-sdk/session-store-runtime").resolveStorePath;
+type ResolveStorePath =
+  typeof import("paleoclaw/plugin-sdk/session-store-runtime").resolveStorePath;
 
 const hoisted = vi.hoisted(() => {
   const deleteSessionEntry = vi.fn();

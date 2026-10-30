@@ -133,7 +133,9 @@ describe("AppSidebar catalog row lifecycle", () => {
       const adoptedMenu = query<HTMLAnchorElement>(
         `[data-session-key="${key}"] .sidebar-recent-session__link`,
       );
-      const popup = query<HTMLElement & { trigger?: HTMLElement }>("paleoclaw-catalog-session-menu");
+      const popup = query<HTMLElement & { trigger?: HTMLElement }>(
+        "paleoclaw-catalog-session-menu",
+      );
       if (menuState === "open") {
         expect(popup).not.toBeNull();
         expect(popup).toBe(originalPopup);

@@ -123,7 +123,11 @@ describe("readLoggingConfig", () => {
     });
     expect(
       readConfig(configPath, { OPENCLAW_TEST_LOG_FILE: "/tmp/paleoclaw-env-backed.log" }),
-    ).toStrictEqual({ consoleStyle: "json", file: "/tmp/paleoclaw-env-backed.log", level: "debug" });
+    ).toStrictEqual({
+      consoleStyle: "json",
+      file: "/tmp/paleoclaw-env-backed.log",
+      level: "debug",
+    });
   });
 
   it("preserves custom redaction patterns while another logging field is unresolved", () => {

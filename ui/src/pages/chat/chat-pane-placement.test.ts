@@ -518,8 +518,9 @@ describe("local session placement actions", () => {
     await dialogs.waitFor(() => expect(option("gateway")).not.toBeNull());
     selectOption("gateway");
     expect(
-      document.body.querySelector<HTMLButtonElement>('paleoclaw-modal-dialog button[type="submit"]')!
-        .disabled,
+      document.body.querySelector<HTMLButtonElement>(
+        'paleoclaw-modal-dialog button[type="submit"]',
+      )!.disabled,
     ).toBe(false);
     session.placement.generation = 2;
     clickButton("Move session");

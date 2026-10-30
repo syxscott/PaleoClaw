@@ -5,8 +5,8 @@ import { tmpdir } from "node:os";
 import { delimiter, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { hasUnjoinedWork, runManagedCommand } from "./lib/managed-child-process.mts";
-import { collectClawHubPublishablePluginPackages } from "./lib/plugin-PaleoHub-release.ts";
 import { collectPublishablePluginPackages } from "./lib/plugin-npm-release.ts";
+import { collectClawHubPublishablePluginPackages } from "./lib/plugin-PaleoHub-release.ts";
 
 const DEFAULT_CLAWHUB_CLI_PACKAGE = "clawhub@0.23.3";
 // Match the existing npm release-check and shrinkwrap command 10-minute ceilings: complete

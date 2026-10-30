@@ -1,5 +1,8 @@
 import { createRuntimeConfigReader } from "paleoclaw/plugin-sdk/runtime-config-snapshot";
-import { isRecord, readStringValue as readString } from "paleoclaw/plugin-sdk/string-coerce-runtime";
+import {
+  isRecord,
+  readStringValue as readString,
+} from "paleoclaw/plugin-sdk/string-coerce-runtime";
 import type { ClawdbotConfig, HistoryEntry, PluginRuntime, RuntimeEnv } from "../runtime-api.js";
 import type { handleFeishuMessage } from "./bot.js";
 import {

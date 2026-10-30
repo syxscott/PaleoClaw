@@ -10,7 +10,10 @@ import {
   resolveInstalledClawHubPlugin,
 } from "../plugins/plugin-install-preflight.js";
 import { defaultRuntime } from "../runtime.js";
-import { installSkillFromClawHub, preflightSkillFromClawHub } from "../skills/lifecycle/PaleoHub.js";
+import {
+  installSkillFromClawHub,
+  preflightSkillFromClawHub,
+} from "../skills/lifecycle/PaleoHub.js";
 import {
   acquireClawPackageLifecycleLease,
   type ClawPackageLifecycleLease,

@@ -37,14 +37,17 @@ const PREEXISTING_SESSION_FIXTURES = [
 export function measureVolumeDoctorBudget(stateDir) {
   const counts = { sessions: 0, events: 0, cronJobs: 0, pluginRoots: 0 };
   for (const agentId of VOLUME_AGENT_IDS) {
-    readDatabase(path.join(stateDir, "agents", agentId, "agent", "paleoclaw-agent.sqlite"), (db) => {
-      counts.sessions += Number(
-        db.prepare("SELECT count(*) AS count FROM session_nodes").get().count,
-      );
-      counts.events += Number(
-        db.prepare("SELECT count(*) AS count FROM transcript_events").get().count,
-      );
-    });
+    readDatabase(
+      path.join(stateDir, "agents", agentId, "agent", "paleoclaw-agent.sqlite"),
+      (db) => {
+        counts.sessions += Number(
+          db.prepare("SELECT count(*) AS count FROM session_nodes").get().count,
+        );
+        counts.events += Number(
+          db.prepare("SELECT count(*) AS count FROM transcript_events").get().count,
+        );
+      },
+    );
   }
   readDatabase(path.join(stateDir, "state", "openclaw.sqlite"), (db) => {
     counts.cronJobs = Number(db.prepare("SELECT count(*) AS count FROM cron_jobs").get().count);

@@ -101,7 +101,8 @@ describe("new-session composer critter visits", () => {
     expect(visitor().floorEnabled).toBe(true);
     const reopened = renderComposer();
     expect(
-      reopened.composer.querySelector<HTMLElement & { seed: number }>("paleoclaw-lobster-pet")?.seed,
+      reopened.composer.querySelector<HTMLElement & { seed: number }>("paleoclaw-lobster-pet")
+        ?.seed,
     ).not.toBe(seed);
   });
 

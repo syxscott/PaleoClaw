@@ -15,11 +15,11 @@ import { useAutoCleanupTempDirTracker } from "../../test/helpers/temp-dir.js";
 import { flushLogger, setLoggerOverride } from "../logging/logger.js";
 import { loggingState } from "../logging/state.js";
 import * as commands from "../process/exec.js";
-import * as processCensus from "./paleoclaw-process-census.js";
 import {
   resolvePackageActivationAnchor,
   resolvePackageActivationControl,
 } from "./package-update-activation-paths.js";
+import * as processCensus from "./paleoclaw-process-census.js";
 import { captureRuntimeWorkerSource } from "./runtime-worker-generation.js";
 import { resolveRuntimeWorkerUrl } from "./runtime-worker-url.js";
 import { openSqliteWorkerStore, type SqliteWorkerStore } from "./sqlite-worker-store.js";

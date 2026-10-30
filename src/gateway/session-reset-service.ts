@@ -1,7 +1,10 @@
 // Gateway session reset/delete service.
 // Rotates transcripts and coordinates lifecycle cleanup across runtimes/hooks.
 import { randomUUID } from "node:crypto";
-import { type FastMode, normalizeOptionalString } from "@paleoclaw/normalization-core/string-coerce";
+import {
+  type FastMode,
+  normalizeOptionalString,
+} from "@paleoclaw/normalization-core/string-coerce";
 import {
   ErrorCodes,
   errorShape,

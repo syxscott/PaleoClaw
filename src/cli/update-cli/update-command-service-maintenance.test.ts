@@ -127,7 +127,11 @@ it.each(["authority-lost", "ordinary"] as const)(
       });
       const service = createMockGatewayService({
         readCommand: async () => ({
-          programArguments: [process.execPath, path.join(process.cwd(), "paleoclaw.mjs"), "gateway"],
+          programArguments: [
+            process.execPath,
+            path.join(process.cwd(), "paleoclaw.mjs"),
+            "gateway",
+          ],
           environment: { HOME: home },
         }),
         readRuntime: async () => ({
@@ -316,7 +320,11 @@ it.each([{ state: "failed", tasksCurrent: 2, residual: true }])(
       mockProcessPlatform("linux");
       const service = createMockGatewayService({
         readCommand: async () => ({
-          programArguments: [process.execPath, path.join(process.cwd(), "paleoclaw.mjs"), "gateway"],
+          programArguments: [
+            process.execPath,
+            path.join(process.cwd(), "paleoclaw.mjs"),
+            "gateway",
+          ],
           environment: { HOME: home },
         }),
         readRuntime: async () => ({
@@ -653,7 +661,11 @@ it("refuses owned Linux admission without a native manager UID", () =>
     mocks.service.mockReturnValue(
       createMockGatewayService({
         readCommand: async () => ({
-          programArguments: [process.execPath, path.join(process.cwd(), "paleoclaw.mjs"), "gateway"],
+          programArguments: [
+            process.execPath,
+            path.join(process.cwd(), "paleoclaw.mjs"),
+            "gateway",
+          ],
           environment: { HOME: home },
         }),
         readRuntime: async () => ({ status: "running" }),

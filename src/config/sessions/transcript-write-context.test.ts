@@ -42,7 +42,11 @@ function withWriteTarget<A extends unknown[]>(
       { label: "owned-transcript-commit", scenario: "minimal" },
       async (state) => {
         setRuntimeConfigSnapshot({});
-        await run(makeTarget(path.join(state.agentDir(), "paleoclaw-agent.sqlite")), state, ...args);
+        await run(
+          makeTarget(path.join(state.agentDir(), "paleoclaw-agent.sqlite")),
+          state,
+          ...args,
+        );
       },
     );
 }

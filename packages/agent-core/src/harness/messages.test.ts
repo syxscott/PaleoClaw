@@ -93,7 +93,8 @@ describe("convertToLlm message ownership", () => {
     expect(convertToLlm([carrier, nearMatch, legacyCarrier])).toEqual([
       {
         ...carrierProjection,
-        content: "paleoclaw runtime context:\ncurrent runtime facts\nEnd paleoclaw runtime context.",
+        content:
+          "paleoclaw runtime context:\ncurrent runtime facts\nEnd paleoclaw runtime context.",
       },
       {
         ...userProjection,

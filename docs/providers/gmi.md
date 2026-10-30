@@ -22,7 +22,7 @@ rate limits, and any provider-side routing policy.
 | Property      | Value                                    |
 | ------------- | ---------------------------------------- |
 | Provider id   | `gmi` (aliases: `gmi-cloud`, `gmicloud`) |
-| Package       | `@paleoclaw/gmi-provider`                 |
+| Package       | `@paleoclaw/gmi-provider`                |
 | Auth env var  | `GMI_API_KEY`                            |
 | API           | OpenAI-compatible (`openai-completions`) |
 | Base URL      | `https://api.gmi-serving.com/v1`         |

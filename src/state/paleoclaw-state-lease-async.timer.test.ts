@@ -19,7 +19,9 @@ type LeaseOwner = Parameters<Storage["acquire"]>[0];
 type Command = { assertCurrent(): void; publish(expiresAt: number): number };
 const lostLease = { ok: false, error: { code: "OPENCLAW_STATE_LEASE_LOST" } };
 
-const { leaseMocks } = await vi.hoisted(() => import("./paleoclaw-state-lease-async.test-mocks.js"));
+const { leaseMocks } = await vi.hoisted(
+  () => import("./paleoclaw-state-lease-async.test-mocks.js"),
+);
 const mocks = vi.hoisted(() => ({
   configureStorage: vi.fn<(storage: Storage) => Storage>(),
 }));

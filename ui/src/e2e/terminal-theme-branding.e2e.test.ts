@@ -23,9 +23,14 @@ suite.define(() => {
     expect(await page.locator("html").getAttribute("data-theme-id")).toBe(theme);
     expect(await page.locator("html").getAttribute("data-theme-mode")).toBe(mode);
     if (process.env.OPENCLAW_CAPTURE_UI_PROOF === "1" && mode === "dark") {
-      const frame = await takeControlUiScreenshotFrame(page, page.locator("paleoclaw-app"), [hero], {
-        animations: "disabled",
-      });
+      const frame = await takeControlUiScreenshotFrame(
+        page,
+        page.locator("paleoclaw-app"),
+        [hero],
+        {
+          animations: "disabled",
+        },
+      );
       writeFileSync(path.join(suite.artifactDir, theme + "-after.png"), frame.png);
     }
     await page.goto(suite.server.baseUrl + "settings/appearance");

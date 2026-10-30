@@ -49,15 +49,15 @@ tool streaming and payload handling.
 State lives in the paleoclaw state directory: `~/.openclaw` by default, or
 `$OPENCLAW_STATE_DIR` when set. Paths relative to that directory:
 
-| Path                                           | Holds                                                              |
-| ---------------------------------------------- | ------------------------------------------------------------------ |
-| `openclaw.json`                                | Config                                                             |
-| `state/openclaw.sqlite`                        | Shared runtime state database                                      |
+| Path                                            | Holds                                                              |
+| ----------------------------------------------- | ------------------------------------------------------------------ |
+| `openclaw.json`                                 | Config                                                             |
+| `state/openclaw.sqlite`                         | Shared runtime state database                                      |
 | `agents/<agentId>/agent/paleoclaw-agent.sqlite` | Per-agent model auth profiles (API keys + OAuth) and runtime state |
-| `credentials/`                                 | Provider/channel credentials outside the auth profile store        |
-| `agents/<agentId>/sessions/`                   | Transcript history and legacy session migration sources            |
-| `sessions/`                                    | Legacy single-agent session store (old installs only)              |
-| `workspace/`                                   | Default agent workspace (extra agents use `workspace-<agentId>`)   |
+| `credentials/`                                  | Provider/channel credentials outside the auth profile store        |
+| `agents/<agentId>/sessions/`                    | Transcript history and legacy session migration sources            |
+| `sessions/`                                     | Legacy single-agent session store (old installs only)              |
+| `workspace/`                                    | Default agent workspace (extra agents use `workspace-<agentId>`)   |
 
 Delete those paths for a full reset. Narrower resets:
 

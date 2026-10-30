@@ -159,13 +159,13 @@ longer connected when delivery runs, the alert is canceled.
 
 ## Troubleshooting
 
-| Symptom                                   | Check                                                                                                                                                                                                                       |
-| ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Symptom                                   | Check                                                                                                                                                                                                                         |
+| ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | No row is marked `active`                 | Confirm a native macOS node is connected, then click or type in OpenClaw. For activity outside paleoclaw, enable system-wide detection and check `permissions.accessibility: true` in `paleoclaw nodes describe --node <id>`. |
 | The wrong Mac remains active              | Interact with paleoclaw on the Mac you want to use, wait for the coalescing window, then rerun `paleoclaw nodes status`. With system-wide detection enabled, physical input in other apps also counts.                        |
-| Last-input data disappears                | Check whether the Mac disconnected or its node session was replaced. Disabling system-wide detection or revoking Accessibility clears the system-wide sample; app-local activity can still select the Mac.                  |
-| The alert appears on several Macs         | Primary delivery was unavailable or failed, so the delayed fallback ran. Verify that the active Mac is connected, allows notifications, and exposes `system.notify`.                                                        |
-| The agent does not mention the active Mac | Start a new turn after activity changes. The runtime hint is stable and compact; use the `nodes` tool for exact current metadata.                                                                                           |
+| Last-input data disappears                | Check whether the Mac disconnected or its node session was replaced. Disabling system-wide detection or revoking Accessibility clears the system-wide sample; app-local activity can still select the Mac.                    |
+| The alert appears on several Macs         | Primary delivery was unavailable or failed, so the delayed fallback ran. Verify that the active Mac is connected, allows notifications, and exposes `system.notify`.                                                          |
+| The agent does not mention the active Mac | Start a new turn after activity changes. The runtime hint is stable and compact; use the `nodes` tool for exact current metadata.                                                                                             |
 
 For TCC recovery, see [macOS permissions](/platforms/mac/permissions). For node
 connection and command failures, see [Node troubleshooting](/nodes/troubleshooting).

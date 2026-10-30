@@ -35,7 +35,8 @@ type AnyAsyncMock = ReturnType<typeof vi.fn<(...args: unknown[]) => Promise<unkn
 type TelegramBotRuntimeForTest = typeof import("./bot.runtime.js");
 type GetRuntimeConfigFn =
   typeof import("paleoclaw/plugin-sdk/runtime-config-snapshot").getRuntimeConfig;
-type GetSessionEntryFn = typeof import("paleoclaw/plugin-sdk/session-store-runtime").getSessionEntry;
+type GetSessionEntryFn =
+  typeof import("paleoclaw/plugin-sdk/session-store-runtime").getSessionEntry;
 type ResolveStorePathFn =
   typeof import("paleoclaw/plugin-sdk/session-store-runtime").resolveStorePath;
 type ReadSessionUpdatedAtFn =

@@ -1,5 +1,8 @@
 import { randomUUID } from "node:crypto";
-import { safeParseJsonWithSchema, safeParseWithSchema } from "paleoclaw/plugin-sdk/extension-shared";
+import {
+  safeParseJsonWithSchema,
+  safeParseWithSchema,
+} from "paleoclaw/plugin-sdk/extension-shared";
 import { channelReadyPatch } from "paleoclaw/plugin-sdk/gateway-runtime";
 import {
   captureWsEventAsync,

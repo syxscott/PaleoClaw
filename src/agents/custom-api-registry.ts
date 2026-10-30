@@ -49,6 +49,9 @@ export function ensureCustomApiRegistered(
 
   const stream: StreamFunction = (model, context, options) =>
     adaptCustomStream(model, streamFn(model, context, options));
-  registry.registerApiProvider({ api, stream, streamSimple: stream }, `paleoclaw-custom-api:${api}`);
+  registry.registerApiProvider(
+    { api, stream, streamSimple: stream },
+    `paleoclaw-custom-api:${api}`,
+  );
   return true;
 }

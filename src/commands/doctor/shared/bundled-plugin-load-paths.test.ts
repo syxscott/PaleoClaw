@@ -23,7 +23,10 @@ function createPluginLoadPathConfig(paths: Array<string | number>): OpenClawConf
 const packageRoot = path.resolve("app-node-modules", "paleoclaw");
 const legacyPath = path.join(packageRoot, "extensions", "feishu");
 const bundledPath = bundledDistPluginRootAt(packageRoot, "feishu");
-const currentBundledPath = bundledDistPluginRootAt(path.resolve("node_modules/paleoclaw"), "feishu");
+const currentBundledPath = bundledDistPluginRootAt(
+  path.resolve("node_modules/paleoclaw"),
+  "feishu",
+);
 
 describe("bundled plugin load path repair", () => {
   beforeEach(() => {

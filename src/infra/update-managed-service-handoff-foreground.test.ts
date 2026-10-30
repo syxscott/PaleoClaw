@@ -88,9 +88,10 @@ it.runIf(process.platform !== "win32").each([
   const root = await fs.realpath(tempDirs.make("foreground-handoff-"));
   const coordinator = path.join(root, "coordinator");
   await fs.mkdir(coordinator);
-  vi.spyOn(await import("./tmp-paleoclaw-dir.js"), "resolvePreferredOpenClawTmpDir").mockReturnValue(
-    coordinator,
-  );
+  vi.spyOn(
+    await import("./tmp-paleoclaw-dir.js"),
+    "resolvePreferredOpenClawTmpDir",
+  ).mockReturnValue(coordinator);
   const fixturePath = path.join(root, "paleoclaw.mjs");
   const configPath = path.join(root, "openclaw.json");
   await fs.writeFile(

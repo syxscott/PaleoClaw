@@ -90,7 +90,7 @@ compatibility window. Their removals were recorded retroactively on October 7,
 The registry's `removeAfter` is the UTC day before the removing commit landed,
 not a compatibility window that was offered to plugin authors.
 
-| Removed export (`paleoclaw/plugin-sdk/` prefix)                 | Landed (UTC) | `removeAfter` | Replacement                                                                                           |
+| Removed export (`paleoclaw/plugin-sdk/` prefix)                | Landed (UTC) | `removeAfter` | Replacement                                                                                           |
 | -------------------------------------------------------------- | ------------ | ------------- | ----------------------------------------------------------------------------------------------------- |
 | `allow-from.mapBasicAllowlistResolutionEntries`                | 2026-10-05   | 2026-10-04    | None; project `BasicAllowlistResolutionEntry` fields in the consuming plugin.                         |
 | `computer-use.compileComputerUseValidator`                     | 2026-10-05   | 2026-10-04    | `Compile(schema).Check` from `typebox/compile`, using the exported Computer Use schemas.              |

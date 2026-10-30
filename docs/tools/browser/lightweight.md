@@ -101,7 +101,7 @@ before bundling or recommending an integrated deployment.
 
 ## Choose where the engine runs
 
-| paleoclaw location       | Lightpanda location                              | Profile CDP URL        |
+| paleoclaw location      | Lightpanda location                              | Profile CDP URL        |
 | ----------------------- | ------------------------------------------------ | ---------------------- |
 | Host, including Windows | Docker/Podman with a loopback-published port     | `ws://127.0.0.1:9222`  |
 | Linux or macOS host     | Native binary on the same host                   | `ws://127.0.0.1:9222`  |

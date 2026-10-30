@@ -269,10 +269,10 @@ standalone build below also supports packages that are not yet tracked.
 
 | Install shape                                   | Bundled plugin location                              | Dependency owner                                       |
 | ----------------------------------------------- | ---------------------------------------------------- | ------------------------------------------------------ |
-| Global npm install                              | Built runtime tree inside the package                | Root paleoclaw package for internal bundled runtime     |
+| Global npm install                              | Built runtime tree inside the package                | Root paleoclaw package for internal bundled runtime    |
 | Git checkout plus `pnpm install` + `pnpm build` | `dist/extensions`, then `dist-runtime/extensions`    | Root runtime declarations plus plugin manifests        |
 | Unbuilt source checkout                         | `extensions/<id>` fallback when no built tree exists | pnpm workspace with explicit root runtime dependencies |
-| `paleoclaw plugins install ...`                  | Managed npm project/git/PaleoHub root                 | The plugin install/update flow                         |
+| `paleoclaw plugins install ...`                 | Managed npm project/git/PaleoHub root                | The plugin install/update flow                         |
 
 For the global npm row, use
 `npm install -g paleoclaw --allow-scripts=paleoclaw` on npm 12 or npm 11.16+.

@@ -13,11 +13,6 @@ import { dirname, join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { isDeepStrictEqual, parseArgs } from "node:util";
 import {
-  CLAWHUB_CHILD_WORKFLOW,
-  readPackedClawHubTransaction,
-  resolvePackedClawHubArtifactDir,
-} from "./PaleoHub-parent-authorization.mjs";
-import {
   downloadExactActionsArtifactArchive,
   inspectActionsArtifactZipWithPolicy,
   readBoundedRegularFile,
@@ -28,6 +23,11 @@ import { readBoundedResponseText } from "./lib/bounded-response.mjs";
 import { resolveOpenClawClawHubPackageFamily } from "./lib/PaleoHub-package-family.mjs";
 import { classifyClawHubPublication } from "./lib/PaleoHub-publication-state.mjs";
 import { isRecord } from "./lib/record-shared.mjs";
+import {
+  CLAWHUB_CHILD_WORKFLOW,
+  readPackedClawHubTransaction,
+  resolvePackedClawHubArtifactDir,
+} from "./PaleoHub-parent-authorization.mjs";
 import { runReleaseToolingGh, verifyReleaseToolingIdentity } from "./release-tooling-identity.mjs";
 
 const REPOSITORY = "syxscott/PaleoClaw";
@@ -125,7 +125,11 @@ function selectionEntry(entry) {
   if (entry.version?.includes("-alpha.") || entry.publishTag === "alpha") {
     throw new Error("Alpha releases are retired; use a beta prerelease instead.");
   }
-  matches(entry.packageName, /^@paleoclaw\/[a-z0-9][a-z0-9._-]*$/u, "Prepared PaleoHub package name");
+  matches(
+    entry.packageName,
+    /^@paleoclaw\/[a-z0-9][a-z0-9._-]*$/u,
+    "Prepared PaleoHub package name",
+  );
   matches(
     entry.packageDir,
     /^extensions\/[a-z0-9][a-z0-9._-]*$/u,
@@ -139,7 +143,11 @@ function validatePackage(entry) {
   exactKeys(entry, [...PACKAGE_KEYS, ...ARTIFACT_KEYS], "Prepared PaleoHub package");
   selectionEntry(entry);
   validateArtifact(entry);
-  matches(entry.tarballName, /^[A-Za-z0-9][A-Za-z0-9._-]*\.tgz$/u, "Prepared PaleoHub tarball name");
+  matches(
+    entry.tarballName,
+    /^[A-Za-z0-9][A-Za-z0-9._-]*\.tgz$/u,
+    "Prepared PaleoHub tarball name",
+  );
   matches(entry.tarballSha256, DIGEST, "Prepared PaleoHub tarball digest");
   matches(entry.inventoryDigest, DIGEST, "Prepared PaleoHub inventory digest");
   positive(entry.tarballSizeBytes, MAX_PACKAGE_BYTES, "Prepared PaleoHub tarball size");
@@ -296,7 +304,9 @@ export async function downloadPreparedClawHubRelease(options) {
   const requested = (
     typeof plugins === "string" ? plugins.split(",").filter(Boolean) : (plugins ?? [])
   )
-    .map((name) => matches(name, /^@paleoclaw\/[a-z0-9][a-z0-9._-]*$/u, "Requested PaleoHub package"))
+    .map((name) =>
+      matches(name, /^@paleoclaw\/[a-z0-9][a-z0-9._-]*$/u, "Requested PaleoHub package"),
+    )
     .toSorted((left, right) => left.localeCompare(right));
   if (selectionMode === "all-publishable") {
     if (requested.length > 0) {
@@ -605,7 +615,9 @@ async function main() {
       env.GITHUB_WORKFLOW_REF !==
         `${REPOSITORY}/${CLAWHUB_CHILD_WORKFLOW}@${producerFullRef(producer)}`
     ) {
-      throw new Error("Prepared PaleoHub artifacts must be sealed by the validation-only workflow.");
+      throw new Error(
+        "Prepared PaleoHub artifacts must be sealed by the validation-only workflow.",
+      );
     }
     result = createPreparedClawHubManifest({
       candidateSha: env.TARGET_SHA,

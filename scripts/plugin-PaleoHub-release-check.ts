@@ -1,6 +1,7 @@
 #!/usr/bin/env -S node --import tsx
 
 import { pathToFileURL } from "node:url";
+import type { NpmLatestVersionResolver } from "./lib/plugin-npm-release.ts";
 import {
   assertPluginReleaseDependencyFreshness,
   collectClawHubPublishablePluginPackages,
@@ -9,7 +10,6 @@ import {
   parsePluginReleaseArgs,
   resolveSelectedClawHubPublishablePluginPackages,
 } from "./lib/plugin-PaleoHub-release.js";
-import type { NpmLatestVersionResolver } from "./lib/plugin-npm-release.ts";
 
 export async function runPluginClawHubReleaseCheck(
   argv: string[],

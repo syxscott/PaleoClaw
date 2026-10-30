@@ -676,7 +676,10 @@ it.each([true, false])(
 
 it("shares invocation-wide install-policy acknowledgement across bulk plugin and hook updates", async () => {
   setTty(false);
-  const config = primeTrackedPluginUpdate("paleoclaw-codex-app-server", "paleoclaw-codex-app-server");
+  const config = primeTrackedPluginUpdate(
+    "paleoclaw-codex-app-server",
+    "paleoclaw-codex-app-server",
+  );
   setHookInstallRecords({
     "demo-hooks": {
       source: "npm",

@@ -1,8 +1,8 @@
 /* @vitest-environment jsdom */
 /* @vitest-environment-options {"url":"http://chat-page-close.test/"} */
 
-import { expectDefined } from "@paleoclaw/normalization-core";
 import { createRouter } from "@openclaw/uirouter";
+import { expectDefined } from "@paleoclaw/normalization-core";
 import { createComponent, createSignal, flush } from "solid-js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createDeferred } from "../../../../test/helpers/promise.js";

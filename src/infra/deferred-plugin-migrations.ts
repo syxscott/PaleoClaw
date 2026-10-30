@@ -437,7 +437,8 @@ export function formatDeferredPluginMigration(
   pending: DeferredPluginMigration,
   env: NodeJS.ProcessEnv = process.env,
 ): string {
-  const retry = pending.command === "paleoclaw doctor --fix" ? "" : ', then "paleoclaw doctor --fix"';
+  const retry =
+    pending.command === "paleoclaw doctor --fix" ? "" : ', then "paleoclaw doctor --fix"';
   // This formatter also ships in the minimal PR bootstrap, without Doctor command modules.
   const packageSwap =
     isTruthyEnvValue(env.OPENCLAW_UPDATE_IN_PROGRESS) &&

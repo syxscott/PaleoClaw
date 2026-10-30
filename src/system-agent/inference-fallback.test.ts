@@ -124,7 +124,8 @@ describe("system-agent inference fallback", () => {
     expect(result).toEqual({
       ok: false,
       status: "unknown",
-      error: "paleoclaw could not verify a usable inference route. Check model setup and try again.",
+      error:
+        "paleoclaw could not verify a usable inference route. Check model setup and try again.",
     });
   });
 

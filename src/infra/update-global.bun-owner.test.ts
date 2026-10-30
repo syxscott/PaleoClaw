@@ -7,9 +7,9 @@ import { withEnvAsync } from "../test-utils/env.js";
 import { createTestGatewayScheduler } from "../test-utils/gateway-scheduler-clock.js";
 import { withMockedPlatform } from "../test-utils/vitest-spies.js";
 import * as gitExec from "./git-exec.js";
-import * as openclawRoot from "./paleoclaw-root.js";
 import { runGlobalPackageUpdateSteps } from "./package-update-steps.js";
 import { writePackageRoot, createRootRunner } from "./package-update-steps.test-support.js";
+import * as openclawRoot from "./paleoclaw-root.js";
 import * as restartSentinel from "./restart-sentinel.js";
 import { createGatewayUpdateLifecycle } from "./update-check-lifecycle.js";
 import { pkgQueryResult } from "./update-freebsd-pkg-ownership.test-support.js";
@@ -202,7 +202,10 @@ describe("pnpm isolated global install discovery", () => {
     const runCommand = probeRunner({ "pnpm root -g": commandResult(`${pnpmGlobalRoot}\n`) });
 
     await expect(
-      listActivePnpmIsolatedGlobalPackages({ globalRoot: pnpmGlobalRoot, packageName: "paleoclaw" }),
+      listActivePnpmIsolatedGlobalPackages({
+        globalRoot: pnpmGlobalRoot,
+        packageName: "paleoclaw",
+      }),
     ).resolves.toEqual([
       {
         packageRoot: path.join(pnpmGlobalRoot, "hash-a-other/node_modules/paleoclaw"),

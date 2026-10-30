@@ -2486,7 +2486,8 @@ describe("google-meet plugin", () => {
           inCall: false,
           manualAction: {
             reason: "google-login-required",
-            message: "Sign in to Google in the paleoclaw browser profile, then retry the Meet join.",
+            message:
+              "Sign in to Google in the paleoclaw browser profile, then retry the Meet join.",
           },
           title: "Sign in - Google Accounts",
           url: "https://accounts.google.com/signin",

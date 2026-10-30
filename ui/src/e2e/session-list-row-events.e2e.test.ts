@@ -83,7 +83,9 @@ suite.define(() => {
         if (route === "dashboards") {
           await expect.poll(() => foreground.count()).toBe(2);
         }
-        const sidebarRow = page.locator(`paleoclaw-app-sidebar [data-session-key="${key}"]`).first();
+        const sidebarRow = page
+          .locator(`paleoclaw-app-sidebar [data-session-key="${key}"]`)
+          .first();
         await expect.poll(() => sidebarRow.textContent()).toContain("Initial roster title");
         await gateway.waitForRequest("sessions.list", { match: { spawnedBy: mainKey } });
         if (route === "chat") {

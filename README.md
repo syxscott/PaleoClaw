@@ -304,13 +304,13 @@ Focused bug-fix release: `splitSections` colon handling, `parseSoul` domain scop
 
 ## 📚 Documentation
 
-| Document                                                             | Description                    |
+| Document | Description |
 | -------------------------------------------------------------------- | ------------------------------ | ------------ |
 | [使用手册 (Manual)](https://www.paleoclaw.paleo-lab.com/manual.html) | Full deployment & usage manual | 完整使用手册 |
-| [README_CN.md](README_CN.md)                                         | 中文文档                       |
-| [CHANGELOG.md](CHANGELOG.md)                                         | Version history                | 版本历史     |
-| [docs/channels/](docs/channels/)                                     | Channel integration guides     | 渠道集成指南 |
-| [DEPLOY_GUIDE (site)](https://github.com/syxscott/PaleoClaw_Web)     | Website deployment             | 官网部署     |
+| [README_CN.md](README_CN.md) | 中文文档 |
+| [CHANGELOG.md](CHANGELOG.md) | Version history | 版本历史 |
+| [docs/channels/](docs/channels/) | Channel integration guides | 渠道集成指南 |
+| [DEPLOY_GUIDE (site)](https://github.com/syxscott/PaleoClaw_Web) | Website deployment | 官网部署 |
 
 ## 🤝 Contributing
 

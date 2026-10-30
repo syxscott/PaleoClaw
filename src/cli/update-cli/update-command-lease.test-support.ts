@@ -111,7 +111,10 @@ async function runUpdateLeaseScenario(): Promise<void> {
     const metadata = JSON.parse(await fs.readFile(path.join(runtimeRoot, "package.json"), "utf8"));
     const sdk = await import(
       pathToFileURL(
-        path.join(scenario.runtimeRoot, "dist/extensions/node_modules/paleoclaw/plugin-sdk/demo.js"),
+        path.join(
+          scenario.runtimeRoot,
+          "dist/extensions/node_modules/paleoclaw/plugin-sdk/demo.js",
+        ),
       ).href
     );
     assert.equal(runtime.generation, "candidate");

@@ -62,7 +62,9 @@ async function runHandoff({
   ].join("\n");
   const delivery = messageEvent("delivery", "request", {
     role: "user",
-    content: hasFault("private announcement") ? "Continue the paleoclaw runtime event." : settlement,
+    content: hasFault("private announcement")
+      ? "Continue the paleoclaw runtime event."
+      : settlement,
     provenance: {
       kind: "inter_session",
       sourceChannel: "internal",

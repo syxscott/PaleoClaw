@@ -69,7 +69,9 @@ describe("native session pages", () => {
           expect(host?.querySelector("#activity-live-panel")).not.toBeNull();
         }
         setVisible(false);
-        await waitForSolid(() => expect(content.querySelector(`paleoclaw-${page}-page`)).toBeNull());
+        await waitForSolid(() =>
+          expect(content.querySelector(`paleoclaw-${page}-page`)).toBeNull(),
+        );
         expect(content.className).toBe("content");
       } finally {
         mounted.unmount();

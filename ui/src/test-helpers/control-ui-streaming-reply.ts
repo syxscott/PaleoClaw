@@ -255,7 +255,9 @@ function installStreamingReplyProbe() {
         window.WeakMap = OriginalWeakMap;
       }
       Reflect.deleteProperty(ProbeWeakMap.prototype, "set");
-      initialScrollHeight = document.querySelector("paleoclaw-chat-pane .chat-thread")!.scrollHeight;
+      initialScrollHeight = document.querySelector(
+        "paleoclaw-chat-pane .chat-thread",
+      )!.scrollHeight;
       startedAt = performance.now();
       active = true;
       requestAnimationFrame(frame);

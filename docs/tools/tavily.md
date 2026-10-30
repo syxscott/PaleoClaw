@@ -18,7 +18,7 @@ Tavily returns structured results optimized for LLM consumption, with configurab
 | Property  | Value                                                                                         |
 | --------- | --------------------------------------------------------------------------------------------- |
 | Plugin id | `tavily`                                                                                      |
-| Package   | `@paleoclaw/tavily-plugin`                                                                     |
+| Package   | `@paleoclaw/tavily-plugin`                                                                    |
 | Auth      | `TAVILY_API_KEY` env var or config `apiKey`                                                   |
 | Base URL  | `https://api.tavily.com` (default); `TAVILY_BASE_URL` env var or config `baseUrl` to override |
 | Timeouts  | 30s search, 60s extract (default)                                                             |

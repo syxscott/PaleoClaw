@@ -11,7 +11,7 @@ Install the official Tencent Cloud provider plugin to access Tencent Hunyuan cha
 | Property                  | Value                                                 |
 | ------------------------- | ----------------------------------------------------- |
 | Provider ids              | `tencent-tokenhub`, `tencent-tokenplan`               |
-| Package                   | `@paleoclaw/tencent-provider`                          |
+| Package                   | `@paleoclaw/tencent-provider`                         |
 | TokenHub auth env var     | `TOKENHUB_API_KEY`                                    |
 | TokenPlan auth env var    | `TOKENPLAN_API_KEY`                                   |
 | TokenHub onboarding flag  | `--auth-choice tokenhub-api-key`                      |

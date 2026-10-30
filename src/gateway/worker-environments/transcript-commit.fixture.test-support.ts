@@ -39,7 +39,9 @@ export function requireSuccess(
 }
 
 export async function createTranscriptCommitFixture(getConfig: () => OpenClawConfig) {
-  const root = await fs.mkdtemp(path.join(await fs.realpath(os.tmpdir()), "paleoclaw-worker-turn-"));
+  const root = await fs.mkdtemp(
+    path.join(await fs.realpath(os.tmpdir()), "paleoclaw-worker-turn-"),
+  );
   vi.stubEnv("OPENCLAW_STATE_DIR", root);
   let stateDatabasePath: string | undefined;
   const close = async () => {

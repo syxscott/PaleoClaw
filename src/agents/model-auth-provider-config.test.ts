@@ -157,9 +157,9 @@ it("evaluates a captured provider without serializing the fleet config", () => {
   });
   const keys = vi.spyOn(Object, "keys");
   for (let i = 0; i < 2; i += 1) {
-    expect(resolver.evaluateRuntimeModelAuth("synthetic", { runtimeId: "paleoclaw" })).toMatchObject(
-      { availability: true },
-    );
+    expect(
+      resolver.evaluateRuntimeModelAuth("synthetic", { runtimeId: "paleoclaw" }),
+    ).toMatchObject({ availability: true });
   }
   expect(
     keys.mock.calls.filter(([value]) => value === cfg || value === runtime || value === source),

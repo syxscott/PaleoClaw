@@ -665,7 +665,11 @@ describe("chat sidebar region", () => {
   });
 
   it.each([
-    { slot: "browser", eventType: "paleoclaw:browser-toggle", detail: { open: true, newTab: true } },
+    {
+      slot: "browser",
+      eventType: "paleoclaw:browser-toggle",
+      detail: { open: true, newTab: true },
+    },
   ] as const)(
     "keeps $slot available in the plus menu to create another hosted tab",
     async ({ slot, eventType, detail }) => {

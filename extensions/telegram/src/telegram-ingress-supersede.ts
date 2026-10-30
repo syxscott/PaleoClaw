@@ -7,7 +7,10 @@ import {
   normalizeCommandBody,
 } from "paleoclaw/plugin-sdk/command-auth-native";
 import { isAbortRequestText } from "paleoclaw/plugin-sdk/command-primitives-runtime";
-import { asOptionalObjectRecord, readStringField } from "paleoclaw/plugin-sdk/string-coerce-runtime";
+import {
+  asOptionalObjectRecord,
+  readStringField,
+} from "paleoclaw/plugin-sdk/string-coerce-runtime";
 import type { TelegramSpooledUpdatePayload } from "./telegram-ingress-spool.payload.js";
 import {
   isTelegramAmbientSpooledUpdate,

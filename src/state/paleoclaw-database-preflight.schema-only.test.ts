@@ -44,7 +44,8 @@ it.each([
   {
     name: "database corruption",
     error: new Error("database disk image is malformed"),
-    guidance: "Stop paleoclaw processes, then restore the affected database from a verified backup.",
+    guidance:
+      "Stop paleoclaw processes, then restore the affected database from a verified backup.",
     restore: true,
   },
 ])(

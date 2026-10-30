@@ -233,9 +233,7 @@ it("preserves native non-browser TS and TSX discovery through directory selectio
     check([`${scope}**/*.test.tsx`], tsx);
   }
   check(["ui/src/**/*.test.ts", "ui/src/**/*.test.tsx"], withTsx(uiTs));
-  expect(filterFiles(files, narrow(owner, "ui/src")!).toSorted()).toEqual(
-    withTsx(uiTs).toSorted(),
-  );
+  expect(filterFiles(files, narrow(owner, "ui/src")!).toSorted()).toEqual(withTsx(uiTs).toSorted());
 });
 
 it("projects arbitrary candidate globs onto a finite literal owner", () => {

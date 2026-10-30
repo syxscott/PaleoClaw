@@ -16,7 +16,8 @@ export async function readMemoryCoreDreamingRuns(params: {
 }): Promise<string[]> {
   const lastRun = async () => {
     try {
-      const { readMemoryHostEventRecords } = await import("paleoclaw/plugin-sdk/memory-host-events");
+      const { readMemoryHostEventRecords } =
+        await import("paleoclaw/plugin-sdk/memory-host-events");
       const events = await readMemoryHostEventRecords({
         workspaceDir: params.workspaceDir,
         type: "memory.dream.completed",

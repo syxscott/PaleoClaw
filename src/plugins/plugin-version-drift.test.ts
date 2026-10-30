@@ -168,7 +168,9 @@ describe("resolvePluginVersionDriftTargets", () => {
   it("does not query npm for non-release cohorts or floating installs", async () => {
     const invalid = await resolveTargets(driftReport("unknown"));
     expect(repairCommand(firstDrift(invalid))).toBeUndefined();
-    const floating = await resolveTargets(driftReport("2026.7.1", "@paleoclaw/brave-plugin@latest"));
+    const floating = await resolveTargets(
+      driftReport("2026.7.1", "@paleoclaw/brave-plugin@latest"),
+    );
     expect(repairCommand(firstDrift(floating))).toBe("paleoclaw plugins update brave");
     expect(fetchNpmPackageTargetStatus).not.toHaveBeenCalled();
   });

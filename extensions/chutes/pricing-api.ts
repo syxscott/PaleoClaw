@@ -1,6 +1,9 @@
 import { normalizeModelPricingCatalog } from "paleoclaw/plugin-sdk/model-catalog-pricing";
 import type { ModelDefinitionConfig } from "paleoclaw/plugin-sdk/provider-model-shared";
-import { asFiniteNumberInRange, asOptionalRecord } from "paleoclaw/plugin-sdk/string-coerce-runtime";
+import {
+  asFiniteNumberInRange,
+  asOptionalRecord,
+} from "paleoclaw/plugin-sdk/string-coerce-runtime";
 
 /** Chutes publishes numeric USD-per-million rates, not OpenRouter's per-token strings. */
 export function normalizeChutesModelPricing(

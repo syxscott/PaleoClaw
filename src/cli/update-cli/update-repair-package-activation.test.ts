@@ -216,7 +216,10 @@ describe.skipIf(process.platform === "win32")("public package repair of obsolete
             bin: { paleoclaw: "./paleoclaw.mjs" },
           }),
         );
-        fs.writeFileSync(path.join(f.packageRoot, "paleoclaw.mjs"), "// newer installed launcher\n");
+        fs.writeFileSync(
+          path.join(f.packageRoot, "paleoclaw.mjs"),
+          "// newer installed launcher\n",
+        );
         fs.mkdirSync(path.join(f.packageRoot, "dist"));
         fs.writeFileSync(
           path.join(f.packageRoot, "dist/build-info.json"),

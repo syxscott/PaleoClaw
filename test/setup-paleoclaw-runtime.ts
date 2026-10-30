@@ -76,9 +76,9 @@ function loadWorkerCleanupHelpers(): Promise<WorkerCleanupHelpers> {
       vi.importActual<typeof import("../src/config/sessions/store-writer-state.test-support.js")>(
         "../src/config/sessions/store-writer-state.test-support.js",
       ),
-      vi.importActual<typeof import("../src/state/paleoclaw-agent-write-admission.test-support.js")>(
-        "../src/state/paleoclaw-agent-write-admission.test-support.js",
-      ),
+      vi.importActual<
+        typeof import("../src/state/paleoclaw-agent-write-admission.test-support.js")
+      >("../src/state/paleoclaw-agent-write-admission.test-support.js"),
       vi.importActual<typeof import("../src/plugin-sdk/file-lock.js")>(
         "../src/plugin-sdk/file-lock.js",
       ),

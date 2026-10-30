@@ -10,14 +10,14 @@ read_when:
 [Chutes](https://chutes.ai) exposes open-source model catalogs through an
 OpenAI-compatible API. paleoclaw supports both browser OAuth and API-key auth.
 
-| Property         | Value                                                   |
-| ---------------- | ------------------------------------------------------- |
-| Provider         | `chutes`                                                |
+| Property         | Value                                                    |
+| ---------------- | -------------------------------------------------------- |
+| Provider         | `chutes`                                                 |
 | Plugin           | official external package (`@paleoclaw/chutes-provider`) |
-| API              | OpenAI-compatible                                       |
-| Base URL         | `https://llm.chutes.ai/v1`                              |
-| Auth             | OAuth or API key (see below)                            |
-| Runtime env vars | `CHUTES_API_KEY`, `CHUTES_OAUTH_TOKEN`                  |
+| API              | OpenAI-compatible                                        |
+| Base URL         | `https://llm.chutes.ai/v1`                               |
+| Auth             | OAuth or API key (see below)                             |
+| Runtime env vars | `CHUTES_API_KEY`, `CHUTES_OAUTH_TOKEN`                   |
 
 `CHUTES_OAUTH_TOKEN` supplies an already-obtained OAuth access token directly
 (for example in CI), bypassing the interactive browser flow below.

@@ -8,7 +8,9 @@ import { geminiMemoryEmbeddingProviderAdapter } from "./memory-embedding-adapter
 // Bounded reads need real Response bodies, not mocked stream objects.
 vi.mock("paleoclaw/plugin-sdk/memory-core-host-engine-embeddings", async (importOriginal) => {
   const actual =
-    await importOriginal<typeof import("paleoclaw/plugin-sdk/memory-core-host-engine-embeddings")>();
+    await importOriginal<
+      typeof import("paleoclaw/plugin-sdk/memory-core-host-engine-embeddings")
+    >();
   return {
     ...actual,
     withRemoteHttpResponse: async <T>(params: {

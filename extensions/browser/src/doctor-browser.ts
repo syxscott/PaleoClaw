@@ -148,7 +148,9 @@ export async function noteChromeMcpBrowserReadiness(
   }
 
   if (missingDisplay.length > 0 || shouldWarnRootNoSandbox) {
-    const lines = [`- paleoclaw-managed browser profile(s) are configured: ${managedProfileLabel}.`];
+    const lines = [
+      `- paleoclaw-managed browser profile(s) are configured: ${managedProfileLabel}.`,
+    ];
     if (missingDisplay.length > 0) {
       lines.push(
         ...(missingDisplay.every((error) => error.headlessSource === "config")

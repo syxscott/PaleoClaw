@@ -989,9 +989,9 @@ ensure_vm_running`,
         "http://192.0.2.2:48123",
       );
     }
-    expect(parseNpmUpdateSmokeArgs(["--", "--package-spec", "paleoclaw@2026.5.1"]).packageSpec).toBe(
-      "paleoclaw@2026.5.1",
-    );
+    expect(
+      parseNpmUpdateSmokeArgs(["--", "--package-spec", "paleoclaw@2026.5.1"]).packageSpec,
+    ).toBe("paleoclaw@2026.5.1");
     expect(
       parseNpmUpdateSmokeArgs([
         "--package-spec",

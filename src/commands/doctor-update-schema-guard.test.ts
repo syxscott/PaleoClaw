@@ -258,9 +258,9 @@ it("stops pre-migration backup production when Doctor accepts SIGINT", async () 
         expect(onVerifiedBackup).not.toHaveBeenCalled();
       });
       expect(fs.readdirSync(resolveUpdateCaptureRoot(state.stateDir))).toEqual([]);
-      expect(fs.readdirSync(scratch).filter((name) => name.startsWith("paleoclaw-backup-"))).toEqual(
-        [],
-      );
+      expect(
+        fs.readdirSync(scratch).filter((name) => name.startsWith("paleoclaw-backup-")),
+      ).toEqual([]);
       expectUnchanged();
       withDatabase(f.pathname, true, (database) => {
         expect(database.prepare("PRAGMA user_version").get()).toEqual({ user_version: 19 });

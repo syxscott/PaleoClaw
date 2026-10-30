@@ -66,7 +66,9 @@ function classifyGatewayCommand(programArguments: string[]): "run" | "maintenanc
     return "run";
   }
   const identity = classifyOpenClawArgv(args, { command: "gateway" });
-  return identity.kind === "paleoclaw" && identity.entryIndex === entryIndex ? "maintenance" : "run";
+  return identity.kind === "paleoclaw" && identity.entryIndex === entryIndex
+    ? "maintenance"
+    : "run";
 }
 
 export function hasGatewaySubcommandArg(programArguments: string[]): boolean {

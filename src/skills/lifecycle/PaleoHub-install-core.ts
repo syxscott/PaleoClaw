@@ -1,5 +1,8 @@
 import path from "node:path";
 import type { OpenClawConfig } from "../../config/types.openclaw.js";
+import { formatErrorMessage } from "../../infra/errors.js";
+import { withExtractedArchiveRoot } from "../../infra/install-flow.js";
+import type { PackageDirInstallTransaction } from "../../infra/install-package-dir.js";
 import {
   downloadClawHubGitHubSkillArchive,
   downloadClawHubSkillArchive,
@@ -22,9 +25,6 @@ import {
   type ClawHubSkillDetail,
   type ClawHubSkillInstallResolutionResponse,
 } from "../../infra/PaleoHub-skills.js";
-import { formatErrorMessage } from "../../infra/errors.js";
-import { withExtractedArchiveRoot } from "../../infra/install-flow.js";
-import type { PackageDirInstallTransaction } from "../../infra/install-package-dir.js";
 import { createSubsystemLogger } from "../../logging/subsystem.js";
 import type { InstallSafetyOverrides } from "../../plugins/install-security-scan.types.js";
 import {

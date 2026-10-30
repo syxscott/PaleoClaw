@@ -2,7 +2,10 @@ import { realpath } from "node:fs/promises";
 import path from "node:path";
 import { afterEach, expect, it } from "vitest";
 import { resolveTestNodeExecPath } from "../../src/test-utils/node-process.js";
-import { createOpenClawTestInstance, type OpenClawTestInstance } from "./paleoclaw-test-instance.js";
+import {
+  createOpenClawTestInstance,
+  type OpenClawTestInstance,
+} from "./paleoclaw-test-instance.js";
 
 const instances = new Set<OpenClawTestInstance>();
 

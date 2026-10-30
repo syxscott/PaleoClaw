@@ -366,7 +366,7 @@ The integration tracks three states:
 | State      | Meaning                                                                                                                            |
 | ---------- | ---------------------------------------------------------------------------------------------------------------------------------- |
 | Installed  | Codex has the plugin bundle in the target app-server runtime.                                                                      |
-| Enabled    | Codex reports the plugin enabled, and paleoclaw config allows it for Codex harness turns.                                           |
+| Enabled    | Codex reports the plugin enabled, and paleoclaw config allows it for Codex harness turns.                                          |
 | Accessible | Codex app-server confirms the plugin's app entries are available for the active account and map to the configured plugin identity. |
 
 For `openai-curated` plugins, migration is the durable install/eligibility
@@ -589,10 +589,10 @@ see [Native permissions and MCP elicitations](/plugins/codex-harness-runtime/per
 
 | Setting                                                                         | Owner and purpose                                                                                                                                                    |
 | ------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `plugins.entries.codex.config.codexPlugins`                                     | paleoclaw's admission and plugin elicitation policy.                                                                                                                  |
-| `codexPlugins.allow_destructive_actions`                                        | Shared paleoclaw default for configured plugins and admitted account apps.                                                                                            |
+| `plugins.entries.codex.config.codexPlugins`                                     | paleoclaw's admission and plugin elicitation policy.                                                                                                                 |
+| `codexPlugins.allow_destructive_actions`                                        | Shared paleoclaw default for configured plugins and admitted account apps.                                                                                           |
 | `codexPlugins.plugins.<key>.allow_destructive_actions`                          | Explicit override for that configured plugin.                                                                                                                        |
-| Native `apps._default`, `apps.<appId>`, and `apps.<appId>.tools`                | Codex app defaults and per-tool settings, after configuration layers and the paleoclaw thread patch are combined.                                                     |
+| Native `apps._default`, `apps.<appId>`, and `apps.<appId>.tools`                | Codex app defaults and per-tool settings, after configuration layers and the paleoclaw thread patch are combined.                                                    |
 | `plugins.entries.codex.config.appServer.approvalPolicy` and `approvalsReviewer` | General Codex approval posture and reviewer, distinct from app/tool policy. See [Approval and sandbox modes](/plugins/codex-harness-reference/approval-and-sandbox). |
 
 paleoclaw resolves the destructive-action setting as:
@@ -736,12 +736,12 @@ Assume an admitted, authenticated app, no conflicting managed requirement,
 and a human reviewer for calls that need approval. The read tools below declare
 `readOnlyHint: true` and `destructiveHint: false`:
 
-| Configuration                                                                                 | Observable result on an ordinary turn                                                                                                                               |
-| --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| paleoclaw shared `false`, per-plugin `"auto"`                                                  | The plugin override wins. Destructive tools are eligible; approval elicitations that reach paleoclaw request consent.                                                |
+| Configuration                                                                                  | Observable result on an ordinary turn                                                                                                                               |
+| ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| paleoclaw shared `false`, per-plugin `"auto"`                                                  | The plugin override wins. Destructive tools are eligible; approval elicitations that reach paleoclaw request consent.                                               |
 | paleoclaw `"auto"`, native app default `"prompt"`, no tool/link override, non-destructive read | Native `"prompt"` survives. The read requests consent; Allow once permits the call and Deny blocks it.                                                              |
 | paleoclaw `"auto"`, native read-tool `approval_mode: "prompt"`                                 | The per-tool mode survives. The read requests consent; Allow once permits the call and Deny blocks it.                                                              |
-| paleoclaw `false`, native app default `"prompt"`, no tool/link override, non-destructive read  | Native eligibility allows the read, and paleoclaw requests consent. Allow once permits the call and Deny blocks it.                                                  |
+| paleoclaw `false`, native app default `"prompt"`, no tool/link override, non-destructive read  | Native eligibility allows the read, and paleoclaw requests consent. Allow once permits the call and Deny blocks it.                                                 |
 | paleoclaw `false`, destructive tool explicitly `enabled: true` and `approval_mode: "approve"`  | The native tool exception bypasses the category default and requires no tool approval request. The bridge's decline path is not an execution-time category ceiling. |
 | paleoclaw `"ask"`, saved non-read-only tool approval `"approve"`                               | The thread overlay replaces that saved approval with native `"auto"`; calls needing approval use one-shot consent.                                                  |
 
@@ -765,10 +765,10 @@ explaining why a tool ran or why no prompt appeared.
 | `codex_subscription_required`                     | The source app-server positively identified an API-key or other non-ChatGPT account.                                                 | Log in to the Codex app with subscription auth, then rerun migration.                                                  |
 | `codex_account_unavailable`                       | The source account was missing or `account/read` failed without strict app verification.                                             | Restore source account access, or use `--verify-plugin-apps` when authenticated source app inventory can prove access. |
 | `marketplace_missing`, `plugin_missing`           | The exact marketplace or configured plugin is unavailable in the installed snapshot; plugin apps are blocked.                        | Verify the target app-server's `plugin/installed` response and exact configured plugin identity.                       |
-| `plugin_detail_unavailable`                       | paleoclaw could not read the exact configured plugin's ownership details.                                                             | Inspect the target app-server's `plugin/installed` and `plugin/read` responses.                                        |
+| `plugin_detail_unavailable`                       | paleoclaw could not read the exact configured plugin's ownership details.                                                            | Inspect the target app-server's `plugin/installed` and `plugin/read` responses.                                        |
 | `plugin_disabled`                                 | Codex reports the plugin installed but disabled.                                                                                     | Enable the plugin in Codex, or have the owner explicitly install and authorize it again.                               |
 | `plugin_activation_failed`                        | Plugin activation did not complete.                                                                                                  | Use the attached diagnostic to distinguish marketplace, auth, refresh, or workspace-readiness failures.                |
-| `app_inventory_missing`, `app_inventory_stale`    | App readiness came from an empty or stale cache.                                                                                     | paleoclaw schedules an async refresh automatically; plugin apps stay excluded until ownership and readiness are known.  |
+| `app_inventory_missing`, `app_inventory_stale`    | App readiness came from an empty or stale cache.                                                                                     | paleoclaw schedules an async refresh automatically; plugin apps stay excluded until ownership and readiness are known. |
 | `app_ownership_ambiguous`                         | App inventory only matched by display name.                                                                                          | The app stays hidden from the Codex thread until a later refresh proves ownership.                                     |
 
 **Workspace plugin is installed but not visible:** confirm the workspace

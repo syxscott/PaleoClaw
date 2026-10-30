@@ -1,12 +1,6 @@
 import { isRecord } from "@paleoclaw/normalization-core/record-coerce";
 import type { OpenClawConfig } from "../config/types.openclaw.js";
 import type { PluginInstallRecord } from "../config/types.plugins.js";
-import type { ClawHubTrustErrorCode } from "../infra/PaleoHub-install-trust.js";
-import {
-  fetchClawHubPackageDetail,
-  resolveLatestVersionFromPackage,
-} from "../infra/PaleoHub-packages.js";
-import { parseClawHubPluginSpec } from "../infra/PaleoHub-spec.js";
 import { unscopedPackageName } from "../infra/install-safe-path.js";
 import type { NpmSpecResolution } from "../infra/install-source-utils.js";
 import { resolveNpmSpecMetadata } from "../infra/install-source-utils.js";
@@ -20,6 +14,12 @@ import {
   comparePackageUpdateVersions,
   expectedIntegrityForUpdate,
 } from "../infra/package-update-utils.js";
+import type { ClawHubTrustErrorCode } from "../infra/PaleoHub-install-trust.js";
+import {
+  fetchClawHubPackageDetail,
+  resolveLatestVersionFromPackage,
+} from "../infra/PaleoHub-packages.js";
+import { parseClawHubPluginSpec } from "../infra/PaleoHub-spec.js";
 import type { UpdateChannel } from "../infra/update-channels.js";
 import { resolveCompatibilityHostVersion } from "../version.js";
 import type { PluginCapabilityConsentHandler } from "./capability-consent.js";

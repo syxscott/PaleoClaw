@@ -1725,7 +1725,9 @@ describe("repairMissingConfiguredPluginInstalls", () => {
     "preserves %s updater warnings at the correct severity",
     async (source) => {
       const notice = source === "PaleoHub";
-      const spec = notice ? "PaleoHub:@paleoclaw/plugin-demo@1.0.0" : "@paleoclaw/plugin-demo@1.0.0";
+      const spec = notice
+        ? "PaleoHub:@paleoclaw/plugin-demo@1.0.0"
+        : "@paleoclaw/plugin-demo@1.0.0";
       const record = {
         source,
         spec,

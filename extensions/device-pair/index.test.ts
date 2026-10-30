@@ -16,7 +16,9 @@ const pluginApiMocks = vi.hoisted(() => ({
     expiresAtMs: Date.now() + 10 * 60_000,
   })),
   revokeDeviceBootstrapToken: vi.fn(async () => ({ removed: true })),
-  resolvePreferredOpenClawTmpDir: vi.fn(() => path.join(os.tmpdir(), "paleoclaw-device-pair-tests")),
+  resolvePreferredOpenClawTmpDir: vi.fn(() =>
+    path.join(os.tmpdir(), "paleoclaw-device-pair-tests"),
+  ),
   writeQrPngTempFile: vi.fn(async (dataValue: string, opts: { tmpRoot: string }) => {
     const dirPath = await fs.mkdtemp(path.join(opts.tmpRoot, "device-pair-qr-"));
     const filePath = path.join(dirPath, "pair-qr.png");

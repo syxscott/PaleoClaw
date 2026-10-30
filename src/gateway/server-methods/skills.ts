@@ -11,8 +11,8 @@ import {
 } from "../../../packages/gateway-protocol/src/index.js";
 import { listAgentIds, resolveAgentWorkspaceDir } from "../../agents/agent-scope-config.js";
 import { redactConfigObject } from "../../config/redact-snapshot.js";
-import { fetchClawHubSkillDetail } from "../../infra/PaleoHub-skills.js";
 import { formatErrorMessage } from "../../infra/errors.js";
+import { fetchClawHubSkillDetail } from "../../infra/PaleoHub-skills.js";
 import { registerClawHubCatalogIconUrls } from "../../plugins/catalog-icon-registry.js";
 import { updateSkillConfigEntry } from "../../skills/config/mutations.js";
 import { collectSkillBins } from "../../skills/discovery/bins.js";

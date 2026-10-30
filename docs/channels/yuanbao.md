@@ -136,7 +136,7 @@ Set `outboundQueueStrategy: "immediate"` to send each chunk without buffering.
 | `/status`  | Show bot status             |
 | `/new`     | Start a new session         |
 | `/stop`    | Stop the current run        |
-| `/restart` | Restart paleoclaw            |
+| `/restart` | Restart paleoclaw           |
 | `/compact` | Compact the session context |
 
 Yuanbao supports native slash-command menus; commands sync to the platform automatically when the gateway starts.

@@ -5,7 +5,9 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("paleoclaw/plugin-sdk/memory-core-host-engine-embeddings", async (importOriginal) => {
   const actual =
-    await importOriginal<typeof import("paleoclaw/plugin-sdk/memory-core-host-engine-embeddings")>();
+    await importOriginal<
+      typeof import("paleoclaw/plugin-sdk/memory-core-host-engine-embeddings")
+    >();
   return {
     ...actual,
     withRemoteHttpResponse: (async <T>(params: {

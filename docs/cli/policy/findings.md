@@ -43,7 +43,7 @@ Interpreting a policy finding, repairing it, and the exit codes. Part of the [`p
 | `policy/gateway-remote-enabled`                          | Gateway remote mode is active when policy denies it.                              |
 | `policy/gateway-http-endpoint-enabled`                   | A Gateway HTTP API endpoint is enabled while denied by policy.                    |
 | `policy/gateway-http-url-fetch-unrestricted`             | Gateway HTTP URL-fetch input lacks a required URL allowlist.                      |
-| `policy/gateway-node-command-denied`                     | A node command denied by policy is not denied by paleoclaw config.                 |
+| `policy/gateway-node-command-denied`                     | A node command denied by policy is not denied by paleoclaw config.                |
 | `policy/agents-workspace-access-denied`                  | Agent sandbox mode or workspace access is outside the policy allowlist.           |
 | `policy/agents-tool-not-denied`                          | An agent or default config does not deny a tool required by policy.               |
 | `policy/tools-profile-unapproved`                        | A configured global or per-agent tool profile is outside the allowlist.           |

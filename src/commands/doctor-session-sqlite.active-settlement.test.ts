@@ -143,7 +143,9 @@ async function seedImportedHistory(
   if (pendingPlugin) {
     await recordDeferredPluginMigrations({
       env: state.env,
-      pending: [{ pluginId, reason: "Plugin migration pending", command: "paleoclaw doctor --fix" }],
+      pending: [
+        { pluginId, reason: "Plugin migration pending", command: "paleoclaw doctor --fix" },
+      ],
     });
     // The later plugin receipt does not know about June's already-imported originals.
     await runDoctorSessionSqlite({ cfg, env: state.env, allAgents: true, mode: "import" });

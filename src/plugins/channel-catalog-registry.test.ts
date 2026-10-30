@@ -234,7 +234,12 @@ describe("listChannelCatalogEntries", () => {
   it.each([
     { name: "current npm global", origin: "global", source: "npm", trusted: true },
     { name: "current official PaleoHub", origin: "global", source: "PaleoHub", trusted: true },
-    { name: "legacy PaleoHub without authority", origin: "global", source: "PaleoHub", legacy: true },
+    {
+      name: "legacy PaleoHub without authority",
+      origin: "global",
+      source: "PaleoHub",
+      legacy: true,
+    },
     { name: "conflicting package identity", origin: "global", source: "npm", conflict: true },
     {
       name: "relocated install before ledger repair",

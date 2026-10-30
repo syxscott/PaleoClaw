@@ -141,7 +141,9 @@ export function workspaceSkillRequest(
       workspaceDir: local,
       ...(includeState ? { stateDir: local, pluginSkillsDir: path.join(local, "plugins") } : {}),
       managedSkillsDir: path.join(local, "managed"),
-      roots: [{ dir: path.join(local, "skills"), source: "paleoclaw-workspace", tier: "workspace" }],
+      roots: [
+        { dir: path.join(local, "skills"), source: "paleoclaw-workspace", tier: "workspace" },
+      ],
       pluginSkillRoots: [],
     },
     limits: { maxCandidatesPerRoot: 100, maxSkillsLoadedPerSource: 100, maxSkillFileBytes: 65536 },

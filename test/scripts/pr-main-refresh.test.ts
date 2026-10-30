@@ -519,14 +519,20 @@ process.exit(result.status ?? 1);
       "PR_AUTHOR_ACCESS_AT_PREP=maintainer\n",
     );
     expect(
-      f.git(f.canonical, "for-each-ref", "--format=%(refname)", "refs/paleoclaw/pr-operation-locks"),
+      f.git(
+        f.canonical,
+        "for-each-ref",
+        "--format=%(refname)",
+        "refs/paleoclaw/pr-operation-locks",
+      ),
     ).toBe("");
     expect(f.git(f.canonical, "rev-parse", "HEAD")).toBe(f.main);
     expect(f.events().filter((e) => e.kind === "unexpected-push")).toEqual([]);
     const lockWrites = f
       .events()
       .filter(
-        (e) => e.kind === "git-decision" && e.args?.includes("refs/paleoclaw/pr-operation-locks/42"),
+        (e) =>
+          e.kind === "git-decision" && e.args?.includes("refs/paleoclaw/pr-operation-locks/42"),
       );
     expect(lockWrites).toHaveLength(2);
     expect(lockWrites[1]?.args?.at(-1)).toBe(lockWrites[0]?.args?.at(-2));
@@ -670,7 +676,12 @@ ${readFileSync(gitShim, "utf8")}
     ).toHaveLength(2);
     expect(existsSync(f.worktree)).toBe(false);
     expect(
-      f.git(f.canonical, "for-each-ref", "--format=%(refname)", "refs/paleoclaw/pr-operation-locks"),
+      f.git(
+        f.canonical,
+        "for-each-ref",
+        "--format=%(refname)",
+        "refs/paleoclaw/pr-operation-locks",
+      ),
     ).toBe("");
     const outcome = f.git(f.canonical, "rev-parse", "refs/paleoclaw/pr-merge-outcomes/42");
     f.git(f.canonical, "update-ref", "-d", "refs/remotes/origin/main");
@@ -1349,7 +1360,12 @@ printf 'replacement=%s\\n' "$PR_MAIN_SHA"
     ).toEqual([f.main, f.movedMain, f.movedMain]);
     expect(f.git(f.worktree, "rev-parse", "HEAD")).toBe(f.movedMain);
     expect(
-      f.git(f.canonical, "for-each-ref", "--format=%(refname)", "refs/paleoclaw/pr-operation-locks"),
+      f.git(
+        f.canonical,
+        "for-each-ref",
+        "--format=%(refname)",
+        "refs/paleoclaw/pr-operation-locks",
+      ),
     ).toBe("");
   });
 
@@ -1751,7 +1767,9 @@ merge_run 42 || exit 1
       ),
     ).toBe("");
     expect(f.git(f.origin, "rev-parse", "refs/heads/main")).toBe(f.movedMain);
-    expect(readdirSync(f.root).filter((name) => name.startsWith("paleoclaw-pr-drift."))).toEqual([]);
+    expect(readdirSync(f.root).filter((name) => name.startsWith("paleoclaw-pr-drift."))).toEqual(
+      [],
+    );
   });
 
   it.each([false, true])("retains successful unrelated drift results (files=%s)", (hasFiles) => {
@@ -1766,7 +1784,9 @@ fi`,
     );
     expect(result.status, result.stdout + result.stderr).toBe(0);
     expect(result.stdout).toContain(hasFiles ? "no overlap" : "no mainline changes");
-    expect(readdirSync(f.root).filter((name) => name.startsWith("paleoclaw-pr-drift."))).toEqual([]);
+    expect(readdirSync(f.root).filter((name) => name.startsWith("paleoclaw-pr-drift."))).toEqual(
+      [],
+    );
   });
 
   it("rejects a moved prepared branch without consuming CI proof", () => {

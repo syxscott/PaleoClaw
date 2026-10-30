@@ -21,7 +21,11 @@ export {
   resolveInboundLastRouteSessionKey,
   type resolveAgentRoute,
 } from "paleoclaw/plugin-sdk/routing";
-export { logVerbose, shouldLogVerbose, type getChildLogger } from "paleoclaw/plugin-sdk/runtime-env";
+export {
+  logVerbose,
+  shouldLogVerbose,
+  type getChildLogger,
+} from "paleoclaw/plugin-sdk/runtime-env";
 export { resolvePinnedMainDmOwnerFromAllowlist } from "paleoclaw/plugin-sdk/security-runtime";
 export { resolveMarkdownTableMode } from "paleoclaw/plugin-sdk/markdown-table-runtime";
 export { normalizeE164 } from "paleoclaw/plugin-sdk/text-utility-runtime";

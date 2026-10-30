@@ -8,7 +8,9 @@ import { replaceConfigFile } from "./mutate.js";
 import { resetConfigRuntimeState } from "./runtime-snapshot.js";
 
 describe("agent deletion through a whole-map entries include", () => {
-  const suiteRootTracker = createSuiteTempRootTracker({ prefix: "paleoclaw-agent-delete-include-" });
+  const suiteRootTracker = createSuiteTempRootTracker({
+    prefix: "paleoclaw-agent-delete-include-",
+  });
 
   beforeAll(async () => {
     await suiteRootTracker.setup();

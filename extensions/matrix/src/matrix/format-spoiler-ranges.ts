@@ -1,5 +1,9 @@
 import MarkdownIt, { type Env } from "markdown-it";
-import { findCodeRegions, isInsideCode, tokenizeHtmlTags } from "paleoclaw/plugin-sdk/text-chunking";
+import {
+  findCodeRegions,
+  isInsideCode,
+  tokenizeHtmlTags,
+} from "paleoclaw/plugin-sdk/text-chunking";
 import { isMarkdownEscaped, projectMatrixMarkdown } from "./format-profile.js";
 import { matrixTableSourceRangesFromTokens } from "./format-table-ranges.js";
 

@@ -128,7 +128,10 @@ function createSelectedAgentHarnessMock(params: {
 }): AgentHarness {
   const configured = resolveAgentHarnessPolicyMock() as { runtime?: string };
   const id =
-    params.agentHarnessId ?? params.agentHarnessRuntimeOverride ?? configured.runtime ?? "paleoclaw";
+    params.agentHarnessId ??
+    params.agentHarnessRuntimeOverride ??
+    configured.runtime ??
+    "paleoclaw";
   return {
     id,
     label: `${id} test harness`,

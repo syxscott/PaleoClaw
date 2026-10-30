@@ -448,7 +448,11 @@ printf '[{"filename":"paleoclaw-%s.tgz"}]\\n' "$version"
 
     for (const filename of unsafeFilenames) {
       await expect(
-        moveNewestPackedTarballForTest(dir, JSON.stringify([{ filename }]), "paleoclaw-current.tgz"),
+        moveNewestPackedTarballForTest(
+          dir,
+          JSON.stringify([{ filename }]),
+          "paleoclaw-current.tgz",
+        ),
       ).rejects.toThrow("npm pack reported unsafe paleoclaw tarball filename");
     }
   });
@@ -481,7 +485,9 @@ printf '[{"filename":"paleoclaw-%s.tgz"}]\\n' "$version"
     ).resolves.toBe(path.join(dir, "paleoclaw-current.tgz"));
     await expect(missing(path.join(dir, "paleoclaw-9999.1.1.tgz"))).resolves.toBe(true);
     await expect(readFile(path.join(dir, "paleoclaw-C:evil.tgz"), "utf8")).resolves.toBe("unsafe");
-    await expect(readFile(path.join(dir, "paleoclaw-current.tgz"), "utf8")).resolves.toBe("current");
+    await expect(readFile(path.join(dir, "paleoclaw-current.tgz"), "utf8")).resolves.toBe(
+      "current",
+    );
   });
 
   it("bounds captured command stderr tails on failures", async () => {

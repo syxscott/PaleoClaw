@@ -655,7 +655,9 @@ function ExecApprovalCardContent(props: ExecApprovalCardProps) {
           when={props.variant === "modal"}
           fallback={<div class="exec-approval-actions">{actions()}</div>}
         >
-          <paleoclaw-modal-actions class="exec-approval-actions">{actions()}</paleoclaw-modal-actions>
+          <paleoclaw-modal-actions class="exec-approval-actions">
+            {actions()}
+          </paleoclaw-modal-actions>
         </Show>
       </div>
     </>

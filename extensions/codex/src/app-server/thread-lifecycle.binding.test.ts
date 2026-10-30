@@ -1497,7 +1497,8 @@ describe("Codex app-server thread lifecycle bindings", () => {
     };
     const firstSkills =
       "## paleoclaw Skills\n\nweather\n\n<AGENT_SOUL>Original persona</AGENT_SOUL>";
-    const secondSkills = "## paleoclaw Skills\n\nweather\n\n<AGENT_SOUL>Edited persona</AGENT_SOUL>";
+    const secondSkills =
+      "## paleoclaw Skills\n\nweather\n\n<AGENT_SOUL>Edited persona</AGENT_SOUL>";
     const started = await startOrResumeThread({ ...common, refreshableInstructions: firstSkills });
     // The catalog rides the thread developer carrier, after the generic policy.
     expect(request.mock.calls.find(([method]) => method === "thread/start")?.[1]).toMatchObject({

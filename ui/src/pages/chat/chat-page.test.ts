@@ -1,9 +1,9 @@
 /* @vitest-environment jsdom */
 /* @vitest-environment-options {"url":"http://chat-page.test/"} */
 
+import type { RouteLocation } from "@openclaw/uirouter";
 import { DEFAULT_GATEWAY_REQUEST_TIMEOUT_MS } from "@paleoclaw/gateway-client/browser";
 import { expectDefined } from "@paleoclaw/normalization-core";
-import type { RouteLocation } from "@openclaw/uirouter";
 import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 
 // mock-isolation: Observe page bindings without registering the real pane tag and starting its domain owners.

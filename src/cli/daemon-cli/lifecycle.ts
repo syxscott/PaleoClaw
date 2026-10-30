@@ -629,7 +629,10 @@ export async function runDaemonRestart(opts: DaemonLifecycleOptions = {}): Promi
 
         fail(
           `Gateway restart timed out after ${waitSeconds}s waiting for health checks.`,
-          [formatCliCommand("paleoclaw gateway status --deep"), formatCliCommand("paleoclaw doctor")],
+          [
+            formatCliCommand("paleoclaw gateway status --deep"),
+            formatCliCommand("paleoclaw doctor"),
+          ],
           activationAccepted ? "restart-health-failed" : undefined,
         );
         throw new Error("unreachable after gateway restart health failure");

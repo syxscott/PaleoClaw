@@ -9,6 +9,7 @@ import {
   validatePluginsListParams,
   validatePluginsSearchParams,
 } from "../../../packages/gateway-protocol/src/index.js";
+import { formatErrorMessage } from "../../infra/errors.js";
 import { resolveClawHubBaseUrl } from "../../infra/PaleoHub-client.js";
 import {
   fetchClawHubPluginCatalog,
@@ -19,7 +20,6 @@ import {
   type ClawHubPluginCategory,
 } from "../../infra/PaleoHub-plugin-catalog.js";
 import { fetchClawHubPluginSkill } from "../../infra/PaleoHub-plugin-skills.js";
-import { formatErrorMessage } from "../../infra/errors.js";
 import {
   encodePluginDiscoveryId,
   encodeLocalPluginDiscoveryId,

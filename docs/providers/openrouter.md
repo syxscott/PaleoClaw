@@ -438,7 +438,7 @@ provider and to custom provider ids whose `baseUrl` points at OpenRouter:
 | Header                    | Value                      |
 | ------------------------- | -------------------------- |
 | `HTTP-Referer`            | `https://openclaw.ai`      |
-| `X-OpenRouter-Title`      | `paleoclaw`                 |
+| `X-OpenRouter-Title`      | `paleoclaw`                |
 | `X-OpenRouter-Categories` | `personal-agent,cli-agent` |
 
 <Warning>

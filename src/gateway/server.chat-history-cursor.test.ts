@@ -1,5 +1,8 @@
 import path from "node:path";
-import { createSessionProjection, reduceSessionProjection } from "@paleoclaw/gateway-client/browser";
+import {
+  createSessionProjection,
+  reduceSessionProjection,
+} from "@paleoclaw/gateway-client/browser";
 import { asOptionalRecord } from "@paleoclaw/normalization-core/record-coerce";
 import { afterEach, describe, expect, onTestFinished, test, vi } from "vitest";
 import { createTempDirTracker } from "../../test/helpers/temp-dir.js";

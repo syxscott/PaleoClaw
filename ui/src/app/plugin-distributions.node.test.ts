@@ -228,6 +228,8 @@ it.each([
     for (const [name, body] of files) {
       expect(await readText(pluginRoot, generation, name)).toBe(body);
     }
-    expect(JSON.parse(await readText(pluginRoot, "package.json")).name).toBe("@paleoclaw/workboard");
+    expect(JSON.parse(await readText(pluginRoot, "package.json")).name).toBe(
+      "@paleoclaw/workboard",
+    );
   },
 );

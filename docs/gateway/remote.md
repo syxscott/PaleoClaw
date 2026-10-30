@@ -19,11 +19,11 @@ The Gateway WebSocket binds to **loopback** by default, on port `18789` (`gatewa
 
 ## Topology options
 
-| Setup                             | Where the Gateway runs                                                                                    | Best for                                                                                                                                          |
-| --------------------------------- | --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Always-on Gateway in your tailnet | Persistent host (VPS or home server), reached via Tailscale or SSH                                        | Laptops that sleep often but need the agent always-on. See [exe.dev](/install/exe-dev) (easy VM) or [Hetzner](/install/hetzner) (production VPS). |
+| Setup                             | Where the Gateway runs                                                                                     | Best for                                                                                                                                          |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Always-on Gateway in your tailnet | Persistent host (VPS or home server), reached via Tailscale or SSH                                         | Laptops that sleep often but need the agent always-on. See [exe.dev](/install/exe-dev) (easy VM) or [Hetzner](/install/hetzner) (production VPS). |
 | Home desktop                      | Desktop; laptop connects remotely via the macOS app's remote mode (Settings → Connection → paleoclaw runs) | Keeping the agent on hardware that stays powered on. Runbook: [macOS remote access](/platforms/mac/remote).                                       |
-| Laptop                            | Laptop, exposed safely via SSH tunnel or Tailscale Serve (keep `gateway.bind: "loopback"`)                | Single-machine setups. See [Tailscale](/gateway/tailscale) and [Web](/web).                                                                       |
+| Laptop                            | Laptop, exposed safely via SSH tunnel or Tailscale Serve (keep `gateway.bind: "loopback"`)                 | Single-machine setups. See [Tailscale](/gateway/tailscale) and [Web](/web).                                                                       |
 
 For the always-on and laptop setups, prefer keeping `gateway.bind: "loopback"` and using **Tailscale Serve** for the Control UI, or a trusted LAN/Tailnet bind with `gateway.remote.transport: "direct"`. SSH tunnel is the fallback that works from any machine.
 

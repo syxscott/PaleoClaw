@@ -318,7 +318,11 @@ describe("redactSensitiveText", () => {
         ].join("\n"),
         undefined,
         [openClawToken, pomeriumJwt, apiKey],
-        ["X-paleoclaw-Token: supers…7890", "x-pomerium-jwt-assertion: eyJhea…3456", "X-Api-Key=***"],
+        [
+          "X-paleoclaw-Token: supers…7890",
+          "x-pomerium-jwt-assertion: eyJhea…3456",
+          "X-Api-Key=***",
+        ],
       ],
       [
         `${keyHeader}: ${value}, request_id=example, status=500`,

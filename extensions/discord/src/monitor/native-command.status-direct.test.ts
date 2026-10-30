@@ -22,9 +22,9 @@ const runtimeModuleMocks = vi.hoisted(() => ({
 }));
 
 vi.mock("paleoclaw/plugin-sdk/reply-dispatch-runtime", async () => {
-  const actual = await vi.importActual<typeof import("paleoclaw/plugin-sdk/reply-dispatch-runtime")>(
-    "paleoclaw/plugin-sdk/reply-dispatch-runtime",
-  );
+  const actual = await vi.importActual<
+    typeof import("paleoclaw/plugin-sdk/reply-dispatch-runtime")
+  >("paleoclaw/plugin-sdk/reply-dispatch-runtime");
   return {
     ...actual,
     dispatchReplyWithDispatcher: runtimeModuleMocks.dispatchReplyWithDispatcher,

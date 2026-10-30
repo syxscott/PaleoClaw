@@ -262,7 +262,9 @@ describe("installOpenClawPluginSdkNativeResolver", () => {
       };
 
       expect(sdk.defineChannelMessageAdapter?.()).toBe("adapter");
-      expect(() => requireFromPlugin.resolve("paleoclaw/not-plugin-sdk/channel-outbound")).toThrow();
+      expect(() =>
+        requireFromPlugin.resolve("paleoclaw/not-plugin-sdk/channel-outbound"),
+      ).toThrow();
     } finally {
       if (process.platform !== "win32") {
         fs.chmodSync(distRoot, distMode);

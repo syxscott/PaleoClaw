@@ -210,8 +210,10 @@ describe("canonical validation schema admission", () => {
               schemaSql: OPENCLAW_AGENT_SCHEMA_SQL,
               loader: import.meta.resolve("tsx/esm/api"),
               native: new URL("../infra/node-sqlite.ts", import.meta.url).href,
-              canonical: new URL("./paleoclaw-agent-canonical-validation-schema.ts", import.meta.url)
-                .href,
+              canonical: new URL(
+                "./paleoclaw-agent-canonical-validation-schema.ts",
+                import.meta.url,
+              ).href,
             },
           },
         );

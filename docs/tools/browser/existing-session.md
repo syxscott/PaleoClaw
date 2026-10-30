@@ -158,7 +158,7 @@ document-bound element identity.
 
 | Field        | What it does                                                                                                                    |
 | ------------ | ------------------------------------------------------------------------------------------------------------------------------- |
-| `mcpCommand` | Custom server executable. Absolute paths are honored; omitted or explicit `npx` selects paleoclaw's packaged server.             |
+| `mcpCommand` | Custom server executable. Absolute paths are honored; omitted or explicit `npx` selects paleoclaw's packaged server.            |
 | `mcpArgs`    | Extra arguments passed unchanged to `mcpCommand`. Connection options override the generated endpoint or auto-connect arguments. |
 
 `mcpArgs` extends the selected server's arguments. Existing configurations that set

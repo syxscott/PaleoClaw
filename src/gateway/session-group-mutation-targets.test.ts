@@ -126,7 +126,9 @@ test("discovers groups above the handle cap without writable database maintenanc
     expect((await readGroups(config)).get("Shared work")).toEqual(scopes);
     expect(maintenance.map((spy) => spy.mock.calls)).toEqual([[], [], []]);
     expect(
-      wal.mock.calls.filter(([, options]) => options?.databaseLabel?.startsWith("paleoclaw-agent:")),
+      wal.mock.calls.filter(([, options]) =>
+        options?.databaseLabel?.startsWith("paleoclaw-agent:"),
+      ),
     ).toEqual([]);
     expect(listOpenClawAgentDatabasesForTest()).toEqual([]);
   });

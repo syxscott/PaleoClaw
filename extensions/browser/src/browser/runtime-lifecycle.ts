@@ -1,7 +1,10 @@
 import type { Server } from "node:http";
 import { collectErrorGraphCandidates } from "paleoclaw/plugin-sdk/error-runtime";
 import { registerUnhandledRejectionHandler } from "paleoclaw/plugin-sdk/runtime-env";
-import { asOptionalObjectRecord, readStringField } from "paleoclaw/plugin-sdk/string-coerce-runtime";
+import {
+  asOptionalObjectRecord,
+  readStringField,
+} from "paleoclaw/plugin-sdk/string-coerce-runtime";
 import {
   getExtensionRelayModule,
   getGatewayExtensionRelayModule,

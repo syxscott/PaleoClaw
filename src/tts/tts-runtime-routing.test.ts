@@ -1,8 +1,7 @@
 import { rmSync } from "node:fs";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { withEnv } from "../test-utils/env.js";
-import { 
+import {
   buildTtsSystemPromptHint,
   clearRuntimeConfigSnapshot,
   createMockSpeechProvider,
@@ -30,7 +29,8 @@ import {
   type OpenClawConfig,
   type SpeechListVoicesRequest,
   type TtsConfig,
- } from "../plugin-sdk/tts-runtime.js";
+} from "../plugin-sdk/tts-runtime.js";
+import { withEnv } from "../test-utils/env.js";
 
 const mockConfig = (providerConfig: Record<string, unknown>): OpenClawConfig => ({
   tts: { enabled: true, provider: "mock", providers: { mock: providerConfig } },

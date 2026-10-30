@@ -39,7 +39,9 @@ describe("scripts/ios-release-signing.mjs", () => {
     expect(output).toContain("OPENCLAW_CODE_SIGN_STYLE = Manual");
     expect(output).toContain("OPENCLAW_CODE_SIGN_IDENTITY = Apple Distribution");
     expect(output).toContain("OPENCLAW_APP_GROUP_ID = group.ai.openclawfoundation.app.shared");
-    expect(output).toContain("OPENCLAW_APP_PROFILE = paleoclaw App Store ai.openclawfoundation.app");
+    expect(output).toContain(
+      "OPENCLAW_APP_PROFILE = paleoclaw App Store ai.openclawfoundation.app",
+    );
     expect(output).toContain(
       "OPENCLAW_SHARE_PROFILE = paleoclaw App Store ai.openclawfoundation.app.share",
     );

@@ -87,8 +87,8 @@ always use the built-in workspace.
 
 The project has three public SDK imports:
 
-| Import                                 | Purpose                                                                                          |
-| -------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| Import                                  | Purpose                                                                                          |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------ |
 | `paleoclaw/plugin-sdk/feature-contract` | Shared operation schemas, typed clients, and event subscriptions; browser safe.                  |
 | `paleoclaw/plugin-sdk/feature-plugin`   | Register backend implementations as session actions, optional agent tools, and command adapters. |
 | `paleoclaw/plugin-sdk/control-ui`       | Native browser activation, host capabilities, contribution types, and component mounts.          |

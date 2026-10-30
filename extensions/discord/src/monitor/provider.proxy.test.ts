@@ -69,7 +69,9 @@ const { GatewayPlugin, HttpsAgent, HttpsProxyAgent, MockWebSocket, guardedFetch 
     }
     const guarded = vi.fn(
       async (
-        params: Parameters<typeof import("paleoclaw/plugin-sdk/ssrf-runtime").fetchWithSsrFGuard>[0],
+        params: Parameters<
+          typeof import("paleoclaw/plugin-sdk/ssrf-runtime").fetchWithSsrFGuard
+        >[0],
       ) => {
         const source = await mocks.fetch(params.url, params.init);
         return {

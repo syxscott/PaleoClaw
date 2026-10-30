@@ -163,7 +163,9 @@ describe("ChannelWizard busy controls", () => {
       false,
     );
     await updatePickers(select.container);
-    const picker = select.container.querySelector("paleoclaw-select-picker .picker-select__trigger");
+    const picker = select.container.querySelector(
+      "paleoclaw-select-picker .picker-select__trigger",
+    );
     expect(picker?.hasAttribute("disabled")).toBe(false);
   });
 });

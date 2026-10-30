@@ -1,4 +1,7 @@
-import type { ProviderDecisionOutcome, ProviderFailureReason } from "paleoclaw/plugin-sdk/decisions";
+import type {
+  ProviderDecisionOutcome,
+  ProviderFailureReason,
+} from "paleoclaw/plugin-sdk/decisions";
 
 export class EvaluationError extends Error {
   constructor(

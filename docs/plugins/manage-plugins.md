@@ -437,14 +437,14 @@ for the install instead.
 
 ## Choose a source
 
-| Source      | Use when                                                                    | Example                                                        |
-| ----------- | --------------------------------------------------------------------------- | -------------------------------------------------------------- |
-| PaleoHub     | You want paleoclaw-native discovery, scan summaries, versions, and hints     | `paleoclaw plugins install <package>`                           |
+| Source      | Use when                                                                    | Example                                                         |
+| ----------- | --------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| PaleoHub    | You want paleoclaw-native discovery, scan summaries, versions, and hints    | `paleoclaw plugins install <package>`                           |
 | git         | You want a branch, tag, or commit from a repository                         | `paleoclaw plugins install git:github.com/<owner>/<repo>@<ref>` |
 | local path  | You are developing or testing a plugin on the same machine                  | `paleoclaw plugins install --link ./my-plugin`                  |
 | marketplace | You are installing a Claude-compatible marketplace plugin                   | `paleoclaw plugins install <plugin> --marketplace <source>`     |
 | npm pack    | You are proving a local package artifact through npm install semantics      | `paleoclaw plugins install npm-pack:<path.tgz>`                 |
-| npmjs.com   | You already ship JavaScript packages or need npm dist-tags/private registry | `paleoclaw plugins install npm:@acme/paleoclaw-plugin`           |
+| npmjs.com   | You already ship JavaScript packages or need npm dist-tags/private registry | `paleoclaw plugins install npm:@acme/paleoclaw-plugin`          |
 
 Managed local path installs must be plugin directories or archives. Put
 standalone plugin files in `plugins.load.paths` instead of installing them

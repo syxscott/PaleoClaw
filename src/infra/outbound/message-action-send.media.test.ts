@@ -439,7 +439,11 @@ describe("runMessageAction media access", () => {
 
         const sent = sendResult(result);
         expect(sent?.mediaUrl).toBe(path.resolve(tmpFile));
-        const hostTmpOutsideOpenClaw = path.join(os.tmpdir(), "outside-paleoclaw", "test-media.png");
+        const hostTmpOutsideOpenClaw = path.join(
+          os.tmpdir(),
+          "outside-paleoclaw",
+          "test-media.png",
+        );
         await expect(
           runDrySend({ media: hostTmpOutsideOpenClaw, message: "" }, sandboxDir),
         ).rejects.toThrow(/sandbox/i);

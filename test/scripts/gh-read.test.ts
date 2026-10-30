@@ -29,7 +29,9 @@ describe("gh-read helpers", () => {
   afterEach(() => vi.useRealTimers());
 
   it("finds repo from gh args", () => {
-    expect(parseRepoArg(["pr", "view", "42", "-R", "syxscott/PaleoClaw"])).toBe("syxscott/PaleoClaw");
+    expect(parseRepoArg(["pr", "view", "42", "-R", "syxscott/PaleoClaw"])).toBe(
+      "syxscott/PaleoClaw",
+    );
     expect(parseRepoArg(["run", "list", "--repo=paleoclaw/docs"])).toBe("paleoclaw/docs");
     expect(parseRepoArg(["pr", "view", "42"])).toBeNull();
   });

@@ -4,7 +4,10 @@ import os from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { isDeepStrictEqual } from "node:util";
-import { stringifyNonErrorCause, toErrorObject } from "@paleoclaw/normalization-core/error-coercion";
+import {
+  stringifyNonErrorCause,
+  toErrorObject,
+} from "@paleoclaw/normalization-core/error-coercion";
 import { GatewayClient } from "paleoclaw/plugin-sdk/gateway-runtime";
 import {
   createQaBusState,

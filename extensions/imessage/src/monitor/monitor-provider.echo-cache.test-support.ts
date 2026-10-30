@@ -102,7 +102,9 @@ describe("iMessage sent-message echo cache", () => {
     const cache = createSentMessageCache();
 
     expect(await cache.has(scope, { text: "paleoclaw imsg live test" })).toBe(true);
-    expect(await cache.has("acct:imessage:+1666", { text: "paleoclaw imsg live test" })).toBe(false);
+    expect(await cache.has("acct:imessage:+1666", { text: "paleoclaw imsg live test" })).toBe(
+      false,
+    );
     expect(await cache.has(scope, { messageId: "guid-1" })).toBe(true);
   });
 

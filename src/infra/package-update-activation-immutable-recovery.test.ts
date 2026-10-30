@@ -4,7 +4,6 @@ import fs from "node:fs";
 import path from "node:path";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { useAutoCleanupTempDirTracker } from "../../test/helpers/temp-dir.js";
-import { resolveOpenClawPackageRoot } from "./paleoclaw-root.js";
 import {
   fileIdentity as identity,
   immutableDescriptor,
@@ -19,6 +18,7 @@ import {
   resolvePackageActivationAnchor,
   resolvePackageActivationControl,
 } from "./package-update-activation-paths.js";
+import { resolveOpenClawPackageRoot } from "./paleoclaw-root.js";
 import { verifyImmutableGeneration } from "./update-immutable-generation.js";
 import type { ImmutableInstallRecord } from "./update-immutable-install-schema.js";
 

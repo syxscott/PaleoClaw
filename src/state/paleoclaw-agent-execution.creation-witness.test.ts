@@ -40,7 +40,10 @@ import {
 } from "./paleoclaw-agent-execution.creation-fixture.test-support.js";
 import { captureOpenClawAgentDatabaseExecution as capture } from "./paleoclaw-agent-execution.js";
 import { createOpenClawDatabaseMaintenanceScope } from "./paleoclaw-state-db-async-lifecycle.js";
-import { closeOpenClawStateDatabaseAsync, openOpenClawStateDatabase } from "./paleoclaw-state-db.js";
+import {
+  closeOpenClawStateDatabaseAsync,
+  openOpenClawStateDatabase,
+} from "./paleoclaw-state-db.js";
 
 type Execution = ReturnType<typeof capture>;
 type Options = ReturnType<typeof fixture>;

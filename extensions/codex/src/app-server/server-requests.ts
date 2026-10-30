@@ -177,7 +177,9 @@ export class CodexServerRequests {
 
 function defaultServerRequestResponse(request: ServerRequest): JsonValue {
   if (request.method === "item/tool/call") {
-    return failedToolResponse("paleoclaw did not register a handler for this app-server tool call.");
+    return failedToolResponse(
+      "paleoclaw did not register a handler for this app-server tool call.",
+    );
   }
   if (
     request.method === "item/commandExecution/requestApproval" ||

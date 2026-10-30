@@ -11,7 +11,7 @@ read_when:
 | Property        | Value                                    |
 | --------------- | ---------------------------------------- |
 | Provider id     | `cohere`                                 |
-| Plugin          | `@paleoclaw/cohere-provider`              |
+| Plugin          | `@paleoclaw/cohere-provider`             |
 | Auth env var    | `COHERE_API_KEY`                         |
 | Onboarding flag | `--auth-choice cohere-api-key`           |
 | Direct CLI flag | `--cohere-api-key <key>`                 |

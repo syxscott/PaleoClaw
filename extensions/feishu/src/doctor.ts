@@ -7,7 +7,10 @@ import type {
 } from "paleoclaw/plugin-sdk/channel-contract";
 import type { OpenClawConfig } from "paleoclaw/plugin-sdk/config-contracts";
 import { isPathStrictlyInside } from "paleoclaw/plugin-sdk/file-access-runtime";
-import { readDirectoryEntriesSync, safeStatSync } from "paleoclaw/plugin-sdk/path-existence-runtime";
+import {
+  readDirectoryEntriesSync,
+  safeStatSync,
+} from "paleoclaw/plugin-sdk/path-existence-runtime";
 import { normalizeAgentId } from "paleoclaw/plugin-sdk/routing";
 import {
   isValidAgentHarnessSessionStoreEntry,

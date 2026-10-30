@@ -76,7 +76,9 @@ it("drains deferred reconciliation after the caller retires its timer queue", as
 }, 30_000);
 
 it("keeps a missing projection store absent", async ({ onTestFinished }) => {
-  const stateDir = useAutoCleanupTempDirTracker(onTestFinished).make("paleoclaw-reconcile-missing-");
+  const stateDir = useAutoCleanupTempDirTracker(onTestFinished).make(
+    "paleoclaw-reconcile-missing-",
+  );
   const options = {
     agentId: "main",
     path: path.join(stateDir, "missing.sqlite"),

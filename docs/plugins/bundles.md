@@ -74,14 +74,14 @@ detected but not wired.
 
 ### Supported now
 
-| Feature                  | How it maps                                                                                       | Applies to     |
-| ------------------------ | ------------------------------------------------------------------------------------------------- | -------------- |
+| Feature                  | How it maps                                                                                        | Applies to     |
+| ------------------------ | -------------------------------------------------------------------------------------------------- | -------------- |
 | Skill content            | Bundle skill roots load as normal paleoclaw skills                                                 | All formats    |
-| Commands                 | `commands/` and `.cursor/commands/` treated as skill roots                                        | Claude, Cursor |
-| Agents and output styles | Claude `agents/` and `output-styles/` treated as skill roots                                      | Claude         |
+| Commands                 | `commands/` and `.cursor/commands/` treated as skill roots                                         | Claude, Cursor |
+| Agents and output styles | Claude `agents/` and `output-styles/` treated as skill roots                                       | Claude         |
 | Hook packs               | paleoclaw-style `HOOK.md` + `handler.ts` layouts                                                   | Claude, Codex  |
 | MCP tools                | Bundle MCP config merged into embedded paleoclaw settings; supported stdio and HTTP servers loaded | All formats    |
-| Env contract             | `PLUGIN_ROOT` and `PLUGIN_DATA` env vars plus placeholder expansion for stdio MCP servers         | Agent Plugins  |
+| Env contract             | `PLUGIN_ROOT` and `PLUGIN_DATA` env vars plus placeholder expansion for stdio MCP servers          | Agent Plugins  |
 | LSP servers              | Claude `.lsp.json` and manifest-declared `lspServers` merged into embedded paleoclaw LSP defaults  | Claude         |
 | Settings                 | Claude `settings.json` imported as embedded paleoclaw defaults                                     | Claude         |
 

@@ -25,7 +25,10 @@ import {
   CONTENT_VERSION_KEY,
   readStateSchemaContentVersion,
 } from "./paleoclaw-state-db-schema-version.js";
-import { closeOpenClawStateDatabaseAsync, openOpenClawStateDatabase } from "./paleoclaw-state-db.js";
+import {
+  closeOpenClawStateDatabaseAsync,
+  openOpenClawStateDatabase,
+} from "./paleoclaw-state-db.js";
 import { reconcileOpenClawStateSchemaPublicationAsync } from "./paleoclaw-state-schema-publication.async.js";
 import { OPENCLAW_STATE_SCHEMA_SQL } from "./paleoclaw-state-schema.js";
 

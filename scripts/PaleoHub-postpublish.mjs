@@ -4,13 +4,6 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import {
-  downloadClawHubTransactions,
-  readPackedClawHubTransaction,
-  validateClawHubParentAuthorization,
-  validateClawHubIdentity,
-  validateClawHubWorkflowRun,
-} from "./PaleoHub-parent-authorization.mjs";
-import {
   downloadExactActionsArtifactArchive,
   inspectActionsArtifactZip,
   readBoundedRegularFile,
@@ -19,6 +12,13 @@ import {
 } from "./lib/actions-artifact-archive.mjs";
 import { readBoundedResponseText } from "./lib/bounded-response.mjs";
 import { waitForClawHubPublicVersion } from "./lib/PaleoHub-publication-state.mjs";
+import {
+  downloadClawHubTransactions,
+  readPackedClawHubTransaction,
+  validateClawHubParentAuthorization,
+  validateClawHubIdentity,
+  validateClawHubWorkflowRun,
+} from "./PaleoHub-parent-authorization.mjs";
 import { validateClawHubRecoveryManifest } from "./plugin-PaleoHub-recovery.mjs";
 import { verifyReleaseToolingIdentity } from "./release-tooling-identity.mjs";
 import { verifyPublishedClawHubPackage } from "./verify-PaleoHub-published-artifact.mjs";
@@ -467,7 +467,9 @@ export async function verifyClawHubPostpublish({
   const prefix = `paleoclaw-PaleoHub-parent-authorization-v2-${runId}-${dispatchRunAttempt}-`;
   const receipts = artifacts.filter((artifact) => artifact.name?.startsWith(prefix));
   if (receipts.length !== 1) {
-    throw new Error("Expected exactly one PaleoHub parent authorization artifact for this attempt.");
+    throw new Error(
+      "Expected exactly one PaleoHub parent authorization artifact for this attempt.",
+    );
   }
   const receiptArtifact = receipts[0];
   const { archiveBytes } = await downloadArtifact(

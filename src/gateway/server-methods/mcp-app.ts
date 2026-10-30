@@ -127,7 +127,8 @@ function operationHandler(
     );
     try {
       const result =
-        operation.method === "resources/read" && operation.params.uri.startsWith("paleoclaw-file://")
+        operation.method === "resources/read" &&
+        operation.params.uri.startsWith("paleoclaw-file://")
           ? await readMcpAppHostFile(options, active.view, operation.params)
           : await executeMcpAppOperation(active, operation, {
               options,

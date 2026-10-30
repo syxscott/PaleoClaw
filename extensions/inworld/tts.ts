@@ -90,7 +90,8 @@ export async function inworldTTS(params: {
   temperature?: number;
   timeoutMs?: number;
 }): Promise<Buffer> {
-  const { canonicalizeBase64, MAX_AUDIO_BYTES } = await import("paleoclaw/plugin-sdk/media-runtime");
+  const { canonicalizeBase64, MAX_AUDIO_BYTES } =
+    await import("paleoclaw/plugin-sdk/media-runtime");
   // Leave headroom for base64 and JSON overhead while bounding the encoded body.
   const INWORLD_TTS_BODY_MAX_BYTES = MAX_AUDIO_BYTES * 2;
   const baseUrl = normalizeInworldBaseUrl(params.baseUrl);

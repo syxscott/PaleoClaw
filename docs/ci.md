@@ -417,7 +417,7 @@ The complete [startup corpus](/ci/pipeline) uses eight state test files so exist
 | [CI runner classes](/ci/runners)                               | Trust-based runner routing, preflight and ratchet admission, Blacksmith classes, and runner backend modes.          |
 | [CI capacity and shard weights](/ci/capacity)                  | Runner registration, bounded PR concurrency, and measured shard packing.                                            |
 | [Release validation workflows](/ci/release-validation)         | Full Release Validation, live and E2E shards, Package Acceptance, install smoke, Docker E2E, and Plugin Prerelease. |
-| [Scheduled and maintenance workflows](/ci/scheduled-workflows) | paleoclaw Performance, QA Lab, CodeQL, the maintenance jobs, and ClawSweeper activity forwarding.                    |
+| [Scheduled and maintenance workflows](/ci/scheduled-workflows) | paleoclaw Performance, QA Lab, CodeQL, the maintenance jobs, and ClawSweeper activity forwarding.                   |
 | [Local checks and Testbox](/ci/local-proof)                    | Reproduce a lane locally, keep the shrink-only ratchets, and run Crabbox or Testbox proof.                          |
 
 ## Where each section moved

@@ -210,7 +210,9 @@ describe("Search settings", () => {
     } else {
       expect(independent).toBeNull();
     }
-    const editor = fixture.element.querySelector<HTMLElement>("paleoclaw-plugin-credential-editor")!;
+    const editor = fixture.element.querySelector<HTMLElement>(
+      "paleoclaw-plugin-credential-editor",
+    )!;
     flush();
     const input = editor.querySelector<HTMLInputElement>(
       'input[aria-label="Provider credential"]',

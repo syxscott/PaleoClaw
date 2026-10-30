@@ -24,7 +24,10 @@ it("returns protected provider guidance through the channel command without a pe
         reply: { text: expect.stringContaining("Settings → Models → Connect provider") },
       });
       expect(
-        await handleSystemAgentCommand(buildCommandTestParams("/paleoclaw yes", cfg, context), true),
+        await handleSystemAgentCommand(
+          buildCommandTestParams("/paleoclaw yes", cfg, context),
+          true,
+        ),
       ).toMatchObject({
         shouldContinue: false,
         reply: { text: "No pending paleoclaw rescue change is waiting for approval." },

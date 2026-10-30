@@ -10,9 +10,9 @@ import { theme } from "../../../packages/terminal-core/src/theme.js";
 import { resolveBrewOpenClawPath } from "../../infra/brew.js";
 import { hasErrnoCode } from "../../infra/errors.js";
 import { resolveRequiredHomeDir } from "../../infra/home-dir.js";
-import { resolveOpenClawPackageRoot } from "../../infra/paleoclaw-root.js";
 import { readPackageName, readPackageVersion } from "../../infra/package-json.js";
 import { normalizePackageTagInput } from "../../infra/package-tag.js";
+import { resolveOpenClawPackageRoot } from "../../infra/paleoclaw-root.js";
 import { parseSemver } from "../../infra/runtime-guard.js";
 import { fetchNpmTagVersion } from "../../infra/update-check.js";
 import {

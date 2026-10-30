@@ -19,7 +19,8 @@ export function createRuntimeParityTranscriptHarness() {
     }>;
     updatedAt?: number;
   }) {
-    const tempRoot = params.tempRoot ?? (await tempDirs.makeTempDir("paleoclaw-qa-runtime-parity-"));
+    const tempRoot =
+      params.tempRoot ?? (await tempDirs.makeTempDir("paleoclaw-qa-runtime-parity-"));
     const env = { ...process.env, OPENCLAW_STATE_DIR: path.join(tempRoot, "state") };
     const storePath = resolveStorePath(undefined, { agentId: "qa", env });
     await upsertSessionEntry({

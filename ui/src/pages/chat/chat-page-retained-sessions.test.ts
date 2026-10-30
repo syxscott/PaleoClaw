@@ -1,8 +1,8 @@
 /* @vitest-environment jsdom */
 /* @vitest-environment-options {"url":"http://chat-page-retained.test/"} */
 
-import { expectDefined } from "@paleoclaw/normalization-core";
 import { createRouter } from "@openclaw/uirouter";
+import { expectDefined } from "@paleoclaw/normalization-core";
 import {
   afterEach,
   beforeEach,

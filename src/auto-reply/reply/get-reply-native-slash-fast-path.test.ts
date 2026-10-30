@@ -340,7 +340,10 @@ describe("maybeResolveNativeSlashCommandFastReply", () => {
       { provider: "openai", id: "gpt-5.5", name: "Default model", reasoning: false },
       { provider: "fixture", id: "selected-model", name: "Selected model", reasoning: true },
     ]);
-    const storePath = path.join(tempDirs.make("paleoclaw-native-status-thinking-"), "sessions.json");
+    const storePath = path.join(
+      tempDirs.make("paleoclaw-native-status-thinking-"),
+      "sessions.json",
+    );
     const sessionKey = "agent:main:telegram:123";
     await replaceSessionEntry(
       { agentId: "main", sessionKey, storePath },

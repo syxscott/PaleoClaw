@@ -652,7 +652,8 @@ describe("scripts/test-docker-all scheduler", () => {
 
     const registryCommand = githubWorkflowRerunCommand(["install-e2e"], "b".repeat(40), {
       OPENCLAW_DOCKER_E2E_BARE_IMAGE: "ghcr.io/paleoclaw/paleoclaw-docker-e2e-bare:test",
-      OPENCLAW_DOCKER_E2E_FUNCTIONAL_IMAGE: "ghcr.io/paleoclaw/paleoclaw-docker-e2e-functional:test",
+      OPENCLAW_DOCKER_E2E_FUNCTIONAL_IMAGE:
+        "ghcr.io/paleoclaw/paleoclaw-docker-e2e-functional:test",
       OPENCLAW_DOCKER_E2E_ALLOW_UNRELEASED_CHANGELOG: "true",
       OPENCLAW_DOCKER_E2E_WORKFLOW_REF: "main",
       OPENCLAW_UPGRADE_SURVIVOR_BASELINE_SPEC: "paleoclaw@2026.5.3",

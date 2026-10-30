@@ -156,7 +156,12 @@ describe("classifyEmbeddedAgentRunResultForModelFallback", () => {
   });
 
   it.each([
-    { label: "another provider", provider: "anthropic", harness: "paleoclaw", replayInvalid: false },
+    {
+      label: "another provider",
+      provider: "anthropic",
+      harness: "paleoclaw",
+      replayInvalid: false,
+    },
     { label: "another harness", provider: "openai", harness: "codex", replayInvalid: false },
     { label: "replay-unsafe work", provider: "openai", harness: "paleoclaw", replayInvalid: true },
   ])(

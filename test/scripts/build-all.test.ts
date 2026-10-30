@@ -366,7 +366,8 @@ describe("resolveBuildAllSteps", () => {
   });
 
   it("returns admissionRefused when the live Gateway fence refuses before any step", async () => {
-    const message = "[paleoclaw] Refusing to rebuild dist while a managed Gateway is still running.";
+    const message =
+      "[paleoclaw] Refusing to rebuild dist while a managed Gateway is still running.";
     vi.spyOn(liveGatewayDistFence, "resolveLiveManagedGatewayDistFence").mockResolvedValue({
       refuse: true,
       message,

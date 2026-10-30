@@ -13,7 +13,10 @@ type WriteReceipt = Pick<ConfigMutationResult<unknown>, "path" | "persistedHash"
   nextConfig?: OpenClawConfig;
 };
 const saved = (hash: string | null) => ({ path: "/tmp/openclaw.json", persistedHash: hash });
-const cleanupPlan = { agentDir: "/tmp/paleoclaw/agents/main", profileIds: ["anthropic:claude-cli"] };
+const cleanupPlan = {
+  agentDir: "/tmp/paleoclaw/agents/main",
+  profileIds: ["anthropic:claude-cli"],
+};
 const deferRepairs = { runPostWriteRepairs: false };
 
 const mocks = vi.hoisted(() => ({

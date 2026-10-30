@@ -15,9 +15,10 @@ const roots = useAutoCleanupTempDirTracker(afterEach);
 const sameProcess = (pid: number, start: number | null) =>
   start !== null && getFileLockProcessStartTime(pid) === start;
 beforeEach(async () => {
-  vi.spyOn(await import("./tmp-paleoclaw-dir.js"), "resolvePreferredOpenClawTmpDir").mockReturnValue(
-    roots.make("paleoclaw-settlement-coordinator-"),
-  );
+  vi.spyOn(
+    await import("./tmp-paleoclaw-dir.js"),
+    "resolvePreferredOpenClawTmpDir",
+  ).mockReturnValue(roots.make("paleoclaw-settlement-coordinator-"));
   vi.spyOn(
     await import("../daemon/systemd-scope.js"),
     "findSystemdGatewayInstallation",

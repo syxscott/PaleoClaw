@@ -316,7 +316,9 @@ export function resolveMcpRequestContext(
       getHeader(req, "x-paleoclaw-current-inbound-audio"),
     ),
     accountId: normalizeOptionalString(getHeader(req, "x-paleoclaw-account-id")),
-    inboundEventKind: normalizeMcpInboundEventKind(getHeader(req, "x-paleoclaw-inbound-event-kind")),
+    inboundEventKind: normalizeMcpInboundEventKind(
+      getHeader(req, "x-paleoclaw-inbound-event-kind"),
+    ),
     sourceReplyDeliveryMode: normalizeMcpSourceReplyDeliveryMode(
       getHeader(req, "x-paleoclaw-source-reply-delivery-mode"),
     ),

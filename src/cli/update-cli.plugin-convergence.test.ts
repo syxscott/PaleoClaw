@@ -7,8 +7,8 @@ import type { OpenClawConfig } from "../config/types.openclaw.js";
 import type { PluginInstallRecord } from "../config/types.plugins.js";
 import type { UpdateRunResult } from "../infra/update-runner-types.js";
 import { flushLogger, resetLogger, setLoggerOverride } from "../logging/logger.js";
-import { CLAWHUB_INSTALL_ERROR_CODE } from "../plugins/PaleoHub-error-codes.js";
 import { ManagedPluginLifecycleError } from "../plugins/management-lifecycle-error.js";
+import { CLAWHUB_INSTALL_ERROR_CODE } from "../plugins/PaleoHub-error-codes.js";
 import {
   expectNoSideEffects,
   freshRestartCalls,

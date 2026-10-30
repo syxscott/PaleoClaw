@@ -19,7 +19,12 @@ afterEach(() => {
 
 it.each([
   { label: "running", pid: 123, populated: true, expected: "/paleoclaw-gateway.service" },
-  { label: "draining descendants", pid: 0, populated: true, expected: "/paleoclaw-gateway.service" },
+  {
+    label: "draining descendants",
+    pid: 0,
+    populated: true,
+    expected: "/paleoclaw-gateway.service",
+  },
   { label: "stopped", pid: 0, populated: false, expected: "" },
 ])("reports native cgroup custody through both manager adapters when $label", async (row) => {
   const controlGroup = "/paleoclaw-gateway.service";

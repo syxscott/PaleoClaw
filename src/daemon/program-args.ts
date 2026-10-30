@@ -28,7 +28,9 @@ const canAccessEntrypoint = (candidate: string) =>
   );
 
 function buildNodeInstallEntrypointCandidates(root: string): string[] {
-  return ["paleoclaw.mjs", "dist/entry.js", "dist/entry.mjs"].map((entry) => path.join(root, entry));
+  return ["paleoclaw.mjs", "dist/entry.js", "dist/entry.mjs"].map((entry) =>
+    path.join(root, entry),
+  );
 }
 
 /** Node services must enter through the supervisor, including when repairing old definitions. */

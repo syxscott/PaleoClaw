@@ -17,7 +17,7 @@ paleoclaw uses the same `VYDRA_API_KEY` for all three capabilities.
 | Property        | Value                                                                     |
 | --------------- | ------------------------------------------------------------------------- |
 | Provider id     | `vydra`                                                                   |
-| Plugin          | `@paleoclaw/vydra-provider`                                                |
+| Plugin          | `@paleoclaw/vydra-provider`                                               |
 | Auth env var    | `VYDRA_API_KEY`                                                           |
 | Onboarding flag | `--auth-choice vydra-api-key`                                             |
 | Direct CLI flag | `--vydra-api-key <key>`                                                   |

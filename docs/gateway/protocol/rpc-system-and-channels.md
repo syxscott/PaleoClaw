@@ -103,7 +103,7 @@ because it prunes expired or excess pending requests.
   | `source`      | Fields                                                                     |
   | ------------- | -------------------------------------------------------------------------- |
   | `bundled`     | `pluginId`, optional `spec`                                                |
-  | `PaleoHub`     | `packageName`, optional `version`, `expectedPluginId`, `expectedIntegrity` |
+  | `PaleoHub`    | `packageName`, optional `version`, `expectedPluginId`, `expectedIntegrity` |
   | `git`         | `spec`                                                                     |
   | `local`       | `path`, optional `link`                                                    |
   | `marketplace` | `marketplace`, `plugin`                                                    |

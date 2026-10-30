@@ -90,7 +90,9 @@ describe("Model Setup explicit discovery", () => {
         candidates: [candidate("openai-api-key", "openai/selected", true)],
       });
       const cancel = () =>
-        page.querySelector("paleoclaw-modal-dialog")!.dispatchEvent(new CustomEvent("modal-cancel"));
+        page
+          .querySelector("paleoclaw-modal-dialog")!
+          .dispatchEvent(new CustomEvent("modal-cancel"));
       try {
         await clickCandidate(page, "openai-api-key");
         await waitForText(page, "Install provider?");
@@ -112,7 +114,11 @@ describe("Model Setup explicit discovery", () => {
           expect(session!.getStatus()).toBe("cancelled");
           expect(answers).toEqual([true]);
         } else {
-          await answerWizard(page, "synthetic-key", 'paleoclaw-modal-dialog input[type="password"]');
+          await answerWizard(
+            page,
+            "synthetic-key",
+            'paleoclaw-modal-dialog input[type="password"]',
+          );
           await committed.promise;
           cancel();
           await waitForText(page, "Setup is finishing the current step");
@@ -172,7 +178,9 @@ describe("Model Setup explicit discovery", () => {
       const receipt = pendingReceipt();
       expect(receipt).not.toBeNull();
       const cancel = () =>
-        page.querySelector("paleoclaw-modal-dialog")!.dispatchEvent(new CustomEvent("modal-cancel"));
+        page
+          .querySelector("paleoclaw-modal-dialog")!
+          .dispatchEvent(new CustomEvent("modal-cancel"));
       cancel();
       if (failure === "missing wizard") {
         await waitForText(page, "It may already have finished");

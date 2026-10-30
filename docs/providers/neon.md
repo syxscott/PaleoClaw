@@ -18,7 +18,7 @@ same isolation your Neon database already has.
 | Property    | Value                                                                                             |
 | ----------- | ------------------------------------------------------------------------------------------------- |
 | Provider id | `neon` (custom; configure under `models.providers.neon`)                                          |
-| Plugin      | none; not a bundled paleoclaw provider plugin                                                      |
+| Plugin      | none; not a bundled paleoclaw provider plugin                                                     |
 | Auth        | Neon credential with the `ai_gateway:invoke` scope, sent as a bearer token                        |
 | API         | `openai-completions`, plus `openai-responses` and `anthropic-messages` for specific models        |
 | Base URL    | `$NEON_AI_GATEWAY_BASE_URL/v1`, `/openai/v1` for Responses or `/anthropic` for Anthropic Messages |

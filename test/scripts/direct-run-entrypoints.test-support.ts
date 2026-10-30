@@ -94,7 +94,9 @@ export async function withShimFixture<T>(
 ) {
   // Own a sibling of Vitest's POSIX temp namespace so unjoined writers survive its cleanup.
   const fixtureParent = process.platform === "win32" ? tmpdir() : path.dirname(tmpdir());
-  const fixtureRoot = realpathSync(mkdtempSync(path.join(fixtureParent, "paleoclaw-tsx-cli-shim-")));
+  const fixtureRoot = realpathSync(
+    mkdtempSync(path.join(fixtureParent, "paleoclaw-tsx-cli-shim-")),
+  );
   const checkoutRoot = path.join(fixtureRoot, "checkout");
   const wrapperPath = path.join(checkoutRoot, wrapper);
   const implementationPath = wrapperPath.replace(

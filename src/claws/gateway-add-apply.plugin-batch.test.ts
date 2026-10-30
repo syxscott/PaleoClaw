@@ -16,8 +16,8 @@ import { writeConfigMachineState } from "../state/config-machine-state-write.js"
 import { closeOpenClawStateDatabaseAsync } from "../state/paleoclaw-state-db.js";
 import * as leaseAcquisition from "../state/paleoclaw-state-lease-acquisition.js";
 import { withEnvAsync } from "../test-utils/env.js";
-import type { ClawHubClawTrust } from "./PaleoHub-source.js";
 import { applyClawAddForGateway } from "./gateway-add-apply.js";
+import type { ClawHubClawTrust } from "./PaleoHub-source.js";
 import type { ClawAddPlan, ClawReadResult } from "./types.js";
 
 const mocks = vi.hoisted(() => ({

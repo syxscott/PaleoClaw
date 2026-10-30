@@ -167,7 +167,10 @@ it.each([{ environment: edge }, { seamColor: "#123456" }])(
 );
 
 it("applies public document environment metadata before authenticated bootstrap", async () => {
-  root.setAttribute("data-paleoclaw-environment", JSON.stringify({ label: "team", color: "amber" }));
+  root.setAttribute(
+    "data-paleoclaw-environment",
+    JSON.stringify({ label: "team", color: "amber" }),
+  );
   document.title = "paleoclaw Control";
 
   const config = createApplicationConfigCapability({ resourceBasePath: "" });

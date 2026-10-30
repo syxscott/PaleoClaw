@@ -19,7 +19,7 @@ you only need an issued ClawRouter key.
 | Property      | Value                                    |
 | ------------- | ---------------------------------------- |
 | Provider      | `clawrouter`                             |
-| Plugin        | bundled (included in paleoclaw)           |
+| Plugin        | bundled (included in paleoclaw)          |
 | Auth          | `CLAWROUTER_API_KEY`                     |
 | Default URL   | `https://clawrouter.openclaw.ai`         |
 | Model catalog | Credential-scoped via `/v1/catalog`      |
@@ -356,7 +356,7 @@ inside the facade.
 ClawRouter owns upstream credentials; its catalog tells paleoclaw which
 transport to use, so you never install every upstream company's auth plugin.
 
-| Catalog capability / route                               | paleoclaw transport     |
+| Catalog capability / route                               | paleoclaw transport    |
 | -------------------------------------------------------- | ---------------------- |
 | `llm.responses` (OpenAI-compatible provider)             | `openai-responses`     |
 | `llm.chat` (OpenAI-compatible provider)                  | `openai-completions`   |
@@ -470,7 +470,7 @@ prevent model calls or the existing `/v1/usage` snapshot.
 | No ClawRouter models                     | Confirm the plugin is enabled and allowed by `plugins.allow`, then check that the ClawRouter key is active and grants at least one ready provider. |
 | A configured ClawRouter model is missing | Inspect its `/v1/catalog` capability and route support. Unsupported transport contracts are intentionally filtered.                                |
 | Model override rejected by policy        | Add the exact catalog ref or `clawrouter/*` to `agents.defaults.modelPolicy.allow`.                                                                |
-| `401` or `403` from catalog or usage     | Reissue or re-scope the ClawRouter key; paleoclaw does not fall back to upstream provider keys.                                                     |
+| `401` or `403` from catalog or usage     | Reissue or re-scope the ClawRouter key; paleoclaw does not fall back to upstream provider keys.                                                    |
 | Model call fails after discovery         | Check the provider connection and upstream health in ClawRouter, then retry after its readiness state recovers.                                    |
 | Usage has totals but no percentage       | The policy is unmetered; add a monthly budget in ClawRouter to expose a percentage window.                                                         |
 

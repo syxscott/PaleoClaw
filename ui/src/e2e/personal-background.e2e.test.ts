@@ -200,7 +200,9 @@ suite.define(() => {
       await section.scrollIntoViewIfNeeded();
       await expectPlacement(page, "Conversations", false);
       await openRoute(page, "new", "new-session");
-      await page.locator("paleoclaw-session-background .session-background__image--theme").waitFor();
+      await page
+        .locator("paleoclaw-session-background .session-background__image--theme")
+        .waitFor();
       await openRoute(page, "chat", "chat");
       await expectCount(page, backgroundImage, 0);
       await expectNoWrites(gateway, ["config.patch", "users.prefs.set", "users.background.upload"]);

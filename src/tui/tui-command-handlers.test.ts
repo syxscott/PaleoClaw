@@ -455,7 +455,9 @@ describe("tui command handlers", () => {
     const h = createHarness();
     await h.handleCommand("/paleoclaw restart gateway");
     expect(h.sendChat).not.toHaveBeenCalled();
-    expect(h.addSystem).toHaveBeenCalledWith("returning to paleoclaw with request: restart gateway");
+    expect(h.addSystem).toHaveBeenCalledWith(
+      "returning to paleoclaw with request: restart gateway",
+    );
     expect(h.requestExit).toHaveBeenCalledWith({
       exitReason: "return-to-system-agent",
       systemAgentMessage: "restart gateway",

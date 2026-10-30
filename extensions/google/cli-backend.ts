@@ -85,7 +85,8 @@ function resolveGeminiCliExecutionArgs(
 
   // Gemini intersects file-based allowlists, where an empty intersection means
   // unrestricted. The argv override bypasses that merge and prevents MCP startup.
-  const allowedServer = ctx.toolAvailability.openClaw.length > 0 ? "paleoclaw" : crypto.randomUUID();
+  const allowedServer =
+    ctx.toolAvailability.openClaw.length > 0 ? "paleoclaw" : crypto.randomUUID();
   return [...args, GEMINI_ALLOWED_MCP_SERVERS_ARG, allowedServer, ...positionalArgs];
 }
 

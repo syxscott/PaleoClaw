@@ -8,16 +8,16 @@ read_when:
 
 [Cerebras](https://www.cerebras.ai) provides high-speed OpenAI-compatible inference on custom inference hardware. The plugin discovers native model metadata and pricing, with a bundled catalog for offline fallback.
 
-| Property        | Value                                                     |
-| --------------- | --------------------------------------------------------- |
-| Provider id     | `cerebras`                                                |
+| Property        | Value                                                      |
+| --------------- | ---------------------------------------------------------- |
+| Provider id     | `cerebras`                                                 |
 | Plugin          | official external package (`@paleoclaw/cerebras-provider`) |
-| Auth env var    | `CEREBRAS_API_KEY`                                        |
-| Onboarding flag | `--auth-choice cerebras-api-key`                          |
-| Direct CLI flag | `--cerebras-api-key <key>`                                |
-| API             | OpenAI-compatible (`openai-completions`)                  |
-| Base URL        | `https://api.cerebras.ai/v1`                              |
-| Default model   | `cerebras/gpt-oss-120b`                                   |
+| Auth env var    | `CEREBRAS_API_KEY`                                         |
+| Onboarding flag | `--auth-choice cerebras-api-key`                           |
+| Direct CLI flag | `--cerebras-api-key <key>`                                 |
+| API             | OpenAI-compatible (`openai-completions`)                   |
+| Base URL        | `https://api.cerebras.ai/v1`                               |
+| Default model   | `cerebras/gpt-oss-120b`                                    |
 
 ## Install plugin
 

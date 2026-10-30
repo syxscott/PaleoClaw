@@ -9,19 +9,19 @@ import {
 import { resolveCanonicalWorkspacePath } from "../agents/workspace-state-identity.js";
 import { resolveStateDir } from "../config/paths.js";
 import type { OpenClawConfig } from "../config/types.openclaw.js";
-import type { ClawHubFetchOptions } from "../infra/PaleoHub-client.js";
 import { hasErrnoCode } from "../infra/errno.js";
+import type { ClawHubFetchOptions } from "../infra/PaleoHub-client.js";
 import { isPathInside } from "../infra/path-guards.js";
 import { normalizeAgentId } from "../routing/session-key.js";
 import { selectNextClawAgentId } from "./add-agent-id.js";
+import { bindClawLifecycleTrust, projectClawAddPlan } from "./gateway-plan-projection.js";
+import { buildClawAddPlan } from "./lifecycle.js";
+import { preflightClawPackage } from "./packages.js";
 import {
   withResolvedClawHubSource,
   type ClawHubClawTrust,
   type ClawHubCoordinate,
 } from "./PaleoHub-source.js";
-import { bindClawLifecycleTrust, projectClawAddPlan } from "./gateway-plan-projection.js";
-import { buildClawAddPlan } from "./lifecycle.js";
-import { preflightClawPackage } from "./packages.js";
 import { projectClawPluginCapabilityReviews } from "./plugin-capability-review.js";
 import type { ClawAddPlan, ClawPackagePreflight, ClawReadResult } from "./types.js";
 

@@ -672,17 +672,17 @@ paleoclaw gateway diagnostics export \
   --log-bytes 1000000
 ```
 
-| Flag                    | Default                                                                       | Description                                        |
-| ----------------------- | ----------------------------------------------------------------------------- | -------------------------------------------------- |
+| Flag                    | Default                                                                        | Description                                        |
+| ----------------------- | ------------------------------------------------------------------------------ | -------------------------------------------------- |
 | `--output <path>`       | `$OPENCLAW_STATE_DIR/logs/support/paleoclaw-diagnostics-<timestamp>-<pid>.zip` | Write to a specific zip path (or directory).       |
-| `--log-lines <count>`   | `5000`                                                                        | Maximum sanitized log lines to include.            |
-| `--log-bytes <bytes>`   | `1000000`                                                                     | Maximum log bytes to inspect.                      |
-| `--url <url>`           | -                                                                             | Gateway WebSocket URL for status/health snapshots. |
-| `--token <token>`       | -                                                                             | Gateway token for status/health snapshots.         |
-| `--password <password>` | -                                                                             | Gateway password for status/health snapshots.      |
-| `--timeout <ms>`        | `3000`                                                                        | Status/health snapshot timeout.                    |
-| `--no-stability-bundle` | off                                                                           | Skip persisted stability bundle lookup.            |
-| `--json`                | off                                                                           | Print machine-readable export metadata.            |
+| `--log-lines <count>`   | `5000`                                                                         | Maximum sanitized log lines to include.            |
+| `--log-bytes <bytes>`   | `1000000`                                                                      | Maximum log bytes to inspect.                      |
+| `--url <url>`           | -                                                                              | Gateway WebSocket URL for status/health snapshots. |
+| `--token <token>`       | -                                                                              | Gateway token for status/health snapshots.         |
+| `--password <password>` | -                                                                              | Gateway password for status/health snapshots.      |
+| `--timeout <ms>`        | `3000`                                                                         | Status/health snapshot timeout.                    |
+| `--no-stability-bundle` | off                                                                            | Skip persisted stability bundle lookup.            |
+| `--json`                | off                                                                            | Print machine-readable export metadata.            |
 
 ## Disable diagnostics
 

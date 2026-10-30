@@ -6,8 +6,8 @@ import {
 } from "../../../packages/gateway-protocol/src/index.js";
 import { retainMutationAuthority } from "../../infra/mutation-authority.js";
 import { getOrCreatePromise } from "../../shared/lazy-promise.js";
-import { installSkillFromClawHub } from "../../skills/lifecycle/PaleoHub.js";
 import { installSkill } from "../../skills/lifecycle/install.js";
+import { installSkillFromClawHub } from "../../skills/lifecycle/PaleoHub.js";
 import { installUploadedSkillArchive } from "../../skills/lifecycle/upload-install.js";
 import { SessionMutationAuthorizationChangedError } from "../session-mutation-authorization-error.js";
 import { captureGatewayClientUploadCommitGuard } from "../upload-policy.js";

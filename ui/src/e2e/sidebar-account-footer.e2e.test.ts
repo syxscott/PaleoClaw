@@ -71,7 +71,9 @@ async function runAccountFooterProof(page: Page, sidebar: Locator) {
     const menu = sidebar.locator(".sidebar-identity-menu");
     await menu.waitFor();
     expect(await menu.locator('[data-value="command:recent-activity"]').count()).toBe(0);
-    expect(await menu.evaluate((dropdown) => dropdown.closest("paleoclaw-menu-surface"))).toBeNull();
+    expect(
+      await menu.evaluate((dropdown) => dropdown.closest("paleoclaw-menu-surface")),
+    ).toBeNull();
 
     const buildLink = menu.getByRole("menuitem", { name: "Control UI build details" });
     expect((await buildLink.textContent())?.trim().startsWith("feat/sidebar-f…@0123456 · ")).toBe(

@@ -18,7 +18,10 @@ import {
   type DiagnosticEventPayload,
 } from "paleoclaw/plugin-sdk/diagnostic-runtime";
 import { createDeferred } from "paleoclaw/plugin-sdk/extension-shared";
-import { initializeGlobalHookRunner, registerInternalHook } from "paleoclaw/plugin-sdk/hook-runtime";
+import {
+  initializeGlobalHookRunner,
+  registerInternalHook,
+} from "paleoclaw/plugin-sdk/hook-runtime";
 import type { AssistantMessage } from "paleoclaw/plugin-sdk/llm";
 import { registerMemoryCapability } from "paleoclaw/plugin-sdk/memory-core-host-runtime-core";
 import { MESSAGE_TOOL_DELIVERY_HINTS } from "paleoclaw/plugin-sdk/message-tool-delivery-hints";

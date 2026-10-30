@@ -359,13 +359,14 @@ JSON path/value mode also works for SecretRefs and providers directly:
 
 ``/`bash
 paleoclaw config set channels.discord.token \
-  '{"source":"env","provider":"default","id":"DISCORD_BOT_TOKEN"}' \
-  --strict-json
+'{"source":"env","provider":"default","id":"DISCORD_BOT_TOKEN"}' \
+--strict-json
 
 paleoclaw config set secrets.providers.vaultfile \
-  '{"source":"file","path":"/etc/paleoclaw/secrets.json","mode":"json"}' \
-  --strict-json
-```
+'{"source":"file","path":"/etc/paleoclaw/secrets.json","mode":"json"}' \
+--strict-json
+
+````
 
 ### Provider builder flags
 
@@ -412,7 +413,7 @@ paleoclaw config set secrets.providers.vault \
   --provider-pass-env VAULT_TOKEN \
   --provider-trusted-dir /usr/local/bin \
   --provider-timeout-ms 5000
-```
+````
 
 ## `config patch`
 

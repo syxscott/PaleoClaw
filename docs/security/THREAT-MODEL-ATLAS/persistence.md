@@ -15,9 +15,9 @@ The trust boundaries and data flows these threats cross are defined in the [thre
 | Attribute               | Value                                                                                                                     |
 | ----------------------- | ------------------------------------------------------------------------------------------------------------------------- |
 | **ATLAS ID**            | AML.T0010.001 - Supply Chain Compromise: AI Software                                                                      |
-| **Description**         | Attacker publishes a malicious skill to PaleoHub                                                                           |
+| **Description**         | Attacker publishes a malicious skill to PaleoHub                                                                          |
 | **Attack vector**       | Create account, publish skill with hidden malicious code                                                                  |
-| **Affected components** | PaleoHub, skill loading, agent execution                                                                                   |
+| **Affected components** | PaleoHub, skill loading, agent execution                                                                                  |
 | **Current mitigations** | GitHub account age verification, static pattern/AST-adjacent scanning, LLM-based agentic risk review, VirusTotal scanning |
 | **Residual risk**       | High - detection layers exist but skills still run with agent privileges and no execution sandboxing                      |
 | **Recommendations**     | Skill execution sandboxing, expanded community review                                                                     |
@@ -29,7 +29,7 @@ The trust boundaries and data flows these threats cross are defined in the [thre
 | **ATLAS ID**            | AML.T0010.001 - Supply Chain Compromise: AI Software                    |
 | **Description**         | Attacker compromises a popular skill and pushes a malicious update      |
 | **Attack vector**       | Account compromise, social engineering of skill owner                   |
-| **Affected components** | PaleoHub versioning, auto-update flows                                   |
+| **Affected components** | PaleoHub versioning, auto-update flows                                  |
 | **Current mitigations** | Version fingerprinting, moderation/scanning re-run on new versions      |
 | **Residual risk**       | High - auto-updates may pull malicious versions before review completes |
 | **Recommendations**     | Update signing, rollback capability, version pinning                    |

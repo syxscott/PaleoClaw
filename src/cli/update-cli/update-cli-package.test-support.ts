@@ -93,7 +93,8 @@ export async function writeGitUpdateResultFixture(
 export const writeNpmPackageInstall = async (
   argv: string[],
   packageRoot: string,
-  version = argv.find((arg) => /^paleoclaw@\d/u.test(arg))?.slice("paleoclaw@".length) ?? "9999.0.0",
+  version = argv.find((arg) => /^paleoclaw@\d/u.test(arg))?.slice("paleoclaw@".length) ??
+    "9999.0.0",
 ) => {
   const stagePrefix = argv.includes("--prefix")
     ? requireValue(argv[argv.indexOf("--prefix") + 1], "staged prefix")

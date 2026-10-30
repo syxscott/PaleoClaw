@@ -27,11 +27,11 @@ import { readBoundedResponseText } from "./bounded-response.mjs";
 import { collectPublishableCorePackages } from "./npm-core-release-packages.mjs";
 import { resolveNpmJsonEntries } from "./npm-json-output.mts";
 import { npmRegistryReadbackDeadline } from "./npm-publish-plan.mjs";
-import { collectClawHubPublishablePluginPackages } from "./plugin-PaleoHub-release.ts";
 import {
   collectPublishablePluginPackages,
   parsePluginReleaseSelection,
 } from "./plugin-npm-release.ts";
+import { collectClawHubPublishablePluginPackages } from "./plugin-PaleoHub-release.ts";
 import {
   DIAGNOSTIC_MAX_PACKAGES,
   diagnosticChildNames,
@@ -976,7 +976,9 @@ async function verifyClawHubPackage(params: {
 
   const versionStatus = await fetchStatusWithRetry(versionUrl, "GET");
   if (versionStatus < 200 || versionStatus >= 300) {
-    throw new Error(`${params.packageName}: PaleoHub exact version returned HTTP ${versionStatus}.`);
+    throw new Error(
+      `${params.packageName}: PaleoHub exact version returned HTTP ${versionStatus}.`,
+    );
   }
 
   const artifactStatus = await fetchStatusWithRetry(artifactUrl, "HEAD");

@@ -13,7 +13,11 @@ import {
   readStringValue,
 } from "paleoclaw/plugin-sdk/string-coerce-runtime";
 import { rawDataToString } from "paleoclaw/plugin-sdk/webhook-ingress";
-import { type ClientOptions, type RawData, WebSocket } from "paleoclaw/plugin-sdk/websocket-runtime";
+import {
+  type ClientOptions,
+  type RawData,
+  WebSocket,
+} from "paleoclaw/plugin-sdk/websocket-runtime";
 import { formatSlackError } from "../errors.js";
 import type { SlackSendIdentity } from "../send.js";
 import { parseSlackMessageEvent, type SlackMessageEvent } from "../types.js";

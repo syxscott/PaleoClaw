@@ -582,7 +582,9 @@ describe("qa cli registration", () => {
     });
     registerQaLabCli(invalidProgram);
 
-    await expect(invalidProgram.parseAsync(["node", "paleoclaw", ...args])).rejects.toThrow(message);
+    await expect(invalidProgram.parseAsync(["node", "paleoclaw", ...args])).rejects.toThrow(
+      message,
+    );
   });
 
   it("shows an enable hint when a discovered runner plugin is installed but blocked", async () => {

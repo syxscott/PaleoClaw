@@ -106,7 +106,13 @@ describe.skipIf(!connection)("offline CLI on PostgreSQL", () => {
           const tty = Object.getOwnPropertyDescriptor(process.stdin, "isTTY");
           Object.defineProperty(process.stdin, "isTTY", { value: true, configurable: true });
           try {
-            await prepareCliDatabaseEngine(["node", "paleoclaw", "models", "auth", "paste-api-key"]);
+            await prepareCliDatabaseEngine([
+              "node",
+              "paleoclaw",
+              "models",
+              "auth",
+              "paste-api-key",
+            ]);
             await ensureConfigReady({
               runtime: defaultRuntime,
               commandPath: ["models", "auth", "paste-api-key"],

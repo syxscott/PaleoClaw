@@ -4,7 +4,9 @@ import { scrubDoctorErrorMessage } from "./doctor-error-message.js";
 describe("scrubDoctorErrorMessage", () => {
   it("keeps word separation for multi-line errors", () => {
     const scrubbed = scrubDoctorErrorMessage(
-      new Error("Gateway not reachable.\nStart it with `paleoclaw gateway run`.\r\n\tCheck status."),
+      new Error(
+        "Gateway not reachable.\nStart it with `paleoclaw gateway run`.\r\n\tCheck status.",
+      ),
     );
     expect(scrubbed).toBe(
       "Gateway not reachable. Start it with `paleoclaw gateway run`. Check status.",

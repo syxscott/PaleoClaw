@@ -4,7 +4,6 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { sha256Hex } from "./crypto-digest.js";
 import { requireDirectorySync, syncDirectorySync } from "./directory-durability.js";
-import { resolveOpenClawPackageRoot } from "./paleoclaw-root.js";
 import {
   ImmutableRecoveryRuntimeReferenceSchema,
   type ImmutableRecoveryRuntimeReference,
@@ -19,6 +18,7 @@ import {
   resolvePackageActivationControl,
   resolvePackageActivationHelper,
 } from "./package-update-activation-paths.js";
+import { resolveOpenClawPackageRoot } from "./paleoclaw-root.js";
 import { isPathInside } from "./path-guards.js";
 import { prepareSqliteRollbackRecovery } from "./sqlite-rollback-recovery.js";
 import {

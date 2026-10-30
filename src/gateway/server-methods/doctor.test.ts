@@ -589,7 +589,9 @@ describe("doctor.memory dream actions", () => {
     "dispatches $action to its workspace owner",
     async ({ action, handler, result, expected }) => {
       const workspaceDir =
-        action === "resetDreamDiary" ? tempDirs.make("doctor-dream-diary-reset-") : "/tmp/paleoclaw";
+        action === "resetDreamDiary"
+          ? tempDirs.make("doctor-dream-diary-reset-")
+          : "/tmp/paleoclaw";
       if (action === "resetDreamDiary") {
         await fs.writeFile(path.join(workspaceDir, "DREAMS.md"), "# Dream Diary\n");
       }

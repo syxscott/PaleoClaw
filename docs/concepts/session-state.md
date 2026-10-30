@@ -30,7 +30,7 @@ paleoclaw appends a typed event to the shared state database (`session_state_eve
 | `run_completed`        | A child run ends successfully                            | No (log only)     |
 | `run_failed`           | A child run fails, times out, or is cancelled            | No (log only)     |
 | `compacted`            | The session's history is compacted                       | No (log only)     |
-| `adopted`              | A catalog session is adopted into paleoclaw               | No (log only)     |
+| `adopted`              | A catalog session is adopted into paleoclaw              | No (log only)     |
 
 Each event names its actor (`human`, `agent`, or `system`). Cancelled and timed-out child runs are recorded as failures with the precise outcome (`cancelled`, `timeout`, or `error`) preserved in the event payload.
 

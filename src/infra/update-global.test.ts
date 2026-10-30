@@ -162,7 +162,11 @@ describe("update global helpers", () => {
   it("passes a source package target through without registry resolution", () => {
     expect(canResolveRegistryVersionForPackageTarget("syxscott/PaleoClaw#main")).toBe(false);
     expect(
-      resolveGlobalInstallSpec({ packageName: "paleoclaw", tag: "syxscott/PaleoClaw#main", env: {} }),
+      resolveGlobalInstallSpec({
+        packageName: "paleoclaw",
+        tag: "syxscott/PaleoClaw#main",
+        env: {},
+      }),
     ).toBe("syxscott/PaleoClaw#main");
   });
 

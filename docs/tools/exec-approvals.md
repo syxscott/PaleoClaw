@@ -72,8 +72,8 @@ for a model you do not trust. This is hardening, not an isolation boundary.
 
 ## Inspecting the effective policy
 
-| Command                                                          | What it shows                                                                                         |
-| ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| Command                                                           | What it shows                                                                                         |
+| ----------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
 | `paleoclaw approvals get` / `--gateway` / `--node <id\|name\|ip>` | Requested policy, host policy sources, and the effective result.                                      |
 | `paleoclaw exec-policy show`                                      | Terminal tool policies and local command approvals; add `--session <key>` for a session tool preview. |
 | `paleoclaw exec-policy set` / `preset`                            | Synchronize the local requested policy with the local host approvals document in one step.            |
@@ -552,7 +552,7 @@ Each allowlist entry supports:
 | `argPattern`       | ECMAScript argv regex or generated exact-argv hash; omitted is path-only |
 | `id`               | Stable opaque ID; generated as a UUID when absent                        |
 | `source`           | Generated entry source, such as `allow-always`; omit for manual entries  |
-| `commandText`      | Legacy plaintext input; saved entries need `paleoclaw doctor --fix`       |
+| `commandText`      | Legacy plaintext input; saved entries need `paleoclaw doctor --fix`      |
 | `lastUsedAt`       | Last-used timestamp                                                      |
 | `lastUsedCommand`  | Last command that matched; omitted for generated hashed argv entries     |
 | `lastResolvedPath` | Last resolved binary path                                                |

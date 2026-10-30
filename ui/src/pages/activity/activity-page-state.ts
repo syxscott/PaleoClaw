@@ -1,5 +1,5 @@
-import { asNullableRecord as asRecord } from "@paleoclaw/normalization-core/record-coerce";
 import type { RouteLocation } from "@openclaw/uirouter";
+import { asNullableRecord as asRecord } from "@paleoclaw/normalization-core/record-coerce";
 import { onCleanup } from "solid-js";
 import type { AuditRunInspectResult } from "../../../../packages/gateway-protocol/src/schema/audit-run.js";
 import type { GatewayBrowserClient, GatewayEventFrame } from "../../api/gateway.ts";

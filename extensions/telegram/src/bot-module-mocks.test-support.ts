@@ -41,7 +41,9 @@ export type TelegramBotFixtureMocks = {
           resolveMethod: import("paleoclaw/plugin-sdk/approval-handler-runtime").ChannelApprovalKind;
         }
     ),
-  ) => Promise<import("paleoclaw/plugin-sdk/approval-gateway-runtime").ApprovalResolveResult | void>;
+  ) => Promise<
+    import("paleoclaw/plugin-sdk/approval-gateway-runtime").ApprovalResolveResult | void
+  >;
   createTelegramDraftStream: typeof import("./draft-stream.js").createTelegramDraftStream;
   deliverReplies: typeof import("./bot/delivery.js").deliverReplies;
   deliverStructuredReplies: typeof import("./bot/delivery.js").deliverStructuredReplies;

@@ -96,7 +96,9 @@ declare global {
 declare module "@solidjs/web" {
   namespace JSX {
     interface IntrinsicElements {
-      "paleoclaw-working-phrase": HTMLAttributes<HTMLElementTagNameMap["paleoclaw-working-phrase"]> &
+      "paleoclaw-working-phrase": HTMLAttributes<
+        HTMLElementTagNameMap["paleoclaw-working-phrase"]
+      > &
         Properties<HTMLElementTagNameMap["paleoclaw-working-phrase"]> & {
           "prop:phrases"?: WorkingPhraseProps["phrases"];
         };

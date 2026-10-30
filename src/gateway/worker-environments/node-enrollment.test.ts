@@ -160,7 +160,9 @@ describe("worker node enrollment", () => {
   };
 
   beforeEach(async () => {
-    root = await fs.mkdtemp(path.join(await fs.realpath(os.tmpdir()), "paleoclaw-node-enrollment-"));
+    root = await fs.mkdtemp(
+      path.join(await fs.realpath(os.tmpdir()), "paleoclaw-node-enrollment-"),
+    );
     database = openOpenClawStateDatabase({ env: { OPENCLAW_STATE_DIR: root } });
     store = await createWorkerEnvironmentStore({ database, now: () => 1_000 });
     transfer = createWorkerBootstrapArtifactTransferService();

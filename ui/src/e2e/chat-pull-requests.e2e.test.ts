@@ -93,7 +93,14 @@ function publicationState(
 ) {
   return {
     pullRequests: [],
-    branch: { owner: "paleoclaw", repo: "paleoclaw", branch, additions: 2, deletions: 1, ...details },
+    branch: {
+      owner: "paleoclaw",
+      repo: "paleoclaw",
+      branch,
+      additions: 2,
+      deletions: 1,
+      ...details,
+    },
     rateLimited: false,
     status: "ok",
   };
@@ -552,7 +559,8 @@ suite.define(() => {
         branch: "paleoclaw/reconciled-publication",
         additions: 3,
         deletions: 0,
-        createUrl: "https://github.com/syxscott/PaleoClaw/pull/new/paleoclaw/reconciled-publication",
+        createUrl:
+          "https://github.com/syxscott/PaleoClaw/pull/new/paleoclaw/reconciled-publication",
       },
       rateLimited: false,
       status: "ok",

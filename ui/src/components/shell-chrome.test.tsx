@@ -47,7 +47,8 @@ describe("Solid shell chrome", () => {
         prop:onOpenPalette={palette}
       />
     ));
-    const topbar = view.container.querySelector<SolidBridgeElement<object>>("paleoclaw-app-topbar")!;
+    const topbar =
+      view.container.querySelector<SolidBridgeElement<object>>("paleoclaw-app-topbar")!;
     const update = async (write: () => void) => {
       write();
       flush();

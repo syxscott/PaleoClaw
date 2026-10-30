@@ -10,14 +10,14 @@ read_when:
 
 ## Runtime status
 
-| Aspect              | Value                                                                                       |
-| ------------------- | ------------------------------------------------------------------------------------------- |
-| Executors           | Node (`node:vm`, default), QuickJS-WASI (bundled plugin)                                    |
-| Default state       | disabled                                                                                    |
+| Aspect              | Value                                                                                        |
+| ------------------- | -------------------------------------------------------------------------------------------- |
+| Executors           | Node (`node:vm`, default), QuickJS-WASI (bundled plugin)                                     |
+| Default state       | disabled                                                                                     |
 | Stability           | experimental paleoclaw surface (Codex Code Mode is a separate, stable Codex harness surface) |
 | Target surface      | generic paleoclaw agent runs                                                                 |
-| Security posture    | Node is trusted host execution; QuickJS provides hardened guest isolation                   |
-| User-facing promise | enabling code mode never silently falls back to broad direct tool exposure                  |
+| Security posture    | Node is trusted host execution; QuickJS provides hardened guest isolation                    |
+| User-facing promise | enabling code mode never silently falls back to broad direct tool exposure                   |
 
 ## Scope
 

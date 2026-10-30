@@ -84,7 +84,9 @@ async function runChannelsListJson(channelIds: readonly string[]) {
   } as OpenClawConfig;
   testState.json = [];
   testState.manifestRegistryRebuilds = 0;
-  await expect(tryRouteCli(["node", "paleoclaw", "channels", "list", "--json"])).resolves.toBe(true);
+  await expect(tryRouteCli(["node", "paleoclaw", "channels", "list", "--json"])).resolves.toBe(
+    true,
+  );
   return {
     rebuilds: testState.manifestRegistryRebuilds,
     chat: (testState.json[0] as { chat: unknown }).chat,

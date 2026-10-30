@@ -3556,9 +3556,10 @@ esac
     },
     {
       name: "preflights Swift for AWS macOS script-stdin Swift builds",
-      input: ["set -euo pipefail", "swift build --package-path apps/macos --product paleoclaw"].join(
-        "\n",
-      ),
+      input: [
+        "set -euo pipefail",
+        "swift build --package-path apps/macos --product paleoclaw",
+      ].join("\n"),
       includes: [
         "openclaw_crabbox_bootstrap_macos_js",
         "openclaw_crabbox_require_macos_swift_63",

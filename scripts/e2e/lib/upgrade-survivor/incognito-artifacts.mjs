@@ -15,7 +15,10 @@ export function assertNoIncognitoArtifacts(roots, marker) {
   let archives = 0;
   let databases = 0;
   function checkName(name) {
-    assert(!/incognito-paleoclaw-agent\.sqlite/u.test(name), `Incognito database artifact: ${name}`);
+    assert(
+      !/incognito-paleoclaw-agent\.sqlite/u.test(name),
+      `Incognito database artifact: ${name}`,
+    );
   }
   function decode(bytes, name) {
     assert(!bytes.includes(Buffer.from(marker)), `Incognito content persisted: ${name}`);

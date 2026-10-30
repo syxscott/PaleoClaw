@@ -613,7 +613,9 @@ export function redactPublicSupportDiagnosticLine(
     );
   }
   const runtime =
-    /^Target package: paleoclaw@(\S+); Minimum Node engine: (\S+); Running Node: (\S+)$/u.exec(line);
+    /^Target package: paleoclaw@(\S+); Minimum Node engine: (\S+); Running Node: (\S+)$/u.exec(
+      line,
+    );
   if (runtime) {
     const [target, minimum, running] = runtime.slice(1).map(redactPublicSupportVersion);
     return truncateUtf16Safe(

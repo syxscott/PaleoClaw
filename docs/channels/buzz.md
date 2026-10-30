@@ -700,7 +700,7 @@ These follow-up areas are planned but are not part of the current plugin:
 | Authentication fails                         | Check the relay URL, bot private key, closed-relay membership, and any `authTag` supplied by the operator.   |
 | A message cannot be sent                     | Confirm the bot is a room member with the **Bot** role and that the UUID is configured.                      |
 | The bot receives messages but does not reply | Confirm the sender is still a room member, then check the optional sender allowlist and mention requirement. |
-| Setup says the Gateway is not running        | Start it with `paleoclaw gateway`, then run `paleoclaw channels status --probe`.                               |
+| Setup says the Gateway is not running        | Start it with `paleoclaw gateway`, then run `paleoclaw channels status --probe`.                             |
 | Automatic room discovery expires             | Grant the Bot role, then choose Retry; the same identity remains active.                                     |
 
 ## Related

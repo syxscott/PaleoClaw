@@ -3977,7 +3977,8 @@ describe("talk realtime gateway relay", () => {
           "native-call",
           {
             status: "already_delivered",
-            message: "paleoclaw already delivered this consult result internally. Do not repeat it.",
+            message:
+              "paleoclaw already delivered this consult result internally. Do not repeat it.",
           },
           { suppressResponse: true },
         );

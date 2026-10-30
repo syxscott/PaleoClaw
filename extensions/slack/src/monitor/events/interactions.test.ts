@@ -1463,7 +1463,9 @@ describe("registerSlackInteractionEvents", () => {
       const otherBlocks = neighbors
         ? [
             actions("time_block", [{ type: "timepicker", action_id: "paleoclaw:time" }]),
-            actions("datetime_block", [{ type: "datetimepicker", action_id: "paleoclaw:datetime" }]),
+            actions("datetime_block", [
+              { type: "datetimepicker", action_id: "paleoclaw:datetime" },
+            ]),
           ]
         : [];
       await getHandler()({

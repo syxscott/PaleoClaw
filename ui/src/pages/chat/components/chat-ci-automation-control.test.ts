@@ -79,7 +79,9 @@ class Fixture {
       vi.restoreAllMocks();
     });
     this.root.append(document.createElement("paleoclaw-chat-ci-automation"));
-    this.element = this.root.querySelector<ChatCiAutomationElement>("paleoclaw-chat-ci-automation")!;
+    this.element = this.root.querySelector<ChatCiAutomationElement>(
+      "paleoclaw-chat-ci-automation",
+    )!;
     Object.assign(this.element, { pullRequest: pr, gateway: this.harness.gateway, sessionKey });
   }
   async paint(sessionId: string) {

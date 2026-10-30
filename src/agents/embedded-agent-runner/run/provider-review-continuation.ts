@@ -1,5 +1,8 @@
 import { isDeepStrictEqual } from "node:util";
-import { bindResponsesInputMessage, responsesRequestLifecycle } from "@paleoclaw/ai/internal/openai";
+import {
+  bindResponsesInputMessage,
+  responsesRequestLifecycle,
+} from "@paleoclaw/ai/internal/openai";
 import { safeParseJsonRecord } from "@paleoclaw/normalization-core/json-coercion";
 import { isRecord } from "@paleoclaw/normalization-core/record-coerce";
 import { hasRuntimeContextMarker } from "../../../llm/types.js";

@@ -1,5 +1,8 @@
 import { collectConfiguredModelRefValues } from "@paleoclaw/model-catalog-core/configured-model-refs";
-import { createLazyRuntimeMethod, createLazyRuntimeModule } from "paleoclaw/plugin-sdk/lazy-runtime";
+import {
+  createLazyRuntimeMethod,
+  createLazyRuntimeModule,
+} from "paleoclaw/plugin-sdk/lazy-runtime";
 import type { ProviderPlugin } from "paleoclaw/plugin-sdk/plugin-entry";
 import { OLLAMA_DEFAULT_API_KEY, OLLAMA_DEFAULT_BASE_URL } from "./defaults.js";
 import {

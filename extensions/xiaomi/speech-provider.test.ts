@@ -5,7 +5,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const transcodeMock = vi.hoisted(() => vi.fn());
 
 // mock-isolation: Capture speech transcoding without invoking ffmpeg.
-vi.mock("paleoclaw/plugin-sdk/media-runtime", () => ({ transcodeAudioBufferToOpus: transcodeMock }));
+vi.mock("paleoclaw/plugin-sdk/media-runtime", () => ({
+  transcodeAudioBufferToOpus: transcodeMock,
+}));
 
 import { buildXiaomiSpeechProvider } from "./speech-provider.js";
 

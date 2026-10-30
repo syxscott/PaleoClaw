@@ -668,8 +668,9 @@ suite.define(() => {
           const inputAttempt = await page.evaluate(() => {
             const sockets = window.desktopProofSockets;
             const socket = sockets.at(-1)!;
-            const keys = Array.from("printf observer > /tmp/paleoclaw-desktop-resize-input", (key) =>
-              key.codePointAt(0)!,
+            const keys = Array.from(
+              "printf observer > /tmp/paleoclaw-desktop-resize-input",
+              (key) => key.codePointAt(0)!,
             );
             keys.push(0xff0d);
             const packet = new Uint8Array(keys.length * 16);
@@ -687,7 +688,9 @@ suite.define(() => {
           const inputProcessed = packetProbe.expectPacket(inputAttempt.bytes);
           await sendDesktopPacket(page, inputAttempt.socketUrl, inputProcessed.bytes);
           expect(await inputProcessed.result).toBe(0);
-          expect(await guest.run(["cat", "/tmp/paleoclaw-desktop-resize-input"])).toBe("controller");
+          expect(await guest.run(["cat", "/tmp/paleoclaw-desktop-resize-input"])).toBe(
+            "controller",
+          );
           expect(await panel.locator('option[value="match"]').count()).toBe(0);
           expect(await observerPanel.locator('option[value="match"]').count()).toBe(1);
           await suite.closeBrowserContext(observerContext);

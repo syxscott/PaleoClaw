@@ -5,7 +5,10 @@ import {
 } from "paleoclaw/plugin-sdk/channel-ingress-test-runtime";
 import { createDeferred } from "paleoclaw/plugin-sdk/extension-shared";
 import { createChannelReplayGuard } from "paleoclaw/plugin-sdk/persistent-dedupe";
-import { createPluginRuntimeMock, createRuntimeEnv } from "paleoclaw/plugin-sdk/plugin-test-runtime";
+import {
+  createPluginRuntimeMock,
+  createRuntimeEnv,
+} from "paleoclaw/plugin-sdk/plugin-test-runtime";
 import { withOpenClawTestState } from "paleoclaw/plugin-sdk/test-state";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { resolveFeishuAccount } from "./accounts.js";

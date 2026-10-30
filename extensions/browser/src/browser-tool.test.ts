@@ -1133,7 +1133,11 @@ it.each(["host cancellation", "node failure"] as const)(
       mockSingleBrowserProxyNode();
       gateway.callGatewayTool
         .mockResolvedValueOnce(
-          nodeReply(navigated, { status: "resolved", profile: "node-default", driver: "paleoclaw" }),
+          nodeReply(navigated, {
+            status: "resolved",
+            profile: "node-default",
+            driver: "paleoclaw",
+          }),
         )
         .mockRejectedValueOnce(
           new Error(

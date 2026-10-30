@@ -28,10 +28,10 @@ endpoint and adapter:
 | Effective route facts                                                                                                                                                           | Implicit runtime      |
 | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
 | Exact official Platform HTTPS endpoint with `openai-responses`, or exact official ChatGPT HTTPS endpoint with `openai-chatgpt-responses`; no authored provider request override | Codex may be selected |
-| Authored `openai-completions` adapter                                                                                                                                           | paleoclaw              |
-| Custom endpoint                                                                                                                                                                 | paleoclaw              |
+| Authored `openai-completions` adapter                                                                                                                                           | paleoclaw             |
+| Custom endpoint                                                                                                                                                                 | paleoclaw             |
 | Explicit exact official endpoint using HTTP                                                                                                                                     | Rejected              |
-| Route with an authored provider/model request override                                                                                                                          | paleoclaw              |
+| Route with an authored provider/model request override                                                                                                                          | paleoclaw             |
 
 Valid model-scoped `params.fastMode` / `params.fast_mode`, cutoff, and `thinking`
 values are typed agent-runtime controls, not authored provider request params.

@@ -38,7 +38,9 @@ function openclawProfile(headless: boolean) {
     }),
   );
   const state = makeState("paleoclaw");
-  const paleoclaw = createTestBrowserRouteContext({ getState: () => state }).forProfile("paleoclaw");
+  const paleoclaw = createTestBrowserRouteContext({ getState: () => state }).forProfile(
+    "paleoclaw",
+  );
   state.profiles.get("paleoclaw")!.running = { ...mockLaunchedChrome(vi.fn(), 1234), headless };
   return paleoclaw;
 }

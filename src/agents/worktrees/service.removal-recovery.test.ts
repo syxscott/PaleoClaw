@@ -156,7 +156,12 @@ describe("interrupted ordinary worktree removal recovery", () => {
     expect(await git(repo, "worktree", "list", "--porcelain")).toContain(sibling);
     expect(await git(repo, "show", `${snapshot}:README.md`)).toBe("base");
     expect(
-      await git(repo, "for-each-ref", "--format=%(refname)", `refs/paleoclaw/removals/${record.id}`),
+      await git(
+        repo,
+        "for-each-ref",
+        "--format=%(refname)",
+        `refs/paleoclaw/removals/${record.id}`,
+      ),
     ).toBe("");
     expect(getRegistryWorktree(env, record.id)?.removedAt).toEqual(expect.any(Number));
     await expect(recover()).resolves.toMatchObject({ removed: true });
@@ -493,7 +498,9 @@ describe("interrupted ordinary worktree removal recovery", () => {
         await expect(fs.stat(admin)).rejects.toMatchObject({ code: "ENOENT" });
         expect(await git(repo, "branch", "--list", record.branch)).toBe("");
         expect(await git(repo, "for-each-ref", "--format=%(refname)", pending)).toBe("");
-        expect(await git(repo, "rev-parse", `refs/paleoclaw/snapshots/${record.id}`)).toBe(snapshot);
+        expect(await git(repo, "rev-parse", `refs/paleoclaw/snapshots/${record.id}`)).toBe(
+          snapshot,
+        );
       }
       expect(getRegistryWorktree(env, record.id)?.removedAt).toBe(retiredAt);
     },

@@ -38,7 +38,7 @@ export NOVITA_API_KEY="<your-novita-api-key>" # pragma: allowlist secret
 
 | Setting       | Value                             |
 | ------------- | --------------------------------- |
-| Plugin        | `@paleoclaw/novita-provider`       |
+| Plugin        | `@paleoclaw/novita-provider`      |
 | Provider id   | `novita`                          |
 | Aliases       | `novita-ai`, `novitaai`           |
 | Base URL      | `https://api.novita.ai/openai/v1` |

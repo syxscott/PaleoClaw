@@ -6,7 +6,10 @@ import {
   resolveAccountEntry,
 } from "paleoclaw/plugin-sdk/account-resolution";
 import type { GoogleChatAccountConfig } from "paleoclaw/plugin-sdk/config-contracts";
-import { safeParseJsonWithSchema, safeParseWithSchema } from "paleoclaw/plugin-sdk/extension-shared";
+import {
+  safeParseJsonWithSchema,
+  safeParseWithSchema,
+} from "paleoclaw/plugin-sdk/extension-shared";
 import { mergePairLoopGuardConfig } from "paleoclaw/plugin-sdk/pair-loop-guard-runtime";
 import { tryReadSecretFileSync } from "paleoclaw/plugin-sdk/secret-file-runtime";
 import {

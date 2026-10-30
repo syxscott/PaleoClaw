@@ -446,4 +446,3 @@ export function isValidCloudCodeAssistToolId(id: string, mode: ToolCallIdMode = 
   // Strictly alphanumeric for providers with tighter tool ID constraints
   return /^[a-zA-Z0-9]+$/.test(id);
 }
-

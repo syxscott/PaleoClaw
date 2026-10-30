@@ -15,8 +15,8 @@ paleoclaw connects to Zalo ClawBot through the catalog-listed external `@zalo-pl
 ## Compatibility
 
 | Plugin Version | paleoclaw Version | npm dist-tag | Status        |
-| -------------- | ---------------- | ------------ | ------------- |
-| 0.1.4          | >=2026.4.10      | `latest`     | Active / Beta |
+| -------------- | ----------------- | ------------ | ------------- |
+| 0.1.4          | >=2026.4.10       | `latest`     | Active / Beta |
 
 ## Prerequisites
 

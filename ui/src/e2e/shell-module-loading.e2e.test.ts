@@ -44,9 +44,9 @@ suite.define(() => {
         held.release();
         await waitForControlUiRoute(page, { routeId: "chat" });
         expect(await page.locator("paleoclaw-chat-page").count()).toBe(1);
-        expect(await page.locator("paleoclaw-router-outlet .lazy-view-state--loading").count()).toBe(
-          0,
-        );
+        expect(
+          await page.locator("paleoclaw-router-outlet .lazy-view-state--loading").count(),
+        ).toBe(0);
       } finally {
         held.release();
       }

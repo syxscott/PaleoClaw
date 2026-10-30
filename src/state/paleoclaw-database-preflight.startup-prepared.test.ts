@@ -131,7 +131,9 @@ it.each([
       expect(() => fleet.agent(agentId)).toThrow("held for deletion recovery");
     });
     expect(log.warn).toHaveBeenCalledWith(
-      expect.stringMatching(new RegExp(`Agent ${agentId} database is held.*paleoclaw doctor --fix`)),
+      expect.stringMatching(
+        new RegExp(`Agent ${agentId} database is held.*paleoclaw doctor --fix`),
+      ),
     );
     expect(fs.readFileSync(heldPath)).toEqual(before);
   },

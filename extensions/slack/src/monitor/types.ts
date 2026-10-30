@@ -13,7 +13,10 @@ import type {
 } from "@slack/types";
 import type { ChannelRuntimeSurface } from "paleoclaw/plugin-sdk/channel-contract";
 import type { ChatCommandDefinition, CommandArgs } from "paleoclaw/plugin-sdk/command-auth-native";
-import type { OpenClawConfig, SlackSlashCommandConfig } from "paleoclaw/plugin-sdk/config-contracts";
+import type {
+  OpenClawConfig,
+  SlackSlashCommandConfig,
+} from "paleoclaw/plugin-sdk/config-contracts";
 import type { PluginCommandReplyOptions } from "paleoclaw/plugin-sdk/plugin-command-runtime";
 import type { PluginServiceSchedulerV1 } from "paleoclaw/plugin-sdk/plugin-entry";
 import type { ResolvedAgentRoute } from "paleoclaw/plugin-sdk/routing";

@@ -59,7 +59,9 @@ describe("applyQaMergePatch", () => {
   it("deletes keys the patch nulls out", () => {
     expect(
       applyQaMergePatch(
-        { messages: { groupChat: { mentionPatterns: ["paleoclaw"], visibleReplies: "automatic" } } },
+        {
+          messages: { groupChat: { mentionPatterns: ["paleoclaw"], visibleReplies: "automatic" } },
+        },
         { messages: { groupChat: { mentionPatterns: null } } },
       ),
     ).toEqual({ messages: { groupChat: { visibleReplies: "automatic" } } });

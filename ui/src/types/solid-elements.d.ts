@@ -120,7 +120,9 @@ declare module "@solidjs/web" {
       "paleoclaw-dashboards-page": HTMLAttributes<HTMLElement>;
       "paleoclaw-lobster-pet": HTMLAttributes<HTMLElement> & ElementProperties<LobsterPetProps>;
       // Each caller validates the picker option/callback pairing before the DOM boundary.
-      "paleoclaw-select-picker": HTMLAttributes<HTMLElementTagNameMap["paleoclaw-select-picker"]> & {
+      "paleoclaw-select-picker": HTMLAttributes<
+        HTMLElementTagNameMap["paleoclaw-select-picker"]
+      > & {
         "prop:params": unknown;
       };
       "paleoclaw-plugin-view": HTMLAttributes<HTMLElement> &

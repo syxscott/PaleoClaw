@@ -17,8 +17,8 @@ import { createRequire } from "node:module";
 import { dirname, join, relative, resolve } from "node:path";
 import { afterAll, afterEach, describe, expect, it } from "vitest";
 import { parse, stringify } from "yaml";
-import { collectClawHubPublishablePluginPackages } from "../../scripts/lib/plugin-PaleoHub-release.ts";
 import { collectPublishablePluginPackages } from "../../scripts/lib/plugin-npm-release.ts";
+import { collectClawHubPublishablePluginPackages } from "../../scripts/lib/plugin-PaleoHub-release.ts";
 import { collectExtensionPackageJsonCandidates } from "../../scripts/lib/plugin-publication-candidates.ts";
 import {
   canonicalReleasePlanLockJson,

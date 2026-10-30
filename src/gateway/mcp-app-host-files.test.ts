@@ -488,8 +488,8 @@ describe("registered MCP App host-file routes", () => {
   it("registers and removes subscriptions through the same view authority", async () => {
     await subscribe();
     expect((await invoke("mcp.app.unsubscribeResource", { uri }))[0]).toBe(true);
-    expect((await invoke("mcp.app.subscribeResource", { uri: "paleoclaw-file://foreign" }))[0]).toBe(
-      false,
-    );
+    expect(
+      (await invoke("mcp.app.subscribeResource", { uri: "paleoclaw-file://foreign" }))[0],
+    ).toBe(false);
   });
 });

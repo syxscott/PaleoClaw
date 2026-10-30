@@ -82,11 +82,11 @@ choices, not evidence that a store has opened. Doctor warns when a
 store has an engine mismatch, missing capability or other actionable problem;
 selecting PostgreSQL alone is not a warning.
 
-| Field                            | Default      | Meaning                                                                                                                                                            |
-| -------------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `database.engine`                | `"sqlite"`   | Default `"sqlite"` or `"postgres"` for supported families. Families without PostgreSQL support remain on SQLite.                                                   |
-| `database.families.<id>.engine`  | Inherit      | Override for `state`, `agent`, `workboard`, `logbook`, or `team-reports`. Each override requires `engine`; explicit unsupported PostgreSQL overrides are rejected. |
-| `database.postgres.connection`   | None         | Required when any effective family uses PostgreSQL. A shared DSN string or env/file/exec SecretRef; store-backed refs are rejected.                                |
+| Field                            | Default       | Meaning                                                                                                                                                            |
+| -------------------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `database.engine`                | `"sqlite"`    | Default `"sqlite"` or `"postgres"` for supported families. Families without PostgreSQL support remain on SQLite.                                                   |
+| `database.families.<id>.engine`  | Inherit       | Override for `state`, `agent`, `workboard`, `logbook`, or `team-reports`. Each override requires `engine`; explicit unsupported PostgreSQL overrides are rejected. |
+| `database.postgres.connection`   | None          | Required when any effective family uses PostgreSQL. A shared DSN string or env/file/exec SecretRef; store-backed refs are rejected.                                |
 | `database.postgres.schemaPrefix` | `"paleoclaw"` | Prefix for new store schemas: 1–27 lowercase letters, digits, or underscores, starting with a letter or underscore. Existing anchors keep their recorded schema.   |
 
 Shared state, agent databases, Workboard, Logbook, and Team Reports support PostgreSQL.
@@ -824,7 +824,7 @@ engine does not add PostgreSQL support to an unported store.
 | Missing or unresolved connection secret   | Configure `database.postgres.connection` and verify the SecretRef provider is available to the Gateway. |
 | Unreachable PostgreSQL server             | Check the DSN, network access, role permissions, and server availability.                               |
 | Store UUID mismatch                       | Restore the matching anchor and PostgreSQL schema; do not pair an anchor with another store.            |
-| Newer schema or missing forward migration | Use a compatible paleoclaw binary; reverse-port with that binary before a downgrade.                     |
+| Newer schema or missing forward migration | Use a compatible paleoclaw binary; reverse-port with that binary before a downgrade.                    |
 | Gateway running during PostgreSQL backup  | Stop through the service owner, then rerun the backup command.                                          |
 | Update target lacks PostgreSQL support    | Stay on the current version or reverse-port with the current compatible binary before retrying.         |
 

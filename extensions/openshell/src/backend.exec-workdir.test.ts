@@ -29,7 +29,10 @@ const cliMocks = vi.hoisted(() => ({
 }));
 
 vi.mock("paleoclaw/plugin-sdk/sandbox", async (importOriginal) => {
-  return { ...(await importOriginal<typeof import("paleoclaw/plugin-sdk/sandbox")>()), ...sdkMocks };
+  return {
+    ...(await importOriginal<typeof import("paleoclaw/plugin-sdk/sandbox")>()),
+    ...sdkMocks,
+  };
 });
 
 vi.mock("./cli.js", async (importOriginal) => {

@@ -10,7 +10,10 @@ import type { PluginAgentToolResultMiddlewareRegistration } from "./registry-typ
 
 describe("normalizeAgentToolResultMiddlewareRuntimes", () => {
   it.each([
-    { declared: ["paleoclaw", "codex", "agentsapi"], expected: ["paleoclaw", "codex", "agentsapi"] },
+    {
+      declared: ["paleoclaw", "codex", "agentsapi"],
+      expected: ["paleoclaw", "codex", "agentsapi"],
+    },
     { declared: ["codex"], expected: ["codex"] },
   ])(
     "defaults omitted runtimes to the manifest declaration $declared",
@@ -24,9 +27,9 @@ describe("normalizeAgentToolResultMiddlewareRuntimes", () => {
   });
 
   it("ignores unknown runtime ids from manifest metadata", () => {
-    expect(normalizeAgentToolResultMiddlewareRuntimeIds(["codex-app-server", "paleoclaw"])).toEqual([
-      "paleoclaw",
-    ]);
+    expect(normalizeAgentToolResultMiddlewareRuntimeIds(["codex-app-server", "paleoclaw"])).toEqual(
+      ["paleoclaw"],
+    );
   });
 });
 
@@ -58,9 +61,9 @@ describe("agent tool result middleware scopes", () => {
     expect(
       agentToolResultMiddlewareRegistrationCoversTool(registration, "paleoclaw", "apply_patch"),
     ).toBe(true);
-    expect(agentToolResultMiddlewareRegistrationCoversTool(registration, "paleoclaw", "Write")).toBe(
-      false,
-    );
+    expect(
+      agentToolResultMiddlewareRegistrationCoversTool(registration, "paleoclaw", "Write"),
+    ).toBe(false);
     expect(agentToolResultMiddlewareRegistrationCoversTool(registration, "paleoclaw", "exec")).toBe(
       false,
     );

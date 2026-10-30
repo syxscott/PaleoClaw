@@ -360,7 +360,9 @@ suite.define(() => {
     await expect
       .poll(() =>
         page
-          .locator(".sidebar-rail__bottom paleoclaw-sidebar-attention .sidebar-issues-button__count")
+          .locator(
+            ".sidebar-rail__bottom paleoclaw-sidebar-attention .sidebar-issues-button__count",
+          )
           .textContent(),
       )
       .toBe("1");

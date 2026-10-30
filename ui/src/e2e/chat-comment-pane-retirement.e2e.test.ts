@@ -65,7 +65,9 @@ suite.define(() => {
             },
           });
           await page.goto(`${suite.server.baseUrl}chat/main/comment-alpha`);
-          const panes = page.locator('paleoclaw-chat-page paleoclaw-chat-pane[aria-hidden="false"]');
+          const panes = page.locator(
+            'paleoclaw-chat-page paleoclaw-chat-pane[aria-hidden="false"]',
+          );
           await expect.poll(() => panes.count()).toBe(2);
           const paneA = panes.filter({ hasText: passage });
           const paneB = panes.filter({ hasText: betaPassage });

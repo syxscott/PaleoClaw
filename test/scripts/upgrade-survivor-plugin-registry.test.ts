@@ -725,7 +725,9 @@ printf '%s\\n' "$baseline_version" >"$CAPTURE_DIR/core-version"
       );
       expect(tags[tag]).toBe(expectedVersion);
     }
-    expect(read(root, "baseline-registry-args")).toContain(`@paleoclaw/discord\n${pluginVersion}\n`);
+    expect(read(root, "baseline-registry-args")).toContain(
+      `@paleoclaw/discord\n${pluginVersion}\n`,
+    );
     expect(read(root, "assert-args")).toBe(
       `scripts/e2e/lib/upgrade-survivor/assertions.mjs\nassert-baseline-plugin\n${pluginVersion}\ndiscord\n${tag}\n`,
     );

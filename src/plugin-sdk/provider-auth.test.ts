@@ -426,7 +426,10 @@ describe("provider auth profile helpers", () => {
     expect(
       isProviderAuthProfileConfigured({ provider: "openai", includeExternalCliAuth: true }),
     ).toBe(true);
-    expect(loadAuthProfileStoreForSecretsRuntime).toHaveBeenNthCalledWith(1, "/tmp/paleoclaw-agent");
+    expect(loadAuthProfileStoreForSecretsRuntime).toHaveBeenNthCalledWith(
+      1,
+      "/tmp/paleoclaw-agent",
+    );
     expect(loadAuthProfileStoreForSecretsRuntime).toHaveBeenNthCalledWith(
       2,
       "/tmp/paleoclaw-agent",

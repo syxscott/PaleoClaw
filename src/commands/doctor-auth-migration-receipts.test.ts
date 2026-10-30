@@ -64,7 +64,10 @@ afterEach(async () => {
 });
 
 beforeEach(async () => {
-  state = await createOpenClawTestState({ layout: "state-only", prefix: "paleoclaw-auth-receipt-" });
+  state = await createOpenClawTestState({
+    layout: "state-only",
+    prefix: "paleoclaw-auth-receipt-",
+  });
   const sourcePath = await state.writeText("credentials/oauth.json", '{"openai":{}}\n');
   receipt = prepareReceipt({
     pathname: sourcePath,

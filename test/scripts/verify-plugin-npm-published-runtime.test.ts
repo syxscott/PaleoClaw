@@ -119,7 +119,9 @@ it("flags reservation packages before they can pass plugin runtime verification"
       },
       files: ["package.json", "README.md"],
     }),
-  ).toEqual(["@paleoclaw/tavily-plugin@0.0.0 plugin npm package must include openclaw.plugin.json"]);
+  ).toEqual([
+    "@paleoclaw/tavily-plugin@0.0.0 plugin npm package must include openclaw.plugin.json",
+  ]);
 });
 
 it.each([
@@ -160,7 +162,12 @@ it.each([
 ] satisfies Array<[string, Record<string, unknown>, string[], string]>)(
   "rejects invalid %s runtime entries",
   (plugin, paleoclaw, files, error) => {
-    runtimeErrors(`@paleoclaw/${plugin}`, paleoclaw, files, `@paleoclaw/${plugin}@2026.5.3 ${error}`);
+    runtimeErrors(
+      `@paleoclaw/${plugin}`,
+      paleoclaw,
+      files,
+      `@paleoclaw/${plugin}@2026.5.3 ${error}`,
+    );
   },
 );
 

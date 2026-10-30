@@ -20,7 +20,13 @@ describe.skipIf(!mixedAgentConnection).each(["sqlite", "postgres"] as const)(
 
     it("persists child runs through the worker and cold-reads full, maintenance, and session projections", async () => {
       const database = withEngineStoreAdmission(() => openOpenClawStateDatabase());
-      const storePath = path.join(fixture.root, "agents", "main", "agent", "paleoclaw-agent.sqlite");
+      const storePath = path.join(
+        fixture.root,
+        "agents",
+        "main",
+        "agent",
+        "paleoclaw-agent.sqlite",
+      );
       const runs = new Map<string, SubagentRunRecord>();
       const records = ([undefined, "parent"] as const).map(
         (completionTarget, index): SubagentRunRecord => {

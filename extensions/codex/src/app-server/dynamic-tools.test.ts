@@ -538,7 +538,12 @@ describe("createCodexDynamicToolBridge", () => {
     expect(codexDynamicToolsFingerprint(forward.specs)).toBe(
       codexDynamicToolsFingerprint(reversed.specs),
     );
-    expect(specNames(forward.specs)).toEqual(["agents_list", "paleoclaw", "web_search", "computer"]);
+    expect(specNames(forward.specs)).toEqual([
+      "agents_list",
+      "paleoclaw",
+      "web_search",
+      "computer",
+    ]);
     expect(forward.specs.filter((spec) => spec.type === "namespace")).toEqual([
       expect.objectContaining({
         name: CODEX_OPENCLAW_DYNAMIC_TOOL_NAMESPACE,

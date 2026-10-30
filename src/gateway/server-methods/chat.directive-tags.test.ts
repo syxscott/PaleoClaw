@@ -1639,7 +1639,9 @@ describe("chat directive tag stripping for non-streaming final payloads", () => 
   });
 
   it("records accepted steering once across transcript, hooks, audit, and finalization", async () => {
-    const { context, send } = await createSqliteChatRequest("paleoclaw-chat-send-steer-accounting-");
+    const { context, send } = await createSqliteChatRequest(
+      "paleoclaw-chat-send-steer-accounting-",
+    );
     mockState.hasMessageReceivedHooks = true;
     setSavedMediaResults(["/tmp/steer.png", "image/png"]);
     const auditEvents: Array<{ reasonCode?: unknown; runId?: unknown }> = [];
@@ -2761,7 +2763,9 @@ describe("chat directive tag stripping for non-streaming final payloads", () => 
   });
 
   it("persists auto-TTS final media as audio-only so webchat does not duplicate assistant text", async () => {
-    const { audioPath } = await createAudioTranscriptFixture("paleoclaw-chat-send-agent-tts-final-");
+    const { audioPath } = await createAudioTranscriptFixture(
+      "paleoclaw-chat-send-agent-tts-final-",
+    );
     setAgentRunReplies([
       {
         kind: "final",

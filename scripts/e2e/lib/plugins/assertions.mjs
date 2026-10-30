@@ -6,13 +6,13 @@ import {
   readBoundedResponseText,
 } from "../../../lib/bounded-response.mjs";
 import { createTimeoutError } from "../../../lib/timeout-error.mjs";
+import { readPositiveIntEnv } from "../env-limits.mjs";
+import { readJson } from "../fixtures/common.mjs";
+import { assertRealPathInside, resolveHomePath } from "../paleoclaw-state-paths.mjs";
 import {
   assertClawHubArtifactMetadata,
   assertClawHubExternalInstallContract,
 } from "../PaleoHub-artifact-assertions.mjs";
-import { readPositiveIntEnv } from "../env-limits.mjs";
-import { readJson } from "../fixtures/common.mjs";
-import { assertRealPathInside, resolveHomePath } from "../paleoclaw-state-paths.mjs";
 import {
   readPluginInstallRecords,
   writePluginInstallIndexForE2E,

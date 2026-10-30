@@ -129,7 +129,9 @@ function isBundledRuntimeSkillsPath(beforeSkillRoot: readonly string[]): boolean
   return (
     lower.some(
       (segment) =>
-        segment === "dist-runtime" || segment === "node_modules" || segment.startsWith("paleoclaw@"),
+        segment === "dist-runtime" ||
+        segment === "node_modules" ||
+        segment.startsWith("paleoclaw@"),
     ) ||
     (openclawIndex > 0 && ["tmp", "temp"].includes(lower[openclawIndex - 1]!))
   );

@@ -38,8 +38,8 @@ for results, cancel work, or inspect Gateway resources.
 | [Embedding guide](/gateway/embedding)                         | Release train   | Child-process environment, readiness, lifecycle, recovery, RPC ownership, and packaging.      |
 | [Gateway protocol](/gateway/protocol)                         | Ready           | WebSocket transport, connect handshake, auth scopes, protocol versioning, and events.         |
 | [Gateway protocol RPC methods](/gateway/protocol/rpc-methods) | Ready           | Current Gateway methods for agents, sessions, tasks, models, tools, artifacts, and approvals. |
-| [`paleoclaw agent`](/cli/agent)                                | Ready           | One-shot script integration when shelling out to the CLI is enough.                           |
-| [`paleoclaw message`](/cli/message)                            | Ready           | Sending messages or channel actions from scripts.                                             |
+| [`paleoclaw agent`](/cli/agent)                               | Ready           | One-shot script integration when shelling out to the CLI is enough.                           |
+| [`paleoclaw message`](/cli/message)                           | Ready           | Sending messages or channel actions from scripts.                                             |
 
 ## Recommended path
 

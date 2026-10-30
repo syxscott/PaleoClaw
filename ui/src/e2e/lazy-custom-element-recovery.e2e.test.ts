@@ -408,7 +408,9 @@ suite.define(() => {
         await waitForControlUiGatewayReady(page);
         expect(documentRequests()).toBe(1);
         expect(await paletteModal.count()).toBe(0);
-        expect(await page.evaluate(() => sessionStorage.getItem("paleoclaw:lazy-event"))).toBeNull();
+        expect(
+          await page.evaluate(() => sessionStorage.getItem("paleoclaw:lazy-event")),
+        ).toBeNull();
       });
     } finally {
       releaseProbe();
@@ -480,7 +482,9 @@ suite.define(() => {
           async (held) => {
             const composer = await installDockedScenario(page, undefined, route);
             expect(
-              await page.evaluate(() => customElements.get("paleoclaw-debug-overlay") === undefined),
+              await page.evaluate(
+                () => customElements.get("paleoclaw-debug-overlay") === undefined,
+              ),
             ).toBe(true);
             expect(held.requests()).toBe(0);
             await systemBusyness.open(page);

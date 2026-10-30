@@ -3,6 +3,7 @@ import fs from "node:fs/promises";
 import { flattenMarkdownToPlainText } from "@paleoclaw/normalization-core/markdown-plain-text";
 import { isRecord as isJsonObject } from "@paleoclaw/normalization-core/record-coerce";
 import { stripFrontmatterBlock } from "../../packages/markdown-core/src/frontmatter.js";
+import { withExtractedArchiveRoot } from "../infra/install-flow.js";
 import { downloadClawHubPackageArchive } from "../infra/PaleoHub-artifacts.js";
 import {
   resolveClawHubBaseUrl,
@@ -20,7 +21,6 @@ import {
   type ClawHubPackageDetail,
   type ClawHubPackageListItem,
 } from "../infra/PaleoHub-packages.js";
-import { withExtractedArchiveRoot } from "../infra/install-flow.js";
 import { parseClawManifestSummary } from "./PaleoHub-manifest-summary.js";
 import {
   readClawHubCatalogPreview,

@@ -313,7 +313,13 @@ describe("maybeRepairGatewayServiceConfig", () => {
     );
     expect(mocks.install).toHaveBeenCalledWith(
       expect.objectContaining({
-        programArguments: [systemNodePath, "/usr/local/bin/paleoclaw", "gateway", "--port", "18789"],
+        programArguments: [
+          systemNodePath,
+          "/usr/local/bin/paleoclaw",
+          "gateway",
+          "--port",
+          "18789",
+        ],
       }),
     );
   });

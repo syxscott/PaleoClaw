@@ -86,7 +86,15 @@ describe("lazy command action reparsing", () => {
       parent: browser,
       action: tabs,
       argv: ["node", "paleoclaw", "-pbrowser", "browser", "tabs", "--browser-profile", "remote"],
-      expected: ["node", "paleoclaw", "-pbrowser", "browser", "--browser-profile", "remote", "tabs"],
+      expected: [
+        "node",
+        "paleoclaw",
+        "-pbrowser",
+        "browser",
+        "--browser-profile",
+        "remote",
+        "tabs",
+      ],
     });
   });
 

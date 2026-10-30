@@ -1,5 +1,10 @@
 import { createAssistantMessageEventStream } from "@paleoclaw/llm-core";
-import type { Api, AssistantMessageEventStreamContract, Model, StreamFn } from "@paleoclaw/llm-core";
+import type {
+  Api,
+  AssistantMessageEventStreamContract,
+  Model,
+  StreamFn,
+} from "@paleoclaw/llm-core";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { createApiRegistry, type ApiRegistry } from "../api-registry.js";
 import { configureAiTransportHost, getAiTransportHost } from "../host.js";

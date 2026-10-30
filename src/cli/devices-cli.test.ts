@@ -664,7 +664,11 @@ describe("list output", () => {
           clientId: "paleoclaw-macos",
         }),
         paired({ deviceId: secondId, displayName: "Kitchen Mac", clientId: "paleoclaw-ios" }),
-        paired({ deviceId: "dev-client", displayName: undefined, clientId: "paleoclaw-control-ui" }),
+        paired({
+          deviceId: "dev-client",
+          displayName: undefined,
+          clientId: "paleoclaw-control-ui",
+        }),
         paired({ deviceId: "dev-id-only", displayName: undefined }),
       ],
     );

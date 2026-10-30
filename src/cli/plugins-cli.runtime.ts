@@ -303,7 +303,9 @@ export async function runPluginsRegistryCommand(opts: PluginRegistryOptions): Pr
   if (inspection.refreshReasons.length > 0) {
     lines.push(`${theme.muted("Refresh reasons:")} ${inspection.refreshReasons.join(", ")}`);
     lines.push(...formatDifferences(inspection.differences).map((difference) => `- ${difference}`));
-    lines.push(`${theme.muted("Repair:")} ${theme.command("paleoclaw plugins registry --refresh")}`);
+    lines.push(
+      `${theme.muted("Repair:")} ${theme.command("paleoclaw plugins registry --refresh")}`,
+    );
   }
   defaultRuntime.log(lines.join("\n"));
 }

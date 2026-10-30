@@ -37,7 +37,9 @@ import { buildDirectLabel, buildGuildLabel } from "./reply-context.js";
 import { deliverDiscordReply } from "./reply-delivery.js";
 import { buildDiscordConversationRouteContext } from "./route-resolution.js";
 
-const loadReplyRuntime = createLazyRuntimeModule(() => import("paleoclaw/plugin-sdk/reply-runtime"));
+const loadReplyRuntime = createLazyRuntimeModule(
+  () => import("paleoclaw/plugin-sdk/reply-runtime"),
+);
 
 const loadTypingRuntime = createLazyRuntimeModule(() => import("./typing.js"));
 

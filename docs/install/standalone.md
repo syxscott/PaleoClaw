@@ -123,7 +123,7 @@ runtime in `runtime/npm/` is retained regardless of the plugin selection.
 | `mode`          | `jit`, `bytecode`, or `aot`.                                                                                      |
 | `target`        | `platform` and `arch` for the compiled executable.                                                                |
 | `bun`           | Compiler `version`, `revision`, `commit`, and `executableSha256`.                                                 |
-| `paleoclaw`      | paleoclaw `version` and source `commit`.                                                                           |
+| `paleoclaw`     | paleoclaw `version` and source `commit`.                                                                          |
 | `executable`    | Relative `path`, `sizeBytes`, and `sha256`.                                                                       |
 | `runtime`       | Relative `path`, `sizeBytes`, `sha256`, `fileCount`, `symlinkCount`, resource `categories`, and `sidecarPlugins`. |
 | `embedded`      | Counts for `workers`, `plugins`, `modules`, and `inlineWorkers`.                                                  |

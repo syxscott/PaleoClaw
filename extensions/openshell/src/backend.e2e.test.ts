@@ -5,7 +5,10 @@ import path from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { promisify } from "node:util";
 import { expectDefined } from "@paleoclaw/normalization-core";
-import type { CreateSandboxBackendParams, SandboxBackendHandle } from "paleoclaw/plugin-sdk/sandbox";
+import type {
+  CreateSandboxBackendParams,
+  SandboxBackendHandle,
+} from "paleoclaw/plugin-sdk/sandbox";
 import { createSandboxTestContext } from "paleoclaw/plugin-sdk/test-fixtures";
 import { expect, it, vi } from "vitest";
 import {

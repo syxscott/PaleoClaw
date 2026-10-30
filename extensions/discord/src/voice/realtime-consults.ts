@@ -609,7 +609,8 @@ export class DiscordRealtimeConsults {
         : alreadyDelivered
           ? {
               status: "already_delivered",
-              message: "paleoclaw already delivered this answer to Discord voice. Do not repeat it.",
+              message:
+                "paleoclaw already delivered this answer to Discord voice. Do not repeat it.",
             }
           : result;
     // Unsupported suppression still needs a terminal payload that prevents replay.

@@ -2,8 +2,8 @@ import { PLUGIN_CAPABILITY_CONSENT_REQUIRED } from "../../packages/gateway-proto
 import { GATEWAY_RESTART_WAIT_OUTCOMES } from "../cli/daemon-cli/restart-health.types.js";
 import { isServiceInspectionReason } from "../daemon/service-inspection-error.js";
 import { normalizeSupportDiagnosticErrorCode } from "../logging/diagnostic-support-redaction.js";
-import { CLAWHUB_INSTALL_ERROR_CODE } from "../plugins/PaleoHub-error-codes.js";
 import { PLUGIN_INSTALL_ERROR_CODE } from "../plugins/install-types.js";
+import { CLAWHUB_INSTALL_ERROR_CODE } from "../plugins/PaleoHub-error-codes.js";
 import {
   SKIPPED_UPDATE_OUTCOMES,
   UPDATE_ENVIRONMENT_FAILURE_REASONS,

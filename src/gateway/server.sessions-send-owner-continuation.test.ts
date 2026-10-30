@@ -55,7 +55,8 @@ import {
 import { releaseGatewaySessionStoreFixture } from "./test/server-sessions-resources.test-helpers.js";
 
 const { createOpenClawTools } = await import("../agents/paleoclaw-tools.js");
-const { resolveOpenClawPluginToolsForOptions } = await import("../agents/paleoclaw-plugin-tools.js");
+const { resolveOpenClawPluginToolsForOptions } =
+  await import("../agents/paleoclaw-plugin-tools.js");
 
 installGatewayTestHooks({ scope: "suite" });
 const tempDirs = useAutoCleanupTempDirTracker((cleanup) =>

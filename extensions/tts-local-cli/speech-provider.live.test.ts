@@ -4,7 +4,10 @@ import path from "node:path";
 import type { OpenClawConfig } from "paleoclaw/plugin-sdk/config-contracts";
 import { resolveFfmpegBin } from "paleoclaw/plugin-sdk/media-ffmpeg";
 import { runFfmpeg } from "paleoclaw/plugin-sdk/media-runtime";
-import type { SpeechProviderConfig, SpeechSynthesisRequest } from "paleoclaw/plugin-sdk/speech-core";
+import type {
+  SpeechProviderConfig,
+  SpeechSynthesisRequest,
+} from "paleoclaw/plugin-sdk/speech-core";
 import { withTempDir } from "paleoclaw/plugin-sdk/test-env";
 import { describe, expect, it } from "vitest";
 import { buildCliSpeechProvider } from "./speech-provider.js";

@@ -155,7 +155,11 @@ describe("pnpm isolated install preflight (v11 layout)", () => {
       await fs.mkdir(ownerBinDir, { recursive: true });
       await writePackageRoot(oldPackageRoot, "1.0.0");
       await writeManifest(path.join(globalRoot, "old"));
-      await fs.symlink(path.join(globalRoot, "old"), path.join(globalRoot, "hash-paleoclaw"), "dir");
+      await fs.symlink(
+        path.join(globalRoot, "old"),
+        path.join(globalRoot, "hash-paleoclaw"),
+        "dir",
+      );
 
       const originalEnv: NodeJS.ProcessEnv = {
         PATH: `${pathBinDir}${path.delimiter}${ownerBinDir}`,
@@ -313,7 +317,10 @@ describe("pnpm isolated install preflight (v11 layout)", () => {
         [".", `paleoclaw@link:${callerProjectDir}`],
         ["../checkout", `paleoclaw@link:${path.join(base, "checkout")}`],
         ["file:./candidate", `paleoclaw@file:${path.join(callerProjectDir, "candidate")}`],
-        ["paleoclaw@link:./candidate", `paleoclaw@link:${path.join(callerProjectDir, "candidate")}`],
+        [
+          "paleoclaw@link:./candidate",
+          `paleoclaw@link:${path.join(callerProjectDir, "candidate")}`,
+        ],
         ["git+file:./candidate#main", "git+file:///C:/caller/candidate#main", "C:\\caller"],
         ["./candidate.tar", `paleoclaw@file:${candidateTar}`],
         ["paleoclaw@file:./candidate.tar", `paleoclaw@file:${candidateTar}`],

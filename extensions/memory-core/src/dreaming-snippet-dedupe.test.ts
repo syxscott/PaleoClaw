@@ -4,7 +4,8 @@ import { dedupeEntries, prioritizeLightEntriesByDiaryCoverage } from "./dreaming
 import type { ShortTermRecallEntry } from "./short-term-promotion.js";
 
 vi.mock("paleoclaw/plugin-sdk/string-coerce-runtime", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("paleoclaw/plugin-sdk/string-coerce-runtime")>();
+  const actual =
+    await importOriginal<typeof import("paleoclaw/plugin-sdk/string-coerce-runtime")>();
   return {
     ...actual,
     normalizeLowercaseStringOrEmpty: vi.fn(actual.normalizeLowercaseStringOrEmpty),

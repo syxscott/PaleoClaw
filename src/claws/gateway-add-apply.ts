@@ -18,7 +18,6 @@ import {
   type StatelessClawAddOptions,
 } from "./add-stateless.js";
 import { ClawAddMutationError } from "./add.js";
-import { withResolvedClawHubSource, type ClawHubCoordinate } from "./PaleoHub-source.js";
 import type { ClawCronGateway, PersistedClawCronRef } from "./cron.js";
 import { digestClawValue } from "./digest.js";
 import {
@@ -32,6 +31,7 @@ import { bindClawPluginInstallConsent } from "./gateway-plugin-consent.js";
 import { bindClawSkillWarningConsent } from "./gateway-skill-consent.js";
 import { assertClawsLabsEnabled } from "./labs-gate.js";
 import { packageFromAction } from "./package-plan-action.js";
+import { withResolvedClawHubSource, type ClawHubCoordinate } from "./PaleoHub-source.js";
 import {
   assertClawPluginInstallOwnersCurrent,
   assertClawPluginRequirementsEnabled,

@@ -71,7 +71,13 @@ describe("verify-docker-attestations", () => {
 
   it("parses required platforms and image refs", () => {
     expect(
-      parseArgs(["--platform", "linux/amd64", "--platform", "linux/arm64", "ghcr.io/paleoclaw/app"]),
+      parseArgs([
+        "--platform",
+        "linux/amd64",
+        "--platform",
+        "linux/arm64",
+        "ghcr.io/paleoclaw/app",
+      ]),
     ).toEqual({
       help: false,
       imageRefs: ["ghcr.io/paleoclaw/app"],

@@ -13,7 +13,7 @@ export {
 export { issuePairingChallenge } from "../pairing/pairing-challenge.js";
 export { emptyPluginConfigSchema } from "../plugins/config-schema.js";
 export { registerPluginHttpRoute } from "../plugins/http-registry.js";
-export type { PluginHttpRouteHandler } from "../plugins/http-registry.js";
+export type { PluginHttpRouteHandoff as PluginHttpRouteHandler } from "../plugins/http-registry.js";
 export type { PluginRuntime } from "../plugins/runtime/types.js";
 export type { OpenClawPluginApi } from "../plugins/types.js";
 export { DEFAULT_ACCOUNT_ID } from "../routing/session-key.js";

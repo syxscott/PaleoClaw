@@ -22,7 +22,10 @@ export async function installNativeWebChrome(page: Page): Promise<void> {
       canGoForward: false,
     };
     const stamp = () => {
-      document.documentElement.classList.add("paleoclaw-native-macos", "paleoclaw-native-web-chrome");
+      document.documentElement.classList.add(
+        "paleoclaw-native-macos",
+        "paleoclaw-native-web-chrome",
+      );
       document.documentElement.style.setProperty("--paleoclaw-native-titlebar-height", "52px");
       // The app also pads both desktop navigation surfaces past AppKit's
       // window controls (DashboardWindowController.installNativeChromeScript).

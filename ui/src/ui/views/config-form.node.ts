@@ -455,10 +455,9 @@ export function renderNode(params: {
               (opt) => html`
                 <button
                   type="button"
-                  class="cfg-segmented__btn ${opt === resolvedValue ||
-                  String(opt) === String(resolvedValue)
-                    ? "active"
-                    : ""}"
+                  class="cfg-segmented__btn ${
+                    opt === resolvedValue || String(opt) === String(resolvedValue) ? "active" : ""
+                  }"
                   ?disabled=${disabled}
                   @click=${() => onPatch(path, opt)}
                 >
@@ -589,19 +588,21 @@ function renderTextInput(params: {
             onPatch(path, raw.trim());
           }}
         />
-        ${schema.default !== undefined
-          ? html`
-              <button
-                type="button"
-                class="cfg-input__reset"
-                title="Reset to default"
-                ?disabled=${disabled}
-                @click=${() => onPatch(path, schema.default)}
-              >
-                ↺
-              </button>
-            `
-          : nothing}
+        ${
+          schema.default !== undefined
+            ? html`
+                <button
+                  type="button"
+                  class="cfg-input__reset"
+                  title="Reset to default"
+                  ?disabled=${disabled}
+                  @click=${() => onPatch(path, schema.default)}
+                >
+                  ↺
+                </button>
+              `
+            : nothing
+        }
       </div>
     </div>
   `;
@@ -755,19 +756,21 @@ function renderObject(params: {
         onPatch,
       }),
     )}
-    ${allowExtra
-      ? renderMapField({
-          schema: additional,
-          value: obj,
-          path,
-          hints,
-          unsupported,
-          disabled,
-          reservedKeys: reserved,
-          searchCriteria: childSearchCriteria,
-          onPatch,
-        })
-      : nothing}
+    ${
+      allowExtra
+        ? renderMapField({
+            schema: additional,
+            value: obj,
+            path,
+            hints,
+            unsupported,
+            disabled,
+            reservedKeys: reserved,
+            searchCriteria: childSearchCriteria,
+            onPatch,
+          })
+        : nothing
+    }
   `;
 
   // For top-level, don't wrap in collapsible
@@ -849,47 +852,49 @@ function renderArray(params: {
         </button>
       </div>
       ${help ? html`<div class="cfg-array__help">${help}</div>` : nothing}
-      ${arr.length === 0
-        ? html` <div class="cfg-array__empty">No items yet. Click "Add" to create one.</div> `
-        : html`
-            <div class="cfg-array__items">
-              ${arr.map(
-                (item, idx) => html`
-                  <div class="cfg-array__item">
-                    <div class="cfg-array__item-header">
-                      <span class="cfg-array__item-index">#${idx + 1}</span>
-                      <button
-                        type="button"
-                        class="cfg-array__item-remove"
-                        title="Remove item"
-                        ?disabled=${disabled}
-                        @click=${() => {
-                          const next = [...arr];
-                          next.splice(idx, 1);
-                          onPatch(path, next);
-                        }}
-                      >
-                        ${icons.trash}
-                      </button>
+      ${
+        arr.length === 0
+          ? html` <div class="cfg-array__empty">No items yet. Click "Add" to create one.</div> `
+          : html`
+              <div class="cfg-array__items">
+                ${arr.map(
+                  (item, idx) => html`
+                    <div class="cfg-array__item">
+                      <div class="cfg-array__item-header">
+                        <span class="cfg-array__item-index">#${idx + 1}</span>
+                        <button
+                          type="button"
+                          class="cfg-array__item-remove"
+                          title="Remove item"
+                          ?disabled=${disabled}
+                          @click=${() => {
+                            const next = [...arr];
+                            next.splice(idx, 1);
+                            onPatch(path, next);
+                          }}
+                        >
+                          ${icons.trash}
+                        </button>
+                      </div>
+                      <div class="cfg-array__item-content">
+                        ${renderNode({
+                          schema: itemsSchema,
+                          value: item,
+                          path: [...path, idx],
+                          hints,
+                          unsupported,
+                          disabled,
+                          searchCriteria: childSearchCriteria,
+                          showLabel: false,
+                          onPatch,
+                        })}
+                      </div>
                     </div>
-                    <div class="cfg-array__item-content">
-                      ${renderNode({
-                        schema: itemsSchema,
-                        value: item,
-                        path: [...path, idx],
-                        hints,
-                        unsupported,
-                        disabled,
-                        searchCriteria: childSearchCriteria,
-                        showLabel: false,
-                        onPatch,
-                      })}
-                    </div>
-                  </div>
-                `,
-              )}
-            </div>
-          `}
+                  `,
+                )}
+              </div>
+            `
+      }
     </div>
   `;
 }
@@ -956,93 +961,97 @@ function renderMapField(params: {
         </button>
       </div>
 
-      ${visibleEntries.length === 0
-        ? html` <div class="cfg-map__empty">No custom entries.</div> `
-        : html`
-            <div class="cfg-map__items">
-              ${visibleEntries.map(([key, entryValue]) => {
-                const valuePath = [...path, key];
-                const fallback = jsonValue(entryValue);
-                return html`
-                  <div class="cfg-map__item">
-                    <div class="cfg-map__item-header">
-                      <div class="cfg-map__item-key">
-                        <input
-                          type="text"
-                          class="cfg-input cfg-input--sm"
-                          placeholder="Key"
-                          .value=${key}
+      ${
+        visibleEntries.length === 0
+          ? html` <div class="cfg-map__empty">No custom entries.</div> `
+          : html`
+              <div class="cfg-map__items">
+                ${visibleEntries.map(([key, entryValue]) => {
+                  const valuePath = [...path, key];
+                  const fallback = jsonValue(entryValue);
+                  return html`
+                    <div class="cfg-map__item">
+                      <div class="cfg-map__item-header">
+                        <div class="cfg-map__item-key">
+                          <input
+                            type="text"
+                            class="cfg-input cfg-input--sm"
+                            placeholder="Key"
+                            .value=${key}
+                            ?disabled=${disabled}
+                            @change=${(e: Event) => {
+                              const nextKey = (e.target as HTMLInputElement).value.trim();
+                              if (!nextKey || nextKey === key) {
+                                return;
+                              }
+                              const next = { ...value };
+                              if (nextKey in next) {
+                                return;
+                              }
+                              next[nextKey] = next[key];
+                              delete next[key];
+                              onPatch(path, next);
+                            }}
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          class="cfg-map__item-remove"
+                          title="Remove entry"
                           ?disabled=${disabled}
-                          @change=${(e: Event) => {
-                            const nextKey = (e.target as HTMLInputElement).value.trim();
-                            if (!nextKey || nextKey === key) {
-                              return;
-                            }
+                          @click=${() => {
                             const next = { ...value };
-                            if (nextKey in next) {
-                              return;
-                            }
-                            next[nextKey] = next[key];
                             delete next[key];
                             onPatch(path, next);
                           }}
-                        />
+                        >
+                          ${icons.trash}
+                        </button>
                       </div>
-                      <button
-                        type="button"
-                        class="cfg-map__item-remove"
-                        title="Remove entry"
-                        ?disabled=${disabled}
-                        @click=${() => {
-                          const next = { ...value };
-                          delete next[key];
-                          onPatch(path, next);
-                        }}
-                      >
-                        ${icons.trash}
-                      </button>
+                      <div class="cfg-map__item-value">
+                        ${
+                          anySchema
+                            ? html`
+                                <textarea
+                                  class="cfg-textarea cfg-textarea--sm"
+                                  placeholder="JSON value"
+                                  rows="2"
+                                  .value=${fallback}
+                                  ?disabled=${disabled}
+                                  @change=${(e: Event) => {
+                                    const target = e.target as HTMLTextAreaElement;
+                                    const raw = target.value.trim();
+                                    if (!raw) {
+                                      onPatch(valuePath, undefined);
+                                      return;
+                                    }
+                                    try {
+                                      onPatch(valuePath, JSON.parse(raw));
+                                    } catch {
+                                      target.value = fallback;
+                                    }
+                                  }}
+                                ></textarea>
+                              `
+                            : renderNode({
+                                schema,
+                                value: entryValue,
+                                path: valuePath,
+                                hints,
+                                unsupported,
+                                disabled,
+                                searchCriteria,
+                                showLabel: false,
+                                onPatch,
+                              })
+                        }
+                      </div>
                     </div>
-                    <div class="cfg-map__item-value">
-                      ${anySchema
-                        ? html`
-                            <textarea
-                              class="cfg-textarea cfg-textarea--sm"
-                              placeholder="JSON value"
-                              rows="2"
-                              .value=${fallback}
-                              ?disabled=${disabled}
-                              @change=${(e: Event) => {
-                                const target = e.target as HTMLTextAreaElement;
-                                const raw = target.value.trim();
-                                if (!raw) {
-                                  onPatch(valuePath, undefined);
-                                  return;
-                                }
-                                try {
-                                  onPatch(valuePath, JSON.parse(raw));
-                                } catch {
-                                  target.value = fallback;
-                                }
-                              }}
-                            ></textarea>
-                          `
-                        : renderNode({
-                            schema,
-                            value: entryValue,
-                            path: valuePath,
-                            hints,
-                            unsupported,
-                            disabled,
-                            searchCriteria,
-                            showLabel: false,
-                            onPatch,
-                          })}
-                    </div>
-                  </div>
-                `;
-              })}
-            </div>
-          `}
+                  `;
+                })}
+              </div>
+            `
+      }
     </div>
   `;
 }

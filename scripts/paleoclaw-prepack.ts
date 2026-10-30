@@ -8,11 +8,11 @@ import { formatErrorMessage } from "../src/infra/errors.ts";
 import { readCurrentGitCommit, resolveBuildIdentityEnvironment } from "./lib/build-identity.mts";
 import { readPositiveEnvInt } from "./lib/numeric-options.mjs";
 import { writePackageDistInventoryForPublish } from "./lib/package-dist-inventory.ts";
-import { restorePrepackArtifacts } from "./paleoclaw-postpack.mjs";
 import { preparePackageChangelog } from "./package-changelog.mjs";
 import { preparePackageDocsMap } from "./package-docs-map.mjs";
 import { preparePackageManifest } from "./package-manifest.mjs";
 import { preparePackagedWorkerBundle } from "./package-worker-bundle.mts";
+import { restorePrepackArtifacts } from "./paleoclaw-postpack.mjs";
 import { createPnpmRunnerSpawnSpec } from "./pnpm-runner.mts";
 const requiredPreparedPathGroups = [
   ["dist/index.js", "dist/index.mjs"],

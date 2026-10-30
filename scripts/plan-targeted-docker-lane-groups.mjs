@@ -90,8 +90,10 @@ export function planTargetedDockerLaneGroups({
   ) {
     baselineSpecs.sort(
       (left, right) =>
-        compareReleaseVersions(right.replace(/^paleoclaw@/u, ""), left.replace(/^paleoclaw@/u, "")) ??
-        0,
+        compareReleaseVersions(
+          right.replace(/^paleoclaw@/u, ""),
+          left.replace(/^paleoclaw@/u, ""),
+        ) ?? 0,
     );
   }
   const requestedScenarios = selectedLanes.some((lane) => BASELINE_SHARDED_LANES.has(lane))

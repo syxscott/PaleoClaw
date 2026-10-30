@@ -288,8 +288,8 @@ files you need from them by hand; paleoclaw does not restore them.
 | Nothing is ever learned            | `skills.workshop.autonomous.mode` is `auto`, the conversation is eligible, and tool policy allows `skill_workshop`. See [Self-learning](/tools/self-learning#troubleshooting). |
 | Agent cannot call `skill_workshop` | Sandboxed runs do not get the tool. Use a non-sandboxed session or the CLI. Otherwise add the tool to `tools.allow` or `tools.alsoAllow`.                                      |
 | A write is refused                 | The error names the fix: rename the skill, correct the frontmatter, shorten the description or `SKILL.md`, or remove the flagged line.                                         |
-| An unwanted change was made        | Press **Undo** on the notice, say "undo", send `/learn undo <id>`, or run `paleoclaw skills workshop restore <name>`.                                                           |
-| A skill was archived unexpectedly  | Unused-skill cleanup archives skills with no activity for 30 days. Run `paleoclaw skills workshop restore <name>`.                                                              |
+| An unwanted change was made        | Press **Undo** on the notice, say "undo", send `/learn undo <id>`, or run `paleoclaw skills workshop restore <name>`.                                                          |
+| A skill was archived unexpectedly  | Unused-skill cleanup archives skills with no activity for 30 days. Run `paleoclaw skills workshop restore <name>`.                                                             |
 
 In `auto` mode, `paleoclaw doctor` runs the `core/doctor/skill-workshop-tool-policy`
 check for each agent. It names the sandbox setting or the config layer that

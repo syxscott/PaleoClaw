@@ -25,7 +25,8 @@ function decodeText(encoded: string): string {
 describe("resume handoff contract", () => {
   it("round-trips hostile cross-shell fields through only the inert base64url alphabet", () => {
     const sessionKey = "agent:runner:hostile-'\"$&;|<>^()%![]{}\\`-%PATH%-��";
-    const hostileGatewayUrl = "wss://gateway.example/paleoclaw/$&;=()+,![]{}'`/%25PATH%25/%E2%98%83";
+    const hostileGatewayUrl =
+      "wss://gateway.example/paleoclaw/$&;=()+,![]{}'`/%25PATH%25/%E2%98%83";
 
     const encoded = encodeResumeHandoff({ sessionKey, gatewayUrl: hostileGatewayUrl });
 

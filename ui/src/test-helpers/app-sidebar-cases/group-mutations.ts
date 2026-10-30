@@ -235,8 +235,9 @@ describe("AppSidebar group mutation collapsed state", () => {
           ).toContain("rename failed"),
         );
         expect(
-          document.body.querySelector<HTMLInputElement>('paleoclaw-modal-dialog input[name="value"]')
-            ?.value,
+          document.body.querySelector<HTMLInputElement>(
+            'paleoclaw-modal-dialog input[name="value"]',
+          )?.value,
         ).toBe("Beta");
       }
       await Promise.resolve();

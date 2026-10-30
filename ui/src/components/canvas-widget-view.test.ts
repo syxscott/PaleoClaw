@@ -409,8 +409,9 @@ describe("Canvas widget view", () => {
         { type: "paleoclaw:widget-board-host", nonce: expect.any(String) },
         new URL(target.src).origin,
       );
-      const nonce = post.mock.calls.find(([data]) => data.type === "paleoclaw:widget-board-host")![0]
-        .nonce;
+      const nonce = post.mock.calls.find(
+        ([data]) => data.type === "paleoclaw:widget-board-host",
+      )![0].nonce;
       const renderId = post.mock.calls.find(
         ([data]) => data.method === "ui/notifications/sandbox-resource-ready",
       )![0].params.renderId;

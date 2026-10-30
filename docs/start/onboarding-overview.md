@@ -22,7 +22,7 @@ The terminal flow also offers the full classic wizard for detailed setup.
 | **Gateway**    | Local or remote                        | Local, direct remote, or SSH                        | Local, direct remote, or SSH              |
 | **Best for**   | Servers, headless, full control        | Desktop Mac, visual setup                           | Linux desktop, visual setup               |
 | **Automation** | `--non-interactive` for scripts        | Automatic for fresh local installs                  | Manual only                               |
-| **Start**      | `paleoclaw onboard`                     | [Download the macOS app](/platforms/macos#download) | [Install the Linux app](/platforms/linux) |
+| **Start**      | `paleoclaw onboard`                    | [Download the macOS app](/platforms/macos#download) | [Install the Linux app](/platforms/linux) |
 
 Most users should start with **CLI onboarding** — it works everywhere and gives
 you the most control.

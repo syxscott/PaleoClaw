@@ -64,7 +64,10 @@ describe("github item references", () => {
   it.each([
     ["[Other](https://github.com/acme/research/pull/25): PR #24.", "paleoclaw/paleoclaw/pull/24"],
     ["[Other](https://github.com/acme/research/issues/24): PR #24.", "paleoclaw/paleoclaw/pull/24"],
-    ["[Other](https://github.com/acme/research/pull/24).\n\nPR #24.", "paleoclaw/paleoclaw/pull/24"],
+    [
+      "[Other](https://github.com/acme/research/pull/24).\n\nPR #24.",
+      "paleoclaw/paleoclaw/pull/24",
+    ],
     ["`https://github.com/acme/research/pull/24` PR #24.", "paleoclaw/paleoclaw/pull/24"],
     [
       "[Other](https://github.com/acme/research/pull/24): ClawSweeper PR #24.",

@@ -24,7 +24,9 @@ describe("release media memory scenario", () => {
   it("uses a per-run temp root for generated media artifacts", () => {
     const script = readFileSync(SCENARIO, "utf8");
 
-    expect(script).toContain('media_root="$(mktemp -d /tmp/paleoclaw-release-media-memory.XXXXXX)"');
+    expect(script).toContain(
+      'media_root="$(mktemp -d /tmp/paleoclaw-release-media-memory.XXXXXX)"',
+    );
     expect(script).toContain('rm -rf "$media_root"');
     expect(script).toContain('MOCK_REQUEST_LOG "$media_root/openai-requests.jsonl"');
     expect(script).toContain('PLUGINS_JSON "$media_root/plugins.json"');

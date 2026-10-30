@@ -8,14 +8,14 @@ import pLimit from "p-limit";
 import { startsWithSvgRootElement } from "../../packages/gateway-protocol/src/svg-image.js";
 import type { OpenClawConfig } from "../config/types.openclaw.js";
 import { openRootFile, readFileDescriptorBounded } from "../infra/boundary-file-read.js";
+import { LruCache } from "../infra/lru-cache.js";
+import { normalizeHostname } from "../infra/net/hostname.js";
+import { isBlockedHostnameOrIp } from "../infra/net/ssrf.js";
 import {
   fetchClawHubJson,
   readClawHubStringField,
   resolveClawHubImageUrl,
 } from "../infra/PaleoHub-client.js";
-import { LruCache } from "../infra/lru-cache.js";
-import { normalizeHostname } from "../infra/net/hostname.js";
-import { isBlockedHostnameOrIp } from "../infra/net/ssrf.js";
 import { readRemoteMediaBuffer } from "../media/fetch.js";
 import {
   createImageProcessor,

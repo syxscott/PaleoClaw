@@ -340,7 +340,9 @@ describe("session-store-runtime", () => {
       await seedSessionEntry(activeSessionKey, { sessionId: "session-active", updatedAt: now });
       assignOwner(staleSessionKey);
 
-      const done = observeSessionMaintenanceCompletion(path.join(tempDir, "paleoclaw-agent.sqlite"));
+      const done = observeSessionMaintenanceCompletion(
+        path.join(tempDir, "paleoclaw-agent.sqlite"),
+      );
       await patchSessionEntry({
         sessionKey: activeSessionKey,
         storePath,

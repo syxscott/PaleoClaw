@@ -103,14 +103,17 @@ describe("getLoadedRuntimePluginRegistry", () => {
     },
   );
 
-  it.each(["paleoclaw", "bundle"] as const)("checks deferred %s metadata availability", (format) => {
-    const registry = createRegistryWithPlugin("metadata", { format, imported: false });
-    activate(registry);
-    expect(lookup(["metadata"])).toBe(format === "bundle" ? registry : undefined);
-    const expected = format === "bundle" ? ["metadata"] : [];
-    expect(listLoadedRuntimePluginIds()).toEqual(expected);
-    expect(listRuntimePluginIdsFromRegistry(registry)).toEqual(expected);
-  });
+  it.each(["paleoclaw", "bundle"] as const)(
+    "checks deferred %s metadata availability",
+    (format) => {
+      const registry = createRegistryWithPlugin("metadata", { format, imported: false });
+      activate(registry);
+      expect(lookup(["metadata"])).toBe(format === "bundle" ? registry : undefined);
+      const expected = format === "bundle" ? ["metadata"] : [];
+      expect(listLoadedRuntimePluginIds()).toEqual(expected);
+      expect(listRuntimePluginIdsFromRegistry(registry)).toEqual(expected);
+    },
+  );
 
   it("reuses scoped loaded owners when load options differ from the active registry", () => {
     const registry = createRegistryWithPlugin("demo");

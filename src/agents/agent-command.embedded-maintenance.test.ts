@@ -784,7 +784,12 @@ describe("agentCommand embedded maintenance", () => {
       try {
         state.runAgentAttemptMock.mockImplementationOnce(async (params) => {
           params.onSuccessfulAuthProfile?.({});
-          return makeResult({ sessionId, text: "local final", runner, agentHarnessId: "paleoclaw" });
+          return makeResult({
+            sessionId,
+            text: "local final",
+            runner,
+            agentHarnessId: "paleoclaw",
+          });
         });
         const compact =
           runner === "embedded"

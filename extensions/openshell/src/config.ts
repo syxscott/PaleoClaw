@@ -1,5 +1,8 @@
 import path from "node:path";
-import { buildPluginConfigSchema, type OpenClawPluginConfigSchema } from "paleoclaw/plugin-sdk/core";
+import {
+  buildPluginConfigSchema,
+  type OpenClawPluginConfigSchema,
+} from "paleoclaw/plugin-sdk/core";
 import {
   formatPluginConfigIssue,
   mapPluginConfigIssues,

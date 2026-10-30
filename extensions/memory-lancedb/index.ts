@@ -6,7 +6,10 @@ import type { OpenClawConfig } from "paleoclaw/plugin-sdk/config-contracts";
 import { formatErrorMessage } from "paleoclaw/plugin-sdk/error-runtime";
 import { enqueueKeyedTask } from "paleoclaw/plugin-sdk/keyed-async-queue";
 import { createLazyRuntimeModule } from "paleoclaw/plugin-sdk/lazy-runtime";
-import { readFiniteNumberParam, readPositiveIntegerParam } from "paleoclaw/plugin-sdk/param-readers";
+import {
+  readFiniteNumberParam,
+  readPositiveIntegerParam,
+} from "paleoclaw/plugin-sdk/param-readers";
 import { resolveLivePluginConfigObject } from "paleoclaw/plugin-sdk/plugin-config-runtime";
 import {
   definePluginEntry,

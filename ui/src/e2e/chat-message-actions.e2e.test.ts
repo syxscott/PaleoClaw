@@ -89,7 +89,9 @@ async function expectHoverTooltip(button: Locator, text: string, side?: "right")
   const measure = () =>
     button.evaluate((element) => {
       const host = [
-        ...document.querySelectorAll<HTMLElement & { anchor?: Element | null }>("paleoclaw-tooltip"),
+        ...document.querySelectorAll<HTMLElement & { anchor?: Element | null }>(
+          "paleoclaw-tooltip",
+        ),
       ].find(
         (candidate) =>
           candidate.anchor === element ||

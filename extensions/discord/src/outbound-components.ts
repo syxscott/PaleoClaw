@@ -1,5 +1,8 @@
 import type { ChannelOutboundAdapter } from "paleoclaw/plugin-sdk/channel-send-result";
-import { createLazyRuntimeMethod, createLazyRuntimeModule } from "paleoclaw/plugin-sdk/lazy-runtime";
+import {
+  createLazyRuntimeMethod,
+  createLazyRuntimeModule,
+} from "paleoclaw/plugin-sdk/lazy-runtime";
 import { resolveAskUserQuestionOptionIndices } from "paleoclaw/plugin-sdk/reply-payload";
 import { readDiscordComponentSpec, type DiscordComponentMessageSpec } from "./components.js";
 

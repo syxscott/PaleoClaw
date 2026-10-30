@@ -31,7 +31,9 @@ export function WorktreesPage() {
     (notify) => new WorktreesModel(() => context, notify),
     (model) => model,
   );
-  return <paleoclaw-worktrees-page>{renderWorktreesView(owner, view.read)}</paleoclaw-worktrees-page>;
+  return (
+    <paleoclaw-worktrees-page>{renderWorktreesView(owner, view.read)}</paleoclaw-worktrees-page>
+  );
 }
 
 export function renderWorktreesView(model: WorktreesModel, view: () => WorktreesModel) {

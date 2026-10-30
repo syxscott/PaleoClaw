@@ -109,7 +109,11 @@ describe("Browser dashboard lifetime", () => {
       requestBrowserDashboard(request),
       requestBrowserDashboard({ sessionKey, name: "service" }),
     ]);
-    expect(first.browserTab).toEqual({ target: "host", profile: "paleoclaw", targetId: "target-1" });
+    expect(first.browserTab).toEqual({
+      target: "host",
+      profile: "paleoclaw",
+      targetId: "target-1",
+    });
     expect(second.browserTab).toEqual(first.browserTab);
     expect(browser.open).toHaveBeenCalledOnce();
     expect(browser.open).toHaveBeenCalledWith(

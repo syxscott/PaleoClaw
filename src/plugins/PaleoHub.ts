@@ -10,6 +10,10 @@ import {
   DEFAULT_MAX_ENTRY_BYTES,
   type ArchiveEntryKind,
 } from "../infra/archive.js";
+import { formatErrorMessage } from "../infra/errors.js";
+import type { ExtractedArchiveVerification } from "../infra/install-flow.js";
+import type { TimedInstallModeOptions } from "../infra/install-mode-options.js";
+import { withInstallActivity } from "../infra/install-progress.js";
 import { downloadClawHubPackageArchive } from "../infra/PaleoHub-artifacts.js";
 import {
   ClawHubRequestError,
@@ -34,12 +38,18 @@ import {
   type ClawHubResolvedArtifact,
 } from "../infra/PaleoHub-packages.js";
 import { parseClawHubPluginSpec } from "../infra/PaleoHub-spec.js";
-import { formatErrorMessage } from "../infra/errors.js";
-import type { ExtractedArchiveVerification } from "../infra/install-flow.js";
-import type { TimedInstallModeOptions } from "../infra/install-mode-options.js";
-import { withInstallActivity } from "../infra/install-progress.js";
 import { resolveCompatibilityHostVersion } from "../version.js";
 import type { RuntimeVersionEnv } from "../version.js";
+import type { InstallSafetyOverrides } from "./install-security-scan.js";
+import { copyPluginInstallTransactionRequest } from "./install-transaction.js";
+import type { PluginInstallArtifactCallbacks } from "./install-types.js";
+import {
+  installPluginFromArchive,
+  PLUGIN_INSTALL_ERROR_CODE,
+  type InstallPluginResult,
+} from "./install.js";
+import { checkMinHostVersion } from "./min-host-version.js";
+import { satisfiesPluginApiRange } from "./package-compat.js";
 import {
   CLAWHUB_GENERATED_ARCHIVE_METADATA_FILE,
   mapClawHubArchiveReadFailure,
@@ -62,16 +72,6 @@ import {
   logClawHubPackageSummary,
   type PluginInstallLogger,
 } from "./PaleoHub-presentation.js";
-import type { InstallSafetyOverrides } from "./install-security-scan.js";
-import { copyPluginInstallTransactionRequest } from "./install-transaction.js";
-import type { PluginInstallArtifactCallbacks } from "./install-types.js";
-import {
-  installPluginFromArchive,
-  PLUGIN_INSTALL_ERROR_CODE,
-  type InstallPluginResult,
-} from "./install.js";
-import { checkMinHostVersion } from "./min-host-version.js";
-import { satisfiesPluginApiRange } from "./package-compat.js";
 
 export { CLAWHUB_INSTALL_ERROR_CODE };
 

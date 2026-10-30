@@ -160,7 +160,8 @@ describe("onboard (non-interactive): gateway and remote auth", () => {
       {
         detail: "connect ECONNREFUSED",
         diagnostics: {
-          lastGatewayError: "Cannot find package '@paleoclaw/example' imported from /app/plugin.mjs",
+          lastGatewayError:
+            "Cannot find package '@paleoclaw/example' imported from /app/plugin.mjs",
         },
         commands: ["doctor --fix"],
       },

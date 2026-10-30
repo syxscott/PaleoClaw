@@ -12,7 +12,8 @@ import {
 
 const reads = vi.hoisted(() => ({ queries: 0 }));
 vi.mock("paleoclaw/plugin-sdk/sqlite-worker-runtime", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("paleoclaw/plugin-sdk/sqlite-worker-runtime")>();
+  const actual =
+    await importOriginal<typeof import("paleoclaw/plugin-sdk/sqlite-worker-runtime")>();
   return {
     ...actual,
     openNodeSqliteDatabase: (...args: Parameters<typeof actual.openNodeSqliteDatabase>) => {

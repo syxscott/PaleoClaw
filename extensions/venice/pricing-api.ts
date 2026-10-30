@@ -1,6 +1,9 @@
 import { normalizeModelPricingCatalog } from "paleoclaw/plugin-sdk/model-catalog-pricing";
 import type { ModelDefinitionConfig } from "paleoclaw/plugin-sdk/provider-model-shared";
-import { asFiniteNumberInRange, asOptionalRecord } from "paleoclaw/plugin-sdk/string-coerce-runtime";
+import {
+  asFiniteNumberInRange,
+  asOptionalRecord,
+} from "paleoclaw/plugin-sdk/string-coerce-runtime";
 
 function readVeniceRates(value: unknown): ModelDefinitionConfig["cost"] | undefined {
   const row = asOptionalRecord(value);

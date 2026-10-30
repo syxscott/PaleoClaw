@@ -348,7 +348,9 @@ describe("QA message-tool current conversation delivery", () => {
           accountId,
           conversation: inbound.conversation,
           text: "edited",
-          reactions: [expect.objectContaining({ emoji: "white_check_mark", senderId: "paleoclaw" })],
+          reactions: [
+            expect.objectContaining({ emoji: "white_check_mark", senderId: "paleoclaw" }),
+          ],
         });
         expect(edited?.threadId).toBe(threadId);
         expect(snapshot.messages.find((message) => message.id === inbound.id)).toEqual(inbound);

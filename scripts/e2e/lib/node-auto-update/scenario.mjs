@@ -535,7 +535,9 @@ try {
   assert(
     updatedArguments.some(
       (arg) =>
-        typeof arg === "string" && arg.includes(`${versions[0]}-`) && arg.endsWith("/paleoclaw.mjs"),
+        typeof arg === "string" &&
+        arg.includes(`${versions[0]}-`) &&
+        arg.endsWith("/paleoclaw.mjs"),
     ),
     "supervisor did not run the private package entrypoint",
   );

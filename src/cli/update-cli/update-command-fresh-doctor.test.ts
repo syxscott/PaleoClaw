@@ -803,7 +803,8 @@ describe("post-plugin update readiness", () => {
       source: "memory-core",
       checkId: "memory-core/managed-local-embedding-setup",
       message: "Managed local embeddings are unavailable.",
-      fixHint: "Run `paleoclaw models --agent main auth login --provider llama-cpp --method local`.",
+      fixHint:
+        "Run `paleoclaw models --agent main auth login --provider llama-cpp --method local`.",
       severity: "error" as const,
     })),
     {

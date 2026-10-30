@@ -36,12 +36,12 @@ The trust boundaries and data flows these threats cross are defined in the [thre
 
 ## T-EXFIL-003: Credential harvesting
 
-| Attribute               | Value                                                                                                                                                   |
-| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **ATLAS ID**            | AML.T0009 - Collection                                                                                                                                  |
-| **Description**         | Malicious skill harvests credentials from the agent context                                                                                             |
-| **Attack vector**       | Skill code reads environment variables, config files                                                                                                    |
-| **Affected components** | Skill execution environment                                                                                                                             |
+| Attribute               | Value                                                                                                                                                    |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **ATLAS ID**            | AML.T0009 - Collection                                                                                                                                   |
+| **Description**         | Malicious skill harvests credentials from the agent context                                                                                              |
+| **Attack vector**       | Skill code reads environment variables, config files                                                                                                     |
+| **Affected components** | Skill execution environment                                                                                                                              |
 | **Current mitigations** | PaleoHub credential-pattern scanning (hardcoded secrets, credential env access paired with network sends); no execution sandboxing for skills at runtime |
-| **Residual risk**       | Critical - skills run with agent privileges                                                                                                             |
-| **Recommendations**     | Skill execution sandboxing, credential isolation                                                                                                        |
+| **Residual risk**       | Critical - skills run with agent privileges                                                                                                              |
+| **Recommendations**     | Skill execution sandboxing, credential isolation                                                                                                         |

@@ -5,7 +5,10 @@ import {
   addTimerTimeoutGraceMs,
   clampPositiveTimerTimeoutMs,
 } from "paleoclaw/plugin-sdk/number-runtime";
-import { readFiniteNumberParam, readPositiveIntegerParam } from "paleoclaw/plugin-sdk/param-readers";
+import {
+  readFiniteNumberParam,
+  readPositiveIntegerParam,
+} from "paleoclaw/plugin-sdk/param-readers";
 import type { AnyAgentTool } from "paleoclaw/plugin-sdk/plugin-entry";
 import { CANVAS_PRESENT_COMMAND, resolveCanvasNodeFromList } from "./node-eligibility.js";
 import { canvasToolDefinition } from "./tool-schema.js";

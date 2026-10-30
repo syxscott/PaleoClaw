@@ -24,7 +24,9 @@ type CreateStorage =
 type StartHeartbeat =
   typeof import("./paleoclaw-state-lease-heartbeat.js").startOpenClawStateLeaseHeartbeat;
 
-const { leaseMocks } = await vi.hoisted(() => import("./paleoclaw-state-lease-async.test-mocks.js"));
+const { leaseMocks } = await vi.hoisted(
+  () => import("./paleoclaw-state-lease-async.test-mocks.js"),
+);
 const mocks = vi.hoisted(() => ({
   createStorage: vi.fn<CreateStorage>(),
   startHeartbeat: vi.fn<StartHeartbeat>(),

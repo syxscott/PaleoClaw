@@ -1,5 +1,8 @@
 import { createHash } from "node:crypto";
-import type { CreateSandboxBackendParams, SandboxBackendHandle } from "paleoclaw/plugin-sdk/sandbox";
+import type {
+  CreateSandboxBackendParams,
+  SandboxBackendHandle,
+} from "paleoclaw/plugin-sdk/sandbox";
 import type { MxcConfig } from "./config.js";
 import { createMxcSandboxBackendHandle } from "./mxc-backend.js";
 

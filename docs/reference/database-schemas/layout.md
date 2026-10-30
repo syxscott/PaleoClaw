@@ -9,11 +9,11 @@ title: "Database layout"
 
 ## Database layout
 
-| Scope                    | Default path                                               | Contents                                                                                                        |
-| ------------------------ | ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| Global control plane     | `~/.openclaw/state/openclaw.sqlite`                        | Shared configuration state, registries, approvals, plugin state, and shared runtime state                       |
+| Scope                    | Default path                                                | Contents                                                                                                        |
+| ------------------------ | ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| Global control plane     | `~/.openclaw/state/openclaw.sqlite`                         | Shared configuration state, registries, approvals, plugin state, and shared runtime state                       |
 | Per-agent data plane     | `~/.openclaw/agents/<agentId>/agent/paleoclaw-agent.sqlite` | Sessions, transcripts, memory indexes, auth state, conversation state, and agent-scoped runtime state           |
-| Local client credentials | `<resolved-client-root>/client/credentials.sqlite`         | Client private identities, device and Gateway-scoped token caches, native socket secrets, and migration receipt |
+| Local client credentials | `<resolved-client-root>/client/credentials.sqlite`          | Client private identities, device and Gateway-scoped token caches, native socket secrets, and migration receipt |
 
 The client root is local even when the Gateway uses PostgreSQL or runs remotely.
 CLI clients normally use the selected state directory. The macOS app preserves

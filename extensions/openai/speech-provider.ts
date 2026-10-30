@@ -1,5 +1,8 @@
 import { normalizeResolvedSecretInputString } from "paleoclaw/plugin-sdk/secret-input";
-import type { SpeechProviderPlugin, SpeechSynthesisRequest } from "paleoclaw/plugin-sdk/speech-core";
+import type {
+  SpeechProviderPlugin,
+  SpeechSynthesisRequest,
+} from "paleoclaw/plugin-sdk/speech-core";
 import {
   createSpeechDirectiveParser,
   parseSpeechDirectiveNumberOverride,

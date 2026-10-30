@@ -1,12 +1,12 @@
 import { expectDefined } from "@paleoclaw/normalization-core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { ClawHubSourceError } from "../../claws/PaleoHub-source.js";
 import {
   ClawGatewayPlanBlockedError,
   ClawGatewayPlanChangedError,
 } from "../../claws/gateway-add-apply.js";
 import { ClawGatewayConsentError } from "../../claws/gateway-plugin-consent.js";
 import { ClawSkillConsentError } from "../../claws/gateway-skill-consent.js";
+import { ClawHubSourceError } from "../../claws/PaleoHub-source.js";
 import { authorizeOperatorScopesForMethod } from "../method-scopes.js";
 import { clawsAddHandlers } from "./claws-add.js";
 import { coreGatewayHandlers } from "./core-handlers.js";

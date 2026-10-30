@@ -14,9 +14,9 @@ import {
   rewriteWorkspaceDependencyVersions,
   runPreparedRuntimePack,
 } from "../../scripts/ocm-npm-workspace-deps.mts";
-import { restorePrepackArtifacts } from "../../scripts/paleoclaw-postpack.mjs";
 import { preparePackageChangelog } from "../../scripts/package-changelog.mjs";
 import { preparePackageDocsMap } from "../../scripts/package-docs-map.mjs";
+import { restorePrepackArtifacts } from "../../scripts/paleoclaw-postpack.mjs";
 import { useAutoCleanupTempDirTracker } from "../helpers/temp-dir.js";
 
 const adapterPath = fileURLToPath(
@@ -25,7 +25,9 @@ const adapterPath = fileURLToPath(
 const packageDocsMapPath = fileURLToPath(
   new URL("../../scripts/package-docs-map.mjs", import.meta.url),
 );
-const postpackPath = fileURLToPath(new URL("../../scripts/paleoclaw-postpack.mjs", import.meta.url));
+const postpackPath = fileURLToPath(
+  new URL("../../scripts/paleoclaw-postpack.mjs", import.meta.url),
+);
 const tempDirs = useAutoCleanupTempDirTracker(afterEach);
 const runtimeProfile = { OPENCLAW_OCM_RUNTIME_BUILD_PROFILE: "sourcePerformance" };
 const buildDate = () => new Date("2026-07-11T12:34:56.000Z");

@@ -67,7 +67,10 @@ test.each([true, false])("limits Windows alias custody to its parent (same=%s)",
   const shortPath = sameParent
     ? path.join(root, "OPENCL~1")
     : path.join(directory(root, "RUNNER~1"), "paleoclaw-agent.sqlite");
-  const longPath = path.join(sameParent ? root : directory(root, "other"), "paleoclaw-agent.sqlite");
+  const longPath = path.join(
+    sameParent ? root : directory(root, "other"),
+    "paleoclaw-agent.sqlite",
+  );
   fs.writeFileSync(shortPath, "");
   fs.linkSync(shortPath, longPath);
   vi.spyOn(process, "platform", "get").mockReturnValue("win32");
@@ -88,7 +91,12 @@ test("rejects a Windows short-path candidate redirected through a symlink", () =
 });
 
 test.each([
-  ["file", "/tmp/custom/paleoclaw-agent.sqlite", "/tmp/database-target/paleoclaw-agent.sqlite", true],
+  [
+    "file",
+    "/tmp/custom/paleoclaw-agent.sqlite",
+    "/tmp/database-target/paleoclaw-agent.sqlite",
+    true,
+  ],
   ["directory", "/tmp/custom", "/tmp/replacement", false],
 ] as const)("tracks family directory identity (%s retargeted)", (_kind, from, to, current) => {
   const family = "/tmp/custom/paleoclaw-agent.sqlite";

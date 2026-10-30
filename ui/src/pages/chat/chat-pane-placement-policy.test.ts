@@ -149,7 +149,9 @@ async function chooseProfile() {
   flush();
 }
 function submit() {
-  document.querySelector<HTMLButtonElement>('paleoclaw-modal-dialog button[type="submit"]')!.click();
+  document
+    .querySelector<HTMLButtonElement>('paleoclaw-modal-dialog button[type="submit"]')!
+    .click();
 }
 
 it.each(["dispatch", "move"] as const)(

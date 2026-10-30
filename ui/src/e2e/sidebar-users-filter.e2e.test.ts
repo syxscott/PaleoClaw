@@ -57,7 +57,9 @@ suite.define(() => {
         const choosePresence = async (value: "all" | "online") => {
           await page.locator("#sidebar-people-presence").click();
           await page
-            .locator(`paleoclaw-select-picker:has(#sidebar-people-presence) [data-value="${value}"]`)
+            .locator(
+              `paleoclaw-select-picker:has(#sidebar-people-presence) [data-value="${value}"]`,
+            )
             .click();
         };
         await choosePresence("all");

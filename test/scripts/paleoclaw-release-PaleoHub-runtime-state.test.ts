@@ -39,7 +39,8 @@ describe("scripts/paleoclaw-release-PaleoHub-runtime-state.ts", () => {
       expect(JSON.parse(result.stdout)).toEqual({
         verifierArgs: ["--plugin-PaleoHub-run", "123", "--plugin-PaleoHub-bootstrap-run", "456"],
         proofLines: {
-          normal: "- plugin PaleoHub publish: https://github.com/syxscott/PaleoClaw/actions/runs/123",
+          normal:
+            "- plugin PaleoHub publish: https://github.com/syxscott/PaleoClaw/actions/runs/123",
           bootstrap:
             "- plugin PaleoHub bootstrap: https://github.com/syxscott/PaleoClaw/actions/runs/456",
         },

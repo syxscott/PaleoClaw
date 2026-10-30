@@ -14,8 +14,8 @@ These plugins participate in meetings. They are separate from messaging channels
 
 ## Choose a plugin
 
-| Platform        | Plugin                                      | Accepted meeting links                                                                                      | Installation                                    | Participation paths                                      | Platform-specific capabilities                                                                                |
-| --------------- | ------------------------------------------- | ----------------------------------------------------------------------------------------------------------- | ----------------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| Platform        | Plugin                                      | Accepted meeting links                                                                                      | Installation                                     | Participation paths                                      | Platform-specific capabilities                                                                                |
+| --------------- | ------------------------------------------- | ----------------------------------------------------------------------------------------------------------- | ------------------------------------------------ | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
 | Google Meet     | [`google-meet`](/plugins/google-meet)       | `meet.google.com/...`                                                                                       | Install from npm or PaleoHub; enabled by default | Local Chrome, Chrome on a paired node, or Twilio dial-in | Can create meetings through the Meet API or a signed-in browser; can read supported Meet artifacts with OAuth |
 | Microsoft Teams | [`teams-meetings`](/plugins/teams-meetings) | Work links under `teams.microsoft.com/l/meetup-join/...` and consumer links under `teams.live.com/meet/...` | Install from npm or PaleoHub; enabled by default | Local Chrome or Chrome on a paired node                  | Guest join for work and consumer meetings                                                                     |
 | Slack huddles   | [`slack-huddles`](/plugins/slack-huddles)   | Slack `/huddle/<TEAM>/<CHANNEL>` or `/huddle/<CHANNEL>` links, or a channel id                              | Install from npm or PaleoHub; enable explicitly  | Local Chrome or Chrome on a paired node                  | Joins active huddles as a dedicated signed-in Slack user                                                      |
@@ -32,11 +32,11 @@ audio. The plugin does not start huddles or answer incoming rings.
 
 The four plugins share the same modes:
 
-| Mode         | Behavior                                                                                              | Audio requirements                                           |
-| ------------ | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
-| `agent`      | Realtime transcription goes to the configured paleoclaw agent; regular paleoclaw TTS speaks the reply.  | Chrome talk-back requires a supported virtual-audio backend. |
+| Mode         | Behavior                                                                                               | Audio requirements                                           |
+| ------------ | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------ |
+| `agent`      | Realtime transcription goes to the configured paleoclaw agent; regular paleoclaw TTS speaks the reply. | Chrome talk-back requires a supported virtual-audio backend. |
 | `bidi`       | A realtime voice model listens and replies directly, with paleoclaw agent delegation when supported.   | Chrome talk-back requires a supported virtual-audio backend. |
-| `transcribe` | Joins observe-only and exposes a bounded live-caption transcript when the platform provides captions. | No virtual-audio bridge.                                     |
+| `transcribe` | Joins observe-only and exposes a bounded live-caption transcript when the platform provides captions.  | No virtual-audio bridge.                                     |
 
 Use `transcribe` when the agent only needs meeting text. Use `agent` for normal paleoclaw reasoning and tools. Use `bidi` when low-latency direct voice is more important than routing each turn through the regular agent.
 
@@ -103,7 +103,7 @@ For Slack, use `"slack-huddles"`, enable the plugin explicitly, and follow its
 | -------------------------------- | --------------------------------------------------------------------------------- |
 | `defaultMode`                    | `agent` (default), `bidi`, or `transcribe`                                        |
 | `chrome.guestName`               | Guest display name entered on the platform prejoin page                           |
-| `chrome.browserProfile`          | paleoclaw browser profile used for the meeting                                     |
+| `chrome.browserProfile`          | paleoclaw browser profile used for the meeting                                    |
 | `chrome.audioBackend`            | `auto` (default), `blackhole-2ch`, or `pipewire-pulse`                            |
 | `chromeNode.node`                | Paired node id, name, or IP that owns Chrome and the native virtual-audio backend |
 | `realtime.transcriptionProvider` | Realtime transcription provider used by `agent` mode                              |
@@ -195,8 +195,8 @@ These changes apply to a running Gateway automatically. If it is offline, start 
 
 ## Verify and join
 
-| Platform        | Setup check                    | Join command                                                                  |
-| --------------- | ------------------------------ | ----------------------------------------------------------------------------- |
+| Platform        | Setup check                     | Join command                                                                   |
+| --------------- | ------------------------------- | ------------------------------------------------------------------------------ |
 | Google Meet     | `paleoclaw googlemeet setup`    | `paleoclaw googlemeet join 'https://meet.google.com/abc-defg-hij'`             |
 | Microsoft Teams | `paleoclaw teamsmeetings setup` | `paleoclaw teamsmeetings join 'https://teams.microsoft.com/l/meetup-join/...'` |
 | Slack huddles   | `paleoclaw slackhuddles setup`  | `paleoclaw slackhuddles join 'channel:C0123ABCD'`                              |

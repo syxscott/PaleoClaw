@@ -538,7 +538,11 @@ function rewriteClawHubMarkdownLinkTarget(rawTarget, relativeSourceDir, source) 
   let normalizedRelative;
   if (pathPart.startsWith("docs/")) {
     normalizedRelative = normalizeSlashes(pathPart.slice("docs/".length));
-  } else if (pathPart.startsWith("./") || pathPart.startsWith("../") || /\.mdx?$/iu.test(pathPart)) {
+  } else if (
+    pathPart.startsWith("./") ||
+    pathPart.startsWith("../") ||
+    /\.mdx?$/iu.test(pathPart)
+  ) {
     normalizedRelative = normalizeSlashes(path.normalize(path.join(relativeSourceDir, pathPart)));
   } else {
     return rawTarget;

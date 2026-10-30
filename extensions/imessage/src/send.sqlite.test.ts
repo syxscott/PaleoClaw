@@ -1,6 +1,9 @@
 import { DatabaseSync, StatementSync } from "node:sqlite";
 import { createDeferred } from "paleoclaw/plugin-sdk/extension-shared";
-import type { SqliteWorkerOperations, SqliteWorkerStore } from "paleoclaw/plugin-sdk/sqlite-runtime";
+import type {
+  SqliteWorkerOperations,
+  SqliteWorkerStore,
+} from "paleoclaw/plugin-sdk/sqlite-runtime";
 import { createOpenClawTestState, type OpenClawTestState } from "paleoclaw/plugin-sdk/test-state";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { IMessageRpcClient } from "./client.js";

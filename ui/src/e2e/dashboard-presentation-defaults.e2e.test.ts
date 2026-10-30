@@ -161,7 +161,9 @@ suite.define(() => {
       expect(await sidebarLink.getAttribute("href")).toContain("/chat/main/");
       await page.keyboard.press("Control+Shift+Alt+G");
       await page.locator("paleoclaw-board-view").waitFor({ state: "visible" });
-      const chat = page.locator('paleoclaw-chat-pane[aria-hidden="false"] .sidebar-region__primary');
+      const chat = page.locator(
+        'paleoclaw-chat-pane[aria-hidden="false"] .sidebar-region__primary',
+      );
       await chat.waitFor({ state: "hidden" });
       const menu = await openChatDashboardMenu(page);
       await menu.locator(`${defaultAction}, ${defaultStatus}`).waitFor({ state: "visible" });

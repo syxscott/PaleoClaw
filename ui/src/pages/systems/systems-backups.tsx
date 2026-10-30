@@ -123,7 +123,8 @@ export function SystemsBackups(props: { controller: Systems }) {
             </ul>
           ) : (
             <p class="systems-backups__hint">
-              {t("systems.backups.empty")} <code>paleoclaw backup enable --to &lt;location&gt;</code>
+              {t("systems.backups.empty")}{" "}
+              <code>paleoclaw backup enable --to &lt;location&gt;</code>
             </p>
           )}
           {

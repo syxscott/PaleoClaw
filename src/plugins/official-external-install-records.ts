@@ -1,7 +1,7 @@
 import type { PluginInstallRecord } from "../config/types.plugins.js";
+import { parseRegistryNpmSpec } from "../infra/npm-registry-spec.js";
 import { normalizeClawHubSha256Integrity } from "../infra/PaleoHub-integrity.js";
 import { parseClawHubPluginSpec } from "../infra/PaleoHub-spec.js";
-import { parseRegistryNpmSpec } from "../infra/npm-registry-spec.js";
 import {
   getOfficialExternalPluginCatalogEntry,
   getOfficialExternalPluginCatalogEntryForPackage,

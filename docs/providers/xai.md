@@ -207,7 +207,7 @@ The bundled plugin maps supported xAI APIs onto paleoclaw's shared provider and
 tool contracts. Capabilities that do not fit the shared contract are listed
 below or under known limits.
 
-| xAI capability             | paleoclaw surface                        | Status                                               |
+| xAI capability             | paleoclaw surface                       | Status                                               |
 | -------------------------- | --------------------------------------- | ---------------------------------------------------- |
 | Chat / Responses           | `xai/<model>` model provider            | Yes                                                  |
 | Context compaction         | `/compact` and threshold compaction     | Yes via `/v1/responses/compact`                      |
@@ -221,7 +221,7 @@ below or under known limits.
 | Batch speech-to-text       | `tools.media.audio` media understanding | Yes                                                  |
 | Streaming speech-to-text   | Voice Call `streaming.provider: "xai"`  | Yes                                                  |
 | Realtime voice             | Talk `talk.realtime.provider: "xai"`    | Yes; gateway-relay for native Talk nodes             |
-| Files / batches            | Generic model API compatibility only    | Not a first-class paleoclaw tool                      |
+| Files / batches            | Generic model API compatibility only    | Not a first-class paleoclaw tool                     |
 
 <Note>
 paleoclaw uses xAI's REST image/video/TTS/STT APIs for media generation and

@@ -19,7 +19,7 @@ What the Notifications page controls depends on where you opened it:
 | Where Settings is open                            | Transport                                          | What you can do                                                                                         |
 | ------------------------------------------------- | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
 | Supported web browser or installed Control UI PWA | Browser Push API via the Control UI service worker | Receive approvals and enabled attention categories, manage this browser's subscription, and send a test |
-| paleoclaw macOS app                                | Native macOS notifications                         | Grant app permission, jump to System Settings when blocked, send a local test                           |
+| paleoclaw macOS app                               | Native macOS notifications                         | Grant app permission, jump to System Settings when blocked, send a local test                           |
 | Browser without Push API support                  | None                                               | Status only. Enable and test stay unavailable                                                           |
 
 The macOS app deliberately uses the native permission flow instead of browser push. That is the notification system your Mac already respects.

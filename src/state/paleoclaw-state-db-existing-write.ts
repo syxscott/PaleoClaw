@@ -36,7 +36,10 @@ import {
   openExistingStatePostgresConnection,
 } from "./paleoclaw-state-db-engine.js";
 import { assertExistingOpenClawStateRuntimeSchema } from "./paleoclaw-state-db-existing-schema.js";
-import { openTrackedStateDatabase, closeTrackedStateDatabase } from "./paleoclaw-state-db-handle.js";
+import {
+  openTrackedStateDatabase,
+  closeTrackedStateDatabase,
+} from "./paleoclaw-state-db-handle.js";
 import { assertStateDatabaseIntegrityOnce } from "./paleoclaw-state-db-integrity-admission.js";
 import { assertOpenClawStateDatabaseOwner } from "./paleoclaw-state-db-maintenance.js";
 import {

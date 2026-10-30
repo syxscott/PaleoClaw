@@ -119,7 +119,9 @@ function expectMediaLoad(url: string, localRoots: readonly string[], extra = {})
 }
 
 async function withIsolatedHome<T>(run: () => Promise<T>): Promise<T> {
-  return withTempDir("paleoclaw-feishu-media-", (tempHome) => withEnvAsync({ HOME: tempHome }, run));
+  return withTempDir("paleoclaw-feishu-media-", (tempHome) =>
+    withEnvAsync({ HOME: tempHome }, run),
+  );
 }
 
 function downloadResource(

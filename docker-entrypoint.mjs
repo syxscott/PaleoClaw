@@ -81,7 +81,10 @@ function activationMarker(rootOptions) {
     .update(JSON.stringify([root, rootOptions]))
     .digest("hex")
     .slice(0, 32);
-  return path.join(os.tmpdir(), `paleoclaw-image-activation-${process.getuid?.() ?? "user"}-${key}`);
+  return path.join(
+    os.tmpdir(),
+    `paleoclaw-image-activation-${process.getuid?.() ?? "user"}-${key}`,
+  );
 }
 
 async function activate() {

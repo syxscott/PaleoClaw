@@ -58,7 +58,7 @@ selectable models; the default model per surface stays the static value
 below. Other surfaces use static catalogs until they move onto the same
 live catalog.
 
-| Surface                  | Default model                                                                  | paleoclaw config/tool                                  |
+| Surface                  | Default model                                                                  | paleoclaw config/tool                                 |
 | ------------------------ | ------------------------------------------------------------------------------ | ----------------------------------------------------- |
 | Chat / model provider    | `deepseek-ai/DeepSeek-V4-Flash` (live catalog adds more chat models)           | `agents.defaults.model`                               |
 | Image generation/editing | `black-forest-labs/FLUX-1-schnell` (live catalog adds more `image-gen` models) | `image_generate`, `agents.defaults.mediaModels.image` |

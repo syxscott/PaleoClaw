@@ -66,15 +66,17 @@ suite.define(() => {
     expect(await gateway.getRequests("sessions.list", rosterMatch)).toHaveLength(initialListCount);
     expect(await gateway.getRequests("chat.metadata")).toHaveLength(initialMetadataCount);
 
-    const owner = await page.locator('paleoclaw-chat-pane[aria-hidden="false"]').evaluate((pane) => {
-      const state = (pane as HTMLElement & { state: OutboxHost }).state;
-      const gatewayUrl = state.settings?.gatewayUrl;
-      const client = state.client;
-      if (!gatewayUrl || !client?.recoveryScopeReady || !client.recoveryScope) {
-        throw new Error("Expected an admitted queue owner");
-      }
-      return { gatewayUrl, recoveryScope: client.recoveryScope };
-    });
+    const owner = await page
+      .locator('paleoclaw-chat-pane[aria-hidden="false"]')
+      .evaluate((pane) => {
+        const state = (pane as HTMLElement & { state: OutboxHost }).state;
+        const gatewayUrl = state.settings?.gatewayUrl;
+        const client = state.client;
+        if (!gatewayUrl || !client?.recoveryScopeReady || !client.recoveryScope) {
+          throw new Error("Expected an admitted queue owner");
+        }
+        return { gatewayUrl, recoveryScope: client.recoveryScope };
+      });
     const target = storageTargetForGateway(owner.gatewayUrl, owner.recoveryScope);
     const storageScope = outboxStorageScope({
       settings: { gatewayUrl: owner.gatewayUrl },

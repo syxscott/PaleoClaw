@@ -167,7 +167,11 @@ describe("memory index schema admission", () => {
   it("retains admission when the publication owner creates vectors on an admitted agent", async () => {
     const database = openOpenClawAgentDatabase(main);
     // Retain quarantine admission too: the observer includes its checks during writer reopen.
-    const quarantinePath = path.join(fixture.paths.stateDir, "state", "paleoclaw-quarantine.sqlite");
+    const quarantinePath = path.join(
+      fixture.paths.stateDir,
+      "state",
+      "paleoclaw-quarantine.sqlite",
+    );
     expect(readSqliteDatabaseWriteTokenForPath(quarantinePath)).toBeDefined();
     using quarantine = openNodeSqliteDatabase(quarantinePath, { readOnly: true });
     expect(quarantine.isOpen).toBe(true);

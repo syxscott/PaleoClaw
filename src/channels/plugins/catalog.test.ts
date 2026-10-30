@@ -26,7 +26,9 @@ import { getChannelPluginCatalogEntry } from "./catalog.js";
 const tempDirs: string[] = [];
 
 function makeRoot() {
-  const root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "paleoclaw-channel-catalog-")));
+  const root = fs.realpathSync(
+    fs.mkdtempSync(path.join(os.tmpdir(), "paleoclaw-channel-catalog-")),
+  );
   tempDirs.push(root);
   return root;
 }

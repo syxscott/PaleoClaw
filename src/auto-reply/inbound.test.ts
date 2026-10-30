@@ -286,7 +286,9 @@ describe("mention helpers", () => {
     const cfg = policyConfig({
       slack: { mentionPatterns: { mode: "deny", allowIn: ["C123"] } },
     });
-    expect(matchesMentionPatterns("paleoclaw: hi", policyMentions(cfg, "slack", "C123"))).toBe(true);
+    expect(matchesMentionPatterns("paleoclaw: hi", policyMentions(cfg, "slack", "C123"))).toBe(
+      true,
+    );
     expect(matchesMentionPatterns("paleoclaw: hi", policyMentions(cfg, "slack", "C999"))).toBe(
       false,
     );

@@ -3,7 +3,10 @@ import { executeSqliteQuerySync, getNodeSqliteKysely } from "../../../infra/kyse
 import type { EngineConnection } from "../../../infra/sql-connection.js";
 import { getAdmittedSqliteSchemaFacts } from "../../../infra/sqlite-schema-facts.js";
 import type { OpenClawStateDatabase } from "../../../state/paleoclaw-state-db-contract.js";
-import { ensureColumn, readTableColumns } from "../../../state/paleoclaw-state-db-schema-helpers.js";
+import {
+  ensureColumn,
+  readTableColumns,
+} from "../../../state/paleoclaw-state-db-schema-helpers.js";
 import type { DB as OpenClawStateKyselyDatabase } from "../../../state/paleoclaw-state-db.generated.js";
 import type { SubagentRunSqliteRow } from "./subagent-registry.store.row.js";
 

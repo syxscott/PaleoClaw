@@ -166,7 +166,9 @@ it("recovers one guest integration, retains saved data and publishes the resolve
         commitFetches++;
       }
       return await runCommandBuffered(
-        argv.map((arg) => (arg === "https://github.com/syxscott/PaleoClaw.git" ? upstreamUrl : arg)),
+        argv.map((arg) =>
+          arg === "https://github.com/syxscott/PaleoClaw.git" ? upstreamUrl : arg,
+        ),
         { ...options, cwd, timeoutMs: 10_000 },
       );
     }

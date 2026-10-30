@@ -331,7 +331,9 @@ describe("minimax provider hooks", () => {
             maxTokens: modelMaxTokens,
             provider: provider.id,
             api:
-              hook === "wrapStreamFn" ? "anthropic-messages" : "paleoclaw-provider-simple:synthetic",
+              hook === "wrapStreamFn"
+                ? "anthropic-messages"
+                : "paleoclaw-provider-simple:synthetic",
           };
           let payload: unknown;
           const wrapped = provider[hook]?.({

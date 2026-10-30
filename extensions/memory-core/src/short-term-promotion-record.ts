@@ -1,4 +1,5 @@
 import path from "node:path";
+import pLimit from "p-limit";
 import type {
   MemoryEntryProvenance,
   MemorySearchResult,
@@ -6,7 +7,6 @@ import type {
 import { formatMemoryDreamingDay } from "paleoclaw/plugin-sdk/memory-core-host-status";
 import { appendMemoryHostEvent } from "paleoclaw/plugin-sdk/memory-host-events";
 import { uniqueStrings } from "paleoclaw/plugin-sdk/string-coerce-runtime";
-import pLimit from "p-limit";
 import { deriveConceptTags } from "./concept-vocabulary.js";
 import {
   findForgottenMemorySessionIds,

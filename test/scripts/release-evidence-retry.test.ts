@@ -235,7 +235,9 @@ describe("release evidence API reads", () => {
 
   it("does not retry a malformed successful response", () => {
     transport.read.mockReturnValue("invalid JSON");
-    expect(() => createReleaseEvidenceClient("syxscott/PaleoClaw").getRunAttempt("42", 1)).toThrow();
+    expect(() =>
+      createReleaseEvidenceClient("syxscott/PaleoClaw").getRunAttempt("42", 1),
+    ).toThrow();
     expect(transport.read).toHaveBeenCalledOnce();
   });
 });

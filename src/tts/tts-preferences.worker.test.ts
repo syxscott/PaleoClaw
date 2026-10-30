@@ -2,6 +2,10 @@ import { existsSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { expectDefined } from "@paleoclaw/normalization-core";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import {
+  buildTtsSystemPromptHint,
+  buildTtsSystemPromptHintAsync,
+} from "../plugin-sdk/tts-runtime.js";
 import { withPluginRuntimePluginScope } from "../plugins/runtime/gateway-request-scope.js";
 import { createPluginRuntime } from "../plugins/runtime/index.js";
 import {
@@ -15,7 +19,6 @@ import { observeMainThreadSql } from "../test-utils/main-thread-sql-spies.test-s
 import { useStateDatabaseTempDirs } from "../test-utils/state-database-temp-dirs.js";
 import { shouldAttemptTtsPayload, shouldCleanTtsDirectiveText } from "./tts-config.js";
 import { prepareTtsPreferences } from "./tts-preferences.js";
-import {  buildTtsSystemPromptHint, buildTtsSystemPromptHintAsync  } from "../plugin-sdk/tts-runtime.js";
 import { resolveTtsConfig, resolveTtsPrefsPath, resolveTtsPrefsPathAsync } from "./tts.js";
 
 const tempDirs = useStateDatabaseTempDirs();

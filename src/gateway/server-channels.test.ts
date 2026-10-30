@@ -2696,7 +2696,10 @@ describe("server-channels auto restart", () => {
   });
 
   it("reinspects file credentials despite skip-unavailable and recovers only their account", async () => {
-    const credentialPath = path.join(channelTempDirs.make("paleoclaw-channel-credential-"), "token");
+    const credentialPath = path.join(
+      channelTempDirs.make("paleoclaw-channel-credential-"),
+      "token",
+    );
     const credentialConfigPath = "channels.telegram.accounts.broken.tokenFile";
     const startAccount = vi.fn(stayRunning);
     const manager = setupChannel(

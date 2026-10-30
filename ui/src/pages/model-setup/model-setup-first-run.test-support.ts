@@ -66,7 +66,10 @@ export function useFirstRunFixtures(privateKey: string, restoreTimers = false, s
     if (session) {
       vi.stubGlobal("sessionStorage", createStorageMock());
     }
-    localStorage.setItem("paleoclaw-device-identity-v1", JSON.stringify({ version: 1, privateKey }));
+    localStorage.setItem(
+      "paleoclaw-device-identity-v1",
+      JSON.stringify({ version: 1, privateKey }),
+    );
     await i18n.setLocale("en");
   });
   afterEach(() => {

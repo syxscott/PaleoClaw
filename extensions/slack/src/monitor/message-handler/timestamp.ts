@@ -1,4 +1,7 @@
-import { asFiniteNumberInRange, parseStrictFiniteNumber } from "paleoclaw/plugin-sdk/number-runtime";
+import {
+  asFiniteNumberInRange,
+  parseStrictFiniteNumber,
+} from "paleoclaw/plugin-sdk/number-runtime";
 
 const SLACK_TIMESTAMP_RE = /^\d+(?:\.\d+)?$/;
 const MAX_SAFE_SLACK_TIMESTAMP_SECONDS = Number.MAX_SAFE_INTEGER / 1000;

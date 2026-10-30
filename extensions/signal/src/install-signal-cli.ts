@@ -6,7 +6,11 @@ import { root as fsRoot } from "paleoclaw/plugin-sdk/file-access-runtime";
 import { readProviderJsonObjectResponse } from "paleoclaw/plugin-sdk/provider-http";
 import { runPluginCommandWithTimeout } from "paleoclaw/plugin-sdk/run-command";
 import type { RuntimeEnv } from "paleoclaw/plugin-sdk/runtime-env";
-import { CONFIG_DIR, extractArchive, resolveBrewExecutable } from "paleoclaw/plugin-sdk/setup-tools";
+import {
+  CONFIG_DIR,
+  extractArchive,
+  resolveBrewExecutable,
+} from "paleoclaw/plugin-sdk/setup-tools";
 import { fetchWithSsrFGuard } from "paleoclaw/plugin-sdk/ssrf-runtime";
 import {
   isRecord,

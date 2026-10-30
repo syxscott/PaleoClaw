@@ -4,7 +4,10 @@ import {
   resolveCommandSecretRefsViaGateway,
 } from "paleoclaw/plugin-sdk/memory-core-host-runtime-cli";
 import type { OpenClawConfig } from "paleoclaw/plugin-sdk/memory-core-host-runtime-core";
-import { getActiveMemoryProvider, type MemoryHealth } from "paleoclaw/plugin-sdk/memory-host-search";
+import {
+  getActiveMemoryProvider,
+  type MemoryHealth,
+} from "paleoclaw/plugin-sdk/memory-host-search";
 import { normalizePluginsConfig } from "paleoclaw/plugin-sdk/plugin-config-runtime";
 import { captureRuntimeConfigAsyncReader } from "paleoclaw/plugin-sdk/runtime-config-snapshot";
 import { asNullableRecord } from "paleoclaw/plugin-sdk/string-coerce-runtime";

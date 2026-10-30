@@ -148,7 +148,9 @@ describe("AppSidebar footer identity menu", () => {
     expect(shortcut?.textContent?.replace(/\s+/gu, "").trim()).toMatch(/^(⌘⇧,|Ctrl\+Shift\+,)$/u);
     expect(menu?.style.getPropertyValue("--sidebar-identity-menu-min-width")).toBe("212px");
     expect(view.query(".sidebar-pair-mobile")?.hasAttribute("disabled")).toBe(true);
-    expect(view.attr("paleoclaw-sidebar-build-chip .sidebar-footer-build", "role")).toBe("menuitem");
+    expect(view.attr("paleoclaw-sidebar-build-chip .sidebar-footer-build", "role")).toBe(
+      "menuitem",
+    );
     expect(view.query("paleoclaw-theme-mode-toggle")).not.toBeNull();
     expect(menu?.textContent).not.toContain("Recent activity");
     expect(view.all(':scope > [role="separator"]')).toHaveLength(4);

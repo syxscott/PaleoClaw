@@ -33,7 +33,9 @@ it.each([
     if (mode === "relocated") {
       withEnv({ OPENCLAW_AGENT_DIR: agentDir }, () => {
         expect(path.dirname(resolveAuthStorePath())).toBe(agentDir);
-        expect(resolveAuthStorePathForDisplay()).toBe(path.join(agentDir, "paleoclaw-agent.sqlite"));
+        expect(resolveAuthStorePathForDisplay()).toBe(
+          path.join(agentDir, "paleoclaw-agent.sqlite"),
+        );
       });
     } else if (mode === "tilde") {
       const resolved = resolveAuthStorePathForDisplay(agentDir);

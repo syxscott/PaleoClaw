@@ -79,7 +79,11 @@ it.each([
             ...(appOwned ? { systemd: { managerUid: process.getuid?.() ?? 501 } } : {}),
           })),
           readCommand: vi.fn(async () => ({
-            programArguments: [process.execPath, path.join(serviceRoot, "paleoclaw.mjs"), "gateway"],
+            programArguments: [
+              process.execPath,
+              path.join(serviceRoot, "paleoclaw.mjs"),
+              "gateway",
+            ],
             environment: { HOME: home, OPENCLAW_HOME: home },
           })),
         });

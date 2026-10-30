@@ -15,13 +15,13 @@ import { fileURLToPath } from "node:url";
 import * as tar from "tar";
 import { afterEach, expect, it } from "vitest";
 import { pnpmLockfileDocuments } from "../scripts/lib/pnpm-lockfile-documents.mjs";
+import { preparePackageDocsMap } from "../scripts/package-docs-map.mjs";
 import { restorePrepackArtifacts } from "../scripts/paleoclaw-postpack.mjs";
 import {
   collectSourcePackWorkspaceDependencyErrors,
   resolvePrepackCommandStdio,
   runPrepackCommand,
 } from "../scripts/paleoclaw-prepack.ts";
-import { preparePackageDocsMap } from "../scripts/package-docs-map.mjs";
 import {
   resolveRuntimeWorkerArgv,
   resolveRuntimeWorkerUrl,

@@ -1,8 +1,8 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import pLimit from "p-limit";
 import { lstatIfExists } from "paleoclaw/plugin-sdk/path-existence-runtime";
 import { normalizeLowercaseStringOrEmpty } from "paleoclaw/plugin-sdk/string-coerce-runtime";
-import pLimit from "p-limit";
 
 export const DEFAULT_OPEN_SHELL_MIRROR_EXCLUDE_DIRS = ["hooks", "git-hooks", ".git"] as const;
 const COPY_TREE_FS_CONCURRENCY = 16;

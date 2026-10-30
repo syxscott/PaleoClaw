@@ -21,7 +21,10 @@ import {
   openOpenClawAgentDatabase,
 } from "./paleoclaw-agent-db.js";
 import { retainOpenClawStateDatabase } from "./paleoclaw-state-db-cache.js";
-import { closeOpenClawStateDatabaseAsync, openOpenClawStateDatabase } from "./paleoclaw-state-db.js";
+import {
+  closeOpenClawStateDatabaseAsync,
+  openOpenClawStateDatabase,
+} from "./paleoclaw-state-db.js";
 
 afterEach(async () => {
   await closeOpenClawAgentDatabasesAsync();

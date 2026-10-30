@@ -56,7 +56,8 @@ it.each([false, true])(
         reason: "table-missing",
         missingTables: ["session_canonical_validation_pending"],
       };
-      const coldCause = /canonical validation schema is missing or drifted.*paleoclaw doctor --fix/u;
+      const coldCause =
+        /canonical validation schema is missing or drifted.*paleoclaw doctor --fix/u;
 
       try {
         expect(read).toThrow(

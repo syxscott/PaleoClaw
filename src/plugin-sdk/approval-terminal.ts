@@ -64,4 +64,5 @@ export function buildSystemAgentApprovalResolvedText(view: SystemAgentResolvedVi
 }
 
 /** Terminal copy for a system change approval that expired before a decision. */
-export const SYSTEM_AGENT_APPROVAL_EXPIRED_TEXT = "⏱️ paleoclaw change expired. No change was made.";
+export const SYSTEM_AGENT_APPROVAL_EXPIRED_TEXT =
+  "⏱️ paleoclaw change expired. No change was made.";

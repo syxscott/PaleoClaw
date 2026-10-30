@@ -64,7 +64,8 @@ export async function resolveLineQuestionPostback(params: {
   authorize: () => boolean | Promise<boolean>;
 }): Promise<{ status: "answered" | "already-terminal" | "denied" | "failed" }> {
   try {
-    const { questionGatewayRuntime } = await import("paleoclaw/plugin-sdk/question-gateway-runtime");
+    const { questionGatewayRuntime } =
+      await import("paleoclaw/plugin-sdk/question-gateway-runtime");
     const result = await questionGatewayRuntime.resolveOption({
       cfg: params.cfg,
       questionId: params.callback.questionId,

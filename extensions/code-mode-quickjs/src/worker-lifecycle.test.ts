@@ -255,7 +255,9 @@ describe("Code Mode worker lifecycle", () => {
     );
     expect(result).toMatchObject({
       status: "failed",
-      error: expect.stringMatching(/Error: legacy failure[\s\S]*paleoclaw-code-mode:user\.js:3:\d+/),
+      error: expect.stringMatching(
+        /Error: legacy failure[\s\S]*paleoclaw-code-mode:user\.js:3:\d+/,
+      ),
     });
   });
 

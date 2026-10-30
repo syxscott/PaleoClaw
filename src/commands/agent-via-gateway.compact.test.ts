@@ -49,7 +49,9 @@ describe("agent CLI compact rejection", () => {
     "rejects $message from $source before any gateway or embedded turn",
     async ({ source, message }) => {
       const messageFile =
-        source === "file" ? path.join(tempDirs.make("paleoclaw-compact-"), "compact.md") : undefined;
+        source === "file"
+          ? path.join(tempDirs.make("paleoclaw-compact-"), "compact.md")
+          : undefined;
       if (messageFile) {
         fs.writeFileSync(messageFile, message, "utf8");
       }

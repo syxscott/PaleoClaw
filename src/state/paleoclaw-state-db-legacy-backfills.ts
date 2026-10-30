@@ -1,6 +1,9 @@
 import type { DatabaseSync } from "node:sqlite";
 import { safeParseJsonRecord } from "@paleoclaw/normalization-core";
-import { asFiniteNumber, asSafeIntegerInRange } from "@paleoclaw/normalization-core/number-coercion";
+import {
+  asFiniteNumber,
+  asSafeIntegerInRange,
+} from "@paleoclaw/normalization-core/number-coercion";
 import { asNullableRecord } from "@paleoclaw/normalization-core/record-coerce";
 import { estimateAcpEventRowBytes, estimateAcpSessionRowBytes } from "../acp/event-ledger-bytes.js";
 import { buildApprovalResolutionRef } from "../infra/approval-resolution-ref.js";

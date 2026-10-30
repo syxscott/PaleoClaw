@@ -97,7 +97,8 @@ vi.mock("../../state/paleoclaw-state-worker-store.js", async (importOriginal) =>
   });
 });
 vi.mock("../../state/paleoclaw-state-db-readonly.js", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("../../state/paleoclaw-state-db-readonly.js")>();
+  const actual =
+    await importOriginal<typeof import("../../state/paleoclaw-state-db-readonly.js")>();
   return {
     ...actual,
     executeExistingOpenClawStateRead: (

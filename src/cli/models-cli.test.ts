@@ -172,7 +172,9 @@ describe("models cli", () => {
   });
 
   it("declares parent --status-plain as plain machine output owning stdout", () => {
-    expect(isModelsPlainMachineOutput(["node", "paleoclaw", "models", "--status-plain"])).toBe(true);
+    expect(isModelsPlainMachineOutput(["node", "paleoclaw", "models", "--status-plain"])).toBe(
+      true,
+    );
   });
 
   it("does not declare plain after argv terminator as plain machine output", () => {

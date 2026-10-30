@@ -318,7 +318,10 @@ describe("persistPluginInstall", () => {
     });
 
     await persistNpm("discord", undefined, {
-      install: npmInstall("@paleoclaw/discord", "/tmp/paleoclaw/npm/node_modules/@paleoclaw/discord"),
+      install: npmInstall(
+        "@paleoclaw/discord",
+        "/tmp/paleoclaw/npm/node_modules/@paleoclaw/discord",
+      ),
     });
 
     expect(pluginsCliRuntimeLogs.join("\n")).not.toContain("is not the active source");

@@ -562,9 +562,9 @@ ${run}`;
           );
         }
       }
-      expect(read(path.join(env.CHECKOUT_KIND === "PaleoHub" ? workspace : root, "protected"))).toBe(
-        "not checkout-owned\n",
-      );
+      expect(
+        read(path.join(env.CHECKOUT_KIND === "PaleoHub" ? workspace : root, "protected")),
+      ).toBe("not checkout-owned\n");
       expect(
         existsSync(path.join(root, "python-injected")),
         "candidate Python startup executed",

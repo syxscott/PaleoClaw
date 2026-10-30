@@ -3,7 +3,10 @@ import path from "node:path";
 // Prepare the native process runtime before the subprocess deadline cases start.
 import "paleoclaw/plugin-sdk/process-runtime";
 import type { OpenClawConfig } from "paleoclaw/plugin-sdk/config-contracts";
-import type { SpeechProviderConfig, SpeechSynthesisRequest } from "paleoclaw/plugin-sdk/speech-core";
+import type {
+  SpeechProviderConfig,
+  SpeechSynthesisRequest,
+} from "paleoclaw/plugin-sdk/speech-core";
 import { useAutoCleanupTempDirTracker } from "paleoclaw/plugin-sdk/test-env";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 

@@ -160,7 +160,11 @@ if (mode === "configure") {
     );
   }
   const overview = cli("backup-overview-after", ["status"]);
-  assert.match(overview, /Backups[^\n]*last ok/u, "paleoclaw status omitted successful backup line");
+  assert.match(
+    overview,
+    /Backups[^\n]*last ok/u,
+    "paleoclaw status omitted successful backup line",
+  );
   const errors = doctorErrors("backup-doctor-after");
   assert.deepEqual(errors, before.errors, "Doctor introduced new errors");
   assertNoStorageConfig();

@@ -199,11 +199,11 @@ All OpenShell config lives under `plugins.entries.openshell.config`:
 | ------------------------- | ------------------------ | ------------- | -------------------------------------------------------------------------------------- |
 | `mode`                    | `"mirror"` or `"remote"` | `"mirror"`    | Workspace sync mode                                                                    |
 | `command`                 | `string`                 | `"openshell"` | Path or name of the `openshell` CLI                                                    |
-| `from`                    | `string`                 | `"paleoclaw"`  | Sandbox source for first-time create                                                   |
+| `from`                    | `string`                 | `"paleoclaw"` | Sandbox source for first-time create                                                   |
 | `gateway`                 | `string`                 | unset         | OpenShell gateway name (top-level `--gateway`)                                         |
 | `gatewayEndpoint`         | `string`                 | unset         | OpenShell gateway endpoint (top-level `--gateway-endpoint`)                            |
 | `workspace`               | `string`                 | unset         | Existing OpenShell workspace used for every CLI operation                              |
-| `policy`                  | `string`                 | unset         | Path to a sandbox policy YAML file on the paleoclaw Gateway host                        |
+| `policy`                  | `string`                 | unset         | Path to a sandbox policy YAML file on the paleoclaw Gateway host                       |
 | `providers`               | `string[]`               | `[]`          | Provider names attached at sandbox creation (deduped, one `--provider` flag per entry) |
 | `gpu`                     | `boolean`                | `false`       | Request GPU resources (`--gpu`)                                                        |
 | `autoProviders`           | `boolean`                | `true`        | Pass `--auto-providers` (or `--no-auto-providers` when false) during create            |

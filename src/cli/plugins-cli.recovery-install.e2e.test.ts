@@ -7,11 +7,11 @@ import { afterEach, expect, it, vi } from "vitest";
 import { runNodeScript } from "../../test/helpers/run-node-script.js";
 import { useAutoCleanupTempDirTracker } from "../../test/helpers/temp-dir.js";
 import type { OpenClawConfig } from "../config/types.openclaw.js";
-import { clawHubSecurityResponse } from "../plugins/PaleoHub.test-fixtures.js";
 import {
   clearLoadInstalledPluginIndexInstallRecordsCache,
   readPersistedInstalledPluginIndexInstallRecordsAsync,
 } from "../plugins/installed-plugin-index-records.js";
+import { clawHubSecurityResponse } from "../plugins/PaleoHub.test-fixtures.js";
 import { seedInstalledPluginIndex } from "../plugins/test-helpers/installed-plugin-index.js";
 import { packPlugins, startStaticRegistry } from "../plugins/test-helpers/npm-registry-fixtures.js";
 import { closeOpenClawStateDatabaseAsync } from "../state/paleoclaw-state-db.js";

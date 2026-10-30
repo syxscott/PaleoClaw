@@ -171,7 +171,8 @@ const enLogin = {
         title: "Gateway unreachable",
         summary:
           "The browser could not reach {host}. Check the address and transport before retrying credentials.",
-        stepGateway: "Confirm the Gateway is running with paleoclaw status or paleoclaw gateway run.",
+        stepGateway:
+          "Confirm the Gateway is running with paleoclaw status or paleoclaw gateway run.",
         stepUrl:
           "Check the Gateway URL and use wss:// when the Gateway is behind HTTPS/Tailscale Serve.",
         stepDashboard:

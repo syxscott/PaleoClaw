@@ -364,7 +364,7 @@ describe("release concurrency observations", () => {
     ${"missing job log"}            | ${"WARN"} | ${{}}                                                             | ${undefined}
     ${"missing dry-run input"}      | ${"WARN"} | ${{ log: log() }}                                                 | ${undefined}
     ${"conflicting input evidence"} | ${"WARN"} | ${{ log: conflictingLog }}                                        | ${undefined}
-    ${"isolated PaleoHub dry run"}   | ${"PASS"} | ${{ log: log("DRY_RUN: true") }}                                  | ${undefined}
+    ${"isolated PaleoHub dry run"}  | ${"PASS"} | ${{ log: log("DRY_RUN: true") }}                                  | ${undefined}
     ${"truncated active inventory"} | ${"WARN"} | ${npmRun(`Plugin NPM Release [default] ${"b".repeat(40)}`, 101)}  | ${"bounded first page"}
   `(
     "qualifies concurrency evidence: $evidence",

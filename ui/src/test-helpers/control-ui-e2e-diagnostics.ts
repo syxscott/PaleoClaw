@@ -381,7 +381,9 @@ async function captureControlUiE2eFailureDiagnosticsUnsafe(
               isSend: element === send,
             }
           : null;
-      const openTooltips = [...document.querySelectorAll<TooltipElement>("paleoclaw-tooltip[open]")];
+      const openTooltips = [
+        ...document.querySelectorAll<TooltipElement>("paleoclaw-tooltip[open]"),
+      ];
       const sendLabel = send?.getAttribute("aria-label");
       // Submit-disabled labels can contain server errors. Only known static UI copy
       // may reach CI logs; private reports retain the existing detailed state.

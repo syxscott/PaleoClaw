@@ -441,7 +441,10 @@ describe("getApiKeyForModelCore", () => {
         const resolved = await resolveAuth({
           provider: "zai",
           store: authStore({
-            "zai:default": keyCredential("zai", "paleoclaw onboard --auth-choice zai-coding-global"),
+            "zai:default": keyCredential(
+              "zai",
+              "paleoclaw onboard --auth-choice zai-coding-global",
+            ),
           }),
         });
         expect(resolved.apiKey).toBe("zai-current-key");

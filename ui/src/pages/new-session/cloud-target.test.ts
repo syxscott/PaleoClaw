@@ -52,7 +52,9 @@ describe("cloud target menu", () => {
       ],
     });
     const catalog = await requestPlaceCatalog({ request }, "paleoclaw");
-    expect(request).toHaveBeenCalledExactlyOnceWith("environments.list", { runtimeId: "paleoclaw" });
+    expect(request).toHaveBeenCalledExactlyOnceWith("environments.list", {
+      runtimeId: "paleoclaw",
+    });
     expect(catalog.profiles.map((entry) => entry.id)).toEqual(["alpha", "zeta"]);
     expect(catalog.environments.map((entry) => entry.id)).toEqual(["node:alpha", "node:zeta"]);
     expect(catalog.profiles[1]).toEqual({

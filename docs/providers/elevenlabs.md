@@ -11,7 +11,7 @@ paleoclaw uses ElevenLabs for text-to-speech, batch speech-to-text with Scribe
 v2, and streaming STT with Scribe v2 Realtime. The plugin is bundled and
 enabled by default; no `plugins install` step is needed.
 
-| Capability               | paleoclaw surface                                                     | Default                  |
+| Capability               | paleoclaw surface                                                    | Default                  |
 | ------------------------ | -------------------------------------------------------------------- | ------------------------ |
 | Text-to-speech           | `tts` / `talk`                                                       | `eleven_multilingual_v2` |
 | Batch speech-to-text     | `tools.media.audio`                                                  | `scribe_v2`              |

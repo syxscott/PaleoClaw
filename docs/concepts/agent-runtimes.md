@@ -14,12 +14,12 @@ to OpenClaw.
 Runtimes are easy to confuse with providers because both show up near model
 configuration. They are different layers:
 
-| Layer         | Examples                                             | Meaning                                                             |
-| ------------- | ---------------------------------------------------- | ------------------------------------------------------------------- |
-| Provider      | `anthropic`, `github-copilot`, `openai`              | How paleoclaw authenticates, discovers models, and names model refs. |
-| Model         | `claude-opus-4-6`, `gpt-6-astra`                     | The model selected for the agent turn.                              |
-| Agent runtime | `claude-cli`, `codex`, `copilot`, `muse`, `paleoclaw` | The low-level loop or backend that executes the prepared turn.      |
-| Channel       | Discord, Slack, Telegram, WhatsApp                   | Where messages enter and leave OpenClaw.                            |
+| Layer         | Examples                                              | Meaning                                                              |
+| ------------- | ----------------------------------------------------- | -------------------------------------------------------------------- |
+| Provider      | `anthropic`, `github-copilot`, `openai`               | How paleoclaw authenticates, discovers models, and names model refs. |
+| Model         | `claude-opus-4-6`, `gpt-6-astra`                      | The model selected for the agent turn.                               |
+| Agent runtime | `claude-cli`, `codex`, `copilot`, `muse`, `paleoclaw` | The low-level loop or backend that executes the prepared turn.       |
+| Channel       | Discord, Slack, Telegram, WhatsApp                    | Where messages enter and leave OpenClaw.                             |
 
 A **harness** is the implementation that provides an agent runtime (code
 term). For example, the bundled Codex harness implements the `codex` runtime.
@@ -47,7 +47,7 @@ the user-facing decision between PI, Codex, and GitHub Copilot agent runtime.
 
 Several surfaces share the Codex name:
 
-| Surface                                          | paleoclaw name/config                 | What it does                                                                                                   |
+| Surface                                          | paleoclaw name/config                | What it does                                                                                                   |
 | ------------------------------------------------ | ------------------------------------ | -------------------------------------------------------------------------------------------------------------- |
 | Native Codex app-server runtime                  | `openai/*` model refs                | Runs OpenAI embedded agent turns through Codex app-server. This is the usual ChatGPT/Codex subscription setup. |
 | Codex OAuth auth profiles                        | `openai` OAuth profiles              | Stores ChatGPT/Codex subscription auth that the Codex app-server harness consumes.                             |
@@ -111,15 +111,15 @@ contract, see [Codex harness runtime](/plugins/codex-harness-runtime#v1-support-
 
 Different runtimes own different amounts of the loop:
 
-| Surface                     | paleoclaw embedded                              | Codex app-server                                                            |
-| --------------------------- | ---------------------------------------------- | --------------------------------------------------------------------------- |
-| Model loop owner            | paleoclaw, through the paleoclaw embedded runner | Codex app-server                                                            |
-| Primary thread state        | paleoclaw transcript                            | Codex thread, plus paleoclaw transcript mirror                               |
-| paleoclaw dynamic tools      | Native paleoclaw tool loop                      | Bridged through the Codex adapter                                           |
-| Native shell and file tools | paleoclaw path                                  | Codex-native tools, bridged through native hooks where supported            |
-| Context engine              | Native paleoclaw context assembly               | paleoclaw projects assembled context into the Codex turn                     |
-| Compaction                  | paleoclaw or selected context engine            | Codex-native compaction, with paleoclaw notifications and mirror maintenance |
-| Channel delivery            | paleoclaw                                       | paleoclaw                                                                    |
+| Surface                     | paleoclaw embedded                               | Codex app-server                                                             |
+| --------------------------- | ------------------------------------------------ | ---------------------------------------------------------------------------- |
+| Model loop owner            | paleoclaw, through the paleoclaw embedded runner | Codex app-server                                                             |
+| Primary thread state        | paleoclaw transcript                             | Codex thread, plus paleoclaw transcript mirror                               |
+| paleoclaw dynamic tools     | Native paleoclaw tool loop                       | Bridged through the Codex adapter                                            |
+| Native shell and file tools | paleoclaw path                                   | Codex-native tools, bridged through native hooks where supported             |
+| Context engine              | Native paleoclaw context assembly                | paleoclaw projects assembled context into the Codex turn                     |
+| Compaction                  | paleoclaw or selected context engine             | Codex-native compaction, with paleoclaw notifications and mirror maintenance |
+| Channel delivery            | paleoclaw                                        | paleoclaw                                                                    |
 
 Design rule: if paleoclaw owns the surface, it can provide normal plugin hook
 behavior. If the native runtime owns the surface, paleoclaw needs runtime
@@ -281,15 +281,15 @@ by the Muse Code CLI for the standard `meta` provider. It is never selected by
 When a runtime is not paleoclaw, its docs should state which paleoclaw surfaces
 it supports:
 
-| Question                               | Why it matters                                                                                    |
-| -------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| Who owns the model loop?               | Determines where retries, tool continuation, and final answer decisions happen.                   |
+| Question                               | Why it matters                                                                                     |
+| -------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| Who owns the model loop?               | Determines where retries, tool continuation, and final answer decisions happen.                    |
 | Who owns primary thread history?       | Determines whether paleoclaw can edit history or only mirror it.                                   |
-| Do paleoclaw dynamic tools work?        | Messaging, sessions, cron, and paleoclaw-owned tools rely on this.                                 |
+| Do paleoclaw dynamic tools work?       | Messaging, sessions, cron, and paleoclaw-owned tools rely on this.                                 |
 | Do dynamic tool hooks work?            | Plugins expect `before_tool_call`, `after_tool_call`, and middleware around paleoclaw-owned tools. |
-| Do native tool hooks work?             | Shell, patch, and runtime-owned tools need native hook support for policy and observation.        |
-| Does the context engine lifecycle run? | Memory and context plugins depend on assemble, ingest, after-turn, and compaction lifecycle.      |
-| What compaction data is exposed?       | Some plugins only need notifications; others need kept/dropped metadata.                          |
+| Do native tool hooks work?             | Shell, patch, and runtime-owned tools need native hook support for policy and observation.         |
+| Does the context engine lifecycle run? | Memory and context plugins depend on assemble, ingest, after-turn, and compaction lifecycle.       |
+| What compaction data is exposed?       | Some plugins only need notifications; others need kept/dropped metadata.                           |
 | What is intentionally unsupported?     | Users should not assume paleoclaw equivalence where the native runtime owns more state.            |
 
 The Codex runtime support contract is documented in

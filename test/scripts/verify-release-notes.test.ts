@@ -211,7 +211,8 @@ describe("release-note verification", () => {
     splitChangelog({ rootDir: cwd });
     const entryPath = join(cwd, "CHANGELOG/2026.7.1.md");
     const recordPath = join(cwd, "CHANGELOG/records/2026.7.1.md");
-    const mirror = "## 2026.7.1\n\n<!-- paleoclaw-docs-mirror-v1 {} -->\n\nApproved reader prose.\n";
+    const mirror =
+      "## 2026.7.1\n\n<!-- paleoclaw-docs-mirror-v1 {} -->\n\nApproved reader prose.\n";
     writeFileSync(entryPath, mirror);
     const record = readFileSync(recordPath, "utf8");
     const index = readFileSync(join(cwd, "CHANGELOG.md"), "utf8");

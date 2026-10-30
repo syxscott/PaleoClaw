@@ -202,7 +202,13 @@ function readAccountConfig({ cfg, accountId }: { cfg: CoreConfig; accountId: str
 }
 
 function matrixDevice(deviceId: string, current: boolean) {
-  return { deviceId, current, displayName: "paleoclaw Gateway", lastSeenIp: null, lastSeenTs: null };
+  return {
+    deviceId,
+    current,
+    displayName: "paleoclaw Gateway",
+    lastSeenIp: null,
+    lastSeenTs: null,
+  };
 }
 
 function healthyMatrixBackup(overrides: Record<string, unknown> = {}) {

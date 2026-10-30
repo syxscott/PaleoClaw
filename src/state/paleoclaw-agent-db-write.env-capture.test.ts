@@ -99,7 +99,8 @@ vi.mock("./paleoclaw-agent-db.js", async () => {
   const { createSqliteWalReclamationResult } = await import("../infra/sqlite-wal-reclamation.js");
   const { createOpenClawAgentDatabaseAdmissionOwner } =
     await import("./paleoclaw-agent-db-admission.js");
-  const { registerOpenClawAgentDatabaseIdentity } = await import("./paleoclaw-agent-db-identity.js");
+  const { registerOpenClawAgentDatabaseIdentity } =
+    await import("./paleoclaw-agent-db-identity.js");
   const owner = createOpenClawAgentDatabaseAdmissionOwner(function* (
     options: OpenClawAgentDatabaseOptions,
   ): SqliteIntegrityOperation<OpenClawAgentDatabase> {

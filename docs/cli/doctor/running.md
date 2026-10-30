@@ -33,8 +33,8 @@ failure before retrying; a deferred check does not certify a successful inspecti
 
 Doctor supports these postures:
 
-| Posture                   | Command                                   | Behavior                                                                              |
-| ------------------------- | ----------------------------------------- | ------------------------------------------------------------------------------------- |
+| Posture                   | Command                                    | Behavior                                                                              |
+| ------------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------- |
 | Guided checks             | `paleoclaw doctor`                         | Interactive health flow; can copy legacy config and apply automatic state migrations. |
 | Advisory JSON             | `paleoclaw doctor --json`                  | Read-only findings; exits successfully after producing a report.                      |
 | Repair                    | `paleoclaw doctor --fix`                   | Applies supported repairs, using prompts unless non-interactive repair is safe.       |
@@ -300,7 +300,7 @@ paleoclaw channels status --probe
 | `--session-sqlite-store <path>` | With `--session-sqlite`: select a SQLite database or legacy `sessions.json` source, subject to the mode's [selection rules](/cli/doctor/sqlite-maintenance#session-sqlite-migration).                                                                 |
 | `--session-sqlite-agent <id>`   | With `--session-sqlite`: select one configured agent.                                                                                                                                                                                                 |
 | `--session-sqlite-all-agents`   | With `--session-sqlite`: select configured and discovered agent stores.                                                                                                                                                                               |
-| `--github-issue`                | With `--session-sqlite recover`: prepare a sanitized syxscott/PaleoClaw issue report; doctor creates it with `gh` after `--yes` or interactive confirmation.                                                                                           |
+| `--github-issue`                | With `--session-sqlite recover`: prepare a sanitized syxscott/PaleoClaw issue report; doctor creates it with `gh` after `--yes` or interactive confirmation.                                                                                          |
 | `--json`                        | Emit read-only JSON. Bare `--json` is advisory; combine with `--lint` for threshold-based exit codes. With another machine mode, emit that mode's existing JSON report.                                                                               |
 | `--severity-min <level>`        | With `--lint`: drop findings below `info`, `warning`, or `error`.                                                                                                                                                                                     |
 | `--all`                         | With `--lint`: run all registered checks, including opt-in checks excluded from the default set.                                                                                                                                                      |

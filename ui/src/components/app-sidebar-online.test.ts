@@ -508,7 +508,10 @@ describe("sidebar people workload", () => {
     expect(names(sidebar)).toEqual(["ada", "bea"]);
     await open();
     await click(sidebar, "#sidebar-people-sort");
-    await click(sidebar, 'paleoclaw-select-picker:has(#sidebar-people-sort) [data-value="running"]');
+    await click(
+      sidebar,
+      'paleoclaw-select-picker:has(#sidebar-people-sort) [data-value="running"]',
+    );
     expect(sidebar.querySelector('[role="dialog"]')).toBeNull();
     expect(names(sidebar)).toEqual(["bea", "ada"]);
     provider.setContext({ ...context, basePath: "/control" });

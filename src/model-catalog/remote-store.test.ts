@@ -36,7 +36,9 @@ afterEach(() => vi.restoreAllMocks());
 
 describe("remote model catalog store", () => {
   it("reuses published catalog rows across unrelated writes and follows committed replacements", async () => {
-    const options = { path: path.join(tempDirs.make("paleoclaw-catalog-receipt-"), "state.sqlite") };
+    const options = {
+      path: path.join(tempDirs.make("paleoclaw-catalog-receipt-"), "state.sqlite"),
+    };
     const other = { path: path.join(tempDirs.make("paleoclaw-catalog-other-"), "state.sqlite") };
     writeConfigMachineState("fixture.unrelated", true, options);
     writeConfigMachineState("fixture.unrelated", true, other);

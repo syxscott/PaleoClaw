@@ -4,7 +4,10 @@ import {
   canonicalPathFromExistingAncestor,
   isPathInside,
 } from "paleoclaw/plugin-sdk/file-access-runtime";
-import { createMigrationItem, MIGRATION_REASON_TARGET_EXISTS } from "paleoclaw/plugin-sdk/migration";
+import {
+  createMigrationItem,
+  MIGRATION_REASON_TARGET_EXISTS,
+} from "paleoclaw/plugin-sdk/migration";
 import type { PlannedMigrationTargets } from "paleoclaw/plugin-sdk/migration-runtime";
 import { lstatIfExists } from "paleoclaw/plugin-sdk/path-existence-runtime";
 import type { MigrationItem } from "paleoclaw/plugin-sdk/plugin-entry";

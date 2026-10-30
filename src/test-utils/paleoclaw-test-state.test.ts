@@ -435,7 +435,9 @@ describe("paleoclaw test state", () => {
         agentId: "worker",
         env: state.env,
         path:
-          location === "configured" ? state.path("configured", "paleoclaw-agent.sqlite") : undefined,
+          location === "configured"
+            ? state.path("configured", "paleoclaw-agent.sqlite")
+            : undefined,
       });
       const unrelatedShared = openOpenClawStateDatabase({ env: unrelatedEnv });
       const unrelatedAgent = agentDb.openOpenClawAgentDatabase({
@@ -519,7 +521,9 @@ describe("paleoclaw test state", () => {
         agentId: "main",
         env: state.env,
         path:
-          location === "configured" ? state.path("configured", "paleoclaw-agent.sqlite") : undefined,
+          location === "configured"
+            ? state.path("configured", "paleoclaw-agent.sqlite")
+            : undefined,
       };
       const agent = agentDb.openOpenClawAgentDatabase(options);
       const shared = openOpenClawStateDatabase({ env: state.env });

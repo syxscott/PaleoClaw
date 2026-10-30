@@ -288,7 +288,13 @@ describe("repairLoadedGatewayServiceForStart", () => {
         ...(sqliteSelectionError ? { sqliteSelectionError: selectionError } : {}),
       });
       const { service, params } = repairFixture({
-        programArguments: ["/home/paleoclaw/.bun/bin/bun", "paleoclaw", "gateway", "--port", "18789"],
+        programArguments: [
+          "/home/paleoclaw/.bun/bin/bun",
+          "paleoclaw",
+          "gateway",
+          "--port",
+          "18789",
+        ],
         environment: { ...homeEnv, OPENCLAW_GATEWAY_PORT: "18789" },
       });
       const repair = repairLoadedGatewayServiceForStart(params);

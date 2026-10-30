@@ -10,7 +10,10 @@ import {
   buildGroupEntrySchema,
   buildMultiAccountChannelSchema,
 } from "paleoclaw/plugin-sdk/channel-config-schema";
-import { buildSecretInputSchema, hasConfiguredSecretInput } from "paleoclaw/plugin-sdk/secret-input";
+import {
+  buildSecretInputSchema,
+  hasConfiguredSecretInput,
+} from "paleoclaw/plugin-sdk/secret-input";
 import { z } from "zod";
 import { FEISHU_EXTERNAL_KEY_PATTERN } from "./external-keys.js";
 import { DEFAULT_FEISHU_WEBHOOK_PATH, normalizeFeishuWebhookPath } from "./webhook-path.js";

@@ -6,6 +6,7 @@ import { setTimeout as sleep } from "node:timers/promises";
 import { crc32 } from "node:zlib";
 import * as tar from "tar";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { waitForClawHubPublicVersion } from "../../scripts/lib/PaleoHub-publication-state.mjs";
 import {
   createClawHubParentAuthorization,
   readPackedClawHubTransaction,
@@ -17,7 +18,6 @@ import {
   resolvePreparedClawHubMatrix,
   restorePreparedClawHubPackage,
 } from "../../scripts/PaleoHub-prepared-artifact.mjs";
-import { waitForClawHubPublicVersion } from "../../scripts/lib/PaleoHub-publication-state.mjs";
 import { verifyPublishedClawHubPackage } from "../../scripts/verify-PaleoHub-published-artifact.mjs";
 
 function requestUrl(input: Parameters<typeof fetch>[0]) {

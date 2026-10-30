@@ -15,7 +15,8 @@ import {
 const resolveApiKeyForProviderMock = vi.hoisted(() => vi.fn());
 
 vi.mock("paleoclaw/plugin-sdk/provider-auth-runtime", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("paleoclaw/plugin-sdk/provider-auth-runtime")>();
+  const actual =
+    await importOriginal<typeof import("paleoclaw/plugin-sdk/provider-auth-runtime")>();
   return {
     ...actual,
     resolveApiKeyForProvider: (...args: unknown[]) => resolveApiKeyForProviderMock(...args),

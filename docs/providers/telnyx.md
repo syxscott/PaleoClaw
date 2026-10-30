@@ -8,16 +8,16 @@ read_when:
 
 [Telnyx AI inference](https://developers.telnyx.com/docs/inference/getting-started) provides hosted, OpenAI-compatible access to open-weight models plus proxied frontier routes. The vendor-maintained external [`@telnyx/paleoclaw-provider`](https://github.com/team-telnyx/paleoclaw-telnyx-provider) plugin supplies the runtime; paleoclaw carries its catalog and onboarding metadata. Authenticated discovery follows the complete model set enabled for your Telnyx account, while the offline fallback contains the models available when that plugin release was built.
 
-| Property        | Value                                                            |
-| --------------- | ---------------------------------------------------------------- |
-| Provider id     | `telnyx`                                                         |
+| Property        | Value                                                             |
+| --------------- | ----------------------------------------------------------------- |
+| Provider id     | `telnyx`                                                          |
 | Plugin          | vendor-maintained external package (`@telnyx/paleoclaw-provider`) |
-| Auth env var    | `TELNYX_API_KEY`                                                 |
-| Onboarding flag | `--auth-choice telnyx-api-key`                                   |
-| Direct CLI flag | `--telnyx-api-key <key>`                                         |
-| API             | OpenAI-compatible (`openai-completions`)                         |
-| Base URL        | `https://api.telnyx.com/v2/ai/openai`                            |
-| Default model   | `telnyx/moonshotai/Kimi-K3`                                      |
+| Auth env var    | `TELNYX_API_KEY`                                                  |
+| Onboarding flag | `--auth-choice telnyx-api-key`                                    |
+| Direct CLI flag | `--telnyx-api-key <key>`                                          |
+| API             | OpenAI-compatible (`openai-completions`)                          |
+| Base URL        | `https://api.telnyx.com/v2/ai/openai`                             |
+| Default model   | `telnyx/moonshotai/Kimi-K3`                                       |
 
 ## Requirements
 

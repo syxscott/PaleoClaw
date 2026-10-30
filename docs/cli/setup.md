@@ -98,7 +98,7 @@ Use `setup --team` for the same small-team onboarding as `onboard --team`.
 
 | Flag                           | Description                                                                                          |
 | ------------------------------ | ---------------------------------------------------------------------------------------------------- |
-| `-m, --message <text>`         | Run one paleoclaw request.                                                                            |
+| `-m, --message <text>`         | Run one paleoclaw request.                                                                           |
 | `--yes`                        | Approve persistent config writes for one `--message` request.                                        |
 | `--workspace <dir>`            | Workspace proposal; existing fleets require classic confirmation and are preserved noninteractively. |
 | `--baseline`                   | Create baseline config/workspace/session folders without onboarding.                                 |
@@ -118,7 +118,7 @@ Use `setup --team` for the same small-team onboarding as `onboard --team`.
 | `--remote-url <url>`           | Remote Gateway WebSocket URL.                                                                        |
 | `--remote-token <token>`       | Remote Gateway token (optional).                                                                     |
 | `--remote-password <password>` | Remote Gateway password (optional).                                                                  |
-| `--json`                       | Configured system: paleoclaw overview. Onboarding route: onboarding summary.                          |
+| `--json`                       | Configured system: paleoclaw overview. Onboarding route: onboarding summary.                         |
 
 `--classic` and `--non-interactive` are mutually exclusive: classic opens the
 prompted wizard, while noninteractive setup uses the automation path.

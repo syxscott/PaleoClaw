@@ -3,7 +3,10 @@
 // returned by sendPoll so a later vote can enter the normal inbound turn pipeline.
 import type { Chat } from "grammy/types";
 import { isStringArray } from "paleoclaw/plugin-sdk/collection-input-runtime";
-import { parseStrictInteger, parseStrictPositiveInteger } from "paleoclaw/plugin-sdk/number-runtime";
+import {
+  parseStrictInteger,
+  parseStrictPositiveInteger,
+} from "paleoclaw/plugin-sdk/number-runtime";
 import { normalizeAccountId } from "paleoclaw/plugin-sdk/routing";
 import { isRecord } from "paleoclaw/plugin-sdk/string-coerce-runtime";
 import { getTelegramRuntime } from "./runtime.js";

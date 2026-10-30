@@ -698,7 +698,9 @@ describe("update-cli", () => {
           return makeOkUpdateResult({ mode: "git" });
         });
       } else {
-        const root = await fixture.mockPackageInstallAtCaseDir("paleoclaw-update-suspension-signal");
+        const root = await fixture.mockPackageInstallAtCaseDir(
+          "paleoclaw-update-suspension-signal",
+        );
         fixture.primeServiceCommand(
           [nodeExecutable, path.join(root, "dist", "index.js"), "gateway", "run"],
           { OPENCLAW_SERVICE_MARKER: "paleoclaw", OPENCLAW_SERVICE_KIND: "gateway" },

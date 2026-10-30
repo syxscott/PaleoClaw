@@ -105,7 +105,9 @@ it.each([
         workflow === PaleoHub
           ? "${{ inputs.release_publish_full_ref }}"
           : "${{ inputs.release_publish_full_ref || github.ref }}",
-      ...(workflow === PaleoHub ? { RELEASE_PUBLISH_PARENT_STATE_POLICY: "active-or-success" } : {}),
+      ...(workflow === PaleoHub
+        ? { RELEASE_PUBLISH_PARENT_STATE_POLICY: "active-or-success" }
+        : {}),
       ...(workflow === core
         ? {
             RELEASE_TAG: "${{ inputs.tag }}",

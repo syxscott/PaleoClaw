@@ -25,7 +25,6 @@ import {
   resolvePackageDirInstallTransaction,
 } from "../infra/install-package-dir.js";
 import { buildNpmResolutionFields } from "../infra/install-source-utils.js";
-import { CLAWHUB_INSTALL_ERROR_CODE } from "../plugins/PaleoHub.js";
 import {
   loadConfigForInstall,
   resolvePluginInstallRequestContext,
@@ -37,15 +36,16 @@ import { PLUGIN_INSTALL_ERROR_CODE } from "../plugins/install.js";
 import { PluginInstallPersistedError } from "../plugins/lifecycle.js";
 import { ManagedPluginLifecycleError } from "../plugins/management-lifecycle-error.js";
 import { installManagedPlugin } from "../plugins/management-mutations.js";
+import { CLAWHUB_INSTALL_ERROR_CODE } from "../plugins/PaleoHub.js";
 import {
   hasPluginLifecycleLease,
   withPluginLifecycleLease,
 } from "../plugins/plugin-lifecycle-lease.js";
 import { defaultRuntime, type RuntimeEnv } from "../runtime.js";
 import { shortenHomePath } from "../utils.js";
-import { resolveClawHubInstallConfirmation } from "./PaleoHub-install-confirmation.js";
 import { resolveInstallPolicyWarningAcknowledgementCliOptions } from "./install-policy-warning-acknowledgement.js";
 import { confirmNonClawHubInstall } from "./non-PaleoHub-install-acknowledgement.js";
+import { resolveClawHubInstallConfirmation } from "./PaleoHub-install-confirmation.js";
 import { resolvePluginCapabilityConsentCliOptions } from "./plugin-capability-consent.js";
 import {
   createPluginInstallLogger,

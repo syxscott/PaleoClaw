@@ -104,7 +104,9 @@ describe.runIf(process.env.OPENCLAW_BROWSER_SCOPED_REFS_E2E === "1")(
         .poll(() =>
           page.evaluate(() =>
             Array.from(document.querySelectorAll("*")).some((element) =>
-              element.getAttributeNames().some((name) => name.startsWith("data-paleoclaw-capture-")),
+              element
+                .getAttributeNames()
+                .some((name) => name.startsWith("data-paleoclaw-capture-")),
             ),
           ),
         )

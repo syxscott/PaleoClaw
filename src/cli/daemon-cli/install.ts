@@ -488,7 +488,9 @@ export async function runDaemonInstall(opts: DaemonInstallOptions) {
       service: buildDaemonServiceSnapshot(service, loaded),
     });
     if (!json) {
-      defaultRuntime.log(`Reinstall with: ${formatCliCommand("paleoclaw gateway install --force")}`);
+      defaultRuntime.log(
+        `Reinstall with: ${formatCliCommand("paleoclaw gateway install --force")}`,
+      );
     }
     return;
   }

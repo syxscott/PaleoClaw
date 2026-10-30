@@ -104,7 +104,10 @@ export async function prepareInternalHooks(
       }
       const safeHandlerPath = opened.path;
       fs.closeSync(opened.fd);
-      if (entry.hook.source === "paleoclaw-workspace" || entry.hook.source === "paleoclaw-managed") {
+      if (
+        entry.hook.source === "paleoclaw-workspace" ||
+        entry.hook.source === "paleoclaw-managed"
+      ) {
         log.warn(
           `Loading ${entry.hook.source.slice("paleoclaw-".length)} hook code into the gateway process. Hooks are trusted local code.`,
         );

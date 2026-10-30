@@ -11,7 +11,7 @@ Choose the integration for the work you want paleoclaw to do:
 
 | Goal                                                 | Integration                         |
 | ---------------------------------------------------- | ----------------------------------- |
-| Use Laguna models with the paleoclaw agent            | Poolside-maintained provider plugin |
+| Use Laguna models with the paleoclaw agent           | Poolside-maintained provider plugin |
 | Run the Poolside Agent as an external coding harness | ACP with the `pool` target          |
 
 ## Laguna model provider

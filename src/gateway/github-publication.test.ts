@@ -188,9 +188,9 @@ describe("Gateway GitHub publication", () => {
 
     const first = await coordinator.requestForSessionV2({ ...request, requester });
     expect(first).toEqual(publishedResult(expect.any(String)));
-    expect(commands.some((argv) => argv.includes("https://github.com/syxscott/PaleoClaw.git"))).toBe(
-      true,
-    );
+    expect(
+      commands.some((argv) => argv.includes("https://github.com/syxscott/PaleoClaw.git")),
+    ).toBe(true);
     expect(commands.some((argv) => argv.some((arg) => arg.includes("roboclaw-token")))).toBe(false);
     for (const argv of commandMatchesAny("update-ref", "read-tree", "add", "reset", "push")) {
       expect(argv, argv.join(" ")).toContain(`core.hooksPath=${os.devNull}`);
@@ -347,7 +347,8 @@ describe("Gateway GitHub publication", () => {
       url: "https://github.com/syxscott/PaleoClaw/pull/right-base",
     });
     const lookup = mocks.runCommand.mock.calls.find(
-      ([argv]) => argv.includes("state=all") && argv.includes("head=paleoclaw:paleoclaw/publication"),
+      ([argv]) =>
+        argv.includes("state=all") && argv.includes("head=paleoclaw:paleoclaw/publication"),
     );
     expect(lookup?.[0]).toContain("base=main");
     expect(mocks.runCommand.mock.calls.filter(([argv]) => argv.includes("POST"))).toHaveLength(1);

@@ -33,7 +33,10 @@ function scenario(
     runtimeParity: {
       scenarioId: name.toLowerCase().replaceAll(" ", "-"),
       drift: options.drift ?? (status === "pass" ? "none" : "failure-mode"),
-      cells: { paleoclaw: cell("paleoclaw", options.openclaw), codex: cell("codex", options.codex) },
+      cells: {
+        paleoclaw: cell("paleoclaw", options.openclaw),
+        codex: cell("codex", options.codex),
+      },
     },
   };
 }

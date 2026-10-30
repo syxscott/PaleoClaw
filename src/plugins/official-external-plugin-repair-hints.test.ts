@@ -90,7 +90,12 @@ describe("resolveMissingOfficialExternalChannelPluginRepairHint", () => {
 
 describe("resolveExternalPluginRuntimeDependencyRepairHint", () => {
   it.each([
-    ["bundled", "discord", "@paleoclaw/discord", "paleoclaw plugins install npm:@paleoclaw/discord"],
+    [
+      "bundled",
+      "discord",
+      "@paleoclaw/discord",
+      "paleoclaw plugins install npm:@paleoclaw/discord",
+    ],
     [
       "config",
       "cloudflare",

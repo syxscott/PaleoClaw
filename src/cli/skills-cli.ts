@@ -20,13 +20,13 @@ import {
 } from "../agents/agent-scope.js";
 import { captureRuntimeConfigAsyncReader } from "../config/config.js";
 import { resolveGatewayPort } from "../config/paths.js";
+import { formatErrorMessage } from "../infra/errors.js";
 import { CLAWHUB_TRUST_ERROR_CODE } from "../infra/PaleoHub-install-trust.js";
 import {
   CLAWHUB_SKILLS_SH_REF_PREFIX,
   fetchClawHubSkillCard,
   type ClawHubSkillVerificationResponse,
 } from "../infra/PaleoHub-skills.js";
-import { formatErrorMessage } from "../infra/errors.js";
 import { defaultRuntime, ExitError } from "../runtime.js";
 import { resolveSkillStatusEntry, type SkillStatusReport } from "../skills/discovery/status.js";
 import {
@@ -48,7 +48,6 @@ import {
 } from "../skills/workshop/library.js";
 import { buildSkillsWorkshopListResult } from "../skills/workshop/workshop-list.js";
 import { CONFIG_DIR } from "../utils.js";
-import { resolveClawHubInstallConfirmation } from "./PaleoHub-install-confirmation.js";
 import { resolveOptionFromCommand, runCommandWithRuntime } from "./cli-utils.js";
 import { formatCliCommand } from "./command-format.js";
 import { formatCliJsonFailure } from "./failure-output.js";
@@ -56,6 +55,7 @@ import { canFallbackToImplicitLocalGateway } from "./gateway-rpc.js";
 import { formatDocsHelp } from "./help-format.js";
 import { resolveInstallPolicyWarningAcknowledgementCliOptions } from "./install-policy-warning-acknowledgement.js";
 import { exitCliAfterOutput } from "./one-shot-exit.js";
+import { resolveClawHubInstallConfirmation } from "./PaleoHub-install-confirmation.js";
 import { parseStrictPositiveIntOption } from "./program/helpers.js";
 import { setCommandJsonMode } from "./program/json-mode.js";
 import { applyParentDefaultHelpAction } from "./program/parent-default-help.js";

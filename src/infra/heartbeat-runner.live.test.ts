@@ -339,7 +339,9 @@ describeLive("session event wake through a live Gateway", () => {
           await vi.waitFor(
             async () => {
               const mainMessages = await readMessages(config, mainSessionKey);
-              expect(messagesWithRole(mainMessages, "user")).toContain("[paleoclaw heartbeat poll]");
+              expect(messagesWithRole(mainMessages, "user")).toContain(
+                "[paleoclaw heartbeat poll]",
+              );
               expect(messagesWithRole(mainMessages, "assistant")).toContain(monitorReply);
             },
             { timeout: TURN_TIMEOUT_MS, interval: 1_000 },

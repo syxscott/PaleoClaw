@@ -1019,7 +1019,9 @@ fs.renameSync = (source, destination) => {
       writeJson(path.join(scratch, "plugins-PaleoHub-installed.json"), {
         plugins: [{ id: CLAWHUB_ID, status: "loaded" }],
       });
-      writeJson(path.join(scratch, "plugins-PaleoHub-inspect.json"), { plugin: { id: CLAWHUB_ID } });
+      writeJson(path.join(scratch, "plugins-PaleoHub-inspect.json"), {
+        plugin: { id: CLAWHUB_ID },
+      });
       writeJson(path.join(state, "plugins", "installs.json"), {
         installRecords: { [CLAWHUB_ID]: record },
       });

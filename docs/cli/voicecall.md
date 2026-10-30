@@ -84,13 +84,13 @@ paleoclaw voicecall setup --json
 Runs the same readiness checks. Places a real phone call only when both
 `--to` and `--yes` are present.
 
-| Flag               | Default                           | Description                             |
-| ------------------ | --------------------------------- | --------------------------------------- |
-| `-t, --to <phone>` | (none)                            | Phone number to call for a live smoke.  |
+| Flag               | Default                            | Description                             |
+| ------------------ | ---------------------------------- | --------------------------------------- |
+| `-t, --to <phone>` | (none)                             | Phone number to call for a live smoke.  |
 | `--message <text>` | `paleoclaw voice call smoke test.` | Message to speak during the smoke call. |
-| `--mode <mode>`    | `notify`                          | Call mode: `notify` or `conversation`.  |
-| `--yes`            | `false`                           | Actually place the live outbound call.  |
-| `--json`           | `false`                           | Print machine-readable JSON.            |
+| `--mode <mode>`    | `notify`                           | Call mode: `notify` or `conversation`.  |
+| `--yes`            | `false`                            | Actually place the live outbound call.  |
+| `--json`           | `false`                            | Print machine-readable JSON.            |
 
 ```bash
 paleoclaw voicecall smoke

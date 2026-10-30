@@ -5,7 +5,10 @@ import {
   type ChannelIngressMonitorLifecycle,
 } from "paleoclaw/plugin-sdk/channel-outbound";
 import { isRecord } from "paleoclaw/plugin-sdk/channel-secret-basic-runtime";
-import { collectErrorGraphCandidates, formatErrorMessage } from "paleoclaw/plugin-sdk/error-runtime";
+import {
+  collectErrorGraphCandidates,
+  formatErrorMessage,
+} from "paleoclaw/plugin-sdk/error-runtime";
 import { getSynologyRuntime } from "./runtime.js";
 
 export type SynologyWebhookRawEvent = {

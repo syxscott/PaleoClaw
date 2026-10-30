@@ -1130,25 +1130,26 @@ describe("combined security review entry point", () => {
     expect(result.combined).toEqual(["pending", "success"]);
   });
 
-  it.each(["paleoclaw/ci-gate", "paleoclaw/dependency-review", "paleoclaw/security-sensitive-review"])(
-    "leaves %s failed before GitHub can exhaust its status-write capacity",
-    (context) => {
-      const result = evaluate({
-        [historyPath]: Array.from({ length: 900 }, () => ({
-          ...otherReview,
-          context,
-          description: "PR #7: Previous review",
-          state: "success",
-        })),
-      });
-      expect(result.status).toBe(1);
-      expect(result.stderr).toContain("capacity is nearly exhausted");
-      expect(result.combined).not.toContain("success");
-      expect(
-        result.requests.findLast((entry) => entry.body?.context === context)?.body?.state,
-      ).toBe("failure");
-    },
-  );
+  it.each([
+    "paleoclaw/ci-gate",
+    "paleoclaw/dependency-review",
+    "paleoclaw/security-sensitive-review",
+  ])("leaves %s failed before GitHub can exhaust its status-write capacity", (context) => {
+    const result = evaluate({
+      [historyPath]: Array.from({ length: 900 }, () => ({
+        ...otherReview,
+        context,
+        description: "PR #7: Previous review",
+        state: "success",
+      })),
+    });
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain("capacity is nearly exhausted");
+    expect(result.combined).not.toContain("success");
+    expect(result.requests.findLast((entry) => entry.body?.context === context)?.body?.state).toBe(
+      "failure",
+    );
+  });
 
   it.each([
     { name: "superseded head", changedPr: { ...pr, head: { ...pr.head, sha: "d".repeat(40) } } },
@@ -1185,7 +1186,10 @@ describe("combined security review entry point", () => {
       });
       expect(result.status, result.stderr).toBe(0);
       expect(result.combined.at(-1)).toBe("failure");
-      for (const context of ["paleoclaw/dependency-review", "paleoclaw/security-sensitive-review"]) {
+      for (const context of [
+        "paleoclaw/dependency-review",
+        "paleoclaw/security-sensitive-review",
+      ]) {
         expect(
           result.reviews.findLast((entry) => entry.body?.context === context)?.body?.state,
         ).toBe("failure");
@@ -1739,7 +1743,10 @@ describe("combined security review entry point", () => {
   });
 
   const exemptRoutes = {
-    "GET /repos/paleoclaw/paleoclaw/pulls/152415": { ...rollout, merged_at: "2026-02-01T00:00:00Z" },
+    "GET /repos/paleoclaw/paleoclaw/pulls/152415": {
+      ...rollout,
+      merged_at: "2026-02-01T00:00:00Z",
+    },
     [`GET /repos/paleoclaw/paleoclaw/compare/${landed}...${head}`]: {
       base_commit: { sha: landed },
       merge_base_commit: { sha: "b".repeat(40) },

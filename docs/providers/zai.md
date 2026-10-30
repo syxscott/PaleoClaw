@@ -14,7 +14,7 @@ paleoclaw uses the `zai` provider with a Z.AI API key.
 | Property | Value                                        |
 | -------- | -------------------------------------------- |
 | Provider | `zai`                                        |
-| Package  | `@paleoclaw/zai-provider`                     |
+| Package  | `@paleoclaw/zai-provider`                    |
 | Auth     | `ZAI_API_KEY` (legacy alias: `Z_AI_API_KEY`) |
 | API      | Z.AI Chat Completions (Bearer auth)          |
 
@@ -171,7 +171,7 @@ The manifest-backed catalog includes:
 | `zai/glm-5.3`       | Coding Plan default; 1,048,576-token context       |
 | `zai/glm-5.3-flash` | Multimodal text and image model; 1,048,576 context |
 | `zai/glm-5.2`       | General API default; 1M context                    |
-| `zai/glm-5-turbo`   | paleoclaw-optimized text model; 200K context        |
+| `zai/glm-5-turbo`   | paleoclaw-optimized text model; 200K context       |
 | `zai/glm-5v-turbo`  | Multimodal coding model; 200K context              |
 | `zai/glm-5.1`       | Deprecated; hidden unless configured; use GLM-5.2  |
 

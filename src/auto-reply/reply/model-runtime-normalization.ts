@@ -27,7 +27,9 @@ import {
 
 export function normalizeRuntimeChoiceId(runtime: string | undefined): string {
   const normalized = normalizeLowercaseStringOrEmpty(runtime);
-  return !normalized || normalized === "auto" || normalized === "default" ? "paleoclaw" : normalized;
+  return !normalized || normalized === "auto" || normalized === "default"
+    ? "paleoclaw"
+    : normalized;
 }
 
 export type RuntimeModelNormalization = NonNullable<Parameters<typeof normalizeModelRef>[2]>;

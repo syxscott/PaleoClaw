@@ -18,8 +18,8 @@ internals](/plugins/architecture-internals) guide.
 Use narrow SDK subpaths instead of the monolithic `paleoclaw/plugin-sdk` root
 barrel when authoring new plugins. Core subpaths:
 
-| Subpath                            | Purpose                                      |
-| ---------------------------------- | -------------------------------------------- |
+| Subpath                             | Purpose                                      |
+| ----------------------------------- | -------------------------------------------- |
 | `paleoclaw/plugin-sdk/plugin-entry` | Plugin registration primitives               |
 | `paleoclaw/plugin-sdk/channel-core` | Channel entry/build helpers                  |
 | `paleoclaw/plugin-sdk/core`         | Generic shared helpers and umbrella contract |

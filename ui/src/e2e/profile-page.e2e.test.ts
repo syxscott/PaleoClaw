@@ -450,7 +450,9 @@ suite.define(() => {
           "img-src 'self' data: blob:",
         );
 
-        const profileAvatar = page.locator("#settings-profile-identity paleoclaw-viewer-avatar img");
+        const profileAvatar = page.locator(
+          "#settings-profile-identity paleoclaw-viewer-avatar img",
+        );
         await profileAvatar.waitFor({ timeout: 10_000 });
         const imageUrl = await profileAvatar.getAttribute("src");
         expect(imageUrl).toMatch(/^blob:/u);

@@ -57,7 +57,9 @@ vi.mock("paleoclaw/plugin-sdk/llm", async () => {
     throw new Error("Unexpected provider inference outside the mocked embedded attempt");
   };
   return {
-    ...(await vi.importActual<typeof import("paleoclaw/plugin-sdk/llm")>("paleoclaw/plugin-sdk/llm")),
+    ...(await vi.importActual<typeof import("paleoclaw/plugin-sdk/llm")>(
+      "paleoclaw/plugin-sdk/llm",
+    )),
     complete: unexpectedInference,
     completeSimple: unexpectedInference,
     streamSimple: unexpectedInference,

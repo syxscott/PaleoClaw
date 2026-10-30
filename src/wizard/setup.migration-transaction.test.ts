@@ -307,7 +307,10 @@ it.each([true, false])(
         ).not.toBeNull();
       },
     });
-    const liveDatabase = path.join(root, "paleoclaw-state/agents/main/agent/paleoclaw-agent.sqlite");
+    const liveDatabase = path.join(
+      root,
+      "paleoclaw-state/agents/main/agent/paleoclaw-agent.sqlite",
+    );
     let admitted = false;
     mocks.runEmbedded.mockImplementation(async (params) => {
       await fixture.unpromoted();

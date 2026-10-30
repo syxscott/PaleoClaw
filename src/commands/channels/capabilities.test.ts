@@ -160,7 +160,11 @@ describe("channelsCapabilitiesCommand", () => {
     selectPlugin({
       account: { ...botAccount, userToken: "xoxp-user", config: { userToken: "xoxp-user" } },
       status: {
-        probeAccount: async () => ({ ok: true, bot: { name: "paleoclaw" }, team: { name: "team" } }),
+        probeAccount: async () => ({
+          ok: true,
+          bot: { name: "paleoclaw" },
+          team: { name: "team" },
+        }),
         formatCapabilitiesProbe: () => [{ text: "Bot: @paleoclaw" }, { text: "Team: team" }],
         buildCapabilitiesDiagnostics: async () => ({
           lines: [

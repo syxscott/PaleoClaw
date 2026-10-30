@@ -24,7 +24,9 @@ const {
 }));
 
 // mock-isolation: Supply the controlled downloader without opening a real network request.
-vi.mock("paleoclaw/plugin-sdk/ssrf-runtime", () => ({ fetchWithSsrFGuard: fetchWithSsrFGuardMock }));
+vi.mock("paleoclaw/plugin-sdk/ssrf-runtime", () => ({
+  fetchWithSsrFGuard: fetchWithSsrFGuardMock,
+}));
 
 vi.mock("paleoclaw/plugin-sdk/setup-tools", async (importOriginal) => {
   const actual = await importOriginal<typeof import("paleoclaw/plugin-sdk/setup-tools")>();

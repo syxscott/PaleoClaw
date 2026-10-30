@@ -1,4 +1,7 @@
-import { createLazyRuntimeMethod, createLazyRuntimeModule } from "paleoclaw/plugin-sdk/lazy-runtime";
+import {
+  createLazyRuntimeMethod,
+  createLazyRuntimeModule,
+} from "paleoclaw/plugin-sdk/lazy-runtime";
 
 export type { MatrixAuth } from "./client/types.js";
 export { getMatrixScopedEnvVarNames } from "../env-vars.js";

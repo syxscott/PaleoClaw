@@ -196,7 +196,10 @@ describe("self-link target and diagnostic accuracy", () => {
         await writeFile(
           root,
           "package.json",
-          JSON.stringify({ dependencies: { paleoclaw: link }, devDependencies: { paleoclaw: link } }),
+          JSON.stringify({
+            dependencies: { paleoclaw: link },
+            devDependencies: { paleoclaw: link },
+          }),
         );
         await noteSourceInstallIssues(root);
         expect(note).not.toHaveBeenCalled();
@@ -219,7 +222,11 @@ describe("self-link target and diagnostic accuracy", () => {
           kind === "empty" ? "" : kind === "dot" ? "." : kind === "absolute" ? root : "self";
         const link = `link:${target}`;
         await writeSourceCheckout(root, `overrides: {paleoclaw: '${link}'}\n`);
-        await writeFile(root, "package.json", JSON.stringify({ dependencies: { paleoclaw: link } }));
+        await writeFile(
+          root,
+          "package.json",
+          JSON.stringify({ dependencies: { paleoclaw: link } }),
+        );
         await noteSourceInstallIssues(root);
         expect(note).toHaveBeenCalledOnce();
         const warning = String(vi.mocked(note).mock.calls[0]?.[0]);

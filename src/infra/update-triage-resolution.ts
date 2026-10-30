@@ -82,8 +82,10 @@ const failureFamilies = {
   ],
 };
 
-const nextUpdate = "Next step: run `paleoclaw update status --json`, then retry `paleoclaw update`.";
-const nextRepair = "Next step: run `paleoclaw update status --json`, then `paleoclaw update repair`.";
+const nextUpdate =
+  "Next step: run `paleoclaw update status --json`, then retry `paleoclaw update`.";
+const nextRepair =
+  "Next step: run `paleoclaw update status --json`, then `paleoclaw update repair`.";
 
 function unresolved(message: string, stop = true, nextStep = nextUpdate): UpdateRepairValidation {
   // Triage bounds displayed diagnostics; retain the next action before long findings.

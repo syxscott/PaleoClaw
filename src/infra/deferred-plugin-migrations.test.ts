@@ -639,7 +639,9 @@ describe("deferred configured-plugin migrations", () => {
       await expect(
         recordDeferredPluginMigrations({
           env,
-          pending: [{ pluginId: "new", reason: "Not installed", command: "paleoclaw doctor --fix" }],
+          pending: [
+            { pluginId: "new", reason: "Not installed", command: "paleoclaw doctor --fix" },
+          ],
         }),
       ).rejects.toThrow(error);
       writeReceipt("completed");

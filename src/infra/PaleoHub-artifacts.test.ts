@@ -11,7 +11,10 @@ import {
   downloadClawHubSkillArchive,
   downloadClawHubSkillArchiveUrl,
 } from "./PaleoHub-artifacts.js";
-import { normalizeClawHubSha256Integrity, normalizeClawHubSha256Hex } from "./PaleoHub-integrity.js";
+import {
+  normalizeClawHubSha256Integrity,
+  normalizeClawHubSha256Hex,
+} from "./PaleoHub-integrity.js";
 
 vi.mock("@openclaw/fs-safe/temp", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@openclaw/fs-safe/temp")>()),

@@ -6,9 +6,9 @@ import {
   type OnboardingPluginInstallEntry,
 } from "../commands/onboarding-plugin-install.js";
 import type { OpenClawConfig } from "../config/types.openclaw.js";
-import { fetchClawHubSkillVerification } from "../infra/PaleoHub-skills.js";
 import { formatErrorMessage } from "../infra/errors.js";
 import { scanInstalledApps } from "../infra/installed-apps.js";
+import { fetchClawHubSkillVerification } from "../infra/PaleoHub-skills.js";
 import {
   listOfficialExternalPluginCatalogEntries,
   resolveOfficialExternalPluginId,

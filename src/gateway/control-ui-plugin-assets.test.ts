@@ -372,7 +372,9 @@ it("limits native asset HTTP cookies to direct loopback origins", async () => {
           expect(response.res.statusCode, JSON.stringify(scenario)).toBe(200);
           const issued = cookies(response);
           expect(issued).toHaveLength(1);
-          expect(issued[0]).toContain("Path=/paleoclaw/__openclaw__/plugins/control-ui/native-ui/;");
+          expect(issued[0]).toContain(
+            "Path=/paleoclaw/__openclaw__/plugins/control-ui/native-ui/;",
+          );
           expect(issued[0]).toContain("SameSite=Strict;");
           expect(String(issued[0]).includes("; Secure;"), JSON.stringify(scenario)).toBe(
             scenario.secure,

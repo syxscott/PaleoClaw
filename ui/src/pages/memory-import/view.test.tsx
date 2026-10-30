@@ -134,7 +134,9 @@ describe("renderMemoryImport", () => {
     const container = document.createElement("div");
     renderView({}, container);
 
-    expect(container.querySelector('paleoclaw-agent-select[name="memory-import-agent"]')).toBeNull();
+    expect(
+      container.querySelector('paleoclaw-agent-select[name="memory-import-agent"]'),
+    ).toBeNull();
     expect(container.textContent).not.toContain("Destination agent");
   });
 

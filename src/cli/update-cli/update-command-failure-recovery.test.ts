@@ -581,7 +581,13 @@ it.each([
         running: true,
         env: {},
         command: {
-          programArguments: ["node", path.join(root, "paleoclaw.mjs"), "gateway", "--port", "19431"],
+          programArguments: [
+            "node",
+            path.join(root, "paleoclaw.mjs"),
+            "gateway",
+            "--port",
+            "19431",
+          ],
         },
         verdict: { kind: "owned", root, fingerprint: "fixture", refreshDefinition: false },
       });

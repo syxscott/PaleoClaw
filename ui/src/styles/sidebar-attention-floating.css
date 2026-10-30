@@ -49,7 +49,9 @@ html.openclaw-native-web-chrome paleoclaw-sidebar-attention.sidebar-attention--f
 }
 
 /* Inherited chrome survives late entry CSS; direct hover/expanded fills still win. */
-:where(html:not(.openclaw-native-web-chrome) paleoclaw-sidebar-attention.sidebar-attention--floating)
+:where(
+    html:not(.openclaw-native-web-chrome) paleoclaw-sidebar-attention.sidebar-attention--floating
+  )
   .sidebar-issues-button {
   box-shadow: var(--shadow-sm);
   backdrop-filter: blur(10px);

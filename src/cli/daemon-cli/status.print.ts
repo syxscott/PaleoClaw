@@ -203,7 +203,9 @@ export function printDaemonStatus(status: DaemonStatus, opts: { json: boolean; d
       }
     }
     if (!status.config.cli.valid || status.config.daemon?.valid === false) {
-      printWarning(`Run \`${formatCliCommand("paleoclaw doctor --fix")}\` to repair configuration.`);
+      printWarning(
+        `Run \`${formatCliCommand("paleoclaw doctor --fix")}\` to repair configuration.`,
+      );
     }
     if (status.config.mismatch) {
       printError(

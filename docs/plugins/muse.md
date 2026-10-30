@@ -234,13 +234,13 @@ and ask floors; `tools.exec.mode: "full"` does not bypass them. Only an explicit
 full-session elevation can bypass those floors while its effective security
 remains full. The effective policy maps to Muse's approval mode and sandbox posture:
 
-| paleoclaw exec policy                 | Muse behavior                                                                                 |
-| ------------------------------------ | --------------------------------------------------------------------------------------------- |
-| `security: "deny"`                   | `muse serve --disable-shell --disable-write`, approval mode `denyUnmatched`.                  |
-| `security: "full"` with `ask: "off"` | Approval mode `allowAll`.                                                                     |
+| paleoclaw exec policy                | Muse behavior                                                                                  |
+| ------------------------------------ | ---------------------------------------------------------------------------------------------- |
+| `security: "deny"`                   | `muse serve --disable-shell --disable-write`, approval mode `denyUnmatched`.                   |
+| `security: "full"` with `ask: "off"` | Approval mode `allowAll`.                                                                      |
 | Default and other combinations       | Approval mode `promptUnmatched`: Muse applies its own rules and asks paleoclaw about the rest. |
 | `security: "allowlist"`              | Refused. Muse cannot enforce paleoclaw's exec allowlist.                                       |
-| `ask: "always"`                      | Refused. Muse cannot guarantee an approval prompt for every native command.                   |
+| `ask: "always"`                      | Refused. Muse cannot guarantee an approval prompt for every native command.                    |
 
 When Muse asks for approval, paleoclaw shows its normal approval prompt with
 **Allow once** and **Deny** to approval surfaces watching the session, such as

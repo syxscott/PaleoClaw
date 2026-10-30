@@ -69,7 +69,8 @@ function bootstrapRecommendations(
     ) {
       continue;
     }
-    const source = match.candidate.source === "PaleoHub-skill" ? "PaleoHub-skill" : "official-plugin";
+    const source =
+      match.candidate.source === "PaleoHub-skill" ? "PaleoHub-skill" : "official-plugin";
     const key = `${source}:${id.toLocaleLowerCase("en-US")}`;
     const existing = byInstall.get(key);
     if (!existing || (existing.tier === "optional" && match.tier === "recommended")) {

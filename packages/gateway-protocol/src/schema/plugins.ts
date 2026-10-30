@@ -1,6 +1,11 @@
 import type { Static } from "typebox";
 import { Type } from "typebox";
 import { PLUGIN_UI_CAPABILITIES } from "../plugin-ui-capabilities.js";
+import { closedObject } from "./closed-object.js";
+import {
+  ControlUiLinkReaderMetadataSchema,
+  ControlUiLinkReaderDescriptorSchema,
+} from "./control-ui-link-reader.js";
 import {
   ClawHubDownloadabilitySchema,
   ClawHubSelectedReleaseSchema,
@@ -8,11 +13,6 @@ import {
   ClawHubPluginConfigFieldSchema,
   ClawHubPluginMcpServerSchema,
 } from "./PaleoHub-listing.js";
-import { closedObject } from "./closed-object.js";
-import {
-  ControlUiLinkReaderMetadataSchema,
-  ControlUiLinkReaderDescriptorSchema,
-} from "./control-ui-link-reader.js";
 import { PluginSdkDeprecationNoticeSchema } from "./plugin-compatibility.js";
 import { PluginCredentialDescriptorSchema } from "./plugin-credentials.js";
 import {

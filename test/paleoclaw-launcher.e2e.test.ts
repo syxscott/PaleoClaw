@@ -1684,7 +1684,9 @@ console.log(JSON.stringify({ parent: process.pid, bun: process.versions.bun, mar
 
     expect(result.status).toBe(0);
     const original = JSON.parse(result.stdout) as { directory: string };
-    expect(original.directory).toContain(path.join(".node-compile-cache", "paleoclaw", "2026.4.29"));
+    expect(original.directory).toContain(
+      path.join(".node-compile-cache", "paleoclaw", "2026.4.29"),
+    );
 
     const child = runLauncher([], {
       env: {

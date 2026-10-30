@@ -156,7 +156,9 @@ export function compileStructuredInputForm(params: {
     fields.push(field);
   }
   if (fields.length === 0 && propertyEntries.length > 0) {
-    return unsupported(`paleoclaw cannot show a ${protocol} form containing only synthetic fields.`);
+    return unsupported(
+      `paleoclaw cannot show a ${protocol} form containing only synthetic fields.`,
+    );
   }
   return { kind: "ready", plan: { kind: "form", intro, fields } };
 }

@@ -1,3 +1,4 @@
+import type { RouteLocation } from "@openclaw/uirouter";
 // Config facts about the `memory` section, with no rendering imports.
 //
 // The Memory page is behind the lazy `import("./config-page.tsx")` route, but
@@ -6,7 +7,6 @@
 // those answers live here rather than in the view module — importing the view
 // from search would pull lit, hub-tabs, and settings-ui into the startup chunk.
 import { asNullableRecord as asConfigRecord } from "@paleoclaw/normalization-core/record-coerce";
-import type { RouteLocation } from "@openclaw/uirouter";
 import { defaultSlotIdForKey, resolveSlotSelection } from "../../../../src/plugins/slots.ts";
 import { memoryTabFromPath, pathForMemoryTab, type MemoryRouteTab } from "../../app-route-paths.ts";
 

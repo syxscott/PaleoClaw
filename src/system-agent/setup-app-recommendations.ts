@@ -3,8 +3,8 @@ import { normalizeOptionalString } from "@paleoclaw/normalization-core/string-co
 import { truncateUtf16Safe } from "@paleoclaw/normalization-core/utf16-slice";
 import pLimit from "p-limit";
 import { z } from "zod";
-import { searchClawHubSkills } from "../infra/PaleoHub-skills.js";
 import type { InstalledApp, InstalledAppsResult } from "../infra/installed-apps.js";
+import { searchClawHubSkills } from "../infra/PaleoHub-skills.js";
 import {
   getOfficialExternalPluginCatalogManifest,
   listOfficialExternalChannelCatalogEntries,

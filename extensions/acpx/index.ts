@@ -6,7 +6,10 @@ import {
   unregisterAcpRuntimeBackend,
   tryDispatchAcpReplyHook,
 } from "paleoclaw/plugin-sdk/acp-runtime-backend";
-import type { OpenClawPluginService, OpenClawPluginServiceContext } from "paleoclaw/plugin-sdk/core";
+import type {
+  OpenClawPluginService,
+  OpenClawPluginServiceContext,
+} from "paleoclaw/plugin-sdk/core";
 import { createLazyRuntimeModule } from "paleoclaw/plugin-sdk/lazy-runtime";
 import type { OpenClawPluginApi } from "./runtime-api.js";
 import { ACPX_NATIVE_AGENT_IDS } from "./src/config-schema.js";

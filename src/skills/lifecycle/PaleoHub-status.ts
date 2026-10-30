@@ -1,6 +1,8 @@
 import fsSync from "node:fs";
 import path from "node:path";
 import { openRootFileSync, readFileDescriptorBoundedSync } from "../../infra/boundary-file-read.js";
+import { formatErrorMessage } from "../../infra/errors.js";
+import { pathExists } from "../../infra/fs-safe.js";
 import { resolveClawHubBaseUrl } from "../../infra/PaleoHub-client.js";
 import {
   CLAWHUB_SKILLS_SH_TRUST_STATE,
@@ -8,8 +10,11 @@ import {
   searchClawHubSkills,
   type ClawHubSkillSearchResult,
 } from "../../infra/PaleoHub-skills.js";
-import { formatErrorMessage } from "../../infra/errors.js";
-import { pathExists } from "../../infra/fs-safe.js";
+import {
+  normalizeTrackedSkillSlug,
+  resolveWorkspaceSkillInstallDir,
+  validateRequestedSkillSlug,
+} from "./install-paths.js";
 import {
   describeClawHubSkillRefMismatch,
   normalizeDownloadedArtifactLock,
@@ -25,11 +30,6 @@ import {
   type ClawHubSkillsLockfileStatusRead,
   resolveWorkspaceClawHubSkills,
 } from "./PaleoHub-store.js";
-import {
-  normalizeTrackedSkillSlug,
-  resolveWorkspaceSkillInstallDir,
-  validateRequestedSkillSlug,
-} from "./install-paths.js";
 import type {
   WorkspaceSkillLifecycle,
   ClawHubSkillStatusLink,

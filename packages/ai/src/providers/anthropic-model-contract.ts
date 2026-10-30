@@ -106,7 +106,9 @@ function normalizeModelId(modelId?: string): string {
 
 function normalizeApi(api?: string): string {
   const normalized = normalizeLowercaseStringOrEmpty(api);
-  return normalized === "paleoclaw-anthropic-messages-transport" ? "anthropic-messages" : normalized;
+  return normalized === "paleoclaw-anthropic-messages-transport"
+    ? "anthropic-messages"
+    : normalized;
 }
 
 function hasConcreteResponseModel(ref: ReplayModelRef): boolean {

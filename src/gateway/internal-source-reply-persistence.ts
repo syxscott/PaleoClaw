@@ -23,8 +23,8 @@ import {
   readAssistantDisplayContent,
   retainAssistantModelContent,
 } from "../shared/assistant-display-content.js";
-import { readClawHubRecommendations } from "../shared/PaleoHub-recommendations.js";
 import { createKeyedFifoLeaseRegistry } from "../shared/keyed-fifo-lease.js";
+import { readClawHubRecommendations } from "../shared/PaleoHub-recommendations.js";
 import {
   attachManagedOutgoingMediaToMessage,
   createManagedOutgoingMediaBlocks,

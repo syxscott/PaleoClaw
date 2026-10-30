@@ -103,7 +103,10 @@ vi.mock("../session-utils.js", async (importOriginal) => {
       let prepared = sessionTargets.get(target);
       if (!prepared) {
         prepared = (async () => {
-          const storePath = path.join(tempDirs.make("paleoclaw-dispatch-session-"), "sessions.json");
+          const storePath = path.join(
+            tempDirs.make("paleoclaw-dispatch-session-"),
+            "sessions.json",
+          );
           for (const [sessionKey, entry] of Object.entries(target.store)) {
             await replaceSessionEntry({ agentId: target.agentId, storePath, sessionKey }, entry);
           }

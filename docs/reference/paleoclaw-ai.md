@@ -70,7 +70,7 @@ A runnable version lives in the repository at `examples/ai-chat`.
 | `./validation`   | Tool argument validation                                                       |
 | `./diagnostics`  | Diagnostics contracts, transport logging, and sanitized URL formatting         |
 | `./event-stream` | Shared `EventStream` implementation                                            |
-| `./internal/*`   | paleoclaw-internal, no semver guarantee                                         |
+| `./internal/*`   | paleoclaw-internal, no semver guarantee                                        |
 
 Use `@paleoclaw/ai/diagnostics` for `emitModelTransportDebug`,
 `formatModelTransportDebugUrl`, and `formatModelTransportDebugBaseUrl` when

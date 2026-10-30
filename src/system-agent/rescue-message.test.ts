@@ -305,7 +305,9 @@ describe("paleoclaw rescue message", () => {
 
     expect(runDaemonRestart).toHaveBeenCalledTimes(1);
     expect(replies).toContain(noPending);
-    expect(replies.some((reply) => reply?.includes("[paleoclaw] done: gateway.restart"))).toBe(true);
+    expect(replies.some((reply) => reply?.includes("[paleoclaw] done: gateway.restart"))).toBe(
+      true,
+    );
   });
 
   it("keeps failed execution consumed", async () => {

@@ -23,7 +23,7 @@ paleoclaw onboard
 
 | Setup choice          | Process owner                 | Local embeddings |
 | --------------------- | ----------------------------- | ---------------- |
-| Managed local server  | paleoclaw                      | Yes              |
+| Managed local server  | paleoclaw                     | Yes              |
 | Existing llama-server | You or an external supervisor | No               |
 
 `models.providers.llama-cpp.localService` is the ownership discriminator. If

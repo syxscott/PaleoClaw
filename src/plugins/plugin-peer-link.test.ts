@@ -306,7 +306,10 @@ describe("plugin peer links", () => {
     async (declaration) => {
       const npmRoot = makeTempDir();
       const packageDir = path.join(npmRoot, "node_modules", "runtime-plugin");
-      writePackage(packageDir, { name: "runtime-plugin", [declaration]: { paleoclaw: "2026.7.1" } });
+      writePackage(packageDir, {
+        name: "runtime-plugin",
+        [declaration]: { paleoclaw: "2026.7.1" },
+      });
       const result = await relinkOpenClawPeerDependenciesInManagedNpmRoot({ npmRoot, logger: {} });
 
       const linkPath = path.join(packageDir, "node_modules", "paleoclaw");

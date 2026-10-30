@@ -314,7 +314,9 @@ describe("PaleoHub skills", () => {
       "does not support a cursor",
     );
     vi.spyOn(globalThis, "fetch").mockImplementation(async () => Response.json({}));
-    await expect(fetchClawHubSkillCatalog({ query: "email" })).rejects.toThrow("Malformed PaleoHub");
+    await expect(fetchClawHubSkillCatalog({ query: "email" })).rejects.toThrow(
+      "Malformed PaleoHub",
+    );
   });
 
   it.each([

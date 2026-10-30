@@ -572,7 +572,14 @@ function createCodexInstallFixture(root: string) {
   });
   const stateDir = path.join(root, "state");
   const npmRoot = path.join(stateDir, "npm");
-  const installPath = path.join(npmRoot, "projects", "codex", "node_modules", "@paleoclaw", "codex");
+  const installPath = path.join(
+    npmRoot,
+    "projects",
+    "codex",
+    "node_modules",
+    "@paleoclaw",
+    "codex",
+  );
   const projectRoot = npmProjectRootForInstalledPackage(installPath, "@paleoclaw/codex");
   const target = currentCodexPlatformTarget();
   const pluginPackageJson = path.join(installPath, "package.json");

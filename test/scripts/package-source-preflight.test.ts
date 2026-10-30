@@ -440,7 +440,10 @@ it("rejects conflicting bundled dependencies before setup and reads only the sel
 });
 
 it("normalizes release-check package mode and guards the source resolver", () => {
-  const { workflow, step, before } = jobSteps("paleoclaw-release-checks", "prepare_release_package");
+  const { workflow, step, before } = jobSteps(
+    "paleoclaw-release-checks",
+    "prepare_release_package",
+  );
   const preflight = step("Validate release package source metadata");
   const packageStep = step("Resolve release package artifact");
   before(preflight, step("Setup Node environment"), packageStep);

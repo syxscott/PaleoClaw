@@ -74,7 +74,8 @@ const gatewayQuestionMock = vi.hoisted(() => ({
 }));
 
 vi.mock("paleoclaw/plugin-sdk/agent-harness-runtime", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("paleoclaw/plugin-sdk/agent-harness-runtime")>();
+  const actual =
+    await importOriginal<typeof import("paleoclaw/plugin-sdk/agent-harness-runtime")>();
   const { copilotAttemptOverrides: overrides } =
     await import("./attempt-selectors.test-support.js");
   type QuestionDispatcher = Exclude<

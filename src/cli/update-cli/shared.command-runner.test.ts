@@ -190,7 +190,14 @@ describe("update CLI shared helpers", () => {
     async () => {
       await withTestDir({ prefix: "paleoclaw-update-root-" }, async (base) => {
         const storeRoot = path.join(base, "store", "paleoclaw");
-        const packageRoot = path.join(base, "global", "v11", "install", "node_modules", "paleoclaw");
+        const packageRoot = path.join(
+          base,
+          "global",
+          "v11",
+          "install",
+          "node_modules",
+          "paleoclaw",
+        );
         await fs.mkdir(path.dirname(packageRoot), { recursive: true });
         await fs.mkdir(storeRoot, { recursive: true });
         await fs.writeFile(

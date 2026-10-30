@@ -29,7 +29,10 @@ export function formatErrorMessageWithCode(err: unknown): string {
   return formatSharedErrorMessage(err, { includeCode: true, redact: redactSensitiveText });
 }
 
-export { stringifyNonErrorCause, toErrorObject } from "@paleoclaw/normalization-core/error-coercion";
+export {
+  stringifyNonErrorCause,
+  toErrorObject,
+} from "@paleoclaw/normalization-core/error-coercion";
 
 export function formatUncaughtError(err: unknown): string {
   if (extractErrorCode(err) === "INVALID_CONFIG") {

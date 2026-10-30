@@ -1,7 +1,7 @@
 import { normalizeOptionalString } from "@paleoclaw/normalization-core/string-coerce";
 import { theme } from "../../packages/terminal-core/src/theme.js";
-import type { ClawHubPackageSearchResult } from "../infra/PaleoHub-packages.js";
 import { formatErrorMessage } from "../infra/errors.js";
+import type { ClawHubPackageSearchResult } from "../infra/PaleoHub-packages.js";
 import { searchInstallablePluginPackages } from "../plugins/catalog-search.js";
 import { isBareNpmPackageName } from "../plugins/install-source-spec.js";
 import { defaultRuntime, writeRuntimeJson, type RuntimeEnv } from "../runtime.js";

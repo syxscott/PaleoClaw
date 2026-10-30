@@ -222,7 +222,13 @@ describe("plugin index install records store", () => {
 
   it("keeps persisted install record metadata over recovered npm records", async () => {
     const stateDir = makeStateDir();
-    const customInstallPath = path.join(stateDir, "custom", "node_modules", "@paleoclaw", "discord");
+    const customInstallPath = path.join(
+      stateDir,
+      "custom",
+      "node_modules",
+      "@paleoclaw",
+      "discord",
+    );
     managedPlugin(stateDir, "discord", "2026.5.2");
     const record: PluginInstallRecord = {
       source: "npm",

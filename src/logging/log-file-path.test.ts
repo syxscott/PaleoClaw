@@ -74,9 +74,9 @@ it("keeps default and named profile fallback families separate", () => {
   expect(
     isSameRollingLogFileFamily("paleoclaw-dev-2026-07-22.log", "paleoclaw-dev-2026-07-21.log"),
   ).toBe(true);
-  expect(isSameRollingLogFileFamily("paleoclaw-dev-2026-07-22.log", "paleoclaw-2026-07-22.log")).toBe(
-    false,
-  );
+  expect(
+    isSameRollingLogFileFamily("paleoclaw-dev-2026-07-22.log", "paleoclaw-2026-07-22.log"),
+  ).toBe(false);
 });
 
 it("keeps legacy explicit dated paths rolling without broadening the override contract", () => {

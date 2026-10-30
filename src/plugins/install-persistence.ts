@@ -527,7 +527,8 @@ async function persistPluginInstallOwned(
       if (warningMessage) {
         warn(
           warningMessage,
-          configWarning ?? "Plugin installation reported a warning. Run `paleoclaw plugins doctor`.",
+          configWarning ??
+            "Plugin installation reported a warning. Run `paleoclaw plugins doctor`.",
         );
       }
       runtime.log(

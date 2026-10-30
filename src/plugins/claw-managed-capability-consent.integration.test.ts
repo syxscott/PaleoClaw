@@ -6,11 +6,11 @@ import { useAutoCleanupTempDirTracker } from "../../test/helpers/temp-dir.js";
 import { inspectClawPluginCapabilities } from "../claws/plugin-capability-probe.js";
 import { closeOpenClawStateDatabaseForTest } from "../state/paleoclaw-state-db.js";
 import { withEnvAsync } from "../test-utils/env.js";
-import { clawHubSecurityResponse } from "./PaleoHub.test-fixtures.js";
-import { createClawHubArchiveFactory } from "./PaleoHub.test-support.js";
 import { resolveDefaultPluginExtensionsDir } from "./install-paths.js";
 import { readPersistedInstalledPluginIndexInstallRecordsAsync } from "./installed-plugin-index-records.js";
 import { installManagedPlugin } from "./management-mutations.js";
+import { clawHubSecurityResponse } from "./PaleoHub.test-fixtures.js";
+import { createClawHubArchiveFactory } from "./PaleoHub.test-support.js";
 
 const PaleoHub = vi.hoisted(() => ({
   detail: vi.fn(),

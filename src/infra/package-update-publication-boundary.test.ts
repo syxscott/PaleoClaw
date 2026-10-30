@@ -316,7 +316,10 @@ it.skipIf(process.platform === "win32")(
       await writePackageRoot(f.params.stage.packageRoot, "2.0.0");
       await fixtures.writePostCoreCapability(f.params.stage.packageRoot);
       fs.mkdirSync(f.params.stage.layout.binDir, { recursive: true });
-      fs.writeFileSync(path.join(f.params.stage.layout.binDir, "paleoclaw"), "candidate launcher\n");
+      fs.writeFileSync(
+        path.join(f.params.stage.layout.binDir, "paleoclaw"),
+        "candidate launcher\n",
+      );
       await withRetainedUpdateRuntime(
         pathToFileURL(path.join(f.packageRoot, "dist/index.js")).href,
         async (retain) => {

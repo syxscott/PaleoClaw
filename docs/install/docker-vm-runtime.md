@@ -167,17 +167,17 @@ docker compose run --rm paleoclaw-cli devices approve <requestId>
 paleoclaw runs in Docker, but the container filesystem is not the source of
 truth. Long-lived state must survive restarts, rebuilds, and reboots.
 
-| Component            | Container location                  | Persistence mechanism       | Notes                                                                                      |
-| -------------------- | ----------------------------------- | --------------------------- | ------------------------------------------------------------------------------------------ |
-| Gateway state/config | `/home/node/.openclaw/`             | `OPENCLAW_CONFIG_DIR` mount | Includes `openclaw.json`, shared state, and installed plugin package roots                 |
-| Agent workspace      | `/home/node/.openclaw/workspace/`   | Workspace mount             | Code and agent artifacts                                                                   |
-| Channel credentials  | `/home/node/.openclaw/credentials/` | Config mount                | Channel credential material                                                                |
+| Component            | Container location                  | Persistence mechanism       | Notes                                                                                       |
+| -------------------- | ----------------------------------- | --------------------------- | ------------------------------------------------------------------------------------------- |
+| Gateway state/config | `/home/node/.openclaw/`             | `OPENCLAW_CONFIG_DIR` mount | Includes `openclaw.json`, shared state, and installed plugin package roots                  |
+| Agent workspace      | `/home/node/.openclaw/workspace/`   | Workspace mount             | Code and agent artifacts                                                                    |
+| Channel credentials  | `/home/node/.openclaw/credentials/` | Config mount                | Channel credential material                                                                 |
 | Model auth profiles  | `/home/node/.openclaw/`             | Config mount                | Shared `state/openclaw.sqlite`; agent-local `agents/<agentId>/agent/paleoclaw-agent.sqlite` |
-| Auth-profile key     | `/home/node/.config/paleoclaw/`      | Secret-directory mount      | Legacy encrypted-sidecar recovery key; does not protect current SQLite rows                |
-| Skill state          | `/home/node/.openclaw/skills/`      | Config mount                | Skill-level state                                                                          |
-| External binaries    | `/usr/local/bin/`                   | Docker image                | Must be baked at build time                                                                |
-| Node and OS packages | Container filesystem                | Docker image                | Rebuilt with the image; do not install at runtime                                          |
-| Docker container     | Ephemeral                           | Restartable                 | Safe to replace after mounted state is verified                                            |
+| Auth-profile key     | `/home/node/.config/paleoclaw/`     | Secret-directory mount      | Legacy encrypted-sidecar recovery key; does not protect current SQLite rows                 |
+| Skill state          | `/home/node/.openclaw/skills/`      | Config mount                | Skill-level state                                                                           |
+| External binaries    | `/usr/local/bin/`                   | Docker image                | Must be baked at build time                                                                 |
+| Node and OS packages | Container filesystem                | Docker image                | Rebuilt with the image; do not install at runtime                                           |
+| Docker container     | Ephemeral                           | Restartable                 | Safe to replace after mounted state is verified                                             |
 
 ## Common pitfall: never file-bind `openclaw.json`
 

@@ -54,7 +54,9 @@ type ChatFixtureOptions = {
 async function readCornerScale(page: Page): Promise<number> {
   return await page.evaluate(() =>
     Number.parseFloat(
-      getComputedStyle(document.documentElement).getPropertyValue("--paleoclaw-corner-radius-scale"),
+      getComputedStyle(document.documentElement).getPropertyValue(
+        "--paleoclaw-corner-radius-scale",
+      ),
     ),
   );
 }

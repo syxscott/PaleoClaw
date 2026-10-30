@@ -159,7 +159,9 @@ export function defineNativeModuleBoundaryTests(
       await page.keyboard.press("ControlOrMeta+K");
       // The loading dialog is replaced during handoff; measure the full palette.
       const palette = page.locator("paleoclaw-command-palette .cmd-palette");
-      const paletteDialog = page.locator("paleoclaw-command-palette paleoclaw-modal-dialog.palette");
+      const paletteDialog = page.locator(
+        "paleoclaw-command-palette paleoclaw-modal-dialog.palette",
+      );
       await palette.locator(".cmd-palette__input:not([disabled])").waitFor({ state: "visible" });
       const paletteAnimationName = await palette.evaluate(
         (element) => getComputedStyle(element).animationName,

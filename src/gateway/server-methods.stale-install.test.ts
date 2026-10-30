@@ -72,7 +72,10 @@ describe("gateway stale install errors", () => {
   );
 
   it("does not rewrite a missing module outside the paleoclaw install", async () => {
-    const outsideInstall = path.join(path.parse(process.cwd()).root, "outside-paleoclaw/missing.js");
+    const outsideInstall = path.join(
+      path.parse(process.cwd()).root,
+      "outside-paleoclaw/missing.js",
+    );
     const error = moduleNotFoundError(outsideInstall);
     const respond = vi.fn();
 

@@ -122,7 +122,9 @@ describe("prepareCliBundleMcpConfig gemini", () => {
 
     try {
       const raw = await readSettings({ ...prepared, env: attempt.env });
-      expect(raw.mcpServers?.openclaw?.headers?.["x-paleoclaw-cli-capture-key"]).toBe("attempt-123");
+      expect(raw.mcpServers?.openclaw?.headers?.["x-paleoclaw-cli-capture-key"]).toBe(
+        "attempt-123",
+      );
       expect(attempt.env?.GOOGLE_CLOUD_PROJECT).toBe("active-capture-project");
       expect(attempt.env?.GEMINI_CLI_SYSTEM_SETTINGS_PATH).not.toBe(
         prepared.env?.GEMINI_CLI_SYSTEM_SETTINGS_PATH,

@@ -489,7 +489,8 @@ describe("native Slack progress stream chunks", () => {
           {
             kind: "tool",
             label: "Exec",
-            detail: "run tests in /Users/example/Projects/paleoclaw/packages/very/deep/path/example",
+            detail:
+              "run tests in /Users/example/Projects/paleoclaw/packages/very/deep/path/example",
             text: "Exec: run tests in /Users/example/Projects/paleoclaw/packages/very/deep/path/example",
           },
         ],

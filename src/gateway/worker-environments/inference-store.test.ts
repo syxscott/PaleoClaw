@@ -116,7 +116,9 @@ describe("worker inference SQLite store", async () => {
 
   beforeEach(async () => {
     vi.stubEnv("OPENCLAW_SUPERVISOR_MODE", "");
-    root = await fs.mkdtemp(path.join(await fs.realpath(os.tmpdir()), "paleoclaw-inference-store-"));
+    root = await fs.mkdtemp(
+      path.join(await fs.realpath(os.tmpdir()), "paleoclaw-inference-store-"),
+    );
     nowMs = 1_000;
     database = openOpenClawStateDatabase({ env: { OPENCLAW_STATE_DIR: root } });
     await initializeStore();

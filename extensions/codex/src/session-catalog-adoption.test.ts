@@ -263,7 +263,9 @@ it("reports duplicate adoption across agents before decoding a later malformed b
     const lookupMany = vi.spyOn(state.asyncReads, "lookupMany");
     await expect(
       listAdoptedSessionEntries({ agentId: "main", bindingStore, config: cohortConfig, runtime }),
-    ).rejects.toThrow("multiple paleoclaw sessions adopt Codex thread duplicate from the same home");
+    ).rejects.toThrow(
+      "multiple paleoclaw sessions adopt Codex thread duplicate from the same home",
+    );
     entries.splice(1, 1);
     await expect(
       listAdoptedSessionEntries({ agentId: "main", bindingStore, config: cohortConfig, runtime }),

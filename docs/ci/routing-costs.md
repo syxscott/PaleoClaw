@@ -33,7 +33,7 @@ The historical table compares eleven successful B1/R1 main runs with five later 
 | Fast channel / plugin contracts                            |                     — |                       322 [325] / 225 [248] | Hosted                         |
 | `control-ui-performance`                                   |                     — |                                   120 [130] | Hosted                         |
 | Docs / Python skills / native and Control UI i18n          |                     — |                        No comparable sample | Retain existing hosted routes  |
-| `paleoclaw/ci-gate`                                         |                     — |                                       3 [6] | Blacksmith 4-class             |
+| `paleoclaw/ci-gate`                                        |                     — |                                       3 [6] | Blacksmith 4-class             |
 
 Independent hosted checks reached at most 664 seconds in this sample. Artifact builds reached 898 seconds before the shared preflight and gate; they retain Blacksmith. Only the gate depends on `build-artifacts`: the workflow does not contain a serial build-to-test job dependency.
 
@@ -428,9 +428,9 @@ Completion requires measured main-shaped and broad-fallback PR-shaped runs for e
 
 The two native runs at `84733d1a17a9a7321ac74099e421889099e411b4` both failed and exceeded the wall target:
 
-| Native run                                                                             | Complete wall | Active jobs | Blacksmith minutes | Hosted Ubuntu minutes | Estimated Blacksmith compute |
-| -------------------------------------------------------------------------------------- | ------------: | ----------: | -----------------: | --------------------: | ---------------------------: |
+| Native run                                                                              | Complete wall | Active jobs | Blacksmith minutes | Hosted Ubuntu minutes | Estimated Blacksmith compute |
+| --------------------------------------------------------------------------------------- | ------------: | ----------: | -----------------: | --------------------: | ---------------------------: |
 | [Hybrid PR 35702479645](https://github.com/syxscott/PaleoClaw/actions/runs/35702479645) |        17m57s |         151 |             906.50 |                111.32 |                     $33.5011 |
-| RunsOn qualification 35702772380                                                       |        17m33s |         155 |             946.62 |                122.35 |                     $34.6651 |
+| RunsOn qualification 35702772380                                                        |        17m33s |         155 |             946.62 |                122.35 |                     $34.6651 |
 
 Qualification additionally used 6.6 job minutes on Spot, with the $0.076286 launch-to-completion estimate above. It includes the two extra cron controls and different dispatch admission, so subtracting these total costs would not isolate the production routing change. Blacksmith Linux class median waits were 12 seconds in the PR and 9–10 seconds in qualification. Windows medians were 48 and **61 seconds**, respectively; qualification therefore also missed the under-60-second class wait target. The successful job tails were 950 seconds in the PR and 907 seconds in qualification. Passing cron controls do not turn either failed workflow into a green or fifteen-minute result. These runs predate the current calibrated packing candidate and do not qualify it. Current main-shaped and broad-PR receipts are recorded in [PR #155403](https://github.com/openclaw/openclaw/pull/155403).

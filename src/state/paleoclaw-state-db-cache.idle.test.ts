@@ -11,7 +11,10 @@ import {
   retainOpenClawStateDatabaseForIdle,
   retainOpenClawStateDatabaseForIndependentRead,
 } from "./paleoclaw-state-db-cache.js";
-import { openOpenClawStateDatabase, runWithOpenClawStateBusyTimeout } from "./paleoclaw-state-db.js";
+import {
+  openOpenClawStateDatabase,
+  runWithOpenClawStateBusyTimeout,
+} from "./paleoclaw-state-db.js";
 
 const tempDirs = useAutoCleanupTempDirTracker((cleanup) => {
   afterEach(() => {

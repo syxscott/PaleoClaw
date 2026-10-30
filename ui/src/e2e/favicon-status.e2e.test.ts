@@ -98,7 +98,9 @@ suite.define(() => {
       await expectStatusColor(page, "--ok");
       await setVisibility(page, "visible");
       await expectOriginal();
-      expect(await page.locator(`${iconSelector}[data-paleoclaw-original-favicon]`).count()).toBe(0);
+      expect(await page.locator(`${iconSelector}[data-paleoclaw-original-favicon]`).count()).toBe(
+        0,
+      );
       await gateway.setOnline(false);
       await expectStatusColor(page, "--muted");
     });

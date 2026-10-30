@@ -227,7 +227,8 @@ See [`ClawDock` Helper README](https://github.com/syxscott/PaleoClaw/blob/main/s
 docker build -t paleoclaw:local -f Dockerfile .
 docker compose run --rm paleoclaw-cli onboard
 docker compose up -d paleoclaw-gateway
-```
+
+````
 
 Note: run `docker compose ...` from the repo root. If you enabled
 `OPENCLAW_EXTRA_MOUNTS` or `OPENCLAW_HOME_VOLUME`, the setup script writes
@@ -235,7 +236,7 @@ Note: run `docker compose ...` from the repo root. If you enabled
 
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.extra.yml <command>
-```
+````
 
 ### Control UI token + pairing (Docker)
 

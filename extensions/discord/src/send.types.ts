@@ -1,7 +1,10 @@
 import type { APIAllowedMentions } from "discord-api-types/v10";
 import type { MessageReceipt } from "paleoclaw/plugin-sdk/channel-outbound";
 import type { OpenClawConfig } from "paleoclaw/plugin-sdk/config-contracts";
-import type { OutboundMediaAccess, OutboundMediaReadFile } from "paleoclaw/plugin-sdk/media-runtime";
+import type {
+  OutboundMediaAccess,
+  OutboundMediaReadFile,
+} from "paleoclaw/plugin-sdk/media-runtime";
 import type { RetryConfig } from "paleoclaw/plugin-sdk/retry-runtime";
 import type { RequestClient } from "./internal/rest.js";
 

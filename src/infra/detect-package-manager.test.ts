@@ -120,7 +120,13 @@ describe("detectPackageManager", () => {
             : path.join(base, `${manager}-global`, "node_modules");
         const packageRoot =
           layout === "virtual"
-            ? path.join(nodeModulesRoot, ".pnpm", "paleoclaw@2026.5.27", "node_modules", "paleoclaw")
+            ? path.join(
+                nodeModulesRoot,
+                ".pnpm",
+                "paleoclaw@2026.5.27",
+                "node_modules",
+                "paleoclaw",
+              )
             : path.join(nodeModulesRoot, "paleoclaw");
         await writePublishedOpenClawRoot(packageRoot, { shrinkwrap });
         if (manager === "pnpm") {

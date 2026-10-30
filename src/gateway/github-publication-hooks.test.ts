@@ -28,7 +28,9 @@ async function git(...args: string[]): Promise<string> {
 }
 
 beforeEach(async () => {
-  root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "paleoclaw-publication-hooks-")));
+  root = await fs.realpath(
+    await fs.mkdtemp(path.join(os.tmpdir(), "paleoclaw-publication-hooks-")),
+  );
   onTestFinished(() => fs.rm(root, { recursive: true, force: true }));
   await git("init", "--initial-branch=main");
   await git("config", "user.name", "paleoclaw Test");

@@ -60,11 +60,11 @@ silence policy. Verbose mode can show bounded recovery detail; Control UI retain
 its usual diagnostic rendering. An externally closed ephemeral thread cannot be
 promised recoverable.
 
-| Layer                                 | Owner                    | Purpose                                                             |
-| ------------------------------------- | ------------------------ | ------------------------------------------------------------------- |
-| paleoclaw plugin hooks                 | paleoclaw                 | Product/plugin compatibility across paleoclaw and Codex harnesses.   |
-| Codex app-server extension middleware | paleoclaw bundled plugins | Per-turn adapter behavior around paleoclaw dynamic tools.            |
-| Codex native hooks                    | Codex                    | Low-level Codex lifecycle and native tool policy from Codex config. |
+| Layer                                 | Owner                     | Purpose                                                             |
+| ------------------------------------- | ------------------------- | ------------------------------------------------------------------- |
+| paleoclaw plugin hooks                | paleoclaw                 | Product/plugin compatibility across paleoclaw and Codex harnesses.  |
+| Codex app-server extension middleware | paleoclaw bundled plugins | Per-turn adapter behavior around paleoclaw dynamic tools.           |
+| Codex native hooks                    | Codex                     | Low-level Codex lifecycle and native tool policy from Codex config. |
 
 paleoclaw does not use project or global Codex `hooks.json` files to route
 plugin behavior. For the native tool and permission bridge, paleoclaw injects

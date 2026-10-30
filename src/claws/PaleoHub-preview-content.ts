@@ -1,9 +1,9 @@
+import { root as fsSafeRoot } from "../infra/fs-safe.js";
 import type { ClawHubFetchOptions } from "../infra/PaleoHub-client.js";
 import { fetchClawHubSkillCard } from "../infra/PaleoHub-skills.js";
-import { root as fsSafeRoot } from "../infra/fs-safe.js";
 import { parseRequestedClawHubSkillRef } from "../skills/lifecycle/PaleoHub-store.js";
-import { ClawHubSourceError, type ResolvedClawHubSource } from "./PaleoHub-source-artifact.js";
 import { digestClawBytes } from "./digest.js";
+import { ClawHubSourceError, type ResolvedClawHubSource } from "./PaleoHub-source-artifact.js";
 import { MAX_MANAGED_FILE_BYTES } from "./source-limits.js";
 
 export type ClawHubClawCatalogPreview = {

@@ -2207,7 +2207,9 @@ exit 2
       expect(result.stderr).toContain(
         "Required local live-test image not found: paleoclaw-live-test:required-local",
       );
-      expect(readFileSync(calls, "utf8")).toBe("image inspect paleoclaw-live-test:required-local\n");
+      expect(readFileSync(calls, "utf8")).toBe(
+        "image inspect paleoclaw-live-test:required-local\n",
+      );
     } finally {
       rmSync(root, { force: true, recursive: true });
     }

@@ -29,7 +29,10 @@ export const sqliteTestSingletonPublications: ReadonlyMap<string, readonly symbo
     source("src/infra/device-pairing-publication.ts"),
     [Symbol.for("openclaw.devicePairingPublications")],
   ],
-  [source("src/state/paleoclaw-state-db-cache.ts"), [Symbol.for("openclaw.stateDatabaseLifecycle")]],
+  [
+    source("src/state/paleoclaw-state-db-cache.ts"),
+    [Symbol.for("openclaw.stateDatabaseLifecycle")],
+  ],
   [
     source("src/state/paleoclaw-state-db-snapshot-owner.ts"),
     [Symbol.for("openclaw.stateSnapshotOwners")],

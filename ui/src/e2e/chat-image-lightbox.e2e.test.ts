@@ -71,7 +71,9 @@ async function installImageGalleries(page: Page) {
 
 suite.define(() => {
   it("opens transcript and sidebar images in one accessible modal", async () => {
-    const banner = await readFile(path.join(process.cwd(), "docs/assets/paleoclaw-banner-dark.png"));
+    const banner = await readFile(
+      path.join(process.cwd(), "docs/assets/paleoclaw-banner-dark.png"),
+    );
     const bannerBase64 = banner.toString("base64");
     const page = await newPage();
     const artifact = {

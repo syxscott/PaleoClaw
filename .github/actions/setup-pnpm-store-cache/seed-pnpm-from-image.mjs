@@ -135,7 +135,9 @@ if (
       }
     }
     if (valid) {
-      corepackHome = await mkdtemp(join(process.env.RUNNER_TEMP || tmpdir(), "paleoclaw-corepack-"));
+      corepackHome = await mkdtemp(
+        join(process.env.RUNNER_TEMP || tmpdir(), "paleoclaw-corepack-"),
+      );
       const pnpmRoot = join(corepackHome, "v1", "pnpm", version);
       const roots = [
         pnpmRoot,

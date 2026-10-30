@@ -36,12 +36,12 @@ Use only the files your deployment already uses. The commands below show the
 default file set; insert your existing `-f` options after `docker compose` when
 needed. See [Manual flow](/install/docker#manual-flow) for setup and extra mounts.
 
-| Task             | Command                                                            |
-| ---------------- | ------------------------------------------------------------------ |
+| Task             | Command                                                             |
+| ---------------- | ------------------------------------------------------------------- |
 | Start            | `docker compose up -d paleoclaw-gateway`                            |
-| Stop the stack   | `docker compose down`                                              |
+| Stop the stack   | `docker compose down`                                               |
 | Restart          | `docker compose restart paleoclaw-gateway`                          |
-| Container status | `docker compose ps`                                                |
+| Container status | `docker compose ps`                                                 |
 | Follow logs      | `docker compose logs -f paleoclaw-gateway`                          |
 | Gateway shell    | `docker compose exec paleoclaw-gateway bash`                        |
 | CLI              | `docker compose run --rm paleoclaw-cli <command>`                   |

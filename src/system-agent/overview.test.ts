@@ -161,7 +161,9 @@ it("fails closed in startup copy when inference is unavailable", () => {
   };
 
   const startup = formatSystemAgentStartupMessage(overview);
-  expect(formatOverview(overview)).toContain('Next: run "paleoclaw onboard" to establish inference');
+  expect(formatOverview(overview)).toContain(
+    'Next: run "paleoclaw onboard" to establish inference',
+  );
   expect(startup).toContain("Inference is unavailable");
   expect(startup).toContain("Run `paleoclaw onboard`");
   expect(startup.match(/`[^`]+`/g)).toEqual(["`paleoclaw onboard`"]);

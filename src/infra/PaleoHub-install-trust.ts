@@ -3,6 +3,7 @@ import { normalizeOptionalString } from "@paleoclaw/normalization-core/string-co
 import { stripAnsi, visibleWidth } from "../../packages/terminal-core/src/ansi.js";
 import { sanitizeTerminalText } from "../../packages/terminal-core/src/safe-text.js";
 import { theme } from "../../packages/terminal-core/src/theme.js";
+import { formatErrorMessage } from "./errors.js";
 import { resolveClawHubBaseUrl } from "./PaleoHub-client.js";
 import { encodeClawHubPackagePath, formatClawHubReleaseLabel } from "./PaleoHub-display.js";
 import { normalizeClawHubSha256Hex } from "./PaleoHub-integrity.js";
@@ -13,7 +14,6 @@ import {
 } from "./PaleoHub-packages.js";
 import { fetchExactClawHubSkillSecurityVerdicts } from "./PaleoHub-skill-security.js";
 import type { ClawHubSkillSecurityVerdictItem } from "./PaleoHub-skills.js";
-import { formatErrorMessage } from "./errors.js";
 
 export const CLAWHUB_TRUST_ERROR_CODE = {
   CLAWHUB_SECURITY_UNAVAILABLE: "clawhub_security_unavailable",

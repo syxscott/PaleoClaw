@@ -8,11 +8,11 @@ import type { GatewayServiceCommandConfig } from "../daemon/service-types.js";
 import * as containerEnvironment from "../infra/container-environment.js";
 import { acquireGatewayLock } from "../infra/gateway-lock.js";
 import * as processArgv from "../infra/gateway-process-argv.js";
-import type { inspectOtherOpenClawProcesses } from "../infra/paleoclaw-process-census.js";
 import {
   resolvePackageActivationAnchor,
   resolvePackageActivationJournalPath,
 } from "../infra/package-update-activation-paths.js";
+import type { inspectOtherOpenClawProcesses } from "../infra/paleoclaw-process-census.js";
 import * as processGroups from "../process/supervisor/service-child-group-ownership.js";
 import { mockProcessPlatform } from "../test-utils/vitest-spies.js";
 import {

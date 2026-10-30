@@ -14,7 +14,10 @@ import { runSqliteImmediateTransactionSync } from "../infra/sqlite-transaction.j
 import { exchangeSqliteDatabaseAdmissions } from "../infra/sqlite-worker-database-admission-relay.js";
 import { getFileLockProcessStartTime } from "../shared/pid-alive.js";
 import { openExistingStatePostgresConnection } from "./paleoclaw-state-db-engine.js";
-import { openTrackedStateDatabase, closeTrackedStateDatabase } from "./paleoclaw-state-db-handle.js";
+import {
+  openTrackedStateDatabase,
+  closeTrackedStateDatabase,
+} from "./paleoclaw-state-db-handle.js";
 import { OpenClawStateLeaseError } from "./paleoclaw-state-lease-error.js";
 import {
   leaseHeartbeatState as state,

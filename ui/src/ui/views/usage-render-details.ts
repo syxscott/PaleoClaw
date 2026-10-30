@@ -116,11 +116,13 @@ function renderSessionSummary(
     })) ?? [];
 
   return html`
-    ${badges.length > 0
-      ? html`<div class="usage-badges">
-          ${badges.map((b) => html`<span class="usage-badge">${b}</span>`)}
-        </div>`
-      : nothing}
+    ${
+      badges.length > 0
+        ? html`<div class="usage-badges">
+            ${badges.map((b) => html`<span class="usage-badge">${b}</span>`)}
+          </div>`
+        : nothing
+    }
     <div class="session-summary-grid">
       <div class="session-summary-card">
         <div class="session-summary-title">Messages</div>
@@ -271,23 +273,29 @@ function renderSessionDetailPanel(
         <div class="session-detail-header-left">
           <div class="session-detail-title">
             ${displayLabel}
-            ${cursorIndicator
-              ? html`<span style="font-size: 11px; color: var(--muted); margin-left: 8px;"
-                  >${cursorIndicator}</span
-                >`
-              : nothing}
+            ${
+              cursorIndicator
+                ? html`<span style="font-size: 11px; color: var(--muted); margin-left: 8px;"
+                    >${cursorIndicator}</span
+                  >`
+                : nothing
+            }
           </div>
         </div>
         <div class="session-detail-stats">
-          ${usage
-            ? html`
-                <span
-                  ><strong>${formatTokens(headerStats.totalTokens)}</strong>
-                  tokens${cursorIndicator}</span
-                >
-                <span><strong>${formatCost(headerStats.totalCost)}</strong>${cursorIndicator}</span>
-              `
-            : nothing}
+          ${
+            usage
+              ? html`
+                  <span
+                    ><strong>${formatTokens(headerStats.totalTokens)}</strong>
+                    tokens${cursorIndicator}</span
+                  >
+                  <span
+                    ><strong>${formatCost(headerStats.totalCost)}</strong>${cursorIndicator}</span
+                  >
+                `
+              : nothing
+          }
         </div>
         <button class="session-close-btn" @click=${onClose} title="Close session details">×</button>
       </div>
@@ -474,18 +482,20 @@ function renderTimeSeriesCompact(
       <div class="timeseries-header-row">
         <div class="card-title" style="font-size: 12px; color: var(--text);">Usage Over Time</div>
         <div class="timeseries-controls">
-          ${hasSelection
-            ? html`
-                <div class="chart-toggle small">
-                  <button
-                    class="toggle-btn active"
-                    @click=${() => onCursorRangeChange?.(null, null)}
-                  >
-                    Reset
-                  </button>
-                </div>
-              `
-            : nothing}
+          ${
+            hasSelection
+              ? html`
+                  <div class="chart-toggle small">
+                    <button
+                      class="toggle-btn active"
+                      @click=${() => onCursorRangeChange?.(null, null)}
+                    >
+                      Reset
+                    </button>
+                  </div>
+                `
+              : nothing
+          }
           <div class="chart-toggle small">
             <button
               class="toggle-btn ${!isCumulative ? "active" : ""}"
@@ -500,24 +510,26 @@ function renderTimeSeriesCompact(
               Cumulative
             </button>
           </div>
-          ${!isCumulative
-            ? html`
-                <div class="chart-toggle small">
-                  <button
-                    class="toggle-btn ${breakdownMode === "total" ? "active" : ""}"
-                    @click=${() => onBreakdownChange("total")}
-                  >
-                    Total
-                  </button>
-                  <button
-                    class="toggle-btn ${breakdownMode === "by-type" ? "active" : ""}"
-                    @click=${() => onBreakdownChange("by-type")}
-                  >
-                    By Type
-                  </button>
-                </div>
-              `
-            : nothing}
+          ${
+            !isCumulative
+              ? html`
+                  <div class="chart-toggle small">
+                    <button
+                      class="toggle-btn ${breakdownMode === "total" ? "active" : ""}"
+                      @click=${() => onBreakdownChange("total")}
+                    >
+                      Total
+                    </button>
+                    <button
+                      class="toggle-btn ${breakdownMode === "by-type" ? "active" : ""}"
+                      @click=${() => onBreakdownChange("by-type")}
+                    >
+                      By Type
+                    </button>
+                  </div>
+                `
+              : nothing
+          }
         </div>
       </div>
       <div class="timeseries-chart-wrapper" style="position: relative; cursor: crosshair;">
@@ -560,12 +572,14 @@ function renderTimeSeriesCompact(
             0
           </text>
           <!-- X axis labels (first and last) -->
-          ${points.length > 0
-            ? svg`
+          ${
+            points.length > 0
+              ? svg`
             <text x="${padding.left}" y="${padding.top + chartHeight + 10}" text-anchor="start" class="ts-axis-label">${new Date(points[0].timestamp).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}</text>
             <text x="${width - padding.right}" y="${padding.top + chartHeight + 10}" text-anchor="end" class="ts-axis-label">${new Date(points[points.length - 1].timestamp).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}</text>
           `
-            : nothing}
+              : nothing
+          }
           <!-- Bars -->
           ${points.map((p, i) => {
             const val = barTotals[i];
@@ -719,74 +733,78 @@ function renderTimeSeriesCompact(
         })()}
       </div>
       <div class="timeseries-summary">
-        ${hasSelection
-          ? html`
-              <span style="color: var(--accent);"
-                >▶ Turns ${rangeStartIdx + 1}–${rangeEndIdx} of ${points.length}</span
-              >
-              ·
-              ${new Date(rangeStartTs).toLocaleTimeString(undefined, {
-                hour: "2-digit",
-                minute: "2-digit",
-              })}–${new Date(rangeEndTs).toLocaleTimeString(undefined, {
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
-              ·
-              ${formatTokens(
-                filteredOutput + filteredInput + filteredCacheRead + filteredCacheWrite,
-              )}
-              · ${formatCost(filteredPoints.reduce((s, p) => s + (p.cost || 0), 0))}
-            `
-          : html`${points.length} msgs · ${formatTokens(cumTokens)} · ${formatCost(cumCost)}`}
+        ${
+          hasSelection
+            ? html`
+                <span style="color: var(--accent);"
+                  >▶ Turns ${rangeStartIdx + 1}–${rangeEndIdx} of ${points.length}</span
+                >
+                ·
+                ${new Date(rangeStartTs).toLocaleTimeString(undefined, {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}–${new Date(rangeEndTs).toLocaleTimeString(undefined, {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+                ·
+                ${formatTokens(
+                  filteredOutput + filteredInput + filteredCacheRead + filteredCacheWrite,
+                )}
+                · ${formatCost(filteredPoints.reduce((s, p) => s + (p.cost || 0), 0))}
+              `
+            : html`${points.length} msgs · ${formatTokens(cumTokens)} · ${formatCost(cumCost)}`
+        }
       </div>
-      ${breakdownByType
-        ? html`
-            <div style="margin-top: 8px;">
-              <div
-                class="card-title"
-                style="font-size: 12px; margin-bottom: 6px; color: var(--text);"
-              >
-                Tokens by Type
+      ${
+        breakdownByType
+          ? html`
+              <div style="margin-top: 8px;">
+                <div
+                  class="card-title"
+                  style="font-size: 12px; margin-bottom: 6px; color: var(--text);"
+                >
+                  Tokens by Type
+                </div>
+                <div class="cost-breakdown-bar" style="height: 18px;">
+                  <div
+                    class="cost-segment output"
+                    style="width: ${pct(filteredOutput, totalTypeTokens).toFixed(1)}%"
+                  ></div>
+                  <div
+                    class="cost-segment input"
+                    style="width: ${pct(filteredInput, totalTypeTokens).toFixed(1)}%"
+                  ></div>
+                  <div
+                    class="cost-segment cache-write"
+                    style="width: ${pct(filteredCacheWrite, totalTypeTokens).toFixed(1)}%"
+                  ></div>
+                  <div
+                    class="cost-segment cache-read"
+                    style="width: ${pct(filteredCacheRead, totalTypeTokens).toFixed(1)}%"
+                  ></div>
+                </div>
+                <div class="cost-breakdown-legend">
+                  <div class="legend-item" title="Assistant output tokens">
+                    <span class="legend-dot output"></span>Output ${formatTokens(filteredOutput)}
+                  </div>
+                  <div class="legend-item" title="User + tool input tokens">
+                    <span class="legend-dot input"></span>Input ${formatTokens(filteredInput)}
+                  </div>
+                  <div class="legend-item" title="Tokens written to cache">
+                    <span class="legend-dot cache-write"></span>Cache Write
+                    ${formatTokens(filteredCacheWrite)}
+                  </div>
+                  <div class="legend-item" title="Tokens read from cache">
+                    <span class="legend-dot cache-read"></span>Cache Read
+                    ${formatTokens(filteredCacheRead)}
+                  </div>
+                </div>
+                <div class="cost-breakdown-total">Total: ${formatTokens(totalTypeTokens)}</div>
               </div>
-              <div class="cost-breakdown-bar" style="height: 18px;">
-                <div
-                  class="cost-segment output"
-                  style="width: ${pct(filteredOutput, totalTypeTokens).toFixed(1)}%"
-                ></div>
-                <div
-                  class="cost-segment input"
-                  style="width: ${pct(filteredInput, totalTypeTokens).toFixed(1)}%"
-                ></div>
-                <div
-                  class="cost-segment cache-write"
-                  style="width: ${pct(filteredCacheWrite, totalTypeTokens).toFixed(1)}%"
-                ></div>
-                <div
-                  class="cost-segment cache-read"
-                  style="width: ${pct(filteredCacheRead, totalTypeTokens).toFixed(1)}%"
-                ></div>
-              </div>
-              <div class="cost-breakdown-legend">
-                <div class="legend-item" title="Assistant output tokens">
-                  <span class="legend-dot output"></span>Output ${formatTokens(filteredOutput)}
-                </div>
-                <div class="legend-item" title="User + tool input tokens">
-                  <span class="legend-dot input"></span>Input ${formatTokens(filteredInput)}
-                </div>
-                <div class="legend-item" title="Tokens written to cache">
-                  <span class="legend-dot cache-write"></span>Cache Write
-                  ${formatTokens(filteredCacheWrite)}
-                </div>
-                <div class="legend-item" title="Tokens read from cache">
-                  <span class="legend-dot cache-read"></span>Cache Read
-                  ${formatTokens(filteredCacheRead)}
-                </div>
-              </div>
-              <div class="cost-breakdown-total">Total: ${formatTokens(totalTypeTokens)}</div>
-            </div>
-          `
-        : nothing}
+            `
+          : nothing
+      }
     </div>
   `;
 }
@@ -845,11 +863,13 @@ function renderContextPanel(
         <div class="card-title" style="font-size: 12px; color: var(--text);">
           System Prompt Breakdown
         </div>
-        ${hasMore
-          ? html`<button class="context-expand-btn" @click=${onToggleExpanded}>
-              ${showAll ? "Collapse" : "Expand all"}
-            </button>`
-          : nothing}
+        ${
+          hasMore
+            ? html`<button class="context-expand-btn" @click=${onToggleExpanded}>
+                ${showAll ? "Collapse" : "Expand all"}
+              </button>`
+            : nothing
+        }
       </div>
       <p class="context-weight-desc">${contextPct || "Base context per message"}</p>
       <div class="context-stacked-bar">
@@ -890,79 +910,91 @@ function renderContextPanel(
       </div>
       <div class="context-total">Total: ~${formatTokens(totalContextTokens)}</div>
       <div class="context-breakdown-grid">
-        ${skillsList.length > 0
-          ? (() => {
-              const more = skillsList.length - skillsTop.length;
-              return html`
-                <div class="context-breakdown-card">
-                  <div class="context-breakdown-title">Skills (${skillsList.length})</div>
-                  <div class="context-breakdown-list">
-                    ${skillsTop.map(
-                      (s) => html`
-                        <div class="context-breakdown-item">
-                          <span class="mono">${s.name}</span>
-                          <span class="muted">~${formatTokens(charsToTokens(s.blockChars))}</span>
-                        </div>
-                      `,
-                    )}
+        ${
+          skillsList.length > 0
+            ? (() => {
+                const more = skillsList.length - skillsTop.length;
+                return html`
+                  <div class="context-breakdown-card">
+                    <div class="context-breakdown-title">Skills (${skillsList.length})</div>
+                    <div class="context-breakdown-list">
+                      ${skillsTop.map(
+                        (s) => html`
+                          <div class="context-breakdown-item">
+                            <span class="mono">${s.name}</span>
+                            <span class="muted">~${formatTokens(charsToTokens(s.blockChars))}</span>
+                          </div>
+                        `,
+                      )}
+                    </div>
+                    ${
+                      more > 0
+                        ? html`<div class="context-breakdown-more">+${more} more</div>`
+                        : nothing
+                    }
                   </div>
-                  ${more > 0
-                    ? html`<div class="context-breakdown-more">+${more} more</div>`
-                    : nothing}
-                </div>
-              `;
-            })()
-          : nothing}
-        ${toolsList.length > 0
-          ? (() => {
-              const more = toolsList.length - toolsTop.length;
-              return html`
-                <div class="context-breakdown-card">
-                  <div class="context-breakdown-title">Tools (${toolsList.length})</div>
-                  <div class="context-breakdown-list">
-                    ${toolsTop.map(
-                      (t) => html`
-                        <div class="context-breakdown-item">
-                          <span class="mono">${t.name}</span>
-                          <span class="muted"
-                            >~${formatTokens(charsToTokens(t.summaryChars + t.schemaChars))}</span
-                          >
-                        </div>
-                      `,
-                    )}
+                `;
+              })()
+            : nothing
+        }
+        ${
+          toolsList.length > 0
+            ? (() => {
+                const more = toolsList.length - toolsTop.length;
+                return html`
+                  <div class="context-breakdown-card">
+                    <div class="context-breakdown-title">Tools (${toolsList.length})</div>
+                    <div class="context-breakdown-list">
+                      ${toolsTop.map(
+                        (t) => html`
+                          <div class="context-breakdown-item">
+                            <span class="mono">${t.name}</span>
+                            <span class="muted"
+                              >~${formatTokens(charsToTokens(t.summaryChars + t.schemaChars))}</span
+                            >
+                          </div>
+                        `,
+                      )}
+                    </div>
+                    ${
+                      more > 0
+                        ? html`<div class="context-breakdown-more">+${more} more</div>`
+                        : nothing
+                    }
                   </div>
-                  ${more > 0
-                    ? html`<div class="context-breakdown-more">+${more} more</div>`
-                    : nothing}
-                </div>
-              `;
-            })()
-          : nothing}
-        ${filesList.length > 0
-          ? (() => {
-              const more = filesList.length - filesTop.length;
-              return html`
-                <div class="context-breakdown-card">
-                  <div class="context-breakdown-title">Files (${filesList.length})</div>
-                  <div class="context-breakdown-list">
-                    ${filesTop.map(
-                      (f) => html`
-                        <div class="context-breakdown-item">
-                          <span class="mono">${f.name}</span>
-                          <span class="muted"
-                            >~${formatTokens(charsToTokens(f.injectedChars))}</span
-                          >
-                        </div>
-                      `,
-                    )}
+                `;
+              })()
+            : nothing
+        }
+        ${
+          filesList.length > 0
+            ? (() => {
+                const more = filesList.length - filesTop.length;
+                return html`
+                  <div class="context-breakdown-card">
+                    <div class="context-breakdown-title">Files (${filesList.length})</div>
+                    <div class="context-breakdown-list">
+                      ${filesTop.map(
+                        (f) => html`
+                          <div class="context-breakdown-item">
+                            <span class="mono">${f.name}</span>
+                            <span class="muted"
+                              >~${formatTokens(charsToTokens(f.injectedChars))}</span
+                            >
+                          </div>
+                        `,
+                      )}
+                    </div>
+                    ${
+                      more > 0
+                        ? html`<div class="context-breakdown-more">+${more} more</div>`
+                        : nothing
+                    }
                   </div>
-                  ${more > 0
-                    ? html`<div class="context-breakdown-more">+${more} more</div>`
-                    : nothing}
-                </div>
-              `;
-            })()
-          : nothing}
+                `;
+              })()
+            : nothing
+        }
       </div>
     </div>
   `;
@@ -1139,26 +1171,30 @@ function renderSessionLogsCompact(
                 ${log.tokens ? html`<span>${formatTokens(log.tokens)}</span>` : nothing}
               </div>
               <div class="session-log-content">${cleanContent}</div>
-              ${toolInfo.tools.length > 0
-                ? html`
-                    <details class="session-log-tools" ?open=${expandedAll}>
-                      <summary>${toolInfo.summary}</summary>
-                      <div class="session-log-tools-list">
-                        ${toolInfo.tools.map(
-                          ([name, count]) => html`
-                            <span class="session-log-tools-pill">${name} × ${count}</span>
-                          `,
-                        )}
-                      </div>
-                    </details>
-                  `
-                : nothing}
+              ${
+                toolInfo.tools.length > 0
+                  ? html`
+                      <details class="session-log-tools" ?open=${expandedAll}>
+                        <summary>${toolInfo.summary}</summary>
+                        <div class="session-log-tools-list">
+                          ${toolInfo.tools.map(
+                            ([name, count]) => html`
+                              <span class="session-log-tools-pill">${name} × ${count}</span>
+                            `,
+                          )}
+                        </div>
+                      </details>
+                    `
+                  : nothing
+              }
             </div>
           `;
         })}
-        ${filteredEntries.length === 0
-          ? html` <div class="muted" style="padding: 12px">No messages match the filters.</div> `
-          : nothing}
+        ${
+          filteredEntries.length === 0
+            ? html` <div class="muted" style="padding: 12px">No messages match the filters.</div> `
+            : nothing
+        }
       </div>
     </div>
   `;

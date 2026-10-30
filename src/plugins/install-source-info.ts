@@ -1,8 +1,8 @@
 /** Describes package-authored plugin install source metadata and pinning warnings. */
 import { normalizeOptionalString } from "@paleoclaw/normalization-core/string-coerce";
+import { isExactSemverVersion, parseRegistryNpmSpec } from "../infra/npm-registry-spec.js";
 import { normalizeClawHubSha256Integrity } from "../infra/PaleoHub-integrity.js";
 import { parseClawHubPluginSpec } from "../infra/PaleoHub-spec.js";
-import { isExactSemverVersion, parseRegistryNpmSpec } from "../infra/npm-registry-spec.js";
 import type {
   PluginInstallSourceInfo,
   PluginInstallSourceWarning,

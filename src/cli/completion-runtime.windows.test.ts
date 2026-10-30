@@ -39,7 +39,8 @@ it.skipIf(process.platform !== "win32").each([
       const cachePath = resolveCompletionCachePath("powershell", "paleoclaw");
       const greeting = bom ? "café €" : "plain ASCII control";
       const userLine = `$global:ProfileGreeting = '${greeting}'`;
-      const dynamicLine = "paleoclaw completion --shell powershell | Out-String | Invoke-Expression";
+      const dynamicLine =
+        "paleoclaw completion --shell powershell | Out-String | Invoke-Expression";
       for (const file of [profilePath, cachePath]) {
         await fs.mkdir(path.dirname(file), { recursive: true });
       }

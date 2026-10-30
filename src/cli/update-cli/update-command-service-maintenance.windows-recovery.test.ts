@@ -102,7 +102,9 @@ it.each([
           failureFacts: [expect.objectContaining({ code: "windows-task-elevation-required" })],
           message: expect.stringContaining("elevated terminal (Run as administrator)"),
         });
-        expect(String(failure)).toContain("npm i -g 'paleoclaw@<target>' --allow-scripts=paleoclaw");
+        expect(String(failure)).toContain(
+          "npm i -g 'paleoclaw@<target>' --allow-scripts=paleoclaw",
+        );
         expect(String(failure)).toContain("paleoclaw doctor --fix");
         expect(String(failure)).toContain("paleoclaw gateway restart");
       } else {

@@ -1,6 +1,6 @@
 import { formatCliCommand } from "../../cli/command-format.js";
-import { ClawHubRequestError } from "../../infra/PaleoHub-client.js";
 import { formatErrorMessage } from "../../infra/errors.js";
+import { ClawHubRequestError } from "../../infra/PaleoHub-client.js";
 
 export function formatClawHubSkillRequestError(
   error: unknown,

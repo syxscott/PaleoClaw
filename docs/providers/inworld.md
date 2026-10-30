@@ -13,7 +13,7 @@ paleoclaw posts to Inworld's streaming TTS endpoint, concatenates the returned b
 | Property      | Value                                                           |
 | ------------- | --------------------------------------------------------------- |
 | Provider id   | `inworld`                                                       |
-| Plugin        | official external package (`@paleoclaw/inworld-speech`)          |
+| Plugin        | official external package (`@paleoclaw/inworld-speech`)         |
 | Contract      | `speechProviders` (TTS only)                                    |
 | Auth env var  | `INWORLD_API_KEY` (HTTP Basic, Base64 dashboard credential)     |
 | Base URL      | `https://api.inworld.ai`                                        |

@@ -123,6 +123,7 @@ export async function archiveSession(
   } else {
     await button(row, "Open session menu", false).click();
   }
-  const menu = surface === "header" ? "paleoclaw-chat-header-session-menu" : "paleoclaw-session-menu";
+  const menu =
+    surface === "header" ? "paleoclaw-chat-header-session-menu" : "paleoclaw-session-menu";
   await activateSelfRemovingControl(menuItem(page.locator(menu), "Archive session"));
 }

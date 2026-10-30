@@ -1,4 +1,7 @@
-import { buildModelAliasIndex, resolveModelRefFromString } from "paleoclaw/plugin-sdk/agent-runtime";
+import {
+  buildModelAliasIndex,
+  resolveModelRefFromString,
+} from "paleoclaw/plugin-sdk/agent-runtime";
 import type { OpenClawConfig, ProviderAuthResult } from "paleoclaw/plugin-sdk/provider-auth";
 import { normalizeLowercaseStringOrEmpty } from "paleoclaw/plugin-sdk/string-coerce-runtime";
 import {

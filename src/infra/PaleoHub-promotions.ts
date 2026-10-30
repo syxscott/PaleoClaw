@@ -1,4 +1,5 @@
 import { isRecord as isJsonObject } from "@paleoclaw/normalization-core/record-coerce";
+import { parseRegistryNpmSpec } from "./npm-registry-spec.js";
 import {
   fetchClawHubJson,
   readClawHubBooleanField,
@@ -9,7 +10,6 @@ import {
   readRequiredClawHubNumberField,
   readRequiredClawHubStringField,
 } from "./PaleoHub-client.js";
-import { parseRegistryNpmSpec } from "./npm-registry-spec.js";
 
 // The payload is declarative only: provider/authChoiceId/pluginNames are
 // validated against the local provider catalog by the caller before any

@@ -60,7 +60,11 @@ const browserConfig = vi.hoisted(() => ({
     enabled: true,
     defaultProfile: "paleoclaw",
     profiles: {
-      paleoclaw: { name: "paleoclaw", driver: "paleoclaw" as const, cdpUrl: "http://127.0.0.1:9222" },
+      paleoclaw: {
+        name: "paleoclaw",
+        driver: "paleoclaw" as const,
+        cdpUrl: "http://127.0.0.1:9222",
+      },
       user: { name: "user", driver: "existing-session" as const, cdpUrl: "http://127.0.0.1:9333" },
     },
     remoteCdpTimeoutMs: 20_000,

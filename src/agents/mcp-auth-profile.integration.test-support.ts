@@ -626,7 +626,8 @@ async function main(): Promise<void> {
         const { closeAuthProfileReadPool } = await import("./auth-profiles/sqlite.js");
         const { closeOpenClawAgentDatabasesForTest } =
           await import("../state/paleoclaw-agent-db.js");
-        const { closeOpenClawStateDatabaseForTest } = await import("../state/paleoclaw-state-db.js");
+        const { closeOpenClawStateDatabaseForTest } =
+          await import("../state/paleoclaw-state-db.js");
         closeAuthProfileReadPool();
         // Agent closure releases leases through shared state; close that owner last.
         closeOpenClawAgentDatabasesForTest();

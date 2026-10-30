@@ -140,12 +140,12 @@ Compared with the previous stable release:
 
 ### Install footprint
 
-| Metric                                          |  Baseline | `v2026.5.28` |       Delta |
-| ----------------------------------------------- | --------: | -----------: | ----------: |
-| Install size from `2026.5.22` peak              | 1,020.6MB |     361.7MiB | 64.6% lower |
-| Install size from latest release `2026.5.27`    |  767.1MiB |     361.7MiB | 52.8% lower |
-| Dependencies from monthly high `2026.2.26`      |       645 |          300 | 53.5% lower |
-| Dependencies from latest release `2026.5.27`    |       371 |          300 | 19.1% lower |
+| Metric                                           |  Baseline | `v2026.5.28` |       Delta |
+| ------------------------------------------------ | --------: | -----------: | ----------: |
+| Install size from `2026.5.22` peak               | 1,020.6MB |     361.7MiB | 64.6% lower |
+| Install size from latest release `2026.5.27`     |  767.1MiB |     361.7MiB | 52.8% lower |
+| Dependencies from monthly high `2026.2.26`       |       645 |          300 | 53.5% lower |
+| Dependencies from latest release `2026.5.27`     |       371 |          300 | 19.1% lower |
 | Nested `paleoclaw/node_modules` from `2026.5.22` |   911.8MB |     259.7MiB | 71.5% lower |
 | Nested `paleoclaw/node_modules` from `2026.5.27` |  656.1MiB |     259.7MiB | 60.4% lower |
 
@@ -238,15 +238,15 @@ Dependency samples use one stable release per month, plus the
 `2026.5.22` shrinkwrap-introduction event and the latest `2026.5.28` release.
 
 | Point              | Installed deps | Fresh install | paleoclaw package | Nested `paleoclaw/node_modules` | Root shrinkwrap | Canvas install behavior                   |
-| ------------------ | -------------: | ------------: | ---------------: | -----------------------------: | --------------- | ----------------------------------------- |
-| Jan `2026.1.30`    |            605 |       438.4MB |           45.8MB |                          2.4MB | no              | top-level wrapper + `darwin-arm64`        |
-| Feb `2026.2.26`    |            645 |       575.7MB |          110.1MB |                          3.5MB | no              | top-level wrapper + `darwin-arm64`        |
-| Mar `2026.3.31`    |            438 |       584.1MB |          234.8MB |                            0MB | no              | top-level wrapper + `darwin-arm64`        |
-| Apr `2026.4.29`    |            392 |       335.0MB |           97.4MB |                            0MB | no              | none installed                            |
-| `2026.5.22`        |            401 |     1,020.6MB |        1,020.4MB |                        911.8MB | yes             | nested: all 12 `@napi-rs/canvas` packages |
-| May `2026.5.26`    |            371 |       767.5MB |          767.4MB |                        656.4MB | yes             | nested: all 12 `@napi-rs/canvas` packages |
-| `2026.5.27`        |            371 |      767.1MiB |         766.9MiB |                       656.1MiB | yes             | nested: all 12 `@napi-rs/canvas` packages |
-| Latest `2026.5.28` |            300 |      361.7MiB |         361.6MiB |                       259.7MiB | yes             | none installed                            |
+| ------------------ | -------------: | ------------: | ----------------: | ------------------------------: | --------------- | ----------------------------------------- |
+| Jan `2026.1.30`    |            605 |       438.4MB |            45.8MB |                           2.4MB | no              | top-level wrapper + `darwin-arm64`        |
+| Feb `2026.2.26`    |            645 |       575.7MB |           110.1MB |                           3.5MB | no              | top-level wrapper + `darwin-arm64`        |
+| Mar `2026.3.31`    |            438 |       584.1MB |           234.8MB |                             0MB | no              | top-level wrapper + `darwin-arm64`        |
+| Apr `2026.4.29`    |            392 |       335.0MB |            97.4MB |                             0MB | no              | none installed                            |
+| `2026.5.22`        |            401 |     1,020.6MB |         1,020.4MB |                         911.8MB | yes             | nested: all 12 `@napi-rs/canvas` packages |
+| May `2026.5.26`    |            371 |       767.5MB |           767.4MB |                         656.4MB | yes             | nested: all 12 `@napi-rs/canvas` packages |
+| `2026.5.27`        |            371 |      767.1MiB |          766.9MiB |                        656.1MiB | yes             | nested: all 12 `@napi-rs/canvas` packages |
+| Latest `2026.5.28` |            300 |      361.7MiB |          361.6MiB |                        259.7MiB | yes             | none installed                            |
 
 ### Shrinkwrap boundary
 

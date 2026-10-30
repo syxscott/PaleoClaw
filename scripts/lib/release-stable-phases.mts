@@ -377,7 +377,8 @@ export async function publish(ctx: ReleaseContext): Promise<void> {
     }
     const dispatched = await dispatchReleaseWorkflow(ctx, {
       phase: "publish",
-      workflow: lane === "validate" ? "paleoclaw-macos-validate.yml" : "paleoclaw-macos-publish.yml",
+      workflow:
+        lane === "validate" ? "paleoclaw-macos-validate.yml" : "paleoclaw-macos-publish.yml",
       repo: state.releasesRepo,
       ref: "main",
       inputs: [

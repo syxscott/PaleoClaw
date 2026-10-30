@@ -185,7 +185,9 @@ describe("Docker channel promotion", () => {
       expect(() => runPromotion(docker, {}, { imageTagSuffix: "-r20260820" })).toThrow(
         "Refusing to move ghcr.io/paleoclaw/paleoclaw:extended-stable backward from 2026.6.34 to 2026.6.33",
       );
-      expect(docker.mock.calls[0]?.[1]).toContain("ghcr.io/paleoclaw/paleoclaw:2026.6.33-r20260820");
+      expect(docker.mock.calls[0]?.[1]).toContain(
+        "ghcr.io/paleoclaw/paleoclaw:2026.6.33-r20260820",
+      );
       expectNoWrites(docker);
     }
   });

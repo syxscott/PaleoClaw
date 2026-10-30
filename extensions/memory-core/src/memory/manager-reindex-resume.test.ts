@@ -30,7 +30,9 @@ const activity = vi.hoisted(() => ({
 }));
 vi.mock("paleoclaw/plugin-sdk/memory-core-host-engine-foundation", async (importOriginal) => {
   const actual =
-    await importOriginal<typeof import("paleoclaw/plugin-sdk/memory-core-host-engine-foundation")>();
+    await importOriginal<
+      typeof import("paleoclaw/plugin-sdk/memory-core-host-engine-foundation")
+    >();
   return {
     ...actual,
     observeAgentRunActivity: (_agentId: string, listener: (busy: boolean) => void) => {

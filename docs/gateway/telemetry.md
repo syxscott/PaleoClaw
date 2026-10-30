@@ -132,7 +132,7 @@ When you explicitly enable anonymous feature statistics, the same daily request 
 | Field                       | Meaning                                                                                           |
 | --------------------------- | ------------------------------------------------------------------------------------------------- |
 | `schema`                    | Payload format version, currently `1`.                                                            |
-| `version`                   | Installed paleoclaw version.                                                                       |
+| `version`                   | Installed paleoclaw version.                                                                      |
 | `platform`                  | Operating system and CPU architecture.                                                            |
 | `node`                      | Running Node.js version.                                                                          |
 | `surface`                   | Request surface: `gateway` or `cli`; the CLI preview uses `gateway`.                              |

@@ -960,7 +960,9 @@ export function prepareNpmPackageBundle({
     npmDistTag,
     ...packed,
     corePackageTarballs,
-    dependencyTarballs: corePackageTarballs.filter((entry) => entry.packageName === "@paleoclaw/ai"),
+    dependencyTarballs: corePackageTarballs.filter(
+      (entry) => entry.packageName === "@paleoclaw/ai",
+    ),
   };
   writeJson(join(outputDir, "package-bundle.json"), manifest);
   return manifest;

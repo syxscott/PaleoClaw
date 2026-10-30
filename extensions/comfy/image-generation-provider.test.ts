@@ -18,7 +18,8 @@ vi.mock("node:crypto", async (importOriginal) => {
   return { ...actual, randomInt: randomIntMock.mockImplementation(actual.randomInt) };
 });
 
-type FetchWithSsrFGuard = (typeof import("paleoclaw/plugin-sdk/ssrf-runtime"))["fetchWithSsrFGuard"];
+type FetchWithSsrFGuard =
+  (typeof import("paleoclaw/plugin-sdk/ssrf-runtime"))["fetchWithSsrFGuard"];
 
 const { fetchWithSsrFGuardMock, ssrfGuardState } = vi.hoisted(() => ({
   fetchWithSsrFGuardMock: vi.fn(),

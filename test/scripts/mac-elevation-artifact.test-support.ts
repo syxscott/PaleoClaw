@@ -246,9 +246,9 @@ plutil() {
       `verify must not invoke apps, services, secrets, or live tools: ${existsSync(forbidden) ? readFileSync(forbidden, "utf8") : ""}`,
     ).toBe(false);
     expect(result.error, `file classifier invocations: ${fileCallCount()}`).toBeUndefined();
-    expect(readdirSync(home).filter((name) => name.startsWith("paleoclaw-elevation-code."))).toEqual(
-      [],
-    );
+    expect(
+      readdirSync(home).filter((name) => name.startsWith("paleoclaw-elevation-code.")),
+    ).toEqual([]);
     return result;
   };
   const architectures = (name: string) =>

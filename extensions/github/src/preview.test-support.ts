@@ -30,7 +30,11 @@ export function coauthorTrailers(...authors: [string, number][]) {
   return [{ commit: { message } }];
 }
 
-export function previewTarget(number: number, kind: "issue" | "pull" = "issue", repo = "paleoclaw") {
+export function previewTarget(
+  number: number,
+  kind: "issue" | "pull" = "issue",
+  repo = "paleoclaw",
+) {
   return { kind, number, owner: "paleoclaw", repo };
 }
 

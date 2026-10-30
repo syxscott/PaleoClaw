@@ -26,7 +26,9 @@ const ledger = vi.hoisted(() => ({
     >(),
 }));
 vi.mock("../state/paleoclaw-state-schema-publication.async.js", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("../state/paleoclaw-state-schema-publication.async.js")>()),
+  ...(await importOriginal<
+    typeof import("../state/paleoclaw-state-schema-publication.async.js")
+  >()),
   reconcileOpenClawStateSchemaPublicationAsync: ledger.publication,
 }));
 vi.mock("../infra/update-run-interruption.js", () => ({

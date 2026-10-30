@@ -38,7 +38,10 @@ export async function renderSettledPastedTextAttachment(
   try {
     const container = renderChatView(overrides);
     await waitForSolid(() =>
-      expectDefined(container.querySelector("paleoclaw-chat-pasted-text"), "pasted text attachment"),
+      expectDefined(
+        container.querySelector("paleoclaw-chat-pasted-text"),
+        "pasted text attachment",
+      ),
     );
     flush();
     expect(read).toHaveBeenCalledOnce();

@@ -563,8 +563,9 @@ describe("SidebarUpdateCard", () => {
         finishedAtMs: now - 5 * 60_000,
       }),
     });
-    await element.find<HTMLElement & { updateComplete: Promise<boolean> }>("paleoclaw-relative-time")
-      ?.updateComplete;
+    await element.find<HTMLElement & { updateComplete: Promise<boolean> }>(
+      "paleoclaw-relative-time",
+    )?.updateComplete;
     expect(element.find("summary time")?.textContent?.trim()).toBe("5m ago");
 
     await vi.advanceTimersByTimeAsync(60_000);

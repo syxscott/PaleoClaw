@@ -86,7 +86,12 @@ it.each([
     await expect(fs.stat(record.path)).rejects.toMatchObject({ code: "ENOENT" });
     expect(await git(repo, "branch", "--list", record.branch)).toBe("");
     expect(
-      await git(repo, "for-each-ref", "--format=%(refname)", `refs/paleoclaw/removals/${record.id}`),
+      await git(
+        repo,
+        "for-each-ref",
+        "--format=%(refname)",
+        `refs/paleoclaw/removals/${record.id}`,
+      ),
     ).toBe("");
     expect(await git(repo, "show", `${snapshot}:tool.sh`)).toBe("#!/bin/sh\nexit 0");
     expect(getRegistryWorktree(env, record.id)?.removedAt).toEqual(expect.any(Number));

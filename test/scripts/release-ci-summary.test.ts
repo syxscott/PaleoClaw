@@ -4091,7 +4091,10 @@ describe("release CI summary child correlation", () => {
           title: "paleoclaw Performance full-release-validation-28717729503-1",
         },
       ],
-      ["releaseChecks", { originAttempt: 1, runId: 28717802397, title: "paleoclaw Release Checks" }],
+      [
+        "releaseChecks",
+        { originAttempt: 1, runId: 28717802397, title: "paleoclaw Release Checks" },
+      ],
     ]);
     const fingerprint = {
       completed_at: "2026-07-04T20:29:21Z",

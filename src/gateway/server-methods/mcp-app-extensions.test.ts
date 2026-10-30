@@ -262,7 +262,9 @@ describe("registered MCP App extensions", () => {
       { assertCurrent: expect.any(Function) },
     );
     expect(mocks.fetch).toHaveBeenCalledWith(
-      expect.objectContaining({ hostFile: { name: "part.stl", resourceUri: "paleoclaw-file://1" } }),
+      expect.objectContaining({
+        hostFile: { name: "part.stl", resourceUri: "paleoclaw-file://1" },
+      }),
     );
   });
   it("does not dispatch an unadvertised launch or forged file resource", async () => {

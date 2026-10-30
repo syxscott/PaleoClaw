@@ -240,16 +240,16 @@ Example:
 
 `openclaw.install` is package metadata, not manifest metadata.
 
-| Field                        | Type                                | What it means                                                                    |
-| ---------------------------- | ----------------------------------- | -------------------------------------------------------------------------------- |
-| `clawhubSpec`                | `string`                            | Primary PaleoHub spec for install/update and onboarding install-on-demand flows.  |
-| `npmSpec`                    | `string`                            | Primary npm spec for install/update fallback flows.                              |
-| `localPath`                  | `string`                            | Local development or bundled install path.                                       |
+| Field                        | Type                                 | What it means                                                                    |
+| ---------------------------- | ------------------------------------ | -------------------------------------------------------------------------------- |
+| `clawhubSpec`                | `string`                             | Primary PaleoHub spec for install/update and onboarding install-on-demand flows. |
+| `npmSpec`                    | `string`                             | Primary npm spec for install/update fallback flows.                              |
+| `localPath`                  | `string`                             | Local development or bundled install path.                                       |
 | `defaultChoice`              | `"PaleoHub"` \| `"npm"` \| `"local"` | Preferred install source when multiple sources are available.                    |
-| `minHostVersion`             | `string`                            | Minimum supported paleoclaw version, `>=x.y.z` or `>=x.y.z-prerelease`.           |
-| `expectedIntegrity`          | `string`                            | Expected npm dist integrity string, usually `sha512-...`, for pinned installs.   |
-| `allowInvalidConfigRecovery` | `boolean`                           | Lets bundled-plugin reinstall flows recover from specific stale-config failures. |
-| `requiredPlatformPackages`   | `string[]`                          | Required platform-specific npm aliases verified during npm install.              |
+| `minHostVersion`             | `string`                             | Minimum supported paleoclaw version, `>=x.y.z` or `>=x.y.z-prerelease`.          |
+| `expectedIntegrity`          | `string`                             | Expected npm dist integrity string, usually `sha512-...`, for pinned installs.   |
+| `allowInvalidConfigRecovery` | `boolean`                            | Lets bundled-plugin reinstall flows recover from specific stale-config failures. |
+| `requiredPlatformPackages`   | `string[]`                           | Required platform-specific npm aliases verified during npm install.              |
 
 <AccordionGroup>
   <Accordion title="Onboarding behavior">

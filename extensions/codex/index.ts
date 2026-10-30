@@ -155,7 +155,8 @@ export default definePluginEntry({
       // Final effect guards retain raw SDK revocations through 2026-12-31.
       lookup: (key) => openBindingStateStore().lookup(key),
       prepareRead: async (key) => {
-        const { preparePluginStateRead } = await import("paleoclaw/plugin-sdk/plugin-state-runtime");
+        const { preparePluginStateRead } =
+          await import("paleoclaw/plugin-sdk/plugin-state-runtime");
         return await preparePluginStateRead(openBindingMutationStore(), key);
       },
       asyncReads: {

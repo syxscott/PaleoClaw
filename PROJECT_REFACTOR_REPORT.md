@@ -24,17 +24,17 @@
 
 共更新 **2757 个文件**，完成以下重命名：
 
-| 原名称                         | 新名称                           |
-| ------------------------------ | -------------------------------- |
-| `paleoclaw`                     | `PaleoClaw`                      |
-| `paleoclaw`                     | `paleoclaw`                      |
-| `OPENCLAW`                     | `PALEOCLAW`                      |
-| `paleoclaw.mjs`                 | `paleoclaw.mjs`                  |
+| 原名称                           | 新名称                           |
+| -------------------------------- | -------------------------------- |
+| `paleoclaw`                      | `PaleoClaw`                      |
+| `paleoclaw`                      | `paleoclaw`                      |
+| `OPENCLAW`                       | `PALEOCLAW`                      |
+| `paleoclaw.mjs`                  | `paleoclaw.mjs`                  |
 | `github.com/paleoclaw/paleoclaw` | `github.com/paleoclaw/paleoclaw` |
-| `ai.openclaw.`                 | `ai.paleoclaw.`                  |
-| `@paleoclaw/`                   | `@paleoclaw/`                    |
-| `docs.openclaw.ai`             | `docs.paleoclaw.ai`              |
-| `PaleoHub`                      | `PaleoHub`                       |
+| `ai.openclaw.`                   | `ai.paleoclaw.`                  |
+| `@paleoclaw/`                    | `@paleoclaw/`                    |
+| `docs.openclaw.ai`               | `docs.paleoclaw.ai`              |
+| `PaleoHub`                       | `PaleoHub`                       |
 
 ### 3. 核心配置文件更新
 

@@ -199,7 +199,8 @@ export function DevicePairSetup(props: DevicePairSetupProps) {
             <Show when={setup()}>
               {(current) => {
                 const expired = () => current().expiresAtMs <= props.nowMs;
-                const command = () => `paleoclaw node run --pair "oc-pair://${current().setupCode}"`;
+                const command = () =>
+                  `paleoclaw node run --pair "oc-pair://${current().setupCode}"`;
                 return (
                   <>
                     <Show

@@ -11,19 +11,19 @@ sidebarTitle: "Models"
 
 ## Quick choice
 
-| Goal                                              | Use                                                                | Notes                                                               |
-| ------------------------------------------------- | ------------------------------------------------------------------ | ------------------------------------------------------------------- |
-| ChatGPT/Codex subscription, native Codex runtime  | `openai/gpt-6-astra`                                               | Fresh subscription setup; sign in with Codex auth.                  |
-| Direct API-key billing for agent turns            | `openai/gpt-6-astra` plus an ordered API-key auth profile          | Fresh API-key setup uses Astra.                                     |
-| GPT-6.1 Sol                                       | `openai/gpt-6.1-sol`                                               | Select explicitly; reasoning cannot be disabled.                    |
-| GPT-6 Sol                                         | `openai/gpt-6-sol`                                                 | Select explicitly; account access can differ between auth routes.   |
-| Lower-cost GPT-6 Luna                             | `openai/gpt-6-luna`                                                | Select explicitly; check the account catalog for availability.      |
-| Choose an exact GPT-5.6 tier                      | `openai/gpt-5.6-sol`, `-terra`, or `-luna`                         | Check `models list` for the tiers available to this account.        |
-| Account without GPT-5.6 access                    | `openai/gpt-5.5`                                                   | Explicit recovery choice; paleoclaw does not silently downgrade.     |
+| Goal                                               | Use                                                                 | Notes                                                               |
+| -------------------------------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| ChatGPT/Codex subscription, native Codex runtime   | `openai/gpt-6-astra`                                                | Fresh subscription setup; sign in with Codex auth.                  |
+| Direct API-key billing for agent turns             | `openai/gpt-6-astra` plus an ordered API-key auth profile           | Fresh API-key setup uses Astra.                                     |
+| GPT-6.1 Sol                                        | `openai/gpt-6.1-sol`                                                | Select explicitly; reasoning cannot be disabled.                    |
+| GPT-6 Sol                                          | `openai/gpt-6-sol`                                                  | Select explicitly; account access can differ between auth routes.   |
+| Lower-cost GPT-6 Luna                              | `openai/gpt-6-luna`                                                 | Select explicitly; check the account catalog for availability.      |
+| Choose an exact GPT-5.6 tier                       | `openai/gpt-5.6-sol`, `-terra`, or `-luna`                          | Check `models list` for the tiers available to this account.        |
+| Account without GPT-5.6 access                     | `openai/gpt-5.5`                                                    | Explicit recovery choice; paleoclaw does not silently downgrade.    |
 | Direct API-key billing, explicit paleoclaw runtime | `openai/gpt-5.6` plus provider/model `agentRuntime.id: "paleoclaw"` | Select a normal `openai` API-key profile.                           |
-| Latest ChatGPT Instant model alias                | `openai/chat-latest`                                               | Direct API-key only; moving alias, not the stable default.          |
-| Image generation or editing                       | `openai/gpt-image-2`                                               | Works with `OPENAI_API_KEY` or Codex OAuth.                         |
-| Transparent-background images                     | `openai/gpt-image-1.5`                                             | Set `outputFormat` to `png` or `webp` and `background=transparent`. |
+| Latest ChatGPT Instant model alias                 | `openai/chat-latest`                                                | Direct API-key only; moving alias, not the stable default.          |
+| Image generation or editing                        | `openai/gpt-image-2`                                                | Works with `OPENAI_API_KEY` or Codex OAuth.                         |
+| Transparent-background images                      | `openai/gpt-image-1.5`                                              | Set `outputFormat` to `png` or `webp` and `background=transparent`. |
 
 Isolated and utility completions on the Codex runtime use the same account routes
 as the model picker. A model listed by your ChatGPT account does not require an

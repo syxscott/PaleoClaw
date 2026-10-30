@@ -1725,7 +1725,8 @@ process.stdout.write(sessionDir + "\\n");
     {
       name: "official-looking git resolvedSpec",
       mutate: (records) => {
-        records.discord!.resolvedSpec = "@paleoclaw/discord@git+https://example.invalid/discord.git";
+        records.discord!.resolvedSpec =
+          "@paleoclaw/discord@git+https://example.invalid/discord.git";
       },
       error: /discord plugin accepted surface missing/,
     },

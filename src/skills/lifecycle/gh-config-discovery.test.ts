@@ -32,7 +32,10 @@ describe("detectGhConfigDirMismatch", () => {
         env: { HOME: "/agent/home", GH_CONFIG_DIR: "/etc/paleoclaw/gh" },
       }),
     );
-    expect(result).toEqual({ kind: "explicit-gh-config-dir-set", ghConfigDir: "/etc/paleoclaw/gh" });
+    expect(result).toEqual({
+      kind: "explicit-gh-config-dir-set",
+      ghConfigDir: "/etc/paleoclaw/gh",
+    });
   });
 
   it("returns 'no-process-home' when HOME and XDG and APPDATA are missing", () => {

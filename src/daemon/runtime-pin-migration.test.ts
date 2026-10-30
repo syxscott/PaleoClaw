@@ -36,7 +36,9 @@ describe("runtime pin migration before service resume", () => {
         vi.spyOn(process, "platform", "get").mockReturnValue("darwin");
         vi.spyOn(temporaryState, "resolvePreferredOpenClawTmpDir").mockReturnValue(state.stateDir);
         const env = { ...state.env, OPENCLAW_LAUNCHD_LABEL: "dev.openclaw.migration-fixture" };
-        const command = { programArguments: ["/fixture/node", "/fixture/paleoclaw.mjs", "gateway"] };
+        const command = {
+          programArguments: ["/fixture/node", "/fixture/paleoclaw.mjs", "gateway"],
+        };
         const pin = { runtime: "node", path: "/fixture/node" };
         const stateKey = `daemon-runtime-pin:${digest(["gateway", "darwin", env.OPENCLAW_LAUNCHD_LABEL, state.configPath])}`;
         const valueJson = malformed

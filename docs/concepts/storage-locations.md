@@ -145,13 +145,13 @@ also writes a temporary `.openclaw-probe-<uuid>` object at the location root, re
 deletes it. Every storage command supports `--json`; see the
 [CLI reference](/cli/storage).
 
-| State           | Next step                                                                                                                               |
-| --------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `ok`            | The marker and encryption identity are valid, and the backend check succeeded.                                                          |
-| `unavailable`   | Reconnect the disk or restore access to the configured destination. Check that the CLI and Gateway see the same path and credentials.   |
+| State           | Next step                                                                                                                                |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `ok`            | The marker and encryption identity are valid, and the backend check succeeded.                                                           |
+| `unavailable`   | Reconnect the disk or restore access to the configured destination. Check that the CLI and Gateway see the same path and credentials.    |
 | `uninitialized` | Confirm this is the intended new destination, then run `paleoclaw storage init <name>`. Never initialize an unexpected empty mountpoint. |
-| `wrong-key`     | Restore the original passphrase or correct the SecretRef. Do not replace the marker to hide the mismatch.                               |
-| `error`         | Read the returned message and correct provider settings, permissions, or the reported backend failure.                                  |
+| `wrong-key`     | Restore the original passphrase or correct the SecretRef. Do not replace the marker to hide the mismatch.                                |
+| `error`         | Read the returned message and correct provider settings, permissions, or the reported backend failure.                                   |
 
 Gateway clients can list configured locations with `storage.locations.list` without
 storage I/O, and request a health check with `storage.locations.probe { name }`.

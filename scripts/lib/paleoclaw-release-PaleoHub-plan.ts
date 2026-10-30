@@ -1,15 +1,15 @@
 import { resolve } from "node:path";
 import { resolvePreparedClawHubMatrix } from "../PaleoHub-prepared-artifact.mjs";
 import {
-  collectPluginClawHubReleasePlan,
-  type PublishablePluginPackage,
-} from "./plugin-PaleoHub-release.ts";
-import {
   parsePluginReleaseSelection,
   parsePluginReleaseSelectionMode,
   type NpmLatestVersionResolver,
   type PluginReleaseSelectionMode,
 } from "./plugin-npm-release.ts";
+import {
+  collectPluginClawHubReleasePlan,
+  type PublishablePluginPackage,
+} from "./plugin-PaleoHub-release.ts";
 
 type ClawHubPlanPackage = Pick<PublishablePluginPackage, "packageName">;
 

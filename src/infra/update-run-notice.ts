@@ -12,7 +12,10 @@ const UPDATE_RUN_HEADLINES = new Map<UpdateRunRecord["status"], string>([
 const SKIPPED_UPDATE_RUN_HEADLINES = new Map<string | null, string>([
   ["already-current", "✅ paleoclaw is already up to date."],
   ["still-starting", "⏳ paleoclaw is installed and still starting."],
-  ["gateway-readiness-unverified", "⚠️ paleoclaw is installed, but we couldn't confirm it's ready."],
+  [
+    "gateway-readiness-unverified",
+    "⚠️ paleoclaw is installed, but we couldn't confirm it's ready.",
+  ],
   ["managed-service-handoff-already-running", "⬆️ paleoclaw is already updating."],
 ]);
 

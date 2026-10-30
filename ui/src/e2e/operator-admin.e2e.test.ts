@@ -332,7 +332,10 @@ suite.define(() => {
 
       await page.goto(`${suite.server.baseUrl}settings/agents`);
       await gateway.waitForRequest("agents.list");
-      await selectAgent(page.locator(".settings-sidebar__agent paleoclaw-agent-select"), "Reviewer");
+      await selectAgent(
+        page.locator(".settings-sidebar__agent paleoclaw-agent-select"),
+        "Reviewer",
+      );
       await page.locator("#agents-tab-overview").click();
       const setDefault = page.getByRole("button", { name: "Set Default", exact: true });
       await expect.poll(() => setDefault.isDisabled()).toBe(true);
@@ -430,7 +433,10 @@ suite.define(() => {
 
       await page.goto(`${suite.server.baseUrl}settings/agents`);
       await gateway.waitForRequest("agents.list");
-      await selectAgent(page.locator(".settings-sidebar__agent paleoclaw-agent-select"), "Reviewer");
+      await selectAgent(
+        page.locator(".settings-sidebar__agent paleoclaw-agent-select"),
+        "Reviewer",
+      );
       const setDefault = page.getByRole("button", { name: "Set Default", exact: true });
       await expect.poll(() => setDefault.isDisabled()).toBe(true);
       await expectAgentCreationDenied(page, gateway);

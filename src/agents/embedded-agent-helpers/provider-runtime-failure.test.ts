@@ -89,7 +89,9 @@ describe("classifyProviderRuntimeFailureKind", () => {
     expectKind(
       'OAuth refresh call "refreshProviderOAuthCredentialWithPlugin(openai)" exceeded hard timeout (120000ms)',
     ).toBe("refresh_timeout");
-    expectKind("file lock timeout for /tmp/paleoclaw-oauth-refresh.lock").toBe("refresh_contention");
+    expectKind("file lock timeout for /tmp/paleoclaw-oauth-refresh.lock").toBe(
+      "refresh_contention",
+    );
     expectKind({
       code: "refresh_contention",
       message:

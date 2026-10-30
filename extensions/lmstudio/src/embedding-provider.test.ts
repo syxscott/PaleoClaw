@@ -50,7 +50,9 @@ const createRemoteEmbeddingProviderMock = vi.hoisted(() =>
 
 vi.mock("paleoclaw/plugin-sdk/memory-core-host-engine-embeddings", async (importOriginal) => {
   const actual =
-    await importOriginal<typeof import("paleoclaw/plugin-sdk/memory-core-host-engine-embeddings")>();
+    await importOriginal<
+      typeof import("paleoclaw/plugin-sdk/memory-core-host-engine-embeddings")
+    >();
   return {
     ...actual,
     createRemoteEmbeddingProvider: createRemoteEmbeddingProviderMock,

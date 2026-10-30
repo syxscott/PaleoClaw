@@ -110,9 +110,9 @@ For integrations that implement paleoclaw's pairing API, see [Pairing](/channels
 The package declares these paleoclaw requirements:
 
 | Plugin version | Declared paleoclaw requirement | npm tag  |
-| -------------- | ----------------------------- | -------- |
-| `2.4.8`        | `>=2026.5.12`                 | `latest` |
-| `1.x`          | `>=2026.1.0 <2026.3.22`       | `legacy` |
+| -------------- | ------------------------------ | -------- |
+| `2.4.8`        | `>=2026.5.12`                  | `latest` |
+| `1.x`          | `>=2026.1.0 <2026.3.22`        | `legacy` |
 
 Version `2.4.8` declares `>=2026.5.12`, but its startup version guard still checks
 `>=2026.3.22`. Passing that guard alone does not satisfy the declared requirement.

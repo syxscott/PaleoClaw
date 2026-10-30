@@ -658,13 +658,11 @@ export async function detectLegacyStateMigrations(params: {
         ),
       )
         .filter((targetPath) => !fileExists(targetPath))
-        .map(
-          (targetPath): FileCopyPlan => ({
-            label: "Telegram pairing allowFrom",
-            sourcePath: legacyTelegramAllowFromPath,
-            targetPath,
-          }),
-        )
+        .map((targetPath): FileCopyPlan => ({
+          label: "Telegram pairing allowFrom",
+          sourcePath: legacyTelegramAllowFromPath,
+          targetPath,
+        }))
     : [];
   const hasLegacyTelegramAllowFrom = telegramPairingAllowFromPlans.length > 0;
 

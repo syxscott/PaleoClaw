@@ -50,7 +50,7 @@ For non-public Teams clouds, set `cloud` and the matching proactive boundary whe
 
 Microsoft publishes the global proactive Bot Connector endpoints in the [Create the conversation](https://learn.microsoft.com/en-us/microsoftteams/platform/bots/how-to/conversations/send-proactive-messages?tabs=dotnet#create-the-conversation) section of the Teams proactive messaging docs. Use the incoming activity's `serviceUrl` when available; otherwise use Microsoft's table below.
 
-| Teams environment | paleoclaw config                                             | Proactive `serviceUrl`                             |
+| Teams environment | paleoclaw config                                            | Proactive `serviceUrl`                             |
 | ----------------- | ----------------------------------------------------------- | -------------------------------------------------- |
 | Public            | no cloud/serviceUrl config needed                           | `https://smba.trafficmanager.net/teams`            |
 | GCC               | set `serviceUrl`; no separate Teams SDK cloud preset exists | `https://smba.infra.gcc.teams.microsoft.com/teams` |

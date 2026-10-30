@@ -22,14 +22,14 @@ Three modes are supported:
 | Hybrid            | One `llmman.hybrid/<local>,<provider>/<model>` ref; llmman picks the local or hosted side per request            |
 | Hosted via llmman | `llmman.provider/<provider>/<model>` refs; llmman forwards to a hosted provider while keeping one local endpoint |
 
-| Property         | Value                                                                         |
-| ---------------- | ----------------------------------------------------------------------------- |
-| Provider id      | `llmman` (custom; configure under `models.providers.llmman`)                  |
+| Property         | Value                                                                          |
+| ---------------- | ------------------------------------------------------------------------------ |
+| Provider id      | `llmman` (custom; configure under `models.providers.llmman`)                   |
 | Plugin           | none; not a bundled paleoclaw provider plugin, so models are listed explicitly |
-| API              | OpenAI-compatible (`api: "openai-completions"`)                               |
-| Default base URL | `http://127.0.0.1:17434/v1`                                                   |
-| Auth             | none on loopback; off loopback a key is required, sent as the `apiKey` bearer |
-| Reference model  | `qwen3.8` (Qwen3.8 27B, vision-capable, 262,144-token native context)         |
+| API              | OpenAI-compatible (`api: "openai-completions"`)                                |
+| Default base URL | `http://127.0.0.1:17434/v1`                                                    |
+| Auth             | none on loopback; off loopback a key is required, sent as the `apiKey` bearer  |
+| Reference model  | `qwen3.8` (Qwen3.8 27B, vision-capable, 262,144-token native context)          |
 
 <Warning>
 On loopback with no keys configured, `llmman serve` needs no key. Bound anywhere else, llmman 0.1.386+ refuses to start without `LLMMAN_API_KEYS`. Never use `LLMMAN_AUTH=off` on a public interface.
@@ -166,7 +166,7 @@ llmman is not a bundled paleoclaw plugin, so there is no implicit discovery. Lis
 | Capabilities | `llmman show <model>` and `POST /api/show` report `completion` plus `vision` when a companion `mmproj` projector is present; mark such models `input: ["text", "image"]` |
 | Reasoning    | Set `reasoning: true` for thinking models such as Qwen3.8; llmman returns thinking as `reasoning_content`                                                                |
 | Context      | `llmman show <model>` prints the trained context length; `llmman ps` prints the context the running server was started with                                              |
-| Costs        | All `0`; the hosted half of a hybrid ref is billed by that provider, not tracked by paleoclaw                                                                             |
+| Costs        | All `0`; the hosted half of a hybrid ref is billed by that provider, not tracked by paleoclaw                                                                            |
 
 ```bash
 llmman list
@@ -401,7 +401,7 @@ the machine.
 | Mechanism                         | Decides                    | Switches on                                                    |
 | --------------------------------- | -------------------------- | -------------------------------------------------------------- |
 | llmman hybrid pair                | Per request, inside llmman | Request size versus local context, or an explicit route header |
-| `agents.defaults.model.fallbacks` | Per turn, inside paleoclaw  | Provider errors, timeouts, rate limits, auth failures          |
+| `agents.defaults.model.fallbacks` | Per turn, inside paleoclaw | Provider errors, timeouts, rate limits, auth failures          |
 
 They compose. A common shape is a hybrid pair as `primary` with a direct hosted
 model as a fallback for when llmman itself is down:

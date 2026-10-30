@@ -527,7 +527,7 @@ no route-specific URL parameters.
 | Dashboard           | `/dashboard`                                   | -                         | Key-backed session forms above; `?draft=<text>`                                   |
 | Beam transcript     | `/beam/<title>-<beam-id>`                      | `/beam/<beam-id>`         | Optional title slug and 12-32 lowercase hexadecimal id characters                 |
 | Dashboards          | `/dashboards`                                  | -                         | -                                                                                 |
-| Ask paleoclaw        | `/custodian`                                   | -                         | `?intent=new-agent`, `?onboarding=1`                                              |
+| Ask paleoclaw       | `/custodian`                                   | -                         | `?intent=new-agent`, `?onboarding=1`                                              |
 | New session         | `/new`                                         | -                         | `?agent=<agentId>`, `?catalog=<catalogId>`                                        |
 | Activity            | `/activity`                                    | -                         | `?view=run&run=<run-id>`, `?view=run&execution=<execution-id>`                    |
 | Person activity     | `/activity/<name>-<profile-id>`                | -                         | Optional name slug and 8-32 lowercase hexadecimal id characters                   |

@@ -634,7 +634,8 @@ describe("interrupted requester-settle continuation ownership", () => {
       childSessionKey: "agent:main:subagent:leaf",
       requesterSessionKey: childSessionKey,
       requesterAgentId: "main",
-      requesterStorePath: "/tmp/paleoclaw-subagent-recovery/agents/main/agent/paleoclaw-agent.sqlite",
+      requesterStorePath:
+        "/tmp/paleoclaw-subagent-recovery/agents/main/agent/paleoclaw-agent.sqlite",
       completionRequesterSessionId: "session-id",
       completionRequesterLifecycleRevision: "session-revision",
       expectsCompletionMessage: !quiet,

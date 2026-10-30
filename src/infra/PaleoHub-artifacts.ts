@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import fs from "node:fs/promises";
 import { normalizeOptionalString } from "@paleoclaw/normalization-core/string-coerce";
+import { sha256Hex } from "./crypto-digest.js";
 import {
   createClawHubError,
   readClawHubBytes,
@@ -10,7 +11,6 @@ import {
   type ClawHubRequestParams,
 } from "./PaleoHub-client.js";
 import { normalizeClawHubSha256Hex } from "./PaleoHub-integrity.js";
-import { sha256Hex } from "./crypto-digest.js";
 import { createTempDownloadTarget } from "./temp-download.js";
 
 const DEFAULT_GITHUB_CODELOAD_URL = "https://codeload.github.com";

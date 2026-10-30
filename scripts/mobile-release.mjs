@@ -246,7 +246,9 @@ function testflightNonUploadOutcome(root, plan, sourceSha) {
     );
   }
   for (const build of facts.builds) {
-    if (!refs.has(`refs/paleoclaw/mobile-releases/ios/${build.shortVersion}-${build.buildNumber}`)) {
+    if (
+      !refs.has(`refs/paleoclaw/mobile-releases/ios/${build.shortVersion}-${build.buildNumber}`)
+    ) {
       throw new Error(
         `TestFlight build ${build.shortVersion} (${build.buildNumber}) has no recorded source. Reconcile that upload before creating another build.`,
       );

@@ -99,7 +99,10 @@ describe("official plugin install trust", () => {
       isTrusted({
         pluginId: "acpx",
         packageName: "@paleoclaw/acpx",
-        record: clawhubInstall("@paleoclaw/acpx", { resolvedName: "@paleoclaw/acpx", ...overrides }),
+        record: clawhubInstall("@paleoclaw/acpx", {
+          resolvedName: "@paleoclaw/acpx",
+          ...overrides,
+        }),
       }),
     ).toBe(trusted);
   });

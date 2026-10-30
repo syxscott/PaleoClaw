@@ -193,7 +193,9 @@ export async function withTempHeartbeatSandbox<T>(
     unsetEnvVars?: string[];
   },
 ): Promise<T> {
-  const tmpDir = await fs.mkdtemp(path.join(sandboxDirs.make(), options?.prefix ?? "paleoclaw-hb-"));
+  const tmpDir = await fs.mkdtemp(
+    path.join(sandboxDirs.make(), options?.prefix ?? "paleoclaw-hb-"),
+  );
   const storePath = path.join(tmpDir, "sessions.json");
   const replySpy = createHeartbeatReplySpy();
   const envNames = new Set(["OPENCLAW_STATE_DIR", ...(options?.unsetEnvVars ?? [])]);

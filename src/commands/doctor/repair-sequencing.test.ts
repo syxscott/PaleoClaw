@@ -514,7 +514,9 @@ describe("doctor repair sequencing", () => {
     mocks.repairMissingConfiguredPluginInstalls.mockImplementationOnce(async () => {
       mistralInstalled = true;
       return {
-        changes: ['Installed missing configured plugin "mistral" from @paleoclaw/mistral-provider.'],
+        changes: [
+          'Installed missing configured plugin "mistral" from @paleoclaw/mistral-provider.',
+        ],
         warnings: [],
         repairedPluginIds: ["mistral"],
         pluginInventoryChanged: true,

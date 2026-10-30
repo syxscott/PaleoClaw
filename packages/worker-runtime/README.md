@@ -75,8 +75,8 @@ adopting a polling optimization.
 
 ## Imports
 
-| Entrypoint                           | Purpose                                                                       |
-| ------------------------------------ | ----------------------------------------------------------------------------- |
+| Entrypoint                            | Purpose                                                                       |
+| ------------------------------------- | ----------------------------------------------------------------------------- |
 | `@paleoclaw/worker-runtime`           | Host scheduler, admission capacity, pool types, errors, and owned-task joins. |
 | `@paleoclaw/worker-runtime/worker`    | Worker task protocol and native-section control.                              |
 | `@paleoclaw/worker-runtime/lifecycle` | Retained operations and worker lifecycle contracts.                           |

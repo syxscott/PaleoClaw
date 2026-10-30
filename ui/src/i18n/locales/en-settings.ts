@@ -1394,7 +1394,8 @@ const enSettings = {
         install: "Choose Set up Chrome on this device to prepare the native host.",
         open_chrome:
           "Installation requested. Open or restart Chrome on this device and approve OpenClaw.",
-        approve_extension: "Approve paleoclaw in Chrome on this device, then verify the connection.",
+        approve_extension:
+          "Approve paleoclaw in Chrome on this device, then verify the connection.",
         install_from_store:
           "Add paleoclaw from the Chrome Web Store on this device, then verify the connection.",
         check_connection: "Choose Verify connection to check this host's Chrome relay.",

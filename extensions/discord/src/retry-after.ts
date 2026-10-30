@@ -1,4 +1,7 @@
-import { asFiniteNumberInRange, parseStrictFiniteNumber } from "paleoclaw/plugin-sdk/number-runtime";
+import {
+  asFiniteNumberInRange,
+  parseStrictFiniteNumber,
+} from "paleoclaw/plugin-sdk/number-runtime";
 
 const RETRY_AFTER_BODY_SECONDS_RE = /^(?:\d+\.?\d*|\.\d+)$/;
 const MAX_SAFE_RETRY_AFTER_SECONDS = Number.MAX_SAFE_INTEGER / 1000;

@@ -127,7 +127,12 @@ function localAttachment(
 ): AttachmentItem {
   return {
     type: "attachment",
-    attachment: { kind, label, url: `/tmp/paleoclaw/${crypto.randomUUID()}/${label}`, ...overrides },
+    attachment: {
+      kind,
+      label,
+      url: `/tmp/paleoclaw/${crypto.randomUUID()}/${label}`,
+      ...overrides,
+    },
   };
 }
 
