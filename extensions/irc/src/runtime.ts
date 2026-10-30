@@ -1,14 +1,11 @@
-import type { PluginRuntime } from "paleoclaw/plugin-sdk/irc";
+import { createPluginRuntimeStore, type PluginRuntime } from "paleoclaw/plugin-sdk/runtime-store";
 
-let runtime: PluginRuntime | null = null;
-
-export function setIrcRuntime(next: PluginRuntime) {
-  runtime = next;
-}
-
-export function getIrcRuntime(): PluginRuntime {
-  if (!runtime) {
-    throw new Error("IRC runtime not initialized");
-  }
-  return runtime;
-}
+const {
+  setRuntime: setIrcRuntime,
+  getRuntime: getIrcRuntime,
+  tryGetRuntime: getOptionalIrcRuntime,
+} = createPluginRuntimeStore<PluginRuntime>({
+  pluginId: "irc",
+  errorMessage: "IRC runtime not initialized",
+});
+export { getIrcRuntime, getOptionalIrcRuntime, setIrcRuntime };

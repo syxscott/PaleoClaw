@@ -1,243 +1,100 @@
 import { randomUUID } from "node:crypto";
+import { normalizeOptionalString } from "@paleoclaw/normalization-core/string-coerce";
+import { truncateUtf16Safe } from "@paleoclaw/normalization-core/utf16-slice";
 import { getAcpSessionManager } from "../../../acp/control-plane/manager.js";
-import {
-  cleanupFailedAcpSpawn,
-  type AcpSpawnRuntimeCloseHandle,
-} from "../../../acp/control-plane/spawn.js";
+import { resolveAcpSessionResolutionError } from "../../../acp/control-plane/manager.utils.js";
+import { cleanupFailedAcpSpawn } from "../../../acp/control-plane/spawn.js";
 import {
   isAcpEnabledByPolicy,
   resolveAcpAgentPolicyError,
   resolveAcpDispatchPolicyError,
   resolveAcpDispatchPolicyMessage,
 } from "../../../acp/policy.js";
-import { AcpRuntimeError } from "../../../acp/runtime/errors.js";
+import { resolveSessionStorePathForAcp } from "../../../acp/runtime/session-meta.js";
+import { closeAdmittedRunDelegatedAuthority } from "../../../agents/admitted-run-context.js";
+import { listAgentIds } from "../../../agents/agent-roster.js";
+import { resolveSpawnedWorkspaceInheritance } from "../../../agents/spawned-context.js";
+import { resolveAcpSpawnRuntimePolicyError } from "../../../agents/subagents/spawn/acp-spawn-policy.js";
+import { resolveRuntimeCwdForAcpSpawn } from "../../../agents/subagents/spawn/acp-spawn-runtime.js";
 import {
-  resolveAcpSessionCwd,
-  resolveAcpThreadSessionDetailLines,
-} from "../../../acp/runtime/session-identifiers.js";
-import { resolveAcpSpawnRuntimePolicyError } from "../../../agents/acp-spawn.js";
+  readChannelContextAdmissionEvidence,
+  readChannelContextGatewayContextResolver,
+} from "../../../channels/message-access/admission-evidence.js";
+import { updateSessionEntry } from "../../../config/sessions/session-accessor.js";
+import { getGatewayLocalUserIngress } from "../../../gateway/local-user-ingress.js";
+import { formatErrorMessage } from "../../../infra/errors.js";
+import { getSessionBindingService } from "../../../infra/outbound/session-binding-service.js";
+import { getPluginRuntimeGatewayRequestScope } from "../../../plugins/runtime/gateway-request-scope.js";
 import {
-  resolveThreadBindingIntroText,
-  resolveThreadBindingThreadName,
-} from "../../../channels/thread-bindings-messages.js";
+  captureSessionTarget,
+  runSessionMutation,
+} from "../../../sessions/session-controller.lifecycle.js";
 import {
-  formatThreadBindingDisabledError,
-  formatThreadBindingSpawnDisabledError,
-  resolveThreadBindingIdleTimeoutMsForChannel,
-  resolveThreadBindingMaxAgeMsForChannel,
-  resolveThreadBindingSpawnPolicy,
-} from "../../../channels/thread-bindings-policy.js";
-import type { OpenClawConfig } from "../../../config/config.js";
-import type { SessionAcpMeta } from "../../../config/sessions/types.js";
-import { callGateway } from "../../../gateway/call.js";
-import {
-  getSessionBindingService,
-  type SessionBindingRecord,
-} from "../../../infra/outbound/session-binding-service.js";
+  captureSessionControllerStop,
+  stopSession,
+} from "../../../sessions/session-controller.stop.js";
+import { stopSubagentsForRequester } from "../abort-operation.js";
+import { formatAbortReplyText } from "../abort.js";
+import { prepareChannelRunAdmission } from "../channel-run-admission.js";
+import { commandReply } from "../command-gates.js";
 import type { CommandHandlerResult, HandleCommandsParams } from "../commands-types.js";
 import {
-  resolveAcpCommandAccountId,
-  resolveAcpCommandBindingContext,
-  resolveAcpCommandConversationId,
-} from "./context.js";
+  bindSpawnedAcpSession,
+  resolveBoundReplyPayload,
+  type SpawnedAcpSessionBinding,
+} from "./bindings.js";
 import {
   ACP_STEER_OUTPUT_LIMIT,
-  collectAcpErrorText,
+  acpCommandErrorReply,
   parseSpawnInput,
   parseSteerInput,
   resolveCommandRequestId,
-  stopWithText,
-  type AcpSpawnThreadMode,
   withAcpCommandErrorBoundary,
 } from "./shared.js";
 import { resolveAcpTargetSessionKey } from "./targets.js";
-
-async function bindSpawnedAcpSessionToThread(params: {
+async function persistSpawnedSessionLabel(params: {
   commandParams: HandleCommandsParams;
   sessionKey: string;
   agentId: string;
   label?: string;
-  threadMode: AcpSpawnThreadMode;
-  sessionMeta?: SessionAcpMeta;
-}): Promise<{ ok: true; binding: SessionBindingRecord } | { ok: false; error: string }> {
-  const { commandParams, threadMode } = params;
-  if (threadMode === "off") {
-    return {
-      ok: false,
-      error: "internal: thread binding is disabled for this spawn",
-    };
+}): Promise<void> {
+  const label = normalizeOptionalString(params.label);
+  if (!label) {
+    return;
   }
 
-  const bindingContext = resolveAcpCommandBindingContext(commandParams);
-  const channel = bindingContext.channel;
-  if (!channel) {
-    return {
-      ok: false,
-      error: "ACP thread binding requires a channel context.",
-    };
-  }
-
-  const accountId = resolveAcpCommandAccountId(commandParams);
-  const spawnPolicy = resolveThreadBindingSpawnPolicy({
-    cfg: commandParams.cfg,
-    channel,
-    accountId,
-    kind: "acp",
+  const now = Date.now();
+  // Cross-agent ACP keys belong to the target agent's store, which can differ
+  // from the requester's store during spawn.
+  const { storePath, agentId } = resolveSessionStorePathForAcp({
+    cfg: params.commandParams.cfg,
+    sessionKey: params.sessionKey,
+    agentId: params.agentId,
   });
-  if (!spawnPolicy.enabled) {
-    return {
-      ok: false,
-      error: formatThreadBindingDisabledError({
-        channel: spawnPolicy.channel,
-        accountId: spawnPolicy.accountId,
-        kind: "acp",
-      }),
-    };
-  }
-  if (!spawnPolicy.spawnEnabled) {
-    return {
-      ok: false,
-      error: formatThreadBindingSpawnDisabledError({
-        channel: spawnPolicy.channel,
-        accountId: spawnPolicy.accountId,
-        kind: "acp",
-      }),
-    };
-  }
 
-  const bindingService = getSessionBindingService();
-  const capabilities = bindingService.getCapabilities({
-    channel: spawnPolicy.channel,
-    accountId: spawnPolicy.accountId,
-  });
-  if (!capabilities.adapterAvailable) {
-    return {
-      ok: false,
-      error: `Thread bindings are unavailable for ${channel}.`,
-    };
-  }
-  if (!capabilities.bindSupported) {
-    return {
-      ok: false,
-      error: `Thread bindings are unavailable for ${channel}.`,
-    };
-  }
-
-  const currentThreadId = bindingContext.threadId ?? "";
-  const currentConversationId = bindingContext.conversationId?.trim() || "";
-  const requiresThreadIdForHere = channel !== "telegram";
-  if (
-    threadMode === "here" &&
-    ((requiresThreadIdForHere && !currentThreadId) ||
-      (!requiresThreadIdForHere && !currentConversationId))
-  ) {
-    return {
-      ok: false,
-      error: `--thread here requires running /acp spawn inside an active ${channel} thread/conversation.`,
-    };
-  }
-
-  const placement = channel === "telegram" ? "current" : currentThreadId ? "current" : "child";
-  if (!capabilities.placements.includes(placement)) {
-    return {
-      ok: false,
-      error: `Thread bindings do not support ${placement} placement for ${channel}.`,
-    };
-  }
-  if (!currentConversationId) {
-    return {
-      ok: false,
-      error: `Could not resolve a ${channel} conversation for ACP thread spawn.`,
-    };
-  }
-
-  const senderId = commandParams.command.senderId?.trim() || "";
-  if (placement === "current") {
-    const existingBinding = bindingService.resolveByConversation({
-      channel: spawnPolicy.channel,
-      accountId: spawnPolicy.accountId,
-      conversationId: currentConversationId,
-    });
-    const boundBy =
-      typeof existingBinding?.metadata?.boundBy === "string"
-        ? existingBinding.metadata.boundBy.trim()
-        : "";
-    if (existingBinding && boundBy && boundBy !== "system" && senderId && senderId !== boundBy) {
-      return {
-        ok: false,
-        error: `Only ${boundBy} can rebind this ${channel === "telegram" ? "conversation" : "thread"}.`,
+  // Only the requester store has an in-memory snapshot to keep coherent.
+  params.commandParams.command.assertOwnerCurrent?.();
+  if (params.commandParams.sessionStore && params.commandParams.storePath === storePath) {
+    const existing = params.commandParams.sessionStore[params.sessionKey];
+    if (existing) {
+      params.commandParams.sessionStore[params.sessionKey] = {
+        ...existing,
+        label,
+        updatedAt: now,
       };
     }
   }
-
-  const label = params.label || params.agentId;
-  const conversationId = currentConversationId;
-
-  try {
-    const binding = await bindingService.bind({
-      targetSessionKey: params.sessionKey,
-      targetKind: "session",
-      conversation: {
-        channel: spawnPolicy.channel,
-        accountId: spawnPolicy.accountId,
-        conversationId,
-      },
-      placement,
-      metadata: {
-        threadName: resolveThreadBindingThreadName({
-          agentId: params.agentId,
-          label,
-        }),
-        agentId: params.agentId,
-        label,
-        boundBy: senderId || "unknown",
-        introText: resolveThreadBindingIntroText({
-          agentId: params.agentId,
-          label,
-          idleTimeoutMs: resolveThreadBindingIdleTimeoutMsForChannel({
-            cfg: commandParams.cfg,
-            channel: spawnPolicy.channel,
-            accountId: spawnPolicy.accountId,
-          }),
-          maxAgeMs: resolveThreadBindingMaxAgeMsForChannel({
-            cfg: commandParams.cfg,
-            channel: spawnPolicy.channel,
-            accountId: spawnPolicy.accountId,
-          }),
-          sessionCwd: resolveAcpSessionCwd(params.sessionMeta),
-          sessionDetails: resolveAcpThreadSessionDetailLines({
-            sessionKey: params.sessionKey,
-            meta: params.sessionMeta,
-          }),
-        }),
-      },
-    });
-    return {
-      ok: true,
-      binding,
-    };
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    return {
-      ok: false,
-      error: message || `Failed to bind a ${channel} thread/conversation to the new ACP session.`,
-    };
-  }
-}
-
-async function cleanupFailedSpawn(params: {
-  cfg: OpenClawConfig;
-  sessionKey: string;
-  shouldDeleteSession: boolean;
-  initializedRuntime?: AcpSpawnRuntimeCloseHandle;
-}) {
-  await cleanupFailedAcpSpawn({
-    cfg: params.cfg,
-    sessionKey: params.sessionKey,
-    shouldDeleteSession: params.shouldDeleteSession,
-    deleteTranscript: false,
-    runtimeCloseHandle: params.initializedRuntime,
-  });
+  await updateSessionEntry(
+    {
+      storePath,
+      agentId,
+      sessionKey: params.sessionKey,
+    },
+    () => {
+      params.commandParams.command.assertOwnerCurrent?.();
+      return { label, updatedAt: now };
+    },
+  );
 }
 
 export async function handleAcpSpawnAction(
@@ -245,119 +102,147 @@ export async function handleAcpSpawnAction(
   restTokens: string[],
 ): Promise<CommandHandlerResult> {
   if (!isAcpEnabledByPolicy(params.cfg)) {
-    return stopWithText("ACP is disabled by policy (`acp.enabled=false`).");
+    return commandReply("ACP is disabled by policy (`acp.enabled=false`).");
   }
 
   const parsed = parseSpawnInput(params, restTokens);
   if (!parsed.ok) {
-    return stopWithText(`⚠️ ${parsed.error}`);
+    return commandReply(`⚠️ ${parsed.error}`);
   }
 
   const spawn = parsed.value;
-  const runtimePolicyError = resolveAcpSpawnRuntimePolicyError({
+  const runtimePolicyError = await resolveAcpSpawnRuntimePolicyError({
     cfg: params.cfg,
+    requesterAgentId: params.agentId,
     requesterSessionKey: params.sessionKey,
   });
   if (runtimePolicyError) {
-    return stopWithText(`⚠️ ${runtimePolicyError}`);
+    return commandReply(`⚠️ ${runtimePolicyError}`);
   }
   const agentPolicyError = resolveAcpAgentPolicyError(params.cfg, spawn.agentId);
   if (agentPolicyError) {
-    return stopWithText(
-      collectAcpErrorText({
-        error: agentPolicyError,
-        fallbackCode: "ACP_SESSION_INIT_FAILED",
-        fallbackMessage: "ACP target agent is not allowed by policy.",
-      }),
+    return acpCommandErrorReply(
+      agentPolicyError,
+      "ACP target agent is not allowed by policy.",
+      "ACP_SESSION_INIT_FAILED",
     );
   }
 
   const acpManager = getAcpSessionManager();
-  const sessionKey = `agent:${spawn.agentId}:acp:${randomUUID()}`;
-
-  let initializedBackend = "";
-  let initializedMeta: SessionAcpMeta | undefined;
-  let initializedRuntime: AcpSpawnRuntimeCloseHandle | undefined;
+  // Raw harness ids select a backend, not a new paleoclaw owner. Keep configured
+  // targets in their existing namespace; otherwise mirror sessions_spawn ownership.
+  const ownerAgentId = listAgentIds(params.cfg).includes(spawn.agentId)
+    ? spawn.agentId
+    : params.agentId;
+  const sessionKey = `agent:${ownerAgentId}:acp:${randomUUID()}`;
+  const resolvedCwd = resolveSpawnedWorkspaceInheritance({
+    config: params.cfg,
+    targetAgentId: ownerAgentId,
+    requesterSessionKey: params.sessionKey,
+    explicitWorkspaceDir: spawn.cwd,
+  });
+  let runtimeCwd: string | undefined;
   try {
-    const initialized = await acpManager.initializeSession({
-      cfg: params.cfg,
-      sessionKey,
-      agent: spawn.agentId,
-      mode: spawn.mode,
-      cwd: spawn.cwd,
+    runtimeCwd = await resolveRuntimeCwdForAcpSpawn({
+      resolvedCwd,
+      explicitCwd: spawn.cwd,
     });
-    initializedRuntime = {
-      runtime: initialized.runtime,
-      handle: initialized.handle,
-    };
-    initializedBackend = initialized.handle.backend || initialized.meta.backend;
-    initializedMeta = initialized.meta;
-  } catch (err) {
-    return stopWithText(
-      collectAcpErrorText({
-        error: err,
-        fallbackCode: "ACP_SESSION_INIT_FAILED",
-        fallbackMessage: "Could not initialize ACP session runtime.",
-      }),
+  } catch (error) {
+    return acpCommandErrorReply(
+      error,
+      "Could not resolve ACP session workspace.",
+      "ACP_SESSION_INIT_FAILED",
     );
   }
 
-  let binding: SessionBindingRecord | null = null;
-  if (spawn.thread !== "off") {
-    const bound = await bindSpawnedAcpSessionToThread({
+  let initialized: Awaited<ReturnType<typeof acpManager.initializeSession>>;
+  try {
+    initialized = await acpManager.initializeSession({
+      assertActive: params.command.assertOwnerCurrent,
+      cfg: params.cfg,
+      sessionKey,
+      agentId: ownerAgentId,
+      agent: spawn.agentId,
+      mode: spawn.mode,
+      cwd: runtimeCwd,
+    });
+  } catch (err) {
+    return acpCommandErrorReply(
+      err,
+      "Could not initialize ACP session runtime.",
+      "ACP_SESSION_INIT_FAILED",
+    );
+  }
+
+  const { sessionEntry, closeRuntimeOnFailure, meta: initializedMeta } = initialized;
+  const initializedBackend = initialized.handle.backend || initializedMeta.backend;
+  const cleanupSpawn = () =>
+    cleanupFailedAcpSpawn({
+      cfg: params.cfg,
+      sessionKey,
+      agentId: ownerAgentId,
+      sessionEntry,
+      deleteTranscript: false,
+      closeRuntimeOnFailure,
+    });
+
+  let boundSession: SpawnedAcpSessionBinding | undefined;
+  if (spawn.bind !== "off" || spawn.thread !== "off") {
+    const result = await bindSpawnedAcpSession({
       commandParams: params,
       sessionKey,
-      agentId: spawn.agentId,
-      label: spawn.label,
-      threadMode: spawn.thread,
+      agentId: ownerAgentId,
+      label: spawn.label ?? spawn.agentId,
+      mode:
+        spawn.bind !== "off"
+          ? "conversation"
+          : spawn.thread === "here"
+            ? "thread-here"
+            : "thread-auto",
       sessionMeta: initializedMeta,
     });
-    if (!bound.ok) {
-      await cleanupFailedSpawn({
-        cfg: params.cfg,
-        sessionKey,
-        shouldDeleteSession: true,
-        initializedRuntime,
-      });
-      return stopWithText(`⚠️ ${bound.error}`);
+    if (!result.ok) {
+      await cleanupSpawn();
+      return commandReply(`⚠️ ${result.error}`);
     }
-    binding = bound.binding;
+    boundSession = result.bound;
   }
 
   try {
-    await callGateway({
-      method: "sessions.patch",
-      params: {
-        key: sessionKey,
-        ...(spawn.label ? { label: spawn.label } : {}),
-      },
-      timeoutMs: 10_000,
+    await persistSpawnedSessionLabel({
+      commandParams: params,
+      sessionKey,
+      agentId: ownerAgentId,
+      label: spawn.label,
     });
   } catch (err) {
-    await cleanupFailedSpawn({
-      cfg: params.cfg,
-      sessionKey,
-      shouldDeleteSession: true,
-      initializedRuntime,
-    });
-    const message = err instanceof Error ? err.message : String(err);
-    return stopWithText(`⚠️ ACP spawn failed: ${message}`);
+    await cleanupSpawn();
+    const message = formatErrorMessage(err);
+    return commandReply(`⚠️ ACP spawn failed: ${message}`);
   }
 
   const parts = [
     `✅ Spawned ACP session ${sessionKey} (${spawn.mode}, backend ${initializedBackend}).`,
   ];
-  if (binding) {
-    const currentConversationId = resolveAcpCommandConversationId(params)?.trim() || "";
+  if (boundSession) {
+    const { binding, placement, labelNoun } = boundSession;
     const boundConversationId = binding.conversation.conversationId.trim();
-    const placementLabel = binding.conversation.channel === "telegram" ? "conversation" : "thread";
-    if (currentConversationId && boundConversationId === currentConversationId) {
-      parts.push(`Bound this ${placementLabel} to ${sessionKey}.`);
+    if (placement === "current") {
+      parts.push(`Bound this ${labelNoun} to ${sessionKey}.`);
     } else {
-      parts.push(`Created ${placementLabel} ${boundConversationId} and bound it to ${sessionKey}.`);
+      parts.push(`Created ${labelNoun} ${boundConversationId} and bound it to ${sessionKey}.`);
+    }
+    const boundReplyPayload = await resolveBoundReplyPayload({
+      binding,
+      placement,
+    });
+    if (boundReplyPayload) {
+      return commandReply({ text: parts.join(" "), ...boundReplyPayload });
     }
   } else {
-    parts.push("Session is unbound (use /focus <session-key> to bind this thread/conversation).");
+    parts.push(
+      "Session is unbound (use /acp spawn ... --bind here to create a session bound to this conversation).",
+    );
   }
 
   const dispatchNote = resolveAcpDispatchPolicyMessage(params.cfg);
@@ -365,153 +250,114 @@ export async function handleAcpSpawnAction(
     parts.push(`ℹ️ ${dispatchNote}`);
   }
 
-  const shouldPinBindingNotice =
-    binding?.conversation.channel === "telegram" &&
-    binding.conversation.conversationId.includes(":topic:");
-  if (shouldPinBindingNotice) {
-    return {
-      shouldContinue: false,
-      reply: {
-        text: parts.join(" "),
-        channelData: { telegram: { pin: true } },
-      },
-    };
-  }
-
-  return stopWithText(parts.join(" "));
-}
-
-function resolveAcpSessionForCommandOrStop(params: {
-  acpManager: ReturnType<typeof getAcpSessionManager>;
-  cfg: OpenClawConfig;
-  sessionKey: string;
-}): CommandHandlerResult | null {
-  const resolved = params.acpManager.resolveSession({
-    cfg: params.cfg,
-    sessionKey: params.sessionKey,
-  });
-  if (resolved.kind === "none") {
-    return stopWithText(
-      collectAcpErrorText({
-        error: new AcpRuntimeError(
-          "ACP_SESSION_INIT_FAILED",
-          `Session is not ACP-enabled: ${params.sessionKey}`,
-        ),
-        fallbackCode: "ACP_SESSION_INIT_FAILED",
-        fallbackMessage: "Session is not ACP-enabled.",
-      }),
-    );
-  }
-  if (resolved.kind === "stale") {
-    return stopWithText(
-      collectAcpErrorText({
-        error: resolved.error,
-        fallbackCode: "ACP_SESSION_INIT_FAILED",
-        fallbackMessage: resolved.error.message,
-      }),
-    );
-  }
-  return null;
-}
-
-async function resolveAcpTokenTargetSessionKeyOrStop(params: {
-  commandParams: HandleCommandsParams;
-  restTokens: string[];
-}): Promise<string | CommandHandlerResult> {
-  const token = params.restTokens.join(" ").trim() || undefined;
-  const target = await resolveAcpTargetSessionKey({
-    commandParams: params.commandParams,
-    token,
-  });
-  if (!target.ok) {
-    return stopWithText(`⚠️ ${target.error}`);
-  }
-  return target.sessionKey;
+  return commandReply(parts.join(" "));
 }
 
 async function withResolvedAcpSessionTarget(params: {
   commandParams: HandleCommandsParams;
-  restTokens: string[];
+  token?: string;
   run: (ctx: {
     acpManager: ReturnType<typeof getAcpSessionManager>;
     sessionKey: string;
+    agentId: string;
   }) => Promise<CommandHandlerResult>;
 }): Promise<CommandHandlerResult> {
   const acpManager = getAcpSessionManager();
-  const targetSessionKey = await resolveAcpTokenTargetSessionKeyOrStop({
+  const target = await resolveAcpTargetSessionKey({
     commandParams: params.commandParams,
-    restTokens: params.restTokens,
+    token: params.token,
   });
-  if (typeof targetSessionKey !== "string") {
-    return targetSessionKey;
+  if (!target.ok) {
+    return commandReply(`⚠️ ${target.error}`);
   }
-  const guardFailure = resolveAcpSessionForCommandOrStop({
-    acpManager,
+  const resolved = await acpManager.resolveSessionAsync({
     cfg: params.commandParams.cfg,
-    sessionKey: targetSessionKey,
+    ...target,
+    assertCurrent: params.commandParams.command.assertOwnerCurrent,
   });
-  if (guardFailure) {
-    return guardFailure;
+  params.commandParams.command.assertOwnerCurrent?.();
+  const error = resolveAcpSessionResolutionError(resolved);
+  if (error) {
+    return acpCommandErrorReply(error, error.message, "ACP_SESSION_INIT_FAILED");
   }
   return await params.run({
     acpManager,
-    sessionKey: targetSessionKey,
+    ...target,
   });
 }
 
+/**
+ * Stops the target's controller turns with source `client-session`. When Stop finds no
+ * turn or waiting input, it sends ACP cancel to a backend that may still be running.
+ */
 export async function handleAcpCancelAction(
   params: HandleCommandsParams,
   restTokens: string[],
 ): Promise<CommandHandlerResult> {
   return await withResolvedAcpSessionTarget({
     commandParams: params,
-    restTokens,
-    run: async ({ acpManager, sessionKey }) =>
+    token: normalizeOptionalString(restTokens.join(" ")),
+    run: async ({ acpManager, sessionKey, agentId }) =>
       await withAcpCommandErrorBoundary({
-        run: async () =>
-          await acpManager.cancelSession({
+        run: async () => {
+          const assertCurrent = params.command.assertOwnerCurrent;
+          const { storePath } = resolveSessionStorePathForAcp({
             cfg: params.cfg,
             sessionKey,
-            reason: "manual-cancel",
-          }),
-        fallbackCode: "ACP_TURN_FAILED",
+            agentId,
+          });
+          const target = captureSessionTarget({ storeScope: storePath, sessionKey, agentId });
+          return await runSessionMutation({
+            target,
+            policy: "allow-live",
+            assertCurrent,
+            run: async () => {
+              const stop = stopSession({
+                source: "client-session",
+                capture: captureSessionControllerStop({
+                  targets: [target],
+                  resolveGatewayContext:
+                    readChannelContextGatewayContextResolver(params.rootCtx ?? params.ctx) ??
+                    getPluginRuntimeGatewayRequestScope()?.resolveGatewayContext,
+                }),
+                assertCurrent,
+                hookContext: {
+                  sessionKey,
+                  commandSource: params.command.surface,
+                  senderId: params.command.senderId,
+                },
+                stopChildren: (applyParentStop) =>
+                  stopSubagentsForRequester({
+                    cfg: params.cfg,
+                    requesterSessionKey: sessionKey,
+                    requesterAgentId: agentId,
+                    assertCurrent,
+                    beforeKill: async (sealRootSelection) => {
+                      sealRootSelection();
+                      return await applyParentStop();
+                    },
+                  }),
+              });
+              const outcome = await stop.completed;
+              if (outcome.alreadyFinalizing && !outcome.aborted) {
+                return commandReply(formatAbortReplyText(outcome.childrenStopped, "finalizing"));
+              }
+              if (!outcome.aborted && outcome.queuedCancelled === 0) {
+                await acpManager.cancelSession({
+                  assertActive: assertCurrent,
+                  cfg: params.cfg,
+                  sessionKey,
+                  agentId,
+                  reason: "manual-cancel",
+                });
+              }
+              return commandReply(`✅ Cancel requested for ACP session ${sessionKey}.`);
+            },
+          });
+        },
         fallbackMessage: "ACP cancel failed before completion.",
-        onSuccess: () => stopWithText(`✅ Cancel requested for ACP session ${sessionKey}.`),
       }),
   });
-}
-
-async function runAcpSteer(params: {
-  cfg: OpenClawConfig;
-  sessionKey: string;
-  instruction: string;
-  requestId: string;
-}): Promise<string> {
-  const acpManager = getAcpSessionManager();
-  let output = "";
-
-  await acpManager.runTurn({
-    cfg: params.cfg,
-    sessionKey: params.sessionKey,
-    text: params.instruction,
-    mode: "steer",
-    requestId: params.requestId,
-    onEvent: (event) => {
-      if (event.type !== "text_delta") {
-        return;
-      }
-      if (event.stream && event.stream !== "output") {
-        return;
-      }
-      if (event.text) {
-        output += event.text;
-        if (output.length > ACP_STEER_OUTPUT_LIMIT) {
-          output = `${output.slice(0, ACP_STEER_OUTPUT_LIMIT)}…`;
-        }
-      }
-    },
-  });
-  return output.trim();
 }
 
 export async function handleAcpSteerAction(
@@ -520,54 +366,68 @@ export async function handleAcpSteerAction(
 ): Promise<CommandHandlerResult> {
   const dispatchPolicyError = resolveAcpDispatchPolicyError(params.cfg);
   if (dispatchPolicyError) {
-    return stopWithText(
-      collectAcpErrorText({
-        error: dispatchPolicyError,
-        fallbackCode: "ACP_DISPATCH_DISABLED",
-        fallbackMessage: dispatchPolicyError.message,
-      }),
+    return acpCommandErrorReply(
+      dispatchPolicyError,
+      dispatchPolicyError.message,
+      "ACP_DISPATCH_DISABLED",
     );
   }
 
   const parsed = parseSteerInput(restTokens);
   if (!parsed.ok) {
-    return stopWithText(`⚠️ ${parsed.error}`);
+    return commandReply(`⚠️ ${parsed.error}`);
   }
-  const acpManager = getAcpSessionManager();
-
-  const target = await resolveAcpTargetSessionKey({
+  return await withResolvedAcpSessionTarget({
     commandParams: params,
     token: parsed.value.sessionToken,
-  });
-  if (!target.ok) {
-    return stopWithText(`⚠️ ${target.error}`);
-  }
-
-  const guardFailure = resolveAcpSessionForCommandOrStop({
-    acpManager,
-    cfg: params.cfg,
-    sessionKey: target.sessionKey,
-  });
-  if (guardFailure) {
-    return guardFailure;
-  }
-
-  return await withAcpCommandErrorBoundary({
-    run: async () =>
-      await runAcpSteer({
-        cfg: params.cfg,
-        sessionKey: target.sessionKey,
-        instruction: parsed.value.instruction,
-        requestId: `${resolveCommandRequestId(params)}:steer`,
+    run: async ({ sessionKey, agentId }) =>
+      withAcpCommandErrorBoundary({
+        run: async () => {
+          const requestId = `${resolveCommandRequestId(params)}:steer`;
+          const steeringManager = getAcpSessionManager();
+          let output = "";
+          const admittedRunContext = await prepareChannelRunAdmission({
+            assertSourceCurrent: params.command.assertOwnerCurrent,
+            cfg: params.cfg,
+            runId: requestId,
+            agentId,
+            ingressKind: "acp",
+            boundary: "acp.command.steer",
+            evidence: readChannelContextAdmissionEvidence(params.rootCtx ?? params.ctx),
+            gatewayLocalUserIngress: getGatewayLocalUserIngress(params.rootCtx ?? params.ctx),
+          }).admit("acp");
+          try {
+            await steeringManager.runTurn({
+              admittedRunContext,
+              cfg: params.cfg,
+              sessionKey,
+              agentId,
+              provenance: "agent",
+              text: parsed.value.instruction,
+              mode: "steer",
+              requestId,
+              onEvent: (event) => {
+                if (event.type !== "text_delta" || (event.stream && event.stream !== "output")) {
+                  return;
+                }
+                if (event.text) {
+                  output += event.text;
+                  if (output.length > ACP_STEER_OUTPUT_LIMIT) {
+                    output = `${truncateUtf16Safe(output, ACP_STEER_OUTPUT_LIMIT)}…`;
+                  }
+                }
+              },
+            });
+          } finally {
+            closeAdmittedRunDelegatedAuthority(admittedRunContext);
+          }
+          const steerOutput = output.trim();
+          return commandReply(
+            `✅ ACP steer sent to ${sessionKey}.${steerOutput ? `\n${steerOutput}` : ""}`,
+          );
+        },
+        fallbackMessage: "ACP steer failed before completion.",
       }),
-    fallbackCode: "ACP_TURN_FAILED",
-    fallbackMessage: "ACP steer failed before completion.",
-    onSuccess: (steerOutput) => {
-      if (!steerOutput) {
-        return stopWithText(`✅ ACP steer sent to ${target.sessionKey}.`);
-      }
-      return stopWithText(`✅ ACP steer sent to ${target.sessionKey}.\n${steerOutput}`);
-    },
   });
 }
 
@@ -577,26 +437,22 @@ export async function handleAcpCloseAction(
 ): Promise<CommandHandlerResult> {
   return await withResolvedAcpSessionTarget({
     commandParams: params,
-    restTokens,
-    run: async ({ acpManager, sessionKey }) => {
-      let runtimeNotice = "";
+    token: normalizeOptionalString(restTokens.join(" ")),
+    run: async ({ acpManager, sessionKey, agentId }) => {
+      let runtimeNotice;
       try {
         const closed = await acpManager.closeSession({
+          assertActive: params.command.assertOwnerCurrent,
           cfg: params.cfg,
           sessionKey,
+          agentId,
           reason: "manual-close",
           allowBackendUnavailable: true,
           clearMeta: true,
         });
         runtimeNotice = closed.runtimeNotice ? ` (${closed.runtimeNotice})` : "";
       } catch (error) {
-        return stopWithText(
-          collectAcpErrorText({
-            error,
-            fallbackCode: "ACP_TURN_FAILED",
-            fallbackMessage: "ACP close failed before completion.",
-          }),
-        );
+        return acpCommandErrorReply(error, "ACP close failed before completion.");
       }
 
       const removedBindings = await getSessionBindingService().unbind({
@@ -604,7 +460,7 @@ export async function handleAcpCloseAction(
         reason: "manual",
       });
 
-      return stopWithText(
+      return commandReply(
         `✅ Closed ACP session ${sessionKey}${runtimeNotice}. Removed ${removedBindings.length} binding${removedBindings.length === 1 ? "" : "s"}.`,
       );
     },

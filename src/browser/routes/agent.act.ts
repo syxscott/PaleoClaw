@@ -1,4 +1,3 @@
-import { createSubsystemLogger } from "../../logging/subsystem.js";
 import type { BrowserFormField } from "../client-actions-core.js";
 import { normalizeBrowserFormField } from "../form-fields.js";
 import type { BrowserRouteContext } from "../server-context.js";
@@ -18,8 +17,6 @@ import {
 } from "./agent.shared.js";
 import type { BrowserRouteRegistrar } from "./types.js";
 import { jsonError, toBoolean, toNumber, toStringArray, toStringOrEmpty } from "./utils.js";
-
-const actEvaluateLogger = createSubsystemLogger("gateway/channels/browser/act-evaluate");
 
 export function registerBrowserAgentActRoutes(
   app: BrowserRouteRegistrar,
@@ -244,7 +241,7 @@ export function registerBrowserAgentActRoutes(
                 403,
                 [
                   "wait --fn is disabled by config (browser.evaluateEnabled=false).",
-                  "Docs: /gateway/configuration#browser-paleoclaw-managed-browser",
+                  "Docs: /gateway/configuration#browser-openclaw-managed-browser",
                 ].join("\n"),
               );
             }
@@ -284,15 +281,10 @@ export function registerBrowserAgentActRoutes(
                 403,
                 [
                   "act:evaluate is disabled by config (browser.evaluateEnabled=false).",
-                  "Docs: /gateway/configuration#browser-paleoclaw-managed-browser",
+                  "Docs: /gateway/configuration#browser-openclaw-managed-browser",
                 ].join("\n"),
               );
             }
-            // SECURITY: This feature allows arbitrary code execution in the browser context.
-            // Only enable browser.evaluateEnabled in trusted environments.
-            actEvaluateLogger.warn(
-              "act:evaluate called - arbitrary code execution in browser context",
-            );
             const fn = toStringOrEmpty(body.fn);
             if (!fn) {
               return jsonError(res, 400, "fn is required");

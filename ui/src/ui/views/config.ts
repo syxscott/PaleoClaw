@@ -471,11 +471,9 @@ export function renderConfig(props: ConfigProps) {
         <div class="config-sidebar__header">
           <div class="config-sidebar__title">Settings</div>
           <span
-            class="pill pill--sm ${validity === "valid"
-              ? "pill--ok"
-              : validity === "invalid"
-                ? "pill--danger"
-                : ""}"
+            class="pill pill--sm ${
+              validity === "valid" ? "pill--ok" : validity === "invalid" ? "pill--danger" : ""
+            }"
             >${validity}</span
           >
         </div>
@@ -500,36 +498,44 @@ export function renderConfig(props: ConfigProps) {
               .value=${props.searchQuery}
               @input=${(e: Event) => props.onSearchChange((e.target as HTMLInputElement).value)}
             />
-            ${props.searchQuery
-              ? html`
-                  <button class="config-search__clear" @click=${() => props.onSearchChange("")}>
-                    ×
-                  </button>
-                `
-              : nothing}
+            ${
+              props.searchQuery
+                ? html`
+                    <button class="config-search__clear" @click=${() => props.onSearchChange("")}>
+                      ×
+                    </button>
+                  `
+                : nothing
+            }
           </div>
           <div class="config-search__hint">
             <span class="config-search__hint-label" id="config-tag-filter-label">Tag filters:</span>
             <details class="config-search__tag-picker">
               <summary class="config-search__tag-trigger" aria-labelledby="config-tag-filter-label">
-                ${selectedTags.size === 0
-                  ? html` <span class="config-search__tag-placeholder">Add tags</span> `
-                  : html`
-                      <div class="config-search__tag-chips">
-                        ${Array.from(selectedTags)
-                          .slice(0, 2)
-                          .map(
-                            (tag) => html`<span class="config-search__tag-chip">tag:${tag}</span>`,
-                          )}
-                        ${selectedTags.size > 2
-                          ? html`
-                              <span class="config-search__tag-chip config-search__tag-chip--count"
-                                >+${selectedTags.size - 2}</span
-                              >
-                            `
-                          : nothing}
-                      </div>
-                    `}
+                ${
+                  selectedTags.size === 0
+                    ? html` <span class="config-search__tag-placeholder">Add tags</span> `
+                    : html`
+                        <div class="config-search__tag-chips">
+                          ${Array.from(selectedTags)
+                            .slice(0, 2)
+                            .map(
+                              (tag) =>
+                                html`<span class="config-search__tag-chip">tag:${tag}</span>`,
+                            )}
+                          ${
+                            selectedTags.size > 2
+                              ? html`
+                                  <span
+                                    class="config-search__tag-chip config-search__tag-chip--count"
+                                    >+${selectedTags.size - 2}</span
+                                  >
+                                `
+                              : nothing
+                          }
+                        </div>
+                      `
+                }
                 <span class="config-search__tag-caret" aria-hidden="true">▾</span>
               </summary>
               <div class="config-search__tag-menu">
@@ -604,15 +610,19 @@ export function renderConfig(props: ConfigProps) {
         <!-- Action bar -->
         <div class="config-actions">
           <div class="config-actions__left">
-            ${hasChanges
-              ? html`
-                  <span class="config-changes-badge"
-                    >${props.formMode === "raw"
-                      ? "Unsaved changes"
-                      : `${diff.length} unsaved change${diff.length !== 1 ? "s" : ""}`}</span
-                  >
-                `
-              : html` <span class="config-status muted">No changes</span> `}
+            ${
+              hasChanges
+                ? html`
+                    <span class="config-changes-badge"
+                      >${
+                        props.formMode === "raw"
+                          ? "Unsaved changes"
+                          : `${diff.length} unsaved change${diff.length !== 1 ? "s" : ""}`
+                      }</span
+                    >
+                  `
+                : html` <span class="config-status muted">No changes</span> `
+            }
           </div>
           <div class="config-actions__right">
             <button class="btn btn--sm" ?disabled=${props.loading} @click=${props.onReload}>
@@ -631,129 +641,145 @@ export function renderConfig(props: ConfigProps) {
         </div>
 
         <!-- Diff panel (form mode only - raw mode doesn't have granular diff) -->
-        ${hasChanges && props.formMode === "form"
-          ? html`
-              <details class="config-diff">
-                <summary class="config-diff__summary">
-                  <span>View ${diff.length} pending change${diff.length !== 1 ? "s" : ""}</span>
-                  <svg
-                    class="config-diff__chevron"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                  >
-                    <polyline points="6 9 12 15 18 9"></polyline>
-                  </svg>
-                </summary>
-                <div class="config-diff__content">
-                  ${diff.map(
-                    (change) => html`
-                      <div class="config-diff__item">
-                        <div class="config-diff__path">${change.path}</div>
-                        <div class="config-diff__values">
-                          <span class="config-diff__from">${truncateValue(change.from)}</span>
-                          <span class="config-diff__arrow">→</span>
-                          <span class="config-diff__to">${truncateValue(change.to)}</span>
+        ${
+          hasChanges && props.formMode === "form"
+            ? html`
+                <details class="config-diff">
+                  <summary class="config-diff__summary">
+                    <span>View ${diff.length} pending change${diff.length !== 1 ? "s" : ""}</span>
+                    <svg
+                      class="config-diff__chevron"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                  </summary>
+                  <div class="config-diff__content">
+                    ${diff.map(
+                      (change) => html`
+                        <div class="config-diff__item">
+                          <div class="config-diff__path">${change.path}</div>
+                          <div class="config-diff__values">
+                            <span class="config-diff__from">${truncateValue(change.from)}</span>
+                            <span class="config-diff__arrow">→</span>
+                            <span class="config-diff__to">${truncateValue(change.to)}</span>
+                          </div>
                         </div>
-                      </div>
+                      `,
+                    )}
+                  </div>
+                </details>
+              `
+            : nothing
+        }
+        ${
+          activeSectionMeta && props.formMode === "form"
+            ? html`
+                <div class="config-section-hero">
+                  <div class="config-section-hero__icon">
+                    ${getSectionIcon(props.activeSection ?? "")}
+                  </div>
+                  <div class="config-section-hero__text">
+                    <div class="config-section-hero__title">${activeSectionMeta.label}</div>
+                    ${
+                      activeSectionMeta.description
+                        ? html`<div class="config-section-hero__desc">
+                            ${activeSectionMeta.description}
+                          </div>`
+                        : nothing
+                    }
+                  </div>
+                </div>
+              `
+            : nothing
+        }
+        ${
+          allowSubnav
+            ? html`
+                <div class="config-subnav">
+                  <button
+                    class="config-subnav__item ${effectiveSubsection === null ? "active" : ""}"
+                    @click=${() => props.onSubsectionChange(ALL_SUBSECTION)}
+                  >
+                    All
+                  </button>
+                  ${subsections.map(
+                    (entry) => html`
+                      <button
+                        class="config-subnav__item ${
+                          effectiveSubsection === entry.key ? "active" : ""
+                        }"
+                        title=${entry.description || entry.label}
+                        @click=${() => props.onSubsectionChange(entry.key)}
+                      >
+                        ${entry.label}
+                      </button>
                     `,
                   )}
                 </div>
-              </details>
-            `
-          : nothing}
-        ${activeSectionMeta && props.formMode === "form"
-          ? html`
-              <div class="config-section-hero">
-                <div class="config-section-hero__icon">
-                  ${getSectionIcon(props.activeSection ?? "")}
-                </div>
-                <div class="config-section-hero__text">
-                  <div class="config-section-hero__title">${activeSectionMeta.label}</div>
-                  ${activeSectionMeta.description
-                    ? html`<div class="config-section-hero__desc">
-                        ${activeSectionMeta.description}
-                      </div>`
-                    : nothing}
-                </div>
-              </div>
-            `
-          : nothing}
-        ${allowSubnav
-          ? html`
-              <div class="config-subnav">
-                <button
-                  class="config-subnav__item ${effectiveSubsection === null ? "active" : ""}"
-                  @click=${() => props.onSubsectionChange(ALL_SUBSECTION)}
-                >
-                  All
-                </button>
-                ${subsections.map(
-                  (entry) => html`
-                    <button
-                      class="config-subnav__item ${effectiveSubsection === entry.key
-                        ? "active"
-                        : ""}"
-                      title=${entry.description || entry.label}
-                      @click=${() => props.onSubsectionChange(entry.key)}
-                    >
-                      ${entry.label}
-                    </button>
-                  `,
-                )}
-              </div>
-            `
-          : nothing}
+              `
+            : nothing
+        }
 
         <!-- Form content -->
         <div class="config-content">
-          ${props.formMode === "form"
-            ? html`
-                ${props.schemaLoading
-                  ? html`
-                      <div class="config-loading">
-                        <div class="config-loading__spinner"></div>
-                        <span>Loading schema…</span>
-                      </div>
-                    `
-                  : renderConfigForm({
-                      schema: analysis.schema,
-                      uiHints: props.uiHints,
-                      value: props.formValue,
-                      disabled: props.loading || !props.formValue,
-                      unsupportedPaths: analysis.unsupportedPaths,
-                      onPatch: props.onFormPatch,
-                      searchQuery: props.searchQuery,
-                      activeSection: props.activeSection,
-                      activeSubsection: effectiveSubsection,
-                    })}
-                ${formUnsafe
-                  ? html`
-                      <div class="callout danger" style="margin-top: 12px">
-                        Form view can't safely edit some fields. Use Raw to avoid losing config
-                        entries.
-                      </div>
-                    `
-                  : nothing}
-              `
-            : html`
-                <label class="field config-raw-field">
-                  <span>Raw JSON5</span>
-                  <textarea
-                    .value=${props.raw}
-                    @input=${(e: Event) =>
-                      props.onRawChange((e.target as HTMLTextAreaElement).value)}
-                  ></textarea>
-                </label>
-              `}
+          ${
+            props.formMode === "form"
+              ? html`
+                  ${
+                    props.schemaLoading
+                      ? html`
+                          <div class="config-loading">
+                            <div class="config-loading__spinner"></div>
+                            <span>Loading schema…</span>
+                          </div>
+                        `
+                      : renderConfigForm({
+                          schema: analysis.schema,
+                          uiHints: props.uiHints,
+                          value: props.formValue,
+                          disabled: props.loading || !props.formValue,
+                          unsupportedPaths: analysis.unsupportedPaths,
+                          onPatch: props.onFormPatch,
+                          searchQuery: props.searchQuery,
+                          activeSection: props.activeSection,
+                          activeSubsection: effectiveSubsection,
+                        })
+                  }
+                  ${
+                    formUnsafe
+                      ? html`
+                          <div class="callout danger" style="margin-top: 12px">
+                            Form view can't safely edit some fields. Use Raw to avoid losing config
+                            entries.
+                          </div>
+                        `
+                      : nothing
+                  }
+                `
+              : html`
+                  <label class="field config-raw-field">
+                    <span>Raw JSON5</span>
+                    <textarea
+                      .value=${props.raw}
+                      @input=${(e: Event) =>
+                        props.onRawChange((e.target as HTMLTextAreaElement).value)}
+                    ></textarea>
+                  </label>
+                `
+          }
         </div>
 
-        ${props.issues.length > 0
-          ? html`<div class="callout danger" style="margin-top: 12px;">
-              <pre class="code-block">${JSON.stringify(props.issues, null, 2)}</pre>
-            </div>`
-          : nothing}
+        ${
+          props.issues.length > 0
+            ? html`<div class="callout danger" style="margin-top: 12px;">
+                <pre class="code-block">${JSON.stringify(props.issues, null, 2)}</pre>
+              </div>`
+            : nothing
+        }
       </main>
     </div>
   `;

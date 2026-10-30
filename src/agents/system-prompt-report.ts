@@ -1,82 +1,169 @@
-import type { AgentTool } from "@mariozechner/pi-agent-core";
+/**
+ * System prompt report builder.
+ *
+ * Session metadata uses this report to account for prompt size, bootstrap file
+ * injection, skills, and tool schema footprint without storing raw prompt text.
+ */
+import {
+  splitSystemPromptCacheBoundary,
+  SYSTEM_PROMPT_CACHE_BOUNDARY,
+} from "@paleoclaw/ai/internal/shared";
+import { getPublishedRuntimeToolInputSchema } from "@paleoclaw/ai/internal/tool-schema";
+import { sha256Hex } from "@paleoclaw/normalization-core/node-crypto";
 import type { SessionSystemPromptReport } from "../config/sessions/types.js";
-import { buildBootstrapInjectionStats } from "./bootstrap-budget.js";
-import type { EmbeddedContextFile } from "./pi-embedded-helpers.js";
-import type { WorkspaceBootstrapFile } from "./workspace.js";
+import { pruneMapToMaxSize } from "../infra/map-size.js";
+import { classifyAgentToolSource } from "../plugins/tool-metadata.js";
+import type { BootstrapInjectionStat } from "./bootstrap-budget.types.js";
+import type { ToolSearchCatalogEntry } from "./tool-search-types.js";
+type PromptReportTool = { name: string; parameters: unknown; description?: string; label?: string };
 
-function extractBetween(
-  input: string,
-  startMarker: string,
-  endMarker: string,
-): { text: string; found: boolean } {
-  const start = input.indexOf(startMarker);
-  if (start === -1) {
-    return { text: "", found: false };
-  }
-  const end = input.indexOf(endMarker, start + startMarker.length);
-  if (end === -1) {
-    return { text: input.slice(start), found: true };
-  }
-  return { text: input.slice(start, end), found: true };
-}
+type ToolReportEntry = SessionSystemPromptReport["tools"]["entries"][number];
+
+// Finalization rebuilds tool objects, while Code Mode updates retained descriptions.
+// Cache only the summary digest, with bounded key size and entry count.
+const toolSummaryHashCache = new Map<string, string>();
+const MAX_TOOL_SUMMARY_HASHES = 512;
+const MAX_CACHED_TOOL_SUMMARY_CHARS = 4_096;
+const toolSchemaStatsCache = new WeakMap<
+  object,
+  Pick<ToolReportEntry, "propertiesCount" | "schemaChars" | "schemaHash">
+>();
 
 function parseSkillBlocks(skillsPrompt: string): Array<{ name: string; blockChars: number }> {
-  const prompt = skillsPrompt.trim();
-  if (!prompt) {
-    return [];
-  }
-  const blocks = Array.from(prompt.matchAll(/<skill>[\s\S]*?<\/skill>/gi)).map(
-    (match) => match[0] ?? "",
-  );
-  return blocks
-    .map((block) => {
-      const name = block.match(/<name>\s*([^<]+?)\s*<\/name>/i)?.[1]?.trim() || "(unknown)";
-      return { name, blockChars: block.length };
-    })
-    .filter((b) => b.blockChars > 0);
+  return Array.from(skillsPrompt.matchAll(/<skill>[\s\S]*?<\/skill>/gi), (match) => {
+    const block = match[0];
+    const name = block.match(/<name>\s*([^<]+?)\s*<\/name>/i)?.[1]?.trim() || "(unknown)";
+    return { name, blockChars: block.length };
+  });
 }
 
-function buildToolsEntries(tools: AgentTool[]): SessionSystemPromptReport["tools"]["entries"] {
+function buildToolSchemaStats(
+  parameters: unknown,
+): Pick<ToolReportEntry, "propertiesCount" | "schemaChars" | "schemaHash"> {
+  if (!parameters || typeof parameters !== "object") {
+    return { schemaChars: 0, schemaHash: sha256Hex(""), propertiesCount: null };
+  }
+  const cached = toolSchemaStatsCache.get(parameters);
+  if (cached) {
+    return cached;
+  }
+  let schemaJson;
+  try {
+    schemaJson = JSON.stringify(parameters);
+  } catch {
+    schemaJson = "";
+  }
+  const properties = (parameters as Record<string, unknown>).properties;
+  const stats = {
+    schemaChars: schemaJson.length,
+    schemaHash: sha256Hex(schemaJson),
+    propertiesCount:
+      properties && typeof properties === "object" ? Object.keys(properties).length : null,
+  };
+  // Tool parameter objects are reused across runs; cache their stable size/hash
+  // so report generation stays cheap during frequent prompt rebuilds.
+  toolSchemaStatsCache.set(parameters, stats);
+  return stats;
+}
+
+function resolveSummaryHash(summary: string): string {
+  if (summary.length > MAX_CACHED_TOOL_SUMMARY_CHARS) {
+    return sha256Hex(summary);
+  }
+  const cached = toolSummaryHashCache.get(summary);
+  if (cached !== undefined) {
+    return cached;
+  }
+  const hash = sha256Hex(summary);
+  toolSummaryHashCache.set(summary, hash);
+  pruneMapToMaxSize(toolSummaryHashCache, MAX_TOOL_SUMMARY_HASHES);
+  return hash;
+}
+
+function buildToolsEntries(
+  tools: PromptReportTool[],
+  catalogEntries?: readonly ToolSearchCatalogEntry[],
+): SessionSystemPromptReport["tools"]["entries"] {
   return tools.map((tool) => {
     const name = tool.name;
     const summary = tool.description?.trim() || tool.label?.trim() || "";
     const summaryChars = summary.length;
-    const schemaChars = (() => {
-      if (!tool.parameters || typeof tool.parameters !== "object") {
-        return 0;
-      }
-      try {
-        return JSON.stringify(tool.parameters).length;
-      } catch {
-        return 0;
-      }
-    })();
-    const propertiesCount = (() => {
-      const schema =
-        tool.parameters && typeof tool.parameters === "object"
-          ? (tool.parameters as Record<string, unknown>)
-          : null;
-      const props = schema && typeof schema.properties === "object" ? schema.properties : null;
-      if (!props || typeof props !== "object") {
-        return null;
-      }
-      return Object.keys(props as Record<string, unknown>).length;
-    })();
-    return { name, summaryChars, schemaChars, propertiesCount };
+    const schemaStats = buildToolSchemaStats(tool.parameters);
+    const catalogEntry = catalogEntries?.find(
+      (entry) => entry.directVisible && entry.name === name,
+    );
+    const provenance = catalogEntry ?? classifyAgentToolSource(tool);
+    return {
+      name,
+      summaryChars,
+      summaryHash: resolveSummaryHash(summary),
+      ...schemaStats,
+      source: provenance.source,
+      sourceName: provenance.sourceName,
+      serverName: provenance.mcp?.serverName,
+    };
   });
 }
 
-function extractToolListText(systemPrompt: string): string {
-  const markerA = "Tool names are case-sensitive. Call tools exactly as listed.\n";
-  const markerB =
-    "\nTOOLS.md does not control tool availability; it is user guidance for how to use external tools.";
-  const extracted = extractBetween(systemPrompt, markerA, markerB);
-  if (!extracted.found) {
-    return "";
-  }
-  return extracted.text.replace(markerA, "").trim();
+function buildDeferredToolsReport(
+  catalogEntries: readonly ToolSearchCatalogEntry[],
+): NonNullable<SessionSystemPromptReport["tools"]["deferred"]> {
+  const entries = catalogEntries
+    .filter((entry) => !entry.directVisible)
+    .map((entry) => {
+      // Remote/client schemas may be lazy hostile objects. Only their owner's
+      // detached JSON publication can supply a size without traversing them.
+      const published = getPublishedRuntimeToolInputSchema(entry.parameters);
+      const schemaChars =
+        published?.json.length ??
+        (entry.source === "paleoclaw" ? buildToolSchemaStats(entry.parameters).schemaChars : null);
+      return {
+        name: entry.name,
+        source: entry.source,
+        sourceName: entry.sourceName,
+        serverName: entry.mcp?.serverName,
+        schemaChars,
+      };
+    });
+  return {
+    entries,
+    schemaChars: entries.reduce((sum, entry) => sum + (entry.schemaChars ?? 0), 0),
+  };
 }
 
+function measureRenderedProjectContextChars(systemPrompt: string): number {
+  // Project Context ends before the run-scoped capability and catalog instructions.
+  const startMarker = "\n# Project Context\n";
+  const start = systemPrompt.indexOf(startMarker);
+  if (start === -1) {
+    return 0;
+  }
+  const end = systemPrompt.indexOf(SYSTEM_PROMPT_CACHE_BOUNDARY, start + startMarker.length);
+  return (end === -1 ? systemPrompt.length : end) - start;
+}
+
+function resolveRenderedSkillsPrompt(systemPrompt: string, skillsPrompt: string): string {
+  const catalog = skillsPrompt.trim();
+  if (!catalog) {
+    return "";
+  }
+  // The renderer places the catalog after this boundary. Workspace examples and
+  // provider headings in the stable prefix are not the rendered Skills section.
+  const prompt = splitSystemPromptCacheBoundary(systemPrompt)?.dynamicSuffix ?? systemPrompt;
+  for (const heading of prompt.matchAll(/(?:^|\n)## Skills\n/g)) {
+    const sectionStart = heading.index + heading[0].length;
+    const catalogStart = prompt.indexOf(catalog, sectionStart);
+    const nextSection = prompt.indexOf("\n#", sectionStart);
+    // Match the whole known catalog, allowing headings inside its descriptions,
+    // only when it starts in the rendered Skills section.
+    if (catalogStart >= 0 && (nextSection < 0 || catalogStart < nextSection)) {
+      return catalog;
+    }
+  }
+  return "";
+}
+
+/** Builds the stored report for a rendered system prompt and its inputs. */
 export function buildSystemPromptReport(params: {
   source: SessionSystemPromptReport["source"];
   generatedAt: number;
@@ -90,23 +177,18 @@ export function buildSystemPromptReport(params: {
   bootstrapTruncation?: SessionSystemPromptReport["bootstrapTruncation"];
   sandbox?: SessionSystemPromptReport["sandbox"];
   systemPrompt: string;
-  bootstrapFiles: WorkspaceBootstrapFile[];
-  injectedFiles: EmbeddedContextFile[];
+  injectedWorkspaceFiles: BootstrapInjectionStat[];
   skillsPrompt: string;
-  tools: AgentTool[];
+  tools: PromptReportTool[];
+  catalogEntries?: readonly ToolSearchCatalogEntry[];
+  currentTurn?: SessionSystemPromptReport["currentTurn"];
 }): SessionSystemPromptReport {
-  const systemPrompt = params.systemPrompt.trim();
-  const projectContext = extractBetween(
-    systemPrompt,
-    "\n# Project Context\n",
-    "\n## Silent Replies\n",
-  );
-  const projectContextChars = projectContext.text.length;
-  const toolListText = extractToolListText(systemPrompt);
-  const toolListChars = toolListText.length;
-  const toolsEntries = buildToolsEntries(params.tools);
+  const systemPromptChars = params.systemPrompt.length;
+  const projectContextChars = measureRenderedProjectContextChars(params.systemPrompt);
+  const toolsEntries = buildToolsEntries(params.tools, params.catalogEntries);
   const toolsSchemaChars = toolsEntries.reduce((sum, t) => sum + (t.schemaChars ?? 0), 0);
-  const skillsEntries = parseSkillBlocks(params.skillsPrompt);
+  const skillsPrompt = resolveRenderedSkillsPrompt(params.systemPrompt, params.skillsPrompt);
+  const skillsEntries = parseSkillBlocks(skillsPrompt);
 
   return {
     source: params.source,
@@ -121,22 +203,25 @@ export function buildSystemPromptReport(params: {
     ...(params.bootstrapTruncation ? { bootstrapTruncation: params.bootstrapTruncation } : {}),
     sandbox: params.sandbox,
     systemPrompt: {
-      chars: systemPrompt.length,
+      chars: systemPromptChars,
+      hash: sha256Hex(params.systemPrompt),
       projectContextChars,
-      nonProjectContextChars: Math.max(0, systemPrompt.length - projectContextChars),
+      nonProjectContextChars: Math.max(0, systemPromptChars - projectContextChars),
     },
-    injectedWorkspaceFiles: buildBootstrapInjectionStats({
-      bootstrapFiles: params.bootstrapFiles,
-      injectedFiles: params.injectedFiles,
-    }),
+    ...(params.currentTurn ? { currentTurn: params.currentTurn } : {}),
+    injectedWorkspaceFiles: params.injectedWorkspaceFiles,
     skills: {
-      promptChars: params.skillsPrompt.length,
+      promptChars: skillsPrompt.length,
+      hash: sha256Hex(skillsPrompt),
       entries: skillsEntries,
     },
     tools: {
-      listChars: toolListChars,
+      listChars: 0,
       schemaChars: toolsSchemaChars,
       entries: toolsEntries,
+      ...(params.catalogEntries
+        ? { deferred: buildDeferredToolsReport(params.catalogEntries) }
+        : {}),
     },
   };
 }

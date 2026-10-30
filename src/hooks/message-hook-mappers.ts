@@ -1,58 +1,247 @@
+import {
+  normalizeLowercaseStringOrEmpty,
+  normalizeOptionalString,
+  readNonBlankString,
+} from "@paleoclaw/normalization-core/string-coerce";
 import type { FinalizedMsgContext } from "../auto-reply/templating.js";
-import type { OpenClawConfig } from "../config/config.js";
+import { getChannelPlugin, normalizeChannelId } from "../channels/plugins/index.js";
+import type { OpenClawConfig } from "../config/types.openclaw.js";
+import {
+  freezeDiagnosticTraceContext,
+  type DiagnosticTraceContext,
+} from "../infra/diagnostic-trace-context.js";
+import { normalizeMediaFacts } from "../media/media-facts.js";
 import type {
+  PluginHookInboundClaimContext,
+  PluginHookInboundClaimEvent,
+  PluginHookInboundMessageMetadata,
   PluginHookMessageContext,
   PluginHookMessageReceivedEvent,
   PluginHookMessageSentEvent,
-} from "../plugins/types.js";
+} from "../plugins/hook-message.types.js";
+import { internalSessionConversationId } from "../utils/message-channel-constants.js";
+import { stripChannelPrefix } from "../utils/string-readers.js";
 import type {
   MessagePreprocessedHookContext,
   MessageReceivedHookContext,
   MessageSentHookContext,
   MessageTranscribedHookContext,
 } from "./internal-hooks.js";
+import { projectMessageHookMediaFacts, type MessageHookMediaFact } from "./message-hook-media.js";
 
-export type CanonicalInboundMessageHookContext = {
-  from: string;
-  to?: string;
-  content: string;
-  body?: string;
-  bodyForAgent?: string;
-  transcript?: string;
-  timestamp?: number;
-  channelId: string;
-  accountId?: string;
-  conversationId?: string;
-  messageId?: string;
-  senderId?: string;
-  senderName?: string;
-  senderUsername?: string;
-  senderE164?: string;
-  provider?: string;
-  surface?: string;
-  threadId?: string | number;
-  mediaPath?: string;
-  mediaType?: string;
-  originatingChannel?: string;
-  originatingTo?: string;
-  guildId?: string;
-  channelName?: string;
-  isGroup: boolean;
-  groupId?: string;
-};
+type CanonicalSentMessageHookContext = MessageSentHookContext &
+  Pick<PluginHookMessageContext, "sessionKey" | "runId" | "trace" | "callDepth">;
 
-export type CanonicalSentMessageHookContext = {
-  to: string;
-  content: string;
-  success: boolean;
-  error?: string;
-  channelId: string;
-  accountId?: string;
-  conversationId?: string;
-  messageId?: string;
-  isGroup?: boolean;
-  groupId?: string;
-};
+function projectHookMediaAliases(canonical: CanonicalInboundMessageHookContext) {
+  const media = canonical.mediaStagingPending ? undefined : canonical;
+  return {
+    mediaPath: media?.mediaPath,
+    mediaUrl: media?.mediaUrl,
+    mediaType: media?.mediaType,
+    mediaPaths: media?.mediaPaths,
+    mediaUrls: media?.mediaUrls,
+    mediaTypes: media?.mediaTypes,
+  };
+}
+
+function assignRemoteMediaStagingMetadata(
+  target: Record<string, unknown>,
+  canonical: CanonicalInboundMessageHookContext,
+) {
+  const metadata = {
+    mediaRemoteHost: canonical.mediaRemoteHost,
+    mediaStagingPending: canonical.mediaStagingPending,
+    originalMediaPath: canonical.originalMediaPath,
+    originalMediaUrl: canonical.originalMediaUrl,
+    originalMediaType: canonical.originalMediaType,
+    originalMediaPaths: canonical.originalMediaPaths,
+    originalMediaUrls: canonical.originalMediaUrls,
+    originalMediaTypes: canonical.originalMediaTypes,
+  };
+  for (const [key, value] of Object.entries(metadata)) {
+    if (value !== undefined) {
+      target[key] = value;
+    }
+  }
+}
+
+function projectInboundMessageMetadata(canonical: CanonicalInboundMessageHookContext) {
+  const metadata = {
+    to: canonical.to,
+    provider: canonical.provider,
+    surface: canonical.surface,
+    senderE164: canonical.senderE164,
+    ...projectHookMediaAliases(canonical),
+    guildId: canonical.guildId,
+    channelName: canonical.channelName,
+    topicName: canonical.topicName,
+  };
+  assignRemoteMediaStagingMetadata(metadata, canonical);
+  return metadata;
+}
+
+function projectHookMediaState(canonical: CanonicalInboundMessageHookContext) {
+  const stagingPending = canonical.mediaStagingPending === true;
+  const media = stagingPending ? undefined : canonical.media;
+  const originalMedia = canonical.originalMedia ?? (stagingPending ? canonical.media : undefined);
+  return {
+    ...(media?.length ? { media: media.map((entry) => Object.assign({}, entry)) } : {}),
+    ...(originalMedia?.length
+      ? { originalMedia: originalMedia.map((entry) => Object.assign({}, entry)) }
+      : {}),
+    ...(stagingPending ? { mediaStagingPending: true as const } : {}),
+  };
+}
+
+function deriveInboundMessageHookContextBase(
+  ctx: FinalizedMsgContext,
+  overrides?: {
+    content?: string;
+    messageId?: string;
+  },
+) {
+  const content =
+    overrides?.content ??
+    readNonBlankString(ctx.BodyForCommands) ??
+    readNonBlankString(ctx.RawBody) ??
+    readNonBlankString(ctx.Body) ??
+    "";
+  const channelId = normalizeLowercaseStringOrEmpty(
+    ctx.OriginatingChannel ?? ctx.Surface ?? ctx.Provider ?? "",
+  );
+  const conversationId =
+    ctx.OriginatingTo ??
+    ctx.To ??
+    ctx.From ??
+    internalSessionConversationId(channelId, ctx.SessionKey);
+  const isGroup = Boolean(ctx.GroupSubject || ctx.GroupChannel);
+  const media = normalizeMediaFacts(ctx.media);
+  const hookMedia = projectMessageHookMediaFacts(media);
+  const compact = (values: Array<string | undefined>) => {
+    const entries = values.filter((value): value is string => Boolean(value));
+    return entries.length > 0 ? entries : undefined;
+  };
+  const mediaPaths = compact(media.map((fact) => fact.path));
+  const mediaUrls = compact(media.map((fact) => fact.url ?? fact.path));
+  const mediaTypes = compact(media.map((fact) => fact.contentType ?? fact.kind));
+  const firstMedia = media[0];
+  const hasLocation = Number.isFinite(ctx.LocationLat) && Number.isFinite(ctx.LocationLon);
+  const locationSource: NonNullable<PluginHookInboundClaimEvent["location"]>["source"] =
+    ctx.LocationSource === "pin" || ctx.LocationSource === "place" || ctx.LocationSource === "live"
+      ? ctx.LocationSource
+      : undefined;
+  const providerUpdateId = normalizeOptionalString(ctx.ProviderUpdateId);
+  const providerUpdateKind = normalizeOptionalString(ctx.ProviderUpdateKind);
+  return {
+    from: ctx.From ?? "",
+    to: ctx.To,
+    content,
+    body: ctx.Body,
+    bodyForAgent: ctx.BodyForAgent,
+    transcript: ctx.Transcript,
+    timestamp: Number.isFinite(ctx.Timestamp) ? ctx.Timestamp : undefined,
+    channelId,
+    accountId: ctx.AccountId,
+    conversationId,
+    sessionKey: ctx.SessionKey,
+    agentId: ctx.AgentId,
+    messageId:
+      normalizeOptionalString(overrides?.messageId) ??
+      normalizeOptionalString(ctx.MessageSidFull) ??
+      normalizeOptionalString(ctx.MessageSid) ??
+      normalizeOptionalString(ctx.MessageSidFirst) ??
+      normalizeOptionalString(ctx.MessageSidLast),
+    senderId: ctx.SenderId,
+    senderName: ctx.SenderName,
+    senderUsername: ctx.SenderUsername,
+    senderE164: ctx.SenderE164,
+    replyToId: ctx.ReplyToId,
+    replyToIdFull: ctx.ReplyToIdFull,
+    replyToBody: ctx.ReplyToBody,
+    replyToSender: ctx.ReplyToSender,
+    replyToIsQuote: ctx.ReplyToIsQuote,
+    provider: ctx.Provider,
+    surface: ctx.Surface,
+    threadId: ctx.MessageThreadId,
+    threadParentId: ctx.ThreadParentId,
+    ...(hookMedia.length > 0 ? { media: hookMedia } : {}),
+    mediaPath: firstMedia?.path ?? mediaPaths?.[0],
+    mediaUrl: firstMedia?.url ?? firstMedia?.path ?? mediaUrls?.[0],
+    mediaType: firstMedia?.contentType ?? firstMedia?.kind ?? mediaTypes?.[0],
+    mediaPaths,
+    mediaUrls,
+    mediaTypes,
+    originatingChannel: ctx.OriginatingChannel,
+    originatingTo: ctx.OriginatingTo,
+    guildId: ctx.GroupSpace,
+    channelName: ctx.GroupChannel,
+    isGroup,
+    groupId: isGroup ? conversationId : undefined,
+    topicName: ctx.TopicName,
+    ...(hasLocation
+      ? {
+          location: {
+            latitude: ctx.LocationLat as number,
+            longitude: ctx.LocationLon as number,
+            ...(typeof ctx.LocationAccuracy === "number" ? { accuracy: ctx.LocationAccuracy } : {}),
+            ...(ctx.LocationName ? { name: ctx.LocationName } : {}),
+            ...(ctx.LocationAddress ? { address: ctx.LocationAddress } : {}),
+            ...(locationSource ? { source: locationSource } : {}),
+            ...(typeof ctx.LocationIsLive === "boolean" ? { isLive: ctx.LocationIsLive } : {}),
+            ...(Number.isFinite(ctx.LocationLivePeriodSeconds)
+              ? { livePeriodSeconds: ctx.LocationLivePeriodSeconds }
+              : {}),
+            ...(ctx.LocationCaption ? { caption: ctx.LocationCaption } : {}),
+          },
+        }
+      : {}),
+    ...(providerUpdateId && providerUpdateKind
+      ? {
+          providerUpdate: {
+            id: providerUpdateId,
+            kind: providerUpdateKind,
+            ...(normalizeOptionalString(ctx.MessageSidFull ?? ctx.MessageSid)
+              ? { messageId: normalizeOptionalString(ctx.MessageSidFull ?? ctx.MessageSid) }
+              : {}),
+            ...(Number.isFinite(ctx.ProviderMessageTimestamp)
+              ? { messageTimestamp: ctx.ProviderMessageTimestamp }
+              : {}),
+            ...(Number.isFinite(ctx.ProviderEditTimestamp)
+              ? { editedTimestamp: ctx.ProviderEditTimestamp }
+              : {}),
+          },
+        }
+      : {}),
+  };
+}
+
+type DerivedInboundMessageHookContext = ReturnType<typeof deriveInboundMessageHookContextBase>;
+type InboundMessageHookMetadataFields = Pick<
+  PluginHookInboundMessageMetadata,
+  | "mediaPath"
+  | "mediaUrl"
+  | "mediaType"
+  | "mediaPaths"
+  | "mediaUrls"
+  | "mediaTypes"
+  | "originalMediaPath"
+  | "originalMediaUrl"
+  | "originalMediaType"
+  | "originalMediaPaths"
+  | "originalMediaUrls"
+  | "originalMediaTypes"
+  | "mediaStagingPending"
+>;
+type CanonicalInboundMessageHookContext = Pick<
+  DerivedInboundMessageHookContext,
+  "from" | "content" | "channelId" | "isGroup"
+> &
+  Partial<DerivedInboundMessageHookContext> &
+  Partial<Pick<PluginHookMessageContext, "runId" | "trace" | "callDepth">> &
+  Partial<InboundMessageHookMetadataFields> & {
+    originalMedia?: MessageHookMediaFact[];
+    mediaRemoteHost?: string;
+  };
 
 export function deriveInboundMessageHookContext(
   ctx: FinalizedMsgContext,
@@ -61,68 +250,12 @@ export function deriveInboundMessageHookContext(
     messageId?: string;
   },
 ): CanonicalInboundMessageHookContext {
-  const content =
-    overrides?.content ??
-    (typeof ctx.BodyForCommands === "string"
-      ? ctx.BodyForCommands
-      : typeof ctx.RawBody === "string"
-        ? ctx.RawBody
-        : typeof ctx.Body === "string"
-          ? ctx.Body
-          : "");
-  const channelId = (ctx.OriginatingChannel ?? ctx.Surface ?? ctx.Provider ?? "").toLowerCase();
-  const conversationId = ctx.OriginatingTo ?? ctx.To ?? ctx.From ?? undefined;
-  const isGroup = Boolean(ctx.GroupSubject || ctx.GroupChannel);
-  return {
-    from: ctx.From ?? "",
-    to: ctx.To,
-    content,
-    body: ctx.Body,
-    bodyForAgent: ctx.BodyForAgent,
-    transcript: ctx.Transcript,
-    timestamp:
-      typeof ctx.Timestamp === "number" && Number.isFinite(ctx.Timestamp)
-        ? ctx.Timestamp
-        : undefined,
-    channelId,
-    accountId: ctx.AccountId,
-    conversationId,
-    messageId:
-      overrides?.messageId ??
-      ctx.MessageSidFull ??
-      ctx.MessageSid ??
-      ctx.MessageSidFirst ??
-      ctx.MessageSidLast,
-    senderId: ctx.SenderId,
-    senderName: ctx.SenderName,
-    senderUsername: ctx.SenderUsername,
-    senderE164: ctx.SenderE164,
-    provider: ctx.Provider,
-    surface: ctx.Surface,
-    threadId: ctx.MessageThreadId,
-    mediaPath: ctx.MediaPath,
-    mediaType: ctx.MediaType,
-    originatingChannel: ctx.OriginatingChannel,
-    originatingTo: ctx.OriginatingTo,
-    guildId: ctx.GroupSpace,
-    channelName: ctx.GroupChannel,
-    isGroup,
-    groupId: isGroup ? conversationId : undefined,
-  };
+  return deriveInboundMessageHookContextBase(ctx, overrides);
 }
 
-export function buildCanonicalSentMessageHookContext(params: {
-  to: string;
-  content: string;
-  success: boolean;
-  error?: string;
-  channelId: string;
-  accountId?: string;
-  conversationId?: string;
-  messageId?: string;
-  isGroup?: boolean;
-  groupId?: string;
-}): CanonicalSentMessageHookContext {
+export function buildCanonicalSentMessageHookContext(
+  params: CanonicalSentMessageHookContext,
+): CanonicalSentMessageHookContext {
   return {
     to: params.to,
     content: params.content,
@@ -131,56 +264,243 @@ export function buildCanonicalSentMessageHookContext(params: {
     channelId: params.channelId,
     accountId: params.accountId,
     conversationId: params.conversationId ?? params.to,
+    sessionKey: params.sessionKey,
+    runId: params.runId,
     messageId: params.messageId,
+    trace: params.trace,
+    callDepth: params.callDepth,
     isGroup: params.isGroup,
     groupId: params.groupId,
+  };
+}
+
+/** Resolves the outbound hook target for a reply produced by an inbound channel turn. */
+export function resolveInboundReplyHookTarget(
+  finalized: FinalizedMsgContext,
+  hookCtx: CanonicalInboundMessageHookContext,
+): string {
+  const originatingTo = readNonBlankString(finalized.OriginatingTo);
+  if (originatingTo) {
+    return originatingTo;
+  }
+  if (hookCtx.isGroup) {
+    return hookCtx.conversationId ?? hookCtx.to ?? hookCtx.from;
+  }
+  return hookCtx.from || hookCtx.conversationId || hookCtx.to || "";
+}
+
+type DiagnosticTraceHookFields = Pick<
+  PluginHookMessageContext,
+  "trace" | "traceId" | "spanId" | "parentSpanId"
+>;
+
+function assignTraceFields(
+  target: DiagnosticTraceHookFields,
+  trace?: DiagnosticTraceContext,
+): void {
+  if (!trace) {
+    return;
+  }
+  const safeTrace = freezeDiagnosticTraceContext(trace);
+  target.trace = safeTrace;
+  target.traceId = safeTrace.traceId;
+  if (safeTrace.spanId) {
+    target.spanId = safeTrace.spanId;
+  }
+  if (safeTrace.parentSpanId) {
+    target.parentSpanId = safeTrace.parentSpanId;
+  }
+}
+
+function projectHookReplyFields(
+  canonical: CanonicalInboundMessageHookContext | CanonicalSentMessageHookContext,
+) {
+  // Sent contexts may omit reply fields; empty strings and false remain meaningful.
+  return {
+    ...("replyToId" in canonical && canonical.replyToId !== undefined
+      ? { replyToId: canonical.replyToId }
+      : {}),
+    ...("replyToIdFull" in canonical && canonical.replyToIdFull !== undefined
+      ? { replyToIdFull: canonical.replyToIdFull }
+      : {}),
+    ...("replyToBody" in canonical && canonical.replyToBody !== undefined
+      ? { replyToBody: canonical.replyToBody }
+      : {}),
+    ...("replyToSender" in canonical && canonical.replyToSender !== undefined
+      ? { replyToSender: canonical.replyToSender }
+      : {}),
+    ...("replyToIsQuote" in canonical && canonical.replyToIsQuote !== undefined
+      ? { replyToIsQuote: canonical.replyToIsQuote }
+      : {}),
   };
 }
 
 export function toPluginMessageContext(
   canonical: CanonicalInboundMessageHookContext | CanonicalSentMessageHookContext,
 ): PluginHookMessageContext {
-  return {
+  const context: PluginHookMessageContext = {
     channelId: canonical.channelId,
     accountId: canonical.accountId,
     conversationId: canonical.conversationId,
   };
+  if (canonical.sessionKey) {
+    context.sessionKey = canonical.sessionKey;
+  }
+  if (canonical.runId) {
+    context.runId = canonical.runId;
+  }
+  if (canonical.messageId) {
+    context.messageId = canonical.messageId;
+  }
+  if ("senderId" in canonical && canonical.senderId) {
+    context.senderId = canonical.senderId;
+  }
+  Object.assign(context, projectHookReplyFields(canonical));
+  assignTraceFields(context, canonical.trace);
+  if (canonical.callDepth != null) {
+    context.callDepth = canonical.callDepth;
+  }
+  return context;
+}
+
+function resolveInboundConversation(canonical: CanonicalInboundMessageHookContext): {
+  conversationId?: string;
+  parentConversationId?: string;
+} {
+  const channelId = normalizeChannelId(canonical.channelId);
+  const pluginResolved = channelId
+    ? getChannelPlugin(channelId)?.messaging?.resolveInboundConversation?.({
+        from: canonical.from,
+        to: canonical.to ?? canonical.originatingTo,
+        conversationId: canonical.conversationId,
+        threadId: canonical.threadId,
+        threadParentId: canonical.threadParentId,
+        isGroup: canonical.isGroup,
+      })
+    : undefined;
+  if (pluginResolved === null) {
+    // A plugin-owned null is an explicit rejection, so generic parsing must not reclaim it.
+    return {};
+  }
+  if (pluginResolved) {
+    return {
+      conversationId: normalizeOptionalString(pluginResolved.conversationId),
+      parentConversationId: normalizeOptionalString(pluginResolved.parentConversationId),
+    };
+  }
+  const baseConversationId = stripChannelPrefix(
+    canonical.to ?? canonical.originatingTo ?? canonical.conversationId,
+    canonical.channelId,
+  );
+  return { conversationId: baseConversationId };
+}
+
+function projectPluginInboundMessageFacts(canonical: CanonicalInboundMessageHookContext) {
+  return {
+    content: canonical.content,
+    timestamp: canonical.timestamp,
+    senderId: canonical.senderId,
+    ...projectHookReplyFields(canonical),
+    threadId: canonical.threadId,
+    messageId: canonical.messageId,
+    sessionKey: canonical.sessionKey,
+    runId: canonical.runId,
+    ...(canonical.location ? { location: { ...canonical.location } } : {}),
+    ...(canonical.providerUpdate ? { providerUpdate: { ...canonical.providerUpdate } } : {}),
+    ...projectHookMediaState(canonical),
+    metadata: {
+      ...projectInboundMessageMetadata(canonical),
+      originatingChannel: canonical.originatingChannel,
+      originatingTo: canonical.originatingTo,
+      replyToId: canonical.replyToId,
+      replyToIdFull: canonical.replyToIdFull,
+      replyToBody: canonical.replyToBody,
+      replyToSender: canonical.replyToSender,
+      replyToIsQuote: canonical.replyToIsQuote,
+    },
+  };
+}
+
+export function toPluginInboundClaimPair(
+  canonical: CanonicalInboundMessageHookContext,
+  extras?: {
+    commandAuthorized?: boolean;
+    wasMentioned?: boolean;
+  },
+): {
+  context: PluginHookInboundClaimContext;
+  event: PluginHookInboundClaimEvent;
+} {
+  const conversation = resolveInboundConversation(canonical);
+  const context: PluginHookInboundClaimContext = {
+    channelId: canonical.channelId,
+    accountId: canonical.accountId,
+    conversationId: conversation.conversationId,
+    sessionKey: canonical.sessionKey,
+    agentId: canonical.agentId,
+    parentConversationId: conversation.parentConversationId,
+    senderId: canonical.senderId,
+    messageId: canonical.messageId,
+    runId: canonical.runId,
+    callDepth: canonical.callDepth,
+  };
+  Object.assign(context, projectHookReplyFields(canonical));
+  assignTraceFields(context, canonical.trace);
+  const facts = projectPluginInboundMessageFacts(canonical);
+  const event: PluginHookInboundClaimEvent = {
+    ...facts,
+    body: canonical.body,
+    bodyForAgent: canonical.bodyForAgent,
+    transcript: canonical.transcript,
+    channel: canonical.channelId,
+    accountId: canonical.accountId,
+    conversationId: context.conversationId,
+    parentConversationId: context.parentConversationId,
+    senderName: canonical.senderName,
+    senderUsername: canonical.senderUsername,
+    isGroup: canonical.isGroup,
+    commandAuthorized: extras?.commandAuthorized,
+    wasMentioned: extras?.wasMentioned,
+    metadata: { ...facts.metadata, from: canonical.from, groupId: canonical.groupId },
+  };
+  assignTraceFields(event, canonical.trace);
+  return { context, event };
 }
 
 export function toPluginMessageReceivedEvent(
   canonical: CanonicalInboundMessageHookContext,
 ): PluginHookMessageReceivedEvent {
-  return {
+  const facts = projectPluginInboundMessageFacts(canonical);
+  const event: PluginHookMessageReceivedEvent = {
+    ...facts,
     from: canonical.from,
-    content: canonical.content,
-    timestamp: canonical.timestamp,
     metadata: {
-      to: canonical.to,
-      provider: canonical.provider,
-      surface: canonical.surface,
+      ...facts.metadata,
       threadId: canonical.threadId,
-      originatingChannel: canonical.originatingChannel,
-      originatingTo: canonical.originatingTo,
       messageId: canonical.messageId,
       senderId: canonical.senderId,
       senderName: canonical.senderName,
       senderUsername: canonical.senderUsername,
-      senderE164: canonical.senderE164,
-      guildId: canonical.guildId,
-      channelName: canonical.channelName,
     },
   };
+  assignTraceFields(event, canonical.trace);
+  return event;
 }
 
 export function toPluginMessageSentEvent(
   canonical: CanonicalSentMessageHookContext,
 ): PluginHookMessageSentEvent {
-  return {
+  const event: PluginHookMessageSentEvent = {
     to: canonical.to,
     content: canonical.content,
     success: canonical.success,
+    ...(canonical.messageId ? { messageId: canonical.messageId } : {}),
+    ...(canonical.sessionKey ? { sessionKey: canonical.sessionKey } : {}),
+    ...(canonical.runId ? { runId: canonical.runId } : {}),
     ...(canonical.error ? { error: canonical.error } : {}),
   };
+  assignTraceFields(event, canonical.trace);
+  return event;
 }
 
 export function toInternalMessageReceivedContext(
@@ -194,17 +514,13 @@ export function toInternalMessageReceivedContext(
     accountId: canonical.accountId,
     conversationId: canonical.conversationId,
     messageId: canonical.messageId,
+    ...projectHookMediaState(canonical),
     metadata: {
-      to: canonical.to,
-      provider: canonical.provider,
-      surface: canonical.surface,
+      ...projectInboundMessageMetadata(canonical),
       threadId: canonical.threadId,
       senderId: canonical.senderId,
       senderName: canonical.senderName,
       senderUsername: canonical.senderUsername,
-      senderE164: canonical.senderE164,
-      guildId: canonical.guildId,
-      channelName: canonical.channelName,
     },
   };
 }
@@ -213,9 +529,8 @@ export function toInternalMessageTranscribedContext(
   canonical: CanonicalInboundMessageHookContext,
   cfg: OpenClawConfig,
 ): MessageTranscribedHookContext & { cfg: OpenClawConfig } {
-  const shared = toInternalInboundMessageHookContextBase(canonical);
   return {
-    ...shared,
+    ...toInternalInboundMessageHookContextBase(canonical),
     transcript: canonical.transcript ?? "",
     cfg,
   };
@@ -225,9 +540,8 @@ export function toInternalMessagePreprocessedContext(
   canonical: CanonicalInboundMessageHookContext,
   cfg: OpenClawConfig,
 ): MessagePreprocessedHookContext & { cfg: OpenClawConfig } {
-  const shared = toInternalInboundMessageHookContextBase(canonical);
   return {
-    ...shared,
+    ...toInternalInboundMessageHookContextBase(canonical),
     transcript: canonical.transcript,
     isGroup: canonical.isGroup,
     groupId: canonical.groupId,
@@ -250,8 +564,9 @@ function toInternalInboundMessageHookContextBase(canonical: CanonicalInboundMess
     senderUsername: canonical.senderUsername,
     provider: canonical.provider,
     surface: canonical.surface,
-    mediaPath: canonical.mediaPath,
-    mediaType: canonical.mediaType,
+    ...projectHookMediaState(canonical),
+    mediaPath: canonical.mediaStagingPending ? undefined : canonical.mediaPath,
+    mediaType: canonical.mediaStagingPending ? undefined : canonical.mediaType,
   };
 }
 

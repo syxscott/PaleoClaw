@@ -1,18 +1,47 @@
-import { createHash } from "node:crypto";
-import type { ToolLoopDetectionConfig } from "../config/types.tools.js";
-import type { SessionState } from "../logging/diagnostic-session-state.js";
+import type {
+  AfterToolOutcomeContext,
+  ToolLoopIntervention,
+  ToolLoopRecoveryState,
+} from "@paleoclaw/agent-core";
+import { stableStringify } from "@paleoclaw/normalization-core";
+import {
+  normalizeNullableString as nonEmptyStringField,
+  normalizeOptionalString as normalizeRunId,
+} from "@paleoclaw/normalization-core/string-coerce";
+import { REPEATED_TOOL_ERROR_MESSAGE } from "../../packages/agent-core/src/errors.js";
+import { sha256Hex } from "../infra/crypto-digest.js";
+import {
+  isIncognitoDiagnosticSession,
+  type SessionState,
+  type ToolCallRecord,
+} from "../logging/diagnostic-session-state.js";
 import { createSubsystemLogger } from "../logging/subsystem.js";
 import { isPlainObject } from "../utils.js";
+import { getCodeModeToolOutcome } from "./code-mode-tool-outcome.js";
+import { isMessagingToolSendAction } from "./embedded-agent-messaging.js";
+import {
+  buildArgumentChurnWarning,
+  getArgumentChurnNoProgressStreak,
+} from "./tool-loop-argument-churn.js";
+import { isKnownPollToolCall } from "./tool-loop-call-kind.js";
+import { getNoProgressStreak } from "./tool-loop-no-progress.js";
+import { digestToolOutcome } from "./tool-loop-outcome-hash.js";
+import { TOOL_LOOP_WARNING_THRESHOLD } from "./tool-loop-thresholds.js";
+import { isToolResultError } from "./tool-result-error.js";
+import { getComputerToolOutcome } from "./tools/computer-tool-outcome.js";
+import { getProgressCardToolOutcome } from "./tools/progress-card-tool-outcome.js";
 
 const log = createSubsystemLogger("agents/loop-detection");
 
-export type LoopDetectorKind =
+type LoopDetectorKind =
   | "generic_repeat"
+  | "argument_churn"
+  | "unknown_tool_repeat"
   | "known_poll_no_progress"
   | "global_circuit_breaker"
   | "ping_pong";
 
-export type LoopDetectionResult =
+type LoopDetectionResult =
   | { stuck: false }
   | {
       stuck: true;
@@ -24,135 +53,30 @@ export type LoopDetectionResult =
       warningKey?: string;
     };
 
-export const TOOL_CALL_HISTORY_SIZE = 30;
-export const WARNING_THRESHOLD = 10;
-export const CRITICAL_THRESHOLD = 20;
-export const GLOBAL_CIRCUIT_BREAKER_THRESHOLD = 30;
-const DEFAULT_LOOP_DETECTION_CONFIG = {
-  enabled: false,
-  historySize: TOOL_CALL_HISTORY_SIZE,
-  warningThreshold: WARNING_THRESHOLD,
-  criticalThreshold: CRITICAL_THRESHOLD,
-  globalCircuitBreakerThreshold: GLOBAL_CIRCUIT_BREAKER_THRESHOLD,
-  detectors: {
-    genericRepeat: true,
-    knownPollNoProgress: true,
-    pingPong: true,
-  },
+const TOOL_CALL_HISTORY_SIZE = 30;
+export const UNKNOWN_TOOL_THRESHOLD = 10;
+const CRITICAL_THRESHOLD = 20;
+const GLOBAL_CIRCUIT_BREAKER_THRESHOLD = 30;
+
+type ToolLoopDetectionScope = {
+  runId?: string;
 };
 
-type ResolvedLoopDetectionConfig = {
-  enabled: boolean;
-  historySize: number;
-  warningThreshold: number;
-  criticalThreshold: number;
-  globalCircuitBreakerThreshold: number;
-  detectors: {
-    genericRepeat: boolean;
-    knownPollNoProgress: boolean;
-    pingPong: boolean;
-  };
-};
-
-function asPositiveInt(value: number | undefined, fallback: number): number {
-  if (typeof value !== "number" || !Number.isInteger(value) || value <= 0) {
-    return fallback;
-  }
-  return value;
+function selectHistoryForScope(
+  history: readonly ToolCallRecord[],
+  scope?: ToolLoopDetectionScope,
+): ToolCallRecord[] {
+  const runId = normalizeRunId(scope?.runId);
+  return history.filter((record) => normalizeRunId(record.runId) === runId);
 }
 
-function resolveLoopDetectionConfig(config?: ToolLoopDetectionConfig): ResolvedLoopDetectionConfig {
-  let warningThreshold = asPositiveInt(
-    config?.warningThreshold,
-    DEFAULT_LOOP_DETECTION_CONFIG.warningThreshold,
-  );
-  let criticalThreshold = asPositiveInt(
-    config?.criticalThreshold,
-    DEFAULT_LOOP_DETECTION_CONFIG.criticalThreshold,
-  );
-  let globalCircuitBreakerThreshold = asPositiveInt(
-    config?.globalCircuitBreakerThreshold,
-    DEFAULT_LOOP_DETECTION_CONFIG.globalCircuitBreakerThreshold,
-  );
-
-  if (criticalThreshold <= warningThreshold) {
-    criticalThreshold = warningThreshold + 1;
-  }
-  if (globalCircuitBreakerThreshold <= criticalThreshold) {
-    globalCircuitBreakerThreshold = criticalThreshold + 1;
-  }
-
-  return {
-    enabled: config?.enabled ?? DEFAULT_LOOP_DETECTION_CONFIG.enabled,
-    historySize: asPositiveInt(config?.historySize, DEFAULT_LOOP_DETECTION_CONFIG.historySize),
-    warningThreshold,
-    criticalThreshold,
-    globalCircuitBreakerThreshold,
-    detectors: {
-      genericRepeat:
-        config?.detectors?.genericRepeat ?? DEFAULT_LOOP_DETECTION_CONFIG.detectors.genericRepeat,
-      knownPollNoProgress:
-        config?.detectors?.knownPollNoProgress ??
-        DEFAULT_LOOP_DETECTION_CONFIG.detectors.knownPollNoProgress,
-      pingPong: config?.detectors?.pingPong ?? DEFAULT_LOOP_DETECTION_CONFIG.detectors.pingPong,
-    },
-  };
-}
-
-/**
- * Hash a tool call for pattern matching.
- * Uses tool name + deterministic JSON serialization digest of params.
- */
 export function hashToolCall(toolName: string, params: unknown): string {
-  return `${toolName}:${digestStable(params)}`;
-}
-
-function stableStringify(value: unknown): string {
-  if (value === null || typeof value !== "object") {
-    return JSON.stringify(value);
+  // Execution titles describe presentation, not a different command or program.
+  if (toolName === "exec" && isPlainObject(params)) {
+    const { title: _title, ...execution } = params;
+    return `${toolName}:${sha256Hex(stableStringify(execution))}`;
   }
-  if (Array.isArray(value)) {
-    return `[${value.map(stableStringify).join(",")}]`;
-  }
-  const obj = value as Record<string, unknown>;
-  const keys = Object.keys(obj).toSorted();
-  return `{${keys.map((k) => `${JSON.stringify(k)}:${stableStringify(obj[k])}`).join(",")}}`;
-}
-
-function digestStable(value: unknown): string {
-  const serialized = stableStringifyFallback(value);
-  return createHash("sha256").update(serialized).digest("hex");
-}
-
-function stableStringifyFallback(value: unknown): string {
-  try {
-    return stableStringify(value);
-  } catch {
-    if (value === null || value === undefined) {
-      return `${value}`;
-    }
-    if (typeof value === "string") {
-      return value;
-    }
-    if (typeof value === "number" || typeof value === "boolean" || typeof value === "bigint") {
-      return `${value}`;
-    }
-    if (value instanceof Error) {
-      return `${value.name}:${value.message}`;
-    }
-    return Object.prototype.toString.call(value);
-  }
-}
-
-function isKnownPollToolCall(toolName: string, params: unknown): boolean {
-  if (toolName === "command_status") {
-    return true;
-  }
-  if (toolName !== "process" || !isPlainObject(params)) {
-    return false;
-  }
-  const action = params.action;
-  return action === "poll" || action === "log";
+  return `${toolName}:${sha256Hex(stableStringify(params))}`;
 }
 
 function extractTextContent(result: unknown): string {
@@ -182,85 +106,384 @@ function formatErrorForHash(error: unknown): string {
   return stableStringify(error);
 }
 
+function extractUnknownToolName(error: unknown): string | undefined {
+  const raw = formatErrorForHash(error).trim();
+  if (!raw) {
+    return undefined;
+  }
+  const match =
+    raw.match(/unknown tool(?: id)?[:\s]+["']?([a-z0-9_.-]+)["']?/i) ??
+    raw.match(/tool\s+["']?([a-z0-9_.-]+)["']?\s+(?:not found|is not available)/i);
+  const toolName = match?.[1]?.trim();
+  return toolName ? toolName.toLowerCase() : undefined;
+}
+
+function stringField(value: unknown): string | null {
+  return typeof value === "string" ? value : null;
+}
+
+function hashExecToolOutcome(details: Record<string, unknown>, text: string): string | undefined {
+  const status = stringField(details.status);
+  if (!status) {
+    return undefined;
+  }
+
+  if (status === "running") {
+    return digestToolOutcome({
+      status,
+      tail: stringField(details.tail) ?? "",
+    });
+  }
+
+  if (status === "completed" || status === "failed") {
+    return digestToolOutcome({
+      status,
+      exitCode: typeof details.exitCode === "number" ? details.exitCode : null,
+      timedOut: details.timedOut === true,
+      output: nonEmptyStringField(details.aggregated) ?? text,
+    });
+  }
+
+  if (status === "approval-pending" || status === "approval-unavailable") {
+    return digestToolOutcome({
+      status,
+      reason: stringField(details.reason),
+      host: stringField(details.host),
+      command: stringField(details.command) ?? "",
+      warningText: stringField(details.warningText) ?? "",
+    });
+  }
+
+  return undefined;
+}
+
+// These spans describe when an exec failed, not why. Preserve every other
+// diagnostic token so a new error, exit code, or cause resets the streak.
+const VOLATILE_EXEC_FAILURE_PATTERNS = [
+  /\d{4}-\d{2}-\d{2}[t ]\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?(?:z|[+-]\d{2}:\d{2})?/giu,
+  /\d{1,2}:\d{2}:\d{2}(?:\.\d{1,6})?/gu,
+  /\b(?:attempt|retry)\b[\s#:=]*\d+/giu,
+  /\b\d+(?:\.\d+)?\s?(?:ns|us|ms|seconds?|minutes?|hours?|s)\b/giu,
+  /\b(?:pid|ppid)\b[\s#:=]*\d+/giu,
+] as const;
+
+function hashExecFailureIdentity(
+  details: Record<string, unknown>,
+  exitCode: number,
+  output: string,
+): string {
+  let outputShape = output;
+  for (const pattern of VOLATILE_EXEC_FAILURE_PATTERNS) {
+    outputShape = outputShape.replace(pattern, "#");
+  }
+  return digestToolOutcome({
+    status: details.status,
+    exitCode,
+    timedOut: details.timedOut === true,
+    output: outputShape,
+  });
+}
+
+// Delivery results carry fresh per-call ids (messageId/runId) in details and text, so
+// hashing them defeats no-progress loop blocking (#89090). Hash only id-stripped facts
+// for outbound-message actions; other `message` actions keep full hashing (real progress).
+const SEND_LIKE_MESSAGE_ACTIONS = new Set([
+  "send",
+  "broadcast",
+  "reply",
+  "thread-reply",
+  "sendWithEffect",
+  "sendAttachment",
+  "upload-file",
+  "sticker",
+  "poll",
+]);
+// Denylist of per-call volatile delivery ids/timestamps stripped before hashing. Must
+// cover the id/timestamp fields a channel's delivery result can carry; a new channel
+// emitting a volatile field name outside this set silently regresses its loop blocking.
+const VOLATILE_SEND_RESULT_KEYS = new Set([
+  "messageId",
+  "message_id",
+  "messageIds",
+  "platformMessageId",
+  "platformMessageIds",
+  "fileId",
+  "file_id",
+  "fileKey",
+  "pollId",
+  "poll_id",
+  "receipt",
+  "runId",
+  "idempotencyKey",
+  "ts",
+  "timestamp",
+  "sentAt",
+  "deliveredAt",
+  "createdAt",
+]);
+
+// A message object's own `id` is its volatile per-send id; a bare `id` elsewhere
+// (route/conversation) is a stable fact, so only strip `id` on the message object.
+function isMessageDeliveryObject(value: Record<string, unknown>): boolean {
+  return (
+    typeof value.id === "string" &&
+    typeof value.text === "string" &&
+    (typeof value.direction === "string" ||
+      typeof value.senderId === "string" ||
+      typeof value.accountId === "string" ||
+      isPlainObject(value.conversation))
+  );
+}
+
+function stripVolatileSendIds(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map(stripVolatileSendIds);
+  }
+  if (!isPlainObject(value)) {
+    return value;
+  }
+  const dropMessageObjectId = isMessageDeliveryObject(value);
+  const stripped: Record<string, unknown> = {};
+  for (const [key, nested] of Object.entries(value)) {
+    if (VOLATILE_SEND_RESULT_KEYS.has(key) || (key === "id" && dropMessageObjectId)) {
+      continue;
+    }
+    stripped[key] = stripVolatileSendIds(nested);
+  }
+  return stripped;
+}
+
+const VOLATILE_MEMORY_SEARCH_DEBUG_KEYS = new Set([
+  "managerMs",
+  "searchMs",
+  "toolMs",
+  "outsideSearchMs",
+]);
+
+function getMemorySearchToolOutcome(details: Record<string, unknown>): unknown {
+  if (!Array.isArray(details.results)) {
+    return undefined;
+  }
+  // Rank and hit content carry progress; aggregate scores also decay with wall time.
+  const results = details.results.map((result) => {
+    if (!isPlainObject(result)) {
+      return result;
+    }
+    const { score: _score, ...stableResult } = result;
+    return stableResult;
+  });
+  const debug = isPlainObject(details.debug)
+    ? Object.fromEntries(
+        Object.entries(details.debug).filter(
+          ([key]) => !VOLATILE_MEMORY_SEARCH_DEBUG_KEYS.has(key),
+        ),
+      )
+    : details.debug;
+  return { ...details, results, debug };
+}
+
+function isVolatileSendResult(toolName: string, params: unknown): boolean {
+  if (toolName === "sessions_send") {
+    return true;
+  }
+  const args = isPlainObject(params) ? params : {};
+  if (toolName === "message") {
+    return typeof args.action === "string" && SEND_LIKE_MESSAGE_ACTIONS.has(args.action);
+  }
+  // Provider-docked send tools (telegram/discord/...) return the same volatile-id shape.
+  // SEND_LIKE_MESSAGE_ACTIONS stays broader than the terminal-send set on purpose:
+  // broadcast/reply/sticker/poll carry volatile ids but are not terminal sends.
+  return isMessagingToolSendAction(toolName, args);
+}
+
+type ToolCallOutcome = Pick<
+  ToolCallRecord,
+  "failureIdentityHash" | "outcomeKind" | "resultHash" | "noProgress" | "unknownToolName"
+>;
+
 function hashToolOutcome(
   toolName: string,
   params: unknown,
   result: unknown,
   error: unknown,
-): string | undefined {
+  isError = false,
+): ToolCallOutcome {
   if (error !== undefined) {
-    return `error:${digestStable(formatErrorForHash(error))}`;
+    const unknownToolName = extractUnknownToolName(error);
+    return {
+      resultHash: `error:${digestToolOutcome(formatErrorForHash(error))}`,
+      noProgress: true,
+      unknownToolName,
+    };
   }
   if (!isPlainObject(result)) {
-    return result === undefined ? undefined : digestStable(result);
+    return { resultHash: result === undefined ? undefined : digestToolOutcome(result) };
   }
 
   const details = isPlainObject(result.details) ? result.details : {};
   const text = extractTextContent(result);
+  // Only our own veto extends the prior streak without a hash. Other blocked
+  // outcomes retain hashes so repeated plugin/approval denials still escalate.
+  if (details.status === "blocked" && details.deniedReason === "tool-loop") {
+    return { outcomeKind: "tool-loop-veto" };
+  }
+  if (isError) {
+    return { resultHash: digestToolOutcome(result) };
+  }
+  if (toolName === "memory_search" && result.isError !== true) {
+    const outcome = getMemorySearchToolOutcome(details);
+    if (outcome !== undefined) {
+      return { resultHash: digestToolOutcome(outcome) };
+    }
+  }
+  if ((toolName === "computer" || toolName === "progress_card") && result.isError !== true) {
+    const outcome =
+      toolName === "computer" ? getComputerToolOutcome(result) : getProgressCardToolOutcome(result);
+    if (outcome !== undefined) {
+      return { resultHash: digestToolOutcome(outcome) };
+    }
+  }
+  if (toolName === "exec" || toolName === "wait") {
+    const resultHash = getCodeModeToolOutcome(result);
+    if (resultHash !== undefined) {
+      return { resultHash };
+    }
+  }
+  if (toolName === "exec") {
+    const execHash = hashExecToolOutcome(details, text);
+    if (execHash) {
+      const exitCode = details.exitCode;
+      const output = nonEmptyStringField(details.aggregated) ?? text;
+      // Normal nonzero exits append this footer even when the command emitted nothing.
+      const terminalFailure =
+        (details.status === "completed" || details.status === "failed") &&
+        typeof exitCode === "number" &&
+        Number.isFinite(exitCode) &&
+        exitCode !== 0 &&
+        details.timedOut !== true &&
+        output !== "" &&
+        output !== `(Command exited with code ${exitCode})`;
+      return terminalFailure
+        ? {
+            resultHash: execHash,
+            outcomeKind: "terminal-exec-failure",
+            failureIdentityHash: hashExecFailureIdentity(details, exitCode, output),
+          }
+        : { resultHash: execHash };
+    }
+  }
+  // Display text echoes the path; the structured flag owns the no-progress fact.
+  if (toolName === "write" && details.changed === false) {
+    return { resultHash: digestToolOutcome({ status: "unchanged" }), noProgress: true };
+  }
   if (isKnownPollToolCall(toolName, params) && toolName === "process" && isPlainObject(params)) {
     const action = params.action;
     if (action === "poll") {
-      return digestStable({
-        action,
-        status: details.status,
-        exitCode: details.exitCode ?? null,
-        exitSignal: details.exitSignal ?? null,
-        aggregated: details.aggregated ?? null,
-        text,
-      });
+      return {
+        resultHash: digestToolOutcome({
+          action,
+          status: details.status,
+          exitCode: details.exitCode ?? null,
+          exitSignal: details.exitSignal ?? null,
+          aggregated: details.aggregated ?? null,
+          text,
+        }),
+      };
     }
     if (action === "log") {
-      return digestStable({
-        action,
-        status: details.status,
-        totalLines: details.totalLines ?? null,
-        totalChars: details.totalChars ?? null,
-        truncated: details.truncated ?? null,
-        exitCode: details.exitCode ?? null,
-        exitSignal: details.exitSignal ?? null,
-        text,
-      });
+      return {
+        resultHash: digestToolOutcome({
+          action,
+          status: details.status,
+          totalLines: details.totalLines ?? null,
+          totalChars: details.totalChars ?? null,
+          truncated: details.truncated ?? null,
+          exitCode: details.exitCode ?? null,
+          exitSignal: details.exitSignal ?? null,
+          text,
+        }),
+      };
     }
   }
 
-  return digestStable({
-    details,
-    text,
-  });
+  if (isVolatileSendResult(toolName, params)) {
+    return { resultHash: digestToolOutcome(stripVolatileSendIds(details)) };
+  }
+
+  return {
+    resultHash: digestToolOutcome({
+      details,
+      text,
+    }),
+  };
 }
 
-function getNoProgressStreak(
-  history: Array<{ toolName: string; argsHash: string; resultHash?: string }>,
+function getUnknownToolRepeatStreak(
+  history: readonly Pick<ToolCallRecord, "toolName" | "unknownToolName" | "outcomeKind">[],
   toolName: string,
-  argsHash: string,
-): { count: number; latestResultHash?: string } {
+): { count: number; unknownToolName?: string } {
   let streak = 0;
-  let latestResultHash: string | undefined;
+  let repeatedUnknownToolName: string | undefined;
 
   for (let i = history.length - 1; i >= 0; i -= 1) {
     const record = history[i];
-    if (!record || record.toolName !== toolName || record.argsHash !== argsHash) {
+    if (record?.outcomeKind === "tool-loop-veto") {
       continue;
     }
-    if (typeof record.resultHash !== "string" || !record.resultHash) {
-      continue;
-    }
-    if (!latestResultHash) {
-      latestResultHash = record.resultHash;
-      streak = 1;
-      continue;
-    }
-    if (record.resultHash !== latestResultHash) {
+    if (!record || record.toolName !== toolName) {
       break;
     }
+    if (!record.unknownToolName) {
+      break;
+    }
+    if (repeatedUnknownToolName && record.unknownToolName !== repeatedUnknownToolName) {
+      break;
+    }
+    repeatedUnknownToolName = record.unknownToolName;
     streak += 1;
   }
 
-  return { count: streak, latestResultHash };
+  return { count: streak, unknownToolName: repeatedUnknownToolName };
+}
+
+/** Three failures allow two retries while bounding a run that cannot make progress. */
+export function observeRepeatedToolError(
+  {
+    toolCall,
+    args,
+    result,
+    isError,
+  }: Pick<AfterToolOutcomeContext, "toolCall" | "args" | "result" | "isError">,
+  state: ToolLoopRecoveryState,
+): ToolLoopIntervention | undefined {
+  if (!isError && !isToolResultError(result)) {
+    delete state.repeatedToolError;
+    return undefined;
+  }
+  const outcome = hashToolOutcome(toolCall.name, args, result, undefined, true);
+  if (outcome.outcomeKind === "tool-loop-veto") {
+    return undefined;
+  }
+  const actionKey = hashToolCall(toolCall.name, args);
+  const signature = `${actionKey}\0${outcome.resultHash}`;
+  const count =
+    state.repeatedToolError?.signature === signature ? state.repeatedToolError.count + 1 : 1;
+  state.repeatedToolError = { signature, count };
+  return count < 3
+    ? undefined
+    : {
+        kind: "critical-tool-loop",
+        toolCallId: toolCall.id,
+        toolName: toolCall.name,
+        actionKey,
+        detector: "repeated_tool_error",
+        count,
+        reason: REPEATED_TOOL_ERROR_MESSAGE,
+      };
 }
 
 function getPingPongStreak(
-  history: Array<{ toolName: string; argsHash: string; resultHash?: string }>,
+  history: readonly ToolCallRecord[],
   currentSignature: string,
 ): {
   count: number;
@@ -273,31 +496,14 @@ function getPingPongStreak(
     return { count: 0, noProgressEvidence: false };
   }
 
-  let otherSignature: string | undefined;
-  let otherToolName: string | undefined;
-  for (let i = history.length - 2; i >= 0; i -= 1) {
-    const call = history[i];
-    if (!call) {
-      continue;
-    }
-    if (call.argsHash !== last.argsHash) {
-      otherSignature = call.argsHash;
-      otherToolName = call.toolName;
-      break;
-    }
-  }
-
-  if (!otherSignature || !otherToolName) {
+  const other = history.findLast((call) => call.argsHash !== last.argsHash);
+  if (!other?.argsHash || !other.toolName || currentSignature !== other.argsHash) {
     return { count: 0, noProgressEvidence: false };
   }
 
   let alternatingTailCount = 0;
-  for (let i = history.length - 1; i >= 0; i -= 1) {
-    const call = history[i];
-    if (!call) {
-      continue;
-    }
-    const expected = alternatingTailCount % 2 === 0 ? last.argsHash : otherSignature;
+  for (const call of history.toReversed()) {
+    const expected = alternatingTailCount % 2 === 0 ? last.argsHash : other.argsHash;
     if (call.argsHash !== expected) {
       break;
     }
@@ -308,56 +514,22 @@ function getPingPongStreak(
     return { count: 0, noProgressEvidence: false };
   }
 
-  const expectedCurrentSignature = otherSignature;
-  if (currentSignature !== expectedCurrentSignature) {
-    return { count: 0, noProgressEvidence: false };
-  }
-
-  const tailStart = Math.max(0, history.length - alternatingTailCount);
-  let firstHashA: string | undefined;
-  let firstHashB: string | undefined;
-  let noProgressEvidence = true;
-  for (let i = tailStart; i < history.length; i += 1) {
-    const call = history[i];
-    if (!call) {
-      continue;
+  const resultHashes = new Map<string, string>();
+  const stableOutcomes = history.slice(-alternatingTailCount).every((call) => {
+    const previousHash = resultHashes.get(call.argsHash);
+    if (!call.resultHash || (previousHash && previousHash !== call.resultHash)) {
+      return false;
     }
-    if (!call.resultHash) {
-      noProgressEvidence = false;
-      break;
-    }
-    if (call.argsHash === last.argsHash) {
-      if (!firstHashA) {
-        firstHashA = call.resultHash;
-      } else if (firstHashA !== call.resultHash) {
-        noProgressEvidence = false;
-        break;
-      }
-      continue;
-    }
-    if (call.argsHash === otherSignature) {
-      if (!firstHashB) {
-        firstHashB = call.resultHash;
-      } else if (firstHashB !== call.resultHash) {
-        noProgressEvidence = false;
-        break;
-      }
-      continue;
-    }
-    noProgressEvidence = false;
-    break;
-  }
-
-  // Need repeated stable outcomes on both sides before treating ping-pong as no-progress.
-  if (!firstHashA || !firstHashB) {
-    noProgressEvidence = false;
-  }
+    resultHashes.set(call.argsHash, call.resultHash);
+    return true;
+  });
 
   return {
     count: alternatingTailCount + 1,
     pairedToolName: last.toolName,
     pairedSignature: last.argsHash,
-    noProgressEvidence,
+    // Both sides must have a stable outcome before alternation counts as no progress.
+    noProgressEvidence: stableOutcomes && resultHashes.size === 2,
   };
 }
 
@@ -365,69 +537,68 @@ function canonicalPairKey(signatureA: string, signatureB: string): string {
   return [signatureA, signatureB].toSorted().join("|");
 }
 
-/**
- * Detect if an agent is stuck in a repetitive tool call loop.
- * Checks if the same tool+params combination has been called excessively.
- */
 export function detectToolCallLoop(
   state: SessionState,
   toolName: string,
   params: unknown,
-  config?: ToolLoopDetectionConfig,
+  scope?: ToolLoopDetectionScope,
 ): LoopDetectionResult {
-  const resolvedConfig = resolveLoopDetectionConfig(config);
-  if (!resolvedConfig.enabled) {
-    return { stuck: false };
-  }
-  const history = state.toolCallHistory ?? [];
+  const history = selectHistoryForScope(state.toolCallHistory ?? [], scope);
   const currentHash = hashToolCall(toolName, params);
+  const unknownToolStreak = getUnknownToolRepeatStreak(history, toolName);
   const noProgress = getNoProgressStreak(history, toolName, currentHash);
   const noProgressStreak = noProgress.count;
+  const argumentChurn = getArgumentChurnNoProgressStreak(history, toolName, currentHash);
   const knownPollTool = isKnownPollToolCall(toolName, params);
   const pingPong = getPingPongStreak(history, currentHash);
 
-  if (noProgressStreak >= resolvedConfig.globalCircuitBreakerThreshold) {
-    log.error(
-      `Global circuit breaker triggered: ${toolName} repeated ${noProgressStreak} times with no progress`,
-    );
+  if (unknownToolStreak.count >= UNKNOWN_TOOL_THRESHOLD) {
+    return {
+      stuck: true,
+      level: "critical",
+      detector: "unknown_tool_repeat",
+      count: unknownToolStreak.count,
+      message: `CRITICAL: attempted unavailable tool ${unknownToolStreak.unknownToolName ?? toolName} ${unknownToolStreak.count} times. Stop retrying that missing tool and answer without it.`,
+      warningKey: `unknown-tool:${toolName}:${unknownToolStreak.unknownToolName ?? "unknown"}`,
+    };
+  }
+
+  if (noProgressStreak >= GLOBAL_CIRCUIT_BREAKER_THRESHOLD) {
+    if (!isIncognitoDiagnosticSession(state)) {
+      log.error(
+        `Runaway-loop limit reached: ${toolName} repeated ${noProgressStreak} times with no progress`,
+      );
+    }
     return {
       stuck: true,
       level: "critical",
       detector: "global_circuit_breaker",
       count: noProgressStreak,
-      message: `CRITICAL: ${toolName} has repeated identical no-progress outcomes ${noProgressStreak} times. Session execution blocked by global circuit breaker to prevent runaway loops.`,
+      message: `CRITICAL: ${toolName} repeated identical no-progress outcomes ${noProgressStreak} times. Session execution blocked by the runaway-loop limit to prevent runaway loops.`,
       warningKey: `global:${toolName}:${currentHash}:${noProgress.latestResultHash ?? "none"}`,
     };
   }
 
-  if (
-    knownPollTool &&
-    resolvedConfig.detectors.knownPollNoProgress &&
-    noProgressStreak >= resolvedConfig.criticalThreshold
-  ) {
-    log.error(`Critical polling loop detected: ${toolName} repeated ${noProgressStreak} times`);
+  // A wait only resumes existing work; ten unchanged outcomes already prove a stuck poll.
+  const pollCriticalThreshold =
+    toolName === "wait" ? TOOL_LOOP_WARNING_THRESHOLD : CRITICAL_THRESHOLD;
+  if (knownPollTool && noProgressStreak >= TOOL_LOOP_WARNING_THRESHOLD) {
+    const critical = noProgressStreak >= pollCriticalThreshold;
+    if (!isIncognitoDiagnosticSession(state)) {
+      if (critical) {
+        log.error(`Critical polling loop detected: ${toolName} repeated ${noProgressStreak} times`);
+      } else {
+        log.warn(`Polling loop warning: ${toolName} repeated ${noProgressStreak} times`);
+      }
+    }
     return {
       stuck: true,
-      level: "critical",
+      level: critical ? "critical" : "warning",
       detector: "known_poll_no_progress",
       count: noProgressStreak,
-      message: `CRITICAL: Called ${toolName} with identical arguments and no progress ${noProgressStreak} times. This appears to be a stuck polling loop. Session execution blocked to prevent resource waste.`,
-      warningKey: `poll:${toolName}:${currentHash}:${noProgress.latestResultHash ?? "none"}`,
-    };
-  }
-
-  if (
-    knownPollTool &&
-    resolvedConfig.detectors.knownPollNoProgress &&
-    noProgressStreak >= resolvedConfig.warningThreshold
-  ) {
-    log.warn(`Polling loop warning: ${toolName} repeated ${noProgressStreak} times`);
-    return {
-      stuck: true,
-      level: "warning",
-      detector: "known_poll_no_progress",
-      count: noProgressStreak,
-      message: `WARNING: You have called ${toolName} ${noProgressStreak} times with identical arguments and no progress. Stop polling and either (1) increase wait time between checks, or (2) report the task as failed if the process is stuck.`,
+      message: critical
+        ? `CRITICAL: Called ${toolName} with identical arguments and no progress ${noProgressStreak} times. This appears to be a stuck polling loop. Session execution blocked to prevent resource waste.`
+        : `WARNING: You have called ${toolName} ${noProgressStreak} times with identical arguments and no progress. Stop polling and either (1) increase wait time between checks, or (2) report the task as failed if the process is stuck.`,
       warningKey: `poll:${toolName}:${currentHash}:${noProgress.latestResultHash ?? "none"}`,
     };
   }
@@ -436,51 +607,62 @@ export function detectToolCallLoop(
     ? `pingpong:${canonicalPairKey(currentHash, pingPong.pairedSignature)}`
     : `pingpong:${toolName}:${currentHash}`;
 
-  if (
-    resolvedConfig.detectors.pingPong &&
-    pingPong.count >= resolvedConfig.criticalThreshold &&
-    pingPong.noProgressEvidence
-  ) {
-    log.error(
-      `Critical ping-pong loop detected: alternating calls count=${pingPong.count} currentTool=${toolName}`,
-    );
+  if (pingPong.count >= TOOL_LOOP_WARNING_THRESHOLD) {
+    const critical = pingPong.count >= CRITICAL_THRESHOLD && pingPong.noProgressEvidence;
+    if (!isIncognitoDiagnosticSession(state)) {
+      if (critical) {
+        log.error(
+          `Critical ping-pong loop detected: alternating calls count=${pingPong.count} currentTool=${toolName}`,
+        );
+      } else {
+        log.warn(
+          `Ping-pong loop warning: alternating calls count=${pingPong.count} currentTool=${toolName}`,
+        );
+      }
+    }
     return {
       stuck: true,
-      level: "critical",
+      level: critical ? "critical" : "warning",
       detector: "ping_pong",
       count: pingPong.count,
-      message: `CRITICAL: You are alternating between repeated tool-call patterns (${pingPong.count} consecutive calls) with no progress. This appears to be a stuck ping-pong loop. Session execution blocked to prevent resource waste.`,
+      message: critical
+        ? `CRITICAL: You are alternating between repeated tool-call patterns (${pingPong.count} consecutive calls) with no progress. This appears to be a stuck ping-pong loop. Session execution blocked to prevent resource waste.`
+        : `WARNING: You are alternating between repeated tool-call patterns (${pingPong.count} consecutive calls). This looks like a ping-pong loop; stop retrying and report the task as failed.`,
       pairedToolName: pingPong.pairedToolName,
       warningKey: pingPongWarningKey,
     };
   }
 
-  if (resolvedConfig.detectors.pingPong && pingPong.count >= resolvedConfig.warningThreshold) {
-    log.warn(
-      `Ping-pong loop warning: alternating calls count=${pingPong.count} currentTool=${toolName}`,
-    );
-    return {
-      stuck: true,
-      level: "warning",
-      detector: "ping_pong",
-      count: pingPong.count,
-      message: `WARNING: You are alternating between repeated tool-call patterns (${pingPong.count} consecutive calls). This looks like a ping-pong loop; stop retrying and report the task as failed.`,
-      pairedToolName: pingPong.pairedToolName,
-      warningKey: pingPongWarningKey,
-    };
-  }
-
-  // Generic detector: warn-only for repeated identical calls.
+  // Generic detector: warn on repeated identical calls, then block only after
+  // outcomes prove the calls are not making progress.
   const recentCount = history.filter(
     (h) => h.toolName === toolName && h.argsHash === currentHash,
   ).length;
+  if (!knownPollTool && noProgressStreak >= CRITICAL_THRESHOLD) {
+    if (!isIncognitoDiagnosticSession(state)) {
+      log.error(`Critical generic loop detected: ${toolName} repeated ${noProgressStreak} times`);
+    }
+    return {
+      stuck: true,
+      level: "critical",
+      detector: "generic_repeat",
+      count: noProgressStreak,
+      message: `CRITICAL: Called ${toolName} with identical outcomes ${noProgressStreak} times. Session execution blocked to prevent runaway loops.`,
+      warningKey: `generic:${toolName}:${currentHash}:${noProgress.latestResultHash ?? "none"}`,
+    };
+  }
 
-  if (
-    !knownPollTool &&
-    resolvedConfig.detectors.genericRepeat &&
-    recentCount >= resolvedConfig.warningThreshold
-  ) {
-    log.warn(`Loop warning: ${toolName} called ${recentCount} times with identical arguments`);
+  if (argumentChurn.count >= TOOL_LOOP_WARNING_THRESHOLD) {
+    if (!isIncognitoDiagnosticSession(state)) {
+      log.warn(`Argument churn warning: ${toolName} cycled through stable argument patterns`);
+    }
+    return buildArgumentChurnWarning(toolName, argumentChurn);
+  }
+
+  if (!knownPollTool && recentCount >= TOOL_LOOP_WARNING_THRESHOLD) {
+    if (!isIncognitoDiagnosticSession(state)) {
+      log.warn(`Loop warning: ${toolName} called ${recentCount} times with identical arguments`);
+    }
     return {
       stuck: true,
       level: "warning",
@@ -494,18 +676,14 @@ export function detectToolCallLoop(
   return { stuck: false };
 }
 
-/**
- * Record a tool call in the session's history for loop detection.
- * Maintains sliding window of last N calls.
- */
 export function recordToolCall(
   state: SessionState,
   toolName: string,
   params: unknown,
   toolCallId?: string,
-  config?: ToolLoopDetectionConfig,
+  scope?: ToolLoopDetectionScope,
 ): void {
-  const resolvedConfig = resolveLoopDetectionConfig(config);
+  const runId = normalizeRunId(scope?.runId);
   if (!state.toolCallHistory) {
     state.toolCallHistory = [];
   }
@@ -514,17 +692,15 @@ export function recordToolCall(
     toolName,
     argsHash: hashToolCall(toolName, params),
     toolCallId,
+    ...(runId && { runId }),
     timestamp: Date.now(),
   });
 
-  if (state.toolCallHistory.length > resolvedConfig.historySize) {
-    state.toolCallHistory.shift();
+  if (state.toolCallHistory.length > TOOL_CALL_HISTORY_SIZE) {
+    state.toolCallHistory.splice(0, state.toolCallHistory.length - TOOL_CALL_HISTORY_SIZE);
   }
 }
 
-/**
- * Record a completed tool call outcome so loop detection can identify no-progress repeats.
- */
 export function recordToolCallOutcome(
   state: SessionState,
   params: {
@@ -533,18 +709,13 @@ export function recordToolCallOutcome(
     toolCallId?: string;
     result?: unknown;
     error?: unknown;
-    config?: ToolLoopDetectionConfig;
+    runId?: string;
   },
-): void {
-  const resolvedConfig = resolveLoopDetectionConfig(params.config);
-  const resultHash = hashToolOutcome(
-    params.toolName,
-    params.toolParams,
-    params.result,
-    params.error,
-  );
-  if (!resultHash) {
-    return;
+): ToolCallRecord | undefined {
+  const runId = normalizeRunId(params.runId);
+  const outcome = hashToolOutcome(params.toolName, params.toolParams, params.result, params.error);
+  if (!outcome.resultHash && !outcome.outcomeKind) {
+    return undefined;
   }
 
   if (!state.toolCallHistory) {
@@ -552,72 +723,38 @@ export function recordToolCallOutcome(
   }
 
   const argsHash = hashToolCall(params.toolName, params.toolParams);
-  let matched = false;
-  for (let i = state.toolCallHistory.length - 1; i >= 0; i -= 1) {
-    const call = state.toolCallHistory[i];
-    if (!call) {
-      continue;
-    }
-    if (params.toolCallId && call.toolCallId !== params.toolCallId) {
-      continue;
-    }
-    if (call.toolName !== params.toolName || call.argsHash !== argsHash) {
-      continue;
-    }
-    if (call.resultHash !== undefined) {
-      continue;
-    }
-    call.resultHash = resultHash;
-    matched = true;
-    break;
-  }
-
-  if (!matched) {
-    state.toolCallHistory.push({
+  let recordedOutcome = state.toolCallHistory.findLast(
+    (call) =>
+      call &&
+      normalizeRunId(call.runId) === runId &&
+      (!params.toolCallId || call.toolCallId === params.toolCallId) &&
+      call.toolName === params.toolName &&
+      call.argsHash === argsHash &&
+      call.resultHash === undefined &&
+      call.outcomeKind === undefined,
+  );
+  if (!recordedOutcome) {
+    recordedOutcome = {
       toolName: params.toolName,
       argsHash,
       toolCallId: params.toolCallId,
-      resultHash,
+      ...(runId && { runId }),
       timestamp: Date.now(),
-    });
+    };
+    state.toolCallHistory.push(recordedOutcome);
+  }
+  recordedOutcome.outcomeKind = outcome.outcomeKind;
+  recordedOutcome.resultHash = outcome.resultHash;
+  recordedOutcome.failureIdentityHash = outcome.failureIdentityHash;
+  recordedOutcome.unknownToolName = outcome.unknownToolName;
+  if (outcome.noProgress) {
+    recordedOutcome.noProgress = true;
+  } else {
+    delete recordedOutcome.noProgress;
   }
 
-  if (state.toolCallHistory.length > resolvedConfig.historySize) {
-    state.toolCallHistory.splice(0, state.toolCallHistory.length - resolvedConfig.historySize);
+  if (state.toolCallHistory.length > TOOL_CALL_HISTORY_SIZE) {
+    state.toolCallHistory.splice(0, state.toolCallHistory.length - TOOL_CALL_HISTORY_SIZE);
   }
-}
-
-/**
- * Get current tool call statistics for a session (for debugging/monitoring).
- */
-export function getToolCallStats(state: SessionState): {
-  totalCalls: number;
-  uniquePatterns: number;
-  mostFrequent: { toolName: string; count: number } | null;
-} {
-  const history = state.toolCallHistory ?? [];
-  const patterns = new Map<string, { toolName: string; count: number }>();
-
-  for (const call of history) {
-    const key = call.argsHash;
-    const existing = patterns.get(key);
-    if (existing) {
-      existing.count += 1;
-    } else {
-      patterns.set(key, { toolName: call.toolName, count: 1 });
-    }
-  }
-
-  let mostFrequent: { toolName: string; count: number } | null = null;
-  for (const pattern of patterns.values()) {
-    if (!mostFrequent || pattern.count > mostFrequent.count) {
-      mostFrequent = pattern;
-    }
-  }
-
-  return {
-    totalCalls: history.length,
-    uniquePatterns: patterns.size,
-    mostFrequent,
-  };
+  return recordedOutcome;
 }

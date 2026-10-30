@@ -3,7 +3,7 @@
  * Inspired by Hermes memory orchestration + fenced context block.
  */
 
-import { MemoryProvider } from "./provider.js";
+import { type MemoryProvider } from "./provider.js";
 import { TaskMemoryStore } from "./store.js";
 
 const FENCE_TAG_RE = /<\/?\s*memory-context\s*>/gi;

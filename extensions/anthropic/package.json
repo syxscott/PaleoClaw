@@ -1,0 +1,15 @@
+{
+  "name": "@paleoclaw/anthropic-provider",
+  "version": "2026.10.5",
+  "private": true,
+  "description": "paleoclaw Anthropic provider, Claude CLI, and native session catalog plugin",
+  "type": "module",
+  "devDependencies": {
+    "@paleoclaw/plugin-sdk": "workspace:*"
+  },
+  "paleoclaw": {
+    "extensions": [
+      "./index.ts"
+    ]
+  }
+}

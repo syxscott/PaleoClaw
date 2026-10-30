@@ -1,38 +1,444 @@
-import type { OpenClawPluginApi } from "paleoclaw/plugin-sdk/memory-core";
-import { emptyPluginConfigSchema } from "paleoclaw/plugin-sdk/memory-core";
+import {
+  listAgentIds,
+  resolveSessionAgentIdStrict,
+} from "paleoclaw/plugin-sdk/agent-scope-runtime";
+import { createLazyRuntimeModule } from "paleoclaw/plugin-sdk/lazy-runtime";
+import {
+  asToolParamsRecord,
+  jsonResult,
+  type MemoryPluginRuntime,
+  type OpenClawConfig,
+} from "paleoclaw/plugin-sdk/memory-core-host-runtime-core";
+import { resolveMemoryBackendConfig } from "paleoclaw/plugin-sdk/memory-core-host-runtime-files";
+import {
+  readNonNegativeIntegerParam,
+  readPositiveIntegerParam,
+} from "paleoclaw/plugin-sdk/param-readers";
+import { normalizePluginsConfig } from "paleoclaw/plugin-sdk/plugin-config-runtime";
+import {
+  definePluginEntry,
+  type AnyAgentTool,
+  type OpenClawPluginToolContext,
+} from "paleoclaw/plugin-sdk/plugin-entry";
+import type { OpenKeyedStoreOptions } from "paleoclaw/plugin-sdk/plugin-state-runtime";
+import { configureMemoryCoreDreamingState } from "./src/dreaming-state.js";
+import { registerShortTermPromotionDreaming } from "./src/dreaming.js";
+import { buildMemoryFlushPlan } from "./src/flush-plan.js";
+import {
+  buildMemoryPromptSection,
+  buildProjectMemoryWriteInstruction,
+  MEMORY_GET_TOOL_CONTRACT,
+  MEMORY_SEARCH_TOOL_CONTRACT,
+  resolveMemoryToolContext,
+  type MemoryToolContract,
+  type MemoryToolOptions,
+} from "./src/memory-tool-contract.js";
+import type { MemoryCoreAcquireLocalService } from "./src/memory/embedding-local-service.js";
+import { hasMemoryIndexingBeenLive, prepareMemoryManagerReload } from "./src/memory/lifecycle.js";
+import type { MemoryCoreRuntimeHost } from "./src/memory/runtime-host.js";
+import { registerSessionBackfillGatewayMethods } from "./src/session-backfill-gateway.js";
 
-const memoryCorePlugin = {
+type MemoryToolsModule = typeof import("./src/tools.js");
+
+const loadMemoryToolsModule = createLazyRuntimeModule(() => import("./src/tools.js"));
+const loadStandingIntentsModule = createLazyRuntimeModule(
+  () => import("./src/standing-intents.js"),
+);
+const loadStandingIntentToolModule = createLazyRuntimeModule(
+  () => import("./src/standing-intents-tool.js"),
+);
+
+const loadRuntimeProviderModule = createLazyRuntimeModule(
+  () => import("./src/runtime-provider.js"),
+);
+
+function createLazyMemoryTool(params: {
+  options: MemoryToolOptions;
+  contract: MemoryToolContract;
+  load: (module: MemoryToolsModule, options: MemoryToolOptions) => AnyAgentTool | null;
+}): AnyAgentTool | null {
+  const initialContext = resolveMemoryToolContext(params.options);
+  if (!initialContext) {
+    return null;
+  }
+
+  let toolPromise: Promise<AnyAgentTool | null> | undefined;
+  return {
+    label: params.contract.label,
+    name: params.contract.name,
+    description: params.contract.describe(initialContext.sources),
+    parameters: params.contract.parameters,
+    prepareArguments: params.contract.prepareArguments,
+    execute: async (toolCallId, toolParams, signal, onUpdate) => {
+      toolPromise ??= loadMemoryToolsModule().then((module) => params.load(module, params.options));
+      const tool = await toolPromise;
+      if (!tool) {
+        return jsonResult({
+          disabled: true,
+          unavailable: true,
+          error: "memory search unavailable",
+        });
+      }
+      return await tool.execute(toolCallId, toolParams, signal, onUpdate);
+    },
+  };
+}
+
+function createLazyStandingIntentTool(
+  ctx: OpenClawPluginToolContext,
+  reportUnavailable: (reason: string) => void,
+): AnyAgentTool | null {
+  const cfg = ctx.getRuntimeConfig?.() ?? ctx.runtimeConfig ?? ctx.config;
+  const provider = ctx.messageChannel?.trim();
+  const senderId = ctx.requesterSenderId?.trim();
+  if (!cfg) {
+    reportUnavailable("runtime config is unavailable for this turn");
+    return null;
+  }
+  const agentId = resolveSessionAgentIdStrict({
+    sessionKey: ctx.sessionKey,
+    config: cfg,
+    agentId: ctx.agentId,
+  });
+  let executorPromise: Promise<AnyAgentTool["execute"]> | undefined;
+  return {
+    label: "Standing Intent",
+    name: "intent",
+    description:
+      "Create, list, or explicitly cancel event-conditioned standing intents. A created intent is armed; the system injects the reminder automatically when it triggers. Do not deliver it early or cancel it unless the user asks. Use scheduled tasks for time-based reminders.",
+    parameters: {
+      type: "object",
+      properties: {
+        action: { type: "string", enum: ["create", "list", "cancel"] },
+        id: { type: "string" },
+        description: { type: "string" },
+        triggerKeywords: { type: "array", items: { type: "string" } },
+        scope: {
+          type: "string",
+          enum: ["conversation", "channel", "anywhere"],
+          default: "channel",
+        },
+        senderScope: {
+          type: "string",
+          enum: ["sender", "anyone"],
+          default: "sender",
+        },
+        expiresAt: { type: "string" },
+        maxFires: { type: "integer", minimum: 1 },
+        cooldownSeconds: { type: "integer", minimum: 0 },
+        status: {
+          type: "string",
+          enum: ["pending", "armed", "fired", "done", "cancelled", "expired"],
+        },
+      },
+      required: ["action"],
+      additionalProperties: false,
+    },
+    prepareArguments: (args) => {
+      const params = asToolParamsRecord(args);
+      return {
+        ...params,
+        maxFires: readPositiveIntegerParam(params, "maxFires"),
+        cooldownSeconds: readNonNegativeIntegerParam(params, "cooldownSeconds"),
+      };
+    },
+    execute: async (toolCallId, params, signal, onUpdate) => {
+      executorPromise ??= loadStandingIntentToolModule().then((module) =>
+        module.createStandingIntentExecutor({
+          agentId,
+          assertCurrent: ctx.assertInvocationCurrent,
+          ...(ctx.sessionId ? { sourceSessionId: ctx.sessionId } : {}),
+          ...(ctx.nativeChannelId ? { conversationId: ctx.nativeChannelId } : {}),
+          ...(provider ? { provider } : {}),
+          ...(ctx.agentAccountId ? { accountId: ctx.agentAccountId } : {}),
+          ...(senderId ? { senderId } : {}),
+        }),
+      );
+      const execute = await executorPromise;
+      return await execute(toolCallId, params, signal, onUpdate);
+    },
+  };
+}
+
+function resolveMemoryToolOptions(
+  ctx: OpenClawPluginToolContext,
+  host: MemoryCoreRuntimeHost,
+): MemoryToolOptions {
+  const getConfig = ctx.getRuntimeConfig
+    ? () => ctx.getRuntimeConfig?.()
+    : () => ctx.runtimeConfig ?? ctx.config;
+  return {
+    config: getConfig(),
+    getConfig,
+    agentId: ctx.agentId,
+    agentSessionKey: ctx.sessionKey,
+    sandboxed: ctx.sandboxed,
+    oneShotCliRun: ctx.oneShotCliRun,
+    conversationRecall: ctx.conversationRecall,
+    activeProjectKeys: ctx.activeProjectKeys,
+    ...(host.acquireLocalService ? { acquireLocalService: host.acquireLocalService } : {}),
+    runInBackgroundContext: host.runInBackgroundContext,
+  };
+}
+
+function createLazyMemoryRuntime(host: MemoryCoreRuntimeHost): MemoryPluginRuntime {
+  return {
+    async searchForCli(params) {
+      const { createMemoryRuntime } = await loadRuntimeProviderModule();
+      return await createMemoryRuntime(host).searchForCli(params);
+    },
+    supportsWorkspaceMemoryReadSources: true,
+    prepareReload: prepareMemoryManagerReload,
+    async getMemorySearchManager(params) {
+      const { createMemoryRuntime } = await loadRuntimeProviderModule();
+      return await createMemoryRuntime(host).getMemorySearchManager(params);
+    },
+    async authorizeSearchHits(params) {
+      const { createMemoryRuntime } = await loadRuntimeProviderModule();
+      return await createMemoryRuntime(host).authorizeSearchHits(params);
+    },
+    async classifyWorkspaceMemoryPaths(params) {
+      const { classifyWorkspaceMemoryPaths } = await import("./src/workspace-path-classifier.js");
+      return await classifyWorkspaceMemoryPaths(params);
+    },
+    resolveMemoryBackendConfig,
+    async closeAllMemorySearchManagers() {
+      const { createMemoryRuntime } = await loadRuntimeProviderModule();
+      await createMemoryRuntime(host).closeAllMemorySearchManagers();
+    },
+    async closeMemorySearchManager(params) {
+      const { createMemoryRuntime } = await loadRuntimeProviderModule();
+      await createMemoryRuntime(host).closeMemorySearchManager(params);
+    },
+  };
+}
+
+export default definePluginEntry({
   id: "memory-core",
-  name: "Memory (Core)",
+  name: "paleoclaw Memory",
   description: "File-backed memory search tools and CLI",
   kind: "memory",
-  configSchema: emptyPluginConfigSchema(),
-  register(api: OpenClawPluginApi) {
-    api.registerTool(
-      (ctx) => {
-        const memorySearchTool = api.runtime.tools.createMemorySearchTool({
-          config: ctx.config,
-          agentSessionKey: ctx.sessionKey,
-        });
-        const memoryGetTool = api.runtime.tools.createMemoryGetTool({
-          config: ctx.config,
-          agentSessionKey: ctx.sessionKey,
-        });
-        if (!memorySearchTool || !memoryGetTool) {
-          return null;
+  register(api) {
+    const acquireLocalService: MemoryCoreAcquireLocalService = (...args) =>
+      api.runtime.llm.acquireLocalService(...args);
+    const openKeyedStore = <T>(options: OpenKeyedStoreOptions) =>
+      api.runtime.state.openKeyedStore<T>(options);
+    const host = {
+      acquireLocalService,
+      openKeyedStore,
+      runInBackgroundContext: api.lifecycle.runInBackgroundContext,
+    } satisfies MemoryCoreRuntimeHost;
+    configureMemoryCoreDreamingState(openKeyedStore);
+    const memoryRuntime = createLazyMemoryRuntime(host);
+    let indexStartup: Promise<void> | undefined;
+    const stopIndex = async (close: () => Promise<void> | undefined) => {
+      const errors: unknown[] = [];
+      for (const settle of [() => indexStartup, close]) {
+        try {
+          await settle();
+        } catch (error) {
+          errors.push(error);
         }
-        return [memorySearchTool, memoryGetTool];
+      }
+      if (errors.length === 1) {
+        throw errors[0];
+      }
+      if (errors.length > 1) {
+        throw new AggregateError(errors, "Memory index shutdown failed");
+      }
+    };
+    api.lifecycle.onDispose?.(async () => {
+      const retirement = prepareMemoryManagerReload({
+        retireRuntime: true,
+        retiringEmbeddingProviders: [],
+      });
+      await stopIndex(async () => {
+        const result = await retirement.drain();
+        if (result?.errors.length) {
+          throw new AggregateError(result.errors, "Memory manager disposal failed");
+        }
+      });
+    });
+    if (normalizePluginsConfig(api.config.plugins).slots.memory === api.id) {
+      api.registerService({
+        id: "memory-core-index",
+        reload: { configPrefixes: ["memory.search", "agents", "models.providers"] },
+        start({ config, logger }) {
+          // Cold start stays demand-driven: opening every agent's index starts its
+          // transcript and index workers before any search or turn needs them.
+          // Restarts after a manager ran restore watching without a search.
+          if (!hasMemoryIndexingBeenLive()) {
+            return;
+          }
+          const activate = async () => {
+            await Promise.all(
+              listAgentIds(config).map(async (agentId) => {
+                const { error } = await memoryRuntime
+                  .getMemorySearchManager({ cfg: config, agentId })
+                  .catch((cause: unknown) => ({ error: String(cause) }));
+                if (error) {
+                  logger.warn(`memory-core: index startup failed for ${agentId}: ${error}`);
+                }
+              }),
+            );
+          };
+          // Database preparation starts after services return; joining here deadlocks startup.
+          indexStartup = api.lifecycle.runInBackgroundContext
+            ? api.lifecycle.runInBackgroundContext(activate)
+            : activate();
+          // Forced retirement may reject before the cleanup owner reaches this task.
+          void indexStartup.catch(() => {});
+        },
+        stop: () => stopIndex(() => memoryRuntime.closeAllMemorySearchManagers?.()),
+      });
+    }
+    registerShortTermPromotionDreaming(api);
+    let stopIntentMaintenance: (() => void) | undefined;
+    api.registerService({
+      apiVersion: 2,
+      id: "memory-core-standing-intents",
+      reload: { configPrefixes: ["agents"] },
+      async start({ config, scheduler, logger }) {
+        const module = await loadStandingIntentsModule();
+        stopIntentMaintenance = module.startStandingIntentMaintenance({
+          agentIds: listAgentIds(config),
+          scheduler,
+          warn: (message) => logger.warn(message),
+        });
       },
-      { names: ["memory_search", "memory_get"] },
+      stop() {
+        stopIntentMaintenance?.();
+        stopIntentMaintenance = undefined;
+      },
+    });
+    registerSessionBackfillGatewayMethods(api);
+    api.registerMemoryCapability({
+      recallToolNames: ["memory_search", "memory_get"],
+      deterministicRecallToolName: "memory_search",
+      supportsPrivateTranscriptRecall: true,
+      promptBuilder: (params) => {
+        // Curated writes use file tools, so project guidance is independent of recall availability.
+        const projectInstruction = buildProjectMemoryWriteInstruction(params.projectKey);
+        if (
+          !params.availableTools.has("memory_search") &&
+          !params.availableTools.has("memory_get")
+        ) {
+          return projectInstruction;
+        }
+        const liveConfig = api.runtime.config?.current ? api.runtime.config.current() : api.config;
+        const context = resolveMemoryToolContext({
+          // SAFETY: Runtime config is host-validated and this resolver only reads the snapshot.
+          config: liveConfig as OpenClawConfig,
+          agentId: params.agentId,
+          agentSessionKey: params.agentSessionKey,
+        });
+        return [...(context ? buildMemoryPromptSection(params) : []), ...projectInstruction];
+      },
+      flushPlanResolver: buildMemoryFlushPlan,
+      runtime: memoryRuntime,
+      publicArtifacts: {
+        async listArtifacts(params) {
+          const { listMemoryHostPublicArtifacts } =
+            await import("paleoclaw/plugin-sdk/memory-host-core");
+          return await listMemoryHostPublicArtifacts(params);
+        },
+      },
+    });
+
+    for (const contract of [MEMORY_SEARCH_TOOL_CONTRACT, MEMORY_GET_TOOL_CONTRACT]) {
+      api.registerTool(
+        (ctx) =>
+          createLazyMemoryTool({
+            options: resolveMemoryToolOptions(ctx, host),
+            contract,
+            load: (module, options) =>
+              contract.name === "memory_search"
+                ? module.createMemorySearchTool(options)
+                : module.createMemoryGetTool(options),
+          }),
+        { names: [contract.name], workspaceAccess: "execute" },
+      );
+    }
+
+    api.registerTool(
+      {
+        contextVersion: 2,
+        create: (ctx) =>
+          createLazyStandingIntentTool(ctx, (reason) => {
+            api.logger.warn(`memory-core: intent tool unavailable: ${reason}`);
+          }),
+      },
+      { names: ["intent"], workspaceAccess: "execute" },
     );
+
+    api.on("before_prompt_build", async (event, ctx) => {
+      if (ctx.trigger !== "user") {
+        return undefined;
+      }
+      try {
+        const invocation = ctx.hookInvocation;
+        if (!invocation) {
+          throw new Error("prompt hook invocation support is required; intent matching skipped");
+        }
+        const module = await loadStandingIntentsModule();
+        invocation.assertActive();
+        if (!module.isEligibleStandingIntentTurn(ctx)) {
+          return undefined;
+        }
+        const config = (api.runtime.config?.current?.() ?? api.config) as OpenClawConfig;
+        const agentId = resolveSessionAgentIdStrict({
+          sessionKey: ctx.sessionKey,
+          config,
+          agentId: ctx.agentId,
+        });
+        const intents = await module.matchStandingIntents({
+          agentId,
+          prompt: event.prompt,
+          assertCurrent: invocation.assertActive,
+          ...((ctx.channelId ?? ctx.chatId)
+            ? { channel: (ctx.channelId ?? ctx.chatId) as string }
+            : {}),
+          ...((ctx.channel ?? ctx.messageProvider)
+            ? { provider: (ctx.channel ?? ctx.messageProvider) as string }
+            : {}),
+          ...(ctx.accountId ? { accountId: ctx.accountId } : {}),
+          ...(ctx.senderId ? { senderId: ctx.senderId } : {}),
+        });
+        const prependContext = module.buildStandingIntentContext(intents);
+        return prependContext ? { prependContext } : undefined;
+      } catch (error) {
+        api.logger.warn?.(
+          `memory-core: standing intent matching failed: ${error instanceof Error ? error.message : String(error)}`,
+        );
+        return undefined;
+      }
+    });
+
+    api.registerCommand({
+      name: "dreaming",
+      description: "Enable or disable memory dreaming.",
+      acceptsArgs: true,
+      exposeSenderIsOwner: true,
+      handler: async (ctx) => {
+        const { handleDreamingCommand } = await import("./src/dreaming-command.js");
+        return await handleDreamingCommand(api, ctx);
+      },
+    });
 
     api.registerCli(
-      ({ program }) => {
-        api.runtime.tools.registerMemoryCli(program);
+      async ({ program }) => {
+        const { registerMemoryCli } = await import("./cli.js");
+        registerMemoryCli(program, host);
       },
-      { commands: ["memory"] },
+      {
+        descriptors: [
+          {
+            name: "memory",
+            description: "Search, inspect, and reindex memory files",
+            hasSubcommands: true,
+          },
+        ],
+      },
     );
   },
-};
-
-export default memoryCorePlugin;
+});

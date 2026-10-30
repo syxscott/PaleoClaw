@@ -1,305 +1,80 @@
-import crypto from "node:crypto";
+/** Builds and revalidates system.run approval plans for cwd and executable paths. */
 import fs from "node:fs";
-import path from "node:path";
-import type {
-  SystemRunApprovalFileOperand,
-  SystemRunApprovalPlan,
-} from "../infra/exec-approvals.js";
+import {
+  normalizeNullableString,
+  readNonBlankString,
+} from "@paleoclaw/normalization-core/string-coerce";
+import type { SystemRunApprovalPlan } from "../infra/exec-approvals.js";
 import { resolveCommandResolutionFromArgv } from "../infra/exec-command-resolution.js";
 import {
-  POSIX_SHELL_WRAPPERS,
-  normalizeExecutableToken,
-  unwrapKnownDispatchWrapperInvocation,
-  unwrapKnownShellMultiplexerInvocation,
+  isBlockedShellWrapperCommand,
+  isShellWrapperInvocation,
 } from "../infra/exec-wrapper-resolution.js";
-import { sameFileIdentity } from "../infra/file-identity.js";
 import {
-  POSIX_INLINE_COMMAND_FLAGS,
-  resolveInlineCommandMatch,
-} from "../infra/shell-inline-command.js";
-import { formatExecCommand, resolveSystemRunCommand } from "../infra/system-run-command.js";
+  inspectHostExecEnvOverrides,
+  sanitizeHostExecEnv,
+  sanitizeSystemRunEnvOverrides,
+} from "../infra/host-env-security.js";
+import { resolveMutableFileOperandSnapshotSync } from "../infra/system-run-approval-binding.js";
+import { formatExecCommand, resolveSystemRunCommandRequest } from "../infra/system-run-command.js";
+import {
+  type ApprovedCwdSnapshot,
+  captureApprovedCwdSnapshotSync,
+} from "../infra/system-run-cwd-binding.js";
+import type { SystemRunBindingFailure } from "../infra/system-run-mutable-file-operand.js";
 
-export type ApprovedCwdSnapshot = {
-  cwd: string;
-  stat: fs.Stats;
-};
-
-const MUTABLE_ARGV1_INTERPRETER_PATTERNS = [
-  /^(?:node|nodejs)$/,
-  /^perl$/,
-  /^php$/,
-  /^python(?:\d+(?:\.\d+)*)?$/,
-  /^ruby$/,
-] as const;
-
-function normalizeString(value: unknown): string | null {
-  if (typeof value !== "string") {
-    return null;
-  }
-  const trimmed = value.trim();
-  return trimmed ? trimmed : null;
-}
-
-function pathComponentsFromRootSync(targetPath: string): string[] {
-  const absolute = path.resolve(targetPath);
-  const parts: string[] = [];
-  let cursor = absolute;
-  while (true) {
-    parts.unshift(cursor);
-    const parent = path.dirname(cursor);
-    if (parent === cursor) {
-      return parts;
-    }
-    cursor = parent;
-  }
-}
-
-function isWritableByCurrentProcessSync(candidate: string): boolean {
-  try {
-    fs.accessSync(candidate, fs.constants.W_OK);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-function hasMutableSymlinkPathComponentSync(targetPath: string): boolean {
-  for (const component of pathComponentsFromRootSync(targetPath)) {
-    try {
-      if (!fs.lstatSync(component).isSymbolicLink()) {
-        continue;
-      }
-      const parentDir = path.dirname(component);
-      if (isWritableByCurrentProcessSync(parentDir)) {
-        return true;
-      }
-    } catch {
-      return true;
-    }
-  }
-  return false;
-}
-
-function shouldPinExecutableForApproval(params: {
-  shellCommand: string | null;
-  wrapperChain: string[] | undefined;
-}): boolean {
-  if (params.shellCommand !== null) {
-    return false;
-  }
-  return (params.wrapperChain?.length ?? 0) === 0;
-}
-
-function hashFileContentsSync(filePath: string): string {
-  return crypto.createHash("sha256").update(fs.readFileSync(filePath)).digest("hex");
-}
-
-function unwrapArgvForMutableOperand(argv: string[]): { argv: string[]; baseIndex: number } {
-  let current = argv;
-  let baseIndex = 0;
-  while (true) {
-    const dispatchUnwrap = unwrapKnownDispatchWrapperInvocation(current);
-    if (dispatchUnwrap.kind === "unwrapped") {
-      baseIndex += current.length - dispatchUnwrap.argv.length;
-      current = dispatchUnwrap.argv;
-      continue;
-    }
-    const shellMultiplexerUnwrap = unwrapKnownShellMultiplexerInvocation(current);
-    if (shellMultiplexerUnwrap.kind === "unwrapped") {
-      baseIndex += current.length - shellMultiplexerUnwrap.argv.length;
-      current = shellMultiplexerUnwrap.argv;
-      continue;
-    }
-    return { argv: current, baseIndex };
-  }
-}
-
-function resolvePosixShellScriptOperandIndex(argv: string[]): number | null {
-  if (
-    resolveInlineCommandMatch(argv, POSIX_INLINE_COMMAND_FLAGS, {
-      allowCombinedC: true,
-    }).valueTokenIndex !== null
-  ) {
-    return null;
-  }
-  let afterDoubleDash = false;
-  for (let i = 1; i < argv.length; i += 1) {
-    const token = argv[i]?.trim() ?? "";
-    if (!token) {
-      continue;
-    }
-    if (token === "-") {
-      return null;
-    }
-    if (!afterDoubleDash && token === "--") {
-      afterDoubleDash = true;
-      continue;
-    }
-    if (!afterDoubleDash && token === "-s") {
-      return null;
-    }
-    if (!afterDoubleDash && token.startsWith("-")) {
-      continue;
-    }
-    return i;
-  }
-  return null;
-}
-
-function resolveMutableFileOperandIndex(argv: string[]): number | null {
-  const unwrapped = unwrapArgvForMutableOperand(argv);
-  const executable = normalizeExecutableToken(unwrapped.argv[0] ?? "");
-  if (!executable) {
-    return null;
-  }
-  if ((POSIX_SHELL_WRAPPERS as ReadonlySet<string>).has(executable)) {
-    const shellIndex = resolvePosixShellScriptOperandIndex(unwrapped.argv);
-    return shellIndex === null ? null : unwrapped.baseIndex + shellIndex;
-  }
-  if (!MUTABLE_ARGV1_INTERPRETER_PATTERNS.some((pattern) => pattern.test(executable))) {
-    return null;
-  }
-  const operand = unwrapped.argv[1]?.trim() ?? "";
-  if (!operand || operand === "-" || operand.startsWith("-")) {
-    return null;
-  }
-  return unwrapped.baseIndex + 1;
-}
-
-function resolveMutableFileOperandSnapshotSync(params: {
-  argv: string[];
-  cwd: string | undefined;
-}): { ok: true; snapshot: SystemRunApprovalFileOperand | null } | { ok: false; message: string } {
-  const argvIndex = resolveMutableFileOperandIndex(params.argv);
-  if (argvIndex === null) {
-    return { ok: true, snapshot: null };
-  }
-  const rawOperand = params.argv[argvIndex]?.trim();
-  if (!rawOperand) {
-    return {
-      ok: false,
-      message: "SYSTEM_RUN_DENIED: approval requires a stable script operand",
-    };
-  }
-  const resolvedPath = path.resolve(params.cwd ?? process.cwd(), rawOperand);
-  let realPath: string;
-  let stat: fs.Stats;
-  try {
-    realPath = fs.realpathSync(resolvedPath);
-    stat = fs.statSync(realPath);
-  } catch {
-    return {
-      ok: false,
-      message: "SYSTEM_RUN_DENIED: approval requires an existing script operand",
-    };
-  }
-  if (!stat.isFile()) {
-    return {
-      ok: false,
-      message: "SYSTEM_RUN_DENIED: approval requires a file script operand",
-    };
-  }
-  return {
-    ok: true,
-    snapshot: {
-      argvIndex,
-      path: realPath,
-      sha256: hashFileContentsSync(realPath),
-    },
-  };
-}
-
-function resolveCanonicalApprovalCwdSync(cwd: string):
+type SystemRunPrepareEnv =
   | {
       ok: true;
-      snapshot: ApprovedCwdSnapshot;
+      env: Record<string, string>;
     }
-  | { ok: false; message: string } {
-  const requestedCwd = path.resolve(cwd);
-  let cwdLstat: fs.Stats;
-  let cwdStat: fs.Stats;
-  let cwdReal: string;
-  let cwdRealStat: fs.Stats;
-  try {
-    cwdLstat = fs.lstatSync(requestedCwd);
-    cwdStat = fs.statSync(requestedCwd);
-    cwdReal = fs.realpathSync(requestedCwd);
-    cwdRealStat = fs.statSync(cwdReal);
-  } catch {
-    return {
-      ok: false,
-      message: "SYSTEM_RUN_DENIED: approval requires an existing canonical cwd",
+  | {
+      ok: false;
+      message: string;
     };
+export function buildEnvOverrideRejectionMessage(params: {
+  rejectedOverrideBlockedKeys: string[];
+  rejectedOverrideInvalidKeys: string[];
+}): string {
+  const details: string[] = [];
+  if (params.rejectedOverrideBlockedKeys.length > 0) {
+    details.push(`blocked override keys: ${params.rejectedOverrideBlockedKeys.join(", ")}`);
   }
-  if (!cwdStat.isDirectory()) {
-    return {
-      ok: false,
-      message: "SYSTEM_RUN_DENIED: approval requires cwd to be a directory",
-    };
+  if (params.rejectedOverrideInvalidKeys.length > 0) {
+    details.push(
+      `invalid non-portable override keys: ${params.rejectedOverrideInvalidKeys.join(", ")}`,
+    );
   }
-  if (hasMutableSymlinkPathComponentSync(requestedCwd)) {
-    return {
-      ok: false,
-      message: "SYSTEM_RUN_DENIED: approval requires canonical cwd (no symlink path components)",
-    };
-  }
-  if (cwdLstat.isSymbolicLink()) {
-    return {
-      ok: false,
-      message: "SYSTEM_RUN_DENIED: approval requires canonical cwd (no symlink cwd)",
-    };
-  }
+  return `SYSTEM_RUN_DENIED: environment override rejected (${details.join("; ")})`;
+}
+
+export function buildSystemRunPrepareCoverageEnv(params: {
+  argv: string[];
+  env?: Record<string, string> | null;
+}): SystemRunPrepareEnv {
+  const diagnostics = inspectHostExecEnvOverrides({
+    overrides: params.env ?? undefined,
+    blockPathOverrides: true,
+  });
   if (
-    !sameFileIdentity(cwdStat, cwdLstat) ||
-    !sameFileIdentity(cwdStat, cwdRealStat) ||
-    !sameFileIdentity(cwdLstat, cwdRealStat)
+    diagnostics.rejectedOverrideBlockedKeys.length > 0 ||
+    diagnostics.rejectedOverrideInvalidKeys.length > 0
   ) {
     return {
       ok: false,
-      message: "SYSTEM_RUN_DENIED: approval cwd identity mismatch",
+      message: buildEnvOverrideRejectionMessage(diagnostics),
     };
   }
+  const envOverrides = sanitizeSystemRunEnvOverrides({
+    overrides: params.env ?? undefined,
+    shellWrapper: isShellWrapperInvocation(params.argv),
+  });
   return {
     ok: true,
-    snapshot: {
-      cwd: cwdReal,
-      stat: cwdStat,
-    },
+    // Prepared coverage is durable approval evidence, so keep this in parity
+    // with the env passed to `system.run` policy and execution.
+    env: sanitizeHostExecEnv({ overrides: envOverrides, blockPathOverrides: true }),
   };
-}
-
-export function revalidateApprovedCwdSnapshot(params: { snapshot: ApprovedCwdSnapshot }): boolean {
-  const current = resolveCanonicalApprovalCwdSync(params.snapshot.cwd);
-  if (!current.ok) {
-    return false;
-  }
-  return sameFileIdentity(params.snapshot.stat, current.snapshot.stat);
-}
-
-export function revalidateApprovedMutableFileOperand(params: {
-  snapshot: SystemRunApprovalFileOperand;
-  argv: string[];
-  cwd: string | undefined;
-}): boolean {
-  const operand = params.argv[params.snapshot.argvIndex]?.trim();
-  if (!operand) {
-    return false;
-  }
-  const resolvedPath = path.resolve(params.cwd ?? process.cwd(), operand);
-  let realPath: string;
-  try {
-    realPath = fs.realpathSync(resolvedPath);
-  } catch {
-    return false;
-  }
-  if (realPath !== params.snapshot.path) {
-    return false;
-  }
-  try {
-    return hashFileContentsSync(realPath) === params.snapshot.sha256;
-  } catch {
-    return false;
-  }
 }
 
 export function hardenApprovedExecutionPaths(params: {
@@ -311,7 +86,6 @@ export function hardenApprovedExecutionPaths(params: {
   | {
       ok: true;
       argv: string[];
-      argvChanged: boolean;
       cwd: string | undefined;
       approvedCwdSnapshot: ApprovedCwdSnapshot | undefined;
     }
@@ -320,89 +94,62 @@ export function hardenApprovedExecutionPaths(params: {
     return {
       ok: true,
       argv: params.argv,
-      argvChanged: false,
       cwd: params.cwd,
       approvedCwdSnapshot: undefined,
     };
   }
 
-  let hardenedCwd = params.cwd;
-  let approvedCwdSnapshot: ApprovedCwdSnapshot | undefined;
-  if (hardenedCwd) {
-    const canonicalCwd = resolveCanonicalApprovalCwdSync(hardenedCwd);
-    if (!canonicalCwd.ok) {
-      return canonicalCwd;
-    }
-    hardenedCwd = canonicalCwd.snapshot.cwd;
-    approvedCwdSnapshot = canonicalCwd.snapshot;
+  // Capture an omitted cwd once on the execution host. Approval, persistence,
+  // revalidation, and process launch must all bind the same directory identity.
+  const canonicalCwd = captureApprovedCwdSnapshotSync(params.cwd ?? process.cwd());
+  if (!canonicalCwd.ok) {
+    return canonicalCwd;
   }
+  const hardened = {
+    ok: true as const,
+    argv: params.argv,
+    cwd: canonicalCwd.snapshot.cwd,
+    approvedCwdSnapshot: canonicalCwd.snapshot,
+  };
 
-  if (params.argv.length === 0) {
-    return {
-      ok: true,
-      argv: params.argv,
-      argvChanged: false,
-      cwd: hardenedCwd,
-      approvedCwdSnapshot,
-    };
-  }
-
-  const resolution = resolveCommandResolutionFromArgv(params.argv, hardenedCwd);
+  const resolution = resolveCommandResolutionFromArgv(params.argv, hardened.cwd);
   if (
-    !shouldPinExecutableForApproval({
-      shellCommand: params.shellCommand,
-      wrapperChain: resolution?.wrapperChain,
-    })
+    params.argv.length === 0 ||
+    params.shellCommand !== null ||
+    (resolution?.wrapperChain?.length ?? 0) !== 0
   ) {
-    // Preserve wrapper semantics for approval-based execution. Pinning the
-    // effective executable while keeping wrapper argv shape can shift positional
-    // arguments and execute a different command than approved.
-    return {
-      ok: true,
-      argv: params.argv,
-      argvChanged: false,
-      cwd: hardenedCwd,
-      approvedCwdSnapshot,
-    };
+    // Wrapper argv must stay intact: replacing its effective executable can shift
+    // positional arguments and run a different command than the approved one.
+    return hardened;
   }
 
-  const pinnedExecutable = resolution?.resolvedRealPath ?? resolution?.resolvedPath;
+  const pinnedExecutable =
+    resolution?.execution.resolvedRealPath ?? resolution?.execution.resolvedPath;
   if (!pinnedExecutable) {
     return {
       ok: false,
       message: "SYSTEM_RUN_DENIED: approval requires a stable executable path",
     };
   }
-
   if (pinnedExecutable === params.argv[0]) {
-    return {
-      ok: true,
-      argv: params.argv,
-      argvChanged: false,
-      cwd: hardenedCwd,
-      approvedCwdSnapshot,
-    };
+    return hardened;
   }
-
   const argv = [...params.argv];
   argv[0] = pinnedExecutable;
-  return {
-    ok: true,
-    argv,
-    argvChanged: true,
-    cwd: hardenedCwd,
-    approvedCwdSnapshot,
-  };
+  return { ...hardened, argv };
 }
 
-export function buildSystemRunApprovalPlan(params: {
-  command?: unknown;
-  rawCommand?: unknown;
-  cwd?: unknown;
-  agentId?: unknown;
-  sessionKey?: unknown;
-}): { ok: true; plan: SystemRunApprovalPlan; cmdText: string } | { ok: false; message: string } {
-  const command = resolveSystemRunCommand({
+export function buildSystemRunApprovalPlan(
+  params: {
+    command?: unknown;
+    rawCommand?: unknown;
+    cwd?: unknown;
+    agentId?: unknown;
+    sessionKey?: unknown;
+  },
+  bindApproval = true,
+): { ok: true; plan: SystemRunApprovalPlan } | SystemRunBindingFailure {
+  const command = resolveSystemRunCommandRequest({
     command: params.command,
     rawCommand: params.rawCommand,
   });
@@ -412,35 +159,58 @@ export function buildSystemRunApprovalPlan(params: {
   if (command.argv.length === 0) {
     return { ok: false, message: "command required" };
   }
+  if (bindApproval && command.shellPayload === null && isBlockedShellWrapperCommand(command.argv)) {
+    return {
+      ok: false,
+      reason: "unsupported-command-shape",
+      message: "SYSTEM_RUN_DENIED: approval cannot safely bind this interpreter/runtime command",
+    };
+  }
+  let cwd = readNonBlankString(params.cwd);
+  // Node-host cwd preserves whitespace; see resolveExecWorkdir.
+  if (!bindApproval) {
+    // Ordinary execution follows aliases once; approval binding keeps its stricter path checks.
+    try {
+      cwd = fs.realpathSync(cwd ?? process.cwd());
+    } catch {
+      return {
+        ok: false,
+        message: "SYSTEM_RUN_DENIED: working directory does not exist or is inaccessible",
+      };
+    }
+  }
   const hardening = hardenApprovedExecutionPaths({
-    approvedByAsk: true,
+    approvedByAsk: bindApproval,
     argv: command.argv,
-    shellCommand: command.shellCommand,
-    cwd: normalizeString(params.cwd) ?? undefined,
+    shellCommand: command.shellPayload,
+    cwd,
   });
   if (!hardening.ok) {
-    return { ok: false, message: hardening.message };
+    return hardening;
   }
-  const rawCommand = hardening.argvChanged
-    ? formatExecCommand(hardening.argv) || null
-    : command.cmdText.trim() || null;
-  const mutableFileOperand = resolveMutableFileOperandSnapshotSync({
-    argv: hardening.argv,
-    cwd: hardening.cwd,
-  });
+  const commandText = formatExecCommand(hardening.argv);
+  const commandPreview =
+    command.previewText && command.previewText !== commandText ? command.previewText : null;
+  const mutableFileOperand = bindApproval
+    ? resolveMutableFileOperandSnapshotSync({
+        argv: hardening.argv,
+        cwd: hardening.cwd,
+        shellCommand: command.shellPayload,
+      })
+    : { ok: true as const, snapshot: null };
   if (!mutableFileOperand.ok) {
-    return { ok: false, message: mutableFileOperand.message };
+    return mutableFileOperand;
   }
   return {
     ok: true,
     plan: {
       argv: hardening.argv,
       cwd: hardening.cwd ?? null,
-      rawCommand,
-      agentId: normalizeString(params.agentId),
-      sessionKey: normalizeString(params.sessionKey),
+      commandText,
+      commandPreview,
+      agentId: normalizeNullableString(params.agentId),
+      sessionKey: normalizeNullableString(params.sessionKey),
       mutableFileOperand: mutableFileOperand.snapshot ?? undefined,
     },
-    cmdText: rawCommand ?? formatExecCommand(hardening.argv),
   };
 }

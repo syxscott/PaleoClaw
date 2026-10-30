@@ -1,0 +1,4 @@
+interface:
+  display_name: "paleoclaw Plugin Pre-Release Testing"
+  short_description: "Plan plugin release validation"
+  default_prompt: "Use $release-paleoclaw-plugin-testing to plan or run pre-release paleoclaw plugin validation across package, lifecycle, doctor, gateway, SDK, and live-ish proof."

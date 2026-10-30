@@ -1,83 +1,101 @@
-import { randomUUID } from "node:crypto";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { vi } from "vitest";
-import type { RuntimeEnv } from "../runtime.js";
+import { drainSessionDiskBudgetWorkers } from "../config/sessions/disk-budget-runtime.js";
+import { replaceSessionEntry } from "../config/sessions/session-accessor.js";
+import { resolveSqliteTargetFromSessionStorePath } from "../config/sessions/session-sqlite-target.js";
+import type { SessionEntry } from "../config/sessions/types.js";
+import {
+  closeOpenClawAgentDatabaseByPathAsync,
+  openOpenClawAgentDatabase,
+} from "../state/paleoclaw-agent-db.js";
+import type { sessionsCommand } from "./sessions.js";
+import { createCapturingTestRuntime } from "./test-runtime-config-helpers.js";
 
-export function mockSessionsConfig() {
-  vi.mock("../config/config.js", async (importOriginal) => {
-    const actual = await importOriginal<typeof import("../config/config.js")>();
-    return {
-      ...actual,
-      loadConfig: () => ({
-        agents: {
-          defaults: {
-            model: { primary: "pi:opus" },
-            models: { "pi:opus": {} },
-            contextTokens: 32000,
-          },
-        },
-      }),
-    };
-  });
-}
-
-export function makeRuntime(params?: { throwOnError?: boolean }): {
-  runtime: RuntimeEnv;
-  logs: string[];
-  errors: string[];
-} {
-  const logs: string[] = [];
-  const errors: string[] = [];
-  const throwOnError = params?.throwOnError ?? false;
-  return {
-    runtime: {
-      log: (msg: unknown) => logs.push(String(msg)),
-      error: (msg: unknown) => {
-        errors.push(String(msg));
-        if (throwOnError) {
-          throw new Error(String(msg));
-        }
-      },
-      exit: (code: number) => {
-        throw new Error(`exit ${code}`);
+const sessionsConfigState = vi.hoisted<{ loadConfig: () => Record<string, unknown> }>(() => ({
+  loadConfig: () => ({
+    agents: {
+      defaults: {
+        model: { primary: "test:opus" },
+        models: { "test:opus": {} },
+        contextTokens: 32000,
       },
     },
-    logs,
-    errors,
-  };
+  }),
+}));
+
+const defaultSessionsConfigLoader = sessionsConfigState.loadConfig;
+
+// mock-isolation: Session CLI fixtures select their own stores instead of the host session config.
+vi.mock("../config/config.js", () => ({
+  getRuntimeConfig: () => sessionsConfigState.loadConfig(),
+  loadConfig: () => sessionsConfigState.loadConfig(),
+  captureRuntimeConfigAsyncReader: () => async () => sessionsConfigState.loadConfig(),
+}));
+
+// The base sessions suite still calls this; importing the module installs the mock.
+export function mockSessionsConfig() {}
+
+export function setMockSessionsConfig(loader: () => Record<string, unknown>) {
+  sessionsConfigState.loadConfig = loader;
 }
 
-export function writeStore(data: unknown, prefix = "sessions"): string {
-  const fileName = `${[prefix, Date.now(), randomUUID()].join("-")}.json`;
-  const file = path.join(os.tmpdir(), fileName);
-  fs.writeFileSync(file, JSON.stringify(data, null, 2));
-  return file;
+export function resetMockSessionsConfig() {
+  sessionsConfigState.loadConfig = defaultSessionsConfigLoader;
+}
+
+export function makeRuntime(params?: { throwOnError?: boolean }) {
+  const captured = createCapturingTestRuntime();
+  const recordError = captured.runtime.error;
+  captured.runtime.error = (msg) => {
+    recordError(msg);
+    if (params?.throwOnError) {
+      throw new Error(String(msg));
+    }
+  };
+  captured.runtime.exit = (code) => {
+    throw new Error(`exit ${code}`);
+  };
+  return captured;
+}
+
+export async function writeStore(
+  data: Record<string, SessionEntry>,
+  prefix = "sessions",
+  options: { agentId?: string } = {},
+): Promise<string> {
+  const storeDir = fs.mkdtempSync(path.join(os.tmpdir(), `${prefix}-`));
+  const storePath = path.join(storeDir, "sessions.json");
+  const agentId = options.agentId ?? "main";
+  const databasePath = resolveSqliteTargetFromSessionStorePath(storePath, { agentId }).path;
+  openOpenClawAgentDatabase({ agentId, path: databasePath });
+  for (const [sessionKey, entry] of Object.entries(data)) {
+    await replaceSessionEntry({ agentId, sessionKey, storePath }, entry);
+  }
+  // Disk-budget scans inspect suffixed database owners; join them before handing off the fixture.
+  await drainSessionDiskBudgetWorkers();
+  await closeOpenClawAgentDatabaseByPathAsync(databasePath);
+  return databasePath;
+}
+
+export function cleanupStore(store: string): void {
+  fs.rmSync(path.dirname(store), { recursive: true, force: true });
 }
 
 export async function runSessionsJson<T>(
-  run: (
-    opts: { json?: boolean; store?: string; active?: string },
-    runtime: RuntimeEnv,
-  ) => Promise<void>,
+  run: typeof sessionsCommand,
   store: string,
-  options?: {
-    active?: string;
-  },
+  options?: Pick<Parameters<typeof sessionsCommand>[0], "active" | "limit">,
 ): Promise<T> {
   const { runtime, logs } = makeRuntime();
   try {
-    await run(
-      {
-        store,
-        json: true,
-        active: options?.active,
-      },
-      runtime,
-    );
+    await run({ store, json: true, active: options?.active, limit: options?.limit }, runtime);
   } finally {
-    fs.rmSync(store, { force: true });
+    await closeOpenClawAgentDatabaseByPathAsync(
+      resolveSqliteTargetFromSessionStorePath(store).path,
+    );
+    cleanupStore(store);
   }
   return JSON.parse(logs[0] ?? "{}") as T;
 }

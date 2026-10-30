@@ -1,50 +1,32 @@
+// Logger settings tests cover file-backed logger settings behavior.
+import path from "node:path";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { captureEnv } from "../test-utils/env.js";
 
-const { fallbackRequireMock, readLoggingConfigMock } = vi.hoisted(() => ({
-  readLoggingConfigMock: vi.fn(() => undefined),
-  fallbackRequireMock: vi.fn(() => {
-    throw new Error("config fallback should not be used in this test");
-  }),
-}));
-
-vi.mock("./config.js", () => ({
-  readLoggingConfig: readLoggingConfigMock,
-}));
-
-vi.mock("./node-require.js", () => ({
-  resolveNodeRequireFromMeta: () => fallbackRequireMock,
-}));
-
-let originalTestFileLog: string | undefined;
-let originalOpenClawLogLevel: string | undefined;
+let envSnapshot: ReturnType<typeof captureEnv> | undefined;
 let logging: typeof import("../logging.js");
+let loggingConfig: typeof import("./config.js");
+let applyLoggingConfig: typeof import("./logger.js").applyLoggingConfig;
 
 beforeAll(async () => {
+  // Bind the observer and both settings consumers to the same module generation.
+  vi.resetModules();
+  loggingConfig = await import("./config.js");
+  ({ applyLoggingConfig } = await import("./logger.js"));
   logging = await import("../logging.js");
 });
 
 beforeEach(() => {
-  originalTestFileLog = process.env.OPENCLAW_TEST_FILE_LOG;
-  originalOpenClawLogLevel = process.env.OPENCLAW_LOG_LEVEL;
+  envSnapshot = captureEnv(["OPENCLAW_TEST_FILE_LOG", "OPENCLAW_LOG_LEVEL"]);
   delete process.env.OPENCLAW_TEST_FILE_LOG;
   delete process.env.OPENCLAW_LOG_LEVEL;
-  readLoggingConfigMock.mockClear();
-  fallbackRequireMock.mockClear();
   logging.resetLogger();
   logging.setLoggerOverride(null);
 });
 
 afterEach(() => {
-  if (originalTestFileLog === undefined) {
-    delete process.env.OPENCLAW_TEST_FILE_LOG;
-  } else {
-    process.env.OPENCLAW_TEST_FILE_LOG = originalTestFileLog;
-  }
-  if (originalOpenClawLogLevel === undefined) {
-    delete process.env.OPENCLAW_LOG_LEVEL;
-  } else {
-    process.env.OPENCLAW_LOG_LEVEL = originalOpenClawLogLevel;
-  }
+  envSnapshot?.restore();
+  envSnapshot = undefined;
   logging.resetLogger();
   logging.setLoggerOverride(null);
   vi.restoreAllMocks();
@@ -52,15 +34,42 @@ afterEach(() => {
 
 describe("getResolvedLoggerSettings", () => {
   it("uses a silent fast path in default Vitest mode without config reads", () => {
+    const readLoggingConfig = vi.spyOn(loggingConfig, "readLoggingConfig");
+
     const settings = logging.getResolvedLoggerSettings();
+
     expect(settings.level).toBe("silent");
-    expect(readLoggingConfigMock).not.toHaveBeenCalled();
-    expect(fallbackRequireMock).not.toHaveBeenCalled();
+    expect(readLoggingConfig).not.toHaveBeenCalled();
   });
 
   it("reads logging config when test file logging is explicitly enabled", () => {
     process.env.OPENCLAW_TEST_FILE_LOG = "1";
+    const readLoggingConfig = vi.spyOn(loggingConfig, "readLoggingConfig");
+    applyLoggingConfig({
+      level: "debug",
+      file: "/tmp/paleoclaw-configured.log",
+      maxFileBytes: 2048,
+    });
+
     const settings = logging.getResolvedLoggerSettings();
+
+    expect(readLoggingConfig).toHaveBeenCalledOnce();
+    expect(settings.level).toBe("debug");
+    expect(settings.file).toBe("/tmp/paleoclaw-configured.log");
+    expect(settings.maxFileBytes).toBe(2048);
+  });
+
+  it("uses defaults when no logging config is available", () => {
+    process.env.OPENCLAW_TEST_FILE_LOG = "1";
+    applyLoggingConfig(undefined);
+
+    const settings = logging.getResolvedLoggerSettings();
+
     expect(settings.level).toBe("info");
+    expect(settings.file).toContain(path.join(".artifacts", "test-logs"));
+    expect(path.basename(settings.file)).toMatch(/^paleoclaw-vitest-\d+-\d{4}-\d{2}-\d{2}\.log$/);
+    expect(settings.file).not.toBe(
+      `/tmp/paleoclaw/paleoclaw-${new Date().toISOString().slice(0, 10)}.log`,
+    );
   });
 });

@@ -1,0 +1,21 @@
+{
+  "name": "@paleoclaw/imap",
+  "version": "2026.10.5",
+  "private": true,
+  "description": "paleoclaw inbound IMAP email trigger plugin",
+  "type": "module",
+  "dependencies": {
+    "imapflow": "2.4.0",
+    "mailauth": "7.3.0",
+    "mailparser": "3.9.38"
+  },
+  "devDependencies": {
+    "@paleoclaw/plugin-sdk": "workspace:*",
+    "@types/mailparser": "3.9.0"
+  },
+  "paleoclaw": {
+    "extensions": [
+      "./index.ts"
+    ]
+  }
+}

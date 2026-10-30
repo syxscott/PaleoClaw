@@ -1,0 +1,756 @@
+import fs from "node:fs/promises";
+import path from "node:path";
+import { isDeepStrictEqual } from "node:util";
+import {
+  listAgentIds,
+  resolveAgentDir,
+  resolveSessionAgentIdsStrict,
+} from "paleoclaw/plugin-sdk/agent-scope-runtime";
+import {
+  canonicalPathFromExistingAncestor,
+  isPathInside,
+} from "paleoclaw/plugin-sdk/file-access-runtime";
+import { withFileLock, type FileLockOptions } from "paleoclaw/plugin-sdk/file-lock";
+import type { PluginStateKeyedStore } from "paleoclaw/plugin-sdk/plugin-state-runtime";
+import { normalizeAgentId } from "paleoclaw/plugin-sdk/routing";
+import {
+  archiveLegacyStateSource,
+  legacyStateFileExists,
+  type PluginDoctorStateMigration,
+} from "paleoclaw/plugin-sdk/runtime-doctor-migrations";
+import { pathExists } from "paleoclaw/plugin-sdk/security-runtime";
+import { resolveStorePath } from "paleoclaw/plugin-sdk/session-store-paths";
+import {
+  CODEX_APP_SERVER_BINDING_MAX_ENTRIES,
+  CODEX_APP_SERVER_BINDING_NAMESPACE,
+} from "../app-server/session-binding-meta.js";
+import type { StoredCodexAppServerBinding as MigratedBindingRow } from "../app-server/session-binding-record.js";
+import {
+  readLegacySessionIndex,
+  resolveLegacySessionFileLocator,
+} from "./session-binding-legacy-index.js";
+
+const LEGACY_BINDING_SUFFIX = ".codex-app-server.json";
+const CODEX_AGENT_HARNESS_ID = "codex";
+const MAX_SESSION_DIRECTORY_DEPTH = 16;
+const LEGACY_BINDING_LOCK_OPTIONS: FileLockOptions = {
+  retries: { retries: 75, factor: 1, minTimeout: 1_000, maxTimeout: 1_000 },
+  stale: 120_000,
+};
+
+type MigrationParams = Parameters<PluginDoctorStateMigration["migrateLegacyState"]>[0];
+type MigrationEnvironment = Pick<MigrationParams, "config" | "env" | "stateDir">;
+
+type SessionSurface = {
+  root: string;
+  scan: boolean;
+  storePaths: Set<string>;
+  agentIds: Set<string>;
+};
+
+type LegacyBindingSource = {
+  sidecarPath: string;
+  transcriptPath: string;
+  agentIds: Set<string>;
+};
+
+type LegacyBindingOwner = {
+  agentId: string;
+  sessionId: string;
+  sessionKey: string;
+  storePath: string;
+  transcriptPath: string;
+  lifecycleRevision?: string;
+  agentHarnessId?: string;
+  updatedAt?: number;
+};
+
+type BindingOwnerCollection = {
+  owners: Map<string, LegacyBindingOwner[]>;
+  failures: string[];
+};
+
+type SourceMigrationResult = {
+  archived: boolean;
+  importedKeys: number;
+  notice?: string;
+  warning?: string;
+};
+
+async function collectSessionSurfaces(params: MigrationEnvironment): Promise<SessionSurface[]> {
+  const surfaces = new Map<string, SessionSurface>();
+  const stateRoot = await canonicalPathFromExistingAncestor(params.stateDir);
+  const add = async (
+    root: string,
+    storePath: string,
+    agentId: string | undefined,
+    scan: boolean,
+  ) => {
+    const canonicalRoot = await canonicalPathFromExistingAncestor(root);
+    const surface = surfaces.get(canonicalRoot) ?? {
+      root: canonicalRoot,
+      scan: false,
+      storePaths: new Set<string>(),
+      agentIds: new Set<string>(),
+    };
+    surface.scan ||= scan;
+    // A store's configured path defines how relative sessionFile locators are
+    // resolved. Keep it intact; canonicalize only when deduplicating aliases.
+    if (!storePath.endsWith(".sqlite")) {
+      surface.storePaths.add(path.resolve(storePath));
+    }
+    if (agentId) {
+      surface.agentIds.add(agentId);
+    }
+    surfaces.set(canonicalRoot, surface);
+  };
+
+  const agentIds = new Set(listAgentIds(params.config));
+  const agentsDir = path.join(params.stateDir, "agents");
+  for (const entry of await readDirectoryEntries(agentsDir)) {
+    if (!entry.isDirectory() || entry.isSymbolicLink()) {
+      continue;
+    }
+    const agentId = resolveSessionAgentIdsStrict({
+      agentId: entry.name,
+      config: params.config,
+    }).sessionAgentId;
+    agentIds.add(agentId);
+    const root = path.join(agentsDir, entry.name, "sessions");
+    await add(root, path.join(root, "sessions.json"), agentId, true);
+  }
+
+  for (const agentId of agentIds) {
+    const storePath = resolveStorePath(params.config.session?.store, {
+      agentId,
+      env: params.env,
+    });
+    const root = path.dirname(storePath);
+    await add(
+      root,
+      storePath,
+      agentId,
+      isPathInside(stateRoot, await canonicalPathFromExistingAncestor(root)),
+    );
+  }
+
+  const legacyRoot = path.join(params.stateDir, "sessions");
+  const legacyOwner = tryResolveLegacyBindingOwnerAgentId({
+    sessionKey: "",
+    config: params.config,
+  });
+  await add(legacyRoot, path.join(legacyRoot, "sessions.json"), legacyOwner, true);
+  return [...surfaces.values()].toSorted((a, b) => a.root.localeCompare(b.root));
+}
+
+async function collectLegacyBindingSources(
+  params: MigrationEnvironment,
+  options: { firstOnly?: boolean } = {},
+): Promise<{ sources: LegacyBindingSource[]; surfaces: SessionSurface[] }> {
+  const surfaces = await collectSessionSurfaces(params);
+  const sources = new Map<string, LegacyBindingSource>();
+  for (const surface of surfaces) {
+    const sidecars = surface.scan ? walkSidecars(surface.root) : iterateIndexedSidecars(surface);
+    for await (const sidecarPath of sidecars) {
+      const canonicalSidecar = await canonicalPathFromExistingAncestor(sidecarPath);
+      const source = sources.get(canonicalSidecar) ?? {
+        sidecarPath: canonicalSidecar,
+        transcriptPath: sidecarPath.slice(0, -LEGACY_BINDING_SUFFIX.length),
+        agentIds: new Set<string>(),
+      };
+      for (const agentId of surface.agentIds) {
+        source.agentIds.add(agentId);
+      }
+      sources.set(canonicalSidecar, source);
+      if (options.firstOnly) {
+        return { sources: [source], surfaces };
+      }
+    }
+  }
+  return {
+    sources: [...sources.values()].toSorted((a, b) => a.sidecarPath.localeCompare(b.sidecarPath)),
+    surfaces,
+  };
+}
+
+async function* iterateIndexedSidecars(surface: SessionSurface): AsyncGenerator<string> {
+  for (const storePath of surface.storePaths) {
+    const index = await readLegacySessionIndex(storePath);
+    if ("failure" in index) {
+      continue;
+    }
+    for (const { entry } of index.entries) {
+      // Legacy sidecars sit beside file-era transcripts; sqlite-marker entries
+      // never had sidecars, so the raw locator is skipped for them.
+      const sessionFile = entry.sessionFile?.trim() ?? "";
+      if (sessionFile.startsWith("sqlite:")) {
+        continue;
+      }
+      let transcriptPath: string;
+      try {
+        transcriptPath = await resolveLegacySessionFileLocator(
+          path.dirname(storePath),
+          entry,
+          entry.sessionId,
+        );
+      } catch {
+        continue;
+      }
+      const sidecarPath = `${transcriptPath}${LEGACY_BINDING_SUFFIX}`;
+      if (await legacyStateFileExists(sidecarPath)) {
+        yield sidecarPath;
+      }
+    }
+  }
+}
+
+async function* walkSidecars(root: string): AsyncGenerator<string> {
+  const pending = [{ directory: root, depth: 0 }];
+  while (pending.length > 0) {
+    const current = pending.pop()!;
+    for (const entry of (await readDirectoryEntries(current.directory)).toSorted((a, b) =>
+      a.name.localeCompare(b.name),
+    )) {
+      if (entry.isSymbolicLink()) {
+        continue;
+      }
+      const entryPath = path.join(current.directory, entry.name);
+      if (entry.isFile() && entry.name.endsWith(LEGACY_BINDING_SUFFIX)) {
+        yield entryPath;
+      } else if (entry.isDirectory() && current.depth < MAX_SESSION_DIRECTORY_DEPTH) {
+        pending.push({ directory: entryPath, depth: current.depth + 1 });
+      }
+    }
+  }
+}
+
+async function collectBindingOwners(
+  sources: LegacyBindingSource[],
+  surfaces: SessionSurface[],
+  params: MigrationEnvironment,
+): Promise<BindingOwnerCollection> {
+  const sourcePaths = new Set(
+    await Promise.all(
+      sources.map((source) => canonicalPathFromExistingAncestor(source.transcriptPath)),
+    ),
+  );
+  const owners = new Map<string, Map<string, LegacyBindingOwner>>();
+  const storeAgentIds = new Map<string, Set<string>>();
+  for (const surface of surfaces) {
+    for (const storePath of surface.storePaths) {
+      const agents = storeAgentIds.get(storePath) ?? new Set<string>();
+      for (const agentId of surface.agentIds) {
+        agents.add(agentId);
+      }
+      storeAgentIds.set(storePath, agents);
+    }
+  }
+  const failures: string[] = [];
+  for (const [storePath, agentIds] of storeAgentIds) {
+    const canonicalStorePath = await canonicalPathFromExistingAncestor(storePath);
+    const index = await readLegacySessionIndex(storePath);
+    if ("failure" in index) {
+      failures.push(index.failure);
+      continue;
+    }
+    const sessionsDir = path.dirname(storePath);
+    for (const { sessionKey, entry } of index.entries) {
+      const sessionId = entry.sessionId;
+      const agentId = tryResolveLegacyBindingOwnerAgentId({
+        sessionKey,
+        config: params.config,
+        storeAgentIds: agentIds,
+      });
+      if (!agentId) {
+        failures.push(`session index ${storePath} has an ambiguous owner for ${sessionKey}`);
+        continue;
+      }
+      let legacyTranscriptPath: string;
+      let canonicalLegacyTranscriptPath: string;
+      try {
+        legacyTranscriptPath = await resolveLegacySessionFileLocator(sessionsDir, entry, sessionId);
+        canonicalLegacyTranscriptPath =
+          await canonicalPathFromExistingAncestor(legacyTranscriptPath);
+      } catch {
+        failures.push(`session index ${storePath} has an invalid locator for ${sessionKey}`);
+        continue;
+      }
+      if (!sourcePaths.has(canonicalLegacyTranscriptPath)) {
+        continue;
+      }
+      const owner: LegacyBindingOwner = {
+        agentId,
+        sessionId,
+        sessionKey,
+        storePath,
+        transcriptPath: legacyTranscriptPath,
+        ...(entry.lifecycleRevision ? { lifecycleRevision: entry.lifecycleRevision } : {}),
+        agentHarnessId: entry.agentHarnessId?.trim(),
+        ...(entry.updatedAt !== undefined ? { updatedAt: entry.updatedAt } : {}),
+      };
+      const candidates =
+        owners.get(canonicalLegacyTranscriptPath) ?? new Map<string, LegacyBindingOwner>();
+      const ownerKey = `${agentId}\0${sessionId}\0${sessionKey}\0${canonicalStorePath}`;
+      const configuredStorePath = resolveStorePath(params.config.session?.store, {
+        agentId,
+        env: params.env,
+      });
+      // The same physical store can appear through a configured symlink and a
+      // discovered real path. Mutate through the path the runtime itself owns.
+      if (!candidates.has(ownerKey) || storePath === configuredStorePath) {
+        candidates.set(ownerKey, owner);
+      }
+      owners.set(canonicalLegacyTranscriptPath, candidates);
+    }
+  }
+  return {
+    owners: new Map([...owners].map(([key, values]) => [key, [...values.values()]])),
+    failures,
+  };
+}
+
+function tryResolveLegacyBindingOwnerAgentId(params: {
+  sessionKey: string;
+  config: MigrationEnvironment["config"];
+  storeAgentIds?: Set<string>;
+}): string | undefined {
+  if (params.sessionKey.trim().toLowerCase().startsWith("agent:")) {
+    return resolveSessionAgentIdsStrict({
+      sessionKey: params.sessionKey,
+      config: params.config,
+    }).sessionAgentId;
+  }
+  const storeAgentId = params.storeAgentIds?.size === 1 ? [...params.storeAgentIds][0] : undefined;
+  const configuredAgentId = params.config.agents?.defaults?.systemAgent?.agentId?.trim();
+  const systemAgentId =
+    !storeAgentId && configuredAgentId ? normalizeAgentId(configuredAgentId) : undefined;
+  const fallbackAgentIds =
+    systemAgentId && listAgentIds(params.config).includes(systemAgentId)
+      ? [undefined, systemAgentId]
+      : [undefined];
+  for (const fallbackAgentId of fallbackAgentIds) {
+    try {
+      return resolveSessionAgentIdsStrict({
+        sessionKey: params.sessionKey,
+        config: params.config,
+        ...(storeAgentId ? { agentId: storeAgentId } : fallbackAgentId ? { fallbackAgentId } : {}),
+      }).sessionAgentId;
+    } catch (error) {
+      if ((error as { code?: unknown }).code !== "AGENT_SELECTION_REQUIRED") {
+        throw error;
+      }
+    }
+  }
+  return undefined;
+}
+
+function copyBindingForSession(stored: MigratedBindingRow, sessionId: string): MigratedBindingRow {
+  return stored.state === "active"
+    ? { version: 1, state: "active", binding: stored.binding, sessionId }
+    : {
+        version: 1,
+        state: "cleared",
+        sessionId,
+        ...(stored.retired ? { retired: true } : {}),
+      };
+}
+
+async function migrateSource(
+  source: LegacyBindingSource,
+  candidates: LegacyBindingOwner[],
+  params: MigrationParams,
+  store: PluginStateKeyedStore<MigratedBindingRow>,
+): Promise<SourceMigrationResult> {
+  let importedKeys = 0;
+  const retain = (
+    reason: string,
+    level: "warning" | "notice" = "warning",
+  ): SourceMigrationResult => ({
+    archived: false,
+    importedKeys,
+    [level]: `Left Codex binding sidecar in place because ${reason}: ${source.sidecarPath}`,
+  });
+  const owner = candidates.length === 1 ? candidates[0] : undefined;
+  try {
+    return await withFileLock(source.sidecarPath, LEGACY_BINDING_LOCK_OPTIONS, async () => {
+      const [contents, stat] = await Promise.all([
+        fs.readFile(source.sidecarPath, "utf8"),
+        fs.stat(source.sidecarPath),
+      ]);
+      const raw = JSON.parse(contents) as Record<string, unknown>;
+      const [
+        {
+          bindingStoreKey,
+          createStoredCodexAppServerBinding,
+          normalizeStoredCodexAppServerBindingFingerprints,
+          readStoredCodexAppServerBinding,
+        },
+        { legacyCodexConversationBindingId },
+      ] = await Promise.all([
+        import("../app-server/session-binding.js"),
+        import("../conversation-binding-data.js"),
+      ]);
+      const agentId =
+        owner?.agentId ?? (source.agentIds.size === 1 ? [...source.agentIds][0] : undefined);
+      const baseStored = await createStoredCodexAppServerBinding(raw, {
+        now: stat.mtime.toISOString(),
+        lookup: {
+          config: params.config,
+          ...(agentId ? { agentDir: resolveAgentDir(params.config, agentId, params.env) } : {}),
+        },
+      });
+      if (!baseStored) {
+        return retain("its binding is invalid");
+      }
+      if (candidates.length > 1) {
+        // The legacy writer keyed one sidecar to one active session file. Multiple
+        // current owners are indeterminate, so preserve the source without writes.
+        return retain(`${candidates.length} matching session owners make ownership ambiguous`);
+      }
+      if (owner?.agentHarnessId === "") {
+        return retain(
+          "its session owner changed before Codex ownership could be recorded",
+          "notice",
+        );
+      }
+      if (owner?.agentHarnessId && owner.agentHarnessId !== CODEX_AGENT_HARNESS_ID) {
+        // Explicit foreign ownership is a complete decision, not an unsafe
+        // migration conflict. Preserve the sidecar for that harness without
+        // blocking every later Gateway startup.
+        return retain(`its session is owned by agent harness ${owner.agentHarnessId}`, "notice");
+      }
+      const readEvidence = params.context.readSessionIdentityEvidenceBatch;
+      const canonicalOwner =
+        owner && readEvidence
+          ? (await readEvidence([{ agentId: owner.agentId, sessionId: owner.sessionId }]))[0]
+          : undefined;
+      const canCreateOwner = !readEvidence || canonicalOwner?.state === "unknown";
+      const storedSessionFile =
+        typeof raw.sessionFile === "string" && raw.sessionFile.trim() ? raw.sessionFile : undefined;
+      const sourceSessionFile = storedSessionFile ?? source.transcriptPath;
+      const ownerSessionFile = storedSessionFile ?? owner?.transcriptPath;
+      const conversationKeys = [
+        sourceSessionFile,
+        ...(ownerSessionFile && ownerSessionFile !== sourceSessionFile ? [ownerSessionFile] : []),
+      ].map((sessionFile) =>
+        bindingStoreKey({
+          kind: "conversation",
+          bindingId: legacyCodexConversationBindingId(sessionFile),
+        }),
+      );
+      const readNormalizedRow = async (
+        key: string,
+      ): Promise<MigratedBindingRow | string | undefined> => {
+        const current = await store.lookup(key);
+        if (current === undefined) {
+          return undefined;
+        }
+        const parsed = readStoredCodexAppServerBinding(current);
+        if (!parsed) {
+          return `current plugin state is invalid at ${key}`;
+        }
+        const normalized = normalizeStoredCodexAppServerBindingFingerprints(parsed);
+        if (!normalized) {
+          return `current plugin state is invalid at ${key}`;
+        }
+        if (isDeepStrictEqual(parsed, normalized)) {
+          return parsed;
+        }
+        if (parsed.lease && parsed.lease.expiresAt > Date.now()) {
+          return `current plugin state is leased at ${key}`;
+        }
+        const { observe, compareAndApply } = store;
+        if (!observe || !compareAndApply) {
+          return `current plugin state could not be normalized at ${key}`;
+        }
+        const observation = await observe(key);
+        const candidateParsed = readStoredCodexAppServerBinding(observation.value);
+        if (!candidateParsed || !isDeepStrictEqual(candidateParsed, parsed)) {
+          return `current plugin state changed at ${key}`;
+        }
+        const result = await compareAndApply(key, observation.comparison, {
+          operation: "update",
+          action: "set",
+          value: normalized,
+        });
+        if (result.status === "conflict") {
+          return `current plugin state changed at ${key}`;
+        }
+        importedKeys++;
+        return normalized;
+      };
+      let currentConversation: MigratedBindingRow | undefined;
+      for (const key of conversationKeys) {
+        const current = await readNormalizedRow(key);
+        if (typeof current === "string") {
+          return retain(current);
+        }
+        currentConversation ??= current;
+      }
+      const stored = currentConversation ?? baseStored;
+      const conversationEntries = conversationKeys.map((key) => ({ key, value: stored }));
+      const sessionEntry = owner
+        ? {
+            key: bindingStoreKey({
+              kind: "session",
+              agentId: owner.agentId,
+              sessionId: owner.sessionId,
+              sessionKey: owner.sessionKey,
+            }),
+            value: copyBindingForSession(stored, owner.sessionId),
+          }
+        : undefined;
+      const entries = [...conversationEntries, ...(sessionEntry ? [sessionEntry] : [])];
+      const hasExpected = (value: MigratedBindingRow | undefined, target: MigratedBindingRow) => {
+        const parsed = readStoredCodexAppServerBinding(value);
+        if (!parsed) {
+          return false;
+        }
+        return target.state === "cleared"
+          ? parsed.state === "cleared" &&
+              parsed.sessionId === target.sessionId &&
+              parsed.retired === target.retired
+          : parsed.state === "active" &&
+              parsed.sessionId === target.sessionId &&
+              isDeepStrictEqual(parsed.binding, target.binding);
+      };
+      for (const entry of entries) {
+        const current = await readNormalizedRow(entry.key);
+        if (typeof current === "string") {
+          return retain(current);
+        }
+        if (current && !hasExpected(current, entry.value)) {
+          return retain(`current plugin state changed at ${entry.key}`);
+        }
+      }
+      for (const entry of entries) {
+        if (await store.registerIfAbsent(entry.key, entry.value)) {
+          importedKeys++;
+        }
+        if (!hasExpected(await store.lookup(entry.key), entry.value)) {
+          return retain(`current plugin state changed at ${entry.key}`);
+        }
+      }
+      if (owner) {
+        const ownershipResult = await recordSessionOwner(owner, params.env, {
+          canCreateOwner,
+          readEvidence,
+        });
+        const ownershipWarning =
+          typeof ownershipResult === "string"
+            ? ownershipResult
+            : ownershipResult
+              ? "its saved session was deleted"
+              : undefined;
+        if (ownershipWarning) {
+          if (sessionEntry?.value.state === "active") {
+            const { observe, compareAndApply } = store;
+            if (!observe || !compareAndApply) {
+              return retain(`${ownershipWarning}; its stale session binding could not be retired`);
+            }
+            const observation = await observe(sessionEntry.key);
+            const parsed = readStoredCodexAppServerBinding(observation.value);
+            if (
+              !(parsed?.lease && parsed.lease.expiresAt > Date.now()) &&
+              hasExpected(observation.value, sessionEntry.value)
+            ) {
+              await compareAndApply(sessionEntry.key, observation.comparison, {
+                operation: "update",
+                action: "set",
+                value: {
+                  version: 1,
+                  state: "cleared",
+                  sessionId: owner.sessionId,
+                  retired: true,
+                },
+              });
+            }
+            if (hasExpected(await store.lookup(sessionEntry.key), sessionEntry.value)) {
+              return retain(`${ownershipWarning}; its stale session binding could not be retired`);
+            }
+          }
+          // Imported active session state is retired before reaching here.
+          // The remaining sidecar may belong to the new owner, so preserve it
+          // as a note; failed retirement and revalidation stay warnings above.
+          if (typeof ownershipResult === "string") {
+            return retain(ownershipWarning, "notice");
+          }
+        }
+      }
+      // Legacy writers only created sidecars for an existing session file. Once
+      // unique ownership is recorded, or zero ownership is proven, it is safe to archive.
+      const archiveWarnings: string[] = [];
+      await archiveLegacyStateSource({
+        filePath: source.sidecarPath,
+        label: "Codex app-server binding",
+        changes: [],
+        warnings: archiveWarnings,
+      });
+      if (archiveWarnings.length > 0 && (await pathExists(source.sidecarPath))) {
+        return retain(archiveWarnings.join("; "));
+      }
+      return { archived: true, importedKeys };
+    });
+  } catch (error) {
+    // Parallel doctor runs can both discover a source before the first archives it.
+    if (
+      (error as NodeJS.ErrnoException).code === "ENOENT" &&
+      !(await pathExists(source.sidecarPath))
+    ) {
+      return { archived: true, importedKeys };
+    }
+    return retain(`migration or archiving failed: ${String(error)}`);
+  }
+}
+
+async function recordSessionOwner(
+  owner: LegacyBindingOwner,
+  env: NodeJS.ProcessEnv,
+  options: {
+    canCreateOwner: boolean;
+    readEvidence: MigrationParams["context"]["readSessionIdentityEvidenceBatch"];
+  },
+): Promise<string | { deleted: true } | undefined> {
+  const { prepareSessionEntryPatch } = await import("paleoclaw/plugin-sdk/session-store-runtime");
+  // Legacy indexes are offline inputs; only the canonical session can change ownership now.
+  let ownershipRefusal: string | undefined;
+  let observedCanonicalEntry = false;
+  const updated = await prepareSessionEntryPatch({
+    agentId: owner.agentId,
+    env,
+    ...(options.canCreateOwner
+      ? {
+          fallbackEntry: {
+            sessionId: owner.sessionId,
+            updatedAt: owner.updatedAt ?? 0,
+            ...(owner.lifecycleRevision ? { lifecycleRevision: owner.lifecycleRevision } : {}),
+          },
+        }
+      : {}),
+    preserveActivity: true,
+    requireWriteSuccess: true,
+    skipMaintenance: true,
+    storePath: owner.storePath,
+    sessionKey: owner.sessionKey,
+    prepare: (entry, { existingEntry }) => {
+      observedCanonicalEntry = existingEntry !== undefined;
+      if (
+        entry.sessionId.trim() !== owner.sessionId ||
+        entry.lifecycleRevision !== owner.lifecycleRevision
+      ) {
+        ownershipRefusal = "its session owner changed before Codex ownership could be recorded";
+        return null;
+      }
+      const harnessId =
+        typeof entry.agentHarnessId === "string" ? entry.agentHarnessId.trim() : undefined;
+      if (entry.agentHarnessId !== undefined && !harnessId) {
+        ownershipRefusal = "Codex harness ownership could not be recorded on its session";
+        return null;
+      }
+      if (harnessId && harnessId !== CODEX_AGENT_HARNESS_ID) {
+        ownershipRefusal = `its session is owned by agent harness ${harnessId}`;
+        return null;
+      }
+      return { agentHarnessId: CODEX_AGENT_HARNESS_ID };
+    },
+  });
+  // A declined patch can return the unchanged row, not only null.
+  if (!updated || ownershipRefusal) {
+    if (!options.canCreateOwner && !observedCanonicalEntry && options.readEvidence) {
+      const current = (
+        await options.readEvidence([{ agentId: owner.agentId, sessionId: owner.sessionId }])
+      )[0];
+      if (current?.state === "absent") {
+        return { deleted: true };
+      }
+    }
+    return ownershipRefusal ?? "its session owner changed before Codex ownership could be recorded";
+  }
+  return undefined;
+}
+
+async function readDirectoryEntries(directory: string) {
+  try {
+    return await fs.readdir(directory, { withFileTypes: true });
+  } catch (error) {
+    if (
+      ["EACCES", "ENOENT", "ENOTDIR", "EPERM"].includes((error as NodeJS.ErrnoException).code ?? "")
+    ) {
+      return [];
+    }
+    throw error;
+  }
+}
+
+export async function collectLegacySessionBindingBackupResources(params: MigrationEnvironment) {
+  const { sources } = await collectLegacyBindingSources(params);
+  return sources.map(({ sidecarPath }) => ({ path: sidecarPath, kind: "file" as const }));
+}
+
+export async function detectLegacySessionBindingSidecars(params: MigrationParams) {
+  const { sources } = await collectLegacyBindingSources(params, { firstOnly: true });
+  return sources.length > 0
+    ? {
+        preview: [
+          `- Codex app-server bindings: legacy sidecar -> plugin state (${CODEX_APP_SERVER_BINDING_NAMESPACE})`,
+        ],
+      }
+    : null;
+}
+
+export async function migrateLegacySessionBindingSidecars(params: MigrationParams) {
+  const changes: string[] = [];
+  const warnings: string[] = [];
+  const notices: string[] = [];
+  const { sources, surfaces } = await collectLegacyBindingSources(params);
+  if (sources.length === 0) {
+    return { changes, warnings };
+  }
+  const ownerCollection = await collectBindingOwners(sources, surfaces, params);
+  if (ownerCollection.failures.length > 0) {
+    warnings.push(
+      `Left ${sources.length} Codex binding sidecar(s) in place because session ownership is indeterminate: ${ownerCollection.failures.join("; ")}`,
+    );
+    return { changes, warnings };
+  }
+  const store = params.context.openPluginStateKeyedStore<MigratedBindingRow>({
+    namespace: CODEX_APP_SERVER_BINDING_NAMESPACE,
+    maxEntries: CODEX_APP_SERVER_BINDING_MAX_ENTRIES,
+    overflowPolicy: "reject-new",
+  });
+  let migrated = 0;
+  let partialImports = 0;
+  for (const source of sources) {
+    const candidates =
+      ownerCollection.owners.get(await canonicalPathFromExistingAncestor(source.transcriptPath)) ??
+      [];
+    const result = await migrateSource(source, candidates, params, store);
+    if (result.warning) {
+      warnings.push(result.warning);
+    }
+    if (result.notice) {
+      notices.push(result.notice);
+    }
+    if (result.archived) {
+      migrated++;
+    } else {
+      partialImports += result.importedKeys;
+    }
+  }
+  if (migrated > 0) {
+    changes.push(
+      `Migrated ${migrated} Codex app-server binding sidecar(s) to plugin state and archived the legacy sources`,
+    );
+  }
+  if (partialImports > 0) {
+    changes.push(
+      `Migrated ${partialImports} safe Codex app-server binding row(s) to plugin state; retained legacy sidecars needing review`,
+    );
+  }
+  return {
+    changes,
+    warnings,
+    ...(notices.length > 0 ? { notices } : {}),
+  };
+}
+/* oxlint-disable max-lines -- TODO: split this grandfathered oversized file. */

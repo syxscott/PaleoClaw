@@ -1,43 +1,48 @@
-import { listAgentIds } from "../../agents/agent-scope.js";
+import { expectDefined } from "@paleoclaw/normalization-core";
+import { asNonArrayRecord } from "@paleoclaw/normalization-core/record-coerce";
+import { resolveAmbientOwnerAgentId } from "../../agents/agent-scope-config.js";
+import { listAgentIds, resolveAgentDir, resolveSoleAgentId } from "../../agents/agent-scope.js";
 import { DEFAULT_MODEL, DEFAULT_PROVIDER } from "../../agents/defaults.js";
 import {
   buildModelAliasIndex,
+  legacyModelKey,
   modelKey,
-  parseModelRef,
   resolveModelRefFromString,
+  type ModelRef,
 } from "../../agents/model-selection.js";
 import { formatCliCommand } from "../../cli/command-format.js";
 import {
   type OpenClawConfig,
+  type ConfigFileSnapshot,
   readConfigFileSnapshot,
-  writeConfigFile,
+  transformConfigFile,
 } from "../../config/config.js";
+import { restoreEnvVarRefs } from "../../config/env-preserve.js";
+import { resolveConfigIncludes } from "../../config/includes.js";
+import type { ConfigWriteOptions } from "../../config/io.js";
 import { formatConfigIssueLines } from "../../config/issue-format.js";
-import { toAgentModelListLike } from "../../config/model-input.js";
-import type { AgentModelConfig } from "../../config/types.agents-shared.js";
+import {
+  mergeAgentModelEntryForConfig,
+  normalizeAgentModelRefForConfig,
+  toAgentModelListLike,
+} from "../../config/model-input.js";
+import { resolveIncludeRoots } from "../../config/paths.js";
+import { copyRuntimeConfigWriteApplication } from "../../config/runtime-write-application.js";
+import type { AgentModelEntryConfig } from "../../config/types.agent-defaults.js";
 import { normalizeAgentId } from "../../routing/session-key.js";
+import { inspectModelReference } from "./model-reference-validation.js";
+import { createModelCatalogProviderAliasCanonicalizer } from "./provider-aliases.js";
 
-export const ensureFlagCompatibility = (opts: { json?: boolean; plain?: boolean }) => {
+export { formatTokenK } from "./list.format.js";
+
+export function ensureFlagCompatibility(opts: { json?: boolean; plain?: boolean }): void {
   if (opts.json && opts.plain) {
     throw new Error("Choose either --json or --plain, not both.");
   }
-};
-
-export const formatTokenK = (value?: number | null) => {
-  if (!value || !Number.isFinite(value)) {
-    return "-";
-  }
-  if (value < 1024) {
-    return `${Math.round(value)}`;
-  }
-  return `${Math.round(value / 1024)}k`;
-};
+}
 
 export const formatMs = (value?: number | null) => {
-  if (value === null || value === undefined) {
-    return "-";
-  }
-  if (!Number.isFinite(value)) {
+  if (value === null || value === undefined || !Number.isFinite(value)) {
     return "-";
   }
   if (value < 1000) {
@@ -46,155 +51,272 @@ export const formatMs = (value?: number | null) => {
   return `${Math.round(value / 100) / 10}s`;
 };
 
-export const isLocalBaseUrl = (baseUrl: string) => {
-  try {
-    const url = new URL(baseUrl);
-    const host = url.hostname.toLowerCase();
-    return (
-      host === "localhost" ||
-      host === "127.0.0.1" ||
-      host === "0.0.0.0" ||
-      host === "::1" ||
-      host.endsWith(".local")
-    );
-  } catch {
-    return false;
-  }
-};
-
-export async function loadValidConfigOrThrow(): Promise<OpenClawConfig> {
+export async function loadValidConfigSnapshotOrThrow(): Promise<ConfigFileSnapshot> {
   const snapshot = await readConfigFileSnapshot();
   if (!snapshot.valid) {
     const issues = formatConfigIssueLines(snapshot.issues, "-").join("\n");
     throw new Error(`Invalid config at ${snapshot.path}\n${issues}`);
   }
-  return snapshot.config;
+  return snapshot;
 }
 
+type UpdateConfigContext = {
+  runtimeConfig: OpenClawConfig;
+  providerRegistryAvailable?: boolean;
+  canonicalModelKeys?: ReadonlyMap<string, string | undefined>;
+  restoreSourceEntry: (
+    from: string,
+    to: string,
+    entry: AgentModelEntryConfig,
+  ) => AgentModelEntryConfig;
+};
+
+type ModelEntryMergeOptions = Partial<
+  Pick<UpdateConfigContext, "canonicalModelKeys" | "restoreSourceEntry">
+>;
+
+/** Reads source config, applies a mutator, and writes only the source-form config. */
 export async function updateConfig(
-  mutator: (cfg: OpenClawConfig) => OpenClawConfig,
+  mutator: (
+    cfg: OpenClawConfig,
+    context: UpdateConfigContext,
+  ) => OpenClawConfig | Promise<OpenClawConfig>,
+  selectModelRefs?: (
+    cfg: OpenClawConfig,
+    context: UpdateConfigContext,
+  ) => readonly (ModelRef | undefined)[],
+  beforeCommit?: () => void,
+  writeOptions?: ConfigWriteOptions,
 ): Promise<OpenClawConfig> {
-  const config = await loadValidConfigOrThrow();
-  const next = mutator(config);
-  await writeConfigFile(next);
-  return next;
+  const explicitSetPaths: string[][] = [];
+  const result = await transformConfigFile({
+    base: "source",
+    writeOptions: copyRuntimeConfigWriteApplication(writeOptions, {
+      ...writeOptions,
+      explicitSetPaths,
+      beforeCommit,
+    }),
+    transform: async (currentConfig, { snapshot }, { envSnapshotForRestore }) => {
+      if (!snapshot.valid) {
+        const issues = formatConfigIssueLines(snapshot.issues, "-").join("\n");
+        throw new Error(`Invalid config at ${snapshot.path}\n${issues}`);
+      }
+      const sourceConfig = structuredClone(currentConfig);
+      let authoredModels: Record<string, unknown> | undefined;
+      const context: UpdateConfigContext = {
+        runtimeConfig: snapshot.runtimeConfig,
+        restoreSourceEntry: (from, to, entry) => {
+          // Equal runtime values can still move an authored key; record that write intent.
+          explicitSetPaths.push(["agents", "defaults", "models", to]);
+          if (!authoredModels) {
+            const authored = asNonArrayRecord(
+              resolveConfigIncludes(snapshot.parsed, snapshot.path, undefined, {
+                allowedRoots: resolveIncludeRoots(envSnapshotForRestore),
+              }),
+            );
+            const defaults = asNonArrayRecord(asNonArrayRecord(authored.agents).defaults);
+            authoredModels = asNonArrayRecord(defaults.models);
+          }
+          // Source snapshots expand env values; restore while the authored key is known.
+          const restored = restoreEnvVarRefs(entry, authoredModels[from], envSnapshotForRestore);
+          // SAFETY: Only string leaves change; the validated entry shape remains intact.
+          return restored as AgentModelEntryConfig;
+        },
+      };
+      const mutate = (providerRegistryAvailable?: boolean) => {
+        context.providerRegistryAvailable = providerRegistryAvailable;
+        if (selectModelRefs) {
+          const cfg = context.runtimeConfig;
+          const canonicalizer = createModelCatalogProviderAliasCanonicalizer({ cfg });
+          context.canonicalModelKeys = new Map(
+            Object.keys(sourceConfig.agents?.defaults?.models ?? {}).map((key) => {
+              // Stored keys are refs, not user-facing aliases. Resolve them only
+              // after the command's provider generation has been prepared.
+              const resolved = resolveModelRefFromString({
+                cfg,
+                raw: key,
+                defaultProvider: DEFAULT_PROVIDER,
+              });
+              const ref = resolved && canonicalizer.ref(resolved.ref);
+              return [key, ref ? modelKey(ref.provider, ref.model) : undefined];
+            }),
+          );
+        }
+        return mutator(sourceConfig, context);
+      };
+      const nextConfig = selectModelRefs
+        ? await (
+            await import("./model-selection.runtime.js")
+          ).withModelCommandProviderRuntime(
+            {
+              runtimeConfig: context.runtimeConfig,
+              selectModelRefs: () => selectModelRefs(sourceConfig, context),
+            },
+            mutate,
+          )
+        : await mutate();
+      // The public SDK returns the mutator's value; persisted readback may restore env refs.
+      return { nextConfig, result: nextConfig };
+    },
+  });
+  return expectDefined(result.result, "model config mutation result");
 }
 
-export function resolveModelTarget(params: { raw: string; cfg: OpenClawConfig }): {
-  provider: string;
-  model: string;
-} {
+function resolveModelInput(params: { raw: string; cfg: OpenClawConfig }) {
   const aliasIndex = buildModelAliasIndex({
     cfg: params.cfg,
     defaultProvider: DEFAULT_PROVIDER,
   });
-  const resolved = resolveModelRefFromString({
+  return resolveModelRefFromString({
+    cfg: params.cfg,
     raw: params.raw,
     defaultProvider: DEFAULT_PROVIDER,
     aliasIndex,
   });
+}
+
+export function resolveModelTarget(params: { raw: string; cfg: OpenClawConfig }): ModelRef {
+  const resolved = resolveModelInput(params);
   if (!resolved) {
     throw new Error(`Invalid model reference: ${params.raw}`);
   }
-  return resolved.ref;
+  return createModelCatalogProviderAliasCanonicalizer({ cfg: params.cfg }).ref(resolved.ref);
 }
 
-export function resolveModelKeysFromEntries(params: {
+function resolveAuthoredModelAliasTarget(params: {
+  raw: string;
+  cfg: OpenClawConfig;
+}): ModelRef | undefined {
+  const resolved = resolveModelInput(params);
+  return resolved?.alias ? resolved.ref : undefined;
+}
+
+export function resolveModelRefsFromEntries(params: {
   cfg: OpenClawConfig;
   entries: readonly string[];
-}): string[] {
+}): Array<ModelRef | undefined> {
   const aliasIndex = buildModelAliasIndex({
     cfg: params.cfg,
     defaultProvider: DEFAULT_PROVIDER,
   });
-  return params.entries
-    .map((entry) =>
-      resolveModelRefFromString({
-        raw: entry,
-        defaultProvider: DEFAULT_PROVIDER,
-        aliasIndex,
-      }),
-    )
-    .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry))
-    .map((entry) => modelKey(entry.ref.provider, entry.ref.model));
+  const canonicalizer = createModelCatalogProviderAliasCanonicalizer({ cfg: params.cfg });
+  return params.entries.map((entry) => {
+    const resolved = resolveModelRefFromString({
+      cfg: params.cfg,
+      raw: entry,
+      defaultProvider: DEFAULT_PROVIDER,
+      aliasIndex,
+    });
+    return resolved ? canonicalizer.ref(resolved.ref) : undefined;
+  });
 }
 
-export function buildAllowlistSet(cfg: OpenClawConfig): Set<string> {
-  const allowed = new Set<string>();
-  const models = cfg.agents?.defaults?.models ?? {};
-  for (const raw of Object.keys(models)) {
-    const parsed = parseModelRef(String(raw ?? ""), DEFAULT_PROVIDER);
-    if (!parsed) {
-      continue;
-    }
-    allowed.add(modelKey(parsed.provider, parsed.model));
-  }
-  return allowed;
-}
-
-export function normalizeAlias(alias: string): string {
-  const trimmed = alias.trim();
-  if (!trimmed) {
-    throw new Error("Alias cannot be empty.");
-  }
-  if (!/^[A-Za-z0-9_.:-]+$/.test(trimmed)) {
-    throw new Error("Alias must use letters, numbers, dots, underscores, colons, or dashes.");
-  }
-  return trimmed;
-}
-
-export function resolveKnownAgentId(params: {
-  cfg: OpenClawConfig;
-  rawAgentId?: string | null;
-}): string | undefined {
-  const raw = params.rawAgentId?.trim();
-  if (!raw) {
-    return undefined;
-  }
-  const agentId = normalizeAgentId(raw);
-  const knownAgents = listAgentIds(params.cfg);
-  if (!knownAgents.includes(agentId)) {
+function resolveKnownAgentId(cfg: OpenClawConfig, rawAgentId: string): string {
+  const agentId = normalizeAgentId(rawAgentId);
+  if (!listAgentIds(cfg).includes(agentId)) {
     throw new Error(
-      `Unknown agent id "${raw}". Use "${formatCliCommand("paleoclaw agents list")}" to see configured agents.`,
+      `Unknown agent id "${rawAgentId}". Use "${formatCliCommand("paleoclaw agents list")}" to see configured agents.`,
     );
   }
   return agentId;
 }
 
-export type PrimaryFallbackConfig = { primary?: string; fallbacks?: string[] };
+type ModelsTargetMode = { kind: "read"; agentDirOverride?: string } | { kind: "mutation" };
+
+/** Resolves model-command scope and retains configured auth ownership through read overrides. */
+export function resolveModelsTargetAgent(
+  cfg: OpenClawConfig,
+  rawAgentId: string | undefined,
+  mode: ModelsTargetMode,
+) {
+  const requested = rawAgentId?.trim();
+  if (rawAgentId !== undefined && !requested) {
+    throw new Error("--agent must not be blank");
+  }
+  const requestedAgentId = requested ? resolveKnownAgentId(cfg, requested) : undefined;
+  const resolvedAgentId =
+    mode.kind === "read"
+      ? resolveAmbientOwnerAgentId(cfg, requestedAgentId, {
+          surface: "model inspection",
+          hint: "Pass --agent <id> or set agents.defaults.systemAgent.agentId.",
+        })
+      : (requestedAgentId ??
+        resolveSoleAgentId(cfg, { surface: "the model command", hint: "Pass --agent <id>." }));
+  const agentId = resolveKnownAgentId(cfg, resolvedAgentId);
+  const agentDirOverride = mode.kind === "read" ? mode.agentDirOverride : undefined;
+  const agentDir = resolveAgentDir(cfg, agentId);
+  return { agentId, agentDir: agentDirOverride ?? agentDir };
+}
+
+type PrimaryFallbackConfig = NonNullable<ReturnType<typeof toAgentModelListLike>>;
+
+/** Upserts the canonical model entry and folds legacy key metadata into it. */
+export function upsertCanonicalModelConfigEntry(
+  models: Record<string, AgentModelEntryConfig>,
+  params: ModelRef,
+  options: ModelEntryMergeOptions = {},
+) {
+  const key = modelKey(params.provider, params.model);
+  const { canonicalModelKeys } = options;
+  // Prepared ownership facts replace legacy guesses, including an empty selection.
+  const sourceKeys = canonicalModelKeys
+    ? Object.keys(models).filter((sourceKey) => canonicalModelKeys.get(sourceKey) === key)
+    : [legacyModelKey(params.provider, params.model), `${params.provider}/${key}`];
+  const legacyKeys = new Set(
+    sourceKeys.filter(
+      (legacyKey): legacyKey is string =>
+        typeof legacyKey === "string" && legacyKey.length > 0 && legacyKey !== key,
+    ),
+  );
+  let legacyEntry: AgentModelEntryConfig | undefined;
+  for (const legacyKey of legacyKeys) {
+    const entry = models[legacyKey];
+    if (!entry) {
+      continue;
+    }
+    legacyEntry = mergeAgentModelEntryForConfig(
+      legacyEntry,
+      options.restoreSourceEntry ? options.restoreSourceEntry(legacyKey, key, entry) : entry,
+    );
+  }
+
+  // Canonical values override migrated fields while omitted settings survive.
+  models[key] = mergeAgentModelEntryForConfig(legacyEntry, models[key] ?? {});
+  for (const legacyKey of legacyKeys) {
+    delete models[legacyKey];
+  }
+  return key;
+}
 
 export function mergePrimaryFallbackConfig(
   existing: PrimaryFallbackConfig | undefined,
-  patch: { primary?: string; fallbacks?: string[] },
+  patch: PrimaryFallbackConfig,
 ): PrimaryFallbackConfig {
-  const base = existing && typeof existing === "object" ? existing : undefined;
-  const next: PrimaryFallbackConfig = { ...base };
+  const next: PrimaryFallbackConfig = { ...existing };
   if (patch.primary !== undefined) {
-    next.primary = patch.primary;
+    next.primary = normalizeAgentModelRefForConfig(patch.primary);
   }
-  if (patch.fallbacks !== undefined) {
-    next.fallbacks = patch.fallbacks;
+  const fallbacks = patch.fallbacks ?? next.fallbacks;
+  if (fallbacks !== undefined) {
+    next.fallbacks = fallbacks.map(normalizeAgentModelRefForConfig);
   }
   return next;
 }
 
 export function applyDefaultModelPrimaryUpdate(params: {
   cfg: OpenClawConfig;
+  resolveCfg?: OpenClawConfig;
   modelRaw: string;
   field: "model" | "imageModel";
+  resolvedTarget?: ModelRef;
+  modelEntryMerge?: ModelEntryMergeOptions;
 }): OpenClawConfig {
-  const resolved = resolveModelTarget({ raw: params.modelRaw, cfg: params.cfg });
-  const key = `${resolved.provider}/${resolved.model}`;
-
+  const resolved = params.resolvedTarget ?? resolveDefaultModelPrimaryTarget(params);
   const nextModels = { ...params.cfg.agents?.defaults?.models };
-  if (!nextModels[key]) {
-    nextModels[key] = {};
-  }
+  const key = upsertCanonicalModelConfigEntry(nextModels, resolved, params.modelEntryMerge);
 
   const defaults = params.cfg.agents?.defaults ?? {};
-  const existing = toAgentModelListLike(
-    (defaults as Record<string, unknown>)[params.field] as AgentModelConfig | undefined,
-  );
+  const existing = toAgentModelListLike(defaults[params.field]);
 
   return {
     ...params.cfg,
@@ -209,15 +331,80 @@ export function applyDefaultModelPrimaryUpdate(params: {
   };
 }
 
+function resolveDefaultModelPrimaryTarget(params: {
+  cfg: OpenClawConfig;
+  resolveCfg?: OpenClawConfig;
+  modelRaw: string;
+}): ModelRef {
+  return params.resolveCfg && params.resolveCfg !== params.cfg
+    ? (resolveAuthoredModelAliasTarget({ raw: params.modelRaw, cfg: params.cfg }) ??
+        resolveModelTarget({ raw: params.modelRaw, cfg: params.resolveCfg }))
+    : resolveModelTarget({ raw: params.modelRaw, cfg: params.cfg });
+}
+
+/** Rejects a model selection whose provider no installed plugin or config declares. */
+export function requireKnownModelProvider(
+  cfg: OpenClawConfig,
+  ref: ModelRef,
+  providerRegistryAvailable?: boolean,
+): ReturnType<typeof inspectModelReference> & { warning?: string } {
+  const inspection = inspectModelReference({ cfg, ref, providerRegistryAvailable });
+  if (inspection.status === "unknown-provider") {
+    throw new Error(
+      `Unknown model provider "${inspection.provider}". Install a plugin that declares it or configure it under models.providers before selecting "${inspection.ref}". Config was not changed.`,
+    );
+  }
+  return {
+    ...inspection,
+    warning:
+      inspection.status === "unverified-provider"
+        ? `Warning: Provider "${inspection.provider}" could not be verified because the plugin registry is unavailable or has no loaded providers. The selection was saved; verify it after restoring the plugin registry.`
+        : undefined,
+  };
+}
+
+export async function updateDefaultModelPrimaryConfig(params: {
+  modelRaw: string;
+  field: "model" | "imageModel";
+}): Promise<{ updated: OpenClawConfig; warning?: string }> {
+  let warning: string | undefined;
+  const updated = await updateConfig(
+    (cfg, context) => {
+      const resolvedTarget = resolveDefaultModelPrimaryTarget({
+        cfg,
+        resolveCfg: context.runtimeConfig,
+        modelRaw: params.modelRaw,
+      });
+      const inspection = requireKnownModelProvider(
+        context.runtimeConfig,
+        resolvedTarget,
+        context.providerRegistryAvailable,
+      );
+      warning = inspection.warning;
+      if (inspection.status === "unknown-model") {
+        warning = `Warning: Model "${inspection.ref}" is not in the local model catalog for provider "${inspection.provider}". The provider is installed or configured, so the selection was saved; verify the model ID if it is not a newly released or self-hosted model.`;
+      } else if (inspection.status === "uncatalogued-provider") {
+        warning = `Note: Provider "${inspection.provider}" has no local model catalog, so "${inspection.ref}" could not be checked offline. The selection was saved.`;
+      }
+      return applyDefaultModelPrimaryUpdate({
+        cfg,
+        resolveCfg: context.runtimeConfig,
+        modelEntryMerge: context,
+        modelRaw: params.modelRaw,
+        field: params.field,
+        resolvedTarget,
+      });
+    },
+    (cfg, context) => [
+      resolveDefaultModelPrimaryTarget({
+        cfg,
+        resolveCfg: context.runtimeConfig,
+        modelRaw: params.modelRaw,
+      }),
+    ],
+  );
+  return { updated, ...(warning ? { warning } : {}) };
+}
+
 export { modelKey };
 export { DEFAULT_MODEL, DEFAULT_PROVIDER };
-
-/**
- * Model key format: "provider/model"
- *
- * The model key is displayed in `/model status` and used to reference models.
- * When using `/model <key>`, use the exact format shown (e.g., "openrouter/moonshotai/kimi-k2").
- *
- * For providers with hierarchical model IDs (e.g., OpenRouter), the model ID may include
- * sub-providers (e.g., "moonshotai/kimi-k2"), resulting in a key like "openrouter/moonshotai/kimi-k2".
- */

@@ -1,0 +1,108 @@
+paleoclaw-keyboard-shortcuts-dialog {
+  display: contents;
+  --paleoclaw-modal-width: 560px;
+}
+
+paleoclaw-keyboard-shortcuts-dialog .dialog {
+  box-sizing: content-box;
+  display: flex;
+  max-height: min(720px, calc(100dvh - 64px));
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--card);
+  color: var(--text);
+}
+
+paleoclaw-keyboard-shortcuts-dialog .header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 22px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+paleoclaw-keyboard-shortcuts-dialog h2 {
+  margin: 0;
+  color: var(--text-strong);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+paleoclaw-keyboard-shortcuts-dialog .close {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+}
+
+paleoclaw-keyboard-shortcuts-dialog .close span {
+  display: flex;
+}
+
+paleoclaw-keyboard-shortcuts-dialog .close svg {
+  width: 16px;
+  height: 16px;
+}
+
+paleoclaw-keyboard-shortcuts-dialog .close:hover {
+  background: var(--bg-hover);
+  color: var(--text);
+}
+
+paleoclaw-keyboard-shortcuts-dialog .body {
+  overflow: auto;
+  padding: 8px 22px 18px;
+}
+
+paleoclaw-keyboard-shortcuts-dialog section + section {
+  margin-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+paleoclaw-keyboard-shortcuts-dialog h3 {
+  margin: 18px 0 8px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+paleoclaw-keyboard-shortcuts-dialog .shortcut-row {
+  display: flex;
+  min-height: 34px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  font-size: 13px;
+}
+
+paleoclaw-keyboard-shortcuts-dialog .combos {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+paleoclaw-keyboard-shortcuts-dialog .combo {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+paleoclaw-keyboard-shortcuts-dialog kbd {
+  box-sizing: content-box;
+  min-width: 22px;
+  padding: 3px 6px;
+  border: 1px solid var(--border-strong);
+  border-radius: 5px;
+  background: var(--bg-muted);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  text-align: center;
+}

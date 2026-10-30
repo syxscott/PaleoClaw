@@ -1,79 +1,92 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { canAccessSync } from "./path-existence.js";
 
-function isExecutable(filePath: string): boolean {
-  try {
-    fs.accessSync(filePath, fs.constants.X_OK);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-function normalizePathValue(value: unknown): string | undefined {
-  if (typeof value !== "string") {
-    return undefined;
-  }
-  const trimmed = value.trim();
-  return trimmed ? trimmed : undefined;
-}
-
-export function resolveBrewPathDirs(opts?: {
+type BrewResolutionOptions = {
   homeDir?: string;
+  /**
+   * @deprecated No-op compatibility field for plugin SDK callers. Homebrew
+   * env vars are ignored for resolution because workspace env can be untrusted.
+   */
   env?: NodeJS.ProcessEnv;
-}): string[] {
-  const homeDir = opts?.homeDir ?? os.homedir();
-  const env = opts?.env ?? process.env;
+};
 
-  const dirs: string[] = [];
-  const prefix = normalizePathValue(env.HOMEBREW_PREFIX);
-  if (prefix) {
-    dirs.push(path.join(prefix, "bin"), path.join(prefix, "sbin"));
-  }
-
-  // Linuxbrew defaults.
-  dirs.push(path.join(homeDir, ".linuxbrew", "bin"));
-  dirs.push(path.join(homeDir, ".linuxbrew", "sbin"));
-  dirs.push("/home/linuxbrew/.linuxbrew/bin", "/home/linuxbrew/.linuxbrew/sbin");
-
-  // macOS defaults (also used by some Linux setups).
-  dirs.push("/opt/homebrew/bin", "/usr/local/bin");
-
-  return dirs;
-}
-
-export function resolveBrewExecutable(opts?: {
-  homeDir?: string;
-  env?: NodeJS.ProcessEnv;
-}): string | undefined {
-  const homeDir = opts?.homeDir ?? os.homedir();
-  const env = opts?.env ?? process.env;
-
-  const candidates: string[] = [];
-
-  const brewFile = normalizePathValue(env.HOMEBREW_BREW_FILE);
-  if (brewFile) {
-    candidates.push(brewFile);
-  }
-
-  const prefix = normalizePathValue(env.HOMEBREW_PREFIX);
-  if (prefix) {
-    candidates.push(path.join(prefix, "bin", "brew"));
-  }
-
-  // Linuxbrew defaults.
-  candidates.push(path.join(homeDir, ".linuxbrew", "bin", "brew"));
-  candidates.push("/home/linuxbrew/.linuxbrew/bin/brew");
-
-  // macOS defaults.
-  candidates.push("/opt/homebrew/bin/brew", "/usr/local/bin/brew");
-
-  for (const candidate of candidates) {
-    if (isExecutable(candidate)) {
+function resolveBrewFromPath(pathEnv = process.env.PATH): string | undefined {
+  for (const dir of (pathEnv ?? "").split(path.delimiter)) {
+    const trimmed = dir.trim();
+    if (!trimmed || !path.isAbsolute(trimmed)) {
+      continue;
+    }
+    const candidate = path.join(trimmed, "brew");
+    if (canAccessSync(candidate, fs.constants.X_OK)) {
       return candidate;
     }
   }
-
   return undefined;
+}
+
+/** Returns standard Homebrew bin directories suitable for PATH augmentation. */
+export function resolveBrewPathDirs(opts?: BrewResolutionOptions): string[] {
+  const homeDir = opts?.homeDir ?? os.homedir();
+
+  return [
+    path.join(homeDir, ".linuxbrew", "bin"),
+    path.join(homeDir, ".linuxbrew", "sbin"),
+    "/home/linuxbrew/.linuxbrew/bin",
+    "/home/linuxbrew/.linuxbrew/sbin",
+    "/opt/homebrew/bin",
+    "/usr/local/bin",
+  ];
+}
+
+/** Resolves an executable `brew` path from trusted PATH entries or standard install roots. */
+export function resolveBrewExecutable(opts?: BrewResolutionOptions): string | undefined {
+  const homeDir = opts?.homeDir ?? os.homedir();
+
+  // Use the real process PATH, not opts.env, because callers may pass workspace
+  // env loaded from untrusted project state.
+  const pathBrew = resolveBrewFromPath();
+  if (pathBrew) {
+    return pathBrew;
+  }
+
+  return [
+    path.join(homeDir, ".linuxbrew", "bin", "brew"),
+    "/home/linuxbrew/.linuxbrew/bin/brew",
+    "/opt/homebrew/bin/brew",
+    "/usr/local/bin/brew",
+  ].find((candidate) => canAccessSync(candidate, fs.constants.X_OK));
+}
+
+/** Recognize formula-owned paleoclaw files and keep service paths independent of the keg version. */
+export async function resolveBrewOpenClawPath(inputPath: string): Promise<string | null> {
+  const match =
+    /^(.*)\/(?:Cellar\/paleoclaw-cli\/[^/]+|opt\/paleoclaw-cli)(\/libexec(?:\/.*)?)$/u.exec(
+      inputPath,
+    );
+  if (!match || process.platform === "win32") {
+    return null;
+  }
+  const [, prefix, suffix] = match;
+  const prefixes = [
+    process.env.HOMEBREW_PREFIX,
+    ...resolveBrewPathDirs().map((dir) => path.dirname(dir)),
+  ];
+  if (
+    !prefixes.some((value) => value && path.isAbsolute(value) && path.resolve(value) === prefix)
+  ) {
+    const brew = resolveBrewExecutable();
+    if (!brew) {
+      return null;
+    }
+    const { runCommandWithTimeout } = await import("../process/exec.js");
+    const result = await runCommandWithTimeout([brew, "--prefix"], { timeoutMs: 5_000 }).catch(
+      () => null,
+    );
+    if (result?.code !== 0 || result.stdout.trim() !== prefix) {
+      return null;
+    }
+  }
+  return path.join(prefix!, "opt", "paleoclaw-cli", suffix!);
 }

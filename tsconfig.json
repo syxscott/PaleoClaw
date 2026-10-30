@@ -6,23 +6,332 @@
     "esModuleInterop": true,
     "experimentalDecorators": true,
     "forceConsistentCasingInFileNames": true,
-    "lib": ["DOM", "DOM.Iterable", "ES2023", "ScriptHost"],
+    "isolatedModules": true,
+    "lib": ["DOM", "DOM.Iterable", "ES2023"],
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
+    "noImplicitOverride": true,
+    "noImplicitReturns": true,
+    "noUncheckedIndexedAccess": true,
     "noEmit": true,
     "noEmitOnError": true,
+    "noUncheckedSideEffectImports": true,
     "outDir": "dist",
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "strict": true,
     "target": "es2023",
+    "types": ["node"],
     "useDefineForClassFields": false,
+    "verbatimModuleSyntax": true,
     "paths": {
-      "paleoclaw/plugin-sdk": ["./src/plugin-sdk/index.ts"],
       "paleoclaw/plugin-sdk/*": ["./src/plugin-sdk/*.ts"],
-      "paleoclaw/plugin-sdk/account-id": ["./src/plugin-sdk/account-id.ts"]
+      "@paleoclaw/ai": ["./packages/ai/src/index.ts"],
+      "@paleoclaw/ai/diagnostics": ["./packages/ai/src/utils/diagnostics.ts"],
+      "@paleoclaw/ai/event-stream": ["./packages/ai/src/utils/event-stream.ts"],
+      "@paleoclaw/ai/providers": ["./packages/ai/src/providers.ts"],
+      "@paleoclaw/ai/provider-types": ["./packages/ai/src/provider-types.ts"],
+      "@paleoclaw/ai/transports": ["./packages/ai/src/transports.ts"],
+      "@paleoclaw/ai/types": ["./packages/ai/src/types.ts"],
+      "@paleoclaw/ai/validation": ["./packages/ai/src/validation.ts"],
+      "@paleoclaw/ai/internal/anthropic": ["./packages/ai/src/internal/anthropic.ts"],
+      "@paleoclaw/ai/internal/google-model-family": [
+        "./packages/ai/src/internal/google-model-family.ts"
+      ],
+      "@paleoclaw/ai/internal/model-request-body": [
+        "./packages/ai/src/transports/model-request-body.ts"
+      ],
+      "@paleoclaw/ai/internal/openai": ["./packages/ai/src/internal/openai.ts"],
+      "@paleoclaw/ai/internal/openai-completions-compat": [
+        "./packages/ai/src/internal/openai-completions-compat.ts"
+      ],
+      "@paleoclaw/ai/internal/openai-responses-payload-policy": [
+        "./packages/ai/src/internal/openai-responses-payload-policy.ts"
+      ],
+      "@paleoclaw/ai/internal/retry-after": ["./packages/ai/src/internal/retry-after.ts"],
+      "@paleoclaw/ai/internal/runtime": ["./packages/ai/src/internal/runtime.ts"],
+      "@paleoclaw/ai/internal/shared": ["./packages/ai/src/internal/shared.ts"],
+      "@paleoclaw/ai/internal/tool-schema": ["./packages/ai/src/internal/tool-schema.ts"],
+      "@paleoclaw/agent-core": ["./packages/agent-core/src/index.ts"],
+      "@paleoclaw/agent-core/*": ["./packages/agent-core/src/*"],
+      "@paleoclaw/llm-core": ["./packages/llm-core/src/index.ts"],
+      "@paleoclaw/llm-core/diagnostics": ["./packages/llm-core/src/utils/diagnostics.ts"],
+      "@paleoclaw/llm-core/event-stream": ["./packages/llm-core/src/utils/event-stream.ts"],
+      "@paleoclaw/llm-core/model-contracts/anthropic": ["./packages/llm-core/src/model-contracts/anthropic.ts"],
+      "@paleoclaw/llm-core/types": ["./packages/llm-core/src/types.ts"],
+      "@paleoclaw/llm-core/validation": ["./packages/llm-core/src/validation.ts"],
+      "@paleoclaw/llm-core/*": ["./packages/llm-core/src/*"],
+      "@paleoclaw/model-catalog-core": ["./packages/model-catalog-core/src/index.ts"],
+      "@paleoclaw/model-catalog-core/configured-model-refs": [
+        "./packages/model-catalog-core/src/configured-model-refs.ts"
+      ],
+      "@paleoclaw/model-catalog-core/model-catalog-normalize": [
+        "./packages/model-catalog-core/src/model-catalog-normalize.ts"
+      ],
+      "@paleoclaw/model-catalog-core/model-catalog-pricing": [
+        "./packages/model-catalog-core/src/model-catalog-pricing.ts"
+      ],
+      "@paleoclaw/model-catalog-core/model-catalog-refs": [
+        "./packages/model-catalog-core/src/model-catalog-refs.ts"
+      ],
+      "@paleoclaw/model-catalog-core/model-catalog-types": [
+        "./packages/model-catalog-core/src/model-catalog-types.ts"
+      ],
+      "@paleoclaw/model-catalog-core/provider-id": [
+        "./packages/model-catalog-core/src/provider-id.ts"
+      ],
+      "@paleoclaw/model-catalog-core/provider-model-id-normalization": [
+        "./packages/model-catalog-core/src/provider-model-id-normalization.ts"
+      ],
+      "@paleoclaw/model-catalog-core/provider-model-id-normalize": [
+        "./packages/model-catalog-core/src/provider-model-id-normalize.ts"
+      ],
+      "@paleoclaw/model-catalog-core/*": ["./packages/model-catalog-core/src/*"],
+      "@paleoclaw/gateway-client": ["./packages/gateway-client/src/index.ts"],
+      "@paleoclaw/gateway-client/browser": ["./packages/gateway-client/src/browser.ts"],
+      "@paleoclaw/gateway-client/scope-upgrade": [
+        "./packages/gateway-client/src/scope-upgrade.ts"
+      ],
+      "@paleoclaw/gateway-client/websocket-data": [
+        "./packages/gateway-client/src/websocket-data.ts"
+      ],
+      "@paleoclaw/gateway-client/*": ["./packages/gateway-client/src/*"],
+      "@paleoclaw/gateway-protocol": ["./packages/gateway-protocol/src/index.ts"],
+      "@paleoclaw/gateway-protocol/client-info": [
+        "./packages/gateway-protocol/src/client-info.ts"
+      ],
+      "@paleoclaw/gateway-protocol/connect-error-details": [
+        "./packages/gateway-protocol/src/connect-error-details.ts"
+      ],
+      "@paleoclaw/gateway-protocol/gateway-error-details": [
+        "./packages/gateway-protocol/src/gateway-error-details.ts"
+      ],
+      "@paleoclaw/gateway-protocol/frame-guards": [
+        "./packages/gateway-protocol/src/frame-guards.ts"
+      ],
+      "@paleoclaw/gateway-protocol/schema": ["./packages/gateway-protocol/src/schema.ts"],
+      "@paleoclaw/gateway-protocol/session-row-deltas": ["./packages/gateway-protocol/src/session-row-deltas.ts"],
+      "@paleoclaw/gateway-protocol/restart-unavailable": [
+        "./packages/gateway-protocol/src/restart-unavailable.ts"
+      ],
+      "@paleoclaw/gateway-protocol/startup-unavailable": [
+        "./packages/gateway-protocol/src/startup-unavailable.ts"
+      ],
+      "@paleoclaw/gateway-protocol/system-agent-context": ["./packages/gateway-protocol/src/system-agent-context.ts"],
+      "@paleoclaw/gateway-protocol/version": ["./packages/gateway-protocol/src/version.ts"],
+      "@paleoclaw/gateway-protocol/*": ["./packages/gateway-protocol/src/*"],
+      "@paleoclaw/media-generation-core": ["./packages/media-generation-core/src/index.ts"],
+      "@paleoclaw/media-generation-core/capability-model-ref": [
+        "./packages/media-generation-core/src/capability-model-ref.ts"
+      ],
+      "@paleoclaw/media-generation-core/catalog": [
+        "./packages/media-generation-core/src/catalog.ts"
+      ],
+      "@paleoclaw/media-generation-core/model-ref": [
+        "./packages/media-generation-core/src/model-ref.ts"
+      ],
+      "@paleoclaw/media-generation-core/normalization": [
+        "./packages/media-generation-core/src/normalization.ts"
+      ],
+      "@paleoclaw/media-generation-core/*": ["./packages/media-generation-core/src/*"],
+      "@paleoclaw/media-core": ["./packages/media-core/src/index.ts"],
+      "@paleoclaw/media-core/attachment-classify": [
+        "./packages/media-core/src/attachment-classify.ts"
+      ],
+      "@paleoclaw/media-core/base64": ["./packages/media-core/src/base64.ts"],
+      "@paleoclaw/media-core/constants": ["./packages/media-core/src/constants.ts"],
+      "@paleoclaw/media-core/content-length": ["./packages/media-core/src/content-length.ts"],
+      "@paleoclaw/media-core/file-name": ["./packages/media-core/src/file-name.ts"],
+      "@paleoclaw/media-core/inbound-path-policy": [
+        "./packages/media-core/src/inbound-path-policy.ts"
+      ],
+      "@paleoclaw/media-core/inline-image-data-url": [
+        "./packages/media-core/src/inline-image-data-url.ts"
+      ],
+      "@paleoclaw/media-core/media-source-url": [
+        "./packages/media-core/src/media-source-url.ts"
+      ],
+      "@paleoclaw/media-core/mime": ["./packages/media-core/src/mime.ts"],
+      "@paleoclaw/media-core/read-byte-stream-with-limit": [
+        "./packages/media-core/src/read-byte-stream-with-limit.ts"
+      ],
+      "@paleoclaw/media-core/*": ["./packages/media-core/src/*"],
+      "@paleoclaw/media-understanding-common/*": [
+        "./packages/media-understanding-common/src/*"
+      ],
+      "@paleoclaw/markdown-core": ["./packages/markdown-core/src/index.ts"],
+      "@paleoclaw/markdown-core/code-spans": ["./packages/markdown-core/src/code-spans.ts"],
+      "@paleoclaw/markdown-core/fences": ["./packages/markdown-core/src/fences.ts"],
+      "@paleoclaw/markdown-core/frontmatter": ["./packages/markdown-core/src/frontmatter.ts"],
+      "@paleoclaw/markdown-core/ir": ["./packages/markdown-core/src/ir.ts"],
+      "@paleoclaw/markdown-core/render": ["./packages/markdown-core/src/render.ts"],
+      "@paleoclaw/markdown-core/render-aware-chunking": [
+        "./packages/markdown-core/src/render-aware-chunking.ts"
+      ],
+      "@paleoclaw/markdown-core/tables": ["./packages/markdown-core/src/tables.ts"],
+      "@paleoclaw/markdown-core/types": ["./packages/markdown-core/src/types.ts"],
+      "@paleoclaw/markdown-core/*": ["./packages/markdown-core/src/*"],
+      "@paleoclaw/normalization-core": ["./packages/normalization-core/src/index.ts"],
+      "@paleoclaw/normalization-core/agent-id": [
+        "./packages/normalization-core/src/agent-id.ts"
+      ],
+      "@paleoclaw/normalization-core/agent-run-terminal-outcome": [
+        "./packages/normalization-core/src/agent-run-terminal-outcome.ts"
+      ],
+      "@paleoclaw/normalization-core/boolean-coercion": [
+        "./packages/normalization-core/src/boolean-coercion.ts"
+      ],
+      "@paleoclaw/normalization-core/cjk-chars": [
+        "./packages/normalization-core/src/cjk-chars.ts"
+      ],
+      "@paleoclaw/normalization-core/code-points": [
+        "./packages/normalization-core/src/code-points.ts"
+      ],
+      "@paleoclaw/normalization-core/error-coercion": [
+        "./packages/normalization-core/src/error-coercion.ts"
+      ],
+      "@paleoclaw/normalization-core/expect": ["./packages/normalization-core/src/expect.ts"],
+      "@paleoclaw/normalization-core/grapheme": ["./packages/normalization-core/src/grapheme.ts"],
+      "@paleoclaw/normalization-core/json-coercion": [
+        "./packages/normalization-core/src/json-coercion.ts"
+      ],
+      "@paleoclaw/normalization-core/json-schema": [
+        "./packages/normalization-core/src/json-schema.ts"
+      ],
+      "@paleoclaw/normalization-core/markdown-plain-text": [
+        "./packages/normalization-core/src/markdown-plain-text.ts"
+      ],
+      "@paleoclaw/normalization-core/mountinfo-path": [
+        "./packages/normalization-core/src/mountinfo-path.ts"
+      ],
+      "@paleoclaw/normalization-core/node-crypto": [
+        "./packages/normalization-core/src/node-crypto.ts"
+      ],
+      "@paleoclaw/normalization-core/number-coercion": [
+        "./packages/normalization-core/src/number-coercion.ts"
+      ],
+      "@paleoclaw/normalization-core/phone-presentation": [
+        "./packages/normalization-core/src/phone-presentation.ts"
+      ],
+      "@paleoclaw/normalization-core/promise-like": [
+        "./packages/normalization-core/src/promise-like.ts"
+      ],
+      "@paleoclaw/normalization-core/record-coerce": [
+        "./packages/normalization-core/src/record-coerce.ts"
+      ],
+      "@paleoclaw/normalization-core/result": [
+        "./packages/normalization-core/src/result.ts"
+      ],
+      "@paleoclaw/normalization-core/session-key-comparison": [
+        "./packages/normalization-core/src/session-key-comparison.ts"
+      ],
+      "@paleoclaw/normalization-core/stable-node-path": [
+        "./packages/normalization-core/src/stable-node-path.ts"
+      ],
+      "@paleoclaw/normalization-core/stable-stringify": [
+        "./packages/normalization-core/src/stable-stringify.ts"
+      ],
+      "@paleoclaw/normalization-core/string-coerce": [
+        "./packages/normalization-core/src/string-coerce.ts"
+      ],
+      "@paleoclaw/normalization-core/string-normalization": [
+        "./packages/normalization-core/src/string-normalization.ts"
+      ],
+      "@paleoclaw/normalization-core/utf16-slice": [
+        "./packages/normalization-core/src/utf16-slice.ts"
+      ],
+      "@paleoclaw/normalization-core/uuid": ["./packages/normalization-core/src/uuid.ts"],
+      "@paleoclaw/normalization-core/home-dir": [
+        "./packages/normalization-core/src/home-dir.ts"
+      ],
+      "@paleoclaw/normalization-core/*": ["./packages/normalization-core/src/*"],
+      "@paleoclaw/retry": ["./packages/retry/src/index.ts"],
+      "@paleoclaw/worker-runtime": ["./packages/worker-runtime/src/index.ts"],
+      "@paleoclaw/worker-runtime/worker": ["./packages/worker-runtime/src/worker.ts"],
+      "@paleoclaw/worker-runtime/lifecycle": ["./packages/worker-runtime/src/lifecycle.ts"],
+      "@paleoclaw/mermaid-renderer": ["./packages/mermaid-renderer/src/renderer.ts"],
+      "@paleoclaw/session-url-contract": ["./packages/session-url-contract/src/index.ts"],
+      "@paleoclaw/session-url-contract/parse": ["./packages/session-url-contract/src/parse.ts"],
+      "@paleoclaw/session-url-contract/session-key-normalization": [
+        "./packages/session-url-contract/src/session-key-normalization.ts"
+      ],
+      "@paleoclaw/session-url-contract/share-build": [
+        "./packages/session-url-contract/src/share-build.ts"
+      ],
+      "@paleoclaw/session-url-contract/*": ["./packages/session-url-contract/src/*"],
+      "@paleoclaw/workboard-contract": ["./packages/workboard-contract/src/index.ts"],
+      "@paleoclaw/acp-core": ["./packages/acp-core/src/index.ts"],
+      "@paleoclaw/acp-core/meta": ["./packages/acp-core/src/meta.ts"],
+      "@paleoclaw/acp-core/session": ["./packages/acp-core/src/session.ts"],
+      "@paleoclaw/acp-core/session-interaction-mode": [
+        "./packages/acp-core/src/session-interaction-mode.ts"
+      ],
+      "@paleoclaw/acp-core/session-lineage-meta": [
+        "./packages/acp-core/src/session-lineage-meta.ts"
+      ],
+      "@paleoclaw/acp-core/types": ["./packages/acp-core/src/types.ts"],
+      "@paleoclaw/acp-core/runtime/error-text": [
+        "./packages/acp-core/src/runtime/error-text.ts"
+      ],
+      "@paleoclaw/acp-core/runtime/errors": ["./packages/acp-core/src/runtime/errors.ts"],
+      "@paleoclaw/acp-core/runtime/session-identifiers": [
+        "./packages/acp-core/src/runtime/session-identifiers.ts"
+      ],
+      "@paleoclaw/acp-core/runtime/session-identity": [
+        "./packages/acp-core/src/runtime/session-identity.ts"
+      ],
+      "@paleoclaw/acp-core/runtime/types": ["./packages/acp-core/src/runtime/types.ts"],
+      "@paleoclaw/acp-core/*": ["./packages/acp-core/src/*"],
+      "@paleoclaw/terminal-core": ["./packages/terminal-core/src/index.ts"],
+      "@paleoclaw/terminal-core/ansi": ["./packages/terminal-core/src/ansi.ts"],
+      "@paleoclaw/terminal-core/decorative-emoji": [
+        "./packages/terminal-core/src/decorative-emoji.ts"
+      ],
+      "@paleoclaw/terminal-core/health-style": [
+        "./packages/terminal-core/src/health-style.ts"
+      ],
+      "@paleoclaw/terminal-core/links": ["./packages/terminal-core/src/links.ts"],
+      "@paleoclaw/terminal-core/note": ["./packages/terminal-core/src/note.ts"],
+      "@paleoclaw/terminal-core/osc-progress": ["./packages/terminal-core/src/osc-progress.ts"],
+      "@paleoclaw/terminal-core/palette": ["./packages/terminal-core/src/palette.ts"],
+      "@paleoclaw/terminal-core/progress-line": [
+        "./packages/terminal-core/src/progress-line.ts"
+      ],
+      "@paleoclaw/terminal-core/prompt-select-styled": [
+        "./packages/terminal-core/src/prompt-select-styled.ts"
+      ],
+      "@paleoclaw/terminal-core/prompt-select-styled-params": [
+        "./packages/terminal-core/src/prompt-select-styled-params.ts"
+      ],
+      "@paleoclaw/terminal-core/prompt-style": [
+        "./packages/terminal-core/src/prompt-style.ts"
+      ],
+      "@paleoclaw/terminal-core/restore": ["./packages/terminal-core/src/restore.ts"],
+      "@paleoclaw/terminal-core/safe-text": ["./packages/terminal-core/src/safe-text.ts"],
+      "@paleoclaw/terminal-core/stream-writer": [
+        "./packages/terminal-core/src/stream-writer.ts"
+      ],
+      "@paleoclaw/terminal-core/table": ["./packages/terminal-core/src/table.ts"],
+      "@paleoclaw/terminal-core/terminal-link": [
+        "./packages/terminal-core/src/terminal-link.ts"
+      ],
+      "@paleoclaw/terminal-core/theme": ["./packages/terminal-core/src/theme.ts"],
+      "@paleoclaw/terminal-core/*": ["./packages/terminal-core/src/*"],
+      "@paleoclaw/net-policy": ["./packages/net-policy/src/index.ts"],
+      "@paleoclaw/net-policy/ip": ["./packages/net-policy/src/ip.ts"],
+      "@paleoclaw/net-policy/ipv4": ["./packages/net-policy/src/ipv4.ts"],
+      "@paleoclaw/net-policy/redact-sensitive-url": [
+        "./packages/net-policy/src/redact-sensitive-url.ts"
+      ],
+      "@paleoclaw/net-policy/url-protocol": ["./packages/net-policy/src/url-protocol.ts"],
+      "@paleoclaw/net-policy/url-userinfo": ["./packages/net-policy/src/url-userinfo.ts"],
+      "@paleoclaw/net-policy/*": ["./packages/net-policy/src/*"],
+      "@paleoclaw/sdk": ["./packages/sdk/src/index.ts"],
+      "@paleoclaw/plugin-sdk/*": ["./src/plugin-sdk/*.ts"],
+      "paleoclaw/plugin-sdk/account-id": ["./src/plugin-sdk/account-id.ts"],
+      "@paleoclaw/*": ["./extensions/*"]
     }
   },
-  "include": ["src/**/*", "ui/**/*", "extensions/**/*"],
-  "exclude": ["node_modules", "dist"]
+  "include": ["src/**/*", "ui/**/*", "extensions/**/*", "packages/**/*"],
+  "exclude": ["node_modules", "dist", "**/dist/**", "**/*.test-compat.d.ts"]
 }

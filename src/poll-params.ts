@@ -1,56 +1,43 @@
-export type PollCreationParamKind = "string" | "stringArray" | "number" | "boolean";
+import { expectDefined } from "@paleoclaw/normalization-core";
+import { readSnakeCaseParamRaw } from "./param-key.js";
 
-export type PollCreationParamDef = {
+type PollCreationParamKind = "string" | "stringArray" | "positiveInteger" | "boolean";
+
+type PollCreationParamDef = {
   kind: PollCreationParamKind;
-  telegramOnly?: boolean;
 };
 
-export const POLL_CREATION_PARAM_DEFS: Record<string, PollCreationParamDef> = {
+const SHARED_POLL_CREATION_PARAM_DEFS = {
   pollQuestion: { kind: "string" },
   pollOption: { kind: "stringArray" },
-  pollDurationHours: { kind: "number" },
+  pollDurationHours: { kind: "positiveInteger" },
   pollMulti: { kind: "boolean" },
-  pollDurationSeconds: { kind: "number", telegramOnly: true },
-  pollAnonymous: { kind: "boolean", telegramOnly: true },
-  pollPublic: { kind: "boolean", telegramOnly: true },
-};
+} satisfies Record<string, PollCreationParamDef>;
 
-export type PollCreationParamName = keyof typeof POLL_CREATION_PARAM_DEFS;
+export const POLL_CREATION_PARAM_DEFS: Record<string, PollCreationParamDef> =
+  SHARED_POLL_CREATION_PARAM_DEFS;
 
-export const POLL_CREATION_PARAM_NAMES = Object.keys(POLL_CREATION_PARAM_DEFS);
+type SharedPollCreationParamName = keyof typeof SHARED_POLL_CREATION_PARAM_DEFS;
 
-function toSnakeCaseKey(key: string): string {
-  return key
-    .replace(/([A-Z]+)([A-Z][a-z])/g, "$1_$2")
-    .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
-    .toLowerCase();
-}
+export const SHARED_POLL_CREATION_PARAM_NAMES = Object.keys(
+  SHARED_POLL_CREATION_PARAM_DEFS,
+) as SharedPollCreationParamName[];
 
-function readPollParamRaw(params: Record<string, unknown>, key: string): unknown {
-  if (Object.hasOwn(params, key)) {
-    return params[key];
-  }
-  const snakeKey = toSnakeCaseKey(key);
-  if (snakeKey !== key && Object.hasOwn(params, snakeKey)) {
-    return params[snakeKey];
-  }
-  return undefined;
-}
-
-export function resolveTelegramPollVisibility(params: {
-  pollAnonymous?: boolean;
-  pollPublic?: boolean;
-}): boolean | undefined {
-  if (params.pollAnonymous && params.pollPublic) {
-    throw new Error("pollAnonymous and pollPublic are mutually exclusive");
-  }
-  return params.pollAnonymous ? true : params.pollPublic ? false : undefined;
-}
+// Among the shared poll params, only the content-bearing fields (pollQuestion,
+// pollOption) signal poll intent on their own. The modifier fields
+// (pollDurationHours, pollMulti) and channel-specific metadata
+// (pollDurationSeconds, pollPublic, pollAnonymous) are also exposed on the
+// shared `message` tool schema, so schema-padded plain sends may echo them.
+// Only content fields count here; action="poll" validates modifiers later.
+const CONTENT_BEARING_SHARED_POLL_PARAM_NAMES = ["pollQuestion", "pollOption"] as const;
 
 export function hasPollCreationParams(params: Record<string, unknown>): boolean {
-  for (const key of POLL_CREATION_PARAM_NAMES) {
-    const def = POLL_CREATION_PARAM_DEFS[key];
-    const value = readPollParamRaw(params, key);
+  for (const key of CONTENT_BEARING_SHARED_POLL_PARAM_NAMES) {
+    const def = expectDefined(
+      POLL_CREATION_PARAM_DEFS[key],
+      "poll creation param defs entry at key",
+    );
+    const value = readSnakeCaseParamRaw(params, key);
     if (def.kind === "string" && typeof value === "string" && value.trim().length > 0) {
       return true;
     }
@@ -62,25 +49,6 @@ export function hasPollCreationParams(params: Record<string, unknown>): boolean 
         return true;
       }
       if (typeof value === "string" && value.trim().length > 0) {
-        return true;
-      }
-    }
-    if (def.kind === "number") {
-      if (typeof value === "number" && Number.isFinite(value)) {
-        return true;
-      }
-      if (typeof value === "string") {
-        const trimmed = value.trim();
-        if (trimmed.length > 0 && Number.isFinite(Number(trimmed))) {
-          return true;
-        }
-      }
-    }
-    if (def.kind === "boolean") {
-      if (value === true) {
-        return true;
-      }
-      if (typeof value === "string" && value.trim().toLowerCase() === "true") {
         return true;
       }
     }

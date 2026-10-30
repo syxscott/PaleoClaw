@@ -1,116 +1,58 @@
+import { createAccountListHelpers } from "paleoclaw/plugin-sdk/account-helpers";
 import {
   DEFAULT_ACCOUNT_ID,
   normalizeAccountId,
   normalizeOptionalAccountId,
 } from "paleoclaw/plugin-sdk/account-id";
-import type { OpenClawConfig } from "paleoclaw/plugin-sdk/nostr";
-import type { NostrProfile } from "./config-schema.js";
-import { getPublicKeyFromPrivate } from "./nostr-bus.js";
-import { DEFAULT_RELAYS } from "./nostr-bus.js";
+import { normalizeOptionalString } from "paleoclaw/plugin-sdk/string-coerce-runtime";
+import {
+  getNostrConfig,
+  resolveNostrAccountBase,
+  type NostrConfigSource,
+  type ResolvedNostrAccount,
+} from "./accounts.js";
+import { getPublicKeyFromPrivate } from "./nostr-key-utils.js";
+import { hasConfiguredNostrPrivateKey } from "./private-key.js";
 
-export interface NostrAccountConfig {
-  enabled?: boolean;
-  name?: string;
-  defaultAccount?: string;
-  privateKey?: string;
-  relays?: string[];
-  dmPolicy?: "pairing" | "allowlist" | "open" | "disabled";
-  allowFrom?: Array<string | number>;
-  profile?: NostrProfile;
-}
+export type { ResolvedNostrAccount } from "./accounts.js";
 
-export interface ResolvedNostrAccount {
-  accountId: string;
-  name?: string;
-  enabled: boolean;
-  configured: boolean;
-  privateKey: string;
-  publicKey: string;
-  relays: string[];
-  profile?: NostrProfile;
-  config: NostrAccountConfig;
-}
+const {
+  listAccountIds: listNostrAccountIds,
+  resolveDefaultAccountId: resolveDefaultNostrAccountId,
+} = createAccountListHelpers("nostr", {
+  fallbackAccountIdWhenEmpty: false,
+  resolveImplicitAccountId: (cfg) => {
+    const account = getNostrConfig(cfg);
+    return hasConfiguredNostrPrivateKey(account?.privateKey)
+      ? (normalizeOptionalAccountId(account?.defaultAccount) ?? DEFAULT_ACCOUNT_ID)
+      : undefined;
+  },
+});
 
-function resolveConfiguredDefaultNostrAccountId(cfg: OpenClawConfig): string | undefined {
-  const nostrCfg = (cfg.channels as Record<string, unknown> | undefined)?.nostr as
-    | NostrAccountConfig
-    | undefined;
-  return normalizeOptionalAccountId(nostrCfg?.defaultAccount);
-}
+export { listNostrAccountIds, resolveDefaultNostrAccountId };
 
-/**
- * List all configured Nostr account IDs
- */
-export function listNostrAccountIds(cfg: OpenClawConfig): string[] {
-  const nostrCfg = (cfg.channels as Record<string, unknown> | undefined)?.nostr as
-    | NostrAccountConfig
-    | undefined;
-
-  // If privateKey is configured at top level, we have a default account
-  if (nostrCfg?.privateKey) {
-    return [resolveConfiguredDefaultNostrAccountId(cfg) ?? DEFAULT_ACCOUNT_ID];
-  }
-
-  return [];
-}
-
-/**
- * Get the default account ID
- */
-export function resolveDefaultNostrAccountId(cfg: OpenClawConfig): string {
-  const preferred = resolveConfiguredDefaultNostrAccountId(cfg);
-  if (preferred) {
-    return preferred;
-  }
-  const ids = listNostrAccountIds(cfg);
-  if (ids.includes(DEFAULT_ACCOUNT_ID)) {
-    return DEFAULT_ACCOUNT_ID;
-  }
-  return ids[0] ?? DEFAULT_ACCOUNT_ID;
-}
-
-/**
- * Resolve a Nostr account from config
- */
 export function resolveNostrAccount(opts: {
-  cfg: OpenClawConfig;
+  cfg: NostrConfigSource;
   accountId?: string | null;
 }): ResolvedNostrAccount {
-  const accountId = normalizeAccountId(opts.accountId ?? resolveDefaultNostrAccountId(opts.cfg));
-  const nostrCfg = (opts.cfg.channels as Record<string, unknown> | undefined)?.nostr as
-    | NostrAccountConfig
-    | undefined;
-
-  const baseEnabled = nostrCfg?.enabled !== false;
-  const privateKey = nostrCfg?.privateKey ?? "";
-  const configured = Boolean(privateKey.trim());
+  const accountId = normalizeAccountId(
+    opts.accountId ??
+      resolveDefaultNostrAccountId({ channels: { nostr: getNostrConfig(opts.cfg) } }),
+  );
+  const account = resolveNostrAccountBase(opts.cfg, accountId);
 
   let publicKey = "";
-  if (configured) {
+  if (account.privateKey) {
     try {
-      publicKey = getPublicKeyFromPrivate(privateKey);
+      publicKey = getPublicKeyFromPrivate(account.privateKey);
     } catch {
       // Invalid key - leave publicKey empty, configured will indicate issues
     }
   }
 
   return {
-    accountId,
-    name: nostrCfg?.name?.trim() || undefined,
-    enabled: baseEnabled,
-    configured,
-    privateKey,
+    ...account,
+    name: normalizeOptionalString(account.config.name),
     publicKey,
-    relays: nostrCfg?.relays ?? DEFAULT_RELAYS,
-    profile: nostrCfg?.profile,
-    config: {
-      enabled: nostrCfg?.enabled,
-      name: nostrCfg?.name,
-      privateKey: nostrCfg?.privateKey,
-      relays: nostrCfg?.relays,
-      dmPolicy: nostrCfg?.dmPolicy,
-      allowFrom: nostrCfg?.allowFrom,
-      profile: nostrCfg?.profile,
-    },
   };
 }

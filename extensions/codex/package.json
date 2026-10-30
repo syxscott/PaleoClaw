@@ -1,0 +1,58 @@
+{
+  "name": "@paleoclaw/codex",
+  "version": "2026.10.5",
+  "description": "paleoclaw Codex app-server harness and native session supervision plugin.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/syxscott/PaleoClaw"
+  },
+  "type": "module",
+  "dependencies": {
+    "@openai/codex": "0.162.1",
+    "@openclaw/fs-safe": "0.26.8",
+    "semver": "7.8.5",
+    "smol-toml": "1.9.1",
+    "typebox": "1.3.37",
+    "ws": "8.22.0",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@paleoclaw/plugin-sdk": "workspace:*"
+  },
+  "paleoclaw": {
+    "extensions": [
+      "./index.ts"
+    ],
+    "install": {
+      "clawhubSpec": "PaleoHub:@paleoclaw/codex",
+      "npmSpec": "@paleoclaw/codex",
+      "defaultChoice": "npm",
+      "minHostVersion": ">=2026.5.1-beta.1",
+      "requiredPlatformPackages": [
+        "@openai/codex-linux-x64",
+        "@openai/codex-linux-arm64",
+        "@openai/codex-darwin-x64",
+        "@openai/codex-darwin-arm64",
+        "@openai/codex-win32-x64",
+        "@openai/codex-win32-arm64"
+      ]
+    },
+    "compat": {
+      "pluginApi": ">=2026.10.5"
+    },
+    "build": {
+      "openclawVersion": "2026.10.5",
+      "workerEntries": [
+        "./catalog-page.worker.ts"
+      ]
+    },
+    "release": {
+      "publishToClawHub": true,
+      "publishToNpm": true,
+      "requireLatestDependencies": [
+        "@openai/codex"
+      ],
+      "bundleRuntimeDependencies": false
+    }
+  }
+}

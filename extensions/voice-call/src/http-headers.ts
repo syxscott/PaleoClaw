@@ -1,10 +1,14 @@
-export type HttpHeaderMap = Record<string, string | string[] | undefined>;
+import { normalizeLowercaseStringOrEmpty } from "paleoclaw/plugin-sdk/string-coerce-runtime";
 
+type HttpHeaderMap = Record<string, string | string[] | undefined>;
+
+/** Return the first value for a header name regardless of caller casing. */
 export function getHeader(headers: HttpHeaderMap, name: string): string | undefined {
-  const target = name.toLowerCase();
+  const target = normalizeLowercaseStringOrEmpty(name);
   const direct = headers[target];
   const value =
-    direct ?? Object.entries(headers).find(([key]) => key.toLowerCase() === target)?.[1];
+    direct ??
+    Object.entries(headers).find(([key]) => normalizeLowercaseStringOrEmpty(key) === target)?.[1];
   if (Array.isArray(value)) {
     return value[0];
   }

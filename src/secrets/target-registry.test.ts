@@ -1,99 +1,104 @@
-import fs from "node:fs";
-import path from "node:path";
-import { describe, expect, it } from "vitest";
+/** Tests core secret target registry queries without plugin discovery. */
+import { describe, expect, it, vi } from "vitest";
 import type { OpenClawConfig } from "../config/config.js";
-import { buildSecretRefCredentialMatrix } from "./credential-matrix.js";
-import { discoverConfigSecretTargetsByIds } from "./target-registry.js";
+import {
+  discoverConfigSecretTargetsByIds,
+  resolveConfigSecretTargetByPath,
+  resolveSecretPlanTargetByPathCore,
+} from "./target-registry.js";
+
+vi.mock("../plugins/plugin-metadata-snapshot.js", () => ({
+  resolvePluginMetadataSnapshot: () => ({ plugins: [] }),
+}));
 
 describe("secret target registry", () => {
-  it("stays in sync with docs/reference/secretref-user-supplied-credentials-matrix.json", () => {
-    const pathname = path.join(
-      process.cwd(),
-      "docs",
-      "reference",
-      "secretref-user-supplied-credentials-matrix.json",
+  it("discovers PostgreSQL connection refs for configure, apply, and audit", () => {
+    const connection = { source: "env" as const, provider: "default", id: "DATABASE_DSN" };
+    const config: OpenClawConfig = { database: { engine: "postgres", postgres: { connection } } };
+    const [target] = discoverConfigSecretTargetsByIds(
+      config,
+      new Set(["database.postgres.connection"]),
     );
-    const raw = fs.readFileSync(pathname, "utf8");
-    const parsed = JSON.parse(raw) as unknown;
-
-    expect(parsed).toEqual(buildSecretRefCredentialMatrix());
+    expect(target).toMatchObject({
+      path: "database.postgres.connection",
+      value: connection,
+      entry: { includeInPlan: true, includeInConfigure: true, includeInAudit: true },
+    });
+    expect(
+      resolveSecretPlanTargetByPathCore({
+        configFile: "openclaw.json",
+        pathSegments: ["database", "postgres", "connection"],
+      })?.entry.id,
+    ).toBe("database.postgres.connection");
   });
 
-  it("stays in sync with docs/reference/secretref-credential-surface.md", () => {
-    const matrixPath = path.join(
-      process.cwd(),
-      "docs",
-      "reference",
-      "secretref-user-supplied-credentials-matrix.json",
-    );
-    const matrixRaw = fs.readFileSync(matrixPath, "utf8");
-    const matrix = JSON.parse(matrixRaw) as ReturnType<typeof buildSecretRefCredentialMatrix>;
-
-    const surfacePath = path.join(
-      process.cwd(),
-      "docs",
-      "reference",
-      "secretref-credential-surface.md",
-    );
-    const surface = fs.readFileSync(surfacePath, "utf8");
-    const readMarkedCredentialList = (params: { start: string; end: string }): Set<string> => {
-      const startIndex = surface.indexOf(params.start);
-      const endIndex = surface.indexOf(params.end);
-      expect(startIndex).toBeGreaterThanOrEqual(0);
-      expect(endIndex).toBeGreaterThan(startIndex);
-      const block = surface.slice(startIndex + params.start.length, endIndex);
-      const credentials = new Set<string>();
-      for (const line of block.split(/\r?\n/)) {
-        const match = line.match(/^- `([^`]+)`/);
-        if (!match) {
-          continue;
-        }
-        const candidate = match[1];
-        if (!candidate.includes(".")) {
-          continue;
-        }
-        credentials.add(candidate);
-      }
-      return credentials;
-    };
-
-    const supportedFromDocs = readMarkedCredentialList({
-      start: '[//]: # "secretref-supported-list-start"',
-      end: '[//]: # "secretref-supported-list-end"',
-    });
-    const unsupportedFromDocs = readMarkedCredentialList({
-      start: '[//]: # "secretref-unsupported-list-start"',
-      end: '[//]: # "secretref-unsupported-list-end"',
-    });
-
-    const supportedFromMatrix = new Set(
-      matrix.entries.map((entry) =>
-        entry.configFile === "auth-profiles.json" && entry.refPath ? entry.refPath : entry.path,
-      ),
-    );
-    const unsupportedFromMatrix = new Set(matrix.excludedMutableOrRuntimeManaged);
-
-    expect([...supportedFromDocs].toSorted()).toEqual([...supportedFromMatrix].toSorted());
-    expect([...unsupportedFromDocs].toSorted()).toEqual([...unsupportedFromMatrix].toSorted());
-  });
-
-  it("supports filtered discovery by target ids", () => {
-    const targets = discoverConfigSecretTargetsByIds(
-      {
-        talk: {
-          apiKey: { source: "env", provider: "default", id: "TALK_API_KEY" },
-        },
-        gateway: {
-          remote: {
-            token: { source: "env", provider: "default", id: "REMOTE_TOKEN" },
+  it("preserves dotted provider header keys during discovery", () => {
+    const config = {
+      models: {
+        providers: {
+          openai: {
+            headers: {
+              "X.Trace": { source: "env", provider: "default", id: "TRACE_HEADER" },
+            },
+            request: {
+              headers: {
+                "X.Request.Trace": {
+                  source: "env",
+                  provider: "default",
+                  id: "REQUEST_TRACE_HEADER",
+                },
+              },
+            },
           },
         },
-      } as unknown as OpenClawConfig,
-      new Set(["talk.apiKey"]),
+      },
+    } as unknown as OpenClawConfig;
+
+    const targets = discoverConfigSecretTargetsByIds(
+      config,
+      new Set(["models.providers.*.headers.*", "models.providers.*.request.headers.*"]),
     );
 
-    expect(targets).toHaveLength(1);
-    expect(targets[0]?.entry.id).toBe("talk.apiKey");
-    expect(targets[0]?.path).toBe("talk.apiKey");
+    expect(targets.map(({ path }) => path).toSorted()).toEqual([
+      'models.providers.openai.headers["X.Trace"]',
+      'models.providers.openai.request.headers["X.Request.Trace"]',
+    ]);
+  });
+
+  it("returns null when no config target path matches", () => {
+    const target = resolveConfigSecretTargetByPath(["gateway", "auth", "mode"]);
+
+    expect(target).toBeNull();
+  });
+
+  it.each([{ prefix: [] }, { prefix: ["agents", "entries", "main"] }])(
+    "does not offer string-only memory headers as structured SecretRef apply targets ($prefix)",
+    ({ prefix }) => {
+      expect(
+        resolveConfigSecretTargetByPath([
+          ...prefix,
+          "memory",
+          "search",
+          "remote",
+          "headers",
+          "Authorization",
+        ]),
+      ).toBeNull();
+    },
+  );
+
+  it("resolves plan targets by owning config document", () => {
+    const configTarget = resolveSecretPlanTargetByPathCore({
+      configFile: "openclaw.json",
+      pathSegments: ["models", "providers", "openai", "apiKey"],
+    });
+    const authProfileTarget = resolveSecretPlanTargetByPathCore({
+      configFile: "auth-profile-store",
+      pathSegments: ["profiles", "openai:default", "key"],
+    });
+
+    expect(configTarget?.entry.targetType).toBe("models.providers.apiKey");
+    expect(configTarget?.providerId).toBe("openai");
+    expect(authProfileTarget?.entry.targetType).toBe("auth-profiles.api_key.key");
   });
 });

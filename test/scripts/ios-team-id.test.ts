@@ -1,76 +1,20 @@
-import { execFileSync } from "node:child_process";
+import { spawnSync } from "node:child_process";
 import { chmodSync } from "node:fs";
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
-import os from "node:os";
+import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { cleanupTempDirs, makeTempDir } from "../helpers/temp-dir.js";
 
 const SCRIPT = path.join(process.cwd(), "scripts", "ios-team-id.sh");
 const BASH_BIN = process.platform === "win32" ? "bash" : "/bin/bash";
 const BASH_ARGS = process.platform === "win32" ? [SCRIPT] : ["--noprofile", "--norc", SCRIPT];
 const BASE_PATH = process.env.PATH ?? "/usr/bin:/bin";
 const BASE_LANG = process.env.LANG ?? "C";
-let fixtureRoot = "";
+const CANONICAL_TEAM_ID = "FWJYW4S8P8";
 let sharedBinDir = "";
 let sharedHomeDir = "";
-let sharedHomeBinDir = "";
 let sharedFakePythonPath = "";
-const runScriptCache = new Map<string, { ok: boolean; stdout: string; stderr: string }>();
-type TeamCandidate = {
-  teamId: string;
-  isFree: boolean;
-  teamName: string;
-};
-
-function parseTeamCandidateRows(raw: string): TeamCandidate[] {
-  return raw
-    .split("\n")
-    .map((line) => line.replace(/\r/g, "").trim())
-    .filter(Boolean)
-    .map((line) => line.split("\t"))
-    .filter((parts) => parts.length >= 3)
-    .map((parts) => ({
-      teamId: parts[0] ?? "",
-      isFree: (parts[1] ?? "0") === "1",
-      teamName: parts[2] ?? "",
-    }))
-    .filter((candidate) => candidate.teamId.length > 0);
-}
-
-function pickTeamIdFromCandidates(params: {
-  candidates: TeamCandidate[];
-  preferredTeamId?: string;
-  preferredTeamName?: string;
-  preferNonFreeTeam?: boolean;
-}): string | undefined {
-  const preferredTeamId = (params.preferredTeamId ?? "").trim();
-  if (preferredTeamId) {
-    const preferred = params.candidates.find((candidate) => candidate.teamId === preferredTeamId);
-    if (preferred) {
-      return preferred.teamId;
-    }
-  }
-
-  const preferredTeamName = (params.preferredTeamName ?? "").trim().toLowerCase();
-  if (preferredTeamName) {
-    const preferredByName = params.candidates.find(
-      (candidate) => candidate.teamName.trim().toLowerCase() === preferredTeamName,
-    );
-    if (preferredByName) {
-      return preferredByName.teamId;
-    }
-  }
-
-  if (params.preferNonFreeTeam !== false) {
-    const paid = params.candidates.find((candidate) => !candidate.isFree);
-    if (paid) {
-      return paid.teamId;
-    }
-  }
-
-  return params.candidates[0]?.teamId;
-}
-
+const tempDirs: string[] = [];
 async function writeExecutable(filePath: string, body: string): Promise<void> {
   await writeFile(filePath, body, "utf8");
   chmodSync(filePath, 0o755);
@@ -79,153 +23,104 @@ async function writeExecutable(filePath: string, body: string): Promise<void> {
 function runScript(
   homeDir: string,
   extraEnv: Record<string, string> = {},
-): {
-  ok: boolean;
-  stdout: string;
-  stderr: string;
-} {
-  const extraEnvKey = Object.keys(extraEnv)
-    .toSorted((a, b) => a.localeCompare(b))
-    .map((key) => `${key}=${extraEnv[key] ?? ""}`)
-    .join("\u0001");
-  const cacheKey = `${homeDir}\u0000${extraEnvKey}`;
-  const cached = runScriptCache.get(cacheKey);
-  if (cached) {
-    return cached;
-  }
-  const binDir = path.join(homeDir, "bin");
-  const env = {
-    HOME: homeDir,
-    PATH: `${binDir}${path.delimiter}${sharedBinDir}${path.delimiter}${BASE_PATH}`,
-    LANG: BASE_LANG,
-    ...extraEnv,
-  };
-  try {
-    const stdout = execFileSync(BASH_BIN, BASH_ARGS, {
-      env,
-      encoding: "utf8",
-      stdio: ["ignore", "pipe", "pipe"],
-    });
-    const result = { ok: true, stdout: stdout.trim(), stderr: "" };
-    runScriptCache.set(cacheKey, result);
-    return result;
-  } catch (error) {
-    const e = error as {
-      stdout?: string | Buffer;
-      stderr?: string | Buffer;
-    };
-    const stdout = typeof e.stdout === "string" ? e.stdout : (e.stdout?.toString("utf8") ?? "");
-    const stderr = typeof e.stderr === "string" ? e.stderr : (e.stderr?.toString("utf8") ?? "");
-    const result = { ok: false, stdout: stdout.trim(), stderr: stderr.trim() };
-    runScriptCache.set(cacheKey, result);
-    return result;
-  }
+  scriptArgs: string[] = [],
+) {
+  const { status, stdout, stderr } = spawnSync(BASH_BIN, [...BASH_ARGS, ...scriptArgs], {
+    env: {
+      HOME: homeDir,
+      LANG: BASE_LANG,
+      PATH: [path.join(homeDir, "bin"), sharedBinDir, BASE_PATH].join(path.delimiter),
+      ...extraEnv,
+    },
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+  return { ok: status === 0, stdout: stdout?.trim() ?? "", stderr: stderr?.trim() ?? "" };
+}
+
+async function makeHome() {
+  const homeDir = makeTempDir(tempDirs, "paleoclaw-ios-team-id-");
+  await mkdir(path.join(homeDir, "bin"), { recursive: true });
+  const preferences = path.join(homeDir, "Library", "Preferences");
+  await mkdir(preferences, { recursive: true });
+  await writeFile(path.join(preferences, "com.apple.dt.Xcode.plist"), "");
+  return homeDir;
 }
 
 describe("scripts/ios-team-id.sh", () => {
   beforeAll(async () => {
-    fixtureRoot = await mkdtemp(path.join(os.tmpdir(), "paleoclaw-ios-team-id-"));
+    const fixtureRoot = makeTempDir(tempDirs, "paleoclaw-ios-team-id-");
     sharedBinDir = path.join(fixtureRoot, "shared-bin");
     await mkdir(sharedBinDir, { recursive: true });
-    sharedHomeDir = path.join(fixtureRoot, "home");
-    sharedHomeBinDir = path.join(sharedHomeDir, "bin");
-    await mkdir(sharedHomeBinDir, { recursive: true });
-    await mkdir(path.join(sharedHomeDir, "Library", "Preferences"), { recursive: true });
-    await writeFile(
-      path.join(sharedHomeDir, "Library", "Preferences", "com.apple.dt.Xcode.plist"),
-      "",
-    );
+    sharedHomeDir = await makeHome();
     await writeExecutable(
       path.join(sharedBinDir, "plutil"),
       `#!/usr/bin/env bash
 echo '{}'`,
     );
-    await writeExecutable(
-      path.join(sharedBinDir, "defaults"),
-      `#!/usr/bin/env bash
-if [[ "$3" == "DVTDeveloperAccountManagerAppleIDLists" ]]; then
-  echo '(identifier = "dev@example.com";)'
-  exit 0
-fi
-exit 0`,
-    );
-    await writeExecutable(
-      path.join(sharedBinDir, "security"),
-      `#!/usr/bin/env bash
-if [[ "$1" == "cms" && "$2" == "-D" ]]; then
-  if [[ "$4" == *"one.mobileprovision" ]]; then
-    cat <<'PLIST'
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0"><dict><key>TeamIdentifier</key><array><string>AAAAA11111</string></array></dict></plist>
-PLIST
-    exit 0
-  fi
-  if [[ "$4" == *"two.mobileprovision" ]]; then
-    cat <<'PLIST'
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0"><dict><key>TeamIdentifier</key><array><string>BBBBB22222</string></array></dict></plist>
-PLIST
-    exit 0
-  fi
-fi
-exit 1`,
-    );
-    sharedFakePythonPath = path.join(sharedHomeBinDir, "fake-python");
+    await writeExecutable(path.join(sharedBinDir, "defaults"), "#!/usr/bin/env bash\nexit 0\n");
+    sharedFakePythonPath = path.join(sharedHomeDir, "bin", "fake-python");
     await writeExecutable(
       sharedFakePythonPath,
       `#!/usr/bin/env bash
-printf 'AAAAA11111\\t0\\tAlpha Team\\r\\n'
+printf 'AAAAA11111\\t1\\tAlpha Team\\r\\n'
 printf 'BBBBB22222\\t0\\tBeta Team\\r\\n'`,
     );
   });
 
-  afterAll(async () => {
-    if (!fixtureRoot) {
-      return;
-    }
-    await rm(fixtureRoot, { recursive: true, force: true });
-  });
+  afterAll(() => cleanupTempDirs(tempDirs));
 
-  it("parses team listings and prioritizes preferred IDs without shelling out", () => {
-    const rows = parseTeamCandidateRows(
-      "AAAAA11111\t1\tAlpha Team\r\nBBBBB22222\t0\tBeta Team\r\n",
+  it("prefers the canonical paleoclaw iOS team when it is present", async () => {
+    const homeDir = await makeHome();
+    const fakePythonPath = path.join(homeDir, "bin", "fake-python");
+    await writeExecutable(
+      fakePythonPath,
+      `#!/usr/bin/env bash
+printf 'AAAAA11111\\t0\\tAlpha Team\\r\\n'
+printf '${CANONICAL_TEAM_ID}\\t0\\tOpenClaw\\r\\n'`,
     );
-    expect(rows).toStrictEqual([
-      { teamId: "AAAAA11111", isFree: true, teamName: "Alpha Team" },
-      { teamId: "BBBBB22222", isFree: false, teamName: "Beta Team" },
+
+    const result = runScript(homeDir, { IOS_PYTHON_BIN: fakePythonPath });
+    expect(result).toMatchObject({ ok: true, stdout: CANONICAL_TEAM_ID });
+  });
+
+  it("loads teams from Xcode account identifier team metadata", async () => {
+    const homeDir = await makeHome();
+    await writeExecutable(
+      path.join(homeDir, "bin", "plutil"),
+      `#!/usr/bin/env bash
+if [[ "$1" == "-extract" && "$2" == "IDEProvisioningTeamByIdentifier" ]]; then
+  cat <<'JSON'
+{"account-id":[{"teamID":"FWJYW4S8P8","teamName":"paleoclaw Foundation","isFreeProvisioningTeam":false,"teamType":"Company"}]}
+JSON
+  exit 0
+fi
+echo '{}'`,
+    );
+
+    const result = runScript(homeDir, { IOS_PYTHON_BIN: "python3" }, ["--require-canonical"]);
+    expect(result).toMatchObject({ ok: true, stdout: CANONICAL_TEAM_ID });
+  });
+
+  it("fails canonical-only resolution when only fallback teams are available", () => {
+    const result = runScript(sharedHomeDir, { IOS_PYTHON_BIN: sharedFakePythonPath }, [
+      "--require-canonical",
     ]);
-
-    const preferred = pickTeamIdFromCandidates({
-      candidates: rows,
-      preferredTeamId: "BBBBB22222",
+    expect(result).toMatchObject({
+      ok: false,
+      stderr: expect.stringContaining(
+        `Official paleoclaw iOS Team ID '${CANONICAL_TEAM_ID}' is not available`,
+      ),
     });
-    expect(preferred).toBe("BBBBB22222");
-
-    const fallback = pickTeamIdFromCandidates({
-      candidates: rows,
-      preferredTeamId: "CCCCCC3333",
-    });
-    expect(fallback).toBe("BBBBB22222");
   });
 
-  it("resolves a fallback team ID from Xcode team listings (smoke)", async () => {
-    const fallbackResult = runScript(sharedHomeDir, { IOS_PYTHON_BIN: sharedFakePythonPath });
-    expect(fallbackResult.ok).toBe(true);
-    expect(fallbackResult.stdout).toBe("AAAAA11111");
-  });
-
-  it("prints actionable guidance when Xcode account exists but no Team ID is resolvable", async () => {
-    const result = runScript(sharedHomeDir);
-    expect(result.ok).toBe(false);
-    expect(
-      result.stderr.includes("An Apple account is signed in to Xcode") ||
-        result.stderr.includes("No Apple Team ID found in Xcode accounts"),
-    ).toBe(true);
-    expect(
-      result.stderr.includes("IOS_DEVELOPMENT_TEAM") ||
-        result.stderr.includes("IOS_ALLOW_KEYCHAIN_TEAM_FALLBACK"),
-    ).toBe(true);
+  it("rejects explicit non-canonical teams in canonical-only mode", () => {
+    const result = runScript(sharedHomeDir, { IOS_DEVELOPMENT_TEAM: "BBBBB22222" }, [
+      "--require-canonical",
+    ]);
+    expect(result).toMatchObject({
+      ok: false,
+      stderr: expect.stringContaining("is not the official paleoclaw iOS team"),
+    });
   });
 });

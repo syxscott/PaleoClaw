@@ -1,8 +1,11 @@
-import type { CommonChannelMessagingConfig } from "./types.channel-messaging-common.js";
-import type { GroupToolPolicyBySenderConfig, GroupToolPolicyConfig } from "./types.tools.js";
+import type {
+  CommonChannelGroupConfig,
+  CommonChannelMessagingConfig,
+  MultiAccountChannelConfig,
+} from "./types.channel-messaging-common.js";
 
-export type IrcAccountConfig = CommonChannelMessagingConfig & {
-  /** IRC server hostname (example: irc.libera.chat). */
+export type IrcAccountConfig = Omit<CommonChannelMessagingConfig, "mentionPatterns"> & {
+  /** IRC server hostname (example: irc.example.com). */
   host?: string;
   /** IRC server port (default: 6697 with TLS, otherwise 6667). */
   port?: number;
@@ -37,25 +40,7 @@ export type IrcAccountConfig = CommonChannelMessagingConfig & {
   channels?: string[];
   /** Outbound text chunk size (chars). Default: 350. */
   textChunkLimit?: number;
-  groups?: Record<
-    string,
-    {
-      requireMention?: boolean;
-      tools?: GroupToolPolicyConfig;
-      toolsBySender?: GroupToolPolicyBySenderConfig;
-      allowFrom?: Array<string | number>;
-      skills?: string[];
-      enabled?: boolean;
-      systemPrompt?: string;
-    }
-  >;
-  /** Optional mention patterns specific to IRC channel messages. */
-  mentionPatterns?: string[];
+  groups?: Record<string, CommonChannelGroupConfig>;
 };
 
-export type IrcConfig = {
-  /** Optional per-account IRC configuration (multi-account). */
-  accounts?: Record<string, IrcAccountConfig>;
-  /** Optional default account id when multiple accounts are configured. */
-  defaultAccount?: string;
-} & IrcAccountConfig;
+export type IrcConfig = MultiAccountChannelConfig<IrcAccountConfig>;

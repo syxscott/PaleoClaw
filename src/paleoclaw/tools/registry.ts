@@ -3,7 +3,12 @@
  * Inspired by Hermes central registry design.
  */
 
-import { RegisteredTool, ToolEntry, ToolExecuteContext, ToolResult } from "./types.js";
+import {
+  type RegisteredTool,
+  type ToolEntry,
+  type ToolExecuteContext,
+  type ToolResult,
+} from "./types.js";
 
 function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> {
   let timeoutId: NodeJS.Timeout | null = null;

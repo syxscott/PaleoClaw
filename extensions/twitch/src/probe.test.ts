@@ -7,6 +7,8 @@ const mockUnbind = vi.fn();
 
 // Event handler storage
 let connectHandler: (() => void) | null = null;
+let authSuccessHandler: (() => void) | null = null;
+let authFailureHandler: (() => void) | null = null;
 let disconnectHandler: ((manually: boolean, reason?: Error) => void) | null = null;
 
 // Event listener mocks that store handlers and return unbind function
@@ -20,7 +22,13 @@ const mockOnDisconnect = vi.fn((handler: (manually: boolean, reason?: Error) => 
   return { unbind: mockUnbind };
 });
 
-const mockOnAuthenticationFailure = vi.fn((_handler: () => void) => {
+const mockOnAuthenticationSuccess = vi.fn((handler: () => void) => {
+  authSuccessHandler = handler;
+  return { unbind: mockUnbind };
+});
+
+const mockOnAuthenticationFailure = vi.fn((handler: () => void) => {
+  authFailureHandler = handler;
   return { unbind: mockUnbind };
 });
 
@@ -30,24 +38,30 @@ const defaultConnectImpl = async () => {
   if (connectHandler) {
     connectHandler();
   }
+  authSuccessHandler?.();
 };
 
 const mockConnect = vi.fn().mockImplementation(defaultConnectImpl);
 
 const mockQuit = vi.fn().mockResolvedValue(undefined);
+type AuthProviderArgs = ConstructorParameters<typeof import("@twurple/auth").StaticAuthProvider>;
+const mockAuthProvider = vi.fn<(...args: AuthProviderArgs) => void>();
 
 vi.mock("@twurple/chat", () => ({
   ChatClient: class {
     connect = mockConnect;
     quit = mockQuit;
     onConnect = mockOnConnect;
+    onAuthenticationSuccess = mockOnAuthenticationSuccess;
     onDisconnect = mockOnDisconnect;
     onAuthenticationFailure = mockOnAuthenticationFailure;
   },
 }));
 
 vi.mock("@twurple/auth", () => ({
-  StaticAuthProvider: class {},
+  StaticAuthProvider: function StaticAuthProvider(...args: AuthProviderArgs) {
+    mockAuthProvider(...args);
+  },
 }));
 
 describe("probeTwitch", () => {
@@ -62,6 +76,8 @@ describe("probeTwitch", () => {
     vi.clearAllMocks();
     // Reset handlers
     connectHandler = null;
+    authSuccessHandler = null;
+    authFailureHandler = null;
     disconnectHandler = null;
   });
 
@@ -73,45 +89,6 @@ describe("probeTwitch", () => {
     expect(result.error).toContain("missing credentials");
   });
 
-  it("returns error when token is missing", async () => {
-    const account = { ...mockAccount, accessToken: "" };
-    const result = await probeTwitch(account, 5000);
-
-    expect(result.ok).toBe(false);
-    expect(result.error).toContain("missing credentials");
-  });
-
-  it("attempts connection regardless of token prefix", async () => {
-    // Note: probeTwitch doesn't validate token format - it tries to connect with whatever token is provided
-    // The actual connection would fail in production with an invalid token
-    const account = { ...mockAccount, accessToken: "raw_token_no_prefix" };
-    const result = await probeTwitch(account, 5000);
-
-    // With mock, connection succeeds even without oauth: prefix
-    expect(result.ok).toBe(true);
-  });
-
-  it("successfully connects with valid credentials", async () => {
-    const result = await probeTwitch(mockAccount, 5000);
-
-    expect(result.ok).toBe(true);
-    expect(result.connected).toBe(true);
-    expect(result.username).toBe("testbot");
-    expect(result.channel).toBe("testchannel"); // uses account's configured channel
-  });
-
-  it("uses custom channel when specified", async () => {
-    const account: TwitchAccountConfig = {
-      ...mockAccount,
-      channel: "customchannel",
-    };
-
-    const result = await probeTwitch(account, 5000);
-
-    expect(result.ok).toBe(true);
-    expect(result.channel).toBe("customchannel");
-  });
-
   it("times out when connection takes too long", async () => {
     vi.useFakeTimers();
     try {
@@ -121,51 +98,28 @@ describe("probeTwitch", () => {
       const result = await resultPromise;
 
       expect(result.ok).toBe(false);
-      expect(result.error).toContain("timeout");
+      expect(result.error).toBe("timeout after 100ms");
+      expect(mockQuit).toHaveBeenCalledOnce();
     } finally {
       vi.useRealTimers();
       mockConnect.mockImplementation(defaultConnectImpl);
     }
   });
 
-  it("cleans up client even on failure", async () => {
+  it("rejects credentials refused after the transport connects", async () => {
     mockConnect.mockImplementationOnce(async () => {
-      // Simulate connection failure by calling disconnect handler
-      // onDisconnect signature: (manually: boolean, reason?: Error) => void
-      if (disconnectHandler) {
-        disconnectHandler(false, new Error("Connection failed"));
-      }
+      connectHandler?.();
+      authFailureHandler?.();
     });
 
     const result = await probeTwitch(mockAccount, 5000);
 
     expect(result.ok).toBe(false);
-    expect(result.error).toContain("Connection failed");
-    expect(mockQuit).toHaveBeenCalled();
-
-    // Reset mocks
-    mockConnect.mockImplementation(defaultConnectImpl);
+    expect(result.error).toBe("Authentication failed");
+    expect(mockQuit).toHaveBeenCalledOnce();
   });
 
-  it("handles connection errors gracefully", async () => {
-    mockConnect.mockImplementationOnce(async () => {
-      // Simulate connection failure by calling disconnect handler
-      // onDisconnect signature: (manually: boolean, reason?: Error) => void
-      if (disconnectHandler) {
-        disconnectHandler(false, new Error("Network error"));
-      }
-    });
-
-    const result = await probeTwitch(mockAccount, 5000);
-
-    expect(result.ok).toBe(false);
-    expect(result.error).toContain("Network error");
-
-    // Reset mock
-    mockConnect.mockImplementation(defaultConnectImpl);
-  });
-
-  it("trims token before validation", async () => {
+  it("trims whitespace before removing the token prefix", async () => {
     const account: TwitchAccountConfig = {
       ...mockAccount,
       accessToken: "  oauth:test123456789  ",
@@ -174,6 +128,11 @@ describe("probeTwitch", () => {
     const result = await probeTwitch(account, 5000);
 
     expect(result.ok).toBe(true);
+    expect(result.connected).toBe(true);
+    expect(result.username).toBe("testbot");
+    expect(result.channel).toBe("testchannel");
+    expect(mockAuthProvider).toHaveBeenCalledOnce();
+    expect(mockAuthProvider).toHaveBeenCalledWith("test-client-id", "test123456789");
   });
 
   it("handles non-Error objects in catch block", async () => {

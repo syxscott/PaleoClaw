@@ -1,18 +1,27 @@
+// Covers config validation issue formatting for user-facing output.
 import { describe, expect, it } from "vitest";
 import {
   formatConfigIssueLine,
   formatConfigIssueLines,
-  normalizeConfigIssue,
-  normalizeConfigIssuePath,
+  formatConfigIssueSummary,
   normalizeConfigIssues,
 } from "./issue-format.js";
 
 describe("config issue format", () => {
-  it("normalizes empty paths to <root>", () => {
-    expect(normalizeConfigIssuePath("")).toBe("<root>");
-    expect(normalizeConfigIssuePath("   ")).toBe("<root>");
-    expect(normalizeConfigIssuePath(null)).toBe("<root>");
-    expect(normalizeConfigIssuePath(undefined)).toBe("<root>");
+  it("formats issue lines with source locations", () => {
+    expect(
+      formatConfigIssueLine(
+        {
+          path: "agents.list.3.tools.profile",
+          pathSegments: ["agents", "list", 3, "tools", "profile"],
+          message: 'Invalid input, got: "none"',
+          line: 247,
+          sourceFile: "openclaw.json",
+        },
+        "×",
+        { normalizeRoot: true },
+      ),
+    ).toBe('× openclaw.json:247 — agents.list[3].tools.profile: Invalid input, got: "none"');
   });
 
   it("formats issue lines with and without markers", () => {
@@ -28,11 +37,18 @@ describe("config issue format", () => {
         [
           { path: "", message: "first" },
           { path: "channels.signal.dmPolicy", message: "second" },
+          { path: "foo.bar", pathSegments: ["foo.bar"], message: "literal" },
+          { path: "foo.bar", pathSegments: ["foo", "bar"], message: "nested" },
         ],
         "×",
         { normalizeRoot: true },
       ),
-    ).toEqual(["× <root>: first", "× channels.signal.dmPolicy: second"]);
+    ).toEqual([
+      "× <root>: first",
+      "× channels.signal.dmPolicy: second",
+      '× ["foo.bar"]: literal',
+      "× foo.bar: nested",
+    ]);
   });
 
   it("sanitizes control characters and ANSI sequences in formatted lines", () => {
@@ -47,48 +63,35 @@ describe("config issue format", () => {
     ).toBe("- gateway.\\nbind: bad\\r\\n\\tvalue");
   });
 
-  it("normalizes issue metadata for machine output", () => {
+  it("formats concise issue summaries", () => {
+    expect(formatConfigIssueSummary([])).toBeNull();
     expect(
-      normalizeConfigIssue({
-        path: "",
-        message: "invalid",
-        allowedValues: ["stable", "beta"],
-        allowedValuesHiddenCount: 0,
-      }),
-    ).toEqual({
-      path: "<root>",
-      message: "invalid",
-      allowedValues: ["stable", "beta"],
-    });
-
-    expect(
-      normalizeConfigIssues([
-        {
-          path: "update.channel",
-          message: "invalid",
-          allowedValues: [],
-          allowedValuesHiddenCount: 2,
-        },
+      formatConfigIssueSummary([
+        { path: "", message: "root broken" },
+        { path: "gateway.auth.password.source", message: "Required" },
+        { path: "agents.defaults.execution", message: "Unrecognized key" },
+        { path: "channels.slack.enabled", message: "Expected boolean" },
+        { path: "gateway.port", message: "Expected number" },
+        { path: "plugins", message: "Expected object" },
       ]),
-    ).toEqual([
+    ).toBe(
+      "<root>: root broken; gateway.auth.password.source: Required; agents.defaults.execution: Unrecognized key; channels.slack.enabled: Expected boolean; gateway.port: Expected number; and 1 more",
+    );
+  });
+
+  it("normalizes issue collections for machine output", () => {
+    const issues = normalizeConfigIssues([
       {
-        path: "update.channel",
+        path: "models.fixture/model.v1.alias",
+        pathSegments: ["models", "fixture/model.v1", "alias"],
         message: "invalid",
+        allowedValues: [],
+        allowedValuesHiddenCount: 2,
       },
     ]);
 
-    expect(
-      normalizeConfigIssue({
-        path: "update.channel",
-        message: "invalid",
-        allowedValues: ["stable"],
-        allowedValuesHiddenCount: 2,
-      }),
-    ).toEqual({
-      path: "update.channel",
-      message: "invalid",
-      allowedValues: ["stable"],
-      allowedValuesHiddenCount: 2,
-    });
+    expect(issues).toEqual([{ path: "models.fixture/model.v1.alias", message: "invalid" }]);
+    expect(issues[0]?.pathSegments).toEqual(["models", "fixture/model.v1", "alias"]);
+    expect(JSON.stringify(issues)).not.toContain("pathSegments");
   });
 });

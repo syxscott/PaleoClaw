@@ -1,101 +1,73 @@
 import fs from "node:fs/promises";
-import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
+import { withTestDir } from "../test-helpers/temp-dir.js";
+import { withEnvAsync } from "../test-utils/env.js";
 import { resolveBrewExecutable, resolveBrewPathDirs } from "./brew.js";
 
-describe("brew helpers", () => {
-  async function withBrewRoot(run: (tmp: string) => Promise<void>) {
-    const tmp = await fs.mkdtemp(path.join(os.tmpdir(), "paleoclaw-brew-"));
-    try {
-      await run(tmp);
-    } finally {
-      await fs.rm(tmp, { recursive: true, force: true });
-    }
-  }
+const withBrewDir = (run: (tmp: string) => Promise<void>) =>
+  withTestDir({ prefix: "paleoclaw-brew-" }, run);
 
+describe("brew helpers", () => {
   async function writeExecutable(filePath: string) {
     await fs.mkdir(path.dirname(filePath), { recursive: true });
     await fs.writeFile(filePath, "#!/bin/sh\necho ok\n", "utf-8");
     await fs.chmod(filePath, 0o755);
   }
 
-  it("resolves brew from ~/.linuxbrew/bin when executable exists", async () => {
-    await withBrewRoot(async (tmp) => {
-      const homebrewBin = path.join(tmp, ".linuxbrew", "bin");
-      const brewPath = path.join(homebrewBin, "brew");
-      await writeExecutable(brewPath);
+  it.each(["process", "workspace"])("trusts only the process PATH (%s)", async (source) => {
+    await withBrewDir(async (tmp) => {
+      const bin = path.join(tmp, "custom-homebrew", "bin");
+      const executable = path.join(bin, "brew");
+      await writeExecutable(executable);
 
-      const env: NodeJS.ProcessEnv = {};
-      expect(resolveBrewExecutable({ homeDir: tmp, env })).toBe(brewPath);
+      await withEnvAsync(source === "process" ? { PATH: bin } : {}, async () => {
+        const resolved = resolveBrewExecutable({
+          homeDir: path.join(tmp, "home"),
+          ...(source === "workspace" ? { env: { PATH: bin } } : {}),
+        });
+        if (source === "process") {
+          expect(resolved).toBe(executable);
+        } else {
+          expect(resolved).not.toBe(executable);
+        }
+      });
     });
   });
 
-  it("prefers HOMEBREW_PREFIX/bin/brew when present", async () => {
-    await withBrewRoot(async (tmp) => {
+  it("ignores Homebrew executable, selector, and prefix env overrides by default", async () => {
+    await withBrewDir(async (tmp) => {
+      const explicit = path.join(tmp, "custom", "brew");
       const prefix = path.join(tmp, "prefix");
       const prefixBin = path.join(prefix, "bin");
-      const prefixBrew = path.join(prefixBin, "brew");
-      await writeExecutable(prefixBrew);
-
-      const homebrewBin = path.join(tmp, ".linuxbrew", "bin");
-      const homebrewBrew = path.join(homebrewBin, "brew");
-      await writeExecutable(homebrewBrew);
-
-      const env: NodeJS.ProcessEnv = { HOMEBREW_PREFIX: prefix };
-      expect(resolveBrewExecutable({ homeDir: tmp, env })).toBe(prefixBrew);
-    });
-  });
-
-  it("prefers HOMEBREW_BREW_FILE over prefix and trims value", async () => {
-    await withBrewRoot(async (tmp) => {
-      const explicit = path.join(tmp, "custom", "brew");
-      const prefix = path.join(tmp, "prefix");
-      const prefixBrew = path.join(prefix, "bin", "brew");
-      await writeExecutable(explicit);
-      await writeExecutable(prefixBrew);
-
-      const env: NodeJS.ProcessEnv = {
-        HOMEBREW_BREW_FILE: `  ${explicit}  `,
+      const homebrewBrew = path.join(tmp, ".linuxbrew", "bin", "brew");
+      await Promise.all(
+        [explicit, path.join(prefixBin, "brew"), homebrewBrew].map(writeExecutable),
+      );
+      const env = {
+        HOMEBREW_BREW_FILE: explicit,
+        HOMEBREW_CURL_PATH: explicit,
+        HOMEBREW_GIT_PATH: explicit,
         HOMEBREW_PREFIX: prefix,
       };
-      expect(resolveBrewExecutable({ homeDir: tmp, env })).toBe(explicit);
+
+      await withEnvAsync({ ...env, PATH: "" }, async () => {
+        expect(resolveBrewExecutable({ homeDir: tmp, env })).toBe(homebrewBrew);
+        expect(resolveBrewPathDirs({ homeDir: tmp, env })).not.toContain(prefixBin);
+      });
     });
   });
 
-  it("falls back to prefix when HOMEBREW_BREW_FILE is missing or not executable", async () => {
-    await withBrewRoot(async (tmp) => {
-      const explicit = path.join(tmp, "custom", "brew");
-      const prefix = path.join(tmp, "prefix");
-      const prefixBrew = path.join(prefix, "bin", "brew");
-      let brewFile = explicit;
-      if (process.platform === "win32") {
-        // Windows doesn't enforce POSIX executable bits, so use a missing path
-        // to verify fallback behavior deterministically.
-        brewFile = path.join(tmp, "custom", "missing-brew");
-      } else {
-        await fs.mkdir(path.dirname(explicit), { recursive: true });
-        await fs.writeFile(explicit, "#!/bin/sh\necho no\n", "utf-8");
-        await fs.chmod(explicit, 0o644);
-      }
-      await writeExecutable(prefixBrew);
-
-      const env: NodeJS.ProcessEnv = {
-        HOMEBREW_BREW_FILE: brewFile,
-        HOMEBREW_PREFIX: prefix,
-      };
-      expect(resolveBrewExecutable({ homeDir: tmp, env })).toBe(prefixBrew);
+  it("keeps Linuxbrew candidates before standard macOS dirs, ignoring env prefixes", async () => {
+    await withEnvAsync({ HOMEBREW_PREFIX: "/custom/prefix" }, async () => {
+      const dirs = resolveBrewPathDirs({ homeDir: "/home/test" });
+      expect(dirs.slice(-2)).toEqual(["/opt/homebrew/bin", "/usr/local/bin"]);
+      expect(dirs).not.toContain(path.join("/custom/prefix", "bin"));
+      expect(dirs).not.toContain(path.join("/custom/prefix", "sbin"));
+      expect(dirs).toContain("/home/linuxbrew/.linuxbrew/bin");
+      expect(dirs).toContain("/home/linuxbrew/.linuxbrew/sbin");
+      expect(dirs).toContain(path.join("/home/test", ".linuxbrew", "bin"));
+      expect(dirs).toContain(path.join("/home/test", ".linuxbrew", "sbin"));
     });
-  });
-
-  it("includes Linuxbrew bin/sbin in path candidates", () => {
-    const env: NodeJS.ProcessEnv = { HOMEBREW_PREFIX: "/custom/prefix" };
-    const dirs = resolveBrewPathDirs({ homeDir: "/home/test", env });
-    expect(dirs).toContain(path.join("/custom/prefix", "bin"));
-    expect(dirs).toContain(path.join("/custom/prefix", "sbin"));
-    expect(dirs).toContain("/home/linuxbrew/.linuxbrew/bin");
-    expect(dirs).toContain("/home/linuxbrew/.linuxbrew/sbin");
-    expect(dirs).toContain(path.join("/home/test", ".linuxbrew", "bin"));
-    expect(dirs).toContain(path.join("/home/test", ".linuxbrew", "sbin"));
   });
 });

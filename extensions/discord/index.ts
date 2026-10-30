@@ -1,19 +1,39 @@
-import type { OpenClawPluginApi } from "paleoclaw/plugin-sdk/discord";
-import { emptyPluginConfigSchema } from "paleoclaw/plugin-sdk/discord";
-import { discordPlugin } from "./src/channel.js";
-import { setDiscordRuntime } from "./src/runtime.js";
-import { registerDiscordSubagentHooks } from "./src/subagent-hooks.js";
+import {
+  defineBundledChannelEntry,
+  loadBundledEntryExportSync,
+  type OpenClawPluginApi,
+} from "paleoclaw/plugin-sdk/channel-entry-contract";
+import { registerDiscordSubagentHooks } from "./subagent-hooks-api.js";
 
-const plugin = {
+export default defineBundledChannelEntry({
   id: "discord",
   name: "Discord",
   description: "Discord channel plugin",
-  configSchema: emptyPluginConfigSchema(),
-  register(api: OpenClawPluginApi) {
-    setDiscordRuntime(api.runtime);
-    api.registerChannel({ plugin: discordPlugin });
+  importMetaUrl: import.meta.url,
+  plugin: {
+    specifier: "./channel-plugin-api.js",
+    exportName: "discordPlugin",
+  },
+  runtime: {
+    specifier: "./runtime-setter-api.js",
+    exportName: "setDiscordRuntime",
+  },
+  accountInspect: {
+    specifier: "./account-inspect-api.js",
+    exportName: "inspectDiscordReadOnlyAccount",
+  },
+  registerFull(api) {
+    // Account inspection loads this entry too; runtime registration must stay behind its owner mode.
+    loadBundledEntryExportSync<(api: OpenClawPluginApi) => void>(import.meta.url, {
+      specifier: "./activities-api.js",
+      exportName: "registerDiscordActivities",
+    })(api);
     registerDiscordSubagentHooks(api);
   },
-};
-
-export default plugin;
+  registerCapabilities(api) {
+    loadBundledEntryExportSync<(api: OpenClawPluginApi) => void>(import.meta.url, {
+      specifier: "./transcripts-source-api.js",
+      exportName: "registerDiscordTranscriptSourceProvider",
+    })(api);
+  },
+});

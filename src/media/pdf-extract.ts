@@ -1,104 +1,104 @@
-type CanvasModule = typeof import("@napi-rs/canvas");
-type PdfJsModule = typeof import("pdfjs-dist/legacy/build/pdf.mjs");
+import { normalizeLowercaseStringOrEmpty } from "@paleoclaw/normalization-core/string-coerce";
+import { z } from "zod";
+import type { OpenClawConfig } from "../config/types.openclaw.js";
+import type {
+  DocumentExtractedImage,
+  DocumentExtractionRequest,
+  DocumentExtractionResult,
+} from "../plugins/document-extractor-types.js";
+import { resolvePluginDocumentExtractors } from "../plugins/document-extractors.runtime.js";
 
-let canvasModulePromise: Promise<CanvasModule> | null = null;
-let pdfJsModulePromise: Promise<PdfJsModule> | null = null;
+/** Image payload extracted from a PDF page by the document-extract plugin. */
+export type PdfExtractedImage = DocumentExtractedImage;
+/** Text and extracted image payloads returned by PDF extraction callers. */
+export type PdfExtractedContent = DocumentExtractionResult;
 
-async function loadCanvasModule(): Promise<CanvasModule> {
-  if (!canvasModulePromise) {
-    canvasModulePromise = import("@napi-rs/canvas").catch((err) => {
-      canvasModulePromise = null;
-      throw new Error(
-        `Optional dependency @napi-rs/canvas is required for PDF image extraction: ${String(err)}`,
-      );
-    });
-  }
-  return canvasModulePromise;
-}
+const extractionIntegerSchema = z.number().int().max(Number.MAX_SAFE_INTEGER);
+const extractionMetadataSchema = z.object({
+  pages: z
+    .object({
+      processed: z.array(extractionIntegerSchema.positive()),
+      total: extractionIntegerSchema.nonnegative(),
+      selection: z.enum(["automatic", "explicit"]),
+      truncated: z.boolean(),
+    })
+    .optional(),
+  textTruncated: z.boolean(),
+  imagesTruncated: z.boolean(),
+});
 
-async function loadPdfJsModule(): Promise<PdfJsModule> {
-  if (!pdfJsModulePromise) {
-    pdfJsModulePromise = import("pdfjs-dist/legacy/build/pdf.mjs").catch((err) => {
-      pdfJsModulePromise = null;
-      throw new Error(
-        `Optional dependency pdfjs-dist is required for PDF extraction: ${String(err)}`,
-      );
-    });
-  }
-  return pdfJsModulePromise;
-}
+/** Extracts PDF content through the configured document extractor. */
+export async function extractPdfContent(
+  params: Omit<DocumentExtractionRequest, "mimeType"> & { config?: OpenClawConfig },
+): Promise<PdfExtractedContent> {
+  const mimeType = "application/pdf";
+  params.signal?.throwIfAborted();
+  const extractors = resolvePluginDocumentExtractors({ config: params.config });
+  params.signal?.throwIfAborted();
+  // Keep config and loader-only fields out of plugin calls; extractors receive the SDK request shape.
+  const request: DocumentExtractionRequest = {
+    buffer: params.buffer,
+    mimeType,
+    maxPages: params.maxPages,
+    maxPixels: params.maxPixels,
+    minTextChars: params.minTextChars,
+    ...(params.password ? { password: params.password } : {}),
+    ...(params.pageNumbers ? { pageNumbers: params.pageNumbers } : {}),
+    ...(params.signal ? { signal: params.signal } : {}),
+    ...(params.onImageExtractionError
+      ? { onImageExtractionError: params.onImageExtractionError }
+      : {}),
+  };
+  const errors: unknown[] = [];
 
-export type PdfExtractedImage = {
-  type: "image";
-  data: string;
-  mimeType: string;
-};
-
-export type PdfExtractedContent = {
-  text: string;
-  images: PdfExtractedImage[];
-};
-
-export async function extractPdfContent(params: {
-  buffer: Buffer;
-  maxPages: number;
-  maxPixels: number;
-  minTextChars: number;
-  pageNumbers?: number[];
-  onImageExtractionError?: (error: unknown) => void;
-}): Promise<PdfExtractedContent> {
-  const { buffer, maxPages, maxPixels, minTextChars, pageNumbers, onImageExtractionError } = params;
-  const { getDocument } = await loadPdfJsModule();
-  const pdf = await getDocument({ data: new Uint8Array(buffer), disableWorker: true }).promise;
-
-  const effectivePages: number[] = pageNumbers
-    ? pageNumbers.filter((p) => p >= 1 && p <= pdf.numPages).slice(0, maxPages)
-    : Array.from({ length: Math.min(pdf.numPages, maxPages) }, (_, i) => i + 1);
-
-  const textParts: string[] = [];
-  for (const pageNum of effectivePages) {
-    const page = await pdf.getPage(pageNum);
-    const textContent = await page.getTextContent();
-    const pageText = textContent.items
-      .map((item) => ("str" in item ? String(item.str) : ""))
-      .filter(Boolean)
-      .join(" ");
-    if (pageText) {
-      textParts.push(pageText);
+  for (const extractor of extractors) {
+    if (
+      !extractor.mimeTypes.map((entry) => normalizeLowercaseStringOrEmpty(entry)).includes(mimeType)
+    ) {
+      continue;
+    }
+    try {
+      const result = await extractor.extract(request);
+      params.signal?.throwIfAborted();
+      if (result) {
+        const { metadata, ...content } = result;
+        const validatedMetadata = extractionMetadataSchema.safeParse(metadata);
+        const parsedMetadata = validatedMetadata.success ? validatedMetadata.data : undefined;
+        const pages = parsedMetadata?.pages;
+        const requestedPageSet = request.pageNumbers ? new Set(request.pageNumbers) : undefined;
+        const hasOmittedPages =
+          (pages?.processed.length ?? 0) < (requestedPageSet?.size ?? pages?.total ?? 0);
+        // Automatic page choice belongs to the extractor; maxPages only caps its count.
+        // Validate bounded completeness facts before rendering them as trusted prompt text.
+        const trustedMetadata =
+          parsedMetadata &&
+          (!pages ||
+            (pages.selection === (request.pageNumbers ? "explicit" : "automatic") &&
+              pages.processed.length <= request.maxPages &&
+              new Set(pages.processed).size === pages.processed.length &&
+              pages.processed.every(
+                (page) => page <= pages.total && (!requestedPageSet || requestedPageSet.has(page)),
+              ) &&
+              (pages.truncated === hasOmittedPages ||
+                (hasOmittedPages && parsedMetadata.textTruncated))))
+            ? parsedMetadata
+            : undefined;
+        return {
+          ...content,
+          ...(trustedMetadata ? { metadata: trustedMetadata } : {}),
+        };
+      }
+    } catch (error) {
+      params.signal?.throwIfAborted();
+      errors.push(error);
     }
   }
-
-  const text = textParts.join("\n\n");
-  if (text.trim().length >= minTextChars) {
-    return { text, images: [] };
+  if (errors.length > 0) {
+    throw new Error("Document extraction failed for application/pdf", {
+      cause: errors.length === 1 ? errors[0] : new AggregateError(errors),
+    });
   }
-
-  let canvasModule: CanvasModule;
-  try {
-    canvasModule = await loadCanvasModule();
-  } catch (err) {
-    onImageExtractionError?.(err);
-    return { text, images: [] };
-  }
-
-  const { createCanvas } = canvasModule;
-  const images: PdfExtractedImage[] = [];
-  const pixelBudget = Math.max(1, maxPixels);
-
-  for (const pageNum of effectivePages) {
-    const page = await pdf.getPage(pageNum);
-    const viewport = page.getViewport({ scale: 1 });
-    const pagePixels = viewport.width * viewport.height;
-    const scale = Math.min(1, Math.sqrt(pixelBudget / Math.max(1, pagePixels)));
-    const scaled = page.getViewport({ scale: Math.max(0.1, scale) });
-    const canvas = createCanvas(Math.ceil(scaled.width), Math.ceil(scaled.height));
-    await page.render({
-      canvas: canvas as unknown as HTMLCanvasElement,
-      viewport: scaled,
-    }).promise;
-    const png = canvas.toBuffer("image/png");
-    images.push({ type: "image", data: png.toString("base64"), mimeType: "image/png" });
-  }
-
-  return { text, images };
+  throw new Error(
+    "PDF extraction disabled or unavailable: enable the document-extract plugin to process application/pdf files.",
+  );
 }

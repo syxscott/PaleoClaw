@@ -191,7 +191,7 @@ docker compose version
 ## 6) Clone the paleoclaw repository
 
 ```bash
-git clone https://github.com/paleoclaw/paleoclaw.git
+git clone https://github.com/syxscott/PaleoClaw.git
 cd paleoclaw
 ```
 

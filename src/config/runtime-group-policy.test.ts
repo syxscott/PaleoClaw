@@ -1,101 +1,74 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { expect, it, vi } from "vitest";
 import {
   GROUP_POLICY_BLOCKED_LABEL,
-  resetMissingProviderGroupPolicyFallbackWarningsForTesting,
-  resolveAllowlistProviderRuntimeGroupPolicy,
+  resolveAllowlistProviderRuntimeGroupPolicy as allowlistPolicy,
   resolveDefaultGroupPolicy,
-  resolveOpenProviderRuntimeGroupPolicy,
-  resolveRuntimeGroupPolicy,
+  resolveOpenProviderRuntimeGroupPolicy as openPolicy,
   warnMissingProviderGroupPolicyFallbackOnce,
 } from "./runtime-group-policy.js";
 
-beforeEach(() => {
-  resetMissingProviderGroupPolicyFallbackWarningsForTesting();
-});
-
-describe("resolveRuntimeGroupPolicy", () => {
-  it.each([
-    {
-      title: "fails closed when provider config is missing and no defaults are set",
-      params: { providerConfigPresent: false },
-      expectedPolicy: "allowlist",
-      expectedFallbackApplied: true,
-    },
-    {
-      title: "keeps configured fallback when provider config is present",
-      params: { providerConfigPresent: true, configuredFallbackPolicy: "open" as const },
-      expectedPolicy: "open",
-      expectedFallbackApplied: false,
-    },
-    {
-      title: "ignores global defaults when provider config is missing",
-      params: {
-        providerConfigPresent: false,
-        defaultGroupPolicy: "disabled" as const,
-        configuredFallbackPolicy: "open" as const,
-        missingProviderFallbackPolicy: "allowlist" as const,
-      },
-      expectedPolicy: "allowlist",
-      expectedFallbackApplied: true,
-    },
-  ])("$title", ({ params, expectedPolicy, expectedFallbackApplied }) => {
-    const resolved = resolveRuntimeGroupPolicy(params);
-    expect(resolved.groupPolicy).toBe(expectedPolicy);
-    expect(resolved.providerMissingFallbackApplied).toBe(expectedFallbackApplied);
+it.each([
+  [
+    "missing provider despite open default",
+    openPolicy,
+    { providerConfigPresent: false, defaultGroupPolicy: "open" },
+    true,
+  ],
+  ["configured provider", allowlistPolicy, { providerConfigPresent: true }, false],
+] as const)("uses allowlist for %s", (_name, resolve, config, providerMissingFallbackApplied) => {
+  expect(resolve(config)).toEqual({
+    groupPolicy: "allowlist",
+    providerMissingFallbackApplied,
   });
 });
 
-describe("resolveOpenProviderRuntimeGroupPolicy", () => {
-  it("uses open fallback when provider config exists", () => {
-    const resolved = resolveOpenProviderRuntimeGroupPolicy({
-      providerConfigPresent: true,
-    });
-    expect(resolved.groupPolicy).toBe("open");
-    expect(resolved.providerMissingFallbackApplied).toBe(false);
-  });
+it("returns channels.defaults.groupPolicy when present", () => {
+  expect(resolveDefaultGroupPolicy({ channels: { defaults: { groupPolicy: "disabled" } } })).toBe(
+    "disabled",
+  );
 });
 
-describe("resolveAllowlistProviderRuntimeGroupPolicy", () => {
-  it("uses allowlist fallback when provider config exists", () => {
-    const resolved = resolveAllowlistProviderRuntimeGroupPolicy({
-      providerConfigPresent: true,
-    });
-    expect(resolved.groupPolicy).toBe("allowlist");
-    expect(resolved.providerMissingFallbackApplied).toBe(false);
-  });
-});
-
-describe("resolveDefaultGroupPolicy", () => {
-  it("returns channels.defaults.groupPolicy when present", () => {
-    const resolved = resolveDefaultGroupPolicy({
-      channels: { defaults: { groupPolicy: "disabled" } },
-    });
-    expect(resolved).toBe("disabled");
-  });
-});
-
-describe("warnMissingProviderGroupPolicyFallbackOnce", () => {
-  it("logs only once per provider/account key", () => {
-    const lines: string[] = [];
-    const first = warnMissingProviderGroupPolicyFallbackOnce({
+it("logs only once per provider/account key", () => {
+  const lines: string[] = [];
+  const warn = () =>
+    warnMissingProviderGroupPolicyFallbackOnce({
       providerMissingFallbackApplied: true,
       providerKey: "runtime-policy-test",
       accountId: "account-a",
       blockedLabel: GROUP_POLICY_BLOCKED_LABEL.room,
       log: (message) => lines.push(message),
     });
-    const second = warnMissingProviderGroupPolicyFallbackOnce({
+  expect(warn()).toBe(true);
+  expect(warn()).toBe(false);
+  expect(lines).toHaveLength(1);
+  expect(lines[0]).toContain("channels.runtime-policy-test is missing");
+  expect(lines[0]).toContain("room messages blocked");
+});
+
+it("refreshes recent keys and re-warns evicted keys once the cap overflows", async () => {
+  vi.resetModules();
+  const { warnMissingProviderGroupPolicyFallbackOnce: warnOnceFn } =
+    await import("./runtime-group-policy.js");
+  const lines: string[] = [];
+  const warnForAccount = (accountId: string) =>
+    warnOnceFn({
       providerMissingFallbackApplied: true,
-      providerKey: "runtime-policy-test",
-      accountId: "account-a",
-      blockedLabel: GROUP_POLICY_BLOCKED_LABEL.room,
+      providerKey: "runtime-policy-evict-test",
+      accountId,
       log: (message) => lines.push(message),
     });
 
-    expect(first).toBe(true);
-    expect(second).toBe(false);
-    expect(lines).toHaveLength(1);
-    expect(lines[0]).toContain("channels.runtime-policy-test is missing");
-    expect(lines[0]).toContain("room messages blocked");
-  });
+  for (let i = 0; i < 4096; i++) {
+    warnForAccount(`account-${i}`);
+  }
+  expect(lines).toHaveLength(4096);
+
+  expect(warnForAccount("account-0")).toBe(false);
+  expect(lines).toHaveLength(4096);
+
+  // Overflow evicts the oldest untouched key (account-1), not the refreshed one.
+  expect(warnForAccount("account-overflow")).toBe(true);
+  expect(warnForAccount("account-0")).toBe(false);
+  expect(warnForAccount("account-1")).toBe(true);
+  expect(lines).toHaveLength(4098);
 });

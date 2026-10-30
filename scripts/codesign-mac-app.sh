@@ -254,7 +254,7 @@ fi
 
 # Sign Sparkle deeply if present
 SPARKLE="$APP_BUNDLE/Contents/Frameworks/Sparkle.framework"
-if [ -d "$SPARKLE" ]; then
+if [ -d "$SPARKLE/" ]; then
   echo "Signing Sparkle framework and helpers"
   find "$SPARKLE" -type f -print0 | while IFS= read -r -d '' f; do
     if /usr/bin/file "$f" | /usr/bin/grep -q "Mach-O"; then

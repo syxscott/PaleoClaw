@@ -171,10 +171,12 @@ authoring plugins:
   `paleoclaw/plugin-sdk/minimax-portal-auth`,
   `paleoclaw/plugin-sdk/nextcloud-talk`, `paleoclaw/plugin-sdk/nostr`,
   `paleoclaw/plugin-sdk/open-prose`, `paleoclaw/plugin-sdk/phone-control`,
-  `paleoclaw/plugin-sdk/qwen-portal-auth`, `paleoclaw/plugin-sdk/synology-chat`,
+  `paleoclaw/plugin-sdk/qqbot`, `paleoclaw/plugin-sdk/qwen-portal-auth`,
+  `paleoclaw/plugin-sdk/synology-chat`,
   `paleoclaw/plugin-sdk/talk-voice`, `paleoclaw/plugin-sdk/test-utils`,
   `paleoclaw/plugin-sdk/thread-ownership`, `paleoclaw/plugin-sdk/tlon`,
   `paleoclaw/plugin-sdk/twitch`, `paleoclaw/plugin-sdk/voice-call`,
+  `paleoclaw/plugin-sdk/wecom`, `paleoclaw/plugin-sdk/weixin`,
   `paleoclaw/plugin-sdk/zalo`, and `paleoclaw/plugin-sdk/zalouser`.
 
 Compatibility note:
@@ -268,7 +270,7 @@ Hardening notes:
   - path ownership is suspicious for non-bundled plugins (POSIX owner is neither current uid nor root).
 - Loaded non-bundled plugins without install/load-path provenance emit a warning so you can pin trust (`plugins.allow`) or install tracking (`plugins.installs`).
 
-Each plugin must include a `paleoclaw.plugin.json` file in its root. If a path
+Each plugin must include a `openclaw.plugin.json` file in its root. If a path
 points at a file, the plugin root is the file's directory and must contain the
 manifest.
 
@@ -387,7 +389,7 @@ Validation rules (strict):
 - Unknown `channels.<id>` keys are **errors** unless a plugin manifest declares
   the channel id.
 - Plugin config is validated using the JSON Schema embedded in
-  `paleoclaw.plugin.json` (`configSchema`).
+  `openclaw.plugin.json` (`configSchema`).
 - If a plugin is disabled, its config is preserved and a **warning** is emitted.
 
 ## Plugin slots (exclusive categories)

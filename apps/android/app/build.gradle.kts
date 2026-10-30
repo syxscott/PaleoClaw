@@ -1,4 +1,5 @@
 import com.android.build.api.variant.impl.VariantOutputImpl
+import java.util.Properties
 
 val androidStoreFile = providers.gradleProperty("OPENCLAW_ANDROID_STORE_FILE").orNull?.takeIf { it.isNotBlank() }
 val androidStorePassword = providers.gradleProperty("OPENCLAW_ANDROID_STORE_PASSWORD").orNull?.takeIf { it.isNotBlank() }
@@ -37,6 +38,24 @@ plugins {
     id("org.jetbrains.kotlin.plugin.serialization")
 }
 
+val openClawAndroidVersionFile = rootProject.file("Config/Version.properties")
+val openClawAndroidVersionProperties =
+  Properties().apply {
+    if (!openClawAndroidVersionFile.isFile) {
+      error("Missing Android version properties. Run `pnpm android:version:sync`.")
+    }
+    openClawAndroidVersionFile.inputStream().use(::load)
+  }
+
+fun requireOpenClawAndroidVersionProperty(name: String): String =
+  (providers.gradleProperty(name).orNull ?: openClawAndroidVersionProperties.getProperty(name))?.trim()?.takeIf { it.isNotEmpty() }
+    ?: error("Missing $name in Config/Version.properties. Run `pnpm android:version:sync`.")
+
+val openClawAndroidVersionName = requireOpenClawAndroidVersionProperty("OPENCLAW_ANDROID_VERSION_NAME")
+val openClawAndroidVersionCode =
+  requireOpenClawAndroidVersionProperty("OPENCLAW_ANDROID_VERSION_CODE").toIntOrNull()
+    ?: error("OPENCLAW_ANDROID_VERSION_CODE must be an integer in Config/Version.properties.")
+
 android {
     namespace = "ai.openclaw.app"
     compileSdk = 36
@@ -63,8 +82,8 @@ android {
         applicationId = "ai.openclaw.app"
         minSdk = 31
         targetSdk = 36
-        versionCode = 202603070
-        versionName = "2026.3.7"
+        versionCode = openClawAndroidVersionCode
+        versionName = openClawAndroidVersionName
         ndk {
             // Support all major ABIs — native libs are tiny (~47 KB per ABI)
             abiFilters += listOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64")

@@ -1,526 +1,725 @@
-import { Type } from "@sinclair/typebox";
-import { loadConfig } from "../../config/config.js";
+import { normalizeLowercaseStringOrEmpty } from "@paleoclaw/normalization-core/string-coerce";
+import { parseDurationMs } from "../../cli/parse-duration.js";
+import { getRuntimeConfig } from "../../config/config.js";
+import { resolveCronCreationDelivery } from "../../cron/delivery-context.js";
+import { assertCronDeliveryInputNonBlankFields } from "../../cron/delivery-target-validation.js";
 import { normalizeCronJobCreate, normalizeCronJobPatch } from "../../cron/normalize.js";
-import type { CronDelivery, CronMessageChannel } from "../../cron/types.js";
+import { readCronStreamApprovalEnded } from "../../cron/stream-approval-outcome.js";
+import {
+  cronCreateRequiresStreamExecAuthority,
+  type CronStreamExecPolicy,
+  type CronStreamExecApprovalReceipt,
+} from "../../cron/stream-exec-authority.js";
+import type { CronDelivery, CronJob } from "../../cron/types.js";
 import { normalizeHttpWebhookUrl } from "../../cron/webhook-url.js";
+import { GatewayClientRequestError } from "../../gateway/client.js";
+import { CRON_MANAGEMENT_METHODS } from "../../gateway/cron-creator-authority-grant.js";
+import { recordCronNextCheckProposal } from "../../infra/agent-run-registry.js";
+import { DEFAULT_EXEC_APPROVAL_TIMEOUT_MS } from "../../infra/exec-approvals-core.js";
+import { normalizeAccountId } from "../../routing/account-id.js";
 import { parseAgentSessionKey } from "../../sessions/session-key-utils.js";
-import { extractTextFromChatContent } from "../../shared/chat-content.js";
-import { isRecord, truncateUtf16Safe } from "../../utils.js";
+import { isRecord } from "../../utils.js";
 import { resolveSessionAgentId } from "../agent-scope.js";
-import { optionalStringEnum, stringEnum } from "../schema/typebox.js";
-import { type AnyAgentTool, jsonResult, readStringParam } from "./common.js";
-import { callGatewayTool, readGatewayCallOptions, type GatewayCallOptions } from "./gateway.js";
+import {
+  bindCronManagementGrant,
+  bindCronRequesterGrant,
+} from "../cron-creator-authority-context.js";
+import { CRON_TOOL_DISPLAY_SUMMARY } from "../tool-description-presets.js";
+import { withToolEffectBoundary } from "../tool-effect-receipt.js";
+import { bindAgentToolReplaySafety } from "../tool-replay-safety.js";
+import { setToolTerminalPresentation } from "../tool-terminal-presentation.js";
+import { AUTOMATIONS_TOOL_NAME } from "./automations-tool-name.js";
+import {
+  type AnyAgentTool,
+  jsonResult,
+  readNonNegativeIntegerParam,
+  readPositiveIntegerParam,
+  readToolStringParam,
+} from "./common.js";
+import {
+  isEmptyRecoveredCronPatch,
+  readCronToolJob,
+  stripCronCreateNullClears,
+} from "./cron-tool-canonicalize.js";
+import {
+  buildReminderContextLines,
+  REMINDER_CONTEXT_MARKER,
+  stripExistingContext,
+} from "./cron-tool-context.js";
+import {
+  assertInheritedCronToolCaptureReady,
+  capCronJobToolsAllowOnCreate,
+  cronCreateRequiresCreatorAuthority,
+  resolveCronCreatorExecToolTarget,
+} from "./cron-tool-creator-cap.js";
+import { buildCronToolDescription } from "./cron-tool-description.js";
+import { createCronToolGatewayCaller } from "./cron-tool-gateway.js";
+import { CronToolOutputSchema } from "./cron-tool-output-schema.js";
+import { formatCronTerminalPresentation } from "./cron-tool-presentation.js";
+import {
+  assertCronPacingInput,
+  createCronToolSchema,
+  CRON_SCOPED_READ_ACTIONS,
+  CRON_TOOL_LIST_MAX_LIMIT,
+} from "./cron-tool-schema.js";
+import { listCronSelfJob } from "./cron-tool-self-list.js";
+import {
+  assertCronCreatorAuthorityResolutionAvailable,
+  assertNoCronShellExecution,
+  prepareCronStreamExecPolicy,
+  captureCronStreamPolicyConfigCurrentness,
+  updateCronJobFromAgentTool,
+} from "./cron-tool-write.js";
+import type {
+  CronCreatorToolAllowlistEntry,
+  CronCreatorToolAuthoritySnapshot,
+  CronToolOptions,
+} from "./cron-tool.types.js";
+import {
+  getGatewayToolCallerIdentity,
+  withGatewayToolCallerIdentity,
+} from "./gateway-caller-context.js";
+import { readGatewayCallOptions, type GatewayCallOptions } from "./gateway.js";
 import { resolveInternalSessionKey, resolveMainSessionAlias } from "./sessions-helpers.js";
 
-// NOTE: We use Type.Object({}, { additionalProperties: true }) for job/patch
-// instead of CronAddParamsSchema/CronJobPatchSchema because the gateway schemas
-// contain nested unions. Tool schemas need to stay provider-friendly, so we
-// accept "any object" here and validate at runtime.
+export type { CronCreatorToolAllowlistEntry, CronToolsAllowCaptureRef } from "./cron-tool.types.js";
+export {
+  captureFinalEffectiveCronCreatorToolAllowlist,
+  replaceWithEffectiveCronCreatorToolAllowlist,
+} from "./cron-tool-creator-cap.js";
 
-const CRON_ACTIONS = ["status", "list", "add", "update", "remove", "run", "runs", "wake"] as const;
-
-const CRON_WAKE_MODES = ["now", "next-heartbeat"] as const;
-const CRON_RUN_MODES = ["due", "force"] as const;
-
-const REMINDER_CONTEXT_MESSAGES_MAX = 10;
-const REMINDER_CONTEXT_PER_MESSAGE_MAX = 220;
-const REMINDER_CONTEXT_TOTAL_MAX = 700;
-const REMINDER_CONTEXT_MARKER = "\n\nRecent context:\n";
-
-// Flattened schema: runtime validates per-action requirements.
-const CronToolSchema = Type.Object(
-  {
-    action: stringEnum(CRON_ACTIONS),
-    gatewayUrl: Type.Optional(Type.String()),
-    gatewayToken: Type.Optional(Type.String()),
-    timeoutMs: Type.Optional(Type.Number()),
-    includeDisabled: Type.Optional(Type.Boolean()),
-    job: Type.Optional(Type.Object({}, { additionalProperties: true })),
-    jobId: Type.Optional(Type.String()),
-    id: Type.Optional(Type.String()),
-    patch: Type.Optional(Type.Object({}, { additionalProperties: true })),
-    text: Type.Optional(Type.String()),
-    mode: optionalStringEnum(CRON_WAKE_MODES),
-    runMode: optionalStringEnum(CRON_RUN_MODES),
-    contextMessages: Type.Optional(
-      Type.Number({ minimum: 0, maximum: REMINDER_CONTEXT_MESSAGES_MAX }),
-    ),
-  },
-  { additionalProperties: true },
-);
-
-type CronToolOptions = {
-  agentSessionKey?: string;
-};
-
-type GatewayToolCaller = typeof callGatewayTool;
-
-type CronToolDeps = {
-  callGatewayTool?: GatewayToolCaller;
-};
-
-type ChatMessage = {
-  role?: unknown;
-  content?: unknown;
-};
-
-function stripExistingContext(text: string) {
-  const index = text.indexOf(REMINDER_CONTEXT_MARKER);
-  if (index === -1) {
-    return text;
+function requireCronJobIdParam(params: Record<string, unknown>): string {
+  const id = readToolStringParam(params, "jobId") ?? readToolStringParam(params, "id");
+  if (!id) {
+    throw new Error("jobId required (id accepted for backward compatibility)");
   }
-  return text.slice(0, index).trim();
+  return id;
 }
 
-function truncateText(input: string, maxLen: number) {
-  if (input.length <= maxLen) {
-    return input;
-  }
-  const truncated = truncateUtf16Safe(input, Math.max(0, maxLen - 3)).trimEnd();
-  return `${truncated}...`;
+const CRON_RUN_MAX_WAIT_MS = 10 * 60_000;
+const CRON_RUN_ENQUEUE_TIMEOUT_MS = 60_000;
+
+const CRON_SELF_REMOVE_SCOPE_ERROR = "Automations tool is restricted to the current automation.";
+
+function readCronSelfRemoveOnlyJobId(opts: CronToolOptions | undefined) {
+  return opts?.selfRemoveOnlyJobId?.trim() || undefined;
 }
 
-function extractMessageText(message: ChatMessage): { role: string; text: string } | null {
-  const role = typeof message.role === "string" ? message.role : "";
-  if (role !== "user" && role !== "assistant") {
-    return null;
+function assertCronSelfRemoveScope(
+  opts: CronToolOptions | undefined,
+  action: string,
+  params: Record<string, unknown>,
+) {
+  const selfRemoveOnlyJobId = readCronSelfRemoveOnlyJobId(opts);
+  if (!selfRemoveOnlyJobId || action === "status" || action === "list") {
+    return;
   }
-  const text = extractTextFromChatContent(message.content);
-  return text ? { role, text } : null;
-}
-
-async function buildReminderContextLines(params: {
-  agentSessionKey?: string;
-  gatewayOpts: GatewayCallOptions;
-  contextMessages: number;
-  callGatewayTool: GatewayToolCaller;
-}) {
-  const maxMessages = Math.min(
-    REMINDER_CONTEXT_MESSAGES_MAX,
-    Math.max(0, Math.floor(params.contextMessages)),
-  );
-  if (maxMessages <= 0) {
-    return [];
-  }
-  const sessionKey = params.agentSessionKey?.trim();
-  if (!sessionKey) {
-    return [];
-  }
-  const cfg = loadConfig();
-  const { mainKey, alias } = resolveMainSessionAlias(cfg);
-  const resolvedKey = resolveInternalSessionKey({ key: sessionKey, alias, mainKey });
-  try {
-    const res = await params.callGatewayTool<{ messages: Array<unknown> }>(
-      "chat.history",
-      params.gatewayOpts,
-      {
-        sessionKey: resolvedKey,
-        limit: maxMessages,
-      },
-    );
-    const messages = Array.isArray(res?.messages) ? res.messages : [];
-    const parsed = messages
-      .map((msg) => extractMessageText(msg as ChatMessage))
-      .filter((msg): msg is { role: string; text: string } => Boolean(msg));
-    const recent = parsed.slice(-maxMessages);
-    if (recent.length === 0) {
-      return [];
+  if (["next_check", "get", "remove", "runs"].includes(action)) {
+    const id = readToolStringParam(params, "jobId") ?? readToolStringParam(params, "id");
+    if (id === selfRemoveOnlyJobId || (action === "next_check" && !id)) {
+      return;
     }
-    const lines: string[] = [];
-    let total = 0;
-    for (const entry of recent) {
-      const label = entry.role === "user" ? "User" : "Assistant";
-      const text = truncateText(entry.text, REMINDER_CONTEXT_PER_MESSAGE_MAX);
-      const line = `- ${label}: ${text}`;
-      total += line.length;
-      if (total > REMINDER_CONTEXT_TOTAL_MAX) {
-        break;
-      }
-      lines.push(line);
-    }
-    return lines;
-  } catch {
-    return [];
   }
+  throw new Error(CRON_SELF_REMOVE_SCOPE_ERROR);
 }
 
-function stripThreadSuffixFromSessionKey(sessionKey: string): string {
-  const normalized = sessionKey.toLowerCase();
-  const idx = normalized.lastIndexOf(":thread:");
-  if (idx <= 0) {
-    return sessionKey;
-  }
-  const parent = sessionKey.slice(0, idx).trim();
-  return parent ? parent : sessionKey;
-}
-
-function inferDeliveryFromSessionKey(agentSessionKey?: string): CronDelivery | null {
-  const rawSessionKey = agentSessionKey?.trim();
-  if (!rawSessionKey) {
-    return null;
-  }
-  const parsed = parseAgentSessionKey(stripThreadSuffixFromSessionKey(rawSessionKey));
-  if (!parsed || !parsed.rest) {
-    return null;
-  }
-  const parts = parsed.rest.split(":").filter(Boolean);
-  if (parts.length === 0) {
-    return null;
-  }
-  const head = parts[0]?.trim().toLowerCase();
-  if (!head || head === "main" || head === "subagent" || head === "acp") {
-    return null;
-  }
-
-  // buildAgentPeerSessionKey encodes peers as:
-  // - direct:<peerId>
-  // - <channel>:direct:<peerId>
-  // - <channel>:<accountId>:direct:<peerId>
-  // - <channel>:group:<peerId>
-  // - <channel>:channel:<peerId>
-  // Note: legacy keys may use "dm" instead of "direct".
-  // Threaded sessions append :thread:<id>, which we strip so delivery targets the parent peer.
-  // NOTE: Telegram forum topics encode as <chatId>:topic:<topicId> and should be preserved.
-  const markerIndex = parts.findIndex(
-    (part) => part === "direct" || part === "dm" || part === "group" || part === "channel",
+function isOlderGatewayRejectingParam(error: unknown, method: string, param: string): boolean {
+  return (
+    error instanceof GatewayClientRequestError &&
+    error.gatewayCode === "INVALID_REQUEST" &&
+    error.message.includes(`invalid ${method} params`) &&
+    error.message.includes(`unexpected property '${param}'`)
   );
-  if (markerIndex === -1) {
-    return null;
-  }
-  const peerId = parts
-    .slice(markerIndex + 1)
-    .join(":")
-    .trim();
-  if (!peerId) {
-    return null;
-  }
-
-  let channel: CronMessageChannel | undefined;
-  if (markerIndex >= 1) {
-    channel = parts[0]?.trim().toLowerCase() as CronMessageChannel;
-  }
-
-  const delivery: CronDelivery = { mode: "announce", to: peerId };
-  if (channel) {
-    delivery.channel = channel;
-  }
-  return delivery;
 }
 
-export function createCronTool(opts?: CronToolOptions, deps?: CronToolDeps): AnyAgentTool {
-  const callGateway = deps?.callGatewayTool ?? callGatewayTool;
-  return {
-    label: "Cron",
-    name: "cron",
-    ownerOnly: true,
-    description: `Manage Gateway cron jobs (status/list/add/update/remove/run/runs) and send wake events.
-
-ACTIONS:
-- status: Check cron scheduler status
-- list: List jobs (use includeDisabled:true to include disabled)
-- add: Create job (requires job object, see schema below)
-- update: Modify job (requires jobId + patch object)
-- remove: Delete job (requires jobId)
-- run: Trigger job immediately (requires jobId)
-- runs: Get job run history (requires jobId)
-- wake: Send wake event (requires text, optional mode)
-
-JOB SCHEMA (for add action):
-{
-  "name": "string (optional)",
-  "schedule": { ... },      // Required: when to run
-  "payload": { ... },       // Required: what to execute
-  "delivery": { ... },      // Optional: announce summary or webhook POST
-  "sessionTarget": "main" | "isolated",  // Required
-  "enabled": true | false   // Optional, default true
-}
-
-SCHEDULE TYPES (schedule.kind):
-- "at": One-shot at absolute time
-  { "kind": "at", "at": "<ISO-8601 timestamp>" }
-- "every": Recurring interval
-  { "kind": "every", "everyMs": <interval-ms>, "anchorMs": <optional-start-ms> }
-- "cron": Cron expression
-  { "kind": "cron", "expr": "<cron-expression>", "tz": "<optional-timezone>" }
-
-ISO timestamps without an explicit timezone are treated as UTC.
-
-PAYLOAD TYPES (payload.kind):
-- "systemEvent": Injects text as system event into session
-  { "kind": "systemEvent", "text": "<message>" }
-- "agentTurn": Runs agent with message (isolated sessions only)
-  { "kind": "agentTurn", "message": "<prompt>", "model": "<optional>", "thinking": "<optional>", "timeoutSeconds": <optional, 0 means no timeout> }
-
-DELIVERY (top-level):
-  { "mode": "none|announce|webhook", "channel": "<optional>", "to": "<optional>", "bestEffort": <optional-bool> }
-  - Default for isolated agentTurn jobs (when delivery omitted): "announce"
-  - announce: send to chat channel (optional channel/to target)
-  - webhook: send finished-run event as HTTP POST to delivery.to (URL required)
-  - If the task needs to send to a specific chat/recipient, set announce delivery.channel/to; do not call messaging tools inside the run.
-
-CRITICAL CONSTRAINTS:
-- sessionTarget="main" REQUIRES payload.kind="systemEvent"
-- sessionTarget="isolated" REQUIRES payload.kind="agentTurn"
-- For webhook callbacks, use delivery.mode="webhook" with delivery.to set to a URL.
-Default: prefer isolated agentTurn jobs unless the user explicitly wants a main-session system event.
-
-WAKE MODES (for wake action):
-- "next-heartbeat" (default): Wake on next heartbeat
-- "now": Wake immediately
-
-Use jobId as the canonical identifier; id is accepted for compatibility. Use contextMessages (0-10) to add previous messages as context to the job text.`,
-    parameters: CronToolSchema,
-    execute: async (_toolCallId, args) => {
+export function createCronTool(opts?: CronToolOptions): AnyAgentTool {
+  const readOnly = opts?.readOnly === true;
+  const assertStreamConfigCurrent = captureCronStreamPolicyConfigCurrentness(opts);
+  const managementAuthority = bindCronManagementGrant(opts?.runId);
+  const requesterAuthority = bindCronRequesterGrant(opts?.runId);
+  // Trigger-gated surfaces default on, matching cron/service/jobs-validation.ts.
+  const triggersEnabled = opts?.config?.cron?.triggers?.enabled !== false;
+  const selfRemoveOnly = Boolean(readCronSelfRemoveOnlyJobId(opts));
+  const tool: AnyAgentTool = {
+    label: "Automations",
+    name: AUTOMATIONS_TOOL_NAME,
+    displaySummary: readOnly ? "Inspect recorded automation state." : CRON_TOOL_DISPLAY_SUMMARY,
+    description: readOnly
+      ? `Inspect recorded automation state during recovery. Available actions: ${managementAuthority?.managementOnly ? "list, get" : "list, get, runs"}.${selfRemoveOnly ? " Only the current automation is accessible." : " Existing caller visibility restrictions apply."} Use get with a known jobId for saved state and streamStatus; list includes disabled jobs only with includeDisabled:true. A missing list entry does not establish deletion or source termination. If the recorded state cannot establish an interrupted action's outcome, report it as unknown. Mutations are unavailable in this recovery continuation; this does not mean the user needs to change permissions.`
+      : selfRemoveOnly
+        ? managementAuthority?.managementOnly
+          ? "Inspect or remove only the current automation. Actions: list [includeDisabled] (enabled only by default), get jobId (saved state), remove jobId. Use the current job ID; other jobs and management actions are unavailable."
+          : 'Inspect or remove only the current automation. Actions: status; list [includeDisabled] (enabled only by default); get/runs/remove jobId; next_check in:"15m" for this paced run or at + agentTurn + explicit session:<key> continuation. A successful one-shot proposal rearms the same job from run end (minimum 2s); without one it completes normally. Use get with the current job ID to inspect its saved state. To stop a finished job, remove it; creating/updating/running jobs and waking sessions are unavailable. Return the task result; the scheduler owns delivery.'
+        : managementAuthority?.managementOnly
+          ? 'Manage any existing automation on this Gateway with the admitted automation management authority. Actions: list [includeDisabled,limit,offset] (enabled-only compact summaries by default; follow nextOffset); get jobId (full saved state, including streamStatus for a known watcher); update jobId job (partial patch, null clears); run jobId (runMode:"force" runs now; waits up to timeoutMs, default 60s; unfinished runs return runId); remove jobId (operator removal requests cancellation of an active run; the result reports activeRunCancellationRequested:true). To stop a saved watcher, use update with job:{enabled:false}, or open it on the Automations page and turn off its Active switch. This pauses the watcher without deleting its saved record. The enabled flag alone does not prove source termination; use get jobId to inspect state.streamStatus. Creator attribution and scheduled execution policy stay intact. Use the Automations page for other actions.'
+          : buildCronToolDescription({ triggersEnabled }),
+    outputSchema: CronToolOutputSchema,
+    parameters: createCronToolSchema({
+      readOnly,
+      agentSessionKey: opts?.agentSessionKey,
+      triggersEnabled,
+      selfRemoveOnly,
+      management: managementAuthority
+        ? managementAuthority.managementOnly
+          ? "only"
+          : "also"
+        : undefined,
+    }),
+    execute: async (_toolCallId, args, operationSignal) => {
+      operationSignal?.throwIfAborted();
+      let streamExecPolicy: CronStreamExecPolicy | undefined;
+      let streamExecutionApproval: CronStreamExecApprovalReceipt | undefined;
+      const mutationResult = (result: unknown) =>
+        jsonResult(
+          streamExecutionApproval && isRecord(result)
+            ? {
+                ...result,
+                streamExecutionApproval: {
+                  ...streamExecutionApproval,
+                  message:
+                    "A human operator approved this watcher and its automatic restarts. The approver's identity is not supplied.",
+                },
+              }
+            : result,
+        );
       const params = args as Record<string, unknown>;
-      const action = readStringParam(params, "action", { required: true });
+      const action = readToolStringParam(params, "action", { required: true });
+      if (readOnly && !CRON_SCOPED_READ_ACTIONS.includes(action)) {
+        throw new Error(
+          "The automation tool is read-only during recovery; only caller-scoped inspections are available. It cannot create, change, remove, run, or wake work. This restriction does not establish the outcome of an earlier action.",
+        );
+      }
+      if (
+        managementAuthority?.managementOnly &&
+        !CRON_MANAGEMENT_METHODS.some((method) => method === `cron.${action}`)
+      ) {
+        throw new Error(
+          "This turn can only list, get, update, run, or remove automations. Use the Automations page for other actions.",
+        );
+      }
+      assertCronSelfRemoveScope(opts, action, params);
+      const parsedGatewayOpts = readGatewayCallOptions(params);
       const gatewayOpts: GatewayCallOptions = {
-        ...readGatewayCallOptions(params),
+        ...parsedGatewayOpts,
         timeoutMs:
-          typeof params.timeoutMs === "number" && Number.isFinite(params.timeoutMs)
-            ? params.timeoutMs
-            : 60_000,
+          parsedGatewayOpts.timeoutMs ??
+          (action === "add" || action === "update"
+            ? DEFAULT_EXEC_APPROVAL_TIMEOUT_MS + 10_000
+            : 60_000),
+      };
+      const runtimeConfig = getRuntimeConfig();
+      const { alias } = resolveMainSessionAlias(runtimeConfig);
+      const callerSessionKey = opts?.agentSessionKey
+        ? resolveInternalSessionKey({ key: opts.agentSessionKey, alias })
+        : undefined;
+      const callerAgentId = opts?.agentSessionKey?.trim()
+        ? resolveSessionAgentId({
+            sessionKey: opts.agentSessionKey,
+            config: runtimeConfig,
+            agentId: opts.agentId,
+          })
+        : undefined;
+      const creatorExecToolTarget = resolveCronCreatorExecToolTarget(opts?.creatorToolAllowlist);
+      const callerIdentity =
+        callerAgentId && opts?.agentSessionKey?.trim()
+          ? {
+              agentId: callerAgentId,
+              sessionKey: opts.agentSessionKey.trim(),
+              turnSourceAccountId: opts.agentAccountId,
+              ...(readCronSelfRemoveOnlyJobId(opts)
+                ? { cronSelfManagementJobId: readCronSelfRemoveOnlyJobId(opts) }
+                : {}),
+              ...(opts?.creatorToolAllowlistCaptureRef?.value?.version === 1 &&
+              opts.creatorToolAllowlistCaptureRef.value.source === "final-executable-surface"
+                ? {
+                    cronToolsAllowCapture: "final-executable-surface" as const,
+                    ...(creatorExecToolTarget ? { cronExecToolTarget: creatorExecToolTarget } : {}),
+                  }
+                : {}),
+            }
+          : undefined;
+
+      const withCreatorAuthorityProvenance = async <T>(
+        authority: CronCreatorToolAuthoritySnapshot | undefined,
+        run: () => Promise<T>,
+      ): Promise<T> => {
+        if (!authority) {
+          return await run();
+        }
+        if (!callerIdentity) {
+          throw new Error(
+            "fresh configured MCP cron authority requires an authenticated local agent run",
+          );
+        }
+        const cronExecToolTarget = resolveCronCreatorExecToolTarget(authority.tools);
+        return await withGatewayToolCallerIdentity(
+          {
+            ...callerIdentity,
+            cronToolsAllowCapture: "final-executable-surface",
+            ...(cronExecToolTarget ? { cronExecToolTarget } : {}),
+            cronCreatorAuthorityGrant: authority.grant,
+          },
+          run,
+        );
       };
 
-      switch (action) {
-        case "status":
-          return jsonResult(await callGateway("cron.status", gatewayOpts, {}));
-        case "list":
-          return jsonResult(
-            await callGateway("cron.list", gatewayOpts, {
-              includeDisabled: Boolean(params.includeDisabled),
-            }),
-          );
-        case "add": {
-          // Flat-params recovery: non-frontier models (e.g. Grok) sometimes flatten
-          // job properties to the top level alongside `action` instead of nesting
-          // them inside `job`. When `params.job` is missing or empty, reconstruct
-          // a synthetic job object from any recognised top-level job fields.
-          // See: https://github.com/paleoclaw/paleoclaw/issues/11310
+      const executeAction = async (onEffectsStart?: () => void) => {
+        const prepareStreamExecAuthority = async (
+          creatorTools: readonly CronCreatorToolAllowlistEntry[] | undefined,
+        ) => {
+          onEffectsStart?.();
+          streamExecPolicy = await prepareCronStreamExecPolicy({
+            opts,
+            creatorTools,
+            operationSignal,
+            assertConfigCurrent: assertStreamConfigCurrent,
+          });
+          streamExecPolicy.onApprovalCommitted = (receipt) => {
+            streamExecutionApproval = receipt;
+          };
+        };
+        const callGateway = createCronToolGatewayCaller({
+          managementAuthority,
+          requesterAuthority,
+          operationSignal,
+          readStreamExecPolicy: () => streamExecPolicy,
+          onEffectsStart,
+        });
+        const readTargetRevision = async (id: string) => {
           if (
-            !params.job ||
-            (typeof params.job === "object" &&
-              params.job !== null &&
-              Object.keys(params.job as Record<string, unknown>).length === 0)
+            !getGatewayToolCallerIdentity()?.sessionKey ||
+            readCronSelfRemoveOnlyJobId(opts) === id
           ) {
-            const JOB_KEYS: ReadonlySet<string> = new Set([
-              "name",
-              "schedule",
-              "sessionTarget",
-              "wakeMode",
-              "payload",
-              "delivery",
-              "enabled",
-              "description",
-              "deleteAfterRun",
-              "agentId",
-              "sessionKey",
-              "message",
-              "text",
-              "model",
-              "thinking",
-              "timeoutSeconds",
-              "allowUnsafeExternalContent",
-            ]);
-            const synthetic: Record<string, unknown> = {};
-            let found = false;
-            for (const key of Object.keys(params)) {
-              if (JOB_KEYS.has(key) && params[key] !== undefined) {
-                synthetic[key] = params[key];
-                found = true;
-              }
-            }
-            // Only use the synthetic job if at least one meaningful field is present
-            // (schedule, payload, message, or text are the minimum signals that the
-            // LLM intended to create a job).
-            if (
-              found &&
-              (synthetic.schedule !== undefined ||
-                synthetic.payload !== undefined ||
-                synthetic.message !== undefined ||
-                synthetic.text !== undefined)
-            ) {
-              params.job = synthetic;
-            }
+            return undefined;
           }
-
-          if (!params.job || typeof params.job !== "object") {
-            throw new Error("job required");
+          const target = await callGateway("cron.get", gatewayOpts, { id });
+          operationSignal?.throwIfAborted();
+          if (getGatewayToolCallerIdentity()?.receiptAuthority?.() === false) {
+            throw new Error("The requesting turn is no longer active.");
           }
-          const job = normalizeCronJobCreate(params.job) ?? params.job;
-          if (job && typeof job === "object") {
-            const cfg = loadConfig();
-            const { mainKey, alias } = resolveMainSessionAlias(cfg);
-            const resolvedSessionKey = opts?.agentSessionKey
-              ? resolveInternalSessionKey({ key: opts.agentSessionKey, alias, mainKey })
-              : undefined;
-            if (!("agentId" in job)) {
-              const agentId = opts?.agentSessionKey
-                ? resolveSessionAgentId({ sessionKey: opts.agentSessionKey, config: cfg })
-                : undefined;
-              if (agentId) {
-                (job as { agentId?: string }).agentId = agentId;
-              }
-            }
-            if (!("sessionKey" in job) && resolvedSessionKey) {
-              (job as { sessionKey?: string }).sessionKey = resolvedSessionKey;
-            }
+          if (!isRecord(target) || typeof target.configRevision !== "string") {
+            throw new Error(
+              "Automation target has no current revision. Inspect it again before retrying.",
+            );
           }
-
-          if (
-            opts?.agentSessionKey &&
-            job &&
-            typeof job === "object" &&
-            "payload" in job &&
-            (job as { payload?: { kind?: string } }).payload?.kind === "agentTurn"
-          ) {
-            const deliveryValue = (job as { delivery?: unknown }).delivery;
-            const delivery = isRecord(deliveryValue) ? deliveryValue : undefined;
-            const modeRaw = typeof delivery?.mode === "string" ? delivery.mode : "";
-            const mode = modeRaw.trim().toLowerCase();
-            if (mode === "webhook") {
-              const webhookUrl = normalizeHttpWebhookUrl(delivery?.to);
-              if (!webhookUrl) {
-                throw new Error(
-                  'delivery.mode="webhook" requires delivery.to to be a valid http(s) URL',
-                );
-              }
-              if (delivery) {
-                delivery.to = webhookUrl;
-              }
+          // Pin the observed definition across preparation; the mutation owner
+          // rejects a later edit instead of applying this request to its successor.
+          return target.configRevision;
+        };
+        return await withGatewayToolCallerIdentity(callerIdentity, async () => {
+          switch (action) {
+            case "status": {
+              const result = await callGateway("cron.status", gatewayOpts, {});
+              return jsonResult(
+                readCronSelfRemoveOnlyJobId(opts)
+                  ? { enabled: isRecord(result) && result.enabled === true }
+                  : result,
+              );
             }
-
-            const hasTarget =
-              (typeof delivery?.channel === "string" && delivery.channel.trim()) ||
-              (typeof delivery?.to === "string" && delivery.to.trim());
-            const shouldInfer =
-              (deliveryValue == null || delivery) &&
-              (mode === "" || mode === "announce") &&
-              !hasTarget;
-            if (shouldInfer) {
-              const inferred = inferDeliveryFromSessionKey(opts.agentSessionKey);
-              if (inferred) {
-                (job as { delivery?: unknown }).delivery = {
-                  ...delivery,
-                  ...inferred,
-                } satisfies CronDelivery;
+            case "list": {
+              const selfRemoveOnlyJobId = readCronSelfRemoveOnlyJobId(opts);
+              const listAgentId = readToolStringParam(params, "agentId");
+              const includeDisabled = Boolean(params.includeDisabled);
+              const requestedLimit = selfRemoveOnlyJobId
+                ? undefined
+                : readPositiveIntegerParam(params, "limit", {
+                    max: CRON_TOOL_LIST_MAX_LIMIT,
+                    message: `limit must be a positive integer no greater than ${CRON_TOOL_LIST_MAX_LIMIT}`,
+                  });
+              const requestedOffset = selfRemoveOnlyJobId
+                ? undefined
+                : readNonNegativeIntegerParam(params, "offset");
+              let useCompactList = true;
+              const requestListPage = async (pageParams: Record<string, unknown>) => {
+                for (;;) {
+                  try {
+                    return await callGateway("cron.list", gatewayOpts, {
+                      includeDisabled,
+                      ...(useCompactList ? { compact: true } : {}),
+                      ...(listAgentId ? { agentId: listAgentId } : {}),
+                      ...pageParams,
+                    });
+                  } catch (error) {
+                    if (
+                      !useCompactList ||
+                      !isOlderGatewayRejectingParam(error, "cron.list", "compact")
+                    ) {
+                      throw error;
+                    }
+                    // Protocol v4 gateways predating compact reject the additive field.
+                    // Retry without it for mixed-version correctness; remove at the next protocol break.
+                    useCompactList = false;
+                  }
+                }
+              };
+              const result = selfRemoveOnlyJobId
+                ? await listCronSelfJob({
+                    jobId: selfRemoveOnlyJobId,
+                    pageSize: CRON_TOOL_LIST_MAX_LIMIT,
+                    requestPage: requestListPage,
+                  })
+                : await requestListPage({
+                    ...(requestedLimit !== undefined ? { limit: requestedLimit } : {}),
+                    ...(requestedOffset !== undefined ? { offset: requestedOffset } : {}),
+                  });
+              if (!isRecord(result)) {
+                throw new Error("cron.list returned an invalid inventory response");
               }
-            }
-          }
-
-          const contextMessages =
-            typeof params.contextMessages === "number" && Number.isFinite(params.contextMessages)
-              ? params.contextMessages
-              : 0;
-          if (
-            job &&
-            typeof job === "object" &&
-            "payload" in job &&
-            (job as { payload?: { kind?: string; text?: string } }).payload?.kind === "systemEvent"
-          ) {
-            const payload = (job as { payload: { kind: string; text: string } }).payload;
-            if (typeof payload.text === "string" && payload.text.trim()) {
-              const contextLines = await buildReminderContextLines({
-                agentSessionKey: opts?.agentSessionKey,
-                gatewayOpts,
-                contextMessages,
-                callGatewayTool: callGateway,
+              return jsonResult({
+                ...result,
+                includeDisabled,
+                inventoryHint: `${includeDisabled ? "Enabled and disabled automations are included." : "Disabled automations are omitted."} Counts and pagination describe this filtered view. Absence does not prove deletion or source termination. For a known watcher, use get jobId to inspect its saved state and streamStatus.`,
+                ...(!selfRemoveOnlyJobId
+                  ? {
+                      scope: managementAuthority ? "gateway" : "caller",
+                      ...(!managementAuthority
+                        ? {
+                            scopeHint:
+                              "Restricted automation inventory. For Gateway-wide management, use a fresh authenticated configured channel owner or Control UI administrator turn or the Automations page.",
+                          }
+                        : {}),
+                    }
+                  : {}),
               });
-              if (contextLines.length > 0) {
-                const baseText = stripExistingContext(payload.text);
-                payload.text = `${baseText}${REMINDER_CONTEXT_MARKER}${contextLines.join("\n")}`;
+            }
+            case "remove": {
+              const id = requireCronJobIdParam(params);
+              const expectedConfigRevision = await readTargetRevision(id);
+              return jsonResult(
+                await callGateway("cron.remove", gatewayOpts, {
+                  id,
+                  ...(expectedConfigRevision ? { expectedConfigRevision } : {}),
+                }),
+              );
+            }
+            case "get":
+            case "runs": {
+              const id = requireCronJobIdParam(params);
+              const runId = action === "runs" ? readToolStringParam(params, "runId") : undefined;
+              return jsonResult(
+                await callGateway(`cron.${action}`, gatewayOpts, {
+                  id,
+                  ...(runId ? { runId } : {}),
+                }),
+              );
+            }
+            case "add": {
+              const canonicalJob = stripCronCreateNullClears(readCronToolJob(params, "add").job);
+              assertNoCronShellExecution(canonicalJob);
+              assertCronDeliveryInputNonBlankFields(canonicalJob.delivery);
+              assertCronPacingInput(canonicalJob.pacing);
+              if (
+                typeof canonicalJob.declarationKey === "string" &&
+                canonicalJob.declarationKey.trim().length === 0
+              ) {
+                throw new Error("declarationKey must be a non-empty string");
               }
-            }
-          }
-          return jsonResult(await callGateway("cron.add", gatewayOpts, job));
-        }
-        case "update": {
-          const id = readStringParam(params, "jobId") ?? readStringParam(params, "id");
-          if (!id) {
-            throw new Error("jobId required (id accepted for backward compatibility)");
-          }
-
-          // Flat-params recovery for patch
-          if (
-            !params.patch ||
-            (typeof params.patch === "object" &&
-              params.patch !== null &&
-              Object.keys(params.patch as Record<string, unknown>).length === 0)
-          ) {
-            const PATCH_KEYS: ReadonlySet<string> = new Set([
-              "name",
-              "schedule",
-              "payload",
-              "delivery",
-              "enabled",
-              "description",
-              "deleteAfterRun",
-              "agentId",
-              "sessionKey",
-              "sessionTarget",
-              "wakeMode",
-              "failureAlert",
-              "allowUnsafeExternalContent",
-            ]);
-            const synthetic: Record<string, unknown> = {};
-            let found = false;
-            for (const key of Object.keys(params)) {
-              if (PATCH_KEYS.has(key) && params[key] !== undefined) {
-                synthetic[key] = params[key];
-                found = true;
+              if (
+                typeof canonicalJob.displayName === "string" &&
+                canonicalJob.displayName.trim().length === 0
+              ) {
+                throw new Error("displayName must be a non-empty string");
               }
-            }
-            if (found) {
-              params.patch = synthetic;
-            }
-          }
+              const enabledExplicit = typeof canonicalJob.enabled === "boolean";
+              const job =
+                normalizeCronJobCreate(canonicalJob, {
+                  sessionContext: { sessionKey: opts?.agentSessionKey },
+                }) ?? canonicalJob;
+              if (
+                typeof job.declarationKey === "string" &&
+                job.declarationKey.length > 0 &&
+                !enabledExplicit
+              ) {
+                delete job.enabled;
+              }
+              const requiresCreatorAuthority = cronCreateRequiresCreatorAuthority(
+                job,
+                opts?.creatorToolAllowlist,
+              );
+              assertCronCreatorAuthorityResolutionAvailable({
+                required: requiresCreatorAuthority,
+                resolveCreatorToolAuthority: opts?.resolveCreatorToolAuthority,
+                creatorToolAllowlistCaptureRef: opts?.creatorToolAllowlistCaptureRef,
+                unavailableReason: opts?.creatorAuthorityUnavailableReason,
+              });
+              const resolvedAuthority =
+                requiresCreatorAuthority && opts?.resolveCreatorToolAuthority
+                  ? await opts.resolveCreatorToolAuthority({ signal: operationSignal })
+                  : undefined;
+              operationSignal?.throwIfAborted();
+              const creatorToolAllowlist = resolvedAuthority?.tools ?? opts?.creatorToolAllowlist;
+              const creatorToolAllowlistCaptureRef = resolvedAuthority
+                ? { value: resolvedAuthority.provenance }
+                : opts?.creatorToolAllowlistCaptureRef;
+              if (cronCreateRequiresStreamExecAuthority(job)) {
+                await prepareStreamExecAuthority(creatorToolAllowlist);
+              }
+              capCronJobToolsAllowOnCreate(
+                job,
+                creatorToolAllowlist,
+                resolvedAuthority?.holdsRuntimeAuthority,
+              );
+              assertInheritedCronToolCaptureReady(job, creatorToolAllowlistCaptureRef);
+              const sessionTarget = normalizeLowercaseStringOrEmpty(job.sessionTarget);
+              if (!("sessionKey" in job) && callerSessionKey && sessionTarget !== "isolated") {
+                job.sessionKey = callerSessionKey;
+              }
 
-          if (!params.patch || typeof params.patch !== "object") {
-            throw new Error("patch required");
+              if (
+                (opts?.agentSessionKey || opts?.currentDeliveryContext) &&
+                "payload" in job &&
+                (job as { payload?: { kind?: string } }).payload?.kind === "agentTurn"
+              ) {
+                const deliveryValue = job.delivery;
+                const delivery = isRecord(deliveryValue) ? deliveryValue : undefined;
+                const modeRaw = typeof delivery?.mode === "string" ? delivery.mode : "";
+                const mode = normalizeLowercaseStringOrEmpty(modeRaw);
+                if (mode === "webhook") {
+                  const webhookUrl = normalizeHttpWebhookUrl(delivery?.to);
+                  if (!webhookUrl) {
+                    throw new Error(
+                      'delivery.mode="webhook" requires delivery.to to be a valid http(s) URL',
+                    );
+                  }
+                  if (delivery) {
+                    delivery.to = webhookUrl;
+                  }
+                }
+
+                const hasTarget =
+                  (typeof delivery?.channel === "string" && delivery.channel.trim()) ||
+                  (typeof delivery?.to === "string" && delivery.to.trim());
+                const shouldInfer =
+                  (deliveryValue == null || delivery) &&
+                  (mode === "" || mode === "announce") &&
+                  !hasTarget;
+                if (shouldInfer) {
+                  const inferred = await resolveCronCreationDelivery({
+                    cfg: runtimeConfig,
+                    agentId: callerAgentId,
+                    currentDeliveryContext: opts.currentDeliveryContext,
+                    agentSessionKey: opts.agentSessionKey,
+                  });
+                  if (inferred) {
+                    job.delivery = {
+                      ...inferred,
+                      ...delivery,
+                    } satisfies CronDelivery;
+                  }
+                }
+              }
+
+              const contextMessages = readNonNegativeIntegerParam(params, "contextMessages") ?? 0;
+              if (
+                "payload" in job &&
+                (job as { payload?: { kind?: string; text?: string } }).payload?.kind ===
+                  "systemEvent"
+              ) {
+                const payload = (job as { payload: { kind: string; text: string } }).payload;
+                if (typeof payload.text === "string" && payload.text.trim()) {
+                  const contextLines = await buildReminderContextLines({
+                    agentSessionKey: opts?.agentSessionKey,
+                    agentId: callerAgentId,
+                    gatewayOpts,
+                    contextMessages,
+                    callGatewayTool: callGateway,
+                  });
+                  if (contextLines.length > 0) {
+                    const baseText = stripExistingContext(payload.text);
+                    payload.text = `${baseText}${REMINDER_CONTEXT_MARKER}${contextLines.join("\n")}`;
+                  }
+                }
+              }
+              return mutationResult(
+                await withCreatorAuthorityProvenance(resolvedAuthority, () =>
+                  callGateway("cron.add", gatewayOpts, job),
+                ),
+              );
+            }
+            case "update": {
+              const id = requireCronJobIdParam(params);
+
+              const { job: canonicalPatch, recovered: recoveredFlatPatch } = readCronToolJob(
+                params,
+                "update",
+              );
+              if (!managementAuthority) {
+                assertNoCronShellExecution(canonicalPatch);
+              }
+              assertCronDeliveryInputNonBlankFields(canonicalPatch.delivery);
+              assertCronPacingInput(canonicalPatch.pacing);
+              if (
+                typeof canonicalPatch.displayName === "string" &&
+                canonicalPatch.displayName.trim().length === 0
+              ) {
+                throw new Error("displayName must be a non-empty string or null");
+              }
+              const patch = normalizeCronJobPatch(canonicalPatch) ?? canonicalPatch;
+              if (recoveredFlatPatch && isEmptyRecoveredCronPatch(patch)) {
+                throw new Error("job required");
+              }
+              let creatorOptions = managementAuthority ? undefined : opts;
+              if (
+                managementAuthority &&
+                opts?.resolveCreatorToolAuthority &&
+                isRecord(patch.payload) &&
+                Object.hasOwn(patch.payload, "toolsAllow")
+              ) {
+                const current = await callGateway<CronJob>("cron.get", gatewayOpts, { id });
+                if (
+                  current.owner?.sessionKey === callerIdentity?.sessionKey &&
+                  normalizeAccountId(current.owner?.accountId) ===
+                    normalizeAccountId(opts?.agentAccountId)
+                ) {
+                  // Resolve a fresh owner ceiling even for already-visible tools.
+                  creatorOptions = { ...opts, creatorToolAllowlist: undefined };
+                }
+              }
+              const update = async (expectedConfigRevision?: string) =>
+                mutationResult(
+                  await updateCronJobFromAgentTool({
+                    id,
+                    expectedConfigRevision,
+                    patch,
+                    adminManagement: Boolean(managementAuthority),
+                    creatorToolAllowlist: creatorOptions?.creatorToolAllowlist,
+                    creatorToolAllowlistCaptureRef: creatorOptions?.creatorToolAllowlistCaptureRef,
+                    resolveCreatorToolAuthority: creatorOptions?.resolveCreatorToolAuthority,
+                    withCreatorAuthorityProvenance,
+                    gatewayOpts,
+                    callGateway,
+                    operationSignal,
+                    creatorAuthorityUnavailableReason:
+                      creatorOptions?.creatorAuthorityUnavailableReason,
+                    prepareStreamExecAuthority: async (creatorTools) => {
+                      // Management edits preserve the target's cap, but a stream still
+                      // executes under the caller's own complete executable surface.
+                      assertCronCreatorAuthorityResolutionAvailable({
+                        required: creatorOptions === undefined,
+                        creatorToolAllowlistCaptureRef: opts?.creatorToolAllowlistCaptureRef,
+                        unavailableReason: opts?.creatorAuthorityUnavailableReason,
+                      });
+                      await prepareStreamExecAuthority(creatorTools ?? opts?.creatorToolAllowlist);
+                    },
+                  }),
+                );
+              return patch.enabled === false
+                ? await update(await readTargetRevision(id))
+                : await update();
+            }
+            case "run": {
+              const id = requireCronJobIdParam(params);
+              const runMode =
+                params.runMode === "due" || params.runMode === "force" ? params.runMode : "due";
+              // The Gateway holds the request until the run records its outcome, so the model
+              // learns the result in this call instead of scheduling a follow-up check.
+              const waitTimeoutMs = Math.min(
+                parsedGatewayOpts.timeoutMs ?? 60_000,
+                CRON_RUN_MAX_WAIT_MS,
+              );
+              let result: Record<string, unknown>;
+              try {
+                result = await callGateway(
+                  "cron.run",
+                  { ...gatewayOpts, timeoutMs: waitTimeoutMs + CRON_RUN_ENQUEUE_TIMEOUT_MS },
+                  { id, mode: runMode, waitTimeoutMs },
+                );
+              } catch (error) {
+                // Shipped Gateways reject the param before enqueueing, so retrying cannot double-run.
+                if (!isOlderGatewayRejectingParam(error, "cron.run", "waitTimeoutMs")) {
+                  throw error;
+                }
+                result = await callGateway("cron.run", gatewayOpts, { id, mode: runMode });
+              }
+              if (result.enqueued !== true || result.run) {
+                return jsonResult(result);
+              }
+              const followUp = managementAuthority?.managementOnly
+                ? "check it later on the Automations page"
+                : "check it later with runs jobId runId";
+              if (!isRecord(result)) {
+                throw new Error("cron.list returned an invalid inventory response");
+              }
+              return jsonResult({
+                ...result,
+                note: result.finished
+                  ? `Finished, but its run history is not visible to this turn (a one-shot may have deleted itself after succeeding); ${followUp} if needed.`
+                  : `Not finished yet: it is still running, or it runs in this session and starts after this turn. Its delivery follows the job settings; ${followUp}. Do not schedule a verification job.`,
+              });
+            }
+            case "next_check": {
+              const jobId = readCronSelfRemoveOnlyJobId(opts);
+              const runId = opts?.runId?.trim();
+              if (!jobId || !runId) {
+                throw new Error("cron next_check is only available to the currently running job");
+              }
+              const rawDuration = readToolStringParam(params, "in", { required: true });
+              let delayMs: number;
+              try {
+                delayMs = parseDurationMs(rawDuration);
+              } catch {
+                throw new Error("cron next_check in must be a positive duration");
+              }
+              if (delayMs <= 0) {
+                throw new Error("cron next_check in must be a positive duration");
+              }
+              recordCronNextCheckProposal(runId, jobId, delayMs);
+              return jsonResult({ ok: true, delayMs });
+            }
+            case "wake": {
+              const text = readToolStringParam(params, "text", { required: true });
+              const mode =
+                params.mode === "now" || params.mode === "next-heartbeat"
+                  ? params.mode
+                  : "next-heartbeat";
+              // An omitted target wakes the originating conversation, not the
+              // heartbeat lane. Gateway owns target validation and authorization.
+              const explicitSessionKey = readToolStringParam(params, "sessionKey");
+              const explicitAgentId = readToolStringParam(params, "agentId");
+              const sessionKey = explicitSessionKey ?? callerSessionKey;
+              // Pair an explicit session with its own agent; caller defaults must
+              // not rewrite that target before the Gateway can validate it.
+              const agentIdFromExplicitSessionKey = explicitSessionKey
+                ? parseAgentSessionKey(explicitSessionKey)?.agentId
+                : undefined;
+              const agentId =
+                explicitAgentId ??
+                (explicitSessionKey ? agentIdFromExplicitSessionKey : callerAgentId);
+              return jsonResult(
+                await callGateway(
+                  "wake",
+                  gatewayOpts,
+                  {
+                    mode,
+                    text,
+                    ...(sessionKey ? { sessionKey } : {}),
+                    ...(agentId ? { agentId } : {}),
+                  },
+                  { expectFinal: false },
+                ),
+              );
+            }
+            default:
+              throw new Error(`Unknown action: ${action}`);
           }
-          const patch = normalizeCronJobPatch(params.patch) ?? params.patch;
-          return jsonResult(
-            await callGateway("cron.update", gatewayOpts, {
-              id,
-              patch,
-            }),
-          );
-        }
-        case "remove": {
-          const id = readStringParam(params, "jobId") ?? readStringParam(params, "id");
-          if (!id) {
-            throw new Error("jobId required (id accepted for backward compatibility)");
+        }).catch((error: unknown) => {
+          const ended =
+            error instanceof GatewayClientRequestError && error.gatewayCode === "FORBIDDEN"
+              ? readCronStreamApprovalEnded(error.details)
+              : undefined;
+          if (ended && ended.action === action) {
+            return jsonResult(ended);
           }
-          return jsonResult(await callGateway("cron.remove", gatewayOpts, { id }));
-        }
-        case "run": {
-          const id = readStringParam(params, "jobId") ?? readStringParam(params, "id");
-          if (!id) {
-            throw new Error("jobId required (id accepted for backward compatibility)");
-          }
-          const runMode =
-            params.runMode === "due" || params.runMode === "force" ? params.runMode : "force";
-          return jsonResult(await callGateway("cron.run", gatewayOpts, { id, mode: runMode }));
-        }
-        case "runs": {
-          const id = readStringParam(params, "jobId") ?? readStringParam(params, "id");
-          if (!id) {
-            throw new Error("jobId required (id accepted for backward compatibility)");
-          }
-          return jsonResult(await callGateway("cron.runs", gatewayOpts, { id }));
-        }
-        case "wake": {
-          const text = readStringParam(params, "text", { required: true });
-          const mode =
-            params.mode === "now" || params.mode === "next-heartbeat"
-              ? params.mode
-              : "next-heartbeat";
-          return jsonResult(
-            await callGateway("wake", gatewayOpts, { mode, text }, { expectFinal: false }),
-          );
-        }
-        default:
-          throw new Error(`Unknown action: ${action}`);
-      }
+          throw error;
+        });
+      };
+      return await (action === "add" || action === "update"
+        ? withToolEffectBoundary(executeAction)
+        : executeAction());
     },
   };
+  if (readOnly) {
+    bindAgentToolReplaySafety(tool, "bounded-read");
+  }
+  return setToolTerminalPresentation(tool, formatCronTerminalPresentation);
 }

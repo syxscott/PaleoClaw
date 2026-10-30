@@ -1,311 +1,188 @@
-import { EventEmitter } from "node:events";
 import fs from "node:fs/promises";
-import os from "node:os";
 import path from "node:path";
-import { PassThrough } from "node:stream";
-import type { OpenClawPluginApi, OpenClawPluginToolContext } from "paleoclaw/plugin-sdk/lobster";
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  createWindowsCmdShimFixture,
-  restorePlatformPathEnv,
-  setProcessPlatform,
-  snapshotPlatformPathEnv,
-} from "./test-helpers.js";
+import type { OpenClawPluginApi } from "paleoclaw/plugin-sdk/plugin-entry";
+import { createTestPluginApi } from "paleoclaw/plugin-sdk/plugin-test-api";
+import { useAutoCleanupTempDirTracker } from "paleoclaw/plugin-sdk/test-env";
+import { createRequireRecord } from "paleoclaw/plugin-sdk/test-fixtures";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import plugin from "../index.js";
+import { createEmbeddedLobsterRunner } from "./lobster-runner.js";
+import { createLobsterTool } from "./lobster-tool.js";
 
-const spawnState = vi.hoisted(() => ({
-  queue: [] as Array<{ stdout: string; stderr?: string; exitCode?: number }>,
-  spawn: vi.fn(),
-}));
-
-vi.mock("node:child_process", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("node:child_process")>();
-  return {
-    ...actual,
-    spawn: (...args: unknown[]) => spawnState.spawn(...args),
-  };
+vi.mock("./lobster-runner.js", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("./lobster-runner.js")>();
+  return { ...actual, createEmbeddedLobsterRunner: vi.fn(actual.createEmbeddedLobsterRunner) };
 });
 
-let createLobsterTool: typeof import("./lobster-tool.js").createLobsterTool;
+afterEach(() => {
+  vi.mocked(createEmbeddedLobsterRunner).mockReset();
+  vi.unstubAllEnvs();
+});
 
-function fakeApi(overrides: Partial<OpenClawPluginApi> = {}): OpenClawPluginApi {
-  return {
-    id: "lobster",
-    name: "lobster",
-    source: "test",
-    config: {},
-    pluginConfig: {},
-    // oxlint-disable-next-line typescript/no-explicit-any
-    runtime: { version: "test" } as any,
-    logger: { info() {}, warn() {}, error() {}, debug() {} },
-    registerTool() {},
-    registerChannel() {},
-    registerGatewayMethod() {},
-    registerCli() {},
-    registerService() {},
-    registerProvider() {},
-    registerHook() {},
-    registerHttpRoute() {},
-    registerCommand() {},
-    registerContextEngine() {},
-    on() {},
-    resolvePath: (p) => p,
-    ...overrides,
-  };
-}
+const requireRecord = createRequireRecord("record", "expected-label-record");
+const tempDirs = useAutoCleanupTempDirTracker(afterEach);
 
-function fakeCtx(overrides: Partial<OpenClawPluginToolContext> = {}): OpenClawPluginToolContext {
-  return {
-    config: {},
-    workspaceDir: "/tmp",
-    agentDir: "/tmp",
-    agentId: "main",
-    sessionKey: "main",
-    messageChannel: undefined,
-    agentAccountId: undefined,
-    sandboxed: false,
-    ...overrides,
-  };
+function resumeToken(details: unknown, field = "requiresInput") {
+  const envelope = requireRecord(details, "Lobster envelope");
+  const request = requireRecord(envelope[field], field);
+  if (typeof request.resumeToken !== "string") {
+    throw new Error("expected a resume token");
+  }
+  return request.resumeToken;
 }
 
 describe("lobster plugin tool", () => {
-  let tempDir = "";
-  const originalProcessState = snapshotPlatformPathEnv();
-
-  beforeAll(async () => {
-    ({ createLobsterTool } = await import("./lobster-tool.js"));
-
-    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "paleoclaw-lobster-plugin-"));
-  });
-
-  afterEach(() => {
-    restorePlatformPathEnv(originalProcessState);
-  });
-
-  afterAll(async () => {
-    if (!tempDir) {
-      return;
-    }
-    if (process.platform === "win32") {
-      await fs.rm(tempDir, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 });
-    } else {
-      await fs.rm(tempDir, { recursive: true, force: true });
-    }
-  });
-
+  let tool: ReturnType<typeof createLobsterTool>;
   beforeEach(() => {
-    spawnState.queue.length = 0;
-    spawnState.spawn.mockReset();
-    spawnState.spawn.mockImplementation(() => {
-      const next = spawnState.queue.shift() ?? { stdout: "" };
-      const stdout = new PassThrough();
-      const stderr = new PassThrough();
-      const child = new EventEmitter() as EventEmitter & {
-        stdout: PassThrough;
-        stderr: PassThrough;
-        kill: (signal?: string) => boolean;
-      };
-      child.stdout = stdout;
-      child.stderr = stderr;
-      child.kill = () => true;
-
-      setImmediate(() => {
-        if (next.stderr) {
-          stderr.end(next.stderr);
-        } else {
-          stderr.end();
-        }
-        stdout.end(next.stdout);
-        child.emit("exit", next.exitCode ?? 0);
-      });
-
-      return child;
-    });
+    tool = createLobsterTool(createTestPluginApi());
   });
-
-  const queueSuccessfulEnvelope = (hello = "world") => {
-    spawnState.queue.push({
-      stdout: JSON.stringify({
-        ok: true,
-        status: "ok",
-        output: [{ hello }],
-        requiresApproval: null,
-      }),
-    });
+  const run = async (pipeline: string) =>
+    (await tool.execute("run", { action: "run", pipeline })).details;
+  const resume = async (
+    token: string,
+    decision: { responseJson?: string; approve?: boolean; cancel?: boolean },
+  ) => (await tool.execute("resume", { action: "resume", token, ...decision })).details;
+  const stateDir = (prefix: string) => {
+    const dir = tempDirs.make(prefix);
+    vi.stubEnv("LOBSTER_STATE_DIR", dir);
+    return dir;
   };
 
-  it("runs lobster and returns parsed envelope in details", async () => {
-    spawnState.queue.push({
-      stdout: JSON.stringify({
-        ok: true,
-        status: "ok",
-        output: [{ hello: "world" }],
-        requiresApproval: null,
-      }),
+  it("resumes real pipeline input, preserves invalid answers, and still handles approvals", async () => {
+    stateDir("paleoclaw-lobster-input-");
+    const first = await run('ask --prompt "Review draft?" | approve --prompt "Publish?"');
+    expect(first).toMatchObject({
+      status: "needs_input",
+      requiresInput: { type: "input_request", prompt: "Review draft?" },
     });
+    const token = resumeToken(first);
+    await expect(resume(token, { responseJson: '{"decision":123}' })).rejects.toThrow(
+      /schema validation/,
+    );
+    const second = await resume(token, {
+      responseJson: '{"decision":"approve","feedback":"Looks good"}',
+    });
+    expect(second).toMatchObject({ status: "needs_approval" });
+    const approved = await resume(resumeToken(second, "requiresApproval"), { approve: true });
+    expect(approved).toMatchObject({
+      status: "ok",
+      output: [{ decision: "approve", feedback: "Looks good" }],
+    });
+    await expect(resume(token, { responseJson: '{"decision":"reject"}' })).rejects.toThrow(
+      /not found/i,
+    );
+  });
 
-    const tool = createLobsterTool(fakeApi());
-    const res = await tool.execute("call1", {
+  it("resumes real workflow files through successive questions without repeating preparation", async () => {
+    const dir = stateDir("paleoclaw-lobster-workflow-input-");
+    const seed = path.join(dir, "seed.json");
+    await fs.writeFile(seed, JSON.stringify({ draft: "original" }));
+    const file = path.join(dir, "review.lobster");
+    await fs.writeFile(
+      file,
+      JSON.stringify({
+        steps: [
+          { id: "prepare", pipeline: "state.get seed | state.set prepared" },
+          {
+            id: "review",
+            input: {
+              prompt: "Review draft?",
+              responseSchema: {
+                type: "object",
+                properties: { feedback: { type: "string" } },
+                required: ["feedback"],
+              },
+              defaults: { feedback: "" },
+            },
+          },
+          {
+            id: "confirm",
+            input: {
+              prompt: "Which label?",
+              responseSchema: { type: "string" },
+            },
+          },
+          { id: "finish", pipeline: "state.get prepared" },
+        ],
+      }),
+    );
+    const first = await run(file);
+    expect(first).toMatchObject({
+      status: "needs_input",
+      requiresInput: { defaults: { feedback: "" }, subject: { draft: "original" } },
+    });
+    await fs.writeFile(seed, JSON.stringify({ draft: "changed" }));
+    const second = await resume(resumeToken(first), { responseJson: '{"feedback":"Keep it"}' });
+    expect(second).toMatchObject({
+      status: "needs_input",
+      requiresInput: { prompt: "Which label?" },
+    });
+    // A new tool instance proves continuation comes from saved state, not the runner's memory.
+    const finished = await createLobsterTool(createTestPluginApi()).execute("finish", {
+      action: "resume",
+      token: resumeToken(second),
+      responseJson: '"reviewed"',
+    });
+    expect(finished.details).toMatchObject({ status: "ok", output: [{ draft: "original" }] });
+  });
+
+  it("cancels a real input checkpoint without executing its remaining steps", async () => {
+    const dir = stateDir("paleoclaw-lobster-input-cancel-");
+    const token = resumeToken(await run("ask | state.set should-not-exist"));
+    expect(await resume(token, { cancel: true })).toMatchObject({ status: "cancelled" });
+    await expect(fs.stat(path.join(dir, "should-not-exist.json"))).rejects.toMatchObject({
+      code: "ENOENT",
+    });
+    await expect(resume(token, { responseJson: '{"decision":"approve"}' })).rejects.toThrow(
+      /not found/i,
+    );
+  });
+
+  it("registers ordinary execution without a task runtime and keeps sandbox gating", () => {
+    const registerTool = vi.fn<OpenClawPluginApi["registerTool"]>();
+    plugin.register(createTestPluginApi({ registerTool }));
+    const factory = registerTool.mock.calls[0]?.[0];
+    if (typeof factory !== "function") {
+      throw new Error("expected a registered Lobster tool factory");
+    }
+    expect(factory({ sandboxed: false })).toMatchObject({ name: "lobster" });
+    expect(factory({ sandboxed: true })).toBeNull();
+  });
+
+  it("normalizes numeric string run limits before invoking the runner", async () => {
+    const result = { ok: true, status: "ok", output: [], requiresApproval: null };
+    const runner = { run: vi.fn().mockResolvedValue(result) };
+
+    vi.mocked(createEmbeddedLobsterRunner).mockReturnValueOnce(runner);
+    tool = createLobsterTool(createTestPluginApi());
+    await tool.execute("call-string-limits", {
       action: "run",
       pipeline: "noop",
-      timeoutMs: 1000,
+      argsJson: '{"since_hours":1}',
+      timeoutMs: "1500",
+      maxStdoutBytes: "4096",
     });
 
-    expect(spawnState.spawn).toHaveBeenCalled();
-    expect(res.details).toMatchObject({ ok: true, status: "ok" });
-  });
-
-  it("tolerates noisy stdout before the JSON envelope", async () => {
-    const payload = { ok: true, status: "ok", output: [], requiresApproval: null };
-    spawnState.queue.push({
-      stdout: `noise before json\n${JSON.stringify(payload)}`,
-    });
-
-    const tool = createLobsterTool(fakeApi());
-    const res = await tool.execute("call-noisy", {
+    expect(runner.run).toHaveBeenCalledWith({
       action: "run",
       pipeline: "noop",
-      timeoutMs: 1000,
+      argsJson: '{"since_hours":1}',
+      cwd: process.cwd(),
+      timeoutMs: 1500,
+      maxStdoutBytes: 4096,
     });
-
-    expect(res.details).toMatchObject({ ok: true, status: "ok" });
   });
 
-  it("requires action", async () => {
-    const tool = createLobsterTool(fakeApi());
-    await expect(tool.execute("call-action-missing", {})).rejects.toThrow(/action required/);
-  });
-
-  it("requires pipeline for run action", async () => {
-    const tool = createLobsterTool(fakeApi());
-    await expect(
-      tool.execute("call-pipeline-missing", {
-        action: "run",
-      }),
-    ).rejects.toThrow(/pipeline required/);
-  });
-
-  it("requires token and approve for resume action", async () => {
-    const tool = createLobsterTool(fakeApi());
-    await expect(
-      tool.execute("call-resume-token-missing", {
-        action: "resume",
-        approve: true,
-      }),
-    ).rejects.toThrow(/token required/);
-    await expect(
-      tool.execute("call-resume-approve-missing", {
-        action: "resume",
-        token: "resume-token",
-      }),
-    ).rejects.toThrow(/approve required/);
-  });
-
-  it("rejects unknown action", async () => {
-    const tool = createLobsterTool(fakeApi());
-    await expect(
-      tool.execute("call-action-unknown", {
-        action: "explode",
-      }),
-    ).rejects.toThrow(/Unknown action/);
-  });
-
-  it("rejects absolute cwd", async () => {
-    const tool = createLobsterTool(fakeApi());
-    await expect(
-      tool.execute("call2c", {
-        action: "run",
-        pipeline: "noop",
-        cwd: "/tmp",
-      }),
-    ).rejects.toThrow(/cwd must be a relative path/);
-  });
-
-  it("rejects cwd that escapes the gateway working directory", async () => {
-    const tool = createLobsterTool(fakeApi());
-    await expect(
-      tool.execute("call2d", {
-        action: "run",
-        pipeline: "noop",
-        cwd: "../../etc",
-      }),
-    ).rejects.toThrow(/must stay within/);
-  });
-
-  it("rejects invalid JSON from lobster", async () => {
-    spawnState.queue.push({ stdout: "nope" });
-
-    const tool = createLobsterTool(fakeApi());
-    await expect(
-      tool.execute("call3", {
-        action: "run",
-        pipeline: "noop",
-      }),
-    ).rejects.toThrow(/invalid JSON/);
-  });
-
-  it("runs Windows cmd shims through Node without enabling shell", async () => {
-    setProcessPlatform("win32");
-    const shimScriptPath = path.join(tempDir, "shim-dist", "lobster-cli.cjs");
-    const shimPath = path.join(tempDir, "shim-bin", "lobster.cmd");
-    await createWindowsCmdShimFixture({
-      shimPath,
-      scriptPath: shimScriptPath,
-      shimLine: `"%dp0%\\..\\shim-dist\\lobster-cli.cjs" %*`,
-    });
-    process.env.PATHEXT = ".CMD;.EXE";
-    process.env.PATH = `${path.dirname(shimPath)};${process.env.PATH ?? ""}`;
-    queueSuccessfulEnvelope();
-
-    const tool = createLobsterTool(fakeApi());
-    await tool.execute("call-win-shim", {
-      action: "run",
-      pipeline: "noop",
-    });
-
-    const [command, argv, options] = spawnState.spawn.mock.calls[0] ?? [];
-    expect(command).toBe(process.execPath);
-    expect(argv).toEqual([shimScriptPath, "run", "--mode", "tool", "noop"]);
-    expect(options).toMatchObject({ windowsHide: true });
-    expect(options).not.toHaveProperty("shell");
-  });
-
-  it("does not retry a failed Windows spawn with shell fallback", async () => {
-    setProcessPlatform("win32");
-    spawnState.spawn.mockReset();
-    spawnState.spawn.mockImplementationOnce(() => {
-      const child = new EventEmitter() as EventEmitter & {
-        stdout: PassThrough;
-        stderr: PassThrough;
-        kill: (signal?: string) => boolean;
-      };
-      child.stdout = new PassThrough();
-      child.stderr = new PassThrough();
-      child.kill = () => true;
-      const err = Object.assign(new Error("spawn failed"), { code: "ENOENT" });
-      setImmediate(() => child.emit("error", err));
-      return child;
-    });
-
-    const tool = createLobsterTool(fakeApi());
-    await expect(
-      tool.execute("call-win-no-retry", {
-        action: "run",
-        pipeline: "noop",
-      }),
-    ).rejects.toThrow(/spawn failed/);
-    expect(spawnState.spawn).toHaveBeenCalledTimes(1);
-  });
-
-  it("can be gated off in sandboxed contexts", async () => {
-    const api = fakeApi();
-    const factoryTool = (ctx: OpenClawPluginToolContext) => {
-      if (ctx.sandboxed) {
-        return null;
-      }
-      return createLobsterTool(api);
-    };
-
-    expect(factoryTool(fakeCtx({ sandboxed: true }))).toBeNull();
-    expect(factoryTool(fakeCtx({ sandboxed: false }))?.name).toBe("lobster");
+  it.each<[string, Record<string, unknown>, RegExp]>([
+    ["missing action", {}, /action required/],
+    ["unknown action", { action: "explode" }, /Unknown action/],
+    [
+      "absolute cwd",
+      { action: "run", pipeline: "noop", cwd: "/tmp" },
+      /cwd must be a relative path/,
+    ],
+    ["escaping cwd", { action: "run", pipeline: "noop", cwd: "../../etc" }, /must stay within/],
+  ])("rejects %s", async (_name, params, error) => {
+    await expect(tool.execute("invalid", params)).rejects.toThrow(error);
   });
 });

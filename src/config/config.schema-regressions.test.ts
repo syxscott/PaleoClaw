@@ -1,187 +1,157 @@
 import { describe, expect, it } from "vitest";
-import { validateConfigObject } from "./config.js";
+import { validateConfigObject } from "./validation.js";
+
+function agentTools(tools: Record<string, unknown>) {
+  return { agents: { entries: { main: { tools } } } };
+}
+
+function validateBinding(agentId: string, entries: Record<string, unknown>) {
+  return validateConfigObject({
+    agents: { entries },
+    bindings: [
+      {
+        type: "route",
+        agentId,
+        match: { channel: "discord", peer: { kind: "direct", id: "user-1" } },
+      },
+    ],
+  });
+}
 
 describe("config schema regressions", () => {
-  it("accepts nested telegram groupPolicy overrides", () => {
-    const res = validateConfigObject({
-      channels: {
-        telegram: {
-          groups: {
-            "-1001234567890": {
-              groupPolicy: "open",
-              topics: {
-                "42": {
-                  groupPolicy: "disabled",
+  it("accepts and preserves mixed extra memory path entries", () => {
+    const extraPaths = [
+      "../team-notes",
+      { path: "../shared", pattern: "runbooks/**/*.md", evergreen: true },
+    ];
+    const result = validateConfigObject({
+      memory: { search: { extraPaths } },
+      agents: { entries: { main: {} } },
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.config.memory?.search?.extraPaths).toEqual(extraPaths);
+    }
+  });
+
+  it.each([
+    { pattern: "**/*.md" },
+    { path: "../shared", pattern: 42 },
+    { path: "../shared", evergreen: "yes" },
+    { path: "../shared", name: "legacy-qmd-name" },
+  ])("rejects invalid extra memory path object %j", (entry) => {
+    const result = validateConfigObject({
+      memory: { search: { extraPaths: [entry] } },
+      agents: { entries: { main: {} } },
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.issues.some((issue) => issue.path.startsWith("memory.search.extraPaths"))).toBe(
+        true,
+      );
+    }
+  });
+
+  it.each([["ops"], ["ops-*"], [], ["*"]].map((send) => ({ send })))(
+    "accepts per-agent send destinations $send",
+    ({ send }) => {
+      const result = validateConfigObject(agentTools({ agentToAgent: { send } }));
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.config.agents?.entries?.main?.tools?.agentToAgent?.send).toEqual(send);
+      }
+    },
+  );
+
+  it.each(["ops", [1], { target: "ops" }].map((send) => ({ send })))(
+    "rejects malformed send destinations $send",
+    ({ send }) => {
+      expect(validateConfigObject(agentTools({ agentToAgent: { send } })).ok).toBe(false);
+    },
+  );
+
+  it("preserves the global exec approval notice delay (#115101)", () => {
+    const result = validateConfigObject({ tools: { exec: { approvalRunningNoticeMs: 0 } } });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.config.tools?.exec?.approvalRunningNoticeMs).toBe(0);
+    }
+  });
+
+  it("accepts exact main bindings when the roster omits main (#89419)", () => {
+    expect(validateBinding("main", { alpha: { model: "anthropic/claude-3-5-sonnet" } }).ok).toBe(
+      true,
+    );
+  });
+
+  it("rejects normalized main variants omitted from the roster", () => {
+    const result = validateBinding("MAIN", { alpha: { model: "anthropic/claude-3-5-sonnet" } });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.issues.some((issue) => issue.message.includes('Unknown agent id "MAIN"'))).toBe(
+        true,
+      );
+    }
+  });
+
+  it("accepts an explicitly configured main variant", () => {
+    expect(validateBinding("MAIN", { MAIN: { model: "anthropic/claude-3-5-sonnet" } }).ok).toBe(
+      true,
+    );
+  });
+
+  it("accepts persisted Foundry thinkingLevelMap (#91011)", () => {
+    expect(
+      validateConfigObject({
+        models: {
+          providers: {
+            "microsoft-foundry": {
+              models: [
+                {
+                  id: "gpt-5.1-chat",
+                  name: "gpt-5.1-chat",
+                  api: "openai-responses",
+                  reasoning: true,
+                  thinkingLevelMap: {
+                    off: "none",
+                    minimal: null,
+                    low: "low",
+                    medium: "medium",
+                    high: "high",
+                    xhigh: null,
+                    max: null,
+                  },
                 },
-              },
+              ],
             },
           },
         },
-      },
-    });
-
-    expect(res.ok).toBe(true);
+      }).ok,
+    ).toBe(true);
   });
 
-  it('accepts memorySearch fallback "voyage"', () => {
-    const res = validateConfigObject({
-      agents: {
-        defaults: {
-          memorySearch: {
-            fallback: "voyage",
-          },
-        },
-      },
-    });
-
-    expect(res.ok).toBe(true);
-  });
-
-  it('accepts memorySearch provider "mistral"', () => {
-    const res = validateConfigObject({
-      agents: {
-        defaults: {
-          memorySearch: {
-            provider: "mistral",
-          },
-        },
-      },
-    });
-
-    expect(res.ok).toBe(true);
-  });
-
-  it("accepts safe iMessage remoteHost", () => {
-    const res = validateConfigObject({
-      channels: {
-        imessage: {
-          remoteHost: "bot@gateway-host",
-        },
-      },
-    });
-
-    expect(res.ok).toBe(true);
-  });
-
-  it("accepts channels.whatsapp.enabled", () => {
-    const res = validateConfigObject({
-      channels: {
-        whatsapp: {
-          enabled: true,
-        },
-      },
-    });
-
-    expect(res.ok).toBe(true);
-  });
-
-  it("rejects unsafe iMessage remoteHost", () => {
-    const res = validateConfigObject({
-      channels: {
-        imessage: {
-          remoteHost: "bot@gateway-host -oProxyCommand=whoami",
-        },
-      },
-    });
-
-    expect(res.ok).toBe(false);
-    if (!res.ok) {
-      expect(res.issues[0]?.path).toBe("channels.imessage.remoteHost");
+  it.each([
+    {
+      scope: "global",
+      path: "tools",
+      config: { tools: { allow: ["group:fs"], alsoAllow: ["lobster"] } },
+    },
+    {
+      scope: "per-agent",
+      path: "agents.entries.main.tools",
+      config: agentTools({ allow: ["group:fs"], alsoAllow: ["lobster"] }),
+    },
+  ])("rejects allow + alsoAllow in the $scope scope", ({ config, path }) => {
+    const result = validateConfigObject(config);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.issues.map((issue) => issue.path)).toContain(path);
     }
   });
 
-  it("accepts iMessage attachment root patterns", () => {
-    const res = validateConfigObject({
-      channels: {
-        imessage: {
-          attachmentRoots: ["/Users/*/Library/Messages/Attachments"],
-          remoteAttachmentRoots: ["/Volumes/relay/attachments"],
-        },
-      },
-    });
-
-    expect(res.ok).toBe(true);
-  });
-
-  it("accepts string values for agents defaults model inputs", () => {
-    const res = validateConfigObject({
-      agents: {
-        defaults: {
-          model: "anthropic/claude-opus-4-6",
-          imageModel: "openai/gpt-4.1-mini",
-        },
-      },
-    });
-
-    expect(res.ok).toBe(true);
-  });
-
-  it("accepts pdf default model and limits", () => {
-    const res = validateConfigObject({
-      agents: {
-        defaults: {
-          pdfModel: {
-            primary: "anthropic/claude-opus-4-6",
-            fallbacks: ["openai/gpt-5-mini"],
-          },
-          pdfMaxBytesMb: 12,
-          pdfMaxPages: 25,
-        },
-      },
-    });
-
-    expect(res.ok).toBe(true);
-  });
-
-  it("rejects non-positive pdf limits", () => {
-    const res = validateConfigObject({
-      agents: {
-        defaults: {
-          pdfModel: { primary: "openai/gpt-5-mini" },
-          pdfMaxBytesMb: 0,
-          pdfMaxPages: 0,
-        },
-      },
-    });
-
-    expect(res.ok).toBe(false);
-    if (!res.ok) {
-      expect(res.issues.some((issue) => issue.path.includes("agents.defaults.pdfMax"))).toBe(true);
-    }
-  });
-
-  it("rejects relative iMessage attachment roots", () => {
-    const res = validateConfigObject({
-      channels: {
-        imessage: {
-          attachmentRoots: ["./attachments"],
-        },
-      },
-    });
-
-    expect(res.ok).toBe(false);
-    if (!res.ok) {
-      expect(res.issues[0]?.path).toBe("channels.imessage.attachmentRoots.0");
-    }
-  });
-
-  it("accepts browser.extraArgs for proxy and custom flags", () => {
-    const res = validateConfigObject({
-      browser: {
-        extraArgs: ["--proxy-server=http://127.0.0.1:7890"],
-      },
-    });
-
-    expect(res.ok).toBe(true);
-  });
-
-  it("rejects browser.extraArgs with non-array value", () => {
-    const res = validateConfigObject({
-      browser: {
-        extraArgs: "--proxy-server=http://127.0.0.1:7890" as unknown,
-      },
-    });
-
-    expect(res.ok).toBe(false);
+  it("allows profile + alsoAllow", () => {
+    expect(validateConfigObject({ tools: { profile: "coding", alsoAllow: ["lobster"] } }).ok).toBe(
+      true,
+    );
   });
 });

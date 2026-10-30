@@ -11,11 +11,12 @@ enum SignificantLocationMonitor {
         locationService: any LocationServicing,
         locationMode: OpenClawLocationMode,
         gateway: GatewayNodeSession,
-        beforeSend: (@MainActor @Sendable () async -> Void)? = nil
-    ) {
+        beforeSend: (@MainActor @Sendable () async -> Void)? = nil)
+    {
         guard locationMode == .always else { return }
         let status = locationService.authorizationStatus()
         guard status == .authorizedAlways else { return }
+        locationService.setBackgroundLocationUpdatesEnabled(true)
         locationService.startMonitoringSignificantLocationChanges { location in
             struct Payload: Codable {
                 var lat: Double
@@ -28,9 +29,8 @@ enum SignificantLocationMonitor {
                 lon: location.coordinate.longitude,
                 accuracyMeters: location.horizontalAccuracy,
                 source: "ios-significant-location")
-            guard let data = try? JSONEncoder().encode(payload),
-                  let json = String(data: data, encoding: .utf8)
-            else { return }
+            guard let data = try? JSONEncoder().encode(payload) else { return }
+            let json = String(bytes: data, encoding: .utf8)!
             Task { @MainActor in
                 if let beforeSend {
                     await beforeSend()

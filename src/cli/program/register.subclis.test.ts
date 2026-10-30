@@ -1,136 +1,195 @@
+import path from "node:path";
 import { Command } from "commander";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { useAutoCleanupTempDirTracker } from "../../../test/helpers/temp-dir.js";
+import { registerSubCliByName, registerSubCliCommands } from "./register.subclis.js";
+import * as subCliDescriptors from "./subcli-descriptors.js";
 
-const { acpAction, registerAcpCli } = vi.hoisted(() => {
-  const action = vi.fn();
-  const register = vi.fn((program: Command) => {
-    program.command("acp").action(action);
-  });
-  return { acpAction: action, registerAcpCli: register };
-});
+const tempDirs = useAutoCleanupTempDirTracker(afterEach);
 
-const { nodesAction, registerNodesCli } = vi.hoisted(() => {
-  const action = vi.fn();
-  const register = vi.fn((program: Command) => {
-    const nodes = program.command("nodes");
-    nodes.command("list").action(action);
-  });
-  return { nodesAction: action, registerNodesCli: register };
-});
-
-const configModule = vi.hoisted(() => ({
-  loadConfig: vi.fn(),
-  readConfigFileSnapshot: vi.fn(),
-}));
-
-vi.mock("../acp-cli.js", () => ({ registerAcpCli }));
-vi.mock("../nodes-cli.js", () => ({ registerNodesCli }));
-vi.mock("../../config/config.js", () => configModule);
-
-const { loadValidatedConfigForPluginRegistration, registerSubCliByName, registerSubCliCommands } =
-  await import("./register.subclis.js");
-
-describe("registerSubCliCommands", () => {
-  const originalArgv = process.argv;
-  const originalDisableLazySubcommands = process.env.OPENCLAW_DISABLE_LAZY_SUBCOMMANDS;
-
-  const createRegisteredProgram = (argv: string[], name?: string) => {
-    process.argv = argv;
-    const program = new Command();
-    if (name) {
-      program.name(name);
-    }
-    registerSubCliCommands(program, process.argv);
-    return program;
+const mocks = vi.hoisted(() => {
+  function registrar(name: string, aliases: string[] = [], child?: string) {
+    const action = vi.fn();
+    return {
+      action,
+      register: vi.fn((program: Command) => {
+        const command = program.command(name).aliases(aliases);
+        return (child ? command.command(child) : command).action(action);
+      }),
+    };
+  }
+  const acp = registrar("acp");
+  const nodes = registrar("nodes", [], "list");
+  const gatewayRunAction = vi.fn();
+  return {
+    acpAction: acp.action,
+    acp: acp.register,
+    nodesAction: nodes.action,
+    nodes: nodes.register,
+    infer: registrar("infer", ["capability"]).register,
+    approvals: registrar("approvals", ["exec-approvals"]).register,
+    tui: vi.fn((program: Command) => program.command("tui").aliases(["terminal", "chat"])),
+    cron: vi.fn((program: Command) => program.command("cron").alias("automations")),
+    pairing: registrar("pairing").register,
+    plugins: vi.fn((program: Command) =>
+      program
+        .command("plugins")
+        .command("update [id]")
+        .action(() => undefined),
+    ),
+    pluginCommands: vi.fn(async (_program: Command) => null),
+    channels: vi.fn(async () => undefined),
+    resume: registrar("resume").register,
+    gatewayRunAction,
+    gatewayRun: vi.fn((command: Command) =>
+      command.option("--force", "force", false).action(gatewayRunAction),
+    ),
+    gateway: registrar("gateway", [], "call").register,
   };
+});
 
-  beforeEach(() => {
-    if (originalDisableLazySubcommands === undefined) {
-      delete process.env.OPENCLAW_DISABLE_LAZY_SUBCOMMANDS;
-    } else {
-      process.env.OPENCLAW_DISABLE_LAZY_SUBCOMMANDS = originalDisableLazySubcommands;
-    }
-    registerAcpCli.mockClear();
-    acpAction.mockClear();
-    registerNodesCli.mockClear();
-    nodesAction.mockClear();
-    configModule.loadConfig.mockReset();
-    configModule.readConfigFileSnapshot.mockReset();
+// mock-isolation: Registration-order tests use synthetic subcommands without initializing live plugins or services.
+vi.mock("../acp-cli.js", () => ({ registerAcpCli: mocks.acp }));
+// mock-isolation: Registration-order tests use synthetic subcommands without initializing live plugins or services.
+vi.mock("../gateway-cli.js", () => ({ registerGatewayCli: mocks.gateway }));
+// mock-isolation: Registration-order tests use synthetic subcommands without initializing live plugins or services.
+vi.mock("../gateway-cli/run-command.js", () => ({
+  addGatewayRunCommand: mocks.gatewayRun,
+}));
+// mock-isolation: Registration-order tests use synthetic subcommands without initializing live plugins or services.
+vi.mock("../nodes-cli.js", () => ({ registerNodesCli: mocks.nodes }));
+// mock-isolation: Registration-order tests use synthetic subcommands without initializing live plugins or services.
+vi.mock("../capability-cli.js", () => ({ registerCapabilityCli: mocks.infer }));
+// mock-isolation: Registration-order tests use synthetic subcommands without initializing live plugins or services.
+vi.mock("../exec-approvals-cli.js", () => ({
+  registerExecApprovalsCli: mocks.approvals,
+}));
+// mock-isolation: Registration-order tests use synthetic subcommands without initializing live plugins or services.
+vi.mock("../tui-cli.js", () => ({ registerTuiCli: mocks.tui }));
+// mock-isolation: Registration-order tests use synthetic subcommands without initializing live plugins or services.
+vi.mock("../cron-cli.js", () => ({ registerCronCli: mocks.cron }));
+// mock-isolation: registration-order checks must not initialize channel plugins or pairing stores.
+vi.mock("../pairing-cli.js", () => ({ registerPairingCli: mocks.pairing }));
+// mock-isolation: Registration-order tests use synthetic subcommands without initializing live plugins or services.
+vi.mock("../plugins-cli.js", () => ({ registerPluginsCli: mocks.plugins }));
+// mock-isolation: Registration-order tests use synthetic subcommands without initializing live plugins or services.
+vi.mock("../channels-cli.js", () => ({ registerChannelsCli: mocks.channels }));
+// mock-isolation: Registration-order tests use synthetic subcommands without initializing live plugins or services.
+vi.mock("../resume-cli.js", () => ({ registerResumeCli: mocks.resume }));
+// mock-isolation: Registration-order tests use synthetic subcommands without initializing live plugins or services.
+vi.mock("../../plugins/cli.js", () => ({
+  registerPluginCliCommandsFromValidatedConfig: mocks.pluginCommands,
+}));
+const originalArgv = process.argv;
+const createRegisteredProgram = (argv: string[], lazy = true) => {
+  process.argv = argv;
+  const program = new Command().name("paleoclaw");
+  if (lazy) {
+    registerSubCliCommands(program, process.argv);
+  }
+  return program;
+};
+
+beforeEach(() => {
+  vi.stubEnv("OPENCLAW_ENABLE_PRIVATE_QA_CLI", "1");
+  vi.stubEnv("OPENCLAW_DISABLE_LAZY_SUBCOMMANDS", undefined);
+  vi.clearAllMocks();
+});
+afterEach(() => {
+  process.argv = originalArgv;
+  vi.unstubAllEnvs();
+  vi.restoreAllMocks();
+});
+
+it("coalesces adjacent completion aliases while preserving separated command visits", async () => {
+  const selectedNames = new Set(
+    "infer capability approvals exec-approvals tui resume terminal chat cron automations completion".split(
+      " ",
+    ),
+  );
+  const descriptors = subCliDescriptors
+    .getSubCliEntriesCore()
+    .filter(({ name }) => selectedNames.has(name));
+  vi.spyOn(subCliDescriptors, "getSubCliEntriesCore").mockReturnValue(descriptors);
+  const root = tempDirs.make("paleoclaw-completion-groups-");
+  for (const name of ["HOME", "USERPROFILE", "OPENCLAW_HOME"]) {
+    vi.stubEnv(name, root);
+  }
+  vi.stubEnv("OPENCLAW_STATE_DIR", path.join(root, "state"));
+  vi.stubEnv("OPENCLAW_CONFIG_PATH", path.join(root, "openclaw.json"));
+  vi.stubEnv("OPENCLAW_COMPLETION_SKIP_PLUGIN_COMMANDS", "1");
+  const program = createRegisteredProgram(["node", "paleoclaw", "completion", "--write-state"]);
+  await program.parseAsync(["completion", "--write-state"], { from: "user" });
+  expect(mocks.infer).toHaveBeenCalledTimes(1);
+  expect(mocks.approvals).toHaveBeenCalledTimes(1);
+  expect(mocks.cron).toHaveBeenCalledTimes(1);
+  expect(mocks.tui).toHaveBeenCalledTimes(2);
+  expect(program.commands.map((command) => command.name())).toEqual(
+    "completion infer approvals resume tui cron".split(" "),
+  );
+});
+
+it("omits the qa placeholder when the private qa cli is disabled", () => {
+  delete process.env.OPENCLAW_ENABLE_PRIVATE_QA_CLI;
+  const program = createRegisteredProgram(["node", "paleoclaw"]);
+  const names = program.commands.map((cmd) => cmd.name());
+  expect(names).toEqual(expect.arrayContaining(["acp", "gateway", "clawbot"]));
+  expect(names).not.toContain("qa");
+  expect(mocks.acp).not.toHaveBeenCalled();
+});
+
+it("re-parses argv for lazy subcommands", async () => {
+  const argv = ["node", "paleoclaw", "nodes", "list"];
+  const program = createRegisteredProgram(argv);
+  expect(program.commands.map((cmd) => cmd.name())).toEqual(["nodes", "completion"]);
+  await program.parseAsync(["nodes", "list"], { from: "user" });
+  expect(mocks.nodes).toHaveBeenCalledExactlyOnceWith(expect.any(Command), argv);
+  expect(mocks.nodesAction).toHaveBeenCalledTimes(1);
+});
+
+it("replaces placeholder when registering a subcommand by name", async () => {
+  const program = createRegisteredProgram(["node", "paleoclaw", "acp", "--help"]);
+  await registerSubCliByName(program, "acp");
+  expect(program.commands.filter((command) => command.name() === "acp")).toHaveLength(1);
+  await program.parseAsync(["acp"], { from: "user" });
+  expect(mocks.acp).toHaveBeenCalledTimes(1);
+  expect(mocks.acpAction).toHaveBeenCalledTimes(1);
+});
+
+it.each([
+  ["gateway --force", 2, 0],
+  ["gateway call health", 0, 1],
+] as const)("registers the correct gateway surface for %s", async (args, runCalls, fullCalls) => {
+  const argv = ["node", "paleoclaw", ...args.split(" ")];
+  const program = createRegisteredProgram(argv, false);
+  await registerSubCliByName(program, "gateway", argv);
+  expect(mocks.gatewayRun).toHaveBeenCalledTimes(runCalls);
+  expect(mocks.gateway).toHaveBeenCalledTimes(fullCalls);
+  if (runCalls) {
+    await program.parseAsync(args.split(" "), { from: "user" });
+    expect(mocks.gatewayRunAction).toHaveBeenCalledTimes(1);
+  }
+});
+
+it("passes completion context to channel registration", async () => {
+  const argv = ["node", "paleoclaw", "completion", "--write-state"];
+  const program = new Command().name("paleoclaw");
+  await registerSubCliByName(program, "channels", argv, { purpose: "completion" });
+  expect(mocks.channels).toHaveBeenCalledWith(program, argv, {
+    includeSetupOptions: true,
   });
+});
 
-  afterEach(() => {
-    process.argv = originalArgv;
-    if (originalDisableLazySubcommands === undefined) {
-      delete process.env.OPENCLAW_DISABLE_LAZY_SUBCOMMANDS;
-    } else {
-      process.env.OPENCLAW_DISABLE_LAZY_SUBCOMMANDS = originalDisableLazySubcommands;
-    }
+it.each([
+  { name: "pairing", expected: ["synthetic-plugin", "pairing"] },
+  { name: "plugins", expected: ["plugins", "synthetic-plugin"] },
+])("preserves plugin command registration order for $name", async ({ name, expected }) => {
+  mocks.pluginCommands.mockImplementationOnce(async (program) => {
+    program.command("synthetic-plugin");
+    return null;
   });
-
-  it("registers only the primary placeholder and dispatches", async () => {
-    const program = createRegisteredProgram(["node", "paleoclaw", "acp"]);
-
-    expect(program.commands.map((cmd) => cmd.name())).toEqual(["acp"]);
-
-    await program.parseAsync(["acp"], { from: "user" });
-
-    expect(registerAcpCli).toHaveBeenCalledTimes(1);
-    expect(acpAction).toHaveBeenCalledTimes(1);
-  });
-
-  it("registers placeholders for all subcommands when no primary", () => {
-    const program = createRegisteredProgram(["node", "paleoclaw"]);
-
-    const names = program.commands.map((cmd) => cmd.name());
-    expect(names).toContain("acp");
-    expect(names).toContain("gateway");
-    expect(names).toContain("clawbot");
-    expect(registerAcpCli).not.toHaveBeenCalled();
-  });
-
-  it("returns null for plugin registration when the config snapshot is invalid", async () => {
-    configModule.readConfigFileSnapshot.mockResolvedValueOnce({
-      valid: false,
-      config: { plugins: { load: { paths: ["/tmp/evil"] } } },
-    });
-
-    await expect(loadValidatedConfigForPluginRegistration()).resolves.toBeNull();
-    expect(configModule.loadConfig).not.toHaveBeenCalled();
-  });
-
-  it("loads validated config for plugin registration when the snapshot is valid", async () => {
-    const loadedConfig = { plugins: { enabled: true } };
-    configModule.readConfigFileSnapshot.mockResolvedValueOnce({
-      valid: true,
-      config: loadedConfig,
-    });
-    configModule.loadConfig.mockReturnValueOnce(loadedConfig);
-
-    await expect(loadValidatedConfigForPluginRegistration()).resolves.toBe(loadedConfig);
-    expect(configModule.loadConfig).toHaveBeenCalledTimes(1);
-  });
-
-  it("re-parses argv for lazy subcommands", async () => {
-    const program = createRegisteredProgram(["node", "paleoclaw", "nodes", "list"], "paleoclaw");
-
-    expect(program.commands.map((cmd) => cmd.name())).toEqual(["nodes"]);
-
-    await program.parseAsync(["nodes", "list"], { from: "user" });
-
-    expect(registerNodesCli).toHaveBeenCalledTimes(1);
-    expect(nodesAction).toHaveBeenCalledTimes(1);
-  });
-
-  it("replaces placeholder when registering a subcommand by name", async () => {
-    const program = createRegisteredProgram(["node", "paleoclaw", "acp", "--help"], "paleoclaw");
-
-    await registerSubCliByName(program, "acp");
-
-    const names = program.commands.map((cmd) => cmd.name());
-    expect(names.filter((name) => name === "acp")).toHaveLength(1);
-
-    await program.parseAsync(["acp"], { from: "user" });
-    expect(registerAcpCli).toHaveBeenCalledTimes(1);
-    expect(acpAction).toHaveBeenCalledTimes(1);
-  });
+  const program = new Command().name("paleoclaw");
+  // Eager registration visits other groups while a plugin-backed command is selected.
+  await registerSubCliByName(program, name, ["node", "paleoclaw", "directory", "peers"]);
+  expect(program.commands.map((command) => command.name())).toEqual(expected);
 });

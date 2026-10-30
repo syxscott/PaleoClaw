@@ -1,0 +1,131 @@
+// Browser tests cover register.files downloads plugin behavior.
+import { Command } from "commander";
+import { defaultRuntime } from "paleoclaw/plugin-sdk/runtime-env";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import * as browserPathsModule from "../../browser/paths.js";
+import {
+  createBrowserProgram,
+  mockBrowserGateway,
+  getBrowserCliRuntime,
+  getBrowserCliRuntimeCapture,
+} from "../browser-cli.test-support.js";
+
+const gatewayMock = mockBrowserGateway();
+gatewayMock.mockImplementation(async (_method, _opts, request) =>
+  request.path === "/wait/download" || request.path === "/download"
+    ? { download: { path: "/tmp/paleoclaw/downloads/file.txt" } }
+    : { ok: true },
+);
+const browserCliRuntime = getBrowserCliRuntime();
+vi.spyOn(defaultRuntime, "log").mockImplementation(browserCliRuntime.log);
+vi.spyOn(defaultRuntime, "writeJson").mockImplementation(browserCliRuntime.writeJson);
+vi.spyOn(defaultRuntime, "error").mockImplementation(browserCliRuntime.error);
+vi.spyOn(defaultRuntime, "exit").mockImplementation(browserCliRuntime.exit);
+vi.spyOn(browserPathsModule, "resolveExistingUploadPaths").mockResolvedValue({
+  ok: true,
+  paths: ["/tmp/paleoclaw/uploads/a.pdf", "/tmp/paleoclaw/uploads/b.pdf"],
+});
+
+const { registerBrowserActionInputCommands } = await import("./register.js");
+
+function createActionInputProgram(): Command {
+  const { program, browser, parentOpts } = createBrowserProgram();
+  registerBrowserActionInputCommands(browser, parentOpts);
+  return program;
+}
+
+function getLastRequestOptions(): { timeoutMs?: number } | undefined {
+  return gatewayMock.mock.calls.at(-1)?.[2];
+}
+
+describe("browser action input file/download commands", () => {
+  beforeEach(() => {
+    gatewayMock.mockClear();
+    vi.mocked(browserPathsModule.resolveExistingUploadPaths).mockClear();
+    getBrowserCliRuntimeCapture().resetRuntimeCapture();
+    getBrowserCliRuntime().exit.mockImplementation(() => {});
+  });
+
+  it("arms uploads with normalized paths and element targeting options", async () => {
+    const program = createActionInputProgram();
+
+    await program.parseAsync(
+      [
+        "browser",
+        "upload",
+        "/tmp/paleoclaw/uploads/a.pdf",
+        "media://inbound/b",
+        "--input-ref",
+        "file-input",
+        "--element",
+        "input[type=file]",
+        "--target-id",
+        "tab-1",
+        "--timeout-ms",
+        "45000",
+      ],
+      { from: "user" },
+    );
+
+    expect(browserPathsModule.resolveExistingUploadPaths).toHaveBeenCalledWith({
+      requestedPaths: ["/tmp/paleoclaw/uploads/a.pdf", "media://inbound/b"],
+    });
+    const request = gatewayMock.mock.calls.at(-1)?.[2];
+    expect(request).toMatchObject({
+      path: "/hooks/file-chooser",
+      body: {
+        paths: ["/tmp/paleoclaw/uploads/a.pdf", "/tmp/paleoclaw/uploads/b.pdf"],
+        inputRef: "file-input",
+        element: "input[type=file]",
+        targetId: "tab-1",
+        timeoutMs: 45000,
+      },
+    });
+    expect(getLastRequestOptions()?.timeoutMs).toBe(50000);
+  });
+
+  it("accepts signed and zero-padded download timeouts", async () => {
+    const program = createActionInputProgram();
+
+    await program.parseAsync(["browser", "waitfordownload", "--timeout-ms", "+025000"], {
+      from: "user",
+    });
+
+    expect(getLastRequestOptions()?.timeoutMs).toBe(30000);
+  });
+
+  it("uses custom download timeouts as the inner wait plus outer slack", async () => {
+    const program = createActionInputProgram();
+
+    await program.parseAsync(
+      ["browser", "download", "ref-1", "file.txt", "--timeout-ms", "25000"],
+      {
+        from: "user",
+      },
+    );
+
+    expect(getLastRequestOptions()?.timeoutMs).toBe(30000);
+  });
+
+  it("rejects conflicting dialog actions without arming the hook", async () => {
+    const program = createActionInputProgram();
+
+    await program.parseAsync(["browser", "dialog", "--accept", "--dismiss"], { from: "user" });
+
+    const errorCall = getBrowserCliRuntime().error.mock.calls.at(-1);
+    expect(gatewayMock).not.toHaveBeenCalled();
+    expect(String(errorCall?.[0])).toContain("Specify only one of --accept or --dismiss");
+    expect(getBrowserCliRuntime().exit).toHaveBeenCalledWith(1);
+  });
+
+  it.each([""])("preserves prompt response %j", async (prompt) => {
+    await createActionInputProgram().parseAsync(
+      ["browser", "dialog", "--accept", "--prompt", prompt],
+      { from: "user" },
+    );
+    expect(gatewayMock.mock.calls.at(-1)?.[2]).toMatchObject({
+      path: "/hooks/dialog",
+      body: { accept: true, promptText: prompt },
+    });
+  });
+});

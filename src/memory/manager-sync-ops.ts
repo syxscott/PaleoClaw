@@ -5,7 +5,7 @@ import path from "node:path";
 import type { DatabaseSync } from "node:sqlite";
 import chokidar, { FSWatcher } from "chokidar";
 import { resolveAgentDir } from "../agents/agent-scope.js";
-import { ResolvedMemorySearchConfig } from "../agents/memory-search.js";
+import { type ResolvedMemorySearchConfig } from "../agents/memory-search.js";
 import { type OpenClawConfig } from "../config/config.js";
 import { resolveSessionTranscriptsDirForAgent } from "../config/sessions/paths.js";
 import { createSubsystemLogger } from "../logging/subsystem.js";

@@ -10,7 +10,9 @@ import { setContextPruningRuntime } from "../pi-extensions/context-pruning/runti
 import { computeEffectiveSettings } from "../pi-extensions/context-pruning/settings.js";
 import { makeToolPrunablePredicate } from "../pi-extensions/context-pruning/tools.js";
 import { ensurePiCompactionReserveTokens } from "../pi-settings.js";
+import { PROVIDER_CAPABILITIES_OVERRIDE_FILE } from "../provider-capabilities.js";
 import { isCacheTtlEligibleProvider, readLastCacheTtlTimestamp } from "./cache-ttl.js";
+import { log } from "./logger.js";
 
 function resolveContextWindowTokens(params: {
   cfg: OpenClawConfig | undefined;
@@ -39,6 +41,14 @@ function buildContextPruningFactory(params: {
     return undefined;
   }
   if (!isCacheTtlEligibleProvider(params.provider, params.modelId)) {
+    // The operator asked for cache-TTL pruning but the provider/model cannot
+    // keep a long-lived cache: say so instead of silently doing nothing.
+    log.warn(
+      `cache-ttl context pruning is inactive for ${params.provider}/${params.modelId}: ` +
+        `this provider/model has no long-lived prompt cache. ` +
+        `Declare it in <agentDir>/${PROVIDER_CAPABILITIES_OVERRIDE_FILE} ` +
+        `(cacheTtl.enabled) if your backend supports one.`,
+    );
     return undefined;
   }
 

@@ -1,0 +1,197 @@
+import { stripAnsi } from "../../../packages/terminal-core/src/ansi.js";
+import { formatDocsLink } from "../../../packages/terminal-core/src/links.js";
+import { theme } from "../../../packages/terminal-core/src/theme.js";
+import { levenshteinDistance } from "../../shared/levenshtein-distance.js";
+import { getCommandPathWithRootOptions } from "../argv.js";
+import { formatCliCommand } from "../command-format.js";
+import { ExpectedCliError } from "../failure-output.js";
+import { getCoreCliCommandNamesCore } from "./core-command-descriptors.js";
+import { getSubCliCommandMetadata } from "./subcli-command-metadata.js";
+
+const MAX_SUGGESTIONS = 3;
+
+type FormatCliParseErrorOptions = {
+  argv?: string[];
+  commandPath?: string[];
+  commandNames?: readonly string[];
+};
+
+function uniqueSortedCommandNames(commands: Iterable<string>): string[] {
+  return [...new Set([...commands].filter(Boolean))].toSorted((left, right) =>
+    left.localeCompare(right),
+  );
+}
+
+function formatCliCommandSuggestions(
+  input: string,
+  commandPath: readonly string[] = [],
+  candidates?: Iterable<string>,
+): string | undefined {
+  const normalizedInput = input.trim().toLowerCase();
+  if (!normalizedInput) {
+    return undefined;
+  }
+
+  const knownCommands = uniqueSortedCommandNames(
+    candidates ??
+      (commandPath.length === 0
+        ? [
+            ...getCoreCliCommandNamesCore(),
+            ...getSubCliCommandMetadata().map((entry) => entry.name),
+          ]
+        : []),
+  );
+  if (
+    (normalizedInput === "upgrade" || normalizedInput === "udpate") &&
+    knownCommands.includes("update")
+  ) {
+    return formatCliSuggestionLines(["update"], commandPath);
+  }
+  const suggestions = findCliCommandSuggestions(normalizedInput, knownCommands);
+  if (suggestions.length === 0) {
+    return undefined;
+  }
+  return formatCliSuggestionLines(suggestions, commandPath);
+}
+
+function findCliCommandSuggestions(input: string, candidates: readonly string[]): string[] {
+  const maxDistance = Math.max(1, Math.floor(input.length * 0.4));
+  return candidates
+    .map((command) => ({ command, distance: levenshteinDistance(input, command) }))
+    .filter(({ command, distance }) => command !== input && distance <= maxDistance)
+    .toSorted(
+      (left, right) => left.distance - right.distance || left.command.localeCompare(right.command),
+    )
+    .slice(0, MAX_SUGGESTIONS)
+    .map(({ command }) => command);
+}
+
+function formatCliSuggestionLines(
+  suggestions: readonly string[],
+  commandPath: readonly string[],
+): string {
+  const commandPrefix = ["paleoclaw", ...commandPath].join(" ");
+  const commandLines = suggestions
+    .map((command) => `  ${formatCliCommand(`${commandPrefix} ${command}`)}`)
+    .join("\n");
+  return `Did you mean this?\n${commandLines}`;
+}
+
+function stripCommanderErrorPrefix(raw: string): string {
+  return raw
+    .trim()
+    .replace(/^error:\s*/i, "")
+    .trim();
+}
+
+function lines(...items: Array<string | undefined>): string {
+  return `${items.filter((item): item is string => Boolean(item)).join("\n")}\n`;
+}
+
+function formatHelpHint(argv: string[] | undefined, options?: { commandPath?: string[] }): string {
+  const commandPath = options?.commandPath ?? (argv ? getCommandPathWithRootOptions(argv, 2) : []);
+  const command = formatCliCommand(["paleoclaw", ...commandPath, "--help"].join(" "));
+  return `${theme.muted("Try:")} ${theme.command(command)}`;
+}
+
+function formatDocsHint(): string {
+  return `${theme.muted("Docs:")} ${formatDocsLink("/cli", "docs.openclaw.ai/cli")}`;
+}
+
+function formatCliMachineOutput(humanOutput: string): string {
+  const docs = `Docs: ${formatDocsLink("/cli", "docs.openclaw.ai/cli", { force: false })}`;
+  return stripAnsi(humanOutput).replace(/^Docs:.*$/mu, docs);
+}
+
+function formatUnknownCommandMessage(command: string, commandPath: readonly string[]): string {
+  return commandPath.length > 0
+    ? `paleoclaw ${commandPath.join(" ")} has no command "${command}".`
+    : `paleoclaw does not know the command "${command}".`;
+}
+
+function formatCliUnknownCommandOutput(
+  command: string,
+  options: FormatCliParseErrorOptions = {},
+): string {
+  const commandPath = options.commandPath ?? [];
+  const hasParentCommand = commandPath.length > 0;
+  return lines(
+    theme.error(formatUnknownCommandMessage(command, commandPath)),
+    formatCliCommandSuggestions(command, commandPath, options.commandNames),
+    formatHelpHint(options.argv, { commandPath }),
+    hasParentCommand
+      ? undefined
+      : `${theme.muted("Plugin command?")} ${theme.command(formatCliCommand("paleoclaw plugins list"))}`,
+    formatDocsHint(),
+  );
+}
+
+export function createCliParseError(
+  raw: string,
+  options: FormatCliParseErrorOptions = {},
+  errorOptions: { humanOutputWritten?: boolean } = {},
+): ExpectedCliError {
+  const message = stripCommanderErrorPrefix(raw);
+  const unknownCommand = message.match(/^unknown command ['"`](.+?)['"`]/i);
+  if (unknownCommand) {
+    return createCliUnknownCommandError(unknownCommand[1] ?? "", options, errorOptions);
+  }
+  const humanOutput = formatCliParseErrorOutput(raw, options);
+  return new ExpectedCliError({
+    message,
+    humanOutput,
+    humanOutputWritten: errorOptions.humanOutputWritten,
+    machineOutput: formatCliMachineOutput(humanOutput),
+  });
+}
+
+export function createCliUnknownCommandError(
+  command: string,
+  options: FormatCliParseErrorOptions = {},
+  errorOptions: { humanOutputWritten?: boolean } = {},
+): ExpectedCliError {
+  const commandPath = options.commandPath ?? [];
+  const humanOutput = formatCliUnknownCommandOutput(command, options);
+  return new ExpectedCliError({
+    message: formatUnknownCommandMessage(command, commandPath),
+    humanOutput,
+    humanOutputWritten: errorOptions.humanOutputWritten,
+    machineOutput: formatCliMachineOutput(humanOutput),
+  });
+}
+
+function formatOrdinaryCliParseErrorMessage(message: string): string {
+  for (const [pattern, prefix] of [
+    [/^unknown option ['"`](.+?)['"`]/i, "paleoclaw does not recognize option"],
+    [/^missing required argument ['"`](.+?)['"`]/i, "Missing required argument"],
+    [/^required option ['"`](.+?)['"`] not specified/i, "Missing required option"],
+  ] as const) {
+    const match = message.match(pattern);
+    if (match) {
+      return `${prefix} "${match[1] ?? ""}".`;
+    }
+  }
+
+  if (/^too many arguments\b/i.test(message)) {
+    return "Too many arguments for this command.";
+  }
+
+  return `paleoclaw could not parse this command: ${message}`;
+}
+
+export function formatCliParseErrorOutput(
+  raw: string,
+  options: FormatCliParseErrorOptions = {},
+): string {
+  const message = stripCommanderErrorPrefix(raw);
+  const unknownCommand = message.match(/^unknown command ['"`](.+?)['"`]/i);
+  if (unknownCommand) {
+    return formatCliUnknownCommandOutput(unknownCommand[1] ?? "", options);
+  }
+
+  const output = formatOrdinaryCliParseErrorMessage(message);
+  return lines(
+    theme.error(output),
+    formatHelpHint(options.argv, { commandPath: options.commandPath }),
+  );
+}

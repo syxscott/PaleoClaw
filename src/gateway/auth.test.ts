@@ -1,652 +1,762 @@
-import { describe, expect, it, vi } from "vitest";
-import type { AuthRateLimiter } from "./auth-rate-limit.js";
+import type { IncomingMessage } from "node:http";
+import os from "node:os";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { makeNetworkInterfacesSnapshot } from "../test-helpers/network-interfaces.js";
+import { createTestGatewayScheduler } from "../test-utils/gateway-scheduler-clock.js";
+import { createGatewayAuthRateLimiter, type AuthRateLimiter } from "./auth-rate-limit.js";
+import { createLimiterSpy } from "./auth-rate-limit.test-support.js";
 import {
   assertGatewayAuthConfigured,
-  authorizeGatewayConnect,
   authorizeHttpGatewayConnect,
+  authorizeControlUiReadHttpGatewayConnect,
   authorizeWsControlUiGatewayConnect,
   resolveGatewayAuth,
 } from "./auth.js";
+import { markGatewayIngressTransport } from "./ingress-attribution.js";
+import { hasForwardedRequestHeaders, isLocalDirectRequest } from "./net.js";
 
-function createLimiterSpy(): AuthRateLimiter & {
-  check: ReturnType<typeof vi.fn>;
-  recordFailure: ReturnType<typeof vi.fn>;
-  reset: ReturnType<typeof vi.fn>;
-} {
-  const check = vi.fn<AuthRateLimiter["check"]>(
-    (_ip, _scope) => ({ allowed: true, remaining: 10, retryAfterMs: 0 }) as const,
-  );
-  const recordFailure = vi.fn<AuthRateLimiter["recordFailure"]>((_ip, _scope) => {});
-  const reset = vi.fn<AuthRateLimiter["reset"]>((_ip, _scope) => {});
-  return {
-    check,
-    recordFailure,
-    reset,
-    size: () => 0,
-    prune: () => {},
-    dispose: () => {},
-  };
-}
-
-function createTailscaleForwardedReq(): never {
-  return {
-    socket: { remoteAddress: "127.0.0.1" },
-    headers: {
-      host: "gateway.local",
-      "x-forwarded-for": "100.64.0.1",
-      "x-forwarded-proto": "https",
-      "x-forwarded-host": "ai-hub.bone-egret.ts.net",
-      "tailscale-user-login": "peter",
-      "tailscale-user-name": "Peter",
+function createSingleAttemptLimiter() {
+  return createGatewayAuthRateLimiter(
+    {
+      maxAttempts: 1,
+      windowMs: 60_000,
+      lockoutMs: 60_000,
+      pruneIntervalMs: 0,
     },
-  } as never;
+    { scheduler: createTestGatewayScheduler() },
+  );
 }
 
-function createTailscaleWhois() {
-  return async () => ({ login: "peter", name: "Peter" });
+type TailscaleForwardedRequest = IncomingMessage & {
+  socket: IncomingMessage["socket"] & { remoteAddress?: string };
+  headers: IncomingMessage["headers"] & Record<string, string | undefined>;
+};
+
+type GatewayConnectInput = Parameters<typeof authorizeHttpGatewayConnect>[0];
+
+function request(headers: Record<string, string | undefined>, remoteAddress = "127.0.0.1") {
+  return {
+    socket: { remoteAddress, localPort: 18_789 },
+    headers,
+  } as unknown as TailscaleForwardedRequest;
 }
+
+function createTailscaleForwardedReq(managed = true): TailscaleForwardedRequest {
+  const req = request({
+    host: "gateway.local",
+    "x-forwarded-for": "100.64.0.1",
+    "x-forwarded-proto": "https",
+    "x-forwarded-host": "ai-hub.bone-egret.ts.net",
+    "tailscale-user-login": "peter@github",
+    "tailscale-user-name": "Peter",
+    "tailscale-user-profile-pic": "https://avatars.example.test/peter.png",
+    "sec-fetch-site": "same-origin",
+  });
+  if (managed) {
+    markGatewayIngressTransport(req, { kind: "managed-tailscale", mode: "serve" });
+  }
+  return req;
+}
+
+const lookupTailscaleIdentity = async () => ({ login: "peter@github", name: "Peter" });
+
+function authorizeServe(options: Partial<GatewayConnectInput> = {}) {
+  return authorizeWsControlUiGatewayConnect({
+    auth: { mode: "token", token: "secret", allowTailscale: true },
+    connectAuth: null,
+    req: createTailscaleForwardedReq(),
+    tailscaleWhois: lookupTailscaleIdentity,
+    ...options,
+  });
+}
+
+function authorizeAvatar(
+  req: TailscaleForwardedRequest,
+  options: Partial<GatewayConnectInput> = {},
+  allowedOrigins: string[] = [],
+) {
+  return authorizeControlUiReadHttpGatewayConnect({
+    auth: { mode: "token", token: "secret", allowTailscale: true },
+    connectAuth: null,
+    tailscaleWhois: lookupTailscaleIdentity,
+    req,
+    browserOriginPolicy: {
+      requestHost: req.headers.host,
+      origin: req.headers.origin,
+      fetchSite: req.headers["sec-fetch-site"],
+      allowedOrigins,
+    },
+    ...options,
+  });
+}
+
+it.each(["null", "  undefined  ", "  "])(
+  "rejects placeholder token %j at startup and the request boundary",
+  async (token) => {
+    const auth = { mode: "token" as const, token, allowTailscale: false };
+    expect(() => assertGatewayAuthConfigured(auth)).toThrow(
+      /must not be blank|no token was configured/,
+    );
+    await expect(
+      authorizeHttpGatewayConnect({ auth, connectAuth: { token } }),
+    ).resolves.toMatchObject({ ok: false });
+  },
+);
+
+describe("HTTP shared-secret fields", () => {
+  const authorize = authorizeHttpGatewayConnect;
+  const secrets = { token: "token-secret", password: "password-secret", allowTailscale: false };
+  it.each(["token", "password"] as const)(
+    "%s mode accepts either field but only its configured secret",
+    async (mode) => {
+      const auth = { mode, ...secrets };
+      const otherField = mode === "token" ? "password" : "token";
+      const limiter = createLimiterSpy();
+      for (const field of [mode, otherField]) {
+        await expect(
+          authorize({ auth, connectAuth: { [field]: auth[mode] }, rateLimiter: limiter }),
+        ).resolves.toEqual({ ok: true, method: mode });
+        await expect(
+          authorize({ auth, connectAuth: { [field]: auth[otherField] }, rateLimiter: limiter }),
+        ).resolves.toEqual({ ok: false, reason: `${mode}_mismatch` });
+      }
+      expect(limiter.reset).toHaveBeenCalledTimes(2);
+      expect(limiter.recordFailure).toHaveBeenCalledTimes(2);
+      await expect(authorize({ auth, connectAuth: {}, rateLimiter: limiter })).resolves.toEqual({
+        ok: false,
+        reason: `${mode}_missing`,
+      });
+      expect(limiter.recordFailure).toHaveBeenCalledTimes(2);
+    },
+  );
+
+  it("gives the matching field precedence and preserves deferred failures", async () => {
+    const auth = { mode: "token" as const, ...secrets };
+    const limiter = createLimiterSpy();
+    await expect(
+      authorize({
+        auth,
+        connectAuth: { token: "wrong", password: "token-secret" },
+        rateLimiter: limiter,
+        deferRateLimitFailure: true,
+      }),
+    ).resolves.toEqual({ ok: false, reason: "token_mismatch" });
+    expect(limiter.recordFailure).not.toHaveBeenCalled();
+    expect(limiter.reset).not.toHaveBeenCalled();
+    await expect(
+      authorize({ auth, connectAuth: { token: "token-secret", password: "wrong" } }),
+    ).resolves.toEqual({ ok: true, method: "token" });
+  });
+});
 
 describe("gateway auth", () => {
-  async function expectTokenMismatchWithLimiter(params: {
-    reqHeaders: Record<string, string>;
-    allowRealIpFallback?: boolean;
-  }) {
-    const limiter = createLimiterSpy();
-    const res = await authorizeGatewayConnect({
-      auth: { mode: "token", token: "secret", allowTailscale: false },
-      connectAuth: { token: "wrong" },
-      req: {
-        socket: { remoteAddress: "127.0.0.1" },
-        headers: params.reqHeaders,
-      } as never,
-      trustedProxies: ["127.0.0.1"],
-      ...(params.allowRealIpFallback ? { allowRealIpFallback: true } : {}),
-      rateLimiter: limiter,
-    });
-    expect(res.ok).toBe(false);
-    expect(res.reason).toBe("token_mismatch");
-    return limiter;
-  }
+  it.each([
+    { name: "Forwarded", headers: { forwarded: "" } },
+    { name: "X-Forwarded-User", headers: { "x-forwarded-user": "nick@example.com" } },
+    { name: "X-Real-IP", headers: { "x-real-ip": "" } },
+  ])("treats $name as forwarded request evidence", ({ headers }) => {
+    const req = request(headers);
 
-  async function expectTailscaleHeaderAuthResult(params: {
-    authorize: typeof authorizeHttpGatewayConnect | typeof authorizeWsControlUiGatewayConnect;
-    expected: { ok: false; reason: string } | { ok: true; method: string; user: string };
-  }) {
-    const res = await params.authorize({
-      auth: { mode: "token", token: "secret", allowTailscale: true },
-      connectAuth: null,
-      tailscaleWhois: createTailscaleWhois(),
-      req: createTailscaleForwardedReq(),
-    });
-    expect(res.ok).toBe(params.expected.ok);
-    if (!params.expected.ok) {
-      expect(res.reason).toBe(params.expected.reason);
-      return;
-    }
-    expect(res.method).toBe(params.expected.method);
-    expect(res.user).toBe(params.expected.user);
-  }
-
-  it("resolves token/password from paleoclaw gateway env vars", () => {
-    expect(
-      resolveGatewayAuth({
-        authConfig: {},
-        env: {
-          OPENCLAW_GATEWAY_TOKEN: "env-token",
-          OPENCLAW_GATEWAY_PASSWORD: "env-password",
-        } as NodeJS.ProcessEnv,
-      }),
-    ).toMatchObject({
-      mode: "password",
-      modeSource: "password",
-      token: "env-token",
-      password: "env-password",
-    });
-  });
-
-  it("does not resolve legacy CLAWDBOT gateway env vars", () => {
-    expect(
-      resolveGatewayAuth({
-        authConfig: {},
-        env: {
-          CLAWDBOT_GATEWAY_TOKEN: "legacy-token",
-          CLAWDBOT_GATEWAY_PASSWORD: "legacy-password",
-        } as NodeJS.ProcessEnv,
-      }),
-    ).toMatchObject({
-      mode: "token",
-      modeSource: "default",
-      token: undefined,
-      password: undefined,
-    });
-  });
-
-  it("keeps gateway auth config values ahead of env overrides", () => {
-    expect(
-      resolveGatewayAuth({
-        authConfig: {
-          token: "config-token",
-          password: "config-password", // pragma: allowlist secret
-        },
-        env: {
-          OPENCLAW_GATEWAY_TOKEN: "env-token",
-          OPENCLAW_GATEWAY_PASSWORD: "env-password",
-        } as NodeJS.ProcessEnv,
-      }),
-    ).toMatchObject({
-      token: "config-token",
-      password: "config-password", // pragma: allowlist secret
-    });
+    expect(hasForwardedRequestHeaders(req)).toBe(true);
+    expect(isLocalDirectRequest(req)).toBe(false);
   });
 
   it("treats env-template auth secrets as SecretRefs instead of plaintext", () => {
-    expect(
-      resolveGatewayAuth({
-        authConfig: {
-          token: "${OPENCLAW_GATEWAY_TOKEN}",
-          password: "${OPENCLAW_GATEWAY_PASSWORD}",
-        },
-        env: {
-          OPENCLAW_GATEWAY_TOKEN: "env-token",
-          OPENCLAW_GATEWAY_PASSWORD: "env-password",
-        } as NodeJS.ProcessEnv,
-      }),
-    ).toMatchObject({
-      token: "env-token",
-      password: "env-password",
-      mode: "password",
-    });
-  });
-
-  it("resolves explicit auth mode none from config", () => {
-    expect(
-      resolveGatewayAuth({
-        authConfig: { mode: "none" },
-        env: {} as NodeJS.ProcessEnv,
-      }),
-    ).toMatchObject({
-      mode: "none",
-      modeSource: "config",
-      token: undefined,
-      password: undefined,
-    });
-  });
-
-  it("marks mode source as override when runtime mode override is provided", () => {
-    expect(
-      resolveGatewayAuth({
-        authConfig: { mode: "password", password: "config-password" }, // pragma: allowlist secret
-        authOverride: { mode: "token" },
-        env: {} as NodeJS.ProcessEnv,
-      }),
-    ).toMatchObject({
-      mode: "token",
-      modeSource: "override",
-      token: undefined,
-      password: "config-password", // pragma: allowlist secret
-    });
-  });
-
-  it("does not throw when req is missing socket", async () => {
-    const res = await authorizeGatewayConnect({
-      auth: { mode: "token", token: "secret", allowTailscale: false },
-      connectAuth: { token: "secret" },
-      // Regression: avoid crashing on req.socket.remoteAddress when callers pass a non-IncomingMessage.
-      req: {} as never,
-    });
-    expect(res.ok).toBe(true);
-  });
-
-  it("reports missing and mismatched token reasons", async () => {
-    const missing = await authorizeGatewayConnect({
-      auth: { mode: "token", token: "secret", allowTailscale: false },
-      connectAuth: null,
-    });
-    expect(missing.ok).toBe(false);
-    expect(missing.reason).toBe("token_missing");
-
-    const mismatch = await authorizeGatewayConnect({
-      auth: { mode: "token", token: "secret", allowTailscale: false },
-      connectAuth: { token: "wrong" },
-    });
-    expect(mismatch.ok).toBe(false);
-    expect(mismatch.reason).toBe("token_mismatch");
-  });
-
-  it("reports missing token config reason", async () => {
-    const res = await authorizeGatewayConnect({
-      auth: { mode: "token", allowTailscale: false },
-      connectAuth: { token: "anything" },
-    });
-    expect(res.ok).toBe(false);
-    expect(res.reason).toBe("token_missing_config");
-  });
-
-  it("allows explicit auth mode none", async () => {
-    const res = await authorizeGatewayConnect({
-      auth: { mode: "none", allowTailscale: false },
-      connectAuth: null,
-    });
-    expect(res.ok).toBe(true);
-    expect(res.method).toBe("none");
-  });
-
-  it("keeps none mode authoritative even when token is present", async () => {
-    const auth = resolveGatewayAuth({
-      authConfig: { mode: "none", token: "configured-token" },
-      env: {} as NodeJS.ProcessEnv,
-    });
-    expect(auth).toMatchObject({
-      mode: "none",
-      modeSource: "config",
-      token: "configured-token",
-    });
-
-    const res = await authorizeGatewayConnect({
-      auth,
-      connectAuth: null,
-    });
-    expect(res.ok).toBe(true);
-    expect(res.method).toBe("none");
-  });
-
-  it("reports missing and mismatched password reasons", async () => {
-    const missing = await authorizeGatewayConnect({
-      auth: { mode: "password", password: "secret", allowTailscale: false },
-      connectAuth: null,
-    });
-    expect(missing.ok).toBe(false);
-    expect(missing.reason).toBe("password_missing");
-
-    const mismatch = await authorizeGatewayConnect({
-      auth: { mode: "password", password: "secret", allowTailscale: false },
-      connectAuth: { password: "wrong" },
-    });
-    expect(mismatch.ok).toBe(false);
-    expect(mismatch.reason).toBe("password_mismatch");
-  });
-
-  it("reports missing password config reason", async () => {
-    const res = await authorizeGatewayConnect({
-      auth: { mode: "password", allowTailscale: false },
-      connectAuth: { password: "secret" },
-    });
-    expect(res.ok).toBe(false);
-    expect(res.reason).toBe("password_missing_config");
-  });
-
-  it("treats local tailscale serve hostnames as direct", async () => {
-    const res = await authorizeGatewayConnect({
-      auth: { mode: "token", token: "secret", allowTailscale: true },
-      connectAuth: { token: "secret" },
-      req: {
-        socket: { remoteAddress: "127.0.0.1" },
-        headers: { host: "gateway.tailnet-1234.ts.net:443" },
-      } as never,
-    });
-
-    expect(res.ok).toBe(true);
-    expect(res.method).toBe("token");
-  });
-
-  it("does not allow tailscale identity to satisfy token mode auth by default", async () => {
-    const res = await authorizeGatewayConnect({
-      auth: { mode: "token", token: "secret", allowTailscale: true },
-      connectAuth: null,
-      tailscaleWhois: createTailscaleWhois(),
-      req: createTailscaleForwardedReq(),
-    });
-
-    expect(res.ok).toBe(false);
-    expect(res.reason).toBe("token_missing");
-  });
-
-  it("allows tailscale identity when header auth is explicitly enabled", async () => {
-    const res = await authorizeGatewayConnect({
-      auth: { mode: "token", token: "secret", allowTailscale: true },
-      connectAuth: null,
-      tailscaleWhois: createTailscaleWhois(),
-      authSurface: "ws-control-ui",
-      req: createTailscaleForwardedReq(),
-    });
-
-    expect(res.ok).toBe(true);
-    expect(res.method).toBe("tailscale");
-    expect(res.user).toBe("peter");
-  });
-
-  it("keeps tailscale header auth disabled on HTTP auth wrapper", async () => {
-    await expectTailscaleHeaderAuthResult({
-      authorize: authorizeHttpGatewayConnect,
-      expected: { ok: false, reason: "token_missing" },
-    });
-  });
-
-  it("enables tailscale header auth on ws control-ui auth wrapper", async () => {
-    await expectTailscaleHeaderAuthResult({
-      authorize: authorizeWsControlUiGatewayConnect,
-      expected: { ok: true, method: "tailscale", user: "peter" },
-    });
-  });
-
-  it("uses proxy-aware request client IP by default for rate-limit checks", async () => {
-    const limiter = await expectTokenMismatchWithLimiter({
-      reqHeaders: { "x-forwarded-for": "203.0.113.10" },
-    });
-    expect(limiter.check).toHaveBeenCalledWith("203.0.113.10", "shared-secret");
-    expect(limiter.recordFailure).toHaveBeenCalledWith("203.0.113.10", "shared-secret");
-  });
-
-  it("ignores X-Real-IP fallback by default for rate-limit checks", async () => {
-    const limiter = await expectTokenMismatchWithLimiter({
-      reqHeaders: { "x-real-ip": "203.0.113.77" },
-    });
-    expect(limiter.check).toHaveBeenCalledWith("127.0.0.1", "shared-secret");
-    expect(limiter.recordFailure).toHaveBeenCalledWith("127.0.0.1", "shared-secret");
-  });
-
-  it("uses X-Real-IP when fallback is explicitly enabled", async () => {
-    const limiter = await expectTokenMismatchWithLimiter({
-      reqHeaders: { "x-real-ip": "203.0.113.77" },
-      allowRealIpFallback: true,
-    });
-    expect(limiter.check).toHaveBeenCalledWith("203.0.113.77", "shared-secret");
-    expect(limiter.recordFailure).toHaveBeenCalledWith("203.0.113.77", "shared-secret");
-  });
-
-  it("passes custom rate-limit scope to limiter operations", async () => {
-    const limiter = createLimiterSpy();
-    const res = await authorizeGatewayConnect({
-      auth: { mode: "password", password: "secret", allowTailscale: false },
-      connectAuth: { password: "wrong" },
-      rateLimiter: limiter,
-      rateLimitScope: "custom-scope",
-    });
-
-    expect(res.ok).toBe(false);
-    expect(res.reason).toBe("password_mismatch");
-    expect(limiter.check).toHaveBeenCalledWith(undefined, "custom-scope");
-    expect(limiter.recordFailure).toHaveBeenCalledWith(undefined, "custom-scope");
-  });
-  it("does not record rate-limit failure for missing token (misconfigured client, not brute-force)", async () => {
-    const limiter = createLimiterSpy();
-    const res = await authorizeGatewayConnect({
-      auth: { mode: "token", token: "secret", allowTailscale: false },
-      connectAuth: null,
-      rateLimiter: limiter,
-    });
-
-    expect(res.ok).toBe(false);
-    expect(res.reason).toBe("token_missing");
-    expect(limiter.recordFailure).not.toHaveBeenCalled();
-  });
-
-  it("does not record rate-limit failure for missing password (misconfigured client, not brute-force)", async () => {
-    const limiter = createLimiterSpy();
-    const res = await authorizeGatewayConnect({
-      auth: { mode: "password", password: "secret", allowTailscale: false },
-      connectAuth: null,
-      rateLimiter: limiter,
-    });
-
-    expect(res.ok).toBe(false);
-    expect(res.reason).toBe("password_missing");
-    expect(limiter.recordFailure).not.toHaveBeenCalled();
-  });
-
-  it("still records rate-limit failure for wrong token (brute-force attempt)", async () => {
-    const limiter = createLimiterSpy();
-    const res = await authorizeGatewayConnect({
-      auth: { mode: "token", token: "secret", allowTailscale: false },
-      connectAuth: { token: "wrong" },
-      rateLimiter: limiter,
-    });
-
-    expect(res.ok).toBe(false);
-    expect(res.reason).toBe("token_mismatch");
-    expect(limiter.recordFailure).toHaveBeenCalled();
-  });
-
-  it("still records rate-limit failure for wrong password (brute-force attempt)", async () => {
-    const limiter = createLimiterSpy();
-    const res = await authorizeGatewayConnect({
-      auth: { mode: "password", password: "secret", allowTailscale: false },
-      connectAuth: { password: "wrong" },
-      rateLimiter: limiter,
-    });
-
-    expect(res.ok).toBe(false);
-    expect(res.reason).toBe("password_mismatch");
-    expect(limiter.recordFailure).toHaveBeenCalled();
-  });
-  it("throws specific error when password is a provider reference object", () => {
     const auth = resolveGatewayAuth({
       authConfig: {
-        mode: "password",
-        password: { source: "exec", provider: "op", id: "pw" } as never,
-      },
-    });
-    expect(() =>
-      assertGatewayAuthConfigured(auth, {
-        mode: "password",
-        password: { source: "exec", provider: "op", id: "pw" } as never,
-      }),
-    ).toThrow(/provider reference object/);
-  });
-
-  it("accepts password mode when env provides OPENCLAW_GATEWAY_PASSWORD", () => {
-    const rawPasswordRef = { source: "exec", provider: "op", id: "pw" } as never;
-    const auth = resolveGatewayAuth({
-      authConfig: {
-        mode: "password",
-        password: rawPasswordRef,
+        token: "${OPENCLAW_GATEWAY_TOKEN}",
+        password: "${OPENCLAW_GATEWAY_PASSWORD}",
       },
       env: {
+        OPENCLAW_GATEWAY_TOKEN: "env-token",
         OPENCLAW_GATEWAY_PASSWORD: "env-password",
       } as NodeJS.ProcessEnv,
     });
 
+    expect(auth.token).toBe("env-token");
     expect(auth.password).toBe("env-password");
-    expect(() =>
-      assertGatewayAuthConfigured(auth, {
-        mode: "password",
-        password: rawPasswordRef,
-      }),
-    ).not.toThrow();
+    expect(auth.mode).toBe("password");
+    expect(auth.modeSource).toBe("password");
+    expect(assertGatewayAuthConfigured(auth)).toBeUndefined();
   });
 
-  it("throws generic error when password mode has no password at all", () => {
-    const auth = resolveGatewayAuth({ authConfig: { mode: "password" } });
-    expect(() => assertGatewayAuthConfigured(auth, { mode: "password" })).toThrow(
-      "gateway auth mode is password, but no password was configured",
-    );
+  it("marks mode source as override when runtime mode override is provided", () => {
+    const auth = resolveGatewayAuth({
+      authConfig: { mode: "password", password: "config-password" }, // pragma: allowlist secret
+      authOverride: { mode: "token" },
+      env: {} as NodeJS.ProcessEnv,
+    });
+
+    expect(auth.mode).toBe("token");
+    expect(auth.modeSource).toBe("override");
+    expect(auth.token).toBeUndefined();
+    expect(auth.password).toBe("config-password"); // pragma: allowlist secret
+  });
+
+  it.each([
+    {
+      host: "gateway.example.com",
+      origin: "https://evil.example",
+      remote: "10.0.0.1",
+      expected: { ok: false, reason: "origin_not_allowed" },
+    },
+    {
+      host: "127.0.0.1",
+      origin: "http://localhost:5173",
+      remote: "127.0.0.1",
+      expected: { ok: true, method: "none" },
+    },
+  ])("checks $origin under none-mode HTTP auth", async ({ host, origin, remote, expected }) => {
+    const result = await authorizeHttpGatewayConnect({
+      auth: { mode: "none", allowTailscale: false },
+      connectAuth: null,
+      req: request({ host, origin }, remote),
+      browserOriginPolicy: { requestHost: host, origin },
+    });
+    expect(result).toEqual(expected);
+  });
+
+  it("reports missing password config even when a token is configured", async () => {
+    const res = await authorizeHttpGatewayConnect({
+      auth: { mode: "password", token: "secret", allowTailscale: false },
+      connectAuth: { password: "secret" },
+    });
+    expect(res).toMatchObject({ ok: false, reason: "password_missing_config" });
+  });
+
+  it("does not allow tailscale identity to satisfy token mode auth by default", async () => {
+    const res = await authorizeHttpGatewayConnect({
+      auth: { mode: "token", token: "secret", allowTailscale: true },
+      connectAuth: null,
+      tailscaleWhois: lookupTailscaleIdentity,
+      req: createTailscaleForwardedReq(),
+    });
+
+    expect(res).toMatchObject({ ok: false, reason: "token_missing" });
+  });
+
+  it("rejects matching Tailscale-shaped identity without managed Serve provenance", async () => {
+    const req = createTailscaleForwardedReq(false);
+    const limiter = createLimiterSpy();
+
+    const res = await authorizeServe({
+      req,
+      connectAuth: { token: "secret" },
+      rateLimiter: limiter,
+    });
+
+    expect(res).toEqual({ ok: false, reason: "proxy_attribution_required" });
+    expect(limiter.check).not.toHaveBeenCalled();
+    expect(limiter.recordFailure).not.toHaveBeenCalled();
+    expect(limiter.reset).not.toHaveBeenCalled();
+  });
+
+  it("keeps externally managed Tailscale ingress on ordinary trusted-proxy auth semantics", async () => {
+    const tailscaleWhois = vi.fn(lookupTailscaleIdentity);
+    const authorize = (connectAuth: { token: string } | null) =>
+      authorizeServe({
+        connectAuth,
+        tailscaleWhois,
+        req: createTailscaleForwardedReq(false),
+        trustedProxies: ["127.0.0.1"],
+      });
+
+    await expect(authorize({ token: "secret" })).resolves.toMatchObject({
+      ok: true,
+      method: "token",
+    });
+    await expect(authorize(null)).resolves.toEqual({ ok: false, reason: "token_missing" });
+    expect(tailscaleWhois).not.toHaveBeenCalled();
+  });
+
+  it("verifies managed Serve identity before a same-source shared-secret lockout", async () => {
+    const limiter = createSingleAttemptLimiter();
+
+    try {
+      await expect(
+        authorizeServe({
+          connectAuth: { token: "wrong" },
+          rateLimiter: limiter,
+        }),
+      ).resolves.toMatchObject({ ok: false, reason: "token_mismatch" });
+      expect(limiter.check("100.64.0.1", "shared-secret").allowed).toBe(false);
+
+      await expect(authorizeServe({ rateLimiter: limiter })).resolves.toEqual({
+        ok: true,
+        method: "tailscale",
+        user: "peter@github",
+        tailscaleIdentity: {
+          login: "peter@github",
+          name: "Peter",
+          profilePic: "https://avatars.example.test/peter.png",
+        },
+      });
+      expect(limiter.check("100.64.0.1", "shared-secret").allowed).toBe(true);
+    } finally {
+      limiter.dispose();
+    }
+  });
+
+  it("serializes managed Serve auth through the delayed failure write", async () => {
+    let locked = false;
+    const { promise: failureStarted, resolve: markFailureStarted } = Promise.withResolvers<void>();
+    const { promise: failureGate, resolve: releaseFailure } = Promise.withResolvers<void>();
+    const recordFailureAndDelay = vi.fn(async () => {
+      markFailureStarted();
+      await failureGate;
+      locked = true;
+    });
+    const reset = vi.fn(() => {
+      locked = false;
+    });
+    const limiter: AuthRateLimiter = {
+      check: vi.fn(() => ({
+        allowed: !locked,
+        remaining: locked ? 0 : 1,
+        retryAfterMs: locked ? 60_000 : 0,
+      })),
+      recordFailure: vi.fn(() => {
+        locked = true;
+      }),
+      recordFailureAndDelay,
+      reset,
+      size: () => Number(locked),
+      prune: () => {},
+      dispose: () => {},
+    };
+    const authorize = (token: string) =>
+      authorizeServe({ connectAuth: { token }, rateLimiter: limiter });
+
+    const first = authorize("wrong");
+    await failureStarted;
+    const second = authorize("secret");
+    releaseFailure();
+
+    await expect(Promise.all([first, second])).resolves.toMatchObject([
+      { ok: false, reason: "token_mismatch" },
+      { ok: false, reason: "rate_limited" },
+    ]);
+    expect(recordFailureAndDelay).toHaveBeenCalledOnce();
+    expect(reset).not.toHaveBeenCalled();
+  });
+
+  it("requires the Funnel password when Tailscale header auth is explicitly enabled", async () => {
+    const req = createTailscaleForwardedReq(false);
+    markGatewayIngressTransport(req, { kind: "managed-tailscale", mode: "funnel" });
+
+    await expect(
+      authorizeWsControlUiGatewayConnect({
+        auth: { mode: "password", password: "secret", allowTailscale: true },
+        connectAuth: null,
+        tailscaleWhois: lookupTailscaleIdentity,
+        req,
+      }),
+    ).resolves.toMatchObject({ ok: false, reason: "password_missing" });
+  });
+
+  it("allows an origin-less same-origin image through the Control UI read surface", async () => {
+    const limiter = createLimiterSpy();
+    await expect(
+      authorizeAvatar(createTailscaleForwardedReq(), { rateLimiter: limiter }),
+    ).resolves.toMatchObject({ ok: true, method: "tailscale", user: "peter@github" });
+    expect(limiter.check).not.toHaveBeenCalled();
+    expect(limiter.reset).toHaveBeenCalledWith("100.64.0.1", "shared-secret");
+  });
+
+  it("rejects wildcard origin grants for ambient Tailscale avatar identity", async () => {
+    const req = createTailscaleForwardedReq();
+    req.headers.origin = "https://evil.example";
+    req.headers["sec-fetch-site"] = "cross-site";
+    const tailscaleWhois = vi.fn(lookupTailscaleIdentity);
+    await expect(authorizeAvatar(req, { tailscaleWhois }, ["*"])).resolves.toMatchObject({
+      ok: false,
+      reason: "origin_not_allowed",
+    });
+    expect(tailscaleWhois).not.toHaveBeenCalled();
+  });
+
+  it("allows an approved Control UI origin before verifying Tailscale avatar identity", async () => {
+    const req = createTailscaleForwardedReq();
+    req.headers.origin = "https://control.example.com";
+    req.headers["sec-fetch-site"] = "cross-site";
+    const tailscaleWhois = vi.fn(lookupTailscaleIdentity);
+    await expect(
+      authorizeAvatar(req, { tailscaleWhois }, ["https://control.example.com"]),
+    ).resolves.toMatchObject({ ok: true, method: "tailscale", user: "peter@github" });
+    expect(tailscaleWhois).toHaveBeenCalledOnce();
+  });
+
+  it("rejects an origin-less avatar request without same-origin fetch metadata", async () => {
+    const req = createTailscaleForwardedReq();
+    delete req.headers["sec-fetch-site"];
+    const tailscaleWhois = vi.fn(lookupTailscaleIdentity);
+    await expect(authorizeAvatar(req, { tailscaleWhois })).resolves.toMatchObject({
+      ok: false,
+      reason: "origin_not_allowed",
+    });
+    expect(tailscaleWhois).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    {
+      name: "missing identity",
+      mutate: (req: ReturnType<typeof createTailscaleForwardedReq>) => {
+        delete req.headers["tailscale-user-login"];
+      },
+      whois: lookupTailscaleIdentity,
+      expectedReason: "token_missing",
+    },
+    {
+      name: "mismatched identity",
+      mutate: () => {},
+      whois: async () => ({ login: "mallory", name: "Mallory" }),
+      expectedReason: "token_missing",
+    },
+    {
+      name: "non-loopback source",
+      mutate: (req: ReturnType<typeof createTailscaleForwardedReq>) => {
+        req.socket.remoteAddress = "192.0.2.10";
+      },
+      whois: lookupTailscaleIdentity,
+      expectedReason: "proxy_attribution_required",
+    },
+    {
+      name: "incomplete forwarded headers",
+      mutate: (req: ReturnType<typeof createTailscaleForwardedReq>) => {
+        delete req.headers["x-forwarded-host"];
+      },
+      whois: lookupTailscaleIdentity,
+      expectedReason: "proxy_attribution_required",
+    },
+  ])(
+    "rejects $name on the Control UI read HTTP surface",
+    async ({ mutate, whois, expectedReason }) => {
+      const req = createTailscaleForwardedReq();
+      mutate(req);
+
+      const res = await authorizeAvatar(req, { tailscaleWhois: whois });
+
+      expect(res).toMatchObject({ ok: false, reason: expectedReason });
+    },
+  );
+
+  it("keeps explicit password auth on the Control UI read HTTP surface", async () => {
+    const req = createTailscaleForwardedReq();
+    req.headers.origin = "https://evil.example";
+    req.headers["sec-fetch-site"] = "cross-site";
+    await expect(
+      authorizeAvatar(
+        req,
+        {
+          auth: { mode: "password", password: "secret", allowTailscale: true },
+          connectAuth: { password: "secret" },
+        },
+        ["*"],
+      ),
+    ).resolves.toMatchObject({ ok: true, method: "password" });
+  });
+
+  it("keeps trusted-proxy client lockout and reset state isolated by source", async () => {
+    const limiter = createSingleAttemptLimiter();
+    const authorize = async (clientIp: string, password: string) =>
+      await authorizeHttpGatewayConnect({
+        auth: { mode: "password", password: "secret", allowTailscale: false },
+        connectAuth: { password },
+        req: request({ "x-forwarded-for": clientIp }),
+        trustedProxies: ["127.0.0.1"],
+        rateLimiter: limiter,
+      });
+
+    try {
+      await expect(authorize("203.0.113.10", "wrong")).resolves.toMatchObject({
+        ok: false,
+        reason: "password_mismatch",
+      });
+      await expect(authorize("203.0.113.11", "secret")).resolves.toMatchObject({
+        ok: true,
+        method: "password",
+      });
+      await expect(authorize("203.0.113.10", "secret")).resolves.toMatchObject({
+        ok: false,
+        reason: "rate_limited",
+      });
+    } finally {
+      limiter.dispose();
+    }
+  });
+
+  it.each([
+    { allowRealIpFallback: false, token: "secret", reason: "proxy_attribution_required" },
+    { allowRealIpFallback: true, token: "wrong", reason: "token_mismatch" },
+  ])(
+    "requires explicit X-Real-IP fallback: $allowRealIpFallback",
+    async ({ allowRealIpFallback, token, reason }) => {
+      const limiter = createLimiterSpy();
+      const result = await authorizeWsControlUiGatewayConnect({
+        auth: { mode: "token", token: "secret", allowTailscale: false },
+        connectAuth: { token },
+        req: request({ "x-real-ip": "203.0.113.77" }),
+        trustedProxies: ["127.0.0.1"],
+        allowRealIpFallback,
+        rateLimiter: limiter,
+      });
+      expect(result).toEqual({ ok: false, reason });
+      if (allowRealIpFallback) {
+        expect(limiter.check).toHaveBeenCalledWith("203.0.113.77", "shared-secret");
+        expect(limiter.recordFailure).toHaveBeenCalledWith("203.0.113.77", "shared-secret");
+      } else {
+        expect(limiter.check).not.toHaveBeenCalled();
+        expect(limiter.reset).not.toHaveBeenCalled();
+      }
+    },
+  );
+
+  it.each([
+    {
+      password: { source: "exec", provider: "op", id: "pw" } as const,
+      error: /provider reference object/,
+    },
+    { password: undefined, error: /gateway auth mode is password, but no password was configured/ },
+  ])("rejects unresolved password configuration: $password", ({ password, error }) => {
+    const authConfig = { mode: "password" as const, password };
+    const auth = resolveGatewayAuth({ authConfig, env: {} });
+    expect(() => assertGatewayAuthConfigured(auth, authConfig)).toThrow(error);
   });
 });
 
 describe("trusted-proxy auth", () => {
-  type GatewayConnectInput = Parameters<typeof authorizeGatewayConnect>[0];
-  const trustedProxyConfig = {
+  const trustedProxy = {
     userHeader: "x-forwarded-user",
     requiredHeaders: ["x-forwarded-proto"],
-    allowUsers: [],
+  };
+  const auth: GatewayConnectInput["auth"] = {
+    mode: "trusted-proxy",
+    allowTailscale: false,
+    trustedProxy,
+  };
+  const identityHeaders = {
+    "x-forwarded-user": "nick@example.com",
+    "x-forwarded-proto": "https",
   };
 
-  function authorizeTrustedProxy(options?: {
-    auth?: GatewayConnectInput["auth"];
-    trustedProxies?: string[];
+  function mockLocalInterfaces(address = "10.0.0.2") {
+    vi.mocked(os.networkInterfaces).mockReturnValue(
+      makeNetworkInterfacesSnapshot({
+        lo: [{ address: "127.0.0.1", family: "IPv4", internal: true }],
+        eth0: [{ address, family: "IPv4" }],
+      }),
+    );
+  }
+  beforeEach(() => {
+    vi.spyOn(os, "networkInterfaces");
+    mockLocalInterfaces();
+  });
+  afterEach(() => vi.restoreAllMocks());
+
+  function authorizeTrustedProxy({
+    remoteAddress = "10.0.0.1",
+    headers = identityHeaders,
+    ...options
+  }: Partial<GatewayConnectInput> & {
     remoteAddress?: string;
-    headers?: Record<string, string>;
-  }) {
-    return authorizeGatewayConnect({
-      auth: options?.auth ?? {
-        mode: "trusted-proxy",
-        allowTailscale: false,
-        trustedProxy: trustedProxyConfig,
-      },
+    headers?: Parameters<typeof request>[0];
+  } = {}) {
+    return authorizeHttpGatewayConnect({
+      auth,
       connectAuth: null,
-      trustedProxies: options?.trustedProxies ?? ["10.0.0.1"],
-      req: {
-        socket: { remoteAddress: options?.remoteAddress ?? "10.0.0.1" },
-        headers: {
-          host: "gateway.local",
-          ...options?.headers,
-        },
-      } as never,
+      trustedProxies: [remoteAddress],
+      req: request(
+        { host: "gateway.local", "x-forwarded-for": "203.0.113.10", ...headers },
+        remoteAddress,
+      ),
+      ...options,
     });
   }
 
-  it("accepts valid request from trusted proxy", async () => {
-    const res = await authorizeTrustedProxy({
-      headers: {
-        "x-forwarded-user": "nick@example.com",
-        "x-forwarded-proto": "https",
-      },
+  it("rejects trusted-proxy headers from the host non-loopback interface address", async () => {
+    mockLocalInterfaces("10.0.0.1");
+    await expect(authorizeTrustedProxy()).resolves.toEqual({
+      ok: false,
+      reason: "trusted_proxy_local_interface_source",
     });
-
-    expect(res.ok).toBe(true);
-    expect(res.method).toBe("trusted-proxy");
-    expect(res.user).toBe("nick@example.com");
   });
 
-  it("rejects request from untrusted source", async () => {
-    const res = await authorizeTrustedProxy({
-      remoteAddress: "192.168.1.100",
-      headers: {
-        "x-forwarded-user": "attacker@evil.com",
-        "x-forwarded-proto": "https",
-      },
+  it("rejects trusted-proxy headers when local interface discovery fails", async () => {
+    vi.mocked(os.networkInterfaces).mockImplementation(() => {
+      throw new Error("interface discovery failed");
     });
+    await expect(authorizeTrustedProxy()).resolves.toEqual({
+      ok: false,
+      reason: "trusted_proxy_local_interface_check_failed",
+    });
+  });
 
-    expect(res.ok).toBe(false);
-    expect(res.reason).toBe("trusted_proxy_untrusted_source");
+  it.each([
+    ["https://evil.example", { ok: false, reason: "trusted_proxy_origin_not_allowed" }],
+    [
+      "https://control.example.com",
+      { ok: true, method: "trusted-proxy", user: "nick@example.com" },
+    ],
+  ])("checks the origin %s for an allowlisted proxy user", async (origin, expected) => {
+    await expect(
+      authorizeTrustedProxy({
+        auth: { ...auth, trustedProxy: { ...trustedProxy, allowUsers: ["nick@example.com"] } },
+        headers: {
+          ...identityHeaders,
+          host: "gateway.example.com",
+          "x-forwarded-user": "  nick@example.com  ",
+          origin,
+        },
+        browserOriginPolicy: {
+          requestHost: "gateway.example.com",
+          origin,
+          allowedOrigins: ["https://control.example.com"],
+        },
+      }),
+    ).resolves.toEqual(expected);
   });
 
   it("rejects request with missing user header", async () => {
-    const res = await authorizeTrustedProxy({
-      headers: {
-        "x-forwarded-proto": "https",
-      },
+    await expect(
+      authorizeTrustedProxy({ headers: { "x-forwarded-proto": "https" } }),
+    ).resolves.toEqual({
+      ok: false,
+      reason: "trusted_proxy_user_missing",
     });
-
-    expect(res.ok).toBe(false);
-    expect(res.reason).toBe("trusted_proxy_user_missing");
   });
 
-  it("rejects request with missing required headers", async () => {
-    const res = await authorizeTrustedProxy({
-      headers: {
-        "x-forwarded-user": "nick@example.com",
-      },
+  it("rejects trusted-proxy mode with an environment token", () => {
+    const resolved = resolveGatewayAuth({
+      authConfig: { mode: "trusted-proxy", trustedProxy },
+      env: { OPENCLAW_GATEWAY_TOKEN: "shared-secret" },
     });
-
-    expect(res.ok).toBe(false);
-    expect(res.reason).toBe("trusted_proxy_missing_header_x-forwarded-proto");
+    expect(resolved.mode).toBe("trusted-proxy");
+    expect(resolved.token).toBe("shared-secret");
+    expect(() => assertGatewayAuthConfigured(resolved)).toThrow(/mutually exclusive/);
   });
 
-  it("rejects user not in allowlist", async () => {
-    const res = await authorizeTrustedProxy({
-      auth: {
-        mode: "trusted-proxy",
-        allowTailscale: false,
-        trustedProxy: {
-          userHeader: "x-forwarded-user",
-          allowUsers: ["admin@example.com", "nick@example.com"],
+  function authorizeLocalDirect(options: Partial<GatewayConnectInput> = {}) {
+    return authorizeHttpGatewayConnect({
+      auth: { ...auth, password: "local-password" },
+      connectAuth: { password: "local-password" },
+      trustedProxies: ["127.0.0.1"],
+      req: request({ host: "localhost" }),
+      ...options,
+    });
+  }
+
+  it("rejects local-direct token auth even with a valid token", async () => {
+    await expect(
+      authorizeLocalDirect({
+        auth: { ...auth, token: "secret", password: "local-password" },
+        connectAuth: { token: "secret" },
+      }),
+    ).resolves.toEqual({ ok: false, reason: "trusted_proxy_loopback_source" });
+  });
+
+  it("accepts local-direct password fallback when trusted-proxy auth fails", async () => {
+    const limiter = createLimiterSpy();
+    await expect(
+      authorizeLocalDirect({
+        auth: {
+          ...auth,
+          password: "local-password",
+          trustedProxy: { ...trustedProxy, allowLoopback: true },
         },
-      },
-      headers: {
-        "x-forwarded-user": "stranger@other.com",
-      },
-    });
-
-    expect(res.ok).toBe(false);
-    expect(res.reason).toBe("trusted_proxy_user_not_allowed");
+        rateLimiter: limiter,
+      }),
+    ).resolves.toEqual({ ok: true, method: "password" });
+    expect(limiter.check).toHaveBeenCalledWith("127.0.0.1", "shared-secret");
+    expect(limiter.reset).toHaveBeenCalledWith("127.0.0.1", "shared-secret");
+    expect(limiter.recordFailure).not.toHaveBeenCalled();
   });
 
-  it("accepts user in allowlist", async () => {
-    const res = await authorizeTrustedProxy({
-      auth: {
-        mode: "trusted-proxy",
-        allowTailscale: false,
-        trustedProxy: {
-          userHeader: "x-forwarded-user",
-          allowUsers: ["admin@example.com", "nick@example.com"],
-        },
-      },
-      headers: {
-        "x-forwarded-user": "nick@example.com",
-      },
-    });
-
-    expect(res.ok).toBe(true);
-    expect(res.method).toBe("trusted-proxy");
-    expect(res.user).toBe("nick@example.com");
+  it("rejects wrong local-direct password fallback and records the failure", async () => {
+    const limiter = createLimiterSpy();
+    await expect(
+      authorizeLocalDirect({
+        connectAuth: { password: "wrong-password" },
+        rateLimiter: limiter,
+        rateLimitScope: "custom-scope",
+      }),
+    ).resolves.toEqual({ ok: false, reason: "password_mismatch" });
+    expect(limiter.check).toHaveBeenCalledWith("127.0.0.1", "custom-scope");
+    expect(limiter.recordFailure).toHaveBeenCalledWith("127.0.0.1", "custom-scope");
+    expect(limiter.reset).not.toHaveBeenCalled();
   });
 
-  it("rejects when no trustedProxies configured", async () => {
-    const res = await authorizeTrustedProxy({
-      trustedProxies: [],
-      headers: {
-        "x-forwarded-user": "nick@example.com",
-      },
+  it("enforces rate-limit lockout before local-direct password fallback", async () => {
+    const limiter = createLimiterSpy();
+    limiter.check.mockReturnValueOnce({ allowed: false, remaining: 0, retryAfterMs: 2500 });
+    await expect(authorizeLocalDirect({ rateLimiter: limiter })).resolves.toEqual({
+      ok: false,
+      reason: "rate_limited",
+      rateLimited: true,
+      retryAfterMs: 2500,
     });
-
-    expect(res.ok).toBe(false);
-    expect(res.reason).toBe("trusted_proxy_no_proxies_configured");
+    expect(limiter.recordFailure).not.toHaveBeenCalled();
+    expect(limiter.reset).not.toHaveBeenCalled();
   });
 
-  it("rejects when trustedProxy config missing", async () => {
-    const res = await authorizeTrustedProxy({
-      auth: {
-        mode: "trusted-proxy",
-        allowTailscale: false,
-      },
-      headers: {
-        "x-forwarded-user": "nick@example.com",
-      },
-    });
+  it.each([
+    {
+      name: "accepts identity",
+      headers: identityHeaders,
+      allowUsers: [],
+      expected: { ok: true, method: "trusted-proxy", user: "nick@example.com" },
+    },
+    {
+      name: "requires headers",
+      headers: { "x-forwarded-user": "nick@example.com" },
+      allowUsers: [],
+      expected: { ok: false, reason: "trusted_proxy_missing_header_x-forwarded-proto" },
+    },
+    {
+      name: "enforces allowUsers",
+      headers: identityHeaders,
+      allowUsers: ["admin@example.com"],
+      expected: { ok: false, reason: "trusted_proxy_user_not_allowed" },
+    },
+  ])(
+    "$name with an explicitly allowed loopback proxy",
+    async ({ headers, allowUsers, expected }) => {
+      await expect(
+        authorizeTrustedProxy({
+          remoteAddress: "127.0.0.1",
+          headers,
+          auth: { ...auth, trustedProxy: { ...trustedProxy, allowLoopback: true, allowUsers } },
+        }),
+      ).resolves.toEqual(expected);
+    },
+  );
 
-    expect(res.ok).toBe(false);
-    expect(res.reason).toBe("trusted_proxy_config_missing");
+  it("fails closed when forwarded headers are present but the client chain resolves to loopback", async () => {
+    await expect(
+      authorizeLocalDirect({
+        req: request({
+          host: "localhost",
+          "x-forwarded-for": "127.0.0.1",
+          "x-forwarded-proto": "https",
+        }),
+      }),
+    ).resolves.toEqual({ ok: false, reason: "proxy_attribution_required" });
   });
 
-  it("supports Pomerium-style headers", async () => {
-    const res = await authorizeTrustedProxy({
-      auth: {
-        mode: "trusted-proxy",
-        allowTailscale: false,
-        trustedProxy: {
-          userHeader: "x-pomerium-claim-email",
-          requiredHeaders: ["x-pomerium-jwt-assertion"],
-        },
-      },
-      trustedProxies: ["172.17.0.1"],
-      remoteAddress: "172.17.0.1",
-      headers: {
-        "x-pomerium-claim-email": "nick@example.com",
-        "x-pomerium-jwt-assertion": "eyJ...",
-      },
+  it("still fails closed when trusted-proxy config is missing", async () => {
+    await expect(
+      authorizeLocalDirect({
+        auth: { ...auth, trustedProxy: undefined, password: "local-password" },
+      }),
+    ).resolves.toEqual({
+      ok: false,
+      reason: "trusted_proxy_config_missing",
     });
-
-    expect(res.ok).toBe(true);
-    expect(res.method).toBe("trusted-proxy");
-    expect(res.user).toBe("nick@example.com");
   });
 
-  it("trims whitespace from user header value", async () => {
-    const res = await authorizeTrustedProxy({
-      auth: {
-        mode: "trusted-proxy",
-        allowTailscale: false,
-        trustedProxy: {
-          userHeader: "x-forwarded-user",
-        },
-      },
-      headers: {
-        "x-forwarded-user": "  nick@example.com  ",
-      },
+  it("still fails closed when trusted proxies are not configured", async () => {
+    await expect(authorizeLocalDirect({ trustedProxies: [] })).resolves.toEqual({
+      ok: false,
+      reason: "trusted_proxy_no_proxies_configured",
     });
-
-    expect(res.ok).toBe(true);
-    expect(res.user).toBe("nick@example.com");
   });
 });

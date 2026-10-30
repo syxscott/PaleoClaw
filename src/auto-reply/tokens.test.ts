@@ -1,104 +1,31 @@
+/** Tests silent-reply and heartbeat token parsing helpers. */
 import { describe, it, expect } from "vitest";
-import { isSilentReplyPrefixText, isSilentReplyText, stripSilentToken } from "./tokens.js";
+import { isInternalFormattingArtifact } from "./tokens.js";
 
-describe("isSilentReplyText", () => {
-  it("returns true for exact token", () => {
-    expect(isSilentReplyText("NO_REPLY")).toBe(true);
+describe("isInternalFormattingArtifact", () => {
+  it("matches Harmony channel markers (#88128)", () => {
+    expect(isInternalFormattingArtifact("  <channel|>  ")).toBe(true);
+    expect(isInternalFormattingArtifact("<channel|answer>")).toBe(true);
+    expect(isInternalFormattingArtifact("<lane|reasoning>")).toBe(true);
+    expect(isInternalFormattingArtifact("<|>")).toBe(true);
+    expect(isInternalFormattingArtifact("<|channel|>")).toBe(true);
+    expect(isInternalFormattingArtifact("set-thought <lane|reasoning>")).toBe(true);
   });
 
-  it("returns true for token with surrounding whitespace", () => {
-    expect(isSilentReplyText("  NO_REPLY  ")).toBe(true);
-    expect(isSilentReplyText("\nNO_REPLY\n")).toBe(true);
+  it("matches box-drawing HR separators (#88128)", () => {
+    expect(isInternalFormattingArtifact("  ───  ")).toBe(true);
   });
 
   it("returns false for undefined/empty", () => {
-    expect(isSilentReplyText(undefined)).toBe(false);
-    expect(isSilentReplyText("")).toBe(false);
+    expect(isInternalFormattingArtifact(undefined)).toBe(false);
+    expect(isInternalFormattingArtifact("")).toBe(false);
   });
 
-  it("returns false for substantive text ending with token (#19537)", () => {
-    const text = "Here is a helpful response.\n\nNO_REPLY";
-    expect(isSilentReplyText(text)).toBe(false);
-  });
-
-  it("returns false for substantive text starting with token", () => {
-    const text = "NO_REPLY but here is more content";
-    expect(isSilentReplyText(text)).toBe(false);
-  });
-
-  it("returns false for token embedded in text", () => {
-    expect(isSilentReplyText("Please NO_REPLY to this")).toBe(false);
-  });
-
-  it("works with custom token", () => {
-    expect(isSilentReplyText("HEARTBEAT_OK", "HEARTBEAT_OK")).toBe(true);
-    expect(isSilentReplyText("Checked inbox. HEARTBEAT_OK", "HEARTBEAT_OK")).toBe(false);
-  });
-});
-
-describe("stripSilentToken", () => {
-  it("strips token from end of text", () => {
-    expect(stripSilentToken("Done.\n\nNO_REPLY")).toBe("Done.");
-  });
-
-  it("does not strip token from start of text", () => {
-    expect(stripSilentToken("NO_REPLY 👍")).toBe("NO_REPLY 👍");
-  });
-
-  it("strips token with emoji (#30916)", () => {
-    expect(stripSilentToken("😄 NO_REPLY")).toBe("😄");
-  });
-
-  it("does not strip embedded token suffix without whitespace delimiter", () => {
-    expect(stripSilentToken("interject.NO_REPLY")).toBe("interject.NO_REPLY");
-  });
-
-  it("strips only trailing occurrence", () => {
-    expect(stripSilentToken("NO_REPLY ok NO_REPLY")).toBe("NO_REPLY ok");
-  });
-
-  it("returns empty string when only token remains", () => {
-    expect(stripSilentToken("NO_REPLY")).toBe("");
-    expect(stripSilentToken("  NO_REPLY  ")).toBe("");
-  });
-
-  it("strips token preceded by bold markdown formatting", () => {
-    expect(stripSilentToken("**NO_REPLY")).toBe("");
-    expect(stripSilentToken("some text **NO_REPLY")).toBe("some text");
-    expect(stripSilentToken("reasoning**NO_REPLY")).toBe("reasoning");
-  });
-
-  it("works with custom token", () => {
-    expect(stripSilentToken("done HEARTBEAT_OK", "HEARTBEAT_OK")).toBe("done");
-  });
-});
-
-describe("isSilentReplyPrefixText", () => {
-  it("matches uppercase token lead fragments", () => {
-    expect(isSilentReplyPrefixText("NO")).toBe(true);
-    expect(isSilentReplyPrefixText("NO_")).toBe(true);
-    expect(isSilentReplyPrefixText("NO_RE")).toBe(true);
-    expect(isSilentReplyPrefixText("NO_REPLY")).toBe(true);
-    expect(isSilentReplyPrefixText("  HEARTBEAT_", "HEARTBEAT_OK")).toBe(true);
-  });
-
-  it("rejects ambiguous natural-language prefixes", () => {
-    expect(isSilentReplyPrefixText("N")).toBe(false);
-    expect(isSilentReplyPrefixText("No")).toBe(false);
-    expect(isSilentReplyPrefixText("no")).toBe(false);
-    expect(isSilentReplyPrefixText("Hello")).toBe(false);
-  });
-
-  it("keeps underscore guard for non-NO_REPLY tokens", () => {
-    expect(isSilentReplyPrefixText("HE", "HEARTBEAT_OK")).toBe(false);
-    expect(isSilentReplyPrefixText("HEART", "HEARTBEAT_OK")).toBe(false);
-    expect(isSilentReplyPrefixText("HEARTBEAT", "HEARTBEAT_OK")).toBe(false);
-    expect(isSilentReplyPrefixText("HEARTBEAT_", "HEARTBEAT_OK")).toBe(true);
-  });
-
-  it("rejects non-prefixes and mixed characters", () => {
-    expect(isSilentReplyPrefixText("NO_X")).toBe(false);
-    expect(isSilentReplyPrefixText("NO_REPLY more")).toBe(false);
-    expect(isSilentReplyPrefixText("NO-")).toBe(false);
+  it("returns false for text that merely contains an artifact pattern", () => {
+    expect(isInternalFormattingArtifact("Here are the options:\n───\n1. Option A")).toBe(false);
+    expect(isInternalFormattingArtifact("Use <channel|> in your config.")).toBe(false);
+    expect(isInternalFormattingArtifact("The set-thought mechanism works like this...")).toBe(
+      false,
+    );
   });
 });

@@ -1,99 +1,62 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
+import { makeIsolatedAgentParamsFixture } from "./job-fixtures.js";
+import { setupRunCronIsolatedAgentTurnSuite } from "./run.suite-helpers.js";
 import {
-  makeIsolatedAgentTurnParams,
-  setupRunCronIsolatedAgentTurnSuite,
-} from "./run.suite-helpers.js";
-import {
-  countActiveDescendantRunsMock,
-  listDescendantRunsForRequesterMock,
   loadRunCronIsolatedAgentTurn,
-  pickLastNonEmptyTextFromPayloadsMock,
-  runEmbeddedPiAgentMock,
+  mockRunCronFallbackPassthrough,
+  runEmbeddedAgentMock,
   runWithModelFallbackMock,
 } from "./run.test-harness.js";
 
 const runCronIsolatedAgentTurn = await loadRunCronIsolatedAgentTurn();
 
-describe("runCronIsolatedAgentTurn — interim ack retry", () => {
+describe("cron producer-owned final results", () => {
   setupRunCronIsolatedAgentTurnSuite();
+  beforeEach(() => {
+    mockRunCronFallbackPassthrough();
+  });
 
-  const mockFallbackPassthrough = () => {
-    runWithModelFallbackMock.mockImplementation(async ({ provider, model, run }) => {
-      const result = await run(provider, model);
-      return { result, provider, model, attempts: [] };
+  it.each([
+    "On it, checking the report now.",
+    "Both subagents are running. Wait for them to report back.",
+    "No channel reply.",
+  ])("does not infer a retry from visible final prose: %s", async (text) => {
+    runEmbeddedAgentMock.mockResolvedValueOnce({
+      payloads: [{ text }],
+      meta: {
+        terminalReply: { disposition: "visible", text },
+        agentMeta: { usage: { input: 10, output: 20 } },
+      },
     });
-  };
-
-  const runTurnAndExpectOk = async (expectedFallbackCalls: number, expectedAgentCalls: number) => {
-    const result = await runCronIsolatedAgentTurn(makeIsolatedAgentTurnParams());
+    const result = await runCronIsolatedAgentTurn(makeIsolatedAgentParamsFixture());
     expect(result.status).toBe("ok");
-    expect(runWithModelFallbackMock).toHaveBeenCalledTimes(expectedFallbackCalls);
-    expect(runEmbeddedPiAgentMock).toHaveBeenCalledTimes(expectedAgentCalls);
-    return result;
-  };
-
-  const usePayloadTextExtraction = () => {
-    pickLastNonEmptyTextFromPayloadsMock.mockImplementation(
-      (payloads?: Array<{ text?: string }>) => {
-        for (let idx = (payloads?.length ?? 0) - 1; idx >= 0; idx -= 1) {
-          const text = payloads?.[idx]?.text;
-          if (typeof text === "string" && text.trim()) {
-            return text;
-          }
-        }
-        return "";
-      },
-    );
-  };
-
-  it("regression, retries once when cron returns interim acknowledgement and no descendants were spawned", async () => {
-    usePayloadTextExtraction();
-    runEmbeddedPiAgentMock
-      .mockResolvedValueOnce({
-        payloads: [
-          {
-            text: "On it, grabbing current SF and SD weather now and I will summarize right after both come back.",
-          },
-        ],
-        meta: { agentMeta: { usage: { input: 10, output: 20 } } },
-      })
-      .mockResolvedValueOnce({
-        payloads: [{ text: "SF is 62F and SD is 67F. SD is warmer by 5F." }],
-        meta: { agentMeta: { usage: { input: 10, output: 20 } } },
-      });
-
-    mockFallbackPassthrough();
-    await runTurnAndExpectOk(2, 2);
-    expect(runEmbeddedPiAgentMock.mock.calls[1]?.[0]?.prompt).toContain(
-      "previous response was only an acknowledgement",
-    );
+    expect(runWithModelFallbackMock).toHaveBeenCalledTimes(1);
+    expect(runEmbeddedAgentMock).toHaveBeenCalledTimes(1);
   });
 
-  it("does not retry when the first turn is already a concrete result", async () => {
-    usePayloadTextExtraction();
-    runEmbeddedPiAgentMock.mockResolvedValueOnce({
-      payloads: [{ text: "SF is 62F and SD is 67F. SD is warmer by 5F." }],
-      meta: { agentMeta: { usage: { input: 10, output: 20 } } },
-    });
-
-    mockFallbackPassthrough();
-    await runTurnAndExpectOk(1, 1);
-  });
-
-  it("does not retry when descendants were spawned in this run even if they already settled", async () => {
-    usePayloadTextExtraction();
-    runEmbeddedPiAgentMock.mockResolvedValueOnce({
-      payloads: [{ text: "On it, I spawned a subagent and it will auto-announce when done." }],
-      meta: { agentMeta: { usage: { input: 10, output: 20 } } },
-    });
-    listDescendantRunsForRequesterMock.mockReturnValue([
-      {
-        startedAt: Date.now() + 60_000,
+  it("preserves a fatal structured failure despite ordinary final prose", async () => {
+    const text = "On it, retrying now.";
+    runEmbeddedAgentMock.mockResolvedValueOnce({
+      payloads: [{ text }],
+      meta: {
+        terminalReply: { disposition: "visible", text },
+        agentMeta: {},
+        failureSignal: {
+          kind: "execution_denied",
+          source: "tool",
+          toolName: "exec",
+          code: "SYSTEM_RUN_DENIED",
+          message: "SYSTEM_RUN_DENIED: approval required",
+          fatalForCron: true,
+        },
       },
-    ]);
-    countActiveDescendantRunsMock.mockReturnValue(0);
-
-    mockFallbackPassthrough();
-    await runTurnAndExpectOk(1, 1);
+    });
+    const result = await runCronIsolatedAgentTurn(makeIsolatedAgentParamsFixture());
+    expect(result).toMatchObject({
+      status: "error",
+      error: "SYSTEM_RUN_DENIED: approval required",
+    });
+    expect(runWithModelFallbackMock).toHaveBeenCalledTimes(1);
+    expect(runEmbeddedAgentMock).toHaveBeenCalledTimes(1);
   });
 });

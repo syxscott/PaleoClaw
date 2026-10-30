@@ -1,127 +1,217 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import {
+  normalizeStringEntries,
+  normalizeUniqueStringEntries,
+} from "@paleoclaw/normalization-core/string-normalization";
 import { resolveBrewPathDirs } from "./brew.js";
 import { isTruthyEnvValue } from "./env.js";
+import { canAccessSync } from "./path-existence.js";
+import { isPathInside, safeStatSync } from "./path-guards.js";
+import { tryProcessCwd } from "./safe-cwd.js";
 
-type EnsureOpenClawPathOpts = {
-  execPath?: string;
-  cwd?: string;
-  homeDir?: string;
-  platform?: NodeJS.Platform;
-  pathEnv?: string;
-  allowProjectLocalBin?: boolean;
-};
-
-function isExecutable(filePath: string): boolean {
-  try {
-    fs.accessSync(filePath, fs.constants.X_OK);
-    return true;
-  } catch {
-    return false;
-  }
+function isKnownPathDir(existingPathParts: ReadonlySet<string>, dirPath: string): boolean {
+  return existingPathParts.has(dirPath) || safeStatSync(dirPath)?.isDirectory() === true;
 }
 
-function isDirectory(dirPath: string): boolean {
-  try {
-    return fs.statSync(dirPath).isDirectory();
-  } catch {
-    return false;
-  }
-}
-
-function mergePath(params: { existing: string; prepend?: string[]; append?: string[] }): string {
-  const partsExisting = params.existing
-    .split(path.delimiter)
-    .map((part) => part.trim())
-    .filter(Boolean);
-  const partsPrepend = (params.prepend ?? []).map((part) => part.trim()).filter(Boolean);
-  const partsAppend = (params.append ?? []).map((part) => part.trim()).filter(Boolean);
-
-  const seen = new Set<string>();
-  const merged: string[] = [];
-  for (const part of [...partsPrepend, ...partsExisting, ...partsAppend]) {
-    if (!seen.has(part)) {
-      seen.add(part);
-      merged.push(part);
+function realpathExistingPath(candidate: string): string | undefined {
+  const suffix: string[] = [];
+  let current = candidate;
+  while (true) {
+    try {
+      return path.resolve(fs.realpathSync.native(current), ...suffix.toReversed());
+    } catch {
+      const parent = path.dirname(current);
+      if (parent === current) {
+        return undefined;
+      }
+      suffix.push(path.basename(current));
+      current = parent;
     }
   }
-  return merged.join(path.delimiter);
 }
 
-function candidateBinDirs(opts: EnsureOpenClawPathOpts): { prepend: string[]; append: string[] } {
-  const execPath = opts.execPath ?? process.execPath;
-  const cwd = opts.cwd ?? process.cwd();
-  const homeDir = opts.homeDir ?? os.homedir();
-  const platform = opts.platform ?? process.platform;
+function isFilesystemRoot(dirPath: string): boolean {
+  return path.dirname(dirPath) === dirPath;
+}
+
+function normalizeTrustedPackageManagerRoot(params: {
+  value: string | undefined;
+  cwd: string | undefined;
+  homeDir: string;
+}): string | undefined {
+  const trimmed = params.value?.trim();
+  if (!trimmed || !path.isAbsolute(trimmed)) {
+    return undefined;
+  }
+  const normalized = path.normalize(trimmed);
+  if (normalized === "/proc" || normalized.startsWith(`/proc${path.sep}`)) {
+    return undefined;
+  }
+  if (!params.cwd) {
+    return normalized;
+  }
+
+  const cwd = path.resolve(params.cwd);
+  const homeDir = path.resolve(params.homeDir);
+  if (cwd === homeDir || isFilesystemRoot(cwd)) {
+    return normalized;
+  }
+  if (isPathInside(cwd, normalized)) {
+    return undefined;
+  }
+
+  const realCandidate = realpathExistingPath(normalized);
+  const realCwd = realpathExistingPath(cwd);
+  const realHome = realpathExistingPath(homeDir);
+  if (
+    realCwd &&
+    realCwd !== realHome &&
+    !isFilesystemRoot(realCwd) &&
+    realCandidate &&
+    isPathInside(realCwd, realCandidate)
+  ) {
+    return undefined;
+  }
+  return normalized;
+}
+
+function resolveMiseDataDir(params: { homeDir: string; platform: NodeJS.Platform }): string {
+  const miseDataDir = process.env.MISE_DATA_DIR;
+  if (miseDataDir !== undefined) {
+    return miseDataDir;
+  }
+
+  // Match mise's override/XDG/platform order; candidate validation and PATH
+  // placement remain owned by the existing bootstrap policy below.
+  const xdgDataHome = process.env.XDG_DATA_HOME;
+  if (xdgDataHome !== undefined) {
+    return path.join(xdgDataHome, "mise");
+  }
+  if (params.platform === "win32") {
+    const localAppData = process.env.LOCALAPPDATA ?? path.join(params.homeDir, "AppData", "Local");
+    return path.join(localAppData, "mise");
+  }
+  return path.join(params.homeDir, ".local", "share", "mise");
+}
+
+function candidateBinDirs(existingPathParts: ReadonlySet<string>): {
+  prepend: string[];
+  append: string[];
+} {
+  const execPath = process.execPath;
+  const cwd = tryProcessCwd();
+  const homeDir = os.homedir();
+  const platform = process.platform;
 
   const prepend: string[] = [];
   const append: string[] = [];
 
+  // Keep the active runtime directory ahead of PATH hardening so shebang-based
+  // subprocesses keep using the same Node/Bun the current paleoclaw process is on.
+  const execDir = path.dirname(execPath);
+  if (canAccessSync(execPath, fs.constants.X_OK)) {
+    prepend.push(execDir);
+  }
+
   // Bundled macOS app: `paleoclaw` lives next to the executable (process.execPath).
-  try {
-    const execDir = path.dirname(execPath);
-    const siblingCli = path.join(execDir, "paleoclaw");
-    if (isExecutable(siblingCli)) {
-      prepend.push(execDir);
-    }
-  } catch {
-    // ignore
+  if (canAccessSync(path.join(execDir, "paleoclaw"), fs.constants.X_OK)) {
+    prepend.push(execDir);
   }
 
   // Project-local installs are a common repo-based attack vector (bin hijacking). Keep this
   // disabled by default; if an operator explicitly enables it, only append (never prepend).
-  const allowProjectLocalBin =
-    opts.allowProjectLocalBin === true ||
-    isTruthyEnvValue(process.env.OPENCLAW_ALLOW_PROJECT_LOCAL_BIN);
-  if (allowProjectLocalBin) {
+  if (isTruthyEnvValue(process.env.OPENCLAW_ALLOW_PROJECT_LOCAL_BIN) && cwd) {
     const localBinDir = path.join(cwd, "node_modules", ".bin");
-    if (isExecutable(path.join(localBinDir, "paleoclaw"))) {
+    if (canAccessSync(path.join(localBinDir, "paleoclaw"), fs.constants.X_OK)) {
       append.push(localBinDir);
     }
   }
 
-  const miseDataDir = process.env.MISE_DATA_DIR ?? path.join(homeDir, ".local", "share", "mise");
-  const miseShims = path.join(miseDataDir, "shims");
-  if (isDirectory(miseShims)) {
-    prepend.push(miseShims);
+  // Only immutable OS directories go in prepend so they take priority over
+  // user-writable locations, preventing PATH hijack of system binaries.
+  prepend.push("/usr/bin", "/bin");
+
+  // User-writable / package-manager directories are appended so they never
+  // shadow trusted OS binaries.
+  // This includes Brew/Homebrew dirs, which are useful for finding `paleoclaw`
+  // in launchd/minimal environments but must not be treated as trusted.
+  append.push(
+    ...resolveBrewPathDirs({ homeDir }).filter(
+      (candidate) =>
+        platform !== "darwin" ||
+        !candidate.split(path.sep).includes(".linuxbrew") ||
+        existingPathParts.has(candidate),
+    ),
+  );
+  const pnpmHome = normalizeTrustedPackageManagerRoot({
+    value: process.env.PNPM_HOME,
+    cwd,
+    homeDir,
+  });
+  if (pnpmHome) {
+    append.push(pnpmHome, path.join(pnpmHome, "bin"));
   }
-
-  prepend.push(...resolveBrewPathDirs({ homeDir }));
-
-  // Common global install locations (macOS first).
+  const npmPrefix = normalizeTrustedPackageManagerRoot({
+    value: process.env.NPM_CONFIG_PREFIX,
+    cwd,
+    homeDir,
+  });
+  if (npmPrefix) {
+    append.push(path.join(npmPrefix, "bin"));
+  }
+  const miseDataDir = resolveMiseDataDir({ homeDir, platform });
+  const miseShims = path.join(miseDataDir, "shims");
+  if (isKnownPathDir(existingPathParts, miseShims)) {
+    append.push(miseShims);
+  }
   if (platform === "darwin") {
-    prepend.push(path.join(homeDir, "Library", "pnpm"));
+    append.push(
+      path.join(homeDir, "Library", "pnpm", "bin"),
+      path.join(homeDir, "Library", "pnpm"),
+    );
   }
   if (process.env.XDG_BIN_HOME) {
-    prepend.push(process.env.XDG_BIN_HOME);
+    append.push(process.env.XDG_BIN_HOME);
   }
-  prepend.push(path.join(homeDir, ".local", "bin"));
-  prepend.push(path.join(homeDir, ".local", "share", "pnpm"));
-  prepend.push(path.join(homeDir, ".bun", "bin"));
-  prepend.push(path.join(homeDir, ".yarn", "bin"));
-  prepend.push("/opt/homebrew/bin", "/usr/local/bin", "/usr/bin", "/bin");
+  append.push(path.join(homeDir, ".local", "bin"));
+  append.push(path.join(homeDir, ".npm-global", "bin"));
+  append.push(path.join(homeDir, ".local", "share", "pnpm", "bin"));
+  append.push(path.join(homeDir, ".local", "share", "pnpm"));
+  append.push(path.join(homeDir, ".bun", "bin"));
+  append.push(path.join(homeDir, ".yarn", "bin"));
 
-  return { prepend: prepend.filter(isDirectory), append: append.filter(isDirectory) };
+  return {
+    prepend: prepend.filter((candidate) => isKnownPathDir(existingPathParts, candidate)),
+    append: append.filter((candidate) => isKnownPathDir(existingPathParts, candidate)),
+  };
 }
 
 /**
  * Best-effort PATH bootstrap so skills that require the `paleoclaw` CLI can run
  * under launchd/minimal environments (and inside the macOS app bundle).
  */
-export function ensureOpenClawCliOnPath(opts: EnsureOpenClawPathOpts = {}) {
+export function ensureOpenClawCliOnPath() {
   if (isTruthyEnvValue(process.env.OPENCLAW_PATH_BOOTSTRAPPED)) {
     return;
   }
+  // Mark before filesystem probing so repeated calls from nested bootstraps do
+  // not keep reshuffling PATH.
   process.env.OPENCLAW_PATH_BOOTSTRAPPED = "1";
 
-  const existing = opts.pathEnv ?? process.env.PATH ?? "";
-  const { prepend, append } = candidateBinDirs(opts);
+  const existing = process.env.PATH ?? "";
+  const existingPathParts = new Set(normalizeStringEntries(existing.split(path.delimiter)));
+  const { prepend, append } = candidateBinDirs(existingPathParts);
   if (prepend.length === 0 && append.length === 0) {
     return;
   }
 
-  const merged = mergePath({ existing, prepend, append });
+  const merged = normalizeUniqueStringEntries([
+    ...prepend,
+    ...existing.split(path.delimiter),
+    ...append,
+  ]).join(path.delimiter);
   if (merged) {
     process.env.PATH = merged;
   }

@@ -1,72 +1,70 @@
-import {
-  formatInboundFromLabel as formatInboundFromLabelShared,
-  resolveThreadSessionKeys as resolveThreadSessionKeysShared,
-  type OpenClawConfig,
-} from "paleoclaw/plugin-sdk/mattermost";
-export { createDedupeCache, rawDataToString } from "paleoclaw/plugin-sdk/mattermost";
+import { normalizeLowercaseStringOrEmpty } from "paleoclaw/plugin-sdk/string-coerce-runtime";
+import { escapeRegExp } from "paleoclaw/plugin-sdk/text-utility-runtime";
 
-export type ResponsePrefixContext = {
-  model?: string;
-  modelFull?: string;
-  provider?: string;
-  thinkingLevel?: string;
-  identityName?: string;
-};
-
-export function extractShortModelName(fullModel: string): string {
-  const slash = fullModel.lastIndexOf("/");
-  const modelPart = slash >= 0 ? fullModel.slice(slash + 1) : fullModel;
-  return modelPart.replace(/-\d{8}$/, "").replace(/-latest$/, "");
+// Server mentions allow surrounding sentence punctuation, while punctuation
+// followed by username characters belongs to another local or remote account.
+function buildMattermostBotMentionPattern(username: string): string {
+  return `(?<![a-z0-9_])@${escapeRegExp(username)}(?![a-z0-9_]|[.:-]+[a-z0-9_])`;
 }
 
-export const formatInboundFromLabel = formatInboundFromLabelShared;
-
-function normalizeAgentId(value: string | undefined | null): string {
-  const trimmed = (value ?? "").trim();
-  if (!trimmed) {
-    return "main";
+export function matchesMattermostBotMention(
+  text: string,
+  botUsername: string | undefined,
+): boolean {
+  if (!botUsername) {
+    return false;
   }
-  if (/^[a-z0-9][a-z0-9_-]{0,63}$/i.test(trimmed)) {
-    return trimmed;
+  return new RegExp(buildMattermostBotMentionPattern(botUsername), "i").test(text);
+}
+
+/**
+ * Strip bot mention from message text while preserving newlines and
+ * block-level Markdown formatting (headings, lists, blockquotes).
+ */
+export function normalizeMention(text: string, mention: string | undefined): string {
+  if (!mention) {
+    return text.trim();
   }
-  return (
-    trimmed
-      .toLowerCase()
-      .replace(/[^a-z0-9_-]+/g, "-")
-      .replace(/^-+/, "")
-      .replace(/-+$/, "")
-      .slice(0, 64) || "main"
-  );
-}
-
-type AgentEntry = NonNullable<NonNullable<OpenClawConfig["agents"]>["list"]>[number];
-
-function listAgents(cfg: OpenClawConfig): AgentEntry[] {
-  const list = cfg.agents?.list;
-  if (!Array.isArray(list)) {
-    return [];
-  }
-  return list.filter((entry): entry is AgentEntry => Boolean(entry && typeof entry === "object"));
-}
-
-function resolveAgentEntry(cfg: OpenClawConfig, agentId: string): AgentEntry | undefined {
-  const id = normalizeAgentId(agentId);
-  return listAgents(cfg).find((entry) => normalizeAgentId(entry.id) === id);
-}
-
-export function resolveIdentityName(cfg: OpenClawConfig, agentId: string): string | undefined {
-  const entry = resolveAgentEntry(cfg, agentId);
-  return entry?.identity?.name?.trim() || undefined;
-}
-
-export function resolveThreadSessionKeys(params: {
-  baseSessionKey: string;
-  threadId?: string | null;
-  parentSessionKey?: string;
-  useSuffix?: boolean;
-}): { sessionKey: string; parentSessionKey?: string } {
-  return resolveThreadSessionKeysShared({
-    ...params,
-    normalizeThreadId: (threadId) => threadId,
+  const pattern = buildMattermostBotMentionPattern(mention);
+  const hasMentionRe = new RegExp(pattern, "i");
+  const leadingMentionRe = new RegExp(`^([\\t ]*)${pattern}[\\t ]*`, "i");
+  const trailingMentionRe = new RegExp(`[\\t ]*${pattern}[\\t ]*$`, "i");
+  const normalizedLines = text.split("\n").map((line) => {
+    // Lines without the mention keep their exact bytes: the whitespace collapse
+    // below would otherwise destroy code-block and table alignment repo-wide.
+    if (!hasMentionRe.test(line)) {
+      return { text: line, mentionOnlyBlank: false };
+    }
+    const normalizedLine = line
+      .replace(leadingMentionRe, "$1")
+      .replace(trailingMentionRe, "")
+      .replace(new RegExp(pattern, "gi"), "")
+      .replace(/(\S)[ \t]{2,}/g, "$1 ");
+    return {
+      text: normalizedLine,
+      mentionOnlyBlank: normalizedLine.trim() === "",
+    };
   });
+
+  while (normalizedLines[0]?.mentionOnlyBlank) {
+    normalizedLines.shift();
+  }
+  while (normalizedLines.at(-1)?.text.trim() === "") {
+    normalizedLines.pop();
+  }
+
+  return normalizedLines.map((line) => line.text).join("\n");
+}
+
+export function shouldDropEmptyMattermostBody(params: {
+  bodyText: string;
+  rawText: string;
+  botUsername?: string | null;
+}): boolean {
+  if (/[^\p{White_Space}\p{Cc}\p{Cf}\p{M}]/u.test(params.bodyText)) {
+    return false;
+  }
+  const botUsername = normalizeLowercaseStringOrEmpty(params.botUsername);
+  const bareMention = params.rawText.match(/^[ \t]*(@\S+)[ \t]*$/u)?.[1];
+  return !botUsername || normalizeLowercaseStringOrEmpty(bareMention) !== `@${botUsername}`;
 }

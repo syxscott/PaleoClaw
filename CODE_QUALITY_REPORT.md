@@ -35,15 +35,15 @@ PaleoClaw 项目整体质量良好，Skills 文档规范完整，配置合理。
 
 ## 🟡 中等问题 (2)
 
-### 1. 命名不一致：openclaw vs paleoclaw
+### 1. 命名不一致：paleoclaw vs paleoclaw
 
 **问题描述**:  
-在 199 个文件中发现了 `openclaw` 和 `paleoclaw` 混用的情况。虽然这是从 OpenClaw 复制过来的项目，但许多 Skills 的元数据和文档中仍然使用 `openclaw` 命名。
+在 199 个文件中发现了 `paleoclaw` 和 `paleoclaw` 混用的情况。虽然这是从 paleoclaw 复制过来的项目，但许多 Skills 的元数据和文档中仍然使用 `paleoclaw` 命名。
 
 **影响范围**:
 
 - Skills 元数据中的 `metadata.paleoclaw` 字段（正确）
-- 但文档中仍有大量 `openclaw` 引用
+- 但文档中仍有大量 `paleoclaw` 引用
 - URL 路径：`/__openclaw__/canvas/`
 - 配置路径：`~/.paleoclaw/` vs `~/.openclaw/`
 
@@ -64,9 +64,9 @@ PaleoClaw/skills/healthcheck/SKILL.md
 
 **建议**:
 
-1. **保留现状**（推荐）：如果这些 Skills 是从 OpenClaw 继承的通用 Skills，保持 `openclaw` 命名可能是合理的
-2. **全局替换**：如果要完全独立，需要全局替换所有 `openclaw` 为 `paleoclaw`
-3. **文档说明**：在 README 中明确说明 PaleoClaw 基于 OpenClaw 框架，某些路径保留原命名
+1. **保留现状**（推荐）：如果这些 Skills 是从 paleoclaw 继承的通用 Skills，保持 `paleoclaw` 命名可能是合理的
+2. **全局替换**：如果要完全独立，需要全局替换所有 `paleoclaw` 为 `paleoclaw`
+3. **文档说明**：在 README 中明确说明 PaleoClaw 基于 paleoclaw 框架，某些路径保留原命名
 
 **优先级**: 中等（不影响功能，但可能造成用户困惑）
 
@@ -308,7 +308,7 @@ PaleoClaw/
 ### 中优先级 (本周修复)
 
 1. 🟡 安装 `oxfmt` 工具，修复代码格式化
-2. 🟡 决定 `openclaw` vs `paleoclaw` 命名策略
+2. 🟡 决定 `paleoclaw` vs `paleoclaw` 命名策略
 
 ### 低优先级 (有时间再修复)
 
@@ -361,7 +361,7 @@ PaleoClaw/
 
 **需要改进**:
 
-1. 🟡 命名一致性（openclaw vs paleoclaw）
+1. 🟡 命名一致性（paleoclaw vs paleoclaw）
 2. 🟡 代码格式化工具缺失
 3. 🟢 GitHub URL 需更新
 4. 🟢 v1.1.0 更改需提交
@@ -369,7 +369,7 @@ PaleoClaw/
 **建议**:
 
 1. 立即安装 `oxfmt` 工具
-2. 决定命名策略（保留 openclaw 或全部改为 paleoclaw）
+2. 决定命名策略（保留 paleoclaw 或全部改为 paleoclaw）
 3. 更新 package.json 中的 GitHub URL
 4. 提交 v1.1.0 到 GitHub
 5. 考虑为活动监控 Skills 添加实现代码

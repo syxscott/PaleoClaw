@@ -43,7 +43,6 @@ import {
 import { log } from "./pi-embedded-runner/logger.js";
 import {
   buildAssistantMessage,
-  buildAssistantMessageWithZeroUsage,
   buildUsageWithNoCost,
   buildStreamErrorAssistantMessage,
 } from "./stream-message-shared.js";
@@ -628,10 +627,11 @@ export function createOpenAIWebSocketStreamFn(
 
       eventStream.push({
         type: "start",
-        partial: buildAssistantMessageWithZeroUsage({
+        partial: buildAssistantMessage({
           model,
           content: [],
           stopReason: "stop",
+          usage: buildUsageWithNoCost({}),
         }),
       });
 
@@ -689,10 +689,11 @@ export function createOpenAIWebSocketStreamFn(
             reject(new Error(`OpenAI WebSocket error: ${event.message} (code=${event.code})`));
           } else if (event.type === "response.output_text.delta") {
             // Stream partial text updates for responsive UI
-            const partialMsg: AssistantMessage = buildAssistantMessageWithZeroUsage({
+            const partialMsg: AssistantMessage = buildAssistantMessage({
               model,
               content: [{ type: "text", text: event.delta }],
               stopReason: "stop",
+              usage: buildUsageWithNoCost({}),
             });
             eventStream.push({
               type: "text_delta",

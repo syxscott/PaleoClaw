@@ -259,7 +259,7 @@ export function resolveModel(
  * error.  This detects known providers that require opt-in auth and adds
  * a hint.
  *
- * See: https://github.com/paleoclaw/paleoclaw/issues/17328
+ * See: https://github.com/openclaw/openclaw/issues/17328
  */
 const LOCAL_PROVIDER_HINTS: Record<string, string> = {
   ollama:

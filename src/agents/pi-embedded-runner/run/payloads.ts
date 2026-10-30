@@ -18,7 +18,7 @@ import {
   extractAssistantThinking,
   formatReasoningMessage,
 } from "../../pi-embedded-utils.js";
-import { isLikelyMutatingToolName } from "../../tool-mutation.js";
+import { isLikelyMutatingToolName } from "../../tool-mutation.legacy.js";
 
 type ToolMetaEntry = { toolName: string; meta?: string };
 type LastToolError = {

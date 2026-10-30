@@ -323,19 +323,21 @@ export function renderChat(props: ChatProps) {
     <section class="card chat">
       ${props.disabledReason ? html`<div class="callout">${props.disabledReason}</div>` : nothing}
       ${props.error ? html`<div class="callout danger">${props.error}</div>` : nothing}
-      ${props.focusMode
-        ? html`
-            <button
-              class="chat-focus-exit"
-              type="button"
-              @click=${props.onToggleFocusMode}
-              aria-label="Exit focus mode"
-              title="Exit focus mode"
-            >
-              ${icons.x}
-            </button>
-          `
-        : nothing}
+      ${
+        props.focusMode
+          ? html`
+              <button
+                class="chat-focus-exit"
+                type="button"
+                @click=${props.onToggleFocusMode}
+                aria-label="Exit focus mode"
+                title="Exit focus mode"
+              >
+                ${icons.x}
+              </button>
+            `
+          : nothing
+      }
 
       <div class="chat-split-container ${sidebarOpen ? "chat-split-container--open" : ""}">
         <div
@@ -345,79 +347,89 @@ export function renderChat(props: ChatProps) {
           ${thread}
         </div>
 
-        ${sidebarOpen
-          ? html`
-              <resizable-divider
-                .splitRatio=${splitRatio}
-                @resize=${(e: CustomEvent) => props.onSplitRatioChange?.(e.detail.splitRatio)}
-              ></resizable-divider>
-              <div class="chat-sidebar">
-                ${renderMarkdownSidebar({
-                  content: props.sidebarContent ?? null,
-                  error: props.sidebarError ?? null,
-                  onClose: props.onCloseSidebar!,
-                  onViewRawText: () => {
-                    if (!props.sidebarContent || !props.onOpenSidebar) {
-                      return;
-                    }
-                    props.onOpenSidebar(`\`\`\`\n${props.sidebarContent}\n\`\`\``);
-                  },
-                })}
-              </div>
-            `
-          : nothing}
+        ${
+          sidebarOpen
+            ? html`
+                <resizable-divider
+                  .splitRatio=${splitRatio}
+                  @resize=${(e: CustomEvent) => props.onSplitRatioChange?.(e.detail.splitRatio)}
+                ></resizable-divider>
+                <div class="chat-sidebar">
+                  ${renderMarkdownSidebar({
+                    content: props.sidebarContent ?? null,
+                    error: props.sidebarError ?? null,
+                    onClose: props.onCloseSidebar!,
+                    onViewRawText: () => {
+                      if (!props.sidebarContent || !props.onOpenSidebar) {
+                        return;
+                      }
+                      props.onOpenSidebar(`\`\`\`\n${props.sidebarContent}\n\`\`\``);
+                    },
+                  })}
+                </div>
+              `
+            : nothing
+        }
       </div>
 
-      ${props.queue.length
-        ? html`
-            <div class="chat-queue" role="status" aria-live="polite">
-              <div class="chat-queue__title">Queued (${props.queue.length})</div>
-              <div class="chat-queue__list">
-                ${props.queue.map(
-                  (item) => html`
-                    <div class="chat-queue__item">
-                      <div class="chat-queue__text">
-                        ${item.text ||
-                        (item.attachments?.length ? `Image (${item.attachments.length})` : "")}
+      ${
+        props.queue.length
+          ? html`
+              <div class="chat-queue" role="status" aria-live="polite">
+                <div class="chat-queue__title">Queued (${props.queue.length})</div>
+                <div class="chat-queue__list">
+                  ${props.queue.map(
+                    (item) => html`
+                      <div class="chat-queue__item">
+                        <div class="chat-queue__text">
+                          ${
+                            item.text ||
+                            (item.attachments?.length ? `Image (${item.attachments.length})` : "")
+                          }
+                        </div>
+                        <button
+                          class="btn chat-queue__remove"
+                          type="button"
+                          aria-label="Remove queued message"
+                          @click=${() => props.onQueueRemove(item.id)}
+                        >
+                          ${icons.x}
+                        </button>
                       </div>
-                      <button
-                        class="btn chat-queue__remove"
-                        type="button"
-                        aria-label="Remove queued message"
-                        @click=${() => props.onQueueRemove(item.id)}
-                      >
-                        ${icons.x}
-                      </button>
-                    </div>
-                  `,
-                )}
+                    `,
+                  )}
+                </div>
               </div>
-            </div>
-          `
-        : nothing}
+            `
+          : nothing
+      }
       ${renderFallbackIndicator(props.fallbackStatus)}
       ${renderCompactionIndicator(props.compactionStatus)}
-      ${props.showNewMessages
-        ? html`
-            <button class="btn chat-new-messages" type="button" @click=${props.onScrollToBottom}>
-              New messages ${icons.arrowDown}
-            </button>
-          `
-        : nothing}
-      ${showRetryFailedSend
-        ? html`
-            <div class="chat-retry-failed" role="status">
-              <button
-                class="btn"
-                type="button"
-                ?disabled=${props.sending}
-                @click=${props.onRetryFailedSend}
-              >
-                Retry last message
+      ${
+        props.showNewMessages
+          ? html`
+              <button class="btn chat-new-messages" type="button" @click=${props.onScrollToBottom}>
+                New messages ${icons.arrowDown}
               </button>
-            </div>
-          `
-        : nothing}
+            `
+          : nothing
+      }
+      ${
+        showRetryFailedSend
+          ? html`
+              <div class="chat-retry-failed" role="status">
+                <button
+                  class="btn"
+                  type="button"
+                  ?disabled=${props.sending}
+                  @click=${props.onRetryFailedSend}
+                >
+                  Retry last message
+                </button>
+              </div>
+            `
+          : nothing
+      }
 
       <div class="chat-compose">
         ${renderAttachmentPreview(props)}

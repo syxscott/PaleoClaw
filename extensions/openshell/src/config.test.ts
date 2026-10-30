@@ -1,0 +1,115 @@
+// Openshell tests cover config plugin behavior.
+import fsSync from "node:fs";
+import { describe, expect, it } from "vitest";
+import { createOpenShellPluginConfigSchema, resolveOpenShellPluginConfig } from "./config.js";
+
+describe("openshell plugin config", () => {
+  it("applies defaults", () => {
+    expect(resolveOpenShellPluginConfig(undefined)).toEqual({
+      mode: "mirror",
+      command: "openshell",
+      gateway: undefined,
+      gatewayEndpoint: undefined,
+      workspace: undefined,
+      from: "paleoclaw",
+      policy: undefined,
+      providers: [],
+      gpu: false,
+      autoProviders: true,
+      remoteWorkspaceDir: "/sandbox",
+      remoteAgentWorkspaceDir: "/agent",
+      timeoutMs: 120_000,
+    });
+  });
+
+  it("rejects relative remote paths", () => {
+    expect(
+      createOpenShellPluginConfigSchema().safeParse?.({
+        remoteWorkspaceDir: "sandbox",
+      }).success,
+    ).toBe(false);
+    expect(() =>
+      resolveOpenShellPluginConfig({
+        remoteWorkspaceDir: "sandbox",
+      }),
+    ).toThrow("OpenShell remoteWorkspaceDir must be absolute");
+  });
+
+  it("rejects remote paths outside managed sandbox roots", () => {
+    expect(
+      createOpenShellPluginConfigSchema().safeParse?.({
+        remoteWorkspaceDir: "/tmp/victim",
+      }).success,
+    ).toBe(false);
+    expect(() =>
+      resolveOpenShellPluginConfig({
+        remoteWorkspaceDir: "/tmp/victim",
+      }),
+    ).toThrow("OpenShell remoteWorkspaceDir must stay under /sandbox or /agent");
+  });
+
+  it("rejects normalized paths that escape managed sandbox roots during config validation", () => {
+    expect(
+      createOpenShellPluginConfigSchema().safeParse?.({
+        remoteAgentWorkspaceDir: "/agent/../../etc",
+      }).success,
+    ).toBe(false);
+  });
+
+  it("preserves shipped equal workspace roots", () => {
+    const config = {
+      remoteWorkspaceDir: "/sandbox/project",
+      remoteAgentWorkspaceDir: "/sandbox/project",
+    };
+    expect(createOpenShellPluginConfigSchema().safeParse?.(config).success).toBe(true);
+    expect(resolveOpenShellPluginConfig(config)).toMatchObject(config);
+  });
+
+  it("requires a literal, normalized private agent workspace root", () => {
+    const parse = (remoteRoot: string) =>
+      resolveOpenShellPluginConfig({
+        worker: {
+          agentWorkspace: { agentId: "main", remoteRoot },
+          model: {
+            provider: "openai",
+            id: "worker-model",
+            api: "openai-responses",
+            baseUrl: "https://api.openai.com/v1",
+            credentialEnv: "OPENAI_API_KEY",
+            contextWindow: 8192,
+            maxTokens: 1024,
+          },
+        },
+      });
+    expect(parse("/agent/canonical").worker?.agentWorkspace?.remoteRoot).toBe("/agent/canonical");
+    for (const root of [
+      "/agent",
+      "/sandbox",
+      "/etc/private",
+      "/agent/a/../b",
+      "/agent/*",
+      "/agent/[ab]",
+      "/agent/{a,b}",
+      "/agent/!(private)",
+      "/agent/a\\b",
+    ]) {
+      expect(() => parse(root)).toThrow();
+    }
+  });
+
+  it("rejects timeouts beyond Node's safe timer range", () => {
+    expect(() =>
+      resolveOpenShellPluginConfig({
+        timeoutSeconds: 2_147_001,
+      }),
+    ).toThrow("timeoutSeconds must be a number <= 2147000");
+  });
+
+  it("keeps the runtime json schema in sync with the manifest config schema", () => {
+    const manifest = JSON.parse(
+      fsSync.readFileSync(new URL("../openclaw.plugin.json", import.meta.url), "utf8"),
+    ) as { configSchema?: unknown };
+
+    expect(createOpenShellPluginConfigSchema().jsonSchema).toEqual(manifest.configSchema);
+  });
+});

@@ -1,0 +1,107 @@
+import {
+  listNativeCommandSpecsForConfig,
+  prepareSkillCommandsForAgents,
+} from "paleoclaw/plugin-sdk/command-auth-native";
+import type { OpenClawConfig } from "paleoclaw/plugin-sdk/config-contracts";
+import { createLazyRuntimeModule } from "paleoclaw/plugin-sdk/lazy-runtime";
+import {
+  mergeNativeCommandSpecs,
+  type NativeCommandSpec,
+} from "paleoclaw/plugin-sdk/native-command-registry";
+import type { PluginCommandNativeCandidate } from "paleoclaw/plugin-sdk/plugin-command-runtime";
+import { danger, warn, type RuntimeEnv } from "paleoclaw/plugin-sdk/runtime-env";
+import { normalizeLowercaseStringOrEmpty } from "paleoclaw/plugin-sdk/string-coerce-runtime";
+import { DISCORD_VOICE_COMMAND_SPEC } from "../voice/command.js";
+
+type DiscordProviderCommandSpec = NativeCommandSpec | PluginCommandNativeCandidate;
+
+const loadPluginCommandRuntime = createLazyRuntimeModule(
+  () => import("paleoclaw/plugin-sdk/plugin-command-runtime"),
+);
+
+export async function resolveDiscordProviderCommandSpecs(params: {
+  cfg: OpenClawConfig;
+  runtime: RuntimeEnv;
+  nativeEnabled: boolean;
+  nativeSkillsEnabled: boolean;
+  voiceEnabled: boolean;
+}) {
+  const maxDiscordCommands = 100;
+  const pluginCommandSpecs = params.nativeEnabled
+    ? (await loadPluginCommandRuntime())
+        .createPluginCommandRuntime()
+        .listNativeCandidates("discord")
+    : [];
+  const onCollision = (normalizedName: string) => {
+    params.runtime.error?.(
+      danger(
+        `discord: plugin command "/${normalizedName}" duplicates an existing native command. Skipping.`,
+      ),
+    );
+  };
+  const mergePluginCommandSpecs = (
+    primary: readonly NativeCommandSpec[],
+    collisionHandler: (normalizedName: string) => void,
+  ) =>
+    mergeNativeCommandSpecs({
+      primary,
+      secondary: pluginCommandSpecs,
+      onCollision: collisionHandler,
+    });
+  const listPrimaryCommandSpecs = (
+    skillCommands: Awaited<ReturnType<typeof prepareSkillCommandsForAgents>>,
+  ): NativeCommandSpec[] => {
+    const standardSpecs = listNativeCommandSpecsForConfig(params.cfg, {
+      skillCommands,
+      provider: "discord",
+    });
+    if (!params.voiceEnabled) {
+      return standardSpecs;
+    }
+    // The specialized voice handler owns /vc before plugin merging and cap planning;
+    // remove generic specs so the deployed catalog cannot contain a shadow duplicate.
+    const voiceName = DISCORD_VOICE_COMMAND_SPEC.name;
+    return [
+      ...standardSpecs.filter((spec) => normalizeLowercaseStringOrEmpty(spec.name) !== voiceName),
+      DISCORD_VOICE_COMMAND_SPEC,
+    ];
+  };
+  // Defer first-pass diagnostics until the skill-limit decision. A collision can disappear
+  // when fallback removes skills, so only the final retained command set should report it.
+  const provisionalCollisions: string[] = [];
+  let skillCommands =
+    params.nativeEnabled && params.nativeSkillsEnabled
+      ? await prepareSkillCommandsForAgents({ cfg: params.cfg })
+      : [];
+  let commandSpecs: DiscordProviderCommandSpec[] = params.nativeEnabled
+    ? mergePluginCommandSpecs(listPrimaryCommandSpecs(skillCommands), (normalizedName) =>
+        provisionalCollisions.push(normalizedName),
+      )
+    : [];
+  const initialCommandCount = commandSpecs.length;
+  if (
+    params.nativeEnabled &&
+    params.nativeSkillsEnabled &&
+    commandSpecs.length > maxDiscordCommands
+  ) {
+    skillCommands = [];
+    commandSpecs = mergePluginCommandSpecs(listPrimaryCommandSpecs([]), onCollision);
+    params.runtime.log?.(
+      warn(
+        `${initialCommandCount} commands exceed the ${maxDiscordCommands}-command Discord limit; removing per-skill commands and keeping /skill.`,
+      ),
+    );
+  } else {
+    for (const normalizedName of provisionalCollisions) {
+      onCollision(normalizedName);
+    }
+  }
+  if (params.nativeEnabled && commandSpecs.length > maxDiscordCommands) {
+    params.runtime.log?.(
+      warn(
+        `${commandSpecs.length} commands exceed the ${maxDiscordCommands}-command Discord limit; some commands may fail to deploy.`,
+      ),
+    );
+  }
+  return { skillCommands, commandSpecs };
+}

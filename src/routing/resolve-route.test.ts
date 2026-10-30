@@ -1,185 +1,200 @@
-import { describe, expect, test, vi } from "vitest";
-import type { ChatType } from "../channels/chat-type.js";
+import { describe, expect, test } from "vitest";
+import { AgentSelectionRequiredError, resolveAgentConfig } from "../agents/agent-scope-config.js";
 import type { OpenClawConfig } from "../config/config.js";
-import * as routingBindings from "./bindings.js";
 import {
-  deriveLastRoutePolicy,
+  listExactDirectMessageBindingPeerIds,
   resolveAgentRoute,
   resolveInboundLastRouteSessionKey,
 } from "./resolve-route.js";
 
+type CompatRoutePeerKind =
+  | NonNullable<Parameters<typeof resolveAgentRoute>[0]["peer"]>["kind"]
+  | "dm";
+
+const resolveRoute = (
+  params: Omit<Parameters<typeof resolveAgentRoute>[0], "cfg"> & { cfg?: OpenClawConfig },
+) => resolveAgentRoute({ cfg: params.cfg ?? {}, ...params });
+
+function expectResolvedRoute(
+  route: ReturnType<typeof resolveAgentRoute>,
+  expected: Partial<ReturnType<typeof resolveAgentRoute>>,
+) {
+  expect(route).toMatchObject(expected);
+}
+
+function createCompatPeer(kind: CompatRoutePeerKind, id: string) {
+  return { kind, id } as unknown as NonNullable<Parameters<typeof resolveAgentRoute>[0]["peer"]>;
+}
+
+function mainBindingConfig(
+  entries: NonNullable<OpenClawConfig["agents"]>["entries"],
+): OpenClawConfig {
+  return {
+    agents: { entries },
+    bindings: [
+      { type: "route", agentId: "main", match: { channel: "discord", accountId: "default" } },
+    ],
+  };
+}
+
 describe("resolveAgentRoute", () => {
-  const resolveDiscordGuildRoute = (cfg: OpenClawConfig) =>
-    resolveAgentRoute({
+  const directRoute = (cfg: OpenClawConfig, channel: string, id: string) =>
+    resolveAgentRoute({ cfg, channel, accountId: null, peer: { kind: "direct", id } });
+
+  test("preserves explicit main bindings when agents.entries has other agents", () => {
+    const route = resolveAgentRoute({
+      cfg: mainBindingConfig({ alpha: {} }),
+      channel: "discord",
+      accountId: "default",
+      peer: { kind: "direct", id: "user-1" },
+    });
+
+    expectResolvedRoute(route, {
+      agentId: "main",
+      sessionKey: "agent:main:main",
+      matchedBy: "binding.account",
+      lastRoutePolicy: "main",
+    });
+  });
+
+  test("resolves exact main bindings through a configured normalized main-like roster entry", () => {
+    const cfg = mainBindingConfig({ MAIN: { model: "anthropic/claude-3-5-sonnet" } });
+    const route = resolveAgentRoute({
       cfg,
       channel: "discord",
       accountId: "default",
-      peer: { kind: "channel", id: "c1" },
-      guildId: "g1",
+      peer: { kind: "direct", id: "user-1" },
     });
 
-  test("defaults to main/default when no bindings exist", () => {
-    const cfg: OpenClawConfig = {};
-    const route = resolveAgentRoute({
-      cfg,
-      channel: "whatsapp",
-      accountId: null,
-      peer: { kind: "direct", id: "+15551234567" },
+    expectResolvedRoute(route, {
+      agentId: "main",
+      sessionKey: "agent:main:main",
+      matchedBy: "binding.account",
+      lastRoutePolicy: "main",
     });
-    expect(route.agentId).toBe("main");
-    expect(route.accountId).toBe("default");
-    expect(route.sessionKey).toBe("agent:main:main");
-    expect(route.lastRoutePolicy).toBe("main");
-    expect(route.matchedBy).toBe("default");
+    expect(resolveAgentConfig(cfg, route.agentId)?.model).toBe("anthropic/claude-3-5-sonnet");
   });
 
-  test("dmScope controls direct-message session key isolation", () => {
-    const cases = [
-      { dmScope: "per-peer" as const, expected: "agent:main:direct:+15551234567" },
-      {
-        dmScope: "per-channel-peer" as const,
-        expected: "agent:main:whatsapp:direct:+15551234567",
-      },
-    ];
-    for (const testCase of cases) {
-      const cfg: OpenClawConfig = {
-        session: { dmScope: testCase.dmScope },
-      };
-      const route = resolveAgentRoute({
-        cfg,
-        channel: "whatsapp",
-        accountId: null,
-        peer: { kind: "direct", id: "+15551234567" },
-      });
-      expect(route.sessionKey).toBe(testCase.expected);
-      expect(route.lastRoutePolicy).toBe("session");
-    }
+  test("dmScope=per-peer controls direct-message session key isolation", () => {
+    const route = directRoute({ session: { dmScope: "per-peer" } }, "whatsapp", "+15551234567");
+    expectResolvedRoute(route, {
+      agentId: "main",
+      matchedBy: "default",
+      lastRoutePolicy: "session",
+      sessionKey: "agent:main:direct:+15551234567",
+    });
   });
 
-  test("resolveInboundLastRouteSessionKey follows route policy", () => {
-    expect(
-      resolveInboundLastRouteSessionKey({
-        route: {
-          mainSessionKey: "agent:main:main",
-          lastRoutePolicy: "main",
+  test("binding groupScope routes a selected room into main without changing direct messages", () => {
+    const cfg: OpenClawConfig = {
+      session: { dmScope: "per-channel-peer", groupScope: "per-group" },
+      bindings: [
+        {
+          agentId: "main",
+          match: { channel: "slack", peer: { kind: "channel", id: "isolated-room" } },
+          session: { groupScope: "main" },
         },
-        sessionKey: "agent:main:discord:direct:user-1",
-      }),
+      ],
+    };
+
+    expect(
+      resolveRoute({ cfg, channel: "slack", peer: { kind: "channel", id: "isolated-room" } })
+        .sessionKey,
     ).toBe("agent:main:main");
-
     expect(
-      resolveInboundLastRouteSessionKey({
-        route: {
-          mainSessionKey: "agent:main:main",
-          lastRoutePolicy: "session",
-        },
-        sessionKey: "agent:main:telegram:atlas:direct:123",
-      }),
-    ).toBe("agent:main:telegram:atlas:direct:123");
+      resolveRoute({ cfg, channel: "slack", peer: { kind: "group", id: "shared-room" } })
+        .sessionKey,
+    ).toBe("agent:main:slack:group:shared-room");
+    expect(
+      resolveRoute({ cfg, channel: "slack", peer: { kind: "direct", id: "teammate" } }).sessionKey,
+    ).toBe("agent:main:slack:direct:teammate");
   });
 
-  test("deriveLastRoutePolicy collapses only main-session routes", () => {
-    expect(
-      deriveLastRoutePolicy({
-        sessionKey: "agent:main:main",
-        mainSessionKey: "agent:main:main",
-      }),
-    ).toBe("main");
-    expect(
-      deriveLastRoutePolicy({
-        sessionKey: "agent:main:telegram:direct:123",
-        mainSessionKey: "agent:main:main",
-      }),
-    ).toBe("session");
-  });
-
-  test("identityLinks applies to direct-message scopes", () => {
-    const cases = [
-      {
-        dmScope: "per-peer" as const,
-        channel: "telegram",
-        peerId: "111111111",
-        expected: "agent:main:direct:alice",
-      },
-      {
-        dmScope: "per-channel-peer" as const,
-        channel: "discord",
-        peerId: "222222222222222222",
-        expected: "agent:main:discord:direct:alice",
-      },
-    ];
-    for (const testCase of cases) {
-      const cfg: OpenClawConfig = {
-        session: {
-          dmScope: testCase.dmScope,
-          identityLinks: {
-            alice: ["telegram:111111111", "discord:222222222222222222"],
-          },
-        },
-      };
-      const route = resolveAgentRoute({
-        cfg,
-        channel: testCase.channel,
-        accountId: null,
-        peer: { kind: "direct", id: testCase.peerId },
-      });
-      expect(route.sessionKey).toBe(testCase.expected);
-    }
-  });
-
-  test("peer binding wins over account binding", () => {
-    const cfg: OpenClawConfig = {
-      bindings: [
-        {
-          agentId: "a",
-          match: {
-            channel: "whatsapp",
-            accountId: "biz",
-            peer: { kind: "direct", id: "+1000" },
-          },
-        },
-        {
-          agentId: "b",
-          match: { channel: "whatsapp", accountId: "biz" },
-        },
-      ],
-    };
-    const route = resolveAgentRoute({
+  test("keeps explicit groupScope overrides distinct in the route cache", () => {
+    const cfg: OpenClawConfig = {};
+    const input = {
       cfg,
-      channel: "whatsapp",
-      accountId: "biz",
-      peer: { kind: "direct", id: "+1000" },
-    });
-    expect(route.agentId).toBe("a");
-    expect(route.sessionKey).toBe("agent:a:main");
-    expect(route.matchedBy).toBe("binding.peer");
+      channel: "slack",
+      peer: { kind: "channel" as const, id: "team-room" },
+    };
+
+    expect(resolveAgentRoute({ ...input, groupScope: "per-group" }).sessionKey).toBe(
+      "agent:main:slack:channel:team-room",
+    );
+    expect(resolveAgentRoute({ ...input, groupScope: "main" }).sessionKey).toBe("agent:main:main");
   });
 
-  test("discord channel peer binding wins over guild binding", () => {
+  test("route binding session dmScope isolates selected direct peers without changing agent", () => {
     const cfg: OpenClawConfig = {
-      bindings: [
-        {
-          agentId: "chan",
-          match: {
-            channel: "discord",
-            accountId: "default",
-            peer: { kind: "channel", id: "c1" },
-          },
-        },
-        {
-          agentId: "guild",
-          match: {
-            channel: "discord",
-            accountId: "default",
-            guildId: "g1",
-          },
-        },
-      ],
+      session: { dmScope: "main" },
+      bindings: ["1497598990336790559", "389224669418618880"].map((id) => ({
+        type: "route",
+        agentId: "main",
+        match: { channel: "discord", accountId: "default", peer: { kind: "direct", id } },
+        session: { dmScope: "per-account-channel-peer" },
+      })),
     };
-    const route = resolveDiscordGuildRoute(cfg);
-    expect(route.agentId).toBe("chan");
-    expect(route.sessionKey).toBe("agent:chan:discord:channel:c1");
-    expect(route.matchedBy).toBe("binding.peer");
+    const route = (
+      peer: Parameters<typeof resolveAgentRoute>[0]["peer"],
+      channel = "discord",
+      accountId: string | null = "default",
+    ) => resolveAgentRoute({ cfg, channel, accountId, peer });
+
+    expectResolvedRoute(route({ kind: "direct", id: "358611388488351744" }), {
+      agentId: "main",
+      sessionKey: "agent:main:main",
+      matchedBy: "default",
+      lastRoutePolicy: "main",
+    });
+    expectResolvedRoute(route({ kind: "direct", id: "1497598990336790559" }), {
+      agentId: "main",
+      sessionKey: "agent:main:discord:default:direct:1497598990336790559",
+      matchedBy: "binding.peer",
+      lastRoutePolicy: "session",
+    });
+    expectResolvedRoute(route({ kind: "direct", id: "389224669418618880" }), {
+      agentId: "main",
+      sessionKey: "agent:main:discord:default:direct:389224669418618880",
+      matchedBy: "binding.peer",
+      lastRoutePolicy: "session",
+    });
+    expectResolvedRoute(route({ kind: "channel", id: "1494710434396110868" }), {
+      agentId: "main",
+      sessionKey: "agent:main:discord:channel:1494710434396110868",
+      matchedBy: "default",
+      lastRoutePolicy: "session",
+    });
+    expectResolvedRoute(route(null, "webchat", null), {
+      agentId: "main",
+      sessionKey: "agent:main:main",
+      matchedBy: "default",
+      lastRoutePolicy: "main",
+    });
+  });
+
+  test.each([
+    ["main", "agent:main:discord:direct:user-1", "agent:main:main"],
+    ["session", "agent:main:telegram:atlas:direct:123", "agent:main:telegram:atlas:direct:123"],
+  ] as const)(
+    "inbound last-route policy %s maps %s to %s",
+    (lastRoutePolicy, sessionKey, expected) => {
+      const route = { mainSessionKey: "agent:main:main", lastRoutePolicy };
+      expect(resolveInboundLastRouteSessionKey({ route, sessionKey })).toBe(expected);
+    },
+  );
+
+  test("forwards identity links to direct-message session isolation", () => {
+    const route = directRoute(
+      {
+        session: {
+          dmScope: "per-channel-peer",
+          identityLinks: { alice: ["telegram:111111111", "discord:222222222222222222"] },
+        },
+      },
+      "discord",
+      "222222222222222222",
+    );
+    expect(route.sessionKey).toBe("agent:main:discord:direct:alice");
   });
 
   test("coerces numeric peer ids to stable session keys", () => {
@@ -193,662 +208,217 @@ describe("resolveAgentRoute", () => {
     expect(route.sessionKey).toBe("agent:main:discord:channel:1468834856187203680");
   });
 
-  test("guild binding wins over account binding when peer not bound", () => {
-    const cfg: OpenClawConfig = {
-      bindings: [
-        {
-          agentId: "guild",
-          match: {
-            channel: "discord",
-            accountId: "default",
-            guildId: "g1",
+  describe.each([
+    { channel: "discord", scope: "guildId", matchedBy: "binding.guild" },
+    { channel: "slack", scope: "teamId", matchedBy: "binding.team" },
+  ] as const)("peer+$scope constraints", ({ channel, scope, matchedBy }) => {
+    test("does not become a scope-wide fallback when the peer mismatches (#14752)", () => {
+      const cfg: OpenClawConfig = {
+        bindings: [
+          {
+            agentId: "peer",
+            match: { channel, [scope]: "space", peer: { kind: "channel", id: "room-a" } },
           },
-        },
-        {
-          agentId: "acct",
-          match: { channel: "discord", accountId: "default" },
-        },
-      ],
-    };
-    const route = resolveDiscordGuildRoute(cfg);
-    expect(route.agentId).toBe("guild");
-    expect(route.matchedBy).toBe("binding.guild");
-  });
+          { agentId: "fallback", match: { channel, [scope]: "space" } },
+        ],
+      };
+      expectResolvedRoute(
+        resolveRoute({ cfg, channel, [scope]: "space", peer: { kind: "channel", id: "room-b" } }),
+        { agentId: "fallback", matchedBy },
+      );
+    });
 
-  test("peer+guild binding does not act as guild-wide fallback when peer mismatches (#14752)", () => {
-    const cfg: OpenClawConfig = {
-      bindings: [
-        {
-          agentId: "olga",
-          match: {
-            channel: "discord",
-            peer: { kind: "channel", id: "CHANNEL_A" },
-            guildId: "GUILD_1",
+    test("requires a matching scope even when the peer matches", () => {
+      const cfg: OpenClawConfig = {
+        bindings: [
+          {
+            agentId: "wrong",
+            match: { channel, [scope]: "other", peer: { kind: "channel", id: "room" } },
           },
-        },
-        {
-          agentId: "main",
-          match: {
-            channel: "discord",
-            guildId: "GUILD_1",
-          },
-        },
-      ],
-    };
-    const route = resolveAgentRoute({
-      cfg,
-      channel: "discord",
-      peer: { kind: "channel", id: "CHANNEL_B" },
-      guildId: "GUILD_1",
+          { agentId: "right", match: { channel, [scope]: "space" } },
+        ],
+      };
+      expectResolvedRoute(
+        resolveRoute({ cfg, channel, [scope]: "space", peer: { kind: "channel", id: "room" } }),
+        { agentId: "right", matchedBy },
+      );
     });
-    expect(route.agentId).toBe("main");
-    expect(route.matchedBy).toBe("binding.guild");
   });
-
-  test("peer+guild binding requires guild match even when peer matches", () => {
-    const cfg: OpenClawConfig = {
-      bindings: [
-        {
-          agentId: "wrongguild",
-          match: {
-            channel: "discord",
-            peer: { kind: "channel", id: "c1" },
-            guildId: "g1",
-          },
-        },
-        {
-          agentId: "rightguild",
-          match: {
-            channel: "discord",
-            guildId: "g2",
-          },
-        },
-      ],
-    };
-    const route = resolveAgentRoute({
-      cfg,
-      channel: "discord",
-      peer: { kind: "channel", id: "c1" },
-      guildId: "g2",
-    });
-    expect(route.agentId).toBe("rightguild");
-    expect(route.matchedBy).toBe("binding.guild");
-  });
-
-  test("peer+team binding does not act as team-wide fallback when peer mismatches", () => {
-    const cfg: OpenClawConfig = {
-      bindings: [
-        {
-          agentId: "roomonly",
-          match: {
-            channel: "slack",
-            peer: { kind: "channel", id: "C_A" },
-            teamId: "T1",
-          },
-        },
-        {
-          agentId: "teamwide",
-          match: {
-            channel: "slack",
-            teamId: "T1",
-          },
-        },
-      ],
-    };
-    const route = resolveAgentRoute({
-      cfg,
-      channel: "slack",
-      teamId: "T1",
-      peer: { kind: "channel", id: "C_B" },
-    });
-    expect(route.agentId).toBe("teamwide");
-    expect(route.matchedBy).toBe("binding.team");
-  });
-
-  test("peer+team binding requires team match even when peer matches", () => {
-    const cfg: OpenClawConfig = {
-      bindings: [
-        {
-          agentId: "wrongteam",
-          match: {
-            channel: "slack",
-            peer: { kind: "channel", id: "C1" },
-            teamId: "T1",
-          },
-        },
-        {
-          agentId: "rightteam",
-          match: {
-            channel: "slack",
-            teamId: "T2",
-          },
-        },
-      ],
-    };
-    const route = resolveAgentRoute({
-      cfg,
-      channel: "slack",
-      teamId: "T2",
-      peer: { kind: "channel", id: "C1" },
-    });
-    expect(route.agentId).toBe("rightteam");
-    expect(route.matchedBy).toBe("binding.team");
-  });
-
-  test("missing accountId in binding matches default account only", () => {
-    const cfg: OpenClawConfig = {
-      bindings: [{ agentId: "defaultAcct", match: { channel: "whatsapp" } }],
-    };
-
-    const defaultRoute = resolveAgentRoute({
-      cfg,
-      channel: "whatsapp",
-      accountId: undefined,
-      peer: { kind: "direct", id: "+1000" },
-    });
-    expect(defaultRoute.agentId).toBe("defaultacct");
-    expect(defaultRoute.matchedBy).toBe("binding.account");
-
-    const otherRoute = resolveAgentRoute({
-      cfg,
-      channel: "whatsapp",
-      accountId: "biz",
-      peer: { kind: "direct", id: "+1000" },
-    });
-    expect(otherRoute.agentId).toBe("main");
-  });
-
-  test("accountId=* matches any account as a channel fallback", () => {
-    const cfg: OpenClawConfig = {
-      bindings: [
-        {
-          agentId: "any",
-          match: { channel: "whatsapp", accountId: "*" },
-        },
-      ],
-    };
-    const route = resolveAgentRoute({
-      cfg,
-      channel: "whatsapp",
-      accountId: "biz",
-      peer: { kind: "direct", id: "+1000" },
-    });
-    expect(route.agentId).toBe("any");
-    expect(route.matchedBy).toBe("binding.channel");
-  });
-
-  test("binding accountId matching is canonicalized", () => {
-    const cfg: OpenClawConfig = {
-      bindings: [{ agentId: "biz", match: { channel: "discord", accountId: "BIZ" } }],
-    };
-    const route = resolveAgentRoute({
-      cfg,
-      channel: "discord",
-      accountId: " biz ",
-      peer: { kind: "direct", id: "u-1" },
-    });
-    expect(route.agentId).toBe("biz");
-    expect(route.matchedBy).toBe("binding.account");
-    expect(route.accountId).toBe("biz");
-  });
-
-  test("defaultAgentId is used when no binding matches", () => {
-    const cfg: OpenClawConfig = {
-      agents: {
-        list: [{ id: "home", default: true, workspace: "~/paleoclaw-home" }],
-      },
-    };
-    const route = resolveAgentRoute({
-      cfg,
-      channel: "whatsapp",
-      accountId: "biz",
-      peer: { kind: "direct", id: "+1000" },
-    });
-    expect(route.agentId).toBe("home");
-    expect(route.sessionKey).toBe("agent:home:main");
-  });
-});
-
-test("dmScope=per-account-channel-peer isolates DM sessions per account, channel and sender", () => {
-  const cfg: OpenClawConfig = {
-    session: { dmScope: "per-account-channel-peer" },
-  };
-  const route = resolveAgentRoute({
-    cfg,
-    channel: "telegram",
-    accountId: "tasks",
-    peer: { kind: "direct", id: "7550356539" },
-  });
-  expect(route.sessionKey).toBe("agent:main:telegram:tasks:direct:7550356539");
-});
-
-test("dmScope=per-account-channel-peer uses default accountId when not provided", () => {
-  const cfg: OpenClawConfig = {
-    session: { dmScope: "per-account-channel-peer" },
-  };
-  const route = resolveAgentRoute({
-    cfg,
-    channel: "telegram",
-    accountId: null,
-    peer: { kind: "direct", id: "7550356539" },
-  });
-  expect(route.sessionKey).toBe("agent:main:telegram:default:direct:7550356539");
 });
 
 describe("parentPeer binding inheritance (thread support)", () => {
   const threadPeer = { kind: "channel" as const, id: "thread-456" };
   const defaultParentPeer = { kind: "channel" as const, id: "parent-channel-123" };
-
   function makeDiscordPeerBinding(agentId: string, peerId: string) {
     return {
       agentId,
-      match: {
-        channel: "discord" as const,
-        peer: { kind: "channel" as const, id: peerId },
-      },
+      match: { channel: "discord", peer: { kind: "channel" as const, id: peerId } },
     };
   }
 
-  function makeDiscordGuildBinding(agentId: string, guildId: string) {
-    return {
-      agentId,
-      match: {
-        channel: "discord" as const,
-        guildId,
-      },
-    };
-  }
-
-  function resolveDiscordThreadRoute(params: {
-    cfg: OpenClawConfig;
-    parentPeer?: { kind: "channel"; id: string } | null;
-    guildId?: string;
-  }) {
-    const parentPeer = "parentPeer" in params ? params.parentPeer : defaultParentPeer;
-    return resolveAgentRoute({
-      cfg: params.cfg,
-      channel: "discord",
-      peer: threadPeer,
-      parentPeer,
-      guildId: params.guildId,
-    });
-  }
-
-  test("thread inherits binding from parent channel when no direct match", () => {
-    const cfg: OpenClawConfig = {
-      bindings: [makeDiscordPeerBinding("adecco", defaultParentPeer.id)],
-    };
-    const route = resolveDiscordThreadRoute({ cfg });
-    expect(route.agentId).toBe("adecco");
-    expect(route.matchedBy).toBe("binding.peer.parent");
-  });
-
-  test("direct peer binding wins over parent peer binding", () => {
-    const cfg: OpenClawConfig = {
-      bindings: [
-        makeDiscordPeerBinding("thread-agent", threadPeer.id),
-        makeDiscordPeerBinding("parent-agent", defaultParentPeer.id),
-      ],
-    };
-    const route = resolveDiscordThreadRoute({ cfg });
-    expect(route.agentId).toBe("thread-agent");
-    expect(route.matchedBy).toBe("binding.peer");
-  });
-
-  test("parent peer binding wins over guild binding", () => {
-    const cfg: OpenClawConfig = {
-      bindings: [
-        makeDiscordPeerBinding("parent-agent", defaultParentPeer.id),
-        makeDiscordGuildBinding("guild-agent", "guild-789"),
-      ],
-    };
-    const route = resolveDiscordThreadRoute({ cfg, guildId: "guild-789" });
-    expect(route.agentId).toBe("parent-agent");
-    expect(route.matchedBy).toBe("binding.peer.parent");
-  });
-
-  test("falls back to guild binding when no parent peer match", () => {
-    const cfg: OpenClawConfig = {
-      bindings: [
-        makeDiscordPeerBinding("other-parent-agent", "other-parent-999"),
-        makeDiscordGuildBinding("guild-agent", "guild-789"),
-      ],
-    };
-    const route = resolveDiscordThreadRoute({ cfg, guildId: "guild-789" });
-    expect(route.agentId).toBe("guild-agent");
-    expect(route.matchedBy).toBe("binding.guild");
-  });
-
-  test("parentPeer with empty id is ignored", () => {
-    const cfg: OpenClawConfig = {
-      bindings: [makeDiscordPeerBinding("parent-agent", defaultParentPeer.id)],
-    };
-    const route = resolveDiscordThreadRoute({ cfg, parentPeer: { kind: "channel", id: "" } });
-    expect(route.agentId).toBe("main");
-    expect(route.matchedBy).toBe("default");
-  });
-
-  test("null parentPeer is handled gracefully", () => {
-    const cfg: OpenClawConfig = {
-      bindings: [makeDiscordPeerBinding("parent-agent", defaultParentPeer.id)],
-    };
-    const route = resolveDiscordThreadRoute({ cfg, parentPeer: null });
-    expect(route.agentId).toBe("main");
-    expect(route.matchedBy).toBe("default");
-  });
+  test.each([threadPeer.id, defaultParentPeer.id])(
+    "rejects an unknown agent in the first matching binding for %s instead of falling back",
+    (peerId) => {
+      expect(() =>
+        resolveAgentRoute({
+          channel: "discord",
+          peer: threadPeer,
+          parentPeer: defaultParentPeer,
+          cfg: {
+            agents: { entries: { fallback: {} } },
+            bindings: [
+              makeDiscordPeerBinding("missing", peerId),
+              makeDiscordPeerBinding("fallback", peerId),
+              { agentId: "fallback", match: { channel: "discord" } },
+            ],
+          },
+        }),
+      ).toThrow(AgentSelectionRequiredError);
+    },
+  );
 });
 
-describe("backward compatibility: peer.kind dm → direct", () => {
-  test("legacy dm in config matches runtime direct peer", () => {
-    const cfg: OpenClawConfig = {
-      bindings: [
-        {
-          agentId: "alex",
-          match: {
-            channel: "whatsapp",
-            // Legacy config uses "dm" instead of "direct"
-            peer: { kind: "dm" as ChatType, id: "+15551234567" },
-          },
-        },
-      ],
-    };
-    const route = resolveAgentRoute({
-      cfg,
-      channel: "whatsapp",
-      accountId: null,
-      // Runtime uses canonical "direct"
-      peer: { kind: "direct", id: "+15551234567" },
-    });
-    expect(route.agentId).toBe("alex");
-    expect(route.matchedBy).toBe("binding.peer");
-  });
-
+describe("backward compatibility: peer.kind aliases", () => {
   test("runtime dm peer.kind matches config direct binding (#22730)", () => {
-    const cfg: OpenClawConfig = {
-      bindings: [
-        {
-          agentId: "alex",
-          match: {
-            channel: "whatsapp",
-            // Config uses canonical "direct"
-            peer: { kind: "direct", id: "+15551234567" },
-          },
-        },
-      ],
-    };
     const route = resolveAgentRoute({
-      cfg,
+      cfg: {
+        bindings: [
+          {
+            agentId: "alex",
+            match: {
+              channel: "whatsapp",
+              peer: createCompatPeer("direct", "+15551234567"),
+            },
+          },
+        ],
+      },
       channel: "whatsapp",
       accountId: null,
-      // Plugin sends "dm" instead of "direct"
-      peer: { kind: "dm" as ChatType, id: "+15551234567" },
+      peer: createCompatPeer("dm", "+15551234567"),
     });
-    expect(route.agentId).toBe("alex");
-    expect(route.matchedBy).toBe("binding.peer");
-  });
-});
-
-describe("backward compatibility: peer.kind group ↔ channel", () => {
-  test("config group binding matches runtime channel scope", () => {
-    const cfg: OpenClawConfig = {
-      bindings: [
-        {
-          agentId: "slack-group-agent",
-          match: {
-            channel: "slack",
-            peer: { kind: "group", id: "C123456" },
-          },
-        },
-      ],
-    };
-    const route = resolveAgentRoute({
-      cfg,
-      channel: "slack",
-      accountId: null,
-      peer: { kind: "channel", id: "C123456" },
+    expectResolvedRoute(route, {
+      agentId: "alex",
+      matchedBy: "binding.peer",
     });
-    expect(route.agentId).toBe("slack-group-agent");
-    expect(route.matchedBy).toBe("binding.peer");
   });
 
-  test("config channel binding matches runtime group scope", () => {
-    const cfg: OpenClawConfig = {
-      bindings: [
-        {
-          agentId: "slack-channel-agent",
-          match: {
-            channel: "slack",
-            peer: { kind: "channel", id: "C123456" },
-          },
+  test.each([
+    ["slack-group-agent", "group", "channel"],
+    ["slack-channel-agent", "channel", "group"],
+  ] as const)(
+    "%s: config %s binding matches runtime %s scope",
+    (agentId, bindingPeerKind, runtimePeerKind) => {
+      const route = resolveAgentRoute({
+        cfg: {
+          bindings: [
+            {
+              agentId,
+              match: {
+                channel: "slack",
+                peer: createCompatPeer(bindingPeerKind, "C123456"),
+              },
+            },
+          ],
         },
-      ],
-    };
-    const route = resolveAgentRoute({
-      cfg,
-      channel: "slack",
-      accountId: null,
-      peer: { kind: "group", id: "C123456" },
-    });
-    expect(route.agentId).toBe("slack-channel-agent");
-    expect(route.matchedBy).toBe("binding.peer");
-  });
-
-  test("group/channel compatibility does not match direct peer kind", () => {
-    const cfg: OpenClawConfig = {
-      bindings: [
-        {
-          agentId: "group-only-agent",
-          match: {
-            channel: "slack",
-            peer: { kind: "group", id: "C123456" },
-          },
-        },
-      ],
-    };
-    const route = resolveAgentRoute({
-      cfg,
-      channel: "slack",
-      accountId: null,
-      peer: { kind: "direct", id: "C123456" },
-    });
-    expect(route.agentId).toBe("main");
-    expect(route.matchedBy).toBe("default");
-  });
+        channel: "slack",
+        accountId: null,
+        peer: createCompatPeer(runtimePeerKind, "C123456"),
+      });
+      expectResolvedRoute(route, {
+        agentId,
+        matchedBy: "binding.peer",
+      });
+    },
+  );
 });
 
 describe("role-based agent routing", () => {
-  type DiscordBinding = NonNullable<OpenClawConfig["bindings"]>[number];
-
-  function makeDiscordRoleBinding(
-    agentId: string,
-    params: {
-      roles?: string[];
-      peerId?: string;
-      includeGuildId?: boolean;
-    } = {},
-  ): DiscordBinding {
-    return {
-      agentId,
-      match: {
-        channel: "discord",
-        ...(params.includeGuildId === false ? {} : { guildId: "g1" }),
-        ...(params.roles !== undefined ? { roles: params.roles } : {}),
-        ...(params.peerId ? { peer: { kind: "channel", id: params.peerId } } : {}),
-      },
-    };
-  }
-
-  function expectDiscordRoleRoute(params: {
-    bindings: DiscordBinding[];
-    memberRoleIds?: string[];
-    peerId?: string;
-    parentPeerId?: string;
-    expectedAgentId: string;
-    expectedMatchedBy: string;
-  }) {
+  test("peer+guild+roles binding does not act as guild+roles fallback when peer mismatches", () => {
+    const match = { channel: "discord", guildId: "g1", roles: ["r1"] };
     const route = resolveAgentRoute({
-      cfg: { bindings: params.bindings },
+      cfg: {
+        bindings: [
+          { agentId: "peer-roles", match: { ...match, peer: { kind: "channel", id: "c-target" } } },
+          { agentId: "guild-roles", match },
+        ],
+      },
       channel: "discord",
       guildId: "g1",
-      ...(params.memberRoleIds ? { memberRoleIds: params.memberRoleIds } : {}),
-      peer: { kind: "channel", id: params.peerId ?? "c1" },
-      ...(params.parentPeerId
-        ? {
-            parentPeer: { kind: "channel", id: params.parentPeerId },
-          }
-        : {}),
-    });
-    expect(route.agentId).toBe(params.expectedAgentId);
-    expect(route.matchedBy).toBe(params.expectedMatchedBy);
-  }
-
-  test("guild+roles binding matches when member has matching role", () => {
-    expectDiscordRoleRoute({
-      bindings: [makeDiscordRoleBinding("opus", { roles: ["r1"] })],
       memberRoleIds: ["r1"],
-      expectedAgentId: "opus",
-      expectedMatchedBy: "binding.guild+roles",
+      peer: { kind: "channel", id: "c-other" },
     });
-  });
-
-  test("guild+roles binding skipped when no matching role", () => {
-    expectDiscordRoleRoute({
-      bindings: [makeDiscordRoleBinding("opus", { roles: ["r1"] })],
-      memberRoleIds: ["r2"],
-      expectedAgentId: "main",
-      expectedMatchedBy: "default",
-    });
-  });
-
-  test("guild+roles is more specific than guild-only", () => {
-    expectDiscordRoleRoute({
-      bindings: [
-        makeDiscordRoleBinding("opus", { roles: ["r1"] }),
-        makeDiscordRoleBinding("sonnet"),
-      ],
-      memberRoleIds: ["r1"],
-      expectedAgentId: "opus",
-      expectedMatchedBy: "binding.guild+roles",
-    });
-  });
-
-  test("peer binding still beats guild+roles", () => {
-    expectDiscordRoleRoute({
-      bindings: [
-        makeDiscordRoleBinding("peer-agent", { peerId: "c1", includeGuildId: false }),
-        makeDiscordRoleBinding("roles-agent", { roles: ["r1"] }),
-      ],
-      memberRoleIds: ["r1"],
-      expectedAgentId: "peer-agent",
-      expectedMatchedBy: "binding.peer",
-    });
-  });
-
-  test("parent peer binding still beats guild+roles", () => {
-    expectDiscordRoleRoute({
-      bindings: [
-        makeDiscordRoleBinding("parent-agent", {
-          peerId: "parent-1",
-          includeGuildId: false,
-        }),
-        makeDiscordRoleBinding("roles-agent", { roles: ["r1"] }),
-      ],
-      memberRoleIds: ["r1"],
-      peerId: "thread-1",
-      parentPeerId: "parent-1",
-      expectedAgentId: "parent-agent",
-      expectedMatchedBy: "binding.peer.parent",
-    });
-  });
-
-  test("no memberRoleIds means guild+roles doesn't match", () => {
-    expectDiscordRoleRoute({
-      bindings: [makeDiscordRoleBinding("opus", { roles: ["r1"] })],
-      expectedAgentId: "main",
-      expectedMatchedBy: "default",
-    });
-  });
-
-  test("first matching binding wins with multiple role bindings", () => {
-    expectDiscordRoleRoute({
-      bindings: [
-        makeDiscordRoleBinding("opus", { roles: ["r1"] }),
-        makeDiscordRoleBinding("sonnet", { roles: ["r2"] }),
-      ],
-      memberRoleIds: ["r1", "r2"],
-      expectedAgentId: "opus",
-      expectedMatchedBy: "binding.guild+roles",
-    });
-  });
-
-  test("empty roles array treated as no role restriction", () => {
-    expectDiscordRoleRoute({
-      bindings: [makeDiscordRoleBinding("opus", { roles: [] })],
-      memberRoleIds: ["r1"],
-      expectedAgentId: "opus",
-      expectedMatchedBy: "binding.guild",
-    });
-  });
-
-  test("guild+roles binding does not match as guild-only when roles do not match", () => {
-    expectDiscordRoleRoute({
-      bindings: [makeDiscordRoleBinding("opus", { roles: ["admin"] })],
-      memberRoleIds: ["regular"],
-      expectedAgentId: "main",
-      expectedMatchedBy: "default",
-    });
-  });
-
-  test("peer+guild+roles binding does not act as guild+roles fallback when peer mismatches", () => {
-    expectDiscordRoleRoute({
-      bindings: [
-        makeDiscordRoleBinding("peer-roles", { peerId: "c-target", roles: ["r1"] }),
-        makeDiscordRoleBinding("guild-roles", { roles: ["r1"] }),
-      ],
-      memberRoleIds: ["r1"],
-      peerId: "c-other",
-      expectedAgentId: "guild-roles",
-      expectedMatchedBy: "binding.guild+roles",
-    });
+    expectResolvedRoute(route, { agentId: "guild-roles", matchedBy: "binding.guild+roles" });
   });
 });
 
-describe("binding evaluation cache scalability", () => {
-  test("does not rescan full bindings after channel/account cache rollover (#36915)", () => {
-    const bindingCount = 2_205;
-    const cfg: OpenClawConfig = {
-      bindings: Array.from({ length: bindingCount }, (_, idx) => ({
-        agentId: `agent-${idx}`,
-        match: {
-          channel: "dingtalk",
-          accountId: `acct-${idx}`,
-          peer: { kind: "direct", id: `user-${idx}` },
-        },
-      })),
-    };
-    const listBindingsSpy = vi.spyOn(routingBindings, "listBindings");
-    try {
-      for (let idx = 0; idx < bindingCount; idx += 1) {
-        const route = resolveAgentRoute({
-          cfg,
-          channel: "dingtalk",
-          accountId: `acct-${idx}`,
-          peer: { kind: "direct", id: `user-${idx}` },
-        });
-        expect(route.agentId).toBe(`agent-${idx}`);
-        expect(route.matchedBy).toBe("binding.peer");
-      }
+describe("unknown direct-message route decisions", () => {
+  test("lists unique exact peers from normalized account and any-account bindings", () => {
+    const binding = (peerId: string, accountId: string, kind: "direct" | "group" = "direct") => ({
+      agentId: "main",
+      match: { channel: "Telegram", accountId, peer: { kind, id: peerId } },
+    });
+    const cfg = {
+      bindings: [
+        binding("peer-b", "*"),
+        binding("peer-a", " WORK "),
+        binding("peer-b", "work"),
+        binding("*", "work"),
+        binding("room", "work", "group"),
+        binding("other", "other"),
+      ],
+    } satisfies OpenClawConfig;
 
-      const repeated = resolveAgentRoute({
+    expect(
+      listExactDirectMessageBindingPeerIds({ cfg, channel: " telegram ", accountId: " work " }),
+    ).toEqual(["peer-b", "peer-a"]);
+  });
+
+  test("account outranks channel for an unknown direct peer", () => {
+    const cfg: OpenClawConfig = {
+      bindings: [
+        {
+          agentId: "exact",
+          match: { channel: "telegram", peer: { kind: "direct", id: "known-user" } },
+        },
+        { agentId: "account", match: { channel: "telegram" } },
+        { agentId: "channel", match: { channel: "telegram", accountId: "*" } },
+      ],
+    };
+    expectResolvedRoute(
+      resolveAgentRoute({
         cfg,
-        channel: "dingtalk",
-        accountId: "acct-0",
-        peer: { kind: "direct", id: "user-0" },
-      });
-      expect(repeated.agentId).toBe("agent-0");
-      expect(listBindingsSpy).toHaveBeenCalledTimes(1);
-    } finally {
-      listBindingsSpy.mockRestore();
-    }
+        channel: "telegram",
+        accountId: "default",
+        peer: { kind: "direct", id: "" },
+      }),
+      { agentId: "account", matchedBy: "binding.account" },
+    );
+  });
+});
+
+describe("wildcard peer bindings (peer.id=*)", () => {
+  test("peer.id=* does not match group peers when kind is direct", () => {
+    const cfg: OpenClawConfig = {
+      agents: { entries: { main: {}, "dm-only": {} } },
+      bindings: [
+        {
+          agentId: "dm-only",
+          match: {
+            channel: "telegram",
+            accountId: "bot1",
+            peer: { kind: "direct", id: "*" },
+          },
+        },
+      ],
+    };
+    const route = resolveAgentRoute({
+      cfg,
+      channel: "telegram",
+      accountId: "bot1",
+      peer: { kind: "group", id: "group-999" },
+      defaultAgentId: "main",
+    });
+    expect(route.agentId).toBe("main");
+    expect(route.matchedBy).toBe("default");
   });
 });

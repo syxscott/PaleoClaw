@@ -1,0 +1,440 @@
+import type { OpenClawConfig } from "paleoclaw/plugin-sdk/config-contracts";
+import { createDeferred } from "paleoclaw/plugin-sdk/extension-shared";
+import type { MsgContext } from "paleoclaw/plugin-sdk/reply-runtime";
+import {
+  clearRuntimeConfigSnapshot,
+  setRuntimeConfigSnapshot,
+} from "paleoclaw/plugin-sdk/runtime-config-snapshot";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+const {
+  dispatchInboundMessageMock,
+  recordInboundSessionMock,
+  sendReadReceiptMock,
+  sendTypingMock,
+} = vi.hoisted(() => ({
+  dispatchInboundMessageMock: vi.fn(),
+  recordInboundSessionMock: vi.fn(),
+  sendReadReceiptMock: vi.fn(),
+  sendTypingMock: vi.fn(),
+}));
+
+vi.mock("../send.js", () => ({
+  sendMessageSignal: vi.fn(),
+  sendTypingSignal: sendTypingMock,
+  sendReadReceiptSignal: sendReadReceiptMock,
+}));
+
+vi.mock("paleoclaw/plugin-sdk/channel-inbound", async () => {
+  const actual = await vi.importActual<typeof import("paleoclaw/plugin-sdk/channel-inbound")>(
+    "paleoclaw/plugin-sdk/channel-inbound",
+  );
+  const { createSignalPreparedDispatchRunner } = await import("./event-handler.test-harness.js");
+  return {
+    ...actual,
+    // Control-lane timing must not depend on filesystem or worker scheduling.
+    resolveInboundSessionEnvelopeContextAsync: vi
+      .fn<typeof actual.resolveInboundSessionEnvelopeContextAsync>()
+      .mockImplementation(async ({ cfg }) => ({
+        storePath: "/tmp/paleoclaw/signal-sessions.json",
+        envelopeOptions: actual.resolveEnvelopeFormatOptions(cfg),
+        previousTimestamp: undefined,
+      })),
+    runChannelInboundEvent: createSignalPreparedDispatchRunner(
+      actual.runChannelInboundEvent,
+      recordInboundSessionMock,
+      async (resolved) => {
+        const result = dispatchInboundMessageMock({ ctx: resolved.ctxPayload });
+        for (const [count, started] of dispatchStarts) {
+          if (dispatchInboundMessageMock.mock.calls.length >= count) {
+            started.resolve();
+          }
+        }
+        return await result;
+      },
+    ),
+  };
+});
+
+vi.mock("paleoclaw/plugin-sdk/conversation-runtime", async () => {
+  const actual = await vi.importActual<typeof import("paleoclaw/plugin-sdk/conversation-runtime")>(
+    "paleoclaw/plugin-sdk/conversation-runtime",
+  );
+  return {
+    ...actual,
+    recordInboundSession: recordInboundSessionMock,
+    readChannelAllowFromStore: vi.fn().mockResolvedValue([]),
+    upsertChannelPairingRequest: vi.fn(),
+  };
+});
+
+const [
+  { createBaseSignalEventHandlerDeps, createSignalReceiveEvent },
+  { createSignalEventHandler },
+  {
+    createSignalPendingInboundRegistry,
+    resolveSignalControlLaneKey,
+    resolveSignalInboundDebounceKey,
+  },
+] = await Promise.all([
+  import("./event-handler.test-harness.js"),
+  import("./event-handler.js"),
+  import("./event-handler.control-lane.js"),
+]);
+
+type DispatchParams = { ctx: MsgContext };
+
+const dispatchResult = {
+  queuedFinal: false,
+  counts: { tool: 0, block: 0, final: 1 },
+};
+
+const pendingTasks: Promise<void>[] = [];
+const activeGates: Array<() => void> = [];
+const dispatchStarts = new Map<number, ReturnType<typeof createDeferred<void>>>();
+let pendingDebounceMs = 0;
+
+function waitForDispatch(count: number) {
+  // Fake timers do not drain the worker-backed session read before dispatch.
+  if (dispatchInboundMessageMock.mock.calls.length >= count) {
+    return Promise.resolve();
+  }
+  const started = createDeferred<void>();
+  dispatchStarts.set(count, started);
+  return started.promise;
+}
+
+function holdNextDispatch() {
+  const gate = createDeferred<void>();
+  activeGates.push(gate.resolve);
+  dispatchInboundMessageMock.mockImplementationOnce(async () => {
+    await gate.promise;
+    return dispatchResult;
+  });
+  return gate.resolve;
+}
+
+function createHandler(debounceMs: number, config?: OpenClawConfig) {
+  pendingDebounceMs = Math.max(pendingDebounceMs, debounceMs);
+  const dmPolicy = "allowlist";
+  const allowFrom = ["+15550001111"];
+  return createSignalEventHandler(
+    createBaseSignalEventHandlerDeps({
+      cfg:
+        config ??
+        ({
+          messages: { inbound: { debounceMs } },
+          channels: { signal: { dmPolicy, allowFrom } },
+        } as OpenClawConfig),
+      dmPolicy,
+      allowFrom,
+      historyLimit: 0,
+      runTrackedTask: (task) => {
+        pendingTasks.push(task());
+      },
+    }),
+  );
+}
+
+function signalText(message: string, timestamp: number) {
+  return createSignalReceiveEvent({
+    timestamp,
+    dataMessage: { message, attachments: [] },
+  });
+}
+
+function signalGroupText(message: string, timestamp: number, sourceNumber: string) {
+  return createSignalReceiveEvent({
+    sourceNumber,
+    sourceName: sourceNumber,
+    timestamp,
+    dataMessage: {
+      message,
+      attachments: [],
+      groupInfo: { groupId: "group-1", groupName: "Test Group" },
+    },
+  });
+}
+
+function dispatchedCommandBody(index: number): string | undefined {
+  const call = dispatchInboundMessageMock.mock.calls[index];
+  if (!call) {
+    throw new Error(`missing dispatch call ${index}`);
+  }
+  return (call[0] as DispatchParams).ctx.CommandBody;
+}
+
+describe("Signal active-run control lane", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    dispatchStarts.clear();
+    dispatchInboundMessageMock.mockReset().mockResolvedValue(dispatchResult);
+    recordInboundSessionMock.mockReset().mockResolvedValue(undefined);
+    sendReadReceiptMock.mockReset().mockResolvedValue(true);
+    sendTypingMock.mockReset().mockResolvedValue(true);
+  });
+
+  afterEach(async () => {
+    try {
+      for (const release of activeGates.splice(0)) {
+        release();
+      }
+      // Shared runtime timers can recur; advance only this fixture's debounce window.
+      await vi.advanceTimersByTimeAsync(pendingDebounceMs);
+      // Debounce admission can finish before dispatch; drain the tracked completion.
+      await Promise.all(pendingTasks.splice(0));
+    } finally {
+      pendingDebounceMs = 0;
+      clearRuntimeConfigSnapshot();
+      vi.useRealTimers();
+    }
+  });
+
+  it("updates Signal batching while keeping stop on the immediate control lane", async () => {
+    const cfg: OpenClawConfig = {
+      messages: { inbound: { debounceMs: 0 } },
+      channels: { signal: { dmPolicy: "allowlist", allowFrom: ["+15550001111"] } },
+    };
+    setRuntimeConfigSnapshot(cfg, cfg);
+    const handler = createHandler(25, cfg);
+    const publish = (debounceMs: number) => {
+      const current = { ...cfg, messages: { inbound: { byChannel: { signal: debounceMs } } } };
+      setRuntimeConfigSnapshot(current, current);
+    };
+    await handler(signalText("immediate", 1));
+    await vi.advanceTimersByTimeAsync(0);
+    expect(dispatchInboundMessageMock).toHaveBeenCalledTimes(1);
+    publish(25);
+    await handler(signalText("first", 2));
+    await handler(signalText("second", 3));
+    expect(dispatchInboundMessageMock).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(25);
+    await waitForDispatch(2);
+    expect(dispatchedCommandBody(1)).toBe("first\nsecond");
+    publish(0);
+    await handler(signalText("after disable", 4));
+    expect(dispatchedCommandBody(2)).toBe("after disable");
+    publish(25);
+    await handler(signalText("pending", 5));
+    await handler(signalText("stop", 6));
+    expect(dispatchedCommandBody(3)).toBe("stop");
+    await vi.advanceTimersByTimeAsync(25);
+    expect(dispatchInboundMessageMock).toHaveBeenCalledTimes(4);
+  });
+
+  it.each(["stop", "/approve abc12345 allow-once", "/status", "/QUEUE", "/steer keep going"])(
+    "dispatches active-run-safe control %s while normal work is active",
+    async (controlText) => {
+      const releaseActive = holdNextDispatch();
+      const handler = createHandler(5);
+
+      await handler(signalText("start a long task", 1));
+      await vi.advanceTimersByTimeAsync(5);
+      await waitForDispatch(1);
+      expect(dispatchInboundMessageMock).toHaveBeenCalledTimes(1);
+
+      const controlHandled = handler(signalText(controlText, 2));
+      await vi.advanceTimersByTimeAsync(0);
+      await waitForDispatch(2);
+      expect(dispatchInboundMessageMock).toHaveBeenCalledTimes(2);
+      expect(dispatchedCommandBody(1)).toBe(controlText);
+
+      releaseActive();
+      await controlHandled;
+    },
+  );
+
+  it("serializes repeated aborts on the control lane", async () => {
+    const releaseFirstAbort = holdNextDispatch();
+    const handler = createHandler(0);
+
+    const first = handler(signalText("stop", 1));
+    await vi.advanceTimersByTimeAsync(0);
+    await waitForDispatch(1);
+    expect(dispatchInboundMessageMock).toHaveBeenCalledTimes(1);
+    const second = handler(signalText("halt", 2));
+    await vi.advanceTimersByTimeAsync(20);
+    expect(dispatchInboundMessageMock).toHaveBeenCalledTimes(1);
+
+    releaseFirstAbort();
+    await Promise.all([first, second]);
+    expect(dispatchInboundMessageMock).toHaveBeenCalledTimes(2);
+    expect(dispatchedCommandBody(1)).toBe("halt");
+  });
+
+  it.each(["one more detail", "/reset"])(
+    "leaves zero-debounce turn %s to core session admission",
+    async (followupText) => {
+      const releaseActive = holdNextDispatch();
+      const handler = createHandler(0);
+
+      const active = handler(signalText("start a long task", 1));
+      await vi.advanceTimersByTimeAsync(0);
+      await waitForDispatch(1);
+      expect(dispatchInboundMessageMock).toHaveBeenCalledTimes(1);
+      const followup = handler(signalText(followupText, 2));
+      await vi.advanceTimersByTimeAsync(0);
+      await waitForDispatch(2);
+      expect(dispatchInboundMessageMock).toHaveBeenCalledTimes(2);
+      expect(dispatchedCommandBody(1)).toBe(followupText);
+
+      releaseActive();
+      await Promise.all([active, followup]);
+    },
+  );
+
+  it("does not promote or cancel an unauthorized abort", () => {
+    const entry = {
+      cfg: {},
+      resolveChannelIngress: async () => {
+        throw new Error("control-lane fixture must not resolve ingress");
+      },
+      senderName: "Alice",
+      senderDisplay: "+15550001111",
+      senderRecipient: "+15550001111",
+      senderPeerId: "+15550001111",
+      isGroup: false,
+      bodyText: "stop",
+      commandBody: "stop",
+      commandAuthorized: false,
+    };
+    const cancelKey = vi.fn(() => true);
+    const pendingInboundRegistry = createSignalPendingInboundRegistry("default");
+
+    expect(resolveSignalInboundDebounceKey("default", entry)).toBe(
+      "signal:default:+15550001111:+15550001111",
+    );
+    expect(resolveSignalControlLaneKey("default", entry)).toBeNull();
+    pendingInboundRegistry.track(entry);
+    pendingInboundRegistry.cancelPendingOnAbort(entry, cancelKey);
+    expect(cancelKey).not.toHaveBeenCalled();
+  });
+
+  it("shares one group control lane without merging normal sender batches", () => {
+    const entry = {
+      cfg: {},
+      resolveChannelIngress: async () => {
+        throw new Error("control-lane fixture must not resolve ingress");
+      },
+      senderName: "Alice",
+      senderDisplay: "+15550001111",
+      senderRecipient: "+15550001111",
+      senderPeerId: "+15550001111",
+      groupId: "group-1",
+      isGroup: true,
+      bodyText: "stop",
+      commandBody: "stop",
+      commandAuthorized: true,
+    };
+    const otherSender = { ...entry, senderPeerId: "+15550002222" };
+
+    expect(resolveSignalControlLaneKey("default", entry)).toBe(
+      resolveSignalControlLaneKey("default", otherSender),
+    );
+    expect(resolveSignalInboundDebounceKey("default", entry)).not.toBe(
+      resolveSignalInboundDebounceKey("default", otherSender),
+    );
+  });
+
+  it("cancels each pending sender once and forgets completed entries", () => {
+    const entry = {
+      cfg: {},
+      resolveChannelIngress: async () => {
+        throw new Error("control-lane fixture must not resolve ingress");
+      },
+      senderName: "Alice",
+      senderDisplay: "+15550001111",
+      senderRecipient: "+15550001111",
+      senderPeerId: "+15550001111",
+      groupId: "group-1",
+      isGroup: true,
+      bodyText: "stop",
+      commandBody: "stop",
+      commandAuthorized: true,
+    };
+    const second = { ...entry };
+    const otherSender = { ...entry, senderPeerId: "+15550002222" };
+    const otherGroup = { ...entry, groupId: "group-2" };
+    const registry = createSignalPendingInboundRegistry("default");
+    for (const pending of [entry, entry, second, otherSender, otherGroup]) {
+      registry.track(pending);
+    }
+    registry.complete([entry, entry]);
+    const cancelKey = vi.fn(() => true);
+    registry.cancelPendingOnAbort(entry, cancelKey);
+    expect(cancelKey.mock.calls).toEqual([
+      ["signal:default:group-1:+15550001111"],
+      ["signal:default:group-1:+15550002222"],
+    ]);
+    registry.complete([second, otherSender]);
+    cancelKey.mockClear();
+    registry.cancelPendingOnAbort(entry, cancelKey);
+    expect(cancelKey).not.toHaveBeenCalled();
+  });
+
+  it.each(["/reset", "/queue status"])(
+    "keeps stateful command %s behind active conversation work",
+    async (commandText) => {
+      const releaseActive = holdNextDispatch();
+      const handler = createHandler(5);
+
+      const active = handler(signalText("start a long task", 1));
+      await active;
+      await vi.advanceTimersByTimeAsync(5);
+      await waitForDispatch(1);
+      expect(dispatchInboundMessageMock).toHaveBeenCalledTimes(1);
+      const statefulCommand = handler(signalText(commandText, 2));
+      await vi.advanceTimersByTimeAsync(20);
+      expect(dispatchInboundMessageMock).toHaveBeenCalledTimes(1);
+
+      releaseActive();
+      await Promise.all([active, statefulCommand]);
+      expect(dispatchInboundMessageMock).toHaveBeenCalledTimes(2);
+      expect(dispatchedCommandBody(1)).toBe(commandText);
+    },
+  );
+
+  it("cancels ordinary text still waiting in the debounce window", async () => {
+    const handler = createHandler(50);
+
+    await handler(signalText("queued work", 1));
+    await handler(signalText("stop", 2));
+    expect(dispatchInboundMessageMock).toHaveBeenCalledTimes(1);
+    expect(dispatchedCommandBody(0)).toBe("stop");
+
+    await vi.advanceTimersByTimeAsync(75);
+    expect(dispatchInboundMessageMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("cancels pending normal work from every sender in a group conversation", async () => {
+    const handler = createHandler(50);
+
+    await handler(signalGroupText("queued work", 1, "+15550001111"));
+    await handler(signalGroupText("stop", 2, "+15550002222"));
+    expect(dispatchInboundMessageMock).toHaveBeenCalledTimes(1);
+    expect(dispatchedCommandBody(0)).toBe("stop");
+
+    await vi.advanceTimersByTimeAsync(75);
+    expect(dispatchInboundMessageMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("cancels ordinary text released from debounce but still waiting on active work", async () => {
+    const releaseActive = holdNextDispatch();
+    const handler = createHandler(5);
+
+    await handler(signalText("start a long task", 1));
+    await vi.advanceTimersByTimeAsync(5);
+    await waitForDispatch(1);
+    expect(dispatchInboundMessageMock).toHaveBeenCalledTimes(1);
+    await handler(signalText("queued followup", 2));
+    await vi.advanceTimersByTimeAsync(20);
+
+    await handler(signalText("stop", 3));
+    expect(dispatchInboundMessageMock).toHaveBeenCalledTimes(2);
+    expect(dispatchedCommandBody(1)).toBe("stop");
+
+    releaseActive();
+    await vi.advanceTimersByTimeAsync(20);
+    expect(dispatchInboundMessageMock).toHaveBeenCalledTimes(2);
+  });
+});

@@ -116,16 +116,18 @@ export function renderChannelConfigSection(params: { channelId: string; props: C
   const disabled = props.configSaving || props.configSchemaLoading;
   return html`
     <div style="margin-top: 16px;">
-      ${props.configSchemaLoading
-        ? html` <div class="muted">Loading config schema…</div> `
-        : renderChannelConfigForm({
-            channelId,
-            configValue: props.configForm,
-            schema: props.configSchema,
-            uiHints: props.configUiHints,
-            disabled,
-            onPatch: props.onConfigPatch,
-          })}
+      ${
+        props.configSchemaLoading
+          ? html` <div class="muted">Loading config schema…</div> `
+          : renderChannelConfigForm({
+              channelId,
+              configValue: props.configForm,
+              schema: props.configSchema,
+              uiHints: props.configUiHints,
+              disabled,
+              onPatch: props.onConfigPatch,
+            })
+      }
       <div class="row" style="margin-top: 12px;">
         <button
           class="btn primary"

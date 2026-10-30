@@ -1,270 +1,309 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { OpenClawConfig } from "../../config/config.js";
+import { expect, it, vi } from "vitest";
+import { getCliSessionBinding } from "../../config/sessions/cli-session-binding.js";
+import type { SessionEntry } from "../../config/sessions/types.js";
+import { normalizeLegacySessionEntryDelivery } from "../../infra/state-migrations.legacy-session-store.js";
+import type { projectSessionDeliveryFields } from "../../utils/delivery-context.shared.js";
 
-vi.mock("../../config/sessions.js", () => ({
-  loadSessionStore: vi.fn(),
-  resolveStorePath: vi.fn().mockReturnValue("/tmp/test-store.json"),
+vi.mock("../../config/sessions/paths.js", () => ({
+  resolveSessionStorePathCore: vi.fn().mockReturnValue("/tmp/test-store.json"),
+  resolveSessionFilePathOptions: vi.fn().mockReturnValue({ sessionsDir: "/tmp" }),
+  resolveSessionFilePathCore: vi.fn((sessionId: string) => `/tmp/${sessionId}.jsonl`),
+}));
+vi.mock("../../config/sessions/reset-policy.js", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../config/sessions/reset-policy.js")>()),
   evaluateSessionFreshness: vi.fn().mockReturnValue({ fresh: true }),
-  resolveSessionResetPolicy: vi.fn().mockReturnValue({ mode: "idle", idleMinutes: 60 }),
 }));
 
-vi.mock("../../agents/bootstrap-cache.js", () => ({
-  clearBootstrapSnapshot: vi.fn(),
-  clearBootstrapSnapshotOnSessionRollover: vi.fn(({ sessionKey, previousSessionId }) => {
-    if (sessionKey && previousSessionId) {
-      clearBootstrapSnapshot(sessionKey);
-    }
-  }),
-}));
-
-import { clearBootstrapSnapshot } from "../../agents/bootstrap-cache.js";
-import { loadSessionStore, evaluateSessionFreshness } from "../../config/sessions.js";
+import { evaluateSessionFreshness } from "../../config/sessions/reset-policy.js";
 import { resolveCronSession } from "./session.js";
 
 const NOW_MS = 1_737_600_000_000;
-
-type SessionStore = ReturnType<typeof loadSessionStore>;
-type SessionStoreEntry = SessionStore[string];
-type MockSessionStoreEntry = Partial<SessionStoreEntry>;
+type MockSessionStoreEntry = Partial<
+  SessionEntry & ReturnType<typeof projectSessionDeliveryFields>
+>;
 
 function resolveWithStoredEntry(params?: {
   sessionKey?: string;
+  sourceSessionKey?: string;
   entry?: MockSessionStoreEntry;
+  targetEntry?: SessionEntry;
   forceNew?: boolean;
   fresh?: boolean;
+  exactRunSession?: boolean;
 }) {
   const sessionKey = params?.sessionKey ?? "webhook:stable-key";
-  const store: SessionStore = params?.entry
-    ? ({ [sessionKey]: params.entry as SessionStoreEntry } as SessionStore)
-    : {};
-  vi.mocked(loadSessionStore).mockReturnValue(store);
+  const sourceSessionKey = params?.sourceSessionKey;
+  const store: Record<string, SessionEntry> = {};
+  if (params?.entry) {
+    store[sourceSessionKey ?? sessionKey] = normalizeLegacySessionEntryDelivery({
+      sessionId: "old-session",
+      updatedAt: NOW_MS - 1_000,
+      ...params.entry,
+    });
+  }
+  if (params?.targetEntry) {
+    store[sessionKey] = params.targetEntry;
+  }
   vi.mocked(evaluateSessionFreshness).mockReturnValue({ fresh: params?.fresh ?? true });
-
   return resolveCronSession({
-    cfg: {} as OpenClawConfig,
+    cfg: {},
     sessionKey,
+    sourceSessionKey,
     agentId: "main",
     nowMs: NOW_MS,
     forceNew: params?.forceNew,
+    exactRunSession: params?.exactRunSession,
+    store,
+    lifecycleTimestamps: {},
   });
 }
 
-describe("resolveCronSession", () => {
-  beforeEach(() => {
-    vi.mocked(clearBootstrapSnapshot).mockReset();
-  });
+const delivery = {
+  lastChannel: "slack",
+  lastTo: "channel:C0XXXXXXXXX",
+  lastThreadId: "1737500000.123456",
+  deliveryContext: { channel: "slack", to: "channel:C0XXXXXXXXX", threadId: "1737500000.123456" },
+};
+const boundContext = {
+  spawnedBy: "agent:main:parent",
+  spawnedCwd: "/repo/task",
+  spawnedWorkspaceDir: "/repo/task",
+  sessionRoot: "/repo/task",
+  permissionMode: "read-only",
+  sandboxMode: "off",
+  inheritedToolPolicyVersion: 1,
+  inheritedToolAllow: ["read"],
+  inheritedToolDeny: ["exec"],
+  spawnDepth: 2,
+  subagentRole: "leaf",
+  subagentControlScope: "none",
+  worktree: { id: "worktree-1", branch: "task", repoRoot: "/repo" },
+  projectId: "project",
+} satisfies Partial<SessionEntry>;
 
-  it("preserves modelOverride and providerOverride from existing session entry", () => {
+// Spawned children and memory-audience leases bind to the parent's exact
+// revision, so a run that reuses an incarnation in place must not rotate it.
+it.each([
+  { name: "fresh in-place reuse", keeps: true },
+  { name: "exact-run reuse", exactRunSession: true, keeps: false },
+])("mints a lifecycle revision only for a new run generation ($name)", ({ keeps, ...params }) => {
+  const result = resolveWithStoredEntry({
+    sessionKey: "agent:main:dashboard:chat",
+    ...params,
+    entry: {
+      sessionId: "existing-session",
+      lifecycleRevision: "existing-revision",
+      systemSent: true,
+    },
+  });
+  expect(result.sessionEntry.lifecycleRevision).toBe(result.lifecycleRevision);
+  if (keeps) {
+    expect(result.lifecycleRevision).toBe("existing-revision");
+  } else {
+    expect(result.lifecycleRevision).not.toBe("existing-revision");
+    expect(result.lifecycleRevision).toEqual(expect.any(String));
+  }
+});
+
+it.each([
+  { forceNew: true, heartbeat: false, initializing: false, rolls: false },
+  { forceNew: true, heartbeat: true, initializing: true, rolls: false },
+  { forceNew: false, heartbeat: true, initializing: false, rolls: false },
+  { forceNew: true, heartbeat: true, initializing: false, rolls: true },
+])(
+  "guards archived sessions: forced=$forceNew, heartbeat=$heartbeat, initializing=$initializing",
+  ({ forceNew, heartbeat, initializing, rolls }) => {
+    const sessionKey = `agent:main:main${heartbeat ? ":heartbeat" : ""}`;
+    const resolve = () =>
+      resolveWithStoredEntry({
+        sessionKey,
+        forceNew,
+        entry: {
+          sessionId: "archived-heartbeat-session",
+          archivedAt: NOW_MS,
+          ...(heartbeat ? { heartbeatIsolatedBaseSessionKey: "agent:main:main" } : {}),
+          ...(initializing ? { initializationPending: true as const } : {}),
+        },
+      });
+    if (!rolls) {
+      const error = initializing
+        ? "is still initializing. Retry after initialization completes."
+        : "is archived. Restore it before starting new work.";
+      expect(resolve).toThrow(`Session "${sessionKey}" ${error}`);
+    } else {
+      const result = resolve();
+      expect(result).toMatchObject({
+        isNewSession: true,
+        previousSessionId: "archived-heartbeat-session",
+      });
+      expect(result.sessionEntry.sessionId).not.toBe("archived-heartbeat-session");
+      expect(result.sessionEntry.archivedAt).toBeUndefined();
+      expect(result.sessionEntry.heartbeatIsolatedBaseSessionKey).toBeUndefined();
+    }
+  },
+);
+
+it.each([
+  { forceNew: false, existingTarget: false },
+  { forceNew: true, existingTarget: true },
+])(
+  "keeps usage with its target (forced=$forceNew, existing=$existingTarget)",
+  ({ forceNew, existingTarget }) => {
+    const sessionKey = "agent:main:cron:target";
+    const sourceSessionKey = "agent:main:chat";
     const result = resolveWithStoredEntry({
-      sessionKey: "agent:main:cron:test-job",
+      sessionKey,
+      sourceSessionKey,
+      forceNew,
       entry: {
-        sessionId: "old-session-id",
-        updatedAt: 1000,
-        modelOverride: "deepseek-v3-4bit-mlx",
-        providerOverride: "inferencer",
-        thinkingLevel: "high",
-        model: "k2p5",
+        sessionId: "source-last",
+        lifecycleRevision: "source-revision",
+        updatedAt: NOW_MS,
+        usageFamilyKey: sourceSessionKey,
+        usageFamilySessionIds: ["source-first", "source-last"],
       },
+      targetEntry: existingTarget
+        ? {
+            sessionId: "target-last",
+            updatedAt: NOW_MS,
+            usageFamilySessionIds: ["target-first", "target-last"],
+          }
+        : undefined,
     });
+    expect(result.sessionEntry.usageFamilyKey).toBe(existingTarget ? sessionKey : undefined);
+    expect(result.sessionEntry.usageFamilySessionIds).toEqual(
+      existingTarget ? ["target-first", "target-last", result.sessionEntry.sessionId] : undefined,
+    );
+    expect(result.sessionEntry.createdActor).toBeUndefined();
+    expect(result.lifecycleRevision).not.toBe("source-revision");
+  },
+);
 
-    expect(result.sessionEntry.modelOverride).toBe("deepseek-v3-4bit-mlx");
-    expect(result.sessionEntry.providerOverride).toBe("inferencer");
-    expect(result.sessionEntry.thinkingLevel).toBe("high");
-    // The model field (last-used model) should also be preserved
-    expect(result.sessionEntry.model).toBe("k2p5");
+it.each([true, false])("resets routing and runtime handles (forced=$0)", (forceNew) => {
+  const preferences = {
+    pinnedAt: NOW_MS - 500,
+    sidebarRoot: true,
+    modelOverride: "claude-sonnet-4-6",
+    providerOverride: "anthropic",
+    modelOverrideSource: "user" as const,
+    agentRuntimeOverride: "paleoclaw",
+    authProfileOverride: "work-profile",
+    authProfileOverrideSource: "user" as const,
+    authProfileOverrideCompactionCount: 3,
+  };
+  const ambient = {
+    ...boundContext,
+    elevatedLevel: "full",
+    sendPolicy: "deny",
+    queueMode: "collect",
+  } as const;
+  const stalePreferences = { modelOverride: "gpt-4.1-mini", providerOverride: "openai" };
+  const result = resolveWithStoredEntry({
+    forceNew,
+    fresh: forceNew,
+    entry: {
+      lifecycleRevision: "old-revision",
+      updatedAt: NOW_MS - (forceNew ? 1_000 : 86_400_000),
+      systemSent: true,
+      sessionFile: forceNew ? "/tmp/stale-session.jsonl" : "/tmp/legacy-session.jsonl",
+      agentHarnessId: "codex",
+      ...boundContext,
+      ...delivery,
+      ...(forceNew
+        ? { lastAccountId: "acct-123", ...preferences }
+        : {
+            ...ambient,
+            ...stalePreferences,
+            claudeCliSessionId: "native-before-boundary",
+            compactionCount: 9,
+            channel: "discord",
+            origin: { provider: "discord", to: "old-channel" },
+          }),
+    },
   });
-
-  it("handles missing modelOverride gracefully", () => {
-    const result = resolveWithStoredEntry({
-      sessionKey: "agent:main:cron:test-job",
-      entry: {
-        sessionId: "old-session-id",
-        updatedAt: 1000,
-        model: "claude-opus-4-5",
-      },
-    });
-
-    expect(result.sessionEntry.modelOverride).toBeUndefined();
-    expect(result.sessionEntry.providerOverride).toBeUndefined();
+  expect(result).toMatchObject({
+    isNewSession: true,
+    systemSent: false,
+    previousSessionId: forceNew ? "old-session" : undefined,
   });
-
-  it("handles no existing session entry", () => {
-    const result = resolveWithStoredEntry({
-      sessionKey: "agent:main:cron:new-job",
+  expect(result.lifecycleRevision).not.toBe("old-revision");
+  expect(result.sessionEntry.agentHarnessId).toBeUndefined();
+  expect(result.sessionEntry.delivery).toBeUndefined();
+  expect(result.sessionEntry).not.toHaveProperty("channel");
+  expect(result.sessionEntry).not.toHaveProperty("origin");
+  if (forceNew) {
+    expect(result.sessionEntry.sessionId).not.toBe("old-session");
+    expect(result.sessionEntry).toMatchObject(preferences);
+    expect(result.sessionEntry.sessionFile).toBeUndefined();
+    for (const field of Object.keys(boundContext)) {
+      expect(result.sessionEntry).not.toHaveProperty(field);
+    }
+  } else {
+    expect(result.sessionEntry).toMatchObject({
+      sessionId: "old-session",
+      ...ambient,
+      ...stalePreferences,
+      compactionCount: 0,
     });
+    expect(result.sessionEntry.claudeCliSessionId).toBeUndefined();
+    expect(result.sessionEntry).not.toHaveProperty("sessionFile");
+    expect(result.resetBoundaryPending).toMatchObject({ reason: "cron-stale" });
+  }
+});
 
-    expect(result.sessionEntry.modelOverride).toBeUndefined();
-    expect(result.sessionEntry.providerOverride).toBeUndefined();
-    expect(result.sessionEntry.model).toBeUndefined();
-    expect(result.isNewSession).toBe(true);
+it("keeps a provider-owned CLI session with the default reset policy", () => {
+  const startedAt = NOW_MS - 86_400_000;
+  const result = resolveWithStoredEntry({
+    sessionKey: "agent:main:cron:daily-job",
+    fresh: false,
+    entry: {
+      sessionId: "old-session-id",
+      updatedAt: startedAt,
+      sessionStartedAt: startedAt,
+      lastInteractionAt: startedAt,
+      modelProvider: "claude-cli",
+      cliSessionBindings: { "claude-cli": { sessionId: "cli-conversation-xyz" } },
+    },
   });
-
-  // New tests for session reuse behavior (#18027)
-  describe("session reuse for webhooks/cron", () => {
-    it("reuses existing sessionId when session is fresh", () => {
-      const result = resolveWithStoredEntry({
-        entry: {
-          sessionId: "existing-session-id-123",
-          updatedAt: NOW_MS - 1000,
-          systemSent: true,
-        },
-        fresh: true,
-      });
-
-      expect(result.sessionEntry.sessionId).toBe("existing-session-id-123");
-      expect(result.isNewSession).toBe(false);
-      expect(result.systemSent).toBe(true);
-      expect(clearBootstrapSnapshot).not.toHaveBeenCalled();
-    });
-
-    it("creates new sessionId when session is stale", () => {
-      const result = resolveWithStoredEntry({
-        entry: {
-          sessionId: "old-session-id",
-          updatedAt: NOW_MS - 86_400_000, // 1 day ago
-          systemSent: true,
-          modelOverride: "gpt-4.1-mini",
-          providerOverride: "openai",
-          sendPolicy: "allow",
-        },
-        fresh: false,
-      });
-
-      expect(result.sessionEntry.sessionId).not.toBe("old-session-id");
-      expect(result.isNewSession).toBe(true);
-      expect(result.systemSent).toBe(false);
-      expect(result.sessionEntry.modelOverride).toBe("gpt-4.1-mini");
-      expect(result.sessionEntry.providerOverride).toBe("openai");
-      expect(result.sessionEntry.sendPolicy).toBe("allow");
-      expect(clearBootstrapSnapshot).toHaveBeenCalledWith("webhook:stable-key");
-    });
-
-    it("creates new sessionId when forceNew is true", () => {
-      const result = resolveWithStoredEntry({
-        entry: {
-          sessionId: "existing-session-id-456",
-          updatedAt: NOW_MS - 1000,
-          systemSent: true,
-          modelOverride: "sonnet-4",
-          providerOverride: "anthropic",
-        },
-        fresh: true,
-        forceNew: true,
-      });
-
-      expect(result.sessionEntry.sessionId).not.toBe("existing-session-id-456");
-      expect(result.isNewSession).toBe(true);
-      expect(result.systemSent).toBe(false);
-      expect(result.sessionEntry.modelOverride).toBe("sonnet-4");
-      expect(result.sessionEntry.providerOverride).toBe("anthropic");
-      expect(clearBootstrapSnapshot).toHaveBeenCalledWith("webhook:stable-key");
-    });
-
-    // Constants for test data to improve readability and maintainability
-    const TEST_SLACK_CHANNEL_ID = "C0TEST123";
-    const TEST_THREAD_ID = "1737500000.TEST123";
-    const TEST_ACCOUNT_ID = "acct-test123";
-
-    it("clears delivery routing metadata and deliveryContext when forceNew is true", () => {
-      const result = resolveWithStoredEntry({
-        entry: {
-          sessionId: "existing-session-id-789",
-          updatedAt: NOW_MS - 1000,
-          systemSent: true,
-          lastChannel: "slack" as never,
-          lastTo: `channel:${TEST_SLACK_CHANNEL_ID}`,
-          lastAccountId: TEST_ACCOUNT_ID,
-          lastThreadId: TEST_THREAD_ID,
-          deliveryContext: {
-            channel: "slack",
-            to: `channel:${TEST_SLACK_CHANNEL_ID}`,
-            threadId: TEST_THREAD_ID,
-          },
-          modelOverride: "gpt-5.2",
-        },
-        fresh: true,
-        forceNew: true,
-      });
-
-      expect(result.isNewSession).toBe(true);
-      // Delivery routing state must be cleared to prevent thread leaking.
-      // deliveryContext must also be cleared because normalizeSessionEntryDelivery
-      // repopulates lastThreadId from deliveryContext.threadId on store writes.
-      expect(result.sessionEntry.lastChannel).toBeUndefined();
-      expect(result.sessionEntry.lastTo).toBeUndefined();
-      expect(result.sessionEntry.lastAccountId).toBeUndefined();
-      expect(result.sessionEntry.lastThreadId).toBeUndefined();
-      expect(result.sessionEntry.deliveryContext).toBeUndefined();
-      // Per-session overrides must be preserved
-      expect(result.sessionEntry.modelOverride).toBe("gpt-5.2");
-    });
-
-    it("clears delivery routing metadata when session is stale", () => {
-      const result = resolveWithStoredEntry({
-        entry: {
-          sessionId: "old-session-id",
-          updatedAt: NOW_MS - 86_400_000,
-          lastChannel: "slack" as never,
-          lastTo: `channel:${TEST_SLACK_CHANNEL_ID}`,
-          lastThreadId: "1737500000.999999",
-          deliveryContext: {
-            channel: "slack",
-            to: `channel:${TEST_SLACK_CHANNEL_ID}`,
-            threadId: "1737500000.999999",
-          },
-        },
-        fresh: false,
-      });
-
-      expect(result.isNewSession).toBe(true);
-      expect(result.sessionEntry.lastChannel).toBeUndefined();
-      expect(result.sessionEntry.lastTo).toBeUndefined();
-      expect(result.sessionEntry.lastAccountId).toBeUndefined();
-      expect(result.sessionEntry.lastThreadId).toBeUndefined();
-      expect(result.sessionEntry.deliveryContext).toBeUndefined();
-    });
-
-    it("preserves delivery routing metadata when reusing fresh session", () => {
-      const result = resolveWithStoredEntry({
-        entry: {
-          sessionId: "existing-session-id-101",
-          updatedAt: NOW_MS - 1000,
-          systemSent: true,
-          lastChannel: "slack" as never,
-          lastTo: `channel:${TEST_SLACK_CHANNEL_ID}`,
-          lastThreadId: TEST_THREAD_ID,
-          deliveryContext: {
-            channel: "slack",
-            to: `channel:${TEST_SLACK_CHANNEL_ID}`,
-            threadId: TEST_THREAD_ID,
-          },
-        },
-        fresh: true,
-      });
-
-      expect(result.isNewSession).toBe(false);
-      expect(result.sessionEntry.lastChannel).toBe("slack");
-      expect(result.sessionEntry.lastTo).toBe(`channel:${TEST_SLACK_CHANNEL_ID}`);
-      expect(result.sessionEntry.lastThreadId).toBe(TEST_THREAD_ID);
-      expect(result.sessionEntry.deliveryContext).toEqual({
-        channel: "slack",
-        to: `channel:${TEST_SLACK_CHANNEL_ID}`,
-        threadId: TEST_THREAD_ID,
-      });
-    });
-
-    it("creates new sessionId when entry exists but has no sessionId", () => {
-      const result = resolveWithStoredEntry({
-        entry: {
-          updatedAt: NOW_MS - 1000,
-          modelOverride: "some-model",
-        },
-      });
-
-      expect(result.sessionEntry.sessionId).toBeDefined();
-      expect(result.isNewSession).toBe(true);
-      // Should still preserve other fields from entry
-      expect(result.sessionEntry.modelOverride).toBe("some-model");
-    });
+  expect(result).toMatchObject({
+    isNewSession: false,
+    sessionEntry: { sessionId: "old-session-id" },
   });
+  expect(getCliSessionBinding(result.sessionEntry, "claude-cli")).toEqual({
+    sessionId: "cli-conversation-xyz",
+  });
+});
+
+it.each([
+  {
+    name: "configured model default",
+    entry: {
+      modelOverrideSource: "default",
+      providerOverride: "anthropic",
+      modelOverride: "claude-sonnet-4-6",
+      modelOverrideFallbackOriginProvider: "openai",
+      modelOverrideFallbackOriginModel: "gpt-5.4",
+    },
+    expected: { modelOverrideSource: "default" },
+    cleared: "modelOverride",
+  },
+  {
+    name: "legacy user auth",
+    entry: { authProfileOverride: "work-profile" },
+    expected: { authProfileOverride: "work-profile", authProfileOverrideSource: "user" },
+    cleared: "authProfileOverrideCompactionCount",
+  },
+] satisfies {
+  name: string;
+  entry: MockSessionStoreEntry;
+  expected: Partial<SessionEntry>;
+  cleared: keyof SessionEntry;
+}[])("preserves $name policy during forced rollover", ({ entry, expected, cleared }) => {
+  const result = resolveWithStoredEntry({
+    forceNew: true,
+    entry,
+  });
+  expect(result.isNewSession).toBe(true);
+  expect(result.sessionEntry).toMatchObject(expected);
+  expect(result.sessionEntry[cleared]).toBeUndefined();
 });

@@ -1,4 +1,4 @@
-import { MemoryProvider, MemoryProviderStats } from "./memory-provider.js";
+import { MemoryProvider, type MemoryProviderStats } from "./memory-provider.js";
 
 export class MemoryManager {
   private static instance: MemoryManager;

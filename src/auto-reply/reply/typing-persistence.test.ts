@@ -1,4 +1,7 @@
+import { MAX_TIMER_TIMEOUT_MS } from "@paleoclaw/normalization-core/number-coercion";
+// Tests typing mode persistence across session updates and reply turns.
 import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from "vitest";
+import { createDeferred } from "../../../test/helpers/promise.js";
 import { createTypingController } from "./typing.js";
 
 describe("typing persistence bug fix", () => {
@@ -23,21 +26,27 @@ describe("typing persistence bug fix", () => {
     vi.useRealTimers();
   });
 
-  it("should NOT restart typing after markRunComplete is called", async () => {
-    // Start typing normally
-    await controller.startTypingLoop();
+  it("keeps typing alive while keepalive ticks continue during long runs", async () => {
+    const longRunCleanupSpy = vi.fn();
+    const longRunController = createTypingController({
+      onReplyStart: onReplyStartSpy,
+      onCleanup: longRunCleanupSpy,
+      typingIntervalSeconds: 6,
+      log: vi.fn(),
+    });
+
+    await longRunController.startTypingLoop();
     expect(onReplyStartSpy).toHaveBeenCalledTimes(1);
 
-    // Mark run as complete (but not yet dispatch idle)
-    controller.markRunComplete();
+    await vi.advanceTimersByTimeAsync(6000);
+    expect(onReplyStartSpy).toHaveBeenCalledTimes(2);
 
-    // Advance time to trigger the typing interval (6 seconds)
-    vi.advanceTimersByTime(6000);
+    await vi.advanceTimersByTimeAsync(115_000);
+    expect(longRunCleanupSpy).not.toHaveBeenCalled();
+    expect(onReplyStartSpy).toHaveBeenCalledTimes(21);
 
-    // BUG: The typing loop should NOT call onReplyStart again
-    // because the run is already complete
-    expect(onReplyStartSpy).toHaveBeenCalledTimes(1);
-    expect(onReplyStartSpy).not.toHaveBeenCalledTimes(2);
+    longRunController.cleanup();
+    expect(longRunCleanupSpy).toHaveBeenCalledTimes(1);
   });
 
   it("should stop typing when both runComplete and dispatchIdle are true", async () => {
@@ -57,6 +66,51 @@ describe("typing persistence bug fix", () => {
     vi.advanceTimersByTime(6000);
     expect(onReplyStartSpy).toHaveBeenCalledTimes(1); // Still only the initial call
   });
+
+  it("keeps timer ticks behind an unfinished initial typing request", async () => {
+    const pending = createDeferred();
+    onReplyStartSpy.mockReturnValueOnce(pending.promise);
+
+    await controller.startTypingLoop();
+    await vi.advanceTimersByTimeAsync(12_000);
+    expect(onReplyStartSpy).toHaveBeenCalledTimes(1);
+
+    pending.resolve();
+    await vi.advanceTimersByTimeAsync(6_000);
+    expect(onReplyStartSpy).toHaveBeenCalledTimes(2);
+    controller.cleanup();
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it.each(["cleanup", "run-first", "idle-first"] as const)(
+    "disposes typing when %s closes the controller before start settles",
+    async (completion) => {
+      const starting = controller.startTypingLoop();
+      if (completion === "cleanup") {
+        controller.cleanup();
+      } else if (completion === "run-first") {
+        controller.markRunComplete();
+        controller.markDispatchIdle();
+      } else {
+        controller.markDispatchIdle();
+        controller.markRunComplete();
+      }
+      await starting;
+      await controller.onReplyStart();
+      await controller.startTypingLoop();
+      await controller.startTypingOnText("late text");
+      controller.refreshTypingTtl();
+      controller.markRunComplete();
+      controller.markDispatchIdle();
+      controller.cleanup();
+
+      expect(controller.isActive()).toBe(false);
+      expect(onCleanupSpy).toHaveBeenCalledTimes(1);
+      expect(vi.getTimerCount()).toBe(0);
+      await vi.advanceTimersByTimeAsync(12_000);
+      expect(onReplyStartSpy).toHaveBeenCalledTimes(1);
+    },
+  );
 
   it("should prevent typing restart even if cleanup is delayed", async () => {
     // Start typing
@@ -79,5 +133,38 @@ describe("typing persistence bug fix", () => {
     // Eventually dispatch becomes idle and triggers cleanup
     controller.markDispatchIdle();
     expect(onCleanupSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it("returns an inert controller when typing callbacks are absent", async () => {
+    const inert = createTypingController({});
+
+    await inert.onReplyStart();
+    await inert.startTypingLoop();
+    await inert.startTypingOnText("hello");
+    inert.refreshTypingTtl();
+    inert.markRunComplete();
+    inert.markDispatchIdle();
+    inert.cleanup();
+
+    expect(inert.isActive()).toBe(false);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("clamps an oversized typing interval and derives a longer TTL", async () => {
+    const setIntervalSpy = vi.spyOn(globalThis, "setInterval");
+    const setTimeoutSpy = vi.spyOn(globalThis, "setTimeout");
+    const boundedController = createTypingController({
+      onReplyStart: onReplyStartSpy,
+      onCleanup: onCleanupSpy,
+      typingIntervalSeconds: Number.MAX_SAFE_INTEGER,
+      log: vi.fn(),
+    });
+
+    await boundedController.startTypingLoop();
+
+    const maxTypingIntervalMs = Math.floor(MAX_TIMER_TIMEOUT_MS / 2);
+    expect(setIntervalSpy).toHaveBeenCalledWith(expect.any(Function), maxTypingIntervalMs);
+    expect(setTimeoutSpy).toHaveBeenCalledWith(expect.any(Function), maxTypingIntervalMs * 2);
+    boundedController.cleanup();
   });
 });

@@ -1,17 +1,65 @@
 {
   "name": "@paleoclaw/twitch",
-  "version": "1.8.0",
-  "description": "paleoclaw Twitch channel plugin",
+  "version": "2026.10.5",
+  "description": "paleoclaw Twitch channel plugin for chat and moderation workflows.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/syxscott/PaleoClaw"
+  },
   "type": "module",
   "dependencies": {
-    "@twurple/api": "^8.0.3",
-    "@twurple/auth": "^8.0.3",
-    "@twurple/chat": "^8.0.3",
-    "zod": "^4.3.6"
+    "@twurple/api-call": "8.2.0",
+    "@twurple/auth": "8.2.0",
+    "@twurple/chat": "8.2.0",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@paleoclaw/plugin-sdk": "workspace:*"
   },
   "paleoclaw": {
     "extensions": [
       "./index.ts"
-    ]
+    ],
+    "setupEntry": "./setup-entry.ts",
+    "setupFeatures": {
+      "configPromotion": true
+    },
+    "install": {
+      "clawhubSpec": "PaleoHub:@paleoclaw/twitch",
+      "npmSpec": "@paleoclaw/twitch",
+      "defaultChoice": "npm",
+      "minHostVersion": ">=2026.4.10"
+    },
+    "compat": {
+      "pluginApi": ">=2026.10.5"
+    },
+    "build": {
+      "openclawVersion": "2026.10.5"
+    },
+    "channel": {
+      "id": "twitch",
+      "configuredState": {
+        "env": {
+          "anyOf": [
+            "OPENCLAW_TWITCH_ACCESS_TOKEN"
+          ]
+        }
+      },
+      "label": "Twitch",
+      "selectionLabel": "Twitch (Chat)",
+      "docsPath": "/channels/twitch",
+      "blurb": "Twitch chat integration",
+      "aliases": [
+        "twitch-chat"
+      ],
+      "setup": {
+        "fields": []
+      }
+    },
+    "release": {
+      "bundleRuntimeDependencies": false,
+      "publishToClawHub": true,
+      "publishToNpm": true
+    }
   }
 }

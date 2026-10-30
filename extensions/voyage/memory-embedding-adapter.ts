@@ -1,0 +1,51 @@
+import {
+  isMissingEmbeddingApiKeyError,
+  mapBatchEmbeddingsByIndex,
+  sanitizeEmbeddingCacheHeaders,
+} from "paleoclaw/plugin-sdk/embedding-provider-adapter";
+import type { MemoryEmbeddingProviderAdapter } from "paleoclaw/plugin-sdk/memory-core-host-engine-embeddings";
+import { runVoyageEmbeddingBatches } from "./embedding-batch.js";
+import {
+  createVoyageEmbeddingProvider,
+  DEFAULT_VOYAGE_EMBEDDING_MODEL,
+} from "./embedding-provider.js";
+
+export const voyageMemoryEmbeddingProviderAdapter: MemoryEmbeddingProviderAdapter = {
+  id: "voyage",
+  defaultModel: DEFAULT_VOYAGE_EMBEDDING_MODEL,
+  transport: "remote",
+  authProviderId: "voyage",
+  autoSelectPriority: 40,
+  allowExplicitWhenConfiguredAuto: true,
+  shouldContinueAutoSelection: isMissingEmbeddingApiKeyError,
+  create: async (options) => {
+    const { provider, client } = await createVoyageEmbeddingProvider({
+      ...options,
+      provider: "voyage",
+      fallback: "none",
+    });
+    return {
+      provider,
+      runtime: {
+        id: "voyage",
+        cacheKeyData: {
+          provider: "voyage",
+          baseUrl: client.baseUrl,
+          model: client.model,
+          headers: sanitizeEmbeddingCacheHeaders(client.headers, ["authorization"]),
+        },
+        batchEmbed: async (batch) => {
+          const byCustomId = await runVoyageEmbeddingBatches({
+            ...batch,
+            client,
+            requests: batch.chunks.map((chunk, index) => ({
+              custom_id: String(index),
+              body: { input: chunk.text },
+            })),
+          });
+          return mapBatchEmbeddingsByIndex(byCustomId, batch.chunks.length);
+        },
+      },
+    };
+  },
+};

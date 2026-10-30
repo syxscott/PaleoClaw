@@ -1,143 +1,74 @@
-import { loadConfig } from "../config/config.js";
+import { expectDefined } from "@paleoclaw/normalization-core";
+import { visibleWidth } from "../../packages/terminal-core/src/ansi.js";
+import {
+  decorativeEmoji,
+  decorativePrefix,
+  stripDecorativeEmojiForTerminal,
+} from "../../packages/terminal-core/src/decorative-emoji.js";
+import { isRich, theme } from "../../packages/terminal-core/src/theme.js";
 import { resolveCommitHash } from "../infra/git-commit.js";
-import { visibleWidth } from "../terminal/ansi.js";
-import { isRich, theme } from "../terminal/theme.js";
+import { isLobsterDay, lobsterDayHash } from "../shared/lobster-day.js";
 import { hasRootVersionAlias } from "./argv.js";
-import { pickTagline, type TaglineMode, type TaglineOptions } from "./tagline.js";
+import { pickTagline, type TaglineOptions } from "./tagline.js";
 
 type BannerOptions = TaglineOptions & {
   argv?: string[];
   commit?: string | null;
-  columns?: number;
   richTty?: boolean;
 };
 
+const LOBSTER_ARTS: readonly string[] = [
+  ["  (\\/)  (\\/)", "   \\_\\  /_/", "    ( o.o )", "    /|__|\\"].join("\n"),
+  ["     o   o", "     )   (", "  ~~~~~~~~~~~"].join("\n"),
+] as const;
+
 let bannerEmitted = false;
 
-const graphemeSegmenter =
-  typeof Intl !== "undefined" && "Segmenter" in Intl
-    ? new Intl.Segmenter(undefined, { granularity: "grapheme" })
-    : null;
-
-function splitGraphemes(value: string): string[] {
-  if (!graphemeSegmenter) {
-    return Array.from(value);
-  }
-  try {
-    return Array.from(graphemeSegmenter.segment(value), (seg) => seg.segment);
-  } catch {
-    return Array.from(value);
-  }
-}
-
-const hasJsonFlag = (argv: string[]) =>
-  argv.some((arg) => arg === "--json" || arg.startsWith("--json="));
-
-const hasVersionFlag = (argv: string[]) =>
-  argv.some((arg) => arg === "--version" || arg === "-V") || hasRootVersionAlias(argv);
-
-function parseTaglineMode(value: unknown): TaglineMode | undefined {
-  if (value === "random" || value === "default" || value === "off") {
-    return value;
-  }
-  return undefined;
-}
-
-function resolveTaglineMode(options: BannerOptions): TaglineMode | undefined {
-  const explicit = parseTaglineMode(options.mode);
-  if (explicit) {
-    return explicit;
-  }
-  try {
-    return parseTaglineMode(loadConfig().cli?.banner?.taglineMode);
-  } catch {
-    // Fall back to default random behavior when config is missing/invalid.
-    return undefined;
-  }
-}
-
 export function formatCliBannerLine(version: string, options: BannerOptions = {}): string {
-  const commit = options.commit ?? resolveCommitHash({ env: options.env });
+  const commit =
+    options.commit ?? resolveCommitHash({ env: options.env, moduleUrl: import.meta.url });
   const commitLabel = commit ?? "unknown";
-  const tagline = pickTagline({ ...options, mode: resolveTaglineMode(options) });
+  const tagline = stripDecorativeEmojiForTerminal(pickTagline(options), options);
   const rich = options.richTty ?? isRich();
-  const title = "🦞 paleoclaw";
-  const prefix = "🦞 ";
-  const columns = options.columns ?? process.stdout.columns ?? 120;
+  const title = decorativePrefix("🦞", "paleoclaw", options);
+  const prefix = decorativeEmoji("🦞", options);
+  const indent = prefix ? `${prefix} ` : "";
+  const columns = process.stdout.columns ?? 120;
   const plainBaseLine = `${title} ${version} (${commitLabel})`;
   const plainFullLine = tagline ? `${plainBaseLine} — ${tagline}` : plainBaseLine;
   const fitsOnOneLine = visibleWidth(plainFullLine) <= columns;
-  if (rich) {
-    if (fitsOnOneLine) {
-      if (!tagline) {
-        return `${theme.heading(title)} ${theme.info(version)} ${theme.muted(`(${commitLabel})`)}`;
-      }
-      return `${theme.heading(title)} ${theme.info(version)} ${theme.muted(
-        `(${commitLabel})`,
-      )} ${theme.muted("—")} ${theme.accentDim(tagline)}`;
-    }
-    const line1 = `${theme.heading(title)} ${theme.info(version)} ${theme.muted(
-      `(${commitLabel})`,
-    )}`;
-    if (!tagline) {
-      return line1;
-    }
-    const line2 = `${" ".repeat(prefix.length)}${theme.accentDim(tagline)}`;
-    return `${line1}\n${line2}`;
-  }
-  if (fitsOnOneLine) {
-    return plainFullLine;
-  }
-  const line1 = plainBaseLine;
+  const baseLine = rich
+    ? `${theme.heading(title)} ${theme.info(version)} ${theme.muted(`(${commitLabel})`)}`
+    : plainBaseLine;
   if (!tagline) {
-    return line1;
+    return baseLine;
   }
-  const line2 = `${" ".repeat(prefix.length)}${tagline}`;
-  return `${line1}\n${line2}`;
+  const taglineText = rich ? theme.accentDim(tagline) : tagline;
+  return fitsOnOneLine
+    ? `${baseLine} ${rich ? theme.muted("—") : "—"} ${taglineText}`
+    : `${baseLine}\n${" ".repeat(indent.length)}${taglineText}`;
 }
 
-const LOBSTER_ASCII = [
-  "▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄",
-  "██░▄▄▄░██░▄▄░██░▄▄▄██░▀██░██░▄▄▀██░████░▄▄▀██░███░██",
-  "██░███░██░▀▀░██░▄▄▄██░█░█░██░█████░████░▀▀░██░█░█░██",
-  "██░▀▀▀░██░█████░▀▀▀██░██▄░██░▀▀▄██░▀▀░█░██░██▄▀▄▀▄██",
-  "▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀",
-  "                  🦞 paleoclaw 🦞                    ",
-  " ",
-];
-
-export function formatCliBannerArt(options: BannerOptions = {}): string {
-  const rich = options.richTty ?? isRich();
-  if (!rich) {
-    return LOBSTER_ASCII.join("\n");
+// Rare day-seeded ASCII lobster above the banner: random-tagline mode only,
+// rich terminals only, never in CI. The shared calendar keeps the UI pet in sync.
+function resolveLobsterArt(options: BannerOptions): string | null {
+  if (options.mode === "off" || options.mode === "default") {
+    return null;
   }
-
-  const colorChar = (ch: string) => {
-    if (ch === "█") {
-      return theme.accentBright(ch);
-    }
-    if (ch === "░") {
-      return theme.accentDim(ch);
-    }
-    if (ch === "▀") {
-      return theme.accent(ch);
-    }
-    return theme.muted(ch);
-  };
-
-  const colored = LOBSTER_ASCII.map((line) => {
-    if (line.includes("paleoclaw")) {
-      return (
-        theme.muted("              ") +
-        theme.accent("🦞") +
-        theme.info(" paleoclaw ") +
-        theme.accent("🦞")
-      );
-    }
-    return splitGraphemes(line).map(colorChar).join("");
-  });
-
-  return colored.join("\n");
+  if (!(options.richTty ?? isRich())) {
+    return null;
+  }
+  const now = new Date();
+  const env = options.env ?? process.env;
+  if (env.CI || env.VITEST || !isLobsterDay(now)) {
+    return null;
+  }
+  return theme.accentDim(
+    expectDefined(
+      LOBSTER_ARTS[(lobsterDayHash(now) >>> 8) % LOBSTER_ARTS.length],
+      "lobster arts entry at (lobster day hash(now) >>> 8) % lobster arts.length",
+    ),
+  );
 }
 
 export function emitCliBanner(version: string, options: BannerOptions = {}) {
@@ -148,14 +79,15 @@ export function emitCliBanner(version: string, options: BannerOptions = {}) {
   if (!process.stdout.isTTY) {
     return;
   }
-  if (hasJsonFlag(argv)) {
+  if (argv.some((arg) => arg === "--json" || arg.startsWith("--json="))) {
     return;
   }
-  if (hasVersionFlag(argv)) {
+  if (argv.some((arg) => arg === "--version" || arg === "-V") || hasRootVersionAlias(argv)) {
     return;
   }
   const line = formatCliBannerLine(version, options);
-  process.stdout.write(`\n${line}\n\n`);
+  const art = resolveLobsterArt(options);
+  process.stdout.write(`\n${art ? `${art}\n` : ""}${line}\n\n`);
   bannerEmitted = true;
 }
 

@@ -19,7 +19,8 @@ import {
 } from "./pi-embedded-subscribe.tools.js";
 import { inferToolMetaFromArgs } from "./pi-embedded-utils.js";
 import { consumeAdjustedParamsForToolCall } from "./pi-tools.before-tool-call.js";
-import { buildToolMutationState, isSameToolMutationAction } from "./tool-mutation.js";
+import { buildToolMutationState } from "./tool-mutation.js";
+import { isSameToolMutationAction } from "./tool-mutation.legacy.js";
 import { normalizeToolName } from "./tool-policy.js";
 
 type ToolStartRecord = {

@@ -1,18 +1,47 @@
+import { parseStrictPositiveInteger } from "@paleoclaw/normalization-core/number-coercion";
+
 export function parseTimeoutMs(raw: unknown): number | undefined {
+  return parseStrictPositiveInteger(typeof raw === "bigint" ? Number(raw) : raw);
+}
+
+function invalidTimeout(flagName: string, value?: string): Error {
+  const suffix = value ? ` Received: "${value}".` : "";
+  return new Error(
+    `Invalid ${flagName}. Use a positive millisecond value, e.g. ${flagName} 30000.${suffix}`,
+  );
+}
+
+export function parseTimeoutMsWithFallback(
+  raw: unknown,
+  fallbackMs: number,
+  options: {
+    invalidType?: "fallback" | "error";
+    // Each caller registers its own flag token; the rejection has to match it.
+    flagName?: string;
+  } = {},
+): number {
+  const flagName = options.flagName ?? "--timeout";
   if (raw === undefined || raw === null) {
-    return undefined;
+    return fallbackMs;
   }
-  let value = Number.NaN;
-  if (typeof raw === "number") {
-    value = raw;
-  } else if (typeof raw === "bigint") {
-    value = Number(raw);
-  } else if (typeof raw === "string") {
-    const trimmed = raw.trim();
-    if (!trimmed) {
-      return undefined;
+
+  const value =
+    typeof raw === "string"
+      ? raw.trim()
+      : typeof raw === "number" || typeof raw === "bigint"
+        ? String(raw)
+        : null;
+
+  if (!value) {
+    if (options.invalidType === "error") {
+      throw invalidTimeout(flagName);
     }
-    value = Number.parseInt(trimmed, 10);
+    return fallbackMs;
   }
-  return Number.isFinite(value) ? value : undefined;
+
+  const parsed = parseStrictPositiveInteger(value);
+  if (parsed === undefined) {
+    throw invalidTimeout(flagName, value);
+  }
+  return parsed;
 }

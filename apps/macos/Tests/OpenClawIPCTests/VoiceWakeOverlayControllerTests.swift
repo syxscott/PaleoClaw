@@ -5,10 +5,9 @@ import Testing
 @Suite(.serialized)
 @MainActor
 struct VoiceWakeOverlayControllerTests {
-    @Test func overlayControllerLifecycleWithoutUI() async {
+    @Test func `overlay controller lifecycle without UI`() async {
         let controller = VoiceWakeOverlayController(enableUI: false)
         let token = controller.startSession(
-            source: .wakeWord,
             transcript: "hello",
             attributed: nil,
             forwardEnabled: true,
@@ -31,7 +30,27 @@ struct VoiceWakeOverlayControllerTests {
         #expect(controller.snapshot().token == nil)
     }
 
-    @Test func evaluateTokenDropsMismatchAndNoActive() {
+    @Test func `sending a cleared edited transcript dismisses without stale recognition`() throws {
+        let coordinator = VoiceSessionCoordinator.shared
+        let controller = VoiceWakeOverlayController.shared
+        let token = coordinator.startSession(
+            text: "recognized words",
+            forwardEnabled: true)
+        defer { coordinator.dismiss(token: token, reason: .explicit, outcome: .empty) }
+
+        controller.userBeganEditing()
+        controller.updateText("corrected words")
+        try #require(coordinator.snapshot().text == "corrected words")
+
+        controller.updateText(" \n ")
+        controller.requestSend(token: token)
+
+        #expect(coordinator.snapshot().token == nil)
+        #expect(controller.snapshot().token == nil)
+        #expect(!controller.model.isSending)
+    }
+
+    @Test func `evaluate token drops mismatch and no active`() {
         let active = UUID()
         #expect(VoiceWakeOverlayController.evaluateToken(active: nil, incoming: active) == .dropNoActive)
         #expect(VoiceWakeOverlayController.evaluateToken(active: active, incoming: UUID()) == .dropMismatch)
@@ -39,10 +58,9 @@ struct VoiceWakeOverlayControllerTests {
         #expect(VoiceWakeOverlayController.evaluateToken(active: active, incoming: nil) == .accept)
     }
 
-    @Test func updateLevelThrottlesRapidChanges() async {
+    @Test func `update level throttles rapid changes`() async {
         let controller = VoiceWakeOverlayController(enableUI: false)
         let token = controller.startSession(
-            source: .wakeWord,
             transcript: "level test",
             attributed: nil,
             forwardEnabled: false,
@@ -60,9 +78,5 @@ struct VoiceWakeOverlayControllerTests {
         try? await Task.sleep(nanoseconds: 120_000_000)
         controller.updateLevel(token: token, 0.9)
         #expect(controller.model.level == 0.9)
-    }
-
-    @Test func overlayControllerExercisesHelpers() async {
-        await VoiceWakeOverlayController.exerciseForTesting()
     }
 }

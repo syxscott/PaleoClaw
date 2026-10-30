@@ -1,4 +1,11 @@
-type DiscordSurfaceParams = {
+import {
+  normalizeOptionalLowercaseString,
+  normalizeOptionalString,
+} from "@paleoclaw/normalization-core/string-coerce";
+import { getLoadedChannelPluginById } from "../../channels/plugins/registry-loaded.js";
+import type { OpenClawConfig } from "../../config/types.openclaw.js";
+
+type CommandSurfaceParams = {
   ctx: {
     OriginatingChannel?: string;
     Surface?: string;
@@ -10,36 +17,28 @@ type DiscordSurfaceParams = {
   };
 };
 
-type DiscordAccountParams = {
-  ctx: {
-    AccountId?: string;
-  };
+type ChannelAccountParams = CommandSurfaceParams & {
+  cfg: OpenClawConfig;
 };
 
-export function isDiscordSurface(params: DiscordSurfaceParams): boolean {
-  return resolveCommandSurfaceChannel(params) === "discord";
-}
-
-export function isTelegramSurface(params: DiscordSurfaceParams): boolean {
-  return resolveCommandSurfaceChannel(params) === "telegram";
-}
-
-export function resolveCommandSurfaceChannel(params: DiscordSurfaceParams): string {
+/** Resolves the command surface channel from inbound context and command state. */
+export function resolveCommandSurfaceChannel(params: CommandSurfaceParams): string {
   const channel =
     params.ctx.OriginatingChannel ??
     params.command.channel ??
     params.ctx.Surface ??
     params.ctx.Provider;
-  return String(channel ?? "")
-    .trim()
-    .toLowerCase();
+  return normalizeOptionalLowercaseString(channel) ?? "";
 }
 
-export function resolveDiscordAccountId(params: DiscordAccountParams): string {
-  return resolveChannelAccountId(params);
-}
-
-export function resolveChannelAccountId(params: DiscordAccountParams): string {
-  const accountId = typeof params.ctx.AccountId === "string" ? params.ctx.AccountId.trim() : "";
-  return accountId || "default";
+/** Resolves command account id, falling back to plugin default account config. */
+export function resolveChannelAccountId(params: ChannelAccountParams): string {
+  const accountId = normalizeOptionalString(params.ctx.AccountId) ?? "";
+  if (accountId) {
+    return accountId;
+  }
+  const channel = resolveCommandSurfaceChannel(params);
+  const plugin = getLoadedChannelPluginById(channel);
+  const configuredDefault = normalizeOptionalString(plugin?.config.defaultAccountId?.(params.cfg));
+  return configuredDefault || "default";
 }

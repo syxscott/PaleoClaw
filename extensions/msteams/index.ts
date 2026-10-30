@@ -1,17 +1,20 @@
-import type { OpenClawPluginApi } from "paleoclaw/plugin-sdk/msteams";
-import { emptyPluginConfigSchema } from "paleoclaw/plugin-sdk/msteams";
-import { msteamsPlugin } from "./src/channel.js";
-import { setMSTeamsRuntime } from "./src/runtime.js";
+import { defineBundledChannelEntry } from "paleoclaw/plugin-sdk/channel-entry-contract";
 
-const plugin = {
+export default defineBundledChannelEntry({
   id: "msteams",
   name: "Microsoft Teams",
   description: "Microsoft Teams channel plugin (Bot Framework)",
-  configSchema: emptyPluginConfigSchema(),
-  register(api: OpenClawPluginApi) {
-    setMSTeamsRuntime(api.runtime);
-    api.registerChannel({ plugin: msteamsPlugin });
+  importMetaUrl: import.meta.url,
+  plugin: {
+    specifier: "./channel-plugin-api.js",
+    exportName: "msteamsPlugin",
   },
-};
-
-export default plugin;
+  secrets: {
+    specifier: "./secret-contract-api.js",
+    exportName: "channelSecrets",
+  },
+  runtime: {
+    specifier: "./runtime-api.js",
+    exportName: "setMSTeamsRuntime",
+  },
+});

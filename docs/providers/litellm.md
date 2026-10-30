@@ -1,58 +1,64 @@
 ---
 summary: "Run paleoclaw through LiteLLM Proxy for unified model access and cost tracking"
+title: "LiteLLM"
 read_when:
   - You want to route paleoclaw through a LiteLLM proxy
   - You need cost tracking, logging, or model routing through LiteLLM
 ---
 
-# LiteLLM
-
-[LiteLLM](https://litellm.ai) is an open-source LLM gateway that provides a unified API to 100+ model providers. Route paleoclaw through LiteLLM to get centralized cost tracking, logging, and the flexibility to switch backends without changing your paleoclaw config.
-
-## Why use LiteLLM with paleoclaw?
-
-- **Cost tracking** — See exactly what paleoclaw spends across all models
-- **Model routing** — Switch between Claude, GPT-4, Gemini, Bedrock without config changes
-- **Virtual keys** — Create keys with spend limits for paleoclaw
-- **Logging** — Full request/response logs for debugging
-- **Fallbacks** — Automatic failover if your primary provider is down
+[LiteLLM](https://litellm.ai) is an open-source LLM gateway with a unified API to 100+ model
+providers. Route paleoclaw through LiteLLM for centralized cost tracking, logging, virtual keys with
+spend limits, and backend failover without changing paleoclaw config.
 
 ## Quick start
 
-### Via onboarding
+<Tabs>
+  <Tab title="Onboarding (recommended)">
+    ```bash
+    paleoclaw onboard --auth-choice litellm-api-key
+    ```
 
-```bash
-paleoclaw onboard --auth-choice litellm-api-key
-```
+    Onboarding prompts for the proxy base URL. Press Enter to keep the `http://localhost:4000`
+    default, or enter your proxy's URL. After the API key, choose a model returned by the proxy's
+    `/v1/models` endpoint. The first advertised model is selected by default; you can also enter a
+    model ID manually. If discovery fails, onboarding shows the reason and asks for a manual ID.
+    If the configuration changes while credentials are being prepared, setup stops before
+    sending the discovery request. Rerun onboarding with the updated configuration.
 
-### Manual setup
+    For non-interactive setup against a remote proxy, pass the proxy URL explicitly:
 
-1. Start LiteLLM Proxy:
+    ```bash
+    paleoclaw onboard --non-interactive --accept-risk --skip-health --auth-choice litellm-api-key \
+      --litellm-api-key "$LITELLM_API_KEY" --custom-base-url "https://litellm.example/v1"
+    ```
 
-```bash
-pip install 'litellm[proxy]'
-litellm --model claude-opus-4-6
-```
+  </Tab>
 
-2. Point paleoclaw to LiteLLM:
+  <Tab title="Manual setup">
+    <Steps>
+      <Step title="Start LiteLLM Proxy">
+        LiteLLM calls the upstream provider on your behalf, so export that
+        provider's key before starting it — `ANTHROPIC_API_KEY` for the model
+        below. See [Model routing](#advanced) for multi-backend setups.
 
-```bash
-export LITELLM_API_KEY="your-litellm-key"
+        ```bash
+        pip install 'litellm[proxy]'
+        export ANTHROPIC_API_KEY=sk-ant-...
+        litellm --model claude-opus-4-6
+        ```
+      </Step>
+      <Step title="Point paleoclaw to LiteLLM">
+        ```bash
+        export LITELLM_API_KEY="your-litellm-key"
+        paleoclaw
+        ```
+      </Step>
+    </Steps>
 
-paleoclaw
-```
-
-That's it. paleoclaw now routes through LiteLLM.
+  </Tab>
+</Tabs>
 
 ## Configuration
-
-### Environment variables
-
-```bash
-export LITELLM_API_KEY="sk-litellm-key"
-```
-
-### Config file
 
 ```json5
 {
@@ -72,12 +78,12 @@ export LITELLM_API_KEY="sk-litellm-key"
             maxTokens: 64000,
           },
           {
-            id: "gpt-4o",
-            name: "GPT-4o",
+            id: "local-qwen",
+            name: "Local Qwen",
             reasoning: false,
-            input: ["text", "image"],
-            contextWindow: 128000,
-            maxTokens: 8192,
+            input: ["text"],
+            contextWindow: 32768,
+            maxTokens: 4096,
           },
         ],
       },
@@ -91,63 +97,149 @@ export LITELLM_API_KEY="sk-litellm-key"
 }
 ```
 
-## Virtual keys
-
-Create a dedicated key for paleoclaw with spend limits:
-
-```bash
-curl -X POST "http://localhost:4000/key/generate" \
-  -H "Authorization: Bearer $LITELLM_MASTER_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "key_alias": "paleoclaw",
-    "max_budget": 50.00,
-    "budget_duration": "monthly"
-  }'
-```
-
-Use the generated key as `LITELLM_API_KEY`.
-
-## Model routing
-
-LiteLLM can route model requests to different backends. Configure in your LiteLLM `config.yaml`:
-
-```yaml
-model_list:
-  - model_name: claude-opus-4-6
-    litellm_params:
-      model: claude-opus-4-6
-      api_key: os.environ/ANTHROPIC_API_KEY
-
-  - model_name: gpt-4o
-    litellm_params:
-      model: gpt-4o
-      api_key: os.environ/OPENAI_API_KEY
-```
-
-paleoclaw keeps requesting `claude-opus-4-6` — LiteLLM handles the routing.
-
-## Viewing usage
-
-Check LiteLLM's dashboard or API:
+Interactive onboarding saves the chosen model as `litellm/<model-id>` and keeps authored model
+settings when that ID is already configured. Re-authentication keeps an existing default model
+and makes the selected model available. Non-interactive onboarding retains its
+`litellm/claude-opus-4-6` default. To change it after setup:
 
 ```bash
-# Key info
-curl "http://localhost:4000/key/info" \
-  -H "Authorization: Bearer sk-litellm-key"
-
-# Spend logs
-curl "http://localhost:4000/spend/logs" \
-  -H "Authorization: Bearer $LITELLM_MASTER_KEY"
+paleoclaw models list --provider litellm --refresh --json
+paleoclaw models set litellm/your-model-id
 ```
 
-## Notes
+Interactive setup records the selected model in both merge and replace modes while preserving
+authored provider models. Non-interactive setup with an explicit proxy URL leaves the model list
+available for discovery in merge mode; replace mode keeps its documented default. Run
+`paleoclaw models list --provider litellm --refresh --json` to refresh the proxy's model list.
 
-- LiteLLM runs on `http://localhost:4000` by default
-- paleoclaw connects via the OpenAI-compatible `/v1/chat/completions` endpoint
-- All paleoclaw features work through LiteLLM — no limitations
+Re-running authentication also combines case-variant provider keys, such as `LiteLLM` and `litellm`,
+into one canonical row while preserving authored provider options and model settings, including when
+activating a saved sign-in. Non-interactive
+reauthentication without `--custom-base-url` keeps the configured proxy URL, including when the
+existing provider key uses different casing.
 
-## See also
+## Image generation
 
-- [LiteLLM Docs](https://docs.litellm.ai)
-- [Model Providers](/concepts/model-providers)
+LiteLLM can back the `image_generate` tool through OpenAI-compatible `/images/generations` and
+`/images/edits` routes. Default image model is `gpt-image-2`; configure a different one under
+`agents.defaults.mediaModels.image`:
+
+```json5
+{
+  models: {
+    providers: {
+      litellm: {
+        baseUrl: "http://localhost:4000",
+        apiKey: "${LITELLM_API_KEY}",
+      },
+    },
+  },
+  agents: {
+    defaults: {
+      mediaModels: {
+        image: {
+          primary: "litellm/gpt-image-2",
+          timeoutMs: 180000,
+        },
+      },
+    },
+  },
+}
+```
+
+Loopback LiteLLM URLs (`http://localhost:4000`, `127.0.0.1`, `::1`, `host.docker.internal`) work
+without a global private-network override. For a LAN-hosted proxy, set
+`models.providers.litellm.request.allowPrivateNetwork: true` because the API key is sent to that host.
+
+Backends that answer with image URLs (`data[].url`, for example `dall-e-3`) work like base64
+results: paleoclaw downloads URLs at the configured provider origin automatically. Other private
+image hosts (including another port on loopback) require
+`models.providers.litellm.request.allowPrivateNetwork: true`. Redirects are checked at every hop.
+Downloads share the request deadline and the image size cap from `agents.defaults.mediaMaxMb`,
+without sending the LiteLLM API key or configured HTTP credentials to the image host.
+
+## Advanced
+
+<AccordionGroup>
+  <Accordion title="Virtual keys">
+    Create a dedicated key for paleoclaw with spend limits:
+
+    ```bash
+    curl -X POST "http://localhost:4000/key/generate" \
+      -H "Authorization: Bearer $LITELLM_MASTER_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "key_alias": "paleoclaw",
+        "max_budget": 50.00,
+        "budget_duration": "monthly"
+      }'
+    ```
+
+    Use the generated key as `LITELLM_API_KEY`.
+
+  </Accordion>
+
+  <Accordion title="Model routing">
+    LiteLLM can route model requests to different backends. Configure in your LiteLLM `config.yaml`:
+
+    ```yaml
+    model_list:
+      - model_name: claude-opus-4-6
+        litellm_params:
+          model: claude-opus-4-6
+          api_key: os.environ/ANTHROPIC_API_KEY
+
+      - model_name: gpt-6-astra
+        litellm_params:
+          model: gpt-6-astra
+          api_key: os.environ/OPENAI_API_KEY
+    ```
+
+    paleoclaw keeps requesting `claude-opus-4-6`; LiteLLM handles the routing.
+
+  </Accordion>
+
+  <Accordion title="Viewing usage">
+    ```bash
+    # Key info
+    curl "http://localhost:4000/key/info" \
+      -H "Authorization: Bearer sk-litellm-key"
+
+    # Spend logs
+    curl "http://localhost:4000/spend/logs" \
+      -H "Authorization: Bearer $LITELLM_MASTER_KEY"
+    ```
+
+  </Accordion>
+
+  <Accordion title="Proxy behavior notes">
+    - LiteLLM runs on `http://localhost:4000` by default.
+    - paleoclaw connects through LiteLLM's proxy-style OpenAI-compatible `/v1` endpoint.
+    - Native-OpenAI-only request shaping does not apply through a configured LiteLLM base URL:
+      no `service_tier`, no Responses `store`, no prompt-cache hints, no OpenAI reasoning-effort
+      payload shaping.
+    - Hidden paleoclaw attribution headers (`originator`, `version`, `User-Agent`) are only sent to
+      verified native OpenAI endpoints, so they are not injected on a custom LiteLLM base URL.
+  </Accordion>
+</AccordionGroup>
+
+<Note>
+For general provider configuration and failover behavior, see [Model Providers](/concepts/model-providers).
+</Note>
+
+## Related
+
+<CardGroup cols={2}>
+  <Card title="LiteLLM Docs" href="https://docs.litellm.ai" icon="book">
+    Official LiteLLM documentation and API reference.
+  </Card>
+  <Card title="Model selection" href="/concepts/model-providers" icon="layers">
+    Overview of all providers, model refs, and failover behavior.
+  </Card>
+  <Card title="Configuration" href="/gateway/configuration" icon="gear">
+    Full config reference.
+  </Card>
+  <Card title="Models" href="/concepts/models" icon="brain">
+    How to choose and configure models.
+  </Card>
+</CardGroup>

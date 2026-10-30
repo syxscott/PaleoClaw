@@ -1,87 +1,116 @@
-import type { ZaloEventMessage, ZaloSendOptions, ZaloSendResult } from "./types.js";
 import {
-  sendZaloDeliveredEvent,
-  sendZaloLink,
-  sendZaloReaction,
-  sendZaloSeenEvent,
-  sendZaloTextMessage,
-  sendZaloTypingEvent,
-} from "./zalo-js.js";
+  createAcceptedChannelDeliveryResult,
+  createChannelPartialDeliveryError,
+} from "paleoclaw/plugin-sdk/channel-inbound";
+import type { ChannelMessageSendResult } from "paleoclaw/plugin-sdk/channel-outbound";
+import { chunkTextRanges } from "paleoclaw/plugin-sdk/text-chunking";
+import { sliceTextStyles } from "./text-styles-ranges.js";
+import { parseZalouserTextStyles } from "./text-styles.js";
+import type { ZaloSendOptions } from "./types.js";
+import { sendZaloTextMessage } from "./zalo-js.js";
 
-export type ZalouserSendOptions = ZaloSendOptions;
-export type ZalouserSendResult = ZaloSendResult;
+type ZalouserSendOptions = ZaloSendOptions & {
+  /** Persist each concrete platform send before the next internal chunk starts. */
+  onDeliveryResult?: (result: ChannelMessageSendResult) => Promise<void> | void;
+};
+
+const ZALO_TEXT_LIMIT = 2000;
+
+type StyledTextChunk = {
+  text: string;
+  styles?: ZaloSendOptions["textStyles"];
+};
 
 export async function sendMessageZalouser(
   threadId: string,
   text: string,
   options: ZalouserSendOptions = {},
-): Promise<ZalouserSendResult> {
-  return await sendZaloTextMessage(threadId, text, options);
+): Promise<ChannelMessageSendResult> {
+  const { onDeliveryResult, ...transportOptions } = options;
+  const prepared =
+    transportOptions.textMode === "markdown"
+      ? parseZalouserTextStyles(text)
+      : { text, styles: transportOptions.textStyles };
+  const textChunkLimit = transportOptions.textChunkLimit ?? ZALO_TEXT_LIMIT;
+  const chunks = splitStyledText(
+    prepared.text,
+    (prepared.styles?.length ?? 0) > 0 ? prepared.styles : undefined,
+    textChunkLimit,
+    transportOptions.textChunkMode,
+  );
+
+  let lastResult: ChannelMessageSendResult | null = null;
+  const accepted: ChannelMessageSendResult[] = [];
+  try {
+    for (const [index, chunk] of chunks.entries()) {
+      const chunkOptions =
+        index === 0
+          ? { ...transportOptions, textStyles: chunk.styles }
+          : {
+              ...transportOptions,
+              caption: undefined,
+              mediaLocalRoots: undefined,
+              mediaUrl: undefined,
+              textStyles: chunk.styles,
+            };
+      const chunkStart = accepted.length;
+      const result = await sendZaloTextMessage(
+        threadId,
+        chunk.text,
+        chunkOptions,
+        async (progress) => {
+          accepted.push(progress);
+          await onDeliveryResult?.(progress);
+        },
+      );
+      // The final chunk receipt includes any nested audio progress already reported.
+      accepted.splice(chunkStart, accepted.length - chunkStart, result);
+      await onDeliveryResult?.(result);
+      lastResult = result;
+    }
+  } catch (error) {
+    if (accepted.length > 0) {
+      throw createChannelPartialDeliveryError(
+        error,
+        createAcceptedChannelDeliveryResult({ results: accepted }),
+      );
+    }
+    throw error;
+  }
+
+  if (!lastResult) {
+    throw new Error("No message content provided");
+  }
+  return lastResult;
 }
 
 export async function sendImageZalouser(
   threadId: string,
   imageUrl: string,
   options: ZalouserSendOptions = {},
-): Promise<ZalouserSendResult> {
-  return await sendZaloTextMessage(threadId, options.caption ?? "", {
+): Promise<ChannelMessageSendResult> {
+  return await sendMessageZalouser(threadId, options.caption ?? "", {
     ...options,
+    caption: undefined,
     mediaUrl: imageUrl,
   });
 }
 
-export async function sendLinkZalouser(
-  threadId: string,
-  url: string,
-  options: ZalouserSendOptions = {},
-): Promise<ZalouserSendResult> {
-  return await sendZaloLink(threadId, url, options);
-}
+function splitStyledText(
+  text: string,
+  styles: ZaloSendOptions["textStyles"],
+  limit: number,
+  mode: ZaloSendOptions["textChunkMode"],
+): StyledTextChunk[] {
+  if (text.length === 0) {
+    return [{ text, styles: undefined }];
+  }
 
-export async function sendTypingZalouser(
-  threadId: string,
-  options: Pick<ZalouserSendOptions, "profile" | "isGroup"> = {},
-): Promise<void> {
-  await sendZaloTypingEvent(threadId, options);
-}
-
-export async function sendReactionZalouser(params: {
-  threadId: string;
-  msgId: string;
-  cliMsgId: string;
-  emoji: string;
-  remove?: boolean;
-  profile?: string;
-  isGroup?: boolean;
-}): Promise<ZalouserSendResult> {
-  const result = await sendZaloReaction({
-    profile: params.profile,
-    threadId: params.threadId,
-    isGroup: params.isGroup,
-    msgId: params.msgId,
-    cliMsgId: params.cliMsgId,
-    emoji: params.emoji,
-    remove: params.remove,
-  });
-  return {
-    ok: result.ok,
-    error: result.error,
-  };
-}
-
-export async function sendDeliveredZalouser(params: {
-  profile?: string;
-  isGroup?: boolean;
-  message: ZaloEventMessage;
-  isSeen?: boolean;
-}): Promise<void> {
-  await sendZaloDeliveredEvent(params);
-}
-
-export async function sendSeenZalouser(params: {
-  profile?: string;
-  isGroup?: boolean;
-  message: ZaloEventMessage;
-}): Promise<void> {
-  await sendZaloSeenEvent(params);
+  return chunkTextRanges(text, {
+    limit,
+    mode: mode === "newline" ? "preferred" : "hard",
+  }).map(({ start, end }) => ({
+    text: text.slice(start, end),
+    styles: sliceTextStyles(styles, start, end),
+  }));
 }

@@ -10,7 +10,7 @@
 
 <p>
   <a href="https://github.com/syxscott/PaleoClaw/actions/workflows/ci.yml?branch=main"><img src="https://img.shields.io/github/actions/workflow/status/syxscott/PaleoClaw/ci.yml?branch=main&style=flat-square&label=CI" alt="CI status"></a>
-  <img src="https://img.shields.io/badge/version-1.8.0-blue?style=flat-square" alt="Version 1.8.0">
+  <img src="https://img.shields.io/badge/version-2026.10.5-blue?style=flat-square" alt="Version 2026.10.5">
   <img src="https://img.shields.io/badge/node-%E2%89%A522.12-339933?style=flat-square&logo=nodedotjs&logoColor=white" alt="Node.js >= 22.12">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="License: MIT"></a>
   <a href="https://github.com/syxscott/PaleoClaw/stargazers"><img src="https://img.shields.io/github/stars/syxscott/PaleoClaw?style=flat-square&color=yellow" alt="Stars"></a>
@@ -42,7 +42,7 @@ PaleoClaw 是基于 OpenClaw 运行时的古生物学领域研究智能体：把
 | 👤  | **Dual-layer research profile** — `soul.md` (system identity) + `user.md` (your preferences) actually shape every run                            | 双层研究画像    |
 | 💾  | **SQLite sessions** — WAL-backed history with FTS5 search, graceful JSON fallback, two-stage session titles                                      | SQLite 会话存储 |
 | 🗂️  | **Skills & pipelines** — curated research skills plus declarative pipelines with dependencies and a lifecycle curator                            | 技能与流水线    |
-| 📱  | **Runs where you chat** — Telegram, Discord, WhatsApp, Slack, Signal, iMessage, LINE, Feishu and more via the OpenClaw channel layer             | 多平台接入      |
+| 📱  | **Runs where you chat** — Telegram, Discord, WhatsApp, Slack, Signal, iMessage, LINE, Feishu, QQ, WeCom, WeChat via the OpenClaw channel layer   | 多平台接入      |
 | 🖥️  | **Control UI** — local web console for chat, sessions, usage and config                                                                          | 控制台 UI       |
 | 🔬  | **Scientific integrity by design** — no fabricated data, verifiable DOIs, transparent uncertainty, reproducible queries                          | 科学诚信设计    |
 
@@ -192,7 +192,7 @@ PALEOCLAW_ENABLE_SESSION_AUTOSAVE=true  # automatic session autosave | 会话自
 
 ## 🖥️ Control UI & Channels
 
-The repo ships the full OpenClaw-style control console (`ui/`) — chat, session history, usage dashboards and configuration in a local web UI, with wake-reconnect, composer drafts and per-session scroll memory. Messaging channels (Telegram, Discord, WhatsApp, Slack, Signal, iMessage, LINE, …) run in-tree; see [docs/channels/](docs/channels/) and [docs/index.md](docs/index.md).
+The repo ships the full OpenClaw-style control console (`ui/`) — chat, session history, usage dashboards and configuration in a local web UI, with wake-reconnect, composer drafts and per-session scroll memory. Messaging channels (Telegram, Discord, WhatsApp, Slack, Signal, iMessage, LINE, QQ, WeCom, WeChat, …) run in-tree; see [docs/channels/](docs/channels/) and [docs/index.md](docs/index.md).
 
 ## 🔬 Scientific Integrity | 科学诚信
 
@@ -277,7 +277,7 @@ PaleoClaw/
 ## 📰 Release Highlights
 
 <details>
-<summary><strong>v1.8.0 (2026-09-08) — hardening & borrowed engines</strong></summary>
+<summary><strong>v2026.10.5 (2026-09-08) — hardening & borrowed engines</strong></summary>
 
 - **Fixed**: startup crash in `memory/index.ts` re-exports; unhandled-rejection crash path in the keyed async queue; LINE signature length handling; Discord embed validation; missing imports in session/task-memory stores; Android `Log` import and version naming; six dead help links and a strict-mode type error in the control UI.
 - **Added**: SQLite session store (WAL + FTS5, self-repairing, JSON fallback) with two-stage session titles; chat-turn daily memory (ported from GeoClaw-OpenAI v3.2.4); skill lifecycle curator; declarative pipeline registry; vendored `normalization-core` + `retry` packages wired into PBDB/CrossRef fetches; wake-reconnect, composer drafts and scroll memory in the control UI; website i18n (zh/en/ja) + SEO infrastructure.
@@ -304,13 +304,13 @@ Focused bug-fix release: `splitSections` colon handling, `parseSoul` domain scop
 
 ## 📚 Documentation
 
-| Document                                                             | Description                    |
+| Document | Description |
 | -------------------------------------------------------------------- | ------------------------------ | ------------ |
 | [使用手册 (Manual)](https://www.paleoclaw.paleo-lab.com/manual.html) | Full deployment & usage manual | 完整使用手册 |
-| [README_CN.md](README_CN.md)                                         | 中文文档                       |
-| [CHANGELOG.md](CHANGELOG.md)                                         | Version history                | 版本历史     |
-| [docs/channels/](docs/channels/)                                     | Channel integration guides     | 渠道集成指南 |
-| [DEPLOY_GUIDE (site)](https://github.com/syxscott/PaleoClaw_Web)     | Website deployment             | 官网部署     |
+| [README_CN.md](README_CN.md) | 中文文档 |
+| [CHANGELOG.md](CHANGELOG.md) | Version history | 版本历史 |
+| [docs/channels/](docs/channels/) | Channel integration guides | 渠道集成指南 |
+| [DEPLOY_GUIDE (site)](https://github.com/syxscott/PaleoClaw_Web) | Website deployment | 官网部署 |
 
 ## 🤝 Contributing
 

@@ -1,36 +1,65 @@
-import { normalizeProviderId } from "../agents/model-selection.js";
+import { normalizeProviderId } from "@paleoclaw/model-catalog-core/provider-id";
+import { resolveTimerTimeoutMs } from "@paleoclaw/normalization-core/number-coercion";
 import type { UsageProviderId } from "./provider-usage.types.js";
 
-export const DEFAULT_TIMEOUT_MS = 5000;
+/** One provider cannot hold the aggregate usage response beyond this deadline. */
+export const PROVIDER_USAGE_TIMEOUT_MS = 5000;
 
-export const PROVIDER_LABELS: Record<UsageProviderId, string> = {
+export const PROVIDER_LABELS = {
   anthropic: "Claude",
+  clawrouter: "ClawRouter",
+  deepseek: "DeepSeek",
   "github-copilot": "Copilot",
   "google-gemini-cli": "Gemini",
   minimax: "MiniMax",
-  "openai-codex": "Codex",
+  openai: "OpenAI",
+  openrouter: "OpenRouter",
+  venice: "Venice",
+  xai: "xAI",
   xiaomi: "Xiaomi",
+  "xiaomi-token-plan": "Xiaomi Token Plan",
   zai: "z.ai",
-};
+} as const satisfies Readonly<Record<string, string>>;
 
-export const usageProviders: UsageProviderId[] = [
-  "anthropic",
-  "github-copilot",
-  "google-gemini-cli",
-  "minimax",
-  "openai-codex",
-  "xiaomi",
-  "zai",
-];
+/** Dynamic-key lookup view; closed-key reads should use PROVIDER_LABELS directly. */
+export function providerUsageLabel(provider: string): string | undefined {
+  const labels: Readonly<Record<string, string | undefined>> = PROVIDER_LABELS;
+  return labels[provider];
+}
 
-export function resolveUsageProviderId(provider?: string | null): UsageProviderId | undefined {
+/** Returns true for providers whose usage endpoint is only meaningful with OAuth/token auth. */
+export function isOAuthOnlyUsageProvider(provider: UsageProviderId): boolean {
+  return provider === "openai";
+}
+
+/** Maps model/provider ids and credential type into a normalized usage provider id. */
+export function resolveUsageProviderId(
+  provider?: string | null,
+  options?: { credentialType?: string | null },
+): UsageProviderId | undefined {
   if (!provider) {
     return undefined;
   }
   const normalized = normalizeProviderId(provider);
-  return usageProviders.includes(normalized as UsageProviderId)
-    ? (normalized as UsageProviderId)
-    : undefined;
+  if (normalized === "openai") {
+    return options?.credentialType === "oauth" || options?.credentialType === "token"
+      ? normalized
+      : undefined;
+  }
+  // Claude CLI-backed models bill against the same Anthropic subscription as
+  // native anthropic OAuth; without this mapping claude-cli-only setups get
+  // "Unsupported provider" instead of plan usage windows.
+  if (normalized === "claude-cli") {
+    return "anthropic";
+  }
+  if (
+    normalized === "minimax-portal" ||
+    normalized === "minimax-cn" ||
+    normalized === "minimax-portal-cn"
+  ) {
+    return "minimax";
+  }
+  return normalized || undefined;
 }
 
 export const ignoredErrors = new Set([
@@ -44,18 +73,26 @@ export const ignoredErrors = new Set([
 export const clampPercent = (value: number) =>
   Math.max(0, Math.min(100, Number.isFinite(value) ? value : 0));
 
-export const withTimeout = async <T>(work: Promise<T>, ms: number, fallback: T): Promise<T> => {
+/** Aborts usage collection and returns a fallback when its deadline expires. */
+export const raceUsageTimeout = async <T>(
+  work: (signal: AbortSignal) => Promise<T>,
+  ms: number,
+  fallback: T,
+): Promise<T> => {
   let timeout: NodeJS.Timeout | undefined;
+  const controller = new AbortController();
+  const timeoutMs = resolveTimerTimeoutMs(ms, 1);
   try {
     return await Promise.race([
-      work,
       new Promise<T>((resolve) => {
-        timeout = setTimeout(() => resolve(fallback), ms);
+        timeout = setTimeout(() => {
+          resolve(fallback);
+          controller.abort(new DOMException("Usage collection timed out", "TimeoutError"));
+        }, timeoutMs);
       }),
+      work(controller.signal),
     ]);
   } finally {
-    if (timeout) {
-      clearTimeout(timeout);
-    }
+    clearTimeout(timeout);
   }
 };

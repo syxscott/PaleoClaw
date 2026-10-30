@@ -1,55 +1,34 @@
-import { readFileSync } from "node:fs";
-import { fetchWithSsrFGuard } from "paleoclaw/plugin-sdk/nextcloud-talk";
-import type { RuntimeEnv } from "paleoclaw/plugin-sdk/nextcloud-talk";
+import { pruneMapToMaxSize } from "paleoclaw/plugin-sdk/collection-runtime";
+import { sha256Hex } from "paleoclaw/plugin-sdk/node-crypto-runtime";
+import { parseStrictPositiveInteger } from "paleoclaw/plugin-sdk/number-runtime";
+import { readProviderJsonResponse } from "paleoclaw/plugin-sdk/provider-http";
+import {
+  SsrFBlockedError,
+  ssrfPolicyFromPrivateNetworkOptIn,
+} from "paleoclaw/plugin-sdk/ssrf-runtime";
+import { fetchWithSsrFGuard, type RuntimeEnv } from "../runtime-api.js";
 import type { ResolvedNextcloudTalkAccount } from "./accounts.js";
-import { normalizeResolvedSecretInputString } from "./secret-input.js";
+import { resolveNextcloudTalkApiCredentials } from "./api-credentials.js";
 
 const ROOM_CACHE_TTL_MS = 5 * 60 * 1000;
 const ROOM_CACHE_ERROR_TTL_MS = 30 * 1000;
+const ROOM_CACHE_MAX_ENTRIES = 1000;
+const NEXTCLOUD_TALK_ROOM_INFO_TIMEOUT_MS = 30_000;
 
-const roomCache = new Map<
-  string,
-  { kind?: "direct" | "group"; fetchedAt: number; error?: string }
->();
+type NextcloudTalkRoomKind = "direct" | "group";
+const roomCache = new Map<string, { kind: NextcloudTalkRoomKind | undefined; expiresAt: number }>();
 
-function resolveRoomCacheKey(params: { accountId: string; roomToken: string }) {
-  return `${params.accountId}:${params.roomToken}`;
+function cacheRoomInfo(
+  key: string,
+  kind: NextcloudTalkRoomKind | undefined,
+  ttlMs: number,
+): NextcloudTalkRoomKind | undefined {
+  roomCache.set(key, { kind, expiresAt: Date.now() + ttlMs });
+  pruneMapToMaxSize(roomCache, ROOM_CACHE_MAX_ENTRIES);
+  return kind;
 }
 
-function readApiPassword(params: {
-  apiPassword?: unknown;
-  apiPasswordFile?: string;
-}): string | undefined {
-  const inlinePassword = normalizeResolvedSecretInputString({
-    value: params.apiPassword,
-    path: "channels.nextcloud-talk.apiPassword",
-  });
-  if (inlinePassword) {
-    return inlinePassword;
-  }
-  if (!params.apiPasswordFile) {
-    return undefined;
-  }
-  try {
-    const value = readFileSync(params.apiPasswordFile, "utf-8").trim();
-    return value || undefined;
-  } catch {
-    return undefined;
-  }
-}
-
-function coerceRoomType(value: unknown): number | undefined {
-  if (typeof value === "number" && Number.isFinite(value)) {
-    return value;
-  }
-  if (typeof value === "string" && value.trim()) {
-    const parsed = Number.parseInt(value, 10);
-    return Number.isFinite(parsed) ? parsed : undefined;
-  }
-  return undefined;
-}
-
-function resolveRoomKindFromType(type: number | undefined): "direct" | "group" | undefined {
+function resolveRoomKindFromType(type: number | undefined): NextcloudTalkRoomKind | undefined {
   if (!type) {
     return undefined;
   }
@@ -63,40 +42,49 @@ export async function resolveNextcloudTalkRoomKind(params: {
   account: ResolvedNextcloudTalkAccount;
   roomToken: string;
   runtime?: RuntimeEnv;
-}): Promise<"direct" | "group" | undefined> {
+  timeoutMs?: number;
+}): Promise<NextcloudTalkRoomKind | undefined> {
   const { account, roomToken, runtime } = params;
-  const key = resolveRoomCacheKey({ accountId: account.accountId, roomToken });
-  const cached = roomCache.get(key);
-  if (cached) {
-    const age = Date.now() - cached.fetchedAt;
-    if (cached.kind && age < ROOM_CACHE_TTL_MS) {
-      return cached.kind;
-    }
-    if (cached.error && age < ROOM_CACHE_ERROR_TTL_MS) {
-      return undefined;
-    }
-  }
-
-  const apiUser = account.config.apiUser?.trim();
-  const apiPassword = readApiPassword({
+  const apiCredentials = resolveNextcloudTalkApiCredentials({
+    apiUser: account.config.apiUser,
     apiPassword: account.config.apiPassword,
     apiPasswordFile: account.config.apiPasswordFile,
   });
-  if (!apiUser || !apiPassword) {
-    return undefined;
-  }
-
   const baseUrl = account.baseUrl?.trim();
-  if (!baseUrl) {
+  if (!apiCredentials || !baseUrl) {
     return undefined;
   }
+  const key = JSON.stringify([
+    account.accountId,
+    baseUrl,
+    roomToken,
+    apiCredentials.apiUser,
+    sha256Hex(apiCredentials.apiPassword),
+    account.config.network?.dangerouslyAllowPrivateNetwork === true,
+  ]);
+  const cached = roomCache.get(key);
+  if (cached && Date.now() < cached.expiresAt) {
+    return cached.kind;
+  }
+  roomCache.delete(key);
 
-  const url = `${baseUrl}/ocs/v2.php/apps/spreed/api/v4/room/${roomToken}`;
-  const auth = Buffer.from(`${apiUser}:${apiPassword}`, "utf-8").toString("base64");
+  const fallback = (error: unknown) => {
+    runtime?.error?.(`nextcloud-talk: room lookup error: ${String(error)}`);
+    return cacheRoomInfo(key, undefined, ROOM_CACHE_ERROR_TTL_MS);
+  };
+  const parsedBaseUrl = URL.parse(baseUrl);
+  if (!parsedBaseUrl || !["http:", "https:"].includes(parsedBaseUrl.protocol)) {
+    return fallback(new Error("Nextcloud Talk room lookup requires an HTTP(S) base URL"));
+  }
 
+  const auth = Buffer.from(
+    `${apiCredentials.apiUser}:${apiCredentials.apiPassword}`,
+    "utf-8",
+  ).toString("base64");
+  let guarded: Awaited<ReturnType<typeof fetchWithSsrFGuard>>;
   try {
-    const { response, release } = await fetchWithSsrFGuard({
-      url,
+    guarded = await fetchWithSsrFGuard({
+      url: `${baseUrl}/ocs/v2.php/apps/spreed/api/v4/room/${roomToken}`,
       init: {
         method: "GET",
         headers: {
@@ -106,35 +94,40 @@ export async function resolveNextcloudTalkRoomKind(params: {
         },
       },
       auditContext: "nextcloud-talk.room-info",
+      policy: ssrfPolicyFromPrivateNetworkOptIn(
+        account.config.network?.dangerouslyAllowPrivateNetwork,
+      ),
+      timeoutMs: params.timeoutMs ?? NEXTCLOUD_TALK_ROOM_INFO_TIMEOUT_MS,
     });
-    try {
-      if (!response.ok) {
-        roomCache.set(key, {
-          fetchedAt: Date.now(),
-          error: `status:${response.status}`,
-        });
-        runtime?.log?.(
-          `nextcloud-talk: room lookup failed (${response.status}) token=${roomToken}`,
-        );
-        return undefined;
-      }
-
-      const payload = (await response.json()) as {
-        ocs?: { data?: { type?: number | string } };
-      };
-      const type = coerceRoomType(payload.ocs?.data?.type);
-      const kind = resolveRoomKindFromType(type);
-      roomCache.set(key, { fetchedAt: Date.now(), kind });
-      return kind;
-    } finally {
-      await release();
+  } catch (error) {
+    if (error instanceof SsrFBlockedError) {
+      return fallback(error);
     }
-  } catch (err) {
-    roomCache.set(key, {
-      fetchedAt: Date.now(),
-      error: err instanceof Error ? err.message : String(err),
-    });
-    runtime?.error?.(`nextcloud-talk: room lookup error: ${String(err)}`);
-    return undefined;
+    // The durable ingress drain owns retries. Do not cache transport failures or
+    // turn them into the webhook's non-authoritative group placeholder.
+    throw error;
+  }
+
+  const { response, release } = guarded;
+  try {
+    if (!response.ok) {
+      const status = response.status;
+      if (status === 408 || status === 429 || (status >= 500 && status <= 599)) {
+        throw new Error(`Nextcloud Talk room lookup failed (${status})`);
+      }
+      runtime?.log?.(`nextcloud-talk: room lookup failed (${status}) token=${roomToken}`);
+      return cacheRoomInfo(key, undefined, ROOM_CACHE_ERROR_TTL_MS);
+    }
+    try {
+      const payload = await readProviderJsonResponse<{
+        ocs?: { data?: { type?: number | string } };
+      }>(response, "Nextcloud Talk room info failed");
+      const kind = resolveRoomKindFromType(parseStrictPositiveInteger(payload.ocs?.data?.type));
+      return kind ? cacheRoomInfo(key, kind, ROOM_CACHE_TTL_MS) : undefined;
+    } catch (error) {
+      return fallback(error);
+    }
+  } finally {
+    await release();
   }
 }

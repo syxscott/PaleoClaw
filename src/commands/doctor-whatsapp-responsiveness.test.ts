@@ -1,0 +1,107 @@
+import { beforeEach, expect, it, vi } from "vitest";
+import type { OpenClawConfig } from "../config/types.openclaw.js";
+import type { GatewayEventLoopHealth } from "../gateway/server/event-loop-health.js";
+
+const noteMock = vi.hoisted(() => vi.fn());
+const spawnSyncMock = vi.hoisted(() => vi.fn());
+
+vi.mock("node:child_process", async () => {
+  const { mockNodeChildProcessSpawnSync } = await import("paleoclaw/plugin-sdk/test-node-mocks");
+  return mockNodeChildProcessSpawnSync(spawnSyncMock, () =>
+    vi.importActual<typeof import("node:child_process")>("node:child_process"),
+  );
+});
+
+vi.mock("../../packages/terminal-core/src/note.js", () => ({ note: noteMock }));
+
+const { collectWhatsappResponsivenessHealthFindings, noteWhatsappResponsivenessHealth } =
+  await import("./doctor-whatsapp-responsiveness.js");
+
+const cfg: OpenClawConfig = { channels: { whatsapp: { enabled: true } } };
+const cpuPressure: GatewayEventLoopHealth = {
+  degraded: true,
+  degradedSinceMs: 0,
+  reasons: ["cpu"],
+  intervalMs: 1_000,
+  delayP99Ms: 40,
+  delayMaxMs: 40,
+  utilization: 0.04,
+  cpuCoreRatio: 2,
+};
+const localTuis = () => [{ pid: 101, command: "paleoclaw-tui --profile another-profile" }];
+const pressured = { cfg, status: { eventLoop: cpuPressure }, listLocalTuiProcesses: localTuis };
+
+beforeEach(() => vi.clearAllMocks());
+
+it("detects local TUI commands through the advisory finding", () => {
+  spawnSyncMock.mockReturnValue({
+    status: 0,
+    stdout: [
+      " 101 paleoclaw-tui",
+      " 102 /usr/bin/node /usr/lib/node_modules/paleoclaw/dist/index.js gateway --port 18789",
+      " 103 paleoclaw channels",
+      " 104 paleoclaw tui --local",
+      " 105 /usr/bin/paleoclaw chat",
+      " 106 helper --note 'paleoclaw tui'",
+      " 107 paleoclaw-helper paleoclaw terminal",
+      " 108 paleoclaw --flag tui",
+    ].join("\n"),
+  });
+  const findings = collectWhatsappResponsivenessHealthFindings({
+    cfg,
+    status: { eventLoop: cpuPressure },
+  });
+
+  if (process.platform === "win32") {
+    expect(findings).toEqual([]);
+    expect(spawnSyncMock).not.toHaveBeenCalled();
+  } else {
+    expect(findings).toEqual([expect.objectContaining({ target: "101, 104, 105" })]);
+    expect(spawnSyncMock).toHaveBeenCalledWith("ps", ["-axo", "pid=,command="], {
+      encoding: "utf8",
+      killSignal: "SIGKILL",
+      timeout: 1_000,
+    });
+  }
+});
+
+it("keeps pressure advice factual and shared with the note", () => {
+  const findings = collectWhatsappResponsivenessHealthFindings(pressured);
+  expect(findings).toEqual([
+    expect.objectContaining({
+      checkId: "core/doctor/whatsapp-responsiveness",
+      severity: "warning",
+      path: "channels.whatsapp",
+      target: "101",
+      requirement: "local-tui-event-loop-pressure",
+      message:
+        "Gateway reports pressure, and local TUI clients were detected. This snapshot does not identify the source of the pressure.",
+      fixHint:
+        "Inspect Gateway diagnostics with paleoclaw gateway diagnostics export before deciding whether to close clients.",
+    }),
+  ]);
+  noteWhatsappResponsivenessHealth(pressured);
+  expect(noteMock).toHaveBeenCalledWith(
+    [findings[0]?.message, "Local TUI pids: 101", findings[0]?.fixHint].join("\n"),
+    "WhatsApp responsiveness",
+  );
+});
+
+it.each([
+  { name: "missing status during maintenance", status: undefined },
+  {
+    name: "healthy Gateway",
+    status: { eventLoop: { ...cpuPressure, degraded: false, reasons: [] } },
+  },
+  {
+    name: "WhatsApp disabled",
+    cfg: { channels: { whatsapp: { enabled: false } } },
+  },
+  { name: "no local TUI", listLocalTuiProcesses: () => [] },
+])("stays quiet with $name", ({ name: _name, ...overrides }) => {
+  const params = { ...pressured, ...overrides };
+  expect(collectWhatsappResponsivenessHealthFindings(params)).toEqual([]);
+  noteWhatsappResponsivenessHealth(params);
+  expect(noteMock).not.toHaveBeenCalled();
+  expect(spawnSyncMock).not.toHaveBeenCalled();
+});

@@ -9,7 +9,7 @@ title: "Nix"
 
 # Nix Installation
 
-The recommended way to run paleoclaw with Nix is via **[nix-paleoclaw](https://github.com/paleoclaw/nix-paleoclaw)** — a batteries-included Home Manager module.
+The recommended way to run paleoclaw with Nix is via **[nix-paleoclaw](https://github.com/openclaw/nix-openclaw)** — a batteries-included Home Manager module.
 
 ## Quick Start
 
@@ -30,7 +30,7 @@ What I need you to do:
 Reference the nix-paleoclaw README for module options.
 ```
 
-> **📦 Full guide: [github.com/paleoclaw/nix-paleoclaw](https://github.com/paleoclaw/nix-paleoclaw)**
+> **📦 Full guide: [github.com/openclaw/nix-openclaw](https://github.com/openclaw/nix-openclaw)**
 >
 > The nix-paleoclaw repo is the source of truth for Nix installation. This page is just a quick overview.
 
@@ -87,12 +87,12 @@ The macOS packaging flow expects a stable Info.plist template at:
 apps/macos/Sources/paleoclaw/Resources/Info.plist
 ```
 
-[`scripts/package-mac-app.sh`](https://github.com/paleoclaw/paleoclaw/blob/main/scripts/package-mac-app.sh) copies this template into the app bundle and patches dynamic fields
+[`scripts/package-mac-app.sh`](https://github.com/syxscott/PaleoClaw/blob/main/scripts/package-mac-app.sh) copies this template into the app bundle and patches dynamic fields
 (bundle ID, version/build, Git SHA, Sparkle keys). This keeps the plist deterministic for SwiftPM
 packaging and Nix builds (which do not rely on a full Xcode toolchain).
 
 ## Related
 
-- [nix-paleoclaw](https://github.com/paleoclaw/nix-paleoclaw) — full setup guide
+- [nix-paleoclaw](https://github.com/openclaw/nix-openclaw) — full setup guide
 - [Wizard](/start/wizard) — non-Nix CLI setup
 - [Docker](/install/docker) — containerized setup

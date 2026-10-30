@@ -1,45 +1,49 @@
-import { vi } from "vitest";
+// Feishu plugin module implements monitor mocks behavior.
+import { randomUUID } from "node:crypto";
+import path from "node:path";
+import { createChannelIngressQueueForTests } from "paleoclaw/plugin-sdk/channel-ingress-test-runtime";
+import { createPluginRuntimeMock } from "paleoclaw/plugin-sdk/channel-test-helpers";
+import type { PluginRuntime } from "paleoclaw/plugin-sdk/core";
 
-export function createFeishuClientMockModule(): {
-  createFeishuWSClient: () => { start: () => void };
-  createEventDispatcher: () => { register: () => void };
-} {
-  return {
-    createFeishuWSClient: vi.fn(() => ({ start: vi.fn() })),
-    createEventDispatcher: vi.fn(() => ({ register: vi.fn() })),
-  };
-}
+export const createFeishuTestIngressQueue: PluginRuntime["state"]["openChannelIngressQueue"] = (
+  options,
+) => createChannelIngressQueueForTests({ ...options, channelId: "feishu" });
 
 export function createFeishuRuntimeMockModule(): {
-  getFeishuRuntime: () => {
-    channel: {
-      debounce: {
-        resolveInboundDebounceMs: () => number;
-        createInboundDebouncer: () => {
-          enqueue: () => Promise<void>;
-          flushKey: () => Promise<void>;
-        };
-      };
-      text: {
-        hasControlCommand: () => boolean;
-      };
-    };
-  };
+  getFeishuRuntime: () => PluginRuntime;
 } {
-  return {
-    getFeishuRuntime: () => ({
-      channel: {
-        debounce: {
-          resolveInboundDebounceMs: () => 0,
-          createInboundDebouncer: () => ({
-            enqueue: async () => {},
-            flushKey: async () => {},
-          }),
-        },
-        text: {
-          hasControlCommand: () => false,
-        },
+  const stateDir = path.join(
+    process.env.HOME ?? process.cwd(),
+    `.openclaw-feishu-monitor-${randomUUID()}`,
+  );
+  const runtime = {
+    state: {
+      resolveStateDir: () => stateDir,
+      openChannelIngressQueue: (
+        options?: Omit<Parameters<typeof createChannelIngressQueueForTests>[0], "channelId">,
+      ) =>
+        createFeishuTestIngressQueue({
+          ...options,
+          stateDir: options?.stateDir ?? stateDir,
+        }),
+    },
+    channel: {
+      inbound: createPluginRuntimeMock().channel.inbound,
+      debounce: {
+        resolveInboundDebounceMs: () => 0,
+        createInboundDebouncer: () => ({
+          enqueue: async () => {},
+          flushKey: async () => {},
+          cancelKey: () => false,
+          drain: async () => {},
+        }),
       },
-    }),
+      text: {
+        hasControlCommand: () => false,
+      },
+    },
+  } as unknown as PluginRuntime;
+  return {
+    getFeishuRuntime: () => runtime,
   };
 }

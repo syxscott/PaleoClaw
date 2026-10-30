@@ -1,47 +1,117 @@
-import { type IncomingMessage, type ServerResponse } from "node:http";
+// Mattermost tests cover interactions plugin behavior.
+import { createHmac } from "node:crypto";
+import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
+import { postRawWebhook } from "paleoclaw/plugin-sdk/test-env";
 import { describe, expect, it, beforeEach, afterEach, vi } from "vitest";
+import { buildButtonAttachments } from "../../api.js";
+import type { PluginRuntime } from "../../runtime-api.js";
 import { setMattermostRuntime } from "../runtime.js";
 import { resolveMattermostAccount } from "./accounts.js";
-import type { MattermostClient } from "./client.js";
+import type { MattermostClient, MattermostPost } from "./client.js";
 import {
-  buildButtonAttachments,
+  buildButtonProps,
   computeInteractionCallbackUrl,
   createMattermostInteractionHandler,
-  generateInteractionToken,
-  getInteractionCallbackUrl,
-  getInteractionSecret,
-  resolveInteractionCallbackPath,
   resolveInteractionCallbackUrl,
   setInteractionCallbackUrl,
   setInteractionSecret,
-  verifyInteractionToken,
 } from "./interactions.js";
+
+type ButtonAction = {
+  id: string;
+  type: "button";
+  name: string;
+  style?: "default" | "primary" | "danger";
+  integration: { url: string; context: Record<string, unknown> };
+};
+type ButtonAttachment = { text: string; actions?: ButtonAction[] };
+type ButtonAttachments = ButtonAttachment[];
+type ButtonPropsInput = {
+  callbackUrl: string;
+  accountId?: string;
+  buttons: Array<{
+    id: string;
+    name: string;
+    style?: "default" | "primary" | "danger";
+    context?: Record<string, unknown>;
+  }>;
+  text?: string;
+};
+
+function buildButtonAttachmentsForTest(params: ButtonPropsInput): ButtonAttachments {
+  const signedChannelId = params.buttons[0]?.context?.["__openclaw_channel_id"];
+  const props = buildButtonProps({
+    ...params,
+    accountId: params.accountId ?? "default",
+    channelId: typeof signedChannelId === "string" ? signedChannelId : "test-channel",
+  });
+  const attachments = props?.attachments;
+  if (!Array.isArray(attachments)) {
+    throw new Error("Expected button attachments");
+  }
+  return attachments as ButtonAttachments;
+}
+
+function requireFirstAttachment(attachments: ButtonAttachments): ButtonAttachment {
+  const [attachment] = attachments;
+  if (!attachment) {
+    throw new Error("Expected button attachment fixture");
+  }
+  return attachment;
+}
+
+function requireActions(attachments: ButtonAttachments): ButtonAction[] {
+  const attachment = requireFirstAttachment(attachments);
+  if (!attachment.actions) {
+    throw new Error("Expected button attachment fixture actions");
+  }
+  return attachment.actions;
+}
+
+function requireAction(attachments: ButtonAttachments, index = 0): ButtonAction {
+  const action = requireActions(attachments).at(index);
+  if (!action) {
+    throw new Error(`Expected button attachment action at index ${index}`);
+  }
+  return action;
+}
+
+function generateInteractionToken(context: Record<string, unknown>, accountId?: string): string {
+  const actionId = typeof context.action_id === "string" ? context.action_id : "test";
+  const attachments = buildButtonAttachmentsForTest({
+    callbackUrl: "https://gateway.example.com/mattermost/interactions/test",
+    accountId,
+    buttons: [{ id: actionId, name: "Test", context }],
+  });
+  return String(requireAction(attachments).integration.context["_token"]);
+}
+
+function verifyInteractionToken(
+  context: Record<string, unknown>,
+  token: string,
+  accountId?: string,
+): boolean {
+  return generateInteractionToken(context, accountId) === token;
+}
 
 // ── HMAC token management ────────────────────────────────────────────
 
 describe("setInteractionSecret / getInteractionSecret", () => {
   beforeEach(() => {
-    setInteractionSecret("test-bot-token");
+    setInteractionSecret("default", "test-bot-token");
   });
 
-  it("derives a deterministic secret from the bot token", () => {
-    setInteractionSecret("token-a");
-    const secretA = getInteractionSecret();
-    setInteractionSecret("token-a");
-    const secretA2 = getInteractionSecret();
-    expect(secretA).toBe(secretA2);
-  });
-
-  it("produces different secrets for different tokens", () => {
-    setInteractionSecret("token-a");
-    const secretA = getInteractionSecret();
-    setInteractionSecret("token-b");
-    const secretB = getInteractionSecret();
-    expect(secretA).not.toBe(secretB);
-  });
-
-  it("returns a hex string", () => {
-    expect(getInteractionSecret()).toMatch(/^[0-9a-f]+$/);
+  it("signs public account-free attachments with the sole registered account", () => {
+    const attachments = buildButtonAttachments({
+      callbackUrl: "https://gateway.example.com/mattermost/interactions/default",
+      buttons: [{ id: "probe", name: "Probe" }],
+    });
+    const secret = createHmac("sha256", "paleoclaw-mattermost-interactions")
+      .update("test-bot-token")
+      .digest("hex");
+    expect(attachments[0]?.actions?.[0]?.integration.context["_token"]).toBe(
+      createHmac("sha256", secret).update('{"action_id":"probe"}').digest("hex"),
+    );
   });
 });
 
@@ -49,91 +119,7 @@ describe("setInteractionSecret / getInteractionSecret", () => {
 
 describe("generateInteractionToken / verifyInteractionToken", () => {
   beforeEach(() => {
-    setInteractionSecret("test-bot-token");
-  });
-
-  it("generates a hex token", () => {
-    const token = generateInteractionToken({ action_id: "click" });
-    expect(token).toMatch(/^[0-9a-f]{64}$/);
-  });
-
-  it("verifies a valid token", () => {
-    const context = { action_id: "do_now", item_id: "123" };
-    const token = generateInteractionToken(context);
-    expect(verifyInteractionToken(context, token)).toBe(true);
-  });
-
-  it("rejects a tampered token", () => {
-    const context = { action_id: "do_now" };
-    const token = generateInteractionToken(context);
-    const tampered = token.replace(/.$/, token.endsWith("0") ? "1" : "0");
-    expect(verifyInteractionToken(context, tampered)).toBe(false);
-  });
-
-  it("rejects a token generated with different context", () => {
-    const token = generateInteractionToken({ action_id: "a" });
-    expect(verifyInteractionToken({ action_id: "b" }, token)).toBe(false);
-  });
-
-  it("rejects tokens with wrong length", () => {
-    const context = { action_id: "test" };
-    expect(verifyInteractionToken(context, "short")).toBe(false);
-  });
-
-  it("is deterministic for the same context", () => {
-    const context = { action_id: "test", x: 1 };
-    const t1 = generateInteractionToken(context);
-    const t2 = generateInteractionToken(context);
-    expect(t1).toBe(t2);
-  });
-
-  it("produces the same token regardless of key order", () => {
-    const contextA = { action_id: "do_now", tweet_id: "123", action: "do" };
-    const contextB = { action: "do", action_id: "do_now", tweet_id: "123" };
-    const contextC = { tweet_id: "123", action: "do", action_id: "do_now" };
-    const tokenA = generateInteractionToken(contextA);
-    const tokenB = generateInteractionToken(contextB);
-    const tokenC = generateInteractionToken(contextC);
-    expect(tokenA).toBe(tokenB);
-    expect(tokenB).toBe(tokenC);
-  });
-
-  it("verifies a token when Mattermost reorders context keys", () => {
-    // Simulate: token generated with keys in one order, verified with keys in another
-    // (Mattermost reorders context keys when storing/returning interactive message payloads)
-    const originalContext = { action_id: "bm_do", tweet_id: "999", action: "do" };
-    const token = generateInteractionToken(originalContext);
-
-    // Mattermost returns keys in alphabetical order (or any arbitrary order)
-    const reorderedContext = { action: "do", action_id: "bm_do", tweet_id: "999" };
-    expect(verifyInteractionToken(reorderedContext, token)).toBe(true);
-  });
-
-  it("verifies nested context regardless of nested key order", () => {
-    const originalContext = {
-      action_id: "nested",
-      payload: {
-        model: "gpt-5",
-        meta: {
-          provider: "openai",
-          page: 2,
-        },
-      },
-    };
-    const token = generateInteractionToken(originalContext);
-
-    const reorderedContext = {
-      payload: {
-        meta: {
-          page: 2,
-          provider: "openai",
-        },
-        model: "gpt-5",
-      },
-      action_id: "nested",
-    };
-
-    expect(verifyInteractionToken(reorderedContext, token)).toBe(true);
+    setInteractionSecret("default", "test-bot-token");
   });
 
   it("rejects nested context tampering", () => {
@@ -167,21 +153,6 @@ describe("generateInteractionToken / verifyInteractionToken", () => {
   });
 });
 
-// ── Callback URL registry ────────────────────────────────────────────
-
-describe("callback URL registry", () => {
-  it("stores and retrieves callback URLs", () => {
-    setInteractionCallbackUrl("acct1", "http://localhost:18789/mattermost/interactions/acct1");
-    expect(getInteractionCallbackUrl("acct1")).toBe(
-      "http://localhost:18789/mattermost/interactions/acct1",
-    );
-  });
-
-  it("returns undefined for unknown account", () => {
-    expect(getInteractionCallbackUrl("nonexistent-account-id")).toBeUndefined();
-  });
-});
-
 describe("resolveInteractionCallbackUrl", () => {
   afterEach(() => {
     for (const accountId of ["cached", "default", "acct", "myaccount"]) {
@@ -200,19 +171,6 @@ describe("resolveInteractionCallbackUrl", () => {
       gateway: { port: 9999, customBindHost: "gateway.internal" },
     });
     expect(url).toBe("http://gateway.internal:9999/mattermost/interactions/acct");
-  });
-
-  it("uses interactions.callbackBaseUrl when configured", () => {
-    const url = resolveInteractionCallbackUrl("default", {
-      channels: {
-        mattermost: {
-          interactions: {
-            callbackBaseUrl: "https://gateway.example.com/paleoclaw",
-          },
-        },
-      },
-    });
-    expect(url).toBe("https://gateway.example.com/paleoclaw/mattermost/interactions/default");
   });
 
   it("trims trailing slashes from callbackBaseUrl", () => {
@@ -248,20 +206,12 @@ describe("resolveInteractionCallbackUrl", () => {
     const account = resolveMattermostAccount({
       cfg,
       accountId: "acct",
-      allowUnresolvedSecretRef: true,
     });
     const url = resolveInteractionCallbackUrl(account.accountId, {
       gateway: cfg.gateway,
       interactions: account.config.interactions,
     });
     expect(url).toBe("https://gateway.example.com/root/mattermost/interactions/acct");
-  });
-
-  it("falls back to gateway.customBindHost when configured", () => {
-    const url = resolveInteractionCallbackUrl("default", {
-      gateway: { port: 9999, customBindHost: "gateway.internal" },
-    });
-    expect(url).toBe("http://gateway.internal:9999/mattermost/interactions/default");
   });
 
   it("falls back to localhost when customBindHost is a wildcard bind address", () => {
@@ -277,169 +227,56 @@ describe("resolveInteractionCallbackUrl", () => {
     });
     expect(url).toBe("http://[::1]:9999/mattermost/interactions/acct");
   });
-
-  it("uses default port 18789 when no config provided", () => {
-    const url = resolveInteractionCallbackUrl("myaccount");
-    expect(url).toBe("http://localhost:18789/mattermost/interactions/myaccount");
-  });
 });
 
-describe("resolveInteractionCallbackPath", () => {
-  it("builds the per-account callback path", () => {
-    expect(resolveInteractionCallbackPath("acct")).toBe("/mattermost/interactions/acct");
-  });
-});
+// ── buildButtonProps attachments ────────────────────────────────────
 
-// ── buildButtonAttachments ───────────────────────────────────────────
-
-describe("buildButtonAttachments", () => {
+describe("buildButtonProps attachments", () => {
   beforeEach(() => {
-    setInteractionSecret("test-bot-token");
-  });
-
-  it("returns an array with one attachment containing all buttons", () => {
-    const result = buildButtonAttachments({
-      callbackUrl: "http://localhost:18789/mattermost/interactions/default",
-      buttons: [
-        { id: "btn1", name: "Click Me" },
-        { id: "btn2", name: "Skip", style: "danger" },
-      ],
-    });
-
-    expect(result).toHaveLength(1);
-    expect(result[0].actions).toHaveLength(2);
+    setInteractionSecret("default", "test-bot-token");
   });
 
   it("sets type to 'button' on every action", () => {
-    const result = buildButtonAttachments({
+    const result = buildButtonAttachmentsForTest({
       callbackUrl: "http://localhost:18789/cb",
-      buttons: [{ id: "a", name: "A" }],
+      buttons: [{ id: "my_action", name: "A" }],
     });
 
-    expect(result[0].actions![0].type).toBe("button");
-  });
-
-  it("includes HMAC _token in integration context", () => {
-    const result = buildButtonAttachments({
-      callbackUrl: "http://localhost:18789/cb",
-      buttons: [{ id: "test", name: "Test" }],
-    });
-
-    const action = result[0].actions![0];
-    expect(action.integration.context._token).toMatch(/^[0-9a-f]{64}$/);
-  });
-
-  it("includes sanitized action_id in integration context", () => {
-    const result = buildButtonAttachments({
-      callbackUrl: "http://localhost:18789/cb",
-      buttons: [{ id: "my_action", name: "Do It" }],
-    });
-
-    const action = result[0].actions![0];
-    // sanitizeActionId strips hyphens and underscores (Mattermost routing bug #25747)
-    expect(action.integration.context.action_id).toBe("myaction");
+    const action = requireAction(result);
+    expect(action.type).toBe("button");
     expect(action.id).toBe("myaction");
-  });
-
-  it("merges custom context into integration context", () => {
-    const result = buildButtonAttachments({
-      callbackUrl: "http://localhost:18789/cb",
-      buttons: [{ id: "btn", name: "Go", context: { tweet_id: "123", batch: true } }],
-    });
-
-    const ctx = result[0].actions![0].integration.context;
-    expect(ctx.tweet_id).toBe("123");
-    expect(ctx.batch).toBe(true);
-    expect(ctx.action_id).toBe("btn");
-    expect(ctx._token).toBeDefined();
-  });
-
-  it("passes callback URL to each button integration", () => {
-    const url = "http://localhost:18789/mattermost/interactions/default";
-    const result = buildButtonAttachments({
-      callbackUrl: url,
-      buttons: [
-        { id: "a", name: "A" },
-        { id: "b", name: "B" },
-      ],
-    });
-
-    for (const action of result[0].actions!) {
-      expect(action.integration.url).toBe(url);
-    }
-  });
-
-  it("preserves button style", () => {
-    const result = buildButtonAttachments({
-      callbackUrl: "http://localhost/cb",
-      buttons: [
-        { id: "ok", name: "OK", style: "primary" },
-        { id: "no", name: "No", style: "danger" },
-      ],
-    });
-
-    expect(result[0].actions![0].style).toBe("primary");
-    expect(result[0].actions![1].style).toBe("danger");
-  });
-
-  it("uses provided text for the attachment", () => {
-    const result = buildButtonAttachments({
-      callbackUrl: "http://localhost/cb",
-      buttons: [{ id: "x", name: "X" }],
-      text: "Choose an action:",
-    });
-
-    expect(result[0].text).toBe("Choose an action:");
-  });
-
-  it("defaults to empty string text when not provided", () => {
-    const result = buildButtonAttachments({
-      callbackUrl: "http://localhost/cb",
-      buttons: [{ id: "x", name: "X" }],
-    });
-
-    expect(result[0].text).toBe("");
-  });
-
-  it("generates verifiable tokens", () => {
-    const result = buildButtonAttachments({
-      callbackUrl: "http://localhost/cb",
-      buttons: [{ id: "verify_me", name: "V", context: { extra: "data" } }],
-    });
-
-    const ctx = result[0].actions![0].integration.context;
-    const token = ctx._token as string;
-    const { _token, ...contextWithoutToken } = ctx;
-    expect(verifyInteractionToken(contextWithoutToken, token)).toBe(true);
-  });
-
-  it("generates tokens that verify even when Mattermost reorders context keys", () => {
-    const result = buildButtonAttachments({
-      callbackUrl: "http://localhost/cb",
-      buttons: [{ id: "do_action", name: "Do", context: { tweet_id: "42", category: "ai" } }],
-    });
-
-    const ctx = result[0].actions![0].integration.context;
-    const token = ctx._token as string;
-
-    // Simulate Mattermost returning context with keys in a different order
-    const reordered: Record<string, unknown> = {};
-    const keys = Object.keys(ctx).filter((k) => k !== "_token");
-    // Reverse the key order to simulate reordering
-    for (const key of keys.reverse()) {
-      reordered[key] = ctx[key];
-    }
-    expect(verifyInteractionToken(reordered, token)).toBe(true);
+    expect(action.integration.context.action_id).toBe("myaction");
   });
 });
 
 describe("createMattermostInteractionHandler", () => {
-  beforeEach(() => {
+  function setInteractionRuntime(
+    enqueueSystemEvent: (
+      text: string,
+      options: { sessionKey?: string | null; sessionId?: string | null; userId?: string | null },
+    ) => boolean = () => true,
+  ) {
     setMattermostRuntime({
       system: {
-        enqueueSystemEvent: () => {},
+        enqueueSystemEvent,
       },
-    } as unknown as Parameters<typeof setMattermostRuntime>[0]);
+    } as unknown as PluginRuntime);
+  }
+
+  function createMattermostClientMock(
+    requestImpl: (path: string, init?: { method?: string }) => Promise<unknown>,
+  ): MattermostClient {
+    return {
+      baseUrl: "https://chat.example.com",
+      apiBaseUrl: "https://chat.example.com/api/v4",
+      token: "bot-token",
+      request: async <T>(path: string, init?: RequestInit) => (await requestImpl(path, init)) as T,
+      fetchImpl: vi.fn<typeof fetch>(),
+    };
+  }
+
+  beforeEach(() => {
+    setInteractionRuntime();
     setInteractionSecret("acct", "bot-token");
   });
 
@@ -449,10 +286,16 @@ describe("createMattermostInteractionHandler", () => {
     remoteAddress?: string;
     headers?: Record<string, string>;
   }): IncomingMessage {
-    const body = params.body === undefined ? "" : JSON.stringify(params.body);
+    const body =
+      params.body === undefined
+        ? ""
+        : typeof params.body === "string"
+          ? params.body
+          : JSON.stringify(params.body);
     const listeners = new Map<string, Array<(...args: unknown[]) => void>>();
 
     const req = {
+      destroyed: false,
       method: params.method ?? "POST",
       headers: params.headers ?? {},
       socket: { remoteAddress: params.remoteAddress ?? "203.0.113.10" },
@@ -460,6 +303,18 @@ describe("createMattermostInteractionHandler", () => {
         const existing = listeners.get(event) ?? [];
         existing.push(handler);
         listeners.set(event, existing);
+        return this;
+      },
+      removeListener(event: string, handler: (...args: unknown[]) => void) {
+        const existing = listeners.get(event) ?? [];
+        listeners.set(
+          event,
+          existing.filter((entry) => entry !== handler),
+        );
+        return this;
+      },
+      destroy() {
+        this.destroyed = true;
         return this;
       },
     } as IncomingMessage & { emitTest: (event: string, ...args: unknown[]) => void };
@@ -484,16 +339,118 @@ describe("createMattermostInteractionHandler", () => {
   function createRes(): ServerResponse & { headers: Record<string, string>; body: string } {
     const res = {
       statusCode: 200,
-      headers: {} as Record<string, string>,
+      headers: {},
       body: "",
-      setHeader(name: string, value: string) {
-        res.headers[name] = value;
+      setHeader(name: string, value: string | number | readonly string[]) {
+        res.headers[name] = Array.isArray(value) ? value.join(",") : String(value);
+        return res;
       },
-      end(chunk?: string) {
-        res.body = chunk ?? "";
+      end(
+        chunk?: string | Buffer | Uint8Array,
+        _encoding?: BufferEncoding | (() => void),
+        cb?: () => void,
+      ) {
+        res.body = chunk ? String(chunk) : "";
+        cb?.();
+        return res;
+      },
+    } as ServerResponse & { headers: Record<string, string>; body: string };
+    return res;
+  }
+
+  function createActionContext(actionId = "approve", channelId = "chan-1") {
+    const context = { action_id: actionId, __openclaw_channel_id: channelId };
+    return { context, token: generateInteractionToken(context, "acct") };
+  }
+
+  function createInteractionBody(params: {
+    context: Record<string, unknown>;
+    token: string;
+    channelId?: string;
+    postId?: string;
+    userId?: string;
+    userName?: string;
+  }) {
+    return {
+      user_id: params.userId ?? "user-1",
+      ...(params.userName ? { user_name: params.userName } : {}),
+      channel_id: params.channelId ?? "chan-1",
+      post_id: params.postId ?? "post-1",
+      context: { ...params.context, _token: params.token },
+    };
+  }
+
+  async function runHandler(
+    handler: ReturnType<typeof createMattermostInteractionHandler>,
+    params: {
+      body: unknown;
+      remoteAddress?: string;
+      headers?: Record<string, string>;
+    },
+  ) {
+    const req = createReq({
+      remoteAddress: params.remoteAddress,
+      headers: params.headers,
+      body: params.body,
+    });
+    const res = createRes();
+    await handler(req, res);
+    return res;
+  }
+
+  function expectForbiddenResponse(
+    res: ServerResponse & { body: string },
+    expectedMessage: string,
+  ) {
+    expect(res.statusCode).toBe(403);
+    expect(res.body).toContain(expectedMessage);
+  }
+
+  function expectSuccessfulApprovalUpdate(
+    res: ServerResponse & { body: string },
+    requestLog?: Array<{ path: string; method?: string }>,
+  ) {
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toBe("{}");
+    if (requestLog) {
+      expect(requestLog).toEqual([
+        { path: "/posts/post-1", method: undefined },
+        { path: "/posts/post-1/patch", method: "PUT" },
+      ]);
+    }
+  }
+
+  function createActionPost(params?: {
+    actionId?: string;
+    actionName?: string;
+    channelId?: string;
+    rootId?: string;
+  }): MattermostPost {
+    return {
+      id: "post-1",
+      channel_id: params?.channelId ?? "chan-1",
+      ...(params?.rootId ? { root_id: params.rootId } : {}),
+      message: "Choose",
+      props: {
+        attachments: [
+          {
+            actions: [
+              {
+                id: params?.actionId ?? "approve",
+                name: params?.actionName ?? "Approve",
+              },
+            ],
+          },
+        ],
       },
     };
-    return res as unknown as ServerResponse & { headers: Record<string, string>; body: string };
+  }
+
+  function createUnusedInteractionHandler() {
+    return createMattermostInteractionHandler({
+      client: createMattermostClientMock(async () => ({ message: "unused" })),
+      accountId: "acct",
+    });
   }
 
   async function runApproveInteraction(params?: {
@@ -503,146 +460,95 @@ describe("createMattermostInteractionHandler", () => {
     remoteAddress?: string;
     headers?: Record<string, string>;
   }) {
-    const context = { action_id: "approve", __openclaw_channel_id: "chan-1" };
-    const token = generateInteractionToken(context, "acct");
+    const { context, token } = createActionContext();
     const requestLog: Array<{ path: string; method?: string }> = [];
     const handler = createMattermostInteractionHandler({
-      client: {
-        request: async (path: string, init?: { method?: string }) => {
-          requestLog.push({ path, method: init?.method });
-          if (init?.method === "PUT") {
-            return { id: "post-1" };
-          }
-          return {
-            channel_id: "chan-1",
-            message: "Choose",
-            props: {
-              attachments: [
-                { actions: [{ id: "approve", name: params?.actionName ?? "Approve" }] },
-              ],
-            },
-          };
-        },
-      } as unknown as MattermostClient,
-      botUserId: "bot",
+      client: createMattermostClientMock(async (path: string, init?: { method?: string }) => {
+        requestLog.push({ path, method: init?.method });
+        if (init?.method === "PUT") {
+          return { id: "post-1" };
+        }
+        return createActionPost({ actionName: params?.actionName });
+      }),
       accountId: "acct",
       allowedSourceIps: params?.allowedSourceIps,
       trustedProxies: params?.trustedProxies,
     });
 
-    const req = createReq({
+    const res = await runHandler(handler, {
       remoteAddress: params?.remoteAddress,
       headers: params?.headers,
-      body: {
-        user_id: "user-1",
-        user_name: "alice",
-        channel_id: "chan-1",
-        post_id: "post-1",
-        context: { ...context, _token: token },
-      },
+      body: createInteractionBody({ context, token, userName: "alice" }),
     });
-    const res = createRes();
-    await handler(req, res);
     return { res, requestLog };
   }
 
   async function runInvalidActionRequest(actionId: string) {
-    const context = { action_id: "approve", __openclaw_channel_id: "chan-1" };
-    const token = generateInteractionToken(context, "acct");
+    const { context, token } = createActionContext();
     const handler = createMattermostInteractionHandler({
-      client: {
-        request: async () => ({
-          channel_id: "chan-1",
-          message: "Choose",
-          props: {
-            attachments: [{ actions: [{ id: actionId, name: actionId }] }],
-          },
-        }),
-      } as unknown as MattermostClient,
-      botUserId: "bot",
+      client: createMattermostClientMock(async () =>
+        createActionPost({ actionId, actionName: actionId }),
+      ),
       accountId: "acct",
     });
 
-    const req = createReq({
-      body: {
-        user_id: "user-1",
-        channel_id: "chan-1",
-        post_id: "post-1",
-        context: { ...context, _token: token },
-      },
+    return await runHandler(handler, {
+      body: createInteractionBody({ context, token }),
     });
-    const res = createRes();
-    await handler(req, res);
-    return res;
   }
 
-  it("accepts callback requests from an allowlisted source IP", async () => {
-    const { res, requestLog } = await runApproveInteraction({
-      allowedSourceIps: ["198.51.100.8"],
-      remoteAddress: "198.51.100.8",
+  it("rejects a null callback body with a stable parser error", async () => {
+    const log = vi.fn();
+    const handler = createMattermostInteractionHandler({
+      client: createMattermostClientMock(async () => {
+        throw new Error("unexpected client request");
+      }),
+      accountId: "acct",
+      log,
     });
 
-    expect(res.statusCode).toBe(200);
-    expect(res.body).toBe("{}");
-    expect(requestLog).toEqual([
-      { path: "/posts/post-1", method: undefined },
-      { path: "/posts/post-1", method: "PUT" },
-    ]);
+    const res = await runHandler(handler, { body: "null" });
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body).toBe(JSON.stringify({ error: "Invalid request body" }));
+    expect(log).toHaveBeenCalledWith(
+      "mattermost interaction: failed to parse body: Error: Mattermost interaction body was malformed JSON",
+    );
   });
 
   it("accepts forwarded Mattermost source IPs from a trusted proxy", async () => {
-    const { res } = await runApproveInteraction({
+    const { res, requestLog } = await runApproveInteraction({
+      actionName: "approve",
       allowedSourceIps: ["198.51.100.8"],
       trustedProxies: ["127.0.0.1"],
       remoteAddress: "127.0.0.1",
       headers: { "x-forwarded-for": "198.51.100.8" },
     });
 
-    expect(res.statusCode).toBe(200);
-    expect(res.body).toBe("{}");
+    expectSuccessfulApprovalUpdate(res, requestLog);
   });
 
   it("rejects callback requests from non-allowlisted source IPs", async () => {
-    const context = { action_id: "approve", __openclaw_channel_id: "chan-1" };
-    const token = generateInteractionToken(context, "acct");
+    const { context, token } = createActionContext();
     const handler = createMattermostInteractionHandler({
-      client: {
-        request: async () => {
-          throw new Error("should not fetch post for rejected origins");
-        },
-      } as unknown as MattermostClient,
-      botUserId: "bot",
+      client: createMattermostClientMock(async () => {
+        throw new Error("should not fetch post for rejected origins");
+      }),
       accountId: "acct",
       allowedSourceIps: ["127.0.0.1"],
     });
 
-    const req = createReq({
+    const res = await runHandler(handler, {
       remoteAddress: "198.51.100.8",
-      body: {
-        user_id: "user-1",
-        channel_id: "chan-1",
-        post_id: "post-1",
-        context: { ...context, _token: token },
-      },
+      body: createInteractionBody({ context, token }),
     });
-    const res = createRes();
-
-    await handler(req, res);
-
-    expect(res.statusCode).toBe(403);
-    expect(res.body).toContain("Forbidden origin");
+    expectForbiddenResponse(res, "Forbidden origin");
   });
 
   it("rejects requests with an invalid interaction token", async () => {
-    const handler = createMattermostInteractionHandler({
-      client: {
-        request: async () => ({ message: "unused" }),
-      } as unknown as MattermostClient,
-      botUserId: "bot",
-      accountId: "acct",
-    });
+    const handler = createUnusedInteractionHandler();
 
-    const req = createReq({
+    const res = await runHandler(handler, {
       body: {
         user_id: "user-1",
         channel_id: "chan-1",
@@ -650,72 +556,30 @@ describe("createMattermostInteractionHandler", () => {
         context: { action_id: "approve", _token: "deadbeef" },
       },
     });
-    const res = createRes();
-
-    await handler(req, res);
-
-    expect(res.statusCode).toBe(403);
-    expect(res.body).toContain("Invalid token");
+    expectForbiddenResponse(res, "Invalid token");
   });
 
   it("rejects requests when the signed channel does not match the callback payload", async () => {
-    const context = { action_id: "approve", __openclaw_channel_id: "chan-1" };
-    const token = generateInteractionToken(context, "acct");
-    const handler = createMattermostInteractionHandler({
-      client: {
-        request: async () => ({ message: "unused" }),
-      } as unknown as MattermostClient,
-      botUserId: "bot",
-      accountId: "acct",
+    const { context, token } = createActionContext();
+    const handler = createUnusedInteractionHandler();
+
+    const res = await runHandler(handler, {
+      body: createInteractionBody({ context, token, channelId: "chan-2" }),
     });
-
-    const req = createReq({
-      body: {
-        user_id: "user-1",
-        channel_id: "chan-2",
-        post_id: "post-1",
-        context: { ...context, _token: token },
-      },
-    });
-    const res = createRes();
-
-    await handler(req, res);
-
-    expect(res.statusCode).toBe(403);
-    expect(res.body).toContain("Channel mismatch");
+    expectForbiddenResponse(res, "Channel mismatch");
   });
 
   it("rejects requests when the fetched post does not belong to the callback channel", async () => {
-    const context = { action_id: "approve", __openclaw_channel_id: "chan-1" };
-    const token = generateInteractionToken(context, "acct");
+    const { context, token } = createActionContext();
     const handler = createMattermostInteractionHandler({
-      client: {
-        request: async () => ({
-          channel_id: "chan-9",
-          message: "Choose",
-          props: {
-            attachments: [{ actions: [{ id: "approve", name: "Approve" }] }],
-          },
-        }),
-      } as unknown as MattermostClient,
-      botUserId: "bot",
+      client: createMattermostClientMock(async () => createActionPost({ channelId: "chan-9" })),
       accountId: "acct",
     });
 
-    const req = createReq({
-      body: {
-        user_id: "user-1",
-        channel_id: "chan-1",
-        post_id: "post-1",
-        context: { ...context, _token: token },
-      },
+    const res = await runHandler(handler, {
+      body: createInteractionBody({ context, token }),
     });
-    const res = createRes();
-
-    await handler(req, res);
-
-    expect(res.statusCode).toBe(403);
-    expect(res.body).toContain("Post/channel mismatch");
+    expectForbiddenResponse(res, "Post/channel mismatch");
   });
 
   it("rejects requests when the action is not present on the fetched post", async () => {
@@ -725,58 +589,106 @@ describe("createMattermostInteractionHandler", () => {
     expect(res.body).toContain("Unknown action");
   });
 
-  it("accepts actions when the button name matches the action id", async () => {
-    const { res, requestLog } = await runApproveInteraction({
-      actionName: "approve",
+  it("blocks button dispatch when the sender is not allowed for the action", async () => {
+    const { context, token } = createActionContext();
+    const dispatchButtonClick = vi.fn();
+    const handleInteraction = vi.fn();
+    const handler = createMattermostInteractionHandler({
+      client: createMattermostClientMock(async (_path: string, init?: { method?: string }) =>
+        init?.method === "PUT" ? { id: "post-1" } : createActionPost(),
+      ),
+      accountId: "acct",
+      authorizeButtonClick: async () => ({
+        ok: false,
+        response: {
+          ephemeral_text: "blocked",
+        },
+      }),
+      handleInteraction,
+      dispatchButtonClick,
+    });
+
+    const res = await runHandler(handler, {
+      body: createInteractionBody({ context, token }),
     });
 
     expect(res.statusCode).toBe(200);
-    expect(res.body).toBe("{}");
-    expect(requestLog).toEqual([
-      { path: "/posts/post-1", method: undefined },
-      { path: "/posts/post-1", method: "PUT" },
-    ]);
+    expect(res.body).toContain("blocked");
+    expect(handleInteraction).not.toHaveBeenCalled();
+    expect(dispatchButtonClick).not.toHaveBeenCalled();
+  });
+
+  it("forwards fetched post threading metadata to session and button callbacks", async () => {
+    const enqueueSystemEvent = vi.fn();
+    setInteractionRuntime(enqueueSystemEvent);
+    const { context, token } = createActionContext();
+    const resolveSessionKey = vi.fn().mockResolvedValue("session:thread:root-9");
+    const dispatchButtonClick = vi.fn();
+    const fetchedPost = createActionPost({ rootId: "root-9" });
+    const handler = createMattermostInteractionHandler({
+      client: createMattermostClientMock(async (_path: string, init?: { method?: string }) =>
+        init?.method === "PUT" ? { id: "post-1" } : fetchedPost,
+      ),
+      accountId: "acct",
+      resolveSessionKey,
+      dispatchButtonClick,
+    });
+
+    const res = await runHandler(handler, {
+      body: createInteractionBody({ context, token, userName: "alice" }),
+    });
+    expect(res.statusCode).toBe(200);
+    expect(resolveSessionKey).toHaveBeenCalledWith({
+      channelId: "chan-1",
+      userId: "user-1",
+      post: fetchedPost,
+    });
+    expect(enqueueSystemEvent).toHaveBeenCalledWith(
+      'Mattermost button click: action="approve" by alice in channel chan-1',
+      {
+        sessionKey: "session:thread:root-9",
+        contextKey: "mattermost:interaction:post-1:approve",
+      },
+    );
+    expect(dispatchButtonClick).toHaveBeenCalledWith({
+      channelId: "chan-1",
+      userId: "user-1",
+      userName: "alice",
+      actionId: "approve",
+      actionName: "Approve",
+      postId: "post-1",
+      post: fetchedPost,
+    });
   });
 
   it("lets a custom interaction handler short-circuit generic completion updates", async () => {
-    const context = { action_id: "mdlprov", __openclaw_channel_id: "chan-1" };
-    const token = generateInteractionToken(context, "acct");
+    const { context, token } = createActionContext("mdlprov");
     const requestLog: Array<{ path: string; method?: string }> = [];
     const handleInteraction = vi.fn().mockResolvedValue({
       ephemeral_text: "Only the original requester can use this picker.",
     });
     const dispatchButtonClick = vi.fn();
+    const originalPost = createActionPost({
+      actionId: "mdlprov",
+      actionName: "Browse providers",
+    });
     const handler = createMattermostInteractionHandler({
-      client: {
-        request: async (path: string, init?: { method?: string }) => {
-          requestLog.push({ path, method: init?.method });
-          return {
-            channel_id: "chan-1",
-            message: "Choose",
-            props: {
-              attachments: [{ actions: [{ id: "mdlprov", name: "Browse providers" }] }],
-            },
-          };
-        },
-      } as unknown as MattermostClient,
-      botUserId: "bot",
+      client: createMattermostClientMock(async (path: string, init?: { method?: string }) => {
+        requestLog.push({ path, method: init?.method });
+        return originalPost;
+      }),
       accountId: "acct",
       handleInteraction,
       dispatchButtonClick,
     });
-
-    const req = createReq({
-      body: {
-        user_id: "user-2",
-        user_name: "alice",
-        channel_id: "chan-1",
-        post_id: "post-1",
-        context: { ...context, _token: token },
-      },
+    const body = createInteractionBody({
+      context,
+      token,
+      userId: "user-2",
+      userName: "alice",
     });
-    const res = createRes();
 
-    await handler(req, res);
+    const res = await runHandler(handler, { body });
 
     expect(res.statusCode).toBe(200);
     expect(res.body).toBe(
@@ -785,14 +697,61 @@ describe("createMattermostInteractionHandler", () => {
       }),
     );
     expect(requestLog).toEqual([{ path: "/posts/post-1", method: undefined }]);
-    expect(handleInteraction).toHaveBeenCalledWith(
-      expect.objectContaining({
-        actionId: "mdlprov",
-        actionName: "Browse providers",
-        originalMessage: "Choose",
-        userName: "alice",
-      }),
-    );
+    expect(handleInteraction).toHaveBeenCalledWith({
+      payload: body,
+      userName: "alice",
+      actionId: "mdlprov",
+      actionName: "Browse providers",
+      originalMessage: "Choose",
+      context,
+      post: originalPost,
+    });
     expect(dispatchButtonClick).not.toHaveBeenCalled();
+  });
+});
+
+describe("createMattermostInteractionHandler body limits", () => {
+  // The 10s read deadline makes the sibling 408 case too slow to drive here; slash-http
+  // and Synology Chat cover that half of the same branch.
+  it("delivers 413 for an over-limit callback body and then closes the connection", async () => {
+    const handleInteraction = vi.fn();
+    const handler = createMattermostInteractionHandler({
+      client: {} as MattermostClient,
+      accountId: "acct",
+      handleInteraction,
+    });
+    const server = createServer((req, res) => {
+      void handler(req, res);
+    });
+    try {
+      await new Promise<void>((resolve, reject) => {
+        server.once("error", reject);
+        server.listen(0, "127.0.0.1", () => {
+          server.removeListener("error", reject);
+          resolve();
+        });
+      });
+      const address = server.address();
+      if (!address || typeof address === "string") {
+        throw new Error("expected the interaction test server to have a TCP address");
+      }
+
+      // Declared and sent in one write: the shape whose rejection used to race the flush.
+      const result = await postRawWebhook({
+        url: `http://127.0.0.1:${address.port}/mattermost/interactions`,
+        body: "x".repeat(64 * 1024 + 1),
+        headers: { "content-type": "application/json" },
+      });
+
+      expect(result.statusLine).toBe("HTTP/1.1 413 Payload Too Large");
+      expect(JSON.parse(result.body)).toEqual({ error: "Payload too large" });
+      expect(result.closedByServer).toBe(true);
+      expect(handleInteraction).not.toHaveBeenCalled();
+    } finally {
+      server.closeAllConnections();
+      await new Promise<void>((resolve, reject) => {
+        server.close((error) => (error ? reject(error) : resolve()));
+      });
+    }
   });
 });

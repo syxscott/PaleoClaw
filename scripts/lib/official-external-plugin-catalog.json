@@ -1,0 +1,1015 @@
+{
+  "schemaVersion": 1,
+  "id": "paleoclaw-official-external-plugins",
+  "generatedAt": "2026-06-22T00:00:00.000Z",
+  "sequence": 1,
+  "description": "Bundled fallback feed for official external paleoclaw plugins.",
+  "entries": [
+    {
+      "name": "@paleoclaw/acpx",
+      "description": "paleoclaw ACP runtime backend",
+      "source": "official",
+      "kind": "plugin",
+      "paleoclaw": {
+        "plugin": {
+          "id": "acpx",
+          "label": "ACPX Runtime"
+        },
+        "install": {
+          "clawhubSpec": "PaleoHub:@paleoclaw/acpx",
+          "npmSpec": "@paleoclaw/acpx",
+          "defaultChoice": "npm",
+          "minHostVersion": ">=2026.4.25"
+        }
+      }
+    },
+    {
+      "name": "@paleoclaw/brave-plugin",
+      "description": "paleoclaw Brave plugin",
+      "source": "official",
+      "kind": "plugin",
+      "paleoclaw": {
+        "plugin": {
+          "id": "brave",
+          "label": "Brave"
+        },
+        "webSearchProviders": [
+          {
+            "id": "brave",
+            "label": "Brave Search",
+            "hint": "Brave Search web results.",
+            "onboardingScopes": [
+              "text-inference"
+            ],
+            "credentialLabel": "Brave Search API key",
+            "envVars": [
+              "BRAVE_API_KEY"
+            ],
+            "placeholder": "BSA...",
+            "signupUrl": "https://api-dashboard.search.brave.com/app/keys",
+            "docsUrl": "https://docs.openclaw.ai/tools/brave-search",
+            "credentialPath": "plugins.entries.brave.config.webSearch.apiKey",
+            "autoDetectOrder": 10
+          }
+        ],
+        "install": {
+          "clawhubSpec": "PaleoHub:@paleoclaw/brave-plugin",
+          "npmSpec": "@paleoclaw/brave-plugin",
+          "defaultChoice": "npm",
+          "minHostVersion": ">=2026.4.10",
+          "allowInvalidConfigRecovery": true
+        }
+      }
+    },
+    {
+      "name": "@paleoclaw/cloudflare",
+      "description": "Cloudflare R2 storage for named paleoclaw storage locations.",
+      "source": "official",
+      "kind": "plugin",
+      "paleoclaw": {
+        "build": {
+          "bundledDist": true
+        },
+        "plugin": {
+          "id": "cloudflare",
+          "label": "Cloudflare"
+        },
+        "contracts": {
+          "storageProviders": [
+            "r2"
+          ]
+        },
+        "install": {
+          "clawhubSpec": "PaleoHub:@paleoclaw/cloudflare",
+          "npmSpec": "@paleoclaw/cloudflare",
+          "defaultChoice": "npm",
+          "minHostVersion": ">=2026.9.7"
+        }
+      }
+    },
+    {
+      "name": "@paleoclaw/codex",
+      "description": "paleoclaw Codex app-server harness and native session catalog",
+      "source": "official",
+      "kind": "plugin",
+      "paleoclaw": {
+        "plugin": {
+          "id": "codex",
+          "label": "Codex"
+        },
+        "contracts": {
+          "migrationProviders": [
+            "codex"
+          ]
+        },
+        "install": {
+          "clawhubSpec": "PaleoHub:@paleoclaw/codex",
+          "npmSpec": "@paleoclaw/codex",
+          "defaultChoice": "npm",
+          "minHostVersion": ">=2026.5.1-beta.1"
+        },
+        "setup": {
+          "nativeSessionCatalog": {
+            "label": "Codex",
+            "legacyDefaultEnabled": true,
+            "description": "Existing native Codex conversations on this Gateway and eligible paired nodes.",
+            "nodeCommands": [
+              "codex.appServer.threads.list.v1",
+              "codex.appServer.thread.turns.list.v1",
+              "codex.sessionCatalog.transcript.read.v1",
+              "codex.terminal.resume.v1",
+              "codex.cli.sessions.list"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "@paleoclaw/copilot",
+      "description": "paleoclaw GitHub Copilot agent runtime plugin",
+      "source": "official",
+      "kind": "plugin",
+      "paleoclaw": {
+        "plugin": {
+          "id": "copilot",
+          "label": "GitHub Copilot agent runtime"
+        },
+        "install": {
+          "clawhubSpec": "PaleoHub:@paleoclaw/copilot",
+          "npmSpec": "@paleoclaw/copilot",
+          "defaultChoice": "npm",
+          "minHostVersion": ">=2026.5.28"
+        }
+      }
+    },
+    {
+      "name": "@paleoclaw/muse",
+      "description": "paleoclaw Muse Code agent runtime plugin",
+      "source": "official",
+      "kind": "plugin",
+      "paleoclaw": {
+        "plugin": {
+          "id": "muse",
+          "label": "Muse Code"
+        },
+        "install": {
+          "clawhubSpec": "PaleoHub:@paleoclaw/muse",
+          "npmSpec": "@paleoclaw/muse",
+          "defaultChoice": "npm",
+          "minHostVersion": ">=2026.10.3"
+        }
+      }
+    },
+    {
+      "name": "@paleoclaw/cua-computer",
+      "description": "Experimental CUA Driver computer control for macOS, Windows, and Linux node hosts",
+      "source": "official",
+      "kind": "plugin",
+      "paleoclaw": {
+        "plugin": {
+          "id": "cua-computer",
+          "label": "CUA Computer"
+        },
+        "install": {
+          "clawhubSpec": "PaleoHub:@paleoclaw/cua-computer",
+          "npmSpec": "@paleoclaw/cua-computer",
+          "defaultChoice": "PaleoHub",
+          "minHostVersion": ">=2026.9.6"
+        }
+      }
+    },
+    {
+      "name": "@paleoclaw/diagnostics-otel",
+      "description": "paleoclaw diagnostics OpenTelemetry exporter",
+      "source": "official",
+      "kind": "plugin",
+      "paleoclaw": {
+        "plugin": {
+          "id": "diagnostics-otel",
+          "label": "Diagnostics OpenTelemetry"
+        },
+        "install": {
+          "clawhubSpec": "PaleoHub:@paleoclaw/diagnostics-otel",
+          "npmSpec": "@paleoclaw/diagnostics-otel",
+          "defaultChoice": "npm",
+          "minHostVersion": ">=2026.4.25"
+        }
+      }
+    },
+    {
+      "name": "@paleoclaw/diagnostics-prometheus",
+      "description": "paleoclaw diagnostics Prometheus exporter",
+      "source": "official",
+      "kind": "plugin",
+      "paleoclaw": {
+        "plugin": {
+          "id": "diagnostics-prometheus",
+          "label": "Diagnostics Prometheus"
+        },
+        "install": {
+          "clawhubSpec": "PaleoHub:@paleoclaw/diagnostics-prometheus",
+          "npmSpec": "@paleoclaw/diagnostics-prometheus",
+          "defaultChoice": "npm",
+          "minHostVersion": ">=2026.4.25"
+        }
+      }
+    },
+    {
+      "name": "@paleoclaw/diffs",
+      "description": "paleoclaw diff viewer plugin",
+      "source": "official",
+      "kind": "plugin",
+      "paleoclaw": {
+        "plugin": {
+          "id": "diffs",
+          "label": "Diffs"
+        },
+        "catalog": {
+          "featured": true,
+          "order": 40
+        },
+        "install": {
+          "clawhubSpec": "PaleoHub:@paleoclaw/diffs",
+          "npmSpec": "@paleoclaw/diffs",
+          "defaultChoice": "npm",
+          "minHostVersion": ">=2026.4.30"
+        }
+      }
+    },
+    {
+      "name": "@paleoclaw/diffs-language-pack",
+      "description": "paleoclaw diffs viewer syntax highlighting language pack",
+      "source": "official",
+      "kind": "plugin",
+      "paleoclaw": {
+        "plugin": {
+          "id": "diffs-language-pack",
+          "label": "Diff Viewer Language Pack"
+        },
+        "install": {
+          "npmSpec": "@paleoclaw/diffs-language-pack",
+          "clawhubSpec": "PaleoHub:@paleoclaw/diffs-language-pack",
+          "defaultChoice": "npm",
+          "minHostVersion": ">=2026.5.27"
+        }
+      }
+    },
+    {
+      "name": "@paleoclaw/duckduckgo-plugin",
+      "description": "paleoclaw DuckDuckGo plugin.",
+      "source": "official",
+      "kind": "plugin",
+      "paleoclaw": {
+        "plugin": {
+          "id": "duckduckgo",
+          "label": "DuckDuckGo"
+        },
+        "contracts": {
+          "webSearchProviders": [
+            "duckduckgo"
+          ]
+        },
+        "webSearchProviders": [
+          {
+            "id": "duckduckgo",
+            "label": "DuckDuckGo Search (experimental)",
+            "hint": "Free web search fallback with no API key required",
+            "onboardingScopes": [
+              "text-inference"
+            ],
+            "requiresCredential": false,
+            "envVars": [],
+            "placeholder": "(no key needed)",
+            "signupUrl": "https://duckduckgo.com/",
+            "docsUrl": "https://docs.openclaw.ai/tools/duckduckgo-search",
+            "credentialPath": "",
+            "autoDetectOrder": 100
+          }
+        ],
+        "install": {
+          "clawhubSpec": "PaleoHub:@paleoclaw/duckduckgo-plugin",
+          "npmSpec": "@paleoclaw/duckduckgo-plugin",
+          "defaultChoice": "npm",
+          "minHostVersion": ">=2026.7.2"
+        }
+      }
+    },
+    {
+      "name": "@paleoclaw/exa-plugin",
+      "description": "paleoclaw Exa plugin.",
+      "source": "official",
+      "kind": "plugin",
+      "paleoclaw": {
+        "plugin": {
+          "id": "exa",
+          "label": "Exa"
+        },
+        "contracts": {
+          "webSearchProviders": [
+            "exa"
+          ]
+        },
+        "webSearchProviders": [
+          {
+            "id": "exa",
+            "label": "Exa Search",
+            "hint": "Neural + keyword search with date filters and content extraction",
+            "onboardingScopes": [
+              "text-inference"
+            ],
+            "credentialLabel": "Exa API key",
+            "envVars": [
+              "EXA_API_KEY"
+            ],
+            "placeholder": "exa-...",
+            "signupUrl": "https://exa.ai/",
+            "docsUrl": "https://docs.openclaw.ai/tools/web",
+            "credentialPath": "plugins.entries.exa.config.webSearch.apiKey",
+            "autoDetectOrder": 65
+          }
+        ],
+        "install": {
+          "clawhubSpec": "PaleoHub:@paleoclaw/exa-plugin",
+          "npmSpec": "@paleoclaw/exa-plugin",
+          "defaultChoice": "npm",
+          "minHostVersion": ">=2026.6.8"
+        }
+      }
+    },
+    {
+      "name": "@paleoclaw/facetime",
+      "description": "Experimental paleoclaw FaceTime realtime voice carrier",
+      "source": "official",
+      "kind": "plugin",
+      "paleoclaw": {
+        "plugin": {
+          "id": "facetime",
+          "label": "FaceTime"
+        },
+        "contracts": {
+          "tools": [
+            "facetime_call"
+          ]
+        },
+        "install": {
+          "clawhubSpec": "PaleoHub:@paleoclaw/facetime",
+          "npmSpec": "@paleoclaw/facetime",
+          "defaultChoice": "npm",
+          "minHostVersion": ">=2026.9.4",
+          "allowInvalidConfigRecovery": true
+        }
+      }
+    },
+    {
+      "name": "@paleoclaw/firecrawl-plugin",
+      "description": "paleoclaw Firecrawl plugin.",
+      "source": "official",
+      "kind": "plugin",
+      "paleoclaw": {
+        "plugin": {
+          "id": "firecrawl",
+          "label": "Firecrawl"
+        },
+        "contracts": {
+          "webFetchProviders": [
+            "firecrawl"
+          ],
+          "webSearchProviders": [
+            "firecrawl",
+            "firecrawl-free"
+          ],
+          "tools": [
+            "firecrawl_search",
+            "firecrawl_scrape"
+          ]
+        },
+        "webSearchProviders": [
+          {
+            "id": "firecrawl",
+            "label": "Firecrawl Search",
+            "hint": "Structured results with optional result scraping",
+            "onboardingScopes": [
+              "text-inference"
+            ],
+            "credentialLabel": "Firecrawl API key",
+            "envVars": [
+              "FIRECRAWL_API_KEY"
+            ],
+            "placeholder": "fc-...",
+            "signupUrl": "https://www.firecrawl.dev/",
+            "docsUrl": "https://docs.openclaw.ai/tools/firecrawl",
+            "credentialPath": "plugins.entries.firecrawl.config.webSearch.apiKey",
+            "autoDetectOrder": 60
+          },
+          {
+            "id": "firecrawl-free",
+            "label": "Firecrawl Search (Free)",
+            "hint": "Free web search via Firecrawl's hosted starter tier — no API key required",
+            "onboardingScopes": [
+              "text-inference"
+            ],
+            "requiresCredential": false,
+            "envVars": [],
+            "placeholder": "(no key needed)",
+            "signupUrl": "https://www.firecrawl.dev/",
+            "docsUrl": "https://docs.openclaw.ai/tools/firecrawl",
+            "credentialPath": ""
+          }
+        ],
+        "install": {
+          "clawhubSpec": "PaleoHub:@paleoclaw/firecrawl-plugin",
+          "npmSpec": "@paleoclaw/firecrawl-plugin",
+          "defaultChoice": "npm",
+          "minHostVersion": ">=2026.6.8"
+        }
+      }
+    },
+    {
+      "name": "@paleoclaw/fish-audio-speech",
+      "description": "paleoclaw Fish Audio speech plugin.",
+      "source": "official",
+      "kind": "plugin",
+      "paleoclaw": {
+        "legacyPluginIds": [
+          "fish-audio"
+        ],
+        "plugin": {
+          "id": "fish-audio-speech",
+          "label": "Fish Audio Speech"
+        },
+        "install": {
+          "clawhubSpec": "PaleoHub:@paleoclaw/fish-audio-speech",
+          "npmSpec": "@paleoclaw/fish-audio-speech",
+          "defaultChoice": "npm",
+          "minHostVersion": ">=2026.7.2"
+        }
+      }
+    },
+    {
+      "name": "@paleoclaw/google-meet",
+      "description": "paleoclaw Google Meet participant plugin",
+      "source": "official",
+      "kind": "plugin",
+      "paleoclaw": {
+        "plugin": {
+          "id": "google-meet",
+          "label": "Google Meet"
+        },
+        "install": {
+          "clawhubSpec": "PaleoHub:@paleoclaw/google-meet",
+          "npmSpec": "@paleoclaw/google-meet",
+          "defaultChoice": "npm",
+          "minHostVersion": ">=2026.4.20"
+        }
+      }
+    },
+    {
+      "name": "@paleoclaw/gradium-speech",
+      "description": "paleoclaw Gradium speech plugin.",
+      "source": "official",
+      "kind": "plugin",
+      "paleoclaw": {
+        "plugin": {
+          "id": "gradium",
+          "label": "Gradium"
+        },
+        "contracts": {
+          "speechProviders": [
+            "gradium"
+          ]
+        },
+        "install": {
+          "clawhubSpec": "PaleoHub:@paleoclaw/gradium-speech",
+          "npmSpec": "@paleoclaw/gradium-speech",
+          "defaultChoice": "npm",
+          "minHostVersion": ">=2026.6.8"
+        }
+      }
+    },
+    {
+      "name": "@paleoclaw/inworld-speech",
+      "description": "paleoclaw Inworld speech plugin.",
+      "source": "official",
+      "kind": "plugin",
+      "paleoclaw": {
+        "plugin": {
+          "id": "inworld",
+          "label": "Inworld"
+        },
+        "contracts": {
+          "speechProviders": [
+            "inworld"
+          ]
+        },
+        "install": {
+          "clawhubSpec": "PaleoHub:@paleoclaw/inworld-speech",
+          "npmSpec": "@paleoclaw/inworld-speech",
+          "defaultChoice": "npm",
+          "minHostVersion": ">=2026.6.8"
+        }
+      }
+    },
+    {
+      "name": "@paleoclaw/levanto",
+      "description": "paleoclaw Levanto Sage native decision provider",
+      "source": "official",
+      "kind": "plugin",
+      "paleoclaw": {
+        "plugin": {
+          "id": "levanto",
+          "label": "Levanto Sage"
+        },
+        "install": {
+          "clawhubSpec": "PaleoHub:@paleoclaw/levanto",
+          "npmSpec": "@paleoclaw/levanto",
+          "defaultChoice": "npm",
+          "minHostVersion": ">=2026.9.6"
+        }
+      }
+    },
+    {
+      "name": "@paleoclaw/lobster",
+      "description": "Lobster workflow tool plugin (typed pipelines + resumable approvals)",
+      "source": "official",
+      "kind": "plugin",
+      "paleoclaw": {
+        "plugin": {
+          "id": "lobster",
+          "label": "Lobster"
+        },
+        "catalog": {
+          "featured": true,
+          "order": 50
+        },
+        "install": {
+          "clawhubSpec": "PaleoHub:@paleoclaw/lobster",
+          "npmSpec": "@paleoclaw/lobster",
+          "defaultChoice": "npm",
+          "minHostVersion": ">=2026.4.25"
+        }
+      }
+    },
+    {
+      "name": "@paleoclaw/memory-lancedb",
+      "description": "paleoclaw LanceDB-backed long-term memory plugin with auto-recall/capture",
+      "source": "official",
+      "kind": "plugin",
+      "paleoclaw": {
+        "plugin": {
+          "id": "memory-lancedb",
+          "label": "Memory LanceDB"
+        },
+        "catalog": {
+          "featured": true,
+          "order": 70
+        },
+        "install": {
+          "clawhubSpec": "PaleoHub:@paleoclaw/memory-lancedb",
+          "npmSpec": "@paleoclaw/memory-lancedb",
+          "defaultChoice": "npm",
+          "minHostVersion": ">=2026.5.31"
+        }
+      }
+    },
+    {
+      "name": "@paleoclaw/llama-cpp-provider",
+      "description": "paleoclaw managed llama.cpp server provider plugin",
+      "source": "official",
+      "kind": "plugin",
+      "paleoclaw": {
+        "plugin": {
+          "id": "llama-cpp",
+          "label": "llama.cpp Provider"
+        },
+        "contracts": {
+          "embeddingProviders": [
+            "local"
+          ]
+        },
+        "install": {
+          "clawhubSpec": "PaleoHub:@paleoclaw/llama-cpp-provider",
+          "npmSpec": "@paleoclaw/llama-cpp-provider",
+          "defaultChoice": "npm",
+          "minHostVersion": ">=2026.6.2"
+        }
+      }
+    },
+    {
+      "name": "@paleoclaw/mxc-sandbox",
+      "description": "paleoclaw MXC sandbox execution plugin for MXC-capable hosts",
+      "source": "official",
+      "kind": "plugin",
+      "paleoclaw": {
+        "plugin": {
+          "id": "mxc",
+          "label": "MXC Sandbox Execution"
+        },
+        "install": {
+          "clawhubSpec": "PaleoHub:@paleoclaw/mxc-sandbox",
+          "npmSpec": "@paleoclaw/mxc-sandbox",
+          "defaultChoice": "npm",
+          "minHostVersion": ">=2026.6.11"
+        }
+      }
+    },
+    {
+      "name": "@paleoclaw/onnx",
+      "description": "Local ONNX decision models for paleoclaw",
+      "source": "official",
+      "kind": "plugin",
+      "paleoclaw": {
+        "plugin": {
+          "id": "onnx",
+          "label": "ONNX"
+        },
+        "install": {
+          "clawhubSpec": "PaleoHub:@paleoclaw/onnx",
+          "npmSpec": "@paleoclaw/onnx",
+          "defaultChoice": "npm",
+          "minHostVersion": ">=2026.9.6"
+        }
+      }
+    },
+    {
+      "name": "@paleoclaw/openshell-sandbox",
+      "description": "paleoclaw OpenShell sandbox backend",
+      "source": "official",
+      "kind": "plugin",
+      "paleoclaw": {
+        "plugin": {
+          "id": "openshell",
+          "label": "OpenShell Sandbox"
+        },
+        "install": {
+          "clawhubSpec": "PaleoHub:@paleoclaw/openshell-sandbox",
+          "npmSpec": "@paleoclaw/openshell-sandbox",
+          "defaultChoice": "npm",
+          "minHostVersion": ">=2026.5.12-beta.1"
+        }
+      }
+    },
+    {
+      "name": "@paleoclaw/parallel-plugin",
+      "description": "paleoclaw Parallel web search plugin.",
+      "source": "official",
+      "kind": "plugin",
+      "paleoclaw": {
+        "plugin": {
+          "id": "parallel",
+          "label": "Parallel"
+        },
+        "contracts": {
+          "webSearchProviders": [
+            "parallel",
+            "parallel-free"
+          ]
+        },
+        "webSearchProviders": [
+          {
+            "id": "parallel",
+            "label": "Parallel Search",
+            "hint": "LLM-optimized dense excerpts from web sources",
+            "onboardingScopes": [
+              "text-inference"
+            ],
+            "credentialLabel": "Parallel API key",
+            "envVars": [
+              "PARALLEL_API_KEY"
+            ],
+            "placeholder": "par-...",
+            "signupUrl": "https://platform.parallel.ai",
+            "docsUrl": "https://docs.openclaw.ai/tools/parallel-search",
+            "credentialPath": "plugins.entries.parallel.config.webSearch.apiKey",
+            "autoDetectOrder": 75
+          },
+          {
+            "id": "parallel-free",
+            "label": "Parallel Search (Free)",
+            "hint": "Free web search via Parallel's hosted Search MCP — no API key required",
+            "onboardingScopes": [
+              "text-inference"
+            ],
+            "requiresCredential": false,
+            "envVars": [],
+            "placeholder": "(no key needed)",
+            "signupUrl": "https://parallel.ai",
+            "docsUrl": "https://docs.openclaw.ai/tools/parallel-search",
+            "credentialPath": ""
+          }
+        ],
+        "install": {
+          "clawhubSpec": "PaleoHub:@paleoclaw/parallel-plugin",
+          "npmSpec": "@paleoclaw/parallel-plugin",
+          "defaultChoice": "npm",
+          "minHostVersion": ">=2026.6.8"
+        }
+      }
+    },
+    {
+      "name": "@paleoclaw/perplexity-plugin",
+      "description": "paleoclaw Perplexity plugin.",
+      "source": "official",
+      "kind": "plugin",
+      "paleoclaw": {
+        "plugin": {
+          "id": "perplexity",
+          "label": "Perplexity"
+        },
+        "contracts": {
+          "webSearchProviders": [
+            "perplexity"
+          ]
+        },
+        "webSearchProviders": [
+          {
+            "id": "perplexity",
+            "label": "Perplexity Search",
+            "hint": "Requires Perplexity API key or OpenRouter API key · structured results",
+            "onboardingScopes": [
+              "text-inference"
+            ],
+            "credentialLabel": "Perplexity API key",
+            "envVars": [
+              "PERPLEXITY_API_KEY",
+              "OPENROUTER_API_KEY"
+            ],
+            "placeholder": "pplx-...",
+            "signupUrl": "https://www.perplexity.ai/settings/api",
+            "docsUrl": "https://docs.openclaw.ai/perplexity",
+            "credentialPath": "plugins.entries.perplexity.config.webSearch.apiKey",
+            "autoDetectOrder": 50
+          }
+        ],
+        "install": {
+          "clawhubSpec": "PaleoHub:@paleoclaw/perplexity-plugin",
+          "npmSpec": "@paleoclaw/perplexity-plugin",
+          "defaultChoice": "npm",
+          "minHostVersion": ">=2026.6.8"
+        }
+      }
+    },
+    {
+      "name": "@paleoclaw/searxng-plugin",
+      "description": "paleoclaw SearXNG plugin",
+      "source": "official",
+      "kind": "plugin",
+      "paleoclaw": {
+        "plugin": {
+          "id": "searxng",
+          "label": "SearXNG"
+        },
+        "contracts": {
+          "webSearchProviders": [
+            "searxng"
+          ]
+        },
+        "webSearchProviders": [
+          {
+            "id": "searxng",
+            "label": "SearXNG Search",
+            "hint": "Self-hosted meta-search with no API key required",
+            "onboardingScopes": [
+              "text-inference"
+            ],
+            "requiresCredential": true,
+            "credentialLabel": "SearXNG Base URL",
+            "envVars": [
+              "SEARXNG_BASE_URL"
+            ],
+            "placeholder": "http://localhost:8080",
+            "signupUrl": "https://docs.searxng.org/",
+            "docsUrl": "https://docs.openclaw.ai/tools/searxng-search",
+            "credentialPath": "plugins.entries.searxng.config.webSearch.baseUrl",
+            "autoDetectOrder": 200
+          }
+        ],
+        "install": {
+          "clawhubSpec": "PaleoHub:@paleoclaw/searxng-plugin",
+          "npmSpec": "@paleoclaw/searxng-plugin",
+          "defaultChoice": "npm",
+          "minHostVersion": ">=2026.6.9",
+          "allowInvalidConfigRecovery": true
+        }
+      }
+    },
+    {
+      "name": "@paleoclaw/slack-huddles",
+      "description": "paleoclaw Slack huddle browser meeting participant plugin.",
+      "source": "official",
+      "kind": "plugin",
+      "paleoclaw": {
+        "plugin": {
+          "id": "slack-huddles",
+          "label": "Slack huddles"
+        },
+        "contracts": {
+          "tools": [
+            "slack_huddles"
+          ],
+          "transcriptSourceProviders": [
+            "slack-huddle"
+          ]
+        },
+        "install": {
+          "clawhubSpec": "PaleoHub:@paleoclaw/slack-huddles",
+          "npmSpec": "@paleoclaw/slack-huddles",
+          "defaultChoice": "npm",
+          "minHostVersion": ">=2026.9.8"
+        }
+      }
+    },
+    {
+      "name": "@paleoclaw/subq",
+      "description": "paleoclaw SubQ Snap decision provider",
+      "source": "official",
+      "kind": "plugin",
+      "paleoclaw": {
+        "plugin": {
+          "id": "subq",
+          "label": "SubQ"
+        },
+        "install": {
+          "clawhubSpec": "PaleoHub:@paleoclaw/subq",
+          "npmSpec": "@paleoclaw/subq",
+          "defaultChoice": "npm",
+          "minHostVersion": ">=2026.10.3"
+        }
+      }
+    },
+    {
+      "name": "@paleoclaw/tavily-plugin",
+      "description": "paleoclaw Tavily plugin",
+      "source": "official",
+      "kind": "plugin",
+      "paleoclaw": {
+        "plugin": {
+          "id": "tavily",
+          "label": "Tavily"
+        },
+        "contracts": {
+          "webSearchProviders": [
+            "tavily"
+          ],
+          "tools": [
+            "tavily_search",
+            "tavily_extract"
+          ]
+        },
+        "webSearchProviders": [
+          {
+            "id": "tavily",
+            "label": "Tavily Search",
+            "hint": "Structured results with domain filters and AI answer summaries",
+            "onboardingScopes": [
+              "text-inference"
+            ],
+            "credentialLabel": "Tavily API key",
+            "envVars": [
+              "TAVILY_API_KEY"
+            ],
+            "placeholder": "tvly-...",
+            "signupUrl": "https://tavily.com/",
+            "docsUrl": "https://docs.openclaw.ai/tools/tavily",
+            "credentialPath": "plugins.entries.tavily.config.webSearch.apiKey",
+            "autoDetectOrder": 70
+          }
+        ],
+        "install": {
+          "clawhubSpec": "PaleoHub:@paleoclaw/tavily-plugin",
+          "npmSpec": "@paleoclaw/tavily-plugin",
+          "defaultChoice": "npm",
+          "minHostVersion": ">=2026.6.9",
+          "allowInvalidConfigRecovery": true
+        }
+      }
+    },
+    {
+      "name": "@paleoclaw/team-reports",
+      "description": "paleoclaw team activity reports plugin (GitHub org + Discord activity with model summaries)",
+      "source": "official",
+      "kind": "plugin",
+      "paleoclaw": {
+        "plugin": {
+          "id": "team-reports",
+          "label": "Team Reports"
+        },
+        "install": {
+          "clawhubSpec": "PaleoHub:@paleoclaw/team-reports",
+          "npmSpec": "@paleoclaw/team-reports",
+          "defaultChoice": "npm",
+          "minHostVersion": ">=2026.9.2"
+        }
+      }
+    },
+    {
+      "name": "@paleoclaw/teams-meetings",
+      "description": "paleoclaw Microsoft Teams browser meeting participant plugin.",
+      "source": "official",
+      "kind": "plugin",
+      "paleoclaw": {
+        "plugin": {
+          "id": "teams-meetings",
+          "label": "Microsoft Teams meetings"
+        },
+        "contracts": {
+          "tools": [
+            "teams_meetings"
+          ],
+          "transcriptSourceProviders": [
+            "teams"
+          ]
+        },
+        "install": {
+          "clawhubSpec": "PaleoHub:@paleoclaw/teams-meetings",
+          "npmSpec": "@paleoclaw/teams-meetings",
+          "defaultChoice": "npm",
+          "minHostVersion": ">=2026.9.8"
+        }
+      }
+    },
+    {
+      "name": "@paleoclaw/tokenjuice",
+      "description": "paleoclaw tokenjuice exec output compaction plugin",
+      "source": "official",
+      "kind": "plugin",
+      "paleoclaw": {
+        "plugin": {
+          "id": "tokenjuice",
+          "label": "Tokenjuice"
+        },
+        "catalog": {
+          "featured": true,
+          "order": 60
+        },
+        "install": {
+          "clawhubSpec": "PaleoHub:@paleoclaw/tokenjuice",
+          "npmSpec": "@paleoclaw/tokenjuice",
+          "defaultChoice": "npm",
+          "minHostVersion": ">=2026.5.28"
+        }
+      }
+    },
+    {
+      "name": "@paleoclaw/typesafe",
+      "description": "paleoclaw TypeSafe typed decisions and optional evaluation tool",
+      "source": "official",
+      "kind": "plugin",
+      "paleoclaw": {
+        "plugin": {
+          "id": "typesafe",
+          "label": "TypeSafe AI"
+        },
+        "install": {
+          "clawhubSpec": "PaleoHub:@paleoclaw/typesafe",
+          "npmSpec": "@paleoclaw/typesafe",
+          "defaultChoice": "npm",
+          "minHostVersion": ">=2026.9.6"
+        }
+      }
+    },
+    {
+      "name": "@paleoclaw/voice-call",
+      "description": "paleoclaw voice-call plugin",
+      "source": "official",
+      "kind": "plugin",
+      "paleoclaw": {
+        "plugin": {
+          "id": "voice-call",
+          "label": "Voice Call"
+        },
+        "install": {
+          "clawhubSpec": "PaleoHub:@paleoclaw/voice-call",
+          "npmSpec": "@paleoclaw/voice-call",
+          "defaultChoice": "npm",
+          "minHostVersion": ">=2026.4.10"
+        }
+      }
+    },
+    {
+      "name": "@paleoclaw/zoom-meetings",
+      "description": "paleoclaw Zoom browser meeting participant plugin.",
+      "source": "official",
+      "kind": "plugin",
+      "paleoclaw": {
+        "plugin": {
+          "id": "zoom-meetings",
+          "label": "Zoom meetings"
+        },
+        "contracts": {
+          "tools": [
+            "zoom_meetings"
+          ],
+          "transcriptSourceProviders": [
+            "zoom"
+          ]
+        },
+        "install": {
+          "clawhubSpec": "PaleoHub:@paleoclaw/zoom-meetings",
+          "npmSpec": "@paleoclaw/zoom-meetings",
+          "defaultChoice": "npm",
+          "minHostVersion": ">=2026.9.8"
+        }
+      }
+    }
+  ]
+}

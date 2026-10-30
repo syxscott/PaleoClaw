@@ -1,3 +1,4 @@
+// Command gating tests cover channel command allow/deny decisions before agent dispatch.
 import { describe, expect, it } from "vitest";
 import {
   resolveCommandAuthorizedFromAuthorizers,
@@ -12,18 +13,6 @@ describe("resolveCommandAuthorizedFromAuthorizers", () => {
         authorizers: [{ configured: false, allowed: true }],
       }),
     ).toBe(false);
-  });
-
-  it("allows when useAccessGroups is enabled and any configured authorizer allows", () => {
-    expect(
-      resolveCommandAuthorizedFromAuthorizers({
-        useAccessGroups: true,
-        authorizers: [
-          { configured: true, allowed: false },
-          { configured: true, allowed: true },
-        ],
-      }),
-    ).toBe(true);
   });
 
   it("allows when useAccessGroups is disabled (default)", () => {
@@ -85,13 +74,17 @@ describe("resolveControlCommandGate", () => {
     expect(result.shouldBlock).toBe(true);
   });
 
-  it("does not block when control commands are disabled", () => {
+  it("accepts a secondary authorizer when the primary denies", () => {
     const result = resolveControlCommandGate({
       useAccessGroups: true,
-      authorizers: [{ configured: true, allowed: false }],
-      allowTextCommands: false,
+      authorizers: [
+        { configured: true, allowed: false },
+        { configured: true, allowed: true },
+      ],
+      allowTextCommands: true,
       hasControlCommand: true,
     });
+    expect(result.commandAuthorized).toBe(true);
     expect(result.shouldBlock).toBe(false);
   });
 });

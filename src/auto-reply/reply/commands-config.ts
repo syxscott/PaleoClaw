@@ -1,279 +1,203 @@
-import { resolveChannelConfigWrites } from "../../channels/plugins/config-writes.js";
-import { normalizeChannelId } from "../../channels/registry.js";
+import { isRecord } from "@paleoclaw/normalization-core/record-coerce";
+import { normalizeOptionalString } from "@paleoclaw/normalization-core/string-coerce";
+import { resolveConfigWriteTargetFromPath } from "../../channels/plugins/config-writes.js";
+import { normalizeChatChannelId } from "../../channels/registry.js";
 import {
   getConfigValueAtPath,
   parseConfigPath,
   setConfigValueAtPath,
-  unsetConfigValueAtPath,
 } from "../../config/config-paths.js";
-import {
-  readConfigFileSnapshot,
-  validateConfigObjectWithPlugins,
-  writeConfigFile,
-} from "../../config/config.js";
+import { readConfigFileSnapshot } from "../../config/config.js";
+import { redactConfigObject } from "../../config/redact-snapshot.js";
 import {
   getConfigOverrides,
   resetConfigOverrides,
   setConfigOverride,
   unsetConfigOverride,
 } from "../../config/runtime-overrides.js";
+import { loadGatewayConfigRedactionHints } from "../../config/runtime-schema.js";
+import { isInternalMessageChannel } from "../../utils/message-channel.js";
+import { resolveChannelAccountId } from "./channel-context.js";
 import {
-  rejectUnauthorizedCommand,
+  commandReply,
+  defineAuthorizedTextCommand,
+  renderCommandJsonBlock,
   requireCommandFlagEnabled,
-  requireGatewayClientScopeForInternalChannel,
+  requireGatewayClientScope,
 } from "./command-gates.js";
 import type { CommandHandler } from "./commands-types.js";
 import { parseConfigCommand } from "./config-commands.js";
+import { AutoReplyConfigMutationError, mutateConfigPath } from "./config-mutations.js";
+import { resolveConfigWriteDeniedText } from "./config-write-authorization.js";
 import { parseDebugCommand } from "./debug-commands.js";
 
-export const handleConfigCommand: CommandHandler = async (params, allowTextCommands) => {
-  if (!allowTextCommands) {
-    return null;
-  }
-  const configCommand = parseConfigCommand(params.command.commandBodyNormalized);
-  if (!configCommand) {
-    return null;
-  }
-  const unauthorized = rejectUnauthorizedCommand(params, "/config");
-  if (unauthorized) {
-    return unauthorized;
-  }
-  const disabled = requireCommandFlagEnabled(params.cfg, {
+function formatConfigSetValueLabel(params: {
+  path: string[];
+  value: unknown;
+  uiHints: ReturnType<typeof loadGatewayConfigRedactionHints>;
+}): string {
+  const previewRoot: Record<string, unknown> = {};
+  setConfigValueAtPath(previewRoot, params.path, params.value);
+  const redactedRoot = redactConfigObject(previewRoot, params.uiHints);
+  const redactedValue = getConfigValueAtPath(redactedRoot, params.path);
+  return typeof redactedValue === "string"
+    ? `"${redactedValue}"`
+    : (JSON.stringify(redactedValue) ?? "null");
+}
+
+export const handleConfigCommand: CommandHandler = defineAuthorizedTextCommand(
+  {
     label: "/config",
-    configKey: "config",
-  });
-  if (disabled) {
-    return disabled;
-  }
-  if (configCommand.action === "error") {
-    return {
-      shouldContinue: false,
-      reply: { text: `⚠️ ${configCommand.message}` },
-    };
-  }
-
-  if (configCommand.action === "set" || configCommand.action === "unset") {
-    const missingAdminScope = requireGatewayClientScopeForInternalChannel(params, {
-      label: "/config write",
-      allowedScopes: ["operator.admin"],
-      missingText: "❌ /config set|unset requires operator.admin for gateway clients.",
+    match: parseConfigCommand,
+    ownerOnly: (params, command) =>
+      command.action !== "show" || !isInternalMessageChannel(params.command.channel),
+  },
+  async (params, configCommand) => {
+    const disabled = requireCommandFlagEnabled(params.cfg, {
+      label: "/config",
+      configKey: "config",
     });
-    if (missingAdminScope) {
-      return missingAdminScope;
+    if (disabled) {
+      return disabled;
     }
-    const channelId = params.command.channelId ?? normalizeChannelId(params.command.channel);
-    const allowWrites = resolveChannelConfigWrites({
-      cfg: params.cfg,
-      channelId,
-      accountId: params.ctx.AccountId,
-    });
-    if (!allowWrites) {
-      const channelLabel = channelId ?? "this channel";
-      const hint = channelId
-        ? `channels.${channelId}.configWrites=true`
-        : "channels.<channel>.configWrites=true";
-      return {
-        shouldContinue: false,
-        reply: {
-          text: `⚠️ Config writes are disabled for ${channelLabel}. Set ${hint} to enable.`,
-        },
-      };
+    if (configCommand.action === "error") {
+      return commandReply(`⚠️ ${configCommand.message}`);
     }
-  }
 
-  const snapshot = await readConfigFileSnapshot();
-  if (!snapshot.valid || !snapshot.parsed || typeof snapshot.parsed !== "object") {
-    return {
-      shouldContinue: false,
-      reply: {
-        text: "⚠️ Config file is invalid; fix it before using /config.",
-      },
-    };
-  }
-  const parsedBase = structuredClone(snapshot.parsed as Record<string, unknown>);
-
-  if (configCommand.action === "show") {
-    const pathRaw = configCommand.path?.trim();
-    if (pathRaw) {
-      const parsedPath = parseConfigPath(pathRaw);
-      if (!parsedPath.ok || !parsedPath.path) {
-        return {
-          shouldContinue: false,
-          reply: { text: `⚠️ ${parsedPath.error ?? "Invalid path."}` },
-        };
+    let parsedWritePath: string[] | undefined;
+    if (configCommand.action === "set" || configCommand.action === "unset") {
+      const missingAdminScope = requireGatewayClientScope(params, {
+        label: "/config write",
+        allowedScopes: ["operator.admin"],
+        missingText: "❌ /config set|unset requires operator.admin for gateway clients.",
+      });
+      if (missingAdminScope) {
+        return missingAdminScope;
       }
-      const value = getConfigValueAtPath(parsedBase, parsedPath.path);
-      const rendered = JSON.stringify(value ?? null, null, 2);
-      return {
-        shouldContinue: false,
-        reply: {
-          text: `⚙️ Config ${pathRaw}:\n\`\`\`json\n${rendered}\n\`\`\``,
-        },
-      };
+      const parsedPath = parseConfigPath(configCommand.path);
+      if (!parsedPath.ok) {
+        return commandReply(`⚠️ ${parsedPath.error}`);
+      }
+      parsedWritePath = parsedPath.path;
+      const channelId = params.command.channelId ?? normalizeChatChannelId(params.command.channel);
+      const deniedText = resolveConfigWriteDeniedText({
+        cfg: params.cfg,
+        channel: params.command.channel,
+        originChannelId: channelId,
+        originAccountId: resolveChannelAccountId({
+          cfg: params.cfg,
+          ctx: params.ctx,
+          command: params.command,
+        }),
+        gatewayClientScopes: params.ctx.GatewayClientScopes,
+        target: resolveConfigWriteTargetFromPath(parsedWritePath),
+      });
+      if (deniedText) {
+        return commandReply(deniedText);
+      }
     }
-    const json = JSON.stringify(parsedBase, null, 2);
-    return {
-      shouldContinue: false,
-      reply: { text: `⚙️ Config (raw):\n\`\`\`json\n${json}\n\`\`\`` },
-    };
-  }
 
-  if (configCommand.action === "unset") {
-    const parsedPath = parseConfigPath(configCommand.path);
-    if (!parsedPath.ok || !parsedPath.path) {
-      return {
-        shouldContinue: false,
-        reply: { text: `⚠️ ${parsedPath.error ?? "Invalid path."}` },
-      };
+    const snapshot = await readConfigFileSnapshot();
+    if (!snapshot.valid || !isRecord(snapshot.parsed)) {
+      return commandReply("⚠️ Config file is invalid; fix it before using /config.");
     }
-    const removed = unsetConfigValueAtPath(parsedBase, parsedPath.path);
-    if (!removed) {
-      return {
-        shouldContinue: false,
-        reply: { text: `⚙️ No config value found for ${configCommand.path}.` },
-      };
-    }
-    const validated = validateConfigObjectWithPlugins(parsedBase);
-    if (!validated.ok) {
-      const issue = validated.issues[0];
-      return {
-        shouldContinue: false,
-        reply: {
-          text: `⚠️ Config invalid after unset (${issue.path}: ${issue.message}).`,
-        },
-      };
-    }
-    await writeConfigFile(validated.config);
-    return {
-      shouldContinue: false,
-      reply: { text: `⚙️ Config updated: ${configCommand.path} removed.` },
-    };
-  }
+    const uiHints = loadGatewayConfigRedactionHints();
 
-  if (configCommand.action === "set") {
-    const parsedPath = parseConfigPath(configCommand.path);
-    if (!parsedPath.ok || !parsedPath.path) {
-      return {
-        shouldContinue: false,
-        reply: { text: `⚠️ ${parsedPath.error ?? "Invalid path."}` },
-      };
+    if (configCommand.action === "show") {
+      const parsedBase = redactConfigObject(snapshot.parsed, uiHints);
+      const pathRaw = normalizeOptionalString(configCommand.path);
+      if (pathRaw) {
+        const parsedPath = parseConfigPath(pathRaw);
+        if (!parsedPath.ok) {
+          return commandReply(`⚠️ ${parsedPath.error}`);
+        }
+        const value = getConfigValueAtPath(parsedBase, parsedPath.path);
+        return commandReply(renderCommandJsonBlock(`⚙️ Config ${pathRaw}:`, value ?? null));
+      }
+      return commandReply(renderCommandJsonBlock("⚙️ Config (raw):", parsedBase));
     }
-    setConfigValueAtPath(parsedBase, parsedPath.path, configCommand.value);
-    const validated = validateConfigObjectWithPlugins(parsedBase);
-    if (!validated.ok) {
-      const issue = validated.issues[0];
-      return {
-        shouldContinue: false,
-        reply: {
-          text: `⚠️ Config invalid after set (${issue.path}: ${issue.message}).`,
-        },
-      };
+
+    const path = parsedWritePath ?? [];
+    try {
+      const changed = await mutateConfigPath(
+        path,
+        configCommand,
+        params.command.assertOwnerCurrent,
+      );
+      if (configCommand.action === "unset") {
+        return commandReply(
+          changed
+            ? `⚙️ Config updated: ${configCommand.path} removed.`
+            : `⚙️ No config value found for ${configCommand.path}.`,
+        );
+      }
+    } catch (error) {
+      if (error instanceof AutoReplyConfigMutationError && error.message) {
+        return commandReply(`⚠️ ${error.message}`);
+      }
+      throw error;
     }
-    await writeConfigFile(validated.config);
-    const valueLabel =
-      typeof configCommand.value === "string"
-        ? `"${configCommand.value}"`
-        : JSON.stringify(configCommand.value);
-    return {
-      shouldContinue: false,
-      reply: {
-        text: `⚙️ Config updated: ${configCommand.path}=${valueLabel ?? "null"}`,
-      },
-    };
-  }
+    const valueLabel = formatConfigSetValueLabel({
+      path,
+      value: configCommand.value,
+      uiHints,
+    });
+    return commandReply(`⚙️ Config updated: ${configCommand.path}=${valueLabel}`);
+  },
+);
 
-  return null;
-};
+export const handleDebugCommand: CommandHandler = defineAuthorizedTextCommand(
+  { label: "/debug", match: parseDebugCommand, ownerOnly: true },
+  (params, debugCommand) => {
+    const disabled = requireCommandFlagEnabled(params.cfg, {
+      label: "/debug",
+      configKey: "debug",
+    });
+    if (disabled) {
+      return disabled;
+    }
+    if (debugCommand.action === "error") {
+      return commandReply(`⚠️ ${debugCommand.message}`);
+    }
+    if (debugCommand.action === "show") {
+      const overrides = getConfigOverrides();
+      const hasOverrides = Object.keys(overrides).length > 0;
+      if (!hasOverrides) {
+        return commandReply("⚙️ Debug overrides: (none)");
+      }
+      const uiHints = loadGatewayConfigRedactionHints();
+      const redactedOverrides = redactConfigObject(overrides, uiHints);
+      return commandReply(
+        renderCommandJsonBlock("⚙️ Debug overrides (memory-only):", redactedOverrides),
+      );
+    }
+    if (debugCommand.action === "reset") {
+      resetConfigOverrides();
+      return commandReply("⚙️ Debug overrides cleared; using config on disk.");
+    }
+    if (debugCommand.action === "unset") {
+      const result = unsetConfigOverride(debugCommand.path);
+      if (!result.ok) {
+        return commandReply(`⚠️ ${result.error}`);
+      }
+      if (!result.value) {
+        return commandReply(`⚙️ No debug override found for ${debugCommand.path}.`);
+      }
+      return commandReply(`⚙️ Debug override removed for ${debugCommand.path}.`);
+    }
+    if (debugCommand.action === "set") {
+      const result = setConfigOverride(debugCommand.path, debugCommand.value);
+      if (!result.ok) {
+        return commandReply(`⚠️ ${result.error}`);
+      }
+      const valueLabel = formatConfigSetValueLabel({
+        path: result.value,
+        value: debugCommand.value,
+        uiHints: loadGatewayConfigRedactionHints(),
+      });
+      return commandReply(`⚙️ Debug override set: ${debugCommand.path}=${valueLabel}`);
+    }
 
-export const handleDebugCommand: CommandHandler = async (params, allowTextCommands) => {
-  if (!allowTextCommands) {
     return null;
-  }
-  const debugCommand = parseDebugCommand(params.command.commandBodyNormalized);
-  if (!debugCommand) {
-    return null;
-  }
-  const unauthorized = rejectUnauthorizedCommand(params, "/debug");
-  if (unauthorized) {
-    return unauthorized;
-  }
-  const disabled = requireCommandFlagEnabled(params.cfg, {
-    label: "/debug",
-    configKey: "debug",
-  });
-  if (disabled) {
-    return disabled;
-  }
-  if (debugCommand.action === "error") {
-    return {
-      shouldContinue: false,
-      reply: { text: `⚠️ ${debugCommand.message}` },
-    };
-  }
-  if (debugCommand.action === "show") {
-    const overrides = getConfigOverrides();
-    const hasOverrides = Object.keys(overrides).length > 0;
-    if (!hasOverrides) {
-      return {
-        shouldContinue: false,
-        reply: { text: "⚙️ Debug overrides: (none)" },
-      };
-    }
-    const json = JSON.stringify(overrides, null, 2);
-    return {
-      shouldContinue: false,
-      reply: {
-        text: `⚙️ Debug overrides (memory-only):\n\`\`\`json\n${json}\n\`\`\``,
-      },
-    };
-  }
-  if (debugCommand.action === "reset") {
-    resetConfigOverrides();
-    return {
-      shouldContinue: false,
-      reply: { text: "⚙️ Debug overrides cleared; using config on disk." },
-    };
-  }
-  if (debugCommand.action === "unset") {
-    const result = unsetConfigOverride(debugCommand.path);
-    if (!result.ok) {
-      return {
-        shouldContinue: false,
-        reply: { text: `⚠️ ${result.error ?? "Invalid path."}` },
-      };
-    }
-    if (!result.removed) {
-      return {
-        shouldContinue: false,
-        reply: {
-          text: `⚙️ No debug override found for ${debugCommand.path}.`,
-        },
-      };
-    }
-    return {
-      shouldContinue: false,
-      reply: { text: `⚙️ Debug override removed for ${debugCommand.path}.` },
-    };
-  }
-  if (debugCommand.action === "set") {
-    const result = setConfigOverride(debugCommand.path, debugCommand.value);
-    if (!result.ok) {
-      return {
-        shouldContinue: false,
-        reply: { text: `⚠️ ${result.error ?? "Invalid override."}` },
-      };
-    }
-    const valueLabel =
-      typeof debugCommand.value === "string"
-        ? `"${debugCommand.value}"`
-        : JSON.stringify(debugCommand.value);
-    return {
-      shouldContinue: false,
-      reply: {
-        text: `⚙️ Debug override set: ${debugCommand.path}=${valueLabel ?? "null"}`,
-      },
-    };
-  }
-
-  return null;
-};
+  },
+);

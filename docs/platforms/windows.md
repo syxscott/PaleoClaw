@@ -187,7 +187,7 @@ systemctl --user status
 Follow the Linux Getting Started flow inside WSL:
 
 ```bash
-git clone https://github.com/paleoclaw/paleoclaw.git
+git clone https://github.com/syxscott/PaleoClaw.git
 cd paleoclaw
 pnpm install
 pnpm ui:build # auto-installs UI deps on first run

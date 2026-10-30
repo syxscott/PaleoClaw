@@ -1,25 +1,42 @@
+import { normalizeLowercaseStringOrEmpty } from "@paleoclaw/normalization-core/string-coerce";
+
 // Default service labels (canonical + legacy compatibility)
-export const GATEWAY_LAUNCH_AGENT_LABEL = "ai.paleoclaw.gateway";
-export const GATEWAY_SYSTEMD_SERVICE_NAME = "paleoclaw-gateway";
-export const GATEWAY_WINDOWS_TASK_NAME = "paleoclaw Gateway";
+export const GATEWAY_LAUNCH_AGENT_LABEL = "ai.openclaw.gateway";
+const GATEWAY_SYSTEMD_SERVICE_NAME = "paleoclaw-gateway";
+const GATEWAY_WINDOWS_TASK_NAME = "paleoclaw Gateway";
 export const GATEWAY_SERVICE_MARKER = "paleoclaw";
 export const GATEWAY_SERVICE_KIND = "gateway";
-export const NODE_LAUNCH_AGENT_LABEL = "ai.paleoclaw.node";
-export const NODE_SYSTEMD_SERVICE_NAME = "paleoclaw-node";
-export const NODE_WINDOWS_TASK_NAME = "paleoclaw Node";
-export const NODE_SERVICE_MARKER = "paleoclaw";
-export const NODE_SERVICE_KIND = "node";
-export const NODE_WINDOWS_TASK_SCRIPT_NAME = "node.cmd";
-export const LEGACY_GATEWAY_LAUNCH_AGENT_LABELS: string[] = [];
-export const LEGACY_GATEWAY_SYSTEMD_SERVICE_NAMES: string[] = [
-  "clawdbot-gateway",
-  "moltbot-gateway",
-];
-export const LEGACY_GATEWAY_WINDOWS_TASK_NAMES: string[] = [];
+export const GATEWAY_SERVICE_RUNTIME_PID_ENV = "OPENCLAW_GATEWAY_SERVICE_PID";
+export const GATEWAY_SERVICE_SELECTOR_ENV_KEYS = [
+  "OPENCLAW_STATE_DIR",
+  "OPENCLAW_CONFIG_PATH",
+  "OPENCLAW_PROFILE",
+  "OPENCLAW_GATEWAY_PORT",
+  "OPENCLAW_LAUNCHD_LABEL",
+  "OPENCLAW_SYSTEMD_UNIT",
+  "OPENCLAW_WINDOWS_TASK_NAME",
+] as const;
 
-export function normalizeGatewayProfile(profile?: string): string | null {
+export function isGatewayServiceEnv(env: Record<string, string | undefined>): boolean {
+  if (env.OPENCLAW_SERVICE_MARKER?.trim() !== GATEWAY_SERVICE_MARKER) {
+    return false;
+  }
+  const serviceKind = env.OPENCLAW_SERVICE_KIND?.trim();
+  return !serviceKind || serviceKind === GATEWAY_SERVICE_KIND;
+}
+
+const NODE_LAUNCH_AGENT_LABEL = "ai.openclaw.node";
+const NODE_SYSTEMD_SERVICE_NAME = "paleoclaw-node";
+const NODE_WINDOWS_TASK_NAME = "paleoclaw Node";
+const NODE_SERVICE_MARKER = "paleoclaw";
+export const NODE_SERVICE_KIND = "node";
+const NODE_WINDOWS_TASK_SCRIPT_NAME = "node.cmd";
+export const LEGACY_GATEWAY_SYSTEMD_SERVICE_NAMES: string[] = ["clawdbot-gateway"];
+
+function normalizeGatewayProfile(profile?: string): string | null {
   const trimmed = profile?.trim();
-  if (!trimmed || trimmed.toLowerCase() === "default") {
+  if (!trimmed || normalizeLowercaseStringOrEmpty(trimmed) === "default") {
+    // The default profile keeps the historical unqualified service names.
     return null;
   }
   return trimmed;
@@ -35,20 +52,46 @@ export function resolveGatewayLaunchAgentLabel(profile?: string): string {
   if (!normalized) {
     return GATEWAY_LAUNCH_AGENT_LABEL;
   }
-  return `ai.paleoclaw.${normalized}`;
-}
-
-export function resolveLegacyGatewayLaunchAgentLabels(profile?: string): string[] {
-  void profile;
-  return [];
+  return `ai.openclaw.${normalized}`;
 }
 
 export function resolveGatewaySystemdServiceName(profile?: string): string {
+  return `${GATEWAY_SYSTEMD_SERVICE_NAME}${resolveGatewayProfileSuffix(profile)}`;
+}
+
+function isAmbiguousLegacyGatewayCandidate(legacyName: string): boolean {
+  // paleoclaw-node is the Node service. paleoclaw-gateway and
+  // paleoclaw-gateway-<profile> are canonical gateway names for default or
+  // another profile (node -> paleoclaw-node, gateway -> paleoclaw-gateway,
+  // gateway-lisa -> paleoclaw-gateway-lisa).
+  return (
+    legacyName === NODE_SYSTEMD_SERVICE_NAME ||
+    legacyName === GATEWAY_SYSTEMD_SERVICE_NAME ||
+    legacyName.startsWith(`${GATEWAY_SYSTEMD_SERVICE_NAME}-`)
+  );
+}
+
+/**
+ * Service-name candidates for a profile, preferred order.
+ *
+ * Current installs use `paleoclaw-gateway[-profile]`. Older multi-agent hosts
+ * used `paleoclaw-<profile>` (no "gateway" segment). Doctor/runtime resolution
+ * must try both for the same profile before scanning unrelated units.
+ */
+export function resolveGatewaySystemdServiceNameCandidates(profile?: string): string[] {
+  const canonical = resolveGatewaySystemdServiceName(profile);
   const suffix = resolveGatewayProfileSuffix(profile);
   if (!suffix) {
-    return GATEWAY_SYSTEMD_SERVICE_NAME;
+    // Default profile: paleoclaw-gateway is current; bare paleoclaw is a known
+    // legacy system-unit name (parallel to paleoclaw-<profile> for named agents).
+    // Custom names are matched separately against their effective installation identity.
+    return [canonical, "paleoclaw"];
   }
-  return `paleoclaw-gateway${suffix}`;
+  const legacy = `paleoclaw${suffix}`;
+  if (isAmbiguousLegacyGatewayCandidate(legacy)) {
+    return [canonical];
+  }
+  return [canonical, legacy];
 }
 
 export function resolveGatewayWindowsTaskName(profile?: string): string {
@@ -59,37 +102,62 @@ export function resolveGatewayWindowsTaskName(profile?: string): string {
   return `paleoclaw Gateway (${normalized})`;
 }
 
-export function formatGatewayServiceDescription(params?: {
-  profile?: string;
-  version?: string;
-}): string {
-  const profile = normalizeGatewayProfile(params?.profile);
-  const version = params?.version?.trim();
-  const parts: string[] = [];
-  if (profile) {
-    parts.push(`profile: ${profile}`);
+export function normalizeWindowsTaskIdentity(value: string): string {
+  // Root prefixes and casing do not change task identity; nested folders do.
+  return value.replace(/^\\+/, "").toLowerCase();
+}
+
+type GatewayNativeServiceIdentityConflict = {
+  envKey: "OPENCLAW_LAUNCHD_LABEL" | "OPENCLAW_SYSTEMD_UNIT" | "OPENCLAW_WINDOWS_TASK_NAME";
+  expected: string;
+};
+
+export function resolveGatewayNativeServiceIdentityConflict(
+  env: Record<string, string | undefined>,
+  platform: NodeJS.Platform = process.platform,
+): GatewayNativeServiceIdentityConflict | null {
+  const profile = normalizeGatewayProfile(env.OPENCLAW_PROFILE);
+  if (!profile) {
+    return null;
   }
-  if (version) {
-    parts.push(`v${version}`);
+
+  if (platform === "darwin") {
+    const envKey = "OPENCLAW_LAUNCHD_LABEL";
+    const actual = env[envKey]?.trim();
+    const expected = resolveGatewayLaunchAgentLabel(profile);
+    return actual && actual !== expected ? { envKey, expected } : null;
   }
-  if (parts.length === 0) {
+  if (platform === "linux") {
+    const envKey = "OPENCLAW_SYSTEMD_UNIT";
+    const actual = env[envKey]?.trim();
+    const normalizedActual = actual?.endsWith(".service") ? actual : actual && `${actual}.service`;
+    const expected = `${resolveGatewaySystemdServiceName(profile)}.service`;
+    return normalizedActual && normalizedActual !== expected ? { envKey, expected } : null;
+  }
+  if (platform === "win32") {
+    const envKey = "OPENCLAW_WINDOWS_TASK_NAME";
+    const actual = env[envKey]?.trim();
+    const expected = resolveGatewayWindowsTaskName(profile);
+    return actual && normalizeWindowsTaskIdentity(actual) !== normalizeWindowsTaskIdentity(expected)
+      ? { envKey, expected }
+      : null;
+  }
+  return null;
+}
+
+function formatGatewayServiceDescription(profile?: string): string {
+  const normalized = normalizeGatewayProfile(profile);
+  if (!normalized) {
     return "paleoclaw Gateway";
   }
-  return `paleoclaw Gateway (${parts.join(", ")})`;
+  return `paleoclaw Gateway (profile: ${normalized})`;
 }
 
 export function resolveGatewayServiceDescription(params: {
   env: Record<string, string | undefined>;
-  environment?: Record<string, string | undefined>;
   description?: string;
 }): string {
-  return (
-    params.description ??
-    formatGatewayServiceDescription({
-      profile: params.env.OPENCLAW_PROFILE,
-      version: params.environment?.OPENCLAW_SERVICE_VERSION ?? params.env.OPENCLAW_SERVICE_VERSION,
-    })
-  );
+  return params.description ?? formatGatewayServiceDescription(params.env.OPENCLAW_PROFILE);
 }
 
 export function resolveNodeLaunchAgentLabel(): string {
@@ -104,10 +172,15 @@ export function resolveNodeWindowsTaskName(): string {
   return NODE_WINDOWS_TASK_NAME;
 }
 
-export function formatNodeServiceDescription(params?: { version?: string }): string {
-  const version = params?.version?.trim();
-  if (!version) {
-    return "paleoclaw Node Host";
-  }
-  return `paleoclaw Node Host (v${version})`;
+export function resolveNodeServiceIdentityEnvironment(): Record<string, string> {
+  return {
+    OPENCLAW_LAUNCHD_LABEL: resolveNodeLaunchAgentLabel(),
+    OPENCLAW_SYSTEMD_UNIT: resolveNodeSystemdServiceName(),
+    OPENCLAW_WINDOWS_TASK_NAME: resolveNodeWindowsTaskName(),
+    OPENCLAW_WINDOWS_TASK_HIDDEN_LAUNCHER: "1",
+    OPENCLAW_TASK_SCRIPT_NAME: NODE_WINDOWS_TASK_SCRIPT_NAME,
+    OPENCLAW_LOG_PREFIX: "node",
+    OPENCLAW_SERVICE_MARKER: NODE_SERVICE_MARKER,
+    OPENCLAW_SERVICE_KIND: NODE_SERVICE_KIND,
+  };
 }

@@ -11,9 +11,14 @@ This document provides guidelines for developing and extending PaleoClaw.
 ```
 PaleoClaw/
 ├── src/paleoclaw/           # Core PaleoClaw modules
-│   ├── profile/             # Profile system
-│   ├── memory/             # Memory system
-│   └── cli/                # CLI commands
+│   ├── profile/            # Profile system (soul.md + user.md)
+│   ├── memory/             # Memory system (short/long term + retrieval)
+│   ├── tools/              # Domain tool registry (PBDB, CrossRef, literature)
+│   ├── session/            # Session store (SQLite with JSON fallback)
+│   ├── integration/        # Runtime switches
+│   ├── cli/                # CLI commands
+│   ├── paths.ts            # Shared path resolution
+│   └── index.ts            # Module exports
 ├── skills/                 # Research skills
 ├── extensions/             # Channel extensions
 ├── scripts/                # Utility scripts
@@ -39,11 +44,27 @@ The profile system provides double-layer personalization:
 **Usage:**
 
 ```typescript
-import { loadProfileLayers, createProfileContext } from "./paleoclaw/profile";
+import { loadSessionProfile, buildProfileContextBlock } from "./paleoclaw/profile";
 
-const profile = await loadProfileLayers();
-const context = createProfileContext(profile);
+// Synchronous: returns the parsed profile for the current workspace.
+const profile = loadSessionProfile();
+
+// Renders the fenced <paleoclaw-profile-context> block that is prepended to
+// every agent run.
+const block = buildProfileContextBlock(profile);
 ```
+
+**Public API (`layers.ts`):**
+
+- `loadSessionProfile(workspaceRoot?, forceReload?): SessionProfile` - load and cache the
+  merged `soul.md` + `user.md` profile.
+- `buildProfileContextBlock(profile): string` - render the profile as a fenced context block.
+- `parseSoul(markdown): SoulConfig` / `parseUser(markdown): UserProfile` - parse one layer.
+- `ensureProfileLayers(workspaceRoot?)` - create the profile files when they are missing.
+- `splitSections(markdown)` / `sectionItems(sections, ...aliases)` - section parsing helpers.
+- `clearProfileCache(workspaceRoot?)` / `getProfileCache(workspaceRoot?)` - cache control.
+- `plannerContext(profile)` / `toolRouterContext(profile)` / `reportContext(profile)` /
+  `memoryContext(profile)` - per-module views over the profile.
 
 ### Memory System (`src/paleoclaw/memory/`)
 
@@ -52,22 +73,50 @@ The memory system provides research trajectory tracking:
 - Short-term memory: Current research tasks
 - Long-term memory: Reviewed insights
 - Vector search: Content similarity retrieval
+- Chat digests: Per-day, per-session conversation summaries
 
 **Key Files:**
 
-- `store.ts` - Memory storage implementation
+- `store.ts` - Memory storage implementation (`TaskMemoryStore`)
 - `retrieval.ts` - Vector-based search
+- `provider.ts` / `manager.ts` - Provider registry and lifecycle
 - `index.ts` - Module exports
 
 **Usage:**
 
 ```typescript
-import { MemoryStore } from "./paleoclaw/memory";
+import { TaskMemoryStore } from "./paleoclaw/memory";
 
-const store = new MemoryStore();
-await store.saveShortTermMemory(task);
-const results = await store.searchLongTerm(query);
+const store = new TaskMemoryStore();
+
+const taskId = store.startTask("agent", ["--message", "hello"], process.cwd());
+store.finishTask(taskId, 0);
+
+// Recall: scope is "short" | "long" | "archive" | "all".
+const results = store.searchMemory({ query: "tyrannosaurus", scope: "all" });
 ```
+
+**Public API (`TaskMemoryStore`):**
+
+- `startTask(command, argv, cwd): string` - open a short-term task record.
+- `finishTask(taskId, returnCode, error?, extra?): TaskMemory` - close the record.
+- `recordChatTurn({ sessionId, userText, assistantText, intent?, mode?, ts? }): void` - fold
+  one chat turn into the session day file.
+- `autoReviewToLong(taskId): LongTermMemory` / `reviewTaskToLong(taskId, summary?, lessons?,
+  nextActions?): LongTermMemory` - promote a task to long-term memory.
+- `getShort(taskId): TaskMemory` - read one task.
+- `listShort({ limit?, status? }): TaskMemory[]` / `listLong({ limit? }): LongTermMemory[]` /
+  `listArchiveShort({ limit?, status? }): TaskMemory[]` - list the stores.
+- `archiveShort({ beforeDays?, status?, includeRunning? })` - archive finished tasks.
+- `searchMemory({ query, scope?, topK?, minScore? }): SearchItem[]` - vector search.
+- `countShort(): number` / `countLong(): number` / `getStatus()` - counters and paths.
+- `listChatDaily(days?): ChatDailyRecord[]` / `getChatDailyDigest(day): ChatDigest | null` -
+  chat digests.
+
+**Retrieval helpers (`retrieval.ts`):**
+
+- `bestMatches(query, items, topK?): SearchItem[]` - rank items by similarity.
+- `calculateSimilarity(textA, textB): number` - cosine similarity of two texts.
 
 ---
 
@@ -80,7 +129,11 @@ Skills are located in `skills/<skill-name>/`.
 **Required Files:**
 
 - `SKILL.md` - Skill definition and instructions
-- `skill.ts` - Skill implementation
+
+A skill is any directory under a skills root that contains a `SKILL.md`; that file is the
+only required artefact. A skill that needs executable code may ship extra files next to
+it (for example `index.ts` plus a `lib/` folder, as `morphometric_analysis` does), but
+there is no fixed name for that code and the loader does not look for one.
 
 **SKILL.md Template:**
 
@@ -102,13 +155,24 @@ Example queries and responses.
 
 ### Existing Skills
 
-| Skill                   | Description                                     |
-| ----------------------- | ----------------------------------------------- |
-| `paper_search`          | Literature search via CrossRef/Semantic Scholar |
-| `pbdb_query`            | PBDB fossil occurrence queries                  |
-| `taxonomy_lookup`       | Taxonomic classification lookup                 |
-| `stratigraphy_lookup`   | Geological formation data                       |
-| `morphometric_analysis` | Landmark extraction and analysis                |
+`skills/` ships roughly 70 skills in total, most of them general-purpose. The
+paleontology core ones are:
+
+| Skill                    | Description                                                          |
+| ------------------------ | -------------------------------------------------------------------- |
+| `paper_search`           | Literature search via CrossRef/Semantic Scholar/arXiv                |
+| `paper_summary`          | Structured summary of a paper (background/methods/results)           |
+| `pbdb_query`             | PBDB fossil occurrence, taxonomy and geological queries              |
+| `taxonomy_lookup`        | Taxonomic classification lookup (PBDB, NCBI/Wikidata)                |
+| `stratigraphy_lookup`    | Geological formation data                                            |
+| `geo-time-scale`         | Geological time scale lookups (eon/era/period/epoch)                 |
+| `morphometric_analysis`  | Landmark extraction and geometric morphometrics (TPS/CSV/Excel/JSON) |
+| `morphometric-converter` | Morphometric data format conversion (TPS/NTsys/Excel/CSV)            |
+| `research_assistant`     | Paleontology research workflow chaining the tools above              |
+| `china-fossil-news`      | Chinese fossil discoveries and news aggregation                      |
+
+Only `morphometric_analysis` ships code (`index.ts` plus `lib/`); the others are
+`SKILL.md` only.
 
 ---
 
@@ -156,11 +220,11 @@ pnpm test
 Run specific tests:
 
 ```bash
-pnpm test --filter <test-name>
+pnpm test -- <test-name>
 ```
 
 ---
 
 ## Version
 
-PaleoClaw v1.6.0
+PaleoClaw v2026.10.5

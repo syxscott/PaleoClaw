@@ -1,63 +1,67 @@
-import type { ChannelMessageActionName } from "../../channels/plugins/types.js";
+import {
+  hasNonEmptyString,
+  normalizeOptionalLowercaseString,
+  normalizeOptionalString,
+  normalizeOptionalStringifiedId,
+} from "@paleoclaw/normalization-core/string-coerce";
+import { getBootstrapChannelPlugin } from "../../channels/plugins/bootstrap-registry.js";
+import { resolveChannelMessageActionFacts } from "../../channels/plugins/message-action-names.js";
+import type {
+  ChannelMessageActionAdapter,
+  ChannelMessageActionName,
+} from "../../channels/plugins/types.public.js";
+import { hasPotentialPluginActionParam } from "./message-action-param-keys.js";
 
-export type MessageActionTargetMode = "to" | "channelId" | "none";
+/** Maps canonical `target` into the legacy field required by the action implementation. */
+export function applyTargetToParams(params: {
+  action: string;
+  args: Record<string, unknown>;
+}): void {
+  const target = normalizeOptionalString(params.args.target) ?? "";
+  const hasLegacyTo = hasNonEmptyString(params.args.to);
+  const hasLegacyChannelId = hasNonEmptyString(params.args.channelId);
+  const mode = resolveChannelMessageActionFacts(params.action)?.targetMode ?? "none";
 
-export const MESSAGE_ACTION_TARGET_MODE: Record<ChannelMessageActionName, MessageActionTargetMode> =
-  {
-    send: "to",
-    broadcast: "none",
-    poll: "to",
-    "poll-vote": "to",
-    react: "to",
-    reactions: "to",
-    read: "to",
-    edit: "to",
-    unsend: "to",
-    reply: "to",
-    sendWithEffect: "to",
-    renameGroup: "to",
-    setGroupIcon: "to",
-    addParticipant: "to",
-    removeParticipant: "to",
-    leaveGroup: "to",
-    sendAttachment: "to",
-    delete: "to",
-    pin: "to",
-    unpin: "to",
-    "list-pins": "to",
-    permissions: "to",
-    "thread-create": "to",
-    "thread-list": "none",
-    "thread-reply": "to",
-    search: "none",
-    sticker: "to",
-    "sticker-search": "none",
-    "member-info": "none",
-    "role-info": "none",
-    "emoji-list": "none",
-    "emoji-upload": "none",
-    "sticker-upload": "none",
-    "role-add": "none",
-    "role-remove": "none",
-    "channel-info": "channelId",
-    "channel-list": "none",
-    "channel-create": "none",
-    "channel-edit": "channelId",
-    "channel-delete": "channelId",
-    "channel-move": "channelId",
-    "category-create": "none",
-    "category-edit": "none",
-    "category-delete": "none",
-    "topic-create": "to",
-    "voice-status": "none",
-    "event-list": "none",
-    "event-create": "none",
-    timeout: "none",
-    kick: "none",
-    ban: "none",
-    "set-presence": "none",
-    "download-file": "none",
-  };
+  if (mode !== "none" && (hasLegacyTo || hasLegacyChannelId)) {
+    throw new Error("Use `target` instead of `to`/`channelId`.");
+  } else if (mode === "none" && hasLegacyTo) {
+    throw new Error("Use `target` for actions that accept a destination.");
+  }
+
+  if (!target) {
+    return;
+  }
+  if (mode === "none") {
+    throw new Error(`Action ${params.action} does not accept a target.`);
+  }
+  params.args[mode] = target;
+}
+
+export type ActionDeliveryTargetAliasSpec = NonNullable<
+  NonNullable<ChannelMessageActionAdapter["messageActionTargetAliases"]>[ChannelMessageActionName]
+>;
+
+type ActionTargetAliasOptions = {
+  channel?: string;
+  /** null preserves a selected adapter's absence; undefined permits bootstrap discovery. */
+  aliasSpec?: ActionDeliveryTargetAliasSpec | null;
+};
+
+function resolvePluginActionTargetAliasSpec(
+  action: ChannelMessageActionName,
+  params: Record<string, unknown>,
+  options?: ActionTargetAliasOptions,
+): ActionDeliveryTargetAliasSpec | null | undefined {
+  const channel = normalizeOptionalLowercaseString(options?.channel);
+  // Screen standard params before consulting plugin bootstrap metadata.
+  if (!channel || !hasPotentialPluginActionParam(params)) {
+    return undefined;
+  }
+  const selected = options?.aliasSpec;
+  return selected !== undefined
+    ? selected
+    : getBootstrapChannelPlugin(channel)?.actions?.messageActionTargetAliases?.[action];
+}
 
 const ACTION_TARGET_ALIASES: Partial<Record<ChannelMessageActionName, string[]>> = {
   unsend: ["messageId"],
@@ -70,34 +74,63 @@ const ACTION_TARGET_ALIASES: Partial<Record<ChannelMessageActionName, string[]>>
   leaveGroup: ["chatGuid", "chatIdentifier", "chatId"],
 };
 
+/** Resolves a plugin-declared delivery alias into the shared target contract. */
+export function resolveActionDeliveryTargetAlias(
+  action: ChannelMessageActionName,
+  params: Record<string, unknown>,
+  options?: ActionTargetAliasOptions,
+): string | undefined {
+  const aliases = resolvePluginActionTargetAliasSpec(action, params, options);
+  if (!aliases) {
+    return undefined;
+  }
+  const resolved = aliases.resolveDeliveryTarget?.({ args: params });
+  if (resolved !== undefined) {
+    return normalizeOptionalString(resolved);
+  }
+  const deliveryAliases = aliases.deliveryTargetAliases ?? [];
+  const targets = deliveryAliases
+    .map((alias) => normalizeOptionalStringifiedId(params[alias]))
+    .filter((value): value is string => Boolean(value));
+  if (new Set(targets).size > 1) {
+    throw new Error(`Action ${action} received conflicting delivery target aliases.`);
+  }
+  return targets[0];
+}
+
+/** Reports whether a plugin alias identifies an existing resource rather than a conversation. */
+export function actionHasResourceReference(
+  action: ChannelMessageActionName,
+  params: Record<string, unknown>,
+  options?: ActionTargetAliasOptions,
+): boolean {
+  const aliases = resolvePluginActionTargetAliasSpec(action, params, options);
+  // Legacy alias specs do not distinguish conversations from resources.
+  // Do not infer ambient authority unless the owner explicitly partitions them.
+  if (!aliases?.deliveryTargetAliases) {
+    return false;
+  }
+  const deliveryAliases = new Set(aliases.deliveryTargetAliases);
+  return aliases.aliases.some(
+    (alias) =>
+      !deliveryAliases.has(alias) && normalizeOptionalStringifiedId(params[alias]) !== undefined,
+  );
+}
+
 export function actionRequiresTarget(action: ChannelMessageActionName): boolean {
-  return MESSAGE_ACTION_TARGET_MODE[action] !== "none";
+  return resolveChannelMessageActionFacts(action)?.targetMode !== "none";
 }
 
 export function actionHasTarget(
   action: ChannelMessageActionName,
   params: Record<string, unknown>,
+  options?: ActionTargetAliasOptions,
 ): boolean {
-  const to = typeof params.to === "string" ? params.to.trim() : "";
-  if (to) {
+  if (hasNonEmptyString(params.to) || hasNonEmptyString(params.channelId)) {
     return true;
   }
-  const channelId = typeof params.channelId === "string" ? params.channelId.trim() : "";
-  if (channelId) {
-    return true;
-  }
-  const aliases = ACTION_TARGET_ALIASES[action];
-  if (!aliases) {
-    return false;
-  }
-  return aliases.some((alias) => {
-    const value = params[alias];
-    if (typeof value === "string") {
-      return value.trim().length > 0;
-    }
-    if (typeof value === "number") {
-      return Number.isFinite(value);
-    }
-    return false;
-  });
+  const pluginAliases = resolvePluginActionTargetAliasSpec(action, params, options)?.aliases;
+  return [...(ACTION_TARGET_ALIASES[action] ?? []), ...(pluginAliases ?? [])].some(
+    (alias) => normalizeOptionalStringifiedId(params[alias]) !== undefined,
+  );
 }

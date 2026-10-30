@@ -5,7 +5,7 @@ Zalo channel plugin for paleoclaw (Bot API).
 ## Install (local checkout)
 
 ```bash
-paleoclaw plugins install ./extensions/zalo
+paleoclaw plugins install ./path/to/local/zalo-plugin
 ```
 
 ## Install (npm)

@@ -214,7 +214,7 @@ scripts/sandbox-setup.sh
 
 - **相对路径**：相对于包含文件解析
 - **绝对路径**：直接使用
-- **父目录**：`../` 引用按预期工作
+- **父目录**：`..` 引用按预期工作
 
 ```json5
 { "$include": "./sub/config.json5" }      // 相对路径
@@ -1307,13 +1307,14 @@ paleoclaw 在提供商启用且两个 token 都已设置时启动 Slack（通过
 - `channels.slack.thread.inheritParent` 控制新线程会话是否继承父频道的记录（默认：false）。
 
 Slack 动作组（控制 `slack` 工具动作）：
-| 动作组 | 默认 | 说明 |
-| --- | --- | --- |
-| reactions | 已启用 | 反应 + 列出反应 |
-| messages | 已启用 | 读取/发送/编辑/删除 |
-| pins | 已启用 | 固定/取消固定/列出 |
-| memberInfo | 已启用 | 成员信息 |
-| emojiList | 已启用 | 自定义表情列表 |
+
+| 动作组     | 默认   | 说明                |
+| ---------- | ------ | ------------------- |
+| reactions  | 已启用 | 反应 + 列出反应     |
+| messages   | 已启用 | 读取/发送/编辑/删除 |
+| pins       | 已启用 | 固定/取消固定/列出  |
+| memberInfo | 已启用 | 成员信息            |
+| emojiList  | 已启用 | 自定义表情列表      |
 
 ### `channels.mattermost`（机器人 token）
 
@@ -3291,28 +3292,28 @@ paleoclaw dns setup --apply
 
 模板占位符在 `tools.media.*.models[].args` 和 `tools.media.models[].args`（以及未来任何模板化参数字段）中展开。
 
-| 变量               | 描述                                                  |
+| 变量 | 描述 |
 | ------------------ | ----------------------------------------------------- | -------- | ------- | ---------- | ----- | ------ | -------- | ------- | ------- | --- |
-| `{{Body}}`         | 完整的入站消息正文                                    |
-| `{{RawBody}}`      | 原始入站消息正文（无历史/发送者包装；最适合命令解析） |
-| `{{BodyStripped}}` | 去除群组提及的正文（最适合智能体的默认值）            |
-| `{{From}}`         | 发送者标识符（WhatsApp 为 E.164；按渠道可能不同）     |
-| `{{To}}`           | 目标标识符                                            |
-| `{{MessageSid}}`   | 渠道消息 id（如果可用）                               |
-| `{{SessionId}}`    | 当前会话 UUID                                         |
-| `{{IsNewSession}}` | 创建新会话时为 `"true"`                               |
-| `{{MediaUrl}}`     | 入站媒体伪 URL（如果存在）                            |
-| `{{MediaPath}}`    | 本地媒体路径（如果已下载）                            |
-| `{{MediaType}}`    | 媒体类型（image/audio/document/…）                    |
-| `{{Transcript}}`   | 音频转录（启用时）                                    |
-| `{{Prompt}}`       | CLI 条目的已解析媒体提示                              |
-| `{{MaxChars}}`     | CLI 条目的已解析最大输出字符数                        |
-| `{{ChatType}}`     | `"direct"` 或 `"group"`                               |
-| `{{GroupSubject}}` | 群组主题（尽力而为）                                  |
-| `{{GroupMembers}}` | 群组成员预览（尽力而为）                              |
-| `{{SenderName}}`   | 发送者显示名称（尽力而为）                            |
-| `{{SenderE164}}`   | 发送者电话号码（尽力而为）                            |
-| `{{Provider}}`     | 提供商提示（whatsapp                                  | telegram | discord | googlechat | slack | signal | imessage | msteams | webchat | …） |
+| `{{Body}}` | 完整的入站消息正文 |
+| `{{RawBody}}` | 原始入站消息正文（无历史/发送者包装；最适合命令解析） |
+| `{{BodyStripped}}` | 去除群组提及的正文（最适合智能体的默认值） |
+| `{{From}}` | 发送者标识符（WhatsApp 为 E.164；按渠道可能不同） |
+| `{{To}}` | 目标标识符 |
+| `{{MessageSid}}` | 渠道消息 id（如果可用） |
+| `{{SessionId}}` | 当前会话 UUID |
+| `{{IsNewSession}}` | 创建新会话时为 `"true"` |
+| `{{MediaUrl}}` | 入站媒体伪 URL（如果存在） |
+| `{{MediaPath}}` | 本地媒体路径（如果已下载） |
+| `{{MediaType}}` | 媒体类型（image/audio/document/…） |
+| `{{Transcript}}` | 音频转录（启用时） |
+| `{{Prompt}}` | CLI 条目的已解析媒体提示 |
+| `{{MaxChars}}` | CLI 条目的已解析最大输出字符数 |
+| `{{ChatType}}` | `"direct"` 或 `"group"` |
+| `{{GroupSubject}}` | 群组主题（尽力而为） |
+| `{{GroupMembers}}` | 群组成员预览（尽力而为） |
+| `{{SenderName}}` | 发送者显示名称（尽力而为） |
+| `{{SenderE164}}` | 发送者电话号码（尽力而为） |
+| `{{Provider}}` | 提供商提示（whatsapp | telegram | discord | googlechat | slack | signal | imessage | msteams | webchat | …） |
 
 ## Cron（Gateway 网关调度器）
 

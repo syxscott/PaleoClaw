@@ -677,8 +677,8 @@ tail -f ~/.paleoclaw/gateway.log
 
 ```typescript
 import { test } from "vitest";
-import { createHookEvent } from "./src/hooks/hooks.js";
 import myHandler from "./hooks/my-hook/handler.js";
+import { createHookEvent } from "./src/hooks/hooks.js";
 
 test("my handler works", async () => {
   const event = createHookEvent("command", "new", "test-session", {
@@ -877,6 +877,6 @@ node -e "import('./path/to/handler.ts').then(console.log)"
 ## 另请参阅
 
 - [CLI 参考：hooks](/cli/hooks)
-- [捆绑 Hooks README](https://github.com/paleoclaw/paleoclaw/tree/main/src/hooks/bundled)
+- [捆绑 Hooks README](https://github.com/syxscott/PaleoClaw/tree/main/src/hooks/bundled)
 - [Webhook Hooks](/automation/webhook)
 - [配置](/gateway/configuration#hooks)

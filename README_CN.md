@@ -10,7 +10,7 @@
 
 <p>
   <a href="https://github.com/syxscott/PaleoClaw/actions/workflows/ci.yml?branch=main"><img src="https://img.shields.io/github/actions/workflow/status/syxscott/PaleoClaw/ci.yml?branch=main&style=flat-square&label=CI" alt="CI"></a>
-  <img src="https://img.shields.io/badge/version-1.8.0-blue?style=flat-square" alt="v1.8.0">
+  <img src="https://img.shields.io/badge/version-2026.10.5-blue?style=flat-square" alt="v2026.10.5">
   <img src="https://img.shields.io/badge/node-%E2%89%A522.12-339933?style=flat-square&logo=nodedotjs&logoColor=white" alt="Node ≥22.12">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="MIT"></a>
   <a href="https://github.com/syxscott/PaleoClaw/stargazers"><img src="https://img.shields.io/github/stars/syxscott/PaleoClaw?style=flat-square&color=yellow" alt="Stars"></a>
@@ -43,12 +43,13 @@ PaleoClaw 是一个专注于古生物学和地球科学的 AI 研究助手。它
 - 🦴 **化石数据查询** - 查询化石产地、分类学信息、地层数据
 - 📊 **形态测量工具** - 化石标本测量数据格式转换
 - 🔄 **记忆系统** - 追踪研究轨迹，保存研究洞察
+- 📱 **多平台接入** - 支持 Telegram、Discord、WhatsApp、Slack、Signal、iMessage、LINE、飞书、QQ、企业微信、微信等渠道
 
 ---
 
 ## 🎯 主要功能
 
-### 功能亮点（当前版本 v1.8.0，完整列表见 [CHANGELOG.md](CHANGELOG.md)）
+### 功能亮点（当前版本 v2026.10.5，完整列表见 [CHANGELOG.md](CHANGELOG.md)）
 
 #### 🆕 新增功能
 
@@ -59,6 +60,9 @@ PaleoClaw 是一个专注于古生物学和地球科学的 AI 研究助手。它
 | `export-bibtex.ts`       | 文献 BibTeX 导出工具 |
 | `backup-memory.sh`       | 记忆系统备份脚本     |
 | `sync-research.ts`       | 研究数据同步工具     |
+| `qqbot`                  | QQ 官方机器人        |
+| `wecom`                  | 企业微信自建应用     |
+| `weixin`                 | 微信 iLink 机器人    |
 
 ### 历史版本功能
 
@@ -232,7 +236,7 @@ PaleoClaw 遵守严格的科学诚信标准：
 
 ## 📄 许可证
 
-本项目基于 OpenClaw 构建，采用相同的开源许可证。
+本项目基于 paleoclaw 构建，采用相同的开源许可证。
 
 ---
 
@@ -246,4 +250,4 @@ PaleoClaw 遵守严格的科学诚信标准：
 
 **"Ex Fossilo, Scientia" - 从化石中获取知识**
 
-_PaleoClaw v1.6.0 | Built on PaleoClaw Framework_
+_PaleoClaw v2026.10.5 | Built on PaleoClaw Framework_

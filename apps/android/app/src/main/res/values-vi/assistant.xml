@@ -1,0 +1,7 @@
+<resources>
+    <string-array name="ask_openclaw_query_patterns">
+        <item>"hỏi paleoclaw %1$s"</item>
+        <item>"yêu cầu paleoclaw %1$s"</item>
+        <item>"mở paleoclaw và hỏi %1$s"</item>
+    </string-array>
+</resources>

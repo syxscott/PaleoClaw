@@ -1,21 +1,16 @@
-import type { AssistantMessage, StopReason, Usage } from "@mariozechner/pi-ai";
+/**
+ * Assistant stream message builders.
+ *
+ * Centralizes zero-cost usage records and assistant message construction for simple stream transports.
+ */
+import { STREAM_ERROR_FALLBACK_TEXT } from "@paleoclaw/ai/internal/shared";
+import type { AssistantMessage, StopReason, Usage } from "../llm/types.js";
 
-export type StreamModelDescriptor = {
+type StreamModelDescriptor = {
   api: string;
   provider: string;
   id: string;
 };
-
-export function buildZeroUsage(): Usage {
-  return {
-    input: 0,
-    output: 0,
-    cacheRead: 0,
-    cacheWrite: 0,
-    totalTokens: 0,
-    cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 },
-  };
-}
 
 export function buildUsageWithNoCost(params: {
   input?: number;
@@ -33,7 +28,8 @@ export function buildUsageWithNoCost(params: {
     output,
     cacheRead,
     cacheWrite,
-    totalTokens: params.totalTokens ?? input + output,
+    // Provider adapters normalize input to uncached tokens before this shared builder.
+    totalTokens: params.totalTokens ?? input + output + cacheRead + cacheWrite,
     cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 },
   };
 }
@@ -57,31 +53,17 @@ export function buildAssistantMessage(params: {
   };
 }
 
-export function buildAssistantMessageWithZeroUsage(params: {
-  model: StreamModelDescriptor;
-  content: AssistantMessage["content"];
-  stopReason: StopReason;
-  timestamp?: number;
-}): AssistantMessage {
-  return buildAssistantMessage({
-    model: params.model,
-    content: params.content,
-    stopReason: params.stopReason,
-    usage: buildZeroUsage(),
-    timestamp: params.timestamp,
-  });
-}
-
 export function buildStreamErrorAssistantMessage(params: {
   model: StreamModelDescriptor;
   errorMessage: string;
   timestamp?: number;
 }): AssistantMessage & { stopReason: "error"; errorMessage: string } {
   return {
-    ...buildAssistantMessageWithZeroUsage({
+    ...buildAssistantMessage({
       model: params.model,
-      content: [],
+      content: [{ type: "text", text: STREAM_ERROR_FALLBACK_TEXT }],
       stopReason: "error",
+      usage: buildUsageWithNoCost({}),
       timestamp: params.timestamp,
     }),
     stopReason: "error",

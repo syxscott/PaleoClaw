@@ -1,1 +1,1 @@
-Run paleoclaw from your iPhone: pair with your own gateway, trigger automations, and use voice, camera, and share actions.
+Pair your iPhone with your paleoclaw Gateway for chat, realtime voice, approvals, device capabilities, and private automation.

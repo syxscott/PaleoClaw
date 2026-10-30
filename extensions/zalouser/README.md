@@ -6,7 +6,7 @@ paleoclaw extension for Zalo Personal Account messaging via native `zca-js` inte
 
 ## Features
 
-- Channel plugin integration with onboarding + QR login
+- Channel plugin integration with setup wizard + QR login
 - In-process listener/sender via `zca-js` (no external CLI)
 - Multi-account support
 - Agent tool integration (`zalouser`)
@@ -30,8 +30,9 @@ paleoclaw plugins install @paleoclaw/zalouser
 ### Option B: local source checkout
 
 ```bash
-paleoclaw plugins install ./extensions/zalouser
-cd ./extensions/zalouser && pnpm install
+PLUGIN_SRC=./path/to/local/zalouser-plugin
+paleoclaw plugins install "$PLUGIN_SRC"
+cd "$PLUGIN_SRC" && pnpm install
 ```
 
 Restart the Gateway after install.
@@ -111,7 +112,7 @@ Available actions: `send`, `image`, `link`, `friends`, `groups`, `me`, `status`
 ## Troubleshooting
 
 - Login not persisted: `paleoclaw channels logout --channel zalouser && paleoclaw channels login --channel zalouser`
-- Probe status: `paleoclaw channels status --probe`
+- Check status: `paleoclaw channels status --probe`
 - Name resolution issues (allowlist/groups): use numeric IDs or exact Zalo names
 
 ## Credits

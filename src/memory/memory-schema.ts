@@ -94,6 +94,7 @@ function ensureColumn(
   if (!validTables.has(table) || !validColumnPattern.test(column)) {
     throw new Error(`Invalid table or column name: ${table}.${column}`);
   }
+
   const rows = db.prepare(`PRAGMA table_info(${table})`).all() as Array<{ name: string }>;
   if (rows.some((row) => row.name === column)) {
     return;

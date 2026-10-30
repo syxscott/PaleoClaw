@@ -1,182 +1,115 @@
 import { describe, expect, it } from "vitest";
-import { isAbortError, isTransientNetworkError } from "./unhandled-rejections.js";
+import {
+  isBenignUncaughtExceptionError,
+  isTransientNetworkError,
+  isTransientSqliteError,
+  isTransientUnhandledRejectionError,
+} from "./unhandled-rejections.js";
 
-describe("isAbortError", () => {
-  it("returns true for error with name AbortError", () => {
-    const error = new Error("aborted");
-    error.name = "AbortError";
-    expect(isAbortError(error)).toBe(true);
-  });
+const codedError = (code: string, message = code) => Object.assign(new Error(message), { code });
 
-  it('returns true for error with "This operation was aborted" message', () => {
-    const error = new Error("This operation was aborted");
-    expect(isAbortError(error)).toBe(true);
-  });
-
-  it("returns true for undici-style AbortError", () => {
-    // Node's undici throws errors with this exact message
-    const error = Object.assign(new Error("This operation was aborted"), { name: "AbortError" });
-    expect(isAbortError(error)).toBe(true);
-  });
-
-  it("returns true for object with AbortError name", () => {
-    expect(isAbortError({ name: "AbortError", message: "test" })).toBe(true);
-  });
-
-  it("returns false for regular errors", () => {
-    expect(isAbortError(new Error("Something went wrong"))).toBe(false);
-    expect(isAbortError(new TypeError("Cannot read property"))).toBe(false);
-    expect(isAbortError(new RangeError("Invalid array length"))).toBe(false);
-  });
-
-  it("returns false for errors with similar but different messages", () => {
-    expect(isAbortError(new Error("Operation aborted"))).toBe(false);
-    expect(isAbortError(new Error("aborted"))).toBe(false);
-    expect(isAbortError(new Error("Request was aborted"))).toBe(false);
-  });
-
-  it.each([null, undefined, "string error", 42, { message: "plain object" }])(
-    "returns false for non-abort input %#",
-    (value) => {
-      expect(isAbortError(value)).toBe(false);
-    },
-  );
-});
-
-describe("isTransientNetworkError", () => {
-  it("returns true for errors with transient network codes", () => {
-    const codes = [
-      "ECONNRESET",
-      "ECONNREFUSED",
-      "ENOTFOUND",
-      "ETIMEDOUT",
-      "ESOCKETTIMEDOUT",
-      "ECONNABORTED",
-      "EPIPE",
-      "EHOSTUNREACH",
-      "ENETUNREACH",
-      "EAI_AGAIN",
-      "EPROTO",
-      "UND_ERR_CONNECT_TIMEOUT",
-      "UND_ERR_SOCKET",
-      "UND_ERR_HEADERS_TIMEOUT",
-      "UND_ERR_BODY_TIMEOUT",
-      "ERR_SSL_WRONG_VERSION_NUMBER",
-      "ERR_SSL_PROTOCOL_RETURNED_AN_ERROR",
-    ];
-
-    for (const code of codes) {
-      const error = Object.assign(new Error("test"), { code });
-      expect(isTransientNetworkError(error), `code: ${code}`).toBe(true);
-    }
-  });
-
-  it('returns true for TypeError with "fetch failed" message', () => {
-    const error = new TypeError("fetch failed");
+describe("network rejection regressions", () => {
+  it("recognizes destroyed HTTP/2 sessions, including wrapped failures", () => {
+    const error = codedError("ERR_HTTP2_INVALID_SESSION", "The session has been destroyed");
     expect(isTransientNetworkError(error)).toBe(true);
+    expect(isTransientNetworkError(new Error("model call failed", { cause: error }))).toBe(true);
+    expect(isTransientNetworkError(new Error("ERR_HTTP2_INVALID_SESSION"))).toBe(true);
   });
 
-  it("returns true for fetch failed with network cause", () => {
-    const cause = Object.assign(new Error("getaddrinfo ENOTFOUND"), { code: "ENOTFOUND" });
-    const error = Object.assign(new TypeError("fetch failed"), { cause });
-    expect(isTransientNetworkError(error)).toBe(true);
+  it("recognizes wrapped fetch failures without swallowing HTTP failures", () => {
+    expect(
+      isTransientNetworkError(new Error("Failed to get gateway information: fetch failed")),
+    ).toBe(true);
+    expect(isTransientNetworkError(new Error("Web fetch failed (404): Not Found"))).toBe(false);
   });
 
-  it("returns true for fetch failed with unclassified cause", () => {
-    const cause = Object.assign(new Error("unknown socket state"), { code: "UNKNOWN" });
-    const error = Object.assign(new TypeError("fetch failed"), { cause });
-    expect(isTransientNetworkError(error)).toBe(true);
-  });
-
-  it("returns true for nested cause chain with network error", () => {
-    const innerCause = Object.assign(new Error("connection reset"), { code: "ECONNRESET" });
-    const outerCause = Object.assign(new Error("wrapper"), { cause: innerCause });
-    const error = Object.assign(new TypeError("fetch failed"), { cause: outerCause });
-    expect(isTransientNetworkError(error)).toBe(true);
-  });
-
-  it("returns true for Slack request errors that wrap network codes in .original", () => {
-    const error = Object.assign(new Error("A request error occurred: getaddrinfo EAI_AGAIN"), {
-      code: "slack_webapi_request_error",
-      original: {
-        errno: -3001,
-        code: "EAI_AGAIN",
-        syscall: "getaddrinfo",
-        hostname: "slack.com",
-      },
-    });
-    expect(isTransientNetworkError(error)).toBe(true);
-  });
-
-  it("returns true for network codes nested in .data payloads", () => {
-    const error = {
-      code: "slack_webapi_request_error",
-      message: "A request error occurred",
-      data: {
-        code: "EAI_AGAIN",
-      },
-    };
-    expect(isTransientNetworkError(error)).toBe(true);
-  });
-
-  it("returns true for AggregateError containing network errors", () => {
-    const networkError = Object.assign(new Error("timeout"), { code: "ETIMEDOUT" });
-    const error = new AggregateError([networkError], "Multiple errors");
-    expect(isTransientNetworkError(error)).toBe(true);
-  });
-
-  it("returns true for wrapped fetch-failed messages from integration clients", () => {
-    const error = new Error("Failed to get gateway information from Discord: fetch failed");
-    expect(isTransientNetworkError(error)).toBe(true);
-  });
-
-  it("returns false for non-network fetch-failed wrappers from tools", () => {
-    const error = new Error("Web fetch failed (404): Not Found");
-    expect(isTransientNetworkError(error)).toBe(false);
-  });
-
-  it("returns true for TLS/SSL transient message snippets", () => {
-    expect(isTransientNetworkError(new Error("write EPROTO 00A8B0C9:error"))).toBe(true);
+  it("recognizes upstream-connect failures wrapped as JSON parse errors", () => {
     expect(
       isTransientNetworkError(
-        new Error("SSL routines:OPENSSL_internal:WRONG_VERSION_NUMBER while connecting"),
+        new Error(
+          `Failed to get gateway information from Discord: Unexpected token 'u', "upstream connect error or disconnect/reset before headers. reset reason: overflow" is not valid JSON`,
+        ),
       ),
     ).toBe(true);
-    expect(isTransientNetworkError(new Error("tlsv1 alert protocol version"))).toBe(true);
   });
 
-  it("returns false for regular errors without network codes", () => {
-    expect(isTransientNetworkError(new Error("Something went wrong"))).toBe(false);
-    expect(isTransientNetworkError(new TypeError("Cannot read property"))).toBe(false);
-    expect(isTransientNetworkError(new RangeError("Invalid array length"))).toBe(false);
+  it("keeps permanent WebSocket closes fatal despite transient wrapper text", () => {
+    const cause = codedError(
+      "ERR_WEBSOCKET_NON_RETRYABLE_CLOSE",
+      "WebSocket closed 1008 policy violation: ECONNRESET",
+    );
+    expect(isTransientNetworkError(new Error("socket hang up", { cause }))).toBe(false);
+  });
+});
+
+describe("SQLite rejection classification", () => {
+  it.each([
+    codedError("SQLITE_CANTOPEN"),
+    Object.assign(new Error("unable to open database file"), {
+      code: "ERR_SQLITE_ERROR",
+      errcode: 14,
+    }),
+    new Error("SQLITE_BUSY: database is locked"),
+  ])("recognizes transient SQLite failure %#", (error) => {
+    expect(isTransientSqliteError(error)).toBe(true);
   });
 
-  it("returns false for errors with non-network codes", () => {
-    const error = Object.assign(new Error("test"), { code: "INVALID_CONFIG" });
-    expect(isTransientNetworkError(error)).toBe(false);
+  it("keeps constraint violations fatal", () => {
+    expect(
+      isTransientSqliteError(codedError("SQLITE_CONSTRAINT", "UNIQUE constraint failed")),
+    ).toBe(false);
+    expect(
+      isTransientSqliteError({
+        code: "ERR_SQLITE_ERROR",
+        message: "constraint failed",
+        errcode: 19,
+        errstr: "constraint failed",
+      }),
+    ).toBe(false);
   });
+});
 
-  it("returns false for Slack request errors without network indicators", () => {
-    const error = Object.assign(new Error("A request error occurred"), {
-      code: "slack_webapi_request_error",
-    });
-    expect(isTransientNetworkError(error)).toBe(false);
+describe("watcher rejection classification", () => {
+  it.each([
+    [null, false],
+    ["string error", false],
+    [codedError("ENOSPC", "watcher error: ENOSPC"), true],
+    [codedError("ENOSPC", "write failed: no space left on device"), false],
+    [new Error("file watcher: no space left on device"), true],
+    [new Error("watcher error: ENOSPC"), false],
+  ])("requires watcher resource exhaustion for input %#", (error, transient) => {
+    expect(isTransientUnhandledRejectionError(error)).toBe(transient);
   });
+});
 
-  it("returns false for non-transient undici codes that only appear in message text", () => {
-    const error = new Error("Request failed with UND_ERR_INVALID_ARG");
-    expect(isTransientNetworkError(error)).toBe(false);
-  });
-
-  it.each([null, undefined, "string error", 42, { message: "plain object" }])(
-    "returns false for non-network input %#",
-    (value) => {
-      expect(isTransientNetworkError(value)).toBe(false);
-    },
-  );
-
-  it("returns false for AggregateError with only non-network errors", () => {
-    const error = new AggregateError([new Error("regular error")], "Multiple errors");
-    expect(isTransientNetworkError(error)).toBe(false);
-  });
+it("restricts benign uncaught exceptions to known transport failures", () => {
+  expect(isBenignUncaughtExceptionError(codedError("EPIPE"))).toBe(true);
+  expect(isBenignUncaughtExceptionError(codedError("ENETDOWN"))).toBe(true);
+  expect(isBenignUncaughtExceptionError(new Error("connect ENETDOWN 192.0.2.1:443"))).toBe(true);
+  expect(
+    isBenignUncaughtExceptionError(
+      new Error("model call failed", { cause: codedError("ERR_HTTP2_INVALID_SESSION") }),
+    ),
+  ).toBe(true);
+  expect(
+    isBenignUncaughtExceptionError(
+      new Error("reconnect failed", {
+        cause: new Error("WebSocket was closed before the connection was established"),
+      }),
+    ),
+  ).toBe(true);
+  expect(
+    isBenignUncaughtExceptionError(
+      new Error("fetch failed", { cause: new TypeError("terminated") }),
+    ),
+  ).toBe(true);
+  expect(isBenignUncaughtExceptionError(codedError("SQLITE_BUSY"))).toBe(false);
+  expect(isBenignUncaughtExceptionError(codedError("ECONNRESET"))).toBe(false);
+  expect(isBenignUncaughtExceptionError(new Error("terminated"))).toBe(false);
+  expect(isBenignUncaughtExceptionError(new TypeError("terminated unexpectedly"))).toBe(false);
+  expect(
+    isBenignUncaughtExceptionError(
+      new Error("WebSocket error: WebSocket was closed before the connection was established"),
+    ),
+  ).toBe(false);
 });

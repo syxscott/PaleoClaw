@@ -171,7 +171,7 @@ paleoclaw agent --message "What is the classification of Tyrannosaurus rex?"
 
 **需要注意的内容**:
 
-源代码中保留了部分 `OpenClaw`/`openclaw` 引用，这些是：
+源代码中保留了部分 `paleoclaw`/`paleoclaw` 引用，这些是：
 
 1. **配置键名和类型定义**（需要保留）:
    - `OpenClawConfig` - TypeScript 类型定义
@@ -210,9 +210,9 @@ Copyright (c) 2026 PaleoClaw Contributors
 
 ## ⚠️ 需要注意的问题
 
-### 1. 源代码中的 OpenClaw 引用
+### 1. 源代码中的 paleoclaw 引用
 
-**问题**: 源代码中有 7915 处 `OpenClaw`/`openclaw` 引用
+**问题**: 源代码中有 7915 处 `paleoclaw`/`paleoclaw` 引用
 
 **分析**:
 
@@ -236,12 +236,12 @@ import type { OpenClawConfig } from "../config/config.js";
 process.env.OPENCLAW_GATEWAY_TOKEN;
 
 // 内部变量 - 保持原名
-const openclawRoot = "/path/to/openclaw";
+const openclawRoot = "/path/to/paleoclaw";
 ```
 
 ### 2. Skills 目录混合
 
-**问题**: Skills 目录包含原有 OpenClaw skills
+**问题**: Skills 目录包含原有 paleoclaw skills
 
 **当前状态**:
 
@@ -253,8 +253,8 @@ skills/
 ├── stratigraphy_lookup/   ✅ PaleoClaw 新增
 ├── paper_summary/         ✅ PaleoClaw 新增
 ├── research_assistant/    ✅ PaleoClaw 新增
-├── 1password/             ⚠️ 原有 OpenClaw skill
-├── github/                ⚠️ 原有 OpenClaw skill
+├── 1password/             ⚠️ 原有 paleoclaw skill
+├── github/                ⚠️ 原有 paleoclaw skill
 └── ... (其他原有 skills)
 ```
 
@@ -303,7 +303,7 @@ skills/
 ### 需要注意（非阻塞）
 
 1. ⚠️ 源代码中的内部变量保留原名（技术实现，不影响功能）
-2. ⚠️ Skills 目录包含原有 OpenClaw skills（可共存）
+2. ⚠️ Skills 目录包含原有 paleoclaw skills（可共存）
 
 ---
 
@@ -427,7 +427,7 @@ This is a specialized domain-specific AI assistant for paleontological research.
 ### 注意事项
 
 1. ⚠️ 源代码中的内部变量保留原名（不影响功能）
-2. ⚠️ Skills 目录包含原有 OpenClaw skills（可共存）
+2. ⚠️ Skills 目录包含原有 paleoclaw skills（可共存）
 
 ### 推荐操作
 

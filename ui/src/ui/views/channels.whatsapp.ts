@@ -54,17 +54,23 @@ export function renderWhatsAppCard(params: {
         </div>
       </div>
 
-      ${whatsapp?.lastError
-        ? html`<div class="callout danger" style="margin-top: 12px;">${whatsapp.lastError}</div>`
-        : nothing}
-      ${props.whatsappMessage
-        ? html`<div class="callout" style="margin-top: 12px;">${props.whatsappMessage}</div>`
-        : nothing}
-      ${props.whatsappQrDataUrl
-        ? html`<div class="qr-wrap">
-            <img src=${props.whatsappQrDataUrl} alt="WhatsApp QR" />
-          </div>`
-        : nothing}
+      ${
+        whatsapp?.lastError
+          ? html`<div class="callout danger" style="margin-top: 12px;">${whatsapp.lastError}</div>`
+          : nothing
+      }
+      ${
+        props.whatsappMessage
+          ? html`<div class="callout" style="margin-top: 12px;">${props.whatsappMessage}</div>`
+          : nothing
+      }
+      ${
+        props.whatsappQrDataUrl
+          ? html`<div class="qr-wrap">
+              <img src=${props.whatsappQrDataUrl} alt="WhatsApp QR" />
+            </div>`
+          : nothing
+      }
 
       <div class="row" style="margin-top: 14px; flex-wrap: wrap;">
         <button

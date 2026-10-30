@@ -32,22 +32,23 @@ Positional:
     If not in a git repo or no remote found, stop with an error asking the user to specify owner/repo.
 
 Flags (all optional):
-| Flag | Default | Description |
-|------|---------|-------------|
-| --label | _(none)_ | Filter by label (e.g. bug, `enhancement`) |
-| --limit | 10 | Max issues to fetch per poll |
-| --milestone | _(none)_ | Filter by milestone title |
-| --assignee | _(none)_ | Filter by assignee (`@me` for self) |
-| --state | open | Issue state: open, closed, all |
-| --fork | _(none)_ | Your fork (`user/repo`) to push branches and open PRs from. Issues are fetched from the source repo; code is pushed to the fork; PRs are opened from the fork to the source repo. |
-| --watch | false | Keep polling for new issues and PR reviews after each batch |
-| --interval | 5 | Minutes between polls (only with `--watch`) |
-| --dry-run | false | Fetch and display only — no sub-agents |
-| --yes | false | Skip confirmation and auto-process all filtered issues |
-| --reviews-only | false | Skip issue processing (Phases 2-5). Only run Phase 6 — check open PRs for review comments and address them. |
-| --cron | false | Cron-safe mode: fetch issues and spawn sub-agents, exit without waiting for results. |
-| --model | _(none)_ | Model to use for sub-agents (e.g. `glm-5`, `zai/glm-5`). If not specified, uses the agent's default model. |
-| --notify-channel | _(none)_ | Telegram channel ID to send final PR summary to (e.g. -1002381931352). Only the final result with PR links is sent, not status updates. |
+
+| Flag             | Default  | Description                                                                                                                                                                       |
+| ---------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| --label          | _(none)_ | Filter by label (e.g. bug, `enhancement`)                                                                                                                                         |
+| --limit          | 10       | Max issues to fetch per poll                                                                                                                                                      |
+| --milestone      | _(none)_ | Filter by milestone title                                                                                                                                                         |
+| --assignee       | _(none)_ | Filter by assignee (`@me` for self)                                                                                                                                               |
+| --state          | open     | Issue state: open, closed, all                                                                                                                                                    |
+| --fork           | _(none)_ | Your fork (`user/repo`) to push branches and open PRs from. Issues are fetched from the source repo; code is pushed to the fork; PRs are opened from the fork to the source repo. |
+| --watch          | false    | Keep polling for new issues and PR reviews after each batch                                                                                                                       |
+| --interval       | 5        | Minutes between polls (only with `--watch`)                                                                                                                                       |
+| --dry-run        | false    | Fetch and display only — no sub-agents                                                                                                                                            |
+| --yes            | false    | Skip confirmation and auto-process all filtered issues                                                                                                                            |
+| --reviews-only   | false    | Skip issue processing (Phases 2-5). Only run Phase 6 — check open PRs for review comments and address them.                                                                       |
+| --cron           | false    | Cron-safe mode: fetch issues and spawn sub-agents, exit without waiting for results.                                                                                              |
+| --model          | _(none)_ | Model to use for sub-agents (e.g. `glm-5`, `zai/glm-5`). If not specified, uses the agent's default model.                                                                        |
+| --notify-channel | _(none)_ | Telegram channel ID to send final PR summary to (e.g. -1002381931352). Only the final result with PR links is sent, not status updates.                                           |
 
 Store parsed values for use in subsequent phases.
 

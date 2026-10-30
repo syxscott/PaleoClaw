@@ -6,8 +6,8 @@
 import * as fs from "fs";
 import * as path from "path";
 import { paleoclawHome, atomicWriteFile, ensurePrivateDir } from "../paths.js";
-import { SessionProfile, loadSessionProfile, memoryContext } from "../profile/layers.js";
-import { bestMatches, SearchItem } from "./retrieval.js";
+import { type SessionProfile, loadSessionProfile, memoryContext } from "../profile/layers.js";
+import { bestMatches, type SearchItem } from "./retrieval.js";
 
 // Task memory interfaces
 export interface TaskMemory {

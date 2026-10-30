@@ -1,22 +1,10 @@
+import Darwin
 import Foundation
 import Network
 
 public enum LoopbackHost {
-    public static func isLoopback(_ rawHost: String) -> Bool {
-        self.isLoopbackHost(rawHost)
-    }
-
     public static func isLoopbackHost(_ rawHost: String) -> Bool {
-        var host = rawHost
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-            .lowercased()
-            .trimmingCharacters(in: CharacterSet(charactersIn: "[]"))
-        if host.hasSuffix(".") {
-            host.removeLast()
-        }
-        if let zoneIndex = host.firstIndex(of: "%") {
-            host = String(host[..<zoneIndex])
-        }
+        let host = self.normalizedHost(rawHost)
         if host.isEmpty {
             return false
         }
@@ -41,16 +29,52 @@ public enum LoopbackHost {
     }
 
     public static func isLocalNetworkHost(_ rawHost: String) -> Bool {
-        let host = rawHost.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let host = self.normalizedHost(rawHost)
         guard !host.isEmpty else { return false }
         if self.isLoopbackHost(host) { return true }
         if host.hasSuffix(".local") { return true }
-        if host.hasSuffix(".ts.net") { return true }
-        if host.hasSuffix(".tailscale.net") { return true }
-        // Allow MagicDNS / LAN hostnames like "peters-mac-studio-1".
-        if !host.contains("."), !host.contains(":") { return true }
-        guard let ipv4 = self.parseIPv4(host) else { return false }
-        return self.isLocalNetworkIPv4(ipv4)
+        if let ipv4 = self.parseIPv4(host) {
+            return self.isLocalNetworkIPv4(ipv4)
+        }
+        guard let ipv6 = IPv6Address(host) else { return false }
+        let bytes = Array(ipv6.rawValue)
+        let isUniqueLocal = (bytes[0] & 0xFE) == 0xFC
+        let isLinkLocal = bytes[0] == 0xFE && (bytes[1] & 0xC0) == 0x80
+        return isUniqueLocal || isLinkLocal
+    }
+
+    public static func isPrivateOrTailnetIPv4Literal(_ value: String) -> Bool {
+        guard value.allSatisfy({ $0.isNumber || $0 == "." }),
+              let (first, second, _, _) = self.parseIPv4(value)
+        else { return false }
+        switch (first, second) {
+        case (10, _), (192, 168), (169, 254), (172, 16...31), (100, 64...127):
+            return true
+        default:
+            return false
+        }
+    }
+
+    public static func isPrivateIPv6Literal(_ value: String) -> Bool {
+        var addr = in6_addr()
+        guard value.withCString({ inet_pton(AF_INET6, $0, &addr) }) == 1 else {
+            return false
+        }
+        return value.hasPrefix("fc") || value.hasPrefix("fd") || value.hasPrefix("fe80:")
+    }
+
+    static func normalizedHost(_ rawHost: String) -> String {
+        var host = rawHost
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
+            .trimmingCharacters(in: CharacterSet(charactersIn: "[]"))
+        if host.hasSuffix(".") {
+            host.removeLast()
+        }
+        if let zoneIndex = host.firstIndex(of: "%") {
+            host = String(host[..<zoneIndex])
+        }
+        return host
     }
 
     static func parseIPv4(_ host: String) -> (UInt8, UInt8, UInt8, UInt8)? {
@@ -62,19 +86,9 @@ public enum LoopbackHost {
     }
 
     static func isLocalNetworkIPv4(_ ip: (UInt8, UInt8, UInt8, UInt8)) -> Bool {
-        let (a, b, _, _) = ip
-        // 10.0.0.0/8
-        if a == 10 { return true }
-        // 172.16.0.0/12
-        if a == 172, (16...31).contains(Int(b)) { return true }
-        // 192.168.0.0/16
-        if a == 192, b == 168 { return true }
-        // 127.0.0.0/8
-        if a == 127 { return true }
-        // 169.254.0.0/16 (link-local)
-        if a == 169, b == 254 { return true }
-        // Tailscale: 100.64.0.0/10
-        if a == 100, (64...127).contains(Int(b)) { return true }
-        return false
+        switch (ip.0, ip.1) {
+        case (10, _), (172, 16...31), (192, 168), (127, _), (169, 254): true
+        default: false
+        }
     }
 }

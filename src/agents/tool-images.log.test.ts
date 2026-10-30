@@ -1,8 +1,13 @@
-import sharp from "sharp";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { writeFile } from "node:fs/promises";
+import path from "node:path";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { createSolidPngBuffer } from "../../test/helpers/image-fixtures.js";
+import { useAutoCleanupTempDirTracker } from "../../test/helpers/temp-dir.js";
+import { imageResultFromFile } from "../plugin-sdk/channel-actions.js";
 
-const { infoMock, warnMock } = vi.hoisted(() => ({
+const { infoMock, resizeToJpegMock, warnMock } = vi.hoisted(() => ({
   infoMock: vi.fn(),
+  resizeToJpegMock: vi.fn(),
   warnMock: vi.fn(),
 }));
 
@@ -22,45 +27,91 @@ vi.mock("../logging/subsystem.js", () => {
   return { createSubsystemLogger: () => makeLogger() };
 });
 
+vi.mock("../media/media-services.js", () => ({
+  buildImageResizeSideGrid: () => [2000],
+  getImageMetadata: vi.fn(),
+  IMAGE_REDUCE_QUALITY_STEPS: [85, 75, 65],
+  isImageProcessorUnavailableError: () => false,
+  MAX_IMAGE_INPUT_PIXELS: 25_000_000,
+  readImageMetadataFromHeader: () => ({ width: 2001, height: 8 }),
+  resizeToJpeg: resizeToJpegMock,
+}));
+
 import { sanitizeContentBlocksImages } from "./tool-images.js";
 
-async function createLargePng(): Promise<Buffer> {
-  const width = 2400;
-  const height = 680;
-  const raw = Buffer.alloc(width * height * 3, 0x7f);
-  return await sharp(raw, {
-    raw: { width, height, channels: 3 },
-  })
-    .png({ compressionLevel: 0 })
-    .toBuffer();
-}
-
 describe("tool-images log context", () => {
+  const tempDirs = useAutoCleanupTempDirTracker(afterEach);
+  let png: Buffer;
+
+  beforeAll(() => {
+    png = createSolidPngBuffer(2001, 8, { r: 0x7f, g: 0x7f, b: 0x7f });
+  });
+
   beforeEach(() => {
     infoMock.mockClear();
+    resizeToJpegMock.mockReset().mockResolvedValue(Buffer.alloc(100, 2));
     warnMock.mockClear();
   });
 
-  it("includes filename from MEDIA text", async () => {
-    const png = await createLargePng();
-    const blocks = [
-      { type: "text" as const, text: "MEDIA:/tmp/snapshots/camera-front.png" },
-      { type: "image" as const, data: png.toString("base64"), mimeType: "image/png" },
-    ];
-    await sanitizeContentBlocksImages(blocks, "nodes:camera_snap");
-    const message = infoMock.mock.calls[0]?.[0];
-    expect(typeof message).toBe("string");
-    expect(String(message)).toContain("camera-front.png");
-  });
+  it.each([
+    [512, 768, "512B", "768B"],
+    [256 * 1024, 512 * 1024, "256.0KB", "512.0KB"],
+    [1.5 * 1024 * 1024, 2 * 1024 * 1024, "1.50MB", "2.00MB"],
+  ] as const)(
+    "reports SDK image cap %s with smallest candidate %s",
+    async (maxBytes, minimumBytes, limit, actual) => {
+      const filePath = path.join(tempDirs.make("tool-image-cap-"), "sample.png");
+      await writeFile(filePath, png);
+      resizeToJpegMock.mockResolvedValue(Buffer.alloc(minimumBytes, 2));
 
-  it("includes filename from read label", async () => {
-    const png = await createLargePng();
+      const result = await imageResultFromFile({
+        label: "sdk:image",
+        path: filePath,
+        extraText: "image caption",
+        details: { media: { outbound: false } },
+        imageSanitization: { maxBytes },
+      });
+
+      expect(result.content).toEqual([
+        { type: "text", text: "image caption" },
+        {
+          type: "text",
+          text: `[sdk:image] omitted image payload: Error: Image could not be reduced below ${limit} (got ${actual})`,
+        },
+      ]);
+      expect(result.details).toMatchObject({
+        path: filePath,
+        media: { outbound: false, mediaUrl: filePath },
+      });
+      expect(warnMock).toHaveBeenLastCalledWith(
+        expect.any(String),
+        expect.objectContaining({ smallestCandidateBytes: minimumBytes }),
+      );
+    },
+  );
+
+  it.each([
+    { sourceBytes: 200, outputBytes: 200, pct: 0, label: "0%" },
+    { sourceBytes: 200, outputBytes: 250, pct: -25, label: "+25%" },
+  ])("logs the signed byte delta for $label", async ({ sourceBytes, outputBytes, pct, label }) => {
+    resizeToJpegMock.mockResolvedValue(Buffer.alloc(outputBytes, 2));
     const blocks = [
-      { type: "image" as const, data: png.toString("base64"), mimeType: "image/png" },
+      {
+        type: "image" as const,
+        data: Buffer.alloc(sourceBytes, 1).toString("base64"),
+        mimeType: "image/png",
+      },
     ];
     await sanitizeContentBlocksImages(blocks, "read:/tmp/images/sample-diagram.png");
-    const message = infoMock.mock.calls[0]?.[0];
-    expect(typeof message).toBe("string");
-    expect(String(message)).toContain("sample-diagram.png");
+    const [message, context] = infoMock.mock.calls.at(-1) ?? [];
+    expect(message).toContain(`sample-diagram.png 2001x8px`);
+    expect(message).toContain(`(${label})`);
+    expect(message).not.toContain("(--");
+    expect(context).toMatchObject({
+      fileName: "sample-diagram.png",
+      sourceBytes,
+      outputBytes,
+      byteReductionPct: pct,
+    });
   });
 });

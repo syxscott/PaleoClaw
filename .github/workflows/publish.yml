@@ -8,8 +8,48 @@ on:
   workflow_dispatch:
 
 jobs:
+  npm-access-check:
+    # Reports whether npm accepts this workflow as a trusted publisher for the
+    # package. It runs in seconds, so a misconfigured publisher is found
+    # without waiting for the build.
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Check the trusted publisher
+        run: |
+          set -euo pipefail
+          OIDC_TOKEN=$(curl -sSf \
+            -H "Authorization: bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=npm:registry.npmjs.org" \
+            | node -e '
+              let input = "";
+              process.stdin.on("data", (chunk) => { input += chunk; });
+              process.stdin.on("end", () => {
+                const parsed = JSON.parse(input);
+                if (!parsed.value) throw new Error("the id token response carried no value");
+                process.stdout.write(parsed.value);
+              });
+            ')
+          RESPONSE=$(curl -sS -w "\n%{http_code}" -X POST \
+            -H "Authorization: Bearer ${OIDC_TOKEN}" \
+            "https://registry.npmjs.org/-/npm/v1/oidc/token/exchange/package/paleoclaw")
+          STATUS=$(printf '%s' "${RESPONSE}" | tail -n 1)
+          BODY=$(printf '%s' "${RESPONSE}" | sed '$d')
+          echo "registry response (${STATUS}): ${BODY}"
+          if [[ "${STATUS}" != "200" ]]; then
+            echo "::error::npm does not accept this workflow as a trusted publisher for the paleoclaw package"
+            exit 1
+          fi
+          echo "npm trusted publishing is configured for this workflow."
+
   build-and-publish:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # npm provenance is attested with the workflow identity.
+      id-token: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -19,13 +59,50 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "22.12.0"
-          registry-url: "https://registry.npmjs.org"
+          node-version: "24.21.0"
+          # No registry-url: it writes an .npmrc with an _authToken placeholder,
+          # and npm then prefers that credential over exchanging the workflow's
+          # OIDC identity, so trusted publishing would never be attempted.
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v2
         with:
-          version: 10.32.1
+          version: 12.12.1
+
+      - name: Verify the publish credentials
+        # The registry answers an unauthorised publish with PUT /<package> -> 404,
+        # which looks identical to a missing package and only surfaces after the
+        # whole build. The publish authenticates with npm trusted publishing, so
+        # check the workflow's OIDC identity up front instead.
+        run: |
+          set -euo pipefail
+          if [[ -z "${ACTIONS_ID_TOKEN_REQUEST_URL:-}" ]]; then
+            echo "::error::the workflow has no id-token permission, so npm trusted publishing cannot authenticate"
+            exit 1
+          fi
+          OIDC_TOKEN=$(curl -sSf \
+            -H "Authorization: bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=npm:registry.npmjs.org" \
+            | node -e '
+              let input = "";
+              process.stdin.on("data", (chunk) => { input += chunk; });
+              process.stdin.on("end", () => {
+                const parsed = JSON.parse(input);
+                if (!parsed.value) throw new Error("the id token response carried no value");
+                process.stdout.write(parsed.value);
+              });
+            ')
+          RESPONSE=$(curl -sS -w "\n%{http_code}" -X POST \
+            -H "Authorization: Bearer ${OIDC_TOKEN}" \
+            "https://registry.npmjs.org/-/npm/v1/oidc/token/exchange/package/paleoclaw")
+          STATUS=$(printf '%s' "${RESPONSE}" | tail -n 1)
+          BODY=$(printf '%s' "${RESPONSE}" | sed '$d')
+          echo "registry response (${STATUS}): ${BODY}"
+          if [[ "${STATUS}" != "200" ]]; then
+            echo "::error::npm does not accept this workflow as a trusted publisher for the paleoclaw package"
+            exit 1
+          fi
+          echo "npm trusted publishing is configured for this workflow."
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -42,17 +119,70 @@ jobs:
           echo "Build output verified:"
           ls -la dist/
 
-      - name: Publish to npm
-        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
+      - name: Prepare the publishable package
+        # The root package depends on workspace packages, so it cannot be packed directly.
+        # Build the self-contained tarball the release tooling expects instead.
         run: |
+          set -euo pipefail
           VERSION=$(node -p "require('./package.json').version")
-          if npm view paleoclaw@$VERSION version 2>/dev/null; then
+          node scripts/package-paleoclaw-for-docker.mjs \
+            --pnpm-pack \
+            --allow-unreleased-changelog \
+            --output-dir .release-tarball \
+            --output-name "paleoclaw-${VERSION}.tgz"
+          ls -la .release-tarball/
+
+      - name: Publish to npm
+        # This fork publishes from its own v* tags. The upstream publisher
+        # additionally requires the preflight/full-release lineage that only the
+        # upstream release pipeline produces, so the fork asserts the contract
+        # it can actually guarantee instead: the tarball is the self-contained
+        # package built from this commit, it carries the manifest version, and
+        # that version belongs to the channel the dist-tag allows.
+        # Authentication comes from npm trusted publishing, so no long-lived
+        # token is needed.
+        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
+        env:
+          NPM_DIST_TAG: latest
+        run: |
+          set -euo pipefail
+          VERSION=$(node -p "require('./package.json').version")
+          TARBALL=".release-tarball/paleoclaw-${VERSION}.tgz"
+          if npm view paleoclaw@$VERSION version >/dev/null 2>&1; then
             echo "Version $VERSION already published, skipping..."
             exit 0
           fi
-          npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          if [[ ! -f "${TARBALL}" ]]; then
+            echo "error: publishable tarball not found: ${TARBALL}" >&2
+            exit 1
+          fi
+          TARBALL_VERSION=$(tar -xOf "${TARBALL}" package/package.json | node -e '
+            let input = "";
+            process.stdin.on("data", (chunk) => { input += chunk; });
+            process.stdin.on("end", () => {
+              const pkg = JSON.parse(input);
+              if (!pkg || typeof pkg.version !== "string" || pkg.version.trim() === "") {
+                throw new Error("package/package.json must contain a nonempty string version");
+              }
+              process.stdout.write(pkg.version.trim());
+            });
+          ')
+          if [[ "${TARBALL_VERSION}" != "${VERSION}" ]]; then
+            echo "error: publishable tarball version mismatch: expected ${VERSION}, got ${TARBALL_VERSION}" >&2
+            exit 1
+          fi
+          # Upstream owns the version-to-channel contract; reuse it so a release
+          # can never land on a dist-tag its channel forbids.
+          PUBLISH_PLAN=$(
+            PACKAGE_VERSION="${VERSION}" REQUESTED_PUBLISH_TAG="${NPM_DIST_TAG}" \
+            BYPASS_EXTENDED_STABLE_GUARD="" \
+            node scripts/paleoclaw-npm-extended-stable-release.mjs publish-plan
+          )
+          RESOLVED_TAG="$(printf '%s\n' "${PUBLISH_PLAN}" | tail -n 1)"
+          echo "Resolved release channel: $(printf '%s\n' "${PUBLISH_PLAN}" | head -n 1)"
+          echo "Resolved publish tag: ${RESOLVED_TAG}"
+          echo "npm identity: $(npm whoami 2>&1 || echo '<unknown>')"
+          npm publish "${TARBALL}" --access public --tag "${RESOLVED_TAG}" --provenance
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4

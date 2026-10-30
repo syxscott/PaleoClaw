@@ -1,168 +1,325 @@
-import { describe, expect, it } from "vitest";
+/** Tests plugin-owned CLI backend resolution and runtime bindings. */
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { OpenClawConfig } from "../config/config.js";
-import { resolveCliBackendConfig } from "./cli-backends.js";
+import type {
+  CliBackendConfig,
+  CliBackendPlugin,
+  CliBackendRuntimeArtifactPolicy,
+} from "../plugins/cli-backend.types.js";
+import {
+  isCliRuntimeModelBackendForProvider,
+  listCliRuntimeModelBackendBindings,
+  listCliRuntimeProviderIds,
+  resolveCliBackendConfig,
+  resolveCliBackendLiveTest,
+  resolveCliRuntimeCanonicalProvider,
+  resolveCliRuntimeModelBackendBinding,
+} from "./cli-backends.js";
+import { testing as cliBackendsTesting } from "./cli-backends.test-support.js";
 
-describe("resolveCliBackendConfig reliability merge", () => {
-  it("defaults codex-cli to workspace-write for fresh and resume runs", () => {
-    const resolved = resolveCliBackendConfig("codex-cli");
+type RuntimeBackendEntry = ReturnType<
+  (typeof import("../plugins/cli-backends.runtime.js"))["resolveRuntimeCliBackends"]
+>[number];
+type SetupBackendEntry = NonNullable<
+  ReturnType<(typeof import("../plugins/setup-registry.js"))["resolvePluginSetupCliBackend"]>
+>;
+type CliBackendOverrides = Partial<
+  Omit<CliBackendPlugin, "ownsNativeCompaction" | "manualCompaction">
+> &
+  (
+    | {
+        ownsNativeCompaction: true;
+        manualCompaction?: NonNullable<CliBackendPlugin["manualCompaction"]>;
+      }
+    | {
+        ownsNativeCompaction?: false;
+        manualCompaction?: never;
+      }
+  );
 
-    expect(resolved).not.toBeNull();
-    expect(resolved?.config.args).toEqual([
-      "exec",
-      "--json",
-      "--color",
-      "never",
-      "--sandbox",
-      "workspace-write",
-      "--skip-git-repo-check",
-    ]);
-    expect(resolved?.config.resumeArgs).toEqual([
-      "exec",
-      "resume",
-      "{sessionId}",
-      "--color",
-      "never",
-      "--sandbox",
-      "workspace-write",
-      "--skip-git-repo-check",
-    ]);
-  });
-
-  it("deep-merges reliability watchdog overrides for codex", () => {
-    const cfg = {
-      agents: {
-        defaults: {
-          cliBackends: {
-            "codex-cli": {
-              command: "codex",
-              reliability: {
-                watchdog: {
-                  resume: {
-                    noOutputTimeoutMs: 42_000,
-                  },
-                },
-              },
-            },
-          },
-        },
+const runtimeArtifact: CliBackendRuntimeArtifactPolicy = {
+  kind: "bundled-package-tree",
+  packageName: "@fixture/acme-cli",
+  entrypoint: "command",
+};
+function createBackend(overrides: CliBackendOverrides = {}): CliBackendPlugin {
+  const base = {
+    id: "acme-cli",
+    modelProvider: "acme",
+    config: {
+      command: "acme",
+      args: ["chat", "--json"],
+      output: "json",
+      input: "stdin",
+      modelArg: "--model",
+      sessionArgs: ["--session", "{sessionId}"],
+      sessionMode: "existing",
+    },
+    ownsNativeCompaction: overrides.ownsNativeCompaction === true,
+    bundleMcp: true,
+    bundleMcpMode: "claude-config-file",
+    runtimeArtifact,
+    liveTest: {
+      defaultModelRef: "acme/acme-large",
+      defaultImageProbe: true,
+      defaultMcpProbe: false,
+      docker: {
+        npmPackage: "@fixture/acme-cli",
+        binaryName: "acme",
       },
-    } satisfies OpenClawConfig;
+    },
+  } satisfies CliBackendPlugin;
+  return overrides.ownsNativeCompaction === true
+    ? { ...base, ...overrides, ownsNativeCompaction: true }
+    : { ...base, ...overrides, ownsNativeCompaction: false };
+}
 
-    const resolved = resolveCliBackendConfig("codex-cli", cfg);
+function runtimeEntry(
+  overrides: CliBackendOverrides = {},
+  pluginId = "acme-plugin",
+): RuntimeBackendEntry {
+  return { ...createBackend(overrides), pluginId } as RuntimeBackendEntry;
+}
 
-    expect(resolved).not.toBeNull();
-    expect(resolved?.config.reliability?.watchdog?.resume?.noOutputTimeoutMs).toBe(42_000);
-    // Ensure defaults are retained when only one field is overridden.
-    expect(resolved?.config.reliability?.watchdog?.resume?.noOutputTimeoutRatio).toBe(0.3);
-    expect(resolved?.config.reliability?.watchdog?.resume?.minMs).toBe(60_000);
-    expect(resolved?.config.reliability?.watchdog?.resume?.maxMs).toBe(180_000);
-    expect(resolved?.config.reliability?.watchdog?.fresh?.noOutputTimeoutRatio).toBe(0.8);
+function setupEntry(
+  overrides: CliBackendOverrides = {},
+  pluginId = "acme-plugin",
+): SetupBackendEntry {
+  return {
+    pluginId,
+    source: "test",
+    backend: createBackend(overrides),
+  } as SetupBackendEntry;
+}
+
+function requireBackend(provider = "acme-cli", cfg?: OpenClawConfig) {
+  const resolved = resolveCliBackendConfig(provider, cfg);
+  if (!resolved) {
+    throw new Error(`Expected CLI backend ${provider}`);
+  }
+  return resolved;
+}
+
+beforeEach(() => {
+  const entries = [runtimeEntry()];
+  cliBackendsTesting.setDepsForTest({
+    resolveRuntimeCliBackends: () => entries,
+    resolvePluginSetupCliBackend: () => undefined,
+    resolvePluginSetupRegistry: () => ({ cliBackends: [] }) as never,
   });
 });
 
-describe("resolveCliBackendConfig claude-cli defaults", () => {
-  it("uses non-interactive permission-mode defaults for fresh and resume args", () => {
-    const resolved = resolveCliBackendConfig("claude-cli");
+afterEach(() => {
+  cliBackendsTesting.resetDepsForTest();
+});
 
-    expect(resolved).not.toBeNull();
-    expect(resolved?.config.args).toContain("--permission-mode");
-    expect(resolved?.config.args).toContain("bypassPermissions");
-    expect(resolved?.config.args).not.toContain("--dangerously-skip-permissions");
-    expect(resolved?.config.resumeArgs).toContain("--permission-mode");
-    expect(resolved?.config.resumeArgs).toContain("bypassPermissions");
-    expect(resolved?.config.resumeArgs).not.toContain("--dangerously-skip-permissions");
+describe("resolveCliBackendConfig", () => {
+  it("returns the plugin-owned command adapter and registration metadata", () => {
+    const resolved = requireBackend();
+
+    expect(resolved).toMatchObject({
+      id: "acme-cli",
+      modelProvider: "acme",
+      pluginId: "acme-plugin",
+      bundleMcp: true,
+      bundleMcpMode: "claude-config-file",
+      runtimeArtifact,
+      config: {
+        command: "acme",
+        args: ["chat", "--json"],
+        output: "json",
+        input: "stdin",
+        modelArg: "--model",
+        sessionArgs: ["--session", "{sessionId}"],
+        sessionMode: "existing",
+      },
+    });
   });
 
-  it("retains default claude safety args when only command is overridden", () => {
-    const cfg = {
-      agents: {
-        defaults: {
-          cliBackends: {
-            "claude-cli": {
-              command: "/usr/local/bin/claude",
-            },
-          },
-        },
-      },
-    } satisfies OpenClawConfig;
+  it("preserves the plugin-owned JSONL parser through runtime resolution", () => {
+    const parseJsonlEvent = vi.fn();
+    const parseJsonlLifecycleEvent = vi.fn();
+    const classifyErrorCode = vi.fn();
+    cliBackendsTesting.setDepsForTest({
+      resolveRuntimeCliBackends: () => [
+        runtimeEntry({ parseJsonlEvent, parseJsonlLifecycleEvent, classifyErrorCode }),
+      ],
+      resolvePluginSetupCliBackend: () => undefined,
+    });
 
-    const resolved = resolveCliBackendConfig("claude-cli", cfg);
-
-    expect(resolved).not.toBeNull();
-    expect(resolved?.config.command).toBe("/usr/local/bin/claude");
-    expect(resolved?.config.args).toContain("--permission-mode");
-    expect(resolved?.config.args).toContain("bypassPermissions");
-    expect(resolved?.config.resumeArgs).toContain("--permission-mode");
-    expect(resolved?.config.resumeArgs).toContain("bypassPermissions");
+    expect(requireBackend().parseJsonlEvent).toBe(parseJsonlEvent);
+    expect(requireBackend().parseJsonlLifecycleEvent).toBe(parseJsonlLifecycleEvent);
+    expect(requireBackend().classifyErrorCode).toBe(classifyErrorCode);
   });
 
-  it("normalizes legacy skip-permissions overrides to permission-mode bypassPermissions", () => {
-    const cfg = {
-      agents: {
-        defaults: {
-          cliBackends: {
-            "claude-cli": {
-              command: "claude",
-              args: ["-p", "--dangerously-skip-permissions", "--output-format", "json"],
-              resumeArgs: [
-                "-p",
-                "--dangerously-skip-permissions",
-                "--output-format",
-                "json",
-                "--resume",
-                "{sessionId}",
-              ],
-            },
-          },
-        },
-      },
-    } satisfies OpenClawConfig;
+  it("normalizes the registered adapter with agent and runtime config context", () => {
+    const normalizeConfig = vi.fn((config: CliBackendConfig): CliBackendConfig => ({
+      ...config,
+      args: [...(config.args ?? []), "--normalized"],
+    }));
+    cliBackendsTesting.setDepsForTest({
+      resolveRuntimeCliBackends: () => [runtimeEntry({ normalizeConfig })],
+      resolvePluginSetupCliBackend: () => undefined,
+    });
+    const cfg: OpenClawConfig = { tools: { exec: { mode: "ask" } } };
 
-    const resolved = resolveCliBackendConfig("claude-cli", cfg);
+    const resolved = resolveCliBackendConfig("acme-cli", cfg, { agentId: "reviewer" });
 
-    expect(resolved).not.toBeNull();
-    expect(resolved?.config.args).not.toContain("--dangerously-skip-permissions");
-    expect(resolved?.config.args).toContain("--permission-mode");
-    expect(resolved?.config.args).toContain("bypassPermissions");
-    expect(resolved?.config.resumeArgs).not.toContain("--dangerously-skip-permissions");
-    expect(resolved?.config.resumeArgs).toContain("--permission-mode");
-    expect(resolved?.config.resumeArgs).toContain("bypassPermissions");
+    expect(resolved?.config.args).toEqual(["chat", "--json", "--normalized"]);
+    expect(normalizeConfig).toHaveBeenCalledWith(expect.objectContaining({ command: "acme" }), {
+      backendId: "acme-cli",
+      agentId: "reviewer",
+      config: cfg,
+    });
   });
 
-  it("keeps explicit permission-mode overrides while removing legacy skip flag", () => {
-    const cfg = {
-      agents: {
-        defaults: {
-          cliBackends: {
-            "claude-cli": {
-              command: "claude",
-              args: ["-p", "--dangerously-skip-permissions", "--permission-mode", "acceptEdits"],
-              resumeArgs: [
-                "-p",
-                "--dangerously-skip-permissions",
-                "--permission-mode=acceptEdits",
-                "--resume",
-                "{sessionId}",
-              ],
-            },
-          },
-        },
+  it("does not let a mutating normalizer rewrite the registered adapter", () => {
+    const backend = runtimeEntry({
+      normalizeConfig(config, context) {
+        config.command = `${config.command}-${context?.agentId ?? "default"}`;
+        return config;
       },
-    } satisfies OpenClawConfig;
+    });
+    cliBackendsTesting.setDepsForTest({
+      resolveRuntimeCliBackends: () => [backend],
+      resolvePluginSetupCliBackend: () => undefined,
+    });
 
-    const resolved = resolveCliBackendConfig("claude-cli", cfg);
+    expect(resolveCliBackendConfig("acme-cli", {}, { agentId: "reviewer" })?.config.command).toBe(
+      "acme-reviewer",
+    );
+    expect(resolveCliBackendConfig("acme-cli", {}, { agentId: "builder" })?.config.command).toBe(
+      "acme-builder",
+    );
+    expect(backend.config.command).toBe("acme");
+  });
 
-    expect(resolved).not.toBeNull();
-    expect(resolved?.config.args).not.toContain("--dangerously-skip-permissions");
-    expect(resolved?.config.args).toEqual(["-p", "--permission-mode", "acceptEdits"]);
-    expect(resolved?.config.resumeArgs).not.toContain("--dangerously-skip-permissions");
-    expect(resolved?.config.resumeArgs).toEqual([
-      "-p",
-      "--permission-mode=acceptEdits",
-      "--resume",
-      "{sessionId}",
+  it("falls back to setup registration before runtime activation", () => {
+    const parseJsonlEvent = vi.fn();
+    const resolveModelId = vi.fn(
+      ({ modelId, contextWindow }: { modelId: string; contextWindow?: string }) =>
+        contextWindow === "1m" ? `${modelId}[1m]` : modelId,
+    );
+    const entry = setupEntry({
+      config: { command: "setup-acme", args: ["run"] },
+      parseJsonlEvent,
+      resolveModelId,
+    });
+    cliBackendsTesting.setDepsForTest({
+      resolveRuntimeCliBackends: () => [],
+      resolvePluginSetupCliBackend: ({ backend }) => (backend === "acme-cli" ? entry : undefined),
+    });
+
+    const resolved = requireBackend();
+
+    expect(resolved.pluginId).toBeUndefined();
+    expect(resolved.config).toEqual({ command: "setup-acme", args: ["run"] });
+    expect(resolved.runtimeArtifact).toEqual(runtimeArtifact);
+    expect(resolved.parseJsonlEvent).toBe(parseJsonlEvent);
+    expect(resolved.resolveModelId?.({ modelId: "acme-large", contextWindow: "1m" })).toBe(
+      "acme-large[1m]",
+    );
+  });
+
+  it("returns null when no plugin owns the backend", () => {
+    cliBackendsTesting.setDepsForTest({
+      resolveRuntimeCliBackends: () => [],
+      resolvePluginSetupCliBackend: () => undefined,
+    });
+
+    expect(resolveCliBackendConfig("missing-cli")).toBeNull();
+  });
+
+  it("preserves backend-owned execution hooks", () => {
+    const prepareExecution = vi.fn(async () => ({ env: { ACME_HOME: "/tmp/acme" } }));
+    const manualCompaction = {
+      buildPrompt: vi.fn(() => "/shrink"),
+      input: "arg" as const,
+      validateOutput: vi.fn(() => ({ ok: true as const })),
+    };
+    const resolveExecutionArgs = vi.fn(({ baseArgs }: { baseArgs: readonly string[] }) => [
+      ...baseArgs,
+      "--effort",
+      "high",
     ]);
-    expect(resolved?.config.args).not.toContain("bypassPermissions");
-    expect(resolved?.config.resumeArgs).not.toContain("bypassPermissions");
+    cliBackendsTesting.setDepsForTest({
+      resolveRuntimeCliBackends: () => [
+        runtimeEntry({
+          prepareExecution,
+          resolveExecutionArgs: resolveExecutionArgs as never,
+          ownsNativeCompaction: true,
+          manualCompaction,
+          nativeToolMode: "selectable",
+          toolAvailabilityEnforcement: "execution-args",
+          sideQuestionToolMode: "disabled",
+        }),
+      ],
+      resolvePluginSetupCliBackend: () => undefined,
+    });
+
+    const resolved = requireBackend();
+
+    expect(resolved.prepareExecution).toBe(prepareExecution);
+    expect(resolved.resolveExecutionArgs).toBe(resolveExecutionArgs);
+    expect(resolved.ownsNativeCompaction).toBe(true);
+    expect(resolved.manualCompaction).toBe(manualCompaction);
+    expect(resolved.nativeToolMode).toBe("selectable");
+    expect(resolved.toolAvailabilityEnforcement).toBe("execution-args");
+    expect(resolved.sideQuestionToolMode).toBe("disabled");
+  });
+
+  it("requires explicit enforcement for a selectable hook", () => {
+    const resolveExecutionArgs = vi.fn(({ baseArgs }: { baseArgs: readonly string[] }) => baseArgs);
+    cliBackendsTesting.setDepsForTest({
+      resolveRuntimeCliBackends: () => [
+        runtimeEntry({
+          nativeToolMode: "selectable",
+          resolveExecutionArgs: resolveExecutionArgs as never,
+        }),
+      ],
+      resolvePluginSetupCliBackend: () => undefined,
+    });
+
+    expect(requireBackend().toolAvailabilityEnforcement).toBeUndefined();
+  });
+});
+
+describe("CLI backend metadata and bindings", () => {
+  it("returns plugin-owned live smoke metadata", () => {
+    expect(resolveCliBackendLiveTest("acme-cli")).toEqual({
+      defaultModelRef: "acme/acme-large",
+      defaultImageProbe: true,
+      defaultMcpProbe: false,
+      dockerNpmPackage: "@fixture/acme-cli",
+      dockerBinaryName: "acme",
+    });
+  });
+
+  it("lists canonical provider to CLI runtime bindings", () => {
+    expect(listCliRuntimeModelBackendBindings()).toEqual([
+      { provider: "acme", runtime: "acme-cli" },
+    ]);
+    expect(listCliRuntimeProviderIds()).toEqual(["acme-cli"]);
+    expect(resolveCliRuntimeCanonicalProvider({ runtime: "ACME-CLI" })).toBe("acme");
+    expect(resolveCliRuntimeModelBackendBinding({ provider: "acme", runtime: "acme-cli" })).toEqual(
+      { provider: "acme", runtime: "acme-cli" },
+    );
+    expect(isCliRuntimeModelBackendForProvider({ provider: "acme", runtime: "acme-cli" })).toBe(
+      true,
+    );
+  });
+
+  it("includes setup bindings only when requested", () => {
+    cliBackendsTesting.setDepsForTest({
+      resolveRuntimeCliBackends: () => [],
+      resolvePluginSetupCliBackend: ({ backend }) =>
+        backend === "acme-cli" ? setupEntry() : undefined,
+      resolvePluginSetupRegistry: () => ({ cliBackends: [setupEntry()] }) as never,
+    });
+
+    expect(listCliRuntimeModelBackendBindings()).toEqual([]);
+    expect(listCliRuntimeModelBackendBindings({ includeSetupRegistry: true })).toEqual([
+      { provider: "acme", runtime: "acme-cli" },
+    ]);
   });
 });

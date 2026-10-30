@@ -1,398 +1,746 @@
-import { Type } from "@sinclair/typebox";
-import { normalizeGroupActivation } from "../../auto-reply/group-activation.js";
-import { getFollowupQueueDepth, resolveQueueSettings } from "../../auto-reply/reply/queue.js";
-import { buildStatusMessage } from "../../auto-reply/status.js";
-import type { OpenClawConfig } from "../../config/config.js";
-import { loadConfig } from "../../config/config.js";
-import {
-  loadSessionStore,
-  resolveStorePath,
-  type SessionEntry,
-  updateSessionStore,
-} from "../../config/sessions.js";
-import { loadCombinedSessionStoreForGateway } from "../../gateway/session-utils.js";
-import {
-  formatUsageWindowSummary,
-  loadProviderUsageSummary,
-  resolveUsageProviderId,
-} from "../../infra/provider-usage.js";
+import { readStringValue } from "@paleoclaw/normalization-core/string-coerce";
+import type {
+  ElevatedLevel,
+  ReasoningLevel,
+  ThinkLevel,
+  VerboseLevel,
+} from "../../auto-reply/thinking.js";
+import { resolveSessionStorePathCore, type SessionEntry } from "../../config/sessions.js";
+import type { OpenClawConfig } from "../../config/types.openclaw.js";
+import type { PluginMetadataSnapshot } from "../../plugins/plugin-metadata-snapshot.types.js";
 import {
   buildAgentMainSessionKey,
-  DEFAULT_AGENT_ID,
+  isIncognitoSessionKey,
+  parseAgentSessionKey,
   resolveAgentIdFromSessionKey,
 } from "../../routing/session-key.js";
-import { applyModelOverrideToSessionEntry } from "../../sessions/model-overrides.js";
-import { resolveAgentDir } from "../agent-scope.js";
-import { formatUserTime, resolveUserTimeFormat, resolveUserTimezone } from "../date-time.js";
-import { resolveModelAuthLabel } from "../model-auth-label.js";
-import { loadModelCatalog } from "../model-catalog.js";
 import {
-  buildAllowedModelSet,
-  buildModelAliasIndex,
-  modelKey,
-  resolveDefaultModelForAgent,
-  resolveModelRefFromString,
-} from "../model-selection.js";
+  getSessionStateVersion,
+  listSessionStateEventsSince,
+} from "../../sessions/session-state-events.js";
+import { createLazyPromise } from "../../shared/lazy-promise.js";
+import {
+  deliveryContextFromSession,
+  sessionDeliveryChannel,
+  sessionDeliveryOrigin,
+  type DeliveryContext,
+} from "../../utils/delivery-context.read.js";
+import { normalizeDeliveryContext } from "../../utils/delivery-context.shared.js";
+import {
+  isDeliverableMessageChannel,
+  normalizeMessageChannel,
+} from "../../utils/message-channel.js";
+import {
+  resolveAgentDir,
+  resolveAgentWorkspaceDir,
+  resolveSessionAgentIds,
+} from "../agent-scope.js";
+import { resolveDefaultModelForAgent } from "../model-selection.js";
+import { resolveThinkingDefault } from "../model-thinking-default.js";
+import { loadPublishedPreparedModelCatalog } from "../prepared-model-catalog.js";
+import { resolveSessionModelIdentityRef } from "../session-model-ref.js";
+import {
+  describeSessionStatusTool,
+  SESSION_STATUS_TOOL_DISPLAY_SUMMARY,
+} from "../tool-description-presets.js";
 import type { AnyAgentTool } from "./common.js";
-import { readStringParam } from "./common.js";
+import { readNonNegativeIntegerParam, readToolStringParam, textResult } from "./common.js";
 import {
+  resolveGatewayToolOperatorSelection,
+  wrapGatewayPersonalToolExecution,
+} from "./gateway-caller-context.js";
+import {
+  callAgentToolGatewayRequest,
+  hasGatewayToolRoutingContext,
+  type AgentToolGatewayRequestCaller,
+} from "./in-process-gateway.js";
+import {
+  resolveSessionToolTargetAgentId,
+  runWithScopedSessionAccess,
+} from "./scoped-session-access.js";
+import {
+  formatSessionCapabilities,
+  resolveSessionCapabilities,
+} from "./session-status-capabilities.js";
+import { patchSessionStatusModel, withActiveStatusModelIdentity } from "./session-status-model.js";
+import {
+  listImplicitDefaultDirectFallbackKeys,
+  resolveImplicitCurrentSessionFallback,
+  resolveSessionStatusEntry,
+  resolveStoreScopedRequesterKey,
+} from "./session-status-session-resolve.js";
+import {
+  compactSessionStateChanges,
+  formatSessionStateChanges,
+} from "./session-status-state-changes.js";
+import {
+  SessionStatusOutputSchema,
+  SessionStatusToolSchema,
+  type SessionStatusDeliveryContextDetails,
+  type SessionStatusOriginDetails,
+} from "./session-status-tool.schema.js";
+import {
+  formatSessionToolAccessDenial,
+  resolveCurrentSessionClientAlias,
+  resolveSessionReference,
+  resolveSessionToolAccess,
+  resolveSessionToolContext,
+  resolveVisibleSessionReference,
   shouldResolveSessionIdInput,
-  resolveInternalSessionKey,
-  resolveMainSessionAlias,
-  createAgentToAgentPolicy,
 } from "./sessions-helpers.js";
 
-const SessionStatusToolSchema = Type.Object({
-  sessionKey: Type.Optional(Type.String()),
-  model: Type.Optional(Type.String()),
-});
+const loadCommandsStatusRuntime = createLazyPromise(() => import("../../status/status-text.js"));
 
-function resolveSessionEntry(params: {
-  store: Record<string, SessionEntry>;
-  keyRaw: string;
-  alias: string;
-  mainKey: string;
-}): { key: string; entry: SessionEntry } | null {
-  const keyRaw = params.keyRaw.trim();
-  if (!keyRaw) {
-    return null;
-  }
-  const internal = resolveInternalSessionKey({
-    key: keyRaw,
-    alias: params.alias,
-    mainKey: params.mainKey,
-  });
+type SessionStatusRouteDetails = {
+  origin?: SessionStatusOriginDetails;
+  active?: SessionStatusDeliveryContextDetails;
+  deliveryContext?: SessionStatusDeliveryContextDetails;
+};
 
-  const candidates = new Set<string>([keyRaw, internal]);
-  if (!keyRaw.startsWith("agent:")) {
-    candidates.add(`agent:${DEFAULT_AGENT_ID}:${keyRaw}`);
-    candidates.add(`agent:${DEFAULT_AGENT_ID}:${internal}`);
-  }
-  if (keyRaw === "main") {
-    candidates.add(
-      buildAgentMainSessionKey({
-        agentId: DEFAULT_AGENT_ID,
-        mainKey: params.mainKey,
-      }),
-    );
-  }
+const INTERNAL_SESSION_KEY_ORIGIN_PREFIXES = new Set(["main", "cron", "subagent", "acp"]);
 
-  for (const key of candidates) {
-    const entry = params.store[key];
-    if (entry) {
-      return { key, entry };
-    }
-  }
-
-  return null;
+function readRouteThreadId(value: unknown): string | number | undefined {
+  return typeof value === "number" && Number.isFinite(value)
+    ? value
+    : readStringValue(value)?.trim() || undefined;
 }
 
-function resolveSessionKeyFromSessionId(params: {
-  cfg: OpenClawConfig;
-  sessionId: string;
-  agentId?: string;
-}): string | null {
-  const trimmed = params.sessionId.trim();
-  if (!trimmed) {
-    return null;
-  }
-  const { store } = loadCombinedSessionStoreForGateway(params.cfg);
-  const match = Object.entries(store).find(([key, entry]) => {
-    if (entry?.sessionId !== trimmed) {
-      return false;
-    }
-    if (!params.agentId) {
-      return true;
-    }
-    return resolveAgentIdFromSessionKey(key) === params.agentId;
-  });
-  return match?.[0] ?? null;
+function compactRouteDetails(
+  params: SessionStatusOriginDetails & SessionStatusDeliveryContextDetails,
+) {
+  const provider = readStringValue(params.provider);
+  const channel = readStringValue(params.channel);
+  const to = readStringValue(params.to);
+  const accountId = readStringValue(params.accountId);
+  const threadId = readRouteThreadId(params.threadId);
+  const details = {
+    ...(provider ? { provider } : {}),
+    ...(channel ? { channel } : {}),
+    ...(to ? { to } : {}),
+    ...(accountId ? { accountId } : {}),
+    ...(threadId !== undefined ? { threadId } : {}),
+  };
+  return Object.keys(details).length ? details : undefined;
 }
 
-async function resolveModelOverride(params: {
-  cfg: OpenClawConfig;
-  raw: string;
-  sessionEntry?: SessionEntry;
-  agentId: string;
-}): Promise<
-  | { kind: "reset" }
-  | {
-      kind: "set";
-      provider: string;
-      model: string;
-      isDefault: boolean;
-    }
-> {
-  const raw = params.raw.trim();
-  if (!raw) {
-    return { kind: "reset" };
+function normalizeActiveDeliveryContext(
+  context?: DeliveryContext,
+): SessionStatusDeliveryContextDetails | undefined {
+  if (!context) {
+    return undefined;
   }
-  if (raw.toLowerCase() === "default") {
-    return { kind: "reset" };
-  }
+  const normalized = normalizeDeliveryContext(context);
+  const rawChannel = readStringValue(normalized?.channel) ?? readStringValue(context.channel);
+  const channel = rawChannel ? (normalizeMessageChannel(rawChannel) ?? rawChannel) : undefined;
+  return compactRouteDetails({
+    channel,
+    to: readStringValue(normalized?.to) ?? readStringValue(context.to),
+    accountId: readStringValue(normalized?.accountId) ?? readStringValue(context.accountId),
+    threadId: normalized?.threadId ?? context.threadId,
+  });
+}
 
-  const configDefault = resolveDefaultModelForAgent({
-    cfg: params.cfg,
-    agentId: params.agentId,
-  });
-  const currentProvider = params.sessionEntry?.providerOverride?.trim() || configDefault.provider;
-  const currentModel = params.sessionEntry?.modelOverride?.trim() || configDefault.model;
-
-  const aliasIndex = buildModelAliasIndex({
-    cfg: params.cfg,
-    defaultProvider: currentProvider,
-  });
-  const catalog = await loadModelCatalog({ config: params.cfg });
-  const allowed = buildAllowedModelSet({
-    cfg: params.cfg,
-    catalog,
-    defaultProvider: currentProvider,
-    defaultModel: currentModel,
-  });
-
-  const resolved = resolveModelRefFromString({
-    raw,
-    defaultProvider: currentProvider,
-    aliasIndex,
-  });
-  if (!resolved) {
-    throw new Error(`Unrecognized model "${raw}".`);
+function inferOriginProviderFromSessionKey(sessionKey: string): string | undefined {
+  const parsed = parseAgentSessionKey(sessionKey);
+  const head = readStringValue(parsed?.rest.split(":")[0]);
+  if (!head || INTERNAL_SESSION_KEY_ORIGIN_PREFIXES.has(head.toLowerCase())) {
+    return undefined;
   }
-  const key = modelKey(resolved.ref.provider, resolved.ref.model);
-  if (allowed.allowedKeys.size > 0 && !allowed.allowedKeys.has(key)) {
-    throw new Error(`Model "${key}" is not allowed.`);
-  }
-  const isDefault =
-    resolved.ref.provider === configDefault.provider && resolved.ref.model === configDefault.model;
+  const channel = normalizeMessageChannel(head);
+  return channel && isDeliverableMessageChannel(channel) ? channel : undefined;
+}
+
+function buildSessionStatusRouteDetails(params: {
+  entry: SessionEntry;
+  sessionKey: string;
+  activeDeliveryContext?: DeliveryContext;
+  isLiveRunSession?: boolean;
+}): SessionStatusRouteDetails {
+  const storedOrigin = sessionDeliveryOrigin(params.entry);
+  const origin = compactRouteDetails({
+    provider:
+      readStringValue(storedOrigin?.provider) ??
+      inferOriginProviderFromSessionKey(params.sessionKey),
+    accountId: storedOrigin?.accountId,
+    threadId: storedOrigin?.threadId,
+  });
+  const storedDelivery = deliveryContextFromSession(params.entry);
+  const deliveryContext = compactRouteDetails({
+    channel: storedDelivery?.channel,
+    to: storedDelivery?.to,
+    accountId: storedDelivery?.accountId,
+    threadId: storedDelivery?.threadId,
+  });
+  const active = params.isLiveRunSession
+    ? normalizeActiveDeliveryContext(params.activeDeliveryContext)
+    : undefined;
+
   return {
-    kind: "set",
-    provider: resolved.ref.provider,
-    model: resolved.ref.model,
-    isDefault,
+    ...(origin ? { origin } : {}),
+    ...(active ? { active } : {}),
+    ...(deliveryContext ? { deliveryContext } : {}),
   };
 }
 
 export function createSessionStatusTool(opts?: {
   agentSessionKey?: string;
+  requesterAgentIdOverride?: string;
+  /**
+   * The actual live run session key. When the tool is constructed with a sandbox/policy
+   * session key (e.g. a Telegram direct peer key), this allows `session_status({sessionKey:
+   * "current"})` to resolve to the live run session instead of the stale sandbox key.
+   */
+  runSessionKey?: string;
   config?: OpenClawConfig;
+  sandboxed?: boolean;
+  activeModelProvider?: string;
+  activeModelId?: string;
+  metadataSnapshot?: PluginMetadataSnapshot;
+  callGateway?: AgentToolGatewayRequestCaller;
+  /** Active live-run route, kept separate from the persisted/origin delivery route. */
+  activeDeliveryContext?: DeliveryContext;
 }): AnyAgentTool {
   return {
     label: "Session Status",
     name: "session_status",
-    description:
-      "Show a /status-equivalent session status card (usage + time + cost when available). Use for model-use questions (📊 session_status). Optional: set per-session model override (model=default resets overrides).",
+    displaySummary: SESSION_STATUS_TOOL_DISPLAY_SUMMARY,
+    description: describeSessionStatusTool(),
     parameters: SessionStatusToolSchema,
-    execute: async (_toolCallId, args) => {
+    outputSchema: SessionStatusOutputSchema,
+    execute: wrapGatewayPersonalToolExecution(async (_toolCallId, args) => {
       const params = args as Record<string, unknown>;
-      const cfg = opts?.config ?? loadConfig();
-      const { mainKey, alias } = resolveMainSessionAlias(cfg);
-      const a2aPolicy = createAgentToAgentPolicy(cfg);
-
-      const requestedKeyParam = readStringParam(params, "sessionKey");
-      let requestedKeyRaw = requestedKeyParam ?? opts?.agentSessionKey;
-      if (!requestedKeyRaw?.trim()) {
-        throw new Error("sessionKey required");
-      }
-
-      const requesterAgentId = resolveAgentIdFromSessionKey(
-        opts?.agentSessionKey ?? requestedKeyRaw,
-      );
-      const ensureAgentAccess = (targetAgentId: string) => {
-        if (targetAgentId === requesterAgentId) {
-          return;
+      const operatorSelection = resolveGatewayToolOperatorSelection();
+      const gatewayCall = opts?.callGateway ?? callAgentToolGatewayRequest;
+      const gatewayScoped = opts?.callGateway !== undefined || hasGatewayToolRoutingContext();
+      const changesSince = readNonNegativeIntegerParam(params, "changesSince");
+      const includeCapabilities = params.capabilities === true;
+      const {
+        cfg,
+        mainKey,
+        alias,
+        effectiveRequesterKey,
+        mainSessionKey,
+        restrictToSpawned,
+        sessionVisibility,
+        a2aPolicy,
+      } = resolveSessionToolContext(opts);
+      const requesterAgentId = resolveSessionAgentIds({
+        config: cfg,
+        sessionKey: opts?.agentSessionKey ?? effectiveRequesterKey,
+        agentId: opts?.requesterAgentIdOverride,
+      }).sessionAgentId;
+      const visibilityRequesterKey = (opts?.agentSessionKey ?? effectiveRequesterKey).trim();
+      const usesLegacyMainAlias = alias === mainKey;
+      const isLegacyMainVisibilityKey = (sessionKey: string) => {
+        const trimmed = sessionKey.trim();
+        return usesLegacyMainAlias && (trimmed === "main" || trimmed === mainKey);
+      };
+      const resolveVisibilityMainSessionKey = (sessionAgentId: string) => {
+        const requesterParsed = parseAgentSessionKey(visibilityRequesterKey);
+        if (
+          resolveAgentIdFromSessionKey(visibilityRequesterKey, requesterAgentId) ===
+            sessionAgentId &&
+          (requesterParsed?.rest === mainKey || isLegacyMainVisibilityKey(visibilityRequesterKey))
+        ) {
+          return visibilityRequesterKey;
         }
-        // Gate cross-agent access behind tools.agentToAgent settings.
-        if (!a2aPolicy.enabled) {
+        return buildAgentMainSessionKey({
+          agentId: sessionAgentId,
+          mainKey,
+        });
+      };
+      const normalizeVisibilityTargetSessionKey = (sessionKey: string, sessionAgentId: string) => {
+        const trimmed = sessionKey.trim();
+        // Preserve legacy bare main keys for requester tree checks.
+        const isMain = trimmed.startsWith("agent:")
+          ? parseAgentSessionKey(trimmed)?.rest === mainKey
+          : isLegacyMainVisibilityKey(trimmed);
+        return isMain ? resolveVisibilityMainSessionKey(sessionAgentId) : trimmed;
+      };
+      const accessByTarget = new Map<
+        string,
+        Awaited<ReturnType<typeof resolveSessionToolAccess>>
+      >();
+      const requireVisibilityAccess = async (
+        target: {
+          targetSessionKey: string;
+          targetAgentId: string;
+          authorizationTargetSessionKey: string;
+          requesterOwned: boolean;
+        },
+        displayKey = target.targetSessionKey,
+      ) => {
+        const cacheKey = `${target.requesterOwned ? "owned" : "unowned"}:${target.targetAgentId}:${target.targetSessionKey}:${target.authorizationTargetSessionKey}`;
+        const access =
+          accessByTarget.get(cacheKey) ??
+          (await resolveSessionToolAccess({
+            ...target,
+            action: "status",
+            requesterAgentId,
+            requesterSessionKey: visibilityRequesterKey,
+            mainSessionKey,
+            visibility: sessionVisibility,
+            a2aPolicy,
+            callGateway: gatewayCall,
+          }));
+        accessByTarget.set(cacheKey, access);
+        if (!access.allowed) {
           throw new Error(
-            "Agent-to-agent status is disabled. Set tools.agentToAgent.enabled=true to allow cross-agent access.",
+            formatSessionToolAccessDenial(access, {
+              action: "status",
+              targetSessionKey: displayKey,
+            }),
           );
         }
-        if (!a2aPolicy.isAllowed(requesterAgentId, targetAgentId)) {
-          throw new Error("Agent-to-agent session status denied by tools.agentToAgent.allow.");
-        }
+        return access;
       };
 
-      if (requestedKeyRaw.startsWith("agent:")) {
-        ensureAgentAccess(resolveAgentIdFromSessionKey(requestedKeyRaw));
+      const requestedKeyParam = readToolStringParam(params, "sessionKey");
+      const isImplicitRunSessionStatus =
+        requestedKeyParam === undefined && Boolean(opts?.runSessionKey?.trim());
+      // No-arg status should prefer the live run session when available (#82669).
+      let requestedKeyInput =
+        (isImplicitRunSessionStatus
+          ? opts?.runSessionKey
+          : (requestedKeyParam ?? opts?.agentSessionKey)
+        )?.trim() ?? "";
+
+      // Track whether this is a semantic-current request (literal "current" or a
+      // current-client alias) BEFORE any rewrite, so visibility treats it as self.
+      const currentSessionAlias = resolveCurrentSessionClientAlias({
+        key: requestedKeyInput,
+        requesterInternalKey: effectiveRequesterKey,
+      });
+      const isSemanticCurrentRequest =
+        requestedKeyInput === "current" ||
+        isImplicitRunSessionStatus ||
+        Boolean(currentSessionAlias);
+
+      // Resolve semantic "current" to the live run session key for lookup purposes (#76708).
+      // In sandboxed channel runs there may be no separate runSessionKey because the sandbox
+      // key already is the live requester; avoid probing literal "current" through the gateway.
+      if (requestedKeyInput === "current" && (opts?.runSessionKey || opts?.sandboxed === true)) {
+        requestedKeyInput = (opts.runSessionKey ?? effectiveRequesterKey).trim();
       }
 
-      const isExplicitAgentKey = requestedKeyRaw.startsWith("agent:");
-      let agentId = isExplicitAgentKey
-        ? resolveAgentIdFromSessionKey(requestedKeyRaw)
-        : requesterAgentId;
-      let storePath = resolveStorePath(cfg.session?.store, { agentId });
-      let store = loadSessionStore(storePath);
+      if (currentSessionAlias) {
+        requestedKeyInput = (opts?.runSessionKey ?? currentSessionAlias).trim();
+      }
+      const effectiveRequesterLookupKey = effectiveRequesterKey.trim();
+      let resolvedViaSessionId = false;
+      let resolvedViaImplicitCurrentFallback = false;
+      if (!requestedKeyInput) {
+        throw new Error("sessionKey required");
+      }
+      let resolvedRequesterOwned = false;
 
-      // Resolve against the requester-scoped store first to avoid leaking default agent data.
-      let resolved = resolveSessionEntry({
-        store,
-        keyRaw: requestedKeyRaw,
-        alias,
+      const deferTargetOwnerResolution =
+        !isSemanticCurrentRequest && shouldResolveSessionIdInput(requestedKeyInput);
+      let agentId = deferTargetOwnerResolution
+        ? requesterAgentId
+        : resolveSessionToolTargetAgentId({
+            cfg,
+            targetSessionKey: requestedKeyInput,
+            requesterAgentId,
+          });
+      // Semantic current is self for ordinary visibility, but its live-run key can
+      // still be process-only. Preserve that target for the shared guard before storage.
+      const mustCheckRequestedKeyBeforeStore =
+        !isSemanticCurrentRequest || isIncognitoSessionKey(requestedKeyInput);
+      if (mustCheckRequestedKeyBeforeStore && !deferTargetOwnerResolution) {
+        await requireVisibilityAccess({
+          targetSessionKey: requestedKeyInput,
+          targetAgentId: agentId,
+          authorizationTargetSessionKey: normalizeVisibilityTargetSessionKey(
+            requestedKeyInput,
+            agentId,
+          ),
+          requesterOwned: false,
+        });
+      }
+      let storePath = resolveSessionStorePathCore(cfg.session?.store, { agentId });
+      let storeScopedRequesterKey = resolveStoreScopedRequesterKey({
+        requesterKey: effectiveRequesterKey,
+        agentId,
         mainKey,
       });
 
-      if (!resolved && shouldResolveSessionIdInput(requestedKeyRaw)) {
-        const resolvedKey = resolveSessionKeyFromSessionId({
+      const readStatusEntry = (keyRaw: string, includeAliasFallback?: boolean) =>
+        resolveSessionStatusEntry({
           cfg,
-          sessionId: requestedKeyRaw,
-          agentId: a2aPolicy.enabled ? undefined : requesterAgentId,
+          agentId,
+          keyRaw,
+          alias,
+          mainKey,
+          requesterInternalKey: storeScopedRequesterKey,
+          includeAliasFallback,
         });
-        if (resolvedKey) {
-          // If resolution points at another agent, enforce A2A policy before switching stores.
-          ensureAgentAccess(resolveAgentIdFromSessionKey(resolvedKey));
-          requestedKeyRaw = resolvedKey;
-          agentId = resolveAgentIdFromSessionKey(resolvedKey);
-          storePath = resolveStorePath(cfg.session?.store, { agentId });
-          store = loadSessionStore(storePath);
-          resolved = resolveSessionEntry({
-            store,
-            keyRaw: requestedKeyRaw,
-            alias,
+
+      // Resolve against the requester-scoped store first to avoid leaking default agent data.
+      let resolved = deferTargetOwnerResolution
+        ? undefined
+        : await readStatusEntry(requestedKeyInput, requestedKeyInput !== "current");
+
+      if (
+        !resolved &&
+        (requestedKeyInput === "current" || shouldResolveSessionIdInput(requestedKeyInput))
+      ) {
+        const resolvedSession = await resolveSessionReference({
+          action: "status",
+          sessionKey: requestedKeyInput,
+          ...(requestedKeyInput === "current" ? { agentId: requesterAgentId } : {}),
+          keyAgentId: requesterAgentId,
+          alias,
+          mainKey,
+          requesterInternalKey: effectiveRequesterKey,
+          restrictToSpawned,
+          callGateway: gatewayCall,
+        });
+        if (resolvedSession.ok) {
+          const visibleSession = await resolveVisibleSessionReference({
+            action: "status",
+            resolvedSession,
+            requesterSessionKey: effectiveRequesterKey,
+            requesterAgentId,
+            restrictToSpawned: opts?.sandboxed === true,
+            visibilitySessionKey: requestedKeyInput,
+            callGateway: gatewayCall,
+          });
+          if (!visibleSession.ok) {
+            // The resolver's copy already names the denying policy (including the
+            // watched-group carve-out); a local string here would drift from it.
+            throw new Error(visibleSession.error);
+          }
+          const visibleAgentId = resolveSessionToolTargetAgentId({
+            cfg,
+            targetSessionKey: visibleSession.key,
+            resolvedAgentId: visibleSession.agentId,
+            requesterAgentId,
+          });
+          if (opts?.sandboxed === true || visibleAgentId !== requesterAgentId) {
+            await requireVisibilityAccess(
+              {
+                targetSessionKey: visibleSession.key,
+                targetAgentId: visibleAgentId,
+                authorizationTargetSessionKey: normalizeVisibilityTargetSessionKey(
+                  visibleSession.key,
+                  visibleAgentId,
+                ),
+                requesterOwned: visibleSession.requesterOwned,
+              },
+              visibleSession.displayKey,
+            );
+          }
+          resolvedRequesterOwned = visibleSession.requesterOwned;
+          resolvedViaSessionId = resolvedSession.resolvedViaSessionId;
+          requestedKeyInput = visibleSession.key.trim();
+          agentId = visibleAgentId;
+          storePath = resolveSessionStorePathCore(cfg.session?.store, { agentId });
+          storeScopedRequesterKey = resolveStoreScopedRequesterKey({
+            requesterKey: effectiveRequesterKey,
+            agentId,
             mainKey,
           });
+          resolved = await readStatusEntry(requestedKeyInput);
+        } else if (!resolvedSession.notFound || resolvedSession.status === "forbidden") {
+          throw new Error(resolvedSession.error);
+        }
+      }
+
+      if (!resolved && requestedKeyInput === "current" && effectiveRequesterLookupKey) {
+        resolved = await readStatusEntry(effectiveRequesterLookupKey, false);
+      }
+
+      if (!resolved && requestedKeyInput === "current") {
+        resolved = await readStatusEntry(requestedKeyInput, true);
+      }
+
+      if (!resolved && requestedKeyParam === undefined) {
+        for (const fallbackKey of listImplicitDefaultDirectFallbackKeys({
+          keyRaw: requestedKeyInput,
+          mainKey,
+        })) {
+          resolved = await readStatusEntry(fallbackKey, true);
+          if (resolved) {
+            resolvedViaImplicitCurrentFallback = true;
+            break;
+          }
         }
       }
 
       if (!resolved) {
-        const kind = shouldResolveSessionIdInput(requestedKeyRaw) ? "sessionId" : "sessionKey";
-        throw new Error(`Unknown ${kind}: ${requestedKeyRaw}`);
-      }
-
-      const configured = resolveDefaultModelForAgent({ cfg, agentId });
-      const modelRaw = readStringParam(params, "model");
-      let changedModel = false;
-      if (typeof modelRaw === "string") {
-        const selection = await resolveModelOverride({
-          cfg,
-          raw: modelRaw,
-          sessionEntry: resolved.entry,
+        const runSessionFallbackKey = opts?.runSessionKey?.trim();
+        const fallback = resolveImplicitCurrentSessionFallback({
           agentId,
-        });
-        const nextEntry: SessionEntry = { ...resolved.entry };
-        const applied = applyModelOverrideToSessionEntry({
-          entry: nextEntry,
-          selection:
-            selection.kind === "reset"
-              ? {
-                  provider: configured.provider,
-                  model: configured.model,
-                  isDefault: true,
-                }
-              : {
-                  provider: selection.provider,
-                  model: selection.model,
-                  isDefault: selection.isDefault,
-                },
-        });
-        if (applied.updated) {
-          store[resolved.key] = nextEntry;
-          await updateSessionStore(storePath, (nextStore) => {
-            nextStore[resolved.key] = nextEntry;
-          });
-          resolved.entry = nextEntry;
-          changedModel = true;
-        }
-      }
-
-      const agentDir = resolveAgentDir(cfg, agentId);
-      const providerForCard = resolved.entry.providerOverride?.trim() || configured.provider;
-      const usageProvider = resolveUsageProviderId(providerForCard);
-      let usageLine: string | undefined;
-      if (usageProvider) {
-        try {
-          const usageSummary = await loadProviderUsageSummary({
-            timeoutMs: 3500,
-            providers: [usageProvider],
-            agentDir,
-          });
-          const snapshot = usageSummary.providers.find((entry) => entry.provider === usageProvider);
-          if (snapshot) {
-            const formatted = formatUsageWindowSummary(snapshot, {
-              now: Date.now(),
-              maxWindows: 2,
-              includeResets: true,
-            });
-            if (formatted && !formatted.startsWith("error:")) {
-              usageLine = `📊 Usage: ${formatted}`;
-            }
-          }
-        } catch {
-          // ignore
-        }
-      }
-
-      const isGroup =
-        resolved.entry.chatType === "group" ||
-        resolved.entry.chatType === "channel" ||
-        resolved.key.includes(":group:") ||
-        resolved.key.includes(":channel:");
-      const groupActivation = isGroup
-        ? (normalizeGroupActivation(resolved.entry.groupActivation) ?? "mention")
-        : undefined;
-
-      const queueSettings = resolveQueueSettings({
-        cfg,
-        channel: resolved.entry.channel ?? resolved.entry.lastChannel ?? "unknown",
-        sessionEntry: resolved.entry,
-      });
-      const queueKey = resolved.key ?? resolved.entry.sessionId;
-      const queueDepth = queueKey ? getFollowupQueueDepth(queueKey) : 0;
-      const queueOverrides = Boolean(
-        resolved.entry.queueDebounceMs ?? resolved.entry.queueCap ?? resolved.entry.queueDrop,
-      );
-
-      const userTimezone = resolveUserTimezone(cfg.agents?.defaults?.userTimezone);
-      const userTimeFormat = resolveUserTimeFormat(cfg.agents?.defaults?.timeFormat);
-      const userTime = formatUserTime(new Date(), userTimezone, userTimeFormat);
-      const timeLine = userTime
-        ? `🕒 Time: ${userTime} (${userTimezone})`
-        : `🕒 Time zone: ${userTimezone}`;
-
-      const agentDefaults = cfg.agents?.defaults ?? {};
-      const defaultLabel = `${configured.provider}/${configured.model}`;
-      const agentModel =
-        typeof agentDefaults.model === "object" && agentDefaults.model
-          ? { ...agentDefaults.model, primary: defaultLabel }
-          : { primary: defaultLabel };
-      const statusText = buildStatusMessage({
-        config: cfg,
-        agent: {
-          ...agentDefaults,
-          model: agentModel,
-        },
-        agentId,
-        sessionEntry: resolved.entry,
-        sessionKey: resolved.key,
-        sessionStorePath: storePath,
-        groupActivation,
-        modelAuth: resolveModelAuthLabel({
-          provider: providerForCard,
+          allowFallback: isSemanticCurrentRequest || requestedKeyParam === undefined,
           cfg,
-          sessionEntry: resolved.entry,
-          agentDir,
-        }),
-        usageLine,
-        timeLine,
-        queue: {
-          mode: queueSettings.mode,
-          depth: queueDepth,
-          debounceMs: queueSettings.debounceMs,
-          cap: queueSettings.cap,
-          dropPolicy: queueSettings.dropPolicy,
-          showDetails: queueOverrides,
-        },
-        includeTranscriptUsage: true,
-      });
+          fallbackKey:
+            (isSemanticCurrentRequest || isImplicitRunSessionStatus) && runSessionFallbackKey
+              ? runSessionFallbackKey
+              : isSemanticCurrentRequest
+                ? effectiveRequesterLookupKey
+                : storeScopedRequesterKey,
+        });
+        if (fallback) {
+          resolved = fallback;
+          resolvedViaImplicitCurrentFallback = true;
+        }
+      }
 
-      return {
-        content: [{ type: "text", text: statusText }],
-        details: {
-          ok: true,
-          sessionKey: resolved.key,
-          changedModel,
-          statusText,
+      if (!resolved) {
+        const kind = shouldResolveSessionIdInput(requestedKeyInput) ? "sessionId" : "sessionKey";
+        throw new Error(`Unknown ${kind}: ${requestedKeyInput}`);
+      }
+
+      // Preserve caller-scoped raw-key/current lookups as "self" for visibility checks.
+      const shouldTreatVisibilityTargetAsSelf =
+        isSemanticCurrentRequest ||
+        resolvedViaImplicitCurrentFallback ||
+        (!resolvedViaSessionId &&
+          (requestedKeyInput === "current" ||
+            (resolved.key === requestedKeyInput && agentId === requesterAgentId)));
+      const visibilityTargetKey =
+        shouldTreatVisibilityTargetAsSelf && !isIncognitoSessionKey(resolved.key)
+          ? visibilityRequesterKey
+          : normalizeVisibilityTargetSessionKey(resolved.key, agentId);
+      const access = await requireVisibilityAccess(
+        {
+          targetSessionKey: resolved.key,
+          targetAgentId: agentId,
+          authorizationTargetSessionKey: visibilityTargetKey,
+          requesterOwned: resolvedRequesterOwned,
         },
+        requestedKeyInput,
+      );
+      let scopedResolved = resolved;
+      const assertStatusVisible = async () => {
+        operatorSelection.assertCurrent();
+        const currentSessionKey = opts?.runSessionKey?.trim() ?? effectiveRequesterLookupKey;
+        if (
+          !operatorSelection.operatorAuthority ||
+          !scopedResolved.persisted ||
+          (agentId === requesterAgentId &&
+            normalizeVisibilityTargetSessionKey(scopedResolved.key, agentId) ===
+              normalizeVisibilityTargetSessionKey(currentSessionKey, requesterAgentId))
+        ) {
+          return;
+        }
+        const described = await gatewayCall<{ session: { sessionId?: string } | null }>({
+          method: "sessions.describe",
+          params: { key: scopedResolved.key, agentId },
+        });
+        operatorSelection.assertCurrent();
+        if (described.session?.sessionId !== scopedResolved.entry.sessionId) {
+          throw new Error(`Session not visible from session tools: ${requestedKeyInput}`);
+        }
       };
-    },
+      await assertStatusVisible();
+
+      return await runWithScopedSessionAccess({
+        cfg,
+        agentId,
+        expectedSessionId: access.expectedSessionId,
+        targetSessionKey: scopedResolved.key,
+        run: async () => {
+          const configured = resolveDefaultModelForAgent({ cfg, agentId });
+          const selectedAgentDir = resolveAgentDir(cfg, agentId);
+          const selectedWorkspaceDir = resolveAgentWorkspaceDir(cfg, agentId);
+          const modelRaw = readToolStringParam(params, "model");
+          let changedModel = false;
+          if (typeof modelRaw === "string") {
+            const patched = await patchSessionStatusModel({
+              cfg,
+              agentId,
+              agentDir: selectedAgentDir,
+              workspaceDir: selectedWorkspaceDir,
+              storePath,
+              raw: modelRaw,
+              resolved: scopedResolved,
+              metadataSnapshot: opts?.metadataSnapshot,
+              gatewayCall: gatewayScoped ? gatewayCall : undefined,
+            });
+            scopedResolved = patched.resolved;
+            changedModel = patched.changedModel;
+          }
+
+          const liveSessionKeys = new Set(
+            [
+              opts?.runSessionKey,
+              storeScopedRequesterKey,
+              effectiveRequesterKey,
+              visibilityRequesterKey,
+            ]
+              .map((value) => value?.trim())
+              .filter((value): value is string => Boolean(value)),
+          );
+          const activeModelId = opts?.activeModelId?.trim();
+          const activeModelProvider = opts?.activeModelProvider?.trim();
+          const activeModelIdentity =
+            activeModelId &&
+            modelRaw === undefined &&
+            (isSemanticCurrentRequest || requestedKeyParam === undefined) &&
+            agentId === requesterAgentId &&
+            liveSessionKeys.has(scopedResolved.key.trim())
+              ? {
+                  model: activeModelId,
+                  ...(activeModelProvider ? { provider: activeModelProvider } : {}),
+                }
+              : undefined;
+          const runtimeModelIdentity =
+            activeModelIdentity ??
+            resolveSessionModelIdentityRef(
+              cfg,
+              scopedResolved.entry,
+              agentId,
+              `${configured.provider}/${configured.model}`,
+            );
+          const hasExplicitModelOverride = Boolean(
+            !activeModelIdentity &&
+            (scopedResolved.entry.providerOverride?.trim() ||
+              scopedResolved.entry.modelOverride?.trim()),
+          );
+          const runtimeProviderForCard = runtimeModelIdentity.provider?.trim();
+          const runtimeModelForCard = runtimeModelIdentity.model.trim();
+          const defaultProviderForCard = hasExplicitModelOverride
+            ? configured.provider
+            : (runtimeProviderForCard ?? "");
+          const defaultModelForCard = hasExplicitModelOverride
+            ? configured.model
+            : runtimeModelForCard || configured.model;
+          const statusSessionEntry = activeModelIdentity
+            ? withActiveStatusModelIdentity(scopedResolved.entry, activeModelIdentity)
+            : !hasExplicitModelOverride && !runtimeProviderForCard && runtimeModelForCard
+              ? { ...scopedResolved.entry, providerOverride: "" }
+              : scopedResolved.entry;
+          const providerOverrideForCard = statusSessionEntry.providerOverride?.trim();
+          const providerForCard = providerOverrideForCard ?? defaultProviderForCard;
+          const primaryModelLabel =
+            providerForCard && defaultModelForCard
+              ? `${providerForCard}/${defaultModelForCard}`
+              : defaultModelForCard;
+          const isGroup =
+            statusSessionEntry.chatType === "group" ||
+            statusSessionEntry.chatType === "channel" ||
+            scopedResolved.key.includes(":group:") ||
+            scopedResolved.key.includes(":channel:");
+          // Tool status may read persisted/configured facts, but must not start provider discovery.
+          const thinkingCatalog = await loadPublishedPreparedModelCatalog({
+            config: cfg,
+            agentId,
+            agentDir: selectedAgentDir,
+            readOnly: true,
+            ...(statusSessionEntry.spawnedWorkspaceDir
+              ? { workspaceDir: statusSessionEntry.spawnedWorkspaceDir }
+              : {}),
+          });
+          const { buildStatusText } = await loadCommandsStatusRuntime();
+          const statusText = await buildStatusText({
+            cfg,
+            agentId,
+            sessionEntry: statusSessionEntry,
+            sessionKey: scopedResolved.key,
+            parentSessionKey: statusSessionEntry.parentSessionKey,
+            sessionScope: cfg.session?.scope,
+            storePath,
+            statusChannel: sessionDeliveryChannel(statusSessionEntry) ?? "unknown",
+            workspaceDir: statusSessionEntry.spawnedWorkspaceDir,
+            provider: providerForCard,
+            model: defaultModelForCard,
+            thinkingCatalog,
+            resolvedThinkLevel: statusSessionEntry.thinkingLevel as ThinkLevel | undefined,
+            resolvedFastMode: statusSessionEntry.fastMode,
+            resolvedVerboseLevel: (statusSessionEntry.verboseLevel ?? "off") as VerboseLevel,
+            resolvedReasoningLevel: (statusSessionEntry.reasoningLevel ?? "off") as ReasoningLevel,
+            resolvedElevatedLevel: statusSessionEntry.elevatedLevel as ElevatedLevel | undefined,
+            resolveDefaultThinkingLevel: async (selection) =>
+              resolveThinkingDefault({
+                cfg,
+                agentId,
+                provider: selection?.provider ?? providerForCard,
+                model: selection?.model ?? defaultModelForCard,
+                agentRuntime: selection?.agentRuntime,
+                catalog: thinkingCatalog,
+              }),
+            isGroup,
+            defaultGroupActivation: () => "mention",
+            primaryModelLabelOverride: primaryModelLabel,
+            ...(providerForCard ? {} : { modelAuthOverride: undefined }),
+            includeTranscriptUsage: true,
+          });
+          const resultOverrideProvider = statusSessionEntry.providerOverride?.trim();
+          const resultOverrideModel = statusSessionEntry.modelOverride?.trim();
+          const activeRouteRunSessionKey = opts?.runSessionKey?.trim();
+          const isLiveRouteSession =
+            agentId === requesterAgentId &&
+            (activeRouteRunSessionKey
+              ? scopedResolved.key.trim() === activeRouteRunSessionKey
+              : liveSessionKeys.has(scopedResolved.key.trim()));
+          const routeDetails = buildSessionStatusRouteDetails({
+            entry: statusSessionEntry,
+            sessionKey: scopedResolved.key,
+            activeDeliveryContext: opts?.activeDeliveryContext,
+            isLiveRunSession: isLiveRouteSession,
+          });
+          const routeContextText = Object.keys(routeDetails).length
+            ? `Route context:
+\`\`\`json
+${JSON.stringify(routeDetails, null, 2)}
+\`\`\``
+            : undefined;
+          const stateVersion = await getSessionStateVersion(scopedResolved.key, agentId);
+          const rawStateChanges =
+            changesSince !== undefined
+              ? await listSessionStateEventsSince(scopedResolved.key, agentId, changesSince, 200)
+              : undefined;
+          const stateChanges = rawStateChanges
+            ? compactSessionStateChanges(rawStateChanges)
+            : undefined;
+          const capabilities = includeCapabilities
+            ? await resolveSessionCapabilities({
+                callGateway: gatewayCall,
+                agentId,
+                // The Gateway inventory resolves canonical keys, not legacy bare main aliases.
+                sessionKey: normalizeVisibilityTargetSessionKey(scopedResolved.key, agentId),
+              })
+            : undefined;
+          const extraBlocks = [
+            routeContextText,
+            stateChanges ? formatSessionStateChanges({ stateVersion, stateChanges }) : undefined,
+            capabilities ? formatSessionCapabilities(capabilities) : undefined,
+          ].filter((block): block is string => Boolean(block));
+          const visibleStatusText = [statusText, ...extraBlocks].join("\n\n");
+          const modelOverrideForResult =
+            modelRaw === undefined
+              ? undefined
+              : resultOverrideModel
+                ? resultOverrideProvider
+                  ? `${resultOverrideProvider}/${resultOverrideModel}`
+                  : resultOverrideModel
+                : null;
+
+          await assertStatusVisible();
+          return textResult(visibleStatusText, {
+            ok: true,
+            sessionKey: scopedResolved.key,
+            agentId,
+            changedModel,
+            stateVersion,
+            ...(stateChanges ? { stateChanges } : {}),
+            ...(modelRaw !== undefined
+              ? {
+                  model: resultOverrideModel ?? defaultModelForCard,
+                  ...((resultOverrideProvider ?? providerForCard)
+                    ? { modelProvider: resultOverrideProvider ?? providerForCard }
+                    : {}),
+                  modelOverride: modelOverrideForResult,
+                }
+              : {}),
+            statusText: visibleStatusText,
+            ...(capabilities ? { capabilities } : {}),
+            ...routeDetails,
+          });
+        },
+      });
+    }),
   };
 }

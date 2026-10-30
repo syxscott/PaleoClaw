@@ -1,454 +1,866 @@
+import { CHANNEL_APPROVAL_NATIVE_RUNTIME_CONTEXT_CAPABILITY } from "paleoclaw/plugin-sdk/approval-handler-adapter-runtime";
 import {
-  collectAllowlistProviderRestrictSendersWarnings,
-  formatAllowFromLowercase,
-} from "paleoclaw/plugin-sdk/compat";
-import type {
-  ChannelMessageActionName,
-  ChannelPlugin,
-  OpenClawConfig,
-} from "paleoclaw/plugin-sdk/msteams";
+  readPositiveIntegerParam,
+  resolveReactionMessageId,
+} from "paleoclaw/plugin-sdk/channel-actions";
+import type { ChannelMessageActionContext } from "paleoclaw/plugin-sdk/channel-contract";
+import { createChatChannelPlugin } from "paleoclaw/plugin-sdk/channel-core";
+import {
+  createAccountStatusSink,
+  createChannelMessageAdapterFromOutbound,
+  createRuntimeOutboundDelegates,
+} from "paleoclaw/plugin-sdk/channel-outbound";
+import { createPairingPrefixStripper } from "paleoclaw/plugin-sdk/channel-pairing";
+import { createConditionalWarningCollector } from "paleoclaw/plugin-sdk/channel-policy";
+import { registerChannelRuntimeContext } from "paleoclaw/plugin-sdk/channel-runtime-context";
+import {
+  createChannelDirectoryAdapter,
+  createRuntimeDirectoryLiveAdapter,
+} from "paleoclaw/plugin-sdk/directory-runtime";
+import { normalizeMessagePresentation } from "paleoclaw/plugin-sdk/interactive-runtime";
+import { createLazyRuntimeNamedExport } from "paleoclaw/plugin-sdk/lazy-runtime";
+import { createComputedAccountStatusAdapter } from "paleoclaw/plugin-sdk/status-helpers";
+import { normalizeOptionalString } from "paleoclaw/plugin-sdk/string-coerce-runtime";
+import { textResult } from "paleoclaw/plugin-sdk/tool-results";
+import { msteamsDirectoryContractPlugin } from "../directory-contract-api.js";
+import type { ChannelOutboundAdapter, ChannelPlugin } from "../runtime-api.js";
 import {
   buildProbeChannelStatusSummary,
-  buildRuntimeAccountStatusSnapshot,
-  buildChannelConfigSchema,
   createDefaultChannelRuntimeState,
   DEFAULT_ACCOUNT_ID,
-  MSTeamsConfigSchema,
   PAIRING_APPROVED_MESSAGE,
-} from "paleoclaw/plugin-sdk/msteams";
-import { listMSTeamsDirectoryGroupsLive, listMSTeamsDirectoryPeersLive } from "./directory-live.js";
-import { msteamsOnboardingAdapter } from "./onboarding.js";
-import { msteamsOutbound } from "./outbound.js";
+} from "../runtime-api.js";
+import {
+  resolveDefaultMSTeamsAccountId,
+  resolveMSTeamsAccount,
+  resolveMSTeamsAccountConfig,
+} from "./accounts.js";
+import { resolveActionContent, resolveActionUploadFilePath } from "./action-params.js";
+import {
+  actionError,
+  jsonActionResult,
+  jsonMSTeamsActionResult,
+  jsonMSTeamsConversationResult,
+  jsonMSTeamsOkActionResult,
+} from "./action-results.js";
+import {
+  extractMSTeamsToolSendResult,
+  msteamsContextTargetsMatch,
+  resolveMSTeamsAutoThreadId,
+} from "./action-threading.js";
+import {
+  isMSTeamsNativeApprovalClientEnabled,
+  msTeamsApprovalCapability,
+  shouldSuppressLocalMSTeamsExecApprovalPrompt,
+} from "./approval-native.js";
+import { collectMSTeamsSecurityWarnings, type ResolvedMSTeamsAccount } from "./channel-config.js";
+import { describeMSTeamsMessageTool } from "./channel-message-tool.js";
+import { msteamsSetupPlugin } from "./channel.setup.js";
+import { msteamsDoctor } from "./doctor.js";
+import {
+  MSTEAMS_GROUP_MANAGEMENT_ACTIONS,
+  withMSTeamsGraphMutationCurrentness,
+} from "./graph-action-context.js";
+import { msteamsOutboundConfig } from "./outbound-config.js";
 import { resolveMSTeamsGroupToolPolicy } from "./policy.js";
-import { probeMSTeams } from "./probe.js";
+import { buildMSTeamsPresentationCard } from "./presentation.js";
+import type { ProbeMSTeamsResult } from "./probe.js";
+import {
+  assertMSTeamsReadTargetAllowed,
+  assertMSTeamsTeamEnumerationAllowed,
+  isCurrentMSTeamsReadTarget,
+} from "./read-policy.js";
 import {
   normalizeMSTeamsMessagingTarget,
   normalizeMSTeamsUserInput,
+  looksLikeMSTeamsTargetId,
   parseMSTeamsConversationId,
   parseMSTeamsTeamChannelInput,
   resolveMSTeamsChannelAllowlist,
   resolveMSTeamsUserAllowlist,
 } from "./resolve-allowlist.js";
-import { sendAdaptiveCardMSTeams, sendMessageMSTeams } from "./send.js";
-import { resolveMSTeamsCredentials } from "./token.js";
-
-type ResolvedMSTeamsAccount = {
-  accountId: string;
-  enabled: boolean;
-  configured: boolean;
+import { inferMSTeamsTargetChatType, resolveMSTeamsOutboundSessionRoute } from "./session-route.js";
+const TEAMS_GRAPH_PERMISSION_HINTS: Record<string, string> = {
+  "ChannelMessage.Read.All": "channel history",
+  "Chat.Read.All": "chat history",
+  "Channel.ReadBasic.All": "channel list",
+  "Team.ReadBasic.All": "team list",
+  "TeamsActivity.Read.All": "teams activity",
+  "Sites.Read.All": "files (SharePoint)",
+  "Files.Read.All": "files (OneDrive)",
 };
 
-const meta = {
+const collectMSTeamsSecurityFindings = createConditionalWarningCollector.findings({
+  collectWarnings: collectMSTeamsSecurityWarnings,
+  checkId: "channels.msteams.groups.open",
+  severity: "warn",
+  title: "MS Teams security warning",
+});
+
+const loadMSTeamsChannelRuntime = createLazyRuntimeNamedExport(
+  () => import("./channel.runtime.js"),
+  "msTeamsChannelRuntime",
+);
+
+const MSTEAMS_REACTION_TYPES = ["like", "heart", "laugh", "surprised", "sad", "angry"] as const;
+
+function requireMSTeamsGroupManagementAuthorization(ctx: {
+  senderIsOwner?: boolean;
+  gatewayClientScopes?: readonly string[];
+}): ReturnType<typeof actionError> | null {
+  if (ctx.senderIsOwner === true || ctx.gatewayClientScopes?.includes("operator.admin")) {
+    return null;
+  }
+  return actionError(
+    "Microsoft Teams group management requires an owner or operator.admin requester.",
+  );
+}
+
+function resolveActionTarget(
+  params: Record<string, unknown>,
+  currentChannelId?: string | null,
+): string {
+  return typeof params.to === "string"
+    ? params.to.trim()
+    : typeof params.target === "string"
+      ? params.target.trim()
+      : (currentChannelId?.trim() ?? "");
+}
+
+function resolveGraphActionTarget(
+  params: Record<string, unknown>,
+  currentChannelId?: string | null,
+  currentGraphChannelId?: string | null,
+  currentChatType?: "direct" | "group" | "channel" | null,
+): string {
+  const explicitTarget = resolveActionTarget(params);
+  const currentChannelTarget = currentChannelId?.trim();
+  const currentGraphTarget = currentGraphChannelId?.trim();
+  if (explicitTarget) {
+    // Current-conversation aliases need the prepared Graph route, including
+    // targets materialized by core before plugin dispatch.
+    if (
+      currentChatType === "channel" &&
+      currentGraphTarget &&
+      currentChannelTarget &&
+      msteamsContextTargetsMatch(normalizeMSTeamsMessagingTarget(explicitTarget) ?? "", {
+        currentChannelId: currentChannelTarget,
+      })
+    ) {
+      return currentGraphTarget;
+    }
+    return explicitTarget;
+  }
+  if (currentGraphTarget) {
+    return currentGraphTarget;
+  }
+  return currentChatType === "channel" ? "" : (currentChannelTarget ?? "");
+}
+
+function resolveMSTeamsActionMessage(
+  ctx: Pick<ChannelMessageActionContext, "params" | "toolContext">,
+  to: string,
+  allowCurrentMessageIdFallback = false,
+): { messageId: string; threadRootId?: string } {
+  const canUseCurrentMessageId =
+    allowCurrentMessageIdFallback &&
+    msteamsContextTargetsMatch(to, {
+      currentChannelId: ctx.toolContext?.currentChannelId,
+      currentMessagingTarget:
+        normalizeOptionalString(ctx.toolContext?.currentGraphChannelId) ??
+        normalizeOptionalString(ctx.toolContext?.currentMessagingTarget),
+    });
+  const resolved = canUseCurrentMessageId
+    ? resolveReactionMessageId({
+        args: ctx.params,
+        toolContext: { currentMessageId: ctx.toolContext?.currentMessageId },
+      })
+    : (normalizeOptionalString(ctx.params.messageId) ?? "");
+  const messageId = resolved == null ? "" : String(resolved).trim();
+  // Graph addresses a channel reply only beneath its thread root. Carry the root for
+  // the current message; never infer one for another explicit message id.
+  const currentMessageId = ctx.toolContext?.currentMessageId;
+  const threadRootId =
+    canUseCurrentMessageId &&
+    ctx.toolContext?.currentChatType === "channel" &&
+    currentMessageId != null &&
+    messageId === String(currentMessageId).trim()
+      ? normalizeOptionalString(ctx.toolContext.currentThreadTs)
+      : undefined;
+  return { messageId, ...(threadRootId ? { threadRootId } : {}) };
+}
+
+const msteamsChannelOutbound: ChannelOutboundAdapter = {
+  ...msteamsOutboundConfig,
+  shouldSuppressLocalPayloadPrompt: ({ cfg, accountId, payload, hint }) =>
+    shouldSuppressLocalMSTeamsExecApprovalPrompt({ cfg, accountId, payload, hint }),
+  ...createRuntimeOutboundDelegates({
+    getRuntime: loadMSTeamsChannelRuntime,
+    renderPresentation: { resolve: (runtime) => runtime.msteamsOutbound.renderPresentation },
+    sendPayload: { resolve: (runtime) => runtime.msteamsOutbound.sendPayload },
+    sendText: { resolve: (runtime) => runtime.msteamsOutbound.sendText },
+    sendMedia: { resolve: (runtime) => runtime.msteamsOutbound.sendMedia },
+    sendPoll: { resolve: (runtime) => runtime.msteamsOutbound.sendPoll },
+  }),
+};
+
+const msteamsMessageAdapter = createChannelMessageAdapterFromOutbound({
   id: "msteams",
-  label: "Microsoft Teams",
-  selectionLabel: "Microsoft Teams (Bot Framework)",
-  docsPath: "/channels/msteams",
-  docsLabel: "msteams",
-  blurb: "Bot Framework; enterprise support.",
-  aliases: ["teams"],
-  order: 60,
-} as const;
-
-export const msteamsPlugin: ChannelPlugin<ResolvedMSTeamsAccount> = {
-  id: "msteams",
-  meta: {
-    ...meta,
-    aliases: [...meta.aliases],
-  },
-  onboarding: msteamsOnboardingAdapter,
-  pairing: {
-    idLabel: "msteamsUserId",
-    normalizeAllowEntry: (entry) => entry.replace(/^(msteams|user):/i, ""),
-    notifyApproval: async ({ cfg, id }) => {
-      await sendMessageMSTeams({
-        cfg,
-        to: id,
-        text: PAIRING_APPROVED_MESSAGE,
-      });
+  outbound: msteamsChannelOutbound,
+  live: {
+    capabilities: {
+      draftPreview: true,
+      previewFinalization: true,
+      progressUpdates: true,
+      nativeStreaming: true,
+    },
+    finalizer: {
+      capabilities: {
+        finalEdit: true,
+        normalFallback: true,
+        previewReceipt: true,
+      },
     },
   },
-  capabilities: {
-    chatTypes: ["direct", "channel", "thread"],
-    polls: true,
-    threads: true,
-    media: true,
-  },
-  agentPrompt: {
-    messageToolHints: () => [
-      "- Adaptive Cards supported. Use `action=send` with `card={type,version,body}` to send rich cards.",
-      "- MSTeams targeting: omit `target` to reply to the current conversation (auto-inferred). Explicit targets: `user:ID` or `user:Display Name` (requires Graph API) for DMs, `conversation:19:...@thread.tacv2` for groups/channels. Prefer IDs over display names for speed.",
-    ],
-  },
-  threading: {
-    buildToolContext: ({ context, hasRepliedRef }) => ({
-      currentChannelId: context.To?.trim() || undefined,
-      currentThreadTs: context.ReplyToId,
-      hasRepliedRef,
-    }),
-  },
-  groups: {
-    resolveToolPolicy: resolveMSTeamsGroupToolPolicy,
-  },
-  reload: { configPrefixes: ["channels.msteams"] },
-  configSchema: buildChannelConfigSchema(MSTeamsConfigSchema),
-  config: {
-    listAccountIds: () => [DEFAULT_ACCOUNT_ID],
-    resolveAccount: (cfg) => ({
-      accountId: DEFAULT_ACCOUNT_ID,
-      enabled: cfg.channels?.msteams?.enabled !== false,
-      configured: Boolean(resolveMSTeamsCredentials(cfg.channels?.msteams)),
-    }),
-    defaultAccountId: () => DEFAULT_ACCOUNT_ID,
-    setAccountEnabled: ({ cfg, enabled }) => ({
-      ...cfg,
-      channels: {
-        ...cfg.channels,
-        msteams: {
-          ...cfg.channels?.msteams,
-          enabled,
+});
+
+export const msteamsPlugin: ChannelPlugin<ResolvedMSTeamsAccount, ProbeMSTeamsResult> =
+  createChatChannelPlugin({
+    base: {
+      ...msteamsSetupPlugin,
+      streaming: {
+        blockStreamingCoalesceDefaults: { minChars: 1500, idleMs: 1000 },
+      },
+      agentPrompt: {
+        messageToolHints: () => [
+          "- Adaptive Cards supported. Use `action=send` with `card={type,version,body}` to send rich cards.",
+          "- MSTeams targeting: omit `target` to reply to the current conversation (auto-inferred). Explicit targets: `user:ID` or `user:Display Name` (requires Graph API) for DMs, `conversation:19:...@thread.tacv2` for groups/channels. Prefer IDs over display names for speed.",
+        ],
+      },
+      groups: {
+        resolveToolPolicy: resolveMSTeamsGroupToolPolicy,
+      },
+      approvalCapability: msTeamsApprovalCapability,
+      doctor: msteamsDoctor,
+      messaging: {
+        targetPrefixes: ["msteams", "teams"],
+        directTargetStyle: "user-prefixed",
+        normalizeTarget: normalizeMSTeamsMessagingTarget,
+        inferTargetChatType: ({ to }) => inferMSTeamsTargetChatType(to),
+        resolveOutboundSessionRoute: resolveMSTeamsOutboundSessionRoute,
+        targetResolver: {
+          looksLikeId: looksLikeMSTeamsTargetId,
+          hint: "<conversationId|user:ID|conversation:ID>",
         },
       },
-    }),
-    deleteAccount: ({ cfg }) => {
-      const next = { ...cfg } as OpenClawConfig;
-      const nextChannels = { ...cfg.channels };
-      delete nextChannels.msteams;
-      if (Object.keys(nextChannels).length > 0) {
-        next.channels = nextChannels;
-      } else {
-        delete next.channels;
-      }
-      return next;
-    },
-    isConfigured: (_account, cfg) => Boolean(resolveMSTeamsCredentials(cfg.channels?.msteams)),
-    describeAccount: (account) => ({
-      accountId: account.accountId,
-      enabled: account.enabled,
-      configured: account.configured,
-    }),
-    resolveAllowFrom: ({ cfg }) => cfg.channels?.msteams?.allowFrom ?? [],
-    formatAllowFrom: ({ allowFrom }) => formatAllowFromLowercase({ allowFrom }),
-    resolveDefaultTo: ({ cfg }) => cfg.channels?.msteams?.defaultTo?.trim() || undefined,
-  },
-  security: {
-    collectWarnings: ({ cfg }) => {
-      return collectAllowlistProviderRestrictSendersWarnings({
-        cfg,
-        providerConfigPresent: cfg.channels?.msteams !== undefined,
-        configuredGroupPolicy: cfg.channels?.msteams?.groupPolicy,
-        surface: "MS Teams groups",
-        openScope: "any member",
-        groupPolicyPath: "channels.msteams.groupPolicy",
-        groupAllowFromPath: "channels.msteams.groupAllowFrom",
-      });
-    },
-  },
-  setup: {
-    resolveAccountId: () => DEFAULT_ACCOUNT_ID,
-    applyAccountConfig: ({ cfg }) => ({
-      ...cfg,
-      channels: {
-        ...cfg.channels,
-        msteams: {
-          ...cfg.channels?.msteams,
-          enabled: true,
-        },
-      },
-    }),
-  },
-  messaging: {
-    normalizeTarget: normalizeMSTeamsMessagingTarget,
-    targetResolver: {
-      looksLikeId: (raw) => {
-        const trimmed = raw.trim();
-        if (!trimmed) {
-          return false;
-        }
-        if (/^conversation:/i.test(trimmed)) {
-          return true;
-        }
-        if (/^user:/i.test(trimmed)) {
-          // Only treat as ID if the value after user: looks like a UUID
-          const id = trimmed.slice("user:".length).trim();
-          return /^[0-9a-fA-F-]{16,}$/.test(id);
-        }
-        return trimmed.includes("@thread");
-      },
-      hint: "<conversationId|user:ID|conversation:ID>",
-    },
-  },
-  directory: {
-    self: async () => null,
-    listPeers: async ({ cfg, query, limit }) => {
-      const q = query?.trim().toLowerCase() || "";
-      const ids = new Set<string>();
-      for (const entry of cfg.channels?.msteams?.allowFrom ?? []) {
-        const trimmed = String(entry).trim();
-        if (trimmed && trimmed !== "*") {
-          ids.add(trimmed);
-        }
-      }
-      for (const userId of Object.keys(cfg.channels?.msteams?.dms ?? {})) {
-        const trimmed = userId.trim();
-        if (trimmed) {
-          ids.add(trimmed);
-        }
-      }
-      return Array.from(ids)
-        .map((raw) => raw.trim())
-        .filter(Boolean)
-        .map((raw) => normalizeMSTeamsMessagingTarget(raw) ?? raw)
-        .map((raw) => {
-          const lowered = raw.toLowerCase();
-          if (lowered.startsWith("user:")) {
-            return raw;
-          }
-          if (lowered.startsWith("conversation:")) {
-            return raw;
-          }
-          return `user:${raw}`;
-        })
-        .filter((id) => (q ? id.toLowerCase().includes(q) : true))
-        .slice(0, limit && limit > 0 ? limit : undefined)
-        .map((id) => ({ kind: "user", id }) as const);
-    },
-    listGroups: async ({ cfg, query, limit }) => {
-      const q = query?.trim().toLowerCase() || "";
-      const ids = new Set<string>();
-      for (const team of Object.values(cfg.channels?.msteams?.teams ?? {})) {
-        for (const channelId of Object.keys(team.channels ?? {})) {
-          const trimmed = channelId.trim();
-          if (trimmed && trimmed !== "*") {
-            ids.add(trimmed);
-          }
-        }
-      }
-      return Array.from(ids)
-        .map((raw) => raw.trim())
-        .filter(Boolean)
-        .map((raw) => raw.replace(/^conversation:/i, "").trim())
-        .map((id) => `conversation:${id}`)
-        .filter((id) => (q ? id.toLowerCase().includes(q) : true))
-        .slice(0, limit && limit > 0 ? limit : undefined)
-        .map((id) => ({ kind: "group", id }) as const);
-    },
-    listPeersLive: async ({ cfg, query, limit }) =>
-      listMSTeamsDirectoryPeersLive({ cfg, query, limit }),
-    listGroupsLive: async ({ cfg, query, limit }) =>
-      listMSTeamsDirectoryGroupsLive({ cfg, query, limit }),
-  },
-  resolver: {
-    resolveTargets: async ({ cfg, inputs, kind, runtime }) => {
-      const results = inputs.map((input) => ({
-        input,
-        resolved: false,
-        id: undefined as string | undefined,
-        name: undefined as string | undefined,
-        note: undefined as string | undefined,
-      }));
-      type ResolveTargetResultEntry = (typeof results)[number];
-      type PendingTargetEntry = { input: string; query: string; index: number };
-
-      const stripPrefix = (value: string) => normalizeMSTeamsUserInput(value);
-      const markPendingLookupFailed = (pending: PendingTargetEntry[]) => {
-        pending.forEach(({ index }) => {
-          const entry = results[index];
-          if (entry) {
-            entry.note = "lookup failed";
-          }
-        });
-      };
-      const resolvePending = async <T>(
-        pending: PendingTargetEntry[],
-        resolveEntries: (entries: string[]) => Promise<T[]>,
-        applyResolvedEntry: (target: ResolveTargetResultEntry, entry: T) => void,
-      ) => {
-        if (pending.length === 0) {
-          return;
-        }
-        try {
-          const resolved = await resolveEntries(pending.map((entry) => entry.query));
-          resolved.forEach((entry, idx) => {
-            const target = results[pending[idx]?.index ?? -1];
-            if (!target) {
-              return;
-            }
-            applyResolvedEntry(target, entry);
-          });
-        } catch (err) {
-          runtime.error?.(`msteams resolve failed: ${String(err)}`);
-          markPendingLookupFailed(pending);
-        }
-      };
-
-      if (kind === "user") {
-        const pending: PendingTargetEntry[] = [];
-        results.forEach((entry, index) => {
-          const trimmed = entry.input.trim();
-          if (!trimmed) {
-            entry.note = "empty input";
-            return;
-          }
-          const cleaned = stripPrefix(trimmed);
-          if (/^[0-9a-fA-F-]{16,}$/.test(cleaned) || cleaned.includes("@")) {
-            entry.resolved = true;
-            entry.id = cleaned;
-            return;
-          }
-          pending.push({ input: entry.input, query: cleaned, index });
-        });
-
-        await resolvePending(
-          pending,
-          (entries) => resolveMSTeamsUserAllowlist({ cfg, entries }),
-          (target, entry) => {
-            target.resolved = entry.resolved;
-            target.id = entry.id;
-            target.name = entry.name;
-            target.note = entry.note;
-          },
-        );
-
-        return results;
-      }
-
-      const pending: PendingTargetEntry[] = [];
-      results.forEach((entry, index) => {
-        const trimmed = entry.input.trim();
-        if (!trimmed) {
-          entry.note = "empty input";
-          return;
-        }
-        const conversationId = parseMSTeamsConversationId(trimmed);
-        if (conversationId !== null) {
-          entry.resolved = Boolean(conversationId);
-          entry.id = conversationId || undefined;
-          entry.note = conversationId ? "conversation id" : "empty conversation id";
-          return;
-        }
-        const parsed = parseMSTeamsTeamChannelInput(trimmed);
-        if (!parsed.team) {
-          entry.note = "missing team";
-          return;
-        }
-        const query = parsed.channel ? `${parsed.team}/${parsed.channel}` : parsed.team;
-        pending.push({ input: entry.input, query, index });
-      });
-
-      await resolvePending(
-        pending,
-        (entries) => resolveMSTeamsChannelAllowlist({ cfg, entries }),
-        (target, entry) => {
-          if (!entry.resolved || !entry.teamId) {
-            target.resolved = false;
-            target.note = entry.note;
-            return;
-          }
-          target.resolved = true;
-          if (entry.channelId) {
-            target.id = `${entry.teamId}/${entry.channelId}`;
-            target.name =
-              entry.channelName && entry.teamName
-                ? `${entry.teamName}/${entry.channelName}`
-                : (entry.channelName ?? entry.teamName);
-          } else {
-            target.id = entry.teamId;
-            target.name = entry.teamName;
-            target.note = "team id";
-          }
-          if (entry.note) {
-            target.note = entry.note;
-          }
-        },
-      );
-
-      return results;
-    },
-  },
-  actions: {
-    listActions: ({ cfg }) => {
-      const enabled =
-        cfg.channels?.msteams?.enabled !== false &&
-        Boolean(resolveMSTeamsCredentials(cfg.channels?.msteams));
-      if (!enabled) {
-        return [];
-      }
-      return ["poll"] satisfies ChannelMessageActionName[];
-    },
-    supportsCards: ({ cfg }) => {
-      return (
-        cfg.channels?.msteams?.enabled !== false &&
-        Boolean(resolveMSTeamsCredentials(cfg.channels?.msteams))
-      );
-    },
-    handleAction: async (ctx) => {
-      // Handle send action with card parameter
-      if (ctx.action === "send" && ctx.params.card) {
-        const card = ctx.params.card as Record<string, unknown>;
-        const to =
-          typeof ctx.params.to === "string"
-            ? ctx.params.to.trim()
-            : typeof ctx.params.target === "string"
-              ? ctx.params.target.trim()
-              : "";
-        if (!to) {
-          return {
-            isError: true,
-            content: [{ type: "text" as const, text: "Card send requires a target (to)." }],
-            details: { error: "Card send requires a target (to)." },
-          };
-        }
-        const result = await sendAdaptiveCardMSTeams({
-          cfg: ctx.cfg,
-          to,
-          card,
-        });
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: JSON.stringify({
-                ok: true,
-                channel: "msteams",
-                messageId: result.messageId,
-                conversationId: result.conversationId,
-              }),
-            },
-          ],
-          details: { ok: true, channel: "msteams", messageId: result.messageId },
-        };
-      }
-      // Return null to fall through to default handler
-      return null as never;
-    },
-  },
-  outbound: msteamsOutbound,
-  status: {
-    defaultRuntime: createDefaultChannelRuntimeState(DEFAULT_ACCOUNT_ID, { port: null }),
-    buildChannelSummary: ({ snapshot }) =>
-      buildProbeChannelStatusSummary(snapshot, {
-        port: snapshot.port ?? null,
+      message: msteamsMessageAdapter,
+      directory: createChannelDirectoryAdapter({
+        ...msteamsDirectoryContractPlugin.directory,
+        ...createRuntimeDirectoryLiveAdapter({
+          getRuntime: loadMSTeamsChannelRuntime,
+          listPeersLive: (runtime) => runtime.listMSTeamsDirectoryPeersLive,
+          listGroupsLive: (runtime) => runtime.listMSTeamsDirectoryGroupsLive,
+        }),
       }),
-    probeAccount: async ({ cfg }) => await probeMSTeams(cfg.channels?.msteams),
-    buildAccountSnapshot: ({ account, runtime, probe }) => ({
-      accountId: account.accountId,
-      enabled: account.enabled,
-      configured: account.configured,
-      ...buildRuntimeAccountStatusSnapshot({ runtime, probe }),
-      port: runtime?.port ?? null,
-    }),
-  },
-  gateway: {
-    startAccount: async (ctx) => {
-      const { monitorMSTeamsProvider } = await import("./index.js");
-      const port = ctx.cfg.channels?.msteams?.webhook?.port ?? 3978;
-      ctx.setStatus({ accountId: ctx.accountId, port });
-      ctx.log?.info(`starting provider (port ${port})`);
-      return monitorMSTeamsProvider({
-        cfg: ctx.cfg,
-        runtime: ctx.runtime,
-        abortSignal: ctx.abortSignal,
-      });
+      resolver: {
+        resolveTargets: async ({ cfg, accountId, inputs, kind, runtime }) => {
+          const results = inputs.map((input) => ({
+            input,
+            resolved: false,
+            id: undefined as string | undefined,
+            name: undefined as string | undefined,
+            note: undefined as string | undefined,
+          }));
+          type ResolveTargetResultEntry = (typeof results)[number];
+          const pending: { query: string; target: ResolveTargetResultEntry }[] = [];
+          for (const entry of results) {
+            const trimmed = entry.input.trim();
+            if (!trimmed) {
+              entry.note = "empty input";
+              continue;
+            }
+            if (kind === "user") {
+              const cleaned = normalizeMSTeamsUserInput(trimmed);
+              if (/^[0-9a-fA-F-]{16,}$/.test(cleaned) || cleaned.includes("@")) {
+                entry.resolved = true;
+                entry.id = cleaned;
+              } else {
+                pending.push({ query: cleaned, target: entry });
+              }
+              continue;
+            }
+            const conversationId = parseMSTeamsConversationId(trimmed);
+            if (conversationId !== null) {
+              entry.resolved = Boolean(conversationId);
+              entry.id = conversationId || undefined;
+              entry.note = conversationId ? "conversation id" : "empty conversation id";
+              continue;
+            }
+            const parsed = parseMSTeamsTeamChannelInput(trimmed);
+            if (!parsed.team) {
+              entry.note = "missing team";
+              continue;
+            }
+            const query = parsed.channel ? `${parsed.team}/${parsed.channel}` : parsed.team;
+            pending.push({ query, target: entry });
+          }
+          if (pending.length === 0) {
+            return results;
+          }
+          const entries = pending.map((entry) => entry.query);
+          try {
+            if (kind === "user") {
+              const resolved = await resolveMSTeamsUserAllowlist({ cfg, accountId, entries });
+              resolved.forEach((entry, index) => {
+                const target = pending[index]?.target;
+                if (target) {
+                  target.resolved = entry.resolved;
+                  target.id = entry.id;
+                  target.name = entry.name;
+                  target.note = entry.note;
+                }
+              });
+            } else {
+              const resolved = await resolveMSTeamsChannelAllowlist({ cfg, accountId, entries });
+              resolved.forEach((entry, index) => {
+                const target = pending[index]?.target;
+                if (!target) {
+                  return;
+                }
+                if (!entry.resolved || !entry.teamId) {
+                  target.resolved = false;
+                  target.note = entry.note;
+                  return;
+                }
+                target.resolved = true;
+                if (entry.channelId) {
+                  target.id = `${entry.teamId}/${entry.channelId}`;
+                  target.name =
+                    entry.channelName && entry.teamName
+                      ? `${entry.teamName}/${entry.channelName}`
+                      : (entry.channelName ?? entry.teamName);
+                } else {
+                  target.id = entry.teamId;
+                  target.name = entry.teamName;
+                  target.note = "team id";
+                }
+                if (entry.note) {
+                  target.note = entry.note;
+                }
+              });
+            }
+          } catch (err) {
+            runtime.error?.(`msteams resolve failed: ${String(err)}`);
+            for (const { target } of pending) {
+              target.note = "lookup failed";
+            }
+          }
+
+          return results;
+        },
+      },
+      actions: {
+        providerOwnedReadGates: true,
+        readAuthorityActions: [
+          "read",
+          "search",
+          "reactions",
+          "list-pins",
+          "member-info",
+          "channel-info",
+          "channel-list",
+        ],
+        describeMessageTool: describeMSTeamsMessageTool,
+        extractToolSendResult: ({ result }) => extractMSTeamsToolSendResult(result),
+        requiresTrustedRequesterSender: ({ action, toolContext }) =>
+          normalizeOptionalString(toolContext?.currentChannelProvider)?.toLowerCase() ===
+            "msteams" && MSTEAMS_GROUP_MANAGEMENT_ACTIONS.has(action),
+        handleAction: withMSTeamsGraphMutationCurrentness(async (ctx) => {
+          if (MSTEAMS_GROUP_MANAGEMENT_ACTIONS.has(ctx.action)) {
+            const authError = requireMSTeamsGroupManagementAuthorization(ctx);
+            if (authError) {
+              return authError;
+            }
+          }
+          const accountId = ctx.accountId ?? resolveDefaultMSTeamsAccountId(ctx.cfg);
+          const actionAccountId =
+            ctx.accountId ?? (accountId === DEFAULT_ACCOUNT_ID ? undefined : accountId);
+          const actionContext = { ...ctx, accountId };
+          const authorizeActionTarget = (target: string) =>
+            assertMSTeamsReadTargetAllowed({ cfg: ctx.cfg, ctx: actionContext, target });
+          const presentation =
+            ctx.action === "send"
+              ? normalizeMessagePresentation(ctx.params.presentation)
+              : undefined;
+          if (ctx.action === "send" && presentation) {
+            const card = buildMSTeamsPresentationCard({
+              presentation,
+              text: resolveActionContent(ctx.params),
+            });
+            const to = resolveActionTarget(ctx.params);
+            if (!to) {
+              return actionError("Card send requires a target (to).");
+            }
+            const { sendAdaptiveCardMSTeams } = await loadMSTeamsChannelRuntime();
+            const result = await sendAdaptiveCardMSTeams({
+              cfg: ctx.cfg,
+              accountId: actionAccountId,
+              to,
+              card,
+              assertDirectAdapterHandoff: ctx.assertDirectAdapterHandoff,
+              onPlatformSendDispatch: ctx.onPlatformSendDispatch,
+            });
+            return jsonActionResult({
+              ok: true,
+              channel: "msteams",
+              messageId: result.messageId,
+              conversationId: result.conversationId,
+            });
+          }
+          if (ctx.action === "upload-file") {
+            const mediaUrl = resolveActionUploadFilePath(ctx.params);
+            if (!mediaUrl) {
+              return actionError("Upload-file requires media, filePath, or path.");
+            }
+            const to = resolveActionTarget(ctx.params, ctx.toolContext?.currentChannelId);
+            if (!to) {
+              return actionError("Upload-file requires a target (to).");
+            }
+            const { sendMessageMSTeams } = await loadMSTeamsChannelRuntime();
+            const result = await sendMessageMSTeams({
+              cfg: ctx.cfg,
+              accountId: actionAccountId,
+              to,
+              text: resolveActionContent(ctx.params),
+              mediaUrl,
+              filename:
+                normalizeOptionalString(ctx.params.filename) ??
+                normalizeOptionalString(ctx.params.title),
+              mediaAccess: ctx.mediaAccess,
+              mediaLocalRoots: ctx.mediaLocalRoots,
+              mediaReadFile: ctx.mediaReadFile,
+              assertDirectAdapterHandoff: ctx.assertDirectAdapterHandoff,
+              onPlatformSendDispatch: ctx.onPlatformSendDispatch,
+            });
+            return jsonActionResult({
+              ok: true,
+              channel: "msteams",
+              action: "upload-file",
+              messageId: result.messageId,
+              conversationId: result.conversationId,
+              ...(result.pendingUploadId ? { pendingUploadId: result.pendingUploadId } : {}),
+            });
+          }
+          if (ctx.action === "edit" || ctx.action === "delete") {
+            const action = ctx.action;
+            const content = action === "edit" ? resolveActionContent(ctx.params) : "";
+            if (action === "edit" && !content) {
+              return actionError("Edit requires content.");
+            }
+            const target = resolveActionTarget(ctx.params, ctx.toolContext?.currentChannelId);
+            const messageId = normalizeOptionalString(ctx.params.messageId) ?? "";
+            if (!target || !messageId) {
+              return actionError(
+                `${action === "edit" ? "Edit" : "Delete"} requires a target (to) and messageId.`,
+              );
+            }
+            const to = await authorizeActionTarget(target);
+            const runtime = await loadMSTeamsChannelRuntime();
+            const params = { cfg: ctx.cfg, accountId: actionAccountId, to, activityId: messageId };
+            const result =
+              action === "edit"
+                ? await runtime.editMessageMSTeams({ ...params, text: content })
+                : await runtime.deleteMessageMSTeams(params);
+            return jsonMSTeamsConversationResult(result.conversationId);
+          }
+
+          // Normal message-tool search/member-info use channelId as their conversation filter.
+          const graphParams =
+            ctx.action === "search" || ctx.action === "member-info"
+              ? {
+                  ...ctx.params,
+                  to:
+                    resolveActionTarget(ctx.params) ||
+                    normalizeOptionalString(ctx.params.channelId),
+                }
+              : ctx.params;
+          const graphTo = resolveGraphActionTarget(
+            graphParams,
+            ctx.toolContext?.currentChannelId,
+            normalizeOptionalString(ctx.toolContext?.currentGraphChannelId) ??
+              normalizeOptionalString(ctx.toolContext?.currentMessagingTarget),
+            ctx.toolContext?.currentChatType,
+          );
+
+          if (ctx.action === "read" || ctx.action === "pin" || ctx.action === "reactions") {
+            const action = ctx.action;
+            const { messageId, threadRootId } = resolveMSTeamsActionMessage(
+              ctx,
+              graphTo,
+              action === "reactions",
+            );
+            if (!graphTo || !messageId) {
+              return actionError(
+                `${{ read: "Read", pin: "Pin", reactions: "Reactions" }[action]} requires a target (to) and messageId.`,
+              );
+            }
+            const to = await authorizeActionTarget(graphTo);
+            const runtime = await loadMSTeamsChannelRuntime();
+            const params = {
+              cfg: ctx.cfg,
+              accountId: actionAccountId,
+              to,
+              messageId,
+              threadRootId,
+            };
+            if (action === "read") {
+              const message = await runtime.getMessageMSTeams(params);
+              return jsonMSTeamsOkActionResult(action, { message });
+            }
+            if (action === "pin") {
+              return jsonMSTeamsActionResult(action, await runtime.pinMessageMSTeams(params));
+            }
+            return jsonMSTeamsOkActionResult(action, await runtime.listReactionsMSTeams(params));
+          }
+
+          if (ctx.action === "unpin") {
+            const pinnedMessageId =
+              typeof ctx.params.pinnedMessageId === "string"
+                ? ctx.params.pinnedMessageId.trim()
+                : (normalizeOptionalString(ctx.params.messageId) ?? "");
+            if (!graphTo || !pinnedMessageId) {
+              return actionError("Unpin requires a target (to) and pinnedMessageId.");
+            }
+            const to = await authorizeActionTarget(graphTo);
+            const { unpinMessageMSTeams } = await loadMSTeamsChannelRuntime();
+            const result = await unpinMessageMSTeams({
+              cfg: ctx.cfg,
+              accountId: actionAccountId,
+              to,
+              pinnedMessageId,
+            });
+            return jsonMSTeamsActionResult("unpin", result);
+          }
+
+          if (ctx.action === "list-pins") {
+            if (!graphTo) {
+              return actionError("List-pins requires a target (to).");
+            }
+            const to = await authorizeActionTarget(graphTo);
+            const { listPinsMSTeams } = await loadMSTeamsChannelRuntime();
+            const result = await listPinsMSTeams({ cfg: ctx.cfg, accountId: actionAccountId, to });
+            return jsonMSTeamsOkActionResult("list-pins", result);
+          }
+
+          if (ctx.action === "react") {
+            const { messageId, threadRootId } = resolveMSTeamsActionMessage(ctx, graphTo, true);
+            if (!graphTo || !messageId) {
+              return actionError("React requires a target (to) and messageId.");
+            }
+            const emoji = typeof ctx.params.emoji === "string" ? ctx.params.emoji.trim() : "";
+            const remove = typeof ctx.params.remove === "boolean" ? ctx.params.remove : false;
+            if (!emoji) {
+              return {
+                isError: true,
+                ...textResult(
+                  `React requires an emoji (reaction type). Valid types: ${MSTEAMS_REACTION_TYPES.join(", ")}.`,
+                  {
+                    error: "React requires an emoji (reaction type).",
+                    validTypes: [...MSTEAMS_REACTION_TYPES],
+                  },
+                ),
+              };
+            }
+            const to = await authorizeActionTarget(graphTo);
+            const runtime = await loadMSTeamsChannelRuntime();
+            const react = remove ? runtime.unreactMessageMSTeams : runtime.reactMessageMSTeams;
+            const result = await react({
+              cfg: ctx.cfg,
+              accountId: actionAccountId,
+              to,
+              messageId,
+              threadRootId,
+              reactionType: emoji,
+            });
+            return jsonMSTeamsActionResult("react", {
+              ...(remove ? { removed: true } : {}),
+              reactionType: emoji,
+              ...result,
+            });
+          }
+
+          if (ctx.action === "search") {
+            if (!graphTo) {
+              return actionError("Search requires a target (to).");
+            }
+            const to = await authorizeActionTarget(graphTo);
+            const query = normalizeOptionalString(ctx.params.query);
+            if (!query) {
+              return actionError("Search requires a target (to) and query.");
+            }
+            const limit = readPositiveIntegerParam(ctx.params, "limit");
+            const from = typeof ctx.params.from === "string" ? ctx.params.from.trim() : undefined;
+            const { searchMessagesMSTeams } = await loadMSTeamsChannelRuntime();
+            const result = await searchMessagesMSTeams({
+              cfg: ctx.cfg,
+              accountId: actionAccountId,
+              to,
+              query,
+              from: from || undefined,
+              limit,
+            });
+            return jsonMSTeamsOkActionResult("search", result);
+          }
+
+          if (ctx.action === "member-info") {
+            const userId = normalizeOptionalString(ctx.params.userId) ?? "";
+            if (!userId) {
+              return actionError("member-info requires a userId.");
+            }
+            if (!graphTo) {
+              return actionError("member-info requires a target (to).");
+            }
+            const to = await authorizeActionTarget(graphTo);
+            const currentRequesterId = isCurrentMSTeamsReadTarget({
+              ctx: actionContext,
+              target: to,
+            })
+              ? ctx.requesterSenderId
+              : undefined;
+            const { getMemberInfoMSTeams } = await loadMSTeamsChannelRuntime();
+            const result = await getMemberInfoMSTeams({
+              cfg: ctx.cfg,
+              accountId: actionAccountId,
+              to,
+              userId,
+              currentRequesterId,
+            });
+            return jsonMSTeamsOkActionResult("member-info", result);
+          }
+
+          if (ctx.action === "channel-list") {
+            const teamId = normalizeOptionalString(ctx.params.teamId) ?? "";
+            if (!teamId) {
+              return actionError("channel-list requires a teamId.");
+            }
+            const graphTeamId = await assertMSTeamsTeamEnumerationAllowed({
+              cfg: ctx.cfg,
+              ctx: actionContext,
+              teamId,
+            });
+            const { listChannelsMSTeams } = await loadMSTeamsChannelRuntime();
+            const result = await listChannelsMSTeams({
+              cfg: ctx.cfg,
+              accountId: actionAccountId,
+              teamId: graphTeamId,
+            });
+            return jsonMSTeamsOkActionResult("channel-list", result);
+          }
+
+          if (ctx.action === "channel-info") {
+            const teamId = normalizeOptionalString(ctx.params.teamId) ?? "";
+            const channelId = normalizeOptionalString(ctx.params.channelId) ?? "";
+            if (!teamId || !channelId) {
+              return actionError("channel-info requires teamId and channelId.");
+            }
+            const graphTarget = await authorizeActionTarget(`${teamId}/${channelId}`);
+            const [graphTeamId, graphChannelId] = graphTarget.split("/", 2);
+            if (!graphTeamId || !graphChannelId) {
+              throw new Error("Authorized Microsoft Teams channel target is invalid.");
+            }
+            const { getChannelInfoMSTeams } = await loadMSTeamsChannelRuntime();
+            const result = await getChannelInfoMSTeams({
+              cfg: ctx.cfg,
+              accountId: actionAccountId,
+              teamId: graphTeamId,
+              channelId: graphChannelId,
+            });
+            return jsonMSTeamsOkActionResult("channel-info", {
+              channelInfo: result.channel,
+            });
+          }
+
+          if (ctx.action === "addParticipant" || ctx.action === "removeParticipant") {
+            const action = ctx.action;
+            const userId = normalizeOptionalString(ctx.params.userId);
+            if (!userId) {
+              return actionError(`${action} requires a userId.`);
+            }
+            const to = resolveActionTarget(ctx.params, ctx.toolContext?.currentChannelId);
+            if (!to) {
+              return actionError(`${action} requires a target (to).`);
+            }
+            const role =
+              action === "addParticipant" ? normalizeOptionalString(ctx.params.role) : undefined;
+            const runtime = await loadMSTeamsChannelRuntime();
+            const params = { cfg: ctx.cfg, accountId: actionAccountId, to, userId };
+            const result =
+              action === "addParticipant"
+                ? await runtime.addParticipantMSTeams({ ...params, role })
+                : await runtime.removeParticipantMSTeams(params);
+            return jsonMSTeamsOkActionResult(action, result);
+          }
+
+          if (ctx.action === "renameGroup") {
+            const name = typeof ctx.params.name === "string" ? ctx.params.name.trim() : "";
+            if (!name) {
+              return actionError("renameGroup requires a name.");
+            }
+            const to = resolveActionTarget(ctx.params, ctx.toolContext?.currentChannelId);
+            if (!to) {
+              return actionError("renameGroup requires a target (to).");
+            }
+            const { renameGroupMSTeams } = await loadMSTeamsChannelRuntime();
+            const result = await renameGroupMSTeams({
+              cfg: ctx.cfg,
+              accountId: actionAccountId,
+              to,
+              name,
+            });
+            return jsonMSTeamsOkActionResult("renameGroup", result);
+          }
+
+          // Return null to fall through to default handler
+          return null as never;
+        }),
+      },
+      status: createComputedAccountStatusAdapter<ResolvedMSTeamsAccount, ProbeMSTeamsResult>({
+        defaultRuntime: createDefaultChannelRuntimeState(DEFAULT_ACCOUNT_ID, { port: null }),
+        buildChannelSummary: ({ snapshot }) =>
+          buildProbeChannelStatusSummary(snapshot, {
+            port: snapshot.port ?? null,
+          }),
+        probeAccount: async ({ account }) =>
+          await (
+            await loadMSTeamsChannelRuntime()
+          ).probeMSTeams(account.config, {
+            accountId: account.accountId,
+          }),
+        formatCapabilitiesProbe: ({ probe }) => {
+          const lines: Array<{ text: string; tone?: "error" }> = [];
+          const appId = normalizeOptionalString(probe?.appId);
+          if (appId) {
+            lines.push({ text: `App: ${appId}` });
+          }
+          const graph = probe?.graph;
+          if (graph) {
+            const roles = graph.roles ?? [];
+            const scopes = graph.scopes ?? [];
+            const formatPermission = (permission: string) => {
+              const hint = TEAMS_GRAPH_PERMISSION_HINTS[permission];
+              return hint ? `${permission} (${hint})` : permission;
+            };
+            if (!graph.ok) {
+              lines.push({ text: `Graph: ${graph.error ?? "failed"}`, tone: "error" });
+            } else if (roles.length > 0 || scopes.length > 0) {
+              if (roles.length > 0) {
+                lines.push({ text: `Graph roles: ${roles.map(formatPermission).join(", ")}` });
+              }
+              if (scopes.length > 0) {
+                lines.push({ text: `Graph scopes: ${scopes.map(formatPermission).join(", ")}` });
+              }
+            } else {
+              lines.push({ text: "Graph: ok" });
+            }
+          }
+          return lines;
+        },
+        resolveAccountSnapshot: ({ account }) => ({
+          accountId: account.accountId,
+          enabled: account.enabled,
+          configured: account.configured,
+          extra: {
+            tokenStatus: account.tokenStatus,
+          },
+        }),
+      }),
+      gateway: {
+        startAccount: async (ctx) => {
+          const { monitorMSTeamsProvider } = await import("./monitor.js");
+          const account = resolveMSTeamsAccount({ cfg: ctx.cfg, accountId: ctx.accountId });
+          const accountId = account.accountId;
+          const webhookPath = account.config.webhook?.path || "/api/messages";
+          const statusSink = createAccountStatusSink({ accountId, setStatus: ctx.setStatus });
+          ctx.log?.info(
+            "starting provider account " + accountId + " (Gateway route " + webhookPath + ")",
+          );
+          if (isMSTeamsNativeApprovalClientEnabled({ cfg: ctx.cfg, accountId })) {
+            registerChannelRuntimeContext({
+              channelRuntime: ctx.channelRuntime,
+              channelId: "msteams",
+              accountId,
+              capability: CHANNEL_APPROVAL_NATIVE_RUNTIME_CONTEXT_CAPABILITY,
+              context: {},
+              abortSignal: ctx.abortSignal,
+            });
+          }
+          return monitorMSTeamsProvider({
+            cfg: ctx.cfg,
+            accountId,
+            msteamsCfg: account.config,
+            runtime: ctx.runtime,
+            abortSignal: ctx.abortSignal,
+            statusSink,
+          });
+        },
+      },
     },
-  },
-};
+    security: {
+      collectWarnings: ({ cfg, accountId }) => collectMSTeamsSecurityFindings({ cfg, accountId }),
+    },
+    pairing: {
+      text: {
+        idLabel: "msteamsUserId",
+        message: PAIRING_APPROVED_MESSAGE,
+        normalizeAllowEntry: createPairingPrefixStripper(/^(msteams|user):/i),
+        notify: async ({ cfg, accountId, id, message }) => {
+          const { sendMessageMSTeams } = await loadMSTeamsChannelRuntime();
+          await sendMessageMSTeams({
+            cfg,
+            accountId,
+            to: id,
+            text: message,
+          });
+        },
+      },
+    },
+    threading: {
+      matchesToolContextTarget: ({ target, toolContext }) =>
+        msteamsContextTargetsMatch(target, toolContext),
+      buildToolContext: ({ context, hasRepliedRef }) => {
+        const nativeChannelId = context.NativeChannelId?.trim();
+        const hasChannelRoute = Boolean(nativeChannelId && nativeChannelId.includes("/"));
+        const isChannel = context.ChatType === "channel";
+        const messageThreadId =
+          context.MessageThreadId != null
+            ? normalizeOptionalString(String(context.MessageThreadId))
+            : undefined;
+        // Prefer MessageThreadId (root). ReplyToId fallback is channel-only — DM/group
+        // quote replies must not inherit ambient thread metadata for dedupe.
+        const currentThreadTs =
+          messageThreadId ?? (isChannel ? normalizeOptionalString(context.ReplyToId) : undefined);
+        return {
+          currentChannelId: normalizeOptionalString(context.To),
+          currentChatType:
+            context.ChatType === "direct" ||
+            context.ChatType === "group" ||
+            context.ChatType === "channel"
+              ? context.ChatType
+              : undefined,
+          currentMessagingTarget: hasChannelRoute ? nativeChannelId : undefined,
+          currentGraphChannelId: hasChannelRoute ? nativeChannelId : undefined,
+          currentThreadTs,
+          ...(currentThreadTs ? { replyToMode: "all" as const } : {}),
+          hasRepliedRef,
+        };
+      },
+      resolveAutoThreadId: ({ cfg, accountId, to, toolContext }) =>
+        resolveMSTeamsAutoThreadId({
+          cfg: resolveMSTeamsAccountConfig(cfg, accountId),
+          to,
+          toolContext,
+        }),
+    },
+    outbound: msteamsChannelOutbound,
+  });
+/* oxlint-disable max-lines -- TODO: split this grandfathered oversized file. */

@@ -1,5 +1,6 @@
 import { EventEmitter } from "node:events";
-import type { IncomingMessage } from "node:http";
+import { IncomingMessage, ServerResponse } from "node:http";
+import { Socket } from "node:net";
 import { describe, expect, it } from "vitest";
 import { createMockServerResponse } from "../test-utils/mock-http-response.js";
 import { createFixedWindowRateLimiter } from "./webhook-memory-guards.js";
@@ -10,63 +11,93 @@ import {
   isJsonContentType,
   readWebhookBodyOrReject,
   readJsonWebhookBodyOrReject,
+  runDetachedWebhookWork,
 } from "./webhook-request-guards.js";
 
 type MockIncomingMessage = IncomingMessage & {
   destroyed?: boolean;
   destroy: () => MockIncomingMessage;
+  pause: () => MockIncomingMessage;
 };
 
 function createMockRequest(params: {
   method?: string;
   headers?: Record<string, string>;
   chunks?: string[];
-  emitEnd?: boolean;
 }): MockIncomingMessage {
   const req = new EventEmitter() as MockIncomingMessage;
   req.method = params.method ?? "POST";
   req.headers = params.headers ?? {};
+  req.socket = new Socket();
   req.destroyed = false;
   req.destroy = (() => {
     req.destroyed = true;
     return req;
   }) as MockIncomingMessage["destroy"];
+  req.pause = (() => req) as MockIncomingMessage["pause"];
 
   if (params.chunks) {
     void Promise.resolve().then(() => {
       for (const chunk of params.chunks ?? []) {
         req.emit("data", Buffer.from(chunk, "utf-8"));
       }
-      if (params.emitEnd !== false) {
-        req.emit("end");
-      }
+      req.emit("end");
     });
   }
 
   return req;
 }
 
-describe("isJsonContentType", () => {
-  it("accepts application/json and +json suffixes", () => {
-    expect(isJsonContentType("application/json")).toBe(true);
-    expect(isJsonContentType("application/cloudevents+json; charset=utf-8")).toBe(true);
+async function readJsonBody(chunks: string[]) {
+  const req = createMockRequest({ chunks });
+  const res = createMockServerResponse();
+  return {
+    result: await readJsonWebhookBodyOrReject({
+      req,
+      res,
+      maxBytes: 1024,
+      emptyObjectOnEmpty: false,
+    }),
+    res,
+  };
+}
+
+function pipeline(
+  inFlightLimiter: ReturnType<typeof createWebhookInFlightLimiter>,
+  res = createMockServerResponse(),
+) {
+  return beginWebhookRequestPipelineOrReject({
+    req: createMockRequest({}),
+    res,
+    allowMethods: ["POST"],
+    inFlightLimiter,
+    inFlightKey: "ip:127.0.0.1",
+  });
+}
+
+async function admitted(run: () => Promise<boolean>) {
+  const { runWithGatewayHttpWorkAdmission } =
+    await import("../gateway/server/http-work-admission.js");
+  return runWithGatewayHttpWorkAdmission(
+    new ServerResponse(new IncomingMessage(new Socket())),
+    run,
+  );
+}
+
+const postAckDelay = () =>
+  new Promise<void>((resolve) => {
+    setTimeout(resolve, 25);
   });
 
-  it("rejects non-json media types", () => {
-    expect(isJsonContentType("text/plain")).toBe(false);
-    expect(isJsonContentType(undefined)).toBe(false);
-  });
+it("rejects missing media types", () => {
+  expect(isJsonContentType(undefined)).toBe(false);
 });
 
 describe("applyBasicWebhookRequestGuards", () => {
   it("rejects disallowed HTTP methods", () => {
     const req = createMockRequest({ method: "GET" });
     const res = createMockServerResponse();
-    const ok = applyBasicWebhookRequestGuards({
-      req,
-      res,
-      allowMethods: ["POST"],
-    });
+    const ok = applyBasicWebhookRequestGuards({ req, res, allowMethods: ["POST"] });
     expect(ok).toBe(false);
     expect(res.statusCode).toBe(405);
     expect(res.getHeader("allow")).toBe("POST");
@@ -78,36 +109,23 @@ describe("applyBasicWebhookRequestGuards", () => {
       maxRequests: 1,
       maxTrackedKeys: 10,
     });
-    const req1 = createMockRequest({ method: "POST" });
     const res1 = createMockServerResponse();
-    const req2 = createMockRequest({ method: "POST" });
     const res2 = createMockServerResponse();
-    expect(
+    const guard = (res: typeof res1, nowMs: number) =>
       applyBasicWebhookRequestGuards({
-        req: req1,
-        res: res1,
+        req: createMockRequest({}),
+        res,
         rateLimiter: limiter,
         rateLimitKey: "k",
-        nowMs: 1_000,
-      }),
-    ).toBe(true);
-    expect(
-      applyBasicWebhookRequestGuards({
-        req: req2,
-        res: res2,
-        rateLimiter: limiter,
-        rateLimitKey: "k",
-        nowMs: 1_001,
-      }),
-    ).toBe(false);
+        nowMs,
+      });
+    expect(guard(res1, 1_000)).toBe(true);
+    expect(guard(res2, 1_001)).toBe(false);
     expect(res2.statusCode).toBe(429);
   });
 
   it("rejects non-json requests when required", () => {
-    const req = createMockRequest({
-      method: "POST",
-      headers: { "content-type": "text/plain" },
-    });
+    const req = createMockRequest({ headers: { "content-type": "text/plain" } });
     const res = createMockServerResponse();
     const ok = applyBasicWebhookRequestGuards({
       req,
@@ -120,117 +138,124 @@ describe("applyBasicWebhookRequestGuards", () => {
 });
 
 describe("readJsonWebhookBodyOrReject", () => {
-  it("returns parsed JSON body", async () => {
-    const req = createMockRequest({ chunks: ['{"ok":true}'] });
-    const res = createMockServerResponse();
-    await expect(
-      readJsonWebhookBodyOrReject({
-        req,
-        res,
-        maxBytes: 1024,
-        emptyObjectOnEmpty: false,
-      }),
-    ).resolves.toEqual({ ok: true, value: { ok: true } });
-  });
-
-  it("preserves valid JSON null payload", async () => {
-    const req = createMockRequest({ chunks: ["null"] });
-    const res = createMockServerResponse();
-    await expect(
-      readJsonWebhookBodyOrReject({
-        req,
-        res,
-        maxBytes: 1024,
-        emptyObjectOnEmpty: false,
-      }),
-    ).resolves.toEqual({ ok: true, value: null });
-  });
-
-  it("writes 400 on invalid JSON payload", async () => {
-    const req = createMockRequest({ chunks: ["{bad json"] });
-    const res = createMockServerResponse();
-    await expect(
-      readJsonWebhookBodyOrReject({
-        req,
-        res,
-        maxBytes: 1024,
-        emptyObjectOnEmpty: false,
-      }),
-    ).resolves.toEqual({ ok: false });
-    expect(res.statusCode).toBe(400);
-    expect(res.body).toBe("Bad Request");
+  it.each([
+    ["parsed", '{"ok":true}', { ok: true, value: { ok: true } }, 200, undefined],
+    ["invalid", "{bad json", { ok: false }, 400, "Bad Request"],
+  ] as const)("handles %s JSON bodies", async (_name, chunk, expected, statusCode, body) => {
+    const { result, res } = await readJsonBody([chunk]);
+    expect(result).toEqual(expected);
+    expect(res.statusCode).toBe(statusCode);
+    expect(res.body).toBe(body);
   });
 });
 
-describe("readWebhookBodyOrReject", () => {
-  it("returns raw body contents", async () => {
-    const req = createMockRequest({ chunks: ["plain text"] });
-    const res = createMockServerResponse();
-    await expect(
-      readWebhookBodyOrReject({
-        req,
-        res,
-      }),
-    ).resolves.toEqual({ ok: true, value: "plain text" });
+it("returns raw webhook body contents", async () => {
+  const result = await readWebhookBodyOrReject({
+    req: createMockRequest({ chunks: ["plain text"] }),
+    res: createMockServerResponse(),
   });
-
-  it("enforces strict pre-auth default body limits", async () => {
-    const req = createMockRequest({
-      headers: { "content-length": String(70 * 1024) },
-    });
-    const res = createMockServerResponse();
-    await expect(
-      readWebhookBodyOrReject({
-        req,
-        res,
-        profile: "pre-auth",
-      }),
-    ).resolves.toEqual({ ok: false });
-    expect(res.statusCode).toBe(413);
-  });
+  expect(result).toEqual({ ok: true, value: "plain text" });
 });
 
 describe("beginWebhookRequestPipelineOrReject", () => {
-  it("enforces in-flight request limits and releases slots", () => {
-    const limiter = createWebhookInFlightLimiter({
-      maxInFlightPerKey: 1,
-      maxTrackedKeys: 10,
-    });
+  it.each([
+    ["non-finite defaults", Number.NaN, Number.NaN, 8],
+    ["explicit limits", 1, 10, 1],
+  ] as const)("enforces and releases %s", (_name, maxInFlightPerKey, maxTrackedKeys, capacity) => {
+    const limiter = createWebhookInFlightLimiter({ maxInFlightPerKey, maxTrackedKeys });
+    const releases: Array<() => void> = [];
+    try {
+      for (let index = 0; index < capacity; index += 1) {
+        const result = pipeline(limiter);
+        expect(result.ok).toBe(true);
+        if (result.ok) {
+          releases.push(result.release);
+        }
+      }
 
-    const first = beginWebhookRequestPipelineOrReject({
-      req: createMockRequest({ method: "POST" }),
-      res: createMockServerResponse(),
-      allowMethods: ["POST"],
-      inFlightLimiter: limiter,
-      inFlightKey: "ip:127.0.0.1",
-    });
-    expect(first.ok).toBe(true);
+      const overflowRes = createMockServerResponse();
+      const overflow = pipeline(limiter, overflowRes);
 
-    const secondRes = createMockServerResponse();
-    const second = beginWebhookRequestPipelineOrReject({
-      req: createMockRequest({ method: "POST" }),
-      res: secondRes,
-      allowMethods: ["POST"],
-      inFlightLimiter: limiter,
-      inFlightKey: "ip:127.0.0.1",
-    });
-    expect(second.ok).toBe(false);
-    expect(secondRes.statusCode).toBe(429);
-
-    if (first.ok) {
-      first.release();
+      expect(overflow.ok).toBe(false);
+      expect(overflowRes.statusCode).toBe(429);
+      releases.shift()?.();
+      const next = pipeline(limiter);
+      expect(next.ok).toBe(true);
+      if (next.ok) {
+        releases.push(next.release);
+      }
+    } finally {
+      for (const release of releases) {
+        release();
+      }
     }
+  });
+});
 
-    const third = beginWebhookRequestPipelineOrReject({
-      req: createMockRequest({ method: "POST" }),
-      res: createMockServerResponse(),
-      allowMethods: ["POST"],
-      inFlightLimiter: limiter,
-      inFlightKey: "ip:127.0.0.1",
+describe("runDetachedWebhookWork", () => {
+  it("defers the callback until the request handler can acknowledge", async () => {
+    const order: string[] = [];
+    const detached: Promise<void>[] = [];
+
+    await admitted(async () => {
+      detached.push(
+        runDetachedWebhookWork(async () => {
+          order.push("work");
+        }),
+      );
+      order.push("ack");
+      expect(order).toEqual(["ack"]);
+      return true;
     });
-    expect(third.ok).toBe(true);
-    if (third.ok) {
-      third.release();
+
+    await Promise.all(detached);
+    expect(order).toEqual(["ack", "work"]);
+  });
+
+  it.each([
+    ["detached", runDetachedWebhookWork, true],
+    ["inherited", (run: () => Promise<number>) => run(), false],
+  ] as const)("checks %s post-ack admission after request release", async (kind, run, allowed) => {
+    const { enqueueCommandInLane } = await import("../process/command-queue.js");
+    let continued: Promise<number> | undefined;
+    await admitted(async () => {
+      continued = run(async () => {
+        await postAckDelay();
+        return await enqueueCommandInLane(`${kind}-webhook-work-test`, async () => 42);
+      });
+      continued.catch(() => {});
+      return true;
+    });
+    if (allowed) {
+      await expect(continued).resolves.toBe(42);
+    } else {
+      await expect(continued).rejects.toThrow(
+        "Gateway is temporarily unavailable. Please try again shortly.",
+      );
     }
+  });
+
+  it("keeps tracked work accepted after the caller's async work scope closes", async () => {
+    const { AsyncWorkScope, captureAsyncWorkTracker } =
+      await import("../shared/async-work-scope.js");
+
+    const parentScope = new AsyncWorkScope();
+    let detached: Promise<string> | undefined;
+    await admitted(
+      async () =>
+        // Detached tracking must outlive the request's async work scope.
+        await parentScope.track(async () => {
+          detached = runDetachedWebhookWork(async () => {
+            const trackOwner = captureAsyncWorkTracker();
+            await postAckDelay();
+            return await trackOwner(async () => "tracked-after-close");
+          });
+          return true;
+        }),
+    );
+
+    parentScope.beginClose();
+    await parentScope.drain();
+    await expect(detached).resolves.toBe("tracked-after-close");
   });
 });

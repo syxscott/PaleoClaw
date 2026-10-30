@@ -1,0 +1,446 @@
+import path from "node:path";
+import { WebClient } from "@slack/web-api";
+import type { OpenClawConfig } from "paleoclaw/plugin-sdk/config-contracts";
+import { setRuntimeConfigSnapshot } from "paleoclaw/plugin-sdk/runtime-config-snapshot";
+import {
+  normalizeSessionDeliveryState,
+  upsertSessionEntry,
+} from "paleoclaw/plugin-sdk/session-store-runtime";
+import { useSessionStoreTempDirs } from "paleoclaw/plugin-sdk/sqlite-runtime-testing";
+import { afterAll, describe, expect, it, vi } from "vitest";
+import {
+  createArgMenusHarness,
+  createSlashCommand,
+  firstDispatchArg,
+  registerCommands,
+  setAsyncDispatchMock,
+} from "./slash.commands.test-harness.js";
+import { getSlackSlashMocks } from "./slash.test-harness.js";
+
+const { dispatchMock } = getSlackSlashMocks();
+
+function responseTexts(mock: ReturnType<typeof vi.fn>): unknown[] {
+  return mock.mock.calls.map(([payload]) =>
+    payload && typeof payload === "object" && !Array.isArray(payload)
+      ? (payload as { text?: unknown }).text
+      : undefined,
+  );
+}
+
+function createPolicyHarness(overrides?: {
+  channelId?: string;
+  channelName?: string;
+  allowFrom?: string[];
+  useAccessGroups?: boolean;
+  channelAllowed?: boolean;
+  slashEphemeral?: boolean;
+  slashCommandEnabled?: boolean;
+  teamId?: string;
+  installationIdentity?:
+    | { kind: "workspace"; teamId: string }
+    | { kind: "enterprise"; enterpriseId: string };
+  shouldDropMismatchedSlackEvent?: (body: unknown) => boolean;
+  resolveChannelName?: () => Promise<{ name?: string; type?: string }>;
+}) {
+  const commands = new Map<unknown, (args: unknown) => Promise<void>>();
+  const postMessage = vi.fn().mockResolvedValue({ ok: true, ts: "123.456" });
+  const postEphemeral = vi.fn().mockResolvedValue({ ok: true });
+  const listenerClient = { chat: { postMessage, postEphemeral } };
+  const runtimeError = vi.fn();
+  const installationIdentity = overrides?.installationIdentity ?? {
+    kind: "workspace" as const,
+    teamId: overrides?.teamId ?? "T1",
+  };
+  const boltContext =
+    installationIdentity.kind === "enterprise"
+      ? {
+          teamId: overrides?.teamId,
+          enterpriseId: installationIdentity.enterpriseId,
+          isEnterpriseInstall: true,
+        }
+      : { teamId: installationIdentity.teamId, isEnterpriseInstall: false };
+  const app = {
+    client: listenerClient,
+    command: (name: unknown, handler: (args: unknown) => Promise<void>) => {
+      commands.set(name, async (args) => {
+        const typed = args as { context?: Record<string, unknown>; client?: unknown };
+        await handler({
+          ...typed,
+          context: { ...boltContext, ...typed.context },
+          client: typed.client ?? listenerClient,
+        });
+      });
+    },
+  };
+
+  const channelId = overrides?.channelId ?? "C_UNLISTED";
+  const channelName = overrides?.channelName ?? "unlisted";
+
+  const ctx = {
+    cfg: { commands: { native: false } },
+    runtime: { error: runtimeError },
+    botToken: "bot-token",
+    botUserId: "bot",
+    teamId: installationIdentity.kind === "enterprise" ? "" : installationIdentity.teamId,
+    installationIdentity,
+    allowFrom: overrides?.allowFrom ?? ["*"],
+    dmEnabled: true,
+    dmPolicy: "open",
+    groupDmEnabled: false,
+    groupDmChannels: [],
+    defaultRequireMention: true,
+    groupPolicy: "open",
+    useAccessGroups: overrides?.useAccessGroups ?? true,
+    slashCommand: {
+      enabled: overrides?.slashCommandEnabled ?? true,
+      name: "paleoclaw",
+      ephemeral: overrides?.slashEphemeral ?? true,
+      sessionPrefix: "slack:slash",
+    },
+    textLimit: 4000,
+    app,
+    isChannelAllowed: vi.fn(() => overrides?.channelAllowed ?? true),
+    shouldDropMismatchedSlackEvent: (body: unknown) =>
+      overrides?.shouldDropMismatchedSlackEvent?.(body) ?? false,
+    resolveChannelName:
+      overrides?.resolveChannelName ?? (async () => ({ name: channelName, type: "channel" })),
+    resolveUserName: async () => ({ name: "Ada" }),
+  };
+
+  Object.assign(ctx, { readRuntimeContext: async () => ctx, isRuntimePolicyCurrent: () => true });
+  const account = { accountId: "acct", config: { commands: { native: false } } } as unknown;
+
+  return { commands, ctx, account, postMessage, runtimeError, channelId, channelName };
+}
+
+async function runSlashHandler(
+  harness: ReturnType<typeof createPolicyHarness>,
+  params: {
+    body?: unknown;
+    respond?: ReturnType<typeof vi.fn>;
+    command?: Partial<ReturnType<typeof createSlashCommand>>;
+  } = {},
+) {
+  const handler = [...harness.commands.values()][0];
+  if (!handler) {
+    throw new Error("Missing slash handler");
+  }
+
+  const respond = params.respond ?? vi.fn().mockResolvedValue(undefined);
+  const ack = vi.fn().mockResolvedValue(undefined);
+
+  await handler({
+    body: params.body,
+    command: createSlashCommand({
+      channel_id: harness.channelId,
+      channel_name: harness.channelName,
+      text: "hello",
+      ...params.command,
+    }),
+    ack,
+    respond,
+  });
+
+  return { respond, ack };
+}
+
+async function registerAndRunPolicySlash(
+  harness: ReturnType<typeof createPolicyHarness>,
+  params: Parameters<typeof runSlashHandler>[1] = {},
+) {
+  await registerCommands(harness.ctx, harness.account);
+  return runSlashHandler(harness, params);
+}
+
+function expectBlockedResponse(respond: ReturnType<typeof vi.fn>, text: string) {
+  expect(dispatchMock).not.toHaveBeenCalled();
+  expect(respond).toHaveBeenCalledWith({ text, response_type: "ephemeral" });
+}
+
+async function dispatchPublicAnswer(params: unknown) {
+  const { dispatcherOptions } = params as {
+    dispatcherOptions: {
+      deliver: (payload: { text: string }, info: { kind: "final" }) => Promise<void>;
+    };
+  };
+  await dispatcherOptions.deliver({ text: "public answer" }, { kind: "final" });
+  return { counts: { final: 1, tool: 0, block: 0 } };
+}
+
+describe("Slack App Home command presentation", () => {
+  it("omits the single command when slash commands are disabled", async () => {
+    const harness = createPolicyHarness({ slashCommandEnabled: false });
+    await expect(registerCommands(harness.ctx, harness.account)).resolves.toEqual({
+      mode: "disabled",
+    });
+    expect(harness.commands.size).toBe(0);
+  });
+
+  it("omits the single command when native commands take precedence", async () => {
+    const harness = createArgMenusHarness();
+    await expect(registerCommands(harness.ctx, harness.account)).resolves.toEqual({
+      mode: "native",
+    });
+    expect(harness.commands.size).toBeGreaterThan(0);
+  });
+});
+
+describe("slack slash commands channel policy", () => {
+  it("drops mismatched slash payloads before dispatch", async () => {
+    const harness = createPolicyHarness({ shouldDropMismatchedSlackEvent: () => true });
+    const { respond, ack } = await registerAndRunPolicySlash(harness, {
+      body: {
+        api_app_id: "A_MISMATCH",
+        team_id: "T_MISMATCH",
+      },
+    });
+
+    expect(ack).toHaveBeenCalledTimes(1);
+    expect(dispatchMock).not.toHaveBeenCalled();
+    expect(respond).not.toHaveBeenCalled();
+  });
+
+  it.each([true, false])("honors monitor channel admission: allowed=%s", async (allowed) => {
+    const harness = createPolicyHarness({ channelAllowed: allowed });
+    const { respond } = await registerAndRunPolicySlash(harness);
+    expect(harness.ctx.isChannelAllowed).toHaveBeenCalledWith({
+      teamId: "T1",
+      channelId: "C_UNLISTED",
+      channelName: "unlisted",
+      channelType: "channel",
+    });
+    if (!allowed) {
+      expectBlockedResponse(respond, "This channel is not allowed.");
+      return;
+    }
+    expect(dispatchMock).toHaveBeenCalledTimes(1);
+    expect(responseTexts(respond)).not.toContain("This channel is not allowed.");
+  });
+});
+
+describe("slack slash commands access groups", () => {
+  it("still treats D-prefixed channel ids as DMs when lookup fails", async () => {
+    const harness = createPolicyHarness({
+      allowFrom: ["*"],
+      channelId: "D123",
+      channelName: "notdirectmessage",
+      resolveChannelName: async () => ({}),
+    });
+    const { respond } = await registerAndRunPolicySlash(harness);
+    expect(dispatchMock).toHaveBeenCalledTimes(1);
+    expect(responseTexts(respond)).not.toContain("You are not authorized to use this command.");
+    expect(firstDispatchArg().ctx?.CommandAuthorized).toBe(true);
+  });
+
+  it.each([
+    { userId: "U_ATTACKER", allowed: false },
+    { userId: "U_OWNER", allowed: true },
+  ])("authorizes MPIM sender $userId: $allowed", async ({ userId, allowed }) => {
+    const harness = createPolicyHarness({
+      allowFrom: ["U_OWNER"],
+      channelId: "G_MPIM",
+      channelName: "group-dm",
+      resolveChannelName: async () => ({ name: "group-dm", type: "mpim" }),
+      ...(!allowed ? { useAccessGroups: false } : {}),
+    });
+    const { respond } = await registerAndRunPolicySlash(harness, {
+      command: { user_id: userId },
+    });
+
+    if (!allowed) {
+      expectBlockedResponse(respond, "You are not authorized to use this command here.");
+      return;
+    }
+    expect(dispatchMock).toHaveBeenCalledTimes(1);
+    expect(responseTexts(respond)).not.toContain(
+      "You are not authorized to use this command here.",
+    );
+    expect(firstDispatchArg().ctx).toMatchObject({
+      ChatType: "group",
+      From: "slack:group:G_MPIM",
+    });
+  });
+
+  it("enforces access-group gating when lookup fails for private channels", async () => {
+    const harness = createPolicyHarness({
+      allowFrom: [],
+      channelId: "G123",
+      channelName: "private",
+      resolveChannelName: async () => ({}),
+    });
+    const { respond } = await registerAndRunPolicySlash(harness);
+    expectBlockedResponse(respond, "You are not authorized to use this command.");
+  });
+});
+
+describe("slack slash command session metadata", () => {
+  const tempDirs = useSessionStoreTempDirs(afterAll, "slack-threaded-stop-");
+  const { deliverSlackSlashRepliesMock, resolveAgentRouteMock } = getSlackSlashMocks();
+
+  it("routes threaded native Stop to the ordinary DM parent after a policy reload", async () => {
+    const { createInboundSlackTestContext, createSlackTestAccount } =
+      await import("./message-handler/prepare.test-helpers.js");
+    const { createSlackCommandHandler } = await import("./slash.js");
+    const storePath = path.join(tempDirs.make(), "sessions.sqlite");
+    const cfg: OpenClawConfig = {
+      session: { store: storePath },
+      channels: { slack: { dmPolicy: "open", allowFrom: ["*"] } },
+    };
+    setRuntimeConfigSnapshot(cfg, cfg);
+    const client = new WebClient("xoxb-synthetic");
+    vi.spyOn(client.conversations, "replies").mockResolvedValue({ ok: true, messages: [] });
+    const ctx = createInboundSlackTestContext({ cfg, appClient: client });
+    ctx.resolveChannelName = async () => ({ name: "directmessage", type: "im" });
+    ctx.resolveUserName = async () => ({ name: "Ada" });
+    ctx.runtime.error = vi.fn();
+    const handleCommand = createSlackCommandHandler({ ctx, account: createSlackTestAccount() });
+    await upsertSessionEntry({
+      agentId: "main",
+      storePath,
+      sessionKey: "agent:main:main",
+      entry: {
+        sessionId: "ordinary-dm",
+        updatedAt: Date.now(),
+        chatType: "direct",
+        delivery: normalizeSessionDeliveryState({
+          context: { channel: "slack", accountId: "default", to: "U1" },
+        }),
+      },
+    });
+    const reloaded: OpenClawConfig = {
+      ...cfg,
+      channels: { slack: { ...cfg.channels?.slack, textChunkLimit: 24 } },
+    };
+    setRuntimeConfigSnapshot(reloaded, reloaded);
+    const admitted = await handleCommand({
+      command: createSlashCommand({ channel_id: "D123" }),
+      threadTs: "170.111",
+      eventTs: "171.222",
+      builtInCommand: "stop",
+      prompt: "/stop",
+      ack: vi.fn(),
+      respond: vi.fn(),
+    });
+    expect(ctx.runtime.error).not.toHaveBeenCalled();
+    expect(admitted).toBe(true);
+    expect(dispatchMock).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({
+        cfg: reloaded,
+        ctx: expect.objectContaining({
+          CommandBody: "/stop",
+          CommandTargetSessionKey: "agent:main:main",
+          MessageThreadId: "170.111",
+        }),
+      }),
+    );
+  });
+
+  it("refreshes slash routing and access policy between invocations", async () => {
+    const { createInboundSlackTestContext } =
+      await import("./message-handler/prepare.test-helpers.js");
+    const harness = createPolicyHarness({
+      channelId: "D123",
+      channelName: "directmessage",
+      resolveChannelName: async () => ({ name: "directmessage", type: "im" }),
+    });
+    const sourceCfg: OpenClawConfig = {
+      ...harness.ctx.cfg,
+      channels: { slack: { dmPolicy: "open", allowFrom: ["*"] } },
+    };
+    setRuntimeConfigSnapshot(sourceCfg, sourceCfg);
+    const ctx = createInboundSlackTestContext({ cfg: sourceCfg, accountId: "acct" });
+    Object.assign(ctx.app, harness.ctx.app);
+    ctx.resolveChannelName = async () => ({ name: "directmessage", type: "im" });
+    ctx.resolveUserName = harness.ctx.resolveUserName;
+    ctx.slashCommand = harness.ctx.slashCommand;
+    const runtimeCfg = {
+      ...sourceCfg,
+      session: { dmScope: "per-channel-peer" },
+    } as OpenClawConfig;
+    resolveAgentRouteMock.mockImplementation((params: { cfg: OpenClawConfig }) => ({
+      agentId: "main",
+      accountId: "acct",
+      sessionKey:
+        params.cfg.session?.dmScope === "per-channel-peer"
+          ? "agent:main:slack:direct:U1"
+          : "agent:main:main",
+    }));
+    await registerCommands(ctx, harness.account);
+    const run = () => runSlashHandler(harness);
+    await run();
+    setRuntimeConfigSnapshot(runtimeCfg, runtimeCfg);
+    await run();
+    expect(dispatchMock.mock.calls.map(([turn]) => turn.ctx.CommandTargetSessionKey)).toEqual([
+      "agent:main:main",
+      "agent:main:slack:direct:U1",
+    ]);
+    const disabled: OpenClawConfig = {
+      ...runtimeCfg,
+      channels: { slack: { dmPolicy: "disabled" } },
+    };
+    setRuntimeConfigSnapshot(disabled, disabled);
+    await run();
+    expect(dispatchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("partitions Enterprise Grid slash sessions and replies by event team", async () => {
+    const harness = createPolicyHarness({
+      slashEphemeral: false,
+      installationIdentity: { kind: "enterprise", enterpriseId: "EGRID" },
+      teamId: "TGRID1",
+      channelId: "CGRID1",
+      channelName: "grid",
+    });
+    await registerAndRunPolicySlash(harness);
+    expect(resolveAgentRouteMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        teamId: "TGRID1",
+        peer: { kind: "channel", id: "team:TGRID1:channel:CGRID1" },
+      }),
+    );
+    expect(firstDispatchArg().ctx).toMatchObject({
+      From: "slack:channel:team:TGRID1:channel:CGRID1",
+      To: "slash:team:TGRID1:user:U1",
+      GroupSpace: "TGRID1",
+      OriginatingTo: "team:TGRID1:channel:CGRID1",
+      SessionKey: expect.stringContaining("team:tgrid1:user:u1"),
+    });
+  });
+
+  it("targets the channel for public slash reply hooks", async () => {
+    setAsyncDispatchMock(dispatchPublicAnswer);
+    const harness = createPolicyHarness({ slashEphemeral: false });
+    await registerAndRunPolicySlash(harness);
+    expect(firstDispatchArg().ctx?.OriginatingTo).toBe(`channel:${harness.channelId}`);
+    expect(deliverSlackSlashRepliesMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        messageSentHookTarget: `channel:${harness.channelId}`,
+        isGroup: true,
+        groupId: harness.channelId,
+      }),
+    );
+  });
+
+  it("fails a public Web API fallback that returns no message timestamp", async () => {
+    deliverSlackSlashRepliesMock.mockImplementation(async (params: unknown) => {
+      const { responseBudget } = params as {
+        responseBudget: {
+          respond: (payload: { text: string; response_type: "in_channel" }) => Promise<unknown>;
+        };
+      };
+      await responseBudget.respond({ text: "public answer", response_type: "in_channel" });
+    });
+    setAsyncDispatchMock(dispatchPublicAnswer);
+    const harness = createPolicyHarness({ slashEphemeral: false });
+    harness.postMessage.mockResolvedValueOnce({ ok: true, channel: harness.channelId });
+    const respondError = Object.assign(new Error("response URL expired"), {
+      code: "slack_bolt_respond_error",
+    });
+    const respond = vi.fn().mockRejectedValue(respondError);
+    await registerAndRunPolicySlash(harness, { respond });
+    expect(harness.postMessage).toHaveBeenCalledOnce();
+    expect(harness.runtimeError).toHaveBeenCalledWith(
+      expect.stringContaining("Slack chat.postMessage returned no message timestamp"),
+    );
+  });
+});

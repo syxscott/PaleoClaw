@@ -1,0 +1,23 @@
+{
+  "name": "@paleoclaw/document-extract-plugin",
+  "version": "2026.10.5",
+  "private": true,
+  "description": "paleoclaw local document extraction plugin",
+  "type": "module",
+  "dependencies": {
+    "clawpdf": "0.3.2"
+  },
+  "devDependencies": {
+    "@paleoclaw/plugin-sdk": "workspace:*"
+  },
+  "paleoclaw": {
+    "build": {
+      "workerEntries": [
+        "./document-extractor.worker.ts"
+      ]
+    },
+    "extensions": [
+      "./index.ts"
+    ]
+  }
+}

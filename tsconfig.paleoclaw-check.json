@@ -1,0 +1,18 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "noEmitOnError": false,
+    "declaration": false,
+    "declarationMap": false,
+    "composite": false
+  },
+  "include": [
+    "src/paleoclaw/**/*.ts",
+    "src/plugin-sdk/**/*.ts",
+    "extensions/qqbot/**/*.ts",
+    "extensions/wecom/**/*.ts",
+    "extensions/weixin/**/*.ts"
+  ],
+  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.e2e.test.ts", "**/*.live.test.ts"]
+}

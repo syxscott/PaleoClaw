@@ -1,31 +1,133 @@
+import { expectDefined } from "@paleoclaw/normalization-core";
+import {
+  findMarkdownCodeRegions as findCodeRegions,
+  parseMarkdownOwnership,
+} from "../../../packages/markdown-core/src/reasoning-tags.js";
+
+export { findCodeRegions };
+
+/** Public range inputs need only offsets; parser-owned metadata belongs to discovered regions. */
 export interface CodeRegion {
   start: number;
   end: number;
 }
 
-export function findCodeRegions(text: string): CodeRegion[] {
-  const regions: CodeRegion[] = [];
-
-  const fencedRe = /(^|\n)(```|~~~)[^\n]*\n[\s\S]*?(?:\n\2(?:\n|$)|$)/g;
-  for (const match of text.matchAll(fencedRe)) {
-    const start = (match.index ?? 0) + match[1].length;
-    regions.push({ start, end: start + match[0].length - match[1].length });
-  }
-
-  const inlineRe = /`+[^`]+`+/g;
-  for (const match of text.matchAll(inlineRe)) {
-    const start = match.index ?? 0;
-    const end = start + match[0].length;
-    const insideFenced = regions.some((r) => start >= r.start && end <= r.end);
-    if (!insideFenced) {
-      regions.push({ start, end });
+/** Index nonempty native parts using the visible text owner's newline separator. */
+export function indexTextParts(parts: readonly string[]) {
+  const spans: Array<{ index: number; start: number; end: number }> = [];
+  const texts: string[] = [];
+  let offset = 0;
+  parts.forEach((part, index) => {
+    if (!part) {
+      return;
     }
-  }
+    if (spans.length) {
+      offset += 1;
+    }
+    const start = offset;
+    texts.push(part);
+    offset += part.length;
+    spans.push({ index, start, end: offset });
+  });
+  return { text: texts.join("\n"), spans };
+}
 
-  regions.sort((a, b) => a.start - b.start);
-  return regions;
+/** One canonical code scan for a stage's immutable native text parts. */
+export function createTextPartCodeRegionResolver(parts: readonly string[]) {
+  const source = indexTextParts(parts);
+  const spans = new Map(source.spans.map((span) => [span.index, span]));
+  let regions: ReturnType<typeof findCodeRegions> | undefined;
+  return (index: number): ReturnType<typeof findCodeRegions> => {
+    const span = spans.get(index);
+    if (!span) {
+      return [];
+    }
+    regions ??= findCodeRegions(source.text);
+    let low = 0;
+    let high = regions.length;
+    while (low < high) {
+      const middle = (low + high) >>> 1;
+      if (expectDefined(regions[middle], "indexed code region").end <= span.start) {
+        low = middle + 1;
+      } else {
+        high = middle;
+      }
+    }
+    const result: ReturnType<typeof findCodeRegions> = [];
+    for (let at = low; at < regions.length; at++) {
+      const region = expectDefined(regions[at], "projected code region");
+      if (region.start >= span.end) {
+        break;
+      }
+      result.push({
+        start: Math.max(0, region.start - span.start),
+        end: Math.min(span.end, region.end) - span.start,
+        block: region.block,
+      });
+    }
+    return result;
+  };
+}
+
+/** Canonical code ranges, stable-prefix boundary, and completed top-level paragraphs. */
+export function findCodeOwnership(
+  text: string,
+  options?: Parameters<typeof parseMarkdownOwnership>[1],
+) {
+  const { regions, retainStart, completedParagraphs, paragraphs, definitions } =
+    parseMarkdownOwnership(text, options);
+  return {
+    regions,
+    retainStart,
+    completedParagraphs,
+    definitions,
+    ...(paragraphs ? { paragraphs } : {}),
+  };
 }
 
 export function isInsideCode(pos: number, regions: CodeRegion[]): boolean {
-  return regions.some((r) => pos >= r.start && pos < r.end);
+  return regions.some((region) => pos >= region.start && pos < region.end);
+}
+
+/** Appends cannot revoke block code after its opening line; inline ownership can change. */
+export function isInsideSettledBlockCode(
+  pos: number,
+  text: string,
+  regions: ReturnType<typeof findCodeRegions>,
+): boolean {
+  return regions.some(
+    (region) =>
+      region.block &&
+      region.start <= pos &&
+      pos < region.end &&
+      /[\r\n]/.test(text.slice(region.start, pos)),
+  );
+}
+
+/** Removes control lines while retaining literal code and original line endings. */
+export function stripLinesOutsideCode(
+  text: string,
+  shouldStrip: (line: string) => boolean,
+): string {
+  return projectLinesOutsideCode(text, shouldStrip, 0).text;
+}
+
+export function projectLinesOutsideCode(
+  text: string,
+  shouldStrip: (line: string) => boolean,
+  retainStart: number,
+) {
+  let regions: CodeRegion[] | undefined;
+  let retainedOutputStart = retainStart;
+  const projected = text.replace(/[^\n]*(?:\n|$)/g, (raw: string, offset: number) => {
+    const line = raw.endsWith("\n") ? raw.slice(0, -1).replace(/\r$/, "") : raw;
+    if (!shouldStrip(line) || isInsideCode(offset, (regions ??= findCodeRegions(text)))) {
+      return raw;
+    }
+    if (offset < retainStart) {
+      retainedOutputStart -= raw.length;
+    }
+    return "";
+  });
+  return { text: projected, retainStart, retainedOutputStart };
 }

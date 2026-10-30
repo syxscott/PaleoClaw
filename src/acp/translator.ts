@@ -1,127 +1,141 @@
-import { randomUUID } from "node:crypto";
 import type {
   Agent,
   AgentSideConnection,
-  AuthenticateRequest,
-  AuthenticateResponse,
-  CancelNotification,
   InitializeRequest,
   InitializeResponse,
-  ListSessionsRequest,
-  ListSessionsResponse,
-  LoadSessionRequest,
-  LoadSessionResponse,
-  NewSessionRequest,
-  NewSessionResponse,
-  PromptRequest,
-  PromptResponse,
-  SetSessionModeRequest,
-  SetSessionModeResponse,
-  StopReason,
 } from "@agentclientprotocol/sdk";
-import { PROTOCOL_VERSION } from "@agentclientprotocol/sdk";
+import { createInMemorySessionStore, type AcpSessionStore } from "@paleoclaw/acp-core/session";
+import type { AcpServerOptions } from "@paleoclaw/acp-core/types";
+import { resolveIntegerOption } from "@paleoclaw/normalization-core/number-coercion";
+import type { EventFrame } from "../../packages/gateway-protocol/src/index.js";
 import type { GatewayClient } from "../gateway/client.js";
-import type { EventFrame } from "../gateway/protocol/index.js";
-import type { SessionsListResult } from "../gateway/session-utils.js";
-import {
-  createFixedWindowRateLimiter,
-  type FixedWindowRateLimiter,
-} from "../infra/fixed-window-rate-limit.js";
-import { shortenHomePath } from "../utils.js";
-import { getAvailableCommands } from "./commands.js";
-import {
-  extractAttachmentsFromPrompt,
-  extractTextFromPrompt,
-  formatToolTitle,
-  inferToolKind,
-} from "./event-mapper.js";
-import { readBool, readNumber, readString } from "./meta.js";
-import { parseSessionMeta, resetSessionIfNeeded, resolveSessionKey } from "./session-mapper.js";
-import { defaultAcpSessionStore, type AcpSessionStore } from "./session.js";
-import { ACP_AGENT_INFO, type AcpServerOptions } from "./types.js";
-
-// Maximum allowed prompt size (2MB) to prevent DoS via memory exhaustion (CWE-400, GHSA-cxpw-2g23-2vgw)
-const MAX_PROMPT_BYTES = 2 * 1024 * 1024;
-
-type PendingPrompt = {
-  sessionId: string;
-  sessionKey: string;
-  idempotencyKey: string;
-  resolve: (response: PromptResponse) => void;
-  reject: (err: Error) => void;
-  sentTextLength?: number;
-  sentText?: string;
-  toolCalls?: Set<string>;
-};
-
-type AcpGatewayAgentOptions = AcpServerOptions & {
-  sessionStore?: AcpSessionStore;
-};
+import { createFixedWindowBudget } from "../infra/fixed-window-rate-limit.js";
+import { createLazyRuntimeModule } from "../shared/lazy-runtime.js";
+import type { AcpEventLedger } from "./event-ledger.js";
+import type { AcpPendingApprovalRelay } from "./translator.prompt-state.js";
+import { AcpTranslatorPromptStream } from "./translator.prompt-stream.js";
+import { AcpTranslatorSessionLifecycle } from "./translator.session-lifecycle.js";
+import { AcpTranslatorSessionState } from "./translator.session-state.js";
+import { AcpTranslatorSessionUpdates } from "./translator.session-updates.js";
+import { ACP_AGENT_INFO } from "./types.js";
 
 const SESSION_CREATE_RATE_LIMIT_DEFAULT_MAX_REQUESTS = 120;
 const SESSION_CREATE_RATE_LIMIT_DEFAULT_WINDOW_MS = 10_000;
 
+const loadAcpSdkModule = createLazyRuntimeModule(() => import("@agentclientprotocol/sdk"));
+
+type AcpGatewayAgentOptions = AcpServerOptions & {
+  eventLedger: AcpEventLedger;
+  sessionStore?: AcpSessionStore;
+};
+
 export class AcpGatewayAgent implements Agent {
-  private connection: AgentSideConnection;
-  private gateway: GatewayClient;
-  private opts: AcpGatewayAgentOptions;
-  private log: (msg: string) => void;
-  private sessionStore: AcpSessionStore;
-  private sessionCreateRateLimiter: FixedWindowRateLimiter;
-  private pendingPrompts = new Map<string, PendingPrompt>();
+  private readonly sessionUpdates: AcpTranslatorSessionUpdates;
+  private readonly promptStream: AcpTranslatorPromptStream;
+  readonly newSession: AcpTranslatorSessionLifecycle["newSession"];
+  readonly loadSession: AcpTranslatorSessionLifecycle["loadSession"];
+  readonly listSessions: AcpTranslatorSessionLifecycle["listSessions"];
+  readonly resumeSession: AcpTranslatorSessionLifecycle["resumeSession"];
+  readonly closeSession: AcpTranslatorSessionLifecycle["closeSession"];
+  readonly authenticate: AcpTranslatorSessionLifecycle["authenticate"];
+  readonly setSessionMode: AcpTranslatorSessionLifecycle["setSessionMode"];
+  readonly setSessionConfigOption: AcpTranslatorSessionLifecycle["setSessionConfigOption"];
+  readonly prompt: AcpTranslatorPromptStream["prompt"];
+  readonly cancel: AcpTranslatorPromptStream["cancel"];
+  private readonly ownedSessionStore: ReturnType<typeof createInMemorySessionStore> | undefined;
+  private readonly approvalRelays = new Map<string, AcpPendingApprovalRelay>();
+  private readonly log: (msg: string) => void;
 
   constructor(
     connection: AgentSideConnection,
     gateway: GatewayClient,
-    opts: AcpGatewayAgentOptions = {},
+    opts: AcpGatewayAgentOptions,
   ) {
-    this.connection = connection;
-    this.gateway = gateway;
-    this.opts = opts;
     this.log = opts.verbose ? (msg: string) => process.stderr.write(`[acp] ${msg}\n`) : () => {};
-    this.sessionStore = opts.sessionStore ?? defaultAcpSessionStore;
-    this.sessionCreateRateLimiter = createFixedWindowRateLimiter({
-      maxRequests: Math.max(
-        1,
-        opts.sessionCreateRateLimit?.maxRequests ?? SESSION_CREATE_RATE_LIMIT_DEFAULT_MAX_REQUESTS,
+    // Injected stores remain caller-owned; only the agent-created registry follows shutdown.
+    const sessionStore =
+      opts.sessionStore === undefined
+        ? (this.ownedSessionStore = createInMemorySessionStore())
+        : opts.sessionStore;
+    this.sessionUpdates = new AcpTranslatorSessionUpdates({
+      connection,
+      eventLedger: opts.eventLedger,
+      log: this.log,
+    });
+    const sessionState = new AcpTranslatorSessionState(gateway, this.sessionUpdates, this.log);
+    this.promptStream = new AcpTranslatorPromptStream(
+      connection,
+      gateway,
+      opts,
+      sessionStore,
+      this.sessionUpdates,
+      sessionState,
+      this.approvalRelays,
+      this.log,
+    );
+    const sessionCreateRateLimiter = createFixedWindowBudget({
+      maxRequests: resolveIntegerOption(
+        opts.sessionCreateRateLimit?.maxRequests,
+        SESSION_CREATE_RATE_LIMIT_DEFAULT_MAX_REQUESTS,
+        { min: 1 },
       ),
-      windowMs: Math.max(
-        1_000,
-        opts.sessionCreateRateLimit?.windowMs ?? SESSION_CREATE_RATE_LIMIT_DEFAULT_WINDOW_MS,
+      windowMs: resolveIntegerOption(
+        opts.sessionCreateRateLimit?.windowMs,
+        SESSION_CREATE_RATE_LIMIT_DEFAULT_WINDOW_MS,
+        { min: 1_000 },
       ),
     });
+    const sessionLifecycle = new AcpTranslatorSessionLifecycle(
+      gateway,
+      opts,
+      sessionStore,
+      this.sessionUpdates,
+      sessionState,
+      sessionCreateRateLimiter,
+      (session) => this.promptStream.cancelSessionWork(session),
+      this.log,
+    );
+    this.newSession = sessionLifecycle.newSession.bind(sessionLifecycle);
+    this.loadSession = sessionLifecycle.loadSession.bind(sessionLifecycle);
+    this.listSessions = sessionLifecycle.listSessions.bind(sessionLifecycle);
+    this.resumeSession = sessionLifecycle.resumeSession.bind(sessionLifecycle);
+    this.closeSession = sessionLifecycle.closeSession.bind(sessionLifecycle);
+    this.authenticate = sessionLifecycle.authenticate.bind(sessionLifecycle);
+    this.setSessionMode = sessionLifecycle.setSessionMode.bind(sessionLifecycle);
+    this.setSessionConfigOption = sessionLifecycle.setSessionConfigOption.bind(sessionLifecycle);
+    this.prompt = this.promptStream.prompt.bind(this.promptStream);
+    this.cancel = this.promptStream.cancel.bind(this.promptStream);
   }
 
   start(): void {
     this.log("ready");
   }
 
+  async shutdown(): Promise<void> {
+    const updatesClosed = this.sessionUpdates.stop();
+    try {
+      await this.promptStream.shutdown();
+    } finally {
+      await updatesClosed;
+      this.ownedSessionStore?.dispose();
+    }
+  }
+
   handleGatewayReconnect(): void {
-    this.log("gateway reconnected");
+    this.promptStream.handleGatewayReconnect();
   }
 
   handleGatewayDisconnect(reason: string): void {
-    this.log(`gateway disconnected: ${reason}`);
-    for (const pending of this.pendingPrompts.values()) {
-      pending.reject(new Error(`Gateway disconnected: ${reason}`));
-      this.sessionStore.clearActiveRun(pending.sessionId);
-    }
-    this.pendingPrompts.clear();
+    this.promptStream.handleGatewayDisconnect(reason);
   }
 
   async handleGatewayEvent(evt: EventFrame): Promise<void> {
-    if (evt.event === "chat") {
-      await this.handleChatEvent(evt);
-      return;
-    }
-    if (evt.event === "agent") {
-      await this.handleAgentEvent(evt);
-    }
+    await this.promptStream.handleGatewayEvent(evt);
   }
 
   async initialize(_params: InitializeRequest): Promise<InitializeResponse> {
     return {
-      protocolVersion: PROTOCOL_VERSION,
+      protocolVersion: (await loadAcpSdkModule()).PROTOCOL_VERSION,
       agentCapabilities: {
         loadSession: true,
         promptCapabilities: {
@@ -135,369 +149,12 @@ export class AcpGatewayAgent implements Agent {
         },
         sessionCapabilities: {
           list: {},
+          resume: {},
+          close: {},
         },
       },
       agentInfo: ACP_AGENT_INFO,
       authMethods: [],
     };
-  }
-
-  async newSession(params: NewSessionRequest): Promise<NewSessionResponse> {
-    if (params.mcpServers.length > 0) {
-      this.log(`ignoring ${params.mcpServers.length} MCP servers`);
-    }
-    this.enforceSessionCreateRateLimit("newSession");
-
-    const sessionId = randomUUID();
-    const meta = parseSessionMeta(params._meta);
-    const sessionKey = await this.resolveSessionKeyFromMeta({
-      meta,
-      fallbackKey: `acp:${sessionId}`,
-    });
-
-    const session = this.sessionStore.createSession({
-      sessionId,
-      sessionKey,
-      cwd: params.cwd,
-    });
-    this.log(`newSession: ${session.sessionId} -> ${session.sessionKey}`);
-    await this.sendAvailableCommands(session.sessionId);
-    return { sessionId: session.sessionId };
-  }
-
-  async loadSession(params: LoadSessionRequest): Promise<LoadSessionResponse> {
-    if (params.mcpServers.length > 0) {
-      this.log(`ignoring ${params.mcpServers.length} MCP servers`);
-    }
-    if (!this.sessionStore.hasSession(params.sessionId)) {
-      this.enforceSessionCreateRateLimit("loadSession");
-    }
-
-    const meta = parseSessionMeta(params._meta);
-    const sessionKey = await this.resolveSessionKeyFromMeta({
-      meta,
-      fallbackKey: params.sessionId,
-    });
-
-    const session = this.sessionStore.createSession({
-      sessionId: params.sessionId,
-      sessionKey,
-      cwd: params.cwd,
-    });
-    this.log(`loadSession: ${session.sessionId} -> ${session.sessionKey}`);
-    await this.sendAvailableCommands(session.sessionId);
-    return {};
-  }
-
-  async unstable_listSessions(params: ListSessionsRequest): Promise<ListSessionsResponse> {
-    const limit = readNumber(params._meta, ["limit"]) ?? 100;
-    const result = await this.gateway.request<SessionsListResult>("sessions.list", { limit });
-    const cwd = params.cwd ?? process.cwd();
-    return {
-      sessions: result.sessions.map((session) => ({
-        sessionId: session.key,
-        cwd,
-        title: session.displayName ?? session.label ?? session.key,
-        updatedAt: session.updatedAt ? new Date(session.updatedAt).toISOString() : undefined,
-        _meta: {
-          sessionKey: session.key,
-          kind: session.kind,
-          channel: session.channel,
-        },
-      })),
-      nextCursor: null,
-    };
-  }
-
-  async authenticate(_params: AuthenticateRequest): Promise<AuthenticateResponse> {
-    return {};
-  }
-
-  async setSessionMode(params: SetSessionModeRequest): Promise<SetSessionModeResponse> {
-    const session = this.sessionStore.getSession(params.sessionId);
-    if (!session) {
-      throw new Error(`Session ${params.sessionId} not found`);
-    }
-    if (!params.modeId) {
-      return {};
-    }
-    try {
-      await this.gateway.request("sessions.patch", {
-        key: session.sessionKey,
-        thinkingLevel: params.modeId,
-      });
-      this.log(`setSessionMode: ${session.sessionId} -> ${params.modeId}`);
-    } catch (err) {
-      this.log(`setSessionMode error: ${String(err)}`);
-    }
-    return {};
-  }
-
-  async prompt(params: PromptRequest): Promise<PromptResponse> {
-    const session = this.sessionStore.getSession(params.sessionId);
-    if (!session) {
-      throw new Error(`Session ${params.sessionId} not found`);
-    }
-
-    if (session.abortController) {
-      this.sessionStore.cancelActiveRun(params.sessionId);
-    }
-
-    const meta = parseSessionMeta(params._meta);
-    // Pass MAX_PROMPT_BYTES so extractTextFromPrompt rejects oversized content
-    // block-by-block, before the full string is ever assembled in memory (CWE-400)
-    const userText = extractTextFromPrompt(params.prompt, MAX_PROMPT_BYTES);
-    const attachments = extractAttachmentsFromPrompt(params.prompt);
-    const prefixCwd = meta.prefixCwd ?? this.opts.prefixCwd ?? true;
-    const displayCwd = shortenHomePath(session.cwd);
-    const message = prefixCwd ? `[Working directory: ${displayCwd}]\n\n${userText}` : userText;
-
-    // Defense-in-depth: also check the final assembled message (includes cwd prefix)
-    if (Buffer.byteLength(message, "utf-8") > MAX_PROMPT_BYTES) {
-      throw new Error(`Prompt exceeds maximum allowed size of ${MAX_PROMPT_BYTES} bytes`);
-    }
-
-    const abortController = new AbortController();
-    const runId = randomUUID();
-    this.sessionStore.setActiveRun(params.sessionId, runId, abortController);
-
-    return new Promise<PromptResponse>((resolve, reject) => {
-      this.pendingPrompts.set(params.sessionId, {
-        sessionId: params.sessionId,
-        sessionKey: session.sessionKey,
-        idempotencyKey: runId,
-        resolve,
-        reject,
-      });
-
-      this.gateway
-        .request(
-          "chat.send",
-          {
-            sessionKey: session.sessionKey,
-            message,
-            attachments: attachments.length > 0 ? attachments : undefined,
-            idempotencyKey: runId,
-            thinking: readString(params._meta, ["thinking", "thinkingLevel"]),
-            deliver: readBool(params._meta, ["deliver"]),
-            timeoutMs: readNumber(params._meta, ["timeoutMs"]),
-          },
-          { expectFinal: true },
-        )
-        .catch((err) => {
-          this.pendingPrompts.delete(params.sessionId);
-          this.sessionStore.clearActiveRun(params.sessionId);
-          reject(err instanceof Error ? err : new Error(String(err)));
-        });
-    });
-  }
-
-  async cancel(params: CancelNotification): Promise<void> {
-    const session = this.sessionStore.getSession(params.sessionId);
-    if (!session) {
-      return;
-    }
-
-    this.sessionStore.cancelActiveRun(params.sessionId);
-    try {
-      await this.gateway.request("chat.abort", { sessionKey: session.sessionKey });
-    } catch (err) {
-      this.log(`cancel error: ${String(err)}`);
-    }
-
-    const pending = this.pendingPrompts.get(params.sessionId);
-    if (pending) {
-      this.pendingPrompts.delete(params.sessionId);
-      pending.resolve({ stopReason: "cancelled" });
-    }
-  }
-
-  private async resolveSessionKeyFromMeta(params: {
-    meta: ReturnType<typeof parseSessionMeta>;
-    fallbackKey: string;
-  }): Promise<string> {
-    const sessionKey = await resolveSessionKey({
-      meta: params.meta,
-      fallbackKey: params.fallbackKey,
-      gateway: this.gateway,
-      opts: this.opts,
-    });
-    await resetSessionIfNeeded({
-      meta: params.meta,
-      sessionKey,
-      gateway: this.gateway,
-      opts: this.opts,
-    });
-    return sessionKey;
-  }
-
-  private async handleAgentEvent(evt: EventFrame): Promise<void> {
-    const payload = evt.payload as Record<string, unknown> | undefined;
-    if (!payload) {
-      return;
-    }
-    const stream = payload.stream as string | undefined;
-    const data = payload.data as Record<string, unknown> | undefined;
-    const sessionKey = payload.sessionKey as string | undefined;
-    if (!stream || !data || !sessionKey) {
-      return;
-    }
-
-    if (stream !== "tool") {
-      return;
-    }
-    const phase = data.phase as string | undefined;
-    const name = data.name as string | undefined;
-    const toolCallId = data.toolCallId as string | undefined;
-    if (!toolCallId) {
-      return;
-    }
-
-    const pending = this.findPendingBySessionKey(sessionKey);
-    if (!pending) {
-      return;
-    }
-
-    if (phase === "start") {
-      if (!pending.toolCalls) {
-        pending.toolCalls = new Set();
-      }
-      if (pending.toolCalls.has(toolCallId)) {
-        return;
-      }
-      pending.toolCalls.add(toolCallId);
-      const args = data.args as Record<string, unknown> | undefined;
-      await this.connection.sessionUpdate({
-        sessionId: pending.sessionId,
-        update: {
-          sessionUpdate: "tool_call",
-          toolCallId,
-          title: formatToolTitle(name, args),
-          status: "in_progress",
-          rawInput: args,
-          kind: inferToolKind(name),
-        },
-      });
-      return;
-    }
-
-    if (phase === "result") {
-      const isError = Boolean(data.isError);
-      await this.connection.sessionUpdate({
-        sessionId: pending.sessionId,
-        update: {
-          sessionUpdate: "tool_call_update",
-          toolCallId,
-          status: isError ? "failed" : "completed",
-          rawOutput: data.result,
-        },
-      });
-    }
-  }
-
-  private async handleChatEvent(evt: EventFrame): Promise<void> {
-    const payload = evt.payload as Record<string, unknown> | undefined;
-    if (!payload) {
-      return;
-    }
-
-    const sessionKey = payload.sessionKey as string | undefined;
-    const state = payload.state as string | undefined;
-    const runId = payload.runId as string | undefined;
-    const messageData = payload.message as Record<string, unknown> | undefined;
-    if (!sessionKey || !state) {
-      return;
-    }
-
-    const pending = this.findPendingBySessionKey(sessionKey);
-    if (!pending) {
-      return;
-    }
-    if (runId && pending.idempotencyKey !== runId) {
-      return;
-    }
-
-    if (state === "delta" && messageData) {
-      await this.handleDeltaEvent(pending.sessionId, messageData);
-      return;
-    }
-
-    if (state === "final") {
-      const rawStopReason = payload.stopReason as string | undefined;
-      const stopReason: StopReason = rawStopReason === "max_tokens" ? "max_tokens" : "end_turn";
-      this.finishPrompt(pending.sessionId, pending, stopReason);
-      return;
-    }
-    if (state === "aborted") {
-      this.finishPrompt(pending.sessionId, pending, "cancelled");
-      return;
-    }
-    if (state === "error") {
-      this.finishPrompt(pending.sessionId, pending, "refusal");
-    }
-  }
-
-  private async handleDeltaEvent(
-    sessionId: string,
-    messageData: Record<string, unknown>,
-  ): Promise<void> {
-    const content = messageData.content as Array<{ type: string; text?: string }> | undefined;
-    const fullText = content?.find((c) => c.type === "text")?.text ?? "";
-    const pending = this.pendingPrompts.get(sessionId);
-    if (!pending) {
-      return;
-    }
-
-    const sentSoFar = pending.sentTextLength ?? 0;
-    if (fullText.length <= sentSoFar) {
-      return;
-    }
-
-    const newText = fullText.slice(sentSoFar);
-    pending.sentTextLength = fullText.length;
-    pending.sentText = fullText;
-
-    await this.connection.sessionUpdate({
-      sessionId,
-      update: {
-        sessionUpdate: "agent_message_chunk",
-        content: { type: "text", text: newText },
-      },
-    });
-  }
-
-  private finishPrompt(sessionId: string, pending: PendingPrompt, stopReason: StopReason): void {
-    this.pendingPrompts.delete(sessionId);
-    this.sessionStore.clearActiveRun(sessionId);
-    pending.resolve({ stopReason });
-  }
-
-  private findPendingBySessionKey(sessionKey: string): PendingPrompt | undefined {
-    for (const pending of this.pendingPrompts.values()) {
-      if (pending.sessionKey === sessionKey) {
-        return pending;
-      }
-    }
-    return undefined;
-  }
-
-  private async sendAvailableCommands(sessionId: string): Promise<void> {
-    await this.connection.sessionUpdate({
-      sessionId,
-      update: {
-        sessionUpdate: "available_commands_update",
-        availableCommands: getAvailableCommands(),
-      },
-    });
-  }
-
-  private enforceSessionCreateRateLimit(method: "newSession" | "loadSession"): void {
-    const budget = this.sessionCreateRateLimiter.consume();
-    if (budget.allowed) {
-      return;
-    }
-    throw new Error(
-      `ACP session creation rate limit exceeded for ${method}; retry after ${Math.ceil(budget.retryAfterMs / 1_000)}s.`,
-    );
   }
 }

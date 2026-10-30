@@ -1,7 +1,9 @@
 import { listAgentIds, resolveAgentWorkspaceDir } from "../../../agents/agent-scope.js";
 import { createDefaultDeps } from "../../../cli/deps.js";
 import { runBootOnce } from "../../../gateway/boot.js";
+import { runStartupTasks, type StartupTask } from "../../../gateway/startup-tasks.js";
 import { createSubsystemLogger } from "../../../logging/subsystem.js";
+import { dedupeByKey } from "../../../shared/dedupe-by-key.js";
 import type { HookHandler } from "../../hooks.js";
 import { isGatewayStartupEvent } from "../../internal-hooks.js";
 
@@ -18,27 +20,22 @@ const runBootChecklist: HookHandler = async (event) => {
 
   const cfg = event.context.cfg;
   const deps = event.context.deps ?? createDefaultDeps();
-  const agentIds = listAgentIds(cfg);
+  // Multiple agents may share a workspace. Startup tasks are keyed by workspace
+  // so BOOT.md is not executed repeatedly for the same files.
+  const tasks: StartupTask[] = dedupeByKey(
+    listAgentIds(cfg).map((agentId) => {
+      const workspaceDir = resolveAgentWorkspaceDir(cfg, agentId);
+      return { agentId, workspaceDir };
+    }),
+    ({ workspaceDir }) => workspaceDir,
+  ).map(({ agentId, workspaceDir }) => ({
+    source: "boot-md" as const,
+    agentId,
+    workspaceDir,
+    run: () => runBootOnce({ cfg, deps, workspaceDir, agentId }),
+  }));
 
-  for (const agentId of agentIds) {
-    const workspaceDir = resolveAgentWorkspaceDir(cfg, agentId);
-    const result = await runBootOnce({ cfg, deps, workspaceDir, agentId });
-    if (result.status === "failed") {
-      log.warn("boot-md failed for agent startup run", {
-        agentId,
-        workspaceDir,
-        reason: result.reason,
-      });
-      continue;
-    }
-    if (result.status === "skipped") {
-      log.debug("boot-md skipped for agent startup run", {
-        agentId,
-        workspaceDir,
-        reason: result.reason,
-      });
-    }
-  }
+  await runStartupTasks({ tasks, log });
 };
 
 export default runBootChecklist;

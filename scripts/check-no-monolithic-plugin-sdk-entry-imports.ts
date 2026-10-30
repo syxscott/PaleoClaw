@@ -1,20 +1,23 @@
 import fs from "node:fs";
 import path from "node:path";
 import { discoverOpenClawPlugins } from "../src/plugins/discovery.js";
+import { collectFilesSync, isCodeFile, relativeToCwd } from "./check-file-utils.js";
 
-// Match exact monolithic-root specifier in any code path:
-// imports/exports, require/dynamic import, and test mocks (vi.mock/jest.mock).
-const ROOT_IMPORT_PATTERN = /["']paleoclaw\/plugin-sdk["']/;
+const LEGACY_BROAD_SUBPATH_PATTERNS = [
+  {
+    pattern: /["']paleoclaw\/plugin-sdk\/config-runtime["']/,
+    label: "paleoclaw/plugin-sdk/config-runtime",
+  },
+  {
+    pattern: /["']paleoclaw\/plugin-sdk\/infra-runtime["']/,
+    label: "paleoclaw/plugin-sdk/infra-runtime",
+  },
+] as const;
 
-function hasMonolithicRootImport(content: string): boolean {
-  return ROOT_IMPORT_PATTERN.test(content);
-}
-
-function isSourceFile(filePath: string): boolean {
-  if (filePath.endsWith(".d.ts")) {
-    return false;
-  }
-  return /\.(?:[cm]?ts|[cm]?js|tsx|jsx)$/u.test(filePath);
+function findLegacyBroadSubpathImports(content: string): string[] {
+  return LEGACY_BROAD_SUBPATH_PATTERNS.filter(({ pattern }) => pattern.test(content)).map(
+    ({ label }) => label,
+  );
 }
 
 function collectPluginSourceFiles(rootDir: string): string[] {
@@ -22,40 +25,30 @@ function collectPluginSourceFiles(rootDir: string): string[] {
   if (!fs.existsSync(srcDir)) {
     return [];
   }
+  return collectFilesSync(srcDir, {
+    includeFile: (filePath) => isCodeFile(filePath),
+    skipDirNames: new Set(["node_modules", "dist", ".git", "coverage"]),
+  });
+}
 
-  const files: string[] = [];
-  const stack: string[] = [srcDir];
-  while (stack.length > 0) {
-    const current = stack.pop();
-    if (!current) {
-      continue;
-    }
-    let entries: fs.Dirent[] = [];
-    try {
-      entries = fs.readdirSync(current, { withFileTypes: true });
-    } catch {
-      continue;
-    }
-    for (const entry of entries) {
-      const fullPath = path.join(current, entry.name);
-      if (entry.isDirectory()) {
-        if (
-          entry.name === "node_modules" ||
-          entry.name === "dist" ||
-          entry.name === ".git" ||
-          entry.name === "coverage"
-        ) {
-          continue;
-        }
-        stack.push(fullPath);
-        continue;
-      }
-      if (entry.isFile() && isSourceFile(fullPath)) {
-        files.push(fullPath);
-      }
-    }
+function collectBundledExtensionSourceFiles(): string[] {
+  const extensionsDir = path.join(process.cwd(), "extensions");
+  let entries: fs.Dirent[];
+  try {
+    entries = fs.readdirSync(extensionsDir, { withFileTypes: true });
+  } catch {
+    return [];
   }
 
+  const files: string[] = [];
+  for (const entry of entries) {
+    if (!entry.isDirectory() || entry.name === "shared") {
+      continue;
+    }
+    for (const srcFile of collectPluginSourceFiles(path.join(extensionsDir, entry.name))) {
+      files.push(srcFile);
+    }
+  }
   return files;
 }
 
@@ -69,34 +62,44 @@ function main() {
       filesToCheck.add(srcFile);
     }
   }
+  for (const sharedFile of collectPluginSourceFiles(
+    path.join(process.cwd(), "extensions", "shared"),
+  )) {
+    filesToCheck.add(sharedFile);
+  }
+  for (const extensionFile of collectBundledExtensionSourceFiles()) {
+    filesToCheck.add(extensionFile);
+  }
 
-  const offenders: string[] = [];
+  const legacyBroadSubpathOffenders = new Map<string, string[]>();
   for (const entryFile of filesToCheck) {
-    let content = "";
+    let content;
     try {
       content = fs.readFileSync(entryFile, "utf8");
     } catch {
       continue;
     }
-    if (hasMonolithicRootImport(content)) {
-      offenders.push(entryFile);
+    const legacyBroadSubpaths = findLegacyBroadSubpathImports(content);
+    if (legacyBroadSubpaths.length > 0) {
+      legacyBroadSubpathOffenders.set(entryFile, legacyBroadSubpaths);
     }
   }
 
-  if (offenders.length > 0) {
-    console.error("Bundled plugin source files must not import monolithic paleoclaw/plugin-sdk.");
-    for (const file of offenders.toSorted()) {
-      const relative = path.relative(process.cwd(), file) || file;
-      console.error(`- ${relative}`);
-    }
+  if (legacyBroadSubpathOffenders.size > 0) {
     console.error(
-      "Use paleoclaw/plugin-sdk/<channel> for channel plugins, /core for startup surfaces, or /compat for broader internals.",
+      "Bundled plugin source files must not import deprecated broad plugin-sdk subpaths.",
     );
+    for (const [file, labels] of [...legacyBroadSubpathOffenders.entries()].toSorted(
+      ([left], [right]) => left.localeCompare(right),
+    )) {
+      console.error(`- ${relativeToCwd(file)} (${labels.join(", ")})`);
+    }
+    console.error("Use focused paleoclaw/plugin-sdk/<domain> subpaths for bundled plugins.");
     process.exit(1);
   }
 
   console.log(
-    `OK: bundled plugin source files use scoped plugin-sdk subpaths (${filesToCheck.size} checked).`,
+    `OK: bundled plugin source files avoid deprecated broad plugin-sdk subpaths (${filesToCheck.size} checked).`,
   );
 }
 

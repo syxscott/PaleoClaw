@@ -1,5 +1,6 @@
 import Cocoa
 import Foundation
+import OpenClawKit
 import OSLog
 
 @MainActor
@@ -10,14 +11,22 @@ final class PresenceReporter {
     private var task: Task<Void, Never>?
     private let interval: TimeInterval = 180 // a few minutes
     private let instanceId: String = InstanceIdentity.instanceId
+    private static let clearLastInputTag = "system-presence-clear-last-input"
+    private static let legacyClearedLastInputSeconds = 30 * 24 * 60 * 60
+
+    static let activityPrivacyParameters: [String: AnyHashable] = [
+        // Older Gateways overwrite exact recency with the sentinel; current ones
+        // let the tag win and delete the field.
+        "lastInputSeconds": AnyHashable(legacyClearedLastInputSeconds),
+        "tags": AnyHashable([clearLastInputTag]),
+    ]
 
     func start() {
         guard self.task == nil else { return }
         self.task = Task.detached { [weak self] in
             guard let self else { return }
             await self.push(reason: "launch")
-            while !Task.isCancelled {
-                try? await Task.sleep(nanoseconds: UInt64(self.interval * 1_000_000_000))
+            while await SimpleTaskSupport.waitForNextOperation(interval: self.interval) {
                 await self.push(reason: "periodic")
             }
         }
@@ -32,12 +41,12 @@ final class PresenceReporter {
     private func push(reason: String) async {
         let mode = await MainActor.run { AppStateStore.shared.connectionMode.rawValue }
         let host = InstanceIdentity.displayName
-        let ip = SystemPresenceInfo.primaryIPv4Address() ?? "ip-unknown"
+        let ip = NetworkInterfaces.primaryIPv4Address() ?? "ip-unknown"
         let version = Self.appVersionString()
         let platform = Self.platformString()
-        let lastInput = SystemPresenceInfo.lastInputSeconds()
         let text = Self.composePresenceSummary(mode: mode, reason: reason)
-        var params: [String: AnyHashable] = [
+        var params = Self.activityPrivacyParameters
+        params.merge([
             "instanceId": AnyHashable(self.instanceId),
             "host": AnyHashable(host),
             "ip": AnyHashable(ip),
@@ -46,9 +55,8 @@ final class PresenceReporter {
             "platform": AnyHashable(platform),
             "deviceFamily": AnyHashable("Mac"),
             "reason": AnyHashable(reason),
-        ]
+        ]) { _, value in value }
         if let model = InstanceIdentity.modelIdentifier { params["modelIdentifier"] = AnyHashable(model) }
-        if let lastInput { params["lastInputSeconds"] = AnyHashable(lastInput) }
         do {
             try await ControlChannel.shared.sendSystemEvent(text, params: params)
         } catch {
@@ -61,13 +69,11 @@ final class PresenceReporter {
         Task { await self.push(reason: reason) }
     }
 
-    private static func composePresenceSummary(mode: String, reason: String) -> String {
+    static func composePresenceSummary(mode: String, reason: String) -> String {
         let host = InstanceIdentity.displayName
-        let ip = SystemPresenceInfo.primaryIPv4Address() ?? "ip-unknown"
+        let ip = NetworkInterfaces.primaryIPv4Address() ?? "ip-unknown"
         let version = Self.appVersionString()
-        let lastInput = SystemPresenceInfo.lastInputSeconds()
-        let lastLabel = lastInput.map { "last input \($0)s ago" } ?? "last input unknown"
-        return "Node: \(host) (\(ip)) · app \(version) · \(lastLabel) · mode \(mode) · reason \(reason)"
+        return "Node: \(host) (\(ip)) · app \(version) · mode \(mode) · reason \(reason)"
     }
 
     private static func appVersionString() -> String {
@@ -85,30 +91,4 @@ final class PresenceReporter {
         let v = ProcessInfo.processInfo.operatingSystemVersion
         return "macos \(v.majorVersion).\(v.minorVersion).\(v.patchVersion)"
     }
-
-    // (SystemPresenceInfo) last input + primary IPv4.
 }
-
-#if DEBUG
-extension PresenceReporter {
-    static func _testComposePresenceSummary(mode: String, reason: String) -> String {
-        self.composePresenceSummary(mode: mode, reason: reason)
-    }
-
-    static func _testAppVersionString() -> String {
-        self.appVersionString()
-    }
-
-    static func _testPlatformString() -> String {
-        self.platformString()
-    }
-
-    static func _testLastInputSeconds() -> Int? {
-        SystemPresenceInfo.lastInputSeconds()
-    }
-
-    static func _testPrimaryIPv4Address() -> String? {
-        SystemPresenceInfo.primaryIPv4Address()
-    }
-}
-#endif

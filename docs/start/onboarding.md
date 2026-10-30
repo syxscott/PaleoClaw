@@ -1,40 +1,54 @@
 ---
-summary: "First-run onboarding flow for paleoclaw (macOS app)"
+summary: "First-run setup flow for paleoclaw (macOS app)"
 read_when:
-  - Designing the macOS onboarding assistant
-  - Implementing auth or identity setup
-title: "Onboarding (macOS App)"
+  - Setting up the macOS app for the first time
+  - Choosing between a local and a remote Gateway during macOS setup
+  - Connecting an AI provider from the macOS app
+title: "Onboarding (macOS app)"
 sidebarTitle: "Onboarding: macOS App"
 ---
 
-# Onboarding (macOS App)
+The macOS app's first-run flow: pick where the Gateway runs, install any
+missing local runtime, and automatically connect a verified AI backend. The app then opens
+guided onboarding in the dashboard for optional setup and the handoff to your
+agent.
+For CLI onboarding and a comparison of both paths, see [Onboarding Overview](/start/onboarding-overview).
 
-This doc describes the **current** first‑run onboarding flow. The goal is a
-smooth “day 0” experience: pick where the Gateway runs, connect auth, run the
-wizard, and let the agent bootstrap itself.
-For a general overview of onboarding paths, see [Onboarding Overview](/start/onboarding-overview).
+<Tip>
+Need the app first? [Download paleoclaw for macOS](/platforms/macos#download),
+then return here for first-run setup.
+</Tip>
 
 <Steps>
 <Step title="Approve macOS warning">
+The first time you open OpenClaw.app, macOS asks you to approve a downloaded
+app. Click **Open** to continue.
+
 <Frame>
-<img src="/assets/macos-onboarding/01-macos-warning.jpeg" alt="" />
+<img src="/assets/macos-onboarding/01-macos-warning.jpeg" alt="macOS dialog that asks whether to open the downloaded paleoclaw app" />
 </Frame>
 </Step>
 <Step title="Approve find local networks">
+macOS then asks whether paleoclaw may find devices on your local network.
+Click **Allow**. The app uses this to reach a Gateway on another machine.
+
 <Frame>
-<img src="/assets/macos-onboarding/02-local-networks.jpeg" alt="" />
+<img src="/assets/macos-onboarding/02-local-networks.jpeg" alt="macOS dialog that asks whether paleoclaw may find devices on the local network" />
 </Frame>
 </Step>
 <Step title="Welcome and security notice">
+The app opens on its welcome screen with the security notice. Read the notice,
+then continue when you accept the trust model below.
+
 <Frame caption="Read the security notice displayed and decide accordingly">
-<img src="/assets/macos-onboarding/03-security-notice.png" alt="" />
+<img src="/assets/macos-onboarding/03-security-notice.png" alt="paleoclaw welcome screen with the security notice" />
 </Frame>
 
 Security trust model:
 
 - By default, paleoclaw is a personal agent: one trusted operator boundary.
-- Shared/multi-user setups require lock-down (split trust boundaries, keep tool access minimal, and follow [Security](/gateway/security)).
-- Local onboarding now defaults new configs to `tools.profile: "coding"` so fresh local setups keep filesystem/runtime tools without forcing the unrestricted `full` profile.
+- Shared/multi-user setups need lock-down: split trust boundaries, keep tool access minimal, and follow [Security](/gateway/security).
+- Local onboarding selects `tools.profile: "full"` when no profile is configured and preserves explicit profiles and other tool policies. Full tool selection does not grant execution permissions. See [Tool profiles](/gateway/config-tools/tool-policy#tool-profiles).
 - If hooks/webhooks or other untrusted content feeds are enabled, use a strong modern model tier and keep strict tool policy/sandboxing.
 
 </Step>
@@ -45,47 +59,181 @@ Security trust model:
 
 Where does the **Gateway** run?
 
-- **This Mac (Local only):** onboarding can configure auth and write credentials
-  locally.
+- **This Mac (Local only):** onboarding configures auth and writes credentials locally.
 - **Remote (over SSH/Tailnet):** onboarding does **not** configure local auth;
-  credentials must exist on the gateway host.
+  credentials must already exist on the gateway host. The remote gateway token
+  field stores the token the macOS app uses to connect to that Gateway;
+  existing `gateway.remote.token` SecretRef values are preserved until you
+  replace them.
 - **Configure later:** skip setup and leave the app unconfigured.
 
 <Tip>
 **Gateway auth tip:**
 
-- The wizard now generates a **token** even for loopback, so local WS clients must authenticate.
-- If you disable auth, any local process can connect; use that only on fully trusted machines.
-- Use a **token** for multi‑machine access or non‑loopback binds.
+- Gateway auth mode defaults to `token` even for loopback binds, so local WS clients must authenticate.
+- Setting `gateway.auth.mode: "none"` lets any local process connect; use that only on fully trusted machines.
+- Use a token for multi-machine access or non-loopback binds.
 
 </Tip>
 </Step>
-<Step title="Permissions">
-<Frame caption="Choose what permissions do you want to give paleoclaw">
-<img src="/assets/macos-onboarding/05-permissions.png" alt="" />
-</Frame>
-
-Onboarding requests TCC permissions needed for:
-
-- Automation (AppleScript)
-- Notifications
-- Accessibility
-- Screen Recording
-- Microphone
-- Speech Recognition
-- Camera
-- Location
-
-</Step>
 <Step title="CLI">
-  <Info>This step is optional</Info>
-  The app can install the global `paleoclaw` CLI via npm/pnpm so terminal
-  workflows and launchd tasks work out of the box.
+  Local setup reuses a compatible CLI installation or uses the bundled installer
+  to install `paleoclaw` and Node in a private managed runtime. It does not require
+  a global npm, pnpm, or bun install.
+
+Attaching to an independently managed local Gateway skips CLI installation
+and proceeds to AI checks without taking over its CLI or service installation.
+See [Gateway on macOS](/platforms/mac/bundled-gateway#automatic-setup).
 </Step>
-<Step title="Onboarding Chat (dedicated session)">
-  After setup, the app opens a dedicated onboarding chat session so the agent can
-  introduce itself and guide next steps. This keeps first‑run guidance separate
-  from your normal conversation. See [Bootstrapping](/start/bootstrapping) for
-  what happens on the gateway host during the first agent run.
+<Step title="Connect your AI">
+If the connected Gateway already has a configured agent model, automatic setup
+keeps it without writing new settings. Otherwise the Gateway automatically
+tries usable AI access in this deterministic order:
+
+1. Saved paleoclaw auth profiles.
+2. Codex credentials from `~/.codex` or `CODEX_HOME` on the Gateway host.
+3. A Claude CLI login.
+4. `OPENAI_API_KEY`, then `ANTHROPIC_API_KEY`.
+5. Eligible loaded models in Ollama, LM Studio, or llama.cpp.
+
+Setup runs on the Gateway host, including when the Mac connects to a Linux
+Gateway. It tries at most four detected connections, verifies each through the
+existing activation flow, and stops at the first successful completion before
+saving the primary model. Apple Foundation Models remains a utility option and
+is never selected as the primary model.
+
+If no detected connection works, paleoclaw automatically installs or enables the
+official Codex plugin. It then uses an existing Codex login or offers ChatGPT
+sign-in. This first-party Codex installation is the only plugin capability
+approval granted by automatic setup. If installation or activation fails, the
+dashboard shows the reason and lets you choose another connection.
+
+<a id="codex-login-and-isolation" />
+
+When automatic setup selects an existing Codex ChatGPT or API-key login, it sets
+`plugins.entries.codex.config.appServer.homeScope: "user"`. Codex's app-server
+then uses `CODEX_HOME`, or `~/.codex` when unset, on the Gateway host. This shares
+your native Codex login, threads, and `config.toml`. Codex owns authentication
+and token refresh; paleoclaw does not copy or register the OAuth tokens in its
+auth store.
+
+If there is no Codex login, the offered ChatGPT sign-in stays isolated in an
+paleoclaw-owned agent home. These are the two Codex modes: **Reuse** shares your
+existing login and sessions; **Separate** uses an paleoclaw login and agent home.
+To switch from reuse to separate, choose **Use a separate login** on the setup
+card and follow the inline ChatGPT sign-in. You can also open **Model Setup**
+and sign in with ChatGPT or enter an OpenAI API key. Completing that sign-in
+selects the isolated home automatically.
+See [Native Codex state](/plugins/codex-harness/native-features#share-threads-with-codex-desktop-and-cli)
+for the home-scope settings. Manual setup retains its existing API-key import
+behavior.
+
+The dashboard explains what paleoclaw picked and lists alternatives. Use its
+provider and model settings to switch, or **Connection… → Gateways** to connect
+to another Gateway. The manual picker still only detects and presents choices;
+it waits for your selection before testing, installing, or saving a connection.
+Local discovery never pulls or downloads a model.
+Ollama checks `/api/ps` for loaded models; an eligible
+model that is only installed on disk requires explicit setup through
+**Choose connection** → **Local only**. See [Ollama](/providers/ollama).
+
+The manual provider picker is built from installed manifests and paleoclaw's official
+provider-plugin catalog, so installable providers such as Meta appear before their
+plugin is present. When a connection needs a runtime plugin, the app and dashboard show the
+staged package's source and capabilities, with integrity when available before installing or
+enabling it, including verified first-party packages. Review the details, then
+explicitly confirm acceptance to continue.
+Declining or confirmed cancellation stops that attempt without selecting another
+inference route. If the confirmation turn fails, the app shows the failure and
+keeps the saved credential. Choose the saved sign-in in **Model Setup** to retry
+without signing in again. Runtime plugins installed for that attempt are kept.
+
+Automatic setup leaves native Claude/Codex conversation discovery off. You can
+enable it separately to show existing native conversations in the sidebar.
+This discovers conversations in place without copying transcripts; choosing a
+Codex or Claude inference route does not enable it.
+
+For a custom OpenAI- or Anthropic-compatible endpoint on a local Gateway, choose
+**Custom OpenAI/Anthropic-compatible endpoint** and complete the Gateway-owned
+wizard. When the Gateway is remote, the Mac does not collect that host's secret;
+run `paleoclaw onboard --auth-choice custom-api-key` on the Gateway host, then
+return to the app and refresh detection.
+
+If the result is uncertain or settings may already have been saved, the app keeps
+replacement setup blocked while it checks the Gateway. **Check again** repeats
+that check without starting another activation; it does not discard the pending
+attempt or shorten its wait. If reconciliation still cannot confirm completion
+after the wait, the app returns to connection choices with the error visible
+instead of automatically retrying a detected credential. Retry that connection
+or choose another one to start a new activation.
+
+The macOS setup sheet shows the selected provider and current activity with a
+spinner while the Gateway works. Plugin installation does not estimate a
+completion percentage. Review prompts and input controls appear when an answer
+is needed; installation and the final live AI test stay in the same flow.
+
+After you choose **Cancel**, wait for confirmation. The Gateway may need to
+finish an operation that has already reached its commit point. If cancellation
+cannot be confirmed, the sheet says setup may still be running and lets you
+retry **Cancel**.
+
+To use a Claude subscription when the Gateway host has no Claude CLI login, run
+`claude setup-token` on any machine with Claude Code installed, then paste the
+printed token as **Anthropic setup-token** under **Connect with an API key or
+token**.
+
+Pi and OpenCode installs may be shown for context when they cannot be selected
+as the reusable guided-setup inference route. They are whole-agent harnesses,
+not setup inference routes; their session integrations require separate runtime
+and plugin setup. Gemini CLI and Antigravity are not offered as detected setup
+routes.
+
+You can also sign in through the provider's own OAuth or device-pairing flow.
+The built-in choices include OpenAI/ChatGPT, OpenRouter, GitHub Copilot, xAI,
+MiniMax Global and CN, and Chutes. Google is available through the supported AI
+Studio API-key route. The list comes from the
+Gateway's active text-inference provider plugins rather than a fixed app list,
+so another provider can opt in without adding provider-specific macOS code.
+
+The manual key/token picker uses the same provider registry. In every route,
+the provider supplies its starter model and configuration. If the starter is an
+alias, paleoclaw tests and saves the provider's full model name while
+preserving existing model settings that the starter does not replace.
+A replacement credential stays inactive until you accept **Activate this saved
+sign-in?** after verification. Declining keeps your current connection and the
+saved replacement. Setup preserves unrelated configuration edits made during
+verification. If the same connection settings change, review them and retry the
+saved sign-in instead of overwriting the newer settings.
+Continuing remains locked until one backend has passed, so the first agent
+chat cannot start without working inference.
+</Step>
+<Step title="Continue in the dashboard">
+After a new model passes its live check, native setup closes and opens guided
+onboarding in the dashboard. paleoclaw helps configure the remaining workspace,
+Gateway, channels, and other optional features, then hands you off to normal
+agent chat. An already configured model opens the normal dashboard instead.
+
+Memory import is part of guided setup, not a separate native onboarding page.
+For a local Gateway, supported sources include Claude Code auto-memory, Codex
+consolidated memories, and Hermes memory files. Selected memories are copied
+into the agent workspace under `memory/imports/` for indexed recall;
+already-imported files are skipped. Import is optional and remains available
+later under **Settings → Import Memory**, with per-file control.
+
+There is no separate native permissions walkthrough before this handoff. Grant
+macOS access for the features you want to use from **Settings → Permissions**.
+Available permissions include Automation (AppleScript), Notifications,
+Accessibility, Screen Recording, Microphone, Speech Recognition, Camera, and
+Location. See [macOS permissions](/platforms/mac/permissions) for grant and
+recovery guidance.
+
+See [Bootstrapping](/start/bootstrapping) for what happens on the Gateway host
+during the agent's first real turn. paleoclaw remains available later under
+**Settings → paleoclaw**.
 </Step>
 </Steps>
+
+## Related
+
+- [Onboarding overview](/start/onboarding-overview)
+- [Getting started](/start/getting-started)

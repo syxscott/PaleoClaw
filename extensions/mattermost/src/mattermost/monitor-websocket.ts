@@ -1,47 +1,68 @@
-import type { ChannelAccountSnapshot, RuntimeEnv } from "paleoclaw/plugin-sdk/mattermost";
-import WebSocket from "ws";
-import type { MattermostPost } from "./client.js";
-import { rawDataToString } from "./monitor-helpers.js";
+import { randomUUID } from "node:crypto";
+import {
+  safeParseJsonWithSchema,
+  safeParseWithSchema,
+} from "paleoclaw/plugin-sdk/extension-shared";
+import { channelReadyPatch } from "paleoclaw/plugin-sdk/gateway-runtime";
+import {
+  captureWsEventAsync,
+  createDebugProxyWebSocketAgent,
+  resolveDebugProxySettings,
+} from "paleoclaw/plugin-sdk/proxy-capture";
+import { rawDataToString } from "paleoclaw/plugin-sdk/webhook-ingress";
+import { type RawData, WebSocket } from "paleoclaw/plugin-sdk/websocket-runtime";
+import { z } from "zod";
+import { MattermostPostSchema, type MattermostPost } from "./client.js";
+import type { ChannelAccountSnapshot, RuntimeEnv } from "./runtime-api.js";
 
-export type MattermostEventPayload = {
-  event?: string;
-  data?: {
-    post?: string;
-    reaction?: string;
-    channel_id?: string;
-    channel_name?: string;
-    channel_display_name?: string;
-    channel_type?: string;
-    sender_name?: string;
-    team_id?: string;
-  };
-  broadcast?: {
-    channel_id?: string;
-    team_id?: string;
-    user_id?: string;
-  };
-};
+export type MattermostEventPayload = z.infer<typeof MattermostEventPayloadSchema>;
 
-export type MattermostWebSocketLike = {
-  on(event: "open", listener: () => void): void;
-  on(event: "message", listener: (data: WebSocket.RawData) => void | Promise<void>): void;
-  on(event: "close", listener: (code: number, reason: Buffer) => void): void;
-  on(event: "error", listener: (err: unknown) => void): void;
-  send(data: string): void;
-  close(): void;
-  terminate(): void;
-};
+// Mattermost events can include double-encoded post props plus server/plugin metadata.
+// Keep channel-compatible headroom while bounding ws's 100 MiB default before parsing.
+const MATTERMOST_WEBSOCKET_MAX_PAYLOAD_BYTES = 16 * 1024 * 1024;
+// A TCP peer can accept without completing the HTTP upgrade; ws has no default deadline.
+const MATTERMOST_WEBSOCKET_HANDSHAKE_TIMEOUT_MS = 30_000;
+// After the challenge the server contract is reply-OK or close; this bounds a
+// peer that does neither so the channel cannot sit unauthenticated forever.
+const MATTERMOST_WEBSOCKET_AUTH_TIMEOUT_MS = 30_000;
+const MATTERMOST_WEBSOCKET_HEALTH_CHECK_INTERVAL_MS = 30_000;
+const MATTERMOST_WEBSOCKET_PING_INTERVAL_MS = 30_000;
+const MATTERMOST_WEBSOCKET_PONG_TIMEOUT_MS = 10_000;
+const MattermostEventPayloadSchema = z.object({
+  event: z.string().optional(),
+  status: z.string().optional(),
+  seq_reply: z.number().optional(),
+  data: z
+    .object({
+      // Durable ingress validates the post only after claiming the raw envelope.
+      post: z.unknown().optional(),
+      reaction: z.union([z.string(), z.record(z.string(), z.unknown())]).optional(),
+      channel_id: z.string().optional(),
+      channel_name: z.string().optional(),
+      channel_display_name: z.string().optional(),
+      channel_type: z.string().optional(),
+      sender_name: z.string().optional(),
+      team_id: z.string().optional(),
+    })
+    .optional(),
+  broadcast: z
+    .object({
+      channel_id: z.string().optional(),
+      team_id: z.string().optional(),
+      user_id: z.string().optional(),
+    })
+    .optional(),
+});
 
-export type MattermostWebSocketFactory = (url: string) => MattermostWebSocketLike;
+export function parseMattermostEventPayload(raw: string): MattermostEventPayload | null {
+  return safeParseJsonWithSchema(MattermostEventPayloadSchema, raw);
+}
 
-export class WebSocketClosedBeforeOpenError extends Error {
-  constructor(
-    public readonly code: number,
-    public readonly reason?: string,
-  ) {
-    super(`websocket closed before open (code ${code})`);
-    this.name = "WebSocketClosedBeforeOpenError";
+export function parseMattermostPost(value: unknown): MattermostPost | null {
+  if (typeof value === "string") {
+    return safeParseJsonWithSchema(MattermostPostSchema, value);
   }
+  return safeParseWithSchema(MattermostPostSchema, value);
 }
 
 type CreateMattermostConnectOnceOpts = {
@@ -51,103 +72,202 @@ type CreateMattermostConnectOnceOpts = {
   statusSink?: (patch: Partial<ChannelAccountSnapshot>) => void;
   runtime: RuntimeEnv;
   nextSeq: () => number;
-  onPosted: (post: MattermostPost, payload: MattermostEventPayload) => Promise<void>;
+  onPosted: (rawEvent: string) => Promise<void>;
   onReaction?: (payload: MattermostEventPayload) => Promise<void>;
-  webSocketFactory?: MattermostWebSocketFactory;
+  /**
+   * Called periodically to check whether the bot account has been modified
+   * (e.g. disabled then re-enabled) since the WebSocket was opened.
+   * Returns the bot's current `update_at` timestamp.  When it differs from
+   * the value recorded at connect time, the connection is terminated so the
+   * reconnect loop can establish a fresh one.
+   */
+  getBotUpdateAt?: () => Promise<number>;
 };
-
-export const defaultMattermostWebSocketFactory: MattermostWebSocketFactory = (url) =>
-  new WebSocket(url) as MattermostWebSocketLike;
-
-export function parsePostedPayload(
-  payload: MattermostEventPayload,
-): { payload: MattermostEventPayload; post: MattermostPost } | null {
-  if (payload.event !== "posted") {
-    return null;
-  }
-  const postData = payload.data?.post;
-  if (!postData) {
-    return null;
-  }
-  let post: MattermostPost | null = null;
-  if (typeof postData === "string") {
-    try {
-      post = JSON.parse(postData) as MattermostPost;
-    } catch {
-      return null;
-    }
-  } else if (typeof postData === "object") {
-    post = postData as MattermostPost;
-  }
-  if (!post) {
-    return null;
-  }
-  return { payload, post };
-}
-
-export function parsePostedEvent(
-  data: WebSocket.RawData,
-): { payload: MattermostEventPayload; post: MattermostPost } | null {
-  const raw = rawDataToString(data);
-  let payload: MattermostEventPayload;
-  try {
-    payload = JSON.parse(raw) as MattermostEventPayload;
-  } catch {
-    return null;
-  }
-  return parsePostedPayload(payload);
-}
 
 export function createMattermostConnectOnce(
   opts: CreateMattermostConnectOnceOpts,
 ): () => Promise<void> {
-  const webSocketFactory = opts.webSocketFactory ?? defaultMattermostWebSocketFactory;
   return async () => {
-    const ws = webSocketFactory(opts.wsUrl);
+    const flowId = randomUUID();
+    const captureEvent = (
+      event: Omit<Parameters<typeof captureWsEventAsync>[0], "url" | "flowId">,
+    ) => {
+      // Capture finalization owns failures; observe this connection's asynchronous writes.
+      void captureWsEventAsync({
+        ...event,
+        url: opts.wsUrl,
+        flowId,
+        meta: { subsystem: "mattermost-websocket", ...event.meta },
+      }).catch(() => {});
+    };
+    const agent = createDebugProxyWebSocketAgent(resolveDebugProxySettings());
+    const ws = new WebSocket(opts.wsUrl, {
+      maxPayload: MATTERMOST_WEBSOCKET_MAX_PAYLOAD_BYTES,
+      handshakeTimeout: MATTERMOST_WEBSOCKET_HANDSHAKE_TIMEOUT_MS,
+      ...(agent ? { agent } : {}),
+    });
     const onAbort = () => ws.terminate();
     opts.abortSignal?.addEventListener("abort", onAbort, { once: true });
+    const getBotUpdateAt = opts.getBotUpdateAt;
 
     try {
       return await new Promise<void>((resolve, reject) => {
         let opened = false;
-        let settled = false;
-        const resolveOnce = () => {
-          if (settled) {
-            return;
-          }
-          settled = true;
-          resolve();
+        let authenticated = false;
+        let stopped = false;
+        let healthCheckTimer: ReturnType<typeof setTimeout> | undefined;
+        let protocolPingTimer: ReturnType<typeof setTimeout> | undefined;
+        let protocolPongTimer: ReturnType<typeof setTimeout> | undefined;
+        let initialUpdateAt: number | undefined;
+        let authenticationSeq: number | undefined;
+        let authTimer: ReturnType<typeof setTimeout> | undefined;
+
+        const stopHealthChecks = () => {
+          stopped = true;
+          clearTimeout(healthCheckTimer);
+          clearTimeout(authTimer);
+          clearTimeout(protocolPingTimer);
+          clearTimeout(protocolPongTimer);
         };
-        const rejectOnce = (error: Error) => {
-          if (settled) {
+
+        const sendProtocolPing = () => {
+          if (stopped) {
             return;
           }
-          settled = true;
-          reject(error);
+          clearTimeout(protocolPongTimer);
+          protocolPongTimer = setTimeout(() => {
+            protocolPongTimer = undefined;
+            opts.runtime.error?.("mattermost websocket pong timeout — reconnecting");
+            stopHealthChecks();
+            ws.terminate();
+          }, MATTERMOST_WEBSOCKET_PONG_TIMEOUT_MS);
+          try {
+            ws.ping();
+          } catch (err) {
+            opts.runtime.error?.(`mattermost websocket ping failed: ${String(err)}`);
+            stopHealthChecks();
+            ws.terminate();
+          }
+        };
+
+        const scheduleProtocolPing = () => {
+          if (stopped || protocolPingTimer !== undefined) {
+            return;
+          }
+          protocolPingTimer = setTimeout(() => {
+            protocolPingTimer = undefined;
+            sendProtocolPing();
+          }, MATTERMOST_WEBSOCKET_PING_INTERVAL_MS);
+        };
+
+        const scheduleHealthCheck = () => {
+          if (!getBotUpdateAt || stopped) {
+            return;
+          }
+          healthCheckTimer = setTimeout(() => {
+            healthCheckTimer = undefined;
+            void runHealthCheck();
+          }, MATTERMOST_WEBSOCKET_HEALTH_CHECK_INTERVAL_MS);
+        };
+
+        const runHealthCheck = async () => {
+          if (!getBotUpdateAt || stopped) {
+            return;
+          }
+          try {
+            const current = await getBotUpdateAt();
+            if (stopped) {
+              return;
+            }
+            if (initialUpdateAt === undefined) {
+              initialUpdateAt = current;
+              return;
+            }
+            if (current !== initialUpdateAt) {
+              opts.runtime.log?.(
+                `mattermost: bot account updated (update_at changed: ${initialUpdateAt} → ${current}) — reconnecting`,
+              );
+              stopHealthChecks();
+              ws.terminate();
+            }
+          } catch (err) {
+            if (stopped) {
+              return;
+            }
+            const label =
+              initialUpdateAt === undefined
+                ? "mattermost: failed to get initial update_at"
+                : "mattermost: health check error";
+            opts.runtime.error?.(`${label}: ${String(err)}`);
+          } finally {
+            scheduleHealthCheck();
+          }
         };
 
         ws.on("open", () => {
           opened = true;
+          captureEvent({
+            direction: "local",
+            kind: "ws-open",
+          });
           opts.statusSink?.({
             connected: true,
-            lastConnectedAt: Date.now(),
-            lastError: null,
+            lifecycle: "starting",
           });
-          ws.send(
-            JSON.stringify({
-              seq: opts.nextSeq(),
-              action: "authentication_challenge",
-              data: { token: opts.botToken },
-            }),
-          );
+          authenticationSeq = opts.nextSeq();
+          const authPayload = JSON.stringify({
+            seq: authenticationSeq,
+            action: "authentication_challenge",
+            data: { token: opts.botToken },
+          });
+          captureEvent({
+            direction: "outbound",
+            kind: "ws-frame",
+            payload: authPayload,
+            meta: { eventType: "authentication_challenge" },
+          });
+          ws.send(authPayload);
+          authTimer = setTimeout(() => {
+            authTimer = undefined;
+            opts.runtime.error?.("mattermost websocket authentication timed out — reconnecting");
+            stopHealthChecks();
+            ws.terminate();
+          }, MATTERMOST_WEBSOCKET_AUTH_TIMEOUT_MS);
+          scheduleProtocolPing();
+
+          // Periodically check if the bot account was modified (e.g. disable/enable).
+          // After such a cycle the WebSocket silently stops delivering events even
+          // though the connection itself stays alive.  Comparing update_at detects
+          // this reliably regardless of how quickly the cycle happens.
+          if (getBotUpdateAt) {
+            // Use a recursive timeout so only one REST poll can be in flight at a time.
+            void runHealthCheck();
+          }
         });
 
-        ws.on("message", async (data) => {
+        ws.on("pong", () => {
+          clearTimeout(protocolPongTimer);
+          protocolPongTimer = undefined;
+          scheduleProtocolPing();
+        });
+
+        const onMessage = async (data: RawData) => {
           const raw = rawDataToString(data);
-          let payload: MattermostEventPayload;
-          try {
-            payload = JSON.parse(raw) as MattermostEventPayload;
-          } catch {
+          captureEvent({
+            direction: "inbound",
+            kind: "ws-frame",
+            payload: Buffer.from(raw),
+          });
+          const payload = parseMattermostEventPayload(raw);
+          if (!payload) {
+            return;
+          }
+
+          if (payload.status === "OK" && payload.seq_reply === authenticationSeq) {
+            authenticated = true;
+            clearTimeout(authTimer);
+            authTimer = undefined;
+            opts.statusSink?.(channelReadyPatch());
             return;
           }
 
@@ -166,56 +286,84 @@ export function createMattermostConnectOnce(
           if (payload.event !== "posted") {
             return;
           }
-          const parsed = parsePostedPayload(payload);
-          if (!parsed) {
-            return;
-          }
           try {
-            await opts.onPosted(parsed.post, parsed.payload);
+            await opts.onPosted(raw);
           } catch (err) {
-            opts.runtime.error?.(`mattermost handler failed: ${String(err)}`);
+            // Durable admission failed after retries: this post is lost and the
+            // websocket cannot nack or replay. Tear the connection down loudly
+            // so the outage is operator-visible instead of silently dropping
+            // every subsequent post against a broken store.
+            opts.runtime.error?.(
+              `mattermost durable admission failed; terminating websocket: ${String(err)}`,
+            );
+            ws.terminate();
           }
+        };
+        ws.on("message", (data) => {
+          void onMessage(data);
         });
 
         ws.on("close", (code, reason) => {
-          const message = reasonToString(reason);
+          captureEvent({
+            direction: "local",
+            kind: "ws-close",
+            closeCode: code,
+            payload: reason,
+          });
+          stopHealthChecks();
+          const message = reason.toString("utf8");
           opts.statusSink?.({
             connected: false,
+            lifecycle: "recovering",
             lastDisconnect: {
               at: Date.now(),
               status: code,
               error: message || undefined,
             },
           });
-          if (opened) {
-            resolveOnce();
+          if (opened && authenticated) {
+            resolve();
             return;
           }
-          rejectOnce(new WebSocketClosedBeforeOpenError(code, message || undefined));
+          // A rejected token and a transient drop share the pre-auth close shape.
+          // Reject either phase so reconnect backoff and visible failure reporting apply.
+          const error = new Error(
+            opened
+              ? `websocket closed before authentication completed (code ${code}) — either the bot token was rejected or the connection dropped (server restart, proxy reset); check the Mattermost bot token if this repeats`
+              : `websocket closed before open (code ${code})`,
+          );
+          reject(
+            Object.assign(error, {
+              code,
+              reason: message || undefined,
+              name: opened
+                ? "WebSocketClosedBeforeAuthenticationError"
+                : "WebSocketClosedBeforeOpenError",
+            }),
+          );
         });
 
         ws.on("error", (err) => {
+          captureEvent({
+            direction: "local",
+            kind: "error",
+            errorText: String(err),
+          });
           opts.runtime.error?.(`mattermost websocket error: ${String(err)}`);
           opts.statusSink?.({
+            connected: false,
+            lifecycle: "recovering",
             lastError: String(err),
           });
           try {
             ws.close();
-          } catch {}
+          } catch {
+            // The transport error is already reported; closing a broken socket is best effort.
+          }
         });
       });
     } finally {
       opts.abortSignal?.removeEventListener("abort", onAbort);
     }
   };
-}
-
-function reasonToString(reason: Buffer | string | undefined): string {
-  if (!reason) {
-    return "";
-  }
-  if (typeof reason === "string") {
-    return reason;
-  }
-  return reason.length > 0 ? reason.toString("utf8") : "";
 }

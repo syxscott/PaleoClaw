@@ -1,14 +1,12 @@
-import type { PluginRuntime } from "paleoclaw/plugin-sdk/imessage";
+import type { PluginRuntime } from "paleoclaw/plugin-sdk/core";
+import { createPluginRuntimeStore } from "paleoclaw/plugin-sdk/runtime-store";
 
-let runtime: PluginRuntime | null = null;
-
-export function setIMessageRuntime(next: PluginRuntime) {
-  runtime = next;
-}
-
-export function getIMessageRuntime(): PluginRuntime {
-  if (!runtime) {
-    throw new Error("iMessage runtime not initialized");
-  }
-  return runtime;
-}
+const {
+  getRuntime: getIMessageRuntime,
+  setRuntime: setIMessageRuntime,
+  tryGetRuntime: getOptionalIMessageRuntime,
+} = createPluginRuntimeStore<PluginRuntime>({
+  pluginId: "imessage",
+  errorMessage: "iMessage runtime not initialized",
+});
+export { getIMessageRuntime, getOptionalIMessageRuntime, setIMessageRuntime };

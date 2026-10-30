@@ -156,7 +156,7 @@ echo "🧹 Cleaning old app bundle"
 rm -rf "$APP_ROOT"
 mkdir -p "$APP_ROOT/Contents/MacOS"
 mkdir -p "$APP_ROOT/Contents/Resources"
-mkdir -p "$APP_ROOT/Contents/Frameworks"
+mkdir -p "$APP_ROOT/Contents/Frameworks/"
 
 echo "📄 Copying Info.plist template"
 INFO_PLIST_SRC="$ROOT_DIR/apps/macos/Sources/paleoclaw/Resources/Info.plist"

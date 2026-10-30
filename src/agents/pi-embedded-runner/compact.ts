@@ -7,7 +7,7 @@ import {
   estimateTokens,
   SessionManager,
 } from "@mariozechner/pi-coding-agent";
-import { resolveHeartbeatPrompt } from "../../auto-reply/heartbeat.js";
+import { resolveHeartbeatPromptCore } from "../../auto-reply/heartbeat.js";
 import type { ReasoningLevel, ThinkLevel } from "../../auto-reply/thinking.js";
 import { resolveChannelCapabilities } from "../../config/channel-capabilities.js";
 import type { OpenClawConfig } from "../../config/config.js";
@@ -18,13 +18,13 @@ import {
 import { createInternalHookEvent, triggerInternalHook } from "../../hooks/internal-hooks.js";
 import { getMachineDisplayName } from "../../infra/machine-name.js";
 import { generateSecureToken } from "../../infra/secure-random.js";
+import { buildTtsSystemPromptHint } from "../../plugin-sdk/tts-runtime.js";
 import { getGlobalHookRunner } from "../../plugins/hook-runner-global.js";
 import { type enqueueCommand, enqueueCommandInLane } from "../../process/command-queue.js";
 import { isCronSessionKey, isSubagentSessionKey } from "../../routing/session-key.js";
 import { resolveSignalReactionLevel } from "../../signal/reaction-level.js";
 import { resolveTelegramInlineButtonsScope } from "../../telegram/inline-buttons.js";
 import { resolveTelegramReactionLevel } from "../../telegram/reaction-level.js";
-import { buildTtsSystemPromptHint } from "../../tts/tts.js";
 import { resolveUserPath } from "../../utils.js";
 import { normalizeMessageChannel } from "../../utils/message-channel.js";
 import { isReasoningTagProvider } from "../../utils/provider-utils.js";
@@ -32,12 +32,13 @@ import { resolveOpenClawAgentDir } from "../agent-paths.js";
 import { resolveSessionAgentIds } from "../agent-scope.js";
 import type { ExecElevatedDefaults } from "../bash-tools.js";
 import { makeBootstrapWarn, resolveBootstrapContextForRun } from "../bootstrap-files.js";
-import { listChannelSupportedActions, resolveChannelMessageToolHints } from "../channel-tools.js";
+import { resolveChannelMessageToolHints } from "../channel-tools.js";
+import { listChannelSupportedActions } from "../channel-tools.legacy.js";
 import { resolveContextWindowInfo } from "../context-window-guard.js";
 import { ensureCustomApiRegistered } from "../custom-api-registry.js";
 import { formatUserTime, resolveUserTimeFormat, resolveUserTimezone } from "../date-time.js";
 import { DEFAULT_CONTEXT_TOKENS, DEFAULT_MODEL, DEFAULT_PROVIDER } from "../defaults.js";
-import { resolveOpenClawDocsPath } from "../docs-path.js";
+import { resolveOpenClawReferencePaths } from "../docs-path.js";
 import { getApiKeyForModel, resolveModelAuthMode } from "../model-auth.js";
 import { supportsModelTools } from "../model-tool-support.js";
 import { ensureOpenClawModelsJson } from "../models-config.js";
@@ -510,7 +511,7 @@ export async function compactEmbeddedPiSessionDirect(
       isSubagentSessionKey(params.sessionKey) || isCronSessionKey(params.sessionKey)
         ? "minimal"
         : "full";
-    const docsPath = await resolveOpenClawDocsPath({
+    const { docsPath } = await resolveOpenClawReferencePaths({
       workspaceDir: effectiveWorkspace,
       argv1: process.argv[1],
       cwd: process.cwd(),
@@ -528,7 +529,7 @@ export async function compactEmbeddedPiSessionDirect(
       ownerDisplaySecret: ownerDisplay.ownerDisplaySecret,
       reasoningTagHint,
       heartbeatPrompt: isDefaultAgent
-        ? resolveHeartbeatPrompt(params.config?.agents?.defaults?.heartbeat?.prompt)
+        ? resolveHeartbeatPromptCore(params.config?.agents?.defaults?.heartbeat?.prompt)
         : undefined,
       skillsPrompt,
       docsPath: docsPath ?? undefined,

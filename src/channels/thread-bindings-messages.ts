@@ -1,18 +1,15 @@
+import { resolveNonNegativeIntegerOption } from "@paleoclaw/normalization-core/number-coercion";
+/**
+ * Channel-neutral thread-binding message builders shared by plugins, ACP, and subagent flows.
+ * Keep text system-prefixed and compact because callers post it directly into user-visible threads.
+ */
+import { normalizeOptionalString } from "@paleoclaw/normalization-core/string-coerce";
+import { normalizeTrimmedStringList } from "@paleoclaw/normalization-core/string-normalization";
+import { truncateUtf16Safe } from "@paleoclaw/normalization-core/utf16-slice";
 import { prefixSystemMessage } from "../infra/system-message.js";
 
 const DEFAULT_THREAD_BINDING_FAREWELL_TEXT =
-  "Session ended. Messages here will no longer be routed.";
-
-function normalizeThreadBindingDurationMs(raw: unknown): number {
-  if (typeof raw !== "number" || !Number.isFinite(raw)) {
-    return 0;
-  }
-  const durationMs = Math.floor(raw);
-  if (durationMs < 0) {
-    return 0;
-  }
-  return durationMs;
-}
+  "This conversation is no longer bound to that session.";
 
 export function formatThreadBindingDurationLabel(durationMs: number): string {
   if (durationMs <= 0) {
@@ -32,10 +29,11 @@ export function resolveThreadBindingThreadName(params: {
   agentId?: string;
   label?: string;
 }): string {
-  const label = params.label?.trim();
-  const base = label || params.agentId?.trim() || "agent";
+  const label = normalizeOptionalString(params.label);
+  const base = label || normalizeOptionalString(params.agentId) || "agent";
   const raw = `🤖 ${base}`.replace(/\s+/g, " ").trim();
-  return raw.slice(0, 100);
+  // Native channel thread names have tight limits; keep generated names bounded.
+  return truncateUtf16Safe(raw, 100);
 }
 
 export function resolveThreadBindingIntroText(params: {
@@ -46,15 +44,13 @@ export function resolveThreadBindingIntroText(params: {
   sessionCwd?: string;
   sessionDetails?: string[];
 }): string {
-  const label = params.label?.trim();
-  const base = label || params.agentId?.trim() || "agent";
-  const normalized = base.replace(/\s+/g, " ").trim().slice(0, 100) || "agent";
-  const idleTimeoutMs = normalizeThreadBindingDurationMs(params.idleTimeoutMs);
-  const maxAgeMs = normalizeThreadBindingDurationMs(params.maxAgeMs);
-  const cwd = params.sessionCwd?.trim();
-  const details = (params.sessionDetails ?? [])
-    .map((entry) => entry.trim())
-    .filter((entry) => entry.length > 0);
+  const label = normalizeOptionalString(params.label);
+  const base = label || normalizeOptionalString(params.agentId) || "agent";
+  const normalized = truncateUtf16Safe(base.replace(/\s+/g, " ").trim(), 100) || "agent";
+  const idleTimeoutMs = resolveNonNegativeIntegerOption(params.idleTimeoutMs, 0);
+  const maxAgeMs = resolveNonNegativeIntegerOption(params.maxAgeMs, 0);
+  const cwd = normalizeOptionalString(params.sessionCwd);
+  const details = normalizeTrimmedStringList(params.sessionDetails);
   if (cwd) {
     details.unshift(`cwd: ${cwd}`);
   }
@@ -62,7 +58,7 @@ export function resolveThreadBindingIntroText(params: {
   const lifecycle: string[] = [];
   if (idleTimeoutMs > 0) {
     lifecycle.push(
-      `idle auto-unfocus after ${formatThreadBindingDurationLabel(idleTimeoutMs)} inactivity`,
+      `idle expiry after ${formatThreadBindingDurationLabel(idleTimeoutMs)} inactivity`,
     );
   }
   if (maxAgeMs > 0) {
@@ -86,26 +82,19 @@ export function resolveThreadBindingFarewellText(params: {
   idleTimeoutMs: number;
   maxAgeMs: number;
 }): string {
-  const custom = params.farewellText?.trim();
+  const custom = normalizeOptionalString(params.farewellText);
   if (custom) {
     return prefixSystemMessage(custom);
   }
 
-  if (params.reason === "idle-expired") {
+  if (params.reason === "idle-expired" || params.reason === "max-age-expired") {
+    const idle = params.reason === "idle-expired";
     const label = formatThreadBindingDurationLabel(
-      normalizeThreadBindingDurationMs(params.idleTimeoutMs),
+      resolveNonNegativeIntegerOption(idle ? params.idleTimeoutMs : params.maxAgeMs, 0),
     );
+    const expiry = idle ? `after ${label} of inactivity` : `at max age of ${label}`;
     return prefixSystemMessage(
-      `Session ended automatically after ${label} of inactivity. Messages here will no longer be routed.`,
-    );
-  }
-
-  if (params.reason === "max-age-expired") {
-    const label = formatThreadBindingDurationLabel(
-      normalizeThreadBindingDurationMs(params.maxAgeMs),
-    );
-    return prefixSystemMessage(
-      `Session ended automatically at max age of ${label}. Messages here will no longer be routed.`,
+      `Conversation binding expired ${expiry}. Messages here will no longer go to that session.`,
     );
   }
 

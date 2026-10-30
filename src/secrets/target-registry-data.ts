@@ -1,749 +1,321 @@
+/** Builds the static and plugin-derived registry of secret migration targets. */
+import type { OpenClawConfig } from "../config/types.openclaw.js";
+import type { PluginManifestRecord } from "../plugins/manifest-registry.js";
+import { resolvePluginMetadataSnapshot } from "../plugins/plugin-metadata-snapshot.js";
+import { formatConcreteConfigPath } from "../shared/dot-path.js";
+import { loadChannelSecretContractApiForRecord } from "./channel-contract-api.js";
+import { listOfficialExternalChannelSecretTargetRegistryEntries } from "./official-external-channel-secret-contract.js";
+import { PROVIDER_REQUEST_SECRET_FIELD_GROUPS } from "./provider-request-secret-fields.js";
+import { parseDotPath } from "./shared.js";
 import type { SecretTargetRegistryEntry } from "./target-registry-types.js";
+
+type PluginConfigTargetScope = {
+  pluginIds: readonly string[];
+  includeChannelContracts?: boolean;
+};
 
 const SECRET_INPUT_SHAPE = "secret_input"; // pragma: allowlist secret
 const SIBLING_REF_SHAPE = "sibling_ref"; // pragma: allowlist secret
 
-const SECRET_TARGET_REGISTRY: SecretTargetRegistryEntry[] = [
-  {
-    id: "auth-profiles.api_key.key",
-    targetType: "auth-profiles.api_key.key",
-    configFile: "auth-profiles.json",
-    pathPattern: "profiles.*.key",
-    refPathPattern: "profiles.*.keyRef",
-    secretShape: SIBLING_REF_SHAPE,
-    expectedResolvedValue: "string",
-    includeInPlan: true,
-    includeInConfigure: true,
-    includeInAudit: true,
-    authProfileType: "api_key",
-  },
-  {
-    id: "auth-profiles.token.token",
-    targetType: "auth-profiles.token.token",
-    configFile: "auth-profiles.json",
-    pathPattern: "profiles.*.token",
-    refPathPattern: "profiles.*.tokenRef",
-    secretShape: SIBLING_REF_SHAPE,
-    expectedResolvedValue: "string",
-    includeInPlan: true,
-    includeInConfigure: true,
-    includeInAudit: true,
-    authProfileType: "token",
-  },
-  {
-    id: "agents.defaults.memorySearch.remote.apiKey",
-    targetType: "agents.defaults.memorySearch.remote.apiKey",
-    configFile: "paleoclaw.json",
-    pathPattern: "agents.defaults.memorySearch.remote.apiKey",
+/** Static credential fields shared by auth-profile scanning and target discovery. */
+export const AUTH_PROFILE_SECRET_FIELDS = {
+  api_key: { authProfileType: "api_key", valueField: "key", refField: "keyRef" },
+  token: { authProfileType: "token", valueField: "token", refField: "tokenRef" },
+} as const;
+
+const WEB_PROVIDER_SECRET_CONFIGS = [
+  { contract: "webSearchProviders", configPath: "webSearch.apiKey" },
+  { contract: "webFetchProviders", configPath: "webFetch.apiKey" },
+] as const;
+
+function createOpenClawConfigSecretTargetEntry(
+  pathPattern: string,
+  options: Partial<
+    Pick<
+      SecretTargetRegistryEntry,
+      | "pathPatternSegments"
+      | "targetType"
+      | "targetTypeAliases"
+      | "includeInConfigure"
+      | "providerIdPathSegmentIndex"
+      | "trackProviderShadowing"
+    >
+  > = {},
+): SecretTargetRegistryEntry {
+  return {
+    id: pathPattern,
+    targetType: pathPattern,
+    configFile: "openclaw.json",
+    pathPattern,
     secretShape: SECRET_INPUT_SHAPE,
     expectedResolvedValue: "string",
     includeInPlan: true,
     includeInConfigure: true,
     includeInAudit: true,
-  },
-  {
-    id: "agents.list[].memorySearch.remote.apiKey",
-    targetType: "agents.list[].memorySearch.remote.apiKey",
-    configFile: "paleoclaw.json",
-    pathPattern: "agents.list[].memorySearch.remote.apiKey",
-    secretShape: SECRET_INPUT_SHAPE,
-    expectedResolvedValue: "string",
-    includeInPlan: true,
-    includeInConfigure: true,
-    includeInAudit: true,
-  },
-  {
-    id: "channels.bluebubbles.accounts.*.password",
-    targetType: "channels.bluebubbles.accounts.*.password",
-    configFile: "paleoclaw.json",
-    pathPattern: "channels.bluebubbles.accounts.*.password",
-    secretShape: SECRET_INPUT_SHAPE,
-    expectedResolvedValue: "string",
-    includeInPlan: true,
-    includeInConfigure: true,
-    includeInAudit: true,
-  },
-  {
-    id: "channels.bluebubbles.password",
-    targetType: "channels.bluebubbles.password",
-    configFile: "paleoclaw.json",
-    pathPattern: "channels.bluebubbles.password",
-    secretShape: SECRET_INPUT_SHAPE,
-    expectedResolvedValue: "string",
-    includeInPlan: true,
-    includeInConfigure: true,
-    includeInAudit: true,
-  },
-  {
-    id: "channels.discord.accounts.*.pluralkit.token",
-    targetType: "channels.discord.accounts.*.pluralkit.token",
-    configFile: "paleoclaw.json",
-    pathPattern: "channels.discord.accounts.*.pluralkit.token",
-    secretShape: SECRET_INPUT_SHAPE,
-    expectedResolvedValue: "string",
-    includeInPlan: true,
-    includeInConfigure: true,
-    includeInAudit: true,
-  },
-  {
-    id: "channels.discord.accounts.*.token",
-    targetType: "channels.discord.accounts.*.token",
-    configFile: "paleoclaw.json",
-    pathPattern: "channels.discord.accounts.*.token",
-    secretShape: SECRET_INPUT_SHAPE,
-    expectedResolvedValue: "string",
-    includeInPlan: true,
-    includeInConfigure: true,
-    includeInAudit: true,
-  },
-  {
-    id: "channels.discord.accounts.*.voice.tts.elevenlabs.apiKey",
-    targetType: "channels.discord.accounts.*.voice.tts.elevenlabs.apiKey",
-    configFile: "paleoclaw.json",
-    pathPattern: "channels.discord.accounts.*.voice.tts.elevenlabs.apiKey",
-    secretShape: SECRET_INPUT_SHAPE,
-    expectedResolvedValue: "string",
-    includeInPlan: true,
-    includeInConfigure: true,
-    includeInAudit: true,
-  },
-  {
-    id: "channels.discord.accounts.*.voice.tts.openai.apiKey",
-    targetType: "channels.discord.accounts.*.voice.tts.openai.apiKey",
-    configFile: "paleoclaw.json",
-    pathPattern: "channels.discord.accounts.*.voice.tts.openai.apiKey",
-    secretShape: SECRET_INPUT_SHAPE,
-    expectedResolvedValue: "string",
-    includeInPlan: true,
-    includeInConfigure: true,
-    includeInAudit: true,
-  },
-  {
-    id: "channels.discord.pluralkit.token",
-    targetType: "channels.discord.pluralkit.token",
-    configFile: "paleoclaw.json",
-    pathPattern: "channels.discord.pluralkit.token",
-    secretShape: SECRET_INPUT_SHAPE,
-    expectedResolvedValue: "string",
-    includeInPlan: true,
-    includeInConfigure: true,
-    includeInAudit: true,
-  },
-  {
-    id: "channels.discord.token",
-    targetType: "channels.discord.token",
-    configFile: "paleoclaw.json",
-    pathPattern: "channels.discord.token",
-    secretShape: SECRET_INPUT_SHAPE,
-    expectedResolvedValue: "string",
-    includeInPlan: true,
-    includeInConfigure: true,
-    includeInAudit: true,
-  },
-  {
-    id: "channels.discord.voice.tts.elevenlabs.apiKey",
-    targetType: "channels.discord.voice.tts.elevenlabs.apiKey",
-    configFile: "paleoclaw.json",
-    pathPattern: "channels.discord.voice.tts.elevenlabs.apiKey",
-    secretShape: SECRET_INPUT_SHAPE,
-    expectedResolvedValue: "string",
-    includeInPlan: true,
-    includeInConfigure: true,
-    includeInAudit: true,
-  },
-  {
-    id: "channels.discord.voice.tts.openai.apiKey",
-    targetType: "channels.discord.voice.tts.openai.apiKey",
-    configFile: "paleoclaw.json",
-    pathPattern: "channels.discord.voice.tts.openai.apiKey",
-    secretShape: SECRET_INPUT_SHAPE,
-    expectedResolvedValue: "string",
-    includeInPlan: true,
-    includeInConfigure: true,
-    includeInAudit: true,
-  },
-  {
-    id: "channels.feishu.accounts.*.appSecret",
-    targetType: "channels.feishu.accounts.*.appSecret",
-    configFile: "paleoclaw.json",
-    pathPattern: "channels.feishu.accounts.*.appSecret",
-    secretShape: SECRET_INPUT_SHAPE,
-    expectedResolvedValue: "string",
-    includeInPlan: true,
-    includeInConfigure: true,
-    includeInAudit: true,
-  },
-  {
-    id: "channels.feishu.accounts.*.verificationToken",
-    targetType: "channels.feishu.accounts.*.verificationToken",
-    configFile: "paleoclaw.json",
-    pathPattern: "channels.feishu.accounts.*.verificationToken",
-    secretShape: SECRET_INPUT_SHAPE,
-    expectedResolvedValue: "string",
-    includeInPlan: true,
-    includeInConfigure: true,
-    includeInAudit: true,
-  },
-  {
-    id: "channels.feishu.appSecret",
-    targetType: "channels.feishu.appSecret",
-    configFile: "paleoclaw.json",
-    pathPattern: "channels.feishu.appSecret",
-    secretShape: SECRET_INPUT_SHAPE,
-    expectedResolvedValue: "string",
-    includeInPlan: true,
-    includeInConfigure: true,
-    includeInAudit: true,
-  },
-  {
-    id: "channels.feishu.verificationToken",
-    targetType: "channels.feishu.verificationToken",
-    configFile: "paleoclaw.json",
-    pathPattern: "channels.feishu.verificationToken",
-    secretShape: SECRET_INPUT_SHAPE,
-    expectedResolvedValue: "string",
-    includeInPlan: true,
-    includeInConfigure: true,
-    includeInAudit: true,
-  },
-  {
-    id: "channels.googlechat.accounts.*.serviceAccount",
-    targetType: "channels.googlechat.serviceAccount",
-    targetTypeAliases: ["channels.googlechat.accounts.*.serviceAccount"],
-    configFile: "paleoclaw.json",
-    pathPattern: "channels.googlechat.accounts.*.serviceAccount",
-    refPathPattern: "channels.googlechat.accounts.*.serviceAccountRef",
-    secretShape: SIBLING_REF_SHAPE,
-    expectedResolvedValue: "string-or-object",
-    includeInPlan: true,
-    includeInConfigure: true,
-    includeInAudit: true,
-    accountIdPathSegmentIndex: 3,
-  },
-  {
-    id: "channels.googlechat.serviceAccount",
-    targetType: "channels.googlechat.serviceAccount",
-    configFile: "paleoclaw.json",
-    pathPattern: "channels.googlechat.serviceAccount",
-    refPathPattern: "channels.googlechat.serviceAccountRef",
-    secretShape: SIBLING_REF_SHAPE,
-    expectedResolvedValue: "string-or-object",
-    includeInPlan: true,
-    includeInConfigure: true,
-    includeInAudit: true,
-  },
-  {
-    id: "channels.irc.accounts.*.nickserv.password",
-    targetType: "channels.irc.accounts.*.nickserv.password",
-    configFile: "paleoclaw.json",
-    pathPattern: "channels.irc.accounts.*.nickserv.password",
-    secretShape: SECRET_INPUT_SHAPE,
-    expectedResolvedValue: "string",
-    includeInPlan: true,
-    includeInConfigure: true,
-    includeInAudit: true,
-  },
-  {
-    id: "channels.irc.accounts.*.password",
-    targetType: "channels.irc.accounts.*.password",
-    configFile: "paleoclaw.json",
-    pathPattern: "channels.irc.accounts.*.password",
-    secretShape: SECRET_INPUT_SHAPE,
-    expectedResolvedValue: "string",
-    includeInPlan: true,
-    includeInConfigure: true,
-    includeInAudit: true,
-  },
-  {
-    id: "channels.irc.nickserv.password",
-    targetType: "channels.irc.nickserv.password",
-    configFile: "paleoclaw.json",
-    pathPattern: "channels.irc.nickserv.password",
-    secretShape: SECRET_INPUT_SHAPE,
-    expectedResolvedValue: "string",
-    includeInPlan: true,
-    includeInConfigure: true,
-    includeInAudit: true,
-  },
-  {
-    id: "channels.irc.password",
-    targetType: "channels.irc.password",
-    configFile: "paleoclaw.json",
-    pathPattern: "channels.irc.password",
-    secretShape: SECRET_INPUT_SHAPE,
-    expectedResolvedValue: "string",
-    includeInPlan: true,
-    includeInConfigure: true,
-    includeInAudit: true,
-  },
-  {
-    id: "channels.mattermost.accounts.*.botToken",
-    targetType: "channels.mattermost.accounts.*.botToken",
-    configFile: "paleoclaw.json",
-    pathPattern: "channels.mattermost.accounts.*.botToken",
-    secretShape: SECRET_INPUT_SHAPE,
-    expectedResolvedValue: "string",
-    includeInPlan: true,
-    includeInConfigure: true,
-    includeInAudit: true,
-  },
-  {
-    id: "channels.mattermost.botToken",
-    targetType: "channels.mattermost.botToken",
-    configFile: "paleoclaw.json",
-    pathPattern: "channels.mattermost.botToken",
-    secretShape: SECRET_INPUT_SHAPE,
-    expectedResolvedValue: "string",
-    includeInPlan: true,
-    includeInConfigure: true,
-    includeInAudit: true,
-  },
-  {
-    id: "channels.matrix.accounts.*.password",
-    targetType: "channels.matrix.accounts.*.password",
-    configFile: "paleoclaw.json",
-    pathPattern: "channels.matrix.accounts.*.password",
-    secretShape: SECRET_INPUT_SHAPE,
-    expectedResolvedValue: "string",
-    includeInPlan: true,
-    includeInConfigure: true,
-    includeInAudit: true,
-  },
-  {
-    id: "channels.matrix.password",
-    targetType: "channels.matrix.password",
-    configFile: "paleoclaw.json",
-    pathPattern: "channels.matrix.password",
-    secretShape: SECRET_INPUT_SHAPE,
-    expectedResolvedValue: "string",
-    includeInPlan: true,
-    includeInConfigure: true,
-    includeInAudit: true,
-  },
-  {
-    id: "channels.msteams.appPassword",
-    targetType: "channels.msteams.appPassword",
-    configFile: "paleoclaw.json",
-    pathPattern: "channels.msteams.appPassword",
-    secretShape: SECRET_INPUT_SHAPE,
-    expectedResolvedValue: "string",
-    includeInPlan: true,
-    includeInConfigure: true,
-    includeInAudit: true,
-  },
-  {
-    id: "channels.nextcloud-talk.accounts.*.apiPassword",
-    targetType: "channels.nextcloud-talk.accounts.*.apiPassword",
-    configFile: "paleoclaw.json",
-    pathPattern: "channels.nextcloud-talk.accounts.*.apiPassword",
-    secretShape: SECRET_INPUT_SHAPE,
-    expectedResolvedValue: "string",
-    includeInPlan: true,
-    includeInConfigure: true,
-    includeInAudit: true,
-  },
-  {
-    id: "channels.nextcloud-talk.accounts.*.botSecret",
-    targetType: "channels.nextcloud-talk.accounts.*.botSecret",
-    configFile: "paleoclaw.json",
-    pathPattern: "channels.nextcloud-talk.accounts.*.botSecret",
-    secretShape: SECRET_INPUT_SHAPE,
-    expectedResolvedValue: "string",
-    includeInPlan: true,
-    includeInConfigure: true,
-    includeInAudit: true,
-  },
-  {
-    id: "channels.nextcloud-talk.apiPassword",
-    targetType: "channels.nextcloud-talk.apiPassword",
-    configFile: "paleoclaw.json",
-    pathPattern: "channels.nextcloud-talk.apiPassword",
-    secretShape: SECRET_INPUT_SHAPE,
-    expectedResolvedValue: "string",
-    includeInPlan: true,
-    includeInConfigure: true,
-    includeInAudit: true,
-  },
-  {
-    id: "channels.nextcloud-talk.botSecret",
-    targetType: "channels.nextcloud-talk.botSecret",
-    configFile: "paleoclaw.json",
-    pathPattern: "channels.nextcloud-talk.botSecret",
-    secretShape: SECRET_INPUT_SHAPE,
-    expectedResolvedValue: "string",
-    includeInPlan: true,
-    includeInConfigure: true,
-    includeInAudit: true,
-  },
-  {
-    id: "channels.slack.accounts.*.appToken",
-    targetType: "channels.slack.accounts.*.appToken",
-    configFile: "paleoclaw.json",
-    pathPattern: "channels.slack.accounts.*.appToken",
-    secretShape: SECRET_INPUT_SHAPE,
-    expectedResolvedValue: "string",
-    includeInPlan: true,
-    includeInConfigure: true,
-    includeInAudit: true,
-  },
-  {
-    id: "channels.slack.accounts.*.botToken",
-    targetType: "channels.slack.accounts.*.botToken",
-    configFile: "paleoclaw.json",
-    pathPattern: "channels.slack.accounts.*.botToken",
-    secretShape: SECRET_INPUT_SHAPE,
-    expectedResolvedValue: "string",
-    includeInPlan: true,
-    includeInConfigure: true,
-    includeInAudit: true,
-  },
-  {
-    id: "channels.slack.accounts.*.signingSecret",
-    targetType: "channels.slack.accounts.*.signingSecret",
-    configFile: "paleoclaw.json",
-    pathPattern: "channels.slack.accounts.*.signingSecret",
-    secretShape: SECRET_INPUT_SHAPE,
-    expectedResolvedValue: "string",
-    includeInPlan: true,
-    includeInConfigure: true,
-    includeInAudit: true,
-  },
-  {
-    id: "channels.slack.accounts.*.userToken",
-    targetType: "channels.slack.accounts.*.userToken",
-    configFile: "paleoclaw.json",
-    pathPattern: "channels.slack.accounts.*.userToken",
-    secretShape: SECRET_INPUT_SHAPE,
-    expectedResolvedValue: "string",
-    includeInPlan: true,
-    includeInConfigure: true,
-    includeInAudit: true,
-  },
-  {
-    id: "channels.slack.appToken",
-    targetType: "channels.slack.appToken",
-    configFile: "paleoclaw.json",
-    pathPattern: "channels.slack.appToken",
-    secretShape: SECRET_INPUT_SHAPE,
-    expectedResolvedValue: "string",
-    includeInPlan: true,
-    includeInConfigure: true,
-    includeInAudit: true,
-  },
-  {
-    id: "channels.slack.botToken",
-    targetType: "channels.slack.botToken",
-    configFile: "paleoclaw.json",
-    pathPattern: "channels.slack.botToken",
-    secretShape: SECRET_INPUT_SHAPE,
-    expectedResolvedValue: "string",
-    includeInPlan: true,
-    includeInConfigure: true,
-    includeInAudit: true,
-  },
-  {
-    id: "channels.slack.signingSecret",
-    targetType: "channels.slack.signingSecret",
-    configFile: "paleoclaw.json",
-    pathPattern: "channels.slack.signingSecret",
-    secretShape: SECRET_INPUT_SHAPE,
-    expectedResolvedValue: "string",
-    includeInPlan: true,
-    includeInConfigure: true,
-    includeInAudit: true,
-  },
-  {
-    id: "channels.slack.userToken",
-    targetType: "channels.slack.userToken",
-    configFile: "paleoclaw.json",
-    pathPattern: "channels.slack.userToken",
-    secretShape: SECRET_INPUT_SHAPE,
-    expectedResolvedValue: "string",
-    includeInPlan: true,
-    includeInConfigure: true,
-    includeInAudit: true,
-  },
-  {
-    id: "channels.telegram.accounts.*.botToken",
-    targetType: "channels.telegram.accounts.*.botToken",
-    configFile: "paleoclaw.json",
-    pathPattern: "channels.telegram.accounts.*.botToken",
-    secretShape: SECRET_INPUT_SHAPE,
-    expectedResolvedValue: "string",
-    includeInPlan: true,
-    includeInConfigure: true,
-    includeInAudit: true,
-  },
-  {
-    id: "channels.telegram.accounts.*.webhookSecret",
-    targetType: "channels.telegram.accounts.*.webhookSecret",
-    configFile: "paleoclaw.json",
-    pathPattern: "channels.telegram.accounts.*.webhookSecret",
-    secretShape: SECRET_INPUT_SHAPE,
-    expectedResolvedValue: "string",
-    includeInPlan: true,
-    includeInConfigure: true,
-    includeInAudit: true,
-  },
-  {
-    id: "channels.telegram.botToken",
-    targetType: "channels.telegram.botToken",
-    configFile: "paleoclaw.json",
-    pathPattern: "channels.telegram.botToken",
-    secretShape: SECRET_INPUT_SHAPE,
-    expectedResolvedValue: "string",
-    includeInPlan: true,
-    includeInConfigure: true,
-    includeInAudit: true,
-  },
-  {
-    id: "channels.telegram.webhookSecret",
-    targetType: "channels.telegram.webhookSecret",
-    configFile: "paleoclaw.json",
-    pathPattern: "channels.telegram.webhookSecret",
-    secretShape: SECRET_INPUT_SHAPE,
-    expectedResolvedValue: "string",
-    includeInPlan: true,
-    includeInConfigure: true,
-    includeInAudit: true,
-  },
-  {
-    id: "channels.zalo.accounts.*.botToken",
-    targetType: "channels.zalo.accounts.*.botToken",
-    configFile: "paleoclaw.json",
-    pathPattern: "channels.zalo.accounts.*.botToken",
-    secretShape: SECRET_INPUT_SHAPE,
-    expectedResolvedValue: "string",
-    includeInPlan: true,
-    includeInConfigure: true,
-    includeInAudit: true,
-  },
-  {
-    id: "channels.zalo.accounts.*.webhookSecret",
-    targetType: "channels.zalo.accounts.*.webhookSecret",
-    configFile: "paleoclaw.json",
-    pathPattern: "channels.zalo.accounts.*.webhookSecret",
-    secretShape: SECRET_INPUT_SHAPE,
-    expectedResolvedValue: "string",
-    includeInPlan: true,
-    includeInConfigure: true,
-    includeInAudit: true,
-  },
-  {
-    id: "channels.zalo.botToken",
-    targetType: "channels.zalo.botToken",
-    configFile: "paleoclaw.json",
-    pathPattern: "channels.zalo.botToken",
-    secretShape: SECRET_INPUT_SHAPE,
-    expectedResolvedValue: "string",
-    includeInPlan: true,
-    includeInConfigure: true,
-    includeInAudit: true,
-  },
-  {
-    id: "channels.zalo.webhookSecret",
-    targetType: "channels.zalo.webhookSecret",
-    configFile: "paleoclaw.json",
-    pathPattern: "channels.zalo.webhookSecret",
-    secretShape: SECRET_INPUT_SHAPE,
-    expectedResolvedValue: "string",
-    includeInPlan: true,
-    includeInConfigure: true,
-    includeInAudit: true,
-  },
-  {
-    id: "cron.webhookToken",
-    targetType: "cron.webhookToken",
-    configFile: "paleoclaw.json",
-    pathPattern: "cron.webhookToken",
-    secretShape: SECRET_INPUT_SHAPE,
-    expectedResolvedValue: "string",
-    includeInPlan: true,
-    includeInConfigure: true,
-    includeInAudit: true,
-  },
-  {
-    id: "gateway.auth.token",
-    targetType: "gateway.auth.token",
-    configFile: "paleoclaw.json",
-    pathPattern: "gateway.auth.token",
-    secretShape: SECRET_INPUT_SHAPE,
-    expectedResolvedValue: "string",
-    includeInPlan: true,
-    includeInConfigure: true,
-    includeInAudit: true,
-  },
-  {
-    id: "gateway.auth.password",
-    targetType: "gateway.auth.password",
-    configFile: "paleoclaw.json",
-    pathPattern: "gateway.auth.password",
-    secretShape: SECRET_INPUT_SHAPE,
-    expectedResolvedValue: "string",
-    includeInPlan: true,
-    includeInConfigure: true,
-    includeInAudit: true,
-  },
-  {
-    id: "gateway.remote.password",
-    targetType: "gateway.remote.password",
-    configFile: "paleoclaw.json",
-    pathPattern: "gateway.remote.password",
-    secretShape: SECRET_INPUT_SHAPE,
-    expectedResolvedValue: "string",
-    includeInPlan: true,
-    includeInConfigure: true,
-    includeInAudit: true,
-  },
-  {
-    id: "gateway.remote.token",
-    targetType: "gateway.remote.token",
-    configFile: "paleoclaw.json",
-    pathPattern: "gateway.remote.token",
-    secretShape: SECRET_INPUT_SHAPE,
-    expectedResolvedValue: "string",
-    includeInPlan: true,
-    includeInConfigure: true,
-    includeInAudit: true,
-  },
-  {
-    id: "messages.tts.elevenlabs.apiKey",
-    targetType: "messages.tts.elevenlabs.apiKey",
-    configFile: "paleoclaw.json",
-    pathPattern: "messages.tts.elevenlabs.apiKey",
-    secretShape: SECRET_INPUT_SHAPE,
-    expectedResolvedValue: "string",
-    includeInPlan: true,
-    includeInConfigure: true,
-    includeInAudit: true,
-  },
-  {
-    id: "messages.tts.openai.apiKey",
-    targetType: "messages.tts.openai.apiKey",
-    configFile: "paleoclaw.json",
-    pathPattern: "messages.tts.openai.apiKey",
-    secretShape: SECRET_INPUT_SHAPE,
-    expectedResolvedValue: "string",
-    includeInPlan: true,
-    includeInConfigure: true,
-    includeInAudit: true,
-  },
-  {
-    id: "models.providers.*.apiKey",
-    targetType: "models.providers.apiKey",
-    targetTypeAliases: ["models.providers.*.apiKey"],
-    configFile: "paleoclaw.json",
-    pathPattern: "models.providers.*.apiKey",
-    secretShape: SECRET_INPUT_SHAPE,
-    expectedResolvedValue: "string",
-    includeInPlan: true,
-    includeInConfigure: true,
-    includeInAudit: true,
-    providerIdPathSegmentIndex: 2,
-    trackProviderShadowing: true,
-  },
-  {
-    id: "models.providers.*.headers.*",
-    targetType: "models.providers.headers",
-    targetTypeAliases: ["models.providers.*.headers.*"],
-    configFile: "paleoclaw.json",
-    pathPattern: "models.providers.*.headers.*",
-    secretShape: SECRET_INPUT_SHAPE,
-    expectedResolvedValue: "string",
-    includeInPlan: true,
-    includeInConfigure: true,
-    includeInAudit: true,
-    providerIdPathSegmentIndex: 2,
-  },
-  {
-    id: "skills.entries.*.apiKey",
+    ...options,
+  };
+}
+
+function createPluginOpenClawConfigSecretTargetEntry(
+  pluginId: string,
+  configPath: string,
+): SecretTargetRegistryEntry {
+  const pluginConfigPath = ["plugins", "entries", pluginId, "config"];
+  const pathPatternSegments = [...pluginConfigPath, ...parseDotPath(configPath)];
+  const pathPattern = `${formatConcreteConfigPath(pluginConfigPath)}.${configPath}`;
+  return createOpenClawConfigSecretTargetEntry(pathPattern, { pathPatternSegments });
+}
+
+function listPluginWebProviderSecretTargetRegistryEntries(
+  plugins: readonly PluginManifestRecord[],
+): SecretTargetRegistryEntry[] {
+  const entries: SecretTargetRegistryEntry[] = [];
+  for (const record of plugins) {
+    for (const config of WEB_PROVIDER_SECRET_CONFIGS) {
+      if (
+        (record.contracts?.[config.contract]?.length ?? 0) > 0 &&
+        record.configUiHints?.[config.configPath]?.sensitive === true
+      ) {
+        entries.push(createPluginOpenClawConfigSecretTargetEntry(record.id, config.configPath));
+      }
+    }
+  }
+  return entries.toSorted((left, right) => left.id.localeCompare(right.id));
+}
+
+function listPluginConfigSecretTargetRegistryEntries(
+  plugins: readonly Pick<PluginManifestRecord, "id" | "configContracts">[],
+): SecretTargetRegistryEntry[] {
+  const entries: SecretTargetRegistryEntry[] = [];
+  const seen = new Set<string>();
+  for (const record of plugins) {
+    const secretInputs = record.configContracts?.secretInputs?.paths ?? [];
+    for (const secretInput of secretInputs) {
+      const entry = createPluginOpenClawConfigSecretTargetEntry(record.id, secretInput.path);
+      const key = `${entry.configFile}:${entry.pathPattern}`;
+      if (seen.has(key)) {
+        continue;
+      }
+      seen.add(key);
+      entries.push(entry);
+    }
+  }
+  return entries.toSorted((left, right) => left.id.localeCompare(right.id));
+}
+
+function listChannelSecretTargetRegistryEntries(
+  channelPlugins: readonly PluginManifestRecord[],
+  throwOnLoadError = false,
+): SecretTargetRegistryEntry[] {
+  const entries: SecretTargetRegistryEntry[] = [];
+
+  for (const record of channelPlugins) {
+    try {
+      const contractApi = loadChannelSecretContractApiForRecord(record, { throwOnLoadError });
+      entries.push(...(contractApi?.secretTargetRegistryEntries ?? []));
+    } catch (error) {
+      // Runtime can isolate unavailable owners; generated docs must never silently lose targets.
+      if (throwOnLoadError) {
+        throw error;
+      }
+    }
+  }
+  return entries;
+}
+
+const CORE_SECRET_TARGET_REGISTRY: SecretTargetRegistryEntry[] = [
+  ...Object.values(AUTH_PROFILE_SECRET_FIELDS).map(
+    ({ authProfileType, valueField, refField }): SecretTargetRegistryEntry => ({
+      id: `auth-profiles.${authProfileType}.${valueField}`,
+      targetType: `auth-profiles.${authProfileType}.${valueField}`,
+      configFile: "auth-profile-store",
+      pathPattern: `profiles.*.${valueField}`,
+      refPathPattern: `profiles.*.${refField}`,
+      secretShape: SIBLING_REF_SHAPE,
+      expectedResolvedValue: "string",
+      includeInPlan: true,
+      includeInConfigure: true,
+      includeInAudit: true,
+      authProfileType,
+    }),
+  ),
+  ...[
+    "tools.github.app.privateKey",
+    "agents.entries.*.tools.github.app.privateKey",
+    "memory.search.remote.apiKey",
+    "agents.entries.*.memory.search.remote.apiKey",
+    "cron.webhookToken",
+    "database.postgres.connection",
+    "gateway.auth.token",
+    "gateway.auth.password",
+    "gateway.remote.password",
+    "gateway.remote.token",
+  ].map((pathPattern) => createOpenClawConfigSecretTargetEntry(pathPattern)),
+  // Header strings support authored env references, but not structured SecretRef config writes.
+  ...["memory.search.remote.headers.*", "agents.entries.*.memory.search.remote.headers.*"].map(
+    (pathPattern): SecretTargetRegistryEntry =>
+      Object.assign(createOpenClawConfigSecretTargetEntry(pathPattern), {
+        includeInPlan: false,
+        includeInConfigure: false,
+        includeInAudit: false,
+      }),
+  ),
+  ...["tts", "agents.entries.*.tts"].flatMap((prefix) =>
+    ["providers.*", "personas.*.providers.*"].map((providerPath): SecretTargetRegistryEntry => {
+      const path = `${prefix}.${providerPath}.apiKey`;
+      return createOpenClawConfigSecretTargetEntry(path, {
+        includeInConfigure: prefix === "tts",
+        providerIdPathSegmentIndex: path.split(".").length - 2,
+      });
+    }),
+  ),
+  ...[
+    "apiKey",
+    "headers.*",
+    ...PROVIDER_REQUEST_SECRET_FIELD_GROUPS.toSorted(
+      (left, right) => left.registryOrder - right.registryOrder,
+    ).flatMap(({ path, fields }) =>
+      (fields === "*" ? ["*"] : fields).map((field) => ["request", ...path, field].join(".")),
+    ),
+  ].map((suffix): SecretTargetRegistryEntry => {
+    const pathPattern = `models.providers.*.${suffix}`;
+    return createOpenClawConfigSecretTargetEntry(pathPattern, {
+      targetType: pathPattern
+        .split(".")
+        .filter((segment) => segment !== "*")
+        .join("."),
+      targetTypeAliases: [pathPattern],
+      providerIdPathSegmentIndex: 2,
+      ...(suffix === "apiKey" ? { trackProviderShadowing: true } : {}),
+    });
+  }),
+  createOpenClawConfigSecretTargetEntry("skills.entries.*.apiKey", {
     targetType: "skills.entries.apiKey",
     targetTypeAliases: ["skills.entries.*.apiKey"],
-    configFile: "paleoclaw.json",
-    pathPattern: "skills.entries.*.apiKey",
-    secretShape: SECRET_INPUT_SHAPE,
-    expectedResolvedValue: "string",
-    includeInPlan: true,
-    includeInConfigure: true,
-    includeInAudit: true,
-  },
-  {
-    id: "talk.apiKey",
-    targetType: "talk.apiKey",
-    configFile: "paleoclaw.json",
-    pathPattern: "talk.apiKey",
-    secretShape: SECRET_INPUT_SHAPE,
-    expectedResolvedValue: "string",
-    includeInPlan: true,
-    includeInConfigure: true,
-    includeInAudit: true,
-  },
-  {
-    id: "talk.providers.*.apiKey",
-    targetType: "talk.providers.*.apiKey",
-    configFile: "paleoclaw.json",
-    pathPattern: "talk.providers.*.apiKey",
-    secretShape: SECRET_INPUT_SHAPE,
-    expectedResolvedValue: "string",
-    includeInPlan: true,
-    includeInConfigure: true,
-    includeInAudit: true,
-  },
-  {
-    id: "tools.web.search.apiKey",
-    targetType: "tools.web.search.apiKey",
-    configFile: "paleoclaw.json",
-    pathPattern: "tools.web.search.apiKey",
-    secretShape: SECRET_INPUT_SHAPE,
-    expectedResolvedValue: "string",
-    includeInPlan: true,
-    includeInConfigure: true,
-    includeInAudit: true,
-  },
-  {
-    id: "tools.web.search.gemini.apiKey",
-    targetType: "tools.web.search.gemini.apiKey",
-    configFile: "paleoclaw.json",
-    pathPattern: "tools.web.search.gemini.apiKey",
-    secretShape: SECRET_INPUT_SHAPE,
-    expectedResolvedValue: "string",
-    includeInPlan: true,
-    includeInConfigure: true,
-    includeInAudit: true,
-  },
-  {
-    id: "tools.web.search.grok.apiKey",
-    targetType: "tools.web.search.grok.apiKey",
-    configFile: "paleoclaw.json",
-    pathPattern: "tools.web.search.grok.apiKey",
-    secretShape: SECRET_INPUT_SHAPE,
-    expectedResolvedValue: "string",
-    includeInPlan: true,
-    includeInConfigure: true,
-    includeInAudit: true,
-  },
-  {
-    id: "tools.web.search.kimi.apiKey",
-    targetType: "tools.web.search.kimi.apiKey",
-    configFile: "paleoclaw.json",
-    pathPattern: "tools.web.search.kimi.apiKey",
-    secretShape: SECRET_INPUT_SHAPE,
-    expectedResolvedValue: "string",
-    includeInPlan: true,
-    includeInConfigure: true,
-    includeInAudit: true,
-  },
-  {
-    id: "tools.web.search.perplexity.apiKey",
-    targetType: "tools.web.search.perplexity.apiKey",
-    configFile: "paleoclaw.json",
-    pathPattern: "tools.web.search.perplexity.apiKey",
-    secretShape: SECRET_INPUT_SHAPE,
-    expectedResolvedValue: "string",
-    includeInPlan: true,
-    includeInConfigure: true,
-    includeInAudit: true,
-  },
+  }),
+  createOpenClawConfigSecretTargetEntry("talk.providers.*.apiKey", {
+    providerIdPathSegmentIndex: 2,
+  }),
+  createOpenClawConfigSecretTargetEntry("talk.realtime.providers.*.apiKey", {
+    providerIdPathSegmentIndex: 3,
+  }),
 ];
 
-export { SECRET_TARGET_REGISTRY };
+let cachedSecretTargetRegistry: SecretTargetRegistryEntry[] | null = null;
+
+function loadSecretTargetRegistryFromPluginMetadata(params: {
+  config?: OpenClawConfig;
+  env: NodeJS.ProcessEnv;
+  pluginConfig?: PluginConfigTargetScope;
+  configuredOnly?: boolean;
+}): SecretTargetRegistryEntry[] {
+  const plugins = resolvePluginMetadataSnapshot({
+    ...(params.config !== undefined ? { config: params.config } : {}),
+    env: params.env,
+    allowWorkspaceScopedCurrent: true,
+    ...(params.pluginConfig?.pluginIds ? { pluginIds: params.pluginConfig.pluginIds } : {}),
+  }).plugins;
+  return buildSecretTargetRegistryFromPlugins(plugins, {
+    pluginConfig: params.pluginConfig,
+    ...(params.configuredOnly ? { config: params.config ?? {} } : {}),
+  });
+}
+
+/** Builds secret targets from one exact manifest-registry plugin set. */
+export function buildSecretTargetRegistryFromPlugins(
+  plugins: readonly PluginManifestRecord[],
+  options?: {
+    throwOnLoadError?: boolean;
+    /** Selected owners' manifest targets, optionally including their channel contracts. */
+    pluginConfig?: PluginConfigTargetScope;
+    /** Restrict discovery to subtrees present in this config, including disabled owners. */
+    config?: OpenClawConfig;
+  },
+): SecretTargetRegistryEntry[] {
+  const pluginConfigIds = options?.pluginConfig?.pluginIds
+    ? new Set(options.pluginConfig.pluginIds)
+    : options?.config
+      ? new Set(Object.keys(options.config.plugins?.entries ?? {}))
+      : null;
+  const configPlugins = pluginConfigIds
+    ? plugins.filter((record) => pluginConfigIds.has(record.id))
+    : plugins;
+  const channelIds = options?.config ? new Set(Object.keys(options.config.channels ?? {})) : null;
+  const channelPlugins = (
+    options?.pluginConfig
+      ? options.pluginConfig.includeChannelContracts
+        ? configPlugins
+        : []
+      : plugins
+  ).filter(
+    (record) =>
+      (!channelIds ||
+        // Shipped channel contracts may also declare their own plugin config secrets.
+        pluginConfigIds?.has(record.id) ||
+        (channelIds.size > 0 &&
+          // External contracts can have multiple owners and cover more than one channel.
+          // Only bundled contracts have a complete, channel-local artifact lookup.
+          (record.origin !== "bundled" ||
+            record.channels.some((id) => channelIds.has(id)) ||
+            Object.keys(record.channelConfigs ?? {}).some((id) => channelIds.has(id)) ||
+            channelIds.has(record.channelCatalogMeta?.id ?? "") ||
+            channelIds.has(record.packageChannel?.id ?? "")))) &&
+      (record.channels.length > 0 ||
+        Object.keys(record.channelConfigs ?? {}).length > 0 ||
+        Boolean(record.channelCatalogMeta?.id) ||
+        Boolean(record.packageChannel?.id)),
+  );
+  // Installed/workspace plugins own secret targets exactly like bundled ones
+  // (#104320: the Exa split moved web providers out of bundled origin and their
+  // targets vanished from the gateway's known-target registry). Entries stay
+  // manifest-scoped — web-provider contract + sensitive hint, or declared
+  // secretInput paths — so a non-bundled origin cannot widen target paths
+  // beyond its own declared contracts.
+  const entries = [
+    ...(options?.pluginConfig ? [] : CORE_SECRET_TARGET_REGISTRY),
+    ...listPluginWebProviderSecretTargetRegistryEntries(configPlugins),
+    ...listPluginConfigSecretTargetRegistryEntries(configPlugins),
+    ...listChannelSecretTargetRegistryEntries(channelPlugins, options?.throwOnLoadError),
+    // Catalog fallbacks are constructed under channels, never plugin config.
+    ...(options?.pluginConfig || channelIds?.size === 0
+      ? []
+      : listOfficialExternalChannelSecretTargetRegistryEntries()),
+  ];
+  const seen = new Set<string>();
+  return entries.filter((entry) => {
+    const key = `${entry.configFile}:${entry.pathPattern}`;
+    if (seen.has(key)) {
+      return false;
+    }
+    seen.add(key);
+    return true;
+  });
+}
+
+/** Returns static core secret target registry entries without plugin-derived targets. */
+export function getCoreSecretTargetRegistry(): SecretTargetRegistryEntry[] {
+  return CORE_SECRET_TARGET_REGISTRY;
+}
+
+/** Returns the full registry, configured subtrees, or selected plugin owners' targets. */
+export function getSecretTargetRegistry(params?: {
+  config?: OpenClawConfig;
+  env?: NodeJS.ProcessEnv;
+  pluginConfig?: PluginConfigTargetScope;
+  configuredOnly?: boolean;
+}): SecretTargetRegistryEntry[] {
+  if (params?.config || params?.pluginConfig) {
+    // Config-scoped plugin roots and policy are not process-stable. Compile these registries per
+    // request so one config cannot poison discovery for a later config in the same process.
+    return loadSecretTargetRegistryFromPluginMetadata({
+      config: params.config,
+      env: params.env ?? process.env,
+      pluginConfig: params.pluginConfig,
+      configuredOnly: params.configuredOnly,
+    });
+  }
+  cachedSecretTargetRegistry ??= loadSecretTargetRegistryFromPluginMetadata({
+    env: process.env,
+  });
+  return cachedSecretTargetRegistry;
+}

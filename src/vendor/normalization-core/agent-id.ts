@@ -7,7 +7,7 @@ const INVALID_CHARS_RE = /[^a-z0-9_-]+/g;
 const LEADING_DASH_RE = /^-+/;
 const TRAILING_DASH_RE = /-+$/;
 
-/** Normalizes an OpenClaw agent id to its filesystem-safe canonical form. */
+/** Normalizes an paleoclaw agent id to its filesystem-safe canonical form. */
 export function normalizeAgentId(value: string | undefined | null): string {
   const result = normalizeAgentIdStrict(value);
   return result.ok ? result.value : DEFAULT_AGENT_ID;
