@@ -206,7 +206,7 @@ describe("historical transcript directive migration", () => {
         .map((event) => JSON.stringify(event))
         .join("\n")}\n`;
       const archiveBytes = Buffer.from(archiveContent, "utf8");
-      const archiveName = "archived-session.jsonl.deleted.2026-01-01T00-00-00.000Z.archive-gen";
+      const archiveName = "archived-session.jsonl.deleted.2026-01-01T00-00-00Z.archive-gen";
       opened.db
         .prepare(
           `INSERT INTO session_transcript_archives(
@@ -497,7 +497,7 @@ describe("historical transcript directive migration", () => {
         "identity",
         archiveBytes,
         createHash("sha256").update(archiveBytes).digest("hex"),
-        "canonical.jsonl.deleted.2026-01-01T00-00-00.000Z.generation",
+        "canonical.jsonl.deleted.2026-01-01T00-00-00Z.generation",
         1,
         null,
       );
@@ -648,7 +648,7 @@ describe("historical transcript directive migration", () => {
       timestamp: 1,
     });
     const archiveBytes = Buffer.from(`${JSON.stringify(archived)}\n`, "utf8");
-    const archiveName = "expired.jsonl.deleted.2026-01-01T00-00-00.000Z.generation";
+    const archiveName = "expired.jsonl.deleted.2026-01-01T00-00-00Z.generation";
     opened.db
       .prepare(
         `INSERT INTO session_transcript_archives(

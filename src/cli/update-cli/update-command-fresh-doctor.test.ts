@@ -327,10 +327,10 @@ describe("post-plugin update readiness", () => {
       vi.stubEnv("OPENCLAW_GATEWAY_STARTUP_TRACE", undefined);
       vi.mocked(defaultRuntime.error).mockClear();
       const stderr = [
-        "[gateway] startup trace: doctor.config-flow 4100.0ms total=4200.0ms start=100.0ms\n",
+        "[gateway] startup trace: doctor.config-flow 4100ms total=4200ms start=100ms\n",
         "real Doctor warning\n",
-        "[gateway] startup trace: doctor.contribution.doctor:plugins 2500.0ms total=6800.0ms start=4300.0ms\n",
-        "[gateway] startup trace: doctor.contributions 2600.0ms total=6900.0ms start=4300.0ms",
+        "[gateway] startup trace: doctor.contribution.doctor:plugins 2500ms total=6800ms start=4300ms\n",
+        "[gateway] startup trace: doctor.contributions 2600ms total=6900ms start=4300ms",
       ].join("");
       let traceEnv: string | undefined;
       mocks.command.mockImplementationOnce(async (_command, _args, options: CommandOptions) => {

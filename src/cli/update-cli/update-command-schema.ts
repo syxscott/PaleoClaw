@@ -17,8 +17,7 @@ import type { UpdateFailureFact } from "../../infra/update-failure-facts.js";
 import { canResolveRegistryVersionForPackageTarget } from "../../infra/update-global.js";
 import { getUpdateRun, recordUpdateRunPhase } from "../../infra/update-run-ledger.js";
 import { defaultRuntime } from "../../runtime.js";
-import type { UpdateRecoveryStep } from "../../shared/update-outcome.js";
-import { UPDATE_GLOBAL_PERMISSION_REASON } from "../../shared/update-outcome.js";
+import { UPDATE_GLOBAL_PERMISSION_REASON, type UpdateRecoveryStep } from "../../shared/update-outcome.js";
 import type { OpenClawDatabaseSchemaPreflight } from "../../state/paleoclaw-database-preflight.js";
 import {
   parsePackageOpenClawSchemaVersions,

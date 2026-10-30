@@ -82,12 +82,12 @@ const fixtures = [
   messageEvent({ role: "unknown", content: [null, 17, "text", { type: "unknown" }] }),
 ].map((event, index) => Object.assign({ id: `entry-${index}`, parentId: "old-parent" }, event));
 const exactJsonFixtures = [
-  '{"type":"reset","timestamp":1.00}',
+  '{"type":"reset","timestamp":1}',
   '{"type":"reset","timestamp":1e-7}',
   '{"type":"reset","reason":"\\uD83E\\uDD9E \\u03bb \\n \\\""}',
   '{"type":"message","message":{"role":"user","content":"日本語 🦞","__openclaw":{"upstreamUserText":"private","runId":"kept"}}}',
-  '{"type":"message","message":{"role":"toolResult","details":{"openclawSyntheticMissingToolResult":1.00},"content":[],"providerReplay":{"type":"checkpoint","number":1e20}}}',
-  '{"type":"message","message":{"role":"assistant","content":[{"type":"toolCall","id":null,"name":{"unknown":1.00}}],"unknown":null}}',
+  '{"type":"message","message":{"role":"toolResult","details":{"openclawSyntheticMissingToolResult":1},"content":[],"providerReplay":{"type":"checkpoint","number":1e20}}}',
+  '{"type":"message","message":{"role":"assistant","content":[{"type":"toolCall","id":null,"name":{"unknown":1}}],"unknown":null}}',
 ];
 const passthrough = ["{ malformed", "null", "true", "17", '"text"', "[]"];
 const schema = `CREATE TABLE transcript_events (

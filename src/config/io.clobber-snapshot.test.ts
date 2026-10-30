@@ -52,9 +52,9 @@ describe("config clobber snapshots", () => {
       .files()
       .find((name) => fs.readFileSync(path.join(f.dir, name), "utf8") === "polluted-0\n");
     expect(oldest).toBeDefined();
-    const future = new Date("2026-05-03T01:00:00.000Z");
+    const future = new Date("2026-05-03T01:00:00Z");
     await fsp.utimes(path.join(f.dir, oldest!), future, future);
-    await persistBoundedClobberedConfigSnapshot(f.params(limit, "2026-05-03T00:01:00.000Z"));
+    await persistBoundedClobberedConfigSnapshot(f.params(limit, "2026-05-03T00:01:00Z"));
     expect(f.files()).toHaveLength(limit);
     expect(f.contents()).not.toContain("polluted-0\n");
     expect(f.contents()).toContain(`polluted-${limit}\n`);

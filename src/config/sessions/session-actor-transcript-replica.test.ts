@@ -19,7 +19,7 @@ const message = (id: string, parentId: string | null, role: string) => ({
   type: "message",
   id,
   parentId,
-  timestamp: "2026-10-12T00:00:00.000Z",
+  timestamp: "2026-10-12T00:00:00Z",
   message: { role, content: [{ type: "text", text: id }] },
 });
 

@@ -271,7 +271,7 @@ it.each([
         ...otherRecords,
         [pluginId]: {
           ...installRecord(candidatePath, "2.0.0"),
-          installedAt: "2026-09-01T00:00:00.000Z",
+          installedAt: "2026-09-01T00:00:00Z",
         },
       };
       await seedInstalledPluginIndex(ready ? nextRecords : previousRecords, {
@@ -322,7 +322,7 @@ it.each([
         configPaths: [["plugins", "entries", pluginId, "config"]],
       };
       const newerRecords = {
-        [pluginId]: { ...nextRecords[pluginId], installedAt: "2026-09-02T00:00:00.000Z" },
+        [pluginId]: { ...nextRecords[pluginId], installedAt: "2026-09-02T00:00:00Z" },
       };
       const payload = { commit: vi.fn(async () => {}), rollback: vi.fn(async () => {}) };
       vi.mocked(updateNpmInstalledPlugins).mockImplementation(async (params) => {

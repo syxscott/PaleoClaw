@@ -29,7 +29,7 @@ const rawAuditPath = `${auditPath}.migrated.raw`;
 const checkpointCountSql =
   "SELECT COUNT(*) AS count FROM diagnostic_events WHERE scope = 'migration.legacy-audit-raw'";
 
-function auditRecord(key: string, value: string, ts = "2026-07-01T00:00:00.000Z") {
+function auditRecord(key: string, value: string, ts = "2026-07-01T00:00:00Z") {
   return {
     ts,
     source: "config-io",

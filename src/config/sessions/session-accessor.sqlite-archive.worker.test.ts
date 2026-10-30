@@ -149,7 +149,7 @@ describe("SQLite transcript archive worker", () => {
     fs.mkdirSync(archiveDirectory, { recursive: true });
     const stagedPath = path.join(
       archiveDirectory,
-      `${sessionId}.jsonl.deleted.2026-09-02T10-00-00.000Z.generation.jsonl-stage`,
+      `${sessionId}.jsonl.deleted.2026-09-02T10-00-00Z.generation.jsonl-stage`,
     );
     fs.writeFileSync(stagedPath, content);
     const archivedPath = writeTranscriptArchive({

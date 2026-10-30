@@ -39,8 +39,8 @@ describe("Doctor workspace move ordering", () => {
     };
     const milestones = {
       version: 1,
-      bootstrapSeededAt: "2026-07-15T10:00:00.000Z",
-      setupCompletedAt: "2026-07-15T10:01:00.000Z",
+      bootstrapSeededAt: "2026-07-15T10:00:00Z",
+      setupCompletedAt: "2026-07-15T10:01:00Z",
     };
     const raw = JSON.stringify(milestones);
     const sourceName = "paleoclaw-workspace-state.json";

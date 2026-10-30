@@ -170,7 +170,7 @@ describe("SQLite post-commit history maintenance", () => {
       // Join setup's full sweep chain before pressure; only this lifecycle attempt may force it.
       await joinSessionHistoryBudgetSweeps(queueSpy);
       queueSpy.mockClear();
-      const archive = path.join(tempDir, "retained.jsonl.deleted.2026-01-01T00-00-00.000Z");
+      const archive = path.join(tempDir, "retained.jsonl.deleted.2026-01-01T00-00-00Z");
       fs.writeFileSync(archive, Buffer.alloc(64 * 1024));
       await replaceConfigFile({
         nextConfig: { session: { maintenance } },

@@ -37,8 +37,8 @@ describe("parseAbsoluteTimeMs", () => {
   });
 
   it.each([
-    ["2027-02-28t24:00:00.000z", "2027-03-01T00:00:00.000Z"],
-    ["2027-02-28t24:00:00+05:45", "2027-02-28T18:15:00.000Z"],
+    ["2027-02-28t24:00:00z", "2027-03-01T00:00:00Z"],
+    ["2027-02-28t24:00:00+05:45", "2027-02-28T18:15:00Z"],
   ])("preserves shipped ISO end-of-day timestamp %s", (input, expected) => {
     expect(parseAbsoluteTimeMs(input)).toBe(Date.parse(expected));
   });

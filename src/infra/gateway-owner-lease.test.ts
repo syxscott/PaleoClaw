@@ -236,7 +236,7 @@ describe("Gateway owner lease", () => {
             ? {
                 identity:
                   namespace.platform === "win32"
-                    ? "2000-01-01T00:00:00.0000000Z"
+                    ? "2000-01-01T00:00:00Z"
                     : namespace.platform === "freebsd"
                       ? "00000000000000000000000000000000"
                       : "87654321-abcd-0123-abcd-0123456789ab",

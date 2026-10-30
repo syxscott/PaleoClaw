@@ -55,12 +55,12 @@ export function createManagedServiceActivationScript(params: {
       legacyState.selectedDriverArgs = process.argv.slice(2);
       legacyFs.writeFileSync(legacyStatePath, JSON.stringify(legacyState));
       ${params.updaterScript}
-    })().catch((error) => { console.error(error); process.exit(18); });`;
+    })().catch((error: unknown) => { console.error(error); process.exit(18); });`;
   }
   if (params.runnerFallback) {
     return `void (async () => { ${params.sourceRuntimeImport}
       await new Promise((resolve,reject) => { process.stdin.once("data", reply => reply.toString() === "parked\\n" ? resolve() : reject(new Error("activation refused"))); process.stdout.write("park\\n"); }); ${params.updaterScript}
-    })().catch((error) => { console.error(error); process.exit(18); });`;
+    })().catch((error: unknown) => { console.error(error); process.exit(18); });`;
   }
   return `process.stdin.once("data", (reply) => { if (reply.toString() !== "parked\\n") process.exit(18); ${params.updaterScript} }); process.stdout.write("park\\n");`;
 }

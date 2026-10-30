@@ -348,7 +348,7 @@ it.each(["live", "offline", "uncertain"] as const)(
             pid: process.pid + 1,
             port: 18789,
             ownerId: "external-gateway",
-            createdAt: "2026-10-09T00:00:00.000Z",
+            createdAt: "2026-10-09T00:00:00Z",
           }
         : undefined,
     );

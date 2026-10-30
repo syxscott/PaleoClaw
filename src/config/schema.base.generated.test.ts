@@ -16,7 +16,7 @@ type TestJsonSchema = {
 };
 
 const BASE_CONFIG_SCHEMA = computeBaseConfigSchemaResponse({
-  generatedAt: "2026-05-05T00:00:00.000Z",
+  generatedAt: "2026-05-05T00:00:00Z",
 });
 const BASE_SCHEMA = BASE_CONFIG_SCHEMA.schema as TestJsonSchema;
 

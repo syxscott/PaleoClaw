@@ -502,7 +502,7 @@ describe("delivery-queue-sqlite corrupt JSON resilience", () => {
     it("expires only the bounded producer namespace after its replay window", () => {
       vi.useFakeTimers();
       try {
-        vi.setSystemTime(new Date("2026-07-20T10:00:00.000Z"));
+        vi.setSystemTime(new Date("2026-07-20T10:00:00Z"));
         const database = openTestDatabase();
         const expiredId = `${boundedCronRetention.idPrefix}expired-run`;
         const otherOwnerId = "another-producer:v1:retained-run";
@@ -545,7 +545,7 @@ describe("delivery-queue-sqlite corrupt JSON resilience", () => {
     it("expires a lone bounded receipt during its own indexed replay lookup", () => {
       vi.useFakeTimers();
       try {
-        vi.setSystemTime(new Date("2026-07-20T10:00:00.000Z"));
+        vi.setSystemTime(new Date("2026-07-20T10:00:00Z"));
         const database = openTestDatabase();
         const id = `${boundedCronRetention.idPrefix}only-run`;
         seedDeliveryQueueEntry({
@@ -586,7 +586,7 @@ describe("delivery-queue-sqlite corrupt JSON resilience", () => {
     it("preserves a bounded receipt beyond the ordinary thirty-day cleanup window", () => {
       vi.useFakeTimers();
       try {
-        vi.setSystemTime(new Date("2026-07-20T10:00:00.000Z"));
+        vi.setSystemTime(new Date("2026-07-20T10:00:00Z"));
         const database = openTestDatabase();
         const id = "long-producer:v1:retained-run";
         seedDeliveryQueueEntry({
@@ -692,7 +692,7 @@ describe("delivery-queue-sqlite corrupt JSON resilience", () => {
     it("recovers an expired pre-provider producer lease without claiming platform delivery", () => {
       vi.useFakeTimers();
       try {
-        vi.setSystemTime(new Date("2026-07-20T10:00:00.000Z"));
+        vi.setSystemTime(new Date("2026-07-20T10:00:00Z"));
         const id = `${boundedCronRetention.idPrefix}expired-producer-claim`;
         seedDeliveryQueueEntry({
           queueName: QUEUE,
@@ -768,7 +768,7 @@ describe("delivery-queue-sqlite corrupt JSON resilience", () => {
       (recoveryState) => {
         vi.useFakeTimers();
         try {
-          vi.setSystemTime(new Date("2026-08-02T10:00:00.000Z"));
+          vi.setSystemTime(new Date("2026-08-02T10:00:00Z"));
           const id = `${boundedCronRetention.idPrefix}renew-${recoveryState}`;
           const claimId = `claim-${recoveryState}`;
           seedDeliveryQueueEntry({
@@ -815,7 +815,7 @@ describe("delivery-queue-sqlite corrupt JSON resilience", () => {
     it("refuses to renew expired, mismatched, and non-explicit owners", () => {
       vi.useFakeTimers();
       try {
-        vi.setSystemTime(new Date("2026-08-02T10:00:00.000Z"));
+        vi.setSystemTime(new Date("2026-08-02T10:00:00Z"));
         const cases = [
           {
             id: `${boundedCronRetention.idPrefix}renew-expired`,
@@ -929,7 +929,7 @@ describe("delivery-queue-sqlite corrupt JSON resilience", () => {
     it("rejects stale reconciliation when two platform attempts start in the same millisecond", () => {
       vi.useFakeTimers();
       try {
-        vi.setSystemTime(new Date("2026-07-20T10:00:00.000Z"));
+        vi.setSystemTime(new Date("2026-07-20T10:00:00Z"));
         const id = `${boundedCronRetention.idPrefix}same-millisecond-attempt-fence`;
         seedDeliveryQueueEntry({
           queueName: QUEUE,

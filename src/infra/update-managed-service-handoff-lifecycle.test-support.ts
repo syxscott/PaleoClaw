@@ -363,7 +363,7 @@ if (${JSON.stringify(kind)} === "systemd") {
     await new Promise((resolve) => setTimeout(resolve, ${options?.launchdTeardown?.bootoutDelayMs ?? 0}));
     ${managedServiceStateUpdateScript(statePath, "state.bootoutCompleted = true")};
   }
-})().catch((error) => { console.error(error); process.exitCode = 1; });
+})().catch((error: unknown) => { console.error(error); process.exitCode = 1; });
 `;
 }
 
@@ -444,7 +444,7 @@ while (!fs.readFileSync(logPath).subarray(logOffset).includes(prefix)) {
 remaining = remaining.subarray(split);
 }
 process.stdout.write(remaining, () => { ${options?.updaterSignal ? 'process.kill(process.pid, "SIGTERM");' : `process.exit(${options?.updaterExitCode ?? 7});`} });
-})().catch((error) => { console.error(error); process.exitCode = 1; });`;
+})().catch((error: unknown) => { console.error(error); process.exitCode = 1; });`;
 }
 
 export function createManagedServiceCancellationPreload(params: {

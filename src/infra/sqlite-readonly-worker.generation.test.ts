@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { afterEach, expect, it, vi } from "vitest";
 import { useAutoCleanupTempDirTracker } from "../../test/helpers/temp-dir.js";
 import {
@@ -44,7 +44,6 @@ it("launches read-only workers from retained code after removing the loaded pack
   const loaded: { moduleUrl: string } = await import(pathToFileURL(modulePath).href);
   fixture.moduleUrl = loaded.moduleUrl;
   const worker = `
-import { fileURLToPath } from "node:url";
 const location = fileURLToPath(import.meta.url);
 const result = mode => mode === "content-version"
   ? { ok: true, contentVersion: "a".repeat(64) }

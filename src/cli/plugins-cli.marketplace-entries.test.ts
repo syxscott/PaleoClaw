@@ -203,7 +203,7 @@ describe("plugins marketplace entries", () => {
     );
     await entries({ feedProfile: "acme", offline: true });
     expect(output()).toContain("signed by acme-root-2026 (1/1)");
-    expect(output()).toContain("2026-06-23T01:02:03.000Z");
+    expect(output()).toContain("2026-06-23T01:02:03Z");
     expect(output()).not.toMatch(/publicKey|signature:/);
     await expectTimeline(filename, "entries", {
       entries: 1,
@@ -265,7 +265,7 @@ describe("plugins marketplace refresh", () => {
     });
     expect(output()).toContain("Marketplace catalog saved for the next Gateway start.");
     expect(output()).toContain("signed by acme-root-2026 (1/1)");
-    expect(output()).toContain("2026-06-23T00:01:02.000Z");
+    expect(output()).toContain("2026-06-23T00:01:02Z");
     expect(output()).not.toMatch(/publicKey|signature:/);
     await expectTimeline(filename, "refresh", {
       entries: 1,

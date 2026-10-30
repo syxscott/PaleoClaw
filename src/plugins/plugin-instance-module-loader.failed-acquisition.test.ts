@@ -20,7 +20,7 @@ it("cleans up rejected native ESM acquisitions and failed compiled evaluations",
   fs.writeFileSync(path.join(root, "broken.mjs"), 'import "./broken.ts";');
   fs.writeFileSync(
     path.join(root, "broken.ts"),
-    'export const value: number = 1; throw new Error("broken plugin helper");',
+    'export const value = 1; throw new Error("broken plugin helper");',
   );
   const moduleUrl = (name: string) => new URL(name, import.meta.url).href;
   const source = `

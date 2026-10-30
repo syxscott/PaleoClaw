@@ -199,7 +199,7 @@ it("uses the channel override model context window instead of stale persisted co
   expect(normalized).toContain("Model: minimax-portal/MiniMax-M2.7");
   expect(normalized).toContain("channel override");
   expect(normalized).toContain("Context: 49k/200k");
-  expect(normalized).not.toContain("Context: 49k/1.0m");
+  expect(normalized).not.toContain("Context: 49k/1m");
 });
 
 it.each<[FallbackContextStatusOverrides, string, string?]>([
@@ -222,7 +222,7 @@ it.each<[FallbackContextStatusOverrides, string, string?]>([
     const text = normalizedStatus(makeFallbackContextStatusArgs(overrides));
     expect(text).toContain(`Fallback: ${model}`);
     expect(text).toContain(`Context: ${context}`);
-    expect(text).not.toContain("Context: 49k/1.0m");
+    expect(text).not.toContain("Context: 49k/1m");
     expect(text.includes("Context: 49k/200k")).toBe(context === "49k/200k");
   },
 );

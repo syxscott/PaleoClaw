@@ -21,8 +21,7 @@ import {
 import { createReplyOperation } from "../../sessions/session-controller.operation.js";
 import { AsyncWorkScope, captureAsyncWorkTracker } from "../../shared/async-work-scope.js";
 import { createDeferredCore } from "../../shared/deferred.js";
-import type { QueueSettings } from "./queue.js";
-import { enqueueFollowupRun, scheduleFollowupDrain } from "./queue.js";
+import { QueueSettings, enqueueFollowupRun, scheduleFollowupDrain } from "./queue.js";
 import {
   createQueueTestRun as createRun,
   installQueueRuntimeErrorSilencer,

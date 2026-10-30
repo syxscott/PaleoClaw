@@ -48,7 +48,7 @@ export function hostedCatalogFeed(params: {
     schemaVersion: 1,
     id: "paleoclaw-official-external-plugins",
     generatedAt: `2026-06-22T00:00:${String(params.sequence).padStart(2, "0")}.000Z`,
-    expiresAt: params.expiresAt ?? "2099-01-01T00:00:00.000Z",
+    expiresAt: params.expiresAt ?? "2099-01-01T00:00:00Z",
     sequence: params.sequence,
     entries: [
       {

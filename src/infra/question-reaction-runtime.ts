@@ -1,6 +1,5 @@
 import { readAskUserQuestionId, type ReplyPayload } from "../auto-reply/reply-payload.js";
-import type { MessagePresentation } from "../interactive/payload.js";
-import { renderMessagePresentationFallbackText } from "../interactive/payload.js";
+import { MessagePresentation, renderMessagePresentationFallbackText } from "../interactive/payload.js";
 import {
   resolveQuestionOverGateway,
   type ResolveQuestionOverGatewayParams,

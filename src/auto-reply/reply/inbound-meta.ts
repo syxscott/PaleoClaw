@@ -12,8 +12,7 @@ import { resolveSessionGoalDisplayState } from "../../config/sessions/goals.js";
 import type { SessionEntry } from "../../config/sessions/types.js";
 import type { OpenClawConfig } from "../../config/types.openclaw.js";
 import { buildDeliveryFormatPrompt } from "../../infra/outbound/delivery-format-prompt.js";
-import type { EnvelopeFormatOptions } from "../envelope.js";
-import { formatAgentEnvelopeTimestamp } from "../envelope.js";
+import { type EnvelopeFormatOptions, formatAgentEnvelopeTimestamp } from "../envelope.js";
 import { getRequesterProfile } from "../requester-profile.js";
 import type { TemplateContext } from "../templating.js";
 import {

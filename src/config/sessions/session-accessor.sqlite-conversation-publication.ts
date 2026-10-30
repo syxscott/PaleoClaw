@@ -1,7 +1,6 @@
 import { isRecord } from "@paleoclaw/normalization-core/record-coerce";
 import type { Selectable } from "kysely";
-import type { EngineConnection } from "../../infra/sql-connection.js";
-import { sqlPublicationAnchor } from "../../infra/sql-connection.js";
+import { type EngineConnection, sqlPublicationAnchor } from "../../infra/sql-connection.js";
 import {
   createSqliteCommitReceipt,
   readSqliteCommitReceipt,

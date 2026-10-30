@@ -752,7 +752,7 @@ describe("installPluginFromNpmSpec", () => {
       await markRetainedManagedNpmInstall({
         packageDir,
         pluginId: "codex",
-        retainedAt: "2026-04-25T00:00:00.000Z",
+        retainedAt: "2026-04-25T00:00:00Z",
         reason: "test-retained-generation",
       });
     }

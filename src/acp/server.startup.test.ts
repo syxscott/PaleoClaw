@@ -548,7 +548,7 @@ describe("serveAcpGateway startup", () => {
 
     it("coerces MCP date-string initialize protocol versions", async () => {
       const initializeRequest = {
-        jsonrpc: "2.0",
+        jsonrpc: "2",
         id: 1,
         method: "initialize",
         params: {
@@ -570,7 +570,7 @@ describe("serveAcpGateway startup", () => {
 
     it("coerces non-integer numeric initialize protocol versions", async () => {
       const initializeRequest = {
-        jsonrpc: "2.0",
+        jsonrpc: "2",
         id: 1,
         method: "initialize",
         params: {
@@ -592,7 +592,7 @@ describe("serveAcpGateway startup", () => {
 
     it("passes uint16 numeric initialize protocol versions through unchanged", async () => {
       const initializeRequest = {
-        jsonrpc: "2.0",
+        jsonrpc: "2",
         id: 1,
         method: "initialize",
         params: {
@@ -608,7 +608,7 @@ describe("serveAcpGateway startup", () => {
 
   it("orders new-session updates at the ACP stdio boundary without delaying loaded sessions", async () => {
     mockState.acpInputMessages.push({
-      jsonrpc: "2.0",
+      jsonrpc: "2",
       id: 3,
       method: "session/load",
       params: { sessionId: "existing-session", cwd: "/tmp/paleoclaw" },
@@ -616,7 +616,7 @@ describe("serveAcpGateway startup", () => {
     // The ordering boundary only holds updates for a session it is expecting, so the
     // creating request must reach it before its response can introduce the session ID.
     mockState.acpInputMessages.push({
-      jsonrpc: "2.0",
+      jsonrpc: "2",
       id: 2,
       method: "session/new",
       params: { cwd: "/tmp/paleoclaw" },
@@ -629,7 +629,7 @@ describe("serveAcpGateway startup", () => {
       await readCapturedAcpMessages();
       const writer = getCapturedAcpStream().writable.getWriter();
       const update = (sessionId: string) => ({
-        jsonrpc: "2.0",
+        jsonrpc: "2",
         method: "session/update",
         params: {
           sessionId,
@@ -639,7 +639,7 @@ describe("serveAcpGateway startup", () => {
       const existingUpdate = update("existing-session");
       const newUpdate = update("new-session");
       const newResult = {
-        jsonrpc: "2.0",
+        jsonrpc: "2",
         id: 2,
         result: { sessionId: "new-session" },
       };
@@ -665,19 +665,19 @@ describe("serveAcpGateway startup", () => {
     // prompt response carries no session ID, so nothing about the frame itself keeps
     // it behind the text it completes — only the boundary does.
     mockState.acpInputMessages.push({
-      jsonrpc: "2.0",
+      jsonrpc: "2",
       id: 1,
       method: "session/new",
       params: { cwd: "/tmp/paleoclaw" },
     });
     mockState.acpInputMessages.push({
-      jsonrpc: "2.0",
+      jsonrpc: "2",
       id: 2,
       method: "session/new",
       params: { cwd: "/tmp/paleoclaw" },
     });
     mockState.acpInputMessages.push({
-      jsonrpc: "2.0",
+      jsonrpc: "2",
       id: 3,
       method: "session/prompt",
       params: { sessionId: "chatty-session", prompt: [{ type: "text", text: "hi" }] },
@@ -690,7 +690,7 @@ describe("serveAcpGateway startup", () => {
       await readCapturedAcpMessages();
       const writer = getCapturedAcpStream().writable.getWriter();
       const chunk = (sessionId: string, text: string) => ({
-        jsonrpc: "2.0",
+        jsonrpc: "2",
         method: "session/update",
         params: {
           sessionId,
@@ -702,9 +702,9 @@ describe("serveAcpGateway startup", () => {
       });
       const slowChunk = chunk("slow-session", "slow");
       const chattyChunk = chunk("chatty-session", "answer");
-      const chattyCreated = { jsonrpc: "2.0", id: 2, result: { sessionId: "chatty-session" } };
-      const endTurn = { jsonrpc: "2.0", id: 3, result: { stopReason: "end_turn" } };
-      const slowCreated = { jsonrpc: "2.0", id: 1, result: { sessionId: "slow-session" } };
+      const chattyCreated = { jsonrpc: "2", id: 2, result: { sessionId: "chatty-session" } };
+      const endTurn = { jsonrpc: "2", id: 3, result: { stopReason: "end_turn" } };
+      const slowCreated = { jsonrpc: "2", id: 1, result: { sessionId: "slow-session" } };
 
       // Neither session is introduced yet, so both updates are held.
       await writer.write(slowChunk);
@@ -752,7 +752,7 @@ describe("serveAcpGateway startup", () => {
       // pipeTo rejection — exactly the promise that used to be discarded.
       mockState.acpOutputSinkError = new Error("stdout sink failed");
       const writer = getCapturedAcpStream().writable.getWriter();
-      await writer.write({ jsonrpc: "2.0", id: 9, result: {} }).catch(() => {});
+      await writer.write({ jsonrpc: "2", id: 9, result: {} }).catch(() => {});
       writer.releaseLock();
 
       await servePromise;

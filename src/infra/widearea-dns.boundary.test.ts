@@ -24,7 +24,7 @@ describe("wide-area DNS zone writer — unmocked production boundary", () => {
 
   beforeEach(() => {
     vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-03-13T12:00:00.000Z"));
+    vi.setSystemTime(new Date("2026-03-13T12:00:00Z"));
     stateDir = fs.realpathSync(
       fs.mkdtempSync(path.join(os.tmpdir(), "paleoclaw-widearea-dns-boundary-")),
     );

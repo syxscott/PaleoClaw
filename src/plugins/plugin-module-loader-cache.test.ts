@@ -226,7 +226,7 @@ it("keeps source SDK evaluation native and preserves terminal failures", async (
             return () => loader(extension === "cjs" ? pathToFileURL(modulePath).href : modulePath);
           };
           assert.equal(loadSdkFixture("enum", "enum State { Ready }\\nexport const ready = State.Ready;")().ready, 0);
-          assert.equal(loadSdkFixture("source-host/node_modules/sdk/index", "export const ready: number = 1;")().ready, 1);
+          assert.equal(loadSdkFixture("source-host/node_modules/sdk/index", "export const ready = 1;")().ready, 1);
           const makePeer = (name, javascript) => {
             const peerRoot = path.join(root, name);
             fs.mkdirSync(peerRoot);

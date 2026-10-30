@@ -175,7 +175,7 @@ process.on("message", (request) => {
         ? await runReplyInit(request)
         : await runTranscriptRewrite(request);
     send({ phase: "result", requestId: request.requestId, value });
-  })().catch((error) => {
+  })().catch((error: unknown) => {
     send({
       error: {
         message: error instanceof Error ? error.message : String(error),

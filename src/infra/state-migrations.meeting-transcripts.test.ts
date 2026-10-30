@@ -78,8 +78,8 @@ async function seedLegacySession(params: {
     sessionId: params.sessionId,
     title: "Design review",
     source: { providerId: "manual-transcript", meetingUrl: "https://meet.example.invalid/room" },
-    startedAt: `${date}T10:00:00.000Z`,
-    stoppedAt: `${date}T10:30:00.000Z`,
+    startedAt: `${date}T10:00:00Z`,
+    stoppedAt: `${date}T10:30:00Z`,
   };
   await write("metadata.json", session);
   const utterances = Array.from({ length: params.utteranceCount ?? 2 }, (_, index) => ({
@@ -98,7 +98,7 @@ async function seedLegacySession(params: {
   if (!params.omitSummaryJson) {
     await write("summary.json", {
       ...summarizeTranscripts({ session, utterances }),
-      generatedAt: `${date}T10:31:00.000Z`,
+      generatedAt: `${date}T10:31:00Z`,
     });
   }
   await fs.writeFile(
@@ -193,7 +193,7 @@ function nativeSession(sessionId: string, date = "2026-07-02") {
   return {
     sessionId,
     source: { providerId: "manual-transcript" },
-    startedAt: `${date}T10:00:00.000Z`,
+    startedAt: `${date}T10:00:00Z`,
   };
 }
 
@@ -286,7 +286,7 @@ describe("meeting transcript Doctor migration", () => {
           ? await h.seed("invalid", { invalidTranscript: true })
           : path.join(h.root, "2026-07-03", "late-session");
       const result = await h.migrate({
-        now: () => Date.parse("2026-07-02T00:00:00.000Z"),
+        now: () => Date.parse("2026-07-02T00:00:00Z"),
         testHooks:
           failure === "invalid transcript"
             ? {}
@@ -334,7 +334,7 @@ describe("meeting transcript Doctor migration", () => {
     });
     let failed: Awaited<ReturnType<typeof h.migrate>>;
     try {
-      failed = await h.migrate({ now: () => Date.parse("2026-07-02T00:00:00.000Z") });
+      failed = await h.migrate({ now: () => Date.parse("2026-07-02T00:00:00Z") });
     } finally {
       archive.mockRestore();
     }
@@ -386,7 +386,7 @@ describe("meeting transcript Doctor migration", () => {
 
     const result = await h.migrate({
       detected,
-      now: () => Date.parse("2026-07-02T00:00:00.000Z"),
+      now: () => Date.parse("2026-07-02T00:00:00Z"),
     });
 
     expect(result.warnings).toEqual([]);
@@ -596,8 +596,8 @@ describe("meeting transcript Doctor migration", () => {
 async function seedStoredSession(sessionId: string, options: { historicalSlug?: string } = {}) {
   const session = {
     sessionId,
-    startedAt: "2026-07-01T10:00:00.000Z",
-    stoppedAt: "2026-07-01T10:30:00.000Z",
+    startedAt: "2026-07-01T10:00:00Z",
+    stoppedAt: "2026-07-01T10:30:00Z",
     source: { providerId: "manual-transcript", channelId: "room" },
     title: "Stored notes",
     metadata: { retained: true },

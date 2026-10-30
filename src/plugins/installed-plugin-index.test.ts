@@ -163,7 +163,7 @@ describe("installed plugin index", () => {
   it("builds a runtime-free installed plugin snapshot from manifest and package metadata", () => {
     const fixture = createRichPluginFixture();
 
-    const index = fixture.load({ now: () => new Date("2026-04-25T12:00:00.000Z") });
+    const index = fixture.load({ now: () => new Date("2026-04-25T12:00:00Z") });
 
     expect(index).toMatchObject({
       version: 1,

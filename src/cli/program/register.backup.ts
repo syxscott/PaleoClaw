@@ -104,7 +104,7 @@ export function registerBackupCommand(program: Command) {
                 ]
               : [
                   [
-                    "paleoclaw backup verify ./2026-03-09T08-00-00.000+08-00-paleoclaw-backup.tar.gz",
+                    "paleoclaw backup verify ./2026-03-09T08-00-00+08-00-paleoclaw-backup.tar.gz",
                     "Check that the archive structure and manifest are intact.",
                   ],
                   [

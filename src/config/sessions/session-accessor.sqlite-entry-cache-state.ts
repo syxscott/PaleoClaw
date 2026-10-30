@@ -1,5 +1,4 @@
-import type { EngineConnection } from "../../infra/sql-connection.js";
-import { isPostgresSqlConnection } from "../../infra/sql-connection.js";
+import { type EngineConnection, isPostgresSqlConnection } from "../../infra/sql-connection.js";
 import {
   publishSqliteCommittedState,
   stageSqliteTransactionState,

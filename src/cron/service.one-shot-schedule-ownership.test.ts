@@ -33,7 +33,7 @@ let clock: ReturnType<typeof createGatewaySchedulerClock>;
 let storePath: string;
 beforeEach(async () => {
   ({ storePath } = await makeStorePath());
-  clock = createGatewaySchedulerClock(Date.parse("2026-07-27T12:00:00.000Z"));
+  clock = createGatewaySchedulerClock(Date.parse("2026-07-27T12:00:00Z"));
 });
 
 function createCron(

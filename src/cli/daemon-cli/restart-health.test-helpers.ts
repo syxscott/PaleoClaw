@@ -179,7 +179,7 @@ export function firstCallArg(mock: { mock: { calls: unknown[][] } }): unknown {
 const previousGatewayLockIdentity: GatewayLockIdentity = {
   pid: 4200,
   ownerId: "gateway-owner-old",
-  createdAt: "2026-07-16T12:00:00.000Z",
+  createdAt: "2026-07-16T12:00:00Z",
   port: 18789,
 };
 
@@ -188,7 +188,7 @@ export function mockGatewayLockReplacement(overrides: Partial<GatewayLockIdentit
   readActiveGatewayLockIdentity.mockResolvedValueOnce(previousLockIdentity).mockResolvedValue({
     ...previousLockIdentity,
     ownerId: "gateway-owner-new",
-    createdAt: "2026-07-16T12:00:01.000Z",
+    createdAt: "2026-07-16T12:00:01Z",
     ...overrides,
   });
   return previousLockIdentity;

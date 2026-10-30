@@ -60,12 +60,12 @@ function message(id: string, parentId: string | null, role: string, content: str
     type: "message" as const,
     id,
     parentId,
-    timestamp: "2026-10-11T00:00:00.000Z",
+    timestamp: "2026-10-11T00:00:00Z",
     message: { role, content },
   };
 }
 function control(type: string, id: string, parentId: string, fields: Record<string, unknown>) {
-  return { type, id, parentId, timestamp: "2026-10-11T00:00:00.000Z", ...fields };
+  return { type, id, parentId, timestamp: "2026-10-11T00:00:00Z", ...fields };
 }
 
 const accounting = {

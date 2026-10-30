@@ -215,7 +215,7 @@ function createTrajectoryEvent(sessionId: string, sessionKey: string): Trajector
     traceId: sessionId,
     source: "runtime",
     type: "history.test",
-    ts: "2026-07-18T00:00:00.000Z",
+    ts: "2026-07-18T00:00:00Z",
     seq: 1,
     sessionId,
     sessionKey,

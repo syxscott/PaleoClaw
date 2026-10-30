@@ -1,8 +1,7 @@
 // PaleoClaw 兼容层：pc 3 月自有的 fs-safe 实现（上游 10 月已把这些能力挪进 @openclaw/fs-safe）。
 // 本文件原样保留，供仍按旧 API 引用这些符号的遗留代码使用。
 import { randomUUID } from "node:crypto";
-import type { Stats } from "node:fs";
-import { constants as fsConstants } from "node:fs";
+import { Stats, constants as fsConstants } from "node:fs";
 import type { FileHandle } from "node:fs/promises";
 import fs from "node:fs/promises";
 import os from "node:os";

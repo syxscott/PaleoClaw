@@ -46,7 +46,7 @@ import { createCronScheduledRunId } from "./store/run-request-id.js";
 import { cronStreamScheduleKey } from "./stream-schedule.js";
 import type { CronJob } from "./types.js";
 
-const NOW = Date.parse("2026-10-01T12:00:00.000Z");
+const NOW = Date.parse("2026-10-01T12:00:00Z");
 const { logger, makeStorePath } = setupCronServiceSuite({
   prefix: "cron-run-queue-",
   fakeTimers: false,

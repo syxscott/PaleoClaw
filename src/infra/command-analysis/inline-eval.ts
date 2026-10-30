@@ -68,7 +68,7 @@ const FLAG_INTERPRETER_INLINE_EVAL_SPECS: readonly InterpreterFlagSpec[] = [
   {
     names: ["awk", "gawk", "mawk", "nawk"],
     exactFlags: new Set(["-e", "--source"]),
-    // gawk before 4.0 accepted "--s" for "--source"; modern releases reject it
+    // gawk before 4 accepted "--s" for "--source"; modern releases reject it
     // as ambiguous with "--sandbox", so the older executable case sets the floor.
     abbreviatedFlags: [{ full: "--source", min: "--s" }],
   },

@@ -63,7 +63,7 @@ describe("provider usage formatting", () => {
       "Usage:",
       "  OpenRouter (Production)",
       "    Balance: -$2.50",
-      "    API key budget: $5.00 / $20.00",
+      "    API key budget: $5 / $20",
     ]);
   });
 
@@ -72,10 +72,10 @@ describe("provider usage formatting", () => {
       ...snapshot([]),
       provider: "deepseek",
       displayName: "DeepSeek",
-      summary: "Balance ¥0.00",
+      summary: "Balance ¥0",
       plan: "Unavailable",
     };
-    expect(formatUsageWindowSummary(balance)).toBe("Balance ¥0.00");
+    expect(formatUsageWindowSummary(balance)).toBe("Balance ¥0");
     expect(
       formatUsageReportLines({
         updatedAt: now,
@@ -93,7 +93,7 @@ describe("provider usage formatting", () => {
       "Usage:",
       "  Claude (Pro): Token expired",
       "  Xiaomi: no data",
-      "  DeepSeek (Unavailable): Balance ¥0.00",
+      "  DeepSeek (Unavailable): Balance ¥0",
       "  Claude (Pro)",
       "    Daily: 75% left · resets 2h",
     ]);

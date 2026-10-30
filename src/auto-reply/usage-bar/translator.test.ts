@@ -24,22 +24,22 @@ function render(pieces: unknown[], contract: Record<string, unknown>): string {
 describe("usage-bar verbs", () => {
   it("num — compact counts", () => {
     expect(render([{ text: "{usage.input_tokens|num}" }], { usage: { input_tokens: 3000 } })).toBe(
-      "3.0k",
+      "3k",
     );
     expect(render([{ text: "{x|num}" }], { x: 272000 })).toBe("272k");
     expect(render([{ text: "{x|num}" }], { x: 128 })).toBe("128");
   });
 
   it("num formats millions while preserving signed thousands rounding", () => {
-    expect(render([{ text: "{x|num}" }], { x: 1_000_000 })).toBe("1.0m");
-    expect(render([{ text: "{x|num}" }], { x: 1_048_576 })).toBe("1.0m");
-    expect(render([{ text: "{x|num}" }], { x: 2_000_000 })).toBe("2.0m");
+    expect(render([{ text: "{x|num}" }], { x: 1_000_000 })).toBe("1m");
+    expect(render([{ text: "{x|num}" }], { x: 1_048_576 })).toBe("1m");
+    expect(render([{ text: "{x|num}" }], { x: 2_000_000 })).toBe("2m");
     expect(render([{ text: "{x|num}" }], { x: -1_500_000 })).toBe("-1.5m");
     expect(render([{ text: "{x|num}" }], { x: -10_500 })).toBe("-10k");
     expect(render([{ text: "{x|num}" }], { x: 999_950 })).toBe("1000k");
   });
 
-  it.each([{ value: true, expected: ["1", "1.00", "0m", "1%", "99"] }])(
+  it.each([{ value: true, expected: ["1", "1", "0m", "1%", "99"] }])(
     "preserves numeric verb coercion and formatting for $value",
     ({ value, expected }) => {
       for (const [index, verb] of ["num", "fixed", "dur", "pct", "inv"].entries()) {

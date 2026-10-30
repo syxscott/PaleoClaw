@@ -33,7 +33,7 @@ import { applyTriggerNoFireResult } from "./timer-outcomes.js";
 const fixtures = setupCronRegressionFixtures({ prefix: "cron-failure-alert-outcome-" });
 
 describe("cron failure alert outcome write-back", () => {
-  const dueAt = Date.parse("2026-08-01T15:00:00.000Z");
+  const dueAt = Date.parse("2026-08-01T15:00:00Z");
   const endedAt = dueAt + 10;
 
   async function runFailure(params: { id: string; sendCronFailureAlert: SendCronFailureAlert }) {

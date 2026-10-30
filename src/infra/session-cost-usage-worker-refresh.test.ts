@@ -4,7 +4,7 @@ import { formatSqliteSessionFileMarker } from "../config/sessions/legacy-sqlite-
 import type { UsageCostRollupEntry } from "./session-cost-usage-rollup-codec.js";
 import { scanUsageCostRollupInWorker } from "./session-cost-usage-worker-refresh.js";
 
-const timestamp = Date.parse("2026-09-23T12:00:00.000Z");
+const timestamp = Date.parse("2026-09-23T12:00:00Z");
 type Row = { seq: number; event: Record<string, unknown> };
 function makeRow(
   seq: number,

@@ -26,7 +26,7 @@ import {
   writeAuditRestoreJournal,
 } from "./state-migrations.audit.test-support.js";
 
-const at = (day: string) => `2026-07-${day}T00:00:00.000Z`;
+const at = (day: string) => `2026-07-${day}T00:00:00Z`;
 const jsonLine = (record: unknown) => `${JSON.stringify(record)}\n`;
 const readText = (file: string) => fs.readFile(file, "utf8");
 function event(summary: string, day = "03", operation = "gateway.restart") {
@@ -49,7 +49,7 @@ function expectIncludes(text: string | string[], ...parts: (string | RegExp)[]) 
 function invalidUtf8Record(newline = "") {
   return Buffer.concat([
     Buffer.from(
-      '{"timestamp":"2026-07-03T00:00:00.000Z","operation":"gateway.restart","summary":"',
+      '{"timestamp":"2026-07-03T00:00:00Z","operation":"gateway.restart","summary":"',
     ),
     Buffer.from([0x80]),
     Buffer.from('"}' + newline),
@@ -304,7 +304,7 @@ it("rehashes a checkpointed raw archive before treating it as clean", async ({ a
   const original = event("original");
   const modified = { ...original, summary: "modified" };
   await audit.writeJsonLines(sourcePath, [original]);
-  const stableMtime = new Date("2026-07-03T01:00:00.000Z");
+  const stableMtime = new Date("2026-07-03T01:00:00Z");
   await fs.utimes(sourcePath, stableMtime, stableMtime);
   await audit.migrate();
   const checkpointedStat = await fs.stat(rawPath);

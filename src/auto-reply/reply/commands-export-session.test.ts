@@ -176,14 +176,14 @@ describe("buildExportSessionReply", () => {
         type: "message",
         id: "inactive-tail",
         parentId: null,
-        timestamp: "2026-06-15T00:00:01.000Z",
+        timestamp: "2026-06-15T00:00:01Z",
         message: { role: "assistant", content: "inactive" },
       },
       {
         type: "leaf",
         id: "empty-leaf",
         parentId: "inactive-tail",
-        timestamp: "2026-06-15T00:00:02.000Z",
+        timestamp: "2026-06-15T00:00:02Z",
         targetId: null,
       },
       {

@@ -6,7 +6,7 @@ import type { CronServiceDeps } from "./service/state.js";
 import { loadCronStore } from "./store.js";
 import type { CronJob } from "./types.js";
 
-const FIRST_RUN_AT = Date.parse("2026-09-06T12:00:00.000Z");
+const FIRST_RUN_AT = Date.parse("2026-09-06T12:00:00Z");
 const MINUTE = 60_000;
 const PACED_DELAY = 30 * MINUTE;
 const { logger, makeStorePath } = setupCronServiceSuite({
@@ -125,8 +125,8 @@ function dailyJob(
     id,
     name: id,
     enabled: true,
-    createdAtMs: Date.parse("2026-07-01T12:00:00.000Z"),
-    updatedAtMs: Date.parse("2026-07-29T08:00:00.000Z"),
+    createdAtMs: Date.parse("2026-07-01T12:00:00Z"),
+    updatedAtMs: Date.parse("2026-07-29T08:00:00Z"),
     schedule,
     sessionTarget: "isolated",
     wakeMode: "next-heartbeat",
@@ -153,7 +153,7 @@ function commandService(
 }
 
 describe("CronService restart catch-up after a schedule change", () => {
-  beforeEach(() => vi.setSystemTime(new Date("2026-07-28T07:18:00.000Z")));
+  beforeEach(() => vi.setSystemTime(new Date("2026-07-28T07:18:00Z")));
   it("does not replay a cron slot that predates the new schedule", async () => {
     // Real report (#91944): a daily 19:00 job edited to 21:00 at 10:18 fired
     // immediately when the gateway restarted at 13:18. Yesterday's 21:00 slot
@@ -161,10 +161,10 @@ describe("CronService restart catch-up after a schedule change", () => {
     const store = await makeStorePath();
     const runCommandJob = vi.fn(async () => ({ status: "ok" as const, summary: "done" }));
     const jobId = "restart-pre-activation-slot";
-    const lastRunUnderOldSchedule = Date.parse("2026-07-27T16:00:00.000Z"); // 27 Jul 19:00 +03
+    const lastRunUnderOldSchedule = Date.parse("2026-07-27T16:00:00Z"); // 27 Jul 19:00 +03
     const createService = () => commandService(store.storePath, runCommandJob);
 
-    vi.setSystemTime(new Date("2026-07-28T07:18:00.000Z")); // 10:18 Europe/Istanbul
+    vi.setSystemTime(new Date("2026-07-28T07:18:00Z")); // 10:18 Europe/Istanbul
     await writeCronStoreSnapshot({
       storePath: store.storePath,
       jobs: [
@@ -172,7 +172,7 @@ describe("CronService restart catch-up after a schedule change", () => {
           ...dailyJob(
             jobId,
             {
-              nextRunAtMs: Date.parse("2026-07-28T16:00:00.000Z"), // 28 Jul 19:00 +03
+              nextRunAtMs: Date.parse("2026-07-28T16:00:00Z"), // 28 Jul 19:00 +03
               lastRunAtMs: lastRunUnderOldSchedule,
               lastStatus: "ok",
             },
@@ -189,24 +189,24 @@ describe("CronService restart catch-up after a schedule change", () => {
       await editor.update(jobId, {
         schedule: { kind: "cron", expr: "0 21 * * *", tz: "Europe/Istanbul" },
       });
-      const activatedAtMs = Date.parse("2026-07-28T07:18:00.000Z");
+      const activatedAtMs = Date.parse("2026-07-28T07:18:00Z");
       expect(editor.getJob(jobId)?.state.scheduleActivatedAtMs).toBe(activatedAtMs);
 
-      vi.setSystemTime(new Date("2026-07-28T08:18:00.000Z"));
+      vi.setSystemTime(new Date("2026-07-28T08:18:00Z"));
       await editor.update(jobId, { name: "renamed daily briefing" });
       await editor.update(jobId, {
         schedule: { kind: "cron", expr: "0 21 * * *", tz: "Europe/Istanbul" },
       });
       const idempotentlyUpdated = editor.getJob(jobId);
       expect(idempotentlyUpdated?.state.scheduleActivatedAtMs).toBe(activatedAtMs);
-      expect(idempotentlyUpdated?.updatedAtMs).toBe(Date.parse("2026-07-28T08:18:00.000Z"));
+      expect(idempotentlyUpdated?.updatedAtMs).toBe(Date.parse("2026-07-28T08:18:00Z"));
     } finally {
       editor.stop();
     }
     // The edit itself is not a run; catch-up must stay quiet before the restart.
     expect(runCommandJob).not.toHaveBeenCalled();
 
-    vi.setSystemTime(new Date("2026-07-28T10:18:00.000Z")); // 13:18 Europe/Istanbul
+    vi.setSystemTime(new Date("2026-07-28T10:18:00Z")); // 13:18 Europe/Istanbul
     const restarted = createService();
     try {
       await restarted.start();
@@ -216,7 +216,7 @@ describe("CronService restart catch-up after a schedule change", () => {
         (entry) => entry.id === jobId,
       );
       expect(job?.state.lastRunAtMs).toBe(lastRunUnderOldSchedule);
-      expect(job?.state.nextRunAtMs).toBe(Date.parse("2026-07-28T18:00:00.000Z"));
+      expect(job?.state.nextRunAtMs).toBe(Date.parse("2026-07-28T18:00:00Z"));
     } finally {
       restarted.stop();
       await store.cleanup();
@@ -226,16 +226,16 @@ describe("CronService restart catch-up after a schedule change", () => {
   it("replays one genuine missed slot after schedule activation", async () => {
     const store = await makeStorePath();
     const runCommandJob = vi.fn(async () => ({ status: "ok" as const, summary: "done" }));
-    const now = Date.parse("2026-07-30T13:18:00.000Z");
+    const now = Date.parse("2026-07-30T13:18:00Z");
     const id = "restart-missed-slot";
     await writeCronStoreSnapshot({
       storePath: store.storePath,
       jobs: [
         dailyJob(id, {
-          nextRunAtMs: Date.parse("2026-07-31T12:00:00.000Z"),
-          lastRunAtMs: Date.parse("2026-07-28T12:00:00.000Z"),
+          nextRunAtMs: Date.parse("2026-07-31T12:00:00Z"),
+          lastRunAtMs: Date.parse("2026-07-28T12:00:00Z"),
           lastStatus: "ok",
-          scheduleActivatedAtMs: Date.parse("2026-07-29T08:00:00.000Z"),
+          scheduleActivatedAtMs: Date.parse("2026-07-29T08:00:00Z"),
         }),
       ],
     });

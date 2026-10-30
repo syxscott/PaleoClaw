@@ -46,7 +46,7 @@ function message(
 }
 
 function boundary(type: "reset" | "compaction", id: string, parentId: string, fields = {}) {
-  return { type, id, parentId, timestamp: "2026-09-07T00:00:00.000Z", ...fields };
+  return { type, id, parentId, timestamp: "2026-09-07T00:00:00Z", ...fields };
 }
 
 function expectEvents(
@@ -182,7 +182,7 @@ describe("SQLite transcript history events", () => {
         customType: "run-failed-before-reply",
         content: "This turn ended before a reply.",
         display: true,
-        timestamp: "2026-09-08T00:00:00.000Z",
+        timestamp: "2026-09-08T00:00:00Z",
       });
       await persist([
         message("wait", "notice", "assistant", "wait"),
@@ -292,7 +292,7 @@ describe("SQLite transcript history events", () => {
       scope,
       boundary("compaction", "excluded-boundary", "older", {
         summary: "excluded",
-        timestamp: "2026-08-15T00:00:00.000Z",
+        timestamp: "2026-08-15T00:00:00Z",
       }),
     );
     await persist([
@@ -331,7 +331,7 @@ describe("SQLite transcript history events", () => {
       content: "old report",
       display: true,
       details,
-      timestamp: "2026-09-07T00:00:00.000Z",
+      timestamp: "2026-09-07T00:00:00Z",
     };
     const events = [
       { type: "session", version: 3, id: scope.sessionId },
@@ -342,11 +342,11 @@ describe("SQLite transcript history events", () => {
       boundary("reset", "reset", "kept-assistant", {
         firstKeptEntryId: "kept-user",
         reason: "new",
-        timestamp: "2026-09-07T01:00:00.000Z",
+        timestamp: "2026-09-07T01:00:00Z",
       }),
       boundary("compaction", "compaction", "reset", {
         summary: "current summary",
-        timestamp: "2026-09-07T02:00:00.000Z",
+        timestamp: "2026-09-07T02:00:00Z",
       }),
     ];
     await replaceTranscriptEvents(scope, events);
@@ -405,7 +405,7 @@ describe("SQLite transcript history events", () => {
       [
         1,
         boundary("compaction", "active-boundary-2", "seed", {
-          timestamp: "2026-08-15T00:00:01.000Z",
+          timestamp: "2026-08-15T00:00:01Z",
           summary: "active",
         }),
       ],
@@ -415,7 +415,7 @@ describe("SQLite transcript history events", () => {
           type: "custom_message",
           id: "candidate-boundary",
           parentId: "seed",
-          timestamp: "2026-08-15T00:00:01.000Z",
+          timestamp: "2026-08-15T00:00:01Z",
           customType: "boundary-notice",
           content: "boundary",
           display: true,
@@ -426,7 +426,7 @@ describe("SQLite transcript history events", () => {
       [
         2,
         boundary("compaction", "active-boundary-4", "active-boundary-2", {
-          timestamp: "2026-08-15T00:00:02.000Z",
+          timestamp: "2026-08-15T00:00:02Z",
           summary: "active",
         }),
       ],
@@ -492,7 +492,7 @@ describe("SQLite transcript history events", () => {
       ]),
     );
     await appendReset("reset", "tool-1000", {
-      timestamp: "2026-08-30T00:00:00.000Z",
+      timestamp: "2026-08-30T00:00:00Z",
       firstKeptEntryId: keptIds[0],
     });
     await persist([message("fresh", "reset", "user", "fresh")]);
@@ -517,7 +517,7 @@ describe("SQLite transcript history events", () => {
     await appendReset("first-reset", "before-tool");
     await persist([message("middle-user", "first-reset", "user", "middle window")]);
     await appendReset("second-reset", "middle-user", {
-      timestamp: "2026-09-07T01:00:00.000Z",
+      timestamp: "2026-09-07T01:00:00Z",
     });
     await persist([message("fresh-user", "second-reset", "user", "fresh after reset")]);
 

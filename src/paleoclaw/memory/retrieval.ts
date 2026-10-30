@@ -81,7 +81,7 @@ function fnvHashToken(token: string, dim: number): [number, number] {
   }
   const unsigned = h >>> 0;
   const idx = unsigned % dim;
-  const sign = unsigned & 0x8000 ? -1.0 : 1.0;
+  const sign = unsigned & 0x8000 ? -1 : 1;
   return [idx, sign];
 }
 

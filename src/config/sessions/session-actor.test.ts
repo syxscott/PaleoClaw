@@ -607,7 +607,7 @@ it("installs the full append receipt and releases FIFO before retained follow-up
           type: "model_change",
           id: "selected-model",
           parentId: null,
-          timestamp: "2026-01-01T00:00:00.000Z",
+          timestamp: "2026-01-01T00:00:00Z",
           provider: "synthetic",
           modelId: "test-model",
         }),

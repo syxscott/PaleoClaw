@@ -775,7 +775,7 @@ it("keeps exact accounting through appends and rewrites beyond the actor's resid
         type: "message" as const,
         id: "after-window",
         parentId: events.at(-1)!.id,
-        timestamp: "2026-01-01T00:00:00.000Z",
+        timestamp: "2026-01-01T00:00:00Z",
         message: question.message,
       };
       const command: Mutation = {

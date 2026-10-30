@@ -173,9 +173,9 @@ async function promptSlackAllowFrom(params: {
     placeholder: "@alice, U12345678",
     parseId,
     invalidWithoutTokenNote: "Slack token missing; use user ids (or mention form) only.",
-    resolveEntries: ({ token, entries }) =>
+    resolveEntries: ({ token: botToken, entries }) =>
       resolveSlackUserAllowlist({
-        token,
+        botToken,
         entries,
       }),
   });
@@ -212,10 +212,10 @@ export const slackOnboardingAdapter: ChannelOnboardingAdapter = {
       quickstartScore: configured ? 2 : 1,
     };
   },
-  configure: async ({ cfg, prompter, options, accountOverrides, shouldPromptAccountIds }) => {
-    const defaultSlackAccountId = resolveDefaultSlackAccountId(cfg);
+  configure: async ({ cfg: adapterCfg, prompter, options, accountOverrides, shouldPromptAccountIds }) => {
+    const defaultSlackAccountId = resolveDefaultSlackAccountId(adapterCfg);
     const slackAccountId = await resolveAccountIdForConfigure({
-      cfg,
+      adapterCfg,
       prompter,
       label: "Slack",
       accountOverride: accountOverrides.slack,
@@ -224,7 +224,7 @@ export const slackOnboardingAdapter: ChannelOnboardingAdapter = {
       defaultAccountId: defaultSlackAccountId,
     });
 
-    let next = cfg;
+    let next = adapterCfg;
     const resolvedAccount = resolveSlackAccount({
       cfg: next,
       accountId: slackAccountId,
@@ -248,11 +248,11 @@ export const slackOnboardingAdapter: ChannelOnboardingAdapter = {
       envValue: process.env.SLACK_APP_TOKEN,
     });
     let resolvedBotTokenForAllowlist = resolvedAccount.botToken;
-    const slackBotName = String(
+    const slackBotName = (
       await prompter.text({
         message: "Slack bot display name (used for manifest)",
         initialValue: "paleoclaw",
-      }),
+      })
     ).trim();
     if (!accountConfigured) {
       await noteSlackTokenHelp(prompter, slackBotName);

@@ -92,7 +92,7 @@ describe("detectPackageManager", () => {
       [
         { path: "package.json", content: JSON.stringify({ packageManager: PNPM_PACKAGE_MANAGER }) },
         { path: "npm-shrinkwrap.json", content: "{}" },
-        { path: "pnpm-lock.yaml", content: "lockfileVersion: '9.0'" },
+        { path: "pnpm-lock.yaml", content: "lockfileVersion: '9'" },
       ],
       async (root) => {
         await expect(detectPackageManager(root)).resolves.toBe("pnpm");
@@ -205,7 +205,7 @@ describe("detectPackageManager", () => {
         JSON.stringify({ private: true, dependencies: { paleoclaw: "2026.7.2" } }),
         "utf8",
       );
-      await fs.writeFile(path.join(installRoot, "pnpm-lock.yaml"), "lockfileVersion: '9.0'\n");
+      await fs.writeFile(path.join(installRoot, "pnpm-lock.yaml"), "lockfileVersion: '9'\n");
       const symlinkType = process.platform === "win32" ? "junction" : "dir";
       await fs.symlink(storePackageRoot, linkedPackageRoot, symlinkType);
       await fs.symlink(installRoot, path.join(globalRoot, "hash-paleoclaw"), symlinkType);

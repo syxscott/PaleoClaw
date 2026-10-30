@@ -343,7 +343,7 @@ describe("SQLite session branches", () => {
               leafEntryId: `${scope.sessionId}-user`,
               headline: scope.headline,
               messageCount: 1,
-              updatedAt: "2026-07-18T01:00:01.000Z",
+              updatedAt: "2026-07-18T01:00:01Z",
             },
           ],
         });
@@ -400,7 +400,7 @@ describe("SQLite session branches", () => {
     await appendTranscriptMessage(scope, {
       eventId: "assistant-3",
       message: { role: "assistant", content: "third answer" },
-      now: Date.parse("2026-07-18T00:00:07.000Z"),
+      now: Date.parse("2026-07-18T00:00:07Z"),
       parentId: "assistant-2",
     });
 
@@ -628,7 +628,7 @@ describe("SQLite session branches", () => {
       await appendTranscriptMessage(scope, {
         eventId: "assistant-3",
         parentId: "assistant-2",
-        now: Date.parse("2026-07-18T00:00:07.000Z"),
+        now: Date.parse("2026-07-18T00:00:07Z"),
         message: { role: "assistant", content: "fresh memory answer" },
       });
       await expect(listSessionBranches(scope)).resolves.toMatchObject({
@@ -672,20 +672,20 @@ describe("SQLite session branches", () => {
         type: "session",
         id: sessionId,
         version: 3,
-        timestamp: "2026-08-30T00:00:00.000Z",
+        timestamp: "2026-08-30T00:00:00Z",
       },
       {
         type: "message",
         id: "orphan-user",
         parentId: "missing-ancestor",
-        timestamp: "2026-08-30T00:00:01.000Z",
+        timestamp: "2026-08-30T00:00:01Z",
         message: { role: "user", content: "orphan prompt" },
       },
       {
         type: "message",
         id: "orphan-assistant",
         parentId: "orphan-user",
-        timestamp: "2026-08-30T00:00:02.000Z",
+        timestamp: "2026-08-30T00:00:02Z",
         message: { role: "assistant", content: "orphan answer" },
       },
     ];
@@ -713,7 +713,7 @@ describe("SQLite session branches", () => {
       id: "active-leaf",
       parentId: "main-12554",
       targetId: "main-12554",
-      timestamp: "2026-08-30T02:00:02.000Z",
+      timestamp: "2026-08-30T02:00:02Z",
     });
     await replaceTranscriptEvents(scope, events);
 
@@ -730,7 +730,7 @@ describe("SQLite session branches", () => {
       leafEntryId: "orphan-assistant",
       headline: "orphan answer",
       messageCount: 2,
-      updatedAt: "2026-08-30T00:00:02.000Z",
+      updatedAt: "2026-08-30T00:00:02Z",
       active: false,
     });
   }, 15_000);

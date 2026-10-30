@@ -124,14 +124,14 @@ describe.skipIf(!connection)("agent database port", () => {
             id: "raw-notice",
             parentId: null,
             content: "raw notice",
-            timestamp: "2026-10-17T00:00:00.000Z",
+            timestamp: "2026-10-17T00:00:00Z",
           },
           {
             ...notice,
             id: "compressed-notice",
             parentId: "raw-notice",
             content: "compressed notice ".repeat(200),
-            timestamp: "2026-10-17T00:00:01.000Z",
+            timestamp: "2026-10-17T00:00:01Z",
           },
         ];
         {
@@ -402,7 +402,7 @@ describe.skipIf(!connection)("agent database port", () => {
       type: "message",
       id: "message",
       parentId: null,
-      timestamp: "2026-10-16T00:00:00.000Z",
+      timestamp: "2026-10-16T00:00:00Z",
       message: { role: "user", content: [{ type: "text", text: "café sentinel ".repeat(200) }] },
     });
     const payload = prepareTranscriptPayload(source, event);

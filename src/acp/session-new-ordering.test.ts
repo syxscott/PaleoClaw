@@ -34,7 +34,7 @@ async function runSteps(steps: Step[]): Promise<AnyMessage[]> {
 }
 
 function request(id: number, method: string, params: unknown): AnyMessage {
-  return { jsonrpc: "2.0", id, method, params };
+  return { jsonrpc: "2", id, method, params };
 }
 
 function inbound(id: number, method: string, params: unknown): Step {
@@ -44,12 +44,12 @@ function inbound(id: number, method: string, params: unknown): Step {
 const newSessionRequest = (id: number): Step => inbound(id, "session/new", { cwd: "/tmp" });
 
 function newSessionResponse(id: number, sessionId: string): AnyMessage {
-  return { jsonrpc: "2.0", id, result: { sessionId } } as AnyMessage;
+  return { jsonrpc: "2", id, result: { sessionId } } as AnyMessage;
 }
 
 function sessionUpdate(sessionId: string, title = "Session"): AnyMessage {
   return {
-    jsonrpc: "2.0",
+    jsonrpc: "2",
     method: "session/update",
     params: { sessionId, update: { sessionUpdate: "session_info_update", title } },
   } as AnyMessage;
@@ -62,7 +62,7 @@ const b1 = sessionUpdate("b", "b1");
 const createdA = newSessionResponse(1, "a");
 const createdB = newSessionResponse(2, "b");
 const failed = (id: number): AnyMessage => ({
-  jsonrpc: "2.0",
+  jsonrpc: "2",
   id,
   error: { code: -32602, message: "rejected" },
 });
@@ -77,9 +77,9 @@ const rejectedSetup = inbound(1, "session/load", {
 });
 const failA = failed(1);
 const failB = failed(2);
-const acceptedLoad: AnyMessage = { jsonrpc: "2.0", id: 11, result: {} };
+const acceptedLoad: AnyMessage = { jsonrpc: "2", id: 11, result: {} };
 const rejectedLoad = failed(10);
-const stringIdResponse: AnyMessage = { jsonrpc: "2.0", id: "1", result: { sessionId: "a" } };
+const stringIdResponse: AnyMessage = { jsonrpc: "2", id: "1", result: { sessionId: "a" } };
 const permission = request(1, "session/request_permission", { options: [] });
 
 const buffered = Array.from({ length: 257 }, (_, i) => sessionUpdate("unbounded", `update-${i}`));

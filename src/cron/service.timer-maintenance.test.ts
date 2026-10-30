@@ -27,7 +27,7 @@ vi.mock("../state/paleoclaw-state-db.js", async (importOriginal) => {
   return { ...actual, runOpenClawStateWriteTransaction: observedWriteTransaction };
 });
 
-const NOW = Date.parse("2026-08-30T12:00:00.000Z");
+const NOW = Date.parse("2026-08-30T12:00:00Z");
 const CRON_SCHEDULE = { kind: "cron", expr: "0 * * * * *", tz: "UTC", staggerMs: 0 } as const;
 let fixture: Awaited<ReturnType<typeof createOpenClawTestState>>;
 let database: ReturnType<typeof openOpenClawStateDatabase>;

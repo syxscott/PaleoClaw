@@ -34,7 +34,7 @@ const failureDefaults = { channel: "slack", to: "C123", accountId: "bot-b" };
 describe("applyJobPatch schedule retention", () => {
   it("defaults cron to cleanup when converting it to at", () => {
     const job = makeJob({ schedule: { kind: "cron", expr: "0 * * * *" } });
-    applyJobPatch(job, { schedule: { kind: "at", at: "2026-07-19T09:00:00.000Z" } });
+    applyJobPatch(job, { schedule: { kind: "at", at: "2026-07-19T09:00:00Z" } });
     expect(job).toMatchObject({ schedule: { kind: "at" }, deleteAfterRun: true });
   });
 
@@ -42,7 +42,7 @@ describe("applyJobPatch schedule retention", () => {
     const job = makeJob({ deleteAfterRun: true });
 
     applyJobPatch(job, {
-      schedule: { kind: "at", at: "2026-07-19T09:00:00.000Z" },
+      schedule: { kind: "at", at: "2026-07-19T09:00:00Z" },
       deleteAfterRun: false,
     });
 
@@ -50,7 +50,7 @@ describe("applyJobPatch schedule retention", () => {
   });
 
   it.each([
-    { kind: "at", at: "2026-07-19T09:00:00.000Z" },
+    { kind: "at", at: "2026-07-19T09:00:00Z" },
     { kind: "on-exit", command: "true" },
   ] as const)(
     "clears inherited $kind cleanup on recurring conversion but honors explicit policies",
@@ -73,7 +73,7 @@ describe("applyJobPatch schedule retention", () => {
 
 describe("schedule activation ownership", () => {
   it("ignores caller-supplied activation state during creation", () => {
-    const now = Date.parse("2026-07-30T00:00:00.000Z");
+    const now = Date.parse("2026-07-30T00:00:00Z");
     const input = {
       name: "owned activation",
       enabled: true,

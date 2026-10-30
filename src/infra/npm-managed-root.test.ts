@@ -402,7 +402,7 @@ describe("managed npm root", () => {
           name: "@paleoclaw/discord",
           version: "2026.5.2",
           resolvedSpec: "@paleoclaw/discord@2026.5.2",
-          resolvedAt: "2026-05-03T00:00:00.000Z",
+          resolvedAt: "2026-05-03T00:00:00Z",
         },
       }),
     ).toBe("2026.5.2");
@@ -419,7 +419,7 @@ describe("managed npm root", () => {
           name: "@paleoclaw/discord",
           version: "2026.5.2",
           resolvedSpec: "@paleoclaw/discord@2026.5.2",
-          resolvedAt: "2026-05-03T00:00:00.000Z",
+          resolvedAt: "2026-05-03T00:00:00Z",
         },
       }),
     ).toBe("2026.5.2");

@@ -89,7 +89,7 @@ describe.each(["status", "describe"])("nodes %s rendering", (command) => {
     if (stats === hostStats) {
       expect(output).toContain("load 3.2/24 · mem 151/192 GB · disk 1.2 TB free");
     } else if (stats) {
-      expect(output).toContain("mem 512 MB/1.0 GB");
+      expect(output).toContain("mem 512 MB/1 GB");
       expect(output).not.toContain("load ");
       expect(output).not.toContain("disk ");
     } else {

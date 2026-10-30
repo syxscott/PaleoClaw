@@ -215,7 +215,7 @@ describe("whole-archive credential relocation", () => {
         }
         const manifest: BackupManifest = {
           schemaVersion: 1,
-          createdAt: "2026-10-16T00:00:00.000Z",
+          createdAt: "2026-10-16T00:00:00Z",
           archiveRoot,
           runtimeVersion: "test",
           platform: process.platform,

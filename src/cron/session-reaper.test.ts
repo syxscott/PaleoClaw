@@ -230,7 +230,7 @@ describe("sweepCronRunSessions", () => {
   it("commits expired rows and warns when transcript archive retention cleanup fails", async () => {
     const sessionKey = "agent:main:cron:job1:run:cleanup-failure";
     const sessionId = "cleanup-failure";
-    const staleArchive = path.join(tmpDir, "older.jsonl.deleted.2026-01-01T00-00-00.000Z");
+    const staleArchive = path.join(tmpDir, "older.jsonl.deleted.2026-01-01T00-00-00Z");
     const cleanupError = Object.assign(new Error("archive cleanup denied"), { code: "EACCES" });
     const { warn } = log;
 

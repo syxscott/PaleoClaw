@@ -3217,13 +3217,13 @@ describe("initSessionState stale threadId fallback", () => {
         OriginatingChannel: "slack",
         OriginatingTo: "user:U1",
         AccountId: "default",
-        TransportThreadId: "650.000",
+        TransportThreadId: "650",
       },
       cfg,
     });
 
-    expect(result.sessionEntry.lastThreadId).toBe("650.000");
-    expect(result.sessionEntry.deliveryContext?.threadId).toBe("650.000");
+    expect(result.sessionEntry.lastThreadId).toBe("650");
+    expect(result.sessionEntry.deliveryContext?.threadId).toBe("650");
   });
 
   it("preserves external thread routing for internal turns and clears it for external non-thread turns", async () => {

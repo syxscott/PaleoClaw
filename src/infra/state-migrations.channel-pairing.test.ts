@@ -15,7 +15,7 @@ import {
 import { runLegacyStateMigrationSteps } from "./state-migrations.steps.js";
 
 const tempDirs = createTrackedTempDirs();
-const createdAt = "2026-01-01T00:00:00.000Z";
+const createdAt = "2026-01-01T00:00:00Z";
 const request = {
   id: "pending-user",
   code: "PAIRME12",

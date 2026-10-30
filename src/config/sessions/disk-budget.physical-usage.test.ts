@@ -354,7 +354,7 @@ describe("physical session disk usage", () => {
   it("reports scan overload and retires queued scans before reusing workers", async () => {
     await withTestDir({ prefix: "paleoclaw-disk-usage-pressure-" }, async (directory) => {
       const storePath = path.join(directory, "paleoclaw-agent.sqlite");
-      const archivePath = path.join(directory, "old.jsonl.deleted.2026-01-01T00-00-00.000Z.zst");
+      const archivePath = path.join(directory, "old.jsonl.deleted.2026-01-01T00-00-00Z.zst");
       await fs.writeFile(storePath, Buffer.alloc(321));
       await fs.writeFile(archivePath, Buffer.alloc(100));
       const release = createDeferredCore();
@@ -439,7 +439,7 @@ describe("physical session disk usage", () => {
       await fs.writeFile(`${databasePath}-shm`, Buffer.alloc(32_768));
       await fs.writeFile(path.join(path.dirname(databasePath), "unrelated.txt"), Buffer.alloc(13));
       await addSessionArtifacts(sessionsDir, 0);
-      const archivePath = path.join(sessionsDir, "old.jsonl.deleted.2026-01-01T00-00-00.000Z.zst");
+      const archivePath = path.join(sessionsDir, "old.jsonl.deleted.2026-01-01T00-00-00Z.zst");
       await fs.writeFile(archivePath, Buffer.alloc(100));
       const storePath = databasePath;
 

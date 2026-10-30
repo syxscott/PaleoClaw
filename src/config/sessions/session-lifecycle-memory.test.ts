@@ -97,7 +97,7 @@ async function fixture() {
               id: "session-1",
               version: 3,
               cwd: "/synthetic",
-              timestamp: "2026-10-11T00:00:00.000Z",
+              timestamp: "2026-10-11T00:00:00Z",
             },
             {
               type: "message",

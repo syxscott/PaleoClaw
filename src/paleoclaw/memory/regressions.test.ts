@@ -13,10 +13,10 @@
  *  - `recordChatTurn` lost a turn when two processes wrote the same file;
  *  - `countShort()` and `listShort()` disagreed on what counts as a task.
  */
-import * as fs from "fs";
+import * as fs from "node:fs";
 import { spawn } from "node:child_process";
-import * as os from "os";
-import * as path from "path";
+import * as os from "node:os";
+import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { BuiltinTaskMemoryProvider, createDefaultMemoryManager } from "./manager.js";
 import { calculateSimilarity, getCachedVector } from "./retrieval.js";
@@ -332,8 +332,8 @@ describe("chat day retention", () => {
         day: "20200101",
         chat_digest: {
           turn_count: 1,
-          first_turn_at: "2020-01-01T00:00:00.000Z",
-          last_turn_at: "2020-01-01T00:00:00.000Z",
+          first_turn_at: "2020-01-01T00:00:00Z",
+          last_turn_at: "2020-01-01T00:00:00Z",
           intents: ["chat"],
           modes: ["fallback"],
           recent_turns: [],
@@ -366,12 +366,12 @@ describe("chat day writes are serialized", () => {
       day,
       chat_digest: {
         turn_count: 1,
-        first_turn_at: "2026-01-15T00:00:01.000Z",
-        last_turn_at: "2026-01-15T00:00:01.000Z",
+        first_turn_at: "2026-01-15T00:00:01Z",
+        last_turn_at: "2026-01-15T00:00:01Z",
         intents: ["chat"],
         modes: ["fallback"],
         recent_turns: [
-          { ts: "2026-01-15T00:00:01.000Z", user: "other-process", assistant: "other-reply" },
+          { ts: "2026-01-15T00:00:01Z", user: "other-process", assistant: "other-reply" },
         ],
       },
     };

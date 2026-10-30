@@ -203,14 +203,14 @@ export const signalOnboardingAdapter: ChannelOnboardingAdapter = {
     }
 
     if (!account) {
-      const rawAccount = String(
+      const rawAccount = (
         await prompter.text({
           message: "Signal bot number (E.164)",
           validate: (value) =>
-            normalizeSignalAccountInput(String(value ?? ""))
+            normalizeSignalAccountInput(value ?? "")
               ? undefined
               : INVALID_SIGNAL_ACCOUNT_ERROR,
-        }),
+        })
       );
       account = normalizeSignalAccountInput(rawAccount) ?? "";
     }

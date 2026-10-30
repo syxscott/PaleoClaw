@@ -23,7 +23,7 @@ import { saveCronStoreInDatabase } from "./save.kernel.js";
 import type { CronSchedulerOperations, CronSchedulerSnapshot } from "./scheduler-actor.types.js";
 import { runCronSchedulerInWorker, stopCronSchedulerInWorker } from "./scheduler-actor.worker.js";
 
-const now = Date.parse("2026-10-11T12:00:00.000Z");
+const now = Date.parse("2026-10-11T12:00:00Z");
 const minute = 60_000;
 const snapshot: CronSchedulerSnapshot = {
   config: { cronEnabled: true, defaultAgentId: "main" },

@@ -45,7 +45,7 @@ function fixture(
 type ActivationTrigger = "scheduled" | "startup";
 
 async function activationFixture(trigger: ActivationTrigger, priorFailure = true) {
-  const dueAt = Date.parse("2026-02-06T10:05:03.000Z");
+  const dueAt = Date.parse("2026-02-06T10:05:03Z");
   const job = makeJob(`activation-${trigger}`, dueAt);
   if (priorFailure) {
     job.state.lastError = "prior failure";
@@ -86,7 +86,7 @@ describe("cron service run admission cleanup", () => {
   });
 
   it("rejects enqueue preflight effects after authority closes", async () => {
-    const dueAt = Date.parse("2026-02-06T10:05:03.000Z");
+    const dueAt = Date.parse("2026-02-06T10:05:03Z");
     const job = makeJob("revoked-preflight", dueAt);
     job.sessionTarget = "main";
     const onEvent = vi.fn();
@@ -125,7 +125,7 @@ describe("cron service run admission cleanup", () => {
     async (revoked) => {
       vi.useRealTimers();
       const store = opsRegressionFixtures.makeStorePath();
-      const dueAt = Date.parse("2026-02-06T10:05:03.000Z");
+      const dueAt = Date.parse("2026-02-06T10:05:03Z");
       const job = makeJob("revoked-queued-run", dueAt);
       const context = {};
       const connection = new AbortController();
@@ -191,7 +191,7 @@ describe("cron service run admission cleanup", () => {
     "preserves an operator-edited schedule after an active $mode $evaluation manual run",
     async ({ mode, evaluation }) => {
       const store = opsRegressionFixtures.makeStorePath();
-      const startedAt = Date.parse("2026-02-06T10:05:02.000Z");
+      const startedAt = Date.parse("2026-02-06T10:05:02Z");
       const job = makeJob(`manual-${mode}-${evaluation}-preserves-edited-schedule`, startedAt);
       job.schedule = { kind: "every", everyMs: 60_000, anchorMs: startedAt };
       await saveCronStore(store.storePath, { version: 1, jobs: [job] });

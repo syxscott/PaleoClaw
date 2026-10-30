@@ -471,7 +471,7 @@ describe("update global helpers", () => {
     await fs.mkdir(pkgRoot, { recursive: true });
     await fs.writeFile(
       path.join(customGlobalDir, "5/pnpm-lock.yaml"),
-      "lockfileVersion: '9.0'\n",
+      "lockfileVersion: '9'\n",
       "utf8",
     );
     await fs.writeFile(path.join(customGlobalRoot, ".modules.yaml"), "layoutVersion: 5\n", "utf8");

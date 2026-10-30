@@ -252,7 +252,7 @@ const workerSource = String.raw`
     await Promise.all(periodicWork);
     parentPort.postMessage({ type: "result", withinAdmission });
     parentPort.close();
-  })().catch((error) => {
+  })().catch((error: unknown) => {
     parentPort.postMessage({ type: "failure", message: error.message });
     process.exitCode = 1;
     parentPort.close();

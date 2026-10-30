@@ -191,7 +191,6 @@ export function buildPluginTypeScriptSource(root: string): PluginSourceBuild {
         fs.writeFileSync(
           helper,
           `import { createRequire } from "node:module";
-import { fileURLToPath, pathToFileURL } from "node:url";
 const modules = createRequire(import.meta.url).cache;
 const pendingImports = Symbol.for("openclaw.plugin.pendingImports");
 export const bindRequire = (nativeRequire) => {

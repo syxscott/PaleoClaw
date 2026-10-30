@@ -313,7 +313,7 @@ describe("trigger handling", () => {
     await withTempHome(async (home) => {
       const historyBody = [
         "[Chat messages since your last reply - for context]",
-        "Peter: /thinking high [2025-12-05T21:45:00.000Z]",
+        "Peter: /thinking high [2025-12-05T21:45:00Z]",
         "",
         "[Current message - respond to this]",
         "Give me the status",

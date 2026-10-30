@@ -169,7 +169,7 @@ describe("runCli exit behavior", () => {
       name: "resumes onboarding when an interrupted first run only persisted risk acknowledgement",
       snapshot: validConfig({
         meta: { updatedBy: "fixture" },
-        wizard: { securityAcknowledgedAt: "2026-07-13T00:00:00.000Z" },
+        wizard: { securityAcknowledgedAt: "2026-07-13T00:00:00Z" },
       }),
     },
   ])("$name", async ({ snapshot }) => {
@@ -474,7 +474,7 @@ describe("runCli exit behavior", () => {
     const proxy = { proxyUrl: "http://proxy.invalid:3128" };
     loadConfigMock.mockReturnValue({ proxy });
     const configPath = "/tmp/openclaw.json";
-    const securityAcknowledgedAt = "2026-08-02T00:00:00.000Z";
+    const securityAcknowledgedAt = "2026-08-02T00:00:00Z";
     const sourceConfig = {
       agents: { defaults: { model: { primary: "openai/gpt-5.6-luna" } } },
       wizard: { securityAcknowledgedAt },

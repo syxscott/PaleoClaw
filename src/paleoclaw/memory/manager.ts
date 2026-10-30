@@ -3,7 +3,7 @@
  * Inspired by Hermes memory orchestration + fenced context block.
  */
 
-import { MemoryProvider } from "./provider.js";
+import { type MemoryProvider } from "./provider.js";
 import { TaskMemoryStore } from "./store.js";
 
 const FENCE_TAG_RE = /<\/?\s*memory-context\s*>/gi;
@@ -37,7 +37,7 @@ export class BuiltinTaskMemoryProvider implements MemoryProvider {
     private readonly store: TaskMemoryStore = new TaskMemoryStore(),
     options: { sessionId?: string } = {},
   ) {
-    this.sessionId = String(options.sessionId || "").trim() || "adhoc";
+    this.sessionId = options.sessionId || "".trim() || "adhoc";
   }
 
   buildSystemPrompt(): string {
@@ -50,7 +50,7 @@ export class BuiltinTaskMemoryProvider implements MemoryProvider {
   }
 
   prefetch(userMessage: string): string {
-    const query = String(userMessage || "").trim();
+    const query = userMessage || "".trim();
     if (!query) {
       return "";
     }
@@ -93,8 +93,8 @@ export class BuiltinTaskMemoryProvider implements MemoryProvider {
    * Best-effort: callers already treat provider failures as non-fatal.
    */
   sync(userMessage: string, assistantResponse: string): void {
-    const userText = String(userMessage || "").trim();
-    const assistantText = String(assistantResponse || "").trim();
+    const userText = userMessage || "".trim();
+    const assistantText = assistantResponse || "".trim();
     if (!userText && !assistantText) {
       return;
     }

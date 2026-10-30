@@ -8,10 +8,10 @@ import { openOpenClawStateDatabase } from "../state/paleoclaw-state-db.js";
 import { useWorkspaceMigrationTestFixture } from "./state-migrations.workspace-setup.test-support.js";
 
 const { migrate, setup } = useWorkspaceMigrationTestFixture();
-const original = "paleoclaw-workspace-attestation:v1\n2026-07-15T11:00:00.000Z\n";
-const recreated = "paleoclaw-workspace-attestation:v1\n2026-07-16T11:00:00.000Z\n";
-const originalMtime = new Date("2026-07-15T11:01:00.000Z");
-const recreatedMtime = new Date("2026-07-16T11:01:00.000Z");
+const original = "paleoclaw-workspace-attestation:v1\n2026-07-15T11:00:00Z\n";
+const recreated = "paleoclaw-workspace-attestation:v1\n2026-07-16T11:00:00Z\n";
+const originalMtime = new Date("2026-07-15T11:01:00Z");
+const recreatedMtime = new Date("2026-07-16T11:01:00Z");
 const sha256 = (content: string) => createHash("sha256").update(content).digest("hex");
 
 function fixture() {
@@ -33,8 +33,8 @@ function fixture() {
 it("cleans a covered setup marker recreated after completed migration", async () => {
   const f = fixture();
   const file = path.join(f.context.workspaceDir, "paleoclaw-workspace-state.json");
-  const bootstrapSeededAt = "2026-07-15T10:00:00.000Z";
-  const setupCompletedAt = "2026-07-15T10:01:00.000Z";
+  const bootstrapSeededAt = "2026-07-15T10:00:00Z";
+  const setupCompletedAt = "2026-07-15T10:01:00Z";
   await fsp.writeFile(file, JSON.stringify({ version: 1, bootstrapSeededAt, setupCompletedAt }));
   expect((await f.migrate()).warnings).toEqual([]);
   const content = JSON.stringify({ version: 1, setupCompletedAt });

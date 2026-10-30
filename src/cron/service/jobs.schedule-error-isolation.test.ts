@@ -40,7 +40,7 @@ function recompute(state: CronServiceState, deferredNotifications: DeferredCronN
 describe("cron schedule error isolation", () => {
   beforeEach(() => {
     vi.useFakeTimers();
-    vi.setSystemTime(new Date("2025-01-15T10:30:00.000Z"));
+    vi.setSystemTime(new Date("2025-01-15T10:30:00Z"));
   });
 
   afterEach(() => {

@@ -355,7 +355,7 @@ describe("installPluginFromNpmSpec e2e", () => {
                   && !validateAgentRunDelegatedAuthority(authority);
                 if (!authorityClosed) throw new Error("Failed to close delegated authority");
                 await fetch(registry + "/-/test/authority-closed").then((response) => response.text());
-              })().catch((error) => errors.push(String(error)))
+              })().catch((error: unknown) => errors.push(String(error)))
             : Promise.resolve();
           try {
             await runPluginInstallCommand({
@@ -381,7 +381,7 @@ describe("installPluginFromNpmSpec e2e", () => {
           await cancellation;
           const npmEntries = await fs.readdir(path.join(process.env.OPENCLAW_STATE_DIR, "npm"), {
             recursive: true,
-          }).catch((error) => {
+          }).catch((error: unknown) => {
             if (error.code === "ENOENT") return [];
             throw error;
           });

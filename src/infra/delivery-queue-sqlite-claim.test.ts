@@ -89,7 +89,7 @@ describe("delivery queue SQLite dispatch ownership", () => {
     (recoveryState) => {
       vi.useFakeTimers();
       try {
-        vi.setSystemTime(new Date("2026-08-28T10:00:00.000Z"));
+        vi.setSystemTime(new Date("2026-08-28T10:00:00Z"));
         const initialClaim = createInitialDeliveryProducerClaim();
         const params = { queueName, id: "expiring-reservation", stateDir: tmpDir() };
         const claimed = { ...params, claimId: initialClaim.producerClaimId };
@@ -159,7 +159,7 @@ describe("delivery queue SQLite dispatch ownership", () => {
   it("reserves unclaimed rows and non-renewable platform attempts without adding a lease", () => {
     vi.useFakeTimers();
     try {
-      vi.setSystemTime(new Date("2026-08-28T10:00:00.000Z"));
+      vi.setSystemTime(new Date("2026-08-28T10:00:00Z"));
       const params = { queueName, id: "unleased-reservation", stateDir: tmpDir() };
       seedDeliveryQueueEntry({
         ...params,
@@ -201,7 +201,7 @@ describe("delivery queue SQLite dispatch ownership", () => {
   it("atomically promotes dispatch ownership and rejects expired or replaced claims", () => {
     vi.useFakeTimers();
     try {
-      vi.setSystemTime(new Date("2026-08-10T10:00:00.000Z"));
+      vi.setSystemTime(new Date("2026-08-10T10:00:00Z"));
       const stateDir = tmpDir();
       const id = "cron-direct-delivery:v1:dispatch-owner";
       seedDeliveryQueueEntry({

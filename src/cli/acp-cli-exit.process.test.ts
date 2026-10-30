@@ -17,7 +17,7 @@ import { createOpenClawTestState } from "../test-utils/paleoclaw-test-state.js";
 import { runCliProcessChild } from "./cli-process-child.test-helpers.js";
 
 const INITIALIZE_FRAME = {
-  jsonrpc: "2.0",
+  jsonrpc: "2",
   id: 1,
   method: "initialize",
   params: {
@@ -149,7 +149,7 @@ it("processes an initialize frame buffered before Gateway hello", async () => {
     });
 
     expect(response).toMatchObject({
-      jsonrpc: "2.0",
+      jsonrpc: "2",
       id: INITIALIZE_FRAME.id,
       result: { protocolVersion: INITIALIZE_FRAME.params.protocolVersion },
     });

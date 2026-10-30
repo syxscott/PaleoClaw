@@ -365,7 +365,7 @@ describe("runGlobalPackageUpdateSteps lifecycle ownership", () => {
       const originalBytes = await readPackageBytes(packageRoot);
       await fs.mkdir(binDir);
       await writeJson(oldOwner, "package.json", { dependencies: { paleoclaw: "1.0.0" } });
-      await writeText(oldOwner, "pnpm-lock.yaml", "lockfileVersion: '9.0'\n");
+      await writeText(oldOwner, "pnpm-lock.yaml", "lockfileVersion: '9'\n");
       await fs.symlink("old", path.join(globalRoot, "hash-paleoclaw"));
       const configArg = (argv: string[], key: string) =>
         argv

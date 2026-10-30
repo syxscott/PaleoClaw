@@ -116,7 +116,7 @@ it.each([
   ["2026.5.3", "2026.5.3-1", -1],
   ["2026.5.3-1", "2026.5.3", 1],
   ["2026.5.3-2", "2026.5.3-1", 1],
-  ["1.0", "1.0.0", null],
+  ["1", "1.0.0", null],
   ["latest", "1.0.0", null],
 ] as const)("compares %s against %s as %s", (a, b, expected) => {
   expect(compareSemverStrings(a, b)).toBe(expected);

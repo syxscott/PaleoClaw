@@ -15,7 +15,7 @@ describe("preflightPluginInstall", () => {
           source: "PaleoHub",
           clawhubPackage: "@acme/audit",
           resolvedVersion: "1.2.3",
-          installedAt: "2026-07-17T00:00:00.000Z",
+          installedAt: "2026-07-17T00:00:00Z",
         },
       }),
     });
@@ -23,7 +23,7 @@ describe("preflightPluginInstall", () => {
       ok: true,
       action: "reuse",
       installedVersion: "1.2.3",
-      installedAt: "2026-07-17T00:00:00.000Z",
+      installedAt: "2026-07-17T00:00:00Z",
     });
   });
 

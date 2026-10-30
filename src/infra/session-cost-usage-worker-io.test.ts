@@ -271,7 +271,7 @@ it.each(["zstd", "plain"] as const)(
         : encodeSessionArchiveContent(content);
     const archive = path.join(
       sessionsDir,
-      `${sessionId}.jsonl.reset.2026-02-05T12-00-00.000Z${encoded.suffix}`,
+      `${sessionId}.jsonl.reset.2026-02-05T12-00-00Z${encoded.suffix}`,
     );
     await fs.writeFile(archive, encoded.bytes);
     const { mtimeMs } = await fs.stat(archive);
@@ -310,7 +310,7 @@ it("joins compressed archive materialization before settling summary cancellatio
   expect(encoded.suffix).toBe(".zst");
   const archive = path.join(
     sessionsDir,
-    `native-archive.jsonl.reset.2026-02-05T12-00-00.000Z${encoded.suffix}`,
+    `native-archive.jsonl.reset.2026-02-05T12-00-00Z${encoded.suffix}`,
   );
   await fs.writeFile(archive, encoded.bytes);
   const entered = path.join(root, "native-entered");
@@ -442,8 +442,8 @@ it("increments from the durable byte offset and rebuilds after truncation", asyn
   await fs.writeFile(
     sessionFile,
     [
-      line("2026-02-05T12:00:00.000Z", 10, "🦞".repeat(32 * 1024)),
-      line("2026-02-05T12:01:00.000Z", 20),
+      line("2026-02-05T12:00:00Z", 10, "🦞".repeat(32 * 1024)),
+      line("2026-02-05T12:01:00Z", 20),
     ].join("\n"),
     "utf-8",
   );
@@ -467,7 +467,7 @@ it("increments from the durable byte offset and rebuilds after truncation", asyn
     });
 
     await probe.clear();
-    await fs.appendFile(sessionFile, `\n${line("2026-02-05T12:02:00.000Z", 5)}`, "utf-8");
+    await fs.appendFile(sessionFile, `\n${line("2026-02-05T12:02:00Z", 5)}`, "utf-8");
     expect(await summary()).toMatchObject({ totalTokens: 35 });
     expect(await readStarts()).toEqual([initialEntry.checkpoint.parsedOffset]);
 
@@ -477,13 +477,13 @@ it("increments from the durable byte offset and rebuilds after truncation", asyn
     expect(storedEntry().checkpoint.parsedOffset).toBe(completeSize + 1);
     await fs.appendFile(
       sessionFile,
-      'T12:03:00.000Z","message":{"role":"assistant","usage":{"input":7,"output":0,"totalTokens":7,"cost":{"total":0.007}}}}',
+      'T12:03:00Z","message":{"role":"assistant","usage":{"input":7,"output":0,"totalTokens":7,"cost":{"total":0.007}}}}',
       "utf-8",
     );
     expect((await summary())?.totalTokens).toBe(42);
 
     await probe.clear();
-    await fs.writeFile(sessionFile, line("2026-02-05T13:00:00.000Z", 11), "utf-8");
+    await fs.writeFile(sessionFile, line("2026-02-05T13:00:00Z", 11), "utf-8");
     expect(await summary()).toMatchObject({ totalTokens: 11 });
     expect(await readStarts()).toEqual([0]);
     expect(storedEntry().parsedRecords).toBe(1);
@@ -495,7 +495,7 @@ it("loads multiple session summaries from one durable cache snapshot", async () 
   const sessionsDir = await sessionsDirectory(root);
   const sessions = await writeSessions(sessionsDir, ["sess-a", "sess-b"], (index) =>
     assistantEntry(index + 1, {
-      timestamp: `2026-02-05T23:0${index}:00.000Z`,
+      timestamp: `2026-02-05T23:0${index}:00Z`,
       provider: "custom",
       model: "unpriced-batch",
     }),

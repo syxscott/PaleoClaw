@@ -306,7 +306,7 @@ describe("cron runtime row publication", () => {
 
   it("hands persisted authority to the runner and records its revocation failure", async () => {
     const store = runtimeStoreFixtures.makeStorePath();
-    const dueAt = Date.parse("2026-02-06T10:05:03.000Z");
+    const dueAt = Date.parse("2026-02-06T10:05:03Z");
     const job: CronStoredJob = createDueIsolatedJob({
       id: "manual-run-runtime-authority",
       nowMs: dueAt,
@@ -369,7 +369,7 @@ describe("cron runtime row publication", () => {
 
   it("publishes a sibling-imported row and its durable deadline", () => {
     vi.useFakeTimers();
-    const now = Date.parse("2026-08-13T18:00:00.000Z");
+    const now = Date.parse("2026-08-13T18:00:00Z");
     vi.setSystemTime(now);
     const resident = createDueIsolatedJob({
       id: "resident-job",

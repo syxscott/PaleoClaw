@@ -132,7 +132,7 @@ it("matches SQLite normalization across optional fields, schedules, payloads, tr
     }),
     makeJob({
       id: "default-empty-tools",
-      schedule: { kind: "at", at: "2027-01-01T00:00:00.000Z" },
+      schedule: { kind: "at", at: "2027-01-01T00:00:00Z" },
       payload: { kind: "agentTurn", message, toolsAllow: [], toolsAllowIsDefault: true },
     }),
     makeJob({

@@ -22,7 +22,7 @@ describe("export html navigation", () => {
     entries.push({
       id: "alternative",
       parentId: "message-0",
-      timestamp: "2026-02-23T00:00:00.000Z",
+      timestamp: "2026-02-23T00:00:00Z",
       type: "message",
       message: { role: "user", content: "Alternative branch" },
     });

@@ -3,8 +3,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterAll, describe, expect, it, vi } from "vitest";
-import { isScannable, scanDirectoryWithSummary, scanSkillContent, scanSource } from "./scanner.js";
-import type { SkillScanOptions } from "./scanner.js";
+import { SkillScanOptions, isScannable, scanDirectoryWithSummary, scanSkillContent, scanSource } from "./scanner.js";
 
 const fixtureRoot = fsSync.mkdtempSync(path.join(os.tmpdir(), "skill-scanner-test-"));
 let fixtureId = 0;
@@ -87,7 +86,7 @@ describe("scanSource", () => {
   const scanRuleCases = [
     {
       name: "detects child_process exec with string interpolation",
-      source: '\nimport { exec } from "child_process";\nconst cmd = `ls ${dir}`;\nexec(cmd);\n',
+      source: '\nimport { exec } from "node:child_process";\nconst cmd = `ls ${dir}`;\nexec(cmd);\n',
       expected: { ruleId: "dangerous-exec", severity: "critical" as const },
     },
     {
@@ -210,7 +209,7 @@ describe("scanSource", () => {
 
   it("does not flag a computed exec-style call on a non-child_process object", () => {
     const source =
-      '\nimport { exec } from "child_process";\nconst re = /pattern/;\nre["exec"](value);\n';
+      '\nimport { exec } from "node:child_process";\nconst re = /pattern/;\nre["exec"](value);\n';
     const findings = scanSource(source, "plugin.ts");
     expectRulePresence(findings, "dangerous-exec", false);
   });

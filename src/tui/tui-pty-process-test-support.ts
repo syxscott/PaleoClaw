@@ -9,7 +9,7 @@ function buildTuiCliScript(args: string[], tuiCliModuleUrl: string) {
     `const program = new Command();`,
     `program.exitOverride();`,
     `registerTuiCli(program);`,
-    `program.parseAsync([process.execPath, "paleoclaw", ...${JSON.stringify(args)}], { from: "node" }).catch((error) => {`,
+    `program.parseAsync([process.execPath, "paleoclaw", ...${JSON.stringify(args)}], { from: "node" }).catch((error: unknown) => {`,
     `  console.error(error);`,
     `  process.exit(1);`,
     `});`,

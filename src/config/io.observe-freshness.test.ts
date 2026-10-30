@@ -101,7 +101,7 @@ it.each([
       raw: baselineRaw,
       parsed: JSON.parse(baselineRaw),
       stat: fs.statSync(configPath),
-      observedAt: "2000-01-01T00:00:00.000Z",
+      observedAt: "2000-01-01T00:00:00Z",
     });
     const timestamp = 1_700_000_000_000;
     vi.spyOn(Date, "now").mockReturnValue(timestamp);

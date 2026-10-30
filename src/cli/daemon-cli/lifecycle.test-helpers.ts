@@ -78,7 +78,7 @@ export function createGatewayLockIdentity(
   return {
     pid: 4200,
     ownerId: "gateway-owner-old",
-    createdAt: "2026-07-16T12:00:00.000Z",
+    createdAt: "2026-07-16T12:00:00Z",
     port: 18_789,
     ...overrides,
   };

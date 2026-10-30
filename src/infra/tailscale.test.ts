@@ -143,7 +143,7 @@ describe("tailscale helpers", () => {
 
   it("caches malformed tailscale whois output on the short error TTL path", async () => {
     vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-01-01T00:00:00.000Z"));
+    vi.setSystemTime(new Date("2026-01-01T00:00:00Z"));
     const exec = vi
       .fn()
       .mockResolvedValueOnce({ stdout: "warning: stale state\n{not json}\n" })

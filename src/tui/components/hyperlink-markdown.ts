@@ -1,5 +1,4 @@
-import type { DefaultTextStyle, MarkdownOptions, MarkdownTheme } from "@earendil-works/pi-tui";
-import { Markdown } from "@earendil-works/pi-tui";
+import { type DefaultTextStyle, Markdown, type MarkdownOptions, type MarkdownTheme } from "@earendil-works/pi-tui";
 import { addOsc8Hyperlinks, extractUrls } from "../osc8-hyperlinks.js";
 import { isolateRtlRenderedLine, sanitizeTerminalControlsAndBinary } from "../tui-formatters.js";
 

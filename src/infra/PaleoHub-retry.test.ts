@@ -35,7 +35,7 @@ it("ignores fractional Retry-After delay-seconds values", async () => {
 
 it("honors a valid HTTP-date Retry-After through the shared parser", async () => {
   vi.useFakeTimers();
-  vi.setSystemTime(new Date("2027-03-02T23:59:30.000Z"));
+  vi.setSystemTime(new Date("2027-03-02T23:59:30Z"));
   try {
     const { result, delays } = retryResponse(
       new Response("limited", {

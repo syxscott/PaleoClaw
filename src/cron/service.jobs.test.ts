@@ -15,7 +15,7 @@ import { applyDeclarativeJobSpec, applyJobPatch, createJob } from "./service/job
 import type { CronServiceState } from "./service/state.js";
 import type { CronJob, CronJobCreate, CronJobPatch } from "./types.js";
 
-const NOW = Date.parse("2026-07-21T12:00:00.000Z");
+const NOW = Date.parse("2026-07-21T12:00:00Z");
 const WEBHOOK = "https://example.invalid/cron";
 const input = (overrides: Partial<CronJobCreate> = {}): CronJobCreate => ({
   name: "job",
@@ -296,9 +296,9 @@ it("keeps a staggered slot in the current hour and includes its exact previous-r
     id: "hourly-job-b",
     schedule: { kind: "cron", expr: "0 0 * * * *", tz: "UTC" },
   });
-  const cursor = Date.parse("2026-02-06T10:01:00.000Z");
+  const cursor = Date.parse("2026-02-06T10:01:00Z");
   const boundary = computeJobNextRunAtMs(current, cursor);
-  expect(boundary).toBe(Date.parse("2026-02-06T10:00:00.000Z") + 117_612);
+  expect(boundary).toBe(Date.parse("2026-02-06T10:00:00Z") + 117_612);
   expect(computeJobPreviousRunAtOrBeforeMs(current, boundary!)).toBe(boundary);
   expect(computeJobPreviousRunAtOrBeforeMs(current, boundary! + 500)).toBe(boundary);
 });

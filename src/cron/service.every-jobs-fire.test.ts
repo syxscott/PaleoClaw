@@ -93,7 +93,7 @@ describe("CronService interval/cron jobs fire on time", () => {
   it("keeps every jobs due while minute cron jobs recompute schedules", async () => {
     const store = await makeStorePath();
     const enqueueSystemEvent = vi.fn();
-    const nowMs = Date.parse("2025-12-13T00:00:00.000Z");
+    const nowMs = Date.parse("2025-12-13T00:00:00Z");
     const clock = createGatewaySchedulerClock(nowMs);
 
     await writeCronStoreSnapshot({

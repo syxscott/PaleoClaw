@@ -14,7 +14,6 @@ it("runs only the requested SDK closures from an independent package host", asyn
   const sourceRoot = tempDirs.make("paleoclaw-sdk-source-");
   const files = {
     "plugin-sdk/first.js": `
-import { createRequire } from "node:module";
 import { value } from "../shared.js";
 import common from "../common.cjs";
 import embedded from "../node_modules/embedded-package/index.cjs";

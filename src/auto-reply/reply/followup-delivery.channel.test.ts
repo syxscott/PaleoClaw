@@ -44,7 +44,7 @@ function register(...plugins: ChannelPlugin[]) {
 }
 const currentReply = {
   text: "Compacting context",
-  replyToId: "222.000",
+  replyToId: "222",
   replyToCurrent: true,
   isCompactionNotice: true,
 };
@@ -52,7 +52,7 @@ const slackTarget = (text: string) => ({
   tool: "slack",
   provider: "slack",
   to: "channel:C1",
-  threadId: "111.000",
+  threadId: "111",
   text,
 });
 
@@ -346,12 +346,12 @@ describe("follow-up delivery channel boundary", () => {
   it("carries current-reply intent through queued status delivery", async () => {
     registerCurrentReplyThreading();
     const turn = createTurn("discord", "slack");
-    turn.queued.originatingThreadId = "111.000";
+    turn.queued.originatingThreadId = "111";
     channelState.outcomes = ["delivered"];
     await sendToOrigin(turn, [currentReply], { kind: "block" });
 
     expect(channelState.deliver).toHaveBeenCalledWith(
-      expect.objectContaining({ replyToId: "111.000" }),
+      expect.objectContaining({ replyToId: "111" }),
       undefined,
     );
   });
@@ -366,7 +366,7 @@ describe("follow-up delivery channel boundary", () => {
         originatingChannel: "slack",
         originatingReplyToMode: "all",
         originatingTo: "channel:C1",
-        originatingThreadId: "111.000",
+        originatingThreadId: "111",
         sentTexts: ["Compacting context"],
         sentTargets: [slackTarget("Compacting context")],
       }),
@@ -433,18 +433,18 @@ describe("follow-up delivery channel boundary", () => {
       resolveFollowupDeliveryPayloads({
         cfg: {},
         payloads: [
-          { text: "first answer", replyToId: "111.000" },
-          { text: "already sent", replyToId: "222.000" },
+          { text: "first answer", replyToId: "111" },
+          { text: "already sent", replyToId: "222" },
         ],
         messageProvider: "slack",
         originatingChannel: "slack",
         originatingReplyToMode: "first",
         originatingTo: "channel:C1",
-        originatingThreadId: "111.000",
+        originatingThreadId: "111",
         sentTexts: ["already sent"],
         sentTargets: [slackTarget("already sent")],
       }),
-    ).toEqual([{ text: "first answer", replyToId: "111.000" }]);
+    ).toEqual([{ text: "first answer", replyToId: "111" }]);
   });
 
   const final = { text: "same-channel final" };

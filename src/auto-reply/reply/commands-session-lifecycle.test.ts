@@ -222,7 +222,7 @@ const lifecycleUpdates = [
   hoisted.setRoomIdle,
   hoisted.setRoomMaxAge,
 ];
-const now = Date.parse("2026-02-20T00:00:00.000Z");
+const now = Date.parse("2026-02-20T00:00:00Z");
 const hour = 60 * 60 * 1000;
 
 function freezeTime() {
@@ -307,7 +307,7 @@ describe("/session conversation bindings", () => {
       durationMs: 2 * 60 * 60 * 1000,
       durationKey: "idleTimeoutMs",
       label: "Idle timeout set to 2h",
-      expiry: "2026-02-20T02:00:00.000Z",
+      expiry: "2026-02-20T02:00:00Z",
       boundAgeMs: 0,
       createParams: rootParams,
       createBinding: rootBinding,
@@ -319,7 +319,7 @@ describe("/session conversation bindings", () => {
       durationMs: 3 * 60 * 60 * 1000,
       durationKey: "maxAgeMs",
       label: "Max age set to 3h",
-      expiry: "2026-02-20T01:00:00.000Z",
+      expiry: "2026-02-20T01:00:00Z",
       boundAgeMs: 2 * 60 * 60 * 1000,
       createParams: roomThreadParams,
       createBinding: roomBinding,
@@ -394,7 +394,7 @@ describe("/session conversation bindings", () => {
       );
     } else {
       expect(result?.reply?.text).toContain("Idle timeout active (2h");
-      expect(result?.reply?.text).toContain("2026-02-20T02:00:00.000Z");
+      expect(result?.reply?.text).toContain("2026-02-20T02:00:00Z");
     }
   });
 

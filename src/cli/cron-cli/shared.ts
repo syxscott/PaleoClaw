@@ -33,8 +33,7 @@ import {
   formatCliOperatorError,
   rethrowExpectedCliError,
 } from "../failure-output.js";
-import type { GatewayRpcOpts } from "../gateway-rpc.js";
-import { callGatewayFromCli } from "../gateway-rpc.js";
+import { type GatewayRpcOpts, callGatewayFromCli } from "../gateway-rpc.js";
 import { isJsonOutputModeActive } from "../json-output-mode.js";
 import { exitCliAfterOutput } from "../one-shot-exit.js";
 import { parseDurationMs as parseSharedDurationMs } from "../parse-duration.js";

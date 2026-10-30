@@ -153,7 +153,7 @@ it.each([false, true])("keeps history marker reads selective (analyzed=%s)", asy
       type: "compaction",
       id,
       parentId,
-      timestamp: "2026-09-13T00:00:00.000Z",
+      timestamp: "2026-09-13T00:00:00Z",
       summary: "sparse history marker",
     });
     parentId = id;

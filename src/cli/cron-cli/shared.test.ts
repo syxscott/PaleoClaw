@@ -389,8 +389,8 @@ it("shows dash for unset agentId instead of default", () => {
 });
 
 it.each([
-  ["2027-02-28t24:00:00.000", "America/New_York", "2027-03-01T05:00:00.000Z"],
-  ["2027-02-28t24:00:00+05:45", "Europe/Oslo", "2027-02-28T18:15:00.000Z"],
+  ["2027-02-28t24:00:00", "America/New_York", "2027-03-01T05:00:00Z"],
+  ["2027-02-28t24:00:00+05:45", "Europe/Oslo", "2027-02-28T18:15:00Z"],
   ["2027-09-04t24:00", "America/Santiago", null],
 ])("interprets offsetless one-shot %s in %s", (input, timezone, expected) => {
   expect(parseAt(input, timezone)).toBe(expected);
@@ -403,14 +403,14 @@ it.each([
 });
 
 it.each<[string, string | null, number?]>([
-  ["+30m", "2026-05-25T00:30:00.000Z"],
-  ["30m", "2026-05-25T00:30:00.000Z"],
+  ["+30m", "2026-05-25T00:30:00Z"],
+  ["30m", "2026-05-25T00:30:00Z"],
   [String(Number.MAX_SAFE_INTEGER), null],
   ["+999999999999999999d", null],
   ["+1m", null, 8_640_000_000_000_000],
 ])("parses relative/epoch time %s", (input, expected, now) => {
   vi.useFakeTimers();
-  vi.setSystemTime(new Date(now ?? "2026-05-25T00:00:00.000Z"));
+  vi.setSystemTime(new Date(now ?? "2026-05-25T00:00:00Z"));
   expect(parseAt(input)).toBe(expected);
 });
 

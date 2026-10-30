@@ -1,8 +1,7 @@
 import type { DatabaseSync } from "node:sqlite";
 import { createSubsystemLogger } from "../logging/subsystem.js";
 import { resolveGlobalSingleton } from "../shared/global-singleton.js";
-import type { EngineConnection } from "./sql-connection.js";
-import { sqlPublicationAnchor } from "./sql-connection.js";
+import { type EngineConnection, sqlPublicationAnchor } from "./sql-connection.js";
 import { createSqliteLifecycleAggregateError } from "./sqlite-lifecycle-errors.js";
 
 type PendingTransactionState = {

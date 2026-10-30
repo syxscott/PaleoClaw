@@ -135,7 +135,7 @@ const readChatHistoryPageMock = vi.fn(
 );
 const loadSessionEntryMock = vi.fn(localSessionEntry);
 let registeredListener: ((evt: unknown) => void) | undefined;
-const embeddedEventTimestamp = Date.parse("2026-05-09T07:26:00.000Z");
+const embeddedEventTimestamp = Date.parse("2026-05-09T07:26:00Z");
 
 vi.mock("../agents/agent-command.js", () => ({
   agentCommandFromIngress: (...args: unknown[]) => agentCommandFromIngressMock(...args),

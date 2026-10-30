@@ -297,7 +297,6 @@ if (scenario === "human-recovery-plugin-error") {
   stub(
     "./update-cli/update-command-report.ts",
     `
-import { mock } from 'node:test';
 export async function runInteractiveUpdateFailureAction({ runtime }) {
   mock.timers.tick(11_000);
   console.error('Fixture advanced watchdog clock.');

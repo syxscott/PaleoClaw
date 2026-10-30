@@ -65,7 +65,7 @@ const childScript = `
         await embedded.promise;
         detachActiveEmbeddedRun(sessionId, handle, sessionKey, undefined, undefined, registration);
         trace("embedded-completed");
-      }).catch((error) => {
+      }).catch((error: unknown) => {
         // Fail fast: a dispatch failure would otherwise leave startup waiting for adoption.
         trace("dispatch-failed:" + error.message);
         process.exit(1);

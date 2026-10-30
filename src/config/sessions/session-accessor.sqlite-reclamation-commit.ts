@@ -1,6 +1,5 @@
 import { AsyncLocalStorage } from "node:async_hooks";
-import type { EngineConnection } from "../../infra/sql-connection.js";
-import { sqlPublicationAnchor } from "../../infra/sql-connection.js";
+import { type EngineConnection, sqlPublicationAnchor } from "../../infra/sql-connection.js";
 import {
   retainSqliteWriteAdmissionService,
   withSqliteWriteAdmissionService,

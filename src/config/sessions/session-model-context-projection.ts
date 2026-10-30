@@ -14,8 +14,7 @@ import {
   jsonValid,
 } from "../../infra/database-engine/json-values.js";
 import { supportsNodeSqliteJsonb } from "../../infra/node-sqlite.js";
-import type { EngineConnection } from "../../infra/sql-connection.js";
-import { isPostgresSqlConnection } from "../../infra/sql-connection.js";
+import { type EngineConnection, isPostgresSqlConnection } from "../../infra/sql-connection.js";
 import { MODEL_CONTEXT_PRIVATE_METADATA_KEYS } from "../../shared/model-context-message.js";
 import {
   MODEL_CONTEXT_NAVIGATION_KEYS,

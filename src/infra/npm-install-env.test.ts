@@ -5,10 +5,10 @@ import { withTempDir } from "../test-utils/temp-dir.js";
 import { withMockedPlatform, withRestoredMocks } from "../test-utils/vitest-spies.js";
 import { createNpmFreshnessBypassArgs, createNpmProjectInstallEnv } from "./npm-install-env.js";
 
-const FROZEN_NOW = new Date("2026-05-18T19:55:00.000Z");
+const FROZEN_NOW = new Date("2026-05-18T19:55:00Z");
 const BEFORE_ARGS = [`--before=${FROZEN_NOW.toISOString()}`];
 
-function writePolicy(file: string, policy = "before=2026-01-01T00:00:00.000Z") {
+function writePolicy(file: string, policy = "before=2026-01-01T00:00:00Z") {
   fsSync.mkdirSync(path.dirname(file), { recursive: true });
   fsSync.writeFileSync(file, `${policy}\n`, "utf-8");
 }

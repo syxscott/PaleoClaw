@@ -14,8 +14,7 @@ import {
   executeSqliteQueryTakeFirstSync,
   getNodeSqliteKysely,
 } from "../../infra/kysely-sync.js";
-import type { EngineConnection } from "../../infra/sql-connection.js";
-import { isPostgresSqlConnection } from "../../infra/sql-connection.js";
+import { type EngineConnection, isPostgresSqlConnection } from "../../infra/sql-connection.js";
 import { createSqliteSchemaEnsurer } from "../../infra/sqlite-schema-ensure.js";
 import { getAdmittedSqlSchemaFacts } from "../../infra/sqlite-schema-facts.js";
 import { ensureStatePostgresFragment } from "../../state/paleoclaw-state-db-engine.js";

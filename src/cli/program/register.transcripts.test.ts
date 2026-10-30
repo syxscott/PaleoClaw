@@ -44,7 +44,7 @@ function sessionFixture(
   return {
     sessionId,
     source: { providerId: "manual-transcript" },
-    startedAt: "2026-05-22T10:00:00.000Z",
+    startedAt: "2026-05-22T10:00:00Z",
     ...fields,
   };
 }
@@ -52,7 +52,7 @@ function sessionFixture(
 async function writeSession(sessionId: string): Promise<string> {
   const session = sessionFixture(sessionId, {
     title: "Design review",
-    stoppedAt: "2026-05-22T10:05:00.000Z",
+    stoppedAt: "2026-05-22T10:05:00Z",
   });
   const utterance = { text: "Action item: Ship CLI", speaker: { label: "Sam" } };
   await store.writeSession(session);

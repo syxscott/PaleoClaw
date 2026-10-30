@@ -1,6 +1,5 @@
 // Skill install test mocks centralize mocked lifecycle dependencies for tests.
-import { vi } from "vitest";
-import type { Mock } from "vitest";
+import { Mock, vi } from "vitest";
 
 /** Shared Vitest mocks for skill install tests that mock heavy dependencies. */
 export const runCommandWithTimeoutMock: Mock<(...args: unknown[]) => unknown> = vi.fn();

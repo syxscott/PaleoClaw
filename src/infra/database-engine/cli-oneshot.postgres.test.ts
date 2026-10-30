@@ -281,7 +281,7 @@ describe("CLI with unresolved PostgreSQL credentials", () => {
           await fs.writeFile(
             logPath,
             `${JSON.stringify({
-              time: "2026-01-09T02:10:00.000Z",
+              time: "2026-01-09T02:10:00Z",
               level: "info",
               message: "synthetic PostgreSQL diagnostic log",
             })}\n`,

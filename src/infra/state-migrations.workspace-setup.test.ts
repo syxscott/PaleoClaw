@@ -22,9 +22,9 @@ import {
 import { useWorkspaceMigrationTestFixture } from "./state-migrations.workspace-setup.test-support.js";
 
 const HASH = "a".repeat(64);
-const ATTESTED_AT = "2026-07-15T11:00:00.000Z";
-const COMPLETED_AT = "2026-07-15T10:01:00.000Z";
-const SEEDED_AT = "2026-07-15T10:00:00.000Z";
+const ATTESTED_AT = "2026-07-15T11:00:00Z";
+const COMPLETED_AT = "2026-07-15T10:01:00Z";
+const SEEDED_AT = "2026-07-15T10:00:00Z";
 type Context = ReturnType<ReturnType<typeof useWorkspaceMigrationTestFixture>["setup"]>;
 type MigrationContext = Omit<Context, "cfg"> & { cfg: OpenClawConfig };
 type MigrationOverrides = Partial<Parameters<typeof migrateLegacyWorkspaceState>[0]>;
@@ -154,7 +154,7 @@ describe("legacy workspace Doctor migration", () => {
     fs.symlinkSync(targetB, workspaceAlias, process.platform === "win32" ? "junction" : "dir");
     await deleteWorkspaceState(prepareWorkspaceStateDeletion(workspaceAlias));
     const identityB = resolveWorkspaceStateIdentity(targetB);
-    const attestedAtB = await writeAttestation(sourcePath, "", "2026-07-15T12:00:00.000Z");
+    const attestedAtB = await writeAttestation(sourcePath, "", "2026-07-15T12:00:00Z");
     await migrateOk(aliasContext);
     const db = database();
     expect(
@@ -352,7 +352,7 @@ describe("legacy workspace Doctor migration", () => {
     await write(setupPath, setupSource());
     const result = await migrate(context, {
       beforeClaim: () => {
-        fs.writeFileSync(setupPath, setupSource({ setupCompletedAt: "2026-07-16T00:00:00.000Z" }));
+        fs.writeFileSync(setupPath, setupSource({ setupCompletedAt: "2026-07-16T00:00:00Z" }));
       },
     });
     expect(result.warnings[0]).toContain("changed before Doctor could claim it");
@@ -365,10 +365,10 @@ describe("legacy workspace Doctor migration", () => {
       const conflicting = kind === "conflicting";
       const identity = workspaceIdentity();
       const setupPath = setupPathFor(context.workspaceDir);
-      const seededAt = "2026-07-15T00:00:00.000Z";
+      const seededAt = "2026-07-15T00:00:00Z";
       const raw = setupSource({ bootstrapSeededAt: seededAt });
       const claimPath = claimPathFor(setupPath);
-      const canonicalSeededAt = conflicting ? "2026-07-14T00:00:00.000Z" : seededAt;
+      const canonicalSeededAt = conflicting ? "2026-07-14T00:00:00Z" : seededAt;
       if (conflicting) {
         database()
           .prepare(
@@ -424,12 +424,12 @@ describe("legacy workspace Doctor migration", () => {
   it("retains a receipt-covered attestation when only its modification time changed", async () => {
     const attestationPath = attestationPathFor();
     await write(attestationPath, attestation());
-    const originalMtime = new Date("2026-07-15T11:01:00.000Z");
+    const originalMtime = new Date("2026-07-15T11:01:00Z");
     await fsp.utimes(attestationPath, originalMtime, originalMtime);
     const first = await migrate(context, { removeSource: interruptCleanup });
     expect(first.warnings[0]).toContain("legacy cleanup failed");
     const claimPath = claimPathFor(attestationPath);
-    const changedMtime = new Date("2026-07-15T11:02:00.000Z");
+    const changedMtime = new Date("2026-07-15T11:02:00Z");
     await fsp.utimes(claimPath, changedMtime, changedMtime);
     const retry = await migrate(context);
     expect(retry.warnings[0]).toContain("retired source now conflicts");

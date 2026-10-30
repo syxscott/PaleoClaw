@@ -7,7 +7,7 @@ describe("OpenClawSchema telemetry config", () => {
     expect(OpenClawSchema.parse({}).telemetry).toBeUndefined();
 
     for (const enabled of [false, true]) {
-      const telemetry = { enabled, consentedAt: "2026-08-23T12:00:00.000Z" };
+      const telemetry = { enabled, consentedAt: "2026-08-23T12:00:00Z" };
       expect(OpenClawSchema.parse({ telemetry }).telemetry).toStrictEqual(telemetry);
     }
   });

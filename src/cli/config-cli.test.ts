@@ -409,7 +409,7 @@ describe("config cli", () => {
       },
       uiHints: {},
       version: "test",
-      generatedAt: "2026-03-25T00:00:00.000Z",
+      generatedAt: "2026-03-25T00:00:00Z",
     });
     mockExit.mockImplementation((code: number) => {
       const errorMessages = mockError.mock.calls.map((call) => call.join(" ")).join("; ");

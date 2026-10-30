@@ -424,7 +424,7 @@ describe("runGatewayLoop", () => {
             .flat()
             .filter((line) => String(line).includes("stop.signal.received "));
           expect(starts).toEqual([
-            `restart trace: stop.signal.received 0.0ms total=0.0ms signal=${signal}`,
+            `restart trace: stop.signal.received 0ms total=0ms signal=${signal}`,
           ]);
           testLoop.expectStopCloseCall(close);
         } finally {

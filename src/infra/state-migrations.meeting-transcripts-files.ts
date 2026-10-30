@@ -11,8 +11,7 @@ import type {
   TranscriptUtterance,
 } from "../transcripts/provider-types.js";
 import { TRANSCRIPT_EXPORT_FILE_NAMES } from "../transcripts/store-artifacts.js";
-import type { TranscriptsSummary } from "../transcripts/summary.js";
-import { renderTranscriptsMarkdown } from "../transcripts/summary.js";
+import { type TranscriptsSummary, renderTranscriptsMarkdown } from "../transcripts/summary.js";
 import { sha256File, sha256FileSync, sha256Hex } from "./crypto-digest.js";
 import { openNodeSqliteDatabase } from "./node-sqlite.js";
 

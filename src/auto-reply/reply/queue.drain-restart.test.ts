@@ -32,8 +32,7 @@ import {
   assertAgentDatabaseResourceAdmission,
   withAgentDatabaseCloseFence,
 } from "../../state/paleoclaw-agent-db-resources.js";
-import type { FollowupRun, QueueSettings } from "./queue.js";
-import { enqueueFollowupRun, scheduleFollowupDrain } from "./queue.js";
+import { FollowupRun, QueueSettings, enqueueFollowupRun, scheduleFollowupDrain } from "./queue.js";
 import {
   createQueueTestRun as createRun,
   createDrainRecorder,

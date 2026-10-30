@@ -182,7 +182,7 @@ it.each(["checkpointed", "newer-frames", "deleted-rows", "recovery-during-handof
         readTraffic(reader);
         const file = path.join(
           state.sessionsDir(),
-          `traffic-${tick}.jsonl.deleted.2020-01-01T00-00-00.000Z`,
+          `traffic-${tick}.jsonl.deleted.2020-01-01T00-00-00Z`,
         );
         fs.writeFileSync(file, Buffer.alloc(256 * 1024, tick));
         if (canonical) {
@@ -245,7 +245,7 @@ it.each(["transaction", "iterator"] as const)(
     const { options, database, sessions, storePath } = await fixture();
     const databasePathKey = sqliteReaderDatabasePathKey(database.path);
     const files = Array.from({ length: 4 }, (_, index) => {
-      const name = `wal-${index}.jsonl.deleted.2020-01-01T00-00-00.000Z`;
+      const name = `wal-${index}.jsonl.deleted.2020-01-01T00-00-00Z`;
       const bytes = Buffer.alloc(256 * 1024, 65 + index);
       insertArchive(database, index, name, bytes);
       fs.writeFileSync(path.join(sessions, name), bytes);

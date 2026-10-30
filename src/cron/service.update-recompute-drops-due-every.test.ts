@@ -13,7 +13,7 @@ import { onTimer } from "./service/timer.test-support.js";
 import type { CronJob, CronSchedule } from "./types.js";
 
 const { logger, makeStorePath } = setupCronServiceSuite({ fakeTimers: false });
-const base = Date.parse("2025-12-13T00:00:00.000Z");
+const base = Date.parse("2025-12-13T00:00:00Z");
 
 async function withScheduledJob(
   schedule: CronSchedule,

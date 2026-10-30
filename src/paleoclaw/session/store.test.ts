@@ -1,6 +1,6 @@
-import * as fs from "fs";
-import * as os from "os";
-import * as path from "path";
+import * as fs from "node:fs";
+import * as os from "node:os";
+import * as path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { DEFAULT_SESSION_TITLE, SessionStore, deriveInstantTitle } from "./store.js";
 
@@ -14,7 +14,7 @@ function createTempRoot(): string {
 
 /** Flush microtasks (e.g. the fire-and-forget titleUpgrader chain). */
 function flush(): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, 0));
+  new Promise((resolve) => setTimeout(resolve, 0));
 }
 
 afterEach(() => {
@@ -212,8 +212,8 @@ describe("Session title provenance", () => {
       JSON.stringify({
         id,
         title,
-        createdAt: "2024-01-01T00:00:00.000Z",
-        updatedAt: "2024-01-01T00:00:00.000Z",
+        createdAt: "2024-01-01T00:00:00Z",
+        updatedAt: "2024-01-01T00:00:00Z",
         tags: [],
         messages: [],
       });

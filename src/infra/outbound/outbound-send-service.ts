@@ -25,8 +25,7 @@ import {
   type ResolvedActionContext,
 } from "./message-action-contracts.js";
 import { collectActionMediaSourceHints } from "./message-action-params.js";
-import type { MessagePollResult, MessageSendResult } from "./message.js";
-import { sendMessage, sendPoll } from "./message.js";
+import { type MessagePollResult, type MessageSendResult, sendMessage, sendPoll } from "./message.js";
 import type { OutboundMirror } from "./mirror.js";
 
 const log = createSubsystemLogger("outbound/send-service");

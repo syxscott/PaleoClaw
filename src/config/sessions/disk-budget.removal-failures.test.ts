@@ -117,7 +117,7 @@ it.each([
           : path.join(
               dir,
               boundary === "archives"
-                ? `old-${index}.jsonl.deleted.2026-01-01T00-00-00.000Z`
+                ? `old-${index}.jsonl.deleted.2026-01-01T00-00-00Z`
                 : `old-${index}.jsonl`,
             );
         await writeArtifact(

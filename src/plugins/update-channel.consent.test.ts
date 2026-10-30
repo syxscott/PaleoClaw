@@ -79,7 +79,7 @@ it.each([
         acceptedSurface: previousSurface,
         acceptedSurfaceHash: computeDeclaredSurfaceHash(previousSurface),
         acceptedSurfaceIntegrity: "sha512-previous",
-        acceptedSurfaceAt: "2026-01-01T00:00:00.000Z",
+        acceptedSurfaceAt: "2026-01-01T00:00:00Z",
       },
       { entries: { [pluginId]: { enabled: true } }, load: { paths: [installedDir] } },
     );

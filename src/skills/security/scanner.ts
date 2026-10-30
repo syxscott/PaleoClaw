@@ -219,11 +219,11 @@ function collectChildProcessBindings(source: string): ChildProcessBindings {
   const methodAliases = new Set<string>();
   const namespaceAliases = new Set<string>();
 
-  // ESM named imports: import { spawn as launch, execFile } from "child_process"
+  // ESM named imports: import { spawn as launch, execFile } from "node:child_process"
   const esmNamed = /\bimport\s*\{([^}]*)\}\s*from\s*["'](?:node:)?child_process["']/g;
-  // ESM default namespace: import cp from "child_process"
+  // ESM default namespace: import cp from "node:child_process"
   const esmDefault = /\bimport\s+(\w+)\s+from\s*["'](?:node:)?child_process["']/g;
-  // ESM namespace import: import * as proc from "child_process"
+  // ESM namespace import: import * as proc from "node:child_process"
   const esmNamespace = /\bimport\s*\*\s*as\s+(\w+)\s+from\s*["'](?:node:)?child_process["']/g;
   // CJS destructured: const { exec: run, spawn } = require("child_process")
   const cjsDestructured =

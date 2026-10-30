@@ -73,7 +73,7 @@ function expectWait(
 }
 
 function legacyOwner(pid = 8000, port = 18789) {
-  return { pid, port, createdAt: "2026-09-01T00:00:00.000Z" };
+  return { pid, port, createdAt: "2026-09-01T00:00:00Z" };
 }
 
 function advanceClock<T>(ms: number, value: T) {

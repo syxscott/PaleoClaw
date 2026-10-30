@@ -929,8 +929,8 @@ describe("update candidate canary", () => {
         traceEnv[key] = options.env.OPENCLAW_GATEWAY_STARTUP_TRACE;
         if (args.includes("--fix")) {
           child.stderr.write(
-            "[gateway] startup trace: doctor.database-preflight 1200.0ms total=1300.0ms start=100.0ms\n" +
-              "[gateway] startup trace: doctor.contributions 3400.0ms total=4800.0ms start=1400.0ms\n",
+            "[gateway] startup trace: doctor.database-preflight 1200ms total=1300ms start=100ms\n" +
+              "[gateway] startup trace: doctor.contributions 3400ms total=4800ms start=1400ms\n",
           );
         }
         return child;

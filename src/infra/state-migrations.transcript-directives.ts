@@ -4,8 +4,7 @@ import { isRecord } from "@paleoclaw/normalization-core/record-coerce";
 import { sql } from "kysely";
 import { updateSqliteTranscriptEventJsonInTransaction } from "../config/sessions/session-accessor.sqlite-transcript-store.js";
 import { transcriptEventJsonSql } from "../config/sessions/transcript-payload.js";
-import { OPENCLAW_AGENT_SCHEMA_VERSION } from "../state/paleoclaw-agent-db-contract.js";
-import type { OpenClawAgentDatabase } from "../state/paleoclaw-agent-db-contract.js";
+import { OPENCLAW_AGENT_SCHEMA_VERSION, type OpenClawAgentDatabase } from "../state/paleoclaw-agent-db-contract.js";
 import { agentEngineInput } from "../state/paleoclaw-agent-db-engine.js";
 import {
   OpenClawAgentDatabaseLeaseActiveError,

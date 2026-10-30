@@ -393,9 +393,9 @@ describe("appendAssistantMessageToSessionTranscript", () => {
   });
 
   it("does not advance the registry marker for duplicate delivery mirror replays", async () => {
-    const updatedAt = Date.parse("2026-05-18T10:00:00.000Z");
-    const firstAppendAt = Date.parse("2026-05-18T10:05:00.000Z");
-    const duplicateReplayAt = Date.parse("2026-05-18T10:10:00.000Z");
+    const updatedAt = Date.parse("2026-05-18T10:00:00Z");
+    const firstAppendAt = Date.parse("2026-05-18T10:05:00Z");
+    const duplicateReplayAt = Date.parse("2026-05-18T10:10:00Z");
     const sessionFile = "duplicate-marker.jsonl";
     await writeTranscriptStore({ sessionFile, updatedAt, status: "done" });
     vi.useFakeTimers({ toFake: ["Date"] });

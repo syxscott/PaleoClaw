@@ -18,9 +18,9 @@ function listState(...jobs: Partial<CronJob>[]) {
         sessionTarget: "main",
         wakeMode: "now",
         payload: { kind: "systemEvent", text: "tick" },
-        state: { nextRunAtMs: Date.parse("2030-02-27T15:30:00.000Z") },
-        createdAtMs: Date.parse("2026-02-27T15:00:00.000Z"),
-        updatedAtMs: Date.parse("2026-02-27T15:05:00.000Z"),
+        state: { nextRunAtMs: Date.parse("2030-02-27T15:30:00Z") },
+        createdAtMs: Date.parse("2026-02-27T15:00:00Z"),
+        updatedAtMs: Date.parse("2026-02-27T15:05:00Z"),
       };
       return Object.assign(job, overrides);
     }),
@@ -132,7 +132,7 @@ it("applies schedule, status, trigger, and cross-field phrase filters before pag
     trigger: { script: "json({ fire: true })" },
   };
   const state = listState(
-    { ...matching, schedule: { kind: "at", at: "2030-02-27T15:30:00.000Z" } },
+    { ...matching, schedule: { kind: "at", at: "2030-02-27T15:30:00Z" } },
     { ...matching, state: { lastStatus: "error" } },
     matching,
     { ...matching, trigger: undefined },

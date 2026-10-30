@@ -16,7 +16,7 @@ import {
 import { formatTimeAgo, formatRelativeTimestamp } from "./format-relative.js";
 
 const invalidDurationInputs = [null, undefined, -100] as const;
-const timestamp = new Date("2024-01-15T14:30:45.000Z");
+const timestamp = new Date("2024-01-15T14:30:45Z");
 const utcOptions = { timeZone: "UTC" };
 
 function expectFormatterCases<TInput, TOutput>(
@@ -117,8 +117,8 @@ it("resolves calendar boundaries across a DST-short day", () => {
   const start = resolveTimeZoneDayStartMs("2026-03-29", "Europe/Vienna");
   const next = resolveTimeZoneDayStartMs("2026-03-30", "Europe/Vienna");
 
-  expect(start).toBe(Date.parse("2026-03-28T23:00:00.000Z"));
-  expect(next).toBe(Date.parse("2026-03-29T22:00:00.000Z"));
+  expect(start).toBe(Date.parse("2026-03-28T23:00:00Z"));
+  expect(next).toBe(Date.parse("2026-03-29T22:00:00Z"));
   expect(next! - start!).toBe(23 * 60 * 60 * 1000);
 });
 it.each([
@@ -193,7 +193,7 @@ it.each([
 describe("formatRelativeTimestamp", () => {
   beforeEach(() => {
     vi.useFakeTimers();
-    vi.setSystemTime(new Date("2024-02-10T12:00:00.000Z"));
+    vi.setSystemTime(new Date("2024-02-10T12:00:00Z"));
   });
 
   afterEach(() => vi.useRealTimers());

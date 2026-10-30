@@ -15,11 +15,11 @@ export abstract class MemoryProvider {
     return "";
   }
 
-  prefetch(_query: string, _session_id: string = ""): string {
+  prefetch(_query: string, _session_id = ""): string {
     return "";
   }
 
-  queue_prefetch(_query: string, _session_id: string = ""): void {
+  queue_prefetch(_query: string, _session_id = ""): void {
     // Default no-op
   }
 

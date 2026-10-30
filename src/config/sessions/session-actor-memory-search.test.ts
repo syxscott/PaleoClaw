@@ -265,7 +265,7 @@ describe("Memory export from the session actor", () => {
     type: "message",
     id,
     parentId: null,
-    timestamp: "2026-10-11T00:00:00.000Z",
+    timestamp: "2026-10-11T00:00:00Z",
     message: { role: "user", content: text },
   });
 

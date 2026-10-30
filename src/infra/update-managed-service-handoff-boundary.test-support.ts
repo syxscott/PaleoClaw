@@ -223,7 +223,7 @@ export function createManagedServiceManagerBoundary({
           });
           ${managedServiceStateUpdateScript(statePath, "state.previousGenerationRestored = true")};
           ${updaterScript}
-        })().catch((error) => { console.error(error); process.exit(18); });`;
+        })().catch((error: unknown) => { console.error(error); process.exit(18); });`;
       }
       if (run && options?.validationResult !== "child-result") {
         updaterScript = `void (async () => {
@@ -231,7 +231,7 @@ export function createManagedServiceManagerBoundary({
           ledger.recordUpdateRunPhase(${JSON.stringify(run.runId)}, "staging");
           ledger.recordUpdateRunPhase(${JSON.stringify(run.runId)}, "validating");
           ${updaterScript}
-        })().catch((error) => { console.error(error); process.exit(18); });`;
+        })().catch((error: unknown) => { console.error(error); process.exit(18); });`;
       }
       if (options?.replaceLedgerWriter) {
         const installedLedgerModule = `${ledgerRuntimeImport}

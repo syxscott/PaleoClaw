@@ -238,7 +238,7 @@ export function resolveAutoToolPlan(prompt: string): AutoToolPlan[] {
 
 function summarizePbdb(data: unknown): string {
   const typed = data as { count?: number; records?: Array<Record<string, unknown> | null> };
-  const count = Number(typed?.count || 0);
+  const count = typed?.count || 0;
   // PBDB sometimes returns records entries as null — guard against it before
   // accessing row fields.
   const names = (typed?.records || [])
@@ -255,7 +255,7 @@ function summarizePbdb(data: unknown): string {
 
 function summarizeCrossref(data: unknown): string {
   const typed = data as { totalResults?: number; items?: Array<Record<string, unknown>> };
-  const total = Number(typed?.totalResults || 0);
+  const total = typed?.totalResults || 0;
   const dois = (typed?.items || [])
     .slice(0, 3)
     .map((item) => {

@@ -18,8 +18,7 @@ import {
   writeControlPlaneUpdateRestartSentinel,
 } from "./update-control-plane-sentinel.js";
 import { prepareUpdateFailureReport } from "./update-failure-report-prepare.js";
-import type { UpdateRestartSentinelMeta } from "./update-restart-sentinel-payload.js";
-import { buildUpdateRestartSentinelPayload } from "./update-restart-sentinel-payload.js";
+import { UpdateRestartSentinelMeta, buildUpdateRestartSentinelPayload } from "./update-restart-sentinel-payload.js";
 import { createUpdateRun, finishUpdateRun, getUpdateRun } from "./update-run-ledger.js";
 import type { UpdateRunRecord } from "./update-run-record.js";
 

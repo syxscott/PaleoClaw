@@ -13,7 +13,7 @@ describe("resolveTransientCronRetryDecision", () => {
     "does not retry an incidental numeric command failure for %s jobs",
     async (scheduleKind) => {
       const error = "529 lines of output";
-      const startedAt = Date.parse("2026-08-20T12:00:00.000Z");
+      const startedAt = Date.parse("2026-08-20T12:00:00Z");
       const endedAt = startedAt + 500;
       const job = makeCronJob({
         payload: { kind: "command", argv: ["local-task"] },
@@ -65,7 +65,7 @@ describe("resolveTransientCronRetryDecision", () => {
     "retries provider-attributed overload for %s jobs",
     async (scheduleKind) => {
       const error = "HTTP 529";
-      const startedAt = Date.parse("2026-08-20T12:00:00.000Z");
+      const startedAt = Date.parse("2026-08-20T12:00:00Z");
       const endedAt = startedAt + 500;
       const job = makeCronJob({
         schedule:

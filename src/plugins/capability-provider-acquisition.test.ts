@@ -57,7 +57,7 @@ it.each([{ custody: "borrowed" }, { custody: "owned" }] as const)(
           const session = {
             sessionId: "custody-capture",
             source: { providerId: record.id },
-            startedAt: "2026-09-23T00:00:00.000Z",
+            startedAt: "2026-09-23T00:00:00Z",
           };
           await expect(provider.start!({ session, onUtterance() {} })).resolves.toEqual({
             ok: true,

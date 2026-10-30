@@ -73,7 +73,7 @@ it.each([
     sourceConfig: {
       $schema: "https://openclaw.ai/config.json",
       meta: { updatedBy: "fixture" },
-      wizard: { securityAcknowledgedAt: "2026-08-02T00:00:00.000Z", accessMode: "guarded" },
+      wizard: { securityAcknowledgedAt: "2026-08-02T00:00:00Z", accessMode: "guarded" },
     },
     onboarding: true,
   },

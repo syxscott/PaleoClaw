@@ -89,7 +89,7 @@ describe("cron store", () => {
   it.each([
     {
       name: "one-shot schedule without delivery",
-      schedule: { kind: "at", at: "2030-01-01T00:00:00.000Z" },
+      schedule: { kind: "at", at: "2030-01-01T00:00:00Z" },
       delivery: { mode: "none" },
       failureAlert: false,
     },

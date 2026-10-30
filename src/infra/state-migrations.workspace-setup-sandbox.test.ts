@@ -22,7 +22,7 @@ import {
   migrateLegacyWorkspaceState,
 } from "./state-migrations.workspace-setup.js";
 
-const SEEDED_AT = "2026-07-20T00:00:00.000Z";
+const SEEDED_AT = "2026-07-20T00:00:00Z";
 const MARKER = "paleoclaw-workspace-state.json";
 
 const sessionDirs = useSessionStoreTempDirs(

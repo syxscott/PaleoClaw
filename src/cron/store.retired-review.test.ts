@@ -90,7 +90,7 @@ it("allows writable-update Doctor to persist config repair while the retired row
     "retired-workshop-doctor",
     async (state) => {
       await state.writeConfig({
-        meta: { lastTouchedAt: "2026-09-01T00:00:00.000Z" },
+        meta: { lastTouchedAt: "2026-09-01T00:00:00Z" },
         gateway: { mode: "local" },
         agents: { list: [{ id: "main", default: true }] },
       });

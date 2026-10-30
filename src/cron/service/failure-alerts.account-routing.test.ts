@@ -176,7 +176,7 @@ it("routes required delivery failure outside the failed topic", async () => {
 });
 
 it("carries run start time without using it for alert cooldown", async () => {
-  const runAtMs = Date.parse("2026-07-30T00:00:00.000Z");
+  const runAtMs = Date.parse("2026-07-30T00:00:00Z");
   const endedAt = runAtMs + 5 * 60_000;
   const { job, send, apply, drain } = routingFixture(
     {

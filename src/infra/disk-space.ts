@@ -62,7 +62,7 @@ export function tryReadDiskSpace(targetPath: string): DiskSpaceSnapshot | null {
 export function formatDiskSpaceBytes(bytes: number): string {
   const mib = bytes / (1024 * 1024);
   // Round before choosing the unit so a value that rounds up to 1024 MiB is
-  // promoted to "1.0 GiB" instead of printing the impossible "1024 MiB".
+  // promoted to "1 GiB" instead of printing the impossible "1024 MiB".
   const roundedMib = Math.max(0, Math.round(mib));
   if (roundedMib < 1024) {
     return `${roundedMib} MiB`;

@@ -180,8 +180,8 @@ describe("scanInstalledApps", () => {
         const plistPath = await createApp(
           roots.applications,
           fixture.name,
-          `<?xml version="1.0" encoding="UTF-8"?>
-<plist version="1.0"><dict>${identifier}${fixture.extra ?? ""}</dict></plist>`,
+          `<?xml version="1" encoding="UTF-8"?>
+<plist version="1"><dict>${identifier}${fixture.extra ?? ""}</dict></plist>`,
         );
         if (fixture.binary) {
           execFileSync("/usr/bin/plutil", ["-convert", "binary1", plistPath], { timeout: 2_000 });

@@ -34,7 +34,7 @@ describe("persisted cron trigger shape", () => {
   it("rejects triggers on at and on-exit schedules", () => {
     expect(
       getInvalidPersistedCronJobReason(
-        candidate({ schedule: { kind: "at", at: "2026-08-01T00:00:00.000Z" } }),
+        candidate({ schedule: { kind: "at", at: "2026-08-01T00:00:00Z" } }),
       ),
     ).toBe("invalid-trigger");
     expect(

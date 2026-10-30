@@ -17,13 +17,13 @@ it("marks a standalone usage footer as non-terminal status", () => {
 
 const completeUsage = { input: 1_000_000, output: 0 };
 it.each<[name: string, usage: Usage, tiered: boolean, expected: string | undefined]>([
-  ["costless flat-price runtime", completeUsage, false, "est $1.00"],
-  ["explicit zero total", { ...completeUsage, cost: { total: 0 } }, true, "est $0.0000"],
+  ["costless flat-price runtime", completeUsage, false, "est $1"],
+  ["explicit zero total", { ...completeUsage, cost: { total: 0 } }, true, "est $0"],
   ["incomplete tiered cost", completeUsage, true, undefined],
   ["input-only usage without a price", { input: 1_000_000 }, false, undefined],
   ["output-only usage without a price", { output: 50 }, false, undefined],
   ["priced partial usage", { input: 1000, cost: { total: 0.25 } }, true, "est $0.25"],
-  ["cost-only zero total", { cost: { total: 0 } }, true, "Usage: ? in / ? out · est $0.0000"],
+  ["cost-only zero total", { cost: { total: 0 } }, true, "Usage: ? in / ? out · est $0"],
 ])("formats %s for the selected agent in an explicit fleet", (_name, usage, tiered, expected) => {
   const cost = { input: 1, output: 2, cacheRead: 0, cacheWrite: 0 };
   const model: ModelDefinitionConfig = {

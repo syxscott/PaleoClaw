@@ -219,7 +219,7 @@ it("rejects accessor and inherited requester identities without invoking getters
 it.each<[UnknownRecord, UnknownRecord]>([
   [CRON_SCHEDULE, { tz: " " }],
   [
-    { kind: "at", at: "2026-01-12T18:00:00.000Z" },
+    { kind: "at", at: "2026-01-12T18:00:00Z" },
     { ...STALE_SCHEDULE, kind: "at" },
   ],
   [

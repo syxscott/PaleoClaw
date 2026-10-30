@@ -176,7 +176,7 @@ describe("buildSessionStartupContextPrelude", () => {
 
   it("caps same-day slugged artifacts by recency rather than slug name", async () => {
     const workspaceDir = await makeWorkspace();
-    const baseTime = new Date("2026-04-11T18:00:00.000Z");
+    const baseTime = new Date("2026-04-11T18:00:00Z");
     for (const [index, suffix] of [
       "zz-old",
       "yy-old",

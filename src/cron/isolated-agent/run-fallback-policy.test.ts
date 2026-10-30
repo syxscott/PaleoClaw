@@ -83,13 +83,13 @@ it.each<FallbackCase>([
   [
     "strict payload model",
     makeConfig(),
-    { job: makeJob({ model: "google/gemini-2.0-flash" }) },
+    { job: makeJob({ model: "google/gemini-2-flash" }) },
     [],
   ],
   [
     "explicit payload fallbacks",
     makeConfig(["openai/gpt-5.4"]),
-    { job: makeJob({ model: "google/gemini-2.0-flash", fallbacks: [] }) },
+    { job: makeJob({ model: "google/gemini-2-flash", fallbacks: [] }) },
     [],
   ],
   [

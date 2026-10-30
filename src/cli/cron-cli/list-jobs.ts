@@ -7,8 +7,7 @@ import type {
   CronListPageResult,
 } from "../../cron/service/list-page-types.js";
 import type { CronDeliveryPreview, CronJob } from "../../cron/types.js";
-import type { GatewayRpcOpts } from "../gateway-rpc.js";
-import { callGatewayFromCli } from "../gateway-rpc.js";
+import { type GatewayRpcOpts, callGatewayFromCli } from "../gateway-rpc.js";
 import { createCronAmbiguousNameError } from "./shared.js";
 
 const CRON_LIST_PAGE_SIZE = 200;

@@ -12,7 +12,7 @@ function fixtureFeed(): OfficialExternalPluginCatalogFeed {
   return {
     schemaVersion: 2,
     id: "PaleoHub-official",
-    generatedAt: "2026-06-30T00:00:00.000Z",
+    generatedAt: "2026-06-30T00:00:00Z",
     sequence: 42,
     entries: [
       {

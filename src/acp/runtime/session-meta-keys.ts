@@ -6,8 +6,7 @@ import {
   getNodeSqliteKysely,
   sqliteStringSet,
 } from "../../infra/kysely-sync.js";
-import type { EngineConnection } from "../../infra/sql-connection.js";
-import { sqlPublicationAnchor } from "../../infra/sql-connection.js";
+import { type EngineConnection, sqlPublicationAnchor } from "../../infra/sql-connection.js";
 import {
   getOrLoadSqliteDatabaseAdmissionForPath,
   getSqliteDatabaseAdmission,

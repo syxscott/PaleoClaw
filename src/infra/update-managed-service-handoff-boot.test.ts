@@ -12,7 +12,7 @@ vi.mock("node:child_process", async (importOriginal) => ({
 
 const bootBytes = Buffer.from("00ff018002fe037f04fd057e06fc077d", "hex");
 const uuid = "12345678-1234-1234-1234-123456789abc";
-const timestamp = "2026-09-01T00:00:00.0000000Z";
+const timestamp = "2026-09-01T00:00:00Z";
 const serviceManagerEnv = { PATH: "/usr/bin:/bin" };
 const store = createManagedHandoffLeaseStore({
   databasePath: "/unused/managed-update-handoffs.sqlite",

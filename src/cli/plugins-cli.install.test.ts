@@ -674,7 +674,7 @@ describe("plugins cli install", () => {
         url: "https://github.com/acme/demo.git",
         ref: "v1.2.3",
         commit: "abc123",
-        resolvedAt: "2026-04-30T00:00:00.000Z",
+        resolvedAt: "2026-04-30T00:00:00Z",
       },
     });
     await installAcknowledged(spec);

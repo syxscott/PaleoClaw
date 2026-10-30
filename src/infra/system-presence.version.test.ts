@@ -81,12 +81,12 @@ describe("system-presence version fallback", () => {
     vi.spyOn(os, "hostname").mockReturnValue("test-mac");
     vi.spyOn(os, "networkInterfaces").mockReturnValue({});
     spawnSyncMock.mockImplementation((command: string) =>
-      spawnResult(command === "sysctl" ? "Mac16,1\n" : "26.0\n"),
+      spawnResult(command === "sysctl" ? "Mac16,1\n" : "26\n"),
     );
 
     expect(await readSelfPresence({})).toMatchObject({
       modelIdentifier: "Mac16,1",
-      platform: "macos 26.0",
+      platform: "macos 26",
     });
 
     const options = { encoding: "utf-8", timeout: 5_000, killSignal: "SIGKILL" };

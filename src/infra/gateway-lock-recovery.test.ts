@@ -83,7 +83,7 @@ describe("explicit Gateway lock recovery", () => {
 
   it("refuses an in-place rewrite even when the original bytes and mtime are restored", async () => {
     const { env, paths } = fixture();
-    const stamp = new Date("2026-01-01T00:00:00.000Z");
+    const stamp = new Date("2026-01-01T00:00:00Z");
     fs.utimesSync(paths.ownerLockPath, stamp, stamp);
     const original = fs.readFileSync(paths.ownerLockPath, "utf8");
     const identity = fs.statSync(paths.ownerLockPath, { bigint: true });

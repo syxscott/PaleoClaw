@@ -18,8 +18,7 @@ import { ExitError, type RuntimeEnv } from "../../runtime.js";
 import { withArtifactPreservingStateReads } from "../../state/paleoclaw-state-db-readonly.js";
 import { formatCliCommand } from "../command-format.js";
 import { measureGatewayBootstrapStep, recordGatewayBootstrapStep } from "../startup-trace.js";
-import type { GatewayRunPreBootstrapOptions } from "./future-config-guard.js";
-import { enforceGatewayRunFutureConfigGuard } from "./future-config-guard.js";
+import { type GatewayRunPreBootstrapOptions, enforceGatewayRunFutureConfigGuard } from "./future-config-guard.js";
 import type { GatewayRunOpts } from "./run-options.js";
 import { getGatewayRunRuntimeHooks } from "./runtime-hooks.js";
 

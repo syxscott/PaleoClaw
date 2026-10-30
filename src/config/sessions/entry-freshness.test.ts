@@ -44,7 +44,7 @@ const params = (sessionKey: string) => ({
 it.each([resolveSessionEntryResetFreshness, resolveSessionEntryResetFreshnessAsync])(
   "returns missing state with a resolved reset policy for absent entries (%s)",
   async (resolveFreshness) => {
-    const result = await resolveFreshness(params("agent:main:missing:thread:100.000"));
+    const result = await resolveFreshness(params("agent:main:missing:thread:100"));
 
     expect(result).toMatchObject({
       state: "missing",

@@ -212,7 +212,7 @@ function requireAdmittedRunId(storePath: string, jobId: string): string {
 
 describe("cron service timer regressions", () => {
   it("#131491: retains a deleteAfterRun one-shot whose stale guard suppressed its delivery", async () => {
-    const scheduledAt = Date.parse("2026-02-06T10:00:00.000Z");
+    const scheduledAt = Date.parse("2026-02-06T10:00:00Z");
     const firedAt = scheduledAt + 18 * 60 * 60_000;
 
     const cronJob = announcingJob("oneshot-stale-delivery", scheduledAt, {
@@ -230,7 +230,7 @@ describe("cron service timer regressions", () => {
       deliveryState: {
         delivered: false,
         status: "not-delivered",
-        error: "skipping stale delivery scheduled at 2026-02-06T10:00:00.000Z, started 1080m late",
+        error: "skipping stale delivery scheduled at 2026-02-06T10:00:00Z, started 1080m late",
         failureNotification: { status: "not-requested" },
       },
     });
@@ -262,7 +262,7 @@ describe("cron service timer regressions", () => {
   });
 
   it("enforces a minimum refire gap for second-granularity cron schedules (#17821)", async () => {
-    const scheduledAt = Date.parse("2026-02-15T13:00:00.000Z");
+    const scheduledAt = Date.parse("2026-02-15T13:00:00Z");
 
     const cronJob = announcingJob("spin-gap-17821", scheduledAt, {
       kind: "cron",
@@ -285,7 +285,7 @@ describe("cron service timer regressions", () => {
   });
 
   it("keeps job cancellation from retracting a conditioned main payload after handoff", async () => {
-    const scheduledAt = Date.parse("2026-02-15T13:00:00.000Z");
+    const scheduledAt = Date.parse("2026-02-15T13:00:00Z");
     const cronJob = conditionJob(
       "main-session-cancel-boundary",
       scheduledAt,
@@ -337,7 +337,7 @@ describe("cron service timer regressions", () => {
   it("allows cancellation of detached script work targeting the main session", async () => {
     resetActiveCronTaskRunsForTests();
 
-    const scheduledAt = Date.parse("2026-07-18T12:00:00.000Z");
+    const scheduledAt = Date.parse("2026-07-18T12:00:00Z");
     const cronJob = scriptJob("main-script-cancel-boundary", scheduledAt, "done");
     const onAbort = vi.fn();
     let timerSettled = false;
@@ -385,7 +385,7 @@ describe("cron service timer regressions", () => {
 
   it("retires main-target script work across restart generation advance", async () => {
     resetActiveCronTaskRunsForTests();
-    const scheduledAt = Date.parse("2026-07-18T12:05:00.000Z");
+    const scheduledAt = Date.parse("2026-07-18T12:05:00Z");
     const cronJob = scriptJob("main-script-generation-retire", scheduledAt, "stale");
     const release = heldRunner({ status: "ok" as const, notify: "stale" });
     const { state, storePath } = await setup([cronJob], scheduledAt, {
@@ -415,7 +415,7 @@ describe("cron service timer regressions", () => {
 
   it("rejects cron runner admission after its active marker generation retires", async () => {
     const { storePath } = timerRegressionFixtures.makeStorePath();
-    const scheduledAt = Date.parse("2026-05-13T12:30:00.000Z");
+    const scheduledAt = Date.parse("2026-05-13T12:30:00Z");
     const cronJob = dueJob("retired-generation-admission", scheduledAt);
     const activeJobMarker = markCronJobActive(cronJob.id);
     advanceCronActiveJobGeneration();
@@ -505,7 +505,7 @@ describe("cron service timer regressions", () => {
   });
 
   it("retries cron schedule computation from the next second when the first attempt returns undefined (#17821)", () => {
-    const scheduledAt = Date.parse("2026-02-15T13:00:00.000Z");
+    const scheduledAt = Date.parse("2026-02-15T13:00:00Z");
     const cronJob = announcingJob("retry-next-second-17821", scheduledAt, {
       kind: "cron",
       expr: "0 13 * * *",
@@ -663,7 +663,7 @@ describe("cron service timer regressions", () => {
   });
 
   it("notifies a stalled batch once without releasing its executing sibling", async () => {
-    const dueAt = Date.parse("2026-02-06T10:06:21.000Z");
+    const dueAt = Date.parse("2026-02-06T10:06:21Z");
     const stalled = timedJob("setup-timeout-stalled", dueAt);
     const running = timedJob("setup-timeout-running-sibling", dueAt);
     const secondStalled = { ...stalled, id: "setup-timeout-second-stalled" };
@@ -717,7 +717,7 @@ describe("cron service timer regressions", () => {
   });
 
   it("notifies timeout recovery before admitting queued manual work", async () => {
-    const dueAt = Date.parse("2026-02-06T10:06:31.000Z");
+    const dueAt = Date.parse("2026-02-06T10:06:31Z");
     const first = timedJob("serial-timeout-recovery-first", dueAt);
     const second = timedJob("serial-timeout-recovery-second", dueAt, dueAt + 3_600_000);
     let now = dueAt;
@@ -757,7 +757,7 @@ describe("cron service timer regressions", () => {
   });
 
   it("recovers stopped catch-up outcomes without overwriting replacement reservations", async () => {
-    const scheduledAt = Date.parse("2026-05-10T08:58:45.000Z");
+    const scheduledAt = Date.parse("2026-05-10T08:58:45Z");
     const job = dueJob("stopped-startup-catchup", scheduledAt);
     const unstartedJob = dueJob("unstarted-stopped-startup-catchup", scheduledAt);
     const replacementClaimedJob = dueJob(
@@ -810,7 +810,7 @@ describe("cron service timer regressions", () => {
   });
 
   it("starts the scheduled batch after manual setup-timeout notification", async () => {
-    const scheduledAt = Date.parse("2026-05-10T08:59:00.000Z");
+    const scheduledAt = Date.parse("2026-05-10T08:59:00Z");
     const manualJob = timedJob(
       "manual-setup-timeout-active-batch",
       scheduledAt,
@@ -866,7 +866,7 @@ describe("cron service timer regressions", () => {
   });
 
   it("finalizes a removed job's ok outcome in operator history", async () => {
-    const dueAt = Date.parse("2026-02-06T10:05:01.000Z");
+    const dueAt = Date.parse("2026-02-06T10:05:01Z");
     const job = dueJob("self-removing-ok", dueAt);
     job.delivery = { mode: "announce", channel: "telegram", to: "chat-123" };
     const events: CronEvent[] = [];

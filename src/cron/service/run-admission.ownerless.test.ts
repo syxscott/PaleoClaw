@@ -38,10 +38,10 @@ import { skipCronJobsWithoutOwners } from "./run-owner.js";
 import type { CronEvent, CronServiceState } from "./state.js";
 import { onTimer } from "./timer.test-support.js";
 
-const NOW = Date.parse("2026-09-06T20:24:00.000Z");
+const NOW = Date.parse("2026-09-06T20:24:00Z");
 const fixtures = setupCronRegressionFixtures({
   prefix: "cron-reservation-ownerless-",
-  baseTimeIso: "2026-09-06T20:24:00.000Z",
+  baseTimeIso: "2026-09-06T20:24:00Z",
 });
 const states = new Set<CronServiceState>();
 

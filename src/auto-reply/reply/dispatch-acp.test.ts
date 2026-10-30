@@ -1136,7 +1136,7 @@ describe("tryDispatchAcpReplyCore", () => {
     const text = String(runTurnCall().text);
     expect(text).toContain("describe current state");
     expect(text).toContain("Recent image 1 from @bob, message msg-history");
-    expect(text).toContain("sent at 2023-11-14T22:13:20.000Z");
+    expect(text).toContain("sent at 2023-11-14T22:13:20Z");
     expect(text).toContain("message 2 of 3 in available history");
     expect(text).not.toContain(historyPath);
     expect(runTurnCall().attachments).toEqual([

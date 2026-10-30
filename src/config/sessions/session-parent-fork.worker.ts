@@ -43,8 +43,7 @@ import type {
   ParentForkEntryPreparation,
 } from "./session-parent-fork.types.js";
 import { normalizeStoreSessionKey } from "./store-entry.js";
-import type { InternalSessionEntry, SessionEntry } from "./types.js";
-import { mergeSessionEntry } from "./types.js";
+import { InternalSessionEntry, SessionEntry, mergeSessionEntry } from "./types.js";
 
 export function prepareParentForkEntry(
   params: ParentForkEntryParams,

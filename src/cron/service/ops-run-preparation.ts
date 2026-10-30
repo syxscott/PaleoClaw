@@ -12,8 +12,7 @@ import { applyCronRuntimeRowsToState } from "./runtime-publication.js";
 import { recomputeUnownedCronSchedules } from "./schedule-maintenance.js";
 import { refreshCronScheduler } from "./scheduler-actor.js";
 import { recordSkippedCronRuns } from "./skipped-runs.js";
-import type { CronRunMode, CronServiceState } from "./state.js";
-import { isImmediateCronRunMode } from "./state.js";
+import { type CronRunMode, type CronServiceState, isImmediateCronRunMode } from "./state.js";
 import {
   captureCronServiceMutationSource,
   ensureLoaded,

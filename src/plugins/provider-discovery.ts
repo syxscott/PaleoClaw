@@ -9,8 +9,7 @@ import {
   copyProviderCatalogOutcomes,
   readProviderCatalogResultEntries,
 } from "./provider-catalog-result.js";
-import type { ProviderCatalogContext, ProviderCatalogOutcome } from "./provider-catalog.types.js";
-import { PROVIDER_CATALOG_ORDERS as DISCOVERY_ORDER } from "./provider-catalog.types.js";
+import { PROVIDER_CATALOG_ORDERS as DISCOVERY_ORDER, type ProviderCatalogContext, type ProviderCatalogOutcome } from "./provider-catalog.types.js";
 import type { ProviderCatalogOrder, ProviderPlugin } from "./types.js";
 
 const providerRuntimeLoader = createLazyImportLoader(

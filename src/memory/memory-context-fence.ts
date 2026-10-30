@@ -7,9 +7,9 @@ const OPEN_TAG = "<memory-context>";
 const CLOSE_TAG = "</memory-context>";
 
 export class StreamingContextScrubber {
-  private buffer: string = "";
-  private inFence: boolean = false;
-  private fenceStart: number = -1;
+  private buffer = "";
+  private inFence = false;
+  private fenceStart = -1;
 
   feed(text: string): string {
     this.buffer += text;
@@ -38,13 +38,13 @@ export class StreamingContextScrubber {
       if (closeIdx === -1) {
         // Fence not closed yet - keep it buffered, but first emit the text
         // that precedes the fence so it is neither dropped nor re-emitted.
-        result += this.buffer.substring(lastEnd, openIdx);
-        this.buffer = this.buffer.substring(openIdx);
+        result += this.buffer.slice(lastEnd, openIdx);
+        this.buffer = this.buffer.slice(openIdx);
         return result;
       }
 
       // Complete fence block found - remove it
-      result += this.buffer.substring(lastEnd, openIdx);
+      result += this.buffer.slice(lastEnd, openIdx);
       lastEnd = closeIdx + CLOSE_TAG.length;
       searchFrom = lastEnd;
     }
@@ -60,8 +60,8 @@ export class StreamingContextScrubber {
         break;
       }
     }
-    result += this.buffer.substring(lastEnd, emitEnd);
-    this.buffer = this.buffer.substring(emitEnd);
+    result += this.buffer.slice(lastEnd, emitEnd);
+    this.buffer = this.buffer.slice(emitEnd);
     return result;
   }
 

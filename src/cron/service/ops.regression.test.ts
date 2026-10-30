@@ -133,7 +133,7 @@ it("transfers queued manual runs out of the released request root", async () => 
 
   const childLane = "cron-manual-admission-child";
   setCommandLaneConcurrency(childLane, 1);
-  const now = Date.parse("2026-02-06T10:05:00.000Z");
+  const now = Date.parse("2026-02-06T10:05:00Z");
   const job = dueJob("manual-admission-continuation", now);
 
   const enterRunner = createDeferred();
@@ -177,7 +177,7 @@ it("transfers queued manual runs out of the released request root", async () => 
 it("runs a manual run queued from an agent turn outside that turn's transcript lifecycle", async () => {
   vi.useRealTimers();
   resetGatewayWorkAdmission();
-  const now = Date.parse("2026-02-06T10:05:00.000Z");
+  const now = Date.parse("2026-02-06T10:05:00Z");
   const job = dueJob("manual-from-agent-turn", now);
 
   const callerSessionKey = "agent:main:main";
@@ -221,7 +221,7 @@ it("runs a manual run queued from an agent turn outside that turn's transcript l
 it("rejects queueing when detached admission is already closed", async () => {
   vi.useRealTimers();
   resetGatewayWorkAdmission();
-  const now = Date.parse("2026-02-06T10:05:00.000Z");
+  const now = Date.parse("2026-02-06T10:05:00Z");
   const job = dueJob("manual-admission-closed", now);
 
   const onEvent = vi.fn();
@@ -303,7 +303,7 @@ it("keeps an acknowledged manual run ahead of a later timer tick", async ({ sign
 });
 
 it("manual due runs honor retry backoff while force can run the preserved occurrence", async () => {
-  const nowMs = Date.parse("2026-09-30T09:00:00.000Z");
+  const nowMs = Date.parse("2026-09-30T09:00:00Z");
   const dueAt = nowMs - 2_000;
   const job = dueJob("manual-backoff", nowMs, dueAt);
   job.schedule = { kind: "every", everyMs: 60_000, anchorMs: dueAt };
@@ -334,7 +334,7 @@ it("manual due runs honor retry backoff while force can run the preserved occurr
 });
 
 it("force-runs a due paced job without consuming its pending slot", async () => {
-  const nowMs = Date.parse("2026-07-19T09:00:00.000Z");
+  const nowMs = Date.parse("2026-07-19T09:00:00Z");
   const dueSlot = nowMs - 1_000;
   const job = recurringJob("manual-paced-due-slot", nowMs, {
     schedule: { kind: "every", everyMs: 60_000, anchorMs: nowMs - 60_000 },
@@ -373,7 +373,7 @@ it("force-runs a due paced job without consuming its pending slot", async () => 
 it("applies timeoutSeconds to manual cron.run isolated executions", async () => {
   vi.useFakeTimers();
   try {
-    const scheduledAt = Date.parse("2026-02-15T13:00:00.000Z");
+    const scheduledAt = Date.parse("2026-02-15T13:00:00Z");
     const job = recurringJob("manual-timeout", scheduledAt, {
       payload: { kind: "agentTurn", message: "work", timeoutSeconds: FAST_TIMEOUT_SECONDS },
     });
@@ -406,7 +406,7 @@ it("applies timeoutSeconds to manual cron.run isolated executions", async () => 
 it("keeps a queued quiet schedule event separate from its one terminal event", async () => {
   vi.useRealTimers();
 
-  const dueAt = Date.parse("2026-02-06T10:05:02.000Z");
+  const dueAt = Date.parse("2026-02-06T10:05:02Z");
   const job = recurringJob("queued-quiet-trigger", dueAt, {
     schedule: { kind: "every", everyMs: 60_000, anchorMs: dueAt - 60_000 },
     trigger: { script: "return false" },
@@ -452,7 +452,7 @@ it.each(["removed", "disabled"] as const)(
   async (mutation) => {
     vi.useRealTimers();
 
-    const dueAt = Date.parse("2026-02-06T10:05:04.000Z");
+    const dueAt = Date.parse("2026-02-06T10:05:04Z");
     const job = dueJob(`queued-${mutation}-manual`, dueAt);
     const reason = `Cron job ${mutation} by operator.`;
 
@@ -532,7 +532,7 @@ it.each(["removed", "disabled"] as const)(
 );
 
 it("#102238 waits for a disabled run to abort before a re-enabled timer tick", async () => {
-  const now = Date.parse("2026-07-09T12:00:00.000Z");
+  const now = Date.parse("2026-07-09T12:00:00Z");
   const job = dueJob("disable-enable-timer", now, now - 60_000);
 
   const firstRunStarted = createDeferred<AbortSignal>();

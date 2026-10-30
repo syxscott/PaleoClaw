@@ -190,7 +190,7 @@ describe("migrateSqliteSchemaToStrict", () => {
       CREATE TABLE entries (id INTEGER PRIMARY KEY AUTOINCREMENT, value TEXT NOT NULL);
       INSERT INTO entries (value) VALUES ('first'), ('second'), ('third');
       DELETE FROM entries WHERE id = 3;
-      UPDATE sqlite_sequence SET seq = 40.0 WHERE name = 'entries';
+      UPDATE sqlite_sequence SET seq = 40 WHERE name = 'entries';
     `);
 
     const schema =

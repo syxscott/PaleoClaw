@@ -11,7 +11,7 @@ it.runIf(process.platform === "win32")(
   async () => {
     const context = setup();
     const source = path.join(context.workspaceDir, "paleoclaw-workspace-state.json");
-    const completedAt = "2026-07-15T10:01:00.000Z";
+    const completedAt = "2026-07-15T10:01:00Z";
     const raw = `${JSON.stringify({ version: 1, setupCompletedAt: completedAt })}\n`;
     fs.writeFileSync(source, raw);
 

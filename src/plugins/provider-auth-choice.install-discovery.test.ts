@@ -101,7 +101,7 @@ it.each([false, true])(
       integrity: "sha512-fixture-artifact",
       acceptedSurface,
       acceptedSurfaceHash: computeDeclaredSurfaceHash(acceptedSurface),
-      acceptedSurfaceAt: "2026-09-05T00:00:00.000Z",
+      acceptedSurfaceAt: "2026-09-05T00:00:00Z",
       acceptedSurfaceIntegrity: "sha512-fixture-artifact",
     };
     fs.mkdirSync(workspaceDir, { recursive: true });

@@ -48,7 +48,7 @@ const transcript = [
     id: "parent-session",
     version: 3,
     cwd: "/synthetic",
-    timestamp: "2026-01-01T00:00:00.000Z",
+    timestamp: "2026-01-01T00:00:00Z",
   },
   message("u1", null, 1, { role: "user", content: "First question" }),
   message("a1", "u1", 2, { role: "assistant", content: "First answer", stopReason: "stop" }),

@@ -2,8 +2,7 @@ import { isRecord } from "@paleoclaw/normalization-core/record-coerce";
 import type { OpenClawConfig } from "../config/types.openclaw.js";
 import type { PluginInstallRecord } from "../config/types.plugins.js";
 import { unscopedPackageName } from "../infra/install-safe-path.js";
-import type { NpmSpecResolution } from "../infra/install-source-utils.js";
-import { resolveNpmSpecMetadata } from "../infra/install-source-utils.js";
+import { type NpmSpecResolution, resolveNpmSpecMetadata } from "../infra/install-source-utils.js";
 import {
   compareOpenClawReleaseVersions,
   isExactSemverVersion,

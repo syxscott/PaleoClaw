@@ -20,7 +20,7 @@ describe("outbound delivery recovery retry backoff", () => {
     const retryCount = 3;
     const backoffMs = 120_000;
     vi.useFakeTimers();
-    const startedAt = new Date("2026-07-25T00:00:00.000Z");
+    const startedAt = new Date("2026-07-25T00:00:00Z");
     vi.setSystemTime(startedAt);
 
     const stateDir = tmpDir();

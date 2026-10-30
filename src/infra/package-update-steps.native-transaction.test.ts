@@ -29,7 +29,7 @@ const writeOwner = async (root: string, version: string) => {
     path.join(root, "package.json"),
     JSON.stringify({ dependencies: { paleoclaw: version } }),
   );
-  await fs.writeFile(path.join(root, "pnpm-lock.yaml"), "lockfileVersion: '9.0'\n");
+  await fs.writeFile(path.join(root, "pnpm-lock.yaml"), "lockfileVersion: '9'\n");
 };
 function executorAuthority() {
   let current = true;

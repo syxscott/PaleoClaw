@@ -25,7 +25,7 @@ import {
   findCronRunByBaseRunId,
 } from "./timer.seam.test-support.js";
 
-const now = Date.parse("2026-03-23T12:00:00.000Z");
+const now = Date.parse("2026-03-23T12:00:00Z");
 
 const { logger, makeStorePath } = setupCronServiceSuite({
   prefix: "cron-service-timer-seam",

@@ -7,8 +7,7 @@ import type {
   captureUpdateCommandExecutorAuthority,
   UpdateCommandExecutor,
 } from "../cli/update-cli/update-command-executor.js";
-import { encodePackageActivationLauncher } from "./package-update-activation-journal.js";
-import type { PackageActivationRecord } from "./package-update-activation-journal.js";
+import { PackageActivationRecord, encodePackageActivationLauncher } from "./package-update-activation-journal.js";
 import { packageActivationRuntimeForTest } from "./package-update-activation-runtime.test-support.js";
 
 const [cut, root, encodedAuthority, encodedRecord] = process.argv.slice(2);

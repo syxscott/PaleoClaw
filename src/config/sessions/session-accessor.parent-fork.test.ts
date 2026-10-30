@@ -41,7 +41,7 @@ async function createStore() {
   return { root, storePath: path.join(sessionsDir, "sessions.json") };
 }
 
-const header = (id: string, cwd: string, timestamp = "2026-06-15T00:00:00.000Z") => ({
+const header = (id: string, cwd: string, timestamp = "2026-06-15T00:00:00Z") => ({
   type: "session",
   version: 3,
   id,
@@ -61,17 +61,17 @@ const messageEvent = (
 ) =>
   event("message", id, {
     ...(parentId === undefined ? {} : { parentId }),
-    timestamp: "2026-06-15T00:00:01.000Z",
+    timestamp: "2026-06-15T00:00:01Z",
     message: { role, content },
   });
 const labelEvent = (id: string, parentId: string, targetId: string, label: string) =>
-  event("label", id, { parentId, targetId, label, timestamp: "2026-06-15T00:00:02.000Z" });
+  event("label", id, { parentId, targetId, label, timestamp: "2026-06-15T00:00:02Z" });
 const leafEvent = (
   id: string,
   parentId: string,
   targetId: string | null,
   extra: { appendParentId?: string | null; appendMode?: "side" } = {},
-) => event("leaf", id, { parentId, targetId, timestamp: "2026-06-15T00:00:03.000Z", ...extra });
+) => event("leaf", id, { parentId, targetId, timestamp: "2026-06-15T00:00:03Z", ...extra });
 const metadata = (id: string, parentId: string) =>
   event("metadata", id, { parentId, payload: { source: "plugin" } });
 const cliBinding = (sessionId: string, resumeCheckpointId: string) => ({
@@ -158,7 +158,7 @@ it("checks authority inside same- and cross-database transcript commits", async 
     storePath,
     parentSessionId,
     events: [
-      header(parentSessionId, root, "2026-08-18T00:00:00.000Z"),
+      header(parentSessionId, root, "2026-08-18T00:00:00Z"),
       messageEvent("private-message", null, "user", "private context"),
     ],
   });
@@ -207,7 +207,7 @@ it("forks the active branch across stores without caller-thread SQL", async () =
       type: "session",
       version: 3,
       id: parentSessionId,
-      timestamp: "2026-05-01T00:00:00.000Z",
+      timestamp: "2026-05-01T00:00:00Z",
       cwd,
     },
     messageEvent("user-1", null, "user", "hello"),

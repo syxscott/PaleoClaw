@@ -18,7 +18,7 @@ const { logger: noopLogger, makeStorePath } = setupCronServiceSuite({
 describe("#16156: cron.list() must not silently advance past-due recurring jobs", () => {
   it("does not skip a cron job when list() is called while the job is past-due", async () => {
     const store = await makeStorePath();
-    const clock = createGatewaySchedulerClock(Date.parse("2025-12-13T00:00:00.000Z"));
+    const clock = createGatewaySchedulerClock(Date.parse("2025-12-13T00:00:00Z"));
     const { cron, state, enqueueSystemEvent, finished } =
       createStartedCronServiceWithFinishedBarrier({
         scheduler: createTestGatewayScheduler(clock.clock),
@@ -39,7 +39,7 @@ describe("#16156: cron.list() must not silently advance past-due recurring jobs"
       });
 
       const firstDueAt = job.state.nextRunAtMs!;
-      expect(firstDueAt).toBe(Date.parse("2025-12-13T00:01:00.000Z"));
+      expect(firstDueAt).toBe(Date.parse("2025-12-13T00:01:00Z"));
 
       clock.setTime(firstDueAt + 5);
 

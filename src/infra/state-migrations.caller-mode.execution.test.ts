@@ -338,7 +338,7 @@ describe("legacy state migration caller execution", () => {
   it("executes and receipts Doctor-owned exec and TUI migrations from the same mode", async () => {
     const fixture = await makeFixture();
     const cfg = {
-      meta: { lastTouchedAt: "2026-09-02T00:00:00.000Z" },
+      meta: { lastTouchedAt: "2026-09-02T00:00:00Z" },
     } as unknown as OpenClawConfig;
     fs.writeFileSync(fixture.configPath, `${JSON.stringify(cfg)}\n`);
     const { execPath, tuiPath } = writeLegacyDoctorAndTuiSources(fixture.stateDir, {

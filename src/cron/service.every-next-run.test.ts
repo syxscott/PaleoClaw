@@ -11,7 +11,7 @@ import { recomputeNextRunsForMaintenance } from "./service/jobs-scheduling.test-
 import type { CronJob } from "./types.js";
 
 const EVERY_30_MIN_MS = 30 * 60_000;
-const ANCHOR_MS = Date.parse("2026-02-22T09:14:00.000Z");
+const ANCHOR_MS = Date.parse("2026-02-22T09:14:00Z");
 
 function createEveryJob(state: CronJob["state"]): CronJob {
   return {
@@ -58,7 +58,7 @@ describe("Cron issue #22895 interval scheduling", () => {
   });
 });
 
-const originalAt = Date.parse("2026-02-22T10:00:00.000Z");
+const originalAt = Date.parse("2026-02-22T10:00:00Z");
 const lastRunAtMs = originalAt + 5_000;
 const futureAt = originalAt + 2 * 60 * 60_000;
 
@@ -74,7 +74,7 @@ describe("one-shot rescheduling (#19676)", () => {
 });
 
 it("advances an already executed daily slot during recovery (#17852)", () => {
-  const threeAM = Date.parse("2026-02-16T03:00:00.000Z");
+  const threeAM = Date.parse("2026-02-16T03:00:00Z");
   const dayMs = 24 * 3_600_000;
   const job: CronJob = {
     id: "daily-job",

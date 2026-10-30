@@ -29,7 +29,7 @@ it.each(["database", "-wal", "-shm", "-journal", "archive"])(
                 "agents",
                 "cleaner",
                 "sessions",
-                "history.jsonl.deleted.2026-09-10T00-00-00.000Z",
+                "history.jsonl.deleted.2026-09-10T00-00-00Z",
               )
             : `${target}${kind}`;
         fs.mkdirSync(path.dirname(evidencePath), { recursive: true });

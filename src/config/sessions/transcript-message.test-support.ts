@@ -39,7 +39,7 @@ export function createManualCompactRecords(sessionId: string, cwd?: string) {
       type: "session",
       version: 3,
       id: sessionId,
-      timestamp: "2026-06-19T12:00:00.000Z",
+      timestamp: "2026-06-19T12:00:00Z",
       ...(cwd ? { cwd } : {}),
     },
     ...[1, 2, 3, 4].map((index) => ({

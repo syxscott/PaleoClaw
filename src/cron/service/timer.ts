@@ -259,7 +259,7 @@ function emitFailureAlert(
         mode: params.mode,
         accountId: params.accountId,
       })
-      .catch((err) => {
+      .catch((err: unknown) => {
         state.deps.log.warn(
           { jobId: params.job.id, err: String(err) },
           "cron: failure alert delivery failed",
@@ -531,7 +531,7 @@ export function armTimer(state: CronServiceState) {
   // Vitest's fake-timer helpers can await async callbacks, which would block
   // tests that simulate long-running jobs. Runtime behavior is unchanged.
   state.timer = setTimeout(() => {
-    void onTimer(state).catch((err) => {
+    void onTimer(state).catch((err: unknown) => {
       state.deps.log.error({ err: String(err) }, "cron: timer tick failed");
     });
   }, clampedDelay);
@@ -546,7 +546,7 @@ function armRunningRecheckTimer(state: CronServiceState) {
     clearTimeout(state.timer);
   }
   state.timer = setTimeout(() => {
-    void onTimer(state).catch((err) => {
+    void onTimer(state).catch((err: unknown) => {
       state.deps.log.error({ err: String(err) }, "cron: timer tick failed");
     });
   }, MAX_TIMER_DELAY_MS);

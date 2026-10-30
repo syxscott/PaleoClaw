@@ -22,7 +22,7 @@ const { logger, makeStorePath } = setupCronServiceSuite({
 const createOkIsolatedCronState = createOkIsolatedCronStateFactory(logger);
 
 describe("cron service ops persist rollback", () => {
-  const now = Date.parse("2026-06-09T00:00:00.000Z");
+  const now = Date.parse("2026-06-09T00:00:00Z");
   let storePath: string;
   let state: ReturnType<typeof createOkIsolatedCronState>;
   beforeEach(async () => {

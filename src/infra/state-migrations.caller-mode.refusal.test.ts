@@ -796,7 +796,7 @@ module.exports = { stateMigrations: [{
     const { execPath } = writeLegacyDoctorSources(fixture.stateDir, {});
     writeLegacyStateSchemaV1(resolveOpenClawStateSqlitePath(fixture.env));
     const plan = await planFixture(fixture);
-    const lastTouchedAt = "2026-09-02T00:00:00.000Z";
+    const lastTouchedAt = "2026-09-02T00:00:00Z";
     const cfg = Object.defineProperty({ meta: { lastTouchedAt } }, "session", {
       get() {
         throw new Error("synthetic agent target discovery failure");

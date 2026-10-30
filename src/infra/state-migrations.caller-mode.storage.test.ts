@@ -373,7 +373,7 @@ it("binds WAL-backed shared-auth and meeting-transcript inputs as SQLite", async
         .insertInto("meeting_transcript_sessions")
         .values({
           session_id: "wal-meeting",
-          started_at: "2026-09-03T00:00:00.000Z",
+          started_at: "2026-09-03T00:00:00Z",
           selector: `2026-09-03/${historicalSlug}`,
           export_key: `2026-09-03/${historicalSlug}`,
           session_slug: historicalSlug,

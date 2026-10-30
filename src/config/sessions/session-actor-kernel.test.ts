@@ -91,14 +91,14 @@ it("hydrates once and commits, rejects, and rolls back against the exact actor p
           type: "session",
           id: "original",
           version: 3,
-          timestamp: "2026-01-01T00:00:00.000Z",
+          timestamp: "2026-01-01T00:00:00Z",
           cwd: "/synthetic",
         },
         {
           type: "message",
           id: "user",
           parentId: null,
-          timestamp: "2026-01-01T00:00:01.000Z",
+          timestamp: "2026-01-01T00:00:01Z",
           message: { role: "user", content: "hello", idempotencyKey: "first-user" },
         },
       ]);
@@ -287,7 +287,7 @@ it("hydrates once and commits, rejects, and rolls back against the exact actor p
                 type: "message",
                 id: "rolled-back-message",
                 parentId: "assistant",
-                timestamp: "2026-01-01T00:00:03.000Z",
+                timestamp: "2026-01-01T00:00:03Z",
                 message: {
                   role: "assistant",
                   content: [{ type: "text", text: "rolled back" }],
@@ -364,14 +364,14 @@ it("initializes over a retained transcript and preserves prepared snapshots, rel
           type: "session",
           id: scope.sessionId,
           version: 3,
-          timestamp: "2026-01-01T00:00:00.000Z",
+          timestamp: "2026-01-01T00:00:00Z",
           cwd: "/synthetic",
         },
         {
           type: "message",
           id: "retained-user",
           parentId: null,
-          timestamp: "2026-01-01T00:00:01.000Z",
+          timestamp: "2026-01-01T00:00:01Z",
           message: { role: "user", content: "retained" },
         },
       ]);
@@ -427,7 +427,7 @@ it("initializes over a retained transcript and preserves prepared snapshots, rel
           type: "message",
           id: "prepared-assistant",
           parentId: "retained-user",
-          timestamp: "2026-01-01T00:00:02.000Z",
+          timestamp: "2026-01-01T00:00:02Z",
         },
         message: {
           messageJson: JSON.stringify({
@@ -527,7 +527,7 @@ it("initializes over a retained transcript and preserves prepared snapshots, rel
             ...append.input,
             event: {
               type: "message",
-              timestamp: "2026-01-01T00:00:03.000Z",
+              timestamp: "2026-01-01T00:00:03Z",
               id: "refused",
               parentId: "prepared-assistant",
             },
@@ -579,7 +579,7 @@ it("initializes over a retained transcript and preserves prepared snapshots, rel
           type: "message",
           id: "newer-user",
           parentId: "prepared-assistant",
-          timestamp: "2026-01-01T00:00:04.000Z",
+          timestamp: "2026-01-01T00:00:04Z",
         },
         message: {
           ...append.input.message!,
@@ -604,7 +604,7 @@ it("initializes over a retained transcript and preserves prepared snapshots, rel
             type: "message",
             id: "stale-assistant",
             parentId: "prepared-assistant",
-            timestamp: "2026-01-01T00:00:05.000Z",
+            timestamp: "2026-01-01T00:00:05Z",
           },
         },
       }),
@@ -618,7 +618,7 @@ it("initializes over a retained transcript and preserves prepared snapshots, rel
           type: "reset",
           id: "reset",
           parentId: "newer-user",
-          timestamp: "2026-01-01T00:00:06.000Z",
+          timestamp: "2026-01-01T00:00:06Z",
           reason: "new",
         }),
         message: undefined,

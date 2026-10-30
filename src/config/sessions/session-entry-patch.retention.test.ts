@@ -40,7 +40,7 @@ it.each([
     const database = openOpenClawAgentDatabase({ agentId: "main" });
     const options = { agentId: database.agentId, path: database.path };
     const sessionKey = "agent:main:patch-worker";
-    const now = Date.parse("2026-07-26T00:00:00.000Z");
+    const now = Date.parse("2026-07-26T00:00:00Z");
     runOpenClawAgentWriteTransaction((current) => {
       writeSessionEntry(current, sessionKey, {
         sessionId: "original",

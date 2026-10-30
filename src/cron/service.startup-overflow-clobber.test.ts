@@ -14,7 +14,7 @@ import type { CronJob } from "./types.js";
 
 const { logger: noopLogger, makeStorePath } = setupCronServiceSuite({
   prefix: "paleoclaw-cron-overflow-",
-  baseTimeIso: "2025-12-13T17:00:00.000Z",
+  baseTimeIso: "2025-12-13T17:00:00Z",
 });
 
 function makeState(storePath: string, overrides: Partial<CronServiceDeps>) {
@@ -44,9 +44,9 @@ describe("CronService startup catch-up repair scoping", () => {
     const store = await makeStorePath();
     const now = Date.now();
     const dueAt = now - 60_000;
-    const tomorrow = Date.parse("2025-12-14T09:00:00.000Z");
+    const tomorrow = Date.parse("2025-12-14T09:00:00Z");
     const daily = createDailyCronJob("missed-daily", dueAt);
-    daily.state.lastRunAtMs = Date.parse("2025-12-12T09:00:00.000Z");
+    daily.state.lastRunAtMs = Date.parse("2025-12-12T09:00:00Z");
     const every: CronJob = {
       ...createJob("missed-every", dueAt, { kind: "every", everyMs: 60_000, anchorMs: dueAt }),
       sessionTarget: "isolated",
@@ -93,9 +93,9 @@ describe("CronService startup catch-up repair scoping", () => {
 
   it("keeps the overflow daily-cron catch-up deferral across a second restart", async () => {
     const store = await makeStorePath();
-    const startNow = Date.parse("2025-12-13T17:00:00.000Z");
+    const startNow = Date.parse("2025-12-13T17:00:00Z");
     let now = startNow;
-    const tomorrowNaturalSlot = Date.parse("2025-12-14T09:00:00.000Z");
+    const tomorrowNaturalSlot = Date.parse("2025-12-14T09:00:00Z");
 
     await saveCronStore(store.storePath, {
       version: 1,
@@ -103,7 +103,7 @@ describe("CronService startup catch-up repair scoping", () => {
         ...Array.from({ length: 5 }, (_, i) =>
           createHourlyCronJob(`hourly-${i}`, startNow - (14 - i) * 3_600_000),
         ),
-        createDailyCronJob("daily-overflow", Date.parse("2025-12-13T09:00:00.000Z")),
+        createDailyCronJob("daily-overflow", Date.parse("2025-12-13T09:00:00Z")),
       ],
     });
 

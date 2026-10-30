@@ -424,7 +424,7 @@ it("settles a prior-boot family with an unreadable recycled owner PID", async ()
 it.each(["before", "retained-child", "at-margin", "after", "unreadable", "runtime-holder"])(
   "repairs a legacy handoff using its durable write time and boot time: %s",
   async (observation) => {
-    const now = Date.parse("2026-10-20T12:00:00.000Z");
+    const now = Date.parse("2026-10-20T12:00:00Z");
     vi.spyOn(Date, "now").mockReturnValue(now);
     const bootStartedAt = now - 60_000;
     const before = ["before", "retained-child", "unreadable", "runtime-holder"].includes(

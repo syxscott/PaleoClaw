@@ -337,7 +337,7 @@ describe("plugin index install records store", () => {
       pluginId: "demo",
       source: "npm",
       spec: "demo@latest",
-      installedAt: "2026-04-25T00:00:00.000Z",
+      installedAt: "2026-04-25T00:00:00Z",
     });
 
     expect(Object.getPrototypeOf(withInstall)).toBeNull();
@@ -345,7 +345,7 @@ describe("plugin index install records store", () => {
     expect(withInstall.demo).toMatchObject({
       source: "npm",
       spec: "demo@latest",
-      installedAt: "2026-04-25T00:00:00.000Z",
+      installedAt: "2026-04-25T00:00:00Z",
     });
     const removed = removePluginInstallRecordFromRecords(withInstall, "demo");
     expect(removed).toEqual(records);

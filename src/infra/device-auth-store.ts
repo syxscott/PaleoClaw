@@ -1,6 +1,5 @@
 // Installation-local client token cache; paired-device authority remains Gateway-owned.
-import type { DeviceAuthEntry } from "../shared/device-auth.js";
-import { normalizeDeviceAuthRole } from "../shared/device-auth.js";
+import { type DeviceAuthEntry, normalizeDeviceAuthRole } from "../shared/device-auth.js";
 import { runClientCredentialOperationAsync } from "./client-credential-async.js";
 import type { ClientTokenKey } from "./client-credential-store.js";
 import {

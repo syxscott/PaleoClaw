@@ -80,7 +80,7 @@ async function fixture(childAgent = "main") {
       id: entry.sessionId,
       version: 3,
       cwd: "/synthetic",
-      timestamp: "2026-01-01T00:00:00.000Z",
+      timestamp: "2026-01-01T00:00:00Z",
     },
     { type: "message", id: "u1", parentId: null, message: { role: "user", content: "Question" } },
     { type: "message", id: "a1", parentId: "u1", message: answer() },
@@ -121,7 +121,7 @@ it.each(["main", "research"])(
               type: "message",
               id: "a2",
               parentId: "a1",
-              timestamp: "2026-01-01T00:00:01.000Z",
+              timestamp: "2026-01-01T00:00:01Z",
             },
             message: {
               messageJson: JSON.stringify(answer("Latest answer")),

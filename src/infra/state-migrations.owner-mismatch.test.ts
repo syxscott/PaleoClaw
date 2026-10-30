@@ -73,7 +73,7 @@ it("retains archives beside a refused database", async () => {
     fs.renameSync(healthy, healthyPath);
     mutateDatabase(target, "UPDATE schema_meta SET updated_at = updated_at + 1");
     const original = fs.readFileSync(target);
-    const archivePath = path.join(directory, "history.jsonl.deleted.2026-09-10T01-02-03.000Z");
+    const archivePath = path.join(directory, "history.jsonl.deleted.2026-09-10T01-02-03Z");
     writeArchive(
       archivePath,
       [

@@ -540,7 +540,7 @@ describe("cron batch outcome finalization", () => {
   });
 
   it("durably finalizes a large scheduled batch while its final run remains active", async () => {
-    const dueAt = Date.parse("2026-02-06T10:05:03.000Z");
+    const dueAt = Date.parse("2026-02-06T10:05:03Z");
     const jobCount = 32;
     const jobs = Array.from({ length: jobCount }, (_, index) =>
       createDueIsolatedJob({

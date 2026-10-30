@@ -33,7 +33,7 @@ function createFailureAlertJob(
 export function setupFailureAlertSuite() {
   const { logger: noopLogger, makeStorePath } = setupCronServiceSuite({
     prefix: "paleoclaw-cron-failure-alert-",
-    baseTimeIso: "2026-01-01T00:00:00.000Z",
+    baseTimeIso: "2026-01-01T00:00:00Z",
   });
 
   async function withFailureAlertCron(

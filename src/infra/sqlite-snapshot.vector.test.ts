@@ -62,7 +62,7 @@ it.each([false, true])(
       expect(await sqliteVec.loadSqliteVecExtension({ db: restored })).toMatchObject({ ok: true });
       expect(
         restored.prepare("SELECT rowid, vec_to_json(embedding) AS embedding FROM vectors").get(),
-      ).toEqual({ rowid: 42, embedding: "[1.000000,2.000000,3.000000]" });
+      ).toEqual({ rowid: 42, embedding: "[1,2,3]" });
     } finally {
       restored.close();
     }

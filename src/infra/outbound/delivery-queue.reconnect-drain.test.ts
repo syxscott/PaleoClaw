@@ -222,7 +222,7 @@ describe("drainPendingDeliveriesCore for reconnect", () => {
 
   it("shares replay pacing between reconnect and startup drains", async () => {
     vi.useFakeTimers();
-    const startedAt = Date.parse("2026-04-23T00:00:00.000Z");
+    const startedAt = Date.parse("2026-04-23T00:00:00Z");
     vi.setSystemTime(startedAt);
     const controlledSleep = controlNextRecoverySleep(sleepMock);
     const startupLog = createRecoveryLog();

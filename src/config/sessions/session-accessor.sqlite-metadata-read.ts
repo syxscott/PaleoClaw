@@ -3,8 +3,7 @@ import {
   prepareSqliteQueryTakeFirstSync,
 } from "../../infra/kysely-sync.js";
 import type { EngineConnection } from "../../infra/sql-connection.js";
-import type { OpenClawAgentDatabase } from "../../state/paleoclaw-agent-db.js";
-import { openOpenClawAgentDatabase } from "../../state/paleoclaw-agent-db.js";
+import { type OpenClawAgentDatabase, openOpenClawAgentDatabase } from "../../state/paleoclaw-agent-db.js";
 import type { SessionTranscriptReadScope } from "./session-accessor.sqlite-contract.js";
 import {
   getSessionKysely,

@@ -431,7 +431,7 @@ it("skips invalid main jobs with agentTurn payloads loaded from disk", async () 
         enabled: true,
         createdAtMs: Date.now(),
         updatedAtMs: Date.now(),
-        schedule: { kind: "at", at: "2025-12-13T00:00:01.000Z" },
+        schedule: { kind: "at", at: "2025-12-13T00:00:01Z" },
         sessionTarget: "main",
         wakeMode: "now",
         payload: { kind: "agentTurn", message: "bad" },
@@ -446,7 +446,7 @@ it("skips invalid main jobs with agentTurn payloads loaded from disk", async () 
     requestHeartbeat,
   });
   try {
-    vi.setSystemTime(new Date("2025-12-13T00:00:01.000Z"));
+    vi.setSystemTime(new Date("2025-12-13T00:00:01Z"));
     await cron.run("job-1", "due");
     expect(enqueueSystemEvent).not.toHaveBeenCalled();
     expect(requestHeartbeat).not.toHaveBeenCalled();

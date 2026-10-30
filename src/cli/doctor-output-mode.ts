@@ -1,5 +1,4 @@
-import type { MachineOutputResolverParams } from "./machine-output-argv.js";
-import { hasMachineOutputOption } from "./machine-output-argv.js";
+import { type MachineOutputResolverParams, hasMachineOutputOption } from "./machine-output-argv.js";
 
 /** Bare doctor JSON and non-TTY lint runs own machine-readable stdout. */
 export function isDoctorMachineOutput(params: MachineOutputResolverParams): boolean {

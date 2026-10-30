@@ -33,7 +33,7 @@ const defaultCatalog: ModelCatalogEntry[] = [
   { provider: "anthropic", id: "claude-sonnet-4-5", name: "Claude Sonnet" },
   { ...openAIPlatformRoute, provider: "openai", id: "gpt-4.1", name: "GPT-4.1" },
   { ...openAIPlatformRoute, provider: "openai", id: "gpt-4.1-mini", name: "GPT-4.1 Mini" },
-  { provider: "google", id: "gemini-2.0-flash", name: "Gemini Flash" },
+  { provider: "google", id: "gemini-2-flash", name: "Gemini Flash" },
 ];
 type AgentDefaults = NonNullable<OpenClawConfig["agents"]>["defaults"];
 

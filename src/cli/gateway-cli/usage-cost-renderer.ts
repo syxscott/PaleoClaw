@@ -13,7 +13,7 @@ export function renderGatewayCostUsageSummary(
   rich: boolean,
 ): string[] {
   const formatTotals = (totals: CostUsageSummary["totals"]) => {
-    const known = `${formatUsd(totals.totalCost) ?? "$0.00"} · ${formatTokenCount(totals.totalTokens) ?? "0"} tokens`;
+    const known = `${formatUsd(totals.totalCost) ?? "$0"} · ${formatTokenCount(totals.totalTokens) ?? "0"} tokens`;
     return totals.usageReport?.state === "unavailable"
       ? `unavailable (known subtotal: ${known})`
       : known;

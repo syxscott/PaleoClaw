@@ -9,7 +9,7 @@ import type { CronJob } from "./types.js";
 
 const { logger, makeStorePath } = setupCronServiceSuite({
   prefix: "paleoclaw-cron-restart-",
-  baseTimeIso: "2025-12-13T17:00:00.000Z",
+  baseTimeIso: "2025-12-13T17:00:00Z",
 });
 const time = (value: string) => Date.parse(value);
 
@@ -335,7 +335,7 @@ describe("CronService restart catch-up", () => {
         expect(recovered).toMatchObject({
           enabled: false,
           deleteAfterRun: true,
-          schedule: { kind: "at", at: "2025-12-13T16:00:00.000Z" },
+          schedule: { kind: "at", at: "2025-12-13T16:00:00Z" },
           state: {
             lastRunAtMs: runningAtMs,
             lastRunStatus: "error",

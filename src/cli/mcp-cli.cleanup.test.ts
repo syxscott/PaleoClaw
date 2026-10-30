@@ -72,7 +72,7 @@ beforeAll(async () => {
           response.setHeader("content-type", "application/json");
           response.end(
             JSON.stringify({
-              jsonrpc: "2.0",
+              jsonrpc: "2",
               id: message.id,
               ...(message.method === "tools/list" && failCatalog
                 ? { error: { code: -32603, message: CATALOG_ERROR } }

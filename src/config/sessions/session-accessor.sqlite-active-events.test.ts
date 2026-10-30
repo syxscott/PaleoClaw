@@ -259,7 +259,7 @@ describe("SQLite active transcript event projection", () => {
     await persistMessages([
       makeMessage("discarded-old", null, "user", `discarded ${"x".repeat(20_000)}`),
     ]);
-    await reset("reset-boundary", "discarded-old", "2026-08-15T00:00:00.000Z");
+    await reset("reset-boundary", "discarded-old", "2026-08-15T00:00:00Z");
     await persistMessages([makeMessage("post-reset", "reset-boundary", "user", "fresh turn")]);
 
     expect(activeStats(scope)).toMatchObject({ eventCount: 1 });
@@ -376,7 +376,7 @@ describe("SQLite active transcript event projection", () => {
     ).toBe(false);
     expect(visited).toBe(1);
 
-    await reset("reset", "later-human", "2026-09-13T00:00:00.000Z");
+    await reset("reset", "later-human", "2026-09-13T00:00:00Z");
     await persistMessages([
       transcriptMessage("fresh", "reset", {
         role: "user",
@@ -449,7 +449,7 @@ describe("SQLite active transcript event projection", () => {
       makeMessage("kept-tool", "kept-user", "toolResult", `hidden tool ${"x".repeat(2_000)}`),
       makeMessage("kept-assistant", "kept-tool", "assistant", "kept answer"),
     ]);
-    await reset("reset-boundary", "kept-assistant", "2026-07-22T00:00:00.000Z", "kept-user");
+    await reset("reset-boundary", "kept-assistant", "2026-07-22T00:00:00Z", "kept-user");
     await persistMessages([makeMessage("post-reset", "reset-boundary", "user", "new turn")]);
 
     const page = readPage(scope, { maxMessages: 10, offset: 0 });
@@ -468,7 +468,7 @@ describe("SQLite active transcript event projection", () => {
       type: "compaction",
       id: "newer-compaction",
       parentId: "post-reset",
-      timestamp: "2026-07-22T00:01:00.000Z",
+      timestamp: "2026-07-22T00:01:00Z",
       summary: "fresh-only summary",
       firstKeptEntryId: "post-reset",
       tokensBefore: 10,
@@ -485,7 +485,7 @@ describe("SQLite active transcript event projection", () => {
       makeMessage("old", null, "user", "old"),
       makeMessage("kept", "old", "assistant", "kept"),
     ]);
-    await reset("reset-boundary", "kept", "2026-08-12T00:00:00.000Z", "kept");
+    await reset("reset-boundary", "kept", "2026-08-12T00:00:00Z", "kept");
     sessionSql(
       "UPDATE transcript_events SET event_json = '{' WHERE session_id = ? AND seq = 3",
     ).run(scope.sessionId);
@@ -499,7 +499,7 @@ describe("SQLite active transcript event projection", () => {
       makeMessage("kept-user", "old", "user", "kept"),
       makeMessage("kept-assistant", "kept-user", "assistant", "kept answer"),
     ]);
-    await reset("reset-boundary", "kept-assistant", "2026-07-22T00:00:00.000Z", "kept-user");
+    await reset("reset-boundary", "kept-assistant", "2026-07-22T00:00:00Z", "kept-user");
     await persistMessages([makeMessage("post-reset", "reset-boundary", "user", "post reset")]);
     expect(countMessages(scope)).toBe(3);
 

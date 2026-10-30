@@ -6,10 +6,10 @@ describe("parseVitestProcessStats", () => {
     expect(
       parseVitestProcessStats(
         [
-          "101 0.0 node /Users/me/project/node_modules/.bin/vitest run --config vitest.config.ts",
+          "101 0 node /Users/me/project/node_modules/.bin/vitest run --config vitest.config.ts",
           "102 41.3 /opt/homebrew/bin/node /Users/me/project/node_modules/vitest/dist/workers/forks.js",
           "103 37.4 /opt/homebrew/bin/node /Users/me/project/node_modules/vitest/dist/workers/forks.js",
-          "200 12.0 node /Users/me/project/node_modules/.bin/vitest run --config test/vitest/vitest.unit.config.ts",
+          "200 12 node /Users/me/project/node_modules/.bin/vitest run --config test/vitest/vitest.unit.config.ts",
           "201 25.5 node unrelated-script.mjs",
         ].join("\n"),
         200,

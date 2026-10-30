@@ -40,7 +40,7 @@ describe("stale lock file ownership", () => {
       isLockOwnerDefinitelyStale({
         payload: {
           pid: 123,
-          createdAt: "2026-05-23T00:00:00.000Z",
+          createdAt: "2026-05-23T00:00:00Z",
         },
       }),
     ).toBe(false);
@@ -53,7 +53,7 @@ describe("stale lock file ownership", () => {
       isLockOwnerDefinitelyStale({
         payload: {
           pid: 123,
-          createdAt: "2026-05-23T00:00:00.000Z",
+          createdAt: "2026-05-23T00:00:00Z",
           starttime: 111,
         },
       }),
@@ -63,9 +63,9 @@ describe("stale lock file ownership", () => {
   it("retains shipped expiry recovery for generic pidless locks", () => {
     expect(
       shouldRemoveDeadOwnerOrExpiredLock({
-        payload: { createdAt: "2026-05-23T00:00:00.000Z" },
+        payload: { createdAt: "2026-05-23T00:00:00Z" },
         staleMs: 10,
-        nowMs: Date.parse("2026-05-23T00:00:11.000Z"),
+        nowMs: Date.parse("2026-05-23T00:00:11Z"),
       }),
     ).toBe(true);
   });

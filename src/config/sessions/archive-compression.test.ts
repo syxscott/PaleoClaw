@@ -39,7 +39,7 @@ describe("archive compression", () => {
 
   it("keeps plain archives readable", () => {
     const dir = tempDirs.make("paleoclaw-archive-zstd-");
-    const archivePath = path.join(dir, "sess.jsonl.reset.2026-07-11T00-00-00.000Z");
+    const archivePath = path.join(dir, "sess.jsonl.reset.2026-07-11T00-00-00Z");
     fs.writeFileSync(archivePath, "plain\n", "utf8");
 
     expect(readSessionArchiveContentSync(archivePath)).toBe("plain\n");
@@ -51,7 +51,7 @@ describe("archive compression", () => {
     const dir = tempDirs.make("paleoclaw-archive-zstd-");
     const archivePath = path.join(
       dir,
-      `sess.jsonl.deleted.2026-07-11T00-00-00.000Z${encoded.suffix}`,
+      `sess.jsonl.deleted.2026-07-11T00-00-00Z${encoded.suffix}`,
     );
     fs.writeFileSync(archivePath, encoded.bytes);
 

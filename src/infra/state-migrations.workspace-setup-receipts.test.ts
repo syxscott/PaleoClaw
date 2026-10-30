@@ -40,8 +40,8 @@ describe("workspace migration receipt move", () => {
     const storedSetup = {
       version: 1,
       workspace_path: storedIdentity.workspacePath,
-      bootstrap_seeded_at: "2026-07-15T10:00:00.000Z",
-      setup_completed_at: "2026-07-15T10:01:00.000Z",
+      bootstrap_seeded_at: "2026-07-15T10:00:00Z",
+      setup_completed_at: "2026-07-15T10:01:00Z",
     };
     const sourcePath = path.join(storedIdentity.workspacePath, "paleoclaw-workspace-state.json");
     const receipt = {

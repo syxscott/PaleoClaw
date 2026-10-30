@@ -48,7 +48,7 @@ const reset = (id: string, parentId: string, firstKeptEntryId?: string) =>
     type: "reset",
     id,
     parentId,
-    timestamp: "2026-09-14T00:00:00.000Z",
+    timestamp: "2026-09-14T00:00:00Z",
     reason: "new",
     ...(firstKeptEntryId === undefined ? {} : { firstKeptEntryId }),
   });

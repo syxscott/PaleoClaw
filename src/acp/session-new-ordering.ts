@@ -26,7 +26,7 @@ export class AcpSessionNewOrdering {
     const requestId = readRequestId(messageObject?.id);
     // Match SDK 1.4 isRequestMessage before recording work. Invalid envelopes
     // receive an uncorrelated null-ID error, not a response to their supplied ID.
-    if (messageObject?.jsonrpc !== "2.0" || typeof method !== "string" || requestId === undefined) {
+    if (messageObject?.jsonrpc !== "2" || typeof method !== "string" || requestId === undefined) {
       return;
     }
 

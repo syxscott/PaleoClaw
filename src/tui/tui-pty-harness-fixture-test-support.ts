@@ -689,7 +689,7 @@ export async function writeTuiPtyFixtureScript(dir: string, opts: TuiStartupFixt
         ${TUI_PTY_STARTUP_SESSION_FIXTURE.returnedState}
       }
 
-      main().catch((error) => {
+      main().catch((error: unknown) => {
         console.error(error);
         process.exitCode = 1;
       });

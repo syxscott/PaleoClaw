@@ -5,20 +5,11 @@
  * in store-sqlite.ts; both implement the SessionStoreLike surface.
  */
 
-import { randomBytes } from "crypto";
-import * as fs from "fs";
-import * as path from "path";
+import { randomBytes } from "node:crypto";
+import * as fs from "node:fs";
+import * as path from "node:path";
 import { paleoclawHome, atomicWriteFile, ensurePrivateDir, withFileLock } from "../paths.js";
-import {
-  SessionMessage,
-  SessionRecord,
-  SessionRole,
-  SessionSearchHit,
-  SessionStoreLike,
-  SessionTitleSource,
-  SessionTitleUpgrader,
-} from "./types.js";
-
+import { type SessionMessage, type SessionRecord, type SessionRole, type SessionSearchHit, type SessionStoreLike, type SessionTitleSource, type SessionTitleUpgrader } from "./types.js";
 export const DEFAULT_SESSION_TITLE = "Untitled PaleoClaw Session";
 
 /** Max length (in code points) for derived/LLM-generated titles. */
@@ -44,7 +35,7 @@ export function normalizeTitleSource(value?: string, title?: string): SessionTit
   if (value === "user" || value === "derived" || value === "llm") {
     return value;
   }
-  const normalized = String(title || "").trim();
+  const normalized = title || "".trim();
   return normalized && normalized !== DEFAULT_SESSION_TITLE ? "user" : "derived";
 }
 
@@ -66,7 +57,7 @@ export function truncateTitle(value: string, maxLen: number = MAX_DERIVED_TITLE_
  * truncate. Falls back to the generic default for empty input.
  */
 export function deriveInstantTitle(rawMessage?: string): string {
-  const collapsed = String(rawMessage || "")
+  const collapsed = rawMessage || ""
     .replace(/\s+/g, " ")
     .trim();
   if (!collapsed) {
@@ -166,7 +157,7 @@ export class SessionStore implements SessionStoreLike {
    * path traversal attacks from crafted CLI inputs.
    */
   private getSessionPath(sessionId: string): string {
-    const id = String(sessionId || "").trim();
+    const id = sessionId || "".trim();
     // Reject path separators and traversal segments.
     if (!id || id.includes("/") || id.includes("\\") || id.includes("..")) {
       throw new Error(`Invalid sessionId: ${sessionId}`);
@@ -217,7 +208,7 @@ export class SessionStore implements SessionStoreLike {
     }
     void upgrader({ sessionId, firstUserMessage, currentTitle })
       .then((upgraded) => {
-        const upgradedTitle = String(upgraded || "").trim();
+        const upgradedTitle = upgraded || "".trim();
         if (!upgradedTitle) {
           return;
         }
@@ -236,7 +227,7 @@ export class SessionStore implements SessionStoreLike {
   }
 
   upsertSession(sessionId: string, title?: string, tags: string[] = []): SessionRecord {
-    const normalizedId = String(sessionId || "").trim();
+    const normalizedId = sessionId || "".trim();
     if (!normalizedId) {
       throw new Error("sessionId is required");
     }
@@ -284,7 +275,7 @@ export class SessionStore implements SessionStoreLike {
       }
 
       const current = nowIso();
-      const trimmedTitle = String(title || "").trim();
+      const trimmedTitle = title || "".trim();
       const created: SessionRecord = {
         id: normalizedId,
         title: trimmedTitle || DEFAULT_SESSION_TITLE,
@@ -301,7 +292,7 @@ export class SessionStore implements SessionStoreLike {
 
   createSession(title?: string, tags: string[] = []): SessionRecord {
     const current = nowIso();
-    const trimmedTitle = String(title || "").trim();
+    const trimmedTitle = title || "".trim();
     const record: SessionRecord = {
       id: makeId("session"),
       title: trimmedTitle || DEFAULT_SESSION_TITLE,
@@ -332,7 +323,7 @@ export class SessionStore implements SessionStoreLike {
       const message: SessionMessage = {
         id: makeId("msg"),
         role,
-        content: String(content || ""),
+        content: content || "",
         createdAt: nowIso(),
         metadata,
       };
@@ -393,7 +384,7 @@ export class SessionStore implements SessionStoreLike {
   }
 
   search(query: string, limit = 10): SessionSearchHit[] {
-    const normalized = String(query || "")
+    const normalized = query || ""
       .trim()
       .toLowerCase();
     if (!normalized) {

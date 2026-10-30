@@ -1,8 +1,7 @@
 import type { OpenClawConfig } from "../../config/types.openclaw.js";
 import { createSubsystemLogger } from "../../logging/subsystem.js";
 import { projectSkillSnapshot } from "../runtime/refresh.js";
-import type { SkillEligibilityContext, SkillEntry, SkillSnapshot } from "../types.js";
-import { WORKSPACE_SKILLS_PROMPT_FORMAT_VERSION } from "../types.js";
+import { type SkillEligibilityContext, type SkillEntry, type SkillSnapshot, WORKSPACE_SKILLS_PROMPT_FORMAT_VERSION } from "../types.js";
 import { hasUnavailableSkillSecretOwners, isSkillSecretOwnerUnavailable } from "./config.js";
 import { resolveSkillKey } from "./frontmatter.js";
 import { compactSkillsPromptForContext, escapeSkillXml } from "./skill-contract.js";

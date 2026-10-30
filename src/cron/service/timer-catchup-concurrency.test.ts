@@ -18,7 +18,7 @@ describe("cron startup catch-up concurrency", () => {
     "preserves catch-up pacing across declarative %s reconciliation",
     async (change) => {
       const { storePath } = fixtures.makeStorePath();
-      let now = Date.parse("2025-12-13T17:00:00.000Z");
+      let now = Date.parse("2025-12-13T17:00:00Z");
       const selected = createDueIsolatedJob({
         id: "selected",
         nowMs: now,
@@ -105,7 +105,7 @@ describe("cron startup catch-up concurrency", () => {
 
   it("does not defer a recurring job completed by another gateway during catch-up", async () => {
     const store = fixtures.makeStorePath();
-    const startNow = Date.parse("2025-12-13T17:00:00.000Z");
+    const startNow = Date.parse("2025-12-13T17:00:00Z");
     const selected = createDueIsolatedJob({
       id: "foreign-window-selected",
       nowMs: startNow,

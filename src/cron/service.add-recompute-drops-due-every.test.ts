@@ -17,7 +17,7 @@ installCronTestHooks({ logger: noopLogger });
 describe("add() must not drop a due every-job's pending run", () => {
   it("preserves a due every-job nextRunAtMs when an unrelated job is added", async () => {
     const store = await makeStorePath();
-    const base = Date.parse("2025-12-13T00:00:00.000Z");
+    const base = Date.parse("2025-12-13T00:00:00Z");
     const lastRunAtMs = base;
     const dueSlot = base + 10_000;
     const nowDue = dueSlot + 50;

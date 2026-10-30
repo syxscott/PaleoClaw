@@ -24,8 +24,7 @@ import {
 } from "./compaction-notice.js";
 import { resolveOriginMessageProvider } from "./origin-routing.js";
 import { createBlockReplyDeliveryHandler, type DirectBlockDelivery } from "./reply-delivery.js";
-import { createReplyMediaContext } from "./reply-media-paths.js";
-import type { ReplyMediaContext } from "./reply-media-paths.js";
+import { type ReplyMediaContext, createReplyMediaContext } from "./reply-media-paths.js";
 import { createReplyToModeFilterForChannel, resolveReplyToMode } from "./reply-threading.js";
 
 export async function deliverPreparedBlockReply(

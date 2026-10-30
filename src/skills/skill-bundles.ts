@@ -38,7 +38,7 @@ export async function loadSkillBundle(yamlContent: string, source?: string): Pro
   let blockScalar: { key: string; fold: boolean; indent: number; lines: string[] } | null = null;
 
   const flushBlockScalar = (): void => {
-    if (!blockScalar) return;
+    if (!blockScalar) { return; }
     const { key, fold, lines: body } = blockScalar;
     blockScalar = null;
 
@@ -60,7 +60,7 @@ export async function loadSkillBundle(yamlContent: string, source?: string): Pro
     const trimmed = line.trim();
     if (!trimmed || trimmed.startsWith("#")) {
       // Blank lines inside a block scalar are part of its text.
-      if (blockScalar && !trimmed) blockScalar.lines.push("");
+      if (blockScalar && !trimmed) { blockScalar.lines.push(""); }
       continue;
     }
 
@@ -90,14 +90,14 @@ export async function loadSkillBundle(yamlContent: string, source?: string): Pro
       } else if (["name", "description", "instruction"].includes(keyClean)) {
         (bundle as any)[keyClean] = value;
       } else if (keyClean === "skills") {
-        if (value) bundle.skills.push(value);
+        if (value) { bundle.skills.push(value); }
       }
       currentKey = keyClean;
     } else if (trimmed.startsWith("-")) {
-      const skill = trimmed.substring(1).trim();
+      const skill = trimmed.slice(1).trim();
       // Only `- ` items under the `skills` key are skill names; list items
       // under any other key are ignored.
-      if (skill && currentKey === "skills") bundle.skills.push(skill);
+      if (skill && currentKey === "skills") { bundle.skills.push(skill); }
     }
   }
   flushBlockScalar();

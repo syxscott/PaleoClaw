@@ -18,8 +18,7 @@ import {
 } from "./shared.js";
 import type { UpdateCommandExecutor } from "./update-command-executor.js";
 import type { UpdateInitializationAdmission } from "./update-command-initialization-types.js";
-import type { StagedPackageInstallUpdate } from "./update-command-package.js";
-import { runPackageUpdateDoctor } from "./update-command-package.js";
+import { type StagedPackageInstallUpdate, runPackageUpdateDoctor } from "./update-command-package.js";
 import { UnreportedUpdateAdmissionOutcome } from "./update-command-result.js";
 import type { resolveUpdateCommandTarget } from "./update-command-target.js";
 

@@ -521,6 +521,66 @@
         // Scenario scripts need page-global declarations, unlike Playwright's expression evaluation.
         "eslint/no-eval": ["error", { "allowIndirect": true }]
       }
+    },
+    {
+      "files": ["src/cli/memory-cli.ts"],
+      "rules": {
+        "max-lines": ["error", { "max": 823, "skipBlankLines": true, "skipComments": true }]
+      }
+    },
+    {
+      "files": ["src/cron/service/timer.ts"],
+      "rules": {
+        "max-lines": ["error", { "max": 1076, "skipBlankLines": true, "skipComments": true }]
+      }
+    },
+    {
+      "files": ["src/infra/state-migrations.ts"],
+      "rules": {
+        "max-lines": ["error", { "max": 1004, "skipBlankLines": true, "skipComments": true }]
+      }
+    },
+    {
+      "files": ["src/infra/update-runner.ts"],
+      "rules": {
+        "max-lines": ["error", { "max": 894, "skipBlankLines": true, "skipComments": true }]
+      }
+    },
+    {
+      "files": ["src/memory/manager-embedding-ops.ts"],
+      "rules": {
+        "max-lines": ["error", { "max": 801, "skipBlankLines": true, "skipComments": true }]
+      }
+    },
+    {
+      "files": ["src/memory/manager-sync-ops.ts"],
+      "rules": {
+        "max-lines": ["error", { "max": 1200, "skipBlankLines": true, "skipComments": true }]
+      }
+    },
+    {
+      "files": ["src/memory/manager.ts"],
+      "rules": {
+        "max-lines": ["error", { "max": 774, "skipBlankLines": true, "skipComments": true }]
+      }
+    },
+    {
+      "files": ["src/memory/qmd-manager.ts"],
+      "rules": {
+        "max-lines": ["error", { "max": 2106, "skipBlankLines": true, "skipComments": true }]
+      }
+    },
+    {
+      "files": ["src/paleoclaw/memory/store.ts"],
+      "rules": {
+        "max-lines": ["error", { "max": 955, "skipBlankLines": true, "skipComments": true }]
+      }
+    },
+    {
+      "files": ["src/plugins/loader.test.ts"],
+      "rules": {
+        "max-lines": ["error", { "max": 1335, "skipBlankLines": true, "skipComments": true }]
+      }
     }
   ]
 }

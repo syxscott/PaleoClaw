@@ -136,7 +136,7 @@ it("replays transcript text and thinking with current session controls and usage
   expectUpdate({
     sessionUpdate: "session_info_update",
     title: "Fix ACP bridge",
-    updatedAt: "2024-03-09T16:00:00.000Z",
+    updatedAt: "2024-03-09T16:00:00Z",
     _meta: { sessionKey: sessionId, kind: "direct" },
   });
   expectUpdate({

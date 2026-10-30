@@ -12,7 +12,7 @@ const fixtures = setupCronRegressionFixtures({ prefix: "cron-66019-" });
 
 async function createErrorCase(expr = "0 0 31 2 *") {
   const { storePath } = fixtures.makeStorePath();
-  const scheduledAt = Date.parse("2026-04-13T15:45:00.000Z");
+  const scheduledAt = Date.parse("2026-04-13T15:45:00Z");
   let now = scheduledAt;
   const job = createIsolatedRegressionJob({
     id: "cron-66019",

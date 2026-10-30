@@ -14,8 +14,7 @@ import type { TemplateContext } from "../templating.js";
 import type { ReplyPayload } from "../types.js";
 import type { InternalGetReplyOptions } from "./get-reply.types.js";
 import * as pendingToolTaskDrain from "./pending-tool-task-drain.js";
-import { enqueueFollowupRun, scheduleFollowupDrain } from "./queue.js";
-import type { FollowupRun } from "./queue.js";
+import { FollowupRun, enqueueFollowupRun, scheduleFollowupDrain } from "./queue.js";
 import {
   REPLY_OPERATION_RUN_STATE,
   type ReplyOperationRunState,

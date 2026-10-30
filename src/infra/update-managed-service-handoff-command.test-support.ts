@@ -182,7 +182,7 @@ export function createManagedServiceCommandFixture(params: {
         ...(checksServiceIdentity
           ? [`console.log(JSON.stringify({ action: "restart", ok: true, result: "restarted" }));`]
           : []),
-        `})().catch((error) => { console.error(error); process.exitCode = 1; });`,
+        `})().catch((error: unknown) => { console.error(error); process.exitCode = 1; });`,
       ].join(""),
       "--",
       "gateway",
@@ -222,7 +222,7 @@ export function createManagedServiceCommandFixture(params: {
                   `console.log(JSON.stringify({ promptPath: "triage-prompt.md", bundlePath: "support.zip" }));`,
                   `process.exit(${options?.triageExitCode ?? 0});`,
                 ]),
-            `})().catch((error) => { console.error(error); process.exitCode = 1; });`,
+            `})().catch((error: unknown) => { console.error(error); process.exitCode = 1; });`,
           ].join(""),
           "--",
           "triage",

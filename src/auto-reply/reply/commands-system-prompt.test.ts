@@ -42,7 +42,7 @@ vi.mock("../../infra/machine-name.js", () => ({
 }));
 
 // mock-isolation: Use a fixed OS label without reading the host platform.
-vi.mock("../../infra/os-summary.js", () => ({ resolveRuntimeOsLabel: vi.fn(() => "TestOS 1.0") }));
+vi.mock("../../infra/os-summary.js", () => ({ resolveRuntimeOsLabel: vi.fn(() => "TestOS 1") }));
 
 vi.mock("../../logging/subsystem.js", async (importOriginal) => {
   const createLogger = (subsystem: string): SubsystemLogger => ({

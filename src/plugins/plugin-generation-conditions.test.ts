@@ -259,7 +259,7 @@ const computedFixtures: ComputedFixture[] = [
     tsconfig: true,
     files: {
       "tsconfig.json": '{"compilerOptions":{"baseUrl":".","paths":{"@fixture/*":["./lib/*"]}}}',
-      "lib/value.ts": "export const value: number = 42;",
+      "lib/value.ts": "export const value = 42;",
     },
     reads: [["@fixture/value", 42]],
   },

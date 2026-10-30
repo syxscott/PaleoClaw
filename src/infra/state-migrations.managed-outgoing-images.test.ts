@@ -49,7 +49,7 @@ async function writeLegacyRecord(overrides: Partial<LegacyRecord> = {}, index = 
     sessionKey: "agent:main:main",
     agentId: "main",
     messageId: "message-1",
-    createdAt: "2026-07-15T00:00:00.000Z",
+    createdAt: "2026-07-15T00:00:00Z",
     retentionClass: "history",
     alt: "Cat",
     original: {
@@ -146,7 +146,7 @@ describe("legacy managed outgoing image migration", () => {
 
   it("retries expired attachment cleanup without importing metadata", async () => {
     const legacy = await writeLegacyRecord({ messageId: null, retentionClass: "transient" });
-    const expire = () => migrate({ nowMs: Date.parse("2026-07-15T00:16:00.000Z") });
+    const expire = () => migrate({ nowMs: Date.parse("2026-07-15T00:16:00Z") });
     const remove = fs.rmSync;
     let attachmentRemovalFailed = false;
     const rmSpy = vi.spyOn(fs, "rmSync").mockImplementation((target, options) => {

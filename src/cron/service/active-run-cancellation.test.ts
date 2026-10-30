@@ -82,7 +82,7 @@ it("consumes a removal request made before the run controller binds", () => {
 });
 
 it("keeps shutdown drain deadlines stable when the wall clock jumps forward", async () => {
-  const initialWallTimeMs = Date.parse("2026-08-23T12:00:00.000Z");
+  const initialWallTimeMs = Date.parse("2026-08-23T12:00:00Z");
   vi.setSystemTime(initialWallTimeMs);
   core();
   const observedDrain = vi.fn();

@@ -79,7 +79,7 @@ describe("runCronIsolatedAgentTurn invocation ownership", () => {
           sessionTarget: target,
           schedule:
             schedule === "at"
-              ? { kind: "at", at: "2026-07-27T12:00:00.000Z" }
+              ? { kind: "at", at: "2026-07-27T12:00:00Z" }
               : { kind: "cron", expr: "0 9 * * *", tz: "UTC" },
           delivery: { mode: "none" },
         },

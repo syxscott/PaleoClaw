@@ -42,7 +42,7 @@ export function writeFeaturePluginScaffold(params: {
       2,
     ),
     "src/contract.ts": `import { Type } from "typebox";
-import { defineFeatureContract } from "paleoclaw/plugin-sdk/feature-contract";
+import { createFeatureClient, defineFeatureContract } from "paleoclaw/plugin-sdk/feature-contract";
 
 export const contract = defineFeatureContract({
   pluginId: ${literal(params.id)},
@@ -77,8 +77,6 @@ export default defineFeaturePlugin({
 });
 `,
     "src/control-ui.ts": `import { defineControlUiPlugin } from "paleoclaw/plugin-sdk/control-ui";
-import { createFeatureClient } from "paleoclaw/plugin-sdk/feature-contract";
-import { contract } from "./contract.js";
 import "./control-ui.css";
 
 export default defineControlUiPlugin({

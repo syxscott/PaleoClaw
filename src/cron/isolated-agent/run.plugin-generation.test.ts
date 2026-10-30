@@ -98,7 +98,7 @@ describe("runCronIsolatedAgentTurn plugin generation carry", () => {
     const runtime = await import("./run-execution.runtime.js");
     vi.mocked(runtime.normalizeVerboseLevel).mockImplementation(normalizeVerboseLevel);
     const agent = {
-      model: "google/gemini-2.0-flash",
+      model: "google/gemini-2-flash",
       identity: { name: "Scheduled worker" },
       verboseDefault: "on" as const,
     };
@@ -107,7 +107,7 @@ describe("runCronIsolatedAgentTurn plugin generation carry", () => {
       agents: { defaults: { model: "anthropic/claude-opus-4-6" }, entries: { main: agent } },
     };
     const admittedConfig = structuredClone(config);
-    const selected = { provider: "google", model: "gemini-2.0-flash" };
+    const selected = { provider: "google", model: "gemini-2-flash" };
     resolveAgentConfigMock.mockReturnValue(agent);
     resolveConfiguredModelRefMock.mockReturnValue(selected);
     resolveAllowedModelRefMock.mockReturnValue({ ref: selected });

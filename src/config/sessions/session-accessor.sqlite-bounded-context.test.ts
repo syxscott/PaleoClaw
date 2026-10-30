@@ -75,7 +75,7 @@ function compaction(id: string, parentId: string, firstKeptEntryId: string, summ
     parentId,
     firstKeptEntryId,
     summary,
-    timestamp: "2026-08-30T00:00:00.000Z",
+    timestamp: "2026-08-30T00:00:00Z",
     tokensBefore: 100,
   };
 }
@@ -87,7 +87,7 @@ function reset(id: string, parentId: string, firstKeptEntryId?: string) {
     parentId,
     firstKeptEntryId,
     reason: "new",
-    timestamp: "2026-08-30T00:00:00.000Z",
+    timestamp: "2026-08-30T00:00:00Z",
   };
 }
 
@@ -526,7 +526,7 @@ it("counts paired reset tool results without counting discarded orphan results",
         toolName: "read",
         content: [{ type: "text", text: `paired ${"p".repeat(3_000)}` }],
         isError: false,
-        timestamp: Date.parse("2026-08-15T00:00:01.000Z"),
+        timestamp: Date.parse("2026-08-15T00:00:01Z"),
       }),
       transcriptMessage("discarded-orphan", "kept-result", {
         role: "toolResult",
@@ -534,7 +534,7 @@ it("counts paired reset tool results without counting discarded orphan results",
         toolName: "read",
         content: [{ type: "text", text: `orphan ${"o".repeat(20_000)}` }],
         isError: false,
-        timestamp: Date.parse("2026-08-15T00:00:02.000Z"),
+        timestamp: Date.parse("2026-08-15T00:00:02Z"),
       }),
     ]);
     await appendTranscriptEvent(scope, reset("reset-boundary", "discarded-orphan", "kept-user"));

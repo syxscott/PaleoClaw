@@ -175,7 +175,7 @@ describe("gateway lock", () => {
 
   it("treats recycled linux pid as stale when start time mismatches", async () => {
     vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-02-06T10:05:00.000Z"));
+    vi.setSystemTime(new Date("2026-02-06T10:05:00Z"));
     const env = await makeEnv();
     const { lockPath, configPath } = resolveLockPath(env);
     const payload = createLockPayload({ configPath, startTime: 111 });

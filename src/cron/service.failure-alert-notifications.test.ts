@@ -20,7 +20,7 @@ import { setupCronServiceSuite } from "./service.test-harness.js";
 
 const { logger, makeStorePath } = setupCronServiceSuite({
   prefix: "paleoclaw-cron-failure-notification-",
-  baseTimeIso: "2026-01-01T00:00:00.000Z",
+  baseTimeIso: "2026-01-01T00:00:00Z",
 });
 const target = "agent:ops:telegram:group:42:topic:77";
 const otherConversation = "agent:ops:discord:channel:other";

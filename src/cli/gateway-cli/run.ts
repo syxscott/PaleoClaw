@@ -35,8 +35,7 @@ import { installGatewayDatabaseEngine } from "../../gateway/server-database-engi
 import { isGatewayEffectiveConfigConflictError } from "../../gateway/server-runtime-config.js";
 import { GatewayStartupCleanupError } from "../../gateway/server-shutdown.js";
 import { isChannelStartupSuppressedByEnvironment } from "../../gateway/server-sidecar-startup-mode.js";
-import type { GatewayWsLogStyle } from "../../gateway/ws-logging.js";
-import { setGatewayWsLogStyle } from "../../gateway/ws-logging.js";
+import { type GatewayWsLogStyle, setGatewayWsLogStyle } from "../../gateway/ws-logging.js";
 import { setVerbose } from "../../globals.js";
 import { isAbortError } from "../../infra/abort-signal.js";
 import { collectNestedErrorCandidates } from "../../infra/error-graph-internal.js";

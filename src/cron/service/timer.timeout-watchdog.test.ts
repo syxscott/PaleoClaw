@@ -24,7 +24,7 @@ import type { CronServiceDeps, CronServiceState } from "./state.js";
 import { executeJobCoreWithTimeout } from "./timer-job-runner.js";
 import { onTimer, runMissedJobs } from "./timer.test-support.js";
 
-const SCHEDULED_AT = Date.parse("2026-05-10T09:00:00.000Z");
+const SCHEDULED_AT = Date.parse("2026-05-10T09:00:00Z");
 const fixtures = setupCronRegressionFixtures({
   prefix: "cron-service-timeout-watchdog-",
   baseTimeIso: new Date(SCHEDULED_AT).toISOString(),

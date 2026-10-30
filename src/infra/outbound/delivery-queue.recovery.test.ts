@@ -606,7 +606,7 @@ describe("delivery-queue recovery", () => {
   });
   it("counts replay pacing against the recovery budget", async () => {
     vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-04-23T00:00:00.000Z"));
+    vi.setSystemTime(new Date("2026-04-23T00:00:00Z"));
     try {
       const controlledSleep = controlNextRecoverySleep(sleepMock);
       await enqueueCrashRecoveryEntries();
@@ -768,7 +768,7 @@ describe("delivery-queue recovery", () => {
   });
   it("reconciles an unknown stable send after restart recovery waits for its lease expiry", async () => {
     vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-08-02T10:00:00.000Z"));
+    vi.setSystemTime(new Date("2026-08-02T10:00:00Z"));
     try {
       const id = "cron-direct-delivery:v1:restart-before-producer-lease-expiry";
       const originalClaimId = await enqueueClaimed(id, {

@@ -7,8 +7,7 @@ import { info, success } from "../globals.js";
 import { getChildLogger } from "../logging.js";
 import { DEFAULT_ACCOUNT_ID } from "../routing/session-key.js";
 import { defaultRuntime, type RuntimeEnv } from "../runtime.js";
-import type { WebChannel } from "../utils.js";
-import { jidToE164, resolveUserPath } from "../utils.js";
+import { WebChannel, jidToE164, resolveUserPath } from "../utils.js";
 
 export function resolveDefaultWebAuthDir(): string {
   return path.join(resolveOAuthDir(), "whatsapp", DEFAULT_ACCOUNT_ID);

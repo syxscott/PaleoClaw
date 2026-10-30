@@ -125,7 +125,7 @@ function appendTrajectory(storePath: string, sessionId: string, type: string) {
       traceId: sessionId,
       source: "runtime",
       type,
-      ts: "2026-07-09T00:00:00.000Z",
+      ts: "2026-07-09T00:00:00Z",
       seq: 1,
       sessionId,
     },
@@ -1158,7 +1158,7 @@ describe("sqlite session normalization", () => {
     fs.writeFileSync(
       path.join(
         paths.tempDir,
-        `stale-session.jsonl.deleted.2026-09-02T00-00-00.000Z${pendingArchive.suffix}.f758980d-fd32-4cf1-8946-720e29457bfb.tmp`,
+        `stale-session.jsonl.deleted.2026-09-02T00-00-00Z${pendingArchive.suffix}.f758980d-fd32-4cf1-8946-720e29457bfb.tmp`,
       ),
       pendingArchive.bytes,
     );

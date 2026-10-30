@@ -1248,8 +1248,8 @@ describe("TUI PTY real backends", () => {
               ...(cacheState === "refreshing"
                 ? ["Usage totals may be incomplete (refreshing). Run this command again later."]
                 : []),
-              "Today $0.0000",
-              "Last 30d $0.0000",
+              "Today $0",
+              "Last 30d $0",
             ].join(" ");
             expect(text).toContain(expected);
             expect(fixture.mockModel.requests()).toHaveLength(0);

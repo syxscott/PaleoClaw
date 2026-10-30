@@ -143,7 +143,7 @@ it("completes when the SQLite snapshot outlives the audit lease", async () => {
       await state.writeText(
         "logs/config-audit.jsonl",
         `${JSON.stringify({
-          ts: "2026-09-03T00:00:00.000Z",
+          ts: "2026-09-03T00:00:00Z",
           source: "config-io",
           event: "config.write",
           argv: ["paleoclaw", "config", "set", "proof", "lease"],

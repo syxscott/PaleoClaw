@@ -15,7 +15,7 @@ describe("provider timing in stability output", () => {
         providerWaitEstimateMs: 109.75,
       }),
     ).toBe(
-      "1970-01-01T00:00:00.000Z #1 model.call.completed provider=llama-cpp model=local-model wall=130ms processing=20ms wait~=110ms",
+      "1970-01-01T00:00:00Z #1 model.call.completed provider=llama-cpp model=local-model wall=130ms processing=20ms wait~=110ms",
     );
   });
 
@@ -28,7 +28,7 @@ describe("provider timing in stability output", () => {
         durationMs: 30,
         failureKind: "aborted",
       }),
-    ).toBe("1970-01-01T00:00:00.000Z #2 model.call.error wall=30ms failure=aborted");
+    ).toBe("1970-01-01T00:00:00Z #2 model.call.error wall=30ms failure=aborted");
   });
 
   it("retains measured zero durations", () => {

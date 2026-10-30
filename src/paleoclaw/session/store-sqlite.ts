@@ -9,7 +9,7 @@
  */
 
 import type { DatabaseSync } from "node:sqlite";
-import * as path from "path";
+import * as path from "node:path";
 import { requireNodeSqlite } from "../../memory/sqlite.js";
 import { paleoclawHome, ensurePrivateDir } from "../paths.js";
 import {
@@ -20,16 +20,7 @@ import {
   previewText,
   truncateTitle,
 } from "./store.js";
-import {
-  SessionMessage,
-  SessionRecord,
-  SessionRole,
-  SessionSearchHit,
-  SessionStoreLike,
-  SessionTitleSource,
-  SessionTitleUpgrader,
-} from "./types.js";
-
+import { type SessionMessage, type SessionRecord, type SessionRole, type SessionSearchHit, type SessionStoreLike, type SessionTitleSource, type SessionTitleUpgrader } from "./types.js";
 function nowIso(): string {
   return new Date().toISOString();
 }
@@ -142,7 +133,7 @@ export class SqliteSessionStore implements SessionStoreLike {
   private db: DatabaseSync;
   private dbPath: string;
   private walEnabled: boolean;
-  private ftsAvailable: boolean = false;
+  private ftsAvailable = false;
   private titleUpgrader?: SessionTitleUpgrader;
   private busyTimeoutMs: number;
 
@@ -244,7 +235,7 @@ export class SqliteSessionStore implements SessionStoreLike {
       const ftsRow = asRow(this.db.prepare("SELECT COUNT(*) AS count FROM messages_fts").get()) as
         | { count: number }
         | undefined;
-      if (Number(msgRow?.count ?? 0) > 0 && Number(ftsRow?.count ?? 0) === 0) {
+      if (msgRow?.count ?? 0 > 0 && ftsRow?.count ?? 0 === 0) {
         this.rebuildFts();
       }
     } catch {
@@ -304,7 +295,7 @@ export class SqliteSessionStore implements SessionStoreLike {
   }
 
   private assertValidSessionId(sessionId: string): string {
-    const id = String(sessionId || "").trim();
+    const id = sessionId || "".trim();
     // Same guard-rails as the JSON store so both backends reject identical ids.
     if (!id || id.includes("/") || id.includes("\\") || id.includes("..")) {
       throw new Error(`Invalid sessionId: ${sessionId}`);
@@ -324,8 +315,8 @@ export class SqliteSessionStore implements SessionStoreLike {
       const message: SessionMessage = {
         id: `${sessionId}:${row.seq}`,
         role: row.role as SessionRole,
-        content: String(row.content ?? ""),
-        createdAt: String(row.ts ?? ""),
+        content: row.content ?? "",
+        createdAt: row.ts ?? "",
       };
       const metadata = parseJsonObject(row.metadata);
       if (Object.keys(metadata).length > 0) {
@@ -352,18 +343,18 @@ export class SqliteSessionStore implements SessionStoreLike {
 
   private rowToRecord(row: SessionRow): SessionRecord {
     const meta = parseJsonObject(row.meta);
-    const title = String(row.title ?? DEFAULT_SESSION_TITLE);
+    const title = row.title ?? DEFAULT_SESSION_TITLE;
     const rawTags = meta.tags;
     return {
-      id: String(row.id),
+      id: row.id,
       title,
       titleSource: normalizeTitleSource(row.title_source ?? undefined, title),
-      createdAt: String(row.created_at ?? ""),
-      updatedAt: String(row.updated_at ?? ""),
+      createdAt: row.created_at ?? "",
+      updatedAt: row.updated_at ?? "",
       tags: Array.isArray(rawTags)
         ? rawTags.filter((tag): tag is string => typeof tag === "string")
         : [],
-      messages: this.readMessages(String(row.id)),
+      messages: this.readMessages(row.id),
     };
   }
 
@@ -396,7 +387,7 @@ export class SqliteSessionStore implements SessionStoreLike {
     }
     void upgrader({ sessionId, firstUserMessage, currentTitle })
       .then((upgraded) => {
-        const upgradedTitle = String(upgraded || "").trim();
+        const upgradedTitle = upgraded || "".trim();
         if (!upgradedTitle) {
           return;
         }
@@ -414,13 +405,13 @@ export class SqliteSessionStore implements SessionStoreLike {
   }
 
   upsertSession(sessionId: string, title?: string, tags: string[] = []): SessionRecord {
-    const normalizedId = String(sessionId || "").trim();
+    const normalizedId = sessionId || "".trim();
     if (!normalizedId) {
       throw new Error("sessionId is required");
     }
     const id = this.assertValidSessionId(normalizedId);
 
-    const trimmedTitle = String(title || "").trim();
+    const trimmedTitle = title || "".trim();
     const filteredTags = tags.filter((tag) => tag.trim().length > 0);
 
     const exists = asRow(this.db.prepare("SELECT id FROM sessions WHERE id = ?").get(id)) as
@@ -506,7 +497,7 @@ export class SqliteSessionStore implements SessionStoreLike {
   ): SessionMessage {
     const id = this.assertValidSessionId(sessionId);
     const record = this.readRecord(id);
-    const text = String(content || "");
+    const text = content || "";
     const isFirstUserMessage = role === "user" && !record.messages.some((m) => m.role === "user");
     // Stage 1: derive an instant title from the first user message so `list`
     // never shows the generic placeholder once any user message exists.
@@ -537,7 +528,7 @@ export class SqliteSessionStore implements SessionStoreLike {
                 .prepare("SELECT MAX(seq) AS max_seq FROM messages WHERE session_id = ?")
                 .get(id),
             ) as { max_seq: number | null } | undefined;
-            seq = Number(current?.max_seq ?? -1) + 1;
+            seq = current?.max_seq ?? -1 + 1;
             try {
               this.insertMessage(id, role, text, ts, seq, metadata);
             } catch (error) {
@@ -635,7 +626,7 @@ export class SqliteSessionStore implements SessionStoreLike {
   }
 
   search(query: string, limit = 10): SessionSearchHit[] {
-    const normalized = String(query || "")
+    const normalized = query || ""
       .trim()
       .toLowerCase();
     if (!normalized) {
@@ -683,7 +674,7 @@ export class SqliteSessionStore implements SessionStoreLike {
       }
       const rows = asRows<{ session_id: string; seq: number }>(ftsStmt.all(escapeFtsToken(token)));
       for (const row of rows) {
-        this.addMatch(matches, String(row.session_id), Number(row.seq));
+        this.addMatch(matches, row.session_id, row.seq);
       }
     }
     return this.buildHits(tokens, matches, limit);
@@ -702,7 +693,7 @@ export class SqliteSessionStore implements SessionStoreLike {
       this.db.prepare(LIKE_SEARCH_SQL).all(`%${escapeLikeToken(token)}%`),
     );
     for (const row of rows) {
-      this.addMatch(matches, String(row.session_id), Number(row.seq));
+      this.addMatch(matches, row.session_id, row.seq);
     }
   }
 
@@ -729,11 +720,11 @@ export class SqliteSessionStore implements SessionStoreLike {
         const score = tokens.length > 0 ? count / tokens.length : 0;
         hits.push({
           sessionId,
-          title: String(row.title ?? DEFAULT_SESSION_TITLE),
+          title: row.title ?? DEFAULT_SESSION_TITLE,
           messageId: `${sessionId}:${seq}`,
           score: Math.round(score * 10_000) / 10_000,
-          preview: previewText(String(row.content ?? "")),
-          createdAt: String(row.ts ?? ""),
+          preview: previewText(row.content ?? ""),
+          createdAt: row.ts ?? "",
         });
       }
     }
@@ -748,7 +739,7 @@ export class SqliteSessionStore implements SessionStoreLike {
       | undefined;
     return {
       root: this.dbPath,
-      count: Number(row?.count ?? 0),
+      count: row?.count ?? 0,
     };
   }
 

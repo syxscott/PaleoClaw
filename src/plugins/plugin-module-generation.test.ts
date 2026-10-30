@@ -39,7 +39,7 @@ describe("plugin module generations", () => {
     "keeps Bun-native plugin generations when Node module hooks are available",
     () => {
       const root = temp.make("plugin-bun-native-owner-");
-      fs.writeFileSync(path.join(root, "index.ts"), "export const value: number = 42;");
+      fs.writeFileSync(path.join(root, "index.ts"), "export const value = 42;");
       fs.writeFileSync(path.join(root, "index.cjs"), "exports.value = 42;");
       const previous = Object.getOwnPropertyDescriptor(Module, "registerHooks");
       Object.defineProperty(Module, "registerHooks", {
@@ -518,7 +518,7 @@ describe("plugin module generations", () => {
         vi.stubEnv("TMPDIR", artifactTemp);
       }
       const entry = `index.${extension}`;
-      fs.writeFileSync(path.join(root, entry), "export const value: number = 42;");
+      fs.writeFileSync(path.join(root, entry), "export const value = 42;");
       expect(load(root, entry).value).toMatchObject({ value: 42 });
     },
   );

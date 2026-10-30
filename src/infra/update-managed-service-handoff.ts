@@ -225,7 +225,7 @@ function recordServiceStop() {
     runLedger?.recordUpdateRunStep(params.runId, {
       step: "service-stop", status: stopped.code === 0 || (params.serviceRecovery?.kind === "launchd" && isLaunchdNotLoaded(stopped)) ? "completed" : "failed", endedAtMs: Date.now(),
     });
-  }).catch((error) => appendLog("could not record service stop completion: " + String(error)));
+  }).catch((error: unknown) => appendLog("could not record service stop completion: " + String(error)));
   try {
     const metaFile = JSON.parse(fs.readFileSync(params.metaPath, "utf-8"));
     metaFile.meta.serviceStoppedAtMs ??= serviceStoppedAtMs;
@@ -1009,7 +1009,7 @@ async function collectUpdateFailureTriage() {
     process.stdin.destroy();
     process.exitCode = finalExitCode;
   }
-})().catch((err) => {
+})().catch((err: unknown) => {
   appendLog("handoff setup failed: " + (err && err.stack ? err.stack : String(err)));
   cleanupSensitiveFiles();
   stopTriageScope();

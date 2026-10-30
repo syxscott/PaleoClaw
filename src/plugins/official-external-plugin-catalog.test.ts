@@ -45,7 +45,7 @@ describe("official external plugin catalog", () => {
       { id: " " },
       { schemaVersion: 3 },
       { generatedAt: "not-a-date" },
-      { generatedAt: "2026-02-30T00:00:00.000Z" },
+      { generatedAt: "2026-02-30T00:00:00Z" },
       { sequence: Number.POSITIVE_INFINITY },
     ]) {
       expect(isFeed({ ...feed, ...invalid })).toBe(false);

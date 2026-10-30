@@ -6,8 +6,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, vi } from "vitest";
 import { closeOpenClawAgentDatabasesAsync } from "../state/paleoclaw-agent-db-lifecycle.js";
 import { createTestGatewayScheduler } from "../test-utils/gateway-scheduler-clock.js";
 import type { MockFn } from "../test-utils/vitest-mock-fn.js";
-import type { CronEvent } from "./service.js";
-import { CronService } from "./service.js";
+import { CronEvent, CronService } from "./service.js";
 import { stop } from "./service/ops-lifecycle.js";
 import * as cronServiceState from "./service/state.js";
 import {
@@ -126,7 +125,7 @@ export function installCronTestHooks(options: {
       // timers from a previous file can still sit in the fake-timer queue.
       // Clear them before advancing time in the next test file.
       vi.clearAllTimers();
-      vi.setSystemTime(new Date(options.baseTimeIso ?? "2025-12-13T00:00:00.000Z"));
+      vi.setSystemTime(new Date(options.baseTimeIso ?? "2025-12-13T00:00:00Z"));
     }
     options.logger.debug.mockClear();
     options.logger.info.mockClear();

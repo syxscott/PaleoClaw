@@ -6,8 +6,7 @@ import { isRecord, isStringArray } from "@paleoclaw/normalization-core/record-co
 import { resolveGlobalSingleton } from "../../shared/global-singleton.js";
 import { notifyListeners, registerListener } from "../../shared/listeners.js";
 import { readTrackedStateDatabaseIdentity } from "../../state/paleoclaw-state-db-handle.js";
-import type { EngineConnection } from "../sql-connection.js";
-import { sqlPublicationAnchor } from "../sql-connection.js";
+import { type EngineConnection, sqlPublicationAnchor } from "../sql-connection.js";
 import {
   createSqliteCommitReceipt,
   readSqliteCommitReceipt,

@@ -53,14 +53,14 @@ describe.skipIf(!mixedAgentConnection)(
         sessionId,
       };
       const events = [
-        { type: "session", version: 3, id: sessionId, timestamp: "2026-04-01T05:46:39.000Z" },
+        { type: "session", version: 3, id: sessionId, timestamp: "2026-04-01T05:46:39Z" },
         // Two 2.5 MiB rows take the transcript past the 4 MiB retained-snapshot limit, and each
         // fills a 2 MiB slice, so a sliced read would issue one payload query per row.
         ...[0, 1].map((index) => ({
           type: "message",
           id: `entry-${index}`,
           parentId: index === 0 ? null : "entry-0",
-          timestamp: "2026-04-01T05:46:40.000Z",
+          timestamp: "2026-04-01T05:46:40Z",
           message: { role: "user", content: "lobster ".repeat((2.5 * MIB) / 8), timestamp: 1 },
         })),
       ];

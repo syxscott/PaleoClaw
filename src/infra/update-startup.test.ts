@@ -353,7 +353,7 @@ describe("update-startup", () => {
       autoInstallId: "stable-install-id",
       autoFirstSeenVersion: "3.0.0",
       autoFirstSeenTag: "latest",
-      autoFirstSeenAt: "2026-01-16T10:00:00.000Z",
+      autoFirstSeenAt: "2026-01-16T10:00:00Z",
     });
   }
 
@@ -362,7 +362,7 @@ describe("update-startup", () => {
       autoInstallId: "stable-install-id",
       autoFirstSeenVersion: "3.0.0",
       autoFirstSeenTag: "latest",
-      autoFirstSeenAt: "2026-01-16T10:00:00.000Z",
+      autoFirstSeenAt: "2026-01-16T10:00:00Z",
     });
   }
 
@@ -420,7 +420,7 @@ describe("update-startup", () => {
   });
 
   it("does not throttle invalid update-check clocks against persisted state", async () => {
-    writePersistedUpdateCheckState({ lastCheckedAt: "2026-01-17T09:30:00.000Z" });
+    writePersistedUpdateCheckState({ lastCheckedAt: "2026-01-17T09:30:00Z" });
     mockPackageUpdateStatus("latest", "2.0.0");
     vi.spyOn(Date, "now").mockReturnValue(8_640_000_000_000_001);
 
@@ -428,7 +428,7 @@ describe("update-startup", () => {
 
     expect(checkUpdateStatus).toHaveBeenCalledTimes(1);
     expect(readPersistedUpdateCheckState()).toMatchObject({
-      lastCheckedAt: "1970-01-01T00:00:00.000Z",
+      lastCheckedAt: "1970-01-01T00:00:00Z",
       lastAvailableVersion: "2.0.0",
     });
   });

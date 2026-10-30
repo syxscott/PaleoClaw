@@ -1,5 +1,4 @@
-import type { ExecAsk, ExecMode, ExecSecurity } from "./exec-approvals-core.js";
-import { resolveExecPolicyForMode } from "./exec-approvals-core.js";
+import { type ExecAsk, type ExecMode, type ExecSecurity, resolveExecPolicyForMode } from "./exec-approvals-core.js";
 
 type ExecPolicyLayer = {
   mode?: ExecMode;

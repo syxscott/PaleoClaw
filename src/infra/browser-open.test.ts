@@ -154,7 +154,7 @@ describe("browser support and launch", () => {
 
   it.each([
     ["darwin", "", "open"],
-    ["linux", "localhost:10.0", "xdg-open"],
+    ["linux", "localhost:10", "xdg-open"],
   ] as const)(
     "launches %s browser over SSH with display %s",
     async (platform, display, command) => {

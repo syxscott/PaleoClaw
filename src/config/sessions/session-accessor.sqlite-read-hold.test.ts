@@ -139,7 +139,7 @@ describe("SQLite transcript readers release the read snapshot before parsing", (
         type: "session",
         version: 3,
         id: sessionId,
-        timestamp: "2026-04-01T05:46:39.000Z",
+        timestamp: "2026-04-01T05:46:39Z",
         cwd: tempDir,
       },
       // Large and repetitive so the stored form is zstd; small rows stay plain JSON.
@@ -147,7 +147,7 @@ describe("SQLite transcript readers release the read snapshot before parsing", (
         type: "message",
         id: `entry-${index}`,
         parentId: index === 0 ? null : `entry-${index - 1}`,
-        timestamp: "2026-04-01T05:46:40.000Z",
+        timestamp: "2026-04-01T05:46:40Z",
         message: userMessage(
           index % 2 === 0
             ? `${MARKER} ${"lobster ".repeat(600)}`
@@ -158,7 +158,7 @@ describe("SQLite transcript readers release the read snapshot before parsing", (
         type: "message",
         id: `entry-${4 + index}`,
         parentId: `entry-${3 + index}`,
-        timestamp: "2026-04-01T05:46:41.000Z",
+        timestamp: "2026-04-01T05:46:41Z",
         message: userMessage(`${MARKER} ${"lobster ".repeat(Math.floor(bytes / 8))}`),
       })),
     ];
@@ -254,7 +254,7 @@ describe("SQLite transcript readers release the read snapshot before parsing", (
       type: "message",
       id: `unicode-${index}`,
       parentId: index === 0 ? "entry-3" : `unicode-${index - 1}`,
-      timestamp: "2026-04-01T05:46:41.000Z",
+      timestamp: "2026-04-01T05:46:41Z",
       message: userMessage("漢".repeat(250)),
     }));
     const events = [...seeded, ...unicode];

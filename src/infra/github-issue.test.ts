@@ -108,7 +108,7 @@ it("uses the final HTTP response block for a definitive request rejection", asyn
   const issue = prepare("permission-denied");
   const runGh = cli(
     authSuccess,
-    cliOutput("HTTP/1.1 200 Connection established\r\n\r\nHTTP/2.0 403 Forbidden\r\n\r\n{}", 1),
+    cliOutput("HTTP/1.1 200 Connection established\r\n\r\nHTTP/2 403 Forbidden\r\n\r\n{}", 1),
   );
 
   await expect(submitGithubIssue(issue, runGh)).resolves.toEqual(
@@ -154,7 +154,7 @@ it.each([
   const issue = prepare(url);
   const runGh = cli(
     authSuccess,
-    cliOutput(`HTTP/2.0 201 Created\r\n\r\n${url}\n`),
+    cliOutput(`HTTP/2 201 Created\r\n\r\n${url}\n`),
     lookupResult(issue, url),
   );
 
@@ -165,7 +165,7 @@ it("does not reconcile a marker search candidate with different content", async 
   const issue = prepare("marker-collision-negative");
   const runGh = cli(
     authSuccess,
-    cliOutput("HTTP/2.0 201 Created\r\n\r\nnot-a-url\n"),
+    cliOutput("HTTP/2 201 Created\r\n\r\nnot-a-url\n"),
     lookupResult(issue, issueUrl(999), `${issue.body}\nchanged`),
   );
 

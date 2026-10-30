@@ -80,7 +80,7 @@ function createManualSecretsPlan() {
   return {
     version: 1,
     protocolVersion: 1,
-    generatedAt: "2026-02-26T00:00:00.000Z",
+    generatedAt: "2026-02-26T00:00:00Z",
     generatedBy: "manual",
     targets: [],
   };
@@ -95,7 +95,7 @@ function createConfigureInteractiveResult(options?: {
     plan: {
       version: 1,
       protocolVersion: 1,
-      generatedAt: "2026-02-26T00:00:00.000Z",
+      generatedAt: "2026-02-26T00:00:00Z",
       generatedBy: "paleoclaw secrets configure",
       targets: options?.targets ?? [],
     },

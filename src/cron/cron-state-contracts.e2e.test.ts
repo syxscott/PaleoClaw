@@ -13,7 +13,7 @@ import { loadCronStore } from "./store.js";
 import { cronStoreKey } from "./store/key.js";
 import type { CronJobCreate } from "./types.js";
 
-const BASE_TIME = Date.parse("2026-01-15T13:55:00.000Z");
+const BASE_TIME = Date.parse("2026-01-15T13:55:00Z");
 
 function createService(
   params: Pick<CronServiceDeps, "scheduler" | "storePath"> &
@@ -89,7 +89,7 @@ it("persists create, edit, restart, scheduled execution, and removal across sche
           schedule: { kind: "every", everyMs: 120_000 },
         });
 
-        const newYorkNineAm = Date.parse("2026-01-15T14:00:00.000Z");
+        const newYorkNineAm = Date.parse("2026-01-15T14:00:00Z");
         expect(timezoneJob.schedule).toEqual(timezoneSchedule);
         expect(timezoneJob.state.nextRunAtMs).toBeGreaterThanOrEqual(newYorkNineAm);
         expect(timezoneJob.state.nextRunAtMs).toBeLessThan(newYorkNineAm + 30_000);

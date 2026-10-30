@@ -3,8 +3,8 @@
  * Adapted from GeoClaw-OpenAI v2.4.0
  */
 
-import * as fs from "fs";
-import * as path from "path";
+import * as fs from "node:fs";
+import * as path from "node:path";
 import {
   paleoclawHome,
   atomicWriteFile,
@@ -12,9 +12,8 @@ import {
   fileLockPath,
   withFileLock,
 } from "../paths.js";
-import { SessionProfile, loadSessionProfile, memoryContext } from "../profile/layers.js";
-import { bestMatches, SearchItem } from "./retrieval.js";
-
+import { type SessionProfile, loadSessionProfile, memoryContext } from "../profile/layers.js";
+import { bestMatches, type SearchItem } from "./retrieval.js";
 // Task memory interfaces
 export interface TaskMemory {
   taskId: string;
@@ -97,7 +96,7 @@ let _taskCounter = 0;
 
 function generateTaskId(): string {
   const stamp = Date.now().toString(36); // millisecond precision
-  const rand = Math.random().toString(36).substring(2, 8);
+  const rand = Math.random().toString(36).slice(2, 8);
   const seq = (_taskCounter++).toString(36);
   return `${stamp}-${seq}-${rand}`;
 }
@@ -160,7 +159,7 @@ function parseEventTime(raw?: string | number | Date): Date {
     const fromEpoch = new Date(raw);
     return Number.isNaN(fromEpoch.getTime()) ? new Date() : fromEpoch;
   }
-  const text = (raw || "").toString().trim();
+  const text = (raw || "").trim();
   if (!text) {
     return new Date();
   }
@@ -575,19 +574,19 @@ export class TaskMemoryStore {
           ? record.chat_digest
           : emptyChatDigest();
 
-      digest.turn_count = (Number(digest.turn_count) || 0) + 1;
+      digest.turn_count = (digest.turn_count || 0) + 1;
       digest.last_turn_at = nowIso;
       if (!digest.first_turn_at) {
         digest.first_turn_at = nowIso;
       }
 
-      const intents = (digest.intents || []).map((x) => String(x).trim()).filter((x) => x);
+      const intents = (digest.intents || []).map((x) => x.trim()).filter((x) => x);
       if (intent && !intents.includes(intent)) {
         intents.push(intent);
       }
       digest.intents = intents.slice(-10);
 
-      const modes = (digest.modes || []).map((x) => String(x).trim()).filter((x) => x);
+      const modes = (digest.modes || []).map((x) => x.trim()).filter((x) => x);
       if (mode && !modes.includes(mode)) {
         modes.push(mode);
       }
@@ -698,7 +697,7 @@ export class TaskMemoryStore {
    */
   listChatDaily(days = 7): ChatDailyRecord[] {
     const rows: ChatDailyRecord[] = [];
-    const requested = Math.floor(Number(days));
+    const requested = Math.floor(days);
     const windowDays = Number.isFinite(requested) ? Math.max(1, requested) : 7;
 
     let files: string[] = [];
@@ -759,7 +758,7 @@ export class TaskMemoryStore {
    * Returns null when the day file is missing or corrupt.
    */
   getChatDailyDigest(day: string): ChatDigest | null {
-    const normalized = (day || "").toString().trim();
+    const normalized = (day || "").trim();
     if (!/^\d{8}$/.test(normalized)) {
       return null;
     }
@@ -1062,7 +1061,7 @@ export class TaskMemoryStore {
         // Move to archive
         let dst = path.join(this.archiveShortDir, file);
         if (fs.existsSync(dst)) {
-          const random = Math.random().toString(36).substring(2, 8);
+          const random = Math.random().toString(36).slice(2, 8);
           dst = path.join(this.archiveShortDir, `${path.parse(file).name}-${random}.json`);
         }
 
@@ -1130,7 +1129,7 @@ export class TaskMemoryStore {
       // Chat content is session-scoped: only the owning session's digests are
       // indexed. Task memories above stay global — they describe work, not
       // conversations, and carry no session identity.
-      const rawSessionId = String(options.sessionId ?? "").trim();
+      const rawSessionId = options.sessionId ?? "".trim();
       const sessionKey = rawSessionId ? safeSessionKey(rawSessionId) : "";
       // Owner-side tooling (the `paleo-memory` CLI) may explicitly opt into
       // every session's digests. The agent path never does — it always names

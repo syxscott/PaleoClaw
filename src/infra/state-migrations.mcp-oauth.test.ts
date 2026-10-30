@@ -581,7 +581,7 @@ it("requires exclusive state ownership", async () => {
 function lockPayload(overrides: Record<string, unknown> = {}): string {
   return `${JSON.stringify({
     pid: 123,
-    createdAt: "2026-07-16T00:00:00.000Z",
+    createdAt: "2026-07-16T00:00:00Z",
     starttime: 456,
     ...overrides,
   })}\n`;
@@ -596,7 +596,7 @@ it("fails closed for live, young, and malformed owner evidence", () => {
     () => {
       for (const raw of [
         lockPayload(),
-        lockPayload({ createdAt: "2026-07-16T00:01:30.000Z" }),
+        lockPayload({ createdAt: "2026-07-16T00:01:30Z" }),
         lockPayload({ createdAt: "invalid" }),
         lockPayload({ starttime: "456" }),
         "not json",
@@ -604,7 +604,7 @@ it("fails closed for live, young, and malformed owner evidence", () => {
         expect(
           isDefinitelyStaleLegacyMcpOAuthLock({
             raw,
-            nowMs: Date.parse("2026-07-16T00:02:00.000Z"),
+            nowMs: Date.parse("2026-07-16T00:02:00Z"),
           }),
         ).toBe(false);
       }

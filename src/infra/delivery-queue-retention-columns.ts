@@ -30,7 +30,7 @@ export function deriveDeliveryQueueRetentionColumns(
         : undefined;
     const prefix = typeof parsedPrefix === "string" ? parsedPrefix : undefined;
     const integer = (raw: string | undefined): number | undefined => {
-      // json_extract(true) is INTEGER 1, but JSON 1.0 and 1e0 are REAL.
+      // json_extract(true) is INTEGER 1, but JSON 1 and 1e0 are REAL.
       const value = raw === "true" ? 1 : raw && /^-?\d+$/u.test(raw) ? Number(raw) : Number.NaN;
       return Number.isSafeInteger(value) && value >= 1 ? value : undefined;
     };

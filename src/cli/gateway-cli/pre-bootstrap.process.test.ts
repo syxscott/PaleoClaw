@@ -295,7 +295,7 @@ describe("Gateway config selection before migration admission", () => {
       };
       writeJson(configPath, {
         gateway: { mode: "local" },
-        meta: { lastTouchedAt: "2026-02-15T00:00:00.000Z" },
+        meta: { lastTouchedAt: "2026-02-15T00:00:00Z" },
         agents: { entries: { main: {}, helper: {} } },
         plugins,
       });

@@ -9,8 +9,7 @@ import { getSessionBindingService } from "../../infra/outbound/session-binding-s
 import type { ReplyOperation } from "../../sessions/session-controller.contracts.js";
 import { isSessionRunActiveForKey } from "../../sessions/session-controller.queries.js";
 import type { tryFastAbortFromMessage } from "./abort.js";
-import { getFollowupQueueDepth } from "./queue.js";
-import type { FollowupRun } from "./queue.js";
+import { FollowupRun, getFollowupQueueDepth } from "./queue.js";
 
 type AbortAcpFixtures = {
   createAbortConfig: (params?: {

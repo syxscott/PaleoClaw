@@ -23,7 +23,7 @@ import { cronStoreKey } from "./store/key.js";
 import type { CronJobCreate } from "./types.js";
 
 const { logger, makeStorePath } = setupCronServiceSuite({ prefix: "cron-one-shot-" });
-const atMs = Date.parse("2025-12-13T00:00:02.000Z");
+const atMs = Date.parse("2025-12-13T00:00:02Z");
 const mainJob = (overrides: Partial<CronJobCreate> = {}): CronJobCreate => ({
   name: "one-shot",
   enabled: true,

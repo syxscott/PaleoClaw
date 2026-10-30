@@ -150,7 +150,7 @@ describe("importSessionCatalogHistory", () => {
 
   it("imports newest-first pages in source order regardless of timestamps with native provenance", async () => {
     vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-07-25T12:00:00.000Z"));
+    vi.setSystemTime(new Date("2026-07-25T12:00:00Z"));
     try {
       await importHistory(
         [
@@ -158,7 +158,7 @@ describe("importSessionCatalogHistory", () => {
           { ...item("u-2", "userMessage", "numeric year"), timestamp: "2026" },
           { ...item("u-3", "userMessage", "numeric zero"), timestamp: "0" },
           item("r-empty", "reasoning"),
-          { ...item("r-1", "reasoning", "careful"), timestamp: "1969-12-31T23:59:59.000Z" },
+          { ...item("r-1", "reasoning", "careful"), timestamp: "1969-12-31T23:59:59Z" },
           {
             ...item("a-1", "agentMessage", "answer"),
             model: "anthropic/claude",
@@ -184,7 +184,7 @@ describe("importSessionCatalogHistory", () => {
     ]);
     expect(transcript.messages[0]?.["__openclaw"]).toEqual({ mirrorOrigin: "pi-catalog-import" });
     expect(transcript.messages.slice(0, 4).map((message) => message.timestamp)).toEqual([
-      Date.parse("2026-07-25T12:00:00.000Z"),
+      Date.parse("2026-07-25T12:00:00Z"),
       Date.parse("2026"),
       Date.parse("0"),
       -1_000,

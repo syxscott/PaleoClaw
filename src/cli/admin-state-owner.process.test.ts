@@ -329,7 +329,7 @@ describe("administrative CLI state owner routing", () => {
       version: 1,
       requests: [
         { id: "sender", code: "ABCDEFGH", createdAt: now, lastSeenAt: now },
-        { id: "expired", code: "JKLMNPQR", createdAt: "2000-01-01T00:00:00.000Z", lastSeenAt: now },
+        { id: "expired", code: "JKLMNPQR", createdAt: "2000-01-01T00:00:00Z", lastSeenAt: now },
       ],
     });
     await updateExecApprovals({

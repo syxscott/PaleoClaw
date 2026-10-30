@@ -1,6 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
-import type { IncomingMessage, ServerResponse } from "node:http";
-import { createServer } from "node:http";
+import { IncomingMessage, ServerResponse, createServer } from "node:http";
 import { text as readBody } from "node:stream/consumers";
 import { Command } from "commander";
 import { afterEach, expect, it, vi } from "vitest";
@@ -133,7 +132,7 @@ async function startOAuthFixture() {
       }
       const message = JSON.parse(body) as { id?: number; method?: string };
       const reply = (result: unknown) =>
-        sendJson(response, { jsonrpc: "2.0", id: message.id, result });
+        sendJson(response, { jsonrpc: "2", id: message.id, result });
       if (message.method === "initialize") {
         return reply({
           protocolVersion: "2025-06-18",

@@ -1,7 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import type { MockInstance } from "vitest";
+import { MockInstance, afterEach, beforeEach, expect, it, vi } from "vitest";
 import { createTempDirTracker } from "../../../test/helpers/temp-dir.js";
 import { UPDATE_RUN_ID_ENV } from "../../infra/update-control-plane-sentinel.js";
 import { UpdateDoctorError } from "../../infra/update-doctor-result.js";

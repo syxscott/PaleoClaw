@@ -95,7 +95,7 @@ it("runs the next future wake under its own Gateway root while an earlier batch 
   }
 });
 it("retires a suspended timer across a scheduler stop and restart", async () => {
-  let nowMs = Date.parse("2026-02-06T10:08:00.000Z");
+  let nowMs = Date.parse("2026-02-06T10:08:00Z");
   const job = dueJob("retired-scheduler-timer", nowMs, nowMs + 1_000);
   const store = await seedJobs([job]);
 

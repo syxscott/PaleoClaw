@@ -198,7 +198,7 @@ describe("cron outcome receipt finalization", () => {
 
   it("refreshes the public job view after a committed terminal reply is lost", async () => {
     const { storePath } = fixtures.makeStorePath();
-    const startedAt = Date.parse("2026-02-06T10:05:00.000Z");
+    const startedAt = Date.parse("2026-02-06T10:05:00Z");
     const job = dueJob("lost-terminal-reply", startedAt);
     job.schedule = { kind: "every", everyMs: 60_000, anchorMs: startedAt };
     job.state.runningAtMs = startedAt;
@@ -374,7 +374,7 @@ describe("cron outcome receipt finalization", () => {
 
   it("schedules an unrelated job missing nextRunAtMs after batch finalization", async () => {
     const store = fixtures.makeStorePath();
-    const startedAt = Date.parse("2026-02-06T10:05:00.000Z");
+    const startedAt = Date.parse("2026-02-06T10:05:00Z");
     const completed = dueJob("completed-batch-job", startedAt);
     completed.state.runningAtMs = startedAt;
     const imported = dueJob("imported-without-next-run", startedAt, startedAt + 60_000);
@@ -397,7 +397,7 @@ describe("cron outcome receipt finalization", () => {
 
   it("publishes the committed outcome before best-effort maintenance fails", async () => {
     const store = fixtures.makeStorePath();
-    const startedAt = Date.parse("2026-02-06T10:05:01.000Z");
+    const startedAt = Date.parse("2026-02-06T10:05:01Z");
     const completed = dueJob("published-before-maintenance", startedAt);
     completed.state.runningAtMs = startedAt;
     const sibling = dueJob("maintenance-write-fails", startedAt, startedAt + 60_000);

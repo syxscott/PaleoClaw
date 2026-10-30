@@ -91,7 +91,7 @@ function makeCronJob(input: Partial<CronJob> & { id: string }): CronJob {
   return {
     name: input.name ?? input.id,
     enabled: true,
-    schedule: { kind: "at", at: "2026-05-01T00:00:00.000Z" },
+    schedule: { kind: "at", at: "2026-05-01T00:00:00Z" },
     sessionTarget: input.sessionTarget ?? `session:${MAIN_SESSION_KEY}`,
     wakeMode: "now",
     payload: { kind: "agentTurn", message: "wake" },
@@ -373,7 +373,7 @@ describe("plugin scheduled turns", () => {
 
   it("keeps one-shot scheduled-turn records until cleanup confirms the job is gone", async () => {
     vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-05-01T00:00:00.000Z"));
+    vi.setSystemTime(new Date("2026-05-01T00:00:00Z"));
     const removed: string[] = [];
     workflowMocks.cronAdd.mockResolvedValue(makeCronJob({ id: "one-shot-job" }));
     workflowMocks.cronRemove.mockImplementation(async (id: string) => {

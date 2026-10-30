@@ -409,10 +409,10 @@ it("rewrites every active shape and trajectory snapshot, migrates mixed archives
     ]);
   }
 
-  const plainArchive = archiveFile(env, "cold-plain.jsonl.deleted.2026-07-24T01-02-03.000Z");
+  const plainArchive = archiveFile(env, "cold-plain.jsonl.deleted.2026-07-24T01-02-03Z");
   const compressedArchive = `${archiveFile(
     env,
-    "cold-zstd.jsonl.reset.2026-07-24T01-02-04.000Z",
+    "cold-zstd.jsonl.reset.2026-07-24T01-02-04Z",
   )}${SESSION_ARCHIVE_ZSTD_SUFFIX}`;
   writeArchive(plainArchive, [legacy], false);
   writeArchive(compressedArchive, [conflict], true);
@@ -691,7 +691,7 @@ it.each([
 it("preserves an archive replaced before its atomic media repair", async () => {
   const row = event({ role: "user", MediaPath: "/media/a.png" });
   const { env } = fixture({ drift: [row] });
-  const archivePath = archiveFile(env, "drift.jsonl.deleted.2026-07-24T01-02-03.000Z");
+  const archivePath = archiveFile(env, "drift.jsonl.deleted.2026-07-24T01-02-03Z");
   writeArchive(archivePath, [row], false);
   const open = fs.openSync;
   using archiveOpen = vi.spyOn(fs, "openSync");
@@ -710,7 +710,7 @@ function createArchiveFixture(bytes: Uint8Array) {
   const env = { OPENCLAW_STATE_DIR: stateDir };
   openOpenClawAgentDatabase({ agentId: "main", env });
   closeOpenClawAgentDatabasesForTest();
-  const archivePath = archiveFile(env, "fixture.jsonl.deleted.2026-07-24T01-02-03.000Z");
+  const archivePath = archiveFile(env, "fixture.jsonl.deleted.2026-07-24T01-02-03Z");
   fs.mkdirSync(path.dirname(archivePath), { recursive: true });
   fs.writeFileSync(archivePath, bytes);
   return { archivePath, env };
@@ -747,7 +747,7 @@ it.each([
 });
 it("rejects ambiguous sparse arrays and ignores stale interrupted temp files", async () => {
   const { env } = fixture();
-  const archivePath = archiveFile(env, "sparse.jsonl.bak.2026-07-24T01-02-03.000Z");
+  const archivePath = archiveFile(env, "sparse.jsonl.bak.2026-07-24T01-02-03Z");
   const row = event({
     role: "user",
     MediaPaths: ["", "/media/b.png"],
@@ -759,7 +759,7 @@ it("rejects ambiguous sparse arrays and ignores stale interrupted temp files", a
   );
   fs.unlinkSync(archivePath);
 
-  const corruptArchivePath = archiveFile(env, "corrupt.jsonl.deleted.2026-07-24T01-02-04.000Z");
+  const corruptArchivePath = archiveFile(env, "corrupt.jsonl.deleted.2026-07-24T01-02-04Z");
   fs.writeFileSync(corruptArchivePath, "{broken\n");
   expect((await migrate({ env })).warnings.join("\n")).toContain("invalid transcript JSON");
   expect(fs.readFileSync(corruptArchivePath, "utf8")).toBe("{broken\n");

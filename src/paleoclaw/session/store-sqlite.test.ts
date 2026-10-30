@@ -1,8 +1,8 @@
-import * as fs from "fs";
+import * as fs from "node:fs";
 import { spawn, type ChildProcess } from "node:child_process";
 import type { DatabaseSync } from "node:sqlite";
-import * as os from "os";
-import * as path from "path";
+import * as os from "node:os";
+import * as path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { requireNodeSqlite } from "../../memory/sqlite.js";
 import { createSessionStore, SessionStore } from "./index.js";
@@ -48,7 +48,7 @@ function listTables(store: SqliteSessionStore): string[] {
 
 /** Flush microtasks (e.g. the fire-and-forget titleUpgrader chain). */
 function flush(): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, 0));
+  new Promise((resolve) => setTimeout(resolve, 0));
 }
 
 function withPaleoclawHome<T>(home: string, fn: () => T): T {
@@ -230,13 +230,13 @@ describe("SqliteSessionStore", () => {
     const walMode = rawDb(walStore).prepare("PRAGMA journal_mode").get() as {
       journal_mode: string;
     };
-    expect(String(walMode.journal_mode).toLowerCase()).toBe("wal");
+    expect(walMode.journal_mode.toLowerCase()).toBe("wal");
 
     const deleteStore = createSqliteStore({ wal: false });
     const deleteMode = rawDb(deleteStore).prepare("PRAGMA journal_mode").get() as {
       journal_mode: string;
     };
-    expect(String(deleteMode.journal_mode).toLowerCase()).toBe("delete");
+    expect(deleteMode.journal_mode.toLowerCase()).toBe("delete");
   });
 
   it("rejects invalid session ids like the JSON store", () => {

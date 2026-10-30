@@ -81,7 +81,7 @@ export async function runDiscordTaskWithTimeout(params: {
 
   let timedOut = false;
   let timeoutHandle: ReturnType<typeof setTimeout> | null = null;
-  const runPromise = params.run(mergedAbortSignal).catch((error) => {
+  const runPromise = params.run(mergedAbortSignal).catch((error: unknown) => {
     if (!timedOut) {
       throw error;
     }

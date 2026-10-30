@@ -127,7 +127,7 @@ describe("delivery queue pending terminal transition", () => {
   it("expires a bounded failed fence during its exact replay lookup", () => {
     vi.useFakeTimers();
     try {
-      vi.setSystemTime(new Date("2026-07-20T10:00:00.000Z"));
+      vi.setSystemTime(new Date("2026-07-20T10:00:00Z"));
       const id = `${boundedRetention.idPrefix}failed-run`;
       const entry = {
         id,

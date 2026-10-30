@@ -24,8 +24,7 @@ import {
 import { visitConfigValueTree } from "../config/value-tree.js";
 import type { DeferredPluginMigration } from "../infra/deferred-plugin-migrations.js";
 import { formatErrorMessage } from "../infra/errors.js";
-import { loadPluginMetadataSnapshot } from "../plugins/plugin-metadata-snapshot.js";
-import type { PluginMetadataSnapshot } from "../plugins/plugin-metadata-snapshot.js";
+import { type PluginMetadataSnapshot, loadPluginMetadataSnapshot } from "../plugins/plugin-metadata-snapshot.js";
 import { type RuntimeEnv, defaultRuntime } from "../runtime.js";
 import { assertSecureExecCommandPath } from "../secrets/exec-provider-path-validation.js";
 import {

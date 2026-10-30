@@ -23,7 +23,7 @@ import type { CronJob, CronJobCreate, CronJobPatch } from "./types.js";
 
 const MINUTE = 60_000;
 const HOUR = 60 * MINUTE;
-const CREATED_AT = Date.parse("2026-09-12T12:00:00.000Z");
+const CREATED_AT = Date.parse("2026-09-12T12:00:00Z");
 const RUN_AT = CREATED_AT + HOUR;
 const EDIT_AT = RUN_AT + 2_000;
 const HOURLY = { kind: "every", everyMs: HOUR, anchorMs: CREATED_AT } as const;

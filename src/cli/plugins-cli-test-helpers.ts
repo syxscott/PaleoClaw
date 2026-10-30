@@ -1,7 +1,6 @@
 // Shared Vitest mocks and runtime capture helpers for plugin CLI command tests.
 import { Command } from "commander";
-import type { Mock } from "vitest";
-import { vi } from "vitest";
+import { type Mock, vi } from "vitest";
 import { createTestConfigSnapshot } from "../commands/test-runtime-config-helpers.js";
 import { getRuntimeConfig } from "../config/config.js";
 import type { HookInstallRecord } from "../config/types.hooks.js";
@@ -454,7 +453,7 @@ vi.mock("../plugins/installed-plugin-index-records.js", async (importOriginal) =
         [pluginId]: {
           ...(records[pluginId] as Record<string, unknown> | undefined),
           ...record,
-          installedAt: update.installedAt ?? "2026-04-25T00:00:00.000Z",
+          installedAt: update.installedAt ?? "2026-04-25T00:00:00Z",
         },
       };
     },

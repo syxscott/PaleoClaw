@@ -5,8 +5,7 @@
 import { requireNodeSqlite } from "../../memory/sqlite.js";
 import { SqliteSessionStore, defaultSessionDbPath } from "./store-sqlite.js";
 import { SessionStore } from "./store.js";
-import { SessionStoreLike, SessionTitleUpgrader } from "./types.js";
-
+import { type SessionStoreLike, type SessionTitleUpgrader } from "./types.js";
 export * from "./types.js";
 export * from "./store.js";
 export * from "./store-sqlite.js";

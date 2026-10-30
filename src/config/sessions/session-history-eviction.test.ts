@@ -370,10 +370,10 @@ describe("SQLite historical session disk budget", () => {
   });
 
   it.each([
-    ["deleted transcript archive", "already-extracted.jsonl.deleted.2026-01-01T00-00-00.000Z"],
+    ["deleted transcript archive", "already-extracted.jsonl.deleted.2026-01-01T00-00-00Z"],
     [
       "legacy compact backup",
-      `legacy-compact.jsonl.bak.2026-01-01T00-00-00.000Z.${"a".repeat(32)}.zst`,
+      `legacy-compact.jsonl.bak.2026-01-01T00-00-00Z.${"a".repeat(32)}.zst`,
     ],
   ])("removes a %s before evicting searchable history", async (_kind, archiveName) => {
     await seed("archive", "keep searchable history");
@@ -463,7 +463,7 @@ describe("SQLite historical session disk budget", () => {
         traceId: "trajectory-history",
         source: "runtime",
         type: "history.test",
-        ts: "2026-07-18T00:00:00.000Z",
+        ts: "2026-07-18T00:00:00Z",
         seq: 1,
         sessionId: "trajectory-history",
         sessionKey,

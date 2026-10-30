@@ -31,7 +31,7 @@ interface MemoryCommandOptions {
  * and tells the user what went wrong.
  */
 function parseLimitOption(raw: string | undefined, fallback: number): number | null {
-  const value = String(raw ?? "").trim() || String(fallback);
+  const value = raw ?? "".trim() || String(fallback);
   const parsed = Number(value);
   if (!Number.isInteger(parsed) || parsed < 1) {
     console.error(`Invalid --limit: ${raw} (expected a positive integer)`);

@@ -20,7 +20,7 @@ describe("resolveNpmIntegrityDrift", () => {
       expectedIntegrity: "sha512-trusted",
       resolution: {
         resolvedSpec: "@paleoclaw/test@1.0.0",
-        resolvedAt: "2026-01-01T00:00:00.000Z",
+        resolvedAt: "2026-01-01T00:00:00Z",
       },
       onIntegrityDrift,
     });
@@ -39,7 +39,7 @@ describe("resolveNpmIntegrityDrift", () => {
       resolution: {
         integrity: "sha512-new",
         resolvedSpec: "@paleoclaw/test@1.0.0",
-        resolvedAt: "2026-01-01T00:00:00.000Z",
+        resolvedAt: "2026-01-01T00:00:00Z",
       },
       warn,
     });
@@ -56,7 +56,7 @@ describe("resolveNpmIntegrityDrift", () => {
       resolution: {
         integrity: "sha512-new",
         resolvedSpec: "@paleoclaw/test@1.0.0",
-        resolvedAt: "2026-01-01T00:00:00.000Z",
+        resolvedAt: "2026-01-01T00:00:00Z",
       },
       onIntegrityDrift: async () => false,
     });
@@ -73,7 +73,7 @@ describe("resolveNpmIntegrityDrift", () => {
       expectedIntegrity: "sha512-old",
       resolution: {
         integrity: "sha512-new",
-        resolvedAt: "2026-01-01T00:00:00.000Z",
+        resolvedAt: "2026-01-01T00:00:00Z",
       },
       warn,
     });

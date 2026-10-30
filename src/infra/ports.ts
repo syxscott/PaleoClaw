@@ -1,7 +1,6 @@
 import { danger, info, shouldLogVerbose } from "../globals.js";
 import { logDebug } from "../logger.js";
-import type { RuntimeEnv } from "../runtime.js";
-import { defaultRuntime } from "../runtime.js";
+import { type RuntimeEnv, defaultRuntime } from "../runtime.js";
 import { isErrno } from "./errors.js";
 import { formatPortDiagnostics } from "./ports-format.js";
 import { tryListenOnPort } from "./ports-probe.js";

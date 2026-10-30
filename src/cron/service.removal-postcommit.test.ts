@@ -13,12 +13,12 @@ import type { CronJob } from "./types.js";
 
 const { logger, makeStorePath } = setupCronServiceSuite({
   prefix: "cron-removal-postcommit-",
-  baseTimeIso: "2026-07-10T12:00:00.000Z",
+  baseTimeIso: "2026-07-10T12:00:00Z",
 });
 
 async function createFixture() {
   const { storePath } = await makeStorePath();
-  const nowMs = Date.parse("2026-07-10T12:00:00.000Z");
+  const nowMs = Date.parse("2026-07-10T12:00:00Z");
   const runAtMs = nowMs - 60_000;
   const job = cronTestJob({
     id: "one-shot-removal",

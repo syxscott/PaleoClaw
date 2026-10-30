@@ -71,15 +71,15 @@ describe("session cost usage stream errors", () => {
       });
     const { tempDir, sessionsDir, sessionFile } = await createSession(
       "sess-cache-stream-error",
-      `${usageEntry("2026-07-06T12:00:00.000Z", 10)}\n`,
+      `${usageEntry("2026-07-06T12:00:00Z", 10)}\n`,
     );
 
     await fs.writeFile(
       path.join(sessionsDir, "sess-readable.jsonl"),
-      `${usageEntry("2026-07-06T12:00:00.000Z", 7)}\n`,
+      `${usageEntry("2026-07-06T12:00:00Z", 7)}\n`,
       "utf-8",
     );
-    const appendedEntry = `${usageEntry("2026-07-06T12:01:00.000Z", 20)}\n`;
+    const appendedEntry = `${usageEntry("2026-07-06T12:01:00Z", 20)}\n`;
     const armed = path.join(tempDir, "fail-next-stream");
     const failed = path.join(tempDir, "stream-failed");
     const preload = path.join(tempDir, "fail-usage-stream.cjs");

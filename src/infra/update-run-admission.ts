@@ -19,8 +19,7 @@ import { isOpenClawStateWriteContentionError } from "../state/paleoclaw-state-ow
 import type { OpenClawStateReadOnlyDatabase } from "../state/paleoclaw-state-read.types.js";
 import { withEngineStoreAdmission } from "./database-engine/admission-scope.js";
 import { formatErrorMessage } from "./errors.js";
-import type { EngineConnection } from "./sql-connection.js";
-import { isPostgresSqlConnection } from "./sql-connection.js";
+import { type EngineConnection, isPostgresSqlConnection } from "./sql-connection.js";
 import { assertSqliteIntegrity, SqliteRepairableForeignKeyError } from "./sqlite-integrity.js";
 import type { UpdateRunLedgerOptions } from "./update-run-codec.js";
 import { updateRunLedgerSchema } from "./update-run-write.js";

@@ -742,7 +742,7 @@ it.each([
 ] as const)("validates $change changes $phase original file capture", async ({ change, phase }) => {
   const f = await originalCaptureFixture();
   const source = f.applicationFile;
-  const timestamp = new Date("2000-01-01T00:00:00.000Z");
+  const timestamp = new Date("2000-01-01T00:00:00Z");
   await fs.utimes(source, timestamp, timestamp);
   const before = await fs.stat(source, { bigint: true });
   const alias = path.join(f.root, "outside-native-capture");

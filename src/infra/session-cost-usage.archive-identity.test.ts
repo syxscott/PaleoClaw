@@ -80,7 +80,7 @@ async function withWork(run: (work: AsyncWorkScope) => Promise<void>) {
 }
 
 const archiveTime = Date.UTC(2026, 7, 26, 12);
-const archiveStamp = "2026-08-26T12-00-00.000Z";
+const archiveStamp = "2026-08-26T12-00-00Z";
 const generation = "0123456789abcdef0123456789abcdef";
 const config = { plugins: { enabled: false } };
 

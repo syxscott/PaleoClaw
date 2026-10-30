@@ -6,7 +6,7 @@ import { loadCronStore, saveCronStore } from "../store.js";
 import { add, update } from "./ops-mutations.js";
 
 const { logger, makeStorePath } = setupCronServiceSuite({ prefix: "cron-pacing-ops" });
-const NOW = Date.parse("2026-07-18T12:00:00.000Z");
+const NOW = Date.parse("2026-07-18T12:00:00Z");
 
 let state: ReturnType<typeof createCronRegressionState>;
 beforeEach(async () => {
@@ -66,7 +66,7 @@ it("requires clearing pacing when converting a recurring job to a one-shot", asy
   job.state.nextRunAtMs = NOW + 4 * 60 * 60_000;
   job.state.pacedNextRunAtMs = job.state.nextRunAtMs;
 
-  const schedule = { kind: "at", at: "2026-07-19T12:00:00.000Z" } as const;
+  const schedule = { kind: "at", at: "2026-07-19T12:00:00Z" } as const;
   await expect(update(state, job.id, { schedule: { ...schedule } })).rejects.toThrow(
     "cron pacing requires an every or cron schedule",
   );

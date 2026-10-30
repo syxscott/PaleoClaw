@@ -33,7 +33,7 @@ const lifecycleSource: string = runInNewContext(
 );
 const finalizerSource = sourceBetween(
   "  } finally {\n    try { await finishManagedUpdateRun(); }",
-  "\n})().catch((err) =>",
+  "\n})().catch((err: unknown) =>",
 ).replace(
   "${JSON.stringify(SYSTEM_SERVICE_UPDATE_SETTLED_MARKER)}",
   JSON.stringify("system-update-settled\n"),

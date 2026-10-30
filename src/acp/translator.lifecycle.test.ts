@@ -365,7 +365,7 @@ it.each(["resume", "load"] as const)(
       update: {
         sessionUpdate: "session_info_update",
         title,
-        updatedAt: resume ? "2024-03-09T16:00:00.000Z" : "2024-03-09T16:00:20.000Z",
+        updatedAt: resume ? "2024-03-09T16:00:00Z" : "2024-03-09T16:00:20Z",
         _meta: meta(sessionKey, {
           spawnedWorkspaceDir,
           ...(!resume ? { channel: "discord", ...lineageMeta } : {}),

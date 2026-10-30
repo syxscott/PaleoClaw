@@ -19,8 +19,7 @@ import { formatThreadBindingDurationLabel } from "../../channels/thread-bindings
 import { parseDurationMs } from "../../cli/parse-duration.js";
 import { extractDeliveryInfo } from "../../config/sessions.js";
 import { logVerbose } from "../../globals.js";
-import { getSessionBindingService } from "../../infra/outbound/session-binding-service.js";
-import type { SessionBindingRecord } from "../../infra/outbound/session-binding-service.js";
+import { type SessionBindingRecord, getSessionBindingService } from "../../infra/outbound/session-binding-service.js";
 import {
   clearRestartSentinelIfRevision,
   formatDoctorNonInteractiveHint,

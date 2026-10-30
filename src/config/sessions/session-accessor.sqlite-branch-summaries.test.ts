@@ -302,7 +302,7 @@ it("extends a selected ancestor while retaining its inactive descendants and hea
   await expect(listSessionBranches(scope)).resolves.toEqual({
     status: "ok",
     branches: [
-      branch("analysis", "root headline", 3, true, "1970-01-01T00:00:03.000Z"),
+      branch("analysis", "root headline", 3, true, "1970-01-01T00:00:03Z"),
       branch("side", "side headline", 2),
     ],
   });
@@ -329,7 +329,7 @@ it("rescans when an append resolves an older opaque forward reference", async ()
   await expect(listSessionBranches(scope)).resolves.toEqual({
     status: "ok",
     branches: [
-      branch("future", "new headline", 2, true, "1970-01-01T00:00:01.000Z"),
+      branch("future", "new headline", 2, true, "1970-01-01T00:00:01Z"),
       branch("forward", "new headline", 2),
     ],
   });

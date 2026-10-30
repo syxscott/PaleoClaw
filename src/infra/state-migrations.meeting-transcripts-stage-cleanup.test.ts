@@ -27,7 +27,7 @@ async function seedLegacySession(stateDir: string, sessionId: string): Promise<s
   await writeJson("metadata.json", {
     sessionId,
     source: { providerId: "manual-transcript" },
-    startedAt: "2026-07-01T10:00:00.000Z",
+    startedAt: "2026-07-01T10:00:00Z",
   });
   await writeJson("transcript.jsonl", { text: "First line" });
   await fs.writeFile(path.join(sessionDir, "summary.md"), "# Design review\n\nFirst line.\n");
@@ -48,7 +48,7 @@ it.runIf(process.platform !== "win32" && process.getuid?.() !== 0)(
       detected,
       env: { ...process.env, OPENCLAW_STATE_DIR: stateDir },
       stateDir,
-      now: () => Date.parse("2026-07-02T00:00:00.000Z"),
+      now: () => Date.parse("2026-07-02T00:00:00Z"),
       // Simulate a held stage file by denying unlink after import and archive.
       testHooks: { afterArchive: () => fsSync.chmodSync(stateDir, 0o555) },
     }).finally(() => fsSync.chmodSync(stateDir, 0o755));

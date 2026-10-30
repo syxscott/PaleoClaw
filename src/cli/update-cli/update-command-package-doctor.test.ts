@@ -517,7 +517,7 @@ it("records the activation Doctor's traced sections on its step and run record",
   const guards = createUpdateCommandExecutionGuards({ run }, root);
   const progress = createUpdateRunProgress(run, {}, guards.recordStep);
   const trace = (name: string, ms: number) =>
-    `[gateway] startup trace: ${name} ${ms.toFixed(1)}ms total=${ms.toFixed(1)}ms start=0.0ms\n`;
+    `[gateway] startup trace: ${name} ${ms.toFixed(1)}ms total=${ms.toFixed(1)}ms start=0ms\n`;
   const stderr = [
     trace("cli.command.config-ready", 3),
     trace("doctor.maintenance.begin", 120),
@@ -553,7 +553,7 @@ it("records the activation Doctor's traced sections on its step and run record",
     progress,
   });
   const sections =
-    "Doctor sections: maintenance.begin 0.1 s, database-preflight 12.3 s, config-flow 4.1 s, contributions 300.2 s, maintenance-ready 0.9 s; slowest contributions: gateway-services 250.0 s, plugins 40.0 s, sessions 9.0 s, skills 1.0 s, auth 0.7 s";
+    "Doctor sections: maintenance.begin 0.1 s, database-preflight 12.3 s, config-flow 4.1 s, contributions 300.2 s, maintenance-ready 0.9 s; slowest contributions: gateway-services 250 s, plugins 40 s, sessions 9 s, skills 1 s, auth 0.7 s";
   expect(doctorEnv?.OPENCLAW_GATEWAY_STARTUP_TRACE).toBe("1");
   expect(step).toMatchObject({ name: "paleoclaw doctor", exitCode: 0 });
   expect(step?.diagnostics?.[0]).toBe(sections);

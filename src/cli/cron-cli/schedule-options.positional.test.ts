@@ -34,14 +34,14 @@ describe("resolveCronCreateScheduleFromArgs positional schedule disambiguation",
 
   it("falls back to an at schedule for other positionals", () => {
     vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-05-25T00:00:00.000Z"));
+    vi.setSystemTime(new Date("2026-05-25T00:00:00Z"));
     expect(resolveCronCreateScheduleFromArgs({ positionalSchedule: "30m" })).toEqual({
       kind: "at",
-      at: "2026-05-25T00:30:00.000Z",
+      at: "2026-05-25T00:30:00Z",
     });
     expect(
       resolveCronCreateScheduleFromArgs({ positionalSchedule: "2027-01-01T00:00:00Z" }),
-    ).toEqual({ kind: "at", at: "2027-01-01T00:00:00.000Z" });
+    ).toEqual({ kind: "at", at: "2027-01-01T00:00:00Z" });
   });
 
   it("reports an invalid --tz before validating the expression", () => {

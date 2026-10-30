@@ -131,7 +131,7 @@ describe("system-presence", () => {
 
   it("parses node presence text and normalizes the update key", () => {
     vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-05-11T04:00:00.000Z"));
+    vi.setSystemTime(new Date("2026-05-11T04:00:00Z"));
     const text =
       "Node: Relay-Host (10.0.0.9) · app 2.1.0 · last input 7s ago · mode ui · reason beacon";
     const instanceId = "  Mixed-Case-Node  ";

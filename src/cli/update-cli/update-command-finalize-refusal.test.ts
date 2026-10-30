@@ -262,7 +262,7 @@ afterEach(() => {
 
 it("keeps repair pending with a real state owner and unavailable systemd inspection", async () => {
   native.realOwner = true;
-  const createdAt = "2026-10-19T12:00:00.000Z";
+  const createdAt = "2026-10-19T12:00:00Z";
   const owner = acquireGatewayStateOwner({
     databasePath: path.join(process.env.OPENCLAW_STATE_DIR!, "state", "openclaw.sqlite"),
     payload: {

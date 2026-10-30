@@ -142,13 +142,13 @@ describe("generic session entry APIs with actor memory storage", () => {
       createSessionTranscriptHeader({
         sessionId: "replacement",
         cwd: "/synthetic/workspace",
-        timestamp: "2026-01-01T00:00:00.000Z",
+        timestamp: "2026-01-01T00:00:00Z",
       }),
       {
         type: "custom",
         id: "retained-event",
         parentId: null,
-        timestamp: "2026-01-01T00:00:01.000Z",
+        timestamp: "2026-01-01T00:00:01Z",
         customType: "synthetic-payload",
         data: { text: "Prepared transcript payload" },
       },

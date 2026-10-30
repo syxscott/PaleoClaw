@@ -41,7 +41,7 @@ vi.mock("../state/paleoclaw-state-db.js", async (importOriginal) => {
 });
 
 const { makeStorePath } = createCronStoreHarness();
-const nowMs = Date.parse("2026-08-30T12:00:00.000Z");
+const nowMs = Date.parse("2026-08-30T12:00:00Z");
 let storePath: string;
 beforeEach(async () => {
   ({ storePath } = await makeStorePath());
@@ -143,7 +143,7 @@ describe("CronService read operations", () => {
     vi.restoreAllMocks();
   });
   it("publishes the scheduler's next run after a cached list and status read", async () => {
-    const now = Date.parse("2026-09-30T12:00:00.000Z");
+    const now = Date.parse("2026-09-30T12:00:00Z");
     const { cron, state, clock, scheduler } = createService({}, now);
     try {
       await cron.start();
@@ -254,7 +254,7 @@ describe("CronService read operations", () => {
   ] as const)(
     "keeps reads responsive and schedule edits across restart during a $mode run",
     async ({ mode, offsets }) => {
-      const startedAt = Date.parse("2025-12-13T00:00:01.000Z");
+      const startedAt = Date.parse("2025-12-13T00:00:01Z");
       const isolatedRun = createDeferredIsolatedRun();
       const { cron, state, clock, scheduler } = createService(
         { runIsolatedAgentJob: isolatedRun.runIsolatedAgentJob },
@@ -360,12 +360,12 @@ describe("CronService read operations", () => {
   it("avoids duplicate runs across lexical aliases of one store", async () => {
     const enqueueSystemEvent = vi.fn();
     const requestHeartbeat = vi.fn();
-    const now = Date.parse("2025-12-13T00:00:00.000Z");
+    const now = Date.parse("2025-12-13T00:00:00Z");
     const deps = { enqueueSystemEvent, requestHeartbeat };
     const first = createService(deps, now);
 
     await first.cron.start();
-    const atMs = Date.parse("2025-12-13T00:00:01.000Z");
+    const atMs = Date.parse("2025-12-13T00:00:01Z");
     await first.cron.add({
       ...systemEventJob("shared store job", { kind: "at", at: new Date(atMs).toISOString() }),
       payload: { kind: "systemEvent", text: "hello" },
@@ -388,7 +388,7 @@ describe("CronService read operations", () => {
   });
 
   it("re-arms a stale service after a missing remove reloads an earlier job", async () => {
-    const baseMs = Date.parse("2025-12-13T00:00:00.000Z");
+    const baseMs = Date.parse("2025-12-13T00:00:00Z");
     const stale = createService({}, baseMs);
     const writer = createService({}, baseMs);
     await readStatus(stale.state);
@@ -419,7 +419,7 @@ describe("CronService read operations", () => {
   it("runs later due work while an earlier scheduled run is still executing", async ({
     signal,
   }) => {
-    const now = Date.parse("2026-02-06T10:05:00.000Z");
+    const now = Date.parse("2026-02-06T10:05:00Z");
     const isolatedRun = createDeferredIsolatedRun();
     const laterFinished = createDeferred();
     const recurringJob = (id: string, nextRunAtMs: number): CronJob => ({

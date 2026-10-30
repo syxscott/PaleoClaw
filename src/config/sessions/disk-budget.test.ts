@@ -492,7 +492,7 @@ describe("pruneUnreferencedSessionArtifacts", () => {
 const EMPTY_PROMPT_HASH = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
 const PROMPT_FILE = `skills-prompts/sha256/e3/${EMPTY_PROMPT_HASH}.txt`;
 const TEMP_SUFFIX = ".123.0f9c1a2b-3c4d-4e5f-8a9b-0c1d2e3f4a5b.tmp";
-const ARCHIVE_STAMP = "2026-01-01T00-00-00.000Z";
+const ARCHIVE_STAMP = "2026-01-01T00-00-00Z";
 const writeOldFile = (dir: string, name: string, content = "") =>
   writeArtifact(path.join(dir, name), content, true);
 

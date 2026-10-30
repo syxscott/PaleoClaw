@@ -114,7 +114,7 @@ async function capture(runId = firstId) {
     configPaths: [configPath],
     creator: { host: "fixture", pid: 1, startIdentity: "1" },
     drivers: [],
-    createdAt: "2026-09-10T00:00:00.000Z",
+    createdAt: "2026-09-10T00:00:00Z",
     roots: [stateDir],
     excludedRoots: [],
     protectedPaths: [configPath],

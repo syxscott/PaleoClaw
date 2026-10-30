@@ -52,7 +52,7 @@ describe("outbound enqueue worker", () => {
     outboundDeliveryNotifications.onEnqueued = enqueued;
     const reply = holdEnqueueReply();
     const channelData = {
-      date: new Date("2026-09-01T00:00:00.000Z"),
+      date: new Date("2026-09-01T00:00:00Z"),
       finite: Number.NaN,
       absent: undefined,
       callable: () => "process local",
@@ -92,7 +92,7 @@ describe("outbound enqueue worker", () => {
       const stored = readQueuedEntry(stateDir, id);
       expect(stored.enqueuedAt).toBeGreaterThanOrEqual(before);
       const serializedData = {
-        date: "2026-09-01T00:00:00.000Z",
+        date: "2026-09-01T00:00:00Z",
         finite: null,
         custom: { canonical: true },
         nested: { value: "before" },

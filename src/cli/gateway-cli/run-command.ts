@@ -8,8 +8,7 @@ import {
 import type { RuntimeEnv } from "../../runtime.js";
 import type { resolveCliStartupPolicy } from "../command-startup-policy.js";
 import type { createGatewayDispatchStartupTrace } from "../startup-trace.js";
-import type { GatewayRunOpts } from "./run-options.js";
-import { resolveGatewayRunOptions } from "./run-options.js";
+import { type GatewayRunOpts, resolveGatewayRunOptions } from "./run-options.js";
 import { getGatewayRunRuntimeHooks } from "./runtime-hooks.js";
 
 type GatewayRunCommandHooks = {

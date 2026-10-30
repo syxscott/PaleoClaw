@@ -81,7 +81,7 @@ export function insertSyntheticHistory(
         type,
         id,
         parentId: null,
-        timestamp: "2026-08-15T00:00:00.000Z",
+        timestamp: "2026-08-15T00:00:00Z",
         ...(isBoundary
           ? boundaryType === "compaction"
             ? { summary: "synthetic" }

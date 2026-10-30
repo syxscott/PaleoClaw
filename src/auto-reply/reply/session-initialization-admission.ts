@@ -17,8 +17,7 @@ import { getReplyOperationSessionReader } from "../../sessions/session-controlle
 import type { FinalizedRuntimeMsgContext } from "../templating.js";
 import { shouldBypassAcpDispatchForCommand } from "./dispatch-acp-command-bypass.js";
 import type { InternalGetReplyOptions } from "./get-reply.types.js";
-import { resolveSessionConversationBinding } from "./session-conversation-binding.js";
-import type { resolveSessionConversationBindingContext } from "./session-conversation-binding.js";
+import { resolveSessionConversationBinding, resolveSessionConversationBindingContext } from "./session-conversation-binding.js";
 import { resolveSessionInputDeliveryKey } from "./session-delivery.js";
 import type { SessionEventExecution } from "./session-event-contract.js";
 

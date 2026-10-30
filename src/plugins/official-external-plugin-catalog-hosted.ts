@@ -224,7 +224,7 @@ function readOfficialExternalPluginCatalogInvalidTimestampSequence(
   }
   const normalized = {
     ...raw,
-    generatedAt: "1970-01-01T00:00:00.000Z",
+    generatedAt: "1970-01-01T00:00:00Z",
   };
   return isOfficialExternalPluginCatalogFeed(normalized) ? normalized.sequence : undefined;
 }

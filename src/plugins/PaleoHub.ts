@@ -38,8 +38,7 @@ import {
   type ClawHubResolvedArtifact,
 } from "../infra/PaleoHub-packages.js";
 import { parseClawHubPluginSpec } from "../infra/PaleoHub-spec.js";
-import { resolveCompatibilityHostVersion } from "../version.js";
-import type { RuntimeVersionEnv } from "../version.js";
+import { type RuntimeVersionEnv, resolveCompatibilityHostVersion } from "../version.js";
 import type { InstallSafetyOverrides } from "./install-security-scan.js";
 import { copyPluginInstallTransactionRequest } from "./install-transaction.js";
 import type { PluginInstallArtifactCallbacks } from "./install-types.js";

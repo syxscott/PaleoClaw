@@ -101,7 +101,7 @@ async function fixture(suffix = "one", owner = createMemorySessionActorOwner(loc
               type: "message",
               id,
               parentId: null,
-              timestamp: "2026-10-11T00:00:00.000Z",
+              timestamp: "2026-10-11T00:00:00Z",
             },
             message: {
               messageJson: JSON.stringify({ role, content: text, timestamp: 1 }),
@@ -197,7 +197,7 @@ function trajectory(sessionId: string, text: string, seq: number): TrajectoryEve
     traceId: "trace",
     source: "runtime",
     type: "test",
-    ts: "2026-10-11T00:00:00.000Z",
+    ts: "2026-10-11T00:00:00Z",
     seq,
     sessionId,
     runId: `run-${seq}`,

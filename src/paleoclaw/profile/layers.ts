@@ -3,8 +3,8 @@
  * Adapted from GeoClaw-OpenAI v2.4.0
  */
 
-import * as fs from "fs";
-import * as path from "path";
+import * as fs from "node:fs";
+import * as path from "node:path";
 import { paleoclawHome } from "../paths.js";
 
 // Default templates
@@ -456,7 +456,7 @@ export function parseUser(markdown: string): UserProfile {
   // Data preferences
   const dataPrefText = sectionText(sections, "data preferences");
   const defaultOccurrenceLimit =
-    parseInt(extractKv(dataPrefText, "Default occurrence limit", "50")) || 50;
+    Number.parseInt(extractKv(dataPrefText, "Default occurrence limit", "50")) || 50;
   const includePreprints =
     extractKv(dataPrefText, "Include preprints", "false").toLowerCase() === "true";
   const preferOpenAccess =

@@ -55,7 +55,7 @@ function sessionFixture(
 ): TranscriptSessionDescriptor {
   return {
     sessionId,
-    startedAt: "2026-09-21T12:00:00.000Z",
+    startedAt: "2026-09-21T12:00:00Z",
     source: { providerId: "manual-transcript" },
     ...overrides,
   };
@@ -325,7 +325,7 @@ it("persists session metadata off thread with typed conflicts and durable ID ori
       store.writeSession({ ...session, title: "Stale" }, { expectedInputRevision: revision }),
     ).rejects.toBeInstanceOf(TranscriptsSummaryChangedError);
     await expect(
-      store.writeSession({ ...session, startedAt: "2026-09-21T13:00:00.000Z" }),
+      store.writeSession({ ...session, startedAt: "2026-09-21T13:00:00Z" }),
     ).rejects.toBeInstanceOf(TranscriptSessionConflictError);
   });
   await closeDatabase();
@@ -338,8 +338,8 @@ it("persists session metadata off thread with typed conflicts and durable ID ori
 it("returns SQLite-normalized text in the committed session receipt", async () => {
   const { store } = fixture();
   const session = sessionFixture("normalized-receipt", {
-    startedAt: "2026-10-04T12:00:00.000Z",
-    stoppedAt: "2026-10-04T12:00:01.000Z",
+    startedAt: "2026-10-04T12:00:00Z",
+    stoppedAt: "2026-10-04T12:00:01Z",
     title: "Unpaired \ud800",
   });
   const inserted = await store.writeSession(session);
@@ -423,8 +423,8 @@ it.each(
   async ({ operation, stage }) => {
     const { env, store } = fixture();
     const session = sessionFixture(`${operation}-revoked-${stage}`, {
-      startedAt: "2026-09-20T12:00:00.000Z",
-      ...(operation === "discard" ? { stoppedAt: "2026-09-20T12:00:01.000Z" } : {}),
+      startedAt: "2026-09-20T12:00:00Z",
+      ...(operation === "discard" ? { stoppedAt: "2026-09-20T12:00:01Z" } : {}),
       title: "Original",
     });
     await store.writeSession(session);
@@ -482,8 +482,8 @@ it("returns complete stored reads and typed errors after existing-only status an
   const session = sessionFixture("worker-meeting", {
     source: { providerId: "manual-transcript", accountId: "synthetic" },
     title: "Worker meeting",
-    startedAt: "2026-09-12T10:00:00.000Z",
-    stoppedAt: "2026-09-12T11:00:00.000Z",
+    startedAt: "2026-09-12T10:00:00Z",
+    stoppedAt: "2026-09-12T11:00:00Z",
     metadata: { agentId: "main", sessionIdOrigin: "generated", nested: { values: [1, null] } },
   });
   const utterances: TranscriptUtterance[] = Array.from({ length: 20 }, (_, index) => ({
@@ -512,8 +512,8 @@ it("returns complete stored reads and typed errors after existing-only status an
     expect(
       await store.readRecentStoppedSession(
         session.source,
-        "2026-09-12T10:59:00.000Z",
-        "2026-09-12T11:01:00.000Z",
+        "2026-09-12T10:59:00Z",
+        "2026-09-12T11:01:00Z",
       ),
     ).toEqual({ session, inputRevision: revision });
     expect(await store.readUtterancesForSession(session)).toEqual(

@@ -143,9 +143,9 @@ export function prepareBundledPluginRuntime({ repoRoot }) {
       const pid = 0x7fff_ffff;
       const ownerRecord = JSON.stringify({
         pid,
-        startedAt: "2026-09-20T01:00:00.000Z",
+        startedAt: "2026-09-20T01:00:00Z",
         startIdentity: "fixture-build-owner",
-        heartbeatAt: "2026-09-20T01:01:00.000Z",
+        heartbeatAt: "2026-09-20T01:01:00Z",
       });
       if (owner !== "absent") {
         await fs.mkdir(lock, { recursive: true });
@@ -186,7 +186,7 @@ export function prepareBundledPluginRuntime({ repoRoot }) {
         expect(execution?.failure?.detail).toContain(lock);
         expect(execution?.failure?.detail).toContain(`retained by PID ${pid}`);
         expect(execution?.failure?.detail).toContain("fixture-build-owner");
-        expect(execution?.failure?.detail).toContain("2026-09-20T01:01:00.000Z");
+        expect(execution?.failure?.detail).toContain("2026-09-20T01:01:00Z");
         expect(execution?.failure?.detail).toContain("to release and retry");
         expect(await fs.readFile(ownerFile, "utf8")).toBe(ownerRecord);
       } else {

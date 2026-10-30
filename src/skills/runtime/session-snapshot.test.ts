@@ -5,8 +5,7 @@ import { createDeferred } from "../../../test/helpers/promise.js";
 import type { OpenClawConfig } from "../../config/config.js";
 import type { PluginMetadataSnapshot } from "../../plugins/plugin-metadata-snapshot.types.js";
 import { createCanonicalFixtureSkill } from "../test-support/test-helpers.js";
-import { WORKSPACE_SKILLS_PROMPT_FORMAT_VERSION } from "../types.js";
-import type { SkillSnapshot } from "../types.js";
+import { SkillSnapshot, WORKSPACE_SKILLS_PROMPT_FORMAT_VERSION } from "../types.js";
 import { resolveReusableWorkspaceSkillSnapshot } from "./session-snapshot.js";
 import { resolveSkillSnapshotExecutionFileHost } from "./skill-snapshot-provenance.js";
 

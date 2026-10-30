@@ -1,7 +1,6 @@
 import type { DatabaseSync } from "node:sqlite";
 import { requireNativeDatabaseFile } from "./database-engine/physical-facts.js";
-import type { EngineConnection } from "./sql-connection.js";
-import { isPostgresSqlConnection } from "./sql-connection.js";
+import { type EngineConnection, isPostgresSqlConnection } from "./sql-connection.js";
 import { getAdmittedSqliteSchemaFacts, runSqliteReadOperationSync } from "./sqlite-schema-facts.js";
 import { runSqliteImmediateTransactionSync } from "./sqlite-transaction.js";
 

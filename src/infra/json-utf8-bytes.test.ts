@@ -61,7 +61,7 @@ describe("boundedJsonUtf8Bytes", () => {
       })(),
     },
     { name: "non-finite numbers", value: [Number.NaN, Number.POSITIVE_INFINITY] },
-    { name: "date", value: { at: new Date("2026-04-25T12:00:00.000Z") } },
+    { name: "date", value: { at: new Date("2026-04-25T12:00:00Z") } },
     {
       name: "omitted properties and escaped keys",
       value: { 'a"\n': "\\", omitted: undefined, fn: () => 1, symbol: Symbol("value") },

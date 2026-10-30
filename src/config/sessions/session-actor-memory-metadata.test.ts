@@ -27,7 +27,7 @@ const scope = { agentId: "main", storePath: "/synthetic/metadata", sessionKey, s
 const authority: SessionActorAuthority = { authorize() {}, assertCurrent() {} };
 const owners: ReturnType<typeof createMemorySessionActorOwner>[] = [];
 const header =
-  '{ "type": "session", "version": 3, "id": "session-1", "timestamp": "1970-01-01T00:00:00.000Z", "cwd": "/synthetic" }';
+  '{ "type": "session", "version": 3, "id": "session-1", "timestamp": "1970-01-01T00:00:00Z", "cwd": "/synthetic" }';
 
 afterEach(() => {
   for (const owner of owners.splice(0)) {
@@ -237,7 +237,7 @@ describe("memory actor metadata storage", () => {
       type: "session",
       version: 3,
       id: branchId,
-      timestamp: "1970-01-01T00:00:00.000Z",
+      timestamp: "1970-01-01T00:00:00Z",
       cwd: "/synthetic",
     };
     const branched = await commitMemory(storage, "session.transcript.branch", {

@@ -35,7 +35,7 @@ it.each([false, true])(
     const binding = {
       unit: "retained.service",
       managerUid: 1000,
-      destination: ":1.0",
+      destination: ":1",
       verify: vi.fn(() => authority.assertGatewayServiceUpdateCurrent()),
       query: vi.fn(async () => []),
       close: vi.fn(async () => {

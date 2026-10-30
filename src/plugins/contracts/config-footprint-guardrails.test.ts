@@ -11,7 +11,7 @@ import { listGitTrackedFiles } from "../../test-utils/repo-files.js";
 const SRC_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const REPO_ROOT = resolve(SRC_ROOT, "..");
 const BASE_CONFIG_SCHEMA = computeBaseConfigSchemaResponse({
-  generatedAt: "2026-05-05T00:00:00.000Z",
+  generatedAt: "2026-05-05T00:00:00Z",
 });
 
 function readSource(path: string): string {

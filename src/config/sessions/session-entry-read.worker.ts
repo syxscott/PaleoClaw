@@ -14,8 +14,7 @@ import {
   isOpenClawAgentDatabasePathCurrent,
   readOpenClawAgentDatabaseIdentity,
 } from "../../state/paleoclaw-agent-db-identity.js";
-import { withOpenClawAgentDatabaseReadOnly } from "../../state/paleoclaw-agent-db-readonly.js";
-import type { OpenClawAgentReadOnlyDatabase } from "../../state/paleoclaw-agent-db-readonly.js";
+import { type OpenClawAgentReadOnlyDatabase, withOpenClawAgentDatabaseReadOnly } from "../../state/paleoclaw-agent-db-readonly.js";
 import type { DB as OpenClawAgentKyselyDatabase } from "../../state/paleoclaw-agent-db.generated.js";
 import { SessionMetadataUnavailableError } from "../../state/session-metadata-unavailable-error.js";
 import { cloneEnvWithPlatformSemantics } from "../config-env-vars.js";

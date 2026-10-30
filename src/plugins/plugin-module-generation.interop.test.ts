@@ -680,7 +680,7 @@ describe("native plugin generation interop", () => {
           '{"name":"source-dependency","type":"module","exports":"./index.ts"}',
         "node_modules/source-dependency/index.ts":
           'import { value } from "./value.js"; export const answer: number = value;',
-        "node_modules/source-dependency/value.ts": "export const value: number = 42;",
+        "node_modules/source-dependency/value.ts": "export const value = 42;",
       });
       if (reference === "file URL") {
         const target = fileUrl(root, "node_modules/source-dependency/value.ts");

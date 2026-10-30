@@ -273,7 +273,7 @@ it.each(["dependencies", "optionalDependencies", "peerDependencies"])(
 
 it.each([
   ["named", "import { createRequire as factory } from 'node:module';", "factory", "require"],
-  ["alias", "import { createRequire as factory } from 'module';", "factory", "local"],
+  ["alias", "import { createRequire as factory } from 'node:module';", "factory", "local"],
   ["default", "import nativeModule from 'node:module';", "nativeModule.createRequire", "local"],
   [
     "inline-resolve",
@@ -601,7 +601,7 @@ it("captures helpers, assets and npm packages with builtin names for each reload
   );
   fs.writeFileSync(
     path.join(source, "index.ts"),
-    `import { value } from './helper.ts'; import { dependency } from 'punycode/fixture';
+    `import { value } from './helper.ts'; import { dependency } from 'node:punycode/fixture';
      export const read = async () => [value, (await import('./lazy.js')).read(), dependency];`,
   );
   fs.writeFileSync(path.join(source, "helper.js"), `export const value = 'stale build';`);

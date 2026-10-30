@@ -3,8 +3,7 @@ import path from "node:path";
 import { afterEach, beforeAll, beforeEach, expect, it, vi } from "vitest";
 import { definePluginDoctorMigrationFromPlans } from "../plugin-sdk/doctor-migration-plan-adapter.js";
 import { loadBundledPluginFacade } from "../test-utils/bundled-plugin-public-surface.js";
-import { coercePluginDoctorContractModule } from "./doctor-contract-module.js";
-import type { PluginDoctorStateMigration } from "./doctor-contract-module.js";
+import { PluginDoctorStateMigration, coercePluginDoctorContractModule } from "./doctor-contract-module.js";
 import { preparePluginDoctorMigrationBackupResources } from "./doctor-contract-registry.js";
 import { clearPluginDoctorContractRegistryCache } from "./doctor-contract-registry.test-fixtures.js";
 import {

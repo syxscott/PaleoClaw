@@ -17,7 +17,7 @@ const { logger, makeStorePath } = setupCronServiceSuite({
   prefix: "cron-service-store-seam",
 });
 
-const STORE_TEST_NOW = Date.parse("2026-03-23T12:00:00.000Z");
+const STORE_TEST_NOW = Date.parse("2026-03-23T12:00:00Z");
 
 async function writeSingleJobStore(storePath: string, job: Record<string, unknown>) {
   await writeJobStore(storePath, [job]);

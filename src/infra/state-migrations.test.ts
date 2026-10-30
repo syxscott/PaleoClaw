@@ -316,7 +316,7 @@ describe("state migrations", () => {
       agents: { entries: { main: { workspace: workspaceDir } } },
     };
     const sourcePath = path.join(workspaceDir, "paleoclaw-workspace-state.json");
-    const completedAt = "2026-07-15T10:01:00.000Z";
+    const completedAt = "2026-07-15T10:01:00Z";
     await fs.mkdir(path.dirname(sourcePath), { recursive: true });
     await fs.writeFile(sourcePath, JSON.stringify({ version: 1, setupCompletedAt: completedAt }));
     const assertReady = () =>
@@ -1340,7 +1340,7 @@ describe("state migrations", () => {
     } as OpenClawConfig;
     const event = {
       type: "memory.recall.recorded",
-      timestamp: "2026-07-01T00:00:00.000Z",
+      timestamp: "2026-07-01T00:00:00Z",
       query: "retained before upgrade",
       resultCount: 0,
       results: [],

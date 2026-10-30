@@ -214,7 +214,7 @@ describe("shared durable delivery recovery coordinator", () => {
   it("defers expired recovery without claiming or reloading a pending entry", async () => {
     vi.useFakeTimers();
     try {
-      vi.setSystemTime(new Date("2026-04-23T00:00:00.000Z"));
+      vi.setSystemTime(new Date("2026-04-23T00:00:00Z"));
       const coordinator = createDeliveryRecoveryCoordinator<RecoveryTestEntry>();
       const entry = createEntry("deadline", Date.now());
       const loadEntry = vi.fn(async () => entry);
@@ -259,7 +259,7 @@ describe("shared durable delivery recovery coordinator", () => {
   it("normalizes recovery deadlines without widening negative or invalid budgets", () => {
     vi.useFakeTimers();
     try {
-      vi.setSystemTime(new Date("2026-04-23T00:00:00.000Z"));
+      vi.setSystemTime(new Date("2026-04-23T00:00:00Z"));
       const now = Date.now();
       expect(resolveDeliveryRecoveryDeadlineMs(-1)).toBe(now);
       expect(resolveDeliveryRecoveryDeadlineMs(5_000.9)).toBe(now + 5_000);

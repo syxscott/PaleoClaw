@@ -66,7 +66,7 @@ it("keeps unrelated legacy content and planner maintenance outside a version mig
     data: { messagesSnapshot: [{ role: "user", MediaPath: "/media/retained.png" }] },
   });
   const archive = Buffer.from(`${event}\n`);
-  const archiveName = "retained.jsonl.deleted.2026-07-24T01-02-03.000Z";
+  const archiveName = "retained.jsonl.deleted.2026-07-24T01-02-03Z";
   const archivePath = path.join(
     resolveSqliteTranscriptArchiveDirectory({ agentId: "main", path: pathname }),
     archiveName,

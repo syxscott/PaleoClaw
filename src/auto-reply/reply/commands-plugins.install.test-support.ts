@@ -19,7 +19,7 @@ export function clawHubInstallResult(pluginId: string, clawhubPackage: string, o
         ? {
             clawhubChannel: "official",
             integrity: "sha512-demo",
-            resolvedAt: "2026-03-22T12:00:00.000Z",
+            resolvedAt: "2026-03-22T12:00:00Z",
           }
         : {}),
     },

@@ -1,7 +1,7 @@
 // Register shared mocks before importing the production CLI graph.
 import "./update-repair.test-support.js";
 import assert from "node:assert/strict";
-import { spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -115,7 +115,6 @@ function createCrashFixture(root: string) {
       fs.writeFileSync(
         script,
         `
-import { spawn } from "node:child_process";
 import fs from "node:fs";
 import { createRequire } from "node:module";
 createRequire(import.meta.url)(${JSON.stringify(path.join(privateTmp, "private-handoff-guard.cjs"))});

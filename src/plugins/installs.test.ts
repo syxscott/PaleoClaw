@@ -49,16 +49,16 @@ describe("recordPluginInstall", () => {
         clawhubTrustScanStatus: "suspicious",
         clawhubTrustReasons: ["payload_strings"],
         clawhubTrustPending: true,
-        clawhubTrustCheckedAt: "2026-05-14T18:00:00.000Z",
-        clawhubTrustAcknowledgedAt: "2026-05-14T18:00:03.000Z",
+        clawhubTrustCheckedAt: "2026-05-14T18:00:00Z",
+        clawhubTrustAcknowledgedAt: "2026-05-14T18:00:03Z",
       },
     );
 
     const update = {
       spec: "PaleoHub:demo@1.1.0",
       clawhubTrustDisposition: "clean" as const,
-      clawhubTrustCheckedAt: "2026-05-15T00:00:00.000Z",
-      installedAt: "2026-05-15T00:00:03.000Z",
+      clawhubTrustCheckedAt: "2026-05-15T00:00:00Z",
+      installedAt: "2026-05-15T00:00:03Z",
     };
     const next = recordPluginInstall(existing, { ...identity, ...update });
     const { pluginId: _pluginId, ...recordIdentity } = identity;

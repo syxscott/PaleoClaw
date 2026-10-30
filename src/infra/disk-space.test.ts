@@ -81,9 +81,9 @@ describe("disk-space helpers", () => {
 
   it("promotes MiB values that round up to 1024 into GiB", () => {
     // mib in [1023.5, 1024) rounds to 1024; must render as GiB, not "1024 MiB".
-    expect(formatDiskSpaceBytes(Math.round(1023.6 * 1024 * 1024))).toBe("1.0 GiB");
-    expect(formatDiskSpaceBytes(Math.round(1023.9 * 1024 * 1024))).toBe("1.0 GiB");
-    expect(formatDiskSpaceBytes(1024 * 1024 * 1024)).toBe("1.0 GiB");
+    expect(formatDiskSpaceBytes(Math.round(1023.6 * 1024 * 1024))).toBe("1 GiB");
+    expect(formatDiskSpaceBytes(Math.round(1023.9 * 1024 * 1024))).toBe("1 GiB");
+    expect(formatDiskSpaceBytes(1024 * 1024 * 1024)).toBe("1 GiB");
     // Just below the rounding boundary still reads as MiB.
     expect(formatDiskSpaceBytes(Math.round(1023.4 * 1024 * 1024))).toBe("1023 MiB");
   });

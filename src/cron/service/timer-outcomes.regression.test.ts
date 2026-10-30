@@ -19,7 +19,7 @@ import { applyJobResult } from "./timer-outcomes.js";
 import { onTimer, runMissedJobs } from "./timer.test-support.js";
 
 const timerRegressionFixtures = setupCronRegressionFixtures({ prefix: "cron-outcomes-" });
-const startedAt = Date.parse("2026-10-05T00:00:00.000Z");
+const startedAt = Date.parse("2026-10-05T00:00:00Z");
 
 function outcomeFixture(
   runAt: number,
@@ -104,7 +104,7 @@ it.each([0, 9, 10])("preserves %i failures after recurring-run cancellation", (p
 });
 
 it("preserves every cadence after a transient recurring retry succeeds", () => {
-  const scheduledAt = Date.parse("2026-05-29T02:28:00.000Z");
+  const scheduledAt = Date.parse("2026-05-29T02:28:00Z");
   const everyTwelveHoursMs = 12 * 60 * 60 * 1_000;
   const retryStartedAt = scheduledAt + 1_001;
 
@@ -121,7 +121,7 @@ it.each(["timer maintenance", "startup catch-up"] as const)(
   "persists schedule auto-disable before notifying during %s",
   async (path) => {
     const store = timerRegressionFixtures.makeStorePath();
-    const now = Date.parse("2026-08-01T11:00:00.000Z");
+    const now = Date.parse("2026-08-01T11:00:00Z");
     const malformed = createIsolatedRegressionJob({
       id: `malformed-${path}`,
       name: `malformed ${path}`,
@@ -313,10 +313,10 @@ it.each([
 });
 
 it.each([
-  { status: "ok", throws: true, at: "2026-03-02T12:00:00.000Z", durationMs: 50 },
-  { status: "error", throws: true, at: "2026-03-02T12:05:00.000Z", durationMs: 25 },
-  { status: "ok", throws: false, at: "2026-04-13T15:40:00.000Z", durationMs: 50 },
-  { status: "error", throws: false, at: "2026-04-13T15:45:00.000Z", durationMs: 25 },
+  { status: "ok", throws: true, at: "2026-03-02T12:00:00Z", durationMs: 50 },
+  { status: "error", throws: true, at: "2026-03-02T12:05:00Z", durationMs: 25 },
+  { status: "ok", throws: false, at: "2026-04-13T15:40:00Z", durationMs: 50 },
+  { status: "error", throws: false, at: "2026-04-13T15:45:00Z", durationMs: 25 },
 ] as const)(
   "retains $status without inventing a next slot (schedule throws: $throws; #30905, #66019)",
   ({ status, throws, at, durationMs }) => {

@@ -368,7 +368,7 @@ function writeToolPluginScaffold(params: { rootDir: string; id: string; name: st
   const idLiteral = JSON.stringify(params.id);
   const description = `Add ${params.name} tools to OpenClaw.`;
   const indexSource = `import { Type } from "typebox";
-import { defineToolPlugin } from "paleoclaw/plugin-sdk/tool-plugin";
+import { defineToolPlugin, getToolPluginMetadata } from "paleoclaw/plugin-sdk/tool-plugin";
 
 export default defineToolPlugin({
   id: ${idLiteral},
@@ -388,7 +388,6 @@ export default defineToolPlugin({
 `;
   const testSource = `import { describe, expect, it } from "vitest";
 import entry from "./index.js";
-import { getToolPluginMetadata } from "paleoclaw/plugin-sdk/tool-plugin";
 
 describe(${idLiteral}, () => {
   it("declares tool metadata", () => {

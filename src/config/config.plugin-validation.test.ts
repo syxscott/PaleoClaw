@@ -748,7 +748,7 @@ describe("config plugin validation", () => {
       "missing-sms": {
         source: "npm",
         spec: "missing-sms@1.0.0",
-        installedAt: "2026-04-12T00:00:00.000Z",
+        installedAt: "2026-04-12T00:00:00Z",
       },
     });
     clearLoadInstalledPluginIndexInstallRecordsCache();

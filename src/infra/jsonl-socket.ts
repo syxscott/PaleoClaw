@@ -36,7 +36,7 @@ export async function requestJsonlSocket<T>(params: JsonlSocketRequest<T>): Prom
 
     const cleanup = () => {
       if (settled) {
-        return false;
+        false;
       }
       settled = true;
       clearNodeTimeout(timer);

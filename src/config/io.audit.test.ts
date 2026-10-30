@@ -47,7 +47,7 @@ function createAuditRecordBase(
     gatewayModeBefore: "local",
     gatewayModeAfter: "local",
     suspicious: [],
-    now: "2026-04-07T08:00:00.000Z",
+    now: "2026-04-07T08:00:00Z",
     processInfo: argv ? { pid: 101, ppid: 99, cwd: "/work", argv, execArgv: [] } : undefined,
     ...overrides,
   });
@@ -85,7 +85,7 @@ beforeAll(async () => {
 
 it("sanitizes external records without adding write-process fields", () => {
   const record = sanitizeConfigAuditRecord({
-    ts: "2026-07-18T00:00:00.000Z",
+    ts: "2026-07-18T00:00:00Z",
     source: "config-io",
     event: "config.external",
     detectedBy: "watch",
@@ -123,7 +123,7 @@ it("drains queued observations without main-thread SQL and reads the newest audi
   const first = createRenameAuditRecord(home);
   const second = {
     ...first,
-    ts: "2026-04-07T08:01:00.000Z",
+    ts: "2026-04-07T08:01:00Z",
     previousHash: first.nextHash,
     nextHash: "newest-hash",
   };

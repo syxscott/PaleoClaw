@@ -402,7 +402,7 @@ describe("commitConfigWithPendingPluginInstalls", () => {
       await markRetainedManagedNpmInstall({
         packageDir: installPath,
         pluginId: index === 0 ? "codex" : "voice-call",
-        retainedAt: "2026-04-25T00:00:00.000Z",
+        retainedAt: "2026-04-25T00:00:00Z",
         reason: "test-retained-generation",
       });
     }
@@ -443,7 +443,7 @@ describe("commitConfigWithPendingPluginInstalls", () => {
     await markRetainedManagedNpmInstall({
       packageDir: installPath,
       pluginId: "codex",
-      retainedAt: "2026-04-25T00:00:00.000Z",
+      retainedAt: "2026-04-25T00:00:00Z",
       reason: "test-successor-owned-marker",
     });
     mocks.restoreIndex.mockResolvedValueOnce(false);

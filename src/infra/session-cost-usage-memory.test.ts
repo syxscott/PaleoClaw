@@ -118,7 +118,7 @@ async function fixture(
     const appendInput: Extract<SessionActorAppend, { kind: "metadata" }>["input"] = {
       scope,
       message,
-      event: { type: "message", id, parentId: null, timestamp: "2026-10-01T12:00:00.000Z" },
+      event: { type: "message", id, parentId: null, timestamp: "2026-10-01T12:00:00Z" },
       options: { appendIntent: "active-branch" },
     };
     expect(

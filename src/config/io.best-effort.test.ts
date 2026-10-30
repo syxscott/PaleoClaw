@@ -64,7 +64,7 @@ it("preserves Windows case-insensitive env lookup in isolated reads", async () =
 it("does not restore suspicious direct edits from .bak during ordinary reads", async () => {
   await withTempHomeConfig(
     {
-      meta: { lastTouchedAt: "2026-04-22T00:00:00.000Z" },
+      meta: { lastTouchedAt: "2026-04-22T00:00:00Z" },
       update: { channel: "beta" },
       gateway: { mode: "local" },
     },

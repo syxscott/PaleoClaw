@@ -18,7 +18,7 @@ it("disables persisted main jobs with empty systemEvent text after skipping them
       cronEnabled: true,
     },
     async ({ cron, state, enqueueSystemEvent, requestHeartbeat }) => {
-      const atMs = Date.parse("2025-12-13T00:00:01.000Z");
+      const atMs = Date.parse("2025-12-13T00:00:01Z");
       await cron.add({
         name: "empty event",
         enabled: true,

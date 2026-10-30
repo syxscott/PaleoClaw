@@ -1019,7 +1019,7 @@ describe("config observe recovery", () => {
       raw,
       parsed: snapshotA.parsed,
       stat: fs.statSync(first.configPath),
-      observedAt: "2000-01-01T00:00:00.000Z",
+      observedAt: "2000-01-01T00:00:00Z",
     });
     patchConfigHealthEntryToStore(options, first.configPath, { lastPromotedGood: old });
     patchConfigHealthEntryToStore(options, secondPath, {

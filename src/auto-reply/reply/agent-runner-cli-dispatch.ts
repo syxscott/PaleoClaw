@@ -19,8 +19,7 @@ import {
 import { isAgentRunRestartAbortReason } from "../../agents/run-termination.js";
 import { inferToolMetaFromArgsCore, isCommandBearingToolCall } from "../../agents/tool-display.js";
 import { normalizeAgentPlanSteps } from "../../channels/streaming.js";
-import type { AgentEventPayload } from "../../infra/agent-events.js";
-import { emitAgentEvent, withAgentRunLifecycleGeneration } from "../../infra/agent-events.js";
+import { type AgentEventPayload, emitAgentEvent, withAgentRunLifecycleGeneration } from "../../infra/agent-events.js";
 import { isAgentPlanProgressToolName } from "../../session-cards/progress-card-input.js";
 import { FAST_MODE_AUTO_PROGRESS_KIND } from "../reply-payload.js";
 import { formatToolAggregate } from "../tool-meta.js";

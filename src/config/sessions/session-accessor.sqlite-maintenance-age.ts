@@ -1,5 +1,4 @@
-import type { EngineConnection } from "../../infra/sql-connection.js";
-import { sqlPublicationAnchor } from "../../infra/sql-connection.js";
+import { type EngineConnection, sqlPublicationAnchor } from "../../infra/sql-connection.js";
 import {
   deferSqlitePostCommitPublication,
   stageSqliteTransactionState,

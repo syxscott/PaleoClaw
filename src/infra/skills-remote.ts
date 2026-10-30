@@ -1,5 +1,4 @@
-import type { SkillEligibilityContext, SkillEntry } from "../agents/skills.js";
-import { loadWorkspaceSkillEntries } from "../agents/skills.js";
+import { SkillEligibilityContext, SkillEntry, loadWorkspaceSkillEntries } from "../agents/skills.js";
 import { bumpSkillsSnapshotVersion } from "../agents/skills/refresh.js";
 import { listAgentWorkspaceDirs } from "../agents/workspace-dirs.js";
 import type { OpenClawConfig } from "../config/config.js";
@@ -75,10 +74,10 @@ function logRemoteBinProbeFailure(nodeId: string, err: unknown) {
 }
 
 function isMacPlatform(platform?: string, deviceFamily?: string): boolean {
-  const platformNorm = String(platform ?? "")
+  const platformNorm = platform ?? ""
     .trim()
     .toLowerCase();
-  const familyNorm = String(deviceFamily ?? "")
+  const familyNorm = deviceFamily ?? ""
     .trim()
     .toLowerCase();
   if (platformNorm.includes("mac")) {

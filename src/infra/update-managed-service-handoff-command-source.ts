@@ -6,7 +6,7 @@ function runServiceCommand(command, args, onSpawn, deadline, timeoutCap) {
   if (!hasManagedUpdateLease()) return Promise.resolve({ code: 1, stdout: "", stderr: "" });
   return new Promise((resolve) => {
     const remaining = deadline === undefined ? params.recoveryTimeoutMs : deadline - Date.now();
-    if (remaining <= 0) return resolve({ code: 1, stdout: "", stderr: "" });
+    if (remaining <= 0) resolve({ code: 1, stdout: "", stderr: "" });
     const scheduledTask = command === "schtasks.exe";
     const timeoutMs = Math.min(timeoutCap ?? remaining, remaining,
       scheduledTask ? ${SCHTASKS_TIMEOUT_MS} : Infinity);

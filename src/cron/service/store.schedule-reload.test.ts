@@ -12,7 +12,7 @@ import { ensureLoaded } from "./store.js";
 
 const { logger, makeStorePath } = setupCronServiceSuite({ prefix: "cron-store-schedule-reload" });
 
-const STORE_TEST_NOW = Date.parse("2026-03-23T12:00:00.000Z");
+const STORE_TEST_NOW = Date.parse("2026-03-23T12:00:00Z");
 
 async function writeSingleJobStore(storePath: string, job: CronJob) {
   await saveCronStore(storePath, { version: 1, jobs: [job] });
@@ -66,7 +66,7 @@ it.each<ReloadCase>([
   {
     name: "cron expression",
     patch: { schedule: { kind: "cron", expr: "30 6 * * 0,6", tz: "UTC" } },
-    nextRunAtMs: Date.parse("2026-03-28T06:30:00.000Z"),
+    nextRunAtMs: Date.parse("2026-03-28T06:30:00Z"),
   },
   {
     name: "pacing",
@@ -75,7 +75,7 @@ it.each<ReloadCase>([
       state: { nextRunAtMs: staleNextRunAtMs, pacedNextRunAtMs: staleNextRunAtMs },
     },
     patch: { pacing: { max: "2h" } },
-    nextRunAtMs: Date.parse("2026-03-24T06:00:00.000Z"),
+    nextRunAtMs: Date.parse("2026-03-24T06:00:00Z"),
   },
   {
     name: "every anchor",
@@ -86,11 +86,11 @@ it.each<ReloadCase>([
   {
     name: "one-shot target",
     initial: {
-      schedule: { kind: "at", at: "2026-03-23T13:00:00.000Z" },
+      schedule: { kind: "at", at: "2026-03-23T13:00:00Z" },
       state: { nextRunAtMs: staleNextRunAtMs, forcePreservedNextRunAtMs: staleNextRunAtMs },
     },
-    patch: { schedule: { kind: "at", at: "2026-03-23T14:00:00.000Z" } },
-    nextRunAtMs: Date.parse("2026-03-23T14:00:00.000Z"),
+    patch: { schedule: { kind: "at", at: "2026-03-23T14:00:00Z" } },
+    nextRunAtMs: Date.parse("2026-03-23T14:00:00Z"),
   },
 ])(
   "commits $name with its matching next-run identity before another view reloads",

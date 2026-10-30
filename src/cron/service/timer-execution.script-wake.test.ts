@@ -50,7 +50,7 @@ describe("cron script immediate wake", () => {
     "honors a $name when recurring heartbeat cadence is disabled",
     async ({ sessionTarget, expectedText, contextKey, wake, immediate, ...result }) => {
       vi.useFakeTimers();
-      const now = Date.parse("2026-08-24T12:00:00.000Z");
+      const now = Date.parse("2026-08-24T12:00:00Z");
       vi.setSystemTime(now);
       const cfg: OpenClawConfig = {
         agents: {

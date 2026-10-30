@@ -54,11 +54,11 @@ export function useSessionMessageCutFixtures() {
   }) {
     const scope = { agentId, ...params };
     await upsertSessionEntryCore(scope, { sessionId: params.sessionId, updatedAt: Date.now() });
-    await appendTranscriptEvent(scope, sessionHeader(params.sessionId, "2026-07-18T01:00:00.000Z"));
+    await appendTranscriptEvent(scope, sessionHeader(params.sessionId, "2026-07-18T01:00:00Z"));
     await appendTranscriptMessage(scope, {
       eventId: `${params.sessionId}-user`,
       message: { role: "user", content: params.headline },
-      now: Date.parse("2026-07-18T01:00:01.000Z"),
+      now: Date.parse("2026-07-18T01:00:01Z"),
       parentId: null,
     });
     return scope;
@@ -100,7 +100,7 @@ export function useSessionMessageCutFixtures() {
       updatedAt: Date.now(),
     };
     await upsertSessionEntryCore(scope, entry);
-    const startedAt = Date.parse("2026-07-18T00:00:00.000Z");
+    const startedAt = Date.parse("2026-07-18T00:00:00Z");
     await appendTranscriptEvent(scope, sessionHeader(sessionId, new Date(startedAt).toISOString()));
     const messages = [
       message("user-1", null, { role: "user", content: "first prompt" }),

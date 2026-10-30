@@ -177,7 +177,7 @@ it(
       },
     };
     writeJson(configPath, invalidConfig);
-    writeJson(workspaceSource, { version: 1, setupCompletedAt: "2026-08-01T00:00:00.000Z" });
+    writeJson(workspaceSource, { version: 1, setupCompletedAt: "2026-08-01T00:00:00Z" });
     writeJson(tuiSource, { global: { sessionKey: "agent:main:main", updatedAt: 1 } });
     writeJson(agentSource, {});
     const sources = [configPath, workspaceSource, tuiSource, agentSource];

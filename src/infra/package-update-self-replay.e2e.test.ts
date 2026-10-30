@@ -2,7 +2,7 @@ import { execFile } from "node:child_process";
 import fs from "node:fs/promises";
 import { createRequire } from "node:module";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { promisify } from "node:util";
 import { build } from "esbuild";
 import { afterEach, expect, it } from "vitest";
@@ -47,7 +47,6 @@ const runner = `
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { pathToFileURL, fileURLToPath } from 'node:url';
 const [base,scenario]=process.argv.slice(1);
 const doctorFailed=scenario==='doctor failure';
 const prefix=path.join(base,'prefix');

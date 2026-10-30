@@ -265,13 +265,13 @@ describe("routeReply", () => {
   });
 
   it.each([
-    { sameRoute: true, expectedReply: "999.000" },
+    { sameRoute: true, expectedReply: "999" },
     { sameRoute: false, expectedReply: null },
   ])(
     "selects payload reply policy only for the same destination ($sameRoute)",
     async ({ sameRoute, expectedReply }) => {
       const payload = setReplyPayloadMetadata(
-        { text: "hello", replyToId: "999.000" },
+        { text: "hello", replyToId: "999" },
         {
           replyDelivery: { chatType: sameRoute ? "channel" : "direct", replyToMode: "all" },
           replyDeliverySource: sameRoute

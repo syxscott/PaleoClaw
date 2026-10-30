@@ -1,5 +1,4 @@
-import type { Component } from "@earendil-works/pi-tui";
-import { Container, Spacer, Text } from "@earendil-works/pi-tui";
+import { type Component, Container, Spacer, Text } from "@earendil-works/pi-tui";
 import type { AgentActivityItem as AgentItemEventData } from "../../../packages/gateway-protocol/src/schema/logs-chat.js";
 import { tuiTheme as theme } from "../theme/theme.js";
 import { sanitizeRenderableText } from "../tui-formatters.js";

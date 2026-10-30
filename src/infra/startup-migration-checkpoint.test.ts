@@ -275,7 +275,7 @@ describe("startup migration lease", () => {
           },
         }),
       ).rejects.toThrow(
-        `paleoclaw startup migrations are already running for this state directory; retry after the other paleoclaw process finishes or after 1970-01-01T00:05:01.000Z. (held by pid ${process.pid})`,
+        `paleoclaw startup migrations are already running for this state directory; retry after the other paleoclaw process finishes or after 1970-01-01T00:05:01Z. (held by pid ${process.pid})`,
       );
       expect(elapsedMs).toBe(500);
       expect(hasActiveStartupMigrationLease({ env, nowMs })).toBe(true);

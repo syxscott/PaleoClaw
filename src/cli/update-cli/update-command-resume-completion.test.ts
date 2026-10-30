@@ -311,7 +311,7 @@ describe("update completion ownership", () => {
       await seedInstalledPluginIndex({ existing: canonical }, { config: localConfig });
       await state.writeConfig({
         ...localConfig,
-        ...(metadata ? { meta: { lastTouchedAt: "2026-07-02T00:00:00.000Z" } } : {}),
+        ...(metadata ? { meta: { lastTouchedAt: "2026-07-02T00:00:00Z" } } : {}),
         agents: { list: [{ id: "main" }] },
       });
       const original = await readConfig();

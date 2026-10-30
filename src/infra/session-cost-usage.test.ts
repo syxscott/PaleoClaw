@@ -225,7 +225,7 @@ describe("session cost usage", () => {
       });
     await writeEntries(
       sessionFile,
-      [assistantEntry(undefined, 1_000), assistantEntry("2026-02-05T12:00:00.000Z", 20)],
+      [assistantEntry(undefined, 1_000), assistantEntry("2026-02-05T12:00:00Z", 20)],
       true,
     );
 
@@ -252,12 +252,12 @@ describe("session cost usage", () => {
         "obsolete with append",
         async () => {
           await writeLegacyRollup();
-          await appendUsage("2026-02-05T13:00:00.000Z");
+          await appendUsage("2026-02-05T13:00:00Z");
         },
         25,
         4,
       ],
-      ["current append", () => appendUsage("2026-02-05T14:00:00.000Z"), 30, 6],
+      ["current append", () => appendUsage("2026-02-05T14:00:00Z"), 30, 6],
     ] as const) {
       await prepare();
       await refreshSessionCostUsageForTest(sessionFile);
@@ -297,7 +297,7 @@ describe("session cost usage", () => {
   it("buckets daily totals with the request timezone offset", async () => {
     await writeTranscript(
       "sess-offset",
-      assistant("2026-02-12T00:30:00.000Z", billed(10, 5, 15, 0.00001)),
+      assistant("2026-02-12T00:30:00Z", billed(10, 5, 15, 0.00001)),
     );
 
     const summary = await readAggregate({
@@ -366,7 +366,7 @@ describe("session cost usage", () => {
   it("preserves rollups and aborts when the transcript directory cannot be read", async () => {
     await writeTranscript(
       "sess-readdir-error",
-      assistant("2026-02-05T12:00:00.000Z", billed(4, 6, 10, 0.01)),
+      assistant("2026-02-05T12:00:00Z", billed(4, 6, 10, 0.01)),
     );
 
     await readAggregate();
@@ -386,16 +386,16 @@ describe("session cost usage", () => {
   it("refreshes the requested range before background aggregate catch-up", async () => {
     const oldSessionFile = await writeTranscript(
       "sess-cache-cold-sync-old",
-      assistant("2026-02-05T12:00:00.000Z", billed(100, 100, 200, 0.2)),
+      assistant("2026-02-05T12:00:00Z", billed(100, 100, 200, 0.2)),
     );
     await writeTranscript(
       "sess-cache-cold-sync-current",
-      assistant("2026-02-05T12:00:00.000Z", billed(10, 20, 30, 0.03)),
+      assistant("2026-02-05T12:00:00Z", billed(10, 20, 30, 0.03)),
     );
     await fs.utimes(
       oldSessionFile,
-      new Date("2025-12-05T12:00:00.000Z"),
-      new Date("2025-12-05T12:00:00.000Z"),
+      new Date("2025-12-05T12:00:00Z"),
+      new Date("2025-12-05T12:00:00Z"),
     );
 
     await refreshCostUsageCacheForAgent({
@@ -422,7 +422,7 @@ describe("session cost usage", () => {
   it("waits for a busy refresh before loading a direct session summary", async () => {
     const sessionFile = await writeTranscript(
       "cost-session-busy-refresh",
-      assistant("2026-02-01T10:00:00.000Z", billed(7, 5, 12, 0.012)),
+      assistant("2026-02-01T10:00:00Z", billed(7, 5, 12, 0.012)),
       root,
     );
 
@@ -441,8 +441,8 @@ describe("session cost usage", () => {
 
   it("captures message counts, tool usage, and model usage", async () => {
     const sessionFile = await writeMessages(
-      user("2026-02-01T10:00:00.000Z", "Hello"),
-      assistant("2026-02-01T10:05:00.000Z", billed(12, 18, 30, 0.02), {
+      user("2026-02-01T10:00:00Z", "Hello"),
+      assistant("2026-02-01T10:05:00Z", billed(12, 18, 30, 0.02), {
         provider: "openai",
         model: "gpt-5.4",
         stopReason: "error",
@@ -482,7 +482,7 @@ describe("session cost usage", () => {
   it("counts standalone tool-result messages without inflating message or tool-call totals", async () => {
     const sessionFile = await writeTranscript(
       "cost-session-tool-result",
-      transcriptEntry("2026-02-01T10:00:00.000Z", {
+      transcriptEntry("2026-02-01T10:00:00Z", {
         role: "toolResult",
         toolCallId: "call-1",
         toolName: "read",
@@ -531,11 +531,11 @@ describe("session cost usage", () => {
 
   it("resolves the newest archive in the candidate session directory", async () => {
     for (const [suffix, text, tokens] of [
-      ["reset.2026-02-12T11-00-00.000Z", "older reset archive", 10],
-      ["deleted.2026-02-12T12-00-00.000Z", "newer deleted archive", 20],
+      ["reset.2026-02-12T11-00-00Z", "older reset archive", 10],
+      ["deleted.2026-02-12T12-00-00Z", "newer deleted archive", 20],
     ] as const) {
       await writeEntries(path.join(root, `sess-mixed.jsonl.${suffix}`), [
-        assistant("2026-02-12T12:00:00.000Z", billed(tokens, 0, tokens, tokens / 1000), {
+        assistant("2026-02-12T12:00:00Z", billed(tokens, 0, tokens, tokens / 1000), {
           content: text,
         }),
       ]);
@@ -555,7 +555,7 @@ describe("session cost usage", () => {
   it("strips inbound and untrusted metadata blocks from session usage logs", async () => {
     const sessionFile = await writeMessages(
       user(
-        "2026-02-21T17:47:00.000Z",
+        "2026-02-21T17:47:00Z",
         [
           "    [message_id: literal]",
           markInboundContextLabel("Conversation info:"),
@@ -587,7 +587,7 @@ describe("session cost usage", () => {
 
   it("does not split surrogate pairs when truncating session log content", async () => {
     const sessionFile = await writeMessages(
-      transcriptEntry("2026-02-21T17:47:00.000Z", {
+      transcriptEntry("2026-02-21T17:47:00Z", {
         role: "assistant",
         content: "x".repeat(1999) + "🚀tail",
       }),
@@ -601,9 +601,9 @@ describe("session cost usage", () => {
       transcriptEntry("bad", {
         role: "assistant",
         content: "nested timestamp entry",
-        timestamp: Date.parse("2026-02-21T17:46:00.000Z"),
+        timestamp: Date.parse("2026-02-21T17:46:00Z"),
       }),
-      transcriptEntry("2026-02-21T17:47:00.000Z", {
+      transcriptEntry("2026-02-21T17:47:00Z", {
         role: "assistant",
         content: "valid timestamp entry",
       }),
@@ -611,15 +611,15 @@ describe("session cost usage", () => {
     const logs = await readLogs(sessionFile);
     expect(logs?.map((log) => log.timestamp)).toEqual([
       0,
-      Date.parse("2026-02-21T17:46:00.000Z"),
-      Date.parse("2026-02-21T17:47:00.000Z"),
+      Date.parse("2026-02-21T17:46:00Z"),
+      Date.parse("2026-02-21T17:47:00Z"),
     ]);
   });
 
   it("aggregates exact UTC quarter-hour usage across midnight", async () => {
     const entries = [
       [
-        "2026-03-15T06:30:00.000Z",
+        "2026-03-15T06:30:00Z",
         {
           ...billed(5, 7, 25, 0.025),
           cache_read: 3,
@@ -627,7 +627,7 @@ describe("session cost usage", () => {
         },
       ],
       [
-        "2026-03-15T06:35:00.000Z",
+        "2026-03-15T06:35:00Z",
         {
           input: 1,
           output: 2,
@@ -636,8 +636,8 @@ describe("session cost usage", () => {
           cost: { total: 0.01 },
         },
       ],
-      ["2026-03-15T23:59:00.000Z", billed(2, 3, 9, 0.009)],
-      ["2026-03-16T00:00:00.000Z", billed(4, 5, 11, 0.011)],
+      ["2026-03-15T23:59:00Z", billed(2, 3, 9, 0.009)],
+      ["2026-03-16T00:00:00Z", billed(4, 5, 11, 0.011)],
     ] as const;
     const sessionFile = await writeMessages(
       ...entries.map(([timestamp, usage]) =>
@@ -739,10 +739,10 @@ describe("session cost usage", () => {
     const sessionFile = await writeMessages(
       ...(
         [
-          ["2026-02-12T10:03:00.000Z", "third"],
-          ["2026-02-12T10:01:00.000Z", "first"],
-          ["2026-02-12T10:04:00.000Z", "fourth"],
-          ["2026-02-12T10:02:00.000Z", "second"],
+          ["2026-02-12T10:03:00Z", "third"],
+          ["2026-02-12T10:01:00Z", "first"],
+          ["2026-02-12T10:04:00Z", "fourth"],
+          ["2026-02-12T10:02:00Z", "second"],
         ] as const
       ).map(([timestamp, content]) => user(timestamp, content)),
     );

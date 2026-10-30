@@ -15,8 +15,7 @@ import { createUpdatePreflightFailure } from "../../infra/update-preflight-detai
 import { hasCommandProcessCleanupError } from "../../process/exec-result.js";
 import { parseOpenClawSchemaVersions } from "../../state/paleoclaw-schema-versions.js";
 import { createUpdateProgress } from "./progress.js";
-import type { InitializedUpdate } from "./update-command-initialization.js";
-import { withUpdateInitializationCleanup } from "./update-command-initialization.js";
+import { type InitializedUpdate, withUpdateInitializationCleanup } from "./update-command-initialization.js";
 import { stagePackageInstallUpdate } from "./update-command-package.js";
 
 type StageParams = Parameters<typeof stagePackageInstallUpdate>[0];

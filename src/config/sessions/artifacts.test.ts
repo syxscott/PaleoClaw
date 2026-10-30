@@ -9,7 +9,7 @@ import {
   parseSessionArchiveTimestamp,
 } from "./artifacts.js";
 
-const stamp = "2026-01-01T00-00-00.000Z";
+const stamp = "2026-01-01T00-00-00Z";
 const deleted = `abc.jsonl.deleted.${stamp}`;
 const reset = `abc.jsonl.reset.${stamp}`;
 const backup = `abc.jsonl.bak.${stamp}`;
@@ -82,9 +82,9 @@ it("parses usage-counted session ids from file names", () => {
 });
 
 it("formats and parses archive timestamps", () => {
-  const now = Date.parse("2026-02-23T12:34:56.000Z");
+  const now = Date.parse("2026-02-23T12:34:56Z");
   const formatted = formatSessionArchiveTimestamp(now);
-  expect(formatted).toBe("2026-02-23T12-34-56.000Z");
+  expect(formatted).toBe("2026-02-23T12-34-56Z");
   const file = `abc.jsonl.deleted.${formatted}`;
   expect(parseSessionArchiveTimestamp(file, "deleted")).toBe(now);
   expect(parseSessionArchiveTimestamp(`${file}.${generation}`, "deleted")).toBe(now);

@@ -141,8 +141,8 @@ function splitSentences(text: string): string[] {
 
 function summaryHandler(params: Record<string, unknown>): unknown {
   const typed = params as SummaryParams;
-  const title = String(typed.title || "").trim();
-  const abstract = String(typed.abstract || "").trim();
+  const title = typed.title || "".trim();
+  const abstract = typed.abstract || "".trim();
   const parsedMax = Number(typed.maxPoints);
   const maxPoints = Math.max(1, Math.min(8, Number.isFinite(parsedMax) ? parsedMax : 4));
 

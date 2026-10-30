@@ -32,7 +32,7 @@ export function createBackupClassificationInventory(stateDir: string): BackupRes
 
 export function makeBackupResult(overrides: Partial<BackupCreateResult> = {}): BackupCreateResult {
   return {
-    createdAt: "2026-01-01T00:00:00.000Z",
+    createdAt: "2026-01-01T00:00:00Z",
     archiveRoot: "paleoclaw-backup-2026-01-01",
     archivePath: "/tmp/paleoclaw-backup.tar.gz",
     dryRun: false,

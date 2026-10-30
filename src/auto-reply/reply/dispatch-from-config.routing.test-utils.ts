@@ -118,9 +118,9 @@ describe("dispatchReplyFromConfig", () => {
       SessionKey: "agent:main:slack:direct:u123",
       AccountId: "default",
       ChatType: "direct",
-      MessageSid: "101.000",
-      ReplyToId: "101.000",
-      TransportThreadId: "101.000",
+      MessageSid: "101",
+      ReplyToId: "101",
+      TransportThreadId: "101",
       MessageThreadId: undefined,
       OriginatingChannel: "slack",
       OriginatingTo: "user:U123",
@@ -131,7 +131,7 @@ describe("dispatchReplyFromConfig", () => {
     await dispatchReplyFromConfig({ ctx, cfg, dispatcher, replyResolver });
 
     const routeCall = firstRouteReplyCall();
-    expect(routeCall?.threadId).toBe("101.000");
+    expect(routeCall?.threadId).toBe("101");
   });
 
   it("does not resurrect a cleared route thread from origin metadata", async () => {

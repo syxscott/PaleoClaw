@@ -1,6 +1,4 @@
-import type { NpmProjectInstallEnvOptions } from "./npm-install-env.js";
-import { createNpmProjectInstallEnv, findExplicitNpmConfigKeys } from "./npm-install-env.js";
-
+import { type NpmProjectInstallEnvOptions, createNpmProjectInstallEnv, findExplicitNpmConfigKeys } from "./npm-install-env.js";
 type SafeNpmInstallEnvOptions = NpmProjectInstallEnvOptions & {
   ignoreWorkspaces?: boolean;
   legacyPeerDeps?: boolean;

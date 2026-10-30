@@ -310,10 +310,10 @@ it("reads legacy handoff bytes, duplicate IDs, timestamps and owner without norm
   await withOpenClawTestState({ label: "import-exact" }, async (state) => {
     const params = target(state, "exact");
     const owner = { actor: { type: "human" as const, id: "owner" }, assignedAt: 40 };
-    const firstMessage = { ...message, timestamp: "2026-08-30T00:00:01.000Z" };
+    const firstMessage = { ...message, timestamp: "2026-08-30T00:00:01Z" };
     const canonicalMessage = {
       ...message,
-      timestamp: "2026-08-30T00:00:02.000Z",
+      timestamp: "2026-08-30T00:00:02Z",
       message: { role: "user", content: "canonical duplicate" },
     };
     const events = [

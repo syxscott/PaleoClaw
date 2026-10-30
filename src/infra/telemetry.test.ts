@@ -22,7 +22,7 @@ import {
 } from "./telemetry.js";
 import { blockTelemetryPersistence } from "./telemetry.test-support.js";
 
-const NOW = Date.parse("2026-08-23T12:00:00.000Z");
+const NOW = Date.parse("2026-08-23T12:00:00Z");
 const DAY_MS = 24 * 60 * 60 * 1000;
 const TELEMETRY_URL = "https://telemetry.openclaw.ai/api/latest-version";
 const TELEMETRY_STATE_KEY = "telemetry.updateCheck";

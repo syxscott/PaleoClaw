@@ -17,7 +17,7 @@ import { saveCronStore } from "./store.js";
 import type { CronJob } from "./types.js";
 
 const { makeStorePath } = createCronStoreHarness({ prefix: "paleoclaw-cron-tight-loop-" });
-const now = Date.parse("2026-02-28T12:32:00.000Z");
+const now = Date.parse("2026-02-28T12:32:00Z");
 
 function job(nextRunAtMs?: number): CronJob {
   return {

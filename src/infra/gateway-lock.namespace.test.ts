@@ -167,7 +167,7 @@ describe("gateway lock namespaces", () => {
       [undefined, false],
       [null, false],
       [namespace, true],
-      [{ ...namespace, identity: "2026-10-01T00:00:00.0000000Z" }, true],
+      [{ ...namespace, identity: "2026-10-01T00:00:00Z" }, true],
       [{ ...namespace, host: "other-host" }, false],
       [{ ...namespace, host: "" }, false],
       [{ ...namespace, identity: "malformed" }, false],
@@ -227,7 +227,7 @@ describe("gateway lock namespaces", () => {
       platform.mockReturnValue("win32");
       boot.mockReturnValue(() => ({
         platform: "win32",
-        identity: "2026-10-17T00:00:01.0000000Z",
+        identity: "2026-10-17T00:00:01Z",
       }));
       vi.spyOn(processIdentity, "getFileLockProcessStartTime").mockReturnValue(startTime);
       vi.spyOn(processIdentity, "isPidDefinitelyDead").mockReturnValue(dead);
@@ -237,13 +237,13 @@ describe("gateway lock namespaces", () => {
       const payload = {
         pid: 2_147_483_647,
         ownerId: "previous-owner",
-        createdAt: "2026-10-17T00:00:00.000Z",
+        createdAt: "2026-10-17T00:00:00Z",
         configPath: path.join(env.OPENCLAW_STATE_DIR, "openclaw.json"),
         startTime: 123,
         processNamespace: {
           host: os.hostname(),
           platform: "win32",
-          identity: "2026-10-17T00:00:00.0000000Z",
+          identity: "2026-10-17T00:00:00Z",
         },
       };
       const record = JSON.stringify(payload);
@@ -304,7 +304,7 @@ describe("gateway lock namespaces", () => {
           platform: "linux",
           identity:
             failure === "boot method mismatch"
-              ? "2026-10-17T00:00:00.0000000Z"
+              ? "2026-10-17T00:00:00Z"
               : "01234567-89ab-cdef-0123-456789abcdef",
         };
       });

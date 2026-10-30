@@ -242,7 +242,7 @@ describe("pnpm isolated global install discovery", () => {
       writeGlobalPackageJson(sharedPackageRoot, "2026.7.1"),
       writePnpmProject(activeInstallRoot, { paleoclaw: "2026.7.1" }),
       writePnpmProject(orphanInstallRoot, { paleoclaw: "2026.7.1" }),
-      fs.writeFile(path.join(orphanInstallRoot, "pnpm-lock.yaml"), "lockfileVersion: '9.0'\n"),
+      fs.writeFile(path.join(orphanInstallRoot, "pnpm-lock.yaml"), "lockfileVersion: '9'\n"),
     ]);
     await Promise.all([
       fs.symlink(sharedPackageRoot, activePackageRoot, "dir"),
@@ -270,7 +270,7 @@ describe("pnpm isolated global install discovery", () => {
     await Promise.all([
       writeGlobalPackageJson(orphanPackageRoot, "2026.7.1"),
       writePnpmProject(orphanInstallRoot, { paleoclaw: "2026.7.1" }),
-      fs.writeFile(path.join(orphanInstallRoot, "pnpm-lock.yaml"), "lockfileVersion: '9.0'\n"),
+      fs.writeFile(path.join(orphanInstallRoot, "pnpm-lock.yaml"), "lockfileVersion: '9'\n"),
     ]);
     const detectRunner = vi
       .fn<CommandRunner>()
@@ -324,7 +324,7 @@ describe("pnpm isolated global install discovery", () => {
     await fs.mkdir(pkgRoot, { recursive: true });
     await fs.writeFile(
       path.join(customGlobalDir, "5/pnpm-lock.yaml"),
-      "lockfileVersion: '9.0'\n",
+      "lockfileVersion: '9'\n",
       "utf8",
     );
 

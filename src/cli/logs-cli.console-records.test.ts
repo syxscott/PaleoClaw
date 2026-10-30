@@ -30,7 +30,7 @@ const producerSource = `
     formatJsonConsoleLine({ level: "warn", subsystem: "gateway", message: "console warning" }),
     formatJsonConsoleLine({ level: "error", subsystem: "worker", message: "console error" }),
     JSON.stringify({
-      time: "2026-01-09T02:10:00.000Z",
+      time: "2026-01-09T02:10:00Z",
       level: "warn", subsystem: "fallback", message: "metadata control",
       _meta: { logLevelName: "INFO", name: '{"subsystem":"canonical"}' },
     }),

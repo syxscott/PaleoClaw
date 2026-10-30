@@ -432,7 +432,7 @@ function waitForUsageCostRefresh(
   state?: UsageCostRefreshState,
 ): Promise<void> {
   return new Promise((resolve) => {
-    // Zero must remain a real timer so cache reads return before refresh starts.
+    // Zero must remain a real timer so cache reads before refresh starts.
     const timer = Number.isFinite(delayMs) ? setTimeout(finish, delayMs) : undefined;
     timer?.unref?.();
     function finish() {

@@ -167,7 +167,7 @@ async function withWindowsDiagnostics(fallback: boolean, run: () => Promise<void
       } else if (script.includes("CreationDate") || script.includes(".StartTime")) {
         stdout =
           command === "wmic.exe"
-            ? "CreationDate=20260903000000.000000+000"
+            ? "CreationDate=20260903000000+000"
             : "2026-09-03T00:00:00Z";
       } else {
         stdout = command === "wmic.exe" ? `CommandLine=${commandLine}` : commandLine;

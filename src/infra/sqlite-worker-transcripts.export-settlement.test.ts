@@ -21,7 +21,7 @@ it("retains the export lease while accepted bookkeeping has an unknown settlemen
   const store = new TranscriptsStore(path.join(stateDir, "transcripts"), { env });
   const session: TranscriptSessionDescriptor = {
     sessionId: "retained-export",
-    startedAt: "2026-09-21T12:00:00.000Z",
+    startedAt: "2026-09-21T12:00:00Z",
     source: { providerId: "manual-transcript" },
   };
   await store.writeSession(session);

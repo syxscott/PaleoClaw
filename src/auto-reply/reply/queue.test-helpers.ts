@@ -2,8 +2,7 @@ import { afterAll, beforeAll, expect } from "vitest";
 import { createDeferred } from "../../../test/helpers/promise.js";
 import { defaultRuntime } from "../../runtime.js";
 import { deferSessionControllerClaimBeforeExecution } from "../../sessions/session-controller.mailbox-claim.js";
-import type { FollowupRun, QueueSettings } from "./queue.js";
-import { enqueueFollowupRun, scheduleFollowupDrain } from "./queue.js";
+import { FollowupRun, QueueSettings, enqueueFollowupRun, scheduleFollowupDrain } from "./queue.js";
 
 const slackRoute = { originatingChannel: "slack", originatingTo: "channel:A" };
 

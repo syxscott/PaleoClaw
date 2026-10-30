@@ -1,6 +1,5 @@
 import { notifyListeners, registerListener } from "../../shared/listeners.js";
-import type { ExecutionSkillWorkspace } from "../loading/workspace-skill-roots.js";
-import { normalizeWorkspaceSkillRoots } from "../loading/workspace-skill-roots.js";
+import { type ExecutionSkillWorkspace, normalizeWorkspaceSkillRoots } from "../loading/workspace-skill-roots.js";
 
 type SkillsChangeEvent = {
   workspaceDir?: string;

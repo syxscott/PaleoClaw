@@ -14,7 +14,7 @@ const noopLogger = createNoopLogger();
 const { makeStorePath } = createCronStoreHarness();
 installCronTestHooks({ logger: noopLogger });
 
-const base = Date.parse("2025-12-13T00:00:00.000Z");
+const base = Date.parse("2025-12-13T00:00:00Z");
 
 function createJob(id: string, schedule: CronJob["schedule"], nextRunAtMs?: number): CronJob {
   return {

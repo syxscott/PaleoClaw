@@ -198,7 +198,7 @@ it.each(["identity", "zstd"])(
     const archiveContent = `${JSON.stringify(archived)}\n${JSON.stringify(archivedUser)}\n`;
     const archiveEncoding = storage === "zstd" ? "zstd" : "identity";
     const archiveBytes = encodeArchiveContent(archiveContent, archiveEncoding, "fixture");
-    const archiveName = `archived-session.jsonl.deleted.2026-01-01T00-00-00.000Z.archive-gen${archiveEncoding === "zstd" ? SESSION_ARCHIVE_ZSTD_SUFFIX : ""}`;
+    const archiveName = `archived-session.jsonl.deleted.2026-01-01T00-00-00Z.archive-gen${archiveEncoding === "zstd" ? SESSION_ARCHIVE_ZSTD_SUFFIX : ""}`;
     database
       .prepare(
         `INSERT INTO session_transcript_archives(

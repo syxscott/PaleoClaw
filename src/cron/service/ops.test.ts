@@ -113,7 +113,7 @@ function insertCronJobRow(targetStorePath: string, job: CronJob) {
 describe("cron service operations", () => {
   it("removes owner-tagged legacy rows outside the active store", async () => {
     const staleStorePath = path.join(path.dirname(storePath), "legacy-copy", "jobs.json");
-    const now = Date.parse("2026-07-29T12:00:00.000Z");
+    const now = Date.parse("2026-07-29T12:00:00Z");
     const state = createOkIsolatedCronState({ storePath, now });
     const family = {
       declarationKey: "memory-core:memory-dreaming-promotion",
@@ -162,7 +162,7 @@ describe("cron service operations", () => {
     );
   });
   it("starts and lists future jobs after upgrading from a database without receipts", async () => {
-    const now = Date.parse("2026-05-20T08:30:00.000Z");
+    const now = Date.parse("2026-05-20T08:30:00Z");
     const job = createFutureEveryJob(now, "pre-receipt-upgrade");
     await writeCronStoreSnapshot({ storePath, jobs: [job] });
     openOpenClawStateDatabase().db.exec("DROP TABLE cron_run_receipts");
@@ -188,7 +188,7 @@ describe("cron service operations", () => {
   });
 
   it("leaves legacy notify fallback for doctor instead of migrating during startup", async () => {
-    const now = Date.parse("2026-05-20T09:00:00.000Z");
+    const now = Date.parse("2026-05-20T09:00:00Z");
     const legacyJob = {
       ...createFutureEveryJob(now, "legacy-notify"),
       schedule: { kind: "every", everyMs: 3_600_000, anchorMs: now },
@@ -223,7 +223,7 @@ describe("cron service operations", () => {
   it.each(["canonical", "pre-upgrade", "foreign"] as const)(
     "recovers a finalized %s task run when startup finds its stale marker",
     async (identity) => {
-      const now = Date.parse("2026-03-23T12:00:00.000Z");
+      const now = Date.parse("2026-03-23T12:00:00Z");
       const startedAt = now - 30 * 60_000 + 250;
       const endedAt = startedAt + 4_000;
 
@@ -355,7 +355,7 @@ describe("cron service operations", () => {
   );
 
   it("recovers a rescheduled delete-after-run one-shot after a finalized error", async () => {
-    const now = Date.parse("2026-03-23T12:00:00.000Z");
+    const now = Date.parse("2026-03-23T12:00:00Z");
     const startedAt = now - 30_000;
     const endedAt = startedAt + 4_000;
     const replacementAt = now - 5_000;
@@ -419,7 +419,7 @@ describe("cron service operations", () => {
   });
 
   it("keeps manual acknowledgement IDs separate from recoverable task run IDs", async () => {
-    const now = Date.parse("2026-03-23T12:00:00.000Z");
+    const now = Date.parse("2026-03-23T12:00:00Z");
 
     await withStateDirForStorePath(storePath, async () => {
       await writeCronStoreSnapshot({ storePath, jobs: [createDueIsolatedJob(now)] });
@@ -450,7 +450,7 @@ describe("cron service operations", () => {
   });
 
   it("does not reschedule a manual lifecycle conflict after execution starts", async () => {
-    const now = Date.parse("2026-03-23T12:00:00.000Z");
+    const now = Date.parse("2026-03-23T12:00:00Z");
     const job = createDueIsolatedJob(now);
     job.id = "manual-post-execution-conflict";
     job.schedule = { kind: "at", at: new Date(now - 1).toISOString() };
@@ -478,7 +478,7 @@ describe("cron service operations", () => {
   });
 
   it("repairs nextRunAtMs=0 on non-schedule edit (#63499)", async () => {
-    const now = Date.parse("2026-04-09T08:00:00.000Z");
+    const now = Date.parse("2026-04-09T08:00:00Z");
 
     const job = createFutureEveryJob(now, "broken-job", {
       createdAtMs: now - 86_400_000,
@@ -499,7 +499,7 @@ describe("cron service operations", () => {
 
   it("uses explicit lifecycle events instead of scheduled duplicates for the target job", async () => {
     const { storePath: lifecycleStorePath } = await makeStorePath();
-    const now = Date.parse("2026-06-09T00:00:00.000Z");
+    const now = Date.parse("2026-06-09T00:00:00Z");
     const events: CronEvent[] = [];
     const state = createOkIsolatedCronState({
       storePath: lifecycleStorePath,
@@ -530,7 +530,7 @@ describe("cron service operations", () => {
   });
 
   it("emits repaired sibling schedules during add before the target lifecycle event", async () => {
-    const now = Date.parse("2026-06-09T00:00:00.000Z");
+    const now = Date.parse("2026-06-09T00:00:00Z");
     const sibling = createFutureEveryJob(now, "repair-during-add");
     await writeCronStoreSnapshot({ storePath, jobs: [sibling] });
     const events: CronEvent[] = [];

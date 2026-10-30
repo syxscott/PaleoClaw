@@ -71,7 +71,7 @@ function createVisibleDispatchParams(
       OriginatingTo: "user:1",
       ChatType: "direct",
       SessionKey: sessionKey,
-      MessageThreadId: "501.000",
+      MessageThreadId: "501",
       BodyForAgent: "second telegram direct turn",
     }),
     cfg: {},
@@ -337,7 +337,7 @@ describe("dispatchReplyFromConfig visible admission recovery", () => {
           expect.objectContaining({
             channel: origin,
             to: "user:1",
-            threadId: "501.000",
+            threadId: "501",
             replyKind: "final",
           }),
         );

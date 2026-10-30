@@ -1,6 +1,5 @@
 import { BroadcastChannel } from "node:worker_threads";
-import type { EngineConnection } from "../../infra/sql-connection.js";
-import { sqlPublicationAnchor } from "../../infra/sql-connection.js";
+import { type EngineConnection, sqlPublicationAnchor } from "../../infra/sql-connection.js";
 import { deferSqlitePostCommitPublication } from "../../infra/sqlite-post-commit.js";
 import { readTrackedStateDatabaseIdentity } from "../../state/paleoclaw-state-db-handle.js";
 

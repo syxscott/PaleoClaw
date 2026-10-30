@@ -34,7 +34,7 @@ vi.mock("../infra/telemetry.js", () => ({
 vi.mock("../runtime.js", () => ({ defaultRuntime: mocks.defaultRuntime }));
 
 const config: OpenClawConfig = {
-  telemetry: { enabled: true, consentedAt: "2026-08-23T00:00:00.000Z" },
+  telemetry: { enabled: true, consentedAt: "2026-08-23T00:00:00Z" },
 };
 const endpoint = "https://telemetry.openclaw.ai/api/latest-version";
 const userAgent = "paleoclaw/2026.8.2 (darwin; node/26.0.1; arm64; gateway)";
@@ -42,7 +42,7 @@ const enabledStatus = {
   enabled: true,
   reason: "enabled" as const,
   endpoint,
-  lastPingAt: Date.parse("2026-08-22T12:00:00.000Z"),
+  lastPingAt: Date.parse("2026-08-22T12:00:00Z"),
 };
 const payload = {
   schema: 1,
@@ -95,7 +95,7 @@ describe("telemetry cli", () => {
     expect(mocks.buildTelemetryPayload).toHaveBeenCalledWith(config, { surface: "gateway" });
     expect(mocks.runtimeLogs).toContain(JSON.stringify(payload));
     expect(mocks.runtimeLogs).toContain("Feature stats: enabled");
-    expect(mocks.runtimeLogs).toContain("Last ping: 2026-08-22T12:00:00.000Z");
+    expect(mocks.runtimeLogs).toContain("Last ping: 2026-08-22T12:00:00Z");
     expect(mocks.runtimeLogs).toContain(
       "Request: POST https://telemetry.openclaw.ai/api/latest-version",
     );
@@ -136,7 +136,7 @@ describe("telemetry cli", () => {
         featureStatsEnabled: true,
         reason: "enabled",
         endpoint,
-        lastPingAt: "2026-08-22T12:00:00.000Z",
+        lastPingAt: "2026-08-22T12:00:00Z",
         request: {
           method: "POST",
           userAgent,
@@ -197,7 +197,7 @@ describe("telemetry cli", () => {
     async ({ command, enabled }) => {
       const originalConfig: OpenClawConfig = {
         update: { checkOnStart: false },
-        telemetry: { enabled: !enabled, consentedAt: "2025-01-01T00:00:00.000Z" },
+        telemetry: { enabled: !enabled, consentedAt: "2025-01-01T00:00:00Z" },
       };
       mocks.transformConfigFileWithRetry.mockImplementationOnce(
         async (options: {

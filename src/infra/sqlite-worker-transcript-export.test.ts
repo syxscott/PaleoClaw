@@ -56,7 +56,7 @@ async function seed(count: number, modified = false, missingMetadata = false) {
     sessionId: `digest-recovery-${++nextSessionId}`,
     title: "Captured title",
     source: { providerId: "manual-transcript" },
-    startedAt: "2026-05-22T10:00:00.000Z",
+    startedAt: "2026-05-22T10:00:00Z",
   };
   await store.writeSession(session);
   const utterances: Utterance[] = Array.from({ length: count }, (_, index) => ({

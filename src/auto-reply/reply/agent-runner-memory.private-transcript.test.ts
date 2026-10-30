@@ -153,7 +153,7 @@ it.each(["completed", "interrupted"] as const)(
                 return;
               }
               response.writeHead(200, { "content-type": "application/json" });
-              response.end(JSON.stringify({ jsonrpc: "2.0", id: message.id, result }));
+              response.end(JSON.stringify({ jsonrpc: "2", id: message.id, result }));
               return;
             }
             const modelRequest = JSON.parse(body) as ModelRequest;

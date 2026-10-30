@@ -35,7 +35,7 @@ function startWorker(channel: MessageChannel, source: string, budgetMs?: number)
        register();
        const { exchangeSqliteDatabaseAdmissions, withSqliteDatabaseAdmissionWait } = await import(workerData.relay);
        ${source}
-     })().catch((error) => { throw error; });`,
+     })().catch((error: unknown) => { throw error; });`,
     {
       eval: true,
       execArgv: [],

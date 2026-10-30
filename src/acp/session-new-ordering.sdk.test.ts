@@ -173,7 +173,7 @@ function createWireHarness(maxSessions = 10) {
 }
 
 function request(id: JsonRpcId, method: string, params: unknown) {
-  return { jsonrpc: "2.0", id, method, params };
+  return { jsonrpc: "2", id, method, params };
 }
 function create(id: JsonRpcId, sessionId: string) {
   return request(id, "session/new", { cwd: `/${sessionId}`, mcpServers: [] });
@@ -210,7 +210,7 @@ it.each([
   { ...create(41, "invalid"), jsonrpc: undefined },
   request(null, "session/new", { cwd: 1, mcpServers: [] }),
   ...["session/load", "session/resume"].map((method) =>
-    Object.assign(restore(41, method, "slow"), { jsonrpc: "1.0" }),
+    Object.assign(restore(41, method, "slow"), { jsonrpc: "1" }),
   ),
 ])("retires rejected session correlations for %j", async (message) => {
   const wire = createWireHarness();
@@ -231,7 +231,7 @@ it.each([
 it("does not settle a null-ID creation on an uncorrelated protocol error", async () => {
   const wire = createWireHarness();
   await wire.beginSlow(null);
-  wire.send({ ...create(41, "invalid"), jsonrpc: "1.0" });
+  wire.send({ ...create(41, "invalid"), jsonrpc: "1" });
   await wire.waitResponse(null);
   await wire.exchange(initialize(42));
   expect(wire.updateIndex("slow")).toBe(-1);

@@ -29,13 +29,13 @@ describe("Cron issue regressions", () => {
       payload: { kind: "systemEvent", text: "tick" },
     });
     const offsetMs = topOfHourOffsetMs(created.id);
-    expect(created.state.nextRunAtMs).toBe(Date.parse("2026-02-06T11:00:00.000Z") + offsetMs);
+    expect(created.state.nextRunAtMs).toBe(Date.parse("2026-02-06T11:00:00Z") + offsetMs);
 
     const updated = await cron.update(created.id, {
       schedule: { kind: "cron", expr: "0 */2 * * *", tz: "UTC" },
     });
 
-    expect(updated.state.nextRunAtMs).toBe(Date.parse("2026-02-06T12:00:00.000Z") + offsetMs);
+    expect(updated.state.nextRunAtMs).toBe(Date.parse("2026-02-06T12:00:00Z") + offsetMs);
 
     const unsafeToggle = await cron.add({
       name: "unsafe toggle",
@@ -60,7 +60,7 @@ describe("Cron issue regressions", () => {
   });
 
   it("does not advance unrelated due jobs when updating another job", async () => {
-    const now = Date.parse("2026-02-06T10:05:00.000Z");
+    const now = Date.parse("2026-02-06T10:05:00Z");
     vi.setSystemTime(now);
     const { store, cron } = await disabledCron();
 
@@ -130,7 +130,7 @@ describe("Cron issue regressions", () => {
 
   it("#13845: one-shot jobs with terminal statuses do not re-fire on restart", async () => {
     const store = cronIssueRegressionFixtures.makeStorePath();
-    const pastAt = Date.parse("2026-02-06T09:00:00.000Z");
+    const pastAt = Date.parse("2026-02-06T09:00:00Z");
     const baseJob = {
       name: "reminder",
       enabled: true,

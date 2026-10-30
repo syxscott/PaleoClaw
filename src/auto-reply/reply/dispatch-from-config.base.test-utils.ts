@@ -123,7 +123,7 @@ describe("dispatchReplyFromConfig", () => {
       storePath: "/tmp/mock-sessions.json",
       kind: "visible",
       resetTriggered: false,
-      routeThreadId: "500.000",
+      routeThreadId: "500",
     });
     if (admission.status !== "owned") {
       throw new Error("expected active Slack owner admission");
@@ -142,7 +142,7 @@ describe("dispatchReplyFromConfig", () => {
           OriginatingTo: `user:${userId}`,
           ChatType: "direct",
           SessionKey: sessionKey,
-          MessageThreadId: "501.000",
+          MessageThreadId: "501",
           ...overrides,
         }),
     };
@@ -856,7 +856,7 @@ describe("dispatchReplyFromConfig", () => {
     ): Promise<ReplyPayload | undefined> => {
       await opts?.onBlockReply?.({
         text: "partial",
-        replyToId: "999.000",
+        replyToId: "999",
         replyToTag: true,
       });
       return undefined;
@@ -951,13 +951,13 @@ describe("dispatchReplyFromConfig", () => {
       OriginatingTo: "user:U1",
       ChatType: "direct",
       SessionKey: "agent:main:slack:direct:U1",
-      MessageThreadId: "501.000",
+      MessageThreadId: "501",
     });
     const replyResolver = vi.fn(async (_ctx: MsgContext, opts?: GetReplyOptions) => {
       const operation = (
         opts as { replyOperation?: { routeThreadId?: string | number } } | undefined
       )?.replyOperation;
-      expect(operation?.routeThreadId).toBe("501.000");
+      expect(operation?.routeThreadId).toBe("501");
       return { text: "hi" } satisfies ReplyPayload;
     });
 

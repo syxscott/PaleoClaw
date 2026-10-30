@@ -575,7 +575,7 @@ describe("managed plugin capability consent", () => {
         acceptedSurface: previous,
         acceptedSurfaceHash: computeDeclaredSurfaceHash(previous),
         acceptedSurfaceIntegrity: "sha512-verified-artifact",
-        acceptedSurfaceAt: "2026-08-25T00:00:00.000Z",
+        acceptedSurfaceAt: "2026-08-25T00:00:00Z",
       }),
     );
     snapshot.byPluginId.get("community-plugin")!.providers.push("new-provider");
@@ -588,7 +588,7 @@ describe("managed plugin capability consent", () => {
     ).rejects.toMatchObject({
       capabilityConsent: {
         widened: { providers: ["new-provider"] },
-        acceptedAt: "2026-08-25T00:00:00.000Z",
+        acceptedAt: "2026-08-25T00:00:00Z",
       },
     });
   });

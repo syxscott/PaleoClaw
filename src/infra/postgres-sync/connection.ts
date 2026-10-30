@@ -17,8 +17,7 @@ import {
 } from "../database-engine/policy.js";
 import { resolveRuntimeProcessEntrypointUrl } from "../runtime-process-url.js";
 import { resolveRuntimeWorkerThreadExecArgv } from "../runtime-worker-url.js";
-import type { PostgresSqlConnection, SqlStatement } from "../sql-connection.js";
-import { sqlPublicationAnchor } from "../sql-connection.js";
+import { type PostgresSqlConnection, type SqlStatement, sqlPublicationAnchor } from "../sql-connection.js";
 import {
   beginSqliteDatabaseWrite,
   finishSqliteDatabaseWrite,

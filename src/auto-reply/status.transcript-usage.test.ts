@@ -117,7 +117,7 @@ describe("status transcript usage and model context", () => {
         sessionKey: "agent:worker1:telegram:12345",
       });
 
-      expect(normalizeTestText(text)).toContain("Context: 1.0k/32k");
+      expect(normalizeTestText(text)).toContain("Context: 1k/32k");
       appendTranscriptMessageSync(
         {
           agentId: "worker1",
@@ -131,7 +131,7 @@ describe("status transcript usage and model context", () => {
         sessionId,
         sessionKey: "agent:worker1:telegram:12345",
       });
-      expect(normalizeTestText(updated)).toContain("Context: 2.0k/32k");
+      expect(normalizeTestText(updated)).toContain("Context: 2k/32k");
     });
   });
 
@@ -145,8 +145,8 @@ describe("status transcript usage and model context", () => {
         totalTokens: 3_800_000,
         totalTokensFresh: false,
       },
-      present: ["Context: ?/1.0m"],
-      absent: ["Context: 3.8m/1.0m", "Context: 3.82m/1.0m"],
+      present: ["Context: ?/1m"],
+      absent: ["Context: 3.8m/1m", "Context: 3.82m/1m"],
     },
     {
       name: "does not let legacy cumulative session totals override fresh transcript context usage",
@@ -158,8 +158,8 @@ describe("status transcript usage and model context", () => {
         cacheWrite: 11_000,
         totalTokens: 2_300_000,
       },
-      present: ["Cache: 100% hit · 2.3m cached, 11k new", "Context: 36k/1.0m (4%)"],
-      absent: ["Context: 2.3m/1.0m"],
+      present: ["Cache: 100% hit · 2.3m cached, 11k new", "Context: 36k/1m (4%)"],
+      absent: ["Context: 2.3m/1m"],
     },
   ])("$name", async ({ transcript, entry, present, absent }) => {
     await withStatusHome(async () => {
@@ -201,8 +201,8 @@ describe("status transcript usage and model context", () => {
         sessionKey: "agent:main:main",
       });
 
-      expect(normalizeTestText(text)).toContain("Cache: 100% hit · 1.0k cached, 0 new");
-      expect(normalizeTestText(text)).toContain("Context: 1.0k/32k");
+      expect(normalizeTestText(text)).toContain("Cache: 100% hit · 1k cached, 0 new");
+      expect(normalizeTestText(text)).toContain("Context: 1k/32k");
     });
   });
 
@@ -226,7 +226,7 @@ describe("status transcript usage and model context", () => {
 
       const normalized = normalizeTestText(text);
       expect(normalized).toContain("Context: 1.2k/999k");
-      expect(normalized).not.toContain("Context: 1.2k/2.0m");
+      expect(normalized).not.toContain("Context: 1.2k/2m");
     });
   });
 
@@ -243,7 +243,7 @@ describe("status transcript usage and model context", () => {
 
     const normalized = normalizeTestText(text);
     expect(normalized).toContain("Context: 1.2k/999k");
-    expect(normalized).not.toContain("Context: 1.2k/2.0m");
+    expect(normalized).not.toContain("Context: 1.2k/2m");
   });
 
   it("keeps provider-aware lookup for legacy fallback runtime slash ids", () => {
@@ -312,7 +312,7 @@ describe("status transcript usage and model context", () => {
       });
 
       const normalized = normalizeTestText(text);
-      expect(normalized).toContain("Context: 1.2k/1.0m");
+      expect(normalized).toContain("Context: 1.2k/1m");
       expect(normalized).not.toContain("Context: 1.2k/128k");
     });
   });

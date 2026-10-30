@@ -14,8 +14,7 @@ import {
   encodeSqliteStringSet,
   sqliteStringSetEntries,
 } from "../kysely-sync.js";
-import type { EngineConnection } from "../sql-connection.js";
-import { sqlPublicationAnchor } from "../sql-connection.js";
+import { type EngineConnection, sqlPublicationAnchor } from "../sql-connection.js";
 import {
   getSqliteReadOperationRevision,
   type SqliteReadOperationRevision,

@@ -104,7 +104,7 @@ export async function createNativeBindingFixture(
       type: "session",
       id: scope.sessionId,
       cwd: "/synthetic/workspace",
-      timestamp: "2026-01-01T00:00:00.000Z",
+      timestamp: "2026-01-01T00:00:00Z",
     },
     {
       type: "message",

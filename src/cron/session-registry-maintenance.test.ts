@@ -25,8 +25,7 @@ import {
   runOpenClawStateWriteTransaction,
 } from "../state/paleoclaw-state-db.js";
 import { beginAgentDeletionJournal } from "../test-utils/agent-deletion-journal.js";
-import { withOpenClawTestState } from "../test-utils/paleoclaw-test-state.js";
-import type { OpenClawTestState } from "../test-utils/paleoclaw-test-state.js";
+import { OpenClawTestState, withOpenClawTestState } from "../test-utils/paleoclaw-test-state.js";
 import { runSessionRegistryMaintenance } from "./session-registry-maintenance.js";
 import * as cronStore from "./store.js";
 import { makeCronReceiptJob } from "./store/run-receipt-store.test-support.js";

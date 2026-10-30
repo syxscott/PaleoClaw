@@ -17,13 +17,12 @@
  * keep this file green while the regression was back. The last describe block
  * therefore also guards the agent source itself.
  */
-import * as fs from "fs";
-import * as os from "os";
-import * as path from "path";
+import * as fs from "node:fs";
+import * as os from "node:os";
+import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createSessionStore } from "./index.js";
-import { SessionStore } from "./store.js";
-import { deriveInstantTitle, truncateTitle, upsertAgentSession } from "./store.js";
+import { SessionStore, deriveInstantTitle, truncateTitle, upsertAgentSession } from "./store.js";
 
 let home: string;
 

@@ -18,7 +18,7 @@ function makeSnapshot(body = "{}") {
   return {
     body,
     metadata: { url, status: 200, checksum },
-    savedAt: "2026-09-16T00:00:00.000Z",
+    savedAt: "2026-09-16T00:00:00Z",
   };
 }
 afterEach(() => vi.restoreAllMocks());

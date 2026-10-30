@@ -18,13 +18,13 @@ import type { CronJob } from "./types.js";
 
 const { logger, makeStorePath } = setupCronServiceSuite({
   prefix: "paleoclaw-cron-active-jobs-manual-run-",
-  baseTimeIso: "2025-12-13T17:00:00.000Z",
+  baseTimeIso: "2025-12-13T17:00:00Z",
 });
 
 type IsolatedRunResult = Awaited<ReturnType<CronServiceDeps["runIsolatedAgentJob"]>>;
 
 function createManualIsolatedJob(id: string, timeoutSeconds?: number): CronJob {
-  const now = Date.parse("2025-12-13T17:00:00.000Z");
+  const now = Date.parse("2025-12-13T17:00:00Z");
   return {
     id,
     name: id.replaceAll("-", " "),
@@ -128,7 +128,7 @@ it("retires preserved main-session markers at the lifecycle cutoff", () => {
 
 it("sends one setup-timeout notification when concurrent manual runs both stall before runner start", async () => {
   vi.useFakeTimers();
-  vi.setSystemTime(Date.parse("2025-12-13T17:00:00.000Z"));
+  vi.setSystemTime(Date.parse("2025-12-13T17:00:00Z"));
 
   const jobIds = ["manual-setup-timeout-first", "manual-setup-timeout-second"] as const;
   const bothStarted = createDeferred();

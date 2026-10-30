@@ -1828,8 +1828,8 @@ describe("runPreparedReply media-only handling", () => {
   });
 
   it.each([
-    ["message thread id", { MessageThreadId: "501.000" }],
-    ["transport thread id", { TransportThreadId: "501.000" }],
+    ["message thread id", { MessageThreadId: "501" }],
+    ["transport thread id", { TransportThreadId: "501" }],
   ] as const)(
     "queues same-session Slack DM turns instead of steering across Slack threads using %s",
     async (_label, threadContext) => {
@@ -1844,7 +1844,7 @@ describe("runPreparedReply media-only handling", () => {
         sessionId: "active-session",
         sessionKey: "session-key",
         resetTriggered: false,
-        routeThreadId: "500.000",
+        routeThreadId: "500",
       });
       activeRun.setPhase("running");
       vi.mocked(sessionQueries.resolveActiveSessionRunId)
@@ -1876,7 +1876,7 @@ describe("runPreparedReply media-only handling", () => {
       expect(call.shouldSteer).toBe(false);
       expect(call.shouldFollowup).toBe(true);
       expect(call.isActive).toBe(true);
-      expect(call.followupRun.originatingThreadId).toBe("501.000");
+      expect(call.followupRun.originatingThreadId).toBe("501");
     },
   );
 
@@ -1893,7 +1893,7 @@ describe("runPreparedReply media-only handling", () => {
       sessionId: "active-session",
       sessionKey: "session-key",
       resetTriggered: false,
-      routeThreadId: "500.000",
+      routeThreadId: "500",
     });
     activeRun.setPhase("running");
     vi.mocked(sessionQueries.resolveActiveSessionRunId)
@@ -1909,7 +1909,7 @@ describe("runPreparedReply media-only handling", () => {
           ChatType: "direct",
           OriginatingChannel: "slack",
           OriginatingTo: "user:U1",
-          TransportThreadId: "501.000",
+          TransportThreadId: "501",
         }),
       });
     } finally {
@@ -1920,7 +1920,7 @@ describe("runPreparedReply media-only handling", () => {
     expect(call.shouldSteer).toBe(false);
     expect(call.shouldFollowup).toBe(true);
     expect(call.isActive).toBe(true);
-    expect(call.followupRun.originatingThreadId).toBe("501.000");
+    expect(call.followupRun.originatingThreadId).toBe("501");
   });
 
   it("does not queue a run behind its provided pre-dispatch reply operation", async () => {

@@ -163,7 +163,7 @@ it.each([
 );
 
 it("resumes skipped alerts after a clock rollback only after durable persistence", async () => {
-  const dueAt = Date.parse("2026-08-01T14:52:00.000Z");
+  const dueAt = Date.parse("2026-08-01T14:52:00Z");
   let now = dueAt;
   let durableAtSend: CronJob["state"] | undefined;
   const send = vi.fn(async () => {
@@ -196,7 +196,7 @@ it("resumes skipped alerts after a clock rollback only after durable persistence
 });
 
 it("rolls back the cooldown without delivery when persistence fails", async () => {
-  const dueAt = Date.parse("2026-08-01T14:55:00.000Z");
+  const dueAt = Date.parse("2026-08-01T14:55:00Z");
   const { store, job, state, persist, durable, finalize, send } = alertFixture(
     "failure-alert-persist-rollback",
     () => dueAt + 10,
@@ -228,7 +228,7 @@ it("rolls back the cooldown without delivery when persistence fails", async () =
 });
 
 it("persists an incident and suppresses repeats after a service reload past cooldown", async () => {
-  const dueAt = Date.parse("2026-08-01T14:58:00.000Z");
+  const dueAt = Date.parse("2026-08-01T14:58:00Z");
   const firstAlertAt = dueAt + 10;
   let now = firstAlertAt;
   const { store, state, persist, durable, finalize, send } = alertFixture(

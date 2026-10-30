@@ -26,7 +26,7 @@ const message = (
   type: "message" as const,
   id,
   parentId,
-  timestamp: "2026-10-11T00:00:00.000Z",
+  timestamp: "2026-10-11T00:00:00Z",
   message: { role, content, ...extra },
 });
 const ids = (events: readonly unknown[]) =>
@@ -141,7 +141,7 @@ describe("memory actor history", () => {
         id: "reset",
         parentId: "old-answer",
         reason: "new",
-        timestamp: "2026-10-11T00:00:01.000Z",
+        timestamp: "2026-10-11T00:00:01Z",
       },
       message("current", "reset", "user", "Current"),
     ]);
@@ -342,7 +342,7 @@ describe("memory actor history", () => {
         firstKeptEntryId: "new",
         summary: "Earlier summary",
         tokensBefore: 100,
-        timestamp: "2026-10-11T00:00:01.000Z",
+        timestamp: "2026-10-11T00:00:01Z",
       },
       message("new", "compact", "user", "Current", {
         __openclaw: { upstreamUserText: "private-prompt", runId: "run" },
@@ -481,7 +481,7 @@ describe("memory actor history facts", () => {
       type: "compaction",
       id: "compact",
       parentId: "fresh",
-      timestamp: "2026-10-11T00:00:00.000Z",
+      timestamp: "2026-10-11T00:00:00Z",
       firstKeptEntryId: "fresh",
       summary: "Earlier context",
       tokensBefore: 100,

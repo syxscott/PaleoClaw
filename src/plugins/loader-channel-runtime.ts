@@ -9,8 +9,7 @@ import {
   resolveBundledRuntimeChannelRegistration,
   resolveSetupChannelRegistration,
 } from "./loader-channel-setup.js";
-import type { PluginModuleLoader } from "./loader-module-runtime.js";
-import { runPluginRegisterSyncInRegistry } from "./loader-module-runtime.js";
+import { type PluginModuleLoader, runPluginRegisterSyncInRegistry } from "./loader-module-runtime.js";
 import { recordPluginError } from "./loader-records.js";
 import type { PluginRegistrationPlan } from "./loader-registration-plan.js";
 import type { PluginManifestRecord } from "./manifest-registry.js";

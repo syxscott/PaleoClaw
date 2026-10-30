@@ -28,7 +28,7 @@ function logPage(lines: string[], cursor?: number) {
   return { file: logFile, lines, ...(cursor === undefined ? {} : { cursor }) };
 }
 const recoveredLine = JSON.stringify({
-  time: "2026-05-29T20:00:00.000Z",
+  time: "2026-05-29T20:00:00Z",
   _meta: { logLevelName: "INFO", name: "gateway" },
   0: "rpc recovered line",
 });
@@ -149,7 +149,7 @@ it("reports a byte-budget re-anchor without claiming rotation in JSON output", a
 });
 
 it.each([
-  { mode: "plain UTC", args: ["--utc", "--plain"], time: "2025-01-01T12:00:00.000Z" },
+  { mode: "plain UTC", args: ["--utc", "--plain"], time: "2025-01-01T12:00:00Z" },
   { mode: "pretty local", args: [], time: "07:00:00-05:00" },
   { mode: "pretty UTC", args: ["--utc"], time: "12:00:00+00:00" },
 ])("renders $mode timestamps and preserves missing or malformed values", async ({ args, time }) => {
@@ -158,7 +158,7 @@ it.each([
       callGatewayFromCli.mockResolvedValueOnce({
         file: "/tmp/openclaw.log",
         lines: [
-          { time: "2025-01-01T12:00:00.000Z", message: "valid timestamp" },
+          { time: "2025-01-01T12:00:00Z", message: "valid timestamp" },
           { message: "missing timestamp" },
           { time: "", message: "empty timestamp" },
           { time: "invalid-date", message: "invalid timestamp" },
@@ -276,7 +276,7 @@ it("switches back to Gateway logs.tail after temporary journal fallback", async 
     "journal while probing",
     "Log file: /tmp/openclaw.log",
     "rpc recovered line",
-    "2026-05-29T20:00:00.000",
+    "2026-05-29T20:00:00",
   ]);
 });
 
@@ -343,7 +343,7 @@ it("prints source changes when Gateway RPC falls back to journal and recovers", 
   const { stdout, stderr } = await runFailure(["--follow", "--plain", "--interval", "1"]);
 
   expectRecoveryCalls(5, 2);
-  expectJournalArgs(2, ["--since=2026-06-01 00:00:03.000 UTC"]);
+  expectJournalArgs(2, ["--since=2026-06-01 00:00:03 UTC"]);
   const secondJournalArgs = execFileUtf8Tail.mock.calls[1]?.[1] as string[];
   expect(secondJournalArgs).not.toContain("--after-cursor=s=abc");
   const output = stdout;

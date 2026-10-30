@@ -18,7 +18,7 @@ const answer = "The answer remains unchanged.";
 const sideReply = (question: string, text: string) => `BTW\nQuestion: ${question}\n\n${text}`;
 
 function slackTarget(text: string) {
-  return { tool: "slack", provider: "slack", to: "channel:C1", threadId: "111.000", text };
+  return { tool: "slack", provider: "slack", to: "channel:C1", threadId: "111", text };
 }
 
 describe("resolveFollowupDeliveryPayloads", () => {
@@ -67,7 +67,7 @@ describe("resolveFollowupDeliveryPayloads", () => {
       resolve([{ text: "thread reply" }], {
         messageProvider: "slack",
         originatingTo: "channel:C1",
-        originatingThreadId: "222.000",
+        originatingThreadId: "222",
         sentTexts: ["thread reply"],
         sentTargets: [slackTarget("thread reply")],
       }),
@@ -87,7 +87,7 @@ describe("resolveFollowupDeliveryPayloads", () => {
         resolve([payload], {
           messageProvider: "slack",
           originatingTo: "channel:C1",
-          originatingThreadId: "111.000",
+          originatingThreadId: "111",
           sentTargets: [slackTarget(sentText)],
           onDeliveredTerminalDuplicate: delivered,
         }),

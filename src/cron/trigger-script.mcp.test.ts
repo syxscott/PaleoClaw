@@ -30,7 +30,7 @@ if (port) {
   process.on("SIGTERM", () => {});
   net.connect(Number(port), "127.0.0.1");
 }
-function reply(id, result) { process.stdout.write(JSON.stringify({ jsonrpc: "2.0", id, result }) + "\\n"); }
+function reply(id, result) { process.stdout.write(JSON.stringify({ jsonrpc: "2", id, result }) + "\\n"); }
 for await (const line of readline.createInterface({ input: process.stdin })) {
   const message = JSON.parse(line);
   if (mode === "hang") continue;

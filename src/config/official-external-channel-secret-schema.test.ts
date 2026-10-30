@@ -53,7 +53,7 @@ it("widens the installed Tencent manifest schema selected for channel validation
   expect(metadata?.configSchema?.allOf).toHaveLength(1);
 });
 
-it("fails closed on QQBot configs that have not run the Tencent 2.0 migration", () => {
+it("fails closed on QQBot configs that have not run the Tencent 2 migration", () => {
   const schema = widenOfficialExternalChannelSecretSchema({
     channelId: "qqbot",
     schema: { type: "object", additionalProperties: true },

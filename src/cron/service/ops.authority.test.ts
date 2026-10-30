@@ -375,7 +375,7 @@ describe("scheduled tool policy provenance", () => {
 
   it("stamps trusted and authenticated-account creates", async () => {
     const { storePath } = await makeStorePath();
-    const now = Date.parse("2026-07-23T12:00:00.000Z");
+    const now = Date.parse("2026-07-23T12:00:00Z");
     const state = createOkIsolatedCronState({ storePath, now });
     const base = {
       ...jobInput,
@@ -415,7 +415,7 @@ describe("scheduled tool policy provenance", () => {
 
   it("keeps routine legacy edits restrictive and adopts authority on an explicit tool edit", async () => {
     const { storePath } = await makeStorePath();
-    const now = Date.parse("2026-07-23T12:00:00.000Z");
+    const now = Date.parse("2026-07-23T12:00:00Z");
     const state = createOkIsolatedCronState({ storePath, now });
     const created = await add(state, {
       ...jobInput,

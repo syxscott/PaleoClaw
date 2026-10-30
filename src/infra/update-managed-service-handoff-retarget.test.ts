@@ -10,8 +10,7 @@ import { resolveServiceManagerEnv } from "../daemon/service-process-env.js";
 import * as pidIdentity from "../shared/pid-alive.js";
 import * as nodeSqlite from "./node-sqlite.js";
 import { captureManagedUpdateLeaseDatabaseIdentity } from "./update-managed-service-handoff-database.js";
-import { createManagedHandoffLeaseStore as createStore } from "./update-managed-service-handoff-lease.js";
-import type { ManagedHandoffLease } from "./update-managed-service-handoff-lease.js";
+import { ManagedHandoffLease, createManagedHandoffLeaseStore as createStore } from "./update-managed-service-handoff-lease.js";
 import { MANAGED_HANDOFF_RUNTIME_ENTRY } from "./update-managed-service-handoff-runtime-assets.js";
 import { stageManagedHandoffRuntime } from "./update-managed-service-handoff-runtime.js";
 

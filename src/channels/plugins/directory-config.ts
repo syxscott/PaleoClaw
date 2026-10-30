@@ -203,7 +203,7 @@ export async function listWhatsAppDirectoryPeersFromConfig(
 ): Promise<ChannelDirectoryEntry[]> {
   const account = resolveWhatsAppAccount({ cfg: params.cfg, accountId: params.accountId });
   const ids = (account.allowFrom ?? [])
-    .map((entry) => String(entry).trim())
+    .map((entry) => entry.trim())
     .filter((entry) => Boolean(entry) && entry !== "*")
     .map((entry) => normalizeWhatsAppTarget(entry) ?? "")
     .filter(Boolean)

@@ -5,7 +5,7 @@ import path from "node:path";
 import type { DatabaseSync } from "node:sqlite";
 import chokidar, { FSWatcher } from "chokidar";
 import { resolveAgentDir } from "../agents/agent-scope.js";
-import { ResolvedMemorySearchConfig } from "../agents/memory-search.js";
+import { type ResolvedMemorySearchConfig } from "../agents/memory-search.js";
 import { type OpenClawConfig } from "../config/config.js";
 import { resolveSessionTranscriptsDirForAgent } from "../config/sessions/paths.js";
 import { createSubsystemLogger } from "../logging/subsystem.js";
@@ -394,7 +394,7 @@ export abstract class MemoryManagerSyncOps {
     }
     this.watcher = chokidar.watch(Array.from(watchPaths), {
       ignoreInitial: true,
-      ignored: (watchPath) => shouldIgnoreMemoryWatchPath(String(watchPath)),
+      ignored: (watchPath) => shouldIgnoreMemoryWatchPath(watchPath),
       awaitWriteFinish: {
         stabilityThreshold: this.settings.sync.watchDebounceMs,
         pollInterval: 100,
@@ -432,7 +432,7 @@ export abstract class MemoryManagerSyncOps {
     }
     this.sessionWatchTimer = setTimeout(() => {
       this.sessionWatchTimer = null;
-      void this.processSessionDeltaBatch().catch((err) => {
+      void this.processSessionDeltaBatch().catch((err: unknown) => {
         log.warn(`memory session delta failed: ${String(err)}`);
       });
     }, SESSION_DIRTY_DEBOUNCE_MS);
@@ -470,7 +470,7 @@ export abstract class MemoryManagerSyncOps {
       shouldSync = true;
     }
     if (shouldSync) {
-      void this.sync({ reason: "session-delta" }).catch((err) => {
+      void this.sync({ reason: "session-delta" }).catch((err: unknown) => {
         log.warn(`memory sync failed (session-delta): ${String(err)}`);
       });
     }
@@ -598,7 +598,7 @@ export abstract class MemoryManagerSyncOps {
     }
     const ms = minutes * 60 * 1000;
     this.intervalTimer = setInterval(() => {
-      void this.sync({ reason: "interval" }).catch((err) => {
+      void this.sync({ reason: "interval" }).catch((err: unknown) => {
         log.warn(`memory sync failed (interval): ${String(err)}`);
       });
     }, ms);
@@ -613,7 +613,7 @@ export abstract class MemoryManagerSyncOps {
     }
     this.watchTimer = setTimeout(() => {
       this.watchTimer = null;
-      void this.sync({ reason: "watch" }).catch((err) => {
+      void this.sync({ reason: "watch" }).catch((err: unknown) => {
         log.warn(`memory sync failed (watch): ${String(err)}`);
       });
     }, this.settings.sync.watchDebounceMs);

@@ -18,7 +18,7 @@ interface CrossrefParams {
  * so the contact is configurable instead of hard-coded.
  */
 function buildUserAgent(): string {
-  const contact = String(process.env.PALEOCLAW_CONTACT_EMAIL || "").trim();
+  const contact = process.env.PALEOCLAW_CONTACT_EMAIL || "".trim();
   const base = `PaleoClaw/${VERSION} (+https://github.com/syxscott/PaleoClaw)`;
   return contact ? `${base}; mailto:${contact}` : base;
 }
@@ -57,7 +57,7 @@ async function fetchCrossrefWithRetry(url: URL, init?: RequestInit): Promise<Res
 
 async function crossrefSearchHandler(params: Record<string, unknown>): Promise<unknown> {
   const typed = params as CrossrefParams;
-  const query = String(typed.query || "").trim();
+  const query = typed.query || "".trim();
   if (!query) {
     throw new Error("query is required");
   }

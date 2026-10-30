@@ -56,7 +56,7 @@ function setupModelSuite() {
 function makeJob(overrides?: Record<string, unknown>) {
   return makeIsolatedAgentJobFixture({
     id: "model-fwd-job",
-    payload: { kind: "agentTurn", message: "summarize", model: "google/gemini-2.0-flash" },
+    payload: { kind: "agentTurn", message: "summarize", model: "google/gemini-2-flash" },
     ...overrides,
   });
 }
@@ -69,7 +69,7 @@ function makeParams(overrides?: Record<string, unknown>) {
   });
 }
 
-function makeSuccessfulRunResult(provider = "google", model = "gemini-2.0-flash") {
+function makeSuccessfulRunResult(provider = "google", model = "gemini-2-flash") {
   return {
     result: {
       result: {
@@ -108,7 +108,7 @@ describe("runCronIsolatedAgentTurn — cron model override forwarding (#58065)",
   beforeEach(() => {
     resolveAllowedModelRefMock.mockImplementation(({ raw }: { raw: string }) => {
       if (raw.includes("gemini")) {
-        return { ref: { provider: "google", model: "gemini-2.0-flash" } };
+        return { ref: { provider: "google", model: "gemini-2-flash" } };
       }
       return { ref: { provider: "anthropic", model: "claude-opus-4-6" } };
     });
@@ -122,11 +122,11 @@ describe("runCronIsolatedAgentTurn — cron model override forwarding (#58065)",
     const ownerConfig = {
       session: { store: "/tmp/store.json" },
       agents: {
-        defaults: { model: "google/gemini-2.0-flash" },
+        defaults: { model: "google/gemini-2-flash" },
         entries: { main: { workspace: "/tmp/replacement-workspace" } },
       },
     };
-    const ownerCatalog = [{ provider: "google", id: "gemini-2.0-flash", name: "Gemini 2.0 Flash" }];
+    const ownerCatalog = [{ provider: "google", id: "gemini-2-flash", name: "Gemini 2 Flash" }];
     loadModelCatalogOwnerMock.mockResolvedValueOnce({
       agentId: "main",
       agentDir: "/tmp/owner-agent",
@@ -195,7 +195,7 @@ describe("runCronIsolatedAgentTurn — cron model override forwarding (#58065)",
       onExecutionPhase?.({
         phase: "model_call_started",
         provider: "google",
-        model: "gemini-2.0-flash",
+        model: "gemini-2-flash",
       });
       return {
         payloads: [{ text: "summary done" }],

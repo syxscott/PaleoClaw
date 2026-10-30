@@ -18,14 +18,14 @@ export function createHostedMarketplaceFeedFixture(
     ...(options.etag ? { etag: options.etag } : {}),
   };
   const verifiedAt =
-    source === "hosted-snapshot" ? "2026-06-23T01:02:03.000Z" : "2026-06-23T00:01:02.000Z";
+    source === "hosted-snapshot" ? "2026-06-23T01:02:03Z" : "2026-06-23T00:01:02Z";
   return {
     source,
     entries: options.entries ?? [],
     feed: {
       schemaVersion: 1,
       id: "acme-marketplace",
-      generatedAt: "2026-06-23T00:00:00.000Z",
+      generatedAt: "2026-06-23T00:00:00Z",
       sequence: 7,
       entries: [],
     },

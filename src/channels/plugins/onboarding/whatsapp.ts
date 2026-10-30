@@ -57,7 +57,7 @@ async function promptWhatsAppOwnerAllowFrom(params: {
     placeholder: "+15555550123",
     initialValue: existingAllowFrom[0],
     validate: (value) => {
-      const raw = String(value ?? "").trim();
+      const raw = value.trim();
       if (!raw) {
         return "Required";
       }
@@ -69,7 +69,7 @@ async function promptWhatsAppOwnerAllowFrom(params: {
     },
   });
 
-  const normalized = normalizeE164(String(entry).trim());
+  const normalized = normalizeE164(entry.trim());
   if (!normalized) {
     throw new Error("Invalid WhatsApp owner number (expected E.164 after validation).");
   }
@@ -229,7 +229,7 @@ async function promptWhatsAppAllowFrom(
       message: "Allowed sender numbers (comma-separated, E.164)",
       placeholder: "+15555550123, +447700900123",
       validate: (value) => {
-        const raw = String(value ?? "").trim();
+        const raw = value.trim();
         if (!raw) {
           return "Required";
         }
@@ -244,7 +244,7 @@ async function promptWhatsAppAllowFrom(
       },
     });
 
-    const parsed = parseWhatsAppAllowFromEntries(String(allowRaw));
+    const parsed = parseWhatsAppAllowFromEntries(allowRaw);
     next = setWhatsAppAllowFrom(next, parsed.entries);
   }
 

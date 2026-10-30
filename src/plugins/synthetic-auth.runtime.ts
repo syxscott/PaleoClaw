@@ -1,7 +1,6 @@
 /** Resolves synthetic and external auth provider refs from active runtime state or persisted manifests. */
 import { normalizeProviderId } from "@paleoclaw/model-catalog-core/provider-id";
-import { loadPluginRegistrySnapshotWithMetadata } from "./plugin-registry.js";
-import type { LoadPluginRegistryParams, PluginRegistrySnapshot } from "./plugin-registry.js";
+import { type LoadPluginRegistryParams, type PluginRegistrySnapshot, loadPluginRegistrySnapshotWithMetadata } from "./plugin-registry.js";
 import { getPluginRegistryState } from "./runtime-state.js";
 import { getPluginRuntimeGenerationRegistry } from "./runtime/generation-state.js";
 

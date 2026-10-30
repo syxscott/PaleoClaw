@@ -12,12 +12,12 @@ import { detectLegacyAuditLogs, migrateLegacyAuditLogs } from "./state-migration
 const AUDIT_SCRUB_PATTERN = Buffer.from(" \t".repeat(16));
 
 const SYSTEM_EVENT = {
-  timestamp: "2026-07-03T00:00:00.000Z",
+  timestamp: "2026-07-03T00:00:00Z",
   operation: "gateway.restart",
   summary: "",
 };
 const CONFIG_RECORD = {
-  ts: "2026-07-01T00:00:00.000Z",
+  ts: "2026-07-01T00:00:00Z",
   source: "config-io",
   event: "config.write",
 };

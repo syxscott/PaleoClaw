@@ -600,13 +600,13 @@ describe("session-delivery queue recovery", () => {
 
   it("skips entries queued after the startup recovery cutoff", async () => {
     vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-04-23T00:00:00.000Z"));
+    vi.setSystemTime(new Date("2026-04-23T00:00:00Z"));
 
     await withSessionDeliveryQueue(async (_stateDir, queueContext) => {
       await enqueueEvent(queueContext, "recover old entry");
       const maxEnqueuedAt = Date.now();
 
-      vi.setSystemTime(new Date("2026-04-23T00:00:05.000Z"));
+      vi.setSystemTime(new Date("2026-04-23T00:00:05Z"));
       await enqueueEvent(queueContext, "leave fresh entry queued");
 
       const deliver = vi.fn(async () => undefined);

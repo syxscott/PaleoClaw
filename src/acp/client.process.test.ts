@@ -35,7 +35,7 @@ function runCase(mode: ServerMode, code = 0, diagnostic?: string) {
 const fs = require("node:fs");
 const readline = require("node:readline");
 const mode = ${JSON.stringify(mode)};
-const send = (payload) => process.stdout.write(JSON.stringify({ jsonrpc: "2.0", ...payload }) + "\\n");
+const send = (payload) => process.stdout.write(JSON.stringify({ jsonrpc: "2", ...payload }) + "\\n");
 fs.writeFileSync(${JSON.stringify(pidFile)}, String(process.pid));
 let pendingPromptReply;
 if (mode === "handshake-failure" || mode === "quit-7" || mode === "eof-pending") {

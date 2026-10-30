@@ -75,8 +75,7 @@ import {
   type SessionSourceAssertion,
 } from "./session-source-authority.js";
 import { resolveSessionStorePathForScope } from "./session-store-path.js";
-import type { InternalSessionEntry as SessionEntry } from "./types.js";
-import { mergeSessionEntry } from "./types.js";
+import { InternalSessionEntry as SessionEntry, mergeSessionEntry } from "./types.js";
 
 export { loadSessionEntryForAdmission } from "./session-accessor.sqlite-entry-admission.js";
 export { ensureSessionEntrySync } from "./session-accessor.sqlite-initial-entry.js";

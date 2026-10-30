@@ -143,7 +143,7 @@ function signedHostedCatalogSnapshot(params: {
   savedAt?: string;
   monotonic?: { sequence: number; generatedAt: string };
 }): HostedOfficialExternalPluginCatalogSnapshot {
-  const savedAt = params.savedAt ?? "2026-06-22T00:00:10.000Z";
+  const savedAt = params.savedAt ?? "2026-06-22T00:00:10Z";
   return {
     body: params.body,
     metadata: {
@@ -291,7 +291,7 @@ describe("official external plugin catalog", () => {
           status: 200,
           checksum: `sha256:${crypto.createHash("sha256").update(body).digest("hex")}`,
         },
-        savedAt: "2026-06-22T00:00:10.000Z",
+        savedAt: "2026-06-22T00:00:10Z",
       };
     };
     const first = snapshotFor("@fixture/first");
@@ -451,14 +451,14 @@ describe("official external plugin catalog", () => {
 
     const acceptedPrevious = await loadSigned(previous, {
       catalogConfig: signedCatalogConfig(previous.publicKeyPem, "acme-root-2026-q2"),
-      now: () => new Date("2026-06-22T00:00:08.000Z"),
+      now: () => new Date("2026-06-22T00:00:08Z"),
       snapshotStore,
     });
     expectSource(acceptedPrevious, "hosted");
 
     const acceptedCurrent = await loadSigned(current, {
       catalogConfig: signedCatalogConfig(current.publicKeyPem, "acme-root-2026-q3"),
-      now: () => new Date("2026-06-22T00:00:09.000Z"),
+      now: () => new Date("2026-06-22T00:00:09Z"),
       snapshotStore,
     });
 
@@ -471,7 +471,7 @@ describe("official external plugin catalog", () => {
     const rolledBack = signedFeed(7, "@paleoclaw/signed-v7", { keyId: "acme-root-2026-q4" });
     const rejectedRollback = await loadSigned(rolledBack, {
       catalogConfig: signedCatalogConfig(rolledBack.publicKeyPem, "acme-root-2026-q4"),
-      now: () => new Date("2026-06-22T00:00:10.000Z"),
+      now: () => new Date("2026-06-22T00:00:10Z"),
       snapshotStore,
     });
 
@@ -546,7 +546,7 @@ describe("official external plugin catalog", () => {
     const signedSnapshot = createInMemoryHostedCatalogSnapshotStore([
       signedHostedCatalogSnapshot({
         body: signed.body,
-        savedAt: "2026-06-22T00:00:08.000Z",
+        savedAt: "2026-06-22T00:00:08Z",
       }),
     ]);
     const offline = await loadSigned(signed, {
@@ -565,7 +565,7 @@ describe("official external plugin catalog", () => {
           status: 200,
           checksum: `sha256:${crypto.createHash("sha256").update(unsignedBody).digest("hex")}`,
         },
-        savedAt: "2026-06-22T00:00:08.000Z",
+        savedAt: "2026-06-22T00:00:08Z",
       },
     ]);
     const rejectedSnapshot = await loadSigned(signed, {
@@ -623,7 +623,7 @@ describe("official external plugin catalog", () => {
       ...hostedCatalogFeed({
         sequence: 8,
         pluginName: "@paleoclaw/expiring",
-        expiresAt: "2026-06-22T00:01:00.000Z",
+        expiresAt: "2026-06-22T00:01:00Z",
       }),
       entries: [
         installableEntry("@paleoclaw/expiring", { sourceRef: "acme-npm", version: "1.0.0" }),
@@ -638,7 +638,7 @@ describe("official external plugin catalog", () => {
       fetchImpl: vi.fn(async () =>
         dsseResponse(signed.body, { status: 200, headers: { etag: '"expiring"' } }),
       ),
-      now: () => new Date("2026-06-22T00:00:30.000Z"),
+      now: () => new Date("2026-06-22T00:00:30Z"),
       snapshotStore,
     });
     expectSource(seeded, "hosted");
@@ -648,7 +648,7 @@ describe("official external plugin catalog", () => {
 
     const expiredFresh = await loadSigned(signed, {
       catalogConfig,
-      now: () => new Date("2026-06-22T00:01:01.000Z"),
+      now: () => new Date("2026-06-22T00:01:01Z"),
       snapshotStore: null,
     });
     expectSource(expiredFresh, "bundled-fallback");
@@ -667,7 +667,7 @@ describe("official external plugin catalog", () => {
       const expiredSnapshot = await loadHostedCatalog({
         feedProfile: "acme",
         catalogConfig,
-        now: () => new Date("2026-06-22T00:01:01.000Z"),
+        now: () => new Date("2026-06-22T00:01:01Z"),
         snapshotStore,
         ...scenario,
       });
@@ -687,12 +687,12 @@ describe("official external plugin catalog", () => {
   });
 
   it.each<[string, string, string?]>([
-    ["2026-06-21T23:59:59.000Z", "expiresAt must be later than generatedAt"],
-    ["2026-02-30T00:00:00.000Z", "requires a valid expiresAt value"],
+    ["2026-06-21T23:59:59Z", "expiresAt must be later than generatedAt"],
+    ["2026-02-30T00:00:00Z", "requires a valid expiresAt value"],
     [
-      "2026-06-22T00:01:00.000Z",
+      "2026-06-22T00:01:00Z",
       "expiresAt must be later than generatedAt",
-      " 2026-06-22T00:02:00.000Z ",
+      " 2026-06-22T00:02:00Z ",
     ],
   ])("rejects invalid signed feed expiry %s", async (expiresAt, error, generatedAt) => {
     const feed = hostedCatalogFeed({
@@ -704,7 +704,7 @@ describe("official external plugin catalog", () => {
       feed.generatedAt = generatedAt;
     }
     const signed = signedHostedCatalogFeed({ feed });
-    const result = await loadSigned(signed, { now: () => new Date("2026-06-22T00:00:30.000Z") });
+    const result = await loadSigned(signed, { now: () => new Date("2026-06-22T00:00:30Z") });
     expectSource(result, "bundled-fallback");
     expect(result.entries).toEqual([]);
     expect(result.error).toContain(error);
@@ -716,7 +716,7 @@ describe("official external plugin catalog", () => {
     const legacy = signedHostedCatalogFeed({ feed: legacyFeed });
     const newer = signedFeed(9, "@paleoclaw/current", { privateKeyPem: legacy.privateKeyPem });
     const snapshotStore = createInMemoryHostedCatalogSnapshotStore([
-      signedHostedCatalogSnapshot({ body: legacy.body, savedAt: "2026-06-22T00:00:08.000Z" }),
+      signedHostedCatalogSnapshot({ body: legacy.body, savedAt: "2026-06-22T00:00:08Z" }),
     ]);
     const catalogConfig = signedCatalogConfig(legacy.publicKeyPem);
 
@@ -731,7 +731,7 @@ describe("official external plugin catalog", () => {
 
     const updated = await loadSigned(newer, {
       catalogConfig,
-      now: () => new Date("2026-06-22T00:00:30.000Z"),
+      now: () => new Date("2026-06-22T00:00:30Z"),
       snapshotStore,
     });
     expectSource(updated, "hosted");
@@ -806,7 +806,7 @@ describe("official external plugin catalog", () => {
     const body = JSON.stringify({
       schemaVersion: 1,
       id: "paleoclaw-official-external-plugins",
-      generatedAt: "2026-06-22T00:00:10.000Z",
+      generatedAt: "2026-06-22T00:00:10Z",
       sequence: 10,
       entries: [
         sourceEntry("known-source", "acme-npm"),
@@ -854,7 +854,7 @@ describe("official external plugin catalog", () => {
     const validBody = JSON.stringify({
       schemaVersion: 1,
       id: "PaleoHub-official",
-      generatedAt: "2026-06-22T00:00:01.000Z",
+      generatedAt: "2026-06-22T00:00:01Z",
       sequence: 1,
       entries: [],
     });

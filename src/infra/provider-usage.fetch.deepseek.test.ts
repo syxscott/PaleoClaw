@@ -22,7 +22,7 @@ describe("fetchDeepSeekUsage", () => {
           {
             currency: " cny ",
             total_balance: "42.50",
-            granted_balance: "12.00",
+            granted_balance: "12",
             topped_up_balance: "30.50",
           },
           { currency: 42, total_balance: "invalid" },
@@ -48,7 +48,7 @@ describe("fetchDeepSeekUsage", () => {
         { type: "balance", amount: 2, unit: "RMB" },
       ],
       summary:
-        "Balance $1.25 · Balance ¥42.50 · Granted ¥12.00 · Topped up ¥30.50 · Balance -2.00 · Granted 1.00 · Topped up 4.00 · Balance 0.00 · Balance 3.00 EUR · Balance ¥2.00",
+        "Balance $1.25 · Balance ¥42.50 · Granted ¥12 · Topped up ¥30.50 · Balance -2 · Granted 1 · Topped up 4 · Balance 0 · Balance 3 EUR · Balance ¥2",
     });
   });
 
@@ -84,7 +84,7 @@ describe("fetchDeepSeekUsage", () => {
 
     const result = await fetchDeepSeekUsage("deepseek-key", 5000, mockFetch);
 
-    expect(result.summary).toBe("Balance ¥0.00");
+    expect(result.summary).toBe("Balance ¥0");
     expect(result.plan).toBe("Unavailable");
   });
 });

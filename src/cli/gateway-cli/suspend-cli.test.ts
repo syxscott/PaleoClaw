@@ -8,7 +8,7 @@ vi.mock("node:timers/promises", { spy: true });
 const readyResult = {
   status: "ready" as const,
   suspensionId: "suspension-1",
-  expiresAtMs: Date.parse("2026-08-11T12:00:00.000Z"),
+  expiresAtMs: Date.parse("2026-08-11T12:00:00Z"),
 };
 
 const busyResult = {
@@ -53,7 +53,7 @@ describe("gateway suspend CLI", () => {
     expect(runtime.log).toHaveBeenCalledWith("Gateway suspension prepared.");
     expect(runtime.log).toHaveBeenCalledWith("Suspension ID: suspension-1");
     expect(runtime.log).toHaveBeenCalledWith(
-      `Expires: 2026-08-11T12:00:00.000Z (${readyResult.expiresAtMs} ms)`,
+      `Expires: 2026-08-11T12:00:00Z (${readyResult.expiresAtMs} ms)`,
     );
     expect(runtime.log).toHaveBeenCalledWith("Resume with: paleoclaw gateway resume suspension-1");
   });

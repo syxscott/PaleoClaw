@@ -3,8 +3,7 @@ import path from "node:path";
 import type { DatabaseSync } from "node:sqlite";
 import { type FSWatcher } from "chokidar";
 import { resolveAgentDir, resolveAgentWorkspaceDir } from "../agents/agent-scope.js";
-import type { ResolvedMemorySearchConfig } from "../agents/memory-search.js";
-import { resolveMemorySearchConfig } from "../agents/memory-search.js";
+import { type ResolvedMemorySearchConfig, resolveMemorySearchConfig } from "../agents/memory-search.js";
 import type { OpenClawConfig } from "../config/config.js";
 import { createSubsystemLogger } from "../logging/subsystem.js";
 import {
@@ -229,7 +228,7 @@ export class MemoryIndexManager extends MemoryManagerEmbeddingOps implements Mem
     if (key && this.sessionWarm.has(key)) {
       return;
     }
-    void this.sync({ reason: "session-start" }).catch((err) => {
+    void this.sync({ reason: "session-start" }).catch((err: unknown) => {
       log.warn(`memory sync failed (session-start): ${String(err)}`);
     });
     if (key) {
@@ -247,7 +246,7 @@ export class MemoryIndexManager extends MemoryManagerEmbeddingOps implements Mem
   ): Promise<MemorySearchResult[]> {
     void this.warmSession(opts?.sessionKey);
     if (this.settings.sync.onSearch && (this.dirty || this.sessionsDirty)) {
-      void this.sync({ reason: "search" }).catch((err) => {
+      void this.sync({ reason: "search" }).catch((err: unknown) => {
         log.warn(`memory sync failed (search): ${String(err)}`);
       });
     }

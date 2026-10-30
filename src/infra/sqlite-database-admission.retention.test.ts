@@ -102,7 +102,7 @@ function admissionWorker(body: string) {
          callback,
        );
 ${body}
-     })().catch((error) => { throw error; });`;
+     })().catch((error: unknown) => { throw error; });`;
 }
 
 function workerOptions(location: string, port: MessagePort, extra: Record<string, unknown> = {}) {

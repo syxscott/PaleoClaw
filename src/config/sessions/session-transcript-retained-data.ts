@@ -8,8 +8,7 @@ import {
   jsonValid,
 } from "../../infra/database-engine/json-values.js";
 import { executeSqliteQuerySync } from "../../infra/kysely-sync.js";
-import type { EngineConnection } from "../../infra/sql-connection.js";
-import { isPostgresSqlConnection } from "../../infra/sql-connection.js";
+import { type EngineConnection, isPostgresSqlConnection } from "../../infra/sql-connection.js";
 import {
   sqliteSessionIdWriteScope,
   withSqliteDatabaseWriteScope,

@@ -59,7 +59,7 @@ function readerWorker(location: string, program: string) {
       const { openNodeSqliteDatabase } = await import(workerData.native);
       ${program}
       parentPort.close();
-    })().catch((error) => { throw error; });
+    })().catch((error: unknown) => { throw error; });
   `,
     {
       eval: true,

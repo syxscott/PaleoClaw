@@ -67,7 +67,7 @@ async function fixture() {
       version: 3,
       id: scope.sessionId,
       cwd: "/synthetic",
-      timestamp: "2026-10-11T00:00:00.000Z",
+      timestamp: "2026-10-11T00:00:00Z",
     }),
   });
   const hydrate = async () => {
@@ -86,7 +86,7 @@ async function fixture() {
         customType: "status",
         content,
         display: true,
-        timestamp: "2026-10-11T00:00:00.000Z",
+        timestamp: "2026-10-11T00:00:00Z",
       }),
     });
   return { actor, storage, hydrate, custom };
@@ -125,7 +125,7 @@ describe("memory transcript reports and edits", () => {
       selection: { kind: "custom", customTypes: ["status"] },
     });
     assert(selected.ok, "Expected report selection");
-    const bytes = `{ "type":"custom_message", "id":"prepared-report", "parentId":${JSON.stringify(selected.value.facts.appendParentId)}, "timestamp":"2026-10-11T00:00:00.000Z", "customType":"status", "content":"exact", "display":true }`;
+    const bytes = `{ "type":"custom_message", "id":"prepared-report", "parentId":${JSON.stringify(selected.value.facts.appendParentId)}, "timestamp":"2026-10-11T00:00:00Z", "customType":"status", "content":"exact", "display":true }`;
     await commitMemory(storage, "session.report.append", {
       scope: reportScope,
       version: selected.value.version,
@@ -172,7 +172,7 @@ describe("memory transcript reports and edits", () => {
       type: "message",
       id: "user-1",
       parentId: null,
-      timestamp: "2026-10-11T00:00:00.000Z",
+      timestamp: "2026-10-11T00:00:00Z",
       message: { role: "user", content: "question", timestamp: 1 },
     };
     await commitMemory(storage, "session.metadata.append", {

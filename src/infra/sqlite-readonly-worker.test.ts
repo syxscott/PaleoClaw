@@ -423,7 +423,7 @@ describe.each(["async", "sync"] as const)("SQLite read-only snapshot worker (%s)
       );
     }
     await expect(run(source)).rejects.toThrow(
-      `SQLite read-only snapshot timed out after 341 seconds (budget for 32.0 MiB) for ${source}. Stop the Gateway service and other paleoclaw processes using this database, then retry; if already stopped, check storage performance.`,
+      `SQLite read-only snapshot timed out after 341 seconds (budget for 32 MiB) for ${source}. Stop the Gateway service and other paleoclaw processes using this database, then retry; if already stopped, check storage performance.`,
     );
     expectBudget(341_000);
   });

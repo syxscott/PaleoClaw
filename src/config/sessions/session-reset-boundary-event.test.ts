@@ -42,7 +42,7 @@ describe("reset boundary planning", () => {
       type: "reset",
       id: "first-reset",
       parentId: keptAssistant.id,
-      timestamp: "2026-07-22T00:00:05.000Z",
+      timestamp: "2026-07-22T00:00:05Z",
       reason: "new",
       firstKeptEntryId: keptUser.id,
     };
@@ -74,7 +74,7 @@ describe("reset boundary planning", () => {
       type: "compaction",
       id: "compaction-boundary",
       parentId: keptAssistant.id,
-      timestamp: "2026-07-22T00:00:04.000Z",
+      timestamp: "2026-07-22T00:00:04Z",
       summary: "summary",
       firstKeptEntryId: keptUser.id,
       tokensBefore: 100,

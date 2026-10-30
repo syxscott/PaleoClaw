@@ -122,9 +122,9 @@ async function promptDiscordAllowFrom(params: {
     placeholder: "@alice, 123456789012345678",
     parseId,
     invalidWithoutTokenNote: "Bot token missing; use numeric user ids (or mention form) only.",
-    resolveEntries: ({ token, entries }) =>
+    resolveEntries: ({ token: botToken, entries }) =>
       resolveDiscordUserAllowlist({
-        token,
+        token: botToken,
         entries,
       }),
   });
@@ -161,10 +161,10 @@ export const discordOnboardingAdapter: ChannelOnboardingAdapter = {
       quickstartScore: configured ? 2 : 1,
     };
   },
-  configure: async ({ cfg, prompter, options, accountOverrides, shouldPromptAccountIds }) => {
-    const defaultDiscordAccountId = resolveDefaultDiscordAccountId(cfg);
+  configure: async ({ cfg: adapterCfg, prompter, options, accountOverrides, shouldPromptAccountIds }) => {
+    const defaultDiscordAccountId = resolveDefaultDiscordAccountId(adapterCfg);
     const discordAccountId = await resolveAccountIdForConfigure({
-      cfg,
+      adapterCfg,
       prompter,
       label: "Discord",
       accountOverride: accountOverrides.discord,
@@ -173,7 +173,7 @@ export const discordOnboardingAdapter: ChannelOnboardingAdapter = {
       defaultAccountId: defaultDiscordAccountId,
     });
 
-    let next = cfg;
+    let next = adapterCfg;
     const resolvedAccount = resolveDiscordAccount({
       cfg: next,
       accountId: discordAccountId,

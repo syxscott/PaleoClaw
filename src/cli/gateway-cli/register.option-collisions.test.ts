@@ -117,7 +117,7 @@ vi.mock("../../../packages/terminal-core/src/theme.js", () => ({
 
 vi.mock("../../utils/usage-format.js", () => ({
   formatTokenCount: () => "0",
-  formatUsd: () => "$0.00",
+  formatUsd: () => "$0",
 }));
 
 // mock-isolation: Keep help rendering out of the CLI routing fixture.

@@ -54,7 +54,7 @@ describe("startup run repair auto-disable", () => {
   it("disables a job instead of restoring an invalid finalized next run", async () => {
     const { state, job, runningAtMs, deferredNotifications, entry, restore } = repairFixture(
       "invalid-next-run",
-      "2026-08-01T16:00:00.000Z",
+      "2026-08-01T16:00:00Z",
     );
     restore({ entry: { ...entry, nextRunAtMs: MAX_DATE_TIMESTAMP_MS + 1 } });
 
@@ -93,10 +93,10 @@ describe("startup run repair auto-disable", () => {
       "failureNotificationDelivery" in testCase ? testCase.failureNotificationDelivery : undefined;
     const { state, job, deferredNotifications, entry, restore } = repairFixture(
       "completion",
-      "2026-08-01T17:00:00.000Z",
+      "2026-08-01T17:00:00Z",
       {
         deleteAfterRun: true,
-        schedule: { kind: "at", at: "2026-08-01T17:00:00.000Z" },
+        schedule: { kind: "at", at: "2026-08-01T17:00:00Z" },
         sessionTarget: "isolated",
         payload: { kind: "agentTurn", message: "do not replay" },
         // Current policy is intentionally mutable and must not decide replay.
@@ -105,7 +105,7 @@ describe("startup run repair auto-disable", () => {
           bestEffort: true,
         },
         failureAlert: { mode: "webhook", to: "https://alerts.example.test/cron" },
-        state: { runningAtMs: Date.parse("2026-08-01T17:00:00.000Z") },
+        state: { runningAtMs: Date.parse("2026-08-01T17:00:00Z") },
       },
     );
     state.deps.sendCronFailureAlert = vi.fn(async () => undefined);
@@ -135,13 +135,13 @@ describe("startup run repair auto-disable", () => {
   it("buffers quiet-trigger repair notifications until the recovery commit", () => {
     const { state, job, deferredNotifications, entry, restore } = repairFixture(
       "quiet-trigger",
-      "2026-08-01T16:30:00.000Z",
+      "2026-08-01T16:30:00Z",
       {
         schedule: { kind: "cron", expr: "0 * * * *", tz: "Invalid/Zone" },
         trigger: { script: "return false" },
         state: {
-          nextRunAtMs: Date.parse("2026-08-01T16:30:00.000Z"),
-          runningAtMs: Date.parse("2026-08-01T16:30:00.000Z"),
+          nextRunAtMs: Date.parse("2026-08-01T16:30:00Z"),
+          runningAtMs: Date.parse("2026-08-01T16:30:00Z"),
           scheduleErrorCount: 2,
         },
       },
@@ -168,7 +168,7 @@ describe("startup run repair auto-disable", () => {
   it("ignores finalized startup history with an invalid timestamp", () => {
     const { state, job, entry, restore } = repairFixture(
       "invalid-history",
-      "2026-08-01T16:00:00.000Z",
+      "2026-08-01T16:00:00Z",
       {
         schedule: { kind: "every", everyMs: 60_000 },
       },
