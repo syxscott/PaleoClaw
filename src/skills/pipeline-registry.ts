@@ -14,7 +14,7 @@
  *     "pre": ["other_skill_id"], "output": "report.md" }
  */
 
-import * as fs from "node:fs";
+import * as fs from "fs";
 
 export interface PipelineStep {
   tool: string;
@@ -67,7 +67,7 @@ function describeError(err: unknown): string {
 }
 
 function extractEntryList(parsed: unknown): unknown[] | null {
-  if (Array.isArray(parsed)) { return parsed; }
+  if (Array.isArray(parsed)) return parsed;
   if (
     parsed &&
     typeof parsed === "object" &&
@@ -81,7 +81,7 @@ function extractEntryList(parsed: unknown): unknown[] | null {
 function readId(item: unknown): string | undefined {
   if (item && typeof item === "object" && !Array.isArray(item)) {
     const id = (item as Record<string, unknown>).id;
-    if (typeof id === "string") { return id; }
+    if (typeof id === "string") return id;
   }
   return undefined;
 }
@@ -140,9 +140,9 @@ function validateEntry(item: unknown): PipelineEntry | string {
   }
 
   const entry: PipelineEntry = { id, type: "pipeline", steps };
-  if (typeof record.description === "string") { entry.description = record.description; }
-  if (Array.isArray(preRaw)) { entry.pre = preRaw as string[]; }
-  if (typeof record.output === "string") { entry.output = record.output; }
+  if (typeof record.description === "string") entry.description = record.description;
+  if (Array.isArray(preRaw)) entry.pre = preRaw as string[];
+  if (typeof record.output === "string") entry.output = record.output;
 
   return entry;
 }

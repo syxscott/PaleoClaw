@@ -1,12 +1,12 @@
-import * as fs from "node:fs";
-import * as os from "node:os";
-import * as path from "node:path";
+import * as fs from "fs";
+import * as os from "os";
+import * as path from "path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { SkillMeta, isCuratorEnabled, recordSkillUse, runCurator } from "./curator.js";
 
-const NOW = new Date("2026-09-07T12:00:00Z");
-const STALE = "2026-07-01T00:00:00Z"; // more than 30 days before NOW
-const FRESH = "2026-09-06T00:00:00Z"; // less than 30 days before NOW
+const NOW = new Date("2026-09-07T12:00:00.000Z");
+const STALE = "2026-07-01T00:00:00.000Z"; // more than 30 days before NOW
+const FRESH = "2026-09-06T00:00:00.000Z"; // less than 30 days before NOW
 
 const tempDirs: string[] = [];
 
@@ -122,7 +122,7 @@ describe("runCurator", () => {
 
   it("respects a custom inactivity window", () => {
     const root = createTempRoot();
-    createSkill(root, "recent-ish", { lastUsedAt: "2026-08-20T00:00:00Z" });
+    createSkill(root, "recent-ish", { lastUsedAt: "2026-08-20T00:00:00.000Z" });
 
     const strict = runCurator({ skillsRoot: root, now: NOW, inactivityDays: 7, dryRun: true });
     const lenient = runCurator({ skillsRoot: root, now: NOW, inactivityDays: 60, dryRun: true });
@@ -160,7 +160,7 @@ describe("recordSkillUse", () => {
     const meta = recordSkillUse(root, "used-skill", NOW);
 
     expect(meta.useCount).toBe(1);
-    expect(meta.lastUsedAt).toBe("2026-09-07T12:00:00Z");
+    expect(meta.lastUsedAt).toBe("2026-09-07T12:00:00.000Z");
     expect(readMeta(root, "used-skill")).toEqual(meta);
   });
 

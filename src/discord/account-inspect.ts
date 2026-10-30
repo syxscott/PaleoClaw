@@ -57,7 +57,7 @@ export function inspectDiscordAccount(params: {
   const accountConfig = resolveDiscordAccountConfig(params.cfg, accountId);
   const hasAccountToken = Boolean(
     accountConfig &&
-    Object.hasOwn(accountConfig as Record<string, unknown>, "token"),
+    Object.prototype.hasOwnProperty.call(accountConfig as Record<string, unknown>, "token"),
   );
   const accountToken = inspectDiscordTokenValue(accountConfig?.token);
   if (accountToken) {

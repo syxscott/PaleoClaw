@@ -1,5 +1,5 @@
-const CHECK_FN_TTL_SECONDS = 30;
-const CHECK_FN_FAILURE_GRACE_SECONDS = 60;
+const CHECK_FN_TTL_SECONDS = 30.0;
+const CHECK_FN_FAILURE_GRACE_SECONDS = 60.0;
 
 export class ToolAvailabilityCache {
   private cache: Map<string, { ts: number; value: boolean }> = new Map();

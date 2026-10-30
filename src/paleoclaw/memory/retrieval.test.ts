@@ -33,7 +33,7 @@ describe("retrieval - tokenize concurrency", () => {
             },
           ],
           3,
-          0,
+          0.0,
         ),
       ),
     );

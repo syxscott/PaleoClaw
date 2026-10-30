@@ -1,6 +1,7 @@
 import type { OpenClawConfig } from "../config/config.js";
 import { createSubsystemLogger } from "../logging/subsystem.js";
-import { type ResolvedQmdConfig, resolveMemoryBackendConfig } from "./backend-config.js";
+import type { ResolvedQmdConfig } from "./backend-config.js";
+import { resolveMemoryBackendConfig } from "./backend-config.js";
 import type {
   MemoryEmbeddingProbeResult,
   MemorySearchManager,

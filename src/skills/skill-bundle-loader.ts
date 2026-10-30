@@ -1,5 +1,5 @@
-import * as fs from "node:fs";
-import * as path from "node:path";
+import * as fs from "fs";
+import * as path from "path";
 import {
   loadSkillBundle,
   addSkillBundle,
@@ -12,7 +12,7 @@ const BUNDLE_MTIMES = new Map<string, number>();
 
 export async function scanBundleDirectory(dir?: string): Promise<string[]> {
   const bundleDir = dir || getSkillBundlesDirectory();
-  if (!bundleDir) { return []; }
+  if (!bundleDir) return [];
 
   if (!fs.existsSync(bundleDir)) {
     return [];
@@ -24,14 +24,14 @@ export async function scanBundleDirectory(dir?: string): Promise<string[]> {
     const files = fs.readdirSync(bundleDir);
 
     for (const file of files) {
-      if (!file.endsWith(".yaml") && !file.endsWith(".yml")) { continue; }
+      if (!file.endsWith(".yaml") && !file.endsWith(".yml")) continue;
 
       const fullPath = path.join(bundleDir, file);
       const stat = fs.statSync(fullPath);
 
       // Check if file has changed since last load
       const lastMtime = BUNDLE_MTIMES.get(fullPath);
-      if (lastMtime && stat.mtimeMs <= lastMtime) { continue; }
+      if (lastMtime && stat.mtimeMs <= lastMtime) continue;
 
       try {
         const content = fs.readFileSync(fullPath, "utf-8");
@@ -57,7 +57,7 @@ export function initializeSkillBundles(dir: string): void {
 
 export function watchBundleDirectory(dir?: string): fs.FSWatcher | null {
   const bundleDir = dir || getSkillBundlesDirectory();
-  if (!bundleDir || !fs.existsSync(bundleDir)) { return null; }
+  if (!bundleDir || !fs.existsSync(bundleDir)) return null;
 
   try {
     const watcher = fs.watch(bundleDir, { recursive: false }, (eventType, filename) => {

@@ -1,8 +1,7 @@
-import * as fs from "node:fs";
-import { spawn, type ChildProcess } from "node:child_process";
+import * as fs from "fs";
 import type { DatabaseSync } from "node:sqlite";
-import * as os from "node:os";
-import * as path from "node:path";
+import * as os from "os";
+import * as path from "path";
 import { afterEach, describe, expect, it } from "vitest";
 import { requireNodeSqlite } from "../../memory/sqlite.js";
 import { createSessionStore, SessionStore } from "./index.js";
@@ -48,7 +47,7 @@ function listTables(store: SqliteSessionStore): string[] {
 
 /** Flush microtasks (e.g. the fire-and-forget titleUpgrader chain). */
 function flush(): Promise<void> {
-  new Promise((resolve) => setTimeout(resolve, 0));
+  return new Promise((resolve) => setTimeout(resolve, 0));
 }
 
 function withPaleoclawHome<T>(home: string, fn: () => T): T {
@@ -230,13 +229,13 @@ describe("SqliteSessionStore", () => {
     const walMode = rawDb(walStore).prepare("PRAGMA journal_mode").get() as {
       journal_mode: string;
     };
-    expect(walMode.journal_mode.toLowerCase()).toBe("wal");
+    expect(String(walMode.journal_mode).toLowerCase()).toBe("wal");
 
     const deleteStore = createSqliteStore({ wal: false });
     const deleteMode = rawDb(deleteStore).prepare("PRAGMA journal_mode").get() as {
       journal_mode: string;
     };
-    expect(deleteMode.journal_mode.toLowerCase()).toBe("delete");
+    expect(String(deleteMode.journal_mode).toLowerCase()).toBe("delete");
   });
 
   it("rejects invalid session ids like the JSON store", () => {
@@ -245,131 +244,6 @@ describe("SqliteSessionStore", () => {
     expect(() => store.upsertSession("../escape")).toThrow("Invalid sessionId");
     expect(() => store.getSession("a/b")).toThrow("Invalid sessionId");
   });
-});
-
-/**
- * Child process that imitates a second writer on the same database: it takes
- * the write lock, inserts one message, holds the lock for `holdMs`, then
- * commits. The parent store then appends while the lock is held.
- */
-const HOLD_WRITE_LOCK_SCRIPT = `
-const { DatabaseSync } = require("node:sqlite");
-const [dbPath, sessionId, holdMs] = process.argv.slice(1);
-const db = new DatabaseSync(dbPath);
-db.exec("BEGIN IMMEDIATE");
-db.prepare("INSERT INTO messages (session_id, role, content, ts, seq, metadata) VALUES (?, ?, ?, ?, ?, ?)")
-  .run(sessionId, "assistant", "message from the concurrent writer", new Date().toISOString(), 0, null);
-process.stdout.write("ready\\n");
-setTimeout(() => {
-  db.exec("COMMIT");
-  db.close();
-}, Number(holdMs));
-`;
-
-interface ConcurrentWriter {
-  /** Resolves once the child holds the write lock. */
-  ready: Promise<void>;
-  /** Resolves once the child committed and exited. */
-  done: Promise<void>;
-  child: ChildProcess;
-}
-
-function startConcurrentWriter(
-  dbPath: string,
-  sessionId: string,
-  holdMs: number,
-): ConcurrentWriter {
-  const child = spawn(
-    process.execPath,
-    ["-e", HOLD_WRITE_LOCK_SCRIPT, dbPath, sessionId, String(holdMs)],
-    { stdio: ["ignore", "pipe", "pipe"] },
-  );
-
-  let output = "";
-  const ready = new Promise<void>((resolve, reject) => {
-    child.stdout?.on("data", (chunk: Buffer) => {
-      output += chunk.toString();
-      if (output.includes("ready")) {
-        resolve();
-      }
-    });
-    child.on("error", reject);
-    child.on("exit", (code) => {
-      if (!output.includes("ready")) {
-        reject(new Error(`concurrent writer exited early (code ${code})`));
-      }
-    });
-  });
-  const done = new Promise<void>((resolve) => {
-    child.on("close", () => resolve());
-  });
-
-  return { ready, done, child };
-}
-
-describe("SqliteSessionStore concurrency", () => {
-  it("sets a busy timeout so writers wait for the lock", () => {
-    const store = createSqliteStore();
-    const row = rawDb(store).prepare("PRAGMA busy_timeout").get() as Record<string, unknown>;
-    expect(Number(Object.values(row)[0])).toBe(5000);
-  });
-
-  it("waits for a concurrent writer instead of dropping the message", async () => {
-    const dir = createTempRoot();
-    const dbPath = path.join(dir, "sessions.db");
-    const store = new SqliteSessionStore(dbPath);
-    stores.push(store);
-    store.upsertSession("concurrent-session");
-
-    const writer = startConcurrentWriter(dbPath, "concurrent-session", 1200);
-    await writer.ready;
-
-    try {
-      const started = Date.now();
-      const message = store.appendMessage("concurrent-session", "user", "message from the agent");
-      const elapsed = Date.now() - started;
-
-      // The append waited for the other writer instead of failing instantly
-      // with SQLITE_BUSY ("database is locked").
-      expect(elapsed).toBeGreaterThan(500);
-      expect(message.id).toBe("concurrent-session:1");
-
-      const record = store.getSession("concurrent-session");
-      expect(record.messages.map((m) => m.content)).toEqual([
-        "message from the concurrent writer",
-        "message from the agent",
-      ]);
-      // The FTS index stays consistent with the messages table.
-      expect(store.search("agent", 5).map((hit) => hit.messageId)).toContain(
-        "concurrent-session:1",
-      );
-    } finally {
-      await writer.done;
-    }
-  }, 30_000);
-
-  it("surfaces a clear error and writes nothing when the lock outlasts the timeout", async () => {
-    const dir = createTempRoot();
-    const dbPath = path.join(dir, "sessions.db");
-    const store = new SqliteSessionStore(dbPath, { busyTimeoutMs: 50 });
-    stores.push(store);
-    store.upsertSession("busy-session");
-
-    const writer = startConcurrentWriter(dbPath, "busy-session", 1500);
-    await writer.ready;
-
-    try {
-      expect(() => store.appendMessage("busy-session", "user", "never stored")).toThrow(
-        /locked|busy/i,
-      );
-    } finally {
-      await writer.done;
-    }
-
-    // The failed append left no half-written row behind.
-    const record = store.getSession("busy-session");
-    expect(record.messages.map((m) => m.content)).toEqual(["message from the concurrent writer"]);
-  }, 30_000);
 });
 
 describe("createSessionStore", () => {

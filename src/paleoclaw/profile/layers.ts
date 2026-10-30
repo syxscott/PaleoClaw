@@ -3,8 +3,8 @@
  * Adapted from GeoClaw-OpenAI v2.4.0
  */
 
-import * as fs from "node:fs";
-import * as path from "node:path";
+import * as fs from "fs";
+import * as path from "path";
 import { paleoclawHome } from "../paths.js";
 
 // Default templates
@@ -176,7 +176,7 @@ Citation format: APA
 - Respect peer review confidentiality
 - Contribute to community databases (PBDB)
 
-*Profile created for PaleoClaw v2026.10.5*
+*Profile created for PaleoClaw v1.6.0*
 *Customize this file to match your research preferences*
 `;
 
@@ -456,7 +456,7 @@ export function parseUser(markdown: string): UserProfile {
   // Data preferences
   const dataPrefText = sectionText(sections, "data preferences");
   const defaultOccurrenceLimit =
-    Number.parseInt(extractKv(dataPrefText, "Default occurrence limit", "50")) || 50;
+    parseInt(extractKv(dataPrefText, "Default occurrence limit", "50")) || 50;
   const includePreprints =
     extractKv(dataPrefText, "Include preprints", "false").toLowerCase() === "true";
   const preferOpenAccess =

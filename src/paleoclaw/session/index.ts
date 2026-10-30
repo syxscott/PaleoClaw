@@ -2,10 +2,10 @@
  * PaleoClaw Session Module
  */
 
-import { requireNodeSqlite } from "../../memory/sqlite.js";
 import { SqliteSessionStore, defaultSessionDbPath } from "./store-sqlite.js";
 import { SessionStore } from "./store.js";
 import { type SessionStoreLike, type SessionTitleUpgrader } from "./types.js";
+
 export * from "./types.js";
 export * from "./store.js";
 export * from "./store-sqlite.js";
@@ -20,11 +20,6 @@ export interface CreateSessionStoreOptions {
    */
   wal?: boolean;
   /**
-   * How long (ms) a SQLite writer waits for the database lock before giving
-   * up with SQLITE_BUSY. Defaults to 5000.
-   */
-  busyTimeoutMs?: number;
-  /**
    * Stage-2 title upgrade hook, forwarded to the created store.
    */
   titleUpgrader?: SessionTitleUpgrader;
@@ -32,30 +27,20 @@ export interface CreateSessionStoreOptions {
 
 /**
  * Create the default session store. Prefers the SQLite-backed store at
- * `<paleoclawHome()>/sessions/sessions.db`.
- *
- * Only an *unsupported* runtime falls back to the JSON store. A SQLite failure
- * that means "the database exists but is corrupt or locked" is allowed to
- * propagate: the previous blanket catch silently downgraded to the JSON
- * backend in that case too, splitting session history across two files with no
- * diagnostic. Callers that must never throw can pass `forceJson`.
+ * `<paleoclawHome()>/sessions/sessions.db` and silently falls back to the
+ * JSON SessionStore when node:sqlite is unavailable or the database cannot
+ * be opened. Never throws on sqlite unavailability.
  */
 export function createSessionStore(options: CreateSessionStoreOptions = {}): SessionStoreLike {
-  if (options.forceJson) {
-    return new SessionStore(undefined, { titleUpgrader: options.titleUpgrader });
+  if (!options.forceJson) {
+    try {
+      return new SqliteSessionStore(defaultSessionDbPath(), {
+        wal: options.wal,
+        titleUpgrader: options.titleUpgrader,
+      });
+    } catch {
+      // node:sqlite missing or DB init failed — fall back to the JSON store.
+    }
   }
-
-  // Probe capability separately from opening the database: only the former
-  // justifies a silent downgrade.
-  try {
-    requireNodeSqlite();
-  } catch {
-    return new SessionStore(undefined, { titleUpgrader: options.titleUpgrader });
-  }
-
-  return new SqliteSessionStore(defaultSessionDbPath(), {
-    wal: options.wal,
-    busyTimeoutMs: options.busyTimeoutMs,
-    titleUpgrader: options.titleUpgrader,
-  });
+  return new SessionStore(undefined, { titleUpgrader: options.titleUpgrader });
 }

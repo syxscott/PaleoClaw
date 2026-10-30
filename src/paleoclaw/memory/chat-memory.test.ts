@@ -1,6 +1,6 @@
-import * as fs from "node:fs";
-import * as os from "node:os";
-import * as path from "node:path";
+import * as fs from "fs";
+import * as os from "os";
+import * as path from "path";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { TaskMemoryStore, clipText } from "./store.js";
 
@@ -70,11 +70,11 @@ describe("chat daily memory", () => {
     expect(record.sessionId).toBe("sess-a");
     expect(record.day).toBe("20260907");
     expect(record.chat_digest.turn_count).toBe(2);
-    expect(record.chat_digest.first_turn_at).toBe("2026-09-07T08:00:00Z");
-    expect(record.chat_digest.last_turn_at).toBe("2026-09-07T09:30:00Z");
+    expect(record.chat_digest.first_turn_at).toBe("2026-09-07T08:00:00.000Z");
+    expect(record.chat_digest.last_turn_at).toBe("2026-09-07T09:30:00.000Z");
     expect(record.chat_digest.recent_turns).toHaveLength(2);
     expect(record.chat_digest.recent_turns[0].user).toBe("霸王龙生活在哪个时期?");
-    expect(record.chat_digest.recent_turns[1].ts).toBe("2026-09-07T09:30:00Z");
+    expect(record.chat_digest.recent_turns[1].ts).toBe("2026-09-07T09:30:00.000Z");
     // Turn 2 omitted intent/mode, so GeoClaw defaults kick in and accumulate.
     expect(record.chat_digest.intents).toEqual(["fossil-id", "chat"]);
     expect(record.chat_digest.modes).toEqual(["research", "fallback"]);
@@ -125,8 +125,8 @@ describe("chat daily memory", () => {
     const second = readChatFile("chat-20260908-sess-a.json");
     expect(first.chat_digest.turn_count).toBe(1);
     expect(second.chat_digest.turn_count).toBe(1);
-    expect(second.chat_digest.first_turn_at).toBe("2026-09-08T00:01:00Z");
-    expect(second.chat_digest.last_turn_at).toBe("2026-09-08T00:01:00Z");
+    expect(second.chat_digest.first_turn_at).toBe("2026-09-08T00:01:00.000Z");
+    expect(second.chat_digest.last_turn_at).toBe("2026-09-08T00:01:00.000Z");
   });
 
   it("sanitizes unsafe session ids in day-file names", () => {
@@ -188,7 +188,7 @@ describe("chat daily memory", () => {
 
     const digest = store.getChatDailyDigest("20260907");
     expect(digest?.turn_count).toBe(1);
-    expect(digest?.last_turn_at).toBe("2026-09-07T08:00:00Z");
+    expect(digest?.last_turn_at).toBe("2026-09-07T08:00:00.000Z");
 
     expect(store.getChatDailyDigest("20251231")).toBeNull();
 

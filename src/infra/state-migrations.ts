@@ -9,7 +9,8 @@ import {
   resolveOAuthDir,
   resolveStateDir,
 } from "../config/paths.js";
-import { SessionEntry, saveSessionStore } from "../config/sessions.js";
+import type { SessionEntry } from "../config/sessions.js";
+import { saveSessionStore } from "../config/sessions.js";
 import { canonicalizeMainSessionAlias } from "../config/sessions/main-session.js";
 import type { SessionScope } from "../config/sessions/types.js";
 import { createSubsystemLogger } from "../logging/subsystem.js";

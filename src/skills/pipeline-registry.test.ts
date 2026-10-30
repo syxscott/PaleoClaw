@@ -1,6 +1,6 @@
-import * as fs from "node:fs";
-import * as os from "node:os";
-import * as path from "node:path";
+import * as fs from "fs";
+import * as os from "os";
+import * as path from "path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { PipelineEntry, loadPipelineRegistry, runPipeline } from "./pipeline-registry.js";
 
@@ -33,7 +33,7 @@ describe("loadPipelineRegistry", () => {
   it("loads valid entries from a { skills: [...] } registry", () => {
     const root = createTempRoot();
     const registryPath = writeRegistry(root, {
-      version: "1",
+      version: "1.0",
       skills: [
         {
           id: "stratigraphy_context",
@@ -159,7 +159,7 @@ describe("runPipeline", () => {
       ],
     };
     const executeTool = vi.fn(async (tool: string) => {
-      if (tool === "explodes") { throw new Error("kaboom"); }
+      if (tool === "explodes") throw new Error("kaboom");
       return "ok";
     });
 

@@ -6,7 +6,7 @@ import {
   makeCacheableSignalKeyStore,
   makeWASocket,
   useMultiFileAuthState,
-} from "baileys";
+} from "@whiskeysockets/baileys";
 import qrcode from "qrcode-terminal";
 import { formatCliCommand } from "../cli/command-format.js";
 import { danger, success } from "../globals.js";
@@ -39,7 +39,7 @@ function enqueueSaveCreds(
 ): void {
   credsSaveQueue = credsSaveQueue
     .then(() => safeSaveCreds(authDir, saveCreds, logger))
-    .catch((err: unknown) => {
+    .catch((err) => {
       logger.warn({ error: String(err) }, "WhatsApp creds save queue error");
     });
 }
@@ -121,7 +121,7 @@ export async function createWaSocket(
   sock.ev.on("creds.update", () => enqueueSaveCreds(authDir, saveCreds, sessionLogger));
   sock.ev.on(
     "connection.update",
-    (update: Partial<import("baileys").ConnectionState>) => {
+    (update: Partial<import("@whiskeysockets/baileys").ConnectionState>) => {
       try {
         const { connection, lastDisconnect, qr } = update;
         if (qr) {
@@ -168,18 +168,14 @@ export async function waitForWaConnection(sock: ReturnType<typeof makeWASocket>)
     const evWithOff = sock.ev as unknown as OffCapable;
 
     const handler = (...args: unknown[]) => {
-      const update = (args[0] ?? {}) as Partial<import("baileys").ConnectionState>;
+      const update = (args[0] ?? {}) as Partial<import("@whiskeysockets/baileys").ConnectionState>;
       if (update.connection === "open") {
         evWithOff.off?.("connection.update", handler);
         resolve();
       }
       if (update.connection === "close") {
         evWithOff.off?.("connection.update", handler);
-        reject(
-          update.lastDisconnect instanceof Error
-            ? update.lastDisconnect
-            : new Error("Connection closed"),
-        );
+        reject(update.lastDisconnect ?? new Error("Connection closed"));
       }
     };
 
@@ -288,8 +284,8 @@ export function formatError(err: unknown): string {
     typeof (err as { error?: { message?: unknown } })?.error?.message === "string"
       ? ((err as { error?: { message?: unknown } }).error?.message as string)
       : undefined,
-  ].find((v): v is string => Boolean(v && v.trim().length > 0));
-  const message = messageCandidates;
+  ].filter((v): v is string => Boolean(v && v.trim().length > 0));
+  const message = messageCandidates[0];
 
   const pieces: string[] = [];
   if (typeof status === "number") {

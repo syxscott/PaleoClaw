@@ -7,7 +7,11 @@ import {
   runInitialModelFallbackAttempt,
   type TestModelFallbackRunnerParams,
 } from "../../agents/test-helpers/model-fallback-runner.test-support.js";
-import { OpenClawConfig, clearRuntimeConfigSnapshot, setRuntimeConfigSnapshot } from "../../config/config.js";
+import {
+  type OpenClawConfig,
+  clearRuntimeConfigSnapshot,
+  setRuntimeConfigSnapshot,
+} from "../../config/config.js";
 import { resetDiagnosticEventsForTest } from "../../infra/diagnostic-events.js";
 import { resetSystemEventsForTest } from "../../infra/system-events.js";
 import { clearMemoryPluginState } from "../../plugins/memory-state.test-fixtures.js";

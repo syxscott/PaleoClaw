@@ -15,7 +15,7 @@ let fixtureCount = 0;
 async function makeEnv() {
   const dir = path.join(fixtureRoot, `case-${fixtureCount++}`);
   await fs.mkdir(dir, { recursive: true });
-  const configPath = path.join(dir, "openclaw.json");
+  const configPath = path.join(dir, "paleoclaw.json");
   await fs.writeFile(configPath, "{}", "utf8");
   await fs.mkdir(resolveGatewayLockDir(), { recursive: true });
   return {
@@ -175,7 +175,7 @@ describe("gateway lock", () => {
 
   it("treats recycled linux pid as stale when start time mismatches", async () => {
     vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-02-06T10:05:00Z"));
+    vi.setSystemTime(new Date("2026-02-06T10:05:00.000Z"));
     const env = await makeEnv();
     const { lockPath, configPath } = resolveLockPath(env);
     const payload = createLockPayload({ configPath, startTime: 111 });

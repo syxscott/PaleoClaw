@@ -1,5 +1,8 @@
 import { openOpenClawAgentDatabase } from "../../state/paleoclaw-agent-db.js";
-import { OpenClawTestState, withOpenClawTestState } from "../../test-utils/paleoclaw-test-state.js";
+import {
+  type OpenClawTestState,
+  withOpenClawTestState,
+} from "../../test-utils/paleoclaw-test-state.js";
 
 export function transcriptScope(env: NodeJS.ProcessEnv, sessionId: string, storePath: string) {
   return { agentId: "main", env, sessionId, sessionKey: `agent:main:${sessionId}`, storePath };

@@ -8,7 +8,7 @@ import {
   listRegisteredChannelPluginEntries,
 } from "./registry-lookup.js";
 export { findChatChannelMeta } from "./chat-meta.js";
-export { CHAT_CHANNEL_ORDER, normalizeChatChannelId } from "./ids.js";
+export { CHAT_CHANNEL_ORDER, CHANNEL_IDS, normalizeChatChannelId } from "./ids.js";
 export { normalizeAnyChannelId } from "./registry-normalize.js";
 
 /** Lists registered ids without importing their runtime implementations. */

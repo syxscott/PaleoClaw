@@ -65,9 +65,9 @@ export function normalizeDiscordAllowList(raw: string[] | undefined, prefixes: s
   }
   const ids = new Set<string>();
   const names = new Set<string>();
-  const allowAll = raw.some((entry) => entry.trim() === "*");
+  const allowAll = raw.some((entry) => String(entry).trim() === "*");
   for (const entry of raw) {
-    const text = entry.trim();
+    const text = String(entry).trim();
     if (!text || text === "*") {
       continue;
     }
@@ -537,7 +537,7 @@ export function resolveGroupDmAllow(params: {
   if (!channels || channels.length === 0) {
     return true;
   }
-  const allowList = new Set(channels.map((entry) => normalizeDiscordSlug(entry)));
+  const allowList = new Set(channels.map((entry) => normalizeDiscordSlug(String(entry))));
   const candidates = [
     normalizeDiscordSlug(channelId),
     channelSlug,

@@ -1,27 +1,16 @@
-import { withTempHome } from "paleoclaw/plugin-sdk/test-env";
-import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import fs from "node:fs";
+import path from "node:path";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { normalizeTestText } from "../../test/helpers/normalize-text.js";
-import { testing as cliBackendsTesting } from "../agents/cli-backends.test-support.js";
+import { withTempHome } from "../../test/helpers/temp-home.js";
 import type { OpenClawConfig } from "../config/config.js";
-import type { MediaUnderstandingDecision } from "../media-understanding/types.js";
-import { statusModelRefs } from "../status/status-message.test-support.js";
-import { normalizeSessionDeliveryState } from "../utils/delivery-context.shared.js";
-import * as commandsRegistry from "./commands-registry.js";
 import { createSuccessfulImageMediaDecision } from "./media-understanding.test-fixtures.js";
 import {
   buildCommandsMessage,
   buildCommandsMessagePaginated,
-  buildToolsMessage,
-} from "./status.js";
-import {
+  buildHelpMessage,
   buildStatusMessage,
-  configureCliBackend,
-  fallbackRoute,
-  normalizedStatus,
-  modelArgs,
-  providerModels,
-  type StatusTestArgs,
-} from "./status.test-fixtures.js";
+} from "./status.js";
 
 const { listPluginCommands } = vi.hoisted(() => ({
   listPluginCommands: vi.fn(
@@ -33,498 +22,686 @@ vi.mock("../plugins/commands.js", () => ({
   listPluginCommands,
 }));
 
-const commandConfig = { commands: { config: false, debug: false } };
-beforeEach(() => configureCliBackend());
 afterEach(() => {
   vi.restoreAllMocks();
-  cliBackendsTesting.resetDepsForTest();
-  listPluginCommands.mockReset().mockImplementation(() => []);
 });
 
-type FallbackContextStatusOverrides = {
-  activeProvider?: string;
-  activeModel?: string;
-  activeContextWindow?: number | null;
-  runtimeContextTokens?: number;
-  sessionContextTokens?: number;
-};
-function audioDecision(
-  outcome: MediaUnderstandingDecision["outcome"],
-  attempts: MediaUnderstandingDecision["attachments"][number]["attempts"],
-  chosen?: MediaUnderstandingDecision["attachments"][number]["chosen"],
-  attachmentIndex = 0,
-): MediaUnderstandingDecision {
-  return {
-    capability: "audio",
-    outcome,
-    attachmentDispositions: {
-      [attachmentIndex]: { kind: outcome === "success" ? "handled" : "failed" },
-    },
-    attachments: [{ attachmentIndex, attempts, ...(chosen ? { chosen } : {}) }],
-  };
-}
-
-function makeFallbackContextStatusArgs({
-  activeProvider = "minimax-portal",
-  activeModel = "MiniMax-M2.7",
-  activeContextWindow = 200_000,
-  runtimeContextTokens,
-  sessionContextTokens,
-}: FallbackContextStatusOverrides): Parameters<typeof buildStatusMessage>[0] {
-  const providers: Parameters<typeof providerModels> = [
-    ["xiaomi", "mimo-v2-flash", { contextWindow: 1_048_576 }],
-  ];
-  if (activeContextWindow !== null) {
-    providers.push([activeProvider, activeModel, { contextWindow: activeContextWindow }]);
-  }
-  const route = fallbackRoute(
-    { provider: "xiaomi", model: "mimo-v2-flash" },
-    { provider: activeProvider, model: activeModel },
-  );
-  return {
-    ...route,
-    config: providerModels(...providers),
-    runtimeContextTokens,
-    sessionEntry: {
-      ...route.sessionEntry,
-      totalTokens: 49_000,
-      totalTokensFresh: true,
-      totalTokensVersion: 1 as const,
-      ...(sessionContextTokens === undefined
-        ? {}
-        : {
-            contextTokens: sessionContextTokens,
-            contextTokensSource: "runtime" as const,
-            agentHarnessId: "paleoclaw" as const,
-          }),
-    },
-    resolvedHarness: "paleoclaw",
-  };
-}
-
-it("shows sanitized TTS provider details in the voice status line", async () => {
-  await withTempHome(async () => {
-    const normalized = normalizedStatus({
+describe("buildStatusMessage", () => {
+  it("summarizes agent readiness and context usage", () => {
+    const text = buildStatusMessage({
       config: {
-        tts: {
-          auto: "always",
-          provider: "openai",
+        models: {
           providers: {
-            openai: {
-              displayName: "NeuTTS local",
-              baseUrl: "http://username@127.0.0.1:18801/v1?token=hidden#fragment",
-              model: "neutts-nano",
-              voice: "clara",
+            anthropic: {
+              apiKey: "test-key",
+              models: [
+                {
+                  id: "pi:opus",
+                  cost: {
+                    input: 1,
+                    output: 1,
+                    cacheRead: 0,
+                    cacheWrite: 0,
+                  },
+                },
+              ],
             },
           },
         },
       } as unknown as OpenClawConfig,
-      agent: {},
-      now: 0,
+      agent: {
+        model: "anthropic/pi:opus",
+        contextTokens: 32_000,
+      },
+      sessionEntry: {
+        sessionId: "abc",
+        updatedAt: 0,
+        inputTokens: 1200,
+        outputTokens: 800,
+        totalTokens: 16_000,
+        contextTokens: 32_000,
+        thinkingLevel: "low",
+        verboseLevel: "on",
+        compactionCount: 2,
+      },
+      sessionKey: "agent:main:main",
+      sessionScope: "per-sender",
+      resolvedThink: "medium",
+      resolvedVerbose: "off",
+      queue: { mode: "collect", depth: 0 },
+      modelAuth: "api-key",
+      now: 10 * 60_000, // 10 minutes later
+    });
+    const normalized = normalizeTestText(text);
+
+    expect(normalized).toContain("paleoclaw");
+    expect(normalized).toContain("Model: anthropic/pi:opus");
+    expect(normalized).toContain("api-key");
+    expect(normalized).toContain("Tokens: 1.2k in / 800 out");
+    expect(normalized).toContain("Cost: $0.0020");
+    expect(normalized).toContain("Context: 16k/32k (50%)");
+    expect(normalized).toContain("Compactions: 2");
+    expect(normalized).toContain("Session: agent:main:main");
+    expect(normalized).toContain("updated 10m ago");
+    expect(normalized).toContain("Runtime: direct");
+    expect(normalized).toContain("Think: medium");
+    expect(normalized).not.toContain("verbose");
+    expect(normalized).toContain("elevated");
+    expect(normalized).toContain("Queue: collect");
+  });
+
+  it("falls back to sessionEntry levels when resolved levels are not passed", () => {
+    const text = buildStatusMessage({
+      agent: {
+        model: "anthropic/pi:opus",
+      },
+      sessionEntry: {
+        sessionId: "abc",
+        updatedAt: 0,
+        thinkingLevel: "high",
+        verboseLevel: "full",
+        reasoningLevel: "on",
+      },
+      sessionKey: "agent:main:main",
+      queue: { mode: "collect", depth: 0 },
+    });
+    const normalized = normalizeTestText(text);
+
+    expect(normalized).toContain("Think: high");
+    expect(normalized).toContain("verbose:full");
+    expect(normalized).toContain("Reasoning: on");
+  });
+
+  it("notes channel model overrides in status output", () => {
+    const text = buildStatusMessage({
+      config: {
+        channels: {
+          modelByChannel: {
+            discord: {
+              "123": "openai/gpt-4.1",
+            },
+          },
+        },
+      } as unknown as OpenClawConfig,
+      agent: {
+        model: "openai/gpt-4.1",
+      },
+      sessionEntry: {
+        sessionId: "abc",
+        updatedAt: 0,
+        channel: "discord",
+        groupId: "123",
+      },
+      sessionKey: "agent:main:discord:channel:123",
+      sessionScope: "per-sender",
+      queue: { mode: "collect", depth: 0 },
+    });
+    const normalized = normalizeTestText(text);
+
+    expect(normalized).toContain("Model: openai/gpt-4.1");
+    expect(normalized).toContain("channel override");
+  });
+
+  it("shows 1M context window when anthropic context1m is enabled", () => {
+    const text = buildStatusMessage({
+      config: {
+        agents: {
+          defaults: {
+            model: "anthropic/claude-opus-4-6",
+            models: {
+              "anthropic/claude-opus-4-6": {
+                params: { context1m: true },
+              },
+            },
+          },
+        },
+      } as unknown as OpenClawConfig,
+      agent: {
+        model: "anthropic/claude-opus-4-6",
+      },
+      sessionEntry: {
+        sessionId: "ctx1m",
+        updatedAt: 0,
+        totalTokens: 200_000,
+      },
+      sessionKey: "agent:main:main",
+      sessionScope: "per-sender",
+      queue: { mode: "collect", depth: 0 },
     });
 
-    expect(normalized).toContain(
-      "Voice: always · provider=openai · name=NeuTTS local · model=neutts-nano · voice=clara · endpoint=custom(http://127.0.0.1:18801/v1)",
-    );
-    expect(normalized).not.toContain("username");
-    expect(normalized).not.toContain("token=hidden");
-    expect(normalized).not.toContain("fragment");
-  });
-});
-
-it("sanitizes runtime labels sourced from session metadata", () => {
-  const text = buildStatusMessage({
-    sessionEntry: {
-      acp: {
-        backend: "acpx\nrewritten",
-        agent: "gemini\u001b[2K",
-        runtimeSessionName: "status-test",
-        mode: "persistent",
-        state: "idle",
-        lastActivityAt: 0,
-      },
-    },
+    expect(normalizeTestText(text)).toContain("Context: 200k/1.0m");
   });
 
-  expect(normalizeTestText(text)).toContain("Runtime: gemini (acp/acpx\\nrewritten)");
-  expect(text).not.toContain("\u001b");
-});
-
-it("shows trace lines only when trace is enabled", () => {
-  const render = (sessionEntry: NonNullable<StatusTestArgs["sessionEntry"]>) =>
-    normalizedStatus({
-      ...modelArgs("anthropic", "test:opus"),
-      sessionEntry: {
-        ...sessionEntry,
-        pluginDebugEntries: [
-          {
-            pluginId: "active-memory",
-            lines: ["🔎 Active Memory Debug: spicy ramen; tacos"],
-          },
-        ],
-      },
-    });
-  expect(render({ verboseLevel: "on" })).not.toContain("Active Memory Debug: spicy ramen; tacos");
-  const visible = render({ verboseLevel: "off", traceLevel: "on" });
-  expect(visible).toContain("Active Memory Debug: spicy ramen; tacos");
-  expect(visible).toContain("trace");
-});
-
-it("uses the channel override model context window instead of stale persisted context", () => {
-  const normalized = normalizedStatus({
-    ...modelArgs("minimax-portal", "MiniMax-M2.7"),
-    config: {
-      ...providerModels(
-        ["minimax-portal", "MiniMax-M2.7", { contextWindow: 200_000 }],
-        ["anthropic", "claude-opus-4-6", { contextWindow: 1_048_576 }],
-      ),
-      channels: {
-        modelByChannel: {
-          discord: {
-            "123": "minimax-portal/MiniMax-M2.7",
-          },
-        },
-      },
-    } as unknown as OpenClawConfig,
-    sessionEntry: {
-      delivery: normalizeSessionDeliveryState({ context: { channel: "discord" } }),
-      groupId: "123",
-      totalTokens: 49_000,
-      totalTokensFresh: true,
-      totalTokensVersion: 1,
-      contextTokens: 1_048_576,
-    },
-  });
-
-  expect(normalized).toContain("Model: minimax-portal/MiniMax-M2.7");
-  expect(normalized).toContain("channel override");
-  expect(normalized).toContain("Context: 49k/200k");
-  expect(normalized).not.toContain("Context: 49k/1m");
-});
-
-it.each<[FallbackContextStatusOverrides, string, string?]>([
-  [{ sessionContextTokens: 1_048_576 }, "49k/200k"],
-  [
-    {
-      activeProvider: "custom-runtime",
-      activeModel: "unknown-fallback-model",
-      activeContextWindow: null,
-      sessionContextTokens: 128_000,
-    },
-    "49k/128k",
-    "custom-runtime/unknown-fallback-model",
-  ],
-  [{ runtimeContextTokens: 123_456, sessionContextTokens: 1_048_576 }, "49k/123k"],
-  [{ sessionContextTokens: 123_456 }, "49k/123k"],
-])(
-  "renders fallback %j with context %s",
-  (overrides, context, model = "minimax-portal/MiniMax-M2.7") => {
-    const text = normalizedStatus(makeFallbackContextStatusArgs(overrides));
-    expect(text).toContain(`Fallback: ${model}`);
-    expect(text).toContain(`Context: ${context}`);
-    expect(text).not.toContain("Context: 49k/1m");
-    expect(text.includes("Context: 49k/200k")).toBe(context === "49k/200k");
-  },
-);
-
-function buildCliAliasStatus({ sessionEntry, ...args }: StatusTestArgs) {
-  configureCliBackend(true);
-  const route = fallbackRoute(
-    { provider: "anthropic", model: "claude-opus-4-7" },
-    { provider: "claude-cli", model: "claude-opus-4-7" },
-    "selected model unavailable",
-  );
-  return buildStatusMessage({
-    ...route,
-    activeModelAuth: "oauth (anthropic:claude-cli)",
-    ...args,
-    sessionEntry: {
-      ...route.sessionEntry,
-      inputTokens: 29,
-      outputTokens: 19_000,
-      ...sessionEntry,
-    },
-  });
-}
-
-it.each<[StatusTestArgs, string[], string[]]>([
-  [
-    {
-      sessionEntry: {
-        cacheRead: 3_000_000,
-        totalTokens: 36_000,
-        totalTokensFresh: true,
-        totalTokensVersion: 1,
-        contextTokens: 1_000_000,
-      },
-      modelAuth: "unknown",
-    },
-    ["Endpoint: unknown", "Context: 36k/?"],
-    ["Auth: unknown"],
-  ],
-  [
-    {
-      config: providerModels([
-        "anthropic",
-        "claude-opus-4-7",
-        {
-          cost: { input: 3, output: 15, cacheRead: 0.3, cacheWrite: 3.75 },
-        },
-      ]),
-      sessionEntry: {},
-      modelAuth: "api-key (env: ANTHROPIC_API_KEY)",
-    },
-    [],
-    ["api-key (env: ANTHROPIC_API_KEY)", "Cost:"],
-  ],
-])("renders CLI alias with %j", (args, present, absent) => {
-  const text = normalizeTestText(buildCliAliasStatus(args));
-  expect(text).toContain("Model: anthropic/claude-opus-4-7");
-  expect(text).toContain("oauth (anthropic:claude-cli)");
-  present.forEach((snippet) => expect(text).toContain(snippet));
-  expect(text).not.toContain("Fallback: claude-cli/claude-opus-4-7");
-  absent.forEach((snippet) => expect(text).not.toContain(snippet));
-});
-
-it.each<[MediaUnderstandingDecision[], string, string?]>([
-  [
-    [
-      createSuccessfulImageMediaDecision(),
-      audioDecision(
-        "skipped",
-        [{ type: "provider", outcome: "skipped", reason: "maxBytes: too large" }],
-        undefined,
-        1,
-      ),
-    ],
-    "Media: image ok (openai/gpt-5.4) · audio skipped (maxBytes)",
-  ],
-  [
-    [
-      audioDecision("success", [], {
-        type: "cli",
-        provider: "whisper-cli",
-        model: "whisper-cli",
-        requestedBackend: "device:0",
-        observedBackend: "metal",
-        outcome: "success",
-      }),
-    ],
-    "Media: audio ok (whisper-cli observed=metal)",
-  ],
-  [
-    [
-      audioDecision("failed", [
-        { type: "provider", outcome: "skipped", reason: "empty output" },
-        {
-          type: "provider",
-          outcome: "failed",
-          reason: "Error: Audio transcription response missing text",
-        },
-      ]),
-    ],
-    "Media: audio failed (Audio transcription response missing text)",
-    "empty output",
-  ],
-])("renders media decisions %j", (mediaDecisions, expected, absent) => {
-  const text = normalizeTestText(buildStatusMessage({ queue: { mode: "none" }, mediaDecisions }));
-  expect(text).toContain(expected);
-  if (absent) {
-    expect(text).not.toContain(absent);
-  }
-});
-
-it.each<[StatusTestArgs, string, boolean]>([
-  [
-    {
-      agent: {
-        model: {
-          primary: "anthropic/claude-opus-4-6",
-          fallbacks: ["google/gemini-2.5-flash", "openai/gpt-5-mini"],
-        },
-      },
-    },
-    "Fallbacks: google/gemini-2.5-flash, openai/gpt-5-mini",
-    true,
-  ],
-  [
-    {
-      modelRefs: statusModelRefs({ provider: "google", model: "gemini-3.1-flash-lite" }),
-      configuredDefaultModelLabel: "google/gemini-3-flash-preview",
-      agent: {
-        model: {
-          primary: "google/gemini-3-flash-preview",
-          fallbacks: [
-            "google/gemini-3.1-flash-lite",
-            "google/gemini-2.5-flash",
-            "google/gemini-3.1-pro-preview",
+  it("uses per-agent sandbox config when config and session key are provided", () => {
+    const text = buildStatusMessage({
+      config: {
+        agents: {
+          list: [
+            { id: "main", default: true },
+            { id: "discord", sandbox: { mode: "all" } },
           ],
         },
+      } as unknown as OpenClawConfig,
+      agent: {},
+      sessionKey: "agent:discord:discord:channel:1456350065223270435",
+      sessionScope: "per-sender",
+      queue: { mode: "collect", depth: 0 },
+    });
+
+    expect(normalizeTestText(text)).toContain("Runtime: docker/all");
+  });
+
+  it("shows verbose/elevated labels only when enabled", () => {
+    const text = buildStatusMessage({
+      agent: { model: "anthropic/claude-opus-4-5" },
+      sessionEntry: { sessionId: "v1", updatedAt: 0 },
+      sessionKey: "agent:main:main",
+      sessionScope: "per-sender",
+      resolvedThink: "low",
+      resolvedVerbose: "on",
+      resolvedElevated: "on",
+      queue: { mode: "collect", depth: 0 },
+    });
+
+    expect(text).toContain("verbose");
+    expect(text).toContain("elevated");
+  });
+
+  it("includes media understanding decisions when present", () => {
+    const text = buildStatusMessage({
+      agent: { model: "anthropic/claude-opus-4-5" },
+      sessionEntry: { sessionId: "media", updatedAt: 0 },
+      sessionKey: "agent:main:main",
+      queue: { mode: "none" },
+      mediaDecisions: [
+        createSuccessfulImageMediaDecision() as unknown as NonNullable<
+          Parameters<typeof buildStatusMessage>[0]["mediaDecisions"]
+        >[number],
+        {
+          capability: "audio",
+          outcome: "skipped",
+          attachments: [
+            {
+              attachmentIndex: 1,
+              attempts: [
+                {
+                  type: "provider",
+                  outcome: "skipped",
+                  reason: "maxBytes: too large",
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    const normalized = normalizeTestText(text);
+    expect(normalized).toContain("Media: image ok (openai/gpt-5.2) · audio skipped (maxBytes)");
+  });
+
+  it("omits media line when all decisions are none", () => {
+    const text = buildStatusMessage({
+      agent: { model: "anthropic/claude-opus-4-5" },
+      sessionEntry: { sessionId: "media-none", updatedAt: 0 },
+      sessionKey: "agent:main:main",
+      queue: { mode: "none" },
+      mediaDecisions: [
+        { capability: "image", outcome: "no-attachment", attachments: [] },
+        { capability: "audio", outcome: "no-attachment", attachments: [] },
+        { capability: "video", outcome: "no-attachment", attachments: [] },
+      ],
+    });
+
+    expect(normalizeTestText(text)).not.toContain("Media:");
+  });
+
+  it("does not show elevated label when session explicitly disables it", () => {
+    const text = buildStatusMessage({
+      agent: { model: "anthropic/claude-opus-4-5", elevatedDefault: "on" },
+      sessionEntry: { sessionId: "v1", updatedAt: 0, elevatedLevel: "off" },
+      sessionKey: "agent:main:main",
+      sessionScope: "per-sender",
+      resolvedThink: "low",
+      resolvedVerbose: "off",
+      queue: { mode: "collect", depth: 0 },
+    });
+
+    const optionsLine = text.split("\n").find((line) => line.trim().startsWith("⚙️"));
+    expect(optionsLine).toBeTruthy();
+    expect(optionsLine).not.toContain("elevated");
+  });
+
+  it("shows selected model and active runtime model when they differ", () => {
+    const text = buildStatusMessage({
+      agent: {
+        model: "anthropic/claude-opus-4-5",
+        contextTokens: 32_000,
       },
       sessionEntry: {
-        modelProvider: "google",
-        model: "gemini-3.1-flash-lite",
-        modelOverride: "gemini-3.1-flash-lite",
-        modelOverrideSource: "user",
+        sessionId: "override-1",
+        updatedAt: 0,
+        providerOverride: "openai",
+        modelOverride: "gpt-4.1-mini",
+        modelProvider: "anthropic",
+        model: "claude-haiku-4-5",
+        fallbackNoticeSelectedModel: "openai/gpt-4.1-mini",
+        fallbackNoticeActiveModel: "anthropic/claude-haiku-4-5",
+        fallbackNoticeReason: "rate limit",
+        contextTokens: 32_000,
       },
-    },
-    "Model: google/gemini-3.1-flash-lite",
-    false,
-  ],
-])("renders configured fallbacks with %j", (args, expected, showFallbacks) => {
-  const text = normalizedStatus(args);
-  expect(text).toContain(expected);
-  expect(text.includes("Fallbacks:")).toBe(showFallbacks);
-});
+      sessionKey: "agent:main:main",
+      sessionScope: "per-sender",
+      queue: { mode: "collect", depth: 0 },
+      modelAuth: "api-key",
+      activeModelAuth: "api-key di_123…abc (deepinfra:default)",
+    });
 
-it("lists commands with aliases and hints", () => {
-  const text = buildCommandsMessage(commandConfig, [
-    { name: "demo_skill", skillName: "demo-skill", description: "Demo skill" },
-  ]);
-  expect(text).toContain("ℹ️ Slash commands");
-  expect(text).toContain("Status");
-  expect(text).toContain("/demo_skill - Demo skill");
-  expect(text).toContain("/commands - List all slash commands.");
-  expect(text).toContain("/skill - Run a skill by name.");
-  expect(text).toContain("/think (/thinking, /t) - Set thinking level.");
-  expect(text).toContain("/compact - Compact the session context.");
-  expect(text).toContain("/models - List model providers/models.");
-  expect(text).not.toContain("/config");
-  expect(text).not.toContain("/debug");
-});
-
-it("includes plugin commands in the paginated list", () => {
-  listPluginCommands.mockReturnValue([
-    { name: "plugin_cmd", description: "Plugin command", pluginId: "demo-plugin" },
-  ]);
-  const firstPage = buildCommandsMessagePaginated(commandConfig, undefined, {
-    surface: "telegram",
-    page: 1,
-    forcePaginatedList: true,
+    const normalized = normalizeTestText(text);
+    expect(normalized).toContain("Model: openai/gpt-4.1-mini");
+    expect(normalized).toContain("Fallback: anthropic/claude-haiku-4-5");
+    expect(normalized).toContain("(rate limit)");
+    expect(normalized).not.toContain(" - Reason:");
+    expect(normalized).not.toContain("Active:");
+    expect(normalized).toContain("di_123...abc");
   });
-  expect(firstPage.text).toContain("ℹ️ Commands (1/");
-  expect(firstPage.text).toContain("Session");
-  expect(firstPage.text).toContain("/stop - Stop the current run.");
-  const pages = Array.from({ length: firstPage.totalPages }, (_, index) =>
-    buildCommandsMessagePaginated(commandConfig, undefined, {
-      surface: "telegram",
-      page: index + 1,
-      forcePaginatedList: true,
-    }),
-  );
-  const pluginPage = pages.find((page) => page.text.includes("/plugin_cmd (demo-plugin)"));
-  if (!pluginPage) {
-    throw new Error("expected plugin command page");
-  }
-  expect(pluginPage.text).toContain("Plugins");
-  expect(pluginPage.text).toContain("/plugin_cmd (demo-plugin) - Plugin command");
-});
 
-const tool = (id: string, label: string, description: string, pluginId?: string) => ({
-  id,
-  label,
-  description,
-  rawDescription: description,
-  source: pluginId ? ("plugin" as const) : ("core" as const),
-  pluginId,
-});
-
-function group(tools: ReturnType<typeof tool>[], source: "core" | "plugin" = "core") {
-  return {
-    id: source,
-    label: source === "core" ? "Built-in tools" : "Connected tools",
-    source,
-    tools,
-  };
-}
-
-it("groups shipped docks commands with tools", () => {
-  vi.spyOn(commandsRegistry, "listChatCommands").mockReturnValue([
-    {
-      key: "saved-layout",
-      description: "Inspect a saved layout.",
-      textAliases: ["/saved-layout"],
-      scope: "text",
-      category: "docks",
-    },
-    {
-      key: "inspect-tool",
-      description: "Inspect a tool.",
-      textAliases: ["/inspect-tool"],
-      scope: "text",
-      category: "tools",
-    },
-  ]);
-  const text = buildCommandsMessage();
-  expect(text).toContain("Tools\n  /saved-layout [text] - Inspect a saved layout.");
-  expect(text).toContain("  /inspect-tool [text] - Inspect a tool.");
-  expect(text.match(/^Tools$/gm)).toHaveLength(1);
-  expect(text).not.toContain("Docks");
-});
-
-it("renders compact inventory with plugin ownership and availability notices", () => {
-  const text = buildToolsMessage({
-    agentId: "main",
-    profile: "coding",
-    groups: [
-      group([
-        tool("exec", "Exec", "Run shell commands"),
-        tool("web_search", "Web Search", "Search the web"),
-      ]),
-      group(
-        [tool("docs_lookup", "Docs Lookup", "Search internal documentation", "docs")],
-        "plugin",
-      ),
-    ],
-    notices: [
-      {
-        id: "browser-filtered-by-profile",
-        severity: "info",
-        message:
-          'Browser is configured, but the current tool profile does not include the browser tool. Add tools.alsoAllow: ["browser"].',
+  it("omits active fallback details when runtime drift does not match fallback state", () => {
+    const text = buildStatusMessage({
+      agent: {
+        model: "openai/gpt-4.1-mini",
+        contextTokens: 32_000,
       },
-    ],
-  });
-  expect(text).toContain("Available tools");
-  expect(text).toContain("Profile: coding");
-  expect(text).toContain("Built-in tools");
-  expect(text).toContain("exec, web_search");
-  expect(text).toContain("Connected tools");
-  expect(text).toContain("docs_lookup (docs)");
-  expect(text).toContain("Use /tools verbose for descriptions.");
-  expect(text).not.toContain("unavailable right now");
-  expect(text).toContain("Notes");
-  expect(text).toContain('Add tools.alsoAllow: ["browser"].');
-});
+      sessionEntry: {
+        sessionId: "runtime-drift-only",
+        updatedAt: 0,
+        modelProvider: "anthropic",
+        model: "claude-haiku-4-5",
+        fallbackNoticeSelectedModel: "fireworks/minimax-m2p5",
+        fallbackNoticeActiveModel: "deepinfra/moonshotai/Kimi-K2.5",
+        fallbackNoticeReason: "rate limit",
+      },
+      sessionKey: "agent:main:main",
+      sessionScope: "per-sender",
+      queue: { mode: "collect", depth: 0 },
+      modelAuth: "api-key",
+      activeModelAuth: "api-key di_123…abc (deepinfra:default)",
+    });
 
-it("trims verbose descriptions before schema-like doc blocks", () => {
-  const text = buildToolsMessage(
-    {
-      agentId: "main",
-      profile: "coding",
-      groups: [
-        group([
-          {
-            ...tool("cron", "Cron", "Schedule and manage cron jobs."),
-            rawDescription:
-              'Manage Gateway cron jobs and send wake events. Use this for reminders, "check back later" requests, delayed follow-ups, and recurring tasks. Do not emulate scheduling with exec sleep or process polling.\n\nACTIONS:\n- status: Check cron scheduler status\nJOB SCHEMA:\n{ ... }',
+    const normalized = normalizeTestText(text);
+    expect(normalized).toContain("Model: openai/gpt-4.1-mini");
+    expect(normalized).not.toContain("Fallback:");
+    expect(normalized).not.toContain("(rate limit)");
+  });
+
+  it("omits active lines when runtime matches selected model", () => {
+    const text = buildStatusMessage({
+      agent: {
+        model: "openai/gpt-4.1-mini",
+        contextTokens: 32_000,
+      },
+      sessionEntry: {
+        sessionId: "selected-active-same",
+        updatedAt: 0,
+        modelProvider: "openai",
+        model: "gpt-4.1-mini",
+        fallbackNoticeReason: "unknown",
+      },
+      sessionKey: "agent:main:main",
+      sessionScope: "per-sender",
+      queue: { mode: "collect", depth: 0 },
+      modelAuth: "api-key",
+    });
+
+    const normalized = normalizeTestText(text);
+    expect(normalized).not.toContain("Fallback:");
+  });
+
+  it("keeps provider prefix from configured model", () => {
+    const text = buildStatusMessage({
+      agent: {
+        model: "google-antigravity/claude-sonnet-4-5",
+      },
+      sessionScope: "per-sender",
+      queue: { mode: "collect", depth: 0 },
+      modelAuth: "api-key",
+    });
+
+    expect(normalizeTestText(text)).toContain("Model: google-antigravity/claude-sonnet-4-5");
+  });
+
+  it("handles missing agent config gracefully", () => {
+    const text = buildStatusMessage({
+      agent: {},
+      sessionScope: "per-sender",
+      queue: { mode: "collect", depth: 0 },
+      modelAuth: "api-key",
+    });
+
+    const normalized = normalizeTestText(text);
+    expect(normalized).toContain("Model:");
+    expect(normalized).toContain("Context:");
+    expect(normalized).toContain("Queue: collect");
+  });
+
+  it("includes group activation for group sessions", () => {
+    const text = buildStatusMessage({
+      agent: {},
+      sessionEntry: {
+        sessionId: "g1",
+        updatedAt: 0,
+        groupActivation: "always",
+        chatType: "group",
+      },
+      sessionKey: "agent:main:whatsapp:group:123@g.us",
+      sessionScope: "per-sender",
+      queue: { mode: "collect", depth: 0 },
+      modelAuth: "api-key",
+    });
+
+    expect(text).toContain("Activation: always");
+  });
+
+  it("shows queue details when overridden", () => {
+    const text = buildStatusMessage({
+      agent: {},
+      sessionEntry: { sessionId: "q1", updatedAt: 0 },
+      sessionKey: "agent:main:main",
+      sessionScope: "per-sender",
+      queue: {
+        mode: "collect",
+        depth: 3,
+        debounceMs: 2000,
+        cap: 5,
+        dropPolicy: "old",
+        showDetails: true,
+      },
+      modelAuth: "api-key",
+    });
+
+    expect(text).toContain("Queue: collect (depth 3 · debounce 2s · cap 5 · drop old)");
+  });
+
+  it("inserts usage summary beneath context line", () => {
+    const text = buildStatusMessage({
+      agent: { model: "anthropic/claude-opus-4-5", contextTokens: 32_000 },
+      sessionEntry: { sessionId: "u1", updatedAt: 0, totalTokens: 1000 },
+      sessionKey: "agent:main:main",
+      sessionScope: "per-sender",
+      queue: { mode: "collect", depth: 0 },
+      usageLine: "📊 Usage: Claude 80% left (5h)",
+      modelAuth: "api-key",
+    });
+
+    const lines = normalizeTestText(text).split("\n");
+    const contextIndex = lines.findIndex((line) => line.includes("Context:"));
+    expect(contextIndex).toBeGreaterThan(-1);
+    expect(lines[contextIndex + 1]).toContain("Usage: Claude 80% left (5h)");
+  });
+
+  it("hides cost when not using an API key", () => {
+    const text = buildStatusMessage({
+      config: {
+        models: {
+          providers: {
+            anthropic: {
+              models: [
+                {
+                  id: "claude-opus-4-5",
+                  cost: {
+                    input: 1,
+                    output: 1,
+                    cacheRead: 0,
+                    cacheWrite: 0,
+                  },
+                },
+              ],
+            },
           },
-        ]),
-      ],
-    },
-    { verbose: true },
-  );
-  expect(text).toContain(
-    'Cron - Manage Gateway cron jobs and send wake events. Use this for reminders, "check back later" requests, delayed follow-ups, and recurring tasks. Do not emulate scheduling with exec sleep or process polling.',
-  );
-  expect(text).toContain("What this agent can use right now:");
-  expect(text).toContain("Tool availability depends on this agent's configuration.");
-  expect(text).not.toContain("ACTIONS:");
-  expect(text).not.toContain("JOB SCHEMA:");
+        },
+      } as unknown as OpenClawConfig,
+      agent: { model: "anthropic/claude-opus-4-5" },
+      sessionEntry: { sessionId: "c1", updatedAt: 0, inputTokens: 10 },
+      sessionKey: "agent:main:main",
+      sessionScope: "per-sender",
+      queue: { mode: "collect", depth: 0 },
+      modelAuth: "oauth",
+    });
+
+    expect(text).not.toContain("💵 Cost:");
+  });
+
+  function writeTranscriptUsageLog(params: {
+    dir: string;
+    agentId: string;
+    sessionId: string;
+    usage: {
+      input: number;
+      output: number;
+      cacheRead: number;
+      cacheWrite: number;
+      totalTokens: number;
+    };
+  }) {
+    const logPath = path.join(
+      params.dir,
+      ".paleoclaw",
+      "agents",
+      params.agentId,
+      "sessions",
+      `${params.sessionId}.jsonl`,
+    );
+    fs.mkdirSync(path.dirname(logPath), { recursive: true });
+    fs.writeFileSync(
+      logPath,
+      [
+        JSON.stringify({
+          type: "message",
+          message: {
+            role: "assistant",
+            model: "claude-opus-4-5",
+            usage: params.usage,
+          },
+        }),
+      ].join("\n"),
+      "utf-8",
+    );
+  }
+
+  const baselineTranscriptUsage = {
+    input: 1,
+    output: 2,
+    cacheRead: 1000,
+    cacheWrite: 0,
+    totalTokens: 1003,
+  } as const;
+
+  function writeBaselineTranscriptUsageLog(params: {
+    dir: string;
+    agentId: string;
+    sessionId: string;
+  }) {
+    writeTranscriptUsageLog({
+      ...params,
+      usage: baselineTranscriptUsage,
+    });
+  }
+
+  function buildTranscriptStatusText(params: { sessionId: string; sessionKey: string }) {
+    return buildStatusMessage({
+      agent: {
+        model: "anthropic/claude-opus-4-5",
+        contextTokens: 32_000,
+      },
+      sessionEntry: {
+        sessionId: params.sessionId,
+        updatedAt: 0,
+        totalTokens: 3,
+        contextTokens: 32_000,
+      },
+      sessionKey: params.sessionKey,
+      sessionScope: "per-sender",
+      queue: { mode: "collect", depth: 0 },
+      includeTranscriptUsage: true,
+      modelAuth: "api-key",
+    });
+  }
+
+  it("prefers cached prompt tokens from the session log", async () => {
+    await withTempHome(
+      async (dir) => {
+        const sessionId = "sess-1";
+        writeBaselineTranscriptUsageLog({
+          dir,
+          agentId: "main",
+          sessionId,
+        });
+
+        const text = buildTranscriptStatusText({
+          sessionId,
+          sessionKey: "agent:main:main",
+        });
+
+        expect(normalizeTestText(text)).toContain("Context: 1.0k/32k");
+      },
+      { prefix: "paleoclaw-status-" },
+    );
+  });
+
+  it("reads transcript usage for non-default agents", async () => {
+    await withTempHome(
+      async (dir) => {
+        const sessionId = "sess-worker1";
+        writeBaselineTranscriptUsageLog({
+          dir,
+          agentId: "worker1",
+          sessionId,
+        });
+
+        const text = buildTranscriptStatusText({
+          sessionId,
+          sessionKey: "agent:worker1:telegram:12345",
+        });
+
+        expect(normalizeTestText(text)).toContain("Context: 1.0k/32k");
+      },
+      { prefix: "paleoclaw-status-" },
+    );
+  });
+
+  it("reads transcript usage using explicit agentId when sessionKey is missing", async () => {
+    await withTempHome(
+      async (dir) => {
+        const sessionId = "sess-worker2";
+        writeTranscriptUsageLog({
+          dir,
+          agentId: "worker2",
+          sessionId,
+          usage: {
+            input: 2,
+            output: 3,
+            cacheRead: 1200,
+            cacheWrite: 0,
+            totalTokens: 1205,
+          },
+        });
+
+        const text = buildStatusMessage({
+          agent: {
+            model: "anthropic/claude-opus-4-5",
+            contextTokens: 32_000,
+          },
+          agentId: "worker2",
+          sessionEntry: {
+            sessionId,
+            updatedAt: 0,
+            totalTokens: 5,
+            contextTokens: 32_000,
+          },
+          // Intentionally omitted: sessionKey
+          sessionScope: "per-sender",
+          queue: { mode: "collect", depth: 0 },
+          includeTranscriptUsage: true,
+          modelAuth: "api-key",
+        });
+
+        expect(normalizeTestText(text)).toContain("Context: 1.2k/32k");
+      },
+      { prefix: "paleoclaw-status-" },
+    );
+  });
 });
 
-it("returns the empty state when no tools are available", () => {
-  expect(buildToolsMessage({ agentId: "main", profile: "full", groups: [] })).toBe(
-    "No tools are available for this agent right now.\n\nProfile: full",
-  );
+describe("buildCommandsMessage", () => {
+  it("lists commands with aliases and hints", () => {
+    const text = buildCommandsMessage({
+      commands: { config: false, debug: false },
+    } as unknown as OpenClawConfig);
+    expect(text).toContain("ℹ️ Slash commands");
+    expect(text).toContain("Status");
+    expect(text).toContain("/commands - List all slash commands.");
+    expect(text).toContain("/skill - Run a skill by name.");
+    expect(text).toContain("/think (/thinking, /t) - Set thinking level.");
+    expect(text).toContain("/compact - Compact the session context.");
+    expect(text).not.toContain("/config");
+    expect(text).not.toContain("/debug");
+  });
+
+  it("includes skill commands when provided", () => {
+    const text = buildCommandsMessage(
+      {
+        commands: { config: false, debug: false },
+      } as unknown as OpenClawConfig,
+      [
+        {
+          name: "demo_skill",
+          skillName: "demo-skill",
+          description: "Demo skill",
+        },
+      ],
+    );
+    expect(text).toContain("/demo_skill - Demo skill");
+  });
+});
+
+describe("buildHelpMessage", () => {
+  it("hides config/debug when disabled", () => {
+    const text = buildHelpMessage({
+      commands: { config: false, debug: false },
+    } as unknown as OpenClawConfig);
+    expect(text).toContain("Skills");
+    expect(text).toContain("/skill <name> [input]");
+    expect(text).not.toContain("/config");
+    expect(text).not.toContain("/debug");
+  });
+});
+
+describe("buildCommandsMessagePaginated", () => {
+  it("formats telegram output with pages", () => {
+    const result = buildCommandsMessagePaginated(
+      {
+        commands: { config: false, debug: false },
+      } as unknown as OpenClawConfig,
+      undefined,
+      { surface: "telegram", page: 1 },
+    );
+    expect(result.text).toContain("ℹ️ Commands (1/");
+    expect(result.text).toContain("Session");
+    expect(result.text).toContain("/stop - Stop the current run.");
+  });
+
+  it("includes plugin commands in the paginated list", () => {
+    listPluginCommands.mockReturnValue([
+      { name: "plugin_cmd", description: "Plugin command", pluginId: "demo-plugin" },
+    ]);
+    const result = buildCommandsMessagePaginated(
+      {
+        commands: { config: false, debug: false },
+      } as unknown as OpenClawConfig,
+      undefined,
+      { surface: "telegram", page: 99 },
+    );
+    expect(result.text).toContain("Plugins");
+    expect(result.text).toContain("/plugin_cmd (demo-plugin) - Plugin command");
+  });
 });

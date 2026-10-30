@@ -9,7 +9,7 @@
  */
 
 import type { DatabaseSync } from "node:sqlite";
-import * as path from "node:path";
+import * as path from "path";
 import { requireNodeSqlite } from "../../memory/sqlite.js";
 import { paleoclawHome, ensurePrivateDir } from "../paths.js";
 import {
@@ -20,7 +20,16 @@ import {
   previewText,
   truncateTitle,
 } from "./store.js";
-import { type SessionMessage, type SessionRecord, type SessionRole, type SessionSearchHit, type SessionStoreLike, type SessionTitleSource, type SessionTitleUpgrader } from "./types.js";
+import {
+  SessionMessage,
+  SessionRecord,
+  SessionRole,
+  SessionSearchHit,
+  SessionStoreLike,
+  SessionTitleSource,
+  SessionTitleUpgrader,
+} from "./types.js";
+
 function nowIso(): string {
   return new Date().toISOString();
 }
@@ -87,23 +96,6 @@ function isFtsError(error: unknown): boolean {
   return /fts|corrupt|malformed/i.test(message);
 }
 
-/**
- * Errors a concurrent writer can cause on an append:
- *  - a seq conflict on the (session_id, seq) primary key, and
- *  - SQLITE_BUSY ("database is locked") when another connection holds the
- *    write lock — the message text does NOT mention a constraint, so a
- *    constraint-only filter never matched it.
- * Both are worth another attempt: the transaction is rolled back before the
- * retry, so nothing is half-written.
- */
-function isRetryableWriteError(error: unknown): boolean {
-  const message = error instanceof Error ? error.message : String(error);
-  return /UNIQUE|PRIMARY KEY|constraint|locked|busy/i.test(message);
-}
-
-/** Attempts per append: one initial write plus two retries. */
-const APPEND_MAX_ATTEMPTS = 3;
-
 /** sessionId -> seq -> number of query tokens matched (for scoring). */
 type MatchCounts = Map<string, Map<number, number>>;
 
@@ -116,31 +108,20 @@ export interface SqliteSessionStoreOptions {
   wal?: boolean;
   /** Skip the FTS5 index entirely and always search via LIKE. */
   fts?: boolean;
-  /**
-   * How long (ms) a writer waits for the database lock before SQLite reports
-   * SQLITE_BUSY. Defaults to 5000 — long enough for a concurrent append to
-   * finish instead of losing the message.
-   */
-  busyTimeoutMs?: number;
   /** Same Stage-2 title hook as the JSON store. */
   titleUpgrader?: SessionTitleUpgrader;
 }
-
-/** Default lock wait for writers (ms). */
-const DEFAULT_BUSY_TIMEOUT_MS = 5000;
 
 export class SqliteSessionStore implements SessionStoreLike {
   private db: DatabaseSync;
   private dbPath: string;
   private walEnabled: boolean;
-  private ftsAvailable = false;
+  private ftsAvailable: boolean = false;
   private titleUpgrader?: SessionTitleUpgrader;
-  private busyTimeoutMs: number;
 
   constructor(dbPath: string, options: SqliteSessionStoreOptions = {}) {
     this.dbPath = dbPath;
     this.titleUpgrader = options.titleUpgrader;
-    this.busyTimeoutMs = options.busyTimeoutMs ?? DEFAULT_BUSY_TIMEOUT_MS;
 
     const { DatabaseSync } = requireNodeSqlite();
     ensurePrivateDir(path.dirname(dbPath));
@@ -152,16 +133,6 @@ export class SqliteSessionStore implements SessionStoreLike {
   }
 
   private applyPragmas(): void {
-    // busy_timeout comes first: it makes every later pragma (notably the
-    // journal_mode switch, which needs an exclusive lock) wait for a
-    // concurrent writer instead of failing. Without it, a writer holding the
-    // lock at open time made the WAL switch fail and silently downgraded the
-    // store to the DELETE journal mode.
-    try {
-      this.db.exec(`PRAGMA busy_timeout = ${Math.max(0, Math.trunc(this.busyTimeoutMs))}`);
-    } catch {
-      // Ignore.
-    }
     if (this.walEnabled) {
       try {
         this.db.exec("PRAGMA journal_mode = WAL");
@@ -235,7 +206,7 @@ export class SqliteSessionStore implements SessionStoreLike {
       const ftsRow = asRow(this.db.prepare("SELECT COUNT(*) AS count FROM messages_fts").get()) as
         | { count: number }
         | undefined;
-      if (msgRow?.count ?? 0 > 0 && ftsRow?.count ?? 0 === 0) {
+      if (Number(msgRow?.count ?? 0) > 0 && Number(ftsRow?.count ?? 0) === 0) {
         this.rebuildFts();
       }
     } catch {
@@ -267,19 +238,8 @@ export class SqliteSessionStore implements SessionStoreLike {
     }
   }
 
-  /**
-   * Run `fn` inside a write transaction.
-   *
-   * BEGIN IMMEDIATE (not the default deferred BEGIN) takes the write lock up
-   * front: with a deferred transaction the first statement only starts a read
-   * transaction, so a concurrent writer can commit between the MAX(seq) read
-   * and the INSERT — the INSERT then fails with SQLITE_BUSY_SNAPSHOT
-   * ("database is locked"), which no busy handler can resolve because the
-   * read snapshot is already stale. Holding the write lock from the start
-   * makes the seq read and the INSERT atomic with respect to other writers.
-   */
   private withTransaction<T>(fn: () => T): T {
-    this.db.exec("BEGIN IMMEDIATE");
+    this.db.exec("BEGIN");
     try {
       const result = fn();
       this.db.exec("COMMIT");
@@ -295,7 +255,7 @@ export class SqliteSessionStore implements SessionStoreLike {
   }
 
   private assertValidSessionId(sessionId: string): string {
-    const id = sessionId || "".trim();
+    const id = String(sessionId || "").trim();
     // Same guard-rails as the JSON store so both backends reject identical ids.
     if (!id || id.includes("/") || id.includes("\\") || id.includes("..")) {
       throw new Error(`Invalid sessionId: ${sessionId}`);
@@ -315,8 +275,8 @@ export class SqliteSessionStore implements SessionStoreLike {
       const message: SessionMessage = {
         id: `${sessionId}:${row.seq}`,
         role: row.role as SessionRole,
-        content: row.content ?? "",
-        createdAt: row.ts ?? "",
+        content: String(row.content ?? ""),
+        createdAt: String(row.ts ?? ""),
       };
       const metadata = parseJsonObject(row.metadata);
       if (Object.keys(metadata).length > 0) {
@@ -326,35 +286,20 @@ export class SqliteSessionStore implements SessionStoreLike {
     });
   }
 
-  private insertMessage(
-    sessionId: string,
-    role: SessionRole,
-    content: string,
-    ts: string,
-    seq: number,
-    metadata?: Record<string, unknown>,
-  ): void {
-    this.db
-      .prepare(
-        "INSERT INTO messages (session_id, role, content, ts, seq, metadata) VALUES (?, ?, ?, ?, ?, ?)",
-      )
-      .run(sessionId, role, content, ts, seq, metadata ? JSON.stringify(metadata) : null);
-  }
-
   private rowToRecord(row: SessionRow): SessionRecord {
     const meta = parseJsonObject(row.meta);
-    const title = row.title ?? DEFAULT_SESSION_TITLE;
+    const title = String(row.title ?? DEFAULT_SESSION_TITLE);
     const rawTags = meta.tags;
     return {
-      id: row.id,
+      id: String(row.id),
       title,
       titleSource: normalizeTitleSource(row.title_source ?? undefined, title),
-      createdAt: row.created_at ?? "",
-      updatedAt: row.updated_at ?? "",
+      createdAt: String(row.created_at ?? ""),
+      updatedAt: String(row.updated_at ?? ""),
       tags: Array.isArray(rawTags)
         ? rawTags.filter((tag): tag is string => typeof tag === "string")
         : [],
-      messages: this.readMessages(row.id),
+      messages: this.readMessages(String(row.id)),
     };
   }
 
@@ -387,7 +332,7 @@ export class SqliteSessionStore implements SessionStoreLike {
     }
     void upgrader({ sessionId, firstUserMessage, currentTitle })
       .then((upgraded) => {
-        const upgradedTitle = upgraded || "".trim();
+        const upgradedTitle = String(upgraded || "").trim();
         if (!upgradedTitle) {
           return;
         }
@@ -405,13 +350,13 @@ export class SqliteSessionStore implements SessionStoreLike {
   }
 
   upsertSession(sessionId: string, title?: string, tags: string[] = []): SessionRecord {
-    const normalizedId = sessionId || "".trim();
+    const normalizedId = String(sessionId || "").trim();
     if (!normalizedId) {
       throw new Error("sessionId is required");
     }
     const id = this.assertValidSessionId(normalizedId);
 
-    const trimmedTitle = title || "".trim();
+    const trimmedTitle = String(title || "").trim();
     const filteredTags = tags.filter((tag) => tag.trim().length > 0);
 
     const exists = asRow(this.db.prepare("SELECT id FROM sessions WHERE id = ?").get(id)) as
@@ -442,24 +387,11 @@ export class SqliteSessionStore implements SessionStoreLike {
       }
 
       const updatedAt = nowIso();
-      // Merge into the existing meta rather than replacing it with
-      // `{ tags }` — the previous overwrite silently dropped any other key
-      // a future writer had stored there.
-      const metaRow = asRow(this.db.prepare("SELECT meta FROM sessions WHERE id = ?").get(id)) as
-        | { meta?: string | null }
-        | undefined;
-      const existingMeta = parseJsonObject(metaRow?.meta ?? null);
       this.db
         .prepare(
           "UPDATE sessions SET title = ?, title_source = ?, updated_at = ?, meta = ? WHERE id = ?",
         )
-        .run(
-          nextTitle,
-          nextTitleSource,
-          updatedAt,
-          JSON.stringify({ ...existingMeta, tags: mergedTags }),
-          id,
-        );
+        .run(nextTitle, nextTitleSource, updatedAt, JSON.stringify({ tags: mergedTags }), id);
       return {
         ...existing,
         title: nextTitle,
@@ -497,64 +429,33 @@ export class SqliteSessionStore implements SessionStoreLike {
   ): SessionMessage {
     const id = this.assertValidSessionId(sessionId);
     const record = this.readRecord(id);
-    const text = content || "";
+    const text = String(content || "");
     const isFirstUserMessage = role === "user" && !record.messages.some((m) => m.role === "user");
     // Stage 1: derive an instant title from the first user message so `list`
     // never shows the generic placeholder once any user message exists.
     const shouldDeriveTitle = isFirstUserMessage && (record.titleSource ?? "user") !== "user";
     const title = shouldDeriveTitle ? deriveInstantTitle(text) : record.title;
 
-    // seq is assigned inside the transaction below, from a MAX(seq) read that
-    // is itself inside the transaction boundary.
-    let seq = 0;
+    const seqRow = asRow(
+      this.db.prepare("SELECT MAX(seq) AS max_seq FROM messages WHERE session_id = ?").get(id),
+    ) as { max_seq: number | null } | undefined;
+    const seq = Number(seqRow?.max_seq ?? -1) + 1;
     const ts = nowIso();
 
-    // The retry wraps the whole transaction, not just the INSERT: a BUSY error
-    // leaves the transaction's read snapshot stale (SQLITE_BUSY_SNAPSHOT), so
-    // the only way forward is to roll back and start over from a fresh
-    // snapshot. withTransaction() rolls back before rethrowing, so a retry
-    // never sees a half-written message.
-    for (let attempt = 0; attempt < APPEND_MAX_ATTEMPTS; attempt += 1) {
-      try {
-        this.withTransaction(() => {
-          // Re-read MAX(seq) inside the write transaction. Reading it outside
-          // meant two concurrent appends could both compute the same seq and
-          // collide on the (session_id, seq) primary key; the write lock
-          // (BEGIN IMMEDIATE) plus the retry keep the invariant local to the
-          // write even if another writer committed in between.
-          for (let seqAttempt = 0; seqAttempt < APPEND_MAX_ATTEMPTS; seqAttempt += 1) {
-            const current = asRow(
-              this.db
-                .prepare("SELECT MAX(seq) AS max_seq FROM messages WHERE session_id = ?")
-                .get(id),
-            ) as { max_seq: number | null } | undefined;
-            seq = current?.max_seq ?? -1 + 1;
-            try {
-              this.insertMessage(id, role, text, ts, seq, metadata);
-            } catch (error) {
-              if (isRetryableWriteError(error) && seqAttempt < APPEND_MAX_ATTEMPTS - 1) {
-                continue;
-              }
-              throw error;
-            }
-            if (shouldDeriveTitle) {
-              this.db
-                .prepare("UPDATE sessions SET title = ?, title_source = ? WHERE id = ?")
-                .run(title, "derived", id);
-            }
-            this.syncFts(id, seq, text);
-            this.db.prepare("UPDATE sessions SET updated_at = ? WHERE id = ?").run(nowIso(), id);
-            return;
-          }
-        });
-        break;
-      } catch (error) {
-        if (attempt < APPEND_MAX_ATTEMPTS - 1 && isRetryableWriteError(error)) {
-          continue;
-        }
-        throw error;
+    this.withTransaction(() => {
+      if (shouldDeriveTitle) {
+        this.db
+          .prepare("UPDATE sessions SET title = ?, title_source = ? WHERE id = ?")
+          .run(title, "derived", id);
       }
-    }
+      this.db
+        .prepare(
+          "INSERT INTO messages (session_id, role, content, ts, seq, metadata) VALUES (?, ?, ?, ?, ?, ?)",
+        )
+        .run(id, role, text, ts, seq, metadata ? JSON.stringify(metadata) : null);
+      this.syncFts(id, seq, text);
+      this.db.prepare("UPDATE sessions SET updated_at = ? WHERE id = ?").run(nowIso(), id);
+    });
 
     // Stage 2: kick off the optional async upgrade (never awaited).
     if (shouldDeriveTitle) {
@@ -626,7 +527,7 @@ export class SqliteSessionStore implements SessionStoreLike {
   }
 
   search(query: string, limit = 10): SessionSearchHit[] {
-    const normalized = query || ""
+    const normalized = String(query || "")
       .trim()
       .toLowerCase();
     if (!normalized) {
@@ -674,7 +575,7 @@ export class SqliteSessionStore implements SessionStoreLike {
       }
       const rows = asRows<{ session_id: string; seq: number }>(ftsStmt.all(escapeFtsToken(token)));
       for (const row of rows) {
-        this.addMatch(matches, row.session_id, row.seq);
+        this.addMatch(matches, String(row.session_id), Number(row.seq));
       }
     }
     return this.buildHits(tokens, matches, limit);
@@ -693,7 +594,7 @@ export class SqliteSessionStore implements SessionStoreLike {
       this.db.prepare(LIKE_SEARCH_SQL).all(`%${escapeLikeToken(token)}%`),
     );
     for (const row of rows) {
-      this.addMatch(matches, row.session_id, row.seq);
+      this.addMatch(matches, String(row.session_id), Number(row.seq));
     }
   }
 
@@ -720,11 +621,11 @@ export class SqliteSessionStore implements SessionStoreLike {
         const score = tokens.length > 0 ? count / tokens.length : 0;
         hits.push({
           sessionId,
-          title: row.title ?? DEFAULT_SESSION_TITLE,
+          title: String(row.title ?? DEFAULT_SESSION_TITLE),
           messageId: `${sessionId}:${seq}`,
           score: Math.round(score * 10_000) / 10_000,
-          preview: previewText(row.content ?? ""),
-          createdAt: row.ts ?? "",
+          preview: previewText(String(row.content ?? "")),
+          createdAt: String(row.ts ?? ""),
         });
       }
     }
@@ -739,7 +640,7 @@ export class SqliteSessionStore implements SessionStoreLike {
       | undefined;
     return {
       root: this.dbPath,
-      count: row?.count ?? 0,
+      count: Number(row?.count ?? 0),
     };
   }
 

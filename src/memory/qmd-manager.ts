@@ -306,18 +306,18 @@ export class QmdMemoryManager implements MemorySearchManager {
     if (this.qmd.update.onBoot) {
       const bootRun = this.runUpdate("boot", true);
       if (this.qmd.update.waitForBootSync) {
-        await bootRun.catch((err: unknown) => {
+        await bootRun.catch((err) => {
           log.warn(`qmd boot update failed: ${String(err)}`);
         });
       } else {
-        void bootRun.catch((err: unknown) => {
+        void bootRun.catch((err) => {
           log.warn(`qmd boot update failed: ${String(err)}`);
         });
       }
     }
     if (this.qmd.update.intervalMs > 0) {
       this.updateTimer = setInterval(() => {
-        void this.runUpdate("interval").catch((err: unknown) => {
+        void this.runUpdate("interval").catch((err) => {
           log.warn(`qmd update failed (${String(err)})`);
         });
       }, this.qmd.update.intervalMs);

@@ -17,30 +17,11 @@ export interface RankedItem extends SearchItem {
   score: number;
 }
 
-// Bounded cache for tokenized vectors so repeated queries don't re-hash.
-// Eviction is FIFO (oldest insertion first), not LRU: entries are never
-// re-ordered on a hit. That is a deliberate trade — refreshing recency on
-// every hit costs a delete+set on the hot path, and re-hashing a few hundred
-// chars is cheap next to the disk and network I/O the caller performs.
-//
-// The key includes the dimension because textToVector() output is
-// dimension-specific. Keying on text alone would hand back a wrong-dimension
-// vector to any caller that used a dim other than the default.
+// LRU cache for tokenized vectors so repeated queries don't re-hash.
 const VECTOR_CACHE_MAX = 500;
 const vectorCache = new Map<string, Map<number, number>>();
-
-/**
- * Return the (cached) vector for `text` at dimension `dim`.
- *
- * Exported so callers and tests can assert the dimension-keyed cache
- * behaviour: the same text at two dimensions must yield two different
- * vectors, never one shared bucket.
- */
-export function getCachedVector(text: string, dim: number): Map<number, number> {
-  // `dim` is a pure digit run, so the first "|" unambiguously terminates it and
-  // no text can forge another dimension's prefix.
-  const key = `${dim}|${text}`;
-  const cached = vectorCache.get(key);
+function getCachedVector(text: string, dim: number): Map<number, number> {
+  const cached = vectorCache.get(text);
   if (cached) {
     return cached;
   }
@@ -52,7 +33,7 @@ export function getCachedVector(text: string, dim: number): Map<number, number> 
       vectorCache.delete(firstKey);
     }
   }
-  vectorCache.set(key, vec);
+  vectorCache.set(text, vec);
   return vec;
 }
 
@@ -81,7 +62,7 @@ function fnvHashToken(token: string, dim: number): [number, number] {
   }
   const unsigned = h >>> 0;
   const idx = unsigned % dim;
-  const sign = unsigned & 0x8000 ? -1 : 1;
+  const sign = unsigned & 0x8000 ? -1.0 : 1.0;
   return [idx, sign];
 }
 

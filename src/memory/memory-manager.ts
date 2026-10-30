@@ -1,10 +1,11 @@
 import { MemoryProvider, type MemoryProviderStats } from "./memory-provider.js";
+
 export class MemoryManager {
   private static instance: MemoryManager;
   private providers: Map<string, MemoryProvider> = new Map();
   private externalProviderCount = 0;
   private externalProviderNames: Set<string> = new Set();
-  private currentSessionId = "";
+  private currentSessionId: string = "";
 
   static getInstance(): MemoryManager {
     if (!MemoryManager.instance) {
@@ -13,7 +14,7 @@ export class MemoryManager {
     return MemoryManager.instance;
   }
 
-  add_provider(provider: MemoryProvider, is_external = false): boolean {
+  add_provider(provider: MemoryProvider, is_external: boolean = false): boolean {
     if (is_external && this.externalProviderCount >= 1) {
       console.warn(
         "MemoryManager: Maximum external providers (1) reached. Rejecting:",

@@ -1,4 +1,4 @@
-import { DisconnectReason } from "baileys";
+import { DisconnectReason } from "@whiskeysockets/baileys";
 import { formatCliCommand } from "../cli/command-format.js";
 import { loadConfig } from "../config/config.js";
 import { danger, info, success } from "../globals.js";
@@ -34,7 +34,7 @@ export async function loginWeb(
         ),
       );
       try {
-        Promise.resolve(sock.ws?.close()).catch(() => {});
+        sock.ws?.close();
       } catch {
         // ignore
       }
@@ -69,7 +69,7 @@ export async function loginWeb(
     // Let Baileys flush any final events before closing the socket.
     setTimeout(() => {
       try {
-        Promise.resolve(sock.ws?.close()).catch(() => {});
+        sock.ws?.close();
       } catch {
         // ignore
       }

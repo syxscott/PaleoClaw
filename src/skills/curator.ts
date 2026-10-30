@@ -10,8 +10,8 @@
  * activity via `recordSkillUse()`.
  */
 
-import * as fs from "node:fs";
-import * as path from "node:path";
+import * as fs from "fs";
+import * as path from "path";
 
 export interface SkillMeta {
   lastUsedAt?: string;
@@ -142,7 +142,7 @@ export function runCurator(opts: CuratorOptions): CuratorReport {
     let lastUsedMs: number | undefined;
     if (meta.lastUsedAt !== undefined) {
       const parsed = new Date(meta.lastUsedAt);
-      if (!Number.isNaN(parsed.getTime())) { lastUsedMs = parsed.getTime(); }
+      if (!Number.isNaN(parsed.getTime())) lastUsedMs = parsed.getTime();
     }
 
     if (lastUsedMs === undefined) {

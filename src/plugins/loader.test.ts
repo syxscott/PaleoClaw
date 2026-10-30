@@ -58,7 +58,7 @@ function writePlugin(params: {
   const file = path.join(dir, filename);
   fs.writeFileSync(file, params.body, "utf-8");
   fs.writeFileSync(
-    path.join(dir, "openclaw.plugin.json"),
+    path.join(dir, "paleoclaw.plugin.json"),
     JSON.stringify(
       {
         id: params.id,
@@ -209,7 +209,7 @@ function createEscapingEntryFixture(params: { id: string; sourceBody: string }) 
   const linkedEntry = path.join(pluginDir, "entry.cjs");
   fs.writeFileSync(outsideEntry, params.sourceBody, "utf-8");
   fs.writeFileSync(
-    path.join(pluginDir, "openclaw.plugin.json"),
+    path.join(pluginDir, "paleoclaw.plugin.json"),
     JSON.stringify(
       {
         id: params.id,
@@ -613,7 +613,7 @@ describe("loadOpenClawPlugins", () => {
     expect(loaded?.error).toContain("registerPluginHttpRoute(...)");
     expect(
       registry.diagnostics.some((diag) =>
-        diag.message.includes("api.registerHttpHandler(...) was removed"),
+        String(diag.message).includes("api.registerHttpHandler(...) was removed"),
       ),
     ).toBe(true);
     expect(errors.some((entry) => entry.includes("api.registerHttpHandler(...) was removed"))).toBe(
@@ -666,7 +666,7 @@ describe("loadOpenClawPlugins", () => {
     );
     expect(
       registry.diagnostics.some((diag) =>
-        diag.message.includes("http route registration missing or invalid auth"),
+        String(diag.message).includes("http route registration missing or invalid auth"),
       ),
     ).toBe(true);
   });
@@ -728,7 +728,7 @@ describe("loadOpenClawPlugins", () => {
     expect(route?.pluginId).toBe("http-route-owner-a");
     expect(
       registry.diagnostics.some((diag) =>
-        diag.message.includes("http route replacement rejected"),
+        String(diag.message).includes("http route replacement rejected"),
       ),
     ).toBe(true);
   });
@@ -756,7 +756,7 @@ describe("loadOpenClawPlugins", () => {
     expect(routes[0]?.path).toBe("/plugin/secure");
     expect(
       registry.diagnostics.some((diag) =>
-        diag.message.includes("http route overlap rejected"),
+        String(diag.message).includes("http route overlap rejected"),
       ),
     ).toBe(true);
   });
@@ -851,13 +851,13 @@ describe("loadOpenClawPlugins", () => {
       providerOverride: "anthropic",
     });
     const blockedDiagnostics = registry.diagnostics.filter((diag) =>
-      diag.message.includes(
+      String(diag.message).includes(
         "blocked by plugins.entries.hook-policy.hooks.allowPromptInjection=false",
       ),
     );
     expect(blockedDiagnostics).toHaveLength(1);
     const constrainedDiagnostics = registry.diagnostics.filter((diag) =>
-      diag.message.includes(
+      String(diag.message).includes(
         "prompt fields constrained by plugins.entries.hook-policy.hooks.allowPromptInjection=false",
       ),
     );
@@ -910,17 +910,17 @@ describe("loadOpenClawPlugins", () => {
     expect(registry.plugins.find((entry) => entry.id === "hook-unknown")?.status).toBe("loaded");
     expect(registry.typedHooks.map((entry) => entry.hookName)).toEqual(["before_model_resolve"]);
     const unknownHookDiagnostics = registry.diagnostics.filter((diag) =>
-      diag.message.includes('unknown typed hook "'),
+      String(diag.message).includes('unknown typed hook "'),
     );
     expect(unknownHookDiagnostics).toHaveLength(2);
     expect(
       unknownHookDiagnostics.some((diag) =>
-        diag.message.includes('unknown typed hook "totally_unknown_hook_name" ignored'),
+        String(diag.message).includes('unknown typed hook "totally_unknown_hook_name" ignored'),
       ),
     ).toBe(true);
     expect(
       unknownHookDiagnostics.some((diag) =>
-        diag.message.includes('unknown typed hook "123" ignored'),
+        String(diag.message).includes('unknown typed hook "123" ignored'),
       ),
     ).toBe(true);
   });
@@ -971,7 +971,7 @@ describe("loadOpenClawPlugins", () => {
       body: `module.exports = { id: "memory-b", kind: "memory", register() {} };`,
     });
     fs.writeFileSync(
-      path.join(memoryADir, "openclaw.plugin.json"),
+      path.join(memoryADir, "paleoclaw.plugin.json"),
       JSON.stringify(
         {
           id: "memory-a",
@@ -984,7 +984,7 @@ describe("loadOpenClawPlugins", () => {
       "utf-8",
     );
     fs.writeFileSync(
-      path.join(memoryBDir, "openclaw.plugin.json"),
+      path.join(memoryBDir, "paleoclaw.plugin.json"),
       JSON.stringify(
         {
           id: "memory-b",
@@ -1015,7 +1015,7 @@ describe("loadOpenClawPlugins", () => {
     const a = registry.plugins.find((entry) => entry.id === "memory-a");
     const b = registry.plugins.find((entry) => entry.id === "memory-b");
     expect(a?.status).toBe("disabled");
-    expect(a?.error ?? "").toContain('memory slot set to "memory-b"');
+    expect(String(a?.error ?? "")).toContain('memory slot set to "memory-b"');
     expect(b?.status).toBe("loaded");
   });
 

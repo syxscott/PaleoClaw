@@ -1,4 +1,4 @@
-import { ToolEntry, ToolSetEntry, ToolJsonSchema } from "./registry-types.js";
+import { type ToolEntry, type ToolSetEntry, type ToolJsonSchema } from "./registry-types.js";
 import { ToolAvailabilityCache } from "./tool-availability-cache.js";
 
 export class ToolRegistry {

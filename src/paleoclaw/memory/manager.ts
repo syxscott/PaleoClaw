@@ -31,14 +31,7 @@ export class BuiltinTaskMemoryProvider implements MemoryProvider {
   name = "builtin-task-memory";
   isBuiltin = true;
 
-  private readonly sessionId: string;
-
-  constructor(
-    private readonly store: TaskMemoryStore = new TaskMemoryStore(),
-    options: { sessionId?: string } = {},
-  ) {
-    this.sessionId = options.sessionId || "".trim() || "adhoc";
-  }
+  constructor(private readonly store: TaskMemoryStore = new TaskMemoryStore()) {}
 
   buildSystemPrompt(): string {
     const status = this.store.getStatus();
@@ -50,7 +43,7 @@ export class BuiltinTaskMemoryProvider implements MemoryProvider {
   }
 
   prefetch(userMessage: string): string {
-    const query = userMessage || "".trim();
+    const query = String(userMessage || "").trim();
     if (!query) {
       return "";
     }
@@ -60,10 +53,6 @@ export class BuiltinTaskMemoryProvider implements MemoryProvider {
       scope: "all",
       topK: 3,
       minScore: 0.12,
-      // Chat digests are session-private: without this the store would hand
-      // back another session's conversation text and it would be injected
-      // into this session's prompt.
-      sessionId: this.sessionId,
     });
 
     if (hits.length === 0) {
@@ -78,33 +67,15 @@ export class BuiltinTaskMemoryProvider implements MemoryProvider {
             ? payload.summary
             : typeof payload.error === "string"
               ? payload.error
-              : typeof payload.excerpt === "string"
-                ? payload.excerpt
-                : "";
+              : "";
         return `${idx + 1}. [${hit.source}] ${hit.taskId} (score=${hit.score || 0}) ${summary}`.trim();
       })
       .join("\n");
   }
 
-  /**
-   * Fold the completed turn into the session's chat day file. This is the
-   * only write side of the builtin memory provider — without it the store is
-   * never populated by a real run and every later prefetch returns nothing.
-   * Best-effort: callers already treat provider failures as non-fatal.
-   */
-  sync(userMessage: string, assistantResponse: string): void {
-    const userText = userMessage || "".trim();
-    const assistantText = assistantResponse || "".trim();
-    if (!userText && !assistantText) {
-      return;
-    }
-    this.store.recordChatTurn({
-      sessionId: this.sessionId,
-      userText,
-      assistantText,
-      intent: "agent-turn",
-      mode: "chat",
-    });
+  sync(): void {
+    // Keep side-effects optional for now; current memory lifecycle is managed
+    // by TaskMemoryStore CLI and task hooks.
   }
 }
 
@@ -176,8 +147,8 @@ export class MemoryManager {
   }
 }
 
-export function createDefaultMemoryManager(options: { sessionId?: string } = {}): MemoryManager {
+export function createDefaultMemoryManager(): MemoryManager {
   const manager = new MemoryManager();
-  manager.addProvider(new BuiltinTaskMemoryProvider(undefined, options));
+  manager.addProvider(new BuiltinTaskMemoryProvider());
   return manager;
 }

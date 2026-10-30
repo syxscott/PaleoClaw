@@ -147,7 +147,7 @@ export const imessageOnboardingAdapter: ChannelOnboardingAdapter = {
         initialValue: resolvedCliPath,
         validate: (value) => (value?.trim() ? undefined : "Required"),
       });
-      resolvedCliPath = entered.trim();
+      resolvedCliPath = String(entered).trim();
       if (!resolvedCliPath) {
         await prompter.note("imsg CLI path required to enable iMessage.", "iMessage");
       }
