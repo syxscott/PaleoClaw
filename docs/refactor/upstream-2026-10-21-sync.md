@@ -19,28 +19,28 @@ measure the gap without guessing.
 
 ## Already fixed on this branch
 
-| Area | Root cause | Symptom it produced |
-| --- | --- | --- |
-| Rust crate names | Renaming a Cargo package renames its library (`openclaw_gateway_client` -> `paleoclaw_gateway_client`), but the `use` statements were left behind | One unresolved import plus six cascading `E0599` errors |
-| Rust formatting | `openclaw` (7 characters) to `paleoclaw` (9) pushed three lines past the width budget | `cargo fmt --check` failed the Linux companion build |
-| Shell script modes | Renaming a file drops the executable bit on platforms where git cannot read it from the filesystem | `EACCES` when a workflow spawned `scripts/stage-paleoclaw-bun.sh` |
-| Third-party coordinates | The Bun runtime is published by `openclaw/bun` and signed by the OpenClaw Foundation, but the rebranded fork expected a `paleoclaw/bun` repository and a `paleoclaw Foundation` signer | The desktop build failed before downloading anything |
-| Package manager | pnpm 10 writes a `.` segment into packed tar entry paths, and pnpm 12 refuses to install when a dependency with a build script is missing from `allowBuilds` | The bundled browser MCP tarball was rejected; `sharp` (used by the morphometric skill) blocked every install |
-| Swift module scope | Upstream moved types into new files and rewrote others; the fork kept the old copies, so the same type was declared twice in one module | 952 Swift compile errors, all before a single app file compiled |
-| SwiftPM manifests | The Xcode project is generated from `apps/ios/project.yml`, whose name is `paleoclaw`; the watch app was still declared as a watchOS 1 container; the mermaid bundle is generated | XcodeGen refused to generate the project, then the watch app was emitted twice |
-| Vite configuration | A Vite config that fails to load silently drops its `resolve.alias`, so the build then cannot resolve a workspace package that only exposes built entry points | `failed to load config from ...` followed by a misleading "no runtime resolution" error |
-| Root dependency ranges | `pnpm-workspace.yaml` overrides rewrite the resolved version, but the manifest kept the pre-override range | The npm package lock generator rejected the root dependency set |
+| Area                    | Root cause                                                                                                                                                                             | Symptom it produced                                                                                          |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| Rust crate names        | Renaming a Cargo package renames its library (`openclaw_gateway_client` -> `paleoclaw_gateway_client`), but the `use` statements were left behind                                      | One unresolved import plus six cascading `E0599` errors                                                      |
+| Rust formatting         | `openclaw` (7 characters) to `paleoclaw` (9) pushed three lines past the width budget                                                                                                  | `cargo fmt --check` failed the Linux companion build                                                         |
+| Shell script modes      | Renaming a file drops the executable bit on platforms where git cannot read it from the filesystem                                                                                     | `EACCES` when a workflow spawned `scripts/stage-paleoclaw-bun.sh`                                            |
+| Third-party coordinates | The Bun runtime is published by `openclaw/bun` and signed by the OpenClaw Foundation, but the rebranded fork expected a `paleoclaw/bun` repository and a `paleoclaw Foundation` signer | The desktop build failed before downloading anything                                                         |
+| Package manager         | pnpm 10 writes a `.` segment into packed tar entry paths, and pnpm 12 refuses to install when a dependency with a build script is missing from `allowBuilds`                           | The bundled browser MCP tarball was rejected; `sharp` (used by the morphometric skill) blocked every install |
+| Swift module scope      | Upstream moved types into new files and rewrote others; the fork kept the old copies, so the same type was declared twice in one module                                                | 952 Swift compile errors, all before a single app file compiled                                              |
+| SwiftPM manifests       | The Xcode project is generated from `apps/ios/project.yml`, whose name is `paleoclaw`; the watch app was still declared as a watchOS 1 container; the mermaid bundle is generated      | XcodeGen refused to generate the project, then the watch app was emitted twice                               |
+| Vite configuration      | A Vite config that fails to load silently drops its `resolve.alias`, so the build then cannot resolve a workspace package that only exposes built entry points                         | `failed to load config from ...` followed by a misleading "no runtime resolution" error                      |
+| Root dependency ranges  | `pnpm-workspace.yaml` overrides rewrite the resolved version, but the manifest kept the pre-override range                                                                             | The npm package lock generator rejected the root dependency set                                              |
 
 ## What is still stale
 
 Measured against the upstream snapshot, after this branch:
 
-| Tree | Files | Identical to upstream | Genuinely different |
-| --- | --- | --- | --- |
-| `apps/macos/Sources/OpenClaw` | 377 | 234 | 108 |
-| `apps/shared/OpenClawKit/Sources/OpenClawKit` | 115 | 104 | 11 |
-| `apps/shared/OpenClawKit/Sources/OpenClawChatUI` | 185 | 169 | 16 |
-| `src/` (TypeScript) | - | - | 2052 |
+| Tree                                             | Files | Identical to upstream | Genuinely different |
+| ------------------------------------------------ | ----- | --------------------- | ------------------- |
+| `apps/macos/Sources/OpenClaw`                    | 377   | 234                   | 108                 |
+| `apps/shared/OpenClawKit/Sources/OpenClawKit`    | 115   | 104                   | 11                  |
+| `apps/shared/OpenClawKit/Sources/OpenClawChatUI` | 185   | 169                   | 16                  |
+| `src/` (TypeScript)                              | -     | -                     | 2052                |
 
 The three biggest ChatUI files (`ChatComposer.swift`, `ChatView.swift`,
 `ChatViewModel.swift`, roughly 3800 lines together) are still the fork's
