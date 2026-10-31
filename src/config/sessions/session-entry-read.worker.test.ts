@@ -12,7 +12,10 @@ import { runSessionMutation } from "../../sessions/session-controller.lifecycle.
 import { sessionChanges } from "../../sessions/session-row-changes.js";
 import { closeOpenClawAgentDatabaseByPathAsync } from "../../state/paleoclaw-agent-db-lifecycle.js";
 import { OpenClawAgentDatabaseReadOnlyScope } from "../../state/paleoclaw-agent-db-readonly-scope.js";
-import { OpenClawAgentReadOnlyDatabase, withOpenClawAgentDatabaseReadOnly } from "../../state/paleoclaw-agent-db-readonly.js";
+import {
+  OpenClawAgentReadOnlyDatabase,
+  withOpenClawAgentDatabaseReadOnly,
+} from "../../state/paleoclaw-agent-db-readonly.js";
 import {
   openOpenClawAgentDatabase,
   resolveOpenClawAgentSqlitePath,

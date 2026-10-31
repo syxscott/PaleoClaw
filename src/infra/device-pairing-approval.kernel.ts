@@ -27,7 +27,10 @@ import {
   resolveRequestedDeviceRoles,
   sameDevicePairingStringSet,
 } from "./device-pairing-state.kernel.js";
-import { type DevicePairingStoreState, persistDevicePairingStoreState as persistState } from "./device-pairing-store.js";
+import {
+  type DevicePairingStoreState,
+  persistDevicePairingStoreState as persistState,
+} from "./device-pairing-store.js";
 import { createDeviceAuthToken, resolveRoleTokenScopes } from "./device-pairing-token-utils.js";
 import type {
   DeviceAuthToken,

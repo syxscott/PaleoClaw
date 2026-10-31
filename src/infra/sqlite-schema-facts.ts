@@ -2,7 +2,11 @@ import type { DatabaseSync } from "node:sqlite";
 import { resolveGlobalSingleton } from "../shared/global-singleton.js";
 import { getPostgresPhysicalFacts } from "./database-engine/physical-facts.js";
 import { registerNodeSqliteDisposeCallback } from "./kysely-sync-cache-state.js";
-import { type EngineConnection, type PostgresSqlConnection, isPostgresSqlConnection } from "./sql-connection.js";
+import {
+  type EngineConnection,
+  type PostgresSqlConnection,
+  isPostgresSqlConnection,
+} from "./sql-connection.js";
 import {
   beginSqliteDatabaseAdmissionOperation,
   beginSqliteDatabaseWrite,

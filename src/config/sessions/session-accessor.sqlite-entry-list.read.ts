@@ -11,7 +11,10 @@ import { runSqliteReadSnapshotSync } from "../../infra/sqlite-transaction.js";
 import { normalizeAgentId, parseAgentSessionKey } from "../../routing/session-key.js";
 import { isCronRunSessionKey } from "../../sessions/session-key-utils.js";
 import { readOpenClawAgentDatabaseIdentity } from "../../state/paleoclaw-agent-db-identity.js";
-import { type OpenClawAgentReadOnlyDatabase, withOpenClawAgentDatabaseReadOnly } from "../../state/paleoclaw-agent-db-readonly.js";
+import {
+  type OpenClawAgentReadOnlyDatabase,
+  withOpenClawAgentDatabaseReadOnly,
+} from "../../state/paleoclaw-agent-db-readonly.js";
 import type { DB } from "../../state/paleoclaw-agent-db.generated.js";
 import type { OpenClawAgentDatabase } from "../../state/paleoclaw-agent-db.js";
 import { isIncognitoOpenClawAgentSqlitePath } from "../../state/paleoclaw-agent-db.paths.js";

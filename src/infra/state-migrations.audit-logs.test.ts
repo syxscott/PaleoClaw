@@ -48,9 +48,7 @@ function expectIncludes(text: string | string[], ...parts: (string | RegExp)[]) 
 }
 function invalidUtf8Record(newline = "") {
   return Buffer.concat([
-    Buffer.from(
-      '{"timestamp":"2026-07-03T00:00:00Z","operation":"gateway.restart","summary":"',
-    ),
+    Buffer.from('{"timestamp":"2026-07-03T00:00:00Z","operation":"gateway.restart","summary":"'),
     Buffer.from([0x80]),
     Buffer.from('"}' + newline),
   ]);

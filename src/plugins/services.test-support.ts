@@ -3,7 +3,10 @@ import type { OpenClawConfig } from "../config/types.openclaw.js";
 import type { GatewayScheduler } from "../infra/gateway-scheduler.js";
 import { createTestGatewayScheduler } from "../test-utils/gateway-scheduler-clock.js";
 import { createPluginRuntimeCapabilityLease } from "./capability-lease.js";
-import { type OpenClawPluginSessionsChangedEvent, createPluginServiceGatewayEvents } from "./gateway-events.js";
+import {
+  type OpenClawPluginSessionsChangedEvent,
+  createPluginServiceGatewayEvents,
+} from "./gateway-events.js";
 import type { PluginOrigin } from "./plugin-origin.types.js";
 import type { PluginServiceRegistration } from "./registry-types.js";
 import { createEmptyPluginRegistry } from "./registry.js";

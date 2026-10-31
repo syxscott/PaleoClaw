@@ -11,7 +11,12 @@ import { escapeRegExp } from "../shared/regexp.js";
 import { GENERATED_BUNDLED_CHANNEL_CONFIG_METADATA } from "./bundled-channel-config-metadata.generated.js";
 import { computeBaseConfigSchemaResponse, computeBaseConfigUiHints } from "./schema-base.js";
 import { applySharedChannelFieldHelp } from "./schema.channel-field-help.js";
-import { type ConfigUiHint, type ConfigUiHints, applySensitiveHints, applySensitiveUrlHints } from "./schema.hints.js";
+import {
+  type ConfigUiHint,
+  type ConfigUiHints,
+  applySensitiveHints,
+  applySensitiveUrlHints,
+} from "./schema.hints.js";
 import {
   asSchemaObject,
   type ConfigJsonSchemaObject as JsonSchemaObject,

@@ -4,7 +4,11 @@ import {
   registryContainsRuntimePluginIds,
 } from "./active-runtime-registry.js";
 import { normalizePluginId } from "./config-state.js";
-import { type PluginLoadOptions, isPluginRegistryLoadInFlight, loadOpenClawPlugins } from "./loader.js";
+import {
+  type PluginLoadOptions,
+  isPluginRegistryLoadInFlight,
+  loadOpenClawPlugins,
+} from "./loader.js";
 import type { PluginManifestRecord } from "./manifest-registry.js";
 import { hasCompletedPluginRuntimeRegistration } from "./plugin-runtime-artifact-binding.js";
 import { hasExplicitPluginIdScope, normalizePluginIdScope } from "./plugin-scope.js";

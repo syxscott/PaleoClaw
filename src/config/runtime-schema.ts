@@ -6,7 +6,12 @@ import {
   collectPluginSchemaMetadataCore,
 } from "./channel-config-metadata.js";
 import { resolveChannelSchemaSelection } from "./channel-schema-selection.js";
-import { type ConfigFileSnapshot, type OpenClawConfig, getRuntimeConfig, readConfigFileSnapshot } from "./config.js";
+import {
+  type ConfigFileSnapshot,
+  type OpenClawConfig,
+  getRuntimeConfig,
+  readConfigFileSnapshot,
+} from "./config.js";
 import { resolveConfigWidePluginManifestRegistry } from "./io.plugin-metadata.js";
 import {
   buildConfigRedactionHints,

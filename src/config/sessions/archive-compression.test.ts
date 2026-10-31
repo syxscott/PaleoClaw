@@ -49,10 +49,7 @@ describe("archive compression", () => {
     const content = `${JSON.stringify({ type: "message", body: "cold" })}\n`;
     const encoded = encodeSessionArchiveContent(content);
     const dir = tempDirs.make("paleoclaw-archive-zstd-");
-    const archivePath = path.join(
-      dir,
-      `sess.jsonl.deleted.2026-07-11T00-00-00Z${encoded.suffix}`,
-    );
+    const archivePath = path.join(dir, `sess.jsonl.deleted.2026-07-11T00-00-00Z${encoded.suffix}`);
     fs.writeFileSync(archivePath, encoded.bytes);
 
     const first = materializeSessionArchiveForRead(archivePath);

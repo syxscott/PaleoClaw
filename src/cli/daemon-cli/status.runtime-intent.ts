@@ -3,7 +3,11 @@ import {
   readDaemonRuntimePinMigrationPending,
 } from "../../daemon/runtime-pin-state.js";
 import type { DaemonRuntimePinSnapshot } from "../../daemon/runtime-pin-types.js";
-import { type GatewayService, type GatewayServiceCommandConfig, hasGatewayServiceLauncherOverride } from "../../daemon/service-types.js";
+import {
+  type GatewayService,
+  type GatewayServiceCommandConfig,
+  hasGatewayServiceLauncherOverride,
+} from "../../daemon/service-types.js";
 import { sha256Hex } from "../../infra/crypto-digest.js";
 import { formatErrorMessage } from "../../infra/errors.js";
 import { projectDaemonServiceForJson } from "./shared.js";

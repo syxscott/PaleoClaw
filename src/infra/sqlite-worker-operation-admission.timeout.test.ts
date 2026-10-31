@@ -11,7 +11,10 @@ import {
   requestSqliteWorkerOperationAdmission,
   withSqliteWorkerOperationAdmission,
 } from "./sqlite-worker-operation-admission.js";
-import { SqliteWorkerOperationContext, settleSqliteWorkerOperationContext } from "./sqlite-worker-operation-settlement.js";
+import {
+  SqliteWorkerOperationContext,
+  settleSqliteWorkerOperationContext,
+} from "./sqlite-worker-operation-settlement.js";
 import { SqliteWorkerSlotCustody } from "./sqlite-worker-request-custody.js";
 
 const tempDirs = useAutoCleanupTempDirTracker(afterEach);

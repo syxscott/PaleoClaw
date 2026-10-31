@@ -8,7 +8,11 @@ import { compactPromptSkills } from "../loading/skill-paths.js";
 import { parseSkillsPromptCatalog } from "../loading/skill-prompt-catalog.js";
 import { buildSkillSnapshot } from "../loading/workspace-skill-prompt.js";
 import { normalizeWorkspaceSkillRoots } from "../loading/workspace-skill-roots.js";
-import { type SkillEligibilityContext, type SkillSnapshot, WORKSPACE_SKILLS_PROMPT_FORMAT_VERSION } from "../types.js";
+import {
+  type SkillEligibilityContext,
+  type SkillSnapshot,
+  WORKSPACE_SKILLS_PROMPT_FORMAT_VERSION,
+} from "../types.js";
 import { isWorkspaceSkillReadPath, resolveSkillReadPath } from "../workspace-skill-read-path.js";
 import { getSkillsSnapshotVersion, shouldRefreshSnapshotForVersion } from "./refresh-state.js";
 import { ensureSkillsWatcher } from "./refresh.js";

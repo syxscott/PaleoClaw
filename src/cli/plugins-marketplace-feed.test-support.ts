@@ -17,8 +17,7 @@ export function createHostedMarketplaceFeedFixture(
     checksum: options.checksum ?? "feed-sha",
     ...(options.etag ? { etag: options.etag } : {}),
   };
-  const verifiedAt =
-    source === "hosted-snapshot" ? "2026-06-23T01:02:03Z" : "2026-06-23T00:01:02Z";
+  const verifiedAt = source === "hosted-snapshot" ? "2026-06-23T01:02:03Z" : "2026-06-23T00:01:02Z";
   return {
     source,
     entries: options.entries ?? [],

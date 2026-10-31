@@ -1,4 +1,9 @@
-import { ExitError, type RuntimeEnv, defaultRuntime, restoreRuntimeTerminalState } from "../runtime.js";
+import {
+  ExitError,
+  type RuntimeEnv,
+  defaultRuntime,
+  restoreRuntimeTerminalState,
+} from "../runtime.js";
 import { waitForPendingCliDisposers } from "./runtime-cleanup.js";
 import { waitForCliSignalExit } from "./signal-exit-barrier.js";
 

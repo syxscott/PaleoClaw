@@ -2,7 +2,12 @@ import type { OpenClawConfig } from "../../config/types.openclaw.js";
 import { resolveEffectiveAgentSkillsLimits } from "../discovery/agent-filter.js";
 import { isSkillPromptVisible } from "../discovery/skill-index.js";
 import { resolveSkillFileHost } from "../skill-file-host.js";
-import { type SkillEligibilityContext, type SkillEntry, type SkillSnapshot, WORKSPACE_SKILLS_PROMPT_FORMAT_VERSION } from "../types.js";
+import {
+  type SkillEligibilityContext,
+  type SkillEntry,
+  type SkillSnapshot,
+  WORKSPACE_SKILLS_PROMPT_FORMAT_VERSION,
+} from "../types.js";
 import { resolveSkillKey } from "./frontmatter.js";
 import { compactPromptSkills } from "./skill-paths.js";
 import { prepareSkillsForPrompt } from "./skill-prompt-limits.js";

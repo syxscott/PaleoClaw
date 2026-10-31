@@ -14,7 +14,10 @@ import {
   type ManagedHandoffOriginalAdmission,
 } from "./update-managed-service-handoff-original-owner.js";
 import type { createManagedHandoffProcessIdentityReader } from "./update-managed-service-handoff-process.js";
-import { createManagedHandoffLeaseRows, managedHandoffLeaseText as text } from "./update-managed-service-handoff-rows.js";
+import {
+  createManagedHandoffLeaseRows,
+  managedHandoffLeaseText as text,
+} from "./update-managed-service-handoff-rows.js";
 import {
   parseManagedHandoffLeasePayload,
   type ManagedHandoffLeaseAction,

@@ -7,11 +7,11 @@ Scope: one new research tool that complements the existing `pbdb_query` tool.
 
 The acronym is ambiguous, so the candidates were probed directly:
 
-| Candidate | Probe | Result |
-|---|---|---|
-| `gbdb.io`, `gbdb.org` | DNS + HTTPS | **Do not resolve** (curl exit 000) — no such service |
-| **GBIF** — Global Biodiversity Information Facility | `api.gbif.org/v1/...` | **Live and fully usable, no API key required** |
-| Gobi Database (palaeobotany.org / gobi.org) | `/api/v1/taxa`, `/api/v1/occurrences` | Host resolves, but every REST path returns **404**; no public API surface documented on the landing page |
+| Candidate                                           | Probe                                 | Result                                                                                                   |
+| --------------------------------------------------- | ------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `gbdb.io`, `gbdb.org`                               | DNS + HTTPS                           | **Do not resolve** (curl exit 000) — no such service                                                     |
+| **GBIF** — Global Biodiversity Information Facility | `api.gbif.org/v1/...`                 | **Live and fully usable, no API key required**                                                           |
+| Gobi Database (palaeobotany.org / gobi.org)         | `/api/v1/taxa`, `/api/v1/occurrences` | Host resolves, but every REST path returns **404**; no public API surface documented on the landing page |
 
 Conclusion: **GBIF is the actionable interpretation.** It is the only candidate with a
 documented, keyless public REST API, and it is the closest living analogue to the
@@ -23,33 +23,33 @@ to code against today.
 
 ## 2. Verified API facts (live probes)
 
-| Property | Measurement |
-|---|---|
-| Authentication | **None** — `species/match` and `occurrence/search` work with no key |
-| Latency | 0.65 s (`species/match`), 0.73 s (`occurrence/search`) from this host |
-| Endpoints used | `GET /v1/species/match?name=`, `GET /v1/occurrence/search?scientificName=&basisOfRecord=&limit=&facet=` |
-| Fossil enum | `basisOfRecord=FOSSIL_SPECIMEN` (**not** `PRESERVED_SPECIMEN` — that returns 0 for fossils) |
-| Volume | Trilobita: **259,547** fossil records; *Tyrannosaurus rex*: 239 `FOSSIL_SPECIMEN` + 2,675 `MATERIAL_CITATION` |
-| Licensing | **Per dataset**, not global. Observed `CC0-1.0` (Yale Peabody) and `CC-BY-NC-4.0` on others — the tool must surface `license` per record |
+| Property       | Measurement                                                                                                                              |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| Authentication | **None** — `species/match` and `occurrence/search` work with no key                                                                      |
+| Latency        | 0.65 s (`species/match`), 0.73 s (`occurrence/search`) from this host                                                                    |
+| Endpoints used | `GET /v1/species/match?name=`, `GET /v1/occurrence/search?scientificName=&basisOfRecord=&limit=&facet=`                                  |
+| Fossil enum    | `basisOfRecord=FOSSIL_SPECIMEN` (**not** `PRESERVED_SPECIMEN` — that returns 0 for fossils)                                              |
+| Volume         | Trilobita: **259,547** fossil records; _Tyrannosaurus rex_: 239 `FOSSIL_SPECIMEN` + 2,675 `MATERIAL_CITATION`                            |
+| Licensing      | **Per dataset**, not global. Observed `CC0-1.0` (Yale Peabody) and `CC-BY-NC-4.0` on others — the tool must surface `license` per record |
 
 ## 3. Complementarity with the existing tools
 
 Measured field-by-field against the current `pbdb_query` (`show=coords,phylo,time,strat`):
 
-| Capability | GBIF | PBDB (current) | CrossRef (current) |
-|---|---|---|---|
-| Fossil occurrence search | ✅ 259K-scale | ✅ | — |
-| Taxon name matching (synonyms, confidence) | ✅ `matchType`/`confidence` | ⚠️ basic | — |
-| **Specimen/catalogue identity** (`catalogNumber`, `collectionCode`, `institutionCode`) | ✅ | ❌ | ❌ |
-| **Persistent specimen identifiers** (e.g. `http://id.luomus.fi/HS.P3163`) | ✅ | ❌ | ❌ |
-| **Collector / identifier** (`identifiedBy`, `recordedBy`) | ✅ | ❌ | ❌ |
-| Fine-grained locality + collection date | ✅ `stateProvince`/`locality`/`eventDate` | ⚠️ coords only | ❌ |
-| **Stratigraphy** (`formation`, `member`) | ❌ | ✅ `show=strat` | ❌ |
-| **Age range** (`eag`/`lag`, epochs) | ❌ | ✅ `show=time` | ❌ |
-| **Literature citation per record** (`rid` → `ref:*`) | ❌ **absent on fossils** | ✅ | ✅ |
-| Dataset / publisher provenance | ✅ `datasetKey`/`publishingOrgKey` | ⚠️ partial | — |
+| Capability                                                                             | GBIF                                      | PBDB (current)  | CrossRef (current) |
+| -------------------------------------------------------------------------------------- | ----------------------------------------- | --------------- | ------------------ |
+| Fossil occurrence search                                                               | ✅ 259K-scale                             | ✅              | —                  |
+| Taxon name matching (synonyms, confidence)                                             | ✅ `matchType`/`confidence`               | ⚠️ basic        | —                  |
+| **Specimen/catalogue identity** (`catalogNumber`, `collectionCode`, `institutionCode`) | ✅                                        | ❌              | ❌                 |
+| **Persistent specimen identifiers** (e.g. `http://id.luomus.fi/HS.P3163`)              | ✅                                        | ❌              | ❌                 |
+| **Collector / identifier** (`identifiedBy`, `recordedBy`)                              | ✅                                        | ❌              | ❌                 |
+| Fine-grained locality + collection date                                                | ✅ `stateProvince`/`locality`/`eventDate` | ⚠️ coords only  | ❌                 |
+| **Stratigraphy** (`formation`, `member`)                                               | ❌                                        | ✅ `show=strat` | ❌                 |
+| **Age range** (`eag`/`lag`, epochs)                                                    | ❌                                        | ✅ `show=time`  | ❌                 |
+| **Literature citation per record** (`rid` → `ref:*`)                                   | ❌ **absent on fossils**                  | ✅              | ✅                 |
+| Dataset / publisher provenance                                                         | ✅ `datasetKey`/`publishingOrgKey`        | ⚠️ partial      | —                  |
 
-**The gap GBIF uniquely fills:** the *physical specimen* behind a fossil occurrence —
+**The gap GBIF uniquely fills:** the _physical specimen_ behind a fossil occurrence —
 catalogue number, holding institution, collector, and the persistent identifiers that
 let a researcher request or cite the actual object. PBDB returns occurrences and
 taxonomy; it does not return specimen records.
@@ -67,12 +67,12 @@ The existing tool contract is small and the reference implementation is 95 lines
 description, schema, handler, timeoutMs })` with a JSON Schema, plus the vendored
 `retryAsync` already used by that tool.
 
-| Component | Effort |
-|---|---|
-| `src/paleoclaw/tools/gbif-specimen-query.ts` | ~110 lines (fetch + retry + schema + handler) |
-| Registry / loader / barrel exports | ~6 lines (mirror the PBDB entry) |
-| Tests (mock `fetch`, as the PBDB tool's tests do) | ~5 cases: match hit, fossil enum, zero-result, 429→retry, licence passthrough |
-| Skill wrapper (`skills/gbif_specimen_lookup/`) if desired | optional, follows `skills/pbdb_query/` |
+| Component                                                 | Effort                                                                        |
+| --------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| `src/paleoclaw/tools/gbif-specimen-query.ts`              | ~110 lines (fetch + retry + schema + handler)                                 |
+| Registry / loader / barrel exports                        | ~6 lines (mirror the PBDB entry)                                              |
+| Tests (mock `fetch`, as the PBDB tool's tests do)         | ~5 cases: match hit, fossil enum, zero-result, 429→retry, licence passthrough |
+| Skill wrapper (`skills/gbif_specimen_lookup/`) if desired | optional, follows `skills/pbdb_query/`                                        |
 
 No new dependency: `fetch` + `node:` built-ins + the vendored retry package.
 
@@ -91,8 +91,9 @@ returns: { endpoint, count, records: [{
 ```
 
 Design notes:
+
 - Always request `basisOfRecord=FOSSIL_SPECIMEN` for paleo use; `MATERIAL_CITATION`
-  entries are references, not specimens (2,675 vs 239 on *T. rex*).
+  entries are references, not specimens (2,675 vs 239 on _T. rex_).
 - Return `license` per record — it varies by dataset, and non-commercial
   (`CC-BY-NC`) datasets exist.
 - Surface `datasetName`/`datasetKey` so a citation can name the publishing dataset.
@@ -101,14 +102,14 @@ Design notes:
 
 ## 6. Risks
 
-| Risk | Mitigation |
-|---|---|
-| Licence heterogeneity (CC0 / CC-BY / CC-BY-NC mixed) | Return `license` per record; document that redistribution obligations follow the dataset |
-| Record semantics differ from PBDB occurrences | Name and document the tool as *specimen* lookup; keep occurrence search on PBDB |
-| Volume skew — `MATERIAL_CITATION` dwarfs fossils | Hard-code the fossil `basisOfRecord` filter |
-| No literature on fossil records | Keep citation verification on PBDB/CrossRef; document the boundary explicitly |
-| GBIF has no SLA | Same posture as the existing PBDB tool: retry with backoff, surface the endpoint URL in the result for verification |
-| GBDB could later mean a different service | Keep the tool behind the existing registry so it can be swapped without touching callers |
+| Risk                                                 | Mitigation                                                                                                          |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| Licence heterogeneity (CC0 / CC-BY / CC-BY-NC mixed) | Return `license` per record; document that redistribution obligations follow the dataset                            |
+| Record semantics differ from PBDB occurrences        | Name and document the tool as _specimen_ lookup; keep occurrence search on PBDB                                     |
+| Volume skew — `MATERIAL_CITATION` dwarfs fossils     | Hard-code the fossil `basisOfRecord` filter                                                                         |
+| No literature on fossil records                      | Keep citation verification on PBDB/CrossRef; document the boundary explicitly                                       |
+| GBIF has no SLA                                      | Same posture as the existing PBDB tool: retry with backoff, surface the endpoint URL in the result for verification |
+| GBDB could later mean a different service            | Keep the tool behind the existing registry so it can be swapped without touching callers                            |
 
 ## 7. Recommendation
 

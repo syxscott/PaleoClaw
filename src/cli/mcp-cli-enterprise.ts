@@ -1,7 +1,14 @@
 import * as oidc from "openid-client";
-import { type McpEnterpriseConfig, discoverMcpEnterpriseIdp, mcpEnterpriseIdpStoreKey } from "../agents/mcp-enterprise.js";
+import {
+  type McpEnterpriseConfig,
+  discoverMcpEnterpriseIdp,
+  mcpEnterpriseIdpStoreKey,
+} from "../agents/mcp-enterprise.js";
 import { buildMcpOAuthHttpFetch } from "../agents/mcp-http-fetch.js";
-import { type McpOAuthLoginLifecycle, withMcpOAuthLeaseSignal } from "../agents/mcp-oauth-provider.js";
+import {
+  type McpOAuthLoginLifecycle,
+  withMcpOAuthLeaseSignal,
+} from "../agents/mcp-oauth-provider.js";
 import { mutateMcpOAuthStore } from "../agents/mcp-oauth-store.js";
 import { startOAuthLoopbackCallbackServer } from "../infra/oauth-loopback-callback.js";
 import { defaultRuntime } from "../runtime.js";

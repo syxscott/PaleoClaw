@@ -2,7 +2,12 @@ import { calculateUsageCost, type ModelCostConfig } from "@paleoclaw/llm-core";
 import { asFiniteNumber } from "@paleoclaw/normalization-core/number-coercion";
 import { asOptionalObjectRecord } from "@paleoclaw/normalization-core/record-coerce";
 import { normalizeOptionalString } from "@paleoclaw/normalization-core/string-coerce";
-import { type NormalizedUsage, type UsageLike, hasRecordedUsageCost, normalizeUsage } from "../agents/usage.js";
+import {
+  type NormalizedUsage,
+  type UsageLike,
+  hasRecordedUsageCost,
+  normalizeUsage,
+} from "../agents/usage.js";
 import { isToolCallContentType } from "../chat/tool-content.js";
 import type { CostBreakdown, ParsedTranscriptEntry } from "./session-cost-usage.types.js";
 

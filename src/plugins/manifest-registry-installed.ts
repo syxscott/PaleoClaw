@@ -22,7 +22,11 @@ import {
   isInstalledPluginIndexInstallOwnerAmbiguous,
   resolveInstalledPluginIndexInstallOwner,
 } from "./installed-plugin-index-install-owner.js";
-import { type InstalledPluginIndex, type InstalledPluginIndexRecord, extractPluginInstallRecordsFromInstalledPluginIndex } from "./installed-plugin-index.js";
+import {
+  type InstalledPluginIndex,
+  type InstalledPluginIndexRecord,
+  extractPluginInstallRecordsFromInstalledPluginIndex,
+} from "./installed-plugin-index.js";
 import {
   normalizeManifestObjectList,
   omitUndefinedManifestFields,

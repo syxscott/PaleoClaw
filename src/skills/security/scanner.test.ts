@@ -3,7 +3,13 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterAll, describe, expect, it, vi } from "vitest";
-import { SkillScanOptions, isScannable, scanDirectoryWithSummary, scanSkillContent, scanSource } from "./scanner.js";
+import {
+  SkillScanOptions,
+  isScannable,
+  scanDirectoryWithSummary,
+  scanSkillContent,
+  scanSource,
+} from "./scanner.js";
 
 const fixtureRoot = fsSync.mkdtempSync(path.join(os.tmpdir(), "skill-scanner-test-"));
 let fixtureId = 0;
@@ -86,7 +92,8 @@ describe("scanSource", () => {
   const scanRuleCases = [
     {
       name: "detects child_process exec with string interpolation",
-      source: '\nimport { exec } from "node:child_process";\nconst cmd = `ls ${dir}`;\nexec(cmd);\n',
+      source:
+        '\nimport { exec } from "node:child_process";\nconst cmd = `ls ${dir}`;\nexec(cmd);\n',
       expected: { ruleId: "dangerous-exec", severity: "critical" as const },
     },
     {

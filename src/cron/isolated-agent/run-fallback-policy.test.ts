@@ -80,12 +80,7 @@ type FallbackCase = [
   expected: string[] | undefined,
 ];
 it.each<FallbackCase>([
-  [
-    "strict payload model",
-    makeConfig(),
-    { job: makeJob({ model: "google/gemini-2-flash" }) },
-    [],
-  ],
+  ["strict payload model", makeConfig(), { job: makeJob({ model: "google/gemini-2-flash" }) }, []],
   [
     "explicit payload fallbacks",
     makeConfig(["openai/gpt-5.4"]),

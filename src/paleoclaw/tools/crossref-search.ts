@@ -44,7 +44,7 @@ async function fetchCrossrefWithRetry(url: URL, init?: RequestInit): Promise<Res
 
 async function crossrefSearchHandler(params: Record<string, unknown>): Promise<unknown> {
   const typed = params as CrossrefParams;
-  const query = String(typed.query || "").trim();
+  const query = typed.query.trim();
   if (!query) {
     throw new Error("query is required");
   }

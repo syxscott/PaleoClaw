@@ -60,7 +60,10 @@ import { readSqliteDatabaseAdmissionDeadline } from "./sqlite-worker-database-ad
 import { SqliteWorkerInputAdmission } from "./sqlite-worker-input-admission.js";
 import type { SqliteWorkerAdmissionFactory } from "./sqlite-worker-operation-admission.js";
 import type { SqliteWorkerOperationSettlement } from "./sqlite-worker-operation-settlement.js";
-import { type SqliteWorkerStateContext, sqliteWorkerRequestBytes } from "./sqlite-worker-state-context.js";
+import {
+  type SqliteWorkerStateContext,
+  sqliteWorkerRequestBytes,
+} from "./sqlite-worker-state-context.js";
 import { resolveSqliteBrokerWorkerCount } from "./worker-pool-sizing.js";
 import { trackWorkerRequest, type WorkerRequestObservation } from "./worker-request-diagnostics.js";
 

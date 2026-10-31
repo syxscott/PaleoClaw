@@ -1,3 +1,4 @@
+import { spawn } from "node:child_process";
 /**
  * Regression tests for the bug-fix pass on the PaleoClaw memory/session layer.
  *
@@ -14,7 +15,6 @@
  *  - `countShort()` and `listShort()` disagreed on what counts as a task.
  */
 import * as fs from "node:fs";
-import { spawn } from "node:child_process";
 import * as os from "node:os";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";

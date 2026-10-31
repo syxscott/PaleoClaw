@@ -1,4 +1,8 @@
-import { type PostgresSqlConnection, assertSyncTransactionResult, sqlPublicationAnchor } from "../sql-connection.js";
+import {
+  type PostgresSqlConnection,
+  assertSyncTransactionResult,
+  sqlPublicationAnchor,
+} from "../sql-connection.js";
 import { withSqlitePostCommitPublications } from "../sqlite-post-commit.js";
 import { beginPostgresReadSnapshotScope } from "../sqlite-schema-facts.js";
 import { deferSqliteWorkerCommitReceipt } from "../sqlite-worker-operation-admission.js";

@@ -10,17 +10,34 @@ interface SummaryParams {
   maxPoints?: number;
 }
 
+// Periods that do NOT end a sentence in paleontological prose: open
+// nomenclature ("sp. nov.", "cf. Triceratops"), genus abbreviations ("T. rex"),
+// figure/table references ("Fig. 3"), "et al.", and decimals ("1.5 m"). Each
+// protected period is swapped for a sentinel before the split and restored
+// afterwards, so the naive splitter no longer breaks on them.
+const PROTECTED_PERIOD_PATTERNS = [
+  /\b(cf|sp|nov|gen|subsp|var|spp|et al|Fig|fig|No|no|Vs|vs|etc|ca|Dr|Mr|Jr|St)\./gi,
+  /\b([A-Z])\.(?=\s*[a-z])/g,
+  /(\d)\.(?=\d)/g,
+];
+
+const PERIOD_SENTINEL = "\u0000";
+
 function splitSentences(text: string): string[] {
-  return text
-    .split(/[。！？.!?]\s*/)
-    .map((item) => item.trim())
-    .filter(Boolean);
+  let masked = text;
+  for (const pattern of PROTECTED_PERIOD_PATTERNS) {
+    masked = masked.replace(pattern, (match) => match.replaceAll(".", PERIOD_SENTINEL));
+  }
+  // Match whole sentences (keeping the terminal punctuation) rather than
+  // splitting-and-discarding, so bullets read as complete sentences.
+  const sentences = masked.match(/[^。！？.!?]+[。！？.!?]*/g) ?? [];
+  return sentences.map((item) => item.replaceAll(PERIOD_SENTINEL, ".").trim()).filter(Boolean);
 }
 
 function summaryHandler(params: Record<string, unknown>): unknown {
   const typed = params as SummaryParams;
-  const title = String(typed.title || "").trim();
-  const abstract = String(typed.abstract || "").trim();
+  const title = (typed.title ?? "").trim();
+  const abstract = (typed.abstract ?? "").trim();
   const parsedMax = Number(typed.maxPoints);
   const maxPoints = Math.max(1, Math.min(8, Number.isFinite(parsedMax) ? parsedMax : 4));
 

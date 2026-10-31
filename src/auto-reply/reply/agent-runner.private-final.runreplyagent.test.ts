@@ -9,7 +9,10 @@ import {
   onAgentEvent as subscribeAgentEvent,
   type AgentEventPayload,
 } from "../../infra/agent-events.js";
-import { ReplyOperation, getSessionControllerOperation } from "../../sessions/session-controller.js";
+import {
+  ReplyOperation,
+  getSessionControllerOperation,
+} from "../../sessions/session-controller.js";
 import {
   getReplyPayloadMetadata,
   markReplyPayloadForSourceSuppressionDelivery,

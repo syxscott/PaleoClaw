@@ -1,5 +1,10 @@
 import crypto from "node:crypto";
-import { type SessionEntry, type SessionGoal, type SessionGoalStatus, resolveFreshSessionTotalTokens } from "./types.js";
+import {
+  type SessionEntry,
+  type SessionGoal,
+  type SessionGoalStatus,
+  resolveFreshSessionTotalTokens,
+} from "./types.js";
 
 export class SessionGoalTransitionError extends Error {
   override name = "SessionGoalTransitionError";

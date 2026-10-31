@@ -8,7 +8,10 @@ import { recoverStore } from "../../agents/main-session-recovery/main-session-re
 import { markStartupOrphanedMainSessionsForRecovery } from "../../agents/main-session-recovery/main-session-restart-recovery.js";
 import { createAgentRunRestartAbortError } from "../../agents/run-termination.js";
 import { captureRuntimeConfigAsyncReader, setRuntimeConfigSnapshot } from "../../config/config.js";
-import { InternalSessionEntry as SessionEntry, SESSION_TOTAL_TOKENS_VERSION } from "../../config/sessions.js";
+import {
+  InternalSessionEntry as SessionEntry,
+  SESSION_TOTAL_TOKENS_VERSION,
+} from "../../config/sessions.js";
 import {
   appendTranscriptMessage,
   loadSessionEntry,

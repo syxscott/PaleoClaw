@@ -689,11 +689,7 @@ describe("official external plugin catalog", () => {
   it.each<[string, string, string?]>([
     ["2026-06-21T23:59:59Z", "expiresAt must be later than generatedAt"],
     ["2026-02-30T00:00:00Z", "requires a valid expiresAt value"],
-    [
-      "2026-06-22T00:01:00Z",
-      "expiresAt must be later than generatedAt",
-      " 2026-06-22T00:02:00Z ",
-    ],
+    ["2026-06-22T00:01:00Z", "expiresAt must be later than generatedAt", " 2026-06-22T00:02:00Z "],
   ])("rejects invalid signed feed expiry %s", async (expiresAt, error, generatedAt) => {
     const feed = hostedCatalogFeed({
       sequence: 8,

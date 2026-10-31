@@ -2,7 +2,11 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { expect, vi } from "vitest";
 import { withEnvAsync } from "../test-utils/env.js";
-import { createConfigIO as CreateConfigIO, setRuntimeConfigSnapshotRefreshHandler as setRefresh, writeConfigFile } from "./io.js";
+import {
+  createConfigIO as CreateConfigIO,
+  setRuntimeConfigSnapshotRefreshHandler as setRefresh,
+  writeConfigFile,
+} from "./io.js";
 import type { OpenClawConfig } from "./types.js";
 
 export function registerConfigWritePreflightTests({

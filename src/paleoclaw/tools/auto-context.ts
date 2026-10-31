@@ -202,12 +202,31 @@ export function resolveAutoToolPlan(prompt: string): AutoToolPlan[] {
   const asksLiterature = /\b(crossref|doi|citation|paper|literature|journal|references?)\b/.test(
     normalized,
   );
+  // Specimen provenance questions ("which museum holds...", "catalogue
+  // number", "request material") are a GBIF ask, not an occurrence ask.
+  const asksSpecimen =
+    /\b(specimens?|catalog(ue)?\s+numbers?|museums?|institutions?|collections?|holdings?)\b/.test(
+      normalized,
+    ) &&
+    /\b(which|where|who|find|list|cite|request|museum|institution|collection|holding)\b/.test(
+      normalized,
+    );
 
   if (asksPbdb) {
     plans.push({
       tool: "pbdb_query",
       params: {
         baseName: taxon,
+        limit: 5,
+      },
+    });
+  }
+
+  if (asksSpecimen && taxon) {
+    plans.push({
+      tool: "gbif_specimen_query",
+      params: {
+        taxonName: taxon,
         limit: 5,
       },
     });
@@ -238,7 +257,7 @@ export function resolveAutoToolPlan(prompt: string): AutoToolPlan[] {
 
 function summarizePbdb(data: unknown): string {
   const typed = data as { count?: number; records?: Array<Record<string, unknown> | null> };
-  const count = Number(typed?.count || 0);
+  const count = typed?.count ?? 0;
   // PBDB sometimes returns records entries as null — guard against it before
   // accessing row fields.
   const names = (typed?.records || [])
@@ -255,7 +274,7 @@ function summarizePbdb(data: unknown): string {
 
 function summarizeCrossref(data: unknown): string {
   const typed = data as { totalResults?: number; items?: Array<Record<string, unknown>> };
-  const total = Number(typed?.totalResults || 0);
+  const total = typed?.totalResults ?? 0;
   const dois = (typed?.items || [])
     .slice(0, 3)
     .map((item) => {
@@ -267,9 +286,32 @@ function summarizeCrossref(data: unknown): string {
   return `CrossRef total=${total}${dois.length > 0 ? `; dois=${dois.join(", ")}` : ""}`;
 }
 
+function summarizeGbif(data: unknown): string {
+  const typed = data as {
+    totalInGbif?: number;
+    count?: number;
+    records?: Array<Record<string, unknown>>;
+  };
+  const records = (typed?.records || []).slice(0, 3);
+  const holdings = records
+    .map((row) => {
+      const inst = typeof row.institutionCode === "string" ? row.institutionCode : "";
+      const catalog = typeof row.catalogNumber === "string" ? row.catalogNumber : "";
+      return [inst, catalog].filter(Boolean).join(":");
+    })
+    .filter(Boolean);
+
+  return `GBIF specimens total=${typed?.totalInGbif ?? "?"}${
+    holdings.length > 0 ? `; holdings=${holdings.join(", ")}` : ""
+  }`;
+}
+
 function summarizeResult(toolName: string, data: unknown): string {
   if (toolName === "pbdb_query") {
     return summarizePbdb(data);
+  }
+  if (toolName === "gbif_specimen_query") {
+    return summarizeGbif(data);
   }
   if (toolName === "crossref_search") {
     return summarizeCrossref(data);
