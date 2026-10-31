@@ -117,18 +117,20 @@ export PATH="$HOME/.npm-global/bin:$PATH"
 
 ## 🧪 Research Tools
 
-| Tool                 | What it does                                                                                        | 数据来源                              |
-| -------------------- | --------------------------------------------------------------------------------------------------- | ------------------------------------- |
-| `pbdb_query`         | Fossil occurrences, taxonomy, stratigraphy via the [Paleobiology Database](https://paleobiodb.org/) | PBDB                                  |
-| `crossref_search`    | Literature metadata with DOI validation                                                             | [CrossRef](https://www.crossref.org/) |
-| `literature_summary` | Multi-source aggregation (CrossRef · Semantic Scholar · arXiv) with citation formatting             | 多源聚合                              |
+| Tool                  | What it does                                                                                                                                | 数据来源                              |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| `pbdb_query`          | Fossil occurrences, taxonomy, stratigraphy via the [Paleobiology Database](https://paleobiodb.org/)                                         | PBDB                                  |
+| `crossref_search`     | Literature metadata with DOI validation                                                                                                     | [CrossRef](https://www.crossref.org/) |
+| `literature_summary`  | Multi-source aggregation (CrossRef · Semantic Scholar · arXiv) with citation formatting                                                     | 多源聚合                              |
+| `gbif_specimen_query` | Fossil **specimen** provenance — catalogue numbers, holding institutions, collectors, persistent identifiers (complements PBDB occurrences) | [GBIF](https://www.gbif.org/)         |
 
-Morphometric analysis runs as a skill (`skills/morphometric_analysis/` — 64 landmarks, TPS/CSV/Excel/JSON export, MorphoJ & geomorph compatible, based on [DeepMorph](mailto:xkliu@cug.edu.cn)); PBDB/CrossRef context is injected into runs automatically by the auto-context layer (`PALEOCLAW_ENABLE_AUTO_TOOLS`).
+Morphometric analysis runs as a skill (`skills/morphometric_analysis/` — 64 landmarks, TPS/CSV/Excel/JSON export, MorphoJ & geomorph compatible, based on [DeepMorph](mailto:xkliu@cug.edu.cn)); PBDB/GBIF/CrossRef context is injected into runs automatically by the auto-context layer (`PALEOCLAW_ENABLE_AUTO_TOOLS`).
 
 ```bash
 paleoclaw paleo-tools list
 paleoclaw paleo-tools run pbdb_query --params '{"baseName":"Allosaurus","limit":5}'
 paleoclaw paleo-tools run crossref_search --params '{"query":"Jurassic theropod","rows":5}'
+paleoclaw paleo-tools run gbif_specimen_query --params '{"taxonName":"Trilobita","country":"CN","limit":5}'
 ```
 
 <details>
@@ -326,6 +328,7 @@ Contributions welcome — new data sources, research skills, citation formats, l
 | -------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
 | 🦕 Fossil occurrences & taxonomy | [Paleobiology Database (PBDB)](https://paleobiodb.org/)                                                                    |
 | 📚 Literature metadata           | [CrossRef](https://www.crossref.org/) · [Semantic Scholar](https://www.semanticscholar.org/) · [arXiv](https://arxiv.org/) |
+| 🏛️ Specimen provenance           | [GBIF](https://www.gbif.org/)                                                                                              |
 | 📐 Morphometric algorithms       | [DeepMorph](mailto:xkliu@cug.edu.cn) — Xiaokang Liu @ CUG                                                                  |
 | 🦞 Agent runtime                 | [OpenClaw](https://github.com/openclaw/openclaw)                                                                           |
 | 🧠 Memory store design           | [GeoClaw-OpenAI](https://github.com/whuyao/GeoClaw-OpenAI)                                                                 |

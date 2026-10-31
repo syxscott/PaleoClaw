@@ -188,6 +188,7 @@ PaleoClaw/
 | `activity_logger`        | v1.1.0 | 活动日志记录                                  |
 | `daily_log_generator`    | v1.1.0 | 每日报告生成                                  |
 | `geo-time-scale`         | v1.5.0 | 地质年代表快速查询                            |
+| `gbif_specimen_lookup`   | v1.8.0 | GBIF 化石标本溯源（馆藏/机构/采集人）         |
 | `morphometric-converter` | v1.5.0 | 形态测量数据格式转换                          |
 
 ---
@@ -198,9 +199,10 @@ PaleoClaw 优先使用以下权威数据源：
 
 1. **Paleobiology Database (PBDB)** - 主要化石数据
 2. **CrossRef** - 同行评审文献元数据
-3. **Semantic Scholar** - 引用分析
-4. **arXiv** - 预印本（明确标注为非同行评审）
-5. **NCBI Taxonomy** - 辅助分类数据
+3. **GBIF** - 化石标本溯源（馆藏编号、收藏机构、采集人、持久化标识）
+4. **Semantic Scholar** - 引用分析
+5. **arXiv** - 预印本（明确标注为非同行评审）
+6. **NCBI Taxonomy** - 辅助分类数据
 
 ---
 

@@ -82,9 +82,15 @@ interface GbifOccurrenceRecord {
 function toSpecimenRecord(raw: GbifOccurrenceRecord): Record<string, unknown> {
   const record: Record<string, unknown> = {};
   const set = (key: string, value: unknown): void => {
-    if (value !== undefined && value !== null && value !== "") {
-      record[key] = value;
+    if (value === undefined || value === null || value === "") {
+      return;
     }
+    // An empty array is as uninformative as an empty string — drop it too so
+    // callers can rely on every present field carrying information.
+    if (Array.isArray(value) && value.length === 0) {
+      return;
+    }
+    record[key] = value;
   };
   set("gbifKey", raw.key);
   set("scientificName", raw.scientificName);
@@ -138,12 +144,15 @@ async function gbifSpecimenQueryHandler(params: Record<string, unknown>): Promis
 
   const data = (await response.json()) as { count?: number; results?: GbifOccurrenceRecord[] };
   const results = Array.isArray(data.results) ? data.results : [];
-  return {
+  const payload: Record<string, unknown> = {
     endpoint: url,
-    totalInGbif: typeof data.count === "number" ? data.count : undefined,
     count: results.length,
     records: results.map(toSpecimenRecord),
   };
+  if (typeof data.count === "number") {
+    payload.totalInGbif = data.count;
+  }
+  return payload;
 }
 
 toolRegistry.register({
