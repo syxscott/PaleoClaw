@@ -46,6 +46,21 @@
       "class": "tui-runtime",
       "risk": ["tui-runtime"]
     },
+    "@earendil-works/pi-agent-core": {
+      "owner": "capability:pi-agent",
+      "class": "tui-runtime",
+      "risk": ["agent-runtime"]
+    },
+    "@earendil-works/pi-ai": {
+      "owner": "capability:pi-agent",
+      "class": "tui-runtime",
+      "risk": ["provider-sdk", "network"]
+    },
+    "@earendil-works/pi-coding-agent": {
+      "owner": "capability:pi-agent",
+      "class": "tui-runtime",
+      "risk": ["agent-runtime", "filesystem"]
+    },
     "@google/genai": {
       "owner": "provider:google",
       "class": "default-runtime-initially",

@@ -1,12 +1,12 @@
-import type { StreamFn } from "@mariozechner/pi-agent-core";
-import { createAssistantMessageEventStream } from "@mariozechner/pi-ai";
+import type { StreamFn } from "@earendil-works/pi-agent-core";
+import { createAssistantMessageEventStream } from "@earendil-works/pi-ai";
 import type {
   Api,
   AssistantMessage,
   Context,
   Model,
   SimpleStreamOptions,
-} from "@mariozechner/pi-ai";
+} from "@earendil-works/pi-ai";
 import type { DiagnosticsStreamWatchdogConfig } from "../../config/types.base.js";
 import { parseBooleanValue } from "../../utils/boolean.js";
 
@@ -177,10 +177,10 @@ function unrefTimer(timer: ReturnType<typeof setTimeout>): void {
  * Default non-streaming fallback.
  *
  * `completeSimple` is imported lazily so that this module never pulls a value
- * import out of `@mariozechner/pi-ai` at load time.
+ * import out of `@earendil-works/pi-ai` at load time.
  */
 const defaultFallback: StreamWatchdogFallback = async (model, context, streamOptions) => {
-  const { completeSimple } = await import("@mariozechner/pi-ai");
+  const { completeSimple } = await import("@earendil-works/pi-ai");
   return completeSimple(model, context, streamOptions);
 };
 

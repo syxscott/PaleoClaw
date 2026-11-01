@@ -1,6 +1,6 @@
-import type { StreamFn } from "@mariozechner/pi-agent-core";
-import type { SimpleStreamOptions } from "@mariozechner/pi-ai";
-import { streamSimple } from "@mariozechner/pi-ai";
+import type { StreamFn } from "@earendil-works/pi-agent-core";
+import type { SimpleStreamOptions } from "@earendil-works/pi-ai";
+import { streamSimple } from "@earendil-works/pi-ai";
 import type { ThinkLevel } from "../../auto-reply/thinking.js";
 import type { OpenClawConfig } from "../../config/config.js";
 import { isOpenAiShapedApi, resolveProviderCapability } from "../provider-capabilities.js";
@@ -246,11 +246,13 @@ function shouldForceResponsesStore(model: {
   api?: unknown;
   provider?: unknown;
   baseUrl?: unknown;
-  compat?: { supportsStore?: boolean };
+  // pi 0.78 widened Model["compat"] into a per-API union where only some
+  // members carry supportsStore, so it is read defensively here.
+  compat?: unknown;
 }): boolean {
   // Never force store=true when the model explicitly declares supportsStore=false
   // (e.g. Azure OpenAI Responses API without server-side persistence).
-  if (model.compat?.supportsStore === false) {
+  if ((model.compat as { supportsStore?: boolean } | undefined)?.supportsStore === false) {
     return false;
   }
   if (typeof model.api !== "string" || typeof model.provider !== "string") {
@@ -291,7 +293,7 @@ function shouldEnableOpenAIResponsesServerCompaction(
     api?: unknown;
     provider?: unknown;
     baseUrl?: unknown;
-    compat?: { supportsStore?: boolean };
+    compat?: unknown;
   },
   extraParams: Record<string, unknown> | undefined,
 ): boolean {
@@ -310,7 +312,7 @@ function shouldEnableOpenAIResponsesServerCompaction(
 }
 
 function shouldStripResponsesStore(
-  model: { api?: unknown; compat?: { supportsStore?: boolean } },
+  model: { api?: unknown; compat?: unknown },
   forceStore: boolean,
 ): boolean {
   if (forceStore) {
@@ -319,7 +321,10 @@ function shouldStripResponsesStore(
   if (typeof model.api !== "string") {
     return false;
   }
-  return OPENAI_RESPONSES_APIS.has(model.api) && model.compat?.supportsStore === false;
+  return (
+    OPENAI_RESPONSES_APIS.has(model.api) &&
+    (model.compat as { supportsStore?: boolean } | undefined)?.supportsStore === false
+  );
 }
 
 function applyOpenAIResponsesPayloadOverrides(params: {

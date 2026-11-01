@@ -1,12 +1,12 @@
 import fs from "node:fs/promises";
 import os from "node:os";
-import type { AgentMessage } from "@mariozechner/pi-agent-core";
+import type { AgentMessage } from "@earendil-works/pi-agent-core";
 import {
   createAgentSession,
   DefaultResourceLoader,
   estimateTokens,
   SessionManager,
-} from "@mariozechner/pi-coding-agent";
+} from "@earendil-works/pi-coding-agent";
 import { resolveHeartbeatPromptCore } from "../../auto-reply/heartbeat.js";
 import type { ReasoningLevel, ThinkLevel } from "../../auto-reply/thinking.js";
 import { resolveChannelCapabilities } from "../../config/channel-capabilities.js";
@@ -601,7 +601,7 @@ export async function compactEmbeddedPiSessionDirect(
         await resourceLoader.reload();
       }
 
-      const { builtInTools, customTools } = splitSdkTools({
+      const { customTools } = splitSdkTools({
         tools,
         sandboxEnabled: !!sandbox?.enabled,
       });
@@ -613,7 +613,9 @@ export async function compactEmbeddedPiSessionDirect(
         modelRegistry,
         model: effectiveModel,
         thinkingLevel: mapThinkingLevel(params.thinkLevel),
-        tools: builtInTools,
+        // pi 0.78 typed `tools` as a name allowlist; built-ins stay disabled and
+        // every tool is registered via customTools (see tool-split.ts).
+        tools: [],
         customTools,
         sessionManager,
         settingsManager,

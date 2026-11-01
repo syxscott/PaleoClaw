@@ -32,7 +32,14 @@ minimumReleaseAgeExclude:
   - "@openclaw/fs-safe-linux-x64-musl@0.26.8"
   - "@openclaw/fs-safe-win32-arm64-msvc@0.26.8"
   - "@openclaw/fs-safe-win32-x64-msvc@0.26.8"
-  # Reviewed proc-safe 0.4.2 release and native helpers; remove after 2026-10-26T00:51:31.079Z.
+  # Security-fix picks reviewed while they clear the cooldown window (Dependency
+  # Audit GHSA batch, 2026-11-01); each entry can be removed one week after publish.
+  # GHSA-mrwp-f3q8-3g9p fix; remove after 2026-11-01T21:32:25.963Z.
+  - "follow-redirects@1.16.2"
+  # GHSA-4528-x5fx-h6hg fix; remove after 2026-11-04T09:59:49.641Z.
+  - "joi@18.3.1"
+  # Pulls @azure/msal-node ^7.1.0 (GHSA-xcx6-jx8p-x3h5 fix); remove after 2026-11-05T22:16:07.100Z.
+  - "@azure/identity@4.14.1"
   - "@openclaw/proc-safe@0.4.2"
   - "@openclaw/proc-safe-darwin-arm64@0.4.2"
   - "@openclaw/proc-safe-darwin-x64@0.4.2"
@@ -82,7 +89,6 @@ overrides:
   "@hono/node-server": 2.1.4
   axios: 1.20.0
   fast-uri: 4.2.2
-  follow-redirects: 1.16.1
   defu: 6.1.7
   fast-xml-parser: 5.11.2
   request: "npm:@cypress/request@4.0.1"
@@ -109,6 +115,39 @@ overrides:
   yauzl: 3.4.0
   protobufjs: 8.8.1
   uuid: 14.0.3
+  # GHSA-mrwp-f3q8-3g9p: follow-redirects <=1.16.1 can leak custom credentials
+  # on cross-realm redirects.
+  follow-redirects: 1.16.2
+  # GHSA-27r3-jxmh-p828: body-parser DoS via trailing bytes after a compressed
+  # body (via express 5).
+  body-parser: 2.4.0
+  # GHSA-4528-x5fx-h6hg: joi quadratic-time email split DoS (via mailauth).
+  joi: 18.3.1
+  # GHSA-gg6h-894w-4m9c: re2js quadratic-time lookbehind DoS (via crabline).
+  re2js: 2.9.0
+  # GHSA-88fw-hqm2-52qc: hono CORS reflects any Origin with credentials when
+  # origin is unset (<4.12.25).
+  hono: 4.13.13
+  # GHSA-xjj6-f33q-929c / GHSA-4w7w-5xrc-9h26 / GHSA-2m5v-pch6-74hx /
+  # GHSA-qrxm-fqhp-jwvm: undici DoS, cache poisoning, and TLS bypass fixes
+  # (8.x line fixed in 8.12.2).
+  undici: 8.12.3
+  # GHSA-mrhx-c7xc-m3w5: zod memory exhaustion validating oversized constrained
+  # collections; fixed only on the 4.6.6+ line, so the 3.x consumers are forced
+  # across the major.
+  zod: 4.6.7
+  # GHSA-gfr2-rv44-r23c / GHSA-r7fv-28h4-cvq7: markdown-it quadratic rendering
+  # fixed in 14.3.3; peer specs are '*' so one version is coherent.
+  markdown-it: 14.3.3
+  # GHSA-96hv-2xvq-fx4p: ws DoS via many-headers frame; @buape/carbon pins 8.20.0.
+  "@buape/carbon>ws": 8.22.0
+  # GHSA-xcx6-jx8p-x3h5: msal-node auth-code flow disclosure, fixed in 7.1.0;
+  # @microsoft/teams.apps 2.1.1 still declares ^5.6.0 (no upstream fix).
+  "@microsoft/teams.apps>@azure/msal-node": 7.1.1
+  # GHSA-x6jw-m9v5-85vh / GHSA-g4wm-2vf7-vfgr / GHSA-858h-whjf-mvg5:
+  # simple-git command execution fixes landed in 4.0.1; node-llama-cpp still
+  # declares ^3.36.0 (its awaited simple-git API is unchanged in 4.x).
+  "node-llama-cpp>simple-git": 4.0.2
 
 allowBuilds:
   "@napi-rs/canvas": true
