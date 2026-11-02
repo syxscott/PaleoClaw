@@ -32,10 +32,12 @@ export const PRIVATE_KEY_MARKERS: readonly string[] = [
   ["BEGIN OpenVPN Static key V", "1"].join(""),
 ];
 
-// Colocated test fixtures and the iOS Fastfile's marker-bearing string. The
+// Colocated test fixtures, the iOS Fastfile's marker-bearing string, and the
+// secrets baseline itself (its regex filters quote marker spellings). The
 // list lives here, not in a config the scanner reads, so CI can run a
 // base-ref copy of this file and get the base-ref policy with it.
-export const PRIVATE_KEY_SCAN_EXCLUDE = /(^|\/)(apps\/ios\/fastlane\/Fastfile$|.*\.test\.ts$)/;
+export const PRIVATE_KEY_SCAN_EXCLUDE =
+  /(^|\/)(apps\/ios\/fastlane\/Fastfile$|.*\.test\.ts$|\.secrets\.baseline$)/;
 
 const REGULAR_FILE_MODES = new Set(["100644", "100755"]);
 

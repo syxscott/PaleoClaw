@@ -3451,6 +3451,7 @@ const workerModules = new Set([
   "extensions/memory-core/src/memory/manager-publication-postgres.ts", // Only manager-publication.worker.ts binds this adapter to the admitted agent execution worker connection.
   "src/infra/database-engine/postgres-vector.ts", // Accepts only an admitted PostgresSqlConnection; the shared executor dispatches through PostgresSyncConnection to postgres-sync/bridge.worker.ts, never native SQLite.
   "src/plugin-state/plugin-state.worker.ts", // Only paleoclaw-state.worker.ts imports and calls this command dispatcher; its nested callbacks share that worker ownership.
+  "src/tui/tui-last-session.kernel.ts", // Only paleoclaw-state-read-handlers.ts and paleoclaw-state-worker-registry.ts bind these readers; the SQL runs in the paleoclaw-state read worker.
   "src/config/sessions/session-suggestion-store.kernel.ts", // session-sharing-store.worker.ts owns add/claim/release/finalize; session-transcript.worker.ts owns list. The host read facade imports only its type.
   "src/config/sessions/session-cold-storage-inventory.ts", // Only session-cold-storage-worker.ts calls readSessionColdStorageInventory, dispatched by session-transcript.worker.ts.
   "src/boards/sqlite-board-store.kernel.ts", // Only sqlite-board-store.worker.ts executes boards.applyOps/putWidget/grant; session-history-read-operation.worker.ts owns board-snapshot/board-widget-document reads. Host imports are type-only.
@@ -3857,21 +3858,42 @@ function findCalls(source) {
 export function loadInventorySources(root = defaultRoot, ref = "", staged = false) {
   const roots = ["src/", "extensions", "packages", "scripts"];
   const snapshot = ref !== "" || staged;
-  const result = spawnSync(
-    snapshot ? "git" : "rg",
-    snapshot
-      ? ref
-        ? ["ls-tree", "-r", "--name-only", "-z", ref, "--", ...roots]
-        : ["ls-files", "-z", "--", ...roots]
-      : [
-          "--files",
-          "--null",
-          "-g",
-          "*.{ts,tsx,js,mjs,mts,cts,cjs}",
-          ...roots.filter((dir) => fs.existsSync(path.join(root, dir))),
-        ],
-    { cwd: root, encoding: "utf8", maxBuffer: 16 * 1024 * 1024 },
-  );
+  const spawnOptions = { cwd: root, encoding: "utf8", maxBuffer: 16 * 1024 * 1024 };
+  const result = snapshot
+    ? spawnSync(
+        "git",
+        ref
+          ? ["ls-tree", "-r", "--name-only", "-z", ref, "--", ...roots]
+          : ["ls-files", "-z", "--", ...roots],
+        spawnOptions,
+      )
+    : // ripgrep is not installed everywhere (CI runners, fresh dev clones);
+      // fall back to git's tracked-file list with the same extension filter.
+      (() => {
+        const rg = spawnSync(
+          "rg",
+          [
+            "--files",
+            "--null",
+            "-g",
+            "*.{ts,tsx,js,mjs,mts,cts,cjs}",
+            ...roots.filter((dir) => fs.existsSync(path.join(root, dir))),
+          ],
+          spawnOptions,
+        );
+        if (rg.error?.code === "ENOENT") {
+          // The shared filter below applies the same extension allowlist that
+          // rg's -g glob would have applied.
+          const tracked = spawnSync("git", ["ls-files", "-z", "--", ...roots], spawnOptions);
+          if (tracked.error || (tracked.status !== 0 && tracked.status !== 1)) {
+            throw (
+              tracked.error ?? new Error(tracked.stderr || "SQLite inventory source scan failed")
+            );
+          }
+          return tracked;
+        }
+        return rg;
+      })();
   if (result.error || (result.status !== 0 && result.status !== 1)) {
     throw result.error ?? new Error(result.stderr || "SQLite inventory source scan failed");
   }

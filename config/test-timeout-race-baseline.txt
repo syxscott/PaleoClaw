@@ -24,7 +24,6 @@ src/agents/tools/ask-user-tool.test.ts	2
 src/agents/tools/message-tool.hosted-transport.test.ts	1
 src/agents/tools/message-tool.scheduled-lifetime.test.ts	1
 src/agents/tools/pdf-native-providers.test.ts	1
-src/agents/workspace.test.ts	1
 src/auto-reply/dispatch.question-input.test.ts	2
 src/auto-reply/reply/agent-runner-steer-adoption.question-recovery.test.ts	1
 src/auto-reply/reply/dispatch-acp-delivery.test.ts	1
@@ -72,12 +71,12 @@ src/gateway/server.visible-spawn-fallback.product-proof.test.ts	1
 src/gateway/session-row-placement-projection.lifecycle.test.ts	10
 src/gateway/terminal/node-relay.test.ts	1
 src/gateway/test-helpers.server-storage.test.ts	1
+src/gateway/test/server-sessions-resources.test-helpers.ts	1
 src/gateway/worker-environments/node-worker-workspace-publication.test.ts	2
 src/gateway/worker-environments/node-workspace-transfer-revocation.test.ts	3
 src/infra/approval-handler-runtime.test.ts	1
 src/infra/http-body.response.test.ts	2
 src/infra/kysely-sync.test.ts	1
-src/infra/net/fetch-guard.ssrf.test.ts	1
 src/infra/net/provider-websocket.test.ts	1
 src/infra/push-apns-cancellation.test.ts	1
 src/infra/push-apns.test.ts	1

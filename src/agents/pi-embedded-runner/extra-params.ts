@@ -252,6 +252,7 @@ function shouldForceResponsesStore(model: {
 }): boolean {
   // Never force store=true when the model explicitly declares supportsStore=false
   // (e.g. Azure OpenAI Responses API without server-side persistence).
+  // SAFETY: the compat union only declares supportsStore on its OpenAI Responses member.
   if ((model.compat as { supportsStore?: boolean } | undefined)?.supportsStore === false) {
     return false;
   }
@@ -323,6 +324,7 @@ function shouldStripResponsesStore(
   }
   return (
     OPENAI_RESPONSES_APIS.has(model.api) &&
+    // SAFETY: only the OpenAI Responses compat member declares supportsStore.
     (model.compat as { supportsStore?: boolean } | undefined)?.supportsStore === false
   );
 }

@@ -748,6 +748,10 @@ const subagentRecoveryMetadataSinks = new Set([
 const rawMachineStateSinks = new Map([
   [key("src/state/paleoclaw-state-db-schema-v12-foldin.ts", "migrateSingletonStateFoldInV12"), 1],
   [key("src/state/paleoclaw-state-db-schema-v13-widerow.ts", "migrateJsonCanonicalWideRowsV13"), 2],
+  // e2e fixtures seed specimen rows into isolated databases; they never touch
+  // a live credential store.
+  [key("scripts/e2e/lib/plugin-index-sqlite.mjs", "writePluginInstallIndexForE2E"), 1],
+  [key("scripts/e2e/lib/upgrade-survivor/channel-owner-policy.mjs", "<module>"), 1],
   ...[...subagentRecoveryMetadataSinks].map((id): [string, number] => [id, 1]),
 ]);
 
@@ -1181,7 +1185,10 @@ export function inspectPersonalCredentialWriters(
   const sinkCounts = new Map<string, number>();
   const rawSinkCounts = new Map<string, number>();
   const edgeCounts = new Map<string, number>();
-  for (const { file, source } of sources) {
+  for (const { file: rawFile, source } of sources) {
+    // The reviewed-owner registries are keyed by POSIX-style repo paths; a
+    // backslashed local path would silently miss every sink lookup.
+    const file = rawFile.replaceAll("\\", "/");
     const fail = (node: ts.Node, reason: string) => {
       violations.push(
         `${file}:${source.getLineAndCharacterOfPosition(node.getStart()).line + 1}: ${reason}`,
