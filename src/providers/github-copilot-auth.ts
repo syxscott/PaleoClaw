@@ -1,5 +1,6 @@
 import { intro, note, outro, spinner } from "@clack/prompts";
-import { ensureAuthProfileStore, upsertAuthProfile } from "../agents/auth-profiles.js";
+import { ensureAuthProfileStore } from "../agents/auth-profiles.js";
+import { upsertAuthProfileWithLockOrThrow } from "../agents/auth-profiles/profiles.js";
 import { updateConfig } from "../commands/models/shared.js";
 import { logConfigUpdated } from "../config/logging.js";
 import { applyAuthProfileConfig } from "../plugins/provider-auth-helpers.js";
@@ -158,7 +159,9 @@ export async function githubCopilotLoginCommand(
   });
   polling.stop("GitHub access token acquired");
 
-  upsertAuthProfile({
+  // The locked writer is the reviewed credential sink; the plain
+  // upsertAuthProfile export is a deprecated plugin-SDK compatibility shim.
+  await upsertAuthProfileWithLockOrThrow({
     profileId,
     credential: {
       type: "token",

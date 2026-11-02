@@ -152,9 +152,7 @@ async function mirrorRepoExists() {
     headers: {
       accept: "application/vnd.github+json",
       "user-agent": TOOL,
-      ...(process.env.GITHUB_TOKEN
-        ? { authorization: `Bearer ${process.env.GITHUB_TOKEN}` }
-        : {}),
+      ...(process.env.GITHUB_TOKEN ? { authorization: `Bearer ${process.env.GITHUB_TOKEN}` } : {}),
     },
   });
   if (response.status === 404) {

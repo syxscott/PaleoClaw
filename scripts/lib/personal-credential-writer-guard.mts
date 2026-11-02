@@ -305,7 +305,15 @@ const genericCredentialCallers = new Map<string, readonly string[]>([
   ],
   [
     key(machineState, "updateConfigMachineStateInDatabase"),
-    [key(machineState, "updateConfigMachineState")],
+    [
+      key(machineState, "updateConfigMachineState"),
+      // Only the doctor heartbeat maintenance commands call these receipt
+      // recorders (doctor-heartbeat-cadence-migration.ts,
+      // doctor-heartbeat-retirement.ts); both are one-shot T3 paths writing
+      // their own provisioning receipt, never a live credential row.
+      key("src/cron/proactive-job-receipt.kernel.ts", "recordDefaultProactiveJobInDatabase"),
+      key("src/cron/proactive-job-receipt.kernel.ts", "recordConvertedProactiveJobInDatabase"),
+    ],
   ],
   // These keys are built by bounded prefixes in the reviewed owners, never copied from a command.
   [
@@ -350,6 +358,16 @@ const nativeReadCallers = new Map<string, readonly string[]>([
   [
     key(authRuntime, "ensureAuthProfileStore"),
     [
+      // Restored fork runtime paths that resolve credentials/availability for
+      // model selection; all read the store (allowKeychainPrompt: false) and
+      // delegate writes to the reviewed upsert-with-lock writer.
+      "src/agents/model-fallback.ts:runWithModelFallback",
+      "src/agents/models-config.providers.ts:normalizeProviders",
+      "src/agents/models-config.providers.ts:resolveImplicitProviders",
+      "src/agents/models-config.providers.ts:resolveImplicitCopilotProvider",
+      "src/agents/pi-embedded-runner/run.ts:runEmbeddedPiAgent",
+      "src/agents/pi-model-discovery.ts:resolvePiCredentials",
+      "src/providers/github-copilot-auth.ts:githubCopilotLoginCommand",
       "extensions/codex/src/account-usage-runtime.ts:handleCodexAccountUsage/assertCurrent",
       "extensions/codex/src/app-server/auth-profile.ts:<module>",
       "extensions/codex/src/app-server/auth-profile-selection.ts:createCodexAuthProfileSelection/resolveCodexAppServerAuthProfileIdAtEffect",
