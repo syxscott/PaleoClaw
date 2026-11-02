@@ -66,7 +66,7 @@ jobs:
     timeout-minutes: ${{ fromJSON(needs.admission.outputs.minutes || '240') }}
     steps:
       - name: Begin Testbox
-        uses: useblacksmith/begin-testbox@233448af4bfdc6fca509a7f0974411ac6d8a8043
+        uses: useblacksmith/begin-testbox@22ff2ea5697369864347140857d218e42815b33c
         with:
           testbox_id: ${{ inputs.testbox_id }}
       - name: Reject expired Testbox admission
