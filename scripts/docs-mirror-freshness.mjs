@@ -147,7 +147,35 @@ async function newestWatchedCommit(watchPaths, until = "") {
   return newest;
 }
 
+async function mirrorRepoExists() {
+  const response = await fetch(`https://api.github.com/repos/${MIRROR_REPO}`, {
+    headers: {
+      accept: "application/vnd.github+json",
+      "user-agent": TOOL,
+      ...(process.env.GITHUB_TOKEN
+        ? { authorization: `Bearer ${process.env.GITHUB_TOKEN}` }
+        : {}),
+    },
+  });
+  if (response.status === 404) {
+    return false;
+  }
+  if (!response.ok) {
+    throw new Error(`GitHub GET /repos/${MIRROR_REPO} responded ${response.status}`);
+  }
+  return true;
+}
+
 async function readMirroredSourceSha() {
+  // The alarm guards the docs-sync-publish pipeline; when the publish repo has
+  // never been created there is nothing to keep fresh and paging every run is
+  // noise. Say so once and exit green until the mirror exists.
+  if (!(await mirrorRepoExists())) {
+    console.error(
+      `${TOOL}: mirror repo ${MIRROR_REPO} does not exist; create it (or remove ${SYNC_WORKFLOW_FILE}) to re-enable the freshness alarm`,
+    );
+    process.exit(0);
+  }
   const contents = await githubJson(
     `/repos/${MIRROR_REPO}/contents/.openclaw-sync/source.json?ref=main`,
   );

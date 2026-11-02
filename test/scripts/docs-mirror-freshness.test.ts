@@ -83,6 +83,10 @@ globalThis.fetch = async (input, init = {}) => {
     const sha = url.pathname.split("/").at(-1);
     assert.ok(Object.hasOwn(scenario.files, sha), "unexpected commit inspection: " + sha);
     body = scenario.files[sha] === null ? { sha } : { sha, files: scenario.files[sha] };
+  } else if (method === "GET" && url.pathname === "/repos/paleoclaw/docs") {
+    // Existence probe: the freshness check no-ops green when the mirror repo
+    // is absent; the scenarios below all exercise an existing mirror.
+    body = { id: 1, full_name: "paleoclaw/docs" };
   } else if (method === "GET" && url.pathname === "/repos/paleoclaw/docs/contents/.openclaw-sync/source.json") {
     assert.equal(url.searchParams.get("ref"), "main");
     body = { content: Buffer.from(JSON.stringify({ sha: scenario.mirror })).toString("base64") };
