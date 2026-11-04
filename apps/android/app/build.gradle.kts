@@ -216,7 +216,7 @@ dependencies {
     implementation("com.journeyapps:zxing-android-embedded:4.3.0")
 
     // Unicast DNS-SD (Wide-Area Bonjour) for tailnet discovery domains.
-    implementation("dnsjava:dnsjava:3.7.0")
+    implementation("dnsjava:dnsjava:3.7.1")
 
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.11.0")
