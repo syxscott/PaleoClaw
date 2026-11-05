@@ -898,7 +898,7 @@ jobs:
     # identity, so it cannot be vendored here. Keep the SHA pinned. When a
     # paleoclaw-owned PaleoHub registry repository exists, repoint this at it with
     # its own pinned SHA instead of dropping the pin.
-    uses: openclaw/clawhub/.github/workflows/package-publish.yml@ef56b2cb287f0db5462b92dea8e4b63325d0341c # reviewed sealed receipt and final-effect proof contract
+    uses: openclaw/clawhub/.github/workflows/package-publish.yml@0a8af13e2900c65efdbed0a2d824835c0eae45f6 # reviewed sealed receipt and final-effect proof contract
     permissions:
       actions: read
       contents: read
