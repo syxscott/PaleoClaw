@@ -47,14 +47,15 @@ jobs:
             exit 1
           fi
 
-      - name: Prepare Git owner
-        uses: ./.github/actions/git-owner
-
+      # The local git-owner composite needs its files materialized first.
       - name: Checkout selected tag
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: refs/tags/${{ inputs.tag }}
           fetch-depth: 0
+
+      - name: Prepare Git owner
+        uses: ./.github/actions/git-owner
 
       - name: Setup Node environment
         uses: ./.github/actions/setup-node-env

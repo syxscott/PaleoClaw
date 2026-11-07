@@ -82,15 +82,16 @@ jobs:
           echo "release_tag=${BASH_REMATCH[1]}" >> "$GITHUB_OUTPUT"
           echo "desktop_test_bundles=${BASH_REMATCH[3]}" >> "$GITHUB_OUTPUT"
 
-      - name: Prepare Git owner
-        uses: ./.github/actions/git-owner
-
+      # The local git-owner composite needs its files materialized first.
       - name: Checkout selected tag
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: refs/tags/${{ steps.request.outputs.release_tag }}
           fetch-depth: 0
           persist-credentials: false
+
+      - name: Prepare Git owner
+        uses: ./.github/actions/git-owner
 
       - name: Checkout trusted release tooling
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

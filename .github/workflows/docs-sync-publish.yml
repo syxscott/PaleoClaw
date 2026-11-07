@@ -49,11 +49,14 @@ jobs:
         with:
           # Keep ancestry for skip_stale_source, without downloading old file bodies.
           # Sparse checkout enables blob:none; cone mode also keeps root manifests.
+          # The git-owner composite below resolves from the workspace, so its
+          # action directory must survive the cone.
           fetch-depth: 0
           sparse-checkout: |
             docs
             scripts
             .github/codex/prompts
+            .github/actions/git-owner
 
       - name: Checkout PaleoHub docs source
         if: env.OPENCLAW_DOCS_SYNC_TOKEN != ''

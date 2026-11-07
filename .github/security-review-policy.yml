@@ -5,8 +5,12 @@
 # apply only to product categories, never to dependency files. For overlapping
 # categories, the first matching category supplies the review guidance.
 
+# Rollout anchor for grandfathering: PRs opened before this merge get advisory
+# reviews. Must be a real PR on this repository with base=main — the fork
+# inherited upstream's anchor (#152415), which 404s here and crashes the
+# scheduled review. PR #32 (CN channels merge) is this repo's equivalent gate.
 rollout:
-  pull-request: 152415
+  pull-request: 32
 
 exclude:
   test-directories:

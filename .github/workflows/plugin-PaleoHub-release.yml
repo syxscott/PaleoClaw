@@ -102,9 +102,7 @@ jobs:
       bootstrap_matrix: ${{ steps.plan.outputs.bootstrap_matrix }}
       missing_trusted_publisher_matrix: ${{ steps.plan.outputs.missing_trusted_publisher_matrix }}
     steps:
-      - name: Prepare Git owner
-        uses: ./.github/actions/git-owner
-
+      # The local git-owner composite needs its files materialized first.
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -112,6 +110,9 @@ jobs:
           ref: ${{ github.ref }}
           fetch-depth: 0
           filter: blob:none
+
+      - name: Prepare Git owner
+        uses: ./.github/actions/git-owner
 
       - name: Resolve checked-out ref
         id: ref

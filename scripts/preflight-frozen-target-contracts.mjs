@@ -280,7 +280,9 @@ async function planWorkflowAdmission(input) {
   }
   if (
     !/^[a-f0-9]{64}$/u.test(input.binding.inputsDigest) ||
-    !input.binding.workflowRef?.startsWith(`paleoclaw/paleoclaw/.github/workflows/`)
+    !input.binding.workflowRef?.startsWith(
+      `${process.env.GITHUB_REPOSITORY ?? "paleoclaw/paleoclaw"}/.github/workflows/`,
+    )
   ) {
     throw new Error("missing workflow input binding");
   }
