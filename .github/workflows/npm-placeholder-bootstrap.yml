@@ -40,9 +40,6 @@ jobs:
       producer_run_attempt: ${{ github.run_attempt }}
       target_sha: ${{ steps.target.outputs.sha }}
     steps:
-      - name: Prepare Git owner
-        uses: ./.github/actions/git-owner
-
       - name: Checkout selected source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -50,6 +47,9 @@ jobs:
           ref: ${{ inputs.ref }}
           fetch-depth: 0
           filter: blob:none
+      # The local git-owner composite needs its files materialized first.
+      - name: Prepare Git owner
+        uses: ./.github/actions/git-owner
 
       - name: Validate trusted workflow and target
         id: target

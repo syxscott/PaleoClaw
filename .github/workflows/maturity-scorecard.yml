@@ -215,15 +215,15 @@ jobs:
             exit 1
           fi
 
-      - name: Prepare Git owner
-        uses: ./.github/actions/git-owner
-
       - name: Checkout selected ref
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
           ref: ${{ inputs.ref }}
           fetch-depth: 0
+      # The local git-owner composite needs its files materialized first.
+      - name: Prepare Git owner
+        uses: ./.github/actions/git-owner
 
       - name: Validate selected ref
         id: validate

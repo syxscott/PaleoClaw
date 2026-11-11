@@ -117,9 +117,6 @@ jobs:
       secret_eligible: ${{ steps.candidate_trust.outputs.secret_eligible }}
       cache_write_allowed: ${{ steps.candidate_trust.outputs.cache_write_allowed }}
     steps:
-      - name: Prepare Git owner
-        uses: ./.github/actions/git-owner
-
       - name: Checkout target metadata
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -132,6 +129,9 @@ jobs:
           sparse-checkout-cone-mode: false
           fetch-depth: 1
           persist-credentials: false
+      # The local git-owner composite needs its files materialized first.
+      - name: Prepare Git owner
+        uses: ./.github/actions/git-owner
 
       - name: Setup supported Node runtime
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
@@ -361,10 +361,6 @@ jobs:
             echo "Skipping ${LANE_ID}: ${reason}" >> "$GITHUB_STEP_SUMMARY"
           fi
 
-      - name: Prepare Git owner
-        if: steps.lane.outputs.run == 'true'
-        uses: ./.github/actions/git-owner
-
       - name: Checkout paleoclaw
         if: steps.lane.outputs.run == 'true'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -372,6 +368,10 @@ jobs:
           ref: ${{ needs.resolve_target.outputs.checkout_ref }}
           fetch-depth: 1
           persist-credentials: false
+      # The local git-owner composite needs its files materialized first.
+      - name: Prepare Git owner
+        if: steps.lane.outputs.run == 'true'
+        uses: ./.github/actions/git-owner
 
       - name: Checkout performance workflow helpers
         if: steps.lane.outputs.run == 'true'
@@ -777,15 +777,15 @@ jobs:
       TESTED_SHA: ${{ needs.resolve_target.outputs.tested_sha }}
       REQUESTED_REPEAT: ${{ inputs.repeat || '3' }}
     steps:
-      - name: Prepare Git owner
-        uses: ./.github/actions/git-owner
-
       - name: Checkout paleoclaw source target
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ needs.resolve_target.outputs.checkout_ref }}
           fetch-depth: 1
           persist-credentials: false
+      # The local git-owner composite needs its files materialized first.
+      - name: Prepare Git owner
+        uses: ./.github/actions/git-owner
 
       - name: Checkout source performance helpers
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -1162,10 +1162,6 @@ jobs:
           fi
           echo "run=$run_lane" >> "$GITHUB_OUTPUT"
 
-      - name: Prepare Git owner
-        if: steps.lane.outputs.run == 'true'
-        uses: ./.github/actions/git-owner
-
       - name: Checkout performance publisher helper
         if: steps.lane.outputs.run == 'true'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -1178,6 +1174,10 @@ jobs:
           sparse-checkout-cone-mode: false
           fetch-depth: 1
           persist-credentials: false
+      # The local git-owner composite needs its files materialized first.
+      - name: Prepare Git owner
+        if: steps.lane.outputs.run == 'true'
+        uses: ./.github/actions/git-owner
 
       - name: Resolve Kova artifact
         id: artifact
@@ -1630,15 +1630,15 @@ jobs:
             exit 1
           fi
 
-      - name: Prepare Git owner
-        uses: ./.github/actions/git-owner
-
       - name: Checkout Gateway concurrency target
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ needs.resolve_target.outputs.checkout_ref }}
           fetch-depth: 1
           persist-credentials: false
+      # The local git-owner composite needs its files materialized first.
+      - name: Prepare Git owner
+        uses: ./.github/actions/git-owner
 
       - name: Checkout Gateway concurrency helpers
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
