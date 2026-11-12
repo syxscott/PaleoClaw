@@ -15,15 +15,15 @@ let package = Package(
         .executable(name: "paleoclaw-mac", targets: ["OpenClawMacCLI"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/orchetect/MenuBarExtraAccess", exact: "1.2.2"),
+        .package(url: "https://github.com/orchetect/MenuBarExtraAccess", exact: "1.3.1"),
         .package(url: "https://github.com/sindresorhus/KeyboardShortcuts", exact: "3.1.0"),
         .package(url: "https://github.com/swiftlang/swift-subprocess.git", from: "1.0.0"),
         .package(url: "https://github.com/apple/swift-log.git", from: "1.15.1"),
-        .package(url: "https://github.com/sparkle-project/Sparkle", exact: "2.10.0"),
+        .package(url: "https://github.com/sparkle-project/Sparkle", exact: "2.10.1"),
         // Peekaboo and the AXorcist it pulls in are external repositories. Their
         // coordinates must not follow this fork's brand, or the package graph
         // cannot be resolved at all.
-        .package(url: "https://github.com/openclaw/Peekaboo.git", exact: "4.9.5"),
+        .package(url: "https://github.com/openclaw/Peekaboo.git", exact: "4.9.8"),
         .package(url: "https://github.com/pointfreeco/swift-concurrency-extras", from: "1.4.1"),
         .package(path: "../shared/OpenClawKit"),
         .package(path: "../shared/OpenClawMLXTTSProtocol"),
