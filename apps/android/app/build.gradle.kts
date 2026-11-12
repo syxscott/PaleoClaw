@@ -201,11 +201,11 @@ dependencies {
     implementation("androidx.exifinterface:exifinterface:1.4.2")
     implementation("com.squareup.okhttp3:okhttp:5.5.1")
     implementation("org.bouncycastle:bcprov-jdk18on:1.86")
-    implementation("org.commonmark:commonmark:0.31.0")
-    implementation("org.commonmark:commonmark-ext-autolink:0.31.0")
-    implementation("org.commonmark:commonmark-ext-gfm-strikethrough:0.31.0")
-    implementation("org.commonmark:commonmark-ext-gfm-tables:0.31.0")
-    implementation("org.commonmark:commonmark-ext-task-list-items:0.31.0")
+    implementation("org.commonmark:commonmark:0.32.0")
+    implementation("org.commonmark:commonmark-ext-autolink:0.32.0")
+    implementation("org.commonmark:commonmark-ext-gfm-strikethrough:0.32.0")
+    implementation("org.commonmark:commonmark-ext-gfm-tables:0.32.0")
+    implementation("org.commonmark:commonmark-ext-task-list-items:0.32.0")
 
     // CameraX (for node.invoke camera.* parity)
     implementation("androidx.camera:camera-core:1.5.2")
@@ -216,7 +216,7 @@ dependencies {
     implementation("com.journeyapps:zxing-android-embedded:4.3.0")
 
     // Unicast DNS-SD (Wide-Area Bonjour) for tailnet discovery domains.
-    implementation("dnsjava:dnsjava:3.7.0")
+    implementation("dnsjava:dnsjava:3.7.1")
 
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.11.0")
