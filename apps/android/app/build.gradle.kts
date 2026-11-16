@@ -195,17 +195,17 @@ dependencies {
     implementation("com.google.android.material:material:1.14.0")
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.12.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.13.0")
 
     implementation("androidx.security:security-crypto:1.1.0")
     implementation("androidx.exifinterface:exifinterface:1.4.2")
     implementation("com.squareup.okhttp3:okhttp:5.5.1")
-    implementation("org.bouncycastle:bcprov-jdk18on:1.86")
-    implementation("org.commonmark:commonmark:0.31.0")
-    implementation("org.commonmark:commonmark-ext-autolink:0.31.0")
-    implementation("org.commonmark:commonmark-ext-gfm-strikethrough:0.31.0")
-    implementation("org.commonmark:commonmark-ext-gfm-tables:0.31.0")
-    implementation("org.commonmark:commonmark-ext-task-list-items:0.31.0")
+    implementation("org.bouncycastle:bcprov-jdk18on:1.87")
+    implementation("org.commonmark:commonmark:0.32.0")
+    implementation("org.commonmark:commonmark-ext-autolink:0.32.0")
+    implementation("org.commonmark:commonmark-ext-gfm-strikethrough:0.32.0")
+    implementation("org.commonmark:commonmark-ext-gfm-tables:0.32.0")
+    implementation("org.commonmark:commonmark-ext-task-list-items:0.32.0")
 
     // CameraX (for node.invoke camera.* parity)
     implementation("androidx.camera:camera-core:1.5.2")
@@ -216,14 +216,14 @@ dependencies {
     implementation("com.journeyapps:zxing-android-embedded:4.3.0")
 
     // Unicast DNS-SD (Wide-Area Bonjour) for tailnet discovery domains.
-    implementation("dnsjava:dnsjava:3.7.0")
+    implementation("dnsjava:dnsjava:3.7.1")
 
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.11.0")
-    testImplementation("io.kotest:kotest-runner-junit5-jvm:6.2.6")
-    testImplementation("io.kotest:kotest-assertions-core-jvm:6.2.6")
+    testImplementation("io.kotest:kotest-runner-junit5-jvm:6.2.7")
+    testImplementation("io.kotest:kotest-assertions-core-jvm:6.2.7")
     testImplementation("com.squareup.okhttp3:mockwebserver:5.5.1")
-    testImplementation("org.robolectric:robolectric:4.17")
+    testImplementation("org.robolectric:robolectric:4.18")
     testRuntimeOnly("org.junit.vintage:junit-vintage-engine:6.1.3")
 }
 
