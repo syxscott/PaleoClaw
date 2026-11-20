@@ -101,7 +101,7 @@ jobs:
     steps:
       - name: Begin Testbox
         if: github.event_name == 'workflow_dispatch'
-        uses: useblacksmith/begin-testbox@233448af4bfdc6fca509a7f0974411ac6d8a8043 # v2
+        uses: useblacksmith/begin-testbox@d5b883fecd6a7581c3f7467543b819abf8b80bbf # v2
         with:
           testbox_id: ${{ inputs.testbox_id }}
       - name: Reject expired Testbox admission
